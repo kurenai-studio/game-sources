@@ -1,0 +1,109 @@
+buildscript {
+    
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        google()
+    }
+    dependencies {
+        classpath 'org.wisepersist:gwt-gradle-plugin:1.1.16'
+        classpath 'org.gretty:gretty:3.0.7'
+        
+
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+
+    version = '1.0'
+    ext {
+        appName = "Shhyrinth"
+        gdxVersion = '1.11.0'
+        roboVMVersion = '2.3.16'
+        box2DLightsVersion = '1.5'
+        ashleyVersion = '1.7.4'
+        aiVersion = '1.8.2'
+        gdxControllersVersion = '2.2.1'
+        shapedrawerVersion = '2.6.0'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://jitpack.io" }
+    }
+}
+
+//subprojects {
+//    apply plugin: 'java'
+//
+//    java {
+//        sourceCompatibility = JavaVersion.VERSION_HIGHER
+//        targetCompatibility = JavaVersion.VERSION_HIGHER
+//    }
+//
+//    tasks.withType(JavaCompile).configureEach {
+//        options.encoding = 'UTF-8'
+//    }
+//}
+
+
+project(":desktop") {
+    apply plugin: "java-library"
+
+    ext{
+        appName = "Shhyrinth"
+    }
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        
+    }
+}
+
+project(":html") {
+    apply plugin: "java-library"
+    apply plugin: "gwt"
+    apply plugin: "war"
+    apply plugin: "org.gretty"
+
+
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+        api "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+        implementation "space.earlygrey:shapedrawer:$shapedrawerVersion:sources"
+        implementation 'com.github.raeleus.stripe:stripe:1.4.5:sources'
+        implementation "com.github.tommyettinger:regexodus:0.1.15:sources"
+        implementation "com.github.tommyettinger:textratypist:0.8.3:sources"
+        api "com.github.crykn:libgdx-screenmanager:0.6.8:sources"
+        api "com.github.crykn:libgdx-screenmanager-gwt:0.6.8"
+        api "com.github.crykn:libgdx-screenmanager-gwt:0.6.8:sources"
+        api "com.github.tommyettinger:formic:0.1.4:sources"
+        implementation 'com.github.tommyettinger:colorful:0.8.4:sources'
+    }
+}
+
+project(":core") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+        implementation "space.earlygrey:shapedrawer:$shapedrawerVersion"
+        implementation 'com.github.raeleus.stripe:stripe:1.4.5'
+        implementation "com.github.tommyettinger:textratypist:0.8.3"
+        implementation 'com.github.tommyettinger:colorful:0.8.4'
+        api "com.github.crykn:libgdx-screenmanager:0.6.8"
+    }
+}
