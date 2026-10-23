@@ -1,0 +1,6 @@
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") then -- в mask стоит только мяч и другие условия не нужны
+		msg.post("/brick_manager", hash("brick_deleted"))
+		go.delete()
+	end
+end

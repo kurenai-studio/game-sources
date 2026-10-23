@@ -1,0 +1,20 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.reloading = false
+	msg.post("#game", "load")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("proxy_loaded") then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+	elseif message_id == hash("reload_game") then
+		self.reloading = true
+		msg.post("#game", "unload")
+	elseif message_id == hash("proxy_unloaded") then
+		if self.reloading then
+			self.reloading = false
+			msg.post("#game", "load")
+		end
+	end
+end

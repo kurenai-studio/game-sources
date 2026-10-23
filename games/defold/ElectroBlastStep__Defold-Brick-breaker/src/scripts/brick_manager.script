@@ -1,0 +1,36 @@
+function init(self)
+	self.spawned = 0
+	
+	local rows = 5
+	local columns = 12
+	local brick_width = 64
+	local brick_height = 32
+
+	local start_x = 100
+	local start_y = 500
+	local margin_x = 5
+	local margin_y = 4
+
+	for r = 1, rows do
+		for c = 1, columns do
+			local x = start_x + (c - 1) * (brick_width + margin_x)
+			local y = start_y - (r - 1) * (brick_height + margin_y)
+
+			local position = vmath.vector3(x, y, 0)
+
+			factory.create("#factory", position)
+			self.spawned = self.spawned + 1
+		end
+	end
+end
+
+function on_message(self, message_id, message)
+	if message_id == hash("brick_deleted") then
+		self.spawned = math.max(self.spawned - 1, 0)
+		if self.spawned == 0 then
+			timer.delay(0.5, false, function()
+				msg.post("main:/loader#loader", "reload_game")
+			end)
+		end
+	end
+end
