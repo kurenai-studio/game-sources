@@ -1,0 +1,207 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Scripts/UI/OptionsMenu.gd" type="Script" id=1]
+[ext_resource path="res://Assets/Fonts/small_font.tres" type="DynamicFont" id=3]
+[ext_resource path="res://Assets/Themes/Main.tres" type="Theme" id=4]
+[ext_resource path="res://Addons/SimpleNodes/LabelRange.gd" type="Script" id=5]
+
+[node name="OptionsMenu" type="Control"]
+pause_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource( 4 )
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.498039 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="."]
+anchor_right = 1.0
+margin_right = -1.0
+margin_bottom = 24.0
+custom_constants/shadow_offset_y = 1
+text = "Options"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -156.0
+size_flags_vertical = 3
+follow_focus = true
+scroll_horizontal_enabled = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="CenterContainer" type="CenterContainer" parent="ScrollContainer"]
+margin_right = 304.0
+margin_bottom = 174.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/CenterContainer"]
+margin_left = 73.0
+margin_right = 231.0
+margin_bottom = 174.0
+custom_constants/separation = 16
+
+[node name="PushTop" type="Control" parent="ScrollContainer/CenterContainer/VBoxContainer"]
+margin_right = 158.0
+
+[node name="Sound" type="VBoxContainer" parent="ScrollContainer/CenterContainer/VBoxContainer"]
+margin_top = 16.0
+margin_right = 158.0
+margin_bottom = 89.0
+
+[node name="Label" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound"]
+margin_right = 158.0
+margin_bottom = 13.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_constants/shadow_offset_y = 1
+text = "Sound"
+align = 1
+
+[node name="Master" type="HBoxContainer" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound"]
+margin_top = 17.0
+margin_right = 158.0
+margin_bottom = 33.0
+
+[node name="Label" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Master"]
+margin_top = 1.0
+margin_right = 30.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 3 )
+text = "Master:"
+align = 2
+
+[node name="Number" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Master"]
+margin_left = 34.0
+margin_top = 1.0
+margin_right = 54.0
+margin_bottom = 14.0
+rect_min_size = Vector2( 20, 0 )
+custom_fonts/font = ExtResource( 3 )
+text = "0"
+
+[node name="MasterSlider" type="HSlider" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Master"]
+margin_left = 58.0
+margin_right = 158.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 100, 0 )
+mouse_default_cursor_shape = 6
+script = ExtResource( 5 )
+label_path = NodePath("../Number")
+
+[node name="SFX" type="HBoxContainer" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound"]
+margin_top = 37.0
+margin_right = 158.0
+margin_bottom = 53.0
+
+[node name="Label" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/SFX"]
+margin_top = 1.0
+margin_right = 30.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 3 )
+text = "SFX:"
+align = 2
+
+[node name="Number" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/SFX"]
+margin_left = 34.0
+margin_top = 1.0
+margin_right = 54.0
+margin_bottom = 14.0
+rect_min_size = Vector2( 20, 0 )
+custom_fonts/font = ExtResource( 3 )
+text = "0"
+
+[node name="SFXSlider" type="HSlider" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/SFX"]
+margin_left = 58.0
+margin_right = 158.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 100, 0 )
+mouse_default_cursor_shape = 6
+script = ExtResource( 5 )
+label_path = NodePath("../Number")
+
+[node name="Music" type="HBoxContainer" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound"]
+margin_top = 57.0
+margin_right = 158.0
+margin_bottom = 73.0
+
+[node name="Label" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Music"]
+margin_top = 1.0
+margin_right = 30.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 3 )
+text = "Music:"
+align = 2
+
+[node name="Number" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Music"]
+margin_left = 34.0
+margin_top = 1.0
+margin_right = 54.0
+margin_bottom = 14.0
+rect_min_size = Vector2( 20, 0 )
+custom_fonts/font = ExtResource( 3 )
+text = "0"
+
+[node name="MusicSlider" type="HSlider" parent="ScrollContainer/CenterContainer/VBoxContainer/Sound/Music"]
+margin_left = 58.0
+margin_right = 158.0
+margin_bottom = 16.0
+rect_min_size = Vector2( 100, 0 )
+mouse_default_cursor_shape = 6
+script = ExtResource( 5 )
+label_path = NodePath("../Number")
+
+[node name="Display" type="VBoxContainer" parent="ScrollContainer/CenterContainer/VBoxContainer"]
+margin_top = 105.0
+margin_right = 158.0
+margin_bottom = 158.0
+
+[node name="Label" type="Label" parent="ScrollContainer/CenterContainer/VBoxContainer/Display"]
+margin_right = 158.0
+margin_bottom = 13.0
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_constants/shadow_offset_y = 1
+text = "Display"
+align = 1
+
+[node name="FullscreenCheckButton" type="CheckButton" parent="ScrollContainer/CenterContainer/VBoxContainer/Display"]
+margin_top = 17.0
+margin_right = 158.0
+margin_bottom = 33.0
+mouse_default_cursor_shape = 2
+custom_fonts/font = ExtResource( 3 )
+text = "Fullscreen"
+
+[node name="ScreenshakeCheckButton" type="CheckButton" parent="ScrollContainer/CenterContainer/VBoxContainer/Display"]
+margin_top = 37.0
+margin_right = 158.0
+margin_bottom = 53.0
+mouse_default_cursor_shape = 2
+custom_fonts/font = ExtResource( 3 )
+pressed = true
+text = "Screenshake"
+
+[node name="PushBottom" type="Control" parent="ScrollContainer/CenterContainer/VBoxContainer"]
+margin_top = 174.0
+margin_right = 158.0
+margin_bottom = 174.0

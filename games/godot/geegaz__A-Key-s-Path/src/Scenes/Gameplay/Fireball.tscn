@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Scripts/Gameplay/Fireball.gd" type="Script" id=1]
+[ext_resource path="res://Assets/Sprites/fireball-Sheet.png" type="Texture" id=2]
+[ext_resource path="res://Scripts/Utility/SpriteEffect.gd" type="Script" id=3]
+[ext_resource path="res://Scenes/Visuals/Effects/FireballDestroyParticles.tscn" type="PackedScene" id=4]
+
+[sub_resource type="CircleShape2D" id=1]
+radius = 3.0
+
+[node name="Fireball" type="KinematicBody2D"]
+collision_layer = 2
+script = ExtResource( 1 )
+destroy_effect = ExtResource( 4 )
+
+[node name="SpriteEffect" type="Sprite" parent="."]
+texture = ExtResource( 2 )
+hframes = 4
+script = ExtResource( 3 )
+frames = 4
+looping = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource( 1 )
+
+[node name="VisibilityNotifier2D" type="VisibilityNotifier2D" parent="."]
+rect = Rect2( -8, -8, 16, 16 )

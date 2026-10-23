@@ -1,0 +1,140 @@
+[gd_scene load_steps=17 format=2]
+
+[ext_resource path="res://Scenes/UI/Controls/ControlLeft.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Scenes/UI/Controls/ControlJump.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Scenes/UI/Controls/ControlRight.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Scripts/UI/controls/ControlScreen.gd" type="Script" id=4]
+[ext_resource path="res://Assets/Sprites/UI/controls/controls_place.png" type="Texture" id=5]
+[ext_resource path="res://Assets/Sprites/UI/controls/controls_background_top.png" type="Texture" id=6]
+[ext_resource path="res://Assets/Sprites/UI/controls/controls_background.png" type="Texture" id=7]
+
+[sub_resource type="AtlasTexture" id=1]
+atlas = ExtResource( 5 )
+region = Rect2( 32, 0, 64, 16 )
+
+[sub_resource type="AtlasTexture" id=2]
+atlas = ExtResource( 5 )
+region = Rect2( 32, 16, 64, 16 )
+
+[sub_resource type="AtlasTexture" id=3]
+atlas = ExtResource( 5 )
+region = Rect2( 32, 32, 64, 16 )
+
+[sub_resource type="AtlasTexture" id=4]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 0, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=5]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 16, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=6]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 32, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=7]
+atlas = ExtResource( 5 )
+region = Rect2( 16, 0, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=8]
+atlas = ExtResource( 5 )
+region = Rect2( 16, 16, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=9]
+atlas = ExtResource( 5 )
+region = Rect2( 16, 32, 16, 16 )
+
+[node name="ControlsScreen" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Tween" type="Tween" parent="."]
+
+[node name="BarBase" type="TextureRect" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -22.0
+margin_bottom = 10.0
+mouse_filter = 2
+texture = ExtResource( 7 )
+stretch_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BarSlots" type="NinePatchRect" parent="."]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -64.0
+margin_top = -22.0
+margin_right = 64.0
+margin_bottom = 10.0
+texture = ExtResource( 6 )
+patch_margin_left = 9
+patch_margin_top = 10
+patch_margin_right = 9
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="RetrieveJump" type="TextureButton" parent="BarSlots"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -8.0
+margin_top = 4.0
+margin_right = 56.0
+margin_bottom = 20.0
+focus_mode = 0
+texture_normal = SubResource( 1 )
+texture_pressed = SubResource( 2 )
+texture_hover = SubResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="RetrieveLeft" type="TextureButton" parent="BarSlots"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -56.0
+margin_top = 4.0
+margin_right = -40.0
+margin_bottom = 20.0
+focus_mode = 0
+texture_normal = SubResource( 4 )
+texture_pressed = SubResource( 5 )
+texture_hover = SubResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="RetrieveRight" type="TextureButton" parent="BarSlots"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -32.0
+margin_top = 4.0
+margin_right = -16.0
+margin_bottom = 20.0
+focus_mode = 0
+texture_normal = SubResource( 7 )
+texture_pressed = SubResource( 8 )
+texture_hover = SubResource( 9 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ControlJump" parent="." instance=ExtResource( 2 )]
+position = Vector2( 184, 170 )
+
+[node name="ControlLeft" parent="." instance=ExtResource( 1 )]
+position = Vector2( 112, 170 )
+
+[node name="ControlRight" parent="." instance=ExtResource( 3 )]
+position = Vector2( 136, 170 )
