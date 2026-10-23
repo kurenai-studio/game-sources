@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Seno</title>
+
+	<meta name="application-name" content="Seno">
+	<meta name="author" content="Jonathan Szablevski">
+	<meta name="description" content="Seno is a HTML5 Canvas game. The objective is to put projectiles on the central circle, in order to hit the targets.">
+
+	<meta property="og:title" content="Seno">
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="http://jesm.github.io/Seno/index.html">
+	<meta property="og:image" content="http://jesm.github.io/Seno/img/seno-og-image.jpg">
+
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<main>
+		<h1 class="title">Seno</h1>
+		<div class="description">
+			<p>In this HTML5 game, the objective is to put projectiles on the central circle (clicking in it), in order to form collision routes with the targets. Don't forget to make your moves before the time runs out!</p>
+			<p class="start">Click anywhere to start the game</p>
+		</div>
+		<span class="version">Version 0.2</span>
+	</main>
+
+	<script src="js/Jesm4.1.min.js"></script>
+	<script src="js/models.js"></script>
+	<script>
+		'use strict';
+
+		(function(){
+			var main = document.getElementsByTagName('main')[0],
+				params = {
+					counterDuration: 5, // Seconds
+					targetQuantity: 2,
+
+					// The following block of parameters is calculated relative to the window minor axis magnitude
+					// For example, considering a window with the size of 400x200px, the value used would be of 200
+					mainCircleRadius: .2,
+					mainCircleTextFontSize: .24,
+					targetRadius: .05,
+					projectileRadius: .009,
+					projectileVelocity: 0.002, // Per millisecond
+
+					backgroundColor: Jesm.Cross.getStyle(main, 'background-color'),
+					mainCircleColor: '#FCB816',
+					mainCircleTextColor: '#906B00',
+					mainCircleTextFontFamily: 'sans-serif',
+					mainCircleCounterColor: '#D83331',
+					explosionColor: '#FFF',
+					targetColor: '#95C120',
+					projectileColor: '#28BBEE'
+				};
+
+			window.Game = new App(main, params);
+			window.Game.start();
+		})();
+	</script>
+</body>
+</html>
