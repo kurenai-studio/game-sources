@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>6efba8a9-a407-4029-bdd0-651d22a87386</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Core</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BaseGame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\CameraController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Data\SpawnPointLDtkEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\IDamageSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\IEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\ILivingEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Impl\BaseEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Impl\BaseLivingEntity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Impl\BasePlayer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Impl\BasicPlayerController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\IPlayer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\IPlayerController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Rendering\IEntityRenderer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Rendering\Impl\PlayerRenderer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Entities\Rendering\RendererRegistry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\IDrawable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Input\Impl\KeyboardPlayerInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Input\IPlayerInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Input\KeyWatcher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\ISceneManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\IUpdateable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\GameLevel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\IScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Math\DebugDrawer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Math\LineF.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Math\Vectors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\CollisionEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\CollisionManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\ICollisionTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\Locomotion\LocomotionBody.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\Locomotion\Effects.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\Locomotion\PlayerLocomotionBody.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\Quadtree.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\QuadtreeData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\RaycastContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\SpawnPointCollisionTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\SpikeCollisionTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Physics\StaticCollisionTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Scenes\BaseScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Scenes\WorldScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Scenes\MenuScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Lib\Utils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Content\" />
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+    <None Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+  </ItemGroup>
+</Project>
