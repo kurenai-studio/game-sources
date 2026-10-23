@@ -1,0 +1,19 @@
+{
+  "id": "hero",
+  "name": "Stick Hero",
+  "description": "A nimble fighter with balanced stats and a spinning special move.",
+  "sprite": "content/sprites/stickman.svg",
+  "tint": "#4fc3f7",
+  "stats": {
+    "maxHp": 120,
+    "maxStamina": 100,
+    "staminaRegen": 16,
+    "moveSpeed": 240,
+    "jumpVelocity": 560
+  },
+  "attacks": {
+    "light": { "name": "Jab", "damage": 8, "staminaCost": 8, "range": 78, "cooldown": 320 },
+    "heavy": { "name": "Power Strike", "damage": 18, "staminaCost": 24, "range": 88, "cooldown": 750 }
+  },
+  "special": { "name": "Whirlwind", "damage": 30, "staminaCost": 45, "range": 120, "cooldown": 3000 }
+}
