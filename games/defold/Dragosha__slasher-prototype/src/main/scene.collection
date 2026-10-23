@@ -1,0 +1,78 @@
+name: "scene"
+collection_instances {
+  id: "hero1"
+  collection: "/main/tiles/hero.collection"
+}
+collection_instances {
+  id: "fx"
+  collection: "/main/collections/fx.collection"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "levels"
+  data: "embedded_components {\n"
+  "  id: \"1\"\n"
+  "  type: \"collectionfactory\"\n"
+  "  data: \"prototype: \\\"/main/levels/level1.collection\\\"\\n"
+  "load_dynamically: true\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"2\"\n"
+  "  type: \"collectionfactory\"\n"
+  "  data: \"prototype: \\\"/main/levels/level2.collection\\\"\\n"
+  "load_dynamically: true\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"3\"\n"
+  "  type: \"collectionfactory\"\n"
+  "  data: \"prototype: \\\"/main/levels/level3.collection\\\"\\n"
+  "load_dynamically: true\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "go"
+  data: "components {\n"
+  "  id: \"scene\"\n"
+  "  component: \"/main/scripts/scene.script\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"virtual_gamepad\"\n"
+  "  component: \"/virtual_gamepad/virtual_gamepad.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "quad"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/builtins/assets/gltf/quad_2x2.gltf\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/assets/materials/lights/multiply_quad.material\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "cam"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 100.0\\n"
+  "far_z: 3000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 1000.0
+  }
+}
