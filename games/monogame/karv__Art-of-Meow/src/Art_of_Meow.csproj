@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{AF2D54DE-9879-4C2F-8911-628AB7D239A2}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>AoM</RootNamespace>
+    <AssemblyName>Art_of_Meow</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <StartupObject>AoM.Program</StartupObject>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <DocumentationFile>bin\Debug\Art_of_Meow.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <DocumentationFile>bin\Release\Art_of_Meow.xml</DocumentationFile>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="MonoGame.Extended">
+      <HintPath>packages\MonoGame.Extended.0.6.0.0\lib\MonoGame.Extended.dll</HintPath>
+    </Reference>
+    <Reference Include="AdvMath">
+      <HintPath>packages\AdvMath.0.1\lib\AdvMath.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="NVorbis">
+      <HintPath>packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\NVorbis.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Jurassic">
+      <HintPath>packages\Jurassic.2.2.1\lib\net35\Jurassic.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="content.mgcb" />
+    <None Include="Content\*.xnb">
+      <Link>Content\*.xnb</Link>
+    </None>
+    <None Include="Data\Items.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Maps\*.map.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Modifiers.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\RaceClass.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Maps\base.map.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Skills.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Attributes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Maps\Generador\RandomMapDataScript.js">
+      <Link>Data\Maps\RandomMapDataScript.js</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="OpenTK.dll.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Juego.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Cells\Cell.cs" />
+    <Compile Include="Screens\MapMainScreen.cs" />
+    <Compile Include="Units\IUnidad.cs" />
+    <Compile Include="Units\MovementDirectionEnum.cs" />
+    <Compile Include="Cells\Depths.cs" />
+    <Compile Include="Cells\CellObjects\IGridObject.cs" />
+    <Compile Include="Cells\CellObjects\BackgroundObject.cs" />
+    <Compile Include="Cells\CellObjects\GridObject.cs" />
+    <Compile Include="Units\Recursos\IRecurso.cs" />
+    <Compile Include="Units\Recursos\ManejadorRecursos.cs" />
+    <Compile Include="Units\Recursos\RecursoEstático.cs" />
+    <Compile Include="Units\Recursos\RecursoHP.cs" />
+    <Compile Include="GameTimeManager.cs" />
+    <Compile Include="Cells\CellObjects\IUpdateGridObject.cs" />
+    <Compile Include="Units\Unidad.cs" />
+    <Compile Include="Units\Inteligencia\ChaseIntelligence.cs" />
+    <Compile Include="Units\Inteligencia\HumanIntelligence.cs" />
+    <Compile Include="Items\Inventory.cs" />
+    <Compile Include="Items\IItem.cs" />
+    <Compile Include="Items\IInventory.cs" />
+    <Compile Include="Items\GroundItem.cs" />
+    <Compile Include="Items\Declarations\CommonItemBase.cs" />
+    <Compile Include="Units\Recursos\StatRecurso.cs" />
+    <Compile Include="IInternalUpdate.cs" />
+    <Compile Include="Units\Recursos\ConstantesRecursos.cs" />
+    <Compile Include="Units\Recursos\RecursoFml.cs" />
+    <Compile Include="Units\Buffs\IBuff.cs" />
+    <Compile Include="Units\Buffs\BuffManager.cs" />
+    <Compile Include="Units\Buffs\Buff.cs" />
+    <Compile Include="Debugging\Logger.cs" />
+    <Compile Include="Units\Buffs\PoisonBuff.cs" />
+    <Compile Include="Componentes\RecursoView.cs" />
+    <Compile Include="Componentes\ListaIconos.cs" />
+    <Compile Include="Cells\CellObjects\IMovementGridObject.cs" />
+    <Compile Include="Units\Buffs\IStatsBuff.cs" />
+    <Compile Include="Units\Buffs\StatsBuff.cs" />
+    <Compile Include="Units\Buffs\HasteBuff.cs" />
+    <Compile Include="Helper\Timer.cs" />
+    <Compile Include="Units\Equipment\EquipmentManager.cs" />
+    <Compile Include="Items\IEquipment.cs" />
+    <Compile Include="Units\Buffs\EquipBuff.cs" />
+    <Compile Include="Units\Buffs\IBuffGenerating.cs" />
+    <Compile Include="Units\Recursos\Recurso.cs" />
+    <Compile Include="Items\Declarations\Equipment\Equipment.cs" />
+    <Compile Include="Screens\EquipmentScreen.cs" />
+    <Compile Include="Screens\InvokeSkillListScreen.cs" />
+    <Compile Include="Maps\Map.cs" />
+    <Compile Include="Units\Order\CooldownOrder.cs" />
+    <Compile Include="Units\Order\ExecuteOrder.cs" />
+    <Compile Include="Units\Order\IPrimitiveOrder.cs" />
+    <Compile Include="Units\Order\OrderQueue.cs" />
+    <Compile Include="Units\Order\PrimitiveOrder.cs" />
+    <Compile Include="Units\TeamManager.cs" />
+    <Compile Include="Items\Declarations\Equipment\FistMeleeEffect.cs" />
+    <Compile Include="Items\Declarations\Equipment\IMeleeEffect.cs" />
+    <Compile Include="Cells\Collision\CollisionSystem.cs" />
+    <Compile Include="Cells\Collision\ICollidableGridObject.cs" />
+    <Compile Include="Cells\Collision\ICollisionRule.cs" />
+    <Compile Include="Cells\Collision\DescriptCollitionRule.cs" />
+    <Compile Include="Componentes\BuffDisplay.cs" />
+    <Compile Include="Units\Inteligencia\IUnidadController.cs" />
+    <Compile Include="Cells\CellObjects\GridWall.cs" />
+    <Compile Include="Cells\CellObjects\StairsGridObject.cs" />
+    <Compile Include="Units\ExpManager.cs" />
+    <Compile Include="Units\IExpGiver.cs" />
+    <Compile Include="Helper\RetardValue.cs" />
+    <Compile Include="Cells\LogicGrid.cs" />
+    <Compile Include="Componentes\GridControl.cs" />
+    <Compile Include="Helper\GameInitializer.cs" />
+    <Compile Include="Items\Declarations\Equipment\GenericArmor.cs" />
+    <Compile Include="Items\Declarations\Equipment\GenericSkillListEquipment.cs" />
+    <Compile Include="Items\Declarations\Equipment\Skills\RangedSkill.cs" />
+    <Compile Include="Screens\SelectTargetScreen.cs" />
+    <Compile Include="Helper\PlayerKeyListener.cs" />
+    <Compile Include="Helper\Geometry.cs" />
+    <Compile Include="GlobalKeys.cs" />
+    <Compile Include="Units\Recursos\RecursoEquilibro.cs" />
+    <Compile Include="Helper\HitDamageCalculator.cs" />
+    <Compile Include="Skills\IEffect.cs" />
+    <Compile Include="Skills\IEffectAgent.cs" />
+    <Compile Include="Skills\ITarget.cs" />
+    <Compile Include="Skills\ITargetEffect.cs" />
+    <Compile Include="Skills\SkillInstance.cs" />
+    <Compile Include="Skills\RemoveItemEffect.cs" />
+    <Compile Include="Skills\ChangeRecurso.cs" />
+    <Compile Include="Skills\EffectResultEnum.cs" />
+    <Compile Include="Skills\CollectionEffect.cs" />
+    <Compile Include="Skills\Effect.cs" />
+    <Compile Include="Skills\GenerateCooldownEffect.cs" />
+    <Compile Include="Helper\MeleeEffectHelper.cs" />
+    <Compile Include="Items\Declarations\Equipment\MeleeWeapon.cs" />
+    <Compile Include="Componentes\PlayerInfoControl.cs" />
+    <Compile Include="Items\Modifiers\ItemModifier.cs" />
+    <Compile Include="Items\Modifiers\ItemModifierNameUsage.cs" />
+    <Compile Include="Items\Modifiers\ItemModification.cs" />
+    <Compile Include="Items\Modifiers\ItemModifiersManager.cs" />
+    <Compile Include="Cells\GridConnector.cs" />
+    <Compile Include="WorldLocation.cs" />
+    <Compile Include="Cells\MemoryGrid.cs" />
+    <Compile Include="Cells\MemorizedCell.cs" />
+    <Compile Include="Helper\IntegerInterval.cs" />
+    <Compile Include="Helper\IDistribution.cs" />
+    <Compile Include="Debugging\DebugCategories.cs" />
+    <Compile Include="Units\Recursos\MaxParameter.cs" />
+    <Compile Include="Units\IGridMoveable.cs" />
+    <Compile Include="Maps\MapParser.cs" />
+    <Compile Include="Helper\ItemWeightPair.cs" />
+    <Compile Include="Helper\ProbabilityInstanceSet.cs" />
+    <Compile Include="Helper\PickOneProbabilityDictionary.cs" />
+    <Compile Include="Items\Modifiers\ItemModifierDatabase.cs" />
+    <Compile Include="FileNames.cs" />
+    <Compile Include="Items\ItemDatabase.cs" />
+    <Compile Include="Items\SimpleItemRecipe.cs" />
+    <Compile Include="Items\RandomItemRecipe.cs" />
+    <Compile Include="Items\IItemFactory.cs" />
+    <Compile Include="Items\AttributesNames.cs" />
+    <Compile Include="Screens\ScreenExt.cs" />
+    <Compile Include="Units\Movement.cs" />
+    <Compile Include="Units\UnitClass.cs" />
+    <Compile Include="Maps\Populator.cs" />
+    <Compile Include="Maps\PopulationRule.cs" />
+    <Compile Include="Units\UnitClassRaceManager.cs" />
+    <Compile Include="Units\UnitRace.cs" />
+    <Compile Include="Items\DropAssignment.cs" />
+    <Compile Include="Items\Declarations\SelfResourceChangeItem.cs" />
+    <Compile Include="Items\Declarations\UsableItem.cs" />
+    <Compile Include="Units\SkillCollection.cs" />
+    <Compile Include="IIdentificable.cs" />
+    <Compile Include="DamageAttribute.cs" />
+    <Compile Include="IdentificableManager.cs" />
+    <Compile Include="DamageAttributesManager.cs" />
+    <Compile Include="Items\IStackingItem.cs" />
+    <Compile Include="Items\Declarations\Arrow.cs" />
+    <Compile Include="Items\Declarations\StackingItem.cs" />
+    <Compile Include="Units\Inteligencia\AIException.cs" />
+    <Compile Include="Units\Inteligencia\AI.cs" />
+    <Compile Include="Units\Inteligencia\RangedIntelligence.cs" />
+    <Compile Include="Cells\CellObjects\DoorGridObject.cs" />
+    <Compile Include="Componentes\MinimapControl.cs" />
+    <Compile Include="Cells\CellObjects\IMinimapVisible.cs" />
+    <Compile Include="Items\ITooltipSource.cs" />
+    <Compile Include="Skills\LearningSystem.cs" />
+    <Compile Include="Units\SkillManager.cs" />
+    <Compile Include="Skills\ISkill.cs" />
+    <Compile Include="Items\Declarations\Equipment\Skills\RangedAmmoSkill.cs" />
+    <Compile Include="Items\Declarations\Equipment\Skills\RangedElementalSkill.cs" />
+    <Compile Include="Units\Recursos\IVisibleRecurso.cs" />
+    <Compile Include="Units\IExpable.cs" />
+    <Compile Include="Skills\SkillAbility.cs" />
+    <Compile Include="Screens\LearnSkillScreen.cs" />
+    <Compile Include="Items\Declarations\Equipment\Skills\FirstAidSkill.cs" />
+    <Compile Include="Skills\AddBuffEffect.cs" />
+    <Compile Include="Items\Declarations\Equipment\Skills\BuffSkill.cs" />
+    <Compile Include="Items\EquipSlot.cs" />
+    <Compile Include="Items\ISkillEquipment.cs" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <TextStylePolicy FileWidth="120" TabWidth="2" IndentWidth="2" inheritsSet="Mono" inheritsScope="text/plain" scope="text/x-csharp" />
+          <CSharpFormattingPolicy IndentSwitchBody="True" AutoPropertyFormatting="ForceOneLine" AnonymousMethodBraceStyle="NextLine" PropertyBraceStyle="NextLine" PropertyGetBraceStyle="NextLine" PropertySetBraceStyle="NextLine" EventBraceStyle="NextLine" EventAddBraceStyle="NextLine" EventRemoveBraceStyle="NextLine" StatementBraceStyle="NextLine" ElseNewLinePlacement="NewLine" CatchNewLinePlacement="NewLine" FinallyNewLinePlacement="NewLine" WhileNewLinePlacement="NewLine" ArrayInitializerBraceStyle="NextLine" NewLineBeforeConstructorInitializerColon="NewLine" NewLineAfterConstructorInitializerColon="SameLine" AfterDelegateDeclarationParameterComma="True" BeforeSizeOfParentheses="True" BeforeTypeOfParentheses="True" SpacesBeforeArrayDeclarationBrackets="True" MethodCallArgumentWrapping="WrapIfTooLong" MethodDeclarationParameterWrapping="WrapIfTooLong" IndexerDeclarationParameterWrapping="WrapIfTooLong" IndexerArgumentWrapping="WrapIfTooLong" inheritsSet="Mono" inheritsScope="text/x-csharp" scope="text/x-csharp" />
+          <DotNetNamingPolicy DirectoryNamespaceAssociation="Hierarchical" ResourceNamePolicy="FileName" />
+          <TextStylePolicy FileWidth="120" TabWidth="2" IndentWidth="2" inheritsSet="Mono" inheritsScope="text/plain" scope="application/json" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+  <ItemGroup>
+    <Folder Include="Screens\" />
+    <Folder Include="Cells\" />
+    <Folder Include="Cells\CellObjects\" />
+    <Folder Include="Units\" />
+    <Folder Include="Units\Recursos\" />
+    <Folder Include="Componentes\" />
+    <Folder Include="Units\Inteligencia\" />
+    <Folder Include="Items\" />
+    <Folder Include="Items\Declarations\" />
+    <Folder Include="Debugging\" />
+    <Folder Include="Units\Buffs\" />
+    <Folder Include="Helper\" />
+    <Folder Include="Units\Equipment\" />
+    <Folder Include="Items\Declarations\Equipment\" />
+    <Folder Include="Maps\" />
+    <Folder Include="Units\Order\" />
+    <Folder Include="Cells\Collision\" />
+    <Folder Include="Content\" />
+    <Folder Include="Items\Declarations\Equipment\Skills\" />
+    <Folder Include="Skills\" />
+    <Folder Include="Items\Modifiers\" />
+    <Folder Include="Data\" />
+    <Folder Include="Data\Maps\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Moggle\Controles_Moggle.csproj">
+      <Project>{63EB1C06-BE20-4A59-B879-C9E52DA53204}</Project>
+      <Name>Controles_Moggle</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
