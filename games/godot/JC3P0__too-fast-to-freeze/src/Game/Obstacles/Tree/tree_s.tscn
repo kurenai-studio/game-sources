@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://q4vq4rwwnp5c"]
+
+[ext_resource type="Script" uid="uid://dc6jrmhccuxwm" path="res://Game/Obstacles/obstacle_move.gd" id="1_6jipa"]
+[ext_resource type="PackedScene" uid="uid://bcta7b1eomtda" path="res://Assets/Blender/Trees/TreeS.blend" id="2_f4ij0"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_5v27c"]
+
+[node name="TreeS" type="CharacterBody3D" groups=["Obstacle", "Tree"]]
+transform = Transform3D(1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, 0, 0, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_6jipa")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_5v27c")
+
+[node name="TreeS" parent="." instance=ExtResource("2_f4ij0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

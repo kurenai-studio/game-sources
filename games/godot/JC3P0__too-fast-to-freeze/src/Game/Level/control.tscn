@@ -1,0 +1,186 @@
+[gd_scene format=3 uid="uid://bbvqs68220nsb"]
+
+[ext_resource type="Script" uid="uid://c4p5ws4ij74wf" path="res://Game/Level/control.gd" id="1_syy6g"]
+[ext_resource type="Texture2D" uid="uid://j0oau1manjoh" path="res://Assets/PNG/ICE_PROG_OVER.png" id="2_rprtg"]
+[ext_resource type="Texture2D" uid="uid://bhmxwonbfnjbd" path="res://Assets/PNG/ICE_PROG.png" id="3_pcigf"]
+
+[node name="Control" type="Control" unique_id=412818272]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_syy6g")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=333286008]
+layout_mode = 0
+offset_top = 63.0
+offset_right = 134.0
+offset_bottom = 115.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=192710333]
+layout_mode = 2
+
+[node name="SpeedContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=451765593]
+layout_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="PanelContainer/VBoxContainer/SpeedContainer" unique_id=2008435849]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Speed : 
+"
+
+[node name="SpeedCurrent" type="Label" parent="PanelContainer/VBoxContainer/SpeedContainer" unique_id=1875567992]
+layout_mode = 2
+text = "00
+"
+
+[node name="DistanceContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=161226939]
+layout_mode = 2
+
+[node name="DistanceLabel" type="Label" parent="PanelContainer/VBoxContainer/DistanceContainer" unique_id=1901447599]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Distance : 
+"
+
+[node name="DistanceCurrent" type="Label" parent="PanelContainer/VBoxContainer/DistanceContainer" unique_id=1093672439]
+layout_mode = 2
+text = "00
+"
+
+[node name="AxeContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=1020976780]
+layout_mode = 2
+
+[node name="AxeLabel" type="Label" parent="PanelContainer/VBoxContainer/AxeContainer" unique_id=598925878]
+layout_mode = 2
+text = "Axe count : "
+
+[node name="AxeCount" type="Label" parent="PanelContainer/VBoxContainer/AxeContainer" unique_id=1634649455]
+layout_mode = 2
+text = "0"
+
+[node name="SawContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=1080177086]
+layout_mode = 2
+
+[node name="SawLabel" type="Label" parent="PanelContainer/VBoxContainer/SawContainer" unique_id=930593314]
+layout_mode = 2
+text = "Saw Count : "
+
+[node name="SawCount" type="Label" parent="PanelContainer/VBoxContainer/SawContainer" unique_id=872645844]
+layout_mode = 2
+text = "0"
+
+[node name="HammerContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=273977214]
+layout_mode = 2
+
+[node name="HammerLabel" type="Label" parent="PanelContainer/VBoxContainer/HammerContainer" unique_id=583073772]
+layout_mode = 2
+text = "Hammer Count : "
+
+[node name="HammerCount" type="Label" parent="PanelContainer/VBoxContainer/HammerContainer" unique_id=1918529053]
+layout_mode = 2
+text = "0"
+
+[node name="FreezeProgressBar" type="TextureProgressBar" parent="." unique_id=181495790]
+custom_minimum_size = Vector2(448, 48)
+layout_mode = 0
+offset_left = 351.0
+offset_right = 799.0
+offset_bottom = 48.0
+max_value = 60.0
+step = 0.01
+nine_patch_stretch = true
+texture_over = ExtResource("2_rprtg")
+texture_progress = ExtResource("3_pcigf")
+
+[node name="FreezeTimer" type="Timer" parent="." unique_id=1381805260]
+wait_time = 60.0
+one_shot = true
+autostart = true
+
+[node name="ButtonSawBlade" type="Button" parent="." unique_id=453670655]
+layout_mode = 0
+offset_left = 352.0
+offset_top = 574.0
+offset_right = 450.0
+offset_bottom = 620.0
+focus_mode = 0
+text = "SawBlade"
+
+[node name="CooldownBar" type="ProgressBar" parent="ButtonSawBlade" unique_id=1591138687]
+self_modulate = Color(0.38431373, 0.38431373, 0.38431373, 0.8862745)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+fill_mode = 1
+show_percentage = false
+
+[node name="ButtonAxe" type="Button" parent="." unique_id=1727762208]
+layout_mode = 0
+offset_left = 531.0
+offset_top = 575.0
+offset_right = 621.0
+offset_bottom = 619.0
+focus_mode = 0
+text = "Axe"
+
+[node name="CooldownBar" type="ProgressBar" parent="ButtonAxe" unique_id=1990214657]
+self_modulate = Color(0.38431373, 0.38431373, 0.38431373, 0.8862745)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+fill_mode = 1
+show_percentage = false
+
+[node name="ButtonHammer" type="Button" parent="." unique_id=1788449378]
+layout_mode = 0
+offset_left = 701.0
+offset_top = 576.0
+offset_right = 804.0
+offset_bottom = 620.0
+focus_mode = 0
+text = "Hammer"
+
+[node name="CooldownBar" type="ProgressBar" parent="ButtonHammer" unique_id=2099907646]
+self_modulate = Color(0.38431373, 0.38431373, 0.38431373, 0.8862745)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+fill_mode = 1
+show_percentage = false
+
+[node name="PanelContainer2" type="PanelContainer" parent="." unique_id=2027167262]
+layout_mode = 0
+offset_left = 174.0
+offset_top = 64.0
+offset_right = 324.0
+offset_bottom = 140.0
+
+[node name="ComboContainer" type="VBoxContainer" parent="PanelContainer2" unique_id=1737682034]
+layout_mode = 2
+
+[node name="ComboCount" type="Label" parent="PanelContainer2/ComboContainer" unique_id=168565549]
+layout_mode = 2
+text = "Combo count: "
+
+[node name="ComboTimer" type="Label" parent="PanelContainer2/ComboContainer" unique_id=938812489]
+layout_mode = 2
+text = "Combo timer: "
+
+[node name="HeatBonus" type="Label" parent="PanelContainer2/ComboContainer" unique_id=2130322778]
+layout_mode = 2
+text = "Heat bonus: "

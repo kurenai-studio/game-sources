@@ -1,0 +1,222 @@
+[gd_scene format=3 uid="uid://c7ewudfnvw511"]
+
+[ext_resource type="PackedScene" uid="uid://bujqvsqm0otsm" path="res://Assets/Blender/TitleScreenPlayer.blend" id="1_s7psy"]
+[ext_resource type="Script" uid="uid://bxd56nxhgwfnn" path="res://Game/Level/TitleTrees.gd" id="2_15bu7"]
+[ext_resource type="PackedScene" uid="uid://byxd6qc10ijjs" path="res://Assets/Blender/Trees/TreeL.blend" id="2_xcuoe"]
+[ext_resource type="Script" uid="uid://cqcrseoiicnix" path="res://Game/Level/UI/title_screen.gd" id="4_efe5r"]
+[ext_resource type="PackedScene" uid="uid://v0gfptghjmi" path="res://Game/Level/UI/Settings/audio_settings.tscn" id="5_gwhaj"]
+[ext_resource type="Script" uid="uid://cn8w8fluwyors" path="res://Game/Level/UI/Settings/audio_settings_title_menu.gd" id="6_20ja8"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_lgyqw"]
+size = Vector2(200, 50)
+
+[sub_resource type="Curve3D" id="Curve3D_1fgly"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -11.1809, -8.0342, 17.5662, 0, 0, 0, 0, 0, 0, 0.722027, -15.2594, -14.8082),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[node name="TitleScreen" type="Node3D" unique_id=431290808]
+script = ExtResource("4_efe5r")
+
+[node name="TitleScreenPlayer" parent="." unique_id=2122339803 instance=ExtResource("1_s7psy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.621679, 0, 0.811446)
+
+[node name="Skeleton3D" parent="TitleScreenPlayer/Armature" parent_id_path=PackedInt32Array(2122339803, 1803972115) index="0" unique_id=1993890891]
+bones/2/rotation = Quaternion(0.583393, 0.4892588, 0.4960808, 0.4173516)
+bones/3/rotation = Quaternion(0.0033338238, -0.0029344135, 0.66074413, 0.75059813)
+bones/5/rotation = Quaternion(0.5933995, -0.5255776, -0.45591542, 0.40470538)
+bones/6/rotation = Quaternion(0.0028774268, 0.0033831105, -0.7617779, 0.6478232)
+bones/9/rotation = Quaternion(-0.15888318, 0.05340148, -0.38851845, 0.9060673)
+bones/10/rotation = Quaternion(0.28906533, -0.06897493, -0.101663314, 0.94939363)
+bones/13/rotation = Quaternion(7.69775e-08, -7.296129e-08, 0.4196666, 0.90767837)
+bones/14/rotation = Quaternion(0.50907695, 0.23765048, 0.01560717, 0.82711506)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=782023762]
+transform = Transform3D(0.214906, -0.458924, 0.862093, -0.141, 0.858891, 0.492368, -0.966403, -0.227368, 0.119872, -39.6502, -15.4034, -16.3974)
+mesh = SubResource("QuadMesh_lgyqw")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2021648782]
+transform = Transform3D(0.335075, -0.130512, 0.933109, 0.0223024, 0.991181, 0.130626, -0.941928, -0.0229587, 0.33503, 2.50512, 1.76782, 2.60922)
+
+[node name="Path3D" type="Path3D" parent="." unique_id=96559264]
+curve = SubResource("Curve3D_1fgly")
+
+[node name="PathFollow3D" type="PathFollow3D" parent="Path3D" unique_id=1076772072]
+transform = Transform3D(0.93856907, 0.07073863, -0.33774787, 9.074761e-06, 0.97875404, 0.20501648, 0.34507677, -0.19242667, 0.9186299, 0.030539023, -14.839661, -12.927443)
+progress = 33.1942
+script = ExtResource("2_15bu7")
+tree_speed = 0.15
+
+[node name="TreeL" parent="Path3D/PathFollow3D" unique_id=536823064 instance=ExtResource("2_xcuoe")]
+transform = Transform3D(0.999971, 0.0076391, 0.000867233, -0.00733849, 0.982029, -0.188586, -0.00229228, 0.188574, 0.982056, 0, 0, 0)
+
+[node name="Title_Options" type="Control" parent="." unique_id=1851821357]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="PanelContainer" parent="Title_Options" unique_id=739525345]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 16.0
+offset_right = 461.0
+offset_bottom = 264.0
+
+[node name="Label" type="Label" parent="Title_Options/Title" unique_id=1864206666]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 77
+text = " Too Fast
+ To Freeze "
+
+[node name="Menu" type="PanelContainer" parent="Title_Options" unique_id=2010921730]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 394.0
+offset_right = 360.0
+offset_bottom = 563.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Title_Options/Menu" unique_id=905111666]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="start_button" type="Button" parent="Title_Options/Menu/VBoxContainer" unique_id=1389010613]
+layout_mode = 2
+focus_neighbor_top = NodePath("../credits_button")
+focus_neighbor_bottom = NodePath("../options_button")
+text = "Start
+"
+
+[node name="options_button" type="Button" parent="Title_Options/Menu/VBoxContainer" unique_id=937504074]
+layout_mode = 2
+focus_neighbor_top = NodePath("../start_button")
+focus_neighbor_bottom = NodePath("../credits_button")
+text = "Options
+"
+
+[node name="how_to_play" type="Button" parent="Title_Options/Menu/VBoxContainer" unique_id=763589996]
+layout_mode = 2
+text = "How to Play"
+
+[node name="credits_button" type="Button" parent="Title_Options/Menu/VBoxContainer" unique_id=1460650793]
+layout_mode = 2
+focus_neighbor_top = NodePath("../options_button")
+focus_neighbor_bottom = NodePath("../start_button")
+text = "Credits"
+
+[node name="AudioSettings" parent="Title_Options" unique_id=212626662 instance=ExtResource("5_gwhaj")]
+visible = false
+layout_mode = 1
+script = ExtResource("6_20ja8")
+
+[node name="CreditPanel" type="Panel" parent="Title_Options" unique_id=1249840413]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 488.0
+offset_top = 305.0
+offset_right = -414.0
+offset_bottom = -69.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Title_Options/CreditPanel" unique_id=1789222011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Title_Options/CreditPanel/VBoxContainer" unique_id=1191089053]
+layout_mode = 2
+size_flags_vertical = 6
+text = "CREDITS"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="Title_Options/CreditPanel/VBoxContainer" unique_id=1286983467]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Game made by
+JC3P0 and Dagoon"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="Title_Options/CreditPanel/VBoxContainer" unique_id=811271712]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Music
+Karl Casey @ White Bat Audio"
+horizontal_alignment = 1
+
+[node name="HowToPlayPanel" type="Panel" parent="Title_Options" unique_id=1263283984]
+visible = false
+layout_mode = 0
+offset_left = 491.0
+offset_top = 2.0
+offset_right = 1011.0
+offset_bottom = 647.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Title_Options/HowToPlayPanel" unique_id=425059718]
+layout_mode = 0
+offset_right = 519.0
+offset_bottom = 652.0
+
+[node name="controls" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=863975659]
+layout_mode = 2
+text = "Controls"
+horizontal_alignment = 1
+
+[node name="controls_info" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=1263443676]
+layout_mode = 2
+text = "Movement
+Mouse: Click and drag
+Keyboard:  A = left, D = right
+Gamepad: Joypad left or right stick
+Abilities
+Mouse: On screen buttons
+Keyboard: Space = Axe, E = Hammer, Q = Saw
+Gamepad: A = Axe, B = Hammer, X = Saw"
+
+[node name="ablility" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=1535291652]
+layout_mode = 2
+text = "Abilities"
+horizontal_alignment = 1
+
+[node name="abilitiy_info" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=1444234358]
+layout_mode = 2
+text = "Axe : swings and destroys any Tree in range. Base cooldown 3.2s.   
+Each tree cut refunds 0.625s off your freeze timer (heat).
+Hammer: swings and destroys any Boulder or Snow Barrier in 
+range. Base cooldown 3.9s. Boulders refund 1.25s of heat 
+each; snow barriers refund 0.625s each.
+Saw: fires a spinning blade forward that flies through trees, 
+cutting up to 6 of them (grows by 1 per stack, capped at 16), 
+and gets destroyed outright if it hits a Boulder. Base 
+cooldown 6.5s."
+
+[node name="combo" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=903586307]
+layout_mode = 2
+text = "Combos"
+horizontal_alignment = 1
+
+[node name="combo_info" type="Label" parent="Title_Options/HowToPlayPanel/VBoxContainer" unique_id=1881553315]
+layout_mode = 2
+text = "Combo: Cut 3+ trees in one axe swing (or smash 1 boulder) 
+to start it. Keep chopping/smashing to extend it before the 
+shrinking timer runs out. Ends on timeout or a hit, paying up 
+to 6s bonus heat."
+
+[connection signal="pressed" from="Title_Options/Menu/VBoxContainer/start_button" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="Title_Options/Menu/VBoxContainer/options_button" to="." method="_on_options_button_pressed"]
+[connection signal="pressed" from="Title_Options/Menu/VBoxContainer/how_to_play" to="." method="_on_how_to_play_pressed"]
+[connection signal="pressed" from="Title_Options/Menu/VBoxContainer/credits_button" to="." method="_on_credits_button_pressed"]
+
+[editable path="TitleScreenPlayer"]

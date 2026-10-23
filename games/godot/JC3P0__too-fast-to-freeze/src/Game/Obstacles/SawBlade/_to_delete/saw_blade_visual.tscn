@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://d1jyjclstg0v1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blade"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_teeth"]
+albedo_color = Color(0.75, 0.75, 0.78, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tooth"]
+size = Vector3(0.14, 0.16, 0.3)
+
+[node name="SawBladeVisual" type="Node3D"]
+
+[node name="BladeBody" type="CSGCylinder3D" parent="."]
+radius = 1.5
+height = 0.15
+sides = 32
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Hole" type="CSGCylinder3D" parent="BladeBody"]
+radius = 0.4
+height = 0.3
+sides = 24
+operation = 2
+
+[node name="Teeth" type="Node3D" parent="."]
+
+[node name="Tooth0" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(1.000000, 0, -0.000000, 0, 1, 0, 0.000000, 0, 1.000000, 0.000000, 0, 1.550000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth1" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 0.401170, 0, 1.497185)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth2" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.866025, 0, -0.500000, 0, 1, 0, 0.500000, 0, 0.866025, 0.775000, 0, 1.342339)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth3" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, 0.707107, 1.096016, 0, 1.096016)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth4" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.500000, 0, -0.866025, 0, 1, 0, 0.866025, 0, 0.500000, 1.342339, 0, 0.775000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth5" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.258819, 0, -0.965926, 0, 1, 0, 0.965926, 0, 0.258819, 1.497185, 0, 0.401170)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth6" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.000000, 0, -1.000000, 0, 1, 0, 1.000000, 0, 0.000000, 1.550000, 0, 0.000000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth7" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.258819, 0, -0.965926, 0, 1, 0, 0.965926, 0, -0.258819, 1.497185, 0, -0.401170)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth8" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.500000, 0, -0.866025, 0, 1, 0, 0.866025, 0, -0.500000, 1.342339, 0, -0.775000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth9" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.707107, 0, -0.707107, 0, 1, 0, 0.707107, 0, -0.707107, 1.096016, 0, -1.096016)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth10" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.866025, 0, -0.500000, 0, 1, 0, 0.500000, 0, -0.866025, 0.775000, 0, -1.342339)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth11" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, -0.965926, 0.401170, 0, -1.497185)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth12" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-1.000000, 0, -0.000000, 0, 1, 0, 0.000000, 0, -1.000000, 0.000000, 0, -1.550000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth13" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, -0.965926, -0.401170, 0, -1.497185)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth14" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.866025, 0, 0.500000, 0, 1, 0, -0.500000, 0, -0.866025, -0.775000, 0, -1.342339)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth15" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, -0.707107, -1.096016, 0, -1.096016)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth16" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.500000, 0, 0.866025, 0, 1, 0, -0.866025, 0, -0.500000, -1.342339, 0, -0.775000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth17" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.258819, 0, 0.965926, 0, 1, 0, -0.965926, 0, -0.258819, -1.497185, 0, -0.401170)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth18" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(-0.000000, 0, 1.000000, 0, 1, 0, -1.000000, 0, -0.000000, -1.550000, 0, -0.000000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth19" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.258819, 0, 0.965926, 0, 1, 0, -0.965926, 0, 0.258819, -1.497185, 0, 0.401170)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth20" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.500000, 0, 0.866025, 0, 1, 0, -0.866025, 0, 0.500000, -1.342339, 0, 0.775000)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth21" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -1.096016, 0, 1.096016)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth22" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.866025, 0, 0.500000, 0, 1, 0, -0.500000, 0, 0.866025, -0.775000, 0, 1.342339)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")
+
+[node name="Tooth23" type="MeshInstance3D" parent="Teeth"]
+transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, -0.401170, 0, 1.497185)
+mesh = SubResource("BoxMesh_tooth")
+surface_material_override/0 = SubResource("StandardMaterial3D_teeth")

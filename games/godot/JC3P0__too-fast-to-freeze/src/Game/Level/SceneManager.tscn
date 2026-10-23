@@ -1,0 +1,53 @@
+[gd_scene load_steps=12 format=3 uid="uid://ptvhpxivmvd0"]
+
+[ext_resource type="Script" uid="uid://b61n6a6nibhrk" path="res://Game/Level/level_loader.gd" id="1_aelf2"]
+[ext_resource type="PackedScene" uid="uid://c7ewudfnvw511" path="res://Game/Level/UI/title_screen.tscn" id="1_m77nq"]
+[ext_resource type="PackedScene" uid="uid://cvn1mmu2q34sp" path="res://Game/Level/UI/Settings/music_loop.tscn" id="2_l8ggh"]
+[ext_resource type="PackedScene" uid="uid://bkkn5jumnrmyx" path="res://Game/Level/UI/pause_screen.tscn" id="4_la8ax"]
+[ext_resource type="PackedScene" uid="uid://bhesqhgfg0wt3" path="res://Game/Level/UI/Settings/sfx.tscn" id="4_vjd3e"]
+[ext_resource type="PackedScene" uid="uid://brb2gvw4skxlw" path="res://Game/Level/UI/game_over_screen.tscn" id="5_cridy"]
+[ext_resource type="PackedScene" uid="uid://v0gfptghjmi" path="res://Game/Level/UI/Settings/audio_settings.tscn" id="7_spb3r"]
+[ext_resource type="Script" uid="uid://c3g3abmunmv86" path="res://Game/Level/UI/Settings/audio_settings_scene_manager.gd" id="8_uqtj0"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_e7sta"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_3qkyn"]
+sky_material = SubResource("ProceduralSkyMaterial_e7sta")
+
+[sub_resource type="Environment" id="Environment_1mngu"]
+background_mode = 2
+sky = SubResource("Sky_3qkyn")
+tonemap_mode = 2
+
+[node name="SceneManager" type="Node"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866024, -0.433016, 0.250001, 0, 0.499998, 0.866026, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+light_color = Color(0.674815, 0.674815, 0.674815, 1)
+light_energy = 0.5
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1mngu")
+
+[node name="LevelLoader" type="Node3D" parent="."]
+script = ExtResource("1_aelf2")
+
+[node name="TitleScreen" parent="LevelLoader" instance=ExtResource("1_m77nq")]
+
+[node name="MusicLoop" parent="." instance=ExtResource("2_l8ggh")]
+
+[node name="sfx" parent="." instance=ExtResource("4_vjd3e")]
+
+[node name="PauseScreen" parent="." instance=ExtResource("4_la8ax")]
+visible = false
+
+[node name="GameOverScreen" parent="." instance=ExtResource("5_cridy")]
+visible = false
+
+[node name="AudioSettings" parent="." instance=ExtResource("7_spb3r")]
+process_mode = 3
+visible = false
+script = ExtResource("8_uqtj0")

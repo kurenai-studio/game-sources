@@ -1,0 +1,433 @@
+[gd_scene format=3 uid="uid://dtqjpg20jqtkv"]
+
+[ext_resource type="Script" uid="uid://cbflemreqti4r" path="res://Game/Player/player.gd" id="1_ih0iw"]
+[ext_resource type="Resource" uid="uid://2lyxmijs8ayx" path="res://Game/Data/player_stats.tres" id="2_6upfr"]
+[ext_resource type="PackedScene" uid="uid://bntvw807yp6np" path="res://Assets/Blender/Player4.blend" id="2_gb67c"]
+[ext_resource type="Script" uid="uid://crkuxkl0j5okf" path="res://Game/Player/States/player_state_manager.gd" id="3_852li"]
+[ext_resource type="PackedScene" uid="uid://ctvfpofgfhexe" path="res://Game/Player/Trails/hard_trail_particles.tscn" id="3_j3gwb"]
+[ext_resource type="Resource" uid="uid://c85gc3jdj7i4e" path="res://Game/Data/directional_stats.tres" id="3_px0gh"]
+[ext_resource type="Script" uid="uid://bf37tspueqq3e" path="res://Game/Player/States/player_helper.gd" id="3_r87qv"]
+[ext_resource type="PackedScene" uid="uid://b67nptry8ud3w" path="res://Game/Player/Trails/snow_trail_idle.tscn" id="4_ssr2j"]
+[ext_resource type="Script" uid="uid://d4ijrcwtesf68" path="res://Game/Player/States/idle_state.gd" id="5_36an1"]
+[ext_resource type="PackedScene" uid="uid://y68uqxs5wuap" path="res://Game/Player/Trails/soft_trail_particles.tscn" id="5_ej26e"]
+[ext_resource type="Script" uid="uid://svbaqotdlx50" path="res://Game/Player/States/soft_turn.gd" id="6_xtbkq"]
+[ext_resource type="Script" uid="uid://c5pwf874ebtol" path="res://Game/Player/States/hard_turn.gd" id="7_ej8a5"]
+[ext_resource type="Script" uid="uid://cdmslms8vieei" path="res://Game/Player/States/stop_turn.gd" id="8_ejxtu"]
+[ext_resource type="Script" uid="uid://dqmw12usdlw01" path="res://Game/Player/States/jump.gd" id="9_ubqs3"]
+[ext_resource type="Script" uid="uid://didepfturi7rt" path="res://Game/Player/States/vulnerable.gd" id="13_25frb"]
+[ext_resource type="Script" uid="uid://0fwok6xg84f3" path="res://Game/Player/Abilities/axe_ability.gd" id="16_86ark"]
+[ext_resource type="Resource" uid="uid://cny8tws0a1tlm" path="res://Game/Data/axe_stats.tres" id="17_cdlqx"]
+[ext_resource type="Script" uid="uid://djewoeuibdd0b" path="res://Game/Player/Abilities/hammer_ability.gd" id="17_wg23h"]
+[ext_resource type="Script" uid="uid://peg8tae5dhx" path="res://Game/Player/Abilities/saw_ability.gd" id="18_u78gx"]
+[ext_resource type="Resource" uid="uid://bb2hdk7prsmh8" path="res://Game/Data/hammer_stats.tres" id="19_rmqab"]
+[ext_resource type="Resource" uid="uid://btcrfy6lldlle" path="res://Game/Data/saw_stats.tres" id="21_vr2vl"]
+[ext_resource type="PackedScene" uid="uid://dlnhttnkkm8ak" path="res://Assets/Blender/Axe.blend" id="23_hgjse"]
+[ext_resource type="PackedScene" uid="uid://iug5hsdgiv0l" path="res://Assets/Blender/Hammer.blend" id="24_3rqyv"]
+[ext_resource type="Script" uid="uid://bwety6a6udx5l" path="res://Game/Player/combo_controller.gd" id="combo_controller"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_54qhv"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cdlqx"]
+top_radius = 0.25
+bottom_radius = 0.25
+height = 1.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rmqab"]
+albedo_color = Color(0.64705884, 0.16470589, 0.16470589, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_vr2vl"]
+size = Vector3(1.25, 0.5, 0.75)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hgjse"]
+albedo_color = Color(0.0035191667, 0.0035191681, 0.0035191672, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cdlqx"]
+size = Vector3(0.6, 1.5, 0.3)
+
+[sub_resource type="PrismMesh" id="PrismMesh_rmqab"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vr2vl"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1w2v0"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_cdlqx"]
+height = 2.4838867
+radius = 3.571289
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rangering"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.6, 0.1, 0.55)
+
+[sub_resource type="TorusMesh" id="TorusMesh_axering"]
+inner_radius = 3.035595
+outer_radius = 3.571289
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rmqab"]
+size = Vector3(2.1351624, 3.2792969, 6.1614757)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hammerrange"]
+size = Vector3(2.1351624, 0.1, 6.1614757)
+
+[sub_resource type="Animation" id="Animation_jexcd"]
+resource_name = "HammerSwing"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HammerPivot:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.26666668, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, -1.5707964, -0.1572996), Vector3(-6.181584e-08, -1.5707964, -0.7921351), Vector3(8.2978964e-08, -1.5707963, 1.6827242)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HammerPivot:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+
+[sub_resource type="Animation" id="Animation_dcs4t"]
+resource_name = "RESET"
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HammerPivot:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -1.5707964, -0.1572996)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HammerPivot:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_cptj8"]
+_data = {
+&"HammerSwing": SubResource("Animation_jexcd"),
+&"RESET": SubResource("Animation_dcs4t")
+}
+
+[sub_resource type="Animation" id="Animation_on0lv"]
+resource_name = "AxeSwing"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-1.5707964, 0.20270254, 0), Vector3(-1.5707964, -0.19257967, 0), Vector3(-1.5707964, 2.9389424, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+
+[sub_resource type="Animation" id="Animation_axeleft_reset"]
+resource_name = "RESET"
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-1.5707964, 0.20270254, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_axeleft"]
+_data = {
+&"AxeSwing": SubResource("Animation_on0lv"),
+&"RESET": SubResource("Animation_axeleft_reset")
+}
+
+[sub_resource type="Animation" id="Animation_axeswingright"]
+resource_name = "AxeSwingRight"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(1.5707964, 2.9388874, 0), Vector3(1.5707964, 3.3341727, 0), Vector3(1.5707964, 0.2026473, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+
+[sub_resource type="Animation" id="Animation_axeright_reset"]
+resource_name = "RESET"
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(1.5707964, 2.9388874, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_axeright"]
+_data = {
+&"AxeSwingRight": SubResource("Animation_axeswingright"),
+&"RESET": SubResource("Animation_axeright_reset")
+}
+
+[node name="Player" type="CharacterBody3D" unique_id=1863745662]
+script = ExtResource("1_ih0iw")
+input_mode = 1
+stats = ExtResource("2_6upfr")
+directional_stats = ExtResource("3_px0gh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1172323215]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.186668, 1, 0)
+shape = SubResource("CapsuleShape3D_54qhv")
+
+[node name="Player4" parent="." unique_id=1084285411 instance=ExtResource("2_gb67c")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="Skeleton3D" parent="Player4/Armature" parent_id_path=PackedInt32Array(1084285411, 1707938421) index="0" unique_id=864693658]
+bones/0/position = Vector3(0, -0.010638773, 0)
+bones/0/rotation = Quaternion(0.005253466, 0, -1.1665037e-18, 0.9999862)
+bones/1/rotation = Quaternion(-0.064634286, -1.761442e-24, 1.4351691e-17, 0.997909)
+bones/2/rotation = Quaternion(0.605867, 0.2593636, 0.6581958, -0.36391488)
+bones/3/rotation = Quaternion(-0.033531025, -0.74368626, 0.03939357, 0.6665243)
+bones/4/rotation = Quaternion(1.3969839e-09, -6.6046716e-18, -1.42608805e-08, 1)
+bones/5/rotation = Quaternion(0.605867, -0.2593637, -0.65819573, -0.3639149)
+bones/6/rotation = Quaternion(-0.03353101, 0.74368626, -0.03939358, 0.6665243)
+bones/7/rotation = Quaternion(4.656614e-10, 5.8890316e-17, 7.3341666e-09, 1)
+bones/9/rotation = Quaternion(0.14035651, -0.72794586, 0.17060937, 0.6490665)
+bones/10/rotation = Quaternion(0.044635642, 0.044417784, -0.013204555, 0.997928)
+bones/13/rotation = Quaternion(0.14035647, 0.7279459, -0.17060933, 0.6490665)
+bones/14/rotation = Quaternion(0.044635657, -0.044417784, 0.013204553, 0.997928)
+
+[node name="hammer_base" type="MeshInstance3D" parent="Player4/Armature/Skeleton3D/LeftArmLeftLower" parent_id_path=PackedInt32Array(1084285411, 1876119270) index="0" unique_id=352281963]
+transform = Transform3D(0.36499998, -2.2563295e-08, 9.346028e-09, 2.2563299e-08, 0.25809395, -0.25809395, 9.346021e-09, 0.25809395, 0.25809395, 0.5263209, 0.2502439, 0.7794617)
+visible = false
+mesh = SubResource("CylinderMesh_cdlqx")
+surface_material_override/0 = SubResource("StandardMaterial3D_rmqab")
+
+[node name="hammer_head" type="MeshInstance3D" parent="Player4/Armature/Skeleton3D/LeftArmLeftLower" parent_id_path=PackedInt32Array(1084285411, 1876119270) index="1" unique_id=277583746]
+transform = Transform3D(-2.5300677e-08, -2.2563293e-08, 0.36499995, 0.25809392, 0.25809392, 3.384494e-08, -0.25809392, 0.25809392, -1.935625e-09, 0.5263209, 0.43087494, 0.9600927)
+visible = false
+mesh = SubResource("BoxMesh_vr2vl")
+surface_material_override/0 = SubResource("StandardMaterial3D_hgjse")
+
+[node name="axe_base" type="MeshInstance3D" parent="Player4/Armature/Skeleton3D/RightArmLeftLower" parent_id_path=PackedInt32Array(1084285411, 720071310) index="0" unique_id=2052875772]
+transform = Transform3D(-1.1103639e-08, -2.1855698e-08, -0.353, -0.17349999, 0.43301266, -7.715064e-09, 0.3005108, 0.24999999, -1.7497364e-08, -0.54151815, 0.15311766, 0.65517753)
+visible = false
+mesh = SubResource("BoxMesh_cdlqx")
+skeleton = NodePath("../..")
+
+[node name="axe_head" type="MeshInstance3D" parent="Player4/Armature/Skeleton3D/RightArmLeftLower" parent_id_path=PackedInt32Array(1084285411, 720071310) index="1" unique_id=1608464237]
+transform = Transform3D(0.34699997, 5.856222e-09, 1.5430121e-08, 1.5167853e-08, -0.25000003, -0.30570692, 4.064219e-09, 0.4330127, -0.1765, -0.55003154, 0.4790455, 0.96964246)
+visible = false
+mesh = SubResource("PrismMesh_rmqab")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_vr2vl")
+
+[node name="hard_trail_particles" parent="." unique_id=210944192 instance=ExtResource("3_j3gwb")]
+
+[node name="snow_trail_idle" parent="." unique_id=484289561 instance=ExtResource("4_ssr2j")]
+
+[node name="soft_trail_particles" parent="." unique_id=1384117169 instance=ExtResource("5_ej26e")]
+visible = false
+
+[node name="Player_state_manager" type="Node" parent="." unique_id=1576056380]
+script = ExtResource("3_852li")
+
+[node name="PlayerHelper" type="Node" parent="Player_state_manager" unique_id=1131724232]
+script = ExtResource("3_r87qv")
+
+[node name="idle_state" type="Node" parent="Player_state_manager" unique_id=2025839866]
+script = ExtResource("5_36an1")
+
+[node name="soft_turn" type="Node" parent="Player_state_manager" unique_id=7563530]
+script = ExtResource("6_xtbkq")
+
+[node name="hard_turn" type="Node" parent="Player_state_manager" unique_id=1143172384]
+script = ExtResource("7_ej8a5")
+
+[node name="stop_turn" type="Node" parent="Player_state_manager" unique_id=352548462]
+script = ExtResource("8_ejxtu")
+
+[node name="jump" type="Node" parent="Player_state_manager" unique_id=826909198]
+script = ExtResource("9_ubqs3")
+
+[node name="vulnerable" type="Node" parent="Player_state_manager" unique_id=1010628229]
+script = ExtResource("13_25frb")
+
+[node name="Area3D" type="Area3D" parent="." unique_id=1247224070]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=2090515796]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.08927, -0.197857)
+shape = SubResource("CapsuleShape3D_1w2v0")
+
+[node name="HurtTimer" type="Timer" parent="." unique_id=628241402]
+wait_time = 1.5
+one_shot = true
+
+[node name="AxeAbility" type="Node" parent="." unique_id=51331014]
+script = ExtResource("16_86ark")
+stats = ExtResource("17_cdlqx")
+
+[node name="HammerAbility" type="Node" parent="." unique_id=186479728]
+script = ExtResource("17_wg23h")
+stats = ExtResource("19_rmqab")
+
+[node name="SawAbility" type="Node" parent="." unique_id=699010567]
+script = ExtResource("18_u78gx")
+stats = ExtResource("21_vr2vl")
+
+[node name="ComboController" type="Node" parent="." unique_id=1739563438]
+script = ExtResource("combo_controller")
+
+[node name="AxeSwingArea" type="Area3D" parent="." unique_id=687171805]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AxeSwingArea" unique_id=1066699239]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1130435, -1.7688314)
+shape = SubResource("CylinderShape3D_cdlqx")
+
+[node name="RangeRing" type="MeshInstance3D" parent="AxeSwingArea" unique_id=1066699240]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -1.7688314)
+visible = false
+material_override = SubResource("StandardMaterial3D_rangering")
+mesh = SubResource("TorusMesh_axering")
+
+[node name="HammerSwingArea" type="Area3D" parent="." unique_id=802257321]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HammerSwingArea" unique_id=1848302589]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0020599365, 1.3520257, -2.1099)
+shape = SubResource("BoxShape3D_rmqab")
+
+[node name="RangeRing" type="MeshInstance3D" parent="HammerSwingArea" unique_id=1848302590]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0020599365, 0.05, -2.1099)
+visible = false
+material_override = SubResource("StandardMaterial3D_rangering")
+mesh = SubResource("BoxMesh_hammerrange")
+
+[node name="ToolHolder" type="Node" parent="." unique_id=1296341318]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="ToolHolder" unique_id=980324768]
+libraries/ = SubResource("AnimationLibrary_cptj8")
+
+[node name="AxePivotLeft" type="Node3D" parent="ToolHolder" unique_id=723215467]
+transform = Transform3D(0.9795259, -0.20131724, -8.799857e-09, 0, -4.371138e-08, 1, -0.20131724, -0.9795259, -4.2816446e-08, 0, 0.9724374, 0)
+visible = false
+
+[node name="Axe2" parent="ToolHolder/AxePivotLeft" unique_id=917385828 instance=ExtResource("23_hgjse")]
+transform = Transform3D(-1.5104888e-08, 0.20000002, 3.019916e-08, 0.20000002, 1.5104888e-08, -8.7422745e-09, -8.742277e-09, 3.019916e-08, -0.2, 1.8354437, 0.0015403436, 0)
+
+[node name="SwingPlayer" type="AnimationPlayer" parent="ToolHolder/AxePivotLeft" unique_id=230943377]
+libraries/ = SubResource("AnimationLibrary_axeleft")
+
+[node name="AxePivotRight" type="Node3D" parent="ToolHolder" unique_id=542306840]
+transform = Transform3D(-0.97952497, 0.20131987, -8.799976e-09, 0, -4.3711363e-08, -1, -0.20131987, -0.97952497, 4.281642e-08, 0, 0.9724374, 0)
+visible = false
+
+[node name="Axe2" parent="ToolHolder/AxePivotRight" unique_id=1871496624 instance=ExtResource("23_hgjse")]
+transform = Transform3D(-1.5104888e-08, 0.20000002, 3.019916e-08, 0.20000002, 1.5104888e-08, -8.7422745e-09, -8.742277e-09, 3.019916e-08, -0.2, 1.8354437, 0.0015403436, 0)
+
+[node name="SwingPlayer" type="AnimationPlayer" parent="ToolHolder/AxePivotRight" unique_id=258012741]
+libraries/ = SubResource("AnimationLibrary_axeright")
+
+[node name="HammerPivot" type="Node3D" parent="ToolHolder" unique_id=835429041]
+transform = Transform3D(-3.9070407e-08, -6.196955e-09, -0.9049999, -0.1417698, 0.8938268, 0, 0.8938268, 0.1417698, -3.9558802e-08, 0, 1, -0.6155312)
+visible = false
+
+[node name="Hammer2" parent="ToolHolder/HammerPivot" unique_id=815492338 instance=ExtResource("24_3rqyv")]
+transform = Transform3D(0.165, 0, 0, 0, 0.165, 0, 0, 0, 0.165, -0.206, 2.061, 0)
+
+[connection signal="body_entered" from="Area3D" to="." method="_on_area_3d_body_entered"]
+[connection signal="timeout" from="HurtTimer" to="." method="_on_hurt_timer_timeout"]
+
+[editable path="Player4"]

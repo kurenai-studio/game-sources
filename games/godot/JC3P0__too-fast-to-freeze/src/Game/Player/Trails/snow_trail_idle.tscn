@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3 uid="uid://b67nptry8ud3w"]
+
+[sub_resource type="Curve" id="Curve_yy73h"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.406593), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_nfkqd"]
+curve = SubResource("Curve_yy73h")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_yym22"]
+emission_shape_scale = Vector3(1, 0, 1)
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.0
+emission_ring_radius = 0.25
+emission_ring_inner_radius = 0.35
+emission_ring_cone_angle = 90.0
+velocity_pivot = Vector3(0, 0, 1)
+direction = Vector3(0, 1, 2)
+spread = 35.0
+initial_velocity_min = 1.5
+initial_velocity_max = 1.5
+gravity = Vector3(0, 0, 0)
+scale_min = 0.6
+scale_curve = SubResource("CurveTexture_nfkqd")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_027jg"]
+shading_mode = 0
+
+[sub_resource type="SphereMesh" id="SphereMesh_vj74l"]
+material = SubResource("StandardMaterial3D_027jg")
+radius = 0.125
+height = 0.25
+radial_segments = 5
+rings = 3
+
+[node name="snow_trail_idle" type="GPUParticles3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.498748)
+cast_shadow = 0
+amount = 1
+lifetime = 0.33
+local_coords = true
+process_material = SubResource("ParticleProcessMaterial_yym22")
+draw_pass_1 = SubResource("SphereMesh_vj74l")

@@ -1,0 +1,69 @@
+[gd_scene load_steps=2 format=3 uid="uid://v0gfptghjmi"]
+
+[ext_resource type="PackedScene" uid="uid://b11j0x3wx27n8" path="res://Game/Level/UI/Settings/audio_slider.tscn" id="1_gsjyh"]
+
+[node name="AudioSettings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -59.0
+offset_top = -68.5
+offset_right = 59.0
+offset_bottom = 68.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="master_label" type="Label" parent="HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Master Volume"
+horizontal_alignment = 1
+
+[node name="master_slider" parent="HBoxContainer/PanelContainer/VBoxContainer" instance=ExtResource("1_gsjyh")]
+layout_mode = 2
+step = 0.01
+value = 1.0
+bus_name = "Master"
+
+[node name="music_label" type="Label" parent="HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Music Volume"
+horizontal_alignment = 1
+
+[node name="music_slider" parent="HBoxContainer/PanelContainer/VBoxContainer" instance=ExtResource("1_gsjyh")]
+layout_mode = 2
+step = 0.01
+value = 1.0
+bus_name = "Music"
+
+[node name="sfx_label" type="Label" parent="HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "SFX Volume"
+horizontal_alignment = 1
+
+[node name="sfx_slider" parent="HBoxContainer/PanelContainer/VBoxContainer" instance=ExtResource("1_gsjyh")]
+layout_mode = 2
+step = 0.01
+value = 1.0
+bus_name = "SFX"
+
+[node name="back" type="Button" parent="HBoxContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Back
+"

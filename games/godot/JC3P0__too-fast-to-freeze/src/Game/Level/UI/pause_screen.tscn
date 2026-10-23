@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3 uid="uid://bkkn5jumnrmyx"]
+
+[ext_resource type="Script" uid="uid://cvjnl3bh27ayk" path="res://Game/Level/UI/pause_screen.gd" id="1_yrp6p"]
+
+[node name="PauseScreen" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_yrp6p")
+
+[node name="PauseMenu" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 465.0
+offset_top = 180.0
+offset_right = 625.0
+offset_bottom = 404.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PauseMenu"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PauseMenu/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Pause Menu"
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="PauseMenu/VBoxContainer"]
+layout_mode = 2
+focus_neighbor_top = NodePath("../ExitButton")
+focus_neighbor_bottom = NodePath("../OptionsButton")
+text = "Continue"
+
+[node name="OptionsButton" type="Button" parent="PauseMenu/VBoxContainer"]
+layout_mode = 2
+focus_neighbor_top = NodePath("../ContinueButton")
+focus_neighbor_bottom = NodePath("../ExitButton")
+text = "Options"
+
+[node name="ExitButton" type="Button" parent="PauseMenu/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 10
+focus_neighbor_top = NodePath("../OptionsButton")
+focus_neighbor_bottom = NodePath("../ContinueButton")
+text = "Exit Game"
+
+[connection signal="pressed" from="PauseMenu/VBoxContainer/ContinueButton" to="." method="_on_continue_button_pressed"]
+[connection signal="pressed" from="PauseMenu/VBoxContainer/OptionsButton" to="." method="_on_options_button_pressed"]
+[connection signal="pressed" from="PauseMenu/VBoxContainer/ExitButton" to="." method="_on_exit_button_pressed"]

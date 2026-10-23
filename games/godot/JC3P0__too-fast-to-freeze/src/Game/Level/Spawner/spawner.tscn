@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://18yehieu3brv"]
+
+[ext_resource type="Script" uid="uid://bvrryhixldj74" path="res://Game/Level/Spawner/spawner.gd" id="1_3j37d"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eoeku"]
+size = Vector3(404.6407, 43.208267, 1)
+
+[node name="Spawner" type="Node3D" unique_id=2086976289]
+script = ExtResource("1_3j37d")
+
+[node name="MarkerA" type="Marker3D" parent="." unique_id=2082490769]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 275, 0, 0)
+
+[node name="MarkerB" type="Marker3D" parent="." unique_id=1539284046]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -275, 0, 0)
+
+[node name="MarkerLeft" type="Marker3D" parent="." unique_id=1660540096]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, 0)
+
+[node name="MarkerCenter" type="Marker3D" parent="." unique_id=1962117327]
+
+[node name="MarkerRight" type="Marker3D" parent="." unique_id=39706888]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 0)
+
+[node name="ObstacleHolder" type="Node3D" parent="." unique_id=679810495]
+
+[node name="Despawner" type="Area3D" parent="." unique_id=221461196]
+collision_layer = 0
+collision_mask = 2
+
+[node name="DespawnerLeft" type="CollisionShape3D" parent="Despawner" unique_id=1972646130]
+transform = Transform3D(0.91212004, 0, -0.40992302, 0, 1, 0, 0.40992302, 0, 0.91212004, -168.11726, 11.457972, 81.32228)
+shape = SubResource("BoxShape3D_eoeku")
+
+[node name="DespawnerRight" type="CollisionShape3D" parent="Despawner" unique_id=1339147650]
+transform = Transform3D(0.9117835, 0, 0.4106711, 0, 1, 0, -0.4106711, 0, 0.9117835, 164.56702, 14.791338, 83.903694)
+shape = SubResource("BoxShape3D_eoeku")
+
+[connection signal="body_entered" from="Despawner" to="." method="_on_despawner_body_entered"]
