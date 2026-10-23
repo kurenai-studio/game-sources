@@ -1,0 +1,793 @@
+package io.github.pbodyMRTF.infernum;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import io.github.pbodyMRTF.infernum.shared.*;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
+
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Iterator;
+import com.badlogic.gdx.graphics.Color;
+
+public class OnlineGameScreen implements Screen {
+
+    // --- Sabitler ---
+    private static final float WORLD_WIDTH  = 1024f;
+    private static final float WORLD_HEIGHT = 768f;
+    private static final float UI_WIDTH     = 1024f;
+    private static final float UI_HEIGHT    = 768f;
+
+    // --- Core ---
+    private final Jgame game;
+    private SpriteBatch batch;
+    private BitmapFont font;
+    private ShapeRenderer shapeRenderer;
+
+    // --- Network ---
+    private io.github.pbodyMRTF.infernum.NetworkClient networkClient;
+    private int myPlayerId = -1;
+    private boolean gameReady = false;
+    private String serverHost;
+
+    private Sound sliceSound;
+    private Map<Integer, Float> bayonetAnimTimers = new HashMap<>();
+
+    private TiledMapTileLayer wallLayer;
+    private LightingManager lighting;
+
+    // --- Camera ---
+    private OrthographicCamera camera;
+    private OrthographicCamera uiCamera;
+    private ExtendViewport viewport;
+    private ExtendViewport uiViewport;
+
+    // --- Map ---
+    private TiledMap map;
+    private OrthogonalTiledMapRenderer mapRenderer;
+    private TiledMapTileLayer groundLayer;
+
+    // --- Shader ---
+    private ShaderProgram shader1;
+    private ShaderProgram mapShader;
+    private float shaderTime = 0f;
+
+    // --- Textures ---
+    private Texture playerTex;
+    private Texture enemyTex;
+    private Texture enemy2Tex;
+    private Texture enemy3Tex;
+    private Texture bloodTex;
+    private Texture heartTex;
+    private Texture heartEmptyTex;
+    private Texture bayonetTex;
+    private Texture hotbar1, hotbar2, hotbar3;
+
+    // --- Sounds ---
+    private Sound shootSound, smgSound, shotgunSound, popSound, woodSound, tinSound, splatSound;
+
+    // --- Input ---
+    private static final int GAMEPAD_AXIS_RIGHT_X      = 2;
+    private static final int GAMEPAD_AXIS_RIGHT_Y      = 3;
+    private static final int GAMEPAD_AXIS_RIGHT_TRIGGER = 5;
+    private static final int GAMEPAD_AXIS_LEFT_X       = 0;
+    private static final int GAMEPAD_AXIS_LEFT_Y       = 1;
+    private static final float DEADZONE         = 0.2f;
+    private static final float TRIGGER_DEADZONE = 0.5f;
+    private boolean prevTriggerFired = false;
+
+    // --- Game state (io.github.pbodyMRTF.infernum.server'dan gelir) ---
+    private GameState currentState = null;
+
+    // --- Görsel interpolasyon için son pozisyonlar ---
+    private Map<Integer, float[]> entityPositions = new HashMap<>(); // id → [x, y]
+    private Map<Integer, float[]> bulletPositions  = new HashMap<>();
+
+    // --- Efektler (sadece görsel) ---
+    private Array<BloodParticle> bloods = new Array<>();
+
+
+    private static final float TICK_INTERVAL = 1f / 20f;
+
+    private GameState prevState = null;
+    private GameState targetState = null;
+    private float interpTimer = 0f;
+
+    private Texture bulletTex, bulletSmgTex, bulletPistolTex;
+
+    // --- Oyuncu başı üstü can göstergesi ayarları ---
+    private static final float HEAD_HP_ICON_SIZE = 18f;   // her kalp ikonunun world-unit boyutu
+    private static final float HEAD_HP_GAP       = 2f;    // kalpler arası boşluk
+    private static final float HEAD_HP_Y_OFFSET  = 78f;   // oyuncu origin'inden (px,py) yukarı mesafe
+    private static final int   MAX_HP_ICONS      = 3;
+
+    public OnlineGameScreen(Jgame game, String serverHost) {
+        this.game       = game;
+        this.serverHost = serverHost;
+
+        batch         = new SpriteBatch();
+        font          = game.getFont(Jgame.FONT_SIZE_32);
+        shapeRenderer = new ShapeRenderer();
+
+        camera   = new OrthographicCamera();
+        viewport = new ExtendViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
+
+        uiCamera   = new OrthographicCamera();
+        uiViewport = new ExtendViewport(UI_WIDTH, UI_HEIGHT, uiCamera);
+        uiCamera.position.set(UI_WIDTH / 2, UI_HEIGHT / 2, 0);
+        uiCamera.update();
+
+        loadAssets();
+        connectToServer();
+    }
+
+    private void loadAssets() {
+        playerTex     = Assets.getTexture(Assets.Textures.PLAYER);
+        enemyTex      = Assets.getTexture(Assets.Textures.ENEMY);
+        enemy2Tex     = Assets.getTexture(Assets.Textures.ENEMY2);
+        enemy3Tex     = Assets.getTexture(Assets.Textures.ENEMY3);
+        bloodTex      = Assets.getTexture(Assets.Textures.BLOOD);
+        heartTex      = Assets.getTexture(Assets.Textures.HEART);
+        heartEmptyTex = Assets.getTexture(Assets.Textures.HEART_EMPTY);
+        bayonetTex    = Assets.getTexture(Assets.Textures.BAYONET);
+        hotbar1       = Assets.getTexture(Assets.Textures.HOTBAR1);
+        hotbar2       = Assets.getTexture(Assets.Textures.HOTBAR2);
+        hotbar3       = Assets.getTexture(Assets.Textures.HOTBAR3);
+
+        shootSound  = Assets.getSound(Assets.Sounds.SHOOT);
+        smgSound    = Assets.getSound(Assets.Sounds.SMGSHOT);
+        shotgunSound = Assets.getSound(Assets.Sounds.SHOTGUNSHOT);
+        popSound    = Assets.getSound(Assets.Sounds.POP);
+        woodSound   = Assets.getSound(Assets.Sounds.WOOD);
+
+        bulletTex        = Assets.getTexture(Assets.Textures.BULLET);
+        bulletSmgTex     = Assets.getTexture(Assets.Textures.BULLET_SMG);
+        bulletPistolTex  = Assets.getTexture(Assets.Textures.BULLET_PISTOL);
+        tinSound         = Assets.getSound(Assets.Sounds.TIN);
+        splatSound       = Assets.getSound(Assets.Sounds.SPLAT);
+
+        sliceSound = Assets.getSound(Assets.Sounds.SLICE);
+    }
+
+    private void connectToServer() {
+        networkClient = new NetworkClient((pid) -> {
+            // LibGDX ana thread'inde çalıştır
+            Gdx.app.postRunnable(() -> {
+                myPlayerId = pid;
+                gameReady  = true;
+                System.out.println("Game Ready! pid: " + pid);
+            });
+        });
+
+        new Thread(() -> {
+            try {
+                networkClient.connect(serverHost);
+            } catch (IOException e) {
+                Gdx.app.postRunnable(() ->
+                        System.err.println("Connection Error: " + e.getMessage())
+                );
+            }
+        }).start();
+    }
+
+    // ---------------------------------------------------------------
+    // Render döngüsü
+    // ---------------------------------------------------------------
+    @Override
+    public void render(float delta) {
+        shaderTime += delta;
+        interpTimer += delta;
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.setScreen(new MainMenuScreen(game));
+            return;
+        }
+
+        // Bekleme ekranı
+        if (!gameReady) {
+            renderWaiting();
+            return;
+        }
+
+        // Input gönder
+        sendInput();
+
+        // Server state al
+        GameState newState = networkClient.pollState();
+        if (newState != null) {
+            handleNewState(newState);
+        }
+
+        // Efektler güncelle
+        for (BloodParticle b : bloods) b.update(delta);
+        for (int i = bloods.size - 1; i >= 0; i--) {
+            if (bloods.get(i).dead) bloods.removeIndex(i);
+        }
+
+        // Render
+        if (groundLayer != null && currentState != null) {
+            renderGame();
+        }
+        Iterator<Map.Entry<Integer, Float>> it = bayonetAnimTimers.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Float> e = it.next();
+            float nt = e.getValue() + delta;
+            if (nt >= 0.3f) it.remove(); else e.setValue(nt);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Input toplama ve gönderme
+    // ---------------------------------------------------------------
+    private void sendInput() {
+        PlayerInput input = new PlayerInput();
+        input.playerId = myPlayerId;
+
+        // Klavye hareket
+        input.up    = Gdx.input.isKeyPressed(Input.Keys.W);
+        input.down  = Gdx.input.isKeyPressed(Input.Keys.S);
+        input.left  = Gdx.input.isKeyPressed(Input.Keys.A);
+        input.right = Gdx.input.isKeyPressed(Input.Keys.D);
+
+        // Silah seçimi
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) input.weaponSlot = 1;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) input.weaponSlot = 2;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) input.weaponSlot = 3;
+
+        // Bayonet
+        input.bayonetPressed = Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT);
+
+        // Aim açısı (mouse)
+        input.aimAngle = getAimAngle();
+
+        // Ateş
+        input.fireKeyboard = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
+
+        // Gamepad
+        Controller c = Controllers.getControllers().size > 0
+                ? Controllers.getControllers().first() : null;
+        if (c != null) {
+            float ax = c.getAxis(GAMEPAD_AXIS_LEFT_X);
+            float ay = c.getAxis(GAMEPAD_AXIS_LEFT_Y);
+            if (Math.abs(ax) > DEADZONE) input.gamepadMoveX = ax;
+            if (Math.abs(ay) > DEADZONE) input.gamepadMoveY = ay;
+
+            float rx = c.getAxis(GAMEPAD_AXIS_RIGHT_X);
+            float ry = c.getAxis(GAMEPAD_AXIS_RIGHT_Y);
+            if (Math.abs(rx) > DEADZONE || Math.abs(ry) > DEADZONE) {
+                input.aimAngle = (float) Math.toDegrees(Math.atan2(-ry, rx));
+            }
+
+            boolean triggerNow = c.getAxis(GAMEPAD_AXIS_RIGHT_TRIGGER) > TRIGGER_DEADZONE;
+            input.fireTrigger = triggerNow && !prevTriggerFired;
+            prevTriggerFired  = triggerNow;
+        }
+
+        networkClient.sendInput(input);
+    }
+
+    private float getAimAngle() {
+        // Kamera henüz yoksa 0 döndür
+        if (currentState == null) return 0f;
+        PlayerSnapshot me = getMySnapshot();
+        if (me == null) return 0f;
+
+        Vector3 mouse = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(mouse);
+        return (float) Math.toDegrees(
+                Math.atan2(mouse.y - (me.y + 32), mouse.x - (me.x + 32))
+        );
+    }
+
+    // ---------------------------------------------------------------
+    // State işleme
+    // ---------------------------------------------------------------
+    private void handleNewState(GameState state) {
+        if (currentState != null) {
+            // Oyuncu ölüm efekti (sadece kan parçacığı görsel farkı için kill anını da tespit ediyoruz;
+            // asıl hasar sesi/kan efekti aşağıdaki damagedThisTick bloğunda)
+            for (EntitySnapshot old : currentState.entities) {
+                for (EntitySnapshot neu : state.entities) {
+                    if (old.id == neu.id && !old.dead && neu.dead) {
+                        spawnBlood(neu.x + 32, neu.y + 32, 8);
+                        popSound.play(0.7f);
+                    }
+                }
+            }
+        }
+
+        // İnterpolasyon için
+        prevState   = (targetState != null) ? targetState : state;
+        targetState = state;
+        interpTimer = 0f;
+        currentState = state;
+
+        boolean allDead = state.players.stream().allMatch(p -> p.dead);
+        if (allDead) {
+            game.setScreen(new MainMenuScreen(game));
+        }
+
+        // Ateş sesi
+        for (PlayerSnapshot ps : state.players) {
+            if (ps.firedThisTick) playShotSound(ps.firedBulletType);
+            if (ps.damagedThisTick) { spawnBlood(ps.x + 32, ps.y + 32, 50); woodSound.play(0.9f); }
+            if (ps.bayonetUsedThisTick) {
+                sliceSound.play(1.2f);
+                bayonetAnimTimers.put(ps.playerId, 0f);
+            }
+        }
+
+        // Düşman isabet sesi (öldürsün öldürmesin)
+        for (EntitySnapshot es : state.entities) {
+            if (es.hitSoundType >= 0) {
+                playHitSound(es.hitSoundType);
+            }
+        }
+    }
+
+    private void playHitSound(byte type) {
+        if (type == 0) tinSound.play(1f);
+        else if (type == 1) splatSound.play();
+        else if (type == 2) { tinSound.play(1f); popSound.play(0.2f); }
+    }
+    private void playShotSound(byte bulletType) {
+        // WeaponStats sabitleri: 0=AMMO(shotgun), 1=AMMO_SMG, 2=AMMO_PISTOL
+        if (bulletType == 0) shotgunSound.play(0.7f);
+        else if (bulletType == 1) smgSound.play(0.7f);
+        else if (bulletType == 2) shootSound.play(0.7f);
+    }
+
+    // ---------------------------------------------------------------
+    // Render
+    // ---------------------------------------------------------------
+    private void renderWaiting() {
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT);
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        font.draw(batch, "Connecting To Server...", 300, 400);
+        if (networkClient.getMyPlayerId() >= 0 && !gameReady) {
+            font.draw(batch, "Waiting for other players...", 300, 360);
+        }
+        batch.end();
+    }
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
+
+    private float lerpAngle(float a, float b, float t) {
+        float diff = b - a;
+        while (diff > 180f)  diff -= 360f;
+        while (diff < -180f) diff += 360f;
+        return a + diff * t;
+    }
+    private PlayerSnapshot findPlayer(GameState s, int pid) {
+        for (PlayerSnapshot p : s.players) if (p.playerId == pid) return p;
+        return null;
+    }
+
+    private EntitySnapshot findEntity(GameState s, int id) {
+        for (EntitySnapshot e : s.entities) if (e.id == id) return e;
+        return null;
+    }
+
+    private BulletSnapshot findBullet(GameState s, int id) {
+        for (BulletSnapshot b : s.bullets) if (b.id == id) return b;
+        return null;
+    }
+    private Texture getBulletTexture(byte bulletType) {
+        // WeaponStats: 0=AMMO(shotgun), 1=AMMO_SMG, 2=AMMO_PISTOL
+        if (bulletType == 1) return bulletSmgTex;
+        if (bulletType == 2) return bulletPistolTex;
+        return bulletTex;
+    }
+
+    // x,y interpolasyonlu döndürür; prev'de yoksa (yeni spawn) direkt target kullanılır
+    private float[] interpPos(float px, float py, float tx, float ty, boolean hasPrev, float t) {
+        if (!hasPrev) return new float[]{tx, ty};
+        return new float[]{lerp(px, py == py ? px : px, 0), 0}; // placeholder, aşağıda gerçek kullanım var
+    }
+
+    private void renderGame() {
+        float t = MathUtils.clamp(interpTimer / TICK_INTERVAL, 0f, 1f);
+
+        float mapWidth  = groundLayer.getWidth()  * groundLayer.getTileWidth()  * 3f;
+        float mapHeight = groundLayer.getHeight() * groundLayer.getTileHeight() * 3f;
+
+        // --- Kamera: ölüysem diğer oyuncuyu izle, canlıysam look-ahead uygula ---
+        PlayerSnapshot meTarget = findPlayer(targetState, myPlayerId);
+        PlayerSnapshot camTarget = (meTarget != null && !meTarget.dead)
+                ? meTarget
+                : findOtherAlivePlayer(targetState, myPlayerId);
+
+        if (camTarget != null) {
+            PlayerSnapshot camPrev = findPlayer(prevState, camTarget.playerId);
+            float mx = (camPrev != null) ? lerp(camPrev.x, camTarget.x, t) : camTarget.x;
+            float my = (camPrev != null) ? lerp(camPrev.y, camTarget.y, t) : camTarget.y;
+
+            float targetCamX = mx + 32;
+            float targetCamY = my + 32;
+
+            // Look-ahead: sadece kendi canlı oyuncumuzsa, mouse yönüne doğru kaydır
+            boolean isMeAndAlive = (meTarget != null && !meTarget.dead && camTarget.playerId == myPlayerId);
+            if (isMeAndAlive) {
+                float maxLookAheadDistance = 60f;
+                Vector3 mouseInWorld = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+                camera.unproject(mouseInWorld);
+
+                float distX = mouseInWorld.x - targetCamX;
+                float distY = mouseInWorld.y - targetCamY;
+                float distance = (float) Math.sqrt(distX * distX + distY * distY);
+
+                if (distance > 1f) {
+                    float lookFactor = Math.min(distance / 300f, 1f);
+                    targetCamX += (distX / distance) * (maxLookAheadDistance * lookFactor);
+                    targetCamY += (distY / distance) * (maxLookAheadDistance * lookFactor);
+                }
+            }
+
+            camera.position.x = MathUtils.lerp(camera.position.x, targetCamX, Gdx.graphics.getDeltaTime() * 5f);
+            camera.position.y = MathUtils.lerp(camera.position.y, targetCamY, Gdx.graphics.getDeltaTime() * 5f);
+
+            camera.position.x = MathUtils.clamp(camera.position.x, viewport.getWorldWidth()  / 2, mapWidth  - viewport.getWorldWidth()  / 2);
+            camera.position.y = MathUtils.clamp(camera.position.y, viewport.getWorldHeight() / 2, mapHeight - viewport.getWorldHeight() / 2);
+            camera.update();
+        }
+
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT);
+
+        // --- Harita: mapShader ile ---
+        mapRenderer.setView(camera);
+        mapRenderer.getBatch().setShader(mapShader);
+        if (mapShader.hasUniform("u_time"))
+            mapShader.setUniformf("u_time", shaderTime);
+        if (mapShader.hasUniform("u_resolution"))
+            mapShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        mapRenderer.render();
+        mapRenderer.getBatch().setShader(null);
+
+        // --- Kan efektleri + mermiler + oyuncular (shader'sız) ---
+        batch.setProjectionMatrix(camera.combined);
+        batch.setShader(null);
+        batch.begin();
+
+        for (BloodParticle b : bloods) batch.draw(bloodTex, b.x, b.y);
+
+        for (BulletSnapshot bt : targetState.bullets) {
+            if (bt.dead) continue;
+            BulletSnapshot bp = findBullet(prevState, bt.id);
+            float bx = (bp != null) ? lerp(bp.x, bt.x, t) : bt.x;
+            float by = (bp != null) ? lerp(bp.y, bt.y, t) : bt.y;
+            batch.draw(getBulletTexture(bt.bulletType), bx, by);
+        }
+
+        // --- Işıkları güncelle (draw döngüsüyle aynı anda, her oyuncu için) ---
+        for (PlayerSnapshot ps : targetState.players) {
+            if (ps.dead) { lighting.removeConeLight(ps.playerId); continue; }
+            PlayerSnapshot pp = findPlayer(prevState, ps.playerId);
+            float px = (pp != null) ? lerp(pp.x, ps.x, t) : ps.x;
+            float py = (pp != null) ? lerp(pp.y, ps.y, t) : ps.y;
+
+            // ← eklendi: açıyı da interpolasyonlu hesapla
+            float angle = (pp != null) ? lerpAngle(pp.aimAngle, ps.aimAngle, t) : ps.aimAngle;
+
+            batch.draw(playerTex, px, py);
+            drawGun(ps, px, py, angle);                         // ← angle parametresi eklendi
+            if (bayonetAnimTimers.containsKey(ps.playerId)) {
+                renderBayonetAnim(px, py, bayonetAnimTimers.get(ps.playerId));
+            }
+
+            // --- Oyuncunun kafasının üstünde can (kalp) göstergesi ---
+            drawPlayerHeartsAboveHead(ps, px, py);
+
+            lighting.updateConeLight(ps.playerId, px + 32, py + 32, angle);  // ← ps.aimAngle yerine angle
+        }
+
+        batch.end();
+
+        // --- Düşmanlar: shader1 ile (u_health uniform) ---
+        batch.setShader(shader1);
+        batch.begin();
+        if (shader1.hasUniform("u_time")) shader1.setUniformf("u_time", shaderTime);
+
+        for (EntitySnapshot es : targetState.entities) {
+            if (es.dead) continue;
+            EntitySnapshot ep = findEntity(prevState, es.id);
+            float ex = (ep != null) ? lerp(ep.x, es.x, t) : es.x;
+            float ey = (ep != null) ? lerp(ep.y, es.y, t) : es.y;
+
+            if (shader1.hasUniform("u_health")) {
+                float healthRatio = es.maxHp > 0 ? (float) es.hp / es.maxHp : 1f;
+                shader1.setUniformf("u_health", healthRatio);
+            }
+            batch.draw(getEntityTexture(es.type), ex, ey);
+        }
+        batch.end();
+        batch.setShader(null);
+
+        lighting.render(camera);   // ← eklendi, HUD'dan önce çizilmeli (ışık dünyanın üstüne biner)
+
+        renderEnemyHealthBars();
+        renderHUD();
+    }
+
+    // --- Oyuncunun kafasının üstünde kalp ikonlarıyla can göstergesi ---
+    // Sol üstteki eski HP HUD'unun yerine geçer; her oyuncunun üstünde kendi 3 kalbi görünür,
+    // böylece 3-4 oyuncuyla oynarken herkes kendi ve takım arkadaşlarının canını anında görebilir.
+    private void drawPlayerHeartsAboveHead(PlayerSnapshot ps, float px, float py) {
+        float totalWidth = MAX_HP_ICONS * HEAD_HP_ICON_SIZE + (MAX_HP_ICONS - 1) * HEAD_HP_GAP;
+        float startX = (px + 32) - totalWidth / 2f;
+        float iconY  = py + HEAD_HP_Y_OFFSET;
+
+        for (int i = 0; i < MAX_HP_ICONS; i++) {
+            Texture h = i < ps.hp ? heartTex : heartEmptyTex;
+            float iconX = startX + i * (HEAD_HP_ICON_SIZE + HEAD_HP_GAP);
+            batch.draw(h, iconX, iconY, HEAD_HP_ICON_SIZE, HEAD_HP_ICON_SIZE);
+        }
+    }
+
+    private void renderBayonetAnim(float px, float py, float animTime) {
+        float bladeW = 16f, bladeH = 32f, orbit = 60f;
+        float rotation = (animTime / 0.3f) * 360f * 1.5f;
+        float alpha    = 1f - (animTime / 0.3f);
+        float cx = px + 32, cy = py + 32;
+        float dx = cx + MathUtils.cosDeg(rotation) * orbit;
+        float dy = cy + MathUtils.sinDeg(rotation) * orbit;
+
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(bayonetTex,
+                dx - bladeW / 2, dy - bladeH / 2,
+                bladeW / 2, bladeH / 2,
+                bladeW, bladeH,
+                1f, 1f, rotation - 90f,
+                0, 0, bayonetTex.getWidth(), bayonetTex.getHeight(),
+                false, false);
+        batch.setColor(Color.WHITE);
+    }
+
+    private PlayerSnapshot findOtherAlivePlayer(GameState s, int excludePid) {
+        for (PlayerSnapshot p : s.players) {
+            if (p.playerId != excludePid && !p.dead) return p;
+        }
+        return null;
+    }
+
+    private void renderEnemyHealthBars() {
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (EntitySnapshot es : targetState.entities) {
+            if (es.dead) continue;
+            EntitySnapshot ep = findEntity(prevState, es.id);
+            float t = MathUtils.clamp(interpTimer / TICK_INTERVAL, 0f, 1f);
+            float ex = (ep != null) ? lerp(ep.x, es.x, t) : es.x;
+            float ey = (ep != null) ? lerp(ep.y, es.y, t) : es.y;
+
+            float bw = 64f, bh = 7f;
+            float bx = ex, by = ey + 68f;
+
+            shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 0.85f);
+            shapeRenderer.rect(bx, by, bw, bh);
+
+            float ratio = es.maxHp > 0 ? MathUtils.clamp((float) es.hp / es.maxHp, 0f, 1f) : 1f;
+            shapeRenderer.setColor(ratio > 0.5f ? 0.2f : 0.85f, ratio > 0.5f ? 0.85f : 0.3f, ratio > 0.5f ? 0.2f : 0.1f, 1f);
+            shapeRenderer.rect(bx, by, bw * ratio, bh);
+        }
+        shapeRenderer.end();
+    }
+
+    private void drawGun(PlayerSnapshot p, float px, float py, float angle) {
+        Weapons weapon = slotToWeapon(p.weaponSlot);
+        if (weapon == null) return;
+        Texture gunTex = Assets.getTexture(weapon.getGunTexturePath());
+        float scale    = weapon.getGunScale();
+
+        batch.draw(
+                gunTex,
+                px + 32, py + 32,
+                0, gunTex.getHeight() / 2f,
+                gunTex.getWidth(), gunTex.getHeight(),
+                scale, scale,
+                angle,
+                0, 0, gunTex.getWidth(), gunTex.getHeight(),
+                false, false
+        );
+    }
+
+    private void renderHUD() {
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+
+        // HUD text color
+        font.setColor(Color.WHITE);
+
+        // Score
+        font.draw(batch, "Score: " + currentState.score, 20, UI_HEIGHT - 20);
+
+        // Not: Oyuncu canları artık burada değil, her oyuncunun kendi kafasının
+        // üstünde (renderGame() -> drawPlayerHeartsAboveHead) gösteriliyor.
+
+        // Hotbar (benim silahım) — orijinaliyle birebir aynı
+        PlayerSnapshot me = getMySnapshot();
+        float hotbarWidth  = 100;
+        float hotbarHeight = 260;
+        float hotbarX      = UI_WIDTH + (hotbarWidth / 2);
+        float hotbarY      = (UI_HEIGHT / 2) - (hotbarHeight / 2);
+
+        Texture current = hotbar1;
+        if (me != null) {
+            current = switch (me.weaponSlot) {
+                case 1 -> hotbar1;
+                case 2 -> hotbar2;
+                case 3 -> hotbar3;
+                default -> current;
+            };
+        }
+
+        batch.draw(current, hotbarX, hotbarY, hotbarWidth, hotbarHeight);
+
+        if (me != null) renderBayonetCooldownBar(me);
+
+        batch.end();
+    }
+    private void renderBayonetCooldownBar(PlayerSnapshot me) {
+        float barWidth = 200, barHeight = 20;
+        float barX = UI_WIDTH - barWidth - 20;
+        float barY = 40;
+
+        batch.end();
+
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+
+        float progress = me.bayonetOnCooldown ? me.bayonetCooldownProgress : 1f;
+        shapeRenderer.setColor(progress >= 1f ? 0.2f : 1f - progress * 0.5f,
+                progress >= 1f ? 0.8f : progress * 0.8f,
+                progress >= 1f ? 0.2f : 0.1f, 1f);
+        shapeRenderer.rect(barX, barY, barWidth * progress, barHeight);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(1f, 1f, 1f, 1f);
+        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+        shapeRenderer.end();
+
+        batch.begin();
+        font.getData().setScale(0.5f);
+        font.draw(batch, me.bayonetOnCooldown ? "Bayonet: Cooldown" : "Bayonet: Ready", barX, barY + barHeight + 18);
+        font.getData().setScale(1f);
+    }
+
+    // ---------------------------------------------------------------
+    // Yardımcı
+    // ---------------------------------------------------------------
+    private void spawnBlood(float x, float y, int count) {
+        for (int i = 0; i < count; i++) bloods.add(new BloodParticle(x, y, bloodTex));
+    }
+
+    private PlayerSnapshot getMySnapshot() {
+        if (targetState == null) return null;
+        for (PlayerSnapshot p : targetState.players)
+            if (p.playerId == myPlayerId) return p;
+        return null;
+    }
+
+    private Texture getEntityTexture(byte type) {
+        if (type == EntitySnapshot.TYPE_ENEMY2) return enemy2Tex;
+        if (type == EntitySnapshot.TYPE_ENEMY3) return enemy3Tex;
+        return enemyTex;
+    }
+
+    private Weapons slotToWeapon(int slot) {
+        if (slot == 1) return new Weapons(Weapons.WeaponType.PISTOL);
+        if (slot == 2) return new Weapons(Weapons.WeaponType.SHOTGUN);
+        if (slot == 3) return new Weapons(Weapons.WeaponType.SMG);
+        return null;
+    }
+
+    // ---------------------------------------------------------------
+    // Screen lifecycle
+    // ---------------------------------------------------------------
+    @Override
+    public void show() {
+        ShaderProgram.pedantic = false;
+        shader1 = new ShaderProgram(
+                Gdx.files.internal("shaders/red.vsh"),
+                Gdx.files.internal("shaders/red.fsh"));
+        mapShader = new ShaderProgram(
+                Gdx.files.internal("shaders/map.vsh"),
+                Gdx.files.internal("shaders/map.fsh"));
+
+        if (!shader1.isCompiled())   throw new GdxRuntimeException("shader1: " + shader1.getLog());
+        if (!mapShader.isCompiled()) throw new GdxRuntimeException("mapShader: " + mapShader.getLog());
+
+        map         = new TmxMapLoader().load("flape.tmx");
+        groundLayer = (TiledMapTileLayer) map.getLayers().get(0);
+        wallLayer   = (TiledMapTileLayer) map.getLayers().get("dk2");   // ← eklendi
+        mapRenderer = new OrthogonalTiledMapRenderer(map, 3f);
+
+        lighting = new LightingManager();                               // ← eklendi
+        buildLightWorldColliders(wallLayer);                             // ← eklendi
+    }
+
+    // --- Yeni yardımcı metod: duvar hücrelerinden box2d static body oluştur ---
+    private void buildLightWorldColliders(TiledMapTileLayer wallLayer) {
+        if (wallLayer == null) return;
+        float unitScale = 3f;
+        float tileW = wallLayer.getTileWidth()  * unitScale;
+        float tileH = wallLayer.getTileHeight() * unitScale;
+
+        for (int x = 0; x < wallLayer.getWidth(); x++) {
+            for (int y = 0; y < wallLayer.getHeight(); y++) {
+                if (wallLayer.getCell(x, y) == null) continue;
+
+                float cx = x * tileW + tileW / 2f;
+                float cy = y * tileH + tileH / 2f;
+
+                BodyDef bd = new BodyDef();
+                bd.type = BodyDef.BodyType.StaticBody;
+                bd.position.set(cx, cy);
+                Body body = lighting.getWorld().createBody(bd);
+
+                PolygonShape shape = new PolygonShape();
+                shape.setAsBox(tileW / 2f, tileH / 2f);
+
+                FixtureDef fd = new FixtureDef();
+                fd.shape = shape;
+                body.createFixture(fd);
+                shape.dispose();
+            }
+        }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        uiViewport.update(width, height, true);
+        uiCamera.position.set(UI_WIDTH / 2, UI_HEIGHT / 2, 0);
+        uiCamera.update();
+    }
+
+    @Override public void pause()  {}
+    @Override public void resume() {}
+    @Override public void hide()   {}
+
+
+    @Override
+    public void dispose() {
+        if (networkClient != null) networkClient.disconnect();
+        if (lighting      != null) lighting.dispose();   // ← eklendi
+        if (shader1    != null) shader1.dispose();
+        if (mapShader  != null) mapShader.dispose();
+        if (batch      != null) batch.dispose();
+        if (shapeRenderer != null) shapeRenderer.dispose();
+        if (mapRenderer   != null) mapRenderer.dispose();
+        if (map           != null) map.dispose();
+    }
+}

@@ -1,0 +1,208 @@
+package io.github.pbodyMRTF.infernum;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+
+public class HUD {
+    private BitmapFont font;
+    private ShapeRenderer shapeRenderer;
+    private Texture heartTex;
+    private Texture heartEmptyTex;
+    private Texture regenHeartTex;
+    private Texture hotbar1;
+    private Texture hotbar2;
+    private Texture hotbar3;
+    private Jgame game;
+    private EntityManager entityManager;
+    private OrthographicCamera worldCamera;
+    private OrthographicCamera uiCamera;
+
+    public static String hudcolornum = "WHITE";
+    private static Color hudcolor = Color.WHITE;
+    public static float hudScale = 1f;
+
+    private static final float UI_WIDTH  = 1024f;
+    private static final float UI_HEIGHT = 768f;
+
+    public HUD(BitmapFont font, ShapeRenderer shapeRenderer,
+               Texture heartTex, Texture heartEmptyTex, Texture regenHeartTex,
+               Texture hotbar1, Texture hotbar2, Texture hotbar3,
+               Jgame game, EntityManager entityManager,
+               OrthographicCamera worldCamera, OrthographicCamera uiCamera) {
+        this.font          = font;
+        this.shapeRenderer = shapeRenderer;
+        this.heartTex      = heartTex;
+        this.heartEmptyTex = heartEmptyTex;
+        this.regenHeartTex = regenHeartTex;
+        this.hotbar1       = hotbar1;
+        this.hotbar2       = hotbar2;
+        this.hotbar3       = hotbar3;
+        this.game          = game;
+        this.entityManager = entityManager;
+        this.worldCamera   = worldCamera;
+        this.uiCamera      = uiCamera;
+    }
+
+    public void render(SpriteBatch batch, Player player,
+                       boolean isSlowed, float slowRemaining,
+                       int score, GameTickManager.TickTimer bayonetCooldown,
+                       int currentTick) {
+        drawHealthBars(batch);
+        batch.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        renderUI(batch, isSlowed, slowRemaining, score);
+        renderHotbar(batch, player);
+        renderHearts(batch, player);
+        renderBayonetCooldownBar(batch, bayonetCooldown, currentTick);
+        batch.end();
+    }
+
+    private void renderUI(SpriteBatch batch, boolean isSlowed, float slowRemaining, int score) {
+        font.setColor(hudcolor);
+        if (isSlowed) {
+            font.getData().setScale(hudScale);
+            font.draw(batch, game.bundle.format("game.ui.slowed", slowRemaining), UI_WIDTH / 2, UI_HEIGHT - 20);
+            font.getData().setScale(hudScale);
+        }
+        font.getData().setScale(hudScale);
+        font.draw(batch, game.bundle.format("game.ui.score", score), UI_WIDTH / 2, 38);
+        font.getData().setScale(hudScale);
+    }
+
+    private void renderHotbar(SpriteBatch batch, Player player) {
+        float hotbarWidth  = 100;
+        float hotbarHeight = 260;
+        float hotbarX      = UI_WIDTH + (hotbarWidth / 2);
+        float hotbarY      = (UI_HEIGHT / 2) - (hotbarHeight / 2);
+
+        Texture current = hotbar1;
+        if (player != null && player.getWeapon() != null) {
+            current = switch (player.getWeapon().getType()) {
+                case PISTOL -> hotbar1;
+                case SHOTGUN -> hotbar2;
+                case SMG -> hotbar3;
+                default -> current;
+            };
+        }
+        batch.draw(current, hotbarX, hotbarY, hotbarWidth, hotbarHeight);
+    }
+
+    private void renderHearts(SpriteBatch batch, Player player) {
+        int   maxHp    = 3;
+        float heartSize = 64 * hudScale;
+        float startX   = 20;
+        float startY   = UI_HEIGHT - 58 * hudScale;
+
+        for (int i = 0; i < maxHp; i++) {
+            Texture heart;
+            if (i < player.getHp()) {
+                heart = player.isRegenHeart(i) ? regenHeartTex : heartTex;
+            } else {
+                heart = heartEmptyTex;
+            }
+            batch.draw(heart, startX + i * (heartSize + 5), startY, heartSize, heartSize);
+        }
+    }
+
+    private void drawHealthBars(SpriteBatch batch) {
+        shapeRenderer.setProjectionMatrix(worldCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        for (Entity e : entityManager.getAll()) {
+            if (!e.isDead()) drawBar(e.getX(), e.getY(), e.getHp(), e.getMaxHp());
+        }
+        shapeRenderer.end();
+    }
+
+    private void drawBar(float x, float y, int hp, int maxHp) {
+        if (hp <= 0) return;
+        float bw = 64f, bh = 7f;
+        float bx = x, by = y + 68f;
+
+        shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 0.85f);
+        shapeRenderer.rect(bx, by, bw, bh);
+
+        float ratio = MathUtils.clamp((float) hp / maxHp, 0f, 1f);
+        if (ratio > 0.5f) shapeRenderer.setColor(0.2f, 0.85f, 0.2f, 1f);
+        else               shapeRenderer.setColor(0.85f, 0.3f, 0.1f, 1f);
+        shapeRenderer.rect(bx, by, bw * ratio, bh);
+    }
+    public static boolean setHudColor(String colorName) {
+        if (colorName == null) return false;
+        Color c = switch (colorName.toUpperCase()) {
+            case "WHITE"        -> Color.WHITE;
+            case "BLACK"        -> Color.BLACK;
+            case "RED"          -> Color.RED;
+            case "GREEN"        -> Color.GREEN;
+            case "BLUE"         -> Color.BLUE;
+            case "YELLOW"       -> Color.YELLOW;
+            case "ORANGE"       -> Color.ORANGE;
+            case "PINK"         -> Color.PINK;
+            case "GRAY", "GREY" -> Color.GRAY;
+            case "CYAN"         -> Color.CYAN;
+            case "MAGENTA"      -> Color.MAGENTA;
+            case "PURPLE"       -> Color.PURPLE;
+            case "BROWN"        -> Color.BROWN;
+            case "MAROON"       -> Color.MAROON;
+            case "GOLD"         -> Color.GOLD;
+            case "OLIVE"        -> Color.OLIVE;
+            case "LIME"         -> Color.LIME;
+            case "NAVY"         -> Color.NAVY;
+            default             -> null;
+        };
+        if (c == null) return false;
+        hudcolor    = c;
+        hudcolornum = colorName.toUpperCase();
+        return true;
+    }
+
+    private void renderBayonetCooldownBar(SpriteBatch batch, GameTickManager.TickTimer bayonetCooldown, int currentTick) {
+        batch.end();
+
+        float barWidth  = 200 * hudScale;
+        float barHeight = 20 * hudScale;
+        float barX      = UI_WIDTH - barWidth - 20;
+        float barY      = 40;
+
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+
+        if (bayonetCooldown != null) {
+            float progress = bayonetCooldown.isRunning()
+                    ? bayonetCooldown.getProgress(currentTick)
+                    : 1.0f;
+
+            if (progress >= 1.0f) {
+                shapeRenderer.setColor(0.2f, 0.8f, 0.2f, 1.0f);
+            } else {
+                shapeRenderer.setColor(1.0f - (progress * 0.5f), progress * 0.8f, 0.1f, 1.0f);
+            }
+            shapeRenderer.rect(barX, barY, barWidth * progress, barHeight);
+        }
+
+        shapeRenderer.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(1f, 1f, 1f, 1f);
+        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+        shapeRenderer.end();
+
+        batch.begin();
+        font.setColor(hudcolor);
+        font.getData().setScale(hudScale / 2);
+        String label = game.bundle.get("game.ui.bayonet");
+        if (bayonetCooldown != null && bayonetCooldown.isRunning()) {
+            label += game.bundle.format("game.ui.bayonet.cooldown",
+                    bayonetCooldown.getRemainingSeconds(currentTick));
+        } else {
+            label += game.bundle.get("game.ui.bayonet.ready");
+        }
+        font.draw(batch, label, barX, barY + barHeight + 18);
+        font.getData().setScale(hudScale);
+    }
+}
