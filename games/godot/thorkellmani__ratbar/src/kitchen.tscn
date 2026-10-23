@@ -1,0 +1,127 @@
+[gd_scene load_steps=2 format=3 uid="uid://bgh42503avk7q"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_rbxf2"]
+font_color = Color(1, 0.14901961, 1, 1)
+
+[node name="Background" type="CanvasLayer"]
+
+[node name="Floor" type="ColorRect" parent="."]
+offset_left = 1.0
+offset_top = 255.0
+offset_right = 1152.0
+offset_bottom = 649.0
+mouse_filter = 2
+color = Color(0.6441393, 0.37807173, 0.29347518, 1)
+
+[node name="Label" type="Label" parent="Floor"]
+layout_mode = 0
+offset_left = 587.0
+offset_top = 148.0
+offset_right = 627.0
+offset_bottom = 197.0
+text = "Floor
+"
+
+[node name="Stove" type="ColorRect" parent="."]
+offset_left = 462.0
+offset_top = 117.0
+offset_right = 689.0
+offset_bottom = 253.0
+mouse_filter = 2
+color = Color(0.4669236, 0.46741438, 0.45538187, 1)
+
+[node name="Label" type="Label" parent="Stove"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 50.0
+offset_right = 143.0
+offset_bottom = 99.0
+text = "Stove"
+
+[node name="Cabinet" type="ColorRect" parent="."]
+offset_left = 923.0
+offset_top = 120.0
+offset_right = 1150.0
+offset_bottom = 256.0
+mouse_filter = 2
+color = Color(0.49168456, 0.2607616, 0.17907879, 1)
+
+[node name="Label" type="Label" parent="Cabinet"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 50.0
+offset_right = 143.0
+offset_bottom = 99.0
+text = "Cabinet
+"
+
+[node name="Cabinet2" type="ColorRect" parent="."]
+offset_left = 694.0
+offset_top = 119.0
+offset_right = 921.0
+offset_bottom = 255.0
+mouse_filter = 2
+color = Color(0.49168456, 0.2607616, 0.17907879, 1)
+
+[node name="Label" type="Label" parent="Cabinet2"]
+layout_mode = 0
+offset_left = 93.0
+offset_top = 43.0
+offset_right = 153.0
+offset_bottom = 92.0
+text = "Cabinet
+ 2"
+
+[node name="HSplitContainer" type="HSplitContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="Table" type="ColorRect" parent="."]
+offset_left = 186.0
+offset_top = 345.0
+offset_right = 355.0
+offset_bottom = 555.0
+mouse_filter = 2
+color = Color(0.49168456, 0.2607616, 0.17907879, 1)
+
+[node name="Label" type="Label" parent="Table"]
+layout_mode = 0
+offset_left = 71.0
+offset_top = 51.0
+offset_right = 131.0
+offset_bottom = 100.0
+text = "Table"
+
+[node name="Stove2" type="ColorRect" parent="."]
+offset_left = 224.0
+offset_top = 40.0
+offset_right = 454.0
+offset_bottom = 253.0
+mouse_filter = 2
+color = Color(0.94305307, 0.94305986, 0.9405375, 1)
+
+[node name="Label" type="Label" parent="Stove2"]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 51.0
+offset_right = 116.0
+offset_bottom = 100.0
+text = "Fridge"
+label_settings = SubResource("LabelSettings_rbxf2")
+
+[node name="Stove3" type="ColorRect" parent="."]
+offset_left = 703.0
+offset_top = 345.0
+offset_right = 896.0
+offset_bottom = 532.0
+mouse_filter = 2
+color = Color(0.4669236, 0.46741438, 0.45538187, 1)
+
+[node name="Label" type="Label" parent="Stove3"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 50.0
+offset_right = 143.0
+offset_bottom = 99.0
+text = "Stove 2"

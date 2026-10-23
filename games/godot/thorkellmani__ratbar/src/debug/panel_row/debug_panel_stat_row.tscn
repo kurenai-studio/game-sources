@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://cc05s35h81hqo"]
+
+[ext_resource type="Script" uid="uid://b31iyvyr4w64b" path="res://debug/panel_row/debug_panel_stat_row.gd" id="1_426e4"]
+
+[node name="DebugPanelStatRow" type="VBoxContainer"]
+offset_left = 4.0
+offset_top = 28.0
+offset_right = 1132.0
+offset_bottom = 59.0
+script = ExtResource("1_426e4")
+
+[node name="Values" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Item" type="Label" parent="Values"]
+layout_mode = 2
+horizontal_alignment = 3
+
+[node name="Value" type="LineEdit" parent="Values"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+clear_button_enabled = true

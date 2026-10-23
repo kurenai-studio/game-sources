@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="NeedUrgencies" load_steps=9 format=3 uid="uid://dkavutvvhrf76"]
+
+[ext_resource type="Script" uid="uid://bl7y58reumro7" path="res://entities/rat/config/needs/need_urgency.gd" id="1_8encs"]
+[ext_resource type="Script" uid="uid://3411vrpptvy2" path="res://entities/rat/config/needs/need_urgencies.gd" id="1_tfeai"]
+
+[sub_resource type="Curve" id="Curve_io38m"]
+_limits = [0.0, 1.0, -100.0, 100.0]
+_data = [Vector2(-100, 0.9), 0.0, 0.0, 0, 0, Vector2(-20, 0.344), 0.0, 0.0, 0, 0, Vector2(100, 0.058), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_8encs"]
+_limits = [0.0, 1.0, -100.0, 100.0]
+_data = [Vector2(-100, 1), 0.0, 0.0, 0, 0, Vector2(-59.3985, 0.899614), 0.0, 0.0, 0, 0, Vector2(-28.82206, 0.19063711), -0.005, -0.005, 0, 0, Vector2(100, 0.011), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_8sjpd"]
+_limits = [0.0, 1.0, -100.0, 100.0]
+_data = [Vector2(-100, 0.7), 0.0, 0.0, 0, 0, Vector2(-40, 0.55), 0.0, 0.0, 0, 0, Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(100, 0.5), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_rjlvr"]
+_limits = [0.0, 1.0, -100.0, 100.0]
+_data = [Vector2(-100, 0.5), 0.0, -0.00050000014, 0, 1, Vector2(0, 0.45), 0.0, 0.0, 0, 0, Vector2(100, 0.4), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_f1k5a"]
+_limits = [0.0, 1.0, -100.0, 100.0]
+_data = [Vector2(-100, 0.95), 0.0, 0.0, 0, 0, Vector2(63.307495, 0.49300003), 0.0, 0.0, 0, 0, Vector2(100, 0.1), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Resource" id="Resource_io38m"]
+script = ExtResource("1_8encs")
+nutrition = SubResource("Curve_8encs")
+energy = SubResource("Curve_io38m")
+stimulation = SubResource("Curve_rjlvr")
+social = SubResource("Curve_8sjpd")
+vice_satisfaction = SubResource("Curve_f1k5a")
+metadata/_custom_type_script = "uid://bl7y58reumro7"
+
+[resource]
+script = ExtResource("1_tfeai")
+need_urgencies = SubResource("Resource_io38m")
+metadata/_custom_type_script = "uid://3411vrpptvy2"

@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://debug/job_assignment/job_assignment.gd" id="1_jobs"]
+
+[node name="JobAssignment" type="FoldableContainer"]
+layout_mode = 2
+folded = true
+title = "Assign Jobs"
+script = ExtResource("1_jobs")
+
+[node name="Details" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="Jobs" type="VBoxContainer" parent="Details"]
+layout_mode = 2
+
+[node name="Unassign" type="Button" parent="Details"]
+layout_mode = 2
+text = "Unassign"

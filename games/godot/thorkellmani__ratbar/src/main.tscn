@@ -1,0 +1,263 @@
+[gd_scene load_steps=31 format=3 uid="uid://dxpm20igoillm"]
+
+[ext_resource type="PackedScene" uid="uid://bgh42503avk7q" path="res://kitchen.tscn" id="1_0xm2m"]
+[ext_resource type="Script" uid="uid://dn2bwf5drxhim" path="res://main.gd" id="1_lquwl"]
+[ext_resource type="PackedScene" uid="uid://t3erssb1muvm" path="res://entities/chef/chef.tscn" id="2_h2yge"]
+[ext_resource type="Script" uid="uid://bedegktgbds81" path="res://managers/job_manager/job_manager.gd" id="4_1bvp3"]
+[ext_resource type="Script" uid="uid://dxrya62xwiptx" path="res://entities/job/job.gd" id="4_ycdy4"]
+[ext_resource type="Script" uid="uid://23nfwe50a7up" path="res://entities/job/job_modifiers.gd" id="5_w48qg"]
+[ext_resource type="Script" uid="uid://cogu2jhsalh42" path="res://managers/rat_manager/rat_manager.gd" id="6_7mycd"]
+[ext_resource type="PackedScene" uid="uid://diubbu3d51vsp" path="res://debug/panel/debug_panel.tscn" id="6_272bh"]
+[ext_resource type="Script" uid="uid://mlu1ief5n0tu" path="res://managers/location_manager/location_manager.gd" id="7_272bh"]
+[ext_resource type="Script" uid="uid://c6cwtu6kw7u3d" path="res://entities/location/location.gd" id="8_kek77"]
+[ext_resource type="Script" uid="uid://cqxnjp4g7lj6q" path="res://entities/location/location_modifiers.gd" id="9_ycdy4"]
+[ext_resource type="Script" uid="uid://bmokapa5tkgtl" path="res://config/game_clock.gd" id="10_4c57u"]
+[ext_resource type="Resource" uid="uid://du8k2qy5nybw8" path="res://entities/location/res/stove_pull_defaults.tres" id="10_dg77c"]
+[ext_resource type="Script" uid="uid://d1dgj1rs2fdji" path="res://entities/location/location_pull.gd" id="10_efxa6"]
+[ext_resource type="Script" path="res://debug/controller/debug_controller.gd" id="17_debug_controller"]
+
+[sub_resource type="Resource" id="Resource_yaehf"]
+script = ExtResource("5_w48qg")
+nutrition = 0.5
+energy = -1.5
+stimulation = 1.0
+social = -0.5
+vice_satisfaction = -1.0
+metadata/_custom_type_script = "uid://23nfwe50a7up"
+
+[sub_resource type="Resource" id="Resource_d13ii"]
+script = ExtResource("5_w48qg")
+nutrition = 1.0
+energy = -1.0
+stimulation = 0.5
+social = 0.5
+vice_satisfaction = -1.0
+metadata/_custom_type_script = "uid://23nfwe50a7up"
+
+[sub_resource type="Resource" id="Resource_1u8w0"]
+script = ExtResource("5_w48qg")
+nutrition = 1.5
+energy = -1.0
+stimulation = 0.5
+social = 1.0
+vice_satisfaction = -0.5
+metadata/_custom_type_script = "uid://23nfwe50a7up"
+
+[sub_resource type="Resource" id="Resource_2cqfq"]
+script = ExtResource("5_w48qg")
+nutrition = 0.5
+energy = -1.0
+stimulation = 1.0
+social = 0.5
+vice_satisfaction = -0.5
+metadata/_custom_type_script = "uid://23nfwe50a7up"
+
+[sub_resource type="Resource" id="Resource_0odxb"]
+script = ExtResource("5_w48qg")
+energy = -1.0
+stimulation = 0.5
+social = 2.0
+vice_satisfaction = 2.0
+metadata/_custom_type_script = "uid://23nfwe50a7up"
+
+[sub_resource type="Resource" id="Resource_vivmo"]
+script = ExtResource("9_ycdy4")
+nutrition = 2.0
+stimulation = 0.5
+social = 0.5
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_dg77c"]
+script = ExtResource("9_ycdy4")
+nutrition = 2.0
+stimulation = 0.5
+social = 0.5
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_ryguw"]
+script = ExtResource("9_ycdy4")
+nutrition = 2.0
+stimulation = 0.5
+social = 0.5
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_074og"]
+script = ExtResource("10_efxa6")
+nutrition = 2.0
+stimulation = 3.0
+social = 2.0
+metadata/_custom_type_script = "uid://d1dgj1rs2fdji"
+
+[sub_resource type="Resource" id="Resource_ycdy4"]
+script = ExtResource("9_ycdy4")
+nutrition = 2.0
+stimulation = 0.5
+social = 0.5
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_cegan"]
+script = ExtResource("10_efxa6")
+nutrition = 1.0
+stimulation = 1.0
+social = 2.0
+metadata/_custom_type_script = "uid://d1dgj1rs2fdji"
+
+[sub_resource type="Resource" id="Resource_w48qg"]
+script = ExtResource("9_ycdy4")
+nutrition = 0.5
+energy = 0.5
+stimulation = 0.5
+social = 1.0
+vice_satisfaction = 1.5
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_82xsv"]
+script = ExtResource("10_efxa6")
+nutrition = 1.0
+energy = 2.0
+stimulation = 2.0
+social = 4.0
+vice_satisfaction = 5.0
+metadata/_custom_type_script = "uid://d1dgj1rs2fdji"
+
+[sub_resource type="Resource" id="Resource_efxa6"]
+script = ExtResource("9_ycdy4")
+nutrition = 20.0
+energy = 2.0
+metadata/_custom_type_script = "uid://cqxnjp4g7lj6q"
+
+[sub_resource type="Resource" id="Resource_getpj"]
+script = ExtResource("10_efxa6")
+nutrition = 6.0
+energy = 5.0
+metadata/_custom_type_script = "uid://d1dgj1rs2fdji"
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_lquwl")
+
+[node name="Chef" parent="." instance=ExtResource("2_h2yge")]
+visible = false
+position = Vector2(449, 225)
+
+[node name="JobManager" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4_1bvp3")
+
+[node name="HeadChef" type="Node2D" parent="JobManager" node_paths=PackedStringArray("locations")]
+script = ExtResource("4_ycdy4")
+modifiers = SubResource("Resource_yaehf")
+title = "Head chef"
+locations = [NodePath("../../LocationManager/Stove 1")]
+metadata/_custom_type_script = "uid://dxrya62xwiptx"
+
+[node name="SousChef" type="Node2D" parent="JobManager" node_paths=PackedStringArray("locations")]
+script = ExtResource("4_ycdy4")
+modifiers = SubResource("Resource_d13ii")
+title = "Sous chef"
+locations = [NodePath("../../LocationManager/Stove 2")]
+metadata/_custom_type_script = "uid://dxrya62xwiptx"
+
+[node name="LineCook" type="Node2D" parent="JobManager" node_paths=PackedStringArray("locations")]
+script = ExtResource("4_ycdy4")
+modifiers = SubResource("Resource_1u8w0")
+title = "Line cook"
+locations = [NodePath("../../LocationManager/Counter 1")]
+metadata/_custom_type_script = "uid://dxrya62xwiptx"
+
+[node name="Dishwasher" type="Node2D" parent="JobManager" node_paths=PackedStringArray("locations")]
+script = ExtResource("4_ycdy4")
+modifiers = SubResource("Resource_2cqfq")
+title = "Dishwasher"
+locations = [NodePath("../../LocationManager/Basin")]
+metadata/_custom_type_script = "uid://dxrya62xwiptx"
+
+[node name="Bartender" type="Node2D" parent="JobManager" node_paths=PackedStringArray("locations")]
+script = ExtResource("4_ycdy4")
+modifiers = SubResource("Resource_0odxb")
+title = "Bartender"
+locations = [NodePath("../../LocationManager/Counter 2")]
+metadata/_custom_type_script = "uid://dxrya62xwiptx"
+
+[node name="RatManager" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_7mycd")
+
+[node name="RatGenerateMarker" type="Marker2D" parent="RatManager"]
+position = Vector2(510, 522)
+
+[node name="Kitchen" parent="." instance=ExtResource("1_0xm2m")]
+layer = -1
+
+[node name="DebugUI" parent="." instance=ExtResource("6_272bh")]
+unique_name_in_owner = true
+visible = false
+
+[node name="LocationManager" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_272bh")
+
+[node name="Stove 1" type="Marker2D" parent="LocationManager"]
+position = Vector2(568, 269)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_vivmo")
+title = "Stove 1"
+location_id = &"stove_1"
+pull = ExtResource("10_dg77c")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="Stove 2" type="Marker2D" parent="LocationManager"]
+position = Vector2(920, 441)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_dg77c")
+title = "Stove 2"
+location_id = &"stove_2"
+pull = ExtResource("10_dg77c")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="Counter 1" type="Marker2D" parent="LocationManager"]
+position = Vector2(324, 273)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_ryguw")
+title = "Counter 1"
+location_id = &"counter_1"
+pull = SubResource("Resource_074og")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="Basin" type="Marker2D" parent="LocationManager"]
+position = Vector2(803, 273)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_ycdy4")
+title = "Basin"
+location_id = &"basin"
+pull = SubResource("Resource_cegan")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="Counter 2" type="Marker2D" parent="LocationManager"]
+position = Vector2(382, 442)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_w48qg")
+title = "Counter 2"
+location_id = &"counter_2"
+pull = SubResource("Resource_82xsv")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="Pantry" type="Marker2D" parent="LocationManager"]
+position = Vector2(1036, 277)
+script = ExtResource("8_kek77")
+modifiers = SubResource("Resource_efxa6")
+title = "Pantry"
+location_id = &"pantry"
+pull = SubResource("Resource_getpj")
+metadata/_custom_type_script = "uid://c6cwtu6kw7u3d"
+
+[node name="GameClock" type="Node" parent="."]
+script = ExtResource("10_4c57u")
+
+[node name="TickTimer" type="Timer" parent="GameClock"]
+autostart = true
+
+[node name="DebugController" type="Node" parent="."]
+script = ExtResource("17_debug_controller")
+
+[connection signal="tick" from="GameClock" to="RatManager" method="_on_game_clock_tick"]
+[connection signal="timeout" from="GameClock/TickTimer" to="GameClock" method="_on_tick_timer_timeout"]

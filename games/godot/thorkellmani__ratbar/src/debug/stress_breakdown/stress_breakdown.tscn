@@ -1,0 +1,29 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://debug/stress_breakdown/stress_breakdown.gd" id="1_stress"]
+
+[node name="StressBreakdown" type="FoldableContainer"]
+layout_mode = 2
+folded = true
+title = "Stress breakdown"
+script = ExtResource("1_stress")
+
+[node name="Details" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="AverageUrgency" type="Label" parent="Details"]
+layout_mode = 2
+text = "Average urgency: --"
+
+[node name="NeedTier" type="Label" parent="Details"]
+layout_mode = 2
+text = "Need tier: --"
+
+[node name="WorkingRate" type="Label" parent="Details"]
+layout_mode = 2
+text = "Working: --"
+
+[node name="NetRate" type="Label" parent="Details"]
+layout_mode = 2
+text = "Net stress rate: --"
