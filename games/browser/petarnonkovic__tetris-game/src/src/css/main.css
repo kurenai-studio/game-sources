@@ -1,0 +1,80 @@
+body {
+    background-color: rgb(11, 15, 30);
+    box-sizing: border-box;
+}
+
+.container {
+    width: 100%;
+    height: 98vh;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    padding-top: calc((100vh - 600px) / 2);
+    position: relative;
+}
+
+/* Game Container */
+.container .game-holder {
+    flex: 0 0 400px;
+    border: 1px solid rgb(221, 221, 221);
+    height: 600px;
+}
+
+.controls-info {
+    width: 300px;
+    height: 200px;
+    color: #fff;
+    margin: 50px;
+}
+
+.controls-field legend {
+    text-align: center;
+    padding: 0 10px;
+}
+
+.controls-field dl dt {
+    margin-top: 20px;
+    color: rgb(223,89,75);
+}
+
+/* Game Pause Overlay */
+.overlay {
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transform: scale(0.6);
+    will-change: transform, opacity;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 99;
+}
+
+.animate-overlay {
+    animation-name: fadeIn;
+    animation-duration: 0.3s;
+    animation-fill-mode: forwards;
+}
+
+.play-sign {
+    margin-left: 100px;
+    border-style: solid;
+    border-color: transparent transparent transparent rgba(0, 0, 0, 0.5);
+    border-width: 100px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
