@@ -1,0 +1,1197 @@
+import pytest
+
+from constants import LAST_ALIVE_STARVATION_LEVEL, DEAD_STARVATION_LEVEL, FRAMERATE, ONE_SECOND, ONE_MINUTE
+from engine.game_event import GameEvent
+from engine.game_event_type import GameEventType
+from engine.game_manager import GameManager
+from engine.random import Random
+from scene_objects.checkbox import Checkbox
+from scene_objects.cpu import Cpu
+from scene_objects.io_queue import IoQueue
+from scene_objects.process import Process, ProcessState, ProcessType
+from scene_objects.process_manager import ProcessManager
+from scene_objects.process_slot import ProcessSlot
+from scene_objects.sort_button import SortButton
+from scenes.stage import Stage
+from config.cpu_config import CpuConfig
+from config.stage_config import StageConfig
+
+class TestProcessManager:
+    @pytest.fixture
+    def stage_config(self):
+        return StageConfig(
+            cpu_config = CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            max_processes=42,
+            new_process_probability=0.05,
+            priority_process_probability=0,
+        )
+
+    @pytest.fixture
+    def stage(self, stage_custom_config, stage_config):
+        return stage_custom_config(stage_config)
+
+    def test_setup(self, stage, stage_config):
+        process_manager = stage.process_manager
+        process_manager.setup()
+
+        for logical_id in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = process_manager.cpu_manager.get_cpu_by_logical_id(logical_id)
+            assert isinstance(cpu, Cpu)
+            assert cpu.logical_id == logical_id
+        assert process_manager.cpu_manager.get_cpu_by_logical_id(stage_config.cpu_config.total_threads + 1) is None
+
+        assert len(process_manager.process_slots) == stage_config.max_processes
+        for process_slot in process_manager.process_slots:
+            assert isinstance(process_slot, ProcessSlot)
+
+        assert isinstance(process_manager.io_queue, IoQueue)
+
+        assert process_manager.user_terminated_process_count == 0
+
+    def test_initial_process_creation(self, stage, stage_config):
+        process_manager = stage.process_manager
+        stage.setup()
+
+        time = 0.0
+        process_count = 0
+        iteration_count = 0
+
+        while process_count < stage_config.num_processes_at_startup and iteration_count < 1000:
+            iteration_count += 1
+            process_manager.update(int(time), [])
+            time += ONE_SECOND / GameManager.fps
+
+            process_count = len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ])
+
+        assert process_count == stage_config.num_processes_at_startup
+
+    @pytest.fixture
+    def ready_process_manager(self, stage, stage_config, monkeypatch):
+        # Cause the random number generator to never provoke creation of new process
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        stage.setup()
+        process_manager = stage.process_manager
+
+        time = 0.0
+        process_count = 0
+        process_in_motion = 0
+        iteration_count = 0
+
+        while (
+            (
+                process_count < stage_config.num_processes_at_startup
+                or process_in_motion > 0
+            )
+            and iteration_count < 100000
+        ):
+            iteration_count += 1
+            process_manager.update(int(time), [])
+            time += ONE_SECOND / GameManager.fps
+
+            used_process_slots = [
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]
+            process_count = len(used_process_slots)
+            process_in_motion = len([
+                process_slot for process_slot in used_process_slots if process_slot.process.is_in_motion
+            ])
+
+        # Bring back normal number generator
+        monkeypatch.setattr(Random, 'get_number', Random.get_number)
+
+        return process_manager
+
+    @pytest.fixture
+    def ready_process_manager_custom_config(self, stage_custom_config, monkeypatch):
+        def create_process_manager(custom_config):
+            # Cause the random number generator to never provoke creation of new process
+            monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+            stage = stage_custom_config(custom_config)
+            stage.setup()
+            process_manager = stage.process_manager
+
+            time = 0.0
+            process_count = 0
+            process_in_motion = 0
+            iteration_count = 0
+
+            while (
+                (
+                    process_count < custom_config.num_processes_at_startup
+                    or process_in_motion > 0
+                )
+                and iteration_count < 100000
+            ):
+                iteration_count += 1
+                process_manager.update(int(time), [])
+                time += ONE_SECOND / GameManager.fps
+
+                used_process_slots = [
+                    process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+                ]
+                process_count = len(used_process_slots)
+                process_in_motion = len([
+                    process_slot for process_slot in used_process_slots if process_slot.process.is_in_motion
+                ])
+
+            # Bring back normal number generator
+            monkeypatch.setattr(Random, 'get_number', Random.get_number)
+
+            return process_manager, stage
+        return create_process_manager
+
+    def test_get_process(self, ready_process_manager, stage_config):
+        process_manager = ready_process_manager
+
+        for i in range(1, stage_config.num_processes_at_startup + 1):
+            assert process_manager.get_process(i).pid == i
+
+    def test_del_process(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process = process_manager.get_process(1)
+        process_manager.del_process(process)
+
+        with pytest.raises(KeyError):
+            process_manager.get_process(1)
+
+    def test_terminate_idle_process_by_user(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process = process_manager.get_process(1)
+
+        process_slot = next(
+            process_slot for process_slot
+                in process_manager.process_slots if process_slot.process == process
+        )
+
+        result = process_manager.terminate_process(process, True)
+        assert result
+
+        assert process_manager.user_terminated_process_count == 1
+        assert process_slot.process is None
+
+        # Validate that the process is now in a terminated process slot
+        new_process_slot = next(
+            child for child in process_manager.children
+                if isinstance(child, ProcessSlot) and child.process == process
+        )
+        assert new_process_slot not in process_manager.process_slots
+
+    def test_terminate_active_process_by_user(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process = process_manager.get_process(1)
+
+        process.use_cpu()
+        cpu = process_manager.cpu_manager.find_cpu_with_process(process)
+
+        result = process_manager.terminate_process(process, True)
+        assert result
+
+        assert process_manager.user_terminated_process_count == 1
+        assert cpu.process is None
+
+        # Validate that the process is NOT in a terminated process slot
+        new_process_slot = next(
+            child for child in process_manager.children
+                if isinstance(child, ProcessSlot) and child.process == process
+        )
+        assert new_process_slot not in process_manager.process_slots
+
+    def test_terminate_active_process_not_by_user(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process = process_manager.get_process(1)
+
+        process.use_cpu()
+        cpu = process_manager.cpu_manager.find_cpu_with_process(process)
+
+        result = process_manager.terminate_process(process, False)
+        assert result
+
+        assert process_manager.user_terminated_process_count == 0
+        assert cpu.process == process
+
+    def test_user_terminated_processes_is_empty_initially(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        assert process_manager.user_terminated_processes == []
+
+    def test_user_terminated_processes_returns_terminated_process(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process = process_manager.get_process(1)
+        process_manager.terminate_process(process, True)
+
+        assert process_manager.user_terminated_processes == [process]
+
+    def test_user_terminated_processes_returns_in_termination_order(self, ready_process_manager):
+        process_manager = ready_process_manager
+
+        process_1 = process_manager.get_process(1)
+        process_2 = process_manager.get_process(2)
+        process_manager.terminate_process(process_1, True)
+        process_manager.terminate_process(process_2, True)
+
+        assert process_manager.user_terminated_processes == [process_1, process_2]
+
+    def test_terminate_process_by_user_when_cannot_terminate(self, ready_process_manager_custom_config):
+        process_manager, stage = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 11,
+            new_process_probability = 0,
+            graceful_termination_probability = 0,
+            io_probability = 0
+        ))
+
+        for i in range(1, 11):
+            process = process_manager.get_process(i)
+            result = process_manager.terminate_process(process, True)
+            assert result
+
+        process = process_manager.get_process(11)
+        result = process_manager.terminate_process(process, True)
+        assert not result
+
+    def test_update_removes_process_out_of_screen(self, ready_process_manager_custom_config):
+        process_manager, stage = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 1,
+            new_process_probability = 0,
+            graceful_termination_probability = 1,
+            io_probability = 0
+        ))
+
+        process = process_manager.get_process(1)
+        process.use_cpu()
+
+        process_is_in_children = False
+        for child in process_manager.children:
+            if child == process:
+                process_is_in_children = True
+                break
+        assert process_is_in_children
+
+        time = 2000
+
+        process_manager.update(time, [])
+        assert process.state == ProcessState.ENDED
+
+        process.yield_cpu()
+
+        counter = 0
+        while process.view.y > -process.view.height and counter < 100000:
+            process_is_in_children = False
+            for child in process_manager.children:
+                if isinstance(child, Process) and child.pid == 1:
+                    process_is_in_children = True
+                    break
+            assert process_is_in_children
+            counter += 1
+            time += ONE_SECOND / FRAMERATE
+            process_manager.update(int(time), [])
+        assert counter < 100000
+
+        process_is_in_children = False
+        for child in process_manager.children:
+            if isinstance(child, Process) and child.pid == 1:
+                process_is_in_children = True
+                break
+        assert not process_is_in_children
+
+    def test_create_new_process_at_random(self, ready_process_manager, stage_config, monkeypatch):
+        process_manager = ready_process_manager
+
+        # Cause the random number generator to never provoke creation of new process
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process_manager.update(5000, [])
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup
+
+        # Cause the random number generator to always provoke creation of new process
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_manager.update(6000, [])
+
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup + 1
+
+    def test_create_new_process_at_interval(self, ready_process_manager, stage_config, monkeypatch):
+        process_manager = ready_process_manager
+
+        # Cause the random number generator to never provoke creation of new process
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        interval = int(1 / stage_config.new_process_probability * 1000)
+        assert interval > 5000
+
+        process_manager.update(5000, [])
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup
+
+        process_manager.update(interval + 5000, [])
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup + 1
+
+        process_manager.update(interval + 6000, [])
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup + 1
+
+        process_manager.update(interval * 2 + 5000, [])
+        assert len([
+                process_slot for process_slot in process_manager.process_slots if process_slot.process is not None
+            ]) == stage_config.num_processes_at_startup + 2
+
+    def test_show_sort_button(self, ready_process_manager_custom_config):
+        stage_config = StageConfig(
+            num_processes_at_startup = 0,
+            new_process_probability = 0,
+            time_ms_to_show_sort_button = 6 * ONE_MINUTE
+        )
+        process_manager, stage = ready_process_manager_custom_config(stage_config)
+
+        sort_button = None
+        for child in process_manager.children:
+            if isinstance(child, SortButton):
+                sort_button = child
+                break
+
+        assert sort_button is not None
+        assert not sort_button.visible
+
+        for i in range(int(stage_config.time_ms_to_show_sort_button / ONE_SECOND)):
+            stage.update(i * ONE_SECOND, [])
+            assert not sort_button.visible
+
+        stage.update(stage_config.time_ms_to_show_sort_button, [])
+        stage.update(stage_config.time_ms_to_show_sort_button + 1, [])
+        # We execute one extra update because the process manager determines the visibility of the button
+        # based on the stage's UptimeManager, which may get updated after the ProcessManager.
+        assert sort_button.visible
+
+    def test_show_auto_sort_checkbox(self, ready_process_manager_custom_config):
+        stage_config = StageConfig(
+            num_processes_at_startup = 0,
+            new_process_probability = 0,
+            time_ms_to_show_auto_sort_checkbox = 12 * ONE_MINUTE
+        )
+        process_manager, stage = ready_process_manager_custom_config(stage_config)
+
+        auto_sort_checkbox = None
+        for child in process_manager.children:
+            if isinstance(child, Checkbox) and child.text == 'Auto-Sort':
+                auto_sort_checkbox = child
+                break
+
+        assert auto_sort_checkbox is not None
+        assert not auto_sort_checkbox.visible
+
+        for i in range(int(stage_config.time_ms_to_show_auto_sort_checkbox / ONE_SECOND)):
+            stage.update(i * ONE_SECOND, [])
+            assert not auto_sort_checkbox.visible
+
+        stage.update(stage_config.time_ms_to_show_auto_sort_checkbox, [])
+        stage.update(stage_config.time_ms_to_show_auto_sort_checkbox + 1, [])
+        # We execute one extra update because the process manager determines the visibility of the checkbox
+        # based on the stage's UptimeManager, which may get updated after the ProcessManager.
+        assert auto_sort_checkbox.visible
+
+    def test_get_current_stats(self, ready_process_manager_custom_config):
+        process_manager_1, stage_1 = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 10,
+            new_process_probability = 0,
+            graceful_termination_probability = 0,
+            io_probability = 0
+        ))
+
+        stats = process_manager_1.get_current_stats()
+        assert stats['alive_process_count'] == 10
+        assert stats['alive_process_count_by_starvation_level'][0] == 0
+        assert stats['alive_process_count_by_starvation_level'][1] == 10
+        for i in range(2, DEAD_STARVATION_LEVEL):
+            assert stats['alive_process_count_by_starvation_level'][i] == 0
+        assert stats['blocked_active_process_count'] == 0
+        assert stats['io_event_count'] == 0
+        assert stats['gracefully_terminated_process_count'] == 0
+        assert stats['user_terminated_process_count'] == 0
+
+        time = 0
+        process1 = process_manager_1.get_process(1)
+        while process1.starvation_level < DEAD_STARVATION_LEVEL and time < 1000000:
+            process1.update(time, [])
+            time += ONE_SECOND
+
+        time = 0
+        process2 = process_manager_1.get_process(2)
+        while process2.starvation_level < DEAD_STARVATION_LEVEL - 1 and time < 1000000:
+            process2.update(time, [])
+            time += ONE_SECOND
+
+        stats = process_manager_1.get_current_stats()
+        assert stats['alive_process_count'] == 9
+        assert stats['alive_process_count_by_starvation_level'][0] == 0
+        assert stats['alive_process_count_by_starvation_level'][1] == 8
+        assert stats['alive_process_count_by_starvation_level'][LAST_ALIVE_STARVATION_LEVEL] == 1
+        for i in range(2, LAST_ALIVE_STARVATION_LEVEL):
+            assert stats['alive_process_count_by_starvation_level'][i] == 0
+        assert stats['blocked_active_process_count'] == 0
+        assert stats['io_event_count'] == 0
+        assert stats['gracefully_terminated_process_count'] == 0
+        assert stats['user_terminated_process_count'] == 1
+
+        process_manager_2, stage_2 = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 10,
+            new_process_probability = 1,
+            graceful_termination_probability = 0,
+            io_probability = 0
+        ))
+
+        stats = process_manager_2.get_current_stats()
+        assert stats['alive_process_count'] == 10
+
+        process_manager_2.update(2000, [])
+
+        stats = process_manager_2.get_current_stats()
+        assert stats['alive_process_count'] == 11
+
+        process_manager_3, stage_3 = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 10,
+            new_process_probability = 0,
+            graceful_termination_probability = 1,
+            io_probability = 0
+        ))
+
+        stats = process_manager_3.get_current_stats()
+        assert stats['alive_process_count'] == 10
+
+        process = process_manager_3.get_process(1)
+        process.use_cpu()
+        process.update(2000, [])
+
+        stats = process_manager_3.get_current_stats()
+        assert stats['alive_process_count'] == 9
+        assert stats['gracefully_terminated_process_count'] == 1
+        assert stats['user_terminated_process_count'] == 0
+        assert stats['alive_process_count_by_starvation_level'][0] == 0
+        assert stats['alive_process_count_by_starvation_level'][1] == 9
+        for i in range(2, DEAD_STARVATION_LEVEL):
+            assert stats['alive_process_count_by_starvation_level'][i] == 0
+
+        process_manager_4, stage_4 = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup = 10,
+            new_process_probability = 0,
+            graceful_termination_probability = 0,
+            io_probability = 1
+        ))
+
+        stats = process_manager_4.get_current_stats()
+        assert stats['blocked_active_process_count'] == 0
+
+        process = process_manager_4.get_process(1)
+        process.use_cpu()
+        process.update(2000, [])
+
+        stats = process_manager_4.get_current_stats()
+        assert stats['blocked_active_process_count'] == 1
+
+    def test_sort(self, ready_process_manager_custom_config):
+        process_manager, stage = ready_process_manager_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=5,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0,
+            time_ms_to_show_sort_button=0,
+        ))
+
+        for i in range(1, 5):
+            process = process_manager.get_process(i)
+            time = 0
+            while process.starvation_level < i + 1:
+                process.update(time, [])
+                time += ONE_SECOND
+
+        process_1 = process_manager.get_process(1)
+        process_2 = process_manager.get_process(2)
+        process_3 = process_manager.get_process(3)
+        process_4 = process_manager.get_process(4)
+
+        assert process_4.sort_key < process_3.sort_key < process_2.sort_key < process_1.sort_key
+        assert process_manager.process_slots[0].process == process_1
+        assert process_manager.process_slots[1].process == process_2
+        assert process_manager.process_slots[2].process == process_3
+        assert process_manager.process_slots[3].process == process_4
+
+        process_manager.get_process(5).use_cpu()
+        active_process = process_manager.get_process(5)
+
+        sort_button = None
+        for child in process_manager.children:
+            if isinstance(child, SortButton):
+                sort_button = child
+                break
+
+        assert sort_button.visible
+        assert not sort_button.disabled
+
+        process_manager.sort_idle_processes()
+
+        process_manager.update(4000, [])
+        assert sort_button.disabled
+
+        steps = [
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+        ]
+        iteration = 0
+        time = 4000
+        while sort_button.disabled :
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+            order = [slot.process.pid for slot in process_manager.process_slots if slot.process is not None]
+            assert order == steps[iteration]
+            iteration += 1
+
+        assert not sort_button.disabled
+        assert process_manager.process_slots[0].process == process_4
+        assert process_manager.process_slots[1].process == process_3
+        assert process_manager.process_slots[2].process == process_2
+        assert process_manager.process_slots[3].process == process_1
+        assert active_process not in [process_slot.process for process_slot in process_manager.process_slots]
+
+    def test_auto_sort(self, ready_process_manager_custom_config):
+        process_manager, stage = ready_process_manager_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=5,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0,
+            time_ms_to_show_sort_button=0,
+        ))
+
+        for i in range(1, 5):
+            process = process_manager.get_process(i)
+            time = 0
+            while process.starvation_level < i + 1:
+                process.update(time, [])
+                time += ONE_SECOND
+
+        process_1 = process_manager.get_process(1)
+        process_2 = process_manager.get_process(2)
+        process_3 = process_manager.get_process(3)
+        process_4 = process_manager.get_process(4)
+
+        assert process_4.sort_key < process_3.sort_key < process_2.sort_key < process_1.sort_key
+        assert process_manager.process_slots[0].process == process_1
+        assert process_manager.process_slots[1].process == process_2
+        assert process_manager.process_slots[2].process == process_3
+        assert process_manager.process_slots[3].process == process_4
+
+        process_manager.get_process(5).use_cpu()
+        active_process = process_manager.get_process(5)
+
+        sort_button = None
+        for child in process_manager.children:
+            if isinstance(child, SortButton):
+                sort_button = child
+                break
+
+        assert sort_button.visible
+        assert not sort_button.disabled
+
+        auto_sort_checkbox = None
+        for child in process_manager.children:
+            if isinstance(child, Checkbox) and child.text == 'Auto-Sort':
+                auto_sort_checkbox = child
+                break
+
+        auto_sort_checkbox.checked = True
+
+        process_manager.update(4000, [])
+        assert sort_button.disabled
+
+        steps = [
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 1, 2],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+            [4, 3, 2, 1],
+        ]
+        time = 4000
+        for step in steps:
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+            order = [slot.process.pid for slot in process_manager.process_slots if slot.process is not None]
+            assert order == step
+
+        assert sort_button.disabled
+        assert process_manager.process_slots[0].process == process_4
+        assert process_manager.process_slots[1].process == process_3
+        assert process_manager.process_slots[2].process == process_2
+        assert process_manager.process_slots[3].process == process_1
+        assert active_process not in [process_slot.process for process_slot in process_manager.process_slots]
+
+        process_2.use_cpu()
+
+        assert process_manager.process_slots[0].process == process_4
+        assert process_manager.process_slots[1].process == process_3
+        assert process_manager.process_slots[2].process == None
+        assert process_manager.process_slots[3].process == process_1
+
+        time += ONE_SECOND / FRAMERATE
+        process_manager.update(time, [])
+
+        assert process_manager.process_slots[0].process == process_4
+        assert process_manager.process_slots[1].process == process_3
+        assert process_manager.process_slots[2].process == process_1
+        assert process_manager.process_slots[3].process == None
+
+    def test_cpu_hotkeys(self, ready_process_manager_custom_config):
+        process_manager, stage = ready_process_manager_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=16),
+            num_processes_at_startup=16,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0,
+            time_ms_to_show_sort_button=0,
+        ))
+
+        for i in range(1, 17):
+            process = process_manager.get_process(i)
+            process.use_cpu()
+            assert process_manager.cpu_manager.get_cpu_by_logical_id(i).process == process
+
+        for i in range(1, 10):
+            cpu = process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            process = cpu.process
+            assert process.cpu == cpu
+
+            event = GameEvent(GameEventType.KEY_UP, { 'key': str(i), 'shift': False })
+            process_manager.update(1000, [event])
+
+            assert cpu.process is None
+            assert process.cpu is None
+
+        cpu = process_manager.cpu_manager.get_cpu_by_logical_id(10)
+        process = cpu.process
+        assert process.cpu == cpu
+
+        event = GameEvent(GameEventType.KEY_UP, { 'key': '0', 'shift': False })
+        process_manager.update(1000, [event])
+
+        assert cpu.process is None
+        assert process.cpu is None
+
+        for i in range(11, 17):
+            cpu = process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            process = cpu.process
+            assert process.cpu == cpu
+
+            event = GameEvent(GameEventType.KEY_UP, { 'key': str(i - 10), 'shift': True })
+            process_manager.update(1000, [event])
+
+            assert cpu.process is None
+            assert process.cpu is None
+
+    def test_forced_standard_process_created_at_scheduled_time(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+        assert process_manager.get_process(1).time_between_starvation_levels == 10000
+
+    def test_forced_priority_process_created_at_scheduled_time(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+        assert process_manager.get_process(1).time_between_starvation_levels == 6000
+
+    def test_forced_priority_process_has_priority_type(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        assert process_manager.get_process(1).type == ProcessType.PRIORITY
+
+    def test_forced_standard_process_has_standard_type(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        assert process_manager.get_process(1).type == ProcessType.STANDARD
+
+    def test_forced_process_not_created_before_scheduled_time(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[20000],
+        ))
+
+        process_manager.update(15000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 0
+
+    def test_forced_process_created_only_once(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        process_manager.update(20000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+    def test_multiple_forced_processes_at_different_times(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000, 20000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        process_manager.update(20000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+
+    def test_mixed_forced_process_types_created_in_time_order(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[20000],
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+        assert process_manager.get_process(1).time_between_starvation_levels == 6000
+
+        process_manager.update(20000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+        assert process_manager.get_process(2).time_between_starvation_levels == 10000
+
+    def test_forced_process_not_created_when_max_processes_reached(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=1,
+            max_processes=1,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+    def test_forced_processes_with_same_scheduled_time_created_in_separate_ticks(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        process_manager.update(10000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+        assert process_manager.get_process(1).time_between_starvation_levels == 10000
+
+        process_manager.update(11000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+        assert process_manager.get_process(2).time_between_starvation_levels == 6000
+
+    def test_forced_process_created_before_startup_burst(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=2,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_priority_process_at_times_ms=[0],
+        ))
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+        assert process_manager.get_process(1).time_between_starvation_levels == 6000
+        assert process_manager.get_process(2).time_between_starvation_levels != 6000
+
+    def test_random_process_not_created_immediately_after_forced_creation(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=1,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[2000],
+            max_processes=42,
+        ))
+
+        process_manager.update(2000, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        process_manager.update(2500, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        process_manager.update(3500, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+
+    def test_priority_process_uses_priority_process_io_probability(self, ready_process_manager_custom_config, monkeypatch):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            priority_process_io_probability=1,
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_manager.update(10000, [])
+
+        process = process_manager.get_process(1)
+        process.use_cpu()
+        process.update(10000, [])
+        assert not process.is_waiting_for_io
+
+        process.update(11000, [])
+        assert process.is_waiting_for_io
+
+    def test_standard_process_uses_io_probability_not_priority_process_io_probability(self, ready_process_manager_custom_config, monkeypatch):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            priority_process_io_probability=1,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_manager.update(10000, [])
+
+        process = process_manager.get_process(1)
+        process.use_cpu()
+        process.update(10000, [])
+
+        process.update(11000, [])
+        assert not process.is_waiting_for_io
+
+    def test_priority_process_uses_priority_process_graceful_termination_probability(self, ready_process_manager_custom_config, monkeypatch):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            priority_process_graceful_termination_probability=1,
+            io_probability=0,
+            force_new_priority_process_at_times_ms=[10000],
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_manager.update(10000, [])
+
+        process = process_manager.get_process(1)
+        process.use_cpu()
+        process.update(10000, [])
+
+        process.update(11000, [])
+        assert process.has_ended_gracefully
+
+    def test_standard_process_uses_graceful_termination_probability_not_priority_process_graceful_termination_probability(self, ready_process_manager_custom_config, monkeypatch):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            priority_process_graceful_termination_probability=1,
+            io_probability=0,
+            force_new_standard_process_at_times_ms=[10000],
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_manager.update(10000, [])
+
+        process = process_manager.get_process(1)
+        process.use_cpu()
+        process.update(10000, [])
+
+        process.update(11000, [])
+        assert not process.has_ended_gracefully
+
+    def test_min_processes_created_when_below_minimum(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(0, 5)],
+        ))
+
+        time = 0
+        for _ in range(1000):
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 5
+
+    def test_min_processes_not_enforced_before_scheduled_time(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(10000, 5)],
+        ))
+
+        process_manager.update(9999, [])
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 0
+
+    def test_min_processes_steps_up_at_new_timestamp(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(0, 0), (10000, 5)],
+        ))
+
+        time = 0
+        for _ in range(100):
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 0
+
+        while time <= 10000:
+            process_manager.update(int(time), [])
+            time += ONE_SECOND / FRAMERATE
+
+        iterations = 0
+        while iterations < 100000:
+            iterations += 1
+            process_manager.update(int(time), [])
+            time += ONE_SECOND / FRAMERATE
+            alive_processes = [
+                slot.process for slot in process_manager.process_slots
+                if slot.process is not None
+            ]
+            still_moving = any(p.is_in_motion for p in alive_processes)
+            if len(alive_processes) == 5 and not still_moving:
+                break
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 5
+
+    def test_min_processes_does_nothing_when_above_minimum(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=10,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(0, 5)],
+        ))
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 10
+
+    def test_min_processes_respects_max_processes(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            max_processes=3,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(0, 10)],
+        ))
+
+        time = 0
+        for _ in range(1000):
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 3
+
+    def test_min_processes_created_one_per_settle(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(10000, 5)],
+        ))
+
+        process_manager.update(10000, [])
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 1
+
+        time = 10000
+        iterations = 0
+        while process_manager.any_process_in_motion and iterations < 100000:
+            iterations += 1
+            time += ONE_SECOND / FRAMERATE
+            process_manager.update(int(time), [])
+            alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+            assert len(alive_processes) == 1
+
+        assert iterations < 100000
+
+        process_manager.update(int(time + ONE_SECOND / FRAMERATE), [])
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 2
+
+    def test_min_processes_uses_random_process_type(self, ready_process_manager_custom_config, monkeypatch):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(0, 5)],
+        ))
+
+        time = 0
+        for _ in range(1000):
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+
+        for i in range(1, 6):
+            assert process_manager.get_process(i).type == ProcessType.STANDARD
+
+    def test_min_processes_handles_unsorted_input(self, ready_process_manager_custom_config):
+        process_manager, _ = ready_process_manager_custom_config(StageConfig(
+            num_processes_at_startup=0,
+            new_process_probability=0,
+            priority_process_probability=0,
+            graceful_termination_probability=0,
+            io_probability=0,
+            min_processes_at_times_ms=[(10000, 5), (0, 0)],
+        ))
+
+        time = 0
+        for _ in range(100):
+            process_manager.update(time, [])
+            time += ONE_SECOND / FRAMERATE
+
+        alive_processes = [slot.process for slot in process_manager.process_slots if slot.process is not None]
+        assert len(alive_processes) == 0
