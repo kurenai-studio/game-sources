@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pl">
+
+<head>
+
+  <title>Paweł Zbyszyński - strona domowa</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="css/style.css" />
+  <link rel="icon" type="image/png" href="images/ikonav2.png" />
+  <meta name="author" content="Paweł" />
+</head>
+
+<body>
+
+<div id="container">
+  <header id="header"><span>Paweł Zbyszyński  Strona Domowa</span></header>
+  <main id="main">
+    <article id="content">
+      <section id="akapit1">
+        <span id="naglowek">O mnie</span>
+        <p>
+          Cześć! Nazywam się Paweł Zbyszyński.Jestem studentem trzeciego roku studiów informatycznych w Olsztynie. Programista stawiający pierwsze kroki w tworzeniu gier webowych, zafascynowany czystym JavaScriptem (ES6+).
+        </p>
+        <span id="naglowek2">Co tu znajdziesz?</span>
+        <p>
+          Demo w Canvasie: Moja pierwsza gra 2D pisana w czystym JS. Wdrożyłem w niej klasyczną pętlę gry (requestAnimationFrame), sterowanie klawiaturą, detekcję kolizji AABB oraz prosty system punktów i przyspieszania rozgrywki
+        </p>
+      </section>
+
+      <section id="game-section">
+        <div style="text-align: center; width: 100%;">
+          <button id="startButton">Start Gry</button>
+          <canvas id="myCanvas"></canvas>
+          <p>Powyższa gra polega na omijaniu czerwonym blokiem spadających żółtych klocków za pomocą strzałek na klawiaturze, powodzenia!</p>
+        </div>
+      </section>
+    </article>
+
+    <aside id="sidemenu">
+
+      <div class="side-box">
+        <h3>O mnie w skrócie</h3>
+        <p>Status: Student UWM w Olsztynie</p>
+        <p>Technologie: HTML, CSS, JS</p>
+      </div>
+      <div class="side-box">
+        <h3>Kontakt:</h3>
+        <p>pzbyszynski1@gmail.com</p>
+      </div>
+      <div class="side-box">
+        <h3>Linki:</h3>
+        <ul>
+          <li><a target="_blank" href="https://github.com/pzbyszynski">GitHub</a></li>
+          <li><a target="_blank" href="https://unsplash.com/photos/a-street-light-sitting-on-the-side-of-a-cliff-ZnlTuVXn5h4">Link Do Tapety</a></li>
+        </ul>
+      </div>
+
+    </aside>
+  </main>
+  <footer id="footer">
+    <span>Wszelkie prawa zastrzeżone</span>
+  </footer>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
