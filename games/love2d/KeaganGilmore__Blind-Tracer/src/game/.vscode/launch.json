@@ -1,0 +1,45 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "lua-local",
+			"request": "launch",
+			"name": "Debug",
+			"program": {
+				"command": "love"
+			},
+			"args": [".", "debug"],
+			"internalConsoleOptions": "openOnSessionStart"
+		},
+		{
+			"type": "lua-local",
+			"request": "launch",
+			"name": "Release",
+			"program": {
+				"command": "love"
+			},
+			"args": ["."],
+			"internalConsoleOptions": "openOnSessionStart"
+		},
+		{
+			"type": "lua-local",
+			"request": "launch",
+			"name": "Profile",
+			"program": {
+				"command": "love"
+			},
+			"args": [".", "debug", "profile"],
+			"presentation": {
+				"hidden": true
+			},
+			"internalConsoleOptions": "openOnSessionStart"
+		}
+	],
+	"compounds": [
+		{
+			"name": "Live Profile",
+			"configurations": ["Profile"],
+			"preLaunchTask": "JPROF Listen"
+		}
+	]
+}
