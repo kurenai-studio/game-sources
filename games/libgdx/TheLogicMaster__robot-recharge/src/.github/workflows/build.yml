@@ -1,0 +1,231 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+name: Build Game
+
+jobs:
+  build:
+    name: Build Game
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get Version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: Download Linux JCEF
+        id: get_jcef_linux
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'https://github.com/jcefbuild/jcefbuild/releases/download/v1.0.10-84.3.8%2Bgc8a556f%2Bchromium-84.0.4147.105/linux64.zip'
+          target: .
+
+      - name: Download Windows JCEF
+        id: get_jcef_windows
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'https://github.com/jcefbuild/jcefbuild/releases/download/v1.0.10-84.3.8%2Bgc8a556f%2Bchromium-84.0.4147.105/win64.zip'
+          target: .
+
+      - name: Download Mac JCEF
+        id: get_jcef_mac
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'https://github.com/jcefbuild/jcefbuild/releases/download/v1.0.10-84.3.8%2Bgc8a556f%2Bchromium-84.0.4147.105/macosx64.zip'
+          target: .
+          
+      - name: Download Linux JRE
+        id: get_jre_linux
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'http://static.azul.com/zulu/bin/zulu11.29.3-ca-fx-jre11.0.2-linux_x64.tar.gz'
+          target: .
+
+      - name: Download Windows JRE
+        id: get_jre_windows
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'http://static.azul.com/zulu/bin/zulu11.29.3-ca-fx-jre11.0.2-win_x64.zip'
+          target: .
+          
+      - name: Download Mac JRE
+        id: get_jre_mac
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: 'https://download.java.net/java/GA/jdk15.0.1/51f4f36ad4ef43e39d0dfdbaf6549e32/9/GPL/openjdk-15.0.1_osx-x64_bin.tar.gz'
+          target: .
+
+      - name: Extract Linux JCEF
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: unzip -qq ${{ steps.get_jcef_linux.outputs.filename }} -d jcef_linux
+
+
+      - name: Extract Windows JCEF
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: unzip -qq ${{ steps.get_jcef_windows.outputs.filename }} -d jcef_windows
+          
+      - name: Extract Mac JCEF
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: unzip -qq ${{ steps.get_jcef_mac.outputs.filename }} -d jcef_mac
+
+      - name: Extract Linux JRE
+        run: |
+          mkdir ./jre_linux
+          tar xvzf ${{ steps.get_jre_linux.outputs.filename }} -C ./jre_linux --strip-components=1
+
+      - name: Extract Windows JRE
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: unzip -qq ${{ steps.get_jre_windows.outputs.filename }} -d jre_windows
+          
+      - name: Extract Mac JRE
+        run: |
+          mkdir ./jre_mac
+          tar xvzf ${{ steps.get_jre_mac.outputs.filename }} -C ./jre_mac --strip-components=2
+
+      - name: Move zip root directories
+        run: |
+          sudo mv ./jcef_linux/*/* ./jcef_linux
+          sudo mv ./jre_windows/*/* ./jre_windows
+          sudo mv ./jcef_windows/*/* ./jcef_windows
+          sudo mv ./jcef_mac/*/* ./jcef_mac
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+          
+      - name: Generate local.properties file
+        run: |
+          echo sdk.dir=$ANDROID_HOME >> ./local.properties
+          echo gameJoltKey=$GAME_JOLT_KEY >> ./local.properties
+          echo chaquopy.license=$CHAQUOPY_KEY >> ./local.properties
+          cat ./local.properties
+        env:
+          GAME_JOLT_KEY: ${{ secrets.GAME_JOLT_KEY }}
+          CHAQUOPY_KEY: ${{ secrets.CHAQUOPY_KEY }}
+          
+      - name: Package Linux release
+        run: ./gradlew packageLinuxGHActions
+
+      - name: Copy Linux native libraries
+        run: |
+          mkdir ./desktop/build/RobotRecharge/jcef
+          cp -r ./jcef_linux/bin/lib/linux64/* ./desktop/build/RobotRecharge/jcef
+          mv ./desktop/build/RobotRecharge .
+
+      - name: Zip Linux Release
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: zip -qq -r linux64-${{ steps.get_version.outputs.VERSION }}.zip ./RobotRecharge/
+
+      - name: Package Windows release
+        run: ./gradlew packageWindowsGHActions
+
+      - name: Copy Windows native libraries
+        run: |
+          rm -rf ./RobotRecharge
+          mkdir ./desktop/build/RobotRecharge/jcef
+          cp -r ./jcef_windows/bin/lib/win64/* ./desktop/build/RobotRecharge/jcef
+          mv ./desktop/build/RobotRecharge .
+
+      - name: Zip Windows Release
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: zip -qq -r win64-${{ steps.get_version.outputs.VERSION }}.zip ./RobotRecharge/
+          
+      - name: Package Mac release
+        run: ./gradlew packageMacGHActions
+
+      - name: Copy Mac native libraries
+        run: |
+          rm -rf ./RobotRecharge
+          sudo rm ./jcef_mac/bin/jcef_app.app/Contents/Info.plist
+          cp -r ./jcef_mac/bin/jcef_app.app/Contents/* ./desktop/build/RobotRecharge/RobotRecharge.app/Contents
+          mv ./desktop/build/RobotRecharge .
+
+      - name: Zip Mac Release
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: zip -qq -r mac64-${{ steps.get_version.outputs.VERSION }}.zip ./RobotRecharge/
+
+      - name: Create Release JAR
+        run: |
+          ./gradlew dist
+          mv ./desktop/build/libs/*.jar ./RobotRecharge-${{ steps.get_version.outputs.VERSION }}.jar
+
+      - name: Build Android Release
+        run: |
+          ./gradlew packageReleaseUniversalApk
+          ./gradlew bundleRelease
+          mv ./android/build/outputs/universal_apk/release/android-release-universal-unsigned.apk ./android-${{ steps.get_version.outputs.VERSION }}.apk
+
+      - name: Build GWT Release
+        run: ./gradlew -p html dist
+          
+      - name: Move GWT files
+        run: |
+          rm -rf ./RobotRecharge
+          mv ./html/build/dist ./RobotRecharge
+
+      - name: Deploy Demo 🚀
+        uses: JamesIves/github-pages-deploy-action@3.6.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: RobotRecharge # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branch
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+          
+      - name: Zip HTML Release
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: zip -qq -r html-${{ steps.get_version.outputs.VERSION }}.zip ./RobotRecharge/
+          
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          hub release edit -a ./RobotRecharge-${{ steps.get_version.outputs.VERSION }}.jar -m "" ${{ steps.get_version.outputs.VERSION }}
+          hub release edit -a ./linux64-${{ steps.get_version.outputs.VERSION }}.zip -m "" ${{ steps.get_version.outputs.VERSION }}
+          hub release edit -a ./win64-${{ steps.get_version.outputs.VERSION }}.zip -m "" ${{ steps.get_version.outputs.VERSION }}
+          hub release edit -a ./mac64-${{ steps.get_version.outputs.VERSION }}.zip -m "" ${{ steps.get_version.outputs.VERSION }}
+          hub release edit -a ./android-${{ steps.get_version.outputs.VERSION }}.apk -m "" ${{ steps.get_version.outputs.VERSION }}
+          hub release edit -a ./html-${{ steps.get_version.outputs.VERSION }}.zip -m "" ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Sign Android bundle
+        uses: r0adkll/sign-android-release@v1
+        id: sign_bundle
+        with:
+          releaseDirectory: ./android/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "29.0.2"
+
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.thelogicmaster.robot_recharge
+          releaseFiles: ${{steps.sign_bundle.outputs.signedReleaseFile}}
+          track: alpha
+          whatsNewDirectory: ./android/whatsnew

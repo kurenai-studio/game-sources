@@ -1,0 +1,184 @@
+buildscript {
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath 'org.gretty:gretty:3.0.2'
+	}
+}
+plugins {
+	id 'de.fuerstenau.buildconfig' version '1.1.8'
+}
+apply plugin: "gwt"
+apply plugin: "war"
+apply plugin: "org.gretty"
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+buildConfig {
+	version = project.version
+	clsName = 'BuildConfig'
+	packageName = 'com.thelogicmaster.robot_recharge'
+	buildConfigField 'String', 'GAME_JOLT_KEY', properties.getProperty('gameJoltKey')
+	buildConfigField 'boolean', 'DEBUG', properties.getProperty('debug') == null ? 'false' : properties.getProperty('debug')
+}
+
+gwt {
+	gwtVersion = "$gwtFrameworkVersion" // Should match the version used for building the GWT backend. See gradle.properties.
+	maxHeapSize = '1G' // Default 256m is not enough for the GWT compiler. GWT is HUNGRY.
+	minHeapSize = '1G'
+
+	src = files(file('src/main/java')) // Needs to be in front of "modules" below.
+	modules 'com.thelogicmaster.robot_recharge.GdxDefinition'
+	devModules 'com.thelogicmaster.robot_recharge.GdxDefinitionSuperdev'
+	project.webAppDirName = 'webapp'
+
+	compiler.strict = true
+	compiler.disableCastChecking = true
+	//// The next line can be useful to uncomment if you want output that hasn't been obfuscated.
+//	compiler.style = org.wisepersist.gradle.plugins.gwt.Style.DETAILED
+}
+
+configurations { lom }
+
+dependencies {
+	implementation fileTree(dir: 'libs', include: ['*.jar'])
+	implementation project(':core')
+
+	implementation "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+	//implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+	//implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+	implementation "com.rafaskoberg.gdx:typing-label:$typingLabelVersion:sources"
+	implementation "com.github.tommyettinger:regexodus:$regExodusVersion:sources"
+	implementation "com.crashinvaders.vfx:gdx-vfx-core:$gdxVfxCoreVersion:sources"
+	implementation "com.crashinvaders.vfx:gdx-vfx-gwt:$gdxVfxCoreVersion"
+	implementation "com.crashinvaders.vfx:gdx-vfx-gwt:$gdxVfxCoreVersion:sources"
+	implementation "com.github.raeleus.TenPatch:tenpatch:$tenPatchVersion:sources"
+	implementation "com.github.tommyettinger:formic:$formicVersion:sources"
+	implementation "com.crashinvaders.vfx:gdx-vfx-effects:$gdxVfxEffectsVersion:sources"
+	implementation "com.kotcrab.vis:vis-ui:$visUiVersion:sources"
+	implementation "com.github.tommyettinger:libgdx-utils:$utilsVersion:sources"
+	implementation "com.github.crykn.guacamole:core:$guacamoleVersion:sources"
+	implementation "com.github.crykn.guacamole:gdx:$guacamoleVersion:sources"
+	implementation "com.github.crykn.guacamole:gdx-gwt:$guacamoleVersion"
+	implementation "com.github.crykn.guacamole:gdx-gwt:$guacamoleVersion:sources"
+	implementation "com.github.intrigus.gdx-freetype-gwt:gdx-freetype-gwt:1.9.10.1"
+	implementation "com.github.intrigus.gdx-freetype-gwt:gdx-freetype-gwt:1.9.10.1:sources"
+	implementation "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core:$gamesvcsVersion:sources"
+	implementation "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core-gamejolt:$gamesvcsVersion"
+	implementation "de.golfgl.gdxgamesvcs:gdx-gamesvcs-core-gamejolt:$gamesvcsVersion:sources"
+	lom "org.projectlombok:lombok:1.18.16"
+	implementation configurations.lom.dependencies
+	annotationProcessor "org.projectlombok:lombok:1.18.16"
+}
+
+import org.akhikhl.gretty.AppBeforeIntegrationTestTask
+import org.wisepersist.gradle.plugins.gwt.GwtSuperDev
+
+gretty.httpPort = 8080
+gretty.resourceBase = project.buildDir.path + "/gwt/draftOut"
+gretty.contextPath = "/"
+gretty.portPropertiesFileName = "TEMP_PORTS.properties"
+
+task startHttpServer (dependsOn: [draftCompileGwt]) {
+	doFirst {
+		copy {
+			from "webapp"
+			into gretty.resourceBase
+		}
+		copy {
+			from "war"
+			into gretty.resourceBase
+		}
+	}
+}
+task beforeRun(type: AppBeforeIntegrationTestTask, dependsOn: startHttpServer) {
+    // The next line allows ports to be reused instead of
+    // needing a process to be manually terminated.
+	file("build/TEMP_PORTS.properties").delete()
+	// Somewhat of a hack; uses Gretty's support for wrapping a task in
+	// a start and then stop of a Jetty server that serves files while
+	// also running the SuperDev code server.
+	integrationTestTask 'superDev'
+	
+	interactive false
+}
+
+task superDev(type: GwtSuperDev) {
+	doFirst {
+		gwt.modules = gwt.devModules
+		copy {
+			from "../assets/blockly"
+			into "build/gwt/draftOut/blockly"
+		}
+	}
+}
+task dist(dependsOn: [clean, compileGwt]) {
+    doLast {
+		file("build/dist").mkdirs()
+		copy {
+			from "build/gwt/out"
+			into "build/dist"
+		}
+		copy {
+			from "webapp"
+			into "build/dist"
+			}
+		copy {
+			from "war"
+			into "build/dist"
+		}
+		copy {
+			from "../assets/blockly"
+			into "build/dist/blockly"
+		}
+	}
+}
+
+task addSource {
+	doLast {
+		sourceSets.main.compileClasspath += files(project(':core').sourceSets.main.allJava.srcDirs)
+		
+	}
+}
+
+task distZip(type: Zip, dependsOn: dist){
+	//// The next lines copy the dist but remove the recompile button (circling arrow) from the HTML page.
+	from('build/dist/') {
+		exclude '**/*.html'
+	}
+	from('build/dist/') {
+		include '**/*.html'
+		filter { String line -> line.replaceAll('<a class="superdev" .+', '') }
+	}
+	//// The next line attempts to name the zip with a unique timestamp, removing spaces and ':' for compatibility.
+	archiveName "dist-${(new Date().toString()).replace(' ', '-').replace(':', '-')}.zip"
+	//// The result will be in html/build/ with a name containing the above probably-unique timestamp.
+	destinationDir(file("build"))
+}
+
+draftCompileGwt {
+	doFirst {
+		jvmArgs "-javaagent:${configurations.lom.asPath}=ECJ"
+	}
+}
+
+compileGwt {
+	doFirst {
+		jvmArgs "-javaagent:${configurations.lom.asPath}=ECJ"
+	}
+}
+
+superDev {
+	doFirst {
+		jvmArgs "-javaagent:${configurations.lom.asPath}=ECJ"
+	}
+}
+
+tasks.compileGwt.dependsOn(addSource)
+tasks.draftCompileGwt.dependsOn(addSource)
+
+sourceCompatibility = 8.0
+sourceSets.main.java.srcDirs = [ "src/main/java/" ]
+
+eclipse.project.name = appName + "-html"

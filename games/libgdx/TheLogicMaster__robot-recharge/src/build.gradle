@@ -1,0 +1,60 @@
+buildscript {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		google()
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+		jcenter()
+		maven { url "https://chaquo.com/maven" }
+	}
+	dependencies {
+		classpath "org.wisepersist:gwt-gradle-plugin:$gwtPluginVersion"
+		classpath "com.android.tools.build:gradle:$androidPluginVersion"
+		classpath "com.mobidevelop.robovm:robovm-gradle-plugin:$robovmVersion"
+		classpath 'io.github.fvarrui:javapackager:1.5.1'
+		classpath 'com.chaquo.python:gradle:9.1.0'
+	}
+}
+
+allprojects {
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+}
+
+configure(subprojects - project(':android')) {
+	apply plugin: 'java-library'
+	sourceCompatibility = 8.0
+	compileJava {
+		options.incremental = true
+	}
+}
+
+subprojects {
+	version = '0.1'
+	ext.appName = 'robot-recharge'
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+		maven { url 'https://jitpack.io' }
+		jcenter()
+	}
+}
+
+eclipse.project.name = 'robot-recharge' + '-parent'
+
+task buildBlockly(type: Exec) {
+	workingDir 'blockly'
+	commandLine 'npm', 'run', 'build'
+}
+
+task updateBlockly(type: Copy) {
+	dependsOn buildBlockly
+	from ('blockly') {
+		include '*_compressed.js'
+		exclude 'dart_compressed.js'
+	}
+	//from "blockly/javascript_compressed.js", "blockly/php_compressed.js", "blockly/lua_compressed.js", "blockly/python_compressed.js", "blockly/blockly_compressed.js", "blockly/blocks_compressed.js"
+	into "assets/blockly"
+	rename '(.+)_compressed\\.js', '$1.js'
+}
