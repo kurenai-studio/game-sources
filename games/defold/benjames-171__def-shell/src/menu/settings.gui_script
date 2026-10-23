@@ -1,0 +1,103 @@
+local data = require "main.data"
+local ui = require "main.ui"
+
+local MENU_LEN = 4
+
+local function display(self)
+	local text
+
+	data.save.sfx = data.clamp(data.save.sfx, 0, 10)
+	data.save.music = data.clamp(data.save.music, 0, 10)
+
+	if data.save.sfx > 0 then text = data.save.sfx
+	else text = "OFF"
+	end
+	gui.set_text(gui.get_node("sfx"), text)
+
+	if data.save.music > 0 then text = data.save.music
+	else text = "OFF"
+	end
+	gui.set_text(gui.get_node("music"), text)
+end
+
+function init(self)
+	self.cursor = 1
+	self.item = {}
+	for n = 1, MENU_LEN do
+		self.item[n] = gui.get_position(gui.get_node(n))
+	end
+	self.node = gui.get_node("container")
+	display(self)
+	ui.init(self.node)
+end
+
+function update(self, dt)
+	if data.state == data.STATE_SETTINGS then
+		local pos = vmath.vector3(self.item[self.cursor].x - 8, self.item[self.cursor].y, 0)
+		gui.set_position(gui.get_node("cursor"), pos)
+		local text
+		if data.save.fullscreen then text = "FULLSCREEN"
+		else text = "WINDOWED"
+		end
+		gui.set_text(gui.get_node("fullscreen"), text)
+	end
+end
+
+local function close(self)
+	ui.hide(self.node)
+	msg.post("#menu", "show")
+	data.sound("menu-back")
+	data.savegamefile()
+end
+
+local function apply_input(self, action_id, action)
+	if action_id == hash("up") and action.pressed then
+		self.cursor = data.wrap(self.cursor - 1, 1, MENU_LEN)
+		data.sound("menu-move")
+	elseif action_id == hash("down") and action.pressed then
+		self.cursor = data.wrap(self.cursor + 1, 1, MENU_LEN)
+		data.sound("menu-move")
+	elseif action_id == hash("left") and (action.pressed or action.repeated) then
+		if self.cursor == 1 then
+			data.save.sfx = data.save.sfx - 1
+		elseif self.cursor == 2 then
+			data.save.music = data.save.music - 1
+			data.setmusicvol()
+		else
+			return
+		end
+		data.sound("menu-move")
+		display(self)
+	elseif action_id == hash("right") and (action.pressed or action.repeated) then
+		if self.cursor == 1 then
+			data.save.sfx = data.save.sfx + 1
+		elseif self.cursor == 2 then
+			data.save.music = data.save.music + 1
+			data.setmusicvol()
+		else
+			return
+		end
+		data.sound("menu-move")
+		display(self)
+	elseif action_id == hash("action") and action.pressed then
+		if self.cursor == 3 then
+			data.fullscreen()
+			data.sound("menu-select")
+		elseif self.cursor == MENU_LEN then
+			close(self)
+		end
+	elseif action_id == hash("exit") and action.pressed then
+		close(self)
+	end
+end
+
+function on_message(self, message_id, message)
+	if message_id == hash("show") then
+		ui.show(self.node)
+		self.cursor = MENU_LEN
+		display(self)
+		data.state = data.STATE_SETTINGS
+	elseif message_id == hash("input") then
+		apply_input(self, message.action_id, message.action)
+	end
+end
