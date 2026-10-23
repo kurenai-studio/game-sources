@@ -1,0 +1,44 @@
+[gd_scene load_steps=4 format=3 uid="uid://cx6hysyop6so4"]
+
+[ext_resource type="Script" path="res://Scripts/Buttons/play_game.gd" id="1_5r4rp"]
+[ext_resource type="Script" path="res://Scripts/Buttons/settings.gd" id="2_lsyf1"]
+[ext_resource type="Script" path="res://Scripts/Buttons/quit_game.gd" id="3_h43kg"]
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Play Game" type="Button" parent="."]
+layout_mode = 0
+offset_left = 527.0
+offset_top = 106.0
+offset_right = 658.0
+offset_bottom = 159.0
+text = "Play"
+script = ExtResource("1_5r4rp")
+
+[node name="Settings" type="Button" parent="."]
+layout_mode = 0
+offset_left = 527.0
+offset_top = 160.0
+offset_right = 658.0
+offset_bottom = 213.0
+text = "Settings"
+script = ExtResource("2_lsyf1")
+
+[node name="Quit" type="Button" parent="."]
+layout_mode = 0
+offset_left = 527.0
+offset_top = 214.0
+offset_right = 658.0
+offset_bottom = 267.0
+text = "Quit"
+script = ExtResource("3_h43kg")
+
+[connection signal="button_down" from="Play Game" to="Play Game" method="_on_button_down"]
+[connection signal="button_down" from="Settings" to="Settings" method="_on_button_down"]
+[connection signal="button_down" from="Quit" to="Quit" method="_on_button_down"]

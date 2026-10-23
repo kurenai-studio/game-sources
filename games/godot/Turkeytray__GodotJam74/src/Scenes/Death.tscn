@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3 uid="uid://b17omraotvjgc"]
+
+[ext_resource type="Script" path="res://Scripts/Buttons/quit.gd" id="1_hfvhr"]
+[ext_resource type="Script" path="res://Scripts/Buttons/button.gd" id="1_hr5yt"]
+
+[node name="Death" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 0
+offset_top = 182.0
+offset_right = 1281.0
+offset_bottom = 299.0
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+text = "[center]You Died"
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 328.0
+offset_top = 356.0
+offset_right = 536.0
+offset_bottom = 430.0
+theme_override_font_sizes/font_size = 35
+text = "Restart"
+script = ExtResource("1_hr5yt")
+
+[node name="Button2" type="Button" parent="."]
+layout_mode = 0
+offset_left = 715.0
+offset_top = 356.0
+offset_right = 923.0
+offset_bottom = 430.0
+theme_override_font_sizes/font_size = 35
+text = "Quit"
+script = ExtResource("1_hfvhr")
+
+[connection signal="button_down" from="Button" to="Button" method="_on_button_down"]
+[connection signal="button_down" from="Button2" to="Button2" method="_on_button_down"]

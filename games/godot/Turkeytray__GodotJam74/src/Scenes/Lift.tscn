@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3 uid="uid://bbbpepggrsnxv"]
+
+[ext_resource type="Script" path="res://Scripts/lift.gd" id="1_ociak"]
+[ext_resource type="Texture2D" uid="uid://b71kgm50lfrti" path="res://Textures/lift.png" id="2_4mv3k"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2812v"]
+size = Vector2(64, 64)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_88lpn"]
+radius = 64.0
+
+[node name="Lift" type="AnimatableBody2D"]
+scale = Vector2(2, 2)
+script = ExtResource("1_ociak")
+
+[node name="Hitbox" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_2812v")
+
+[node name="Texture" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_4mv3k")
+
+[node name="Interaction" type="Area2D" parent="."]
+
+[node name="InteractionBox" type="CollisionShape2D" parent="Interaction"]
+shape = SubResource("CircleShape2D_88lpn")
+
+[connection signal="body_entered" from="Interaction" to="." method="_on_player_entered"]
+[connection signal="body_exited" from="Interaction" to="." method="_on_player_exited"]
