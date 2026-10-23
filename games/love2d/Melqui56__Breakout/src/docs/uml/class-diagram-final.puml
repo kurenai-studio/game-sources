@@ -1,0 +1,41 @@
+@startuml class-diagram-final
+' Diagrama UML final del Breakout (ACA 2).
+' Verde = nuevo respecto al ACA 1.
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor White
+
+class Brick
+class StrongBrick #LightGreen
+class Ball
+class Paddle
+class Level
+class UI
+class Game
+
+class StateMachine #LightGreen
+class "states/*" as States #LightGreen
+class collision #LightGreen <<module>>
+class effects #LightGreen
+class PowerUp #LightGreen
+
+' Herencia
+Brick <|-- StrongBrick
+
+' Composicion / agregacion
+Game *-- Ball
+Game *-- Paddle
+Game *-- Level
+Game o-- UI
+Level *-- Brick
+
+' Asociacion
+Ball ..> Paddle
+Ball ..> Brick
+
+' Dependencias nuevas del ACA 2
+Game ..> collision
+Game ..> effects
+Game ..> PowerUp
+StateMachine o-- States
+States ..> Game
+@enduml

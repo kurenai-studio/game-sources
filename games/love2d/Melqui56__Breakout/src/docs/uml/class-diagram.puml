@@ -1,0 +1,91 @@
+@startuml class-diagram
+' Breakout - Class diagram (ACA 1)
+' Render:  java -jar plantuml.jar -Playout=smetana docs/uml/class-diagram.puml
+' Online:  https://www.planttext.com
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+top to bottom direction
+
+class Game {
+  + state : string
+  + score : number
+  + lives : number
+  + levelNum : number
+  --
+  + load()
+  + update(dt)
+  + draw()
+  + handleInput(key)
+  + releaseInput(key)
+}
+
+class Ball {
+  + x : number
+  + y : number
+  + radius : number
+  + speedX : number
+  + speedY : number
+  --
+  + update(dt)
+  + draw()
+  + bounce()
+  + reset(x, y)
+}
+
+class Paddle {
+  + x : number
+  + y : number
+  + width : number
+  + speed : number
+  --
+  + update(dt, input)
+  + moveLeft(dt)
+  + moveRight(dt)
+  + draw()
+}
+
+class Level {
+  + bricks : Brick[]
+  --
+  + load(levelData)
+  + update(dt)
+  + draw()
+  + isComplete() : boolean
+}
+
+class Brick {
+  + x : number
+  + y : number
+  + width : number
+  + height : number
+  + hp : number
+  --
+  + update(dt)
+  + draw()
+  + takeHit()
+}
+
+class UI {
+  + score : number
+  + lives : number
+  --
+  + setHud(score, lives, level)
+  + setMessage(text)
+  + draw()
+}
+
+' Composition: Game owns these entities; they do not outlive it
+Game "1" *-- "1" Paddle  : owns >
+Game "1" *-- "1" Ball    : owns >
+Game "1" *-- "1" Level   : owns >
+Level "1" *-- "0..*" Brick : contains >
+
+' Aggregation: the HUD can be swapped or shared
+Game "1" o-- "1" UI : displays >
+
+' Association (dependency): the ball queries the surfaces it may hit
+Ball ..> Paddle : collides with
+Ball ..> Brick  : collides with
+@enduml

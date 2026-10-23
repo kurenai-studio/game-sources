@@ -1,0 +1,32 @@
+@startuml state-machine
+' Breakout - Finite state machine, owned by Game (ACA 1)
+' Render:  java -jar plantuml.jar -Playout=smetana docs/uml/state-machine.puml
+
+skinparam shadowing false
+skinparam state {
+  BackgroundColor White
+  BorderColor Black
+}
+
+state "Title" as Title
+state "Play" as Play
+state "Pause" as Pause
+state "GameOver" as GameOver
+state ballLost <<choice>>
+
+[*]      --> Title
+Title    --> Play     : Enter
+Play     --> Pause    : P
+Pause    --> Play     : P
+Play     --> Play     : Level complete\n/ load next level
+Play     --> ballLost : Ball lost
+ballLost --> Play     : [lives > 0]\n/ reset ball
+ballLost --> GameOver : [lives == 0]
+GameOver --> Title    : Enter
+
+note right of Pause
+  While paused, update(dt)
+  is skipped: the run resumes
+  from the exact same point.
+end note
+@enduml

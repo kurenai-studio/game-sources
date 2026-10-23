@@ -1,0 +1,28 @@
+# Auto-detect text files and normalize line endings.
+* text=auto
+
+# Lua source — always LF (LÖVE expects consistent line endings).
+*.lua text eol=lf
+
+# Documentation and config — LF.
+*.md text eol=lf
+*.txt text eol=lf
+*.gitattributes text eol=lf
+*.gitignore text eol=lf
+LICENSE text eol=lf
+
+# Shell / PowerShell helpers are kept in the repo but excluded from the
+# repository language statistics (Linguist).
+scripts/*.sh linguist-vendored
+scripts/*.ps1 linguist-vendored
+
+# Binary / build artifacts (never treat as text).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.love binary
+*.AppImage binary
+*.exe binary
+*.tar.gz binary
