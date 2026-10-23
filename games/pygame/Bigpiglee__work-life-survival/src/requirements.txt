@@ -1,0 +1,7 @@
+# 本游戏只依赖 pygame API，不需要任何图片、音频或额外第三方库。
+#
+# Python 3.14 目前暂时没有官方 pygame 的预编译轮子，
+# 因此 3.14+ 使用 API 完全兼容、导入名同样为 pygame 的 pygame-ce。
+# 两个包不会同时安装，代码中统一写 "import pygame"。
+pygame-ce>=2.5.8; python_version >= "3.14"
+pygame>=2.6.1; python_version < "3.14"
