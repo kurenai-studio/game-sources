@@ -1,0 +1,154 @@
+local world = require("game.world")
+local color = require("druid.color")
+local druid = require("druid.druid")
+local levels = require("game.levels")
+local events = require("event.events")
+
+local level_header = require("widget.level_header.level_header")
+local star_counter = require("widget.star_counter.star_counter")
+local slide_counter = require("widget.slide_counter.slide_counter")
+local text_level_hint = require("widget.text_level_hint.text_level_hint")
+
+---@class script.game_gui
+---@field druid druid.instance
+---@field level_header widget.level_header
+---@field star_counter widget.star_counter
+---@field text_level_hint widget.text_level_hint
+---@field button_menu druid.button
+---@field button_restart druid.button
+---@field button_level_prev druid.button
+---@field button_level_next druid.button
+---@field slide_counter widget.slide_counter
+
+---@param self script.game_gui
+local function on_menu(self)
+	events.trigger("game_gui.on_menu")
+end
+
+
+---@param self script.game_gui
+local function on_restart(self)
+	events.trigger("game_gui.on_restart")
+end
+
+
+---@param self script.game_gui
+local function on_level_prev(self)
+	if levels.is_prev_level_available() then
+		events.trigger("game_gui.on_level_prev")
+	end
+end
+
+
+---@param self script.game_gui
+local function on_level_next(self)
+	if levels.is_next_level_available() then
+		events.trigger("game_gui.on_level_next")
+	end
+end
+
+
+---@param self script.game_gui
+---@param color_id color
+local function set_color(self, color_id)
+	self.level_header:set_color(color_id)
+	self.star_counter:set_color(color_id)
+	color.set_color(gui.get_node("icon_restart"), color_id)
+	color.set_color(gui.get_node("icon_menu"), color_id)
+end
+
+
+---@param self script.game_gui
+---@param level_data game.const.level
+local function on_level_loaded(self, level_data)
+	self.slide_counter:set(0)
+	self.level_header:set_level_status(level_data.index, 5)
+	self.level_header:set_text(level_data.text)
+	self.level_header:set_enabled_change_buttons(levels.is_prev_level_available(), levels.is_next_level_available())
+	self.text_level_hint:set_text(level_data.text_hint)
+
+	self.star_counter:set_stars(levels.get_stars_count(level_data.level_id))
+
+	set_color(self, level_data.color)
+end
+
+
+---@param self script.game_gui
+local function on_swipe(self, direction)
+	world.field_movable:move_to_direction(direction)
+end
+
+
+---@param self script.game_gui
+---@param event event.game.on_star_collected
+local function on_star_collected(self, event)
+	self.star_counter:set_stars(event.stars_count)
+end
+
+
+---@param self script.game_gui
+local function on_make_turn(self)
+	self.slide_counter:add()
+end
+
+
+---@param self script.game_gui
+function init(self)
+	self.druid = druid.new(self)
+	self.druid:new_swipe("root", on_swipe)
+
+	self.level_header = self.druid:new_widget(level_header, "level_header")
+	self.text_level_hint = self.druid:new_widget(text_level_hint, "text_level_hint")
+
+	self.level_header:set_text("Big Bang Happened")
+	self.level_header:set_level_status(1, 5)
+	self.level_header.on_level_prev:subscribe(on_level_prev, self)
+	self.level_header.on_level_next:subscribe(on_level_next, self)
+
+	self.star_counter = self.druid:new_widget(star_counter, "star_counter")
+	self.star_counter:set_stars(0)
+
+	self.slide_counter = self.druid:new_widget(slide_counter, "slide_counter")
+	self.slide_counter:set(0)
+
+	self.button_menu = self.druid:new_button("button_menu", on_menu)
+	self.button_restart = self.druid:new_button("button_restart", on_restart)
+	self.button_restart:set_key_trigger("key_r")
+
+	events.subscribe("game_manager.level_loaded", on_level_loaded, self)
+	events.subscribe("game.star_collected", on_star_collected, self)
+	events.subscribe("game.make_turn", on_make_turn, self)
+end
+
+
+---@param self script.game_gui
+function final(self)
+	self.druid:final()
+	events.unsubscribe("game_manager.level_loaded", on_level_loaded, self)
+	events.unsubscribe("game.star_collected", on_star_collected, self)
+	events.unsubscribe("game.make_turn", on_make_turn, self)
+end
+
+
+---@param self script.game_gui
+---@param dt number
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+
+---@param self script.game_gui
+---@param message_id hash
+---@param message any
+---@param sender any
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+end
+
+
+---@param self script.game_gui
+---@param action_id hash
+---@param action table
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end

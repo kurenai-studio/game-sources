@@ -1,0 +1,47 @@
+-- Main entry point for the game
+
+local decore = require("decore.decore")
+local systems = require("system.systems")
+local entities = require("entity.entities")
+local saver = require("saver.saver")
+local world = require("game.world")
+
+---@class script.game
+---@field world world
+
+
+---@param self script.game
+function init(self)
+	self.world = decore.new_world(systems.get_systems())
+	world.set_world(self.world)
+
+	decore.register_entities("game", entities.get_entities())
+
+	if sys.get_engine_info().is_debug then
+		self.world:addEntity(decore.create_prefab("debug_panel"))
+	end
+
+	self.world.game_manager:create_menu_gui()
+end
+
+
+---@param self script.game
+function final(self)
+	self.world:clearEntities()
+	self.world:clearSystems()
+end
+
+
+---@param self script.game
+---@param dt number
+function update(self, dt)
+	self.world:update(dt)
+end
+
+
+---@param self script.game
+---@param action_id hash
+---@param action table
+function on_input(self, action_id, action)
+	return self.world.input:on_input(action_id, action)
+end

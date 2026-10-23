@@ -1,0 +1,163 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: 45.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 450.0
+    y: 60.0
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_TEXT
+  text: "Big Bang"
+  font: "text"
+  id: "text"
+  parent: "root"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    y: -65.0
+  }
+  type: TYPE_TEMPLATE
+  id: "fill_dots"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/fill_dots/fill_dots.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "fill_dots/root"
+  parent: "fill_dots"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "fill_dots/fill_dot"
+  parent: "fill_dots/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "fill_dots/fill_dot/root"
+  parent: "fill_dots/fill_dot"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "fill_dots/fill_dot/dot"
+  parent: "fill_dots/fill_dot/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -400.0
+    y: 50.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "button_level_prev"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.4
+    y: 0.4
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_select"
+  id: "icon_level_prev"
+  parent: "button_level_prev"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 400.0
+    y: 50.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "button_level_next"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  rotation {
+    z: 180.0
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_select"
+  id: "icon_level_next"
+  parent: "button_level_next"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

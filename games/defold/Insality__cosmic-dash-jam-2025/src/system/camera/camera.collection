@@ -1,0 +1,58 @@
+name: "camera"
+instances {
+  id: "background"
+  prototype: "/entity/background/background.go"
+  position {
+    z: -100.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "camera"
+  children: "background"
+  children: "camera_group"
+  data: "components {\n"
+  "  id: \"camera\"\n"
+  "  component: \"/system/camera/camera.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "camera_group"
+  children: "shake"
+  data: ""
+}
+embedded_instances {
+  id: "shake"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.01\\n"
+  "far_z: 1000.0\\n"
+  "orthographic_projection: 1\\n"
+  "orthographic_zoom: 0.5\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"screen_overlay\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"empty\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 1024.0\\n"
+  "  y: 1024.0\\n"
+  "}\\n"
+  "size_mode: SIZE_MODE_MANUAL\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/system/camera/screen_overlay.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: -0.1\n"
+  "  }\n"
+  "}\n"
+  ""
+}

@@ -1,0 +1,30 @@
+name: "game"
+instances {
+  id: "sound"
+  prototype: "/assets/sounds/sounds.go"
+}
+instances {
+  id: "entities"
+  prototype: "/entity/entities.go"
+}
+collection_instances {
+  id: "camera"
+  collection: "/system/camera/camera.collection"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "game"
+  data: "components {\n"
+  "  id: \"game\"\n"
+  "  component: \"/game/game.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "gui"
+  data: "components {\n"
+  "  id: \"game_gui\"\n"
+  "  component: \"/entity/game_gui/game_gui.gui\"\n"
+  "}\n"
+  ""
+}

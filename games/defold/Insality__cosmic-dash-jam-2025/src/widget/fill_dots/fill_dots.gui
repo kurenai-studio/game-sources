@@ -1,0 +1,48 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 440.0
+    y: 64.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  slice9 {
+    z: 20.0
+  }
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "fill_dot"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/fill_dots/fill_dot.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "fill_dot/root"
+  parent: "fill_dot"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "fill_dot/dot"
+  parent: "fill_dot/root"
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

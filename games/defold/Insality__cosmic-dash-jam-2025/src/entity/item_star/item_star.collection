@@ -1,0 +1,50 @@
+name: "player"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  children: "shadow"
+  data: "components {\n"
+  "  id: \"item_star\"\n"
+  "  component: \"/entity/item_star/item_star.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "body"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"item_star_icon\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 40.0
+    z: 0.1
+  }
+}
+embedded_instances {
+  id: "shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"item_star_shadow\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 114.0\\n"
+  "  y: 118.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}

@@ -1,0 +1,48 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 64.0
+    y: 64.0
+  }
+  color {
+    x: 0.514
+    y: 0.631
+    z: 0.651
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/ui_circle_64"
+  id: "dot"
+  parent: "root"
+  inherit_alpha: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

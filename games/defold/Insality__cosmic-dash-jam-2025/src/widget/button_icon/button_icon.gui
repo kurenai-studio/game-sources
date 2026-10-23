@@ -1,0 +1,80 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 128.0
+    y: 128.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 128.0
+    y: 128.0
+  }
+  color {
+    x: 0.914
+    y: 0.992
+  }
+  type: TYPE_BOX
+  texture: "gui/ui_circle_64"
+  id: "button"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+}
+nodes {
+  size {
+    x: 128.0
+    y: 128.0
+  }
+  color {
+    x: 0.098
+    y: 0.635
+    z: 0.969
+  }
+  type: TYPE_BOX
+  texture: "gui/ui_circle_64_10_width"
+  id: "outline"
+  parent: "button"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+}
+nodes {
+  position {
+    x: 1.0
+  }
+  color {
+    x: 0.098
+    y: 0.635
+    z: 0.969
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_chat"
+  id: "icon"
+  parent: "button"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

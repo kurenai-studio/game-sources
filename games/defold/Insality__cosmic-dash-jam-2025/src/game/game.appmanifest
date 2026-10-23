@@ -1,0 +1,109 @@
+platforms:
+  armv7-ios:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      frameworks: []
+      linkFlags: []
+  arm64-ios:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      frameworks: []
+      linkFlags: []
+  x86_64-ios:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      frameworks: []
+      linkFlags: []
+  armv7-android:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeJars: []
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+      jetifier: true
+  arm64-android:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeJars: []
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+      jetifier: true
+  arm64-osx:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, graphics_vulkan, platform_vulkan, MoltenVK, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, GraphicsAdapterVulkan, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [GraphicsAdapterOpenGL, AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, graphics, platform, decoder_opus, opus]
+      frameworks: [OpenGL]
+      linkFlags: []
+  x86_64-osx:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, graphics_vulkan, platform_vulkan, MoltenVK, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, GraphicsAdapterVulkan, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [GraphicsAdapterOpenGL, AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, graphics, platform, decoder_opus, opus]
+      frameworks: [OpenGL]
+      linkFlags: []
+  x86_64-linux:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+  arm64-linux:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+  x86-win32:
+    context:
+      excludeLibs: [libbox2d, libscript_box2d, libgamesys_rig, librig, libliveupdate, libphysics, libLinearMath, libBulletDynamics, libBulletCollision, libbox2d_defold, libscript_box2d_defold, libgamesys_model, librecord, vpx, libdecoder_ogg, libdecoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [libgamesys_rig_null.lib, librig_null.lib, libliveupdate_null.lib, libphysics_null.lib, libgamesys_model_null.lib, librecord_null.lib, libdecoder_opus.lib, libopus.lib]
+      linkFlags: []
+  x86_64-win32:
+    context:
+      excludeLibs: [libbox2d, libscript_box2d, libgamesys_rig, librig, libliveupdate, libphysics, libLinearMath, libBulletDynamics, libBulletCollision, libbox2d_defold, libscript_box2d_defold, libgamesys_model, librecord, vpx, libdecoder_ogg, libdecoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [libgamesys_rig_null.lib, librig_null.lib, libliveupdate_null.lib, libphysics_null.lib, libgamesys_model_null.lib, librecord_null.lib, libdecoder_opus.lib, libopus.lib]
+      linkFlags: []
+  js-web:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeJsLibs: []
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+  wasm-web:
+    context:
+      excludeLibs: [box2d, script_box2d, gamesys_rig, rig, liveupdate, physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, record, vpx, decoder_ogg, decoder_wav]
+      excludeJsLibs: []
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [gamesys_rig_null, rig_null, liveupdate_null, physics_null, gamesys_model_null, record_null, decoder_opus, opus]
+      linkFlags: []
+  wasm_pthread-web:
+    context:
+      excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, record, vpx, liveupdate, decoder_ogg, decoder_wav]
+      excludeSymbols: [ScriptBox2DExt, ScriptModelExt, AudioDecoderStbVorbis, AudioDecoderTremolo, ResourceTypeOgg, AudioDecoderWav, ResourceTypeWav]
+      symbols: [AudioDecoderOpus, ResourceTypeOpus]
+      libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, record_null, liveupdate_null, decoder_opus, opus]
