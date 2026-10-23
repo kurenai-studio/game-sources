@@ -1,0 +1,22 @@
+{
+  "name": "nebula-catcher-web-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A small browser canvas game deployable to GitHub Pages and Cloudflare Pages.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "lint": "node scripts/lint.mjs",
+    "test": "vitest run",
+    "check": "npm run lint && npm test && npm run build"
+  },
+  "keywords": ["game", "canvas", "vite", "cloudflare-pages", "github-pages"],
+  "author": "GitHub-GPT Developer",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

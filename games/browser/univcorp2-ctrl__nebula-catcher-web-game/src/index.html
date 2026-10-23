@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Nebula Catcher - 星を集めて隕石を避けるミニゲーム" />
+    <meta name="theme-color" content="#0b1026" />
+    <title>Nebula Catcher</title>
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Nebula Catcher game">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Mini Canvas Game</p>
+          <h1>Nebula Catcher</h1>
+          <p class="lead">左右に動いて星を集め、落ちてくる隕石を避けよう。どこまでスコアを伸ばせるか挑戦。</p>
+        </div>
+        <div class="score-card" aria-live="polite"><span>High Score</span><strong id="high-score">0</strong></div>
+      </section>
+      <section class="game-panel">
+        <div class="hud" aria-label="game status">
+          <div><span>Score</span><strong id="score">0</strong></div>
+          <div><span>Lives</span><strong id="lives">3</strong></div>
+          <div><span>Time</span><strong id="time">0.0s</strong></div>
+        </div>
+        <canvas id="game" width="800" height="520" role="img" aria-label="Nebula Catcher gameplay area"></canvas>
+        <div class="controls"><button id="start-button" type="button">Start / Restart</button><p>操作: ← → / A D / 画面タップ・ドラッグ</p></div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
