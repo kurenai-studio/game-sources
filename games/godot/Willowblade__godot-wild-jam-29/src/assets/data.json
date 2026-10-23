@@ -1,0 +1,1346 @@
+{
+    "upgrades": {
+        "grip_lessons": {
+            "target": "player",
+            "description": "With an improved grip technique, you feel more powerful! You can now also throw enemies!",
+            "effects": {
+                "strength": 0.2,
+                "moves": ["throw"]
+            }
+        },
+        "cold_showers": {
+            "target": "player",
+            "description": "Nothing as revitalizing as a cold shower! You feel invigorated! Your health and stamina have improved greatly.",
+            "effects": {
+                "max_health": 15,
+                "max_stamina": 10
+            }
+        },
+        "shaman_blessing": {
+            "target": "player",
+            "description": "The blessing of the shaman runs through your body, and in a flash of insight you learn the sacred Heavenly Slam technique.",
+            "effects": {
+                "moves": ["slam"]
+            }
+        },
+        "eagle_training_scroll": {
+            "target": "eagle",
+            "description": "The blessing of the shaman runs through your body, and in a flash of insight you learn the sacred Heavenly Slam technique.",
+            "effects": {
+                "strength": 0.2,
+                "moves": ["slam"]
+            }
+        },
+        "boz_blessing": {
+            "target": "player",
+            "description": "The blessing of Boz runs through your body, and in a flash of insight you learn the sacred Heavenly Slam technique. You also feel more powerful",
+            "effects": {
+                "strength": 0.2,
+                "max_health": 10,
+                "max_stamina": 5,
+                "moves": ["slam"]
+            }
+        },
+        "od_blessing": {
+            "target": "player",
+            "description": "The blessing of Öd runs through you, and you feel more powerful.",
+            "effects": {
+                "strength": 0.2,
+                "defense": 0.1,
+                "max_health": 15,
+                "max_stamina": 10,
+                "moves": ["loremaster"]
+            }
+        },
+        "kok_blessing": {
+            "target": "player",
+            "description": "The blessing of Kök runs through your body, you feel the air's blessing in every pulse. You feel indestructable",
+            "effects": {
+                "strength": 0.3,
+                "defense": 0.2,
+                "max_health": 25,
+                "max_stamina": 15,
+                "moves": ["slam"]
+            }
+        },
+        "death_wurm_tooth": {
+            "target": "player",
+            "description": "A relic from the most formidable foe in the desert, Death Wurm Barrudin.",
+            "effects": {
+                "strength": 0.5,
+                "defense": 0.5,
+                "max_health": 35,
+                "max_stamina": 30,
+                "moves": []
+            }
+        }
+    },
+    "player": {
+        "name": "Bataar",
+        "level": 1,
+        "experience": 0,
+        "base_stats": {
+            "max_health": 32,
+            "max_stamina": 20,
+            "strength": 1.0,
+            "defense": 1.0,
+            "moves": ["slap", "throw"],
+            "timeout": 3.5
+        }
+    },
+    "eagle": {
+        "name": "Eagle",
+        "level": 1,
+        "experience": 0,
+        "base_stats": {
+            "max_health": 999,
+            "max_stamina": 999,
+            "strength": 1.0,
+            "defense": 1.0,
+            "moves": ["rend"],
+            "timeout": 5.0
+        }
+    },
+    "moves": {
+        "slap": {
+            "name": "Mongolian Slap™",
+            "description": "Not sure what makes it mongolian, but they own it",
+            "cost": 0,
+            "damage": 9
+        },
+        "throw": {
+            "name": "Throw",
+            "description": "Throws your opponent up in the air, making them fall. Hurts...",
+            "cost": 5,
+            "damage": 14
+        },
+        "slam": {
+            "name": "Heavenly Slam",
+            "description": "Jump up in the air with your opponent, turning them around twice and slamming them face first into the ground. Boom!",
+            "cost": 10,
+            "damage": 18
+        },
+        "loremaster": {
+            "name": "Storytime",
+            "description": "Tell your adversary all about the history you've uncovered so far, making them sympathise with you",
+            "cost": 8,
+            "damage": 20,
+            "sfx": "male_dialogue1"
+        },
+        "rend": {
+            "name": "Rend Throw",
+            "description": "Jump up in the air with your opponent, turning them around twice and slamming them face first into the ground. Boom!",
+            "cost": 10,
+            "damage": 7,
+            "animation": "throw",
+            "sfx": "eagle_screech1"
+        }
+    },
+    "enemies": {
+        "slime": {
+            "name": "Slime",
+            "description": "Slimes are a pest in this desert, I think there's a reward for eradicating all of them",
+            "stats": {
+                "timeout": 4.5,
+                "max_health": 25,
+                "strength": 0.5,
+                "defense": 0.7,
+                "moves": [
+                    {
+                        "name": "slap",
+                        "chance": 0.7
+                    }, {
+                        "name": "throw",
+                        "chance": 0.3
+                    }
+                ]
+            }
+        },
+        "snake": {
+            "name": "Snake",
+            "description": "When you hear its rattle, you better get on your guard. Pit vipers are among the most aggressive animals in the Gobi.",
+            "stats": {
+                "timeout": 6.5,
+                "max_health": 12,
+                "strength": 0.7,
+                "defense": 0.7,
+                "moves": [
+                    {
+                        "name": "slap",
+                        "chance": 1.0
+                    }
+                ]
+            },
+            "xp": 6
+        },
+        "wolf": {
+            "name": "Wolf",
+            "description": "Hunts in packs, and it's out for your blood!.",
+            "stats": {
+                "timeout": 5.5,
+                "max_health": 30,
+                "strength": 0.8,
+                "defense": 0.8,
+                "moves": [
+                    {
+                        "name": "slap",
+                        "chance": 1.0
+                    }
+                ]
+            },
+            "xp": 10
+        },
+        "alpha": {
+            "name": "Alpha Wolf",
+            "description": "You've really done it this time Bataar... This wolf commands all the wolves in this entire region. Surely defeating it warrants a reward...",
+            "stats": {
+                "timeout": 5.0,
+                "max_health": 55,
+                "strength": 1.1,
+                "defense": 1.2,
+                "moves": [
+                    {
+                        "name": "throw",
+                        "chance": 1.0
+                    }
+                ]
+            },
+            "xp": 40
+        },
+        "death_wurm": {
+            "name": "Death Wurm Barrudin, Bane of the Gobi",
+            "description": "Many lives were lost to Mongolian Death Wurm Barrudin, swallowed whole and minced to pieces.",
+            "stats": {
+                "timeout": 4.0,
+                "max_health": 120,
+                "strength": 1.5,
+                "defense": 1.5,
+                "moves": [
+                    {
+                        "name": "throw",
+                        "chance": 0.5
+                    },
+                    {
+                        "name": "slam",
+                        "chance": 0.5
+                    }
+                ]
+            },
+            "xp": 399
+        },
+        "copy": {
+            "name": "Bataar???",
+            "description": "You're not sure why you're fighting your alter image?",
+            "stats": {
+                "timeout": 4.5,
+                "max_health": 30,
+                "strength": 1.0,
+                "defense": 1.0,
+                "moves": [
+                    {
+                        "name": "slap",
+                        "chance": 0.7
+                    }, {
+                        "name": "throw",
+                        "chance": 0.3
+                    }
+                ]
+            },
+            "xp": 15
+        },
+        "bolkhi": {
+            "name": "Bolkhi",
+            "description": "You're not sure why you're wrestling this guy every day",
+            "stats": {
+                "timeout": 4,
+                "max_health": 60,
+                "strength": 0.8,
+                "defense": 0.7,
+                "moves": [
+                    {
+                        "name": "slap",
+                        "chance": 0.7
+                    }, {
+                        "name": "throw",
+                        "chance": 0.3
+                    }
+                ]
+            },
+            "xp": 15
+        }
+    },
+    "interactive": {
+        "small_pots": {
+            "descriptions": [
+                "I wonder who lives here? They are clearly short on water..",
+                "Blood isn't my thing. But we don't always have a choice."
+            ]
+        },
+        "white_bucket": {
+            "descriptions": [
+                "That.. Is a lot of Kumis. Who would of thought, fermented mare's milk could be so tasty!",
+                "Ah, Kumis. I think I'm better off not getting drunk right now."
+            ]
+        },
+        "blue_bucket": {
+            "descriptions": [
+                "It looks like I know where to go if I get thirsty."
+            ]
+        },
+        "barrel": {
+            "descriptions": [
+                "Hm, I wonder what's in here?"
+            ]
+        },
+        "center_post": {
+            "descriptions": [
+                "Wait a second.. What's this doing here? Kinda sus."
+            ]
+        },
+        "empty_box": {
+            "descriptions": [
+                "Everyone seems to be running low on resources these days."
+            ]
+        },
+        "radish_box": {
+            "descriptions": [
+                "Mmm, wild garlic! These are pretty rare!"
+            ]
+        },
+        "beet_box": {
+            "descriptions": [
+                "That's enough dried meat to last a year!"
+            ]
+        },
+        "white_box": {
+            "descriptions": [
+                "Cheese curds. Won't be running out of that any time soon.."
+            ]
+        },
+        "bed": {
+            "descriptions": [
+                "Just a bed. I can sleep here."
+            ],
+            "save_point": true
+        },
+        "broken_bed": {
+            "descriptions": [
+                "It looks like noone has lived here in a long time. Sleeping here will be painful."
+            ],
+            "save_point": true
+        },
+        "large_cactus": {
+            "descriptions": [
+                "Saguaro cacti have delicious fruit!"
+            ]
+        },
+        "saxual": {
+            "descriptions": [
+                "A Saxual Tree. Pretty much the only wood you'll find out here in the Gobi.",
+                "When I get that feeling, I want Saxual healing."
+            ]
+        },
+        "small_cactus": {
+            "descriptions": [
+                "A Barrel Cactus. They can actually live to over 100 years old."
+            ]
+        }
+    },
+    "battles": {
+        "death_wurm": {
+            "triggers": [
+                {
+                    "upgrade": "death_wurm_tooth"
+                }
+            ]
+        },
+        "copy": {
+            "triggered": true,
+            "triggers": [
+                {
+                    "show": "copy"
+                },
+                {
+                    "conversation": {
+                        "move": {
+                            "location": "npc",
+                            "npc": "copy"
+                        },
+                        "dialogue": [
+                            {
+                                "speaker": "bataar",
+                                "text": "You here again?"
+                            },
+                            {
+                                "speaker": "copy",
+                                "text": "A copy? I'm the real Bataar, jerk! I was put here for testing purposes"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Right... I'll be leaving"
+                                
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "slime": {
+            "triggers": [
+                {
+                    "show": "copy"
+                },
+                {
+                    "conversation": {
+                        "move": {
+                            "location": "npc",
+                            "npc": "copy"
+                        },
+                        "dialogue": [
+                            {
+                                "speaker": "copy",
+                                "text": "How did you like the fight with those slimes?!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Pfft! Easy!"
+                                
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "bolkhi": {
+            "triggered": true,
+            "triggers": [
+                {
+                    "show": "bolkhi"
+                },
+                {
+                    "conversation": {
+                        "move": {
+                            "location": "npc",
+                            "npc": "bolkhi"
+                        },
+                        "dialogue": [
+                            {
+                                "speaker": "bolkhi",
+                                "text": "-huff, huff- Nothing like a good wrestle first thing in the morning!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "-huff, huff, huff- I can't say I feel the same Bolkhi.."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Bahahahah, quit whining. Grab your things and lets go!!!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Uhm, actually I've got a lot of stuff to do today.."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Oh come on! I've been asking you for months! I'm not saying we need to join. But we have to at least check it out!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Karakorum will still be there tomorrow Bolkhi.."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Yea. And the next day, and the day after that. So lets just go today!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Everyone whos gone never comes back Bolkhi. They just stay there. You know that."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "And? You're telling me you just want to wander these fields forever?"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text":"We could be part of something big!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text":"I just- I still have some holes to patch on my yurt..",
+                                "animation": "none",
+                                "audio": "bataar_whatever"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text":"And I found a really nice patch of grass that I wanted to nap on..",
+                                "animation": "none",
+                                "audio": "bataar_whatever"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "I get it Bataar. This is all I've known too. But.. I just feel like we could be so much more. Ya know?"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "I know Bolkhi.. Just. Give me some time."
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "I need to think about it a bit more..."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Alright. Maybe go see the [tornado radius=5 freq=2]Shaman up North[/tornado]?",
+                                "audio": "male_explaining"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "She always has something helpful to say.",
+                                "audio": "male_explaining"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Oh and don't forget! If you press [TAB] you can have your eagle, Burg, help you find it.",
+                                "audio": "male_explaining"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "That's a pretty good idea. Alright. Thanks Bolkhi."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "And hey, Bataar, no matter what you decide, I'm always here for you."
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "For better or worse."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "For better!",
+                                "animation": "angry"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "That.. Wasn't a question.",
+                                "audio": "bataar_mocking"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Oh! Yea I knew that.",
+                                "audio": "male_mocking"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "condition": "bolkhi:spoken"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "bolkhi2": {
+            "triggered": true,
+            "triggers": [
+                {
+                    "show": "bolkhi2"
+                },
+                {
+                    "conversation": {
+                        "move": {
+                            "location": "npc",
+                            "npc": "bolkhi2"
+                        },
+                        "dialogue": [
+                            {
+                                "speaker": "bolkhi",
+                                "text": "-huff, huff- Nothing like a good wrestle first thing in the morning!"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "I can't say I disagree, hahah.",
+                                "audio":"bataar_mocking"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "You're out of breath though Bolkhi. You should probably exercise a bit more.",
+                                "audio":"bataar_mocking"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Yea yea tough guy, you know I usually win."
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "So do you have everything packed up?"
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "Are you serious!?"
+                            },
+                            {
+                                "speaker": "bataar",
+                                "text": "Yea actually. Yea I am."
+                            },
+                            {
+                                "speaker": "bolkhi",
+                                "text": "WOOOOOO!!! Lets gooooo!"
+                            }
+                        ],
+                        "triggers": [
+                            {"conversation": {
+                                "move": {
+                                    "location": "npc",
+                                    "npc": "bolkhi3"
+                                },
+                                "dialogue": [
+                                    {
+                                        "speaker": "bolkhi",
+                                        "text": "I can't help but wonder though Bataar.."
+                                    },
+                                    {
+                                        "speaker": "bolkhi",
+                                        "text": "What made you change your mind?"
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "Well.. A wise man once told me.."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "You either choose to let your life change you."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "Or you choose to change your life."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "And.. I know no matter what happens Bolkhi."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "I've got you."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "And you always have me too."
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "So..",
+                                        "audio": "none"
+                                    },
+                                    {
+                                        "speaker": "bataar",
+                                        "text": "..Lets go change the world."
+                                    }
+                                ],
+                                "triggers": [
+                                    {"end": true}
+                                ]
+                            }
+                        }
+                        ]
+                            
+                        }
+                    }
+                
+            ]
+        }
+    },
+    "npcs": {
+        "copy": {
+            "conditions": {
+                "exist": [],
+                "death": []
+            },
+            "conversations": {
+                "start": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Ah, what do we have here? A perfect copy of me?"
+                        },
+                        {
+                            "speaker": "copy",
+                            "text": "A copy? I'm the real Bataar, jerk! I was put here for testing purposes",
+                            "audio": "female_mumble_1"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Right... I'll be leaving"
+                            
+                        }
+                    ],
+                    "conditions": [],
+                    "triggers": [
+                        {
+                            "condition": "copy:talked"
+                        },
+                        {
+                            "interact": {
+                                "description": "Your copy looks annoyed..."
+                            }
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Still here?",
+                            "animation": "angry",
+                            "audio": "bataar_mocking"
+                        },
+                        {
+                            "speaker": "copy",
+                            "text": "Still here?",
+                            "animation": "angry",
+                            "audio": "male_mocking"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "You. Me. Now.",
+                            "animation": "none",
+                            "audio": "none"
+                        }
+                    ],
+                    "conditions": ["copy:talked"],
+                    "triggers": [
+                        {
+                            "condition": "copy:hidden"
+                        },
+                        {
+                            "hide": "copy"
+                        },
+                        {
+                            "battle": "copy"
+                        }
+                    ]
+                }
+            }
+        },
+        "bolkhi": {
+            "conditions": {
+                "exist": [],
+                "death": ["bolkhi:hidden"]
+            },
+            "conversations": {
+                "start": {
+                    "dialogue": [
+                        
+                        {
+                            "speaker": "bolkhi",
+                            "text": "Bataar!! Are you ready!?",
+                            "audio": "female_talking",
+                            "animation": "angry"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Oh right.. I almost forgot, about that-"
+                        },
+                        {
+                            "speaker": "bolkhi",
+                            "text": "- Because here I come!!",
+                            "audio": "female_talking",
+                            "animation": "angry"
+                        }
+                    ],
+                    "conditions": [],
+                    "triggers": [
+                        {
+                            "condition": "bolkhi:talked"
+                        },
+                        {
+                            "hide": "bolkhi"
+                        },
+                        {
+                            "battle": "bolkhi"
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bolkhi",
+                            "text": "Still here?",
+                            "animation": "angry",
+                            "audio": "male_mocking"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Going, going.",
+                            "animation": "none",
+                            "audio": "none"
+                        }
+                    ],
+                    "conditions": ["bolkhi:talked"],
+                    "triggers": []
+                }
+            }
+        },
+        "bolkhi2": {
+            "conditions": {
+                "exist": ["kok:talked"],
+                "death": []
+            },
+            "conversations": {
+                "start": {
+                    "dialogue": [
+                        
+                        {
+                            "speaker": "bolkhi",
+                            "text": "Bataar!! Are you ready!?",
+                            "audio": "female_talking",
+                            "animation": "angry"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Actually-"
+                        },
+                        {
+                            "speaker": "bolkhi",
+                            "text": "- Because here I come!!",
+                            "audio": "female_talking",
+                            "animation": "angry"
+                        }
+                    ],
+                    "conditions": [],
+                    "triggers": [
+                        {
+                            "condition": "bolkhi2:talked"
+                        },
+                        {
+                            "hide": "bolkhi2"
+                        },
+                        {
+                            "battle": "bolkhi2"
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Still here?",
+                            "animation": "angry",
+                            "audio": "bataar_mocking"
+                        },
+                        {
+                            "speaker": "copy",
+                            "text": "Still here?",
+                            "animation": "angry",
+                            "audio": "male_mocking"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "You. Me. Now.",
+                            "animation": "none",
+                            "audio": "none"
+                        }
+                    ],
+                    "conditions": ["copy:talked"],
+                    "triggers": [
+                        {
+                            "condition": "copy:hidden"
+                        },
+                        {
+                            "hide": "copy"
+                        },
+                        {
+                            "battle": "copy"
+                        }
+                    ]
+                }
+            }
+        },
+        "shaman": {
+            "conditions": {
+                "exist": [],
+                "death": []
+            },
+            "conversations": {
+                "start": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Greetings.. Wise one."
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "...",
+                            "audio": "none"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Greetings.. Wise one.",
+                            "audio": "bataar_whatever"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "You may ask. But YOU must answer.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "We all seek answers.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "Walk the path, seek the shrines of the Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "And find your answer.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "What path..?"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "To the East, you will find the cave shrine of Boz Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "To the North West, you will find the cave shrine of Öd Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "And to the North, you will find the final cave shrine of Kök Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I will go, immediately. Thank you."
+                        }
+                    ],
+                    "conditions": [],
+                    "triggers": [
+                        {
+                            "condition": "shaman:talked"
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Can you remind me of the path?",
+                            "audio": "bataar_whatever"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "To the East, you will find the cave shrine of Boz Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "To the North West, you will find the cave shrine of Öd Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "shaman",
+                            "text": "And to the North, you will find the final cave shrine of Kök Tengri.",
+                            "audio": "female_explaining"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I will go, immediately. Thank you."
+                        }
+                    ],
+                    "conditions": ["shaman:talked"],
+                    "triggers": []
+                }
+            }
+        },
+        "boz_tengri": {
+            "conditions": {
+                "exist": [],
+                "death": []
+            },
+            "conversations": {
+                "start": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Am I dead?"
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "Far from it. I am Boz Tengri, of the Tengri."
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "For what purpose have you called upon me this day?"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "...-Takes a deep breath-...",
+                            "animation": "none"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I'm afraid, Boz."
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "Please, explain."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I have a chance to change my entire life."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "To join something with real purpose."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "But all I've ever known is this land, these fields."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I'm not sure if I can leave it all behind."
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "I see."
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "However, no matter where you go in this world Bataar.."
+                        },
+                        {
+                            "speaker": "boz",
+                            "text": "This land will forever remain under your feet."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "..I suppose you're right."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Thank you for your wise words Boz Tengri."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "..but how do you know my name? Wait!",
+                            "animation": "vanish"
+                        }
+                    ],
+                    "conditions": [],
+                    "triggers": [
+                        {
+                            "condition": "boz:talked"
+                        },
+                        {
+                            "upgrade": "boz_blessing"
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "There's nothing left for me here"
+                        }
+                    ],
+                    "conditions": ["boz:talked"],
+                    "triggers": []
+                }
+            }
+        },
+        "od_tengri": {
+            "conditions": {
+                "exist": [],
+                "death": []
+            },
+            "conversations": {
+                "invalid": {
+                    "dialogue": [{
+                        "speaker": "bataar",
+                        "text": "Such beautiful inscriptions. Nothing is happening... I wonder if someone can help me."
+                    }],
+                    "conditions": [],
+                    "triggers": []
+                },
+                "invalid_shaman": {
+                    "dialogue": [{
+                        "speaker": "bataar",
+                        "text": "Nothing is happening... I should remember what the shaman told me."
+                    }],
+                    "conditions": ["shaman:talked"],
+                    "triggers": []
+                },
+                "start": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "Hello..?"
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "Greetings young one. I am Öd Tengri, of the Tengri."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "For what purpose have you called upon me this day?"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I have a chance to change my entire life..",
+                            "animation": "none"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "To spend my time on something other than myself."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "But I enjoy being able to do what I want.. When I want.."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "That must sound selfish.."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "Ah but your time is precious, Bataar."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "Compared to the ocean, and the sky, and the soil beneath your feet.."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "Your time here is brief."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "However, the mark that you leave on this world when you are gone Bataar."
+                        },
+                        {
+                            "speaker": "od",
+                            "text": "That, will last far longer."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "... You're right."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Thank you for your wise words Öd Tengri."
+                        }
+                    ],
+                    "conditions": ["boz:talked"],
+                    "triggers": [
+                        {
+                            "condition": "od:talked"
+                        },
+                        {
+                            "upgrade": "od_blessing"
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "There's nothing left for me here"
+                        }
+                    ],
+                    "conditions": ["od:talked"],
+                    "triggers": []
+                }
+            }
+        },
+        "kok_tengri": {
+            "conditions": {
+                "exist": [],
+                "death": []
+            },
+            "conversations": {
+                "invalid": {
+                    "dialogue": [{
+                        "speaker": "bataar",
+                        "text": "Such beautiful inscriptions. Nothing is happening... I wonder if someone can help me."
+                    }],
+                    "conditions": [],
+                    "triggers": []
+                },
+                "invalid_shaman": {
+                    "dialogue": [{
+                        "speaker": "bataar",
+                        "text": "Nothing is happening... I should remember what the shaman told me."
+                    }],
+                    "conditions": ["shaman:talked"],
+                    "triggers": []
+                },
+                "start": {  
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "I had come to seek your council.. Oh wise God of the Gods."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Oh? 'Had', you say. Has something changed?",
+                            "audio": "male_mocking"
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "'I' have changed.. I didn't even see it happen."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I've fended off beasts."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I've traversed the depths of caves."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I've scaled this mountain."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "All to find an answer to a question, that I already knew.."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Hahahah, ah Bataar."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "You're a brave and courageous young man."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Change is inevitable."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "You're absolutely right."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "There are only 2 true choices, Bataar."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "I could stay here, content. Grow old and die."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Or I can use this time I have, this time I've been blessed with."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "To be a part of something greater than myself."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Very wise words Bataar."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "You either choose to let your life change you."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Or you choose to change your life."
+                        },
+                        {
+                            "speaker": "bataar",
+                            "text": "Tengri, I can not thank you and your sons enough."
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Hahahahah, nonsense Bataar.",
+                            "audio": "none"
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "It has been our pleasure.",
+                            "audio": "none"
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "Now, step forward into the world.",
+                            "audio": "none"
+                        },
+                        {
+                            "speaker": "kok",
+                            "text": "And change it!",
+                            "audio": "none",
+                            "animation": "angry"
+                        }
+                    ],
+                    "conditions": ["od:talked", "boz:talked"],
+                    "triggers": [
+                        {
+                            "condition": "kok:talked"
+                        },
+                        {
+                            "upgrade": "kok_blessing",
+                            "triggers": [
+                                {
+                                    "condition": "bolkhi:hidden"
+                                },
+                                {
+                                    "hide": "bolkhi"
+                                },
+                                {
+                                    "show": "bolkhi2"
+                                },
+                                {
+                                    "conversation": {
+                                        "move": {
+                                            "location": "npc",
+                                            "npc": "bolkhi"
+                                        },
+                                        "dialogue": [
+                                            {
+                                                "speaker": "copy",
+                                                "text": "Wake up! You're daydreaming again!",
+                                                "animation": "angry"
+                                            },
+                                            {
+                                                "speaker": "bataar",
+                                                "text": "Wait, was it all a dream?"
+                                            },
+                                            {
+                                                "speaker": "copy",
+                                                "text": "Always has been.",
+                                                "audio": "bataar_mocking"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "after": {
+                    "dialogue": [
+                        {
+                            "speaker": "bataar",
+                            "text": "There's nothing left for me here"
+                        }
+                    ],
+                    "conditions": ["kok:talked"],
+                    "triggers": []
+                }
+            }
+        }
+    }
+}

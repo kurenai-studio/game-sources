@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://src/game/level/DesertItem.tscn" type="PackedScene" id=1]
+
+[node name="LargeCactus" instance=ExtResource( 1 )]
+id = "large_cactus"
+
+[node name="Sprite" parent="." index="0"]
+position = Vector2( 0, -19.2905 )
+region_rect = Rect2( 34, 0, 30, 42 )
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." index="1"]
+position = Vector2( 0, 1.70949 )
+polygon = PoolVector2Array( -14.9973, -0.583582, -1.47002, 2.8354, 10.6451, -0.583582, -1.47002, -6.52964 )
