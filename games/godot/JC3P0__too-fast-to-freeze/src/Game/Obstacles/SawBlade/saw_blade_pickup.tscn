@@ -1,0 +1,189 @@
+[gd_scene format=3 uid="uid://sawpickup001"]
+
+[ext_resource type="Script" uid="uid://dc6jrmhccuxwm" path="res://Game/Obstacles/obstacle_move.gd" id="1_sawpu"]
+[ext_resource type="Script" uid="uid://48pb00st1q2h" path="res://Game/Obstacles/pickup_bob.gd" id="pickup_bob"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_sawpu"]
+height = 2.2678711
+radius = 1.3520508
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1qn54"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sawpu"]
+top_radius = 1.2
+bottom_radius = 1.4
+height = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cbvnj"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_27gtp"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hvb2c"]
+albedo_color = Color(0, 0.25563234, 0.25704995, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sawpu"]
+radius = 1.5
+height = 4.0
+
+[node name="SawBladePickup" type="CharacterBody3D" unique_id=2084775902 groups=["Saw"]]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_sawpu")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=869050862]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5589355, 0)
+shape = SubResource("CylinderShape3D_sawpu")
+
+[node name="Visual" type="Node3D" parent="." unique_id=1027254381]
+script = ExtResource("pickup_bob")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Visual" unique_id=1520798209]
+transform = Transform3D(1.9106855e-15, 4.371139e-08, 1, 1, -4.371139e-08, 0, 4.371139e-08, 1, -4.371139e-08, 0.00023769937, 2.2449222, 0.008389744)
+radius = 1.24
+height = 0.226
+sides = 22
+smooth_faces = false
+material = SubResource("StandardMaterial3D_1qn54")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Visual/CSGCylinder3D" unique_id=1020137359]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.011869907, 0)
+operation = 2
+radius = 0.1
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Visual" unique_id=1568631410]
+transform = Transform3D(1.9106855e-15, 4.371139e-08, 1, 1, -4.371139e-08, 0, 4.371139e-08, 1, -4.371139e-08, 0.000237701, 2.2449222, 0.043930087)
+visible = false
+mesh = SubResource("CylinderMesh_sawpu")
+surface_material_override/0 = SubResource("StandardMaterial3D_cbvnj")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Visual" unique_id=1738917494]
+transform = Transform3D(-1.0709289e-08, 0, 0.15999997, -8.8817837e-16, 0.20999995, 0, -0.24499997, 0, -6.9938206e-09, 0.00023769774, 3.5774493, -0.029712826)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="Visual" unique_id=388011916]
+transform = Transform3D(-5.354644e-09, -0.10499998, 0.13856405, 1.4347716e-09, 0.18186532, 0.08, -0.24499999, 6.489131e-09, -6.6894468e-09, -0.6997623, 3.3668098, -0.0030698848)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="Visual" unique_id=1248149525]
+transform = Transform3D(-1.6063936e-08, 0.10499998, 0.13856405, 1.4347716e-09, 0.18186532, -0.08, -0.24499999, -2.6902598e-09, -5.4242077e-09, 0.7002377, 3.368402, -0.003069946)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="Visual" unique_id=980369018]
+transform = Transform3D(-2.1418579e-08, 0.20999996, 1.2079663e-08, 1.07092895e-08, 1.585456e-08, -0.16, -0.24499999, -1.835878e-08, -6.993822e-09, 1.3218565, 2.2491996, -0.0025952116)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D6" type="MeshInstance3D" parent="Visual" unique_id=377887652]
+transform = Transform3D(-1.9983805e-08, 0.1818653, 0.07999997, 5.354644e-09, 0.10499997, -0.13856405, -0.24499999, -2.33793e-08, -1.4322106e-08, 1.1109891, 2.9491997, -0.0030699822)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D7" type="MeshInstance3D" parent="Visual" unique_id=381490411]
+transform = Transform3D(-1.9983808e-08, 0.18186533, -0.07999997, 1.6063934e-08, -0.10499997, -0.13856408, -0.245, -1.9427906e-08, -9.073634e-09, 1.1125813, 1.5491996, -0.0030700434)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D8" type="MeshInstance3D" parent="Visual" unique_id=503228600]
+transform = Transform3D(-1.0709288e-08, -1.835878e-08, -0.15999997, 2.1418577e-08, -0.20999995, 1.3987641e-08, -0.24499997, -1.835878e-08, 6.993821e-09, -0.004505937, 0.91084445, -0.002595212)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D9" type="MeshInstance3D" parent="Visual" unique_id=320117673]
+transform = Transform3D(-1.6063936e-08, 0.104999974, -0.13856408, 1.998381e-08, -0.18186535, -0.07999998, -0.24499997, -2.1718673e-08, 2.5599214e-09, 0.695494, 1.1230396, -0.0030700439)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D10" type="MeshInstance3D" parent="Visual" unique_id=863143886]
+transform = Transform3D(-5.3546434e-09, -0.105000004, -0.13856405, 1.9983807e-08, -0.18186529, 0.08, -0.24499999, -9.410033e-09, 1.3683268e-08, -0.704506, 1.1214474, -0.0030699829)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D11" type="MeshInstance3D" parent="Visual" unique_id=164476744]
+transform = Transform3D(8.881784e-16, -0.20999996, 1.20796635e-08, 1.07092895e-08, 1.585456e-08, 0.16, -0.24499999, 1.7763568e-15, 6.993821e-09, -1.3178676, 2.2478251, -0.0025950961)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D12" type="MeshInstance3D" parent="Visual" unique_id=2049848761]
+transform = Transform3D(-1.4347723e-09, -0.18186533, -0.07999997, 1.6063934e-08, -0.10499997, 0.13856408, -0.245, 2.7297524e-09, 7.808391e-09, -1.1127342, 1.5478253, -0.0030699463)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D13" type="MeshInstance3D" parent="Visual" unique_id=320184205]
+transform = Transform3D(-1.4347732e-09, -0.1818653, 0.07999997, 5.354646e-09, 0.10499997, 0.13856405, -0.24499999, -7.4801285e-09, 7.328288e-09, -1.1143262, 2.947825, -0.003069885)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D14" type="MeshInstance3D" parent="Visual" unique_id=743425133]
+transform = Transform3D(-1.3250016e-08, 0.049821462, 0.15543194, 3.057518e-10, 0.20400444, -0.037959214, -0.24499999, -2.4398394e-09, -8.453396e-09, 0.35027787, 3.5022793, -0.0025951143)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D15" type="MeshInstance3D" parent="Visual" unique_id=612500127]
+transform = Transform3D(-7.707856e-09, -0.058855552, 0.15358764, 4.2919793e-10, 0.20158377, 0.04484233, -0.245, -5.556924e-09, -1.5125452e-09, -0.36918572, 3.5004897, -0.0030698935)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D16" type="MeshInstance3D" parent="Visual" unique_id=1020215978]
+transform = Transform3D(-1.811139e-08, 0.14514887, 0.115628414, 2.969923e-09, 0.1517623, -0.11058962, -0.245, -1.7738953e-08, -1.0038471e-08, 0.9208675, 3.1698933, -0.0030699642)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D17" type="MeshInstance3D" parent="Visual" unique_id=1163991541]
+transform = Transform3D(-2.111283e-08, 0.20400448, -0.03795921, 1.3250018e-08, -0.049821455, -0.15543196, -0.24499997, -2.257198e-08, -2.2531448e-09, 1.2622792, 1.8736153, -0.002595225)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D18" type="MeshInstance3D" parent="Visual" unique_id=1495068953]
+transform = Transform3D(-2.0989383e-08, 0.20158377, 0.04484233, 7.707856e-09, 0.058855552, -0.15358764, -0.245, -1.9671871e-08, -1.4587323e-08, 1.2458874, 2.6185684, -0.0030700027)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D19" type="MeshInstance3D" parent="Visual" unique_id=702784050]
+transform = Transform3D(-1.8448658e-08, 0.1517623, -0.11058962, 1.8111393e-08, -0.14514889, -0.11562843, -0.24499997, -2.1960698e-08, -6.9620762e-09, 0.9152911, 1.3298545, -0.0030700443)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D20" type="MeshInstance3D" parent="Visual" unique_id=1786901908]
+transform = Transform3D(-8.168563e-09, -0.04982148, -0.15543196, 2.1112829e-08, -0.20400445, 0.037959225, -0.245, -1.3621438e-08, 5.5716436e-09, -0.36572912, 0.9648855, -0.016842373)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D21" type="MeshInstance3D" parent="Visual" unique_id=1298026328]
+transform = Transform3D(-1.3710724e-08, 0.05885555, -0.15358764, 2.0989383e-08, -0.20158377, -0.044842325, -0.245, -1.2801859e-08, 1.5125465e-09, 0.3577632, 0.9897616, -0.003070035)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D22" type="MeshInstance3D" parent="Visual" unique_id=200257759]
+transform = Transform3D(-3.3071874e-09, -0.14514887, -0.115628414, 1.8448654e-08, -0.1517623, 0.11058962, -0.245, -6.1983263e-10, 1.0038471e-08, -0.9220404, 1.320358, -0.0030699645)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D23" type="MeshInstance3D" parent="Visual" unique_id=256540177]
+transform = Transform3D(-3.0575187e-10, -0.20400448, 0.03795921, 8.1685645e-09, 0.04982146, 0.15543196, -0.24499997, 1.1732935e-09, 2.818781e-09, -1.2807343, 2.574391, -0.01004185)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D24" type="MeshInstance3D" parent="Visual" unique_id=1288164120]
+transform = Transform3D(-4.2919623e-10, -0.20158379, -0.04484231, 1.3710724e-08, -0.058855534, 0.15358765, -0.24499997, -2.9405394e-09, 8.6736485e-09, -1.2468174, 1.8511573, -0.0030699272)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="MeshInstance3D25" type="MeshInstance3D" parent="Visual" unique_id=246450965]
+transform = Transform3D(-2.969923e-09, -0.1517623, 0.11058962, 3.3071872e-09, 0.14514889, 0.11562843, -0.24499997, 3.6019143e-09, 6.962077e-09, -0.9162208, 3.163629, -0.0030698841)
+mesh = SubResource("PrismMesh_27gtp")
+surface_material_override/0 = SubResource("StandardMaterial3D_hvb2c")
+
+[node name="Area3D" type="Area3D" parent="." unique_id=168686722]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=302397127]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_sawpu")
+
+[connection signal="body_entered" from="Area3D" to="." method="_on_area_3d_body_entered"]

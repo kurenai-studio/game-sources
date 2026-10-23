@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://brb2gvw4skxlw"]
+
+[ext_resource type="Script" uid="uid://bum5s2bxlpbbb" path="res://Game/Level/UI/game_over_screen.gd" id="1_4v1be"]
+
+[node name="GameOverScreen" type="Control" unique_id=383028952]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_4v1be")
+
+[node name="GameOver" type="PanelContainer" parent="." unique_id=1782489349]
+layout_mode = 0
+offset_left = 326.0
+offset_top = 134.0
+offset_right = 734.0
+offset_bottom = 242.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameOver" unique_id=164785525]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameOver/VBoxContainer" unique_id=109660865]
+layout_mode = 2
+text = "Game Over"
+horizontal_alignment = 1
+
+[node name="distance" type="Label" parent="GameOver/VBoxContainer" unique_id=16224695]
+layout_mode = 2
+text = "Distance: "
+horizontal_alignment = 1
+
+[node name="ScoresContainer" type="VBoxContainer" parent="GameOver/VBoxContainer" unique_id=800809776]
+layout_mode = 2
+
+[node name="NameEntrySection" type="VBoxContainer" parent="GameOver/VBoxContainer" unique_id=745486956]
+visible = false
+layout_mode = 2
+
+[node name="NamePrompt" type="Label" parent="GameOver/VBoxContainer/NameEntrySection" unique_id=925289913]
+layout_mode = 2
+text = "New high score!
+Enter name (3–6 chars):"
+horizontal_alignment = 1
+
+[node name="NameRow" type="HBoxContainer" parent="GameOver/VBoxContainer/NameEntrySection" unique_id=1007334247]
+layout_mode = 2
+alignment = 1
+
+[node name="NameInput" type="LineEdit" parent="GameOver/VBoxContainer/NameEntrySection/NameRow" unique_id=1122083486]
+layout_mode = 2
+alignment = 1
+
+[node name="SubmitButton" type="Button" parent="GameOver/VBoxContainer/NameEntrySection/NameRow" unique_id=800106856]
+layout_mode = 2
+text = "Submit"
+
+[node name="Restart" type="Button" parent="GameOver/VBoxContainer" unique_id=2057241778]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+focus_neighbor_top = NodePath(".")
+focus_neighbor_bottom = NodePath(".")
+text = "Retry"
+
+[connection signal="pressed" from="GameOver/VBoxContainer/Restart" to="." method="_on_restart_pressed"]

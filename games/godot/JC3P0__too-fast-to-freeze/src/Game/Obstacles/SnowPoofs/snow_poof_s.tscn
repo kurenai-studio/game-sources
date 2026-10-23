@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsw34smi8mmyi"]
+
+[ext_resource type="PackedScene" uid="uid://db0ovn16qhk4d" path="res://Assets/Blender/SnowPoofs/SnowPoofS.blend" id="1_od10m"]
+[ext_resource type="Script" uid="uid://dc6jrmhccuxwm" path="res://Game/Obstacles/obstacle_move.gd" id="1_xwltg"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_qjc1m"]
+
+[node name="SnowPoofS" type="CharacterBody3D" groups=["SnowPuff"]]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_xwltg")
+
+[node name="SnowPoofS" parent="." instance=ExtResource("1_od10m")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.04151, 0)
+shape = SubResource("CylinderShape3D_qjc1m")

@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://cckpfdqh4f1cj"]
+
+[ext_resource type="Texture2D" uid="uid://dy3wdmpxyab5d" path="res://Assets/Textures/Snow/7/7_diffuseOriginal.bmp" id="1_flw52"]
+[ext_resource type="PackedScene" uid="uid://dtqjpg20jqtkv" path="res://Game/Player/Player.tscn" id="1_ix8k8"]
+[ext_resource type="Script" uid="uid://b6jcxkh2kam87" path="res://Game/Level/floor.gd" id="1_jn3mv"]
+[ext_resource type="Texture2D" uid="uid://h6hf8pxygdh4" path="res://Assets/Textures/Snow/7/7_height.bmp" id="2_6mbeq"]
+[ext_resource type="PackedScene" uid="uid://18yehieu3brv" path="res://Game/Level/Spawner/spawner.tscn" id="2_ugmdt"]
+[ext_resource type="Texture2D" uid="uid://bb26gd7wuw0dy" path="res://Assets/Textures/Snow/7/7_metallic.bmp" id="3_ea6fa"]
+[ext_resource type="Script" uid="uid://dfnu41k3ww6vf" path="res://Game/Level/camera_3d.gd" id="3_m5af0"]
+[ext_resource type="Texture2D" uid="uid://kp1yy28slljc" path="res://Assets/Textures/Snow/7/7_normal.bmp" id="4_7taih"]
+[ext_resource type="PackedScene" uid="uid://bbvqs68220nsb" path="res://Game/Level/control.tscn" id="7_g0rfv"]
+[ext_resource type="PackedScene" uid="uid://ce8bjp12uxn7a" path="res://Game/Level/snow_fall.tscn" id="11_gjw61"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kgrb6"]
+albedo_texture = ExtResource("1_flw52")
+metallic = 1.0
+metallic_texture = ExtResource("3_ea6fa")
+normal_enabled = true
+normal_texture = ExtResource("4_7taih")
+heightmap_enabled = true
+heightmap_texture = ExtResource("2_6mbeq")
+uv1_scale = Vector3(0.09, 0.09, 0.09)
+uv1_triplanar = true
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_k7grm"]
+size = Vector2(275, 200)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_4ud2c"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yc0i2"]
+size = Vector3(1, 6.46594, 5.09808)
+
+[node name="Main" type="Node3D" unique_id=1624866221]
+
+[node name="Player" parent="." unique_id=662395417 instance=ExtResource("1_ix8k8")]
+
+[node name="Spawner" parent="." unique_id=2086976289 instance=ExtResource("2_ugmdt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -139.92659)
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=158111828]
+script = ExtResource("1_jn3mv")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=150209278]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -38.740814)
+material_override = SubResource("StandardMaterial3D_kgrb6")
+mesh = SubResource("PlaneMesh_k7grm")
+skeleton = NodePath("../..")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1194394693]
+shape = SubResource("WorldBoundaryShape3D_4ud2c")
+
+[node name="Control" parent="." unique_id=412818272 instance=ExtResource("7_g0rfv")]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1934839546]
+transform = Transform3D(1, 0, 0, 0, 0.987658, 0.156624, 0, -0.156624, 0.987658, 0, 3.7123, 4.54726)
+script = ExtResource("3_m5af0")
+
+[node name="snow_fall" parent="." unique_id=1288033624 instance=ExtResource("11_gjw61")]
+
+[node name="right_barier" type="StaticBody3D" parent="." unique_id=1555821080]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="right_barier" unique_id=232096460]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.50474, 2.73297, -0.532562)
+shape = SubResource("BoxShape3D_yc0i2")
+
+[node name="left_barier" type="StaticBody3D" parent="." unique_id=847223490]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -46, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="left_barier" unique_id=1364519745]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.733, 0.533)
+shape = SubResource("BoxShape3D_yc0i2")
+
+[node name="WallHolder" type="Node3D" parent="." unique_id=265845086]
+
+[editable path="Spawner"]

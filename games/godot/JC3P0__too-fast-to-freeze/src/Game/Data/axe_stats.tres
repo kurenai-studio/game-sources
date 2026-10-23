@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AbilityResource" format=3 uid="uid://cny8tws0a1tlm"]
+
+[ext_resource type="Script" uid="uid://c4to1ua3bsir2" path="res://Game/Data/AbilityResource.gd" id="1_5f5rq"]
+
+[resource]
+script = ExtResource("1_5f5rq")
+id = &"axe"
+display_name = "Axe"
+input_action = &"fire_axe"
+swing_weapon_paths = Array[String](["Player4/Armature/Skeleton3D/RightArmLeftLower/axe_base", "Player4/Armature/Skeleton3D/RightArmLeftLower/axe_head", "AxeSwingArea/RangeRing"])
+swing_duration = 0.5
+base_cooldown = 3.2
+min_cooldown = 1.6
+cooldown_decrease_per_stack = 0.06
+metadata/_custom_type_script = "uid://c4to1ua3bsir2"
