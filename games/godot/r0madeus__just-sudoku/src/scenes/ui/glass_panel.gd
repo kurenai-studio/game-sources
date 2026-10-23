@@ -1,0 +1,224 @@
+class_name GlassPanel
+extends PanelContainer
+
+## Liquid-glass surface: blurs whatever is drawn behind it, bends the backdrop slightly at the
+## rim (lens effect), tints it with the theme surface colour and adds a lit rim (light from the
+## top-left) plus a soft drop shadow. Content is added as ordinary children.
+##
+## It only reads convincingly over something that varies, so pair it with AmbientBackdrop or
+## real content, and keep it off surfaces that must stay opaque (the Sudoku grid, the numpad).
+
+const ThemeManager = preload("res://scripts/services/theme_manager.gd")
+
+const SHADER_CODE: String = """
+shader_type canvas_item;
+
+uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
+uniform vec2 rect_size = vec2(300.0, 200.0);
+uniform vec2 quad_size = vec2(300.0, 200.0);
+uniform float radius = 22.0;
+uniform float shadow_size = 18.0;
+uniform vec2 shadow_offset = vec2(0.0, 6.0);
+uniform vec4 shadow_color : source_color = vec4(0.0, 0.0, 0.0, 0.4);
+uniform float blur_radius = 8.0;
+uniform vec3 tint_color : source_color = vec3(0.1);
+uniform float tint_amount = 0.6;
+uniform float refraction = 7.0;
+uniform float edge_width = 16.0;
+uniform float saturation = 1.15;
+uniform vec3 rim_light : source_color = vec3(1.0);
+uniform float rim_light_amount = 0.4;
+uniform vec3 rim_shade : source_color = vec3(0.0);
+uniform float rim_shade_amount = 0.2;
+uniform float rim_width = 1.4;
+uniform float sheen = 0.05;
+
+float sd_round_box(vec2 p, vec2 half_size, float r) {
+	vec2 q = abs(p) - half_size + vec2(r);
+	return min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0))) - r;
+}
+
+float hash(vec2 p) {
+	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// Error function (Abramowitz-Stegun 7.1.27), for the Gaussian falloff of the shadow
+float erf_approx(float x) {
+	float a = abs(x);
+	float t = 1.0 + (0.278393 + (0.230389 + 0.078108 * a * a) * a) * a;
+	t *= t;
+	return sign(x) * (1.0 - 1.0 / (t * t));
+}
+
+// Coverage of a Gaussian-blurred edge at signed distance d (sigma in the same units)
+float soft_edge(float d, float sigma) {
+	return 0.5 - 0.5 * erf_approx(d / (sigma * 1.41421356));
+}
+
+void fragment() {
+	// Panel units (dp) are scaled to the screen; px_scale = device pixels per unit, so blur,
+	// bend and the edge's anti-aliasing look the same on a 2.6x phone and a 1x desktop
+	float px_scale = 1.0 / max(length(vec2(dFdx(UV.x), dFdy(UV.x))) * quad_size.x, 1e-4);
+	float aa = 0.5 / px_scale;
+
+	// The quad is larger than the panel so the drop shadow can be drawn here too: a stylebox
+	// shadow would sit under the glass and get blurred into it, darkening the glass
+	vec2 p = (UV - 0.5) * quad_size;
+	float d = sd_round_box(p, rect_size * 0.5, radius);
+	float mask = 1.0 - smoothstep(-aa, aa, d);
+	// Two layers, as real light gives: a tighter key shadow below the panel and a wide ambient one
+	float sigma = max(shadow_size, 0.001) * 0.4;
+	float key = soft_edge(sd_round_box(p - shadow_offset, rect_size * 0.5, radius), sigma * 0.6);
+	float ambient = soft_edge(sd_round_box(p - shadow_offset * 0.25, rect_size * 0.5, radius), sigma);
+	float shadow_a = shadow_size > 0.0 ? shadow_color.a * (0.6 * key + 0.4 * ambient) : 0.0;
+
+	// Lens: near the rim the backdrop is sampled from further inside, so it appears bent
+	float edge = clamp(1.0 + d / edge_width, 0.0, 1.0);
+	vec2 dir = normalize(p + vec2(0.0001));
+	vec2 uv = SCREEN_UV - dir * edge * edge * refraction * px_scale * SCREEN_PIXEL_SIZE;
+	// Mip level n is the screen blurred over about 2^n pixels
+	float lod = log2(max(blur_radius * px_scale, 1.0));
+	vec3 col = textureLod(screen_tex, uv, lod).rgb;
+	float grey = dot(col, vec3(0.299, 0.587, 0.114));
+	col = mix(vec3(grey), col, saturation);
+	col = mix(col, tint_color, tint_amount);
+
+	// Rim lit from the top-left, shaded on the opposite side; at least a device pixel wide
+	vec2 n = normalize(vec2(dFdx(d), dFdy(d)) + vec2(0.0001));
+	float facing = dot(n, normalize(vec2(-0.6, -0.8)));
+	float band = 1.0 - clamp(-d / max(rim_width, 1.0 / px_scale), 0.0, 1.0);
+	col += rim_light * band * max(facing, 0.0) * rim_light_amount;
+	col = mix(col, rim_shade, band * max(-facing, 0.0) * rim_shade_amount);
+	col += rim_light * edge * edge * 0.035;
+	col += rim_light * (1.0 - UV.y) * (1.0 - UV.y) * sheen;
+
+	col += (hash(FRAGCOORD.xy) - 0.5) * (2.0 / 255.0);
+	vec3 out_rgb = mix(shadow_color.rgb, col, mask);
+	float out_a = mix(shadow_a * (1.0 - mask), 1.0, mask);
+	COLOR = vec4(out_rgb, out_a);
+}
+"""
+
+static var _shader: Shader = null
+
+## Corner radius in pixels
+var corner_radius: float = 22.0 :
+	set(v):
+		corner_radius = v
+		_refresh()
+## True: modal-level surface (stronger tint, deeper shadow); false: light chrome like the dock
+var elevated: bool = true :
+	set(v):
+		elevated = v
+		_refresh()
+var pad_h: int = 18 :
+	set(v):
+		pad_h = v
+		_refresh()
+var pad_v: int = 18 :
+	set(v):
+		pad_v = v
+		_refresh()
+var shadow_size: int = 22 :
+	set(v):
+		shadow_size = v
+		_refresh()
+var shadow_offset: Vector2 = Vector2(0, 8) :
+	set(v):
+		shadow_offset = v
+		_refresh()
+
+var glass_rect: ColorRect
+var _material: ShaderMaterial
+
+func _init() -> void:
+	if _shader == null:
+		_shader = Shader.new()
+		_shader.code = SHADER_CODE
+	_material = ShaderMaterial.new()
+	_material.shader = _shader
+
+	glass_rect = ColorRect.new()
+	glass_rect.material = _material
+	glass_rect.mouse_filter = MOUSE_FILTER_IGNORE
+	glass_rect.show_behind_parent = true
+	glass_rect.set_anchors_preset(PRESET_FULL_RECT)
+	add_child(glass_rect)
+	_refresh()
+
+## Ready-made card for grouped content on screens (light chrome glass, modest shadow)
+static func card(radius: float = 20.0, horizontal: int = 16, vertical: int = 6) -> GlassPanel:
+	var panel := GlassPanel.new()
+	panel.elevated = false
+	panel.corner_radius = radius
+	panel.pad_h = horizontal
+	panel.pad_v = vertical
+	panel.shadow_size = 10
+	panel.shadow_offset = Vector2(0, 3)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return panel
+
+func _enter_tree() -> void:
+	ThemeManager.add_listener(_refresh)
+
+func _exit_tree() -> void:
+	ThemeManager.remove_listener(_refresh)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_update_geometry()
+	elif what == NOTIFICATION_SORT_CHILDREN and glass_rect != null:
+		# PanelContainer squeezes every child into its padded content rect; the glass has to
+		# cover the whole panel, padding included
+		var m: float = _quad_margin()
+		fit_child_in_rect(glass_rect, Rect2(Vector2(-m, -m), size + Vector2(m, m) * 2.0))
+
+## Extra room around the panel for the shadow drawn by the glass shader
+func _quad_margin() -> float:
+	if shadow_size <= 0:
+		return 2.0
+	return float(shadow_size) + maxf(absf(shadow_offset.x), absf(shadow_offset.y)) + 4.0
+
+func _update_geometry() -> void:
+	if _material == null:
+		return
+	var has_size: bool = size.x > 0.0 and size.y > 0.0
+	var panel_size: Vector2 = size if has_size else custom_minimum_size
+	_material.set_shader_parameter("rect_size", panel_size)
+	_material.set_shader_parameter("quad_size", panel_size + Vector2(_quad_margin(), _quad_margin()) * 2.0)
+	_material.set_shader_parameter("shadow_size", float(shadow_size))
+	_material.set_shader_parameter("shadow_offset", shadow_offset)
+	_material.set_shader_parameter("radius", minf(corner_radius, minf(size.x, size.y) * 0.5) if has_size else corner_radius)
+
+func _refresh() -> void:
+	if _material == null:
+		return
+	var is_dark: bool = ThemeManager.get_color("bg").get_luminance() < 0.5
+	var surface: Color = ThemeManager.get_color("surface_elevated" if elevated else "surface")
+
+	# Frosted glass is lighter than what is behind it, so light themes tint toward white
+	if not is_dark:
+		surface = surface.lerp(Color.WHITE, 0.6)
+	_material.set_shader_parameter("tint_color", Color(surface.r, surface.g, surface.b))
+	_material.set_shader_parameter("tint_amount", (0.74 if elevated else 0.58) if is_dark else (0.82 if elevated else 0.64))
+	_material.set_shader_parameter("blur_radius", 10.0 if elevated else 7.0)
+	_material.set_shader_parameter("rim_light", Color.WHITE)
+	_material.set_shader_parameter("rim_light_amount", 0.34 if is_dark else 0.95)
+	var shade: Color = Color.BLACK if is_dark else ThemeManager.get_color("border_subtle").darkened(0.15)
+	_material.set_shader_parameter("rim_shade", Color(shade.r, shade.g, shade.b))
+	_material.set_shader_parameter("rim_shade_amount", 0.30 if is_dark else 0.22)
+	_material.set_shader_parameter("sheen", 0.04 if is_dark else 0.10)
+	_update_geometry()
+
+	# Transparent panel style: only supplies the content margins (the shadow is in the shader)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0)
+	sb.set_corner_radius_all(int(corner_radius))
+	sb.corner_detail = 16
+	# The Gaussian falloff is half strength at the panel's edge, so these are a little higher
+	_material.set_shader_parameter("shadow_color", Color(0, 0, 0, 0.55) if is_dark else Color(0.08, 0.12, 0.20, 0.26))
+	sb.content_margin_left = pad_h
+	sb.content_margin_right = pad_h
+	sb.content_margin_top = pad_v
+	sb.content_margin_bottom = pad_v
+	add_theme_stylebox_override("panel", sb)
