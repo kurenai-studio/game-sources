@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>深渊幸存者</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0d0e1a; overflow: hidden; touch-action: none; }
+  #game { width: 100vw; height: 100vh; }
+  canvas { display: block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
+</head>
+<body>
+<div id="game"></div>
+<script>
+// index.html 是开发服务器专用入口；直接双击（file://）会被浏览器 CORS 策略拦截。
+// 引导用户打开打包好的单文件版。
+if (location.protocol === 'file:') {
+  document.body.innerHTML = '<div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f4f4f4;background:#0d0e1a;font-family:sans-serif;text-align:center">'
+    + '<div style="font-size:26px;color:#ffcd75;margin-bottom:18px">这是开发版入口，不能直接双击打开</div>'
+    + '<div style="font-size:18px;line-height:2">请关闭本页，双击打开同目录下的 <b style="color:#41a6f6">深渊幸存者.html</b> 即可游玩<br>'
+    + '<span style="color:#94b0c2;font-size:14px">（index.html 仅供开发调试，需配合本地服务器使用）</span></div></div>';
+  document.currentScript.remove();
+}
+</script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

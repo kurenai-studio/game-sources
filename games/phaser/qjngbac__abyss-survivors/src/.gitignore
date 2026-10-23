@@ -1,0 +1,36 @@
+# 构建产物：作为 Release 附件分发，不入库
+深渊幸存者.html
+
+# 本地素材工作目录（74 MB，含源图/备份/工具，不入库）
+assets1/
+
+# 早期设计文档（部分内容已被实现超越，数值以 data/ 与 src/ 为准）
+docs/
+
+# 未引用的 4 张历史贴图（保留在本地，不入库；仓库内 assets 恰好 56 张）
+assets/sprites/fx-arrow.png
+assets/sprites/fx-holy-water.png
+assets/sprites/fx-magic-bolt.png
+assets/sprites/ui-panel-upgrade.png
+
+# 素材抽取说明（引用本地 assets1/ 与 python 脚本，不入库）
+assets/README.md
+
+# 内部记录：审计工单、AI 工作记忆、临时脚本
+.workbuddy/
+06-code-audit-fix-plan.md
+07-gameplay-audit.md
+.tmp-*
+
+# 素材处理脚本（依赖 assets1，仓库内不提供）
+extract_usable.py
+fix_from_sources.py
+
+# 系统 / 编辑器 / 依赖
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+node_modules/
+*.log
