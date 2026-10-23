@@ -1,0 +1,805 @@
+@tool
+extends Node2D
+
+const HungryBeacon := preload("hungry_beacon.gd")
+const HungryContent := preload("../hungry_content.gd")
+const HungryContentSource := preload("hungry_content_source.gd")
+const HungryFalls := preload("hungry_falls.gd")
+const HungryField := preload("../hungry_field.gd")
+const HungryHazards := preload("../hungry_hazards.gd")
+const HungryHunters := preload("../hungry_hunters.gd")
+const HungryMonster := preload("../hungry_monster.gd")
+const HungryPiece := preload("../hungry_piece.gd")
+const HungryRider := preload("hungry_rider.gd")
+const HungryWorld := preload("../hungry_world.gd")
+
+## Draws the world. The only file in this project that knows what anything looks like.
+##
+## [b]Drawn, not composed.[/b] A world with eleven hundred pieces of food in it is eleven
+## hundred nodes if each one is a sprite, created and freed as the field refills — and on
+## a browser client that is most of a frame. A `_draw` call per visible thing is one node
+## and no allocation, which is the same choice game-blob's minimap made for the same
+## reason.
+##
+## [b]Everything is culled to the camera.[/b] The rectangle comes from the camera rig, and
+## the food inside it comes out of the same [Dot2DGrid] the eat checks use — which is what
+## that grid is for. Drawing the whole field and letting the renderer clip it would draw a
+## thousand circles to show fifty.
+##
+## No art. dot-2d ships none, dot-ui ships none, and neither does this: shapes, colours
+## and a font. What a real deployment adds is content, through dot-cloud, and the seam for
+## that is [HungryRider].
+
+# No CHANNEL: a drawer. It reads the world every frame and has nothing to report that a frame does not show.
+
+## A beacon on [param player_id] sent out a ripple from [param at]: once a second while it
+## is on, and once the moment it comes on. The client plays the ping here.
+signal beacon_pulsed(player_id: int, at: Vector2)
+
+## Extra world units drawn beyond the camera rectangle, so nothing pops in at the edge.
+const CULL_MARGIN := 120.0
+
+@export var world: HungryWorld = null
+
+## Whose monster this is, for the highlight and the name.
+@export var local_player_id: int = 0
+
+## The camera, for the cull rectangle. Any [Camera2D] will do.
+@export var camera: Camera2D = null
+
+## The clock this machine's own monster is predicted on (dot-net's `DotNetClock`), for its
+## render alpha; null offline. See [method HungryPiece.frame_alpha].
+var render_clock: Object = null
+
+## Whether every monster is simulated on this machine (offline: the bots too), so every one
+## is drawn between its ticks. Connected, only your own is: everybody else's pieces are moved
+## once a frame by dot-net's interpolator.
+var all_simulated_here: bool = false
+
+## This frame's alpha through the tick, read once in [method _draw].
+var _alpha: float = 1.0
+
+
+## Draw everybody's name above their monster. A player's setting; off is quieter and, in
+## a crowd, considerably more readable.
+@export var show_names: bool = true
+
+## Ring every monster by whether you could eat it, or it you.
+##
+## [b]The affordance this genre cannot do without.[/b] Eating needs a ratio — a quarter
+## bigger — and a quarter of a difference in area is about 12% of a difference in width,
+## which nobody judges reliably by eye and certainly not while being chased. The ring says
+## what the rule says.
+@export var show_threat: bool = true
+
+var prey_colour := Color(0.12, 0.70, 0.36, 0.90)
+var threat_colour := Color(0.92, 0.20, 0.24, 0.90)
+
+## Riders, one per player. Nodes rather than drawings, because an avatar may resolve to
+## real content and content is a scene.
+var _riders: Dictionary = {}
+
+## Where eaten monsters go down ([HungryFalls]): this node's first child, so a fall draws over
+## the arena and under every rider. Built in [method _ready].
+var falls: HungryFalls = null
+
+## What is in the arena besides the players. Read, never written — a renderer that nudged
+## one would be a renderer fighting the simulation, and the symptom is a stutter nobody
+## can locate.
+## An administrator's beacons, one per beaconed monster, keyed by player id. Built and
+## dropped by [method present_beacons] as the replicated flag comes and goes.
+var _beacons: Dictionary = {}
+
+var hunters: HungryHunters = null
+var hazards: HungryHazards = null
+
+## The look: a bright pastel sky, the family's sunny look (game-arena's built-in maps) in
+## 2D. It was deep space (a near-black floor, a starfield, faint nebulae), which read as
+## dark and heavy beside every other game; the saturated things on screen are now the food,
+## the fruit and the monsters, on a pale ground that never competes with them.
+##
+## The arena floor: a sky blue, one clear step lighter than the void so the boundary reads
+## without the wall having to do all the work. A mid sky blue rather than a near-white one:
+## the floor is most of every frame, and at (0.86, 0.92, 1.00) the whole frame sat at 0.91
+## luminance with the grid, the rocks and the paler food barely off it (the first play
+## test's "washed out", in 2D).
+var background := Color(0.74, 0.82, 0.96)
+
+## Outside the walls. A deeper periwinkle, and the only thing that says "you cannot go there".
+var void_colour := Color(0.46, 0.52, 0.78)
+
+var grid_line := Color(0.30, 0.40, 0.72, 0.30)
+var wall := Color(0.38, 0.46, 0.92)
+
+## Clouds drifting under the arena: parallaxed, hashed per cell like [DotStarfield] (the
+## same position every frame from any direction), drawn only where a whole cloud fits
+## inside the arena. Opaque and a step toward white from the floor, because translucent
+## discs show every overlap as a seam; large and pale, so no cloud is ever mistaken for
+## something edible.
+const CLOUD_CELL := 900.0
+const CLOUD_PARALLAX := 0.3
+const CLOUD_WHITEN := 0.6
+
+## The level's own geometry. Opaque and in the wall's family, because the one thing it has
+## to say is "you cannot be here" — a translucent rock reads as an area effect, and the
+## first thing a player does with an area effect is drive into it.
+var rock := Color(0.56, 0.52, 0.86)
+var rock_rim := Color(0.32, 0.28, 0.66)
+
+## Food, by tier. Cool through to hot, so size reads at a glance; saturated enough to
+## stand off the pale floor (the dark-sky tints washed out against it).
+var food_colours: Array[Color] = [
+	Color(0.50, 0.60, 0.98),
+	Color(0.16, 0.76, 0.66),
+	Color(1.00, 0.70, 0.12),
+	Color(1.00, 0.42, 0.32),
+]
+
+var planted_colour := Color(0.68, 0.36, 1.0)
+
+var _font: Font = null
+
+
+func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+
+	_font = ThemeDB.fallback_font
+	z_index = -1
+
+	falls = HungryFalls.new()
+	falls.name = "Falls"
+	falls.rider_fn = func(id: int) -> Node2D:
+		var rider: Node2D = _riders.get(id)
+		return rider if rider != null and is_instance_valid(rider) else null
+	falls.alive_fn = func(id: int) -> bool:
+		var monster := world.monster_for(id) if world != null else null
+		return monster != null and monster.alive and monster.piece_count() > 0
+	falls.colour_fn = func(id: int) -> Color:
+		var monster := world.monster_for(id) if world != null else null
+		return monster.colour if monster != null else Color.WHITE
+	add_child(falls)
+	move_child(falls, 0)
+
+
+func _process(delta: float) -> void:
+	if not Engine.is_editor_hint():
+		present_beacons(delta)
+		queue_redraw()
+
+
+## Moves every beacon's ripple on, starts one for a monster that has just been beaconed and
+## drops one whose monster is not any more — or is not alive: the flag outlives a death
+## (dot-moderation re-applies it on the respawn), but a ring round a monster that is not in
+## the arena marks nothing, and a pointer at where it died points everybody at empty floor.
+##
+## Returns how many pinged this frame. Public so a check can step it.
+func present_beacons(delta: float) -> int:
+	if world == null:
+		return 0
+
+	var pinged := 0
+	var seen := {}
+
+	for monster in world.monsters():
+		if not monster.beacon or not monster.alive or monster.piece_count() == 0:
+			continue
+
+		seen[monster.id] = true
+		var beacon: HungryBeacon = _beacons.get(monster.id)
+
+		if beacon == null:
+			beacon = HungryBeacon.new()
+			_beacons[monster.id] = beacon
+
+		if beacon.advance(delta):
+			pinged += 1
+			beacon_pulsed.emit(monster.id, monster.centre())
+
+	for id: Variant in _beacons.keys():
+		if not seen.has(id):
+			_beacons.erase(id)
+
+	return pinged
+
+
+## How many beacons are being drawn, for a check.
+func beacon_count() -> int:
+	return _beacons.size()
+
+
+func bind(p_world: HungryWorld, p_camera: Camera2D, p_player_id: int) -> void:
+	if world != null and world.piece_destroyed.is_connected(_on_piece_destroyed):
+		world.piece_destroyed.disconnect(_on_piece_destroyed)
+	world = p_world
+	# Every piece that leaves, remembered for a moment: the eaten one is gone from the world
+	# a message before the death that says whose last it was.
+	if world != null:
+		world.piece_destroyed.connect(_on_piece_destroyed)
+	camera = p_camera
+	local_player_id = p_player_id
+
+
+## The world rectangle worth drawing.
+func _view() -> Rect2:
+	if camera == null:
+		return world.arena.bounds if world != null else Rect2()
+
+	# [b]Divided by the zoom, not multiplied by it.[/b] Godot's [member Camera2D.zoom] is
+	# a magnification: a zoom of 2 doubles the size of everything on screen and therefore
+	# covers HALF the world. This multiplied, which is wrong by the square of the zoom in
+	# area — and the zoom here only leaves 1.0 when the player has grown, so the bug was
+	# invisible for the first minute of every round and then took most of the screen: a
+	# monster at half the winning mass zooms to 0.6, sees 2100 units across and had
+	# everything past 400 of them culled. Nothing drawn past that point, on a black
+	# background, reads as an empty arena rather than as a rendering fault.
+	#
+	# Found by rendering a frame of a level and looking at it. dot-2d's own camera rig had
+	# the same inversion in `visible_rect` and `_clamp`, which is what interest management
+	# is measured against.
+	return _visible().grow(CULL_MARGIN)
+
+
+## The world rectangle actually on screen, with no margin. What a beacon's edge pointer is
+## placed against: the margin is for drawing, and a pointer inside it is off the screen.
+func _visible() -> Rect2:
+	if camera == null:
+		return world.arena.bounds if world != null else Rect2()
+
+	var half := get_viewport_rect().size * 0.5 / Vector2(
+		maxf(absf(camera.zoom.x), 0.001), maxf(absf(camera.zoom.y), 0.001)
+	)
+	return Rect2(camera.global_position - half, half * 2.0)
+
+
+func _draw() -> void:
+	if world == null or world.arena == null:
+		return
+
+	var view := _view()
+	_alpha = HungryPiece.frame_alpha(render_clock)
+
+	_draw_ground(view)
+	# The level's geometry under the food, over the ground. Before the field for the same
+	# reason the hazards are: a rock that covered a crumb would be a crumb nobody goes
+	# for — except that here nothing is ever under one, because the world culls the field
+	# out of its own geometry. Drawn first anyway, so the day that stops being true the
+	# arena does not quietly develop dead zones.
+	_draw_layout(view)
+	_draw_field(view)
+	# Hazards under everything that moves and over the ground: a rock is part of the arena
+	# and a monster walks in front of it. Drawn before the food as well, so a rock never
+	# hides a crumb — a crumb a player cannot see is a crumb they do not go for, and the
+	# arena would quietly develop dead zones.
+	_draw_hazards(view)
+	_draw_hunters(view)
+	_draw_projectiles()
+	_draw_monsters(view)
+	# Last, over every monster: a beacon is the one mark that has to read over a crowd.
+	_draw_beacons(view)
+
+
+## The level. Read from the same [HungryLayout] the client predicts itself against, which
+## is the same one the server resolves against — because both built it from one id.
+##
+## [b]Opaque, hard-edged and the same colour as the wall.[/b] Everything else in this game
+## is a circle too, so the only thing that distinguishes the one circle a player cannot
+## enter is how solid it looks: a rim in the wall's own colour says "this is the edge of
+## the arena, locally", which is exactly what it is.
+func _draw_layout(view: Rect2) -> void:
+	if world == null or world.layout == null:
+		return
+
+	for block in world.layout.blocks:
+		var at := Vector2(block.x, block.y)
+		var radius: float = block.z
+
+		if not view.grow(radius).has_point(at):
+			continue
+
+		draw_circle(at, radius, rock)
+		# Two arcs rather than one: the outer is the boundary a player is stopped at and
+		# the inner is depth. Without the second a rock is a flat hole in the floor, which
+		# at this scale reads as a gap to drive into rather than a thing to go around.
+		draw_arc(at, radius, 0.0, TAU, 48, rock_rim, 3.0)
+		draw_arc(at, radius * 0.82, 0.0, TAU, 40, Color(rock_rim, 0.22), 2.0)
+
+
+## What people have had put in the arena. Read from the same object the simulation
+## resolves against, so a rock a client draws is a rock the server pushes them out of.
+func _draw_hazards(view: Rect2) -> void:
+	if hazards == null:
+		return
+
+	for entry in hazards.placements().values():
+		var placement: Dictionary = entry
+		var def: DotPropDef = placement["def"]
+		var at: Vector2 = placement["at"]
+		var radius := HungryHazards.radius_of(def)
+
+		if not view.has_point(at) and view.grow(radius).has_point(at) == false:
+			continue
+
+		var colour := HungryHazards.colour_of(def)
+
+		match HungryHazards.effect_of(def):
+			&"burst":
+				# A ring of spikes rather than a disc, because a thing that hurts you has
+				# to look unlike a thing that merely stops you. A player who cannot tell a
+				# rock from a spike learns the difference by being scattered.
+				draw_circle(at, radius * 0.55, Color(colour, 0.35))
+
+				for step in range(8):
+					var angle := TAU * float(step) / 8.0
+					draw_line(
+						at + Vector2.from_angle(angle) * radius * 0.45,
+						at + Vector2.from_angle(angle) * radius,
+						colour, 3.0
+					)
+			&"lure":
+				# Faint and pulsing-free: a lure does nothing to a player and must not
+				# read as something to avoid.
+				draw_circle(at, radius, Color(colour, 0.18))
+				draw_arc(at, radius, 0.0, TAU, 28, Color(colour, 0.6), 2.0)
+			_:
+				draw_circle(at, radius, colour)
+				draw_arc(at, radius, 0.0, TAU, 32, colour.darkened(0.4), 2.5)
+
+
+## The NPC monsters. Drawn like a piece, because they are one to a player's eye — and the
+## comparison a player makes is the same one: is that bigger than me.
+func _draw_hunters(view: Rect2) -> void:
+	if hunters == null:
+		return
+
+	var mine := world.monster_for(local_player_id) if world != null else null
+	var my_mass := mine.mass() if mine != null and mine.alive else 0.0
+
+	for entry in hunters.hunters().values():
+		var state: Dictionary = entry
+
+		if not bool(state["alive"]):
+			continue
+
+		var at: Vector2 = state["at"]
+		var radius: float = state["radius"]
+
+		if not view.grow(radius).has_point(at):
+			continue
+
+		var kind: StringName = state["kind"]
+		var mass := HungryHunters.mass_of(kind)
+
+		# Ringed exactly the way another player is, and by the same rule: green if you
+		# could eat it, red if it could eat you, and NEITHER when the two are inside the
+		# ratio of each other. That gap is the interesting case and the one a colour would
+		# lie about.
+		var ratio := 1.25
+
+		if world != null and world.tunables != null and world.tunables.mass_rules != null:
+			ratio = world.tunables.mass_rules.eat_ratio
+
+		draw_circle(at, radius, Color(0.28, 0.22, 0.32, 0.92))
+		draw_arc(at, radius, 0.0, TAU, 40, Color(0.55, 0.42, 0.62), 2.0)
+
+		# The spines are what say "this is not a player". A hunter that looked like a
+		# monster would be one people try to talk to.
+		for step in range(6):
+			var angle := TAU * float(step) / 6.0 + at.x * 0.01
+			draw_line(
+				at + Vector2.from_angle(angle) * radius * 0.8,
+				at + Vector2.from_angle(angle) * radius * 1.25,
+				Color(0.62, 0.48, 0.70), 2.0
+			)
+
+		if my_mass <= 0.0:
+			continue
+
+		if my_mass >= mass * ratio:
+			draw_arc(at, radius + 6.0, 0.0, TAU, 40, prey_colour, 2.5)
+		elif mass >= my_mass * ratio:
+			draw_arc(at, radius + 6.0, 0.0, TAU, 40, threat_colour, 2.5)
+
+
+func _draw_ground(view: Rect2) -> void:
+	var bounds := world.arena.bounds
+
+	# THE WHOLE VIEW, not just the arena. Only the arena used to be painted, which left the
+	# window's clear colour showing past the boundary — unnoticeable as a flat grey and
+	# glaring once there is a sky, because space that stops at the wall makes the wall look
+	# like a rendering fault.
+	draw_rect(view, void_colour)
+	draw_rect(bounds, background)
+
+	# The sky's clouds, parallaxed against the camera — hashed rather than stored, for the
+	# reason [DotStarfield] gives. Drawn under the grid and everything else: it is scenery,
+	# and nothing in it may be mistaken for something edible.
+	var anchor := camera.global_position if camera != null else Vector2.ZERO
+
+	_draw_clouds(view, anchor, bounds)
+
+	# A grid, because a featureless plane gives no sense of speed at all — a monster
+	# moving across an empty background looks stationary, which is exactly wrong for a
+	# game whose whole tension is how fast you are.
+	var step := 260.0
+	var from_x := floorf(view.position.x / step) * step
+	var to_x := view.end.x
+	var from_y := floorf(view.position.y / step) * step
+	var to_y := view.end.y
+
+	var x := from_x
+
+	while x <= to_x:
+		if x >= bounds.position.x and x <= bounds.end.x:
+			draw_line(
+				Vector2(x, maxf(view.position.y, bounds.position.y)),
+				Vector2(x, minf(to_y, bounds.end.y)),
+				grid_line,
+				1.0
+			)
+		x += step
+
+	var y := from_y
+
+	while y <= to_y:
+		if y >= bounds.position.y and y <= bounds.end.y:
+			draw_line(
+				Vector2(maxf(view.position.x, bounds.position.x), y),
+				Vector2(minf(to_x, bounds.end.x), y),
+				grid_line,
+				1.0
+			)
+		y += step
+
+	_draw_wall(bounds)
+
+
+## Soft white clouds over the visible rectangle, one candidate per [constant CLOUD_CELL].
+##
+## A cloud is four overlapping discs from one hash, so the same cell is the same cloud
+## every frame; half the cells are empty so the sky does not read as a lattice.
+func _draw_clouds(view: Rect2, anchor: Vector2, bounds: Rect2) -> void:
+	var colour := background.lerp(Color.WHITE, CLOUD_WHITEN)
+	var offset := anchor * (1.0 - CLOUD_PARALLAX)
+	var sample := Rect2(view.position - offset, view.size).grow(CLOUD_CELL * 0.5)
+	for cx in range(int(floorf(sample.position.x / CLOUD_CELL)), int(ceilf(sample.end.x / CLOUD_CELL)) + 1):
+		for cy in range(int(floorf(sample.position.y / CLOUD_CELL)), int(ceilf(sample.end.y / CLOUD_CELL)) + 1):
+			var h := _cloud_hash(cx, cy)
+			if h % 2 != 0:
+				continue
+			var at := Vector2(
+				(float(cx) + _cloud_unit(h, 1)) * CLOUD_CELL,
+				(float(cy) + _cloud_unit(h, 2)) * CLOUD_CELL
+			) + offset
+			var size := CLOUD_CELL * (0.12 + _cloud_unit(h, 3) * 0.10)
+			if not bounds.grow(-size * 2.2).has_point(at):
+				continue
+			for i in 4:
+				var puff := Vector2((float(i) - 1.5) * size * 0.7, (absf(float(i) - 1.5) - 0.75) * size * 0.25)
+				draw_circle(at + puff, size * (0.75 if i == 0 or i == 3 else 1.0), colour)
+
+
+static func _cloud_hash(x: int, y: int) -> int:
+	var h := (x * 73856093) ^ (y * 19349663) ^ 0x5bd1e995
+	h = (h ^ (h >> 13)) * 1274126177
+	return absi(h ^ (h >> 16))
+
+
+static func _cloud_unit(h: int, slot: int) -> float:
+	return float((h >> (slot * 5)) & 1023) / 1023.0
+
+
+## The boundary, drawn as a glow rather than a line.
+##
+## Three passes, widest and faintest first. A 3px hairline is nearly invisible against a
+## starfield, and the wall is the one thing in this scene a player cannot afford to miss:
+## being cornered against it is how most of them are eaten.
+func _draw_wall(bounds: Rect2) -> void:
+	draw_rect(bounds, Color(wall.r, wall.g, wall.b, 0.09), false, 16.0)
+	draw_rect(bounds, Color(wall.r, wall.g, wall.b, 0.20), false, 7.0)
+	draw_rect(bounds, Color(wall.r, wall.g, wall.b, 0.85), false, 2.0)
+
+
+func _draw_field(view: Rect2) -> void:
+	for grid_id in world.arena.grid.query_rect(view):
+		if grid_id < HungryField.PIECE_ID_LIMIT:
+			continue
+
+		var at := world.field.position_of(grid_id)
+		var radius := world.field.radius_of(grid_id)
+
+		match HungryField.kind_of(grid_id):
+			HungryField.Kind.FOOD:
+				var tier := world.field.tier_of(grid_id)
+				var food := food_colours[tier]
+
+				# A halo on the top two tiers ONLY. Every crumb glowing is a thousand extra
+				# circles a frame and a screen with no contrast left in it; the pieces worth
+				# crossing the arena for are the ones that should carry light.
+				if tier >= 2:
+					draw_circle(at, radius * 2.1, Color(food.r, food.g, food.b, 0.13))
+
+				draw_circle(at, radius, food)
+
+			HungryField.Kind.PLANTED:
+				draw_circle(at, radius, planted_colour)
+
+			HungryField.Kind.FRUIT:
+				var kind := int(world.field.fruit_kind_of(grid_id))
+				var colour := HungryContent.FRUIT_COLOURS[kind]
+				draw_circle(at, radius * 2.6, Color(colour.r, colour.g, colour.b, 0.16))
+				draw_circle(at, radius, colour)
+				# A ring, so a fruit is never mistaken for a large piece of food. Being
+				# able to tell them apart at a glance is the whole value of a rare thing.
+				draw_arc(at, radius + 5.0, 0.0, TAU, 24, colour, 2.0)
+
+			HungryField.Kind.ITEM:
+				var item := world.field.item_id_of(grid_id)
+				var tint := HungryContent.item_colour(item)
+				draw_rect(
+					Rect2(at - Vector2(radius, radius) * 0.7, Vector2(radius, radius) * 1.4),
+					tint
+				)
+				draw_arc(at, radius, 0.0, TAU, 20, tint.lightened(0.3), 2.0)
+
+
+func _draw_projectiles() -> void:
+	var tick := world.current_tick()
+
+	for shot in world.projectiles():
+		var at := shot.position_at(tick, world.tick_rate)
+		var tint := HungryContent.item_colour(shot.item)
+
+		# A short tail rather than a dot: a projectile crossing the screen in a second is
+		# hard to see coming, and which way it is going is the only thing that matters.
+		draw_line(at - shot.direction * 26.0, at, Color(tint.r, tint.g, tint.b, 0.6), 4.0)
+		draw_circle(at, HungryContent.THROW_RADIUS, tint)
+
+
+func _draw_monsters(view: Rect2) -> void:
+	# What the local monster's biggest piece weighs, which is what every eat check against
+	# it is measured from. Read once rather than per piece: it does not change inside a
+	# frame and this loop runs over everything on screen.
+	var me := world.monster_for(local_player_id)
+	var my_biggest := 0.0
+
+	if me != null and me.alive:
+		for piece in me.pieces:
+			my_biggest = maxf(my_biggest, piece.mass())
+
+	for monster in world.monsters():
+		if not monster.alive:
+			continue
+
+		var rider_piece := monster.rider_piece()
+		var mine := monster.id == local_player_id
+
+		for piece in monster.pieces:
+			# Grown by the piece's own radius, because a monster wide enough to fill the
+			# screen has its centre well outside the view rectangle while most of it is
+			# inside — culling on the centre alone makes the biggest player invisible.
+			if not view.grow(piece.radius()).has_point(_at(piece, mine)):
+				continue
+
+			_draw_piece(monster, piece, mine, rider_piece)
+
+			if show_threat and not mine and my_biggest > 0.0:
+				_draw_threat(piece, my_biggest)
+
+		_place_rider(monster, rider_piece, mine)
+		_draw_name(monster, rider_piece, mine)
+
+
+func _draw_piece(
+	monster: HungryMonster,
+	piece: HungryPiece,
+	mine: bool,
+	rider_piece: HungryPiece
+) -> void:
+	var body := monster.colour
+	var flags := piece.state.flags
+	var at := _at(piece, mine)
+
+	if (flags & HungryContent.FLAG_FROSTED) != 0:
+		body = body.lerp(Color(0.55, 0.80, 1.0), 0.45)
+
+	if (flags & HungryContent.FLAG_PROTECTED) != 0:
+		body.a = 0.65
+
+	# A corona, so a monster reads as a body of light in a sky rather than a flat disc laid
+	# on top of one. One extra circle per piece, and pieces are counted in dozens.
+	draw_circle(
+		at, piece.radius() * 1.15, Color(body.r, body.g, body.b, 0.13)
+	)
+	draw_circle(at, piece.radius(), body)
+	draw_arc(
+		at,
+		piece.radius(),
+		0.0,
+		TAU,
+		48,
+		body.darkened(0.45) if not mine else Color.WHITE,
+		3.0 if mine else 2.0
+	)
+
+	if (flags & HungryContent.FLAG_RUSH) != 0:
+		draw_arc(
+			at, piece.radius() + 6.0, 0.0, TAU, 48,
+			HungryContent.FRUIT_COLOURS[int(HungryContent.Fruit.RUSH)], 2.0
+		)
+
+	if (flags & HungryContent.FLAG_RIND) != 0:
+		draw_arc(
+			at, piece.radius() + 11.0, 0.0, TAU, 48,
+			HungryContent.FRUIT_COLOURS[int(HungryContent.Fruit.RIND)], 2.0
+		)
+
+	# A piece that may merge is drawn open, so a player can see at a glance whether
+	# gathering will actually put them back together. Waiting sixteen seconds without
+	# being told how long is the least readable part of this genre.
+	if piece != rider_piece and (flags & HungryContent.FLAG_MERGE_READY) != 0:
+		draw_arc(
+			at, piece.radius() * 0.72, 0.0, TAU, 32,
+			Color(1.0, 1.0, 1.0, 0.35), 1.5
+		)
+
+
+## Every beacon: a ring round the monster when it is anywhere near the screen, and a
+## pointer at the screen's edge when it is not. See [HungryBeacon].
+func _draw_beacons(view: Rect2) -> void:
+	if _beacons.is_empty():
+		return
+
+	var visible := _visible()
+	var px := 1.0 / maxf(absf(camera.zoom.x), 0.001) if camera != null else 1.0
+
+	for id: Variant in _beacons:
+		var monster := world.monster_for(int(id))
+
+		if monster == null or not monster.alive or monster.piece_count() == 0:
+			continue
+
+		var beacon: HungryBeacon = _beacons[id]
+		var centre := monster.centre()
+		var radius := monster.spread_radius()
+
+		if view.grow(radius * HungryBeacon.RIPPLE_SCALE + HungryBeacon.MARGIN * 3.0).has_point(centre):
+			beacon.draw_ring(self, centre, radius)
+
+		# Not on this player's own beacon: they are in the middle of their own screen, and
+		# a pointer never has anywhere to point when the camera is following them.
+		if int(id) != local_player_id:
+			var _drew := beacon.draw_pointer(self, visible, centre, px)
+
+
+## Rings a piece by whether it can be eaten, or eaten by.
+##
+## Neither, when the two are within the ratio of each other — which is the interesting
+## case and the one a colour would lie about. A piece that is merely *smaller* is not
+## food; it has to be smaller by a quarter, and the gap between those two is exactly where
+## players get eaten.
+func _draw_threat(piece: HungryPiece, my_biggest: float) -> void:
+	var rules := world.tunables.mass_rules
+	var mass := piece.mass()
+
+	if my_biggest >= mass * rules.eat_ratio:
+		draw_arc(
+			_at(piece, false), piece.radius() + 4.0, 0.0, TAU, 40, prey_colour, 2.0
+		)
+	elif mass >= my_biggest * rules.eat_ratio:
+		draw_arc(
+			_at(piece, false), piece.radius() + 4.0, 0.0, TAU, 40, threat_colour, 2.0
+		)
+
+
+## Where [param piece] is drawn this frame: between its ticks when this machine simulates it
+## (your own, or everybody offline), else where it is, which for a remote piece is where the
+## interpolator put it this frame.
+func _at(piece: HungryPiece, mine: bool) -> Vector2:
+	if mine or all_simulated_here:
+		return piece.drawn_position(_alpha)
+	return piece.position()
+
+
+## Keeps one rider node per player, on the piece the flags say carries it.
+func _place_rider(monster: HungryMonster, piece: HungryPiece, mine: bool = false) -> void:
+	if piece == null:
+		return
+
+	var rider: HungryRider = _riders.get(monster.id)
+
+	if rider == null:
+		rider = HungryRider.make(_schema(), _catalogue())
+		_riders[monster.id] = rider
+		add_child(rider)
+
+	rider.wear(monster.avatar)
+	# Alive again after a fall moved, turned, shrank or hid it ([HungryFall]).
+	rider.visible = true
+	rider.rotation = 0.0
+	rider.scale = Vector2.ONE
+	rider.modulate = Color.WHITE
+	rider.position = _at(piece, mine)
+	rider.resize(clampf(piece.radius() * 0.55, 10.0, 90.0))
+	rider.queue_redraw()
+
+
+func _draw_name(monster: HungryMonster, piece: HungryPiece, mine: bool) -> void:
+	if not show_names or _font == null or piece == null:
+		return
+
+	var size := clampi(int(piece.radius() * 0.34), 11, 34)
+	var text := monster.display_name
+	var width := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var at := _at(piece, mine) + Vector2(-width * 0.5, piece.radius() + float(size) + 4.0)
+
+	# Dark on a light sky, with a white lift under it: the white names of the dark-sky look
+	# vanished into the pale floor.
+	draw_string(
+		_font, at + Vector2(1.0, 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size,
+		Color(1.0, 1.0, 1.0, 0.7)
+	)
+	draw_string(
+		_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size,
+		Color(0.06, 0.08, 0.18) if mine else Color(0.16, 0.20, 0.34)
+	)
+
+
+## The rider schema and catalogue, shared across every rider.
+var _shared_schema: DotAvatarSchema = null
+var _shared_catalogue: DotAvatarCatalogue = null
+
+## Where part scenes come from. Public so a host can hand it a pack it acquired itself.
+var content: HungryContentSource = null
+
+
+func _schema() -> DotAvatarSchema:
+	if _shared_schema == null:
+		_shared_schema = HungryContent.avatar_schema()
+
+	return _shared_schema
+
+
+## One catalogue for everybody, because it caches resolutions.
+##
+## A catalogue per rider would ask dot-cloud for the same hat once per player wearing it,
+## and `ResourceLoader.exists` on a path that is not there is not free.
+##
+## Its resolver is [HungryContentSource], which prefers a mounted pack over the build and
+## falls back to nothing so the rider draws itself. That order is what makes downloadable
+## cosmetics an upgrade rather than a requirement.
+func _catalogue() -> DotAvatarCatalogue:
+	if _shared_catalogue == null:
+		_shared_catalogue = DotAvatarCatalogue.new()
+		_shared_catalogue.builtin_prefix = HungryContentSource.BUILTIN_PREFIX
+		content = HungryContentSource.new()
+		content.install(_shared_catalogue)
+
+	return _shared_catalogue
+
+
+func _on_piece_destroyed(piece: HungryPiece) -> void:
+	if falls != null:
+		falls.note_piece(piece)
+
+
+## Drops the rider of a player who has left.
+func forget(player_id: int) -> void:
+	_beacons.erase(player_id)
+
+	var rider: HungryRider = _riders.get(player_id)
+
+	if rider != null and is_instance_valid(rider):
+		rider.queue_free()
+
+	_riders.erase(player_id)
+
+
+func describe() -> Dictionary:
+	return {
+		"riders": _riders.size(),
+		"beacons": _beacons.size(),
+		"view": _view(),
+		"player": local_player_id,
+		"content": content.describe() if content != null else null,
+	}
