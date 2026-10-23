@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FunGals | Who’s That Gal?</title>
+    <meta name="description" content="Read a fun fact about a real fungus and guess which FunGal it belongs to. No score, just facts and tries." />
+    <link rel="canonical" href="https://jessicasogge.github.io/fungals/whos-that-gal.html" />
+    <!-- How the link looks when it's shared (iMessage, Slack, Discord, social media) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FunGals" />
+    <meta property="og:title" content="FunGals | Who’s That Gal?" />
+    <meta property="og:description" content="Read a fun fact about a real fungus and guess which FunGal it belongs to. No score, just facts and tries." />
+    <meta property="og:url" content="https://jessicasogge.github.io/fungals/whos-that-gal.html" />
+    <meta property="og:image" content="https://jessicasogge.github.io/fungals/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Penelope, Sasha, Miri, Candi, Fumi, Olive and Yara, seven cartoon yeasts and molds, above the words FunGals: Grow your colony. Dodge antifungals." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <!-- The icon (and name) for "Add to Home Screen" on an iPhone or iPad. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="FunGals" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="picker-page">
+    <!-- "Growing the colony…" covers the page until game/whos-that-gal.js has
+         filled it in (see game/loading.js). -->
+    <div class="loading-overlay arriving">
+      <div class="loading-card" role="status">
+        <span class="loading-cells" aria-hidden="true"><span></span><span></span></span>
+        <span class="loading-text">Growing the colony…</span>
+      </div>
+    </div>
+    <main class="picker-shell guess-shell">
+      <h1>Who’s That Gal?</h1>
+      <!-- How many facts you've seen so far, out of all of them. Not a score. -->
+      <p class="guess-counter" aria-label="Fact number"></p>
+      <!-- A fact with "this gal" in place of her name, from game/guess.js. -->
+      <p class="guess-fact"></p>
+      <p class="guess-status" aria-live="polite">Who is this fact about? Tap her!</p>
+      <!-- A button for every gal, made by game/whos-that-gal.js. -->
+      <div class="gal-grid guess-grid"></div>
+      <div class="guess-actions">
+        <button class="pick-btn next-fact" type="button" hidden>Next fact</button>
+      </div>
+      <a class="back-link" href="./index.html">Back to home</a>
+    </main>
+    <footer class="signature">jsogge 2026</footer>
+    <script type="module" src="./game/whos-that-gal.js"></script>
+    <script data-goatcounter="https://petripals.goatcounter.com/count"
+            async src="https://gc.zgo.at/count.js"></script>
+  </body>
+</html>

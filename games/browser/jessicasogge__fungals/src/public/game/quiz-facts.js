@@ -1,0 +1,86 @@
+// Fun facts for Who’s That Gal? (whos-that-gal.js), picked so each is specific to just that gal
+
+export const QUIZ_FACTS = {
+  sasha: [
+    "Sasha makes bread rise: the carbon dioxide she gives off puffs the dough up with bubbles.",
+    "Sasha turns sugar into alcohol and carbon dioxide, which is how beer and wine are made.",
+    "In 1996, Sasha became the first eukaryote to have her whole genome sequenced.",
+    "When glucose is plentiful, Sasha can make ethanol even with oxygen around—a behavior called the Crabtree effect.",
+    "Engineered cells of Sasha's species help make insulin for people with diabetes.",
+  ],
+  candi: [
+    "Candi can live harmlessly in the mouth, gut, and on the skin of many people.",
+    "Candi can cause thrush, which often makes white patches inside the mouth.",
+    "Candi is the most common cause of yeast infections.",
+    "In serum at body temperature, Candi sprouts germ tubes within hours, a classic lab test.",
+    "On a special agar called CHROMagar Candida, Candi's colonies usually grow green.",
+    "Candi makes a toxin called candidalysin that punches holes in human cells.",
+    "On cornmeal agar, Candi makes chlamydospores: big, round, thick-walled cells.",
+  ],
+  olive: [
+    "Olive's genus, *Malassezia*, is named for Louis-Charles Malassez, a French scientist.",
+    "Olive can't make her own fatty acids, so she eats the oils on your skin.",
+    "One way to grow Olive in the lab is to add a thin layer of olive oil to her culture plate.",
+    "Olive buds again and again from one end, so her cells can look like little bowling pins.",
+    "Olive has a little collar at her budding site, called a collarette.",
+    "*Malassezia* yeasts like Olive play a part in dandruff.",
+    "Olive can cause pityriasis versicolor: patches of skin that turn lighter or darker.",
+    "Olive is a basidiomycete yeast, on the same big fungal branch as cap-and-stem mushrooms.",
+  ],
+  fumi: [
+    "Fumi's species name, *fumigatus*, means \"smoky,\" for her smoky grey-green colonies.",
+    "Fumi's genus is named for the aspergillum, a brush for sprinkling holy water.",
+    "Fumi can grow at 50 °C, so she thrives in hot, rotting compost heaps.",
+    "Fumi's spores grow in long chains that stand up from a swollen head, like columns.",
+  ],
+  penelope: [
+    "Alexander Fleming found Penelope's penicillin in 1928, when she spoiled one of his plates.",
+    "Penelope's genus, *Penicillium*, means \"little paintbrush,\" for her spore stalks.",
+    "The world's penicillin strain came from Penelope on a moldy cantaloupe in Peoria.",
+    "Mary Hunt, nicknamed \"Moldy Mary,\" found Penelope on a moldy cantaloupe in 1943.",
+    "By D-Day in 1944, enough of Penelope's penicillin was made to treat wounded soldiers.",
+    "Penelope's cousins make blue cheese like Roquefort and the white rind on Brie.",
+  ],
+  miri: [
+    "Miri is the koji mold, grown on steamed rice or soybeans to make soy sauce and miso.",
+    "Miri helps brew sake by turning the starch in rice into sugar that yeast can ferment.",
+    "In 2006, the Brewing Society of Japan named Miri its \"national fungus.\"",
+    "Miri's species name, *oryzae*, means \"of rice.\"",
+  ],
+  yara: [
+    "Yara's species name, *lipolytica*, means \"fat-breaking,\" since she feeds on fats and oils.",
+    "Yara stores fat in cell droplets, sometimes over a third of her dry weight.",
+    "Yara can eat hydrocarbons from oil, so scientists study her for cleaning up spills.",
+    "Companies grow Yara to make omega-3 fats for fish feed and supplements.",
+  ],
+  peachy: [
+    "Peachy can use methanol, a simple alcohol, as her sole source of carbon and energy.",
+    "On methanol, Peachy's peroxisomes can grow to occupy most of her cell.",
+    "Peachy's species name, *phaffii*, honors the yeast scientist Herman Phaff.",
+    "Peachy is now *Komagataella phaffii*, but labs often call her *Pichia pastoris*.",
+  ],
+  maizey: [
+    "Maizey causes corn smut, swelling kernels into galls that darken as spores mature.",
+    "In Mexico, Maizey's young galls are eaten as huitlacoche, the \"Mexican truffle.\"",
+    "To infect corn, two Maizey cells with compatible mating types normally fuse first.",
+    "Maizey's species name, *maydis*, means \"of maize,\" another word for corn.",
+  ],
+  ruby: [
+    "Ruby is the \"bleeding tooth fungus\": her young white cap oozes bright red drops.",
+    "Instead of gills, Ruby has tiny \"teeth\" under her cap that release spores.",
+    "Ruby's young caps are white and fuzzy, then turn brown as they age.",
+    "Ruby's species name, *peckii*, honors American mycologist Charles Horton Peck.",
+  ],
+  rosie: [
+    "Rosie can cause \"rose gardener's disease\" after entering skin through a thorn prick.",
+    "Rosie's skin infections can form a line of bumps up an arm along lymph vessels.",
+    "In Brazil, Rosie's cousin *Sporothrix brasiliensis* spreads from cats to people.",
+    "Rosie's genus name, *Sporothrix*, comes from words meaning \"spore\" and \"hair\".",
+  ],
+  neve: [
+    "Neve's thick sugar capsule appears as a clear halo against dark India ink.",
+    "Neve lives in soil and old pigeon droppings, and infection starts by breathing her in.",
+    "On birdseed agar, Neve makes melanin that turns her colonies brown.",
+    "Neve's species name, *neoformans*, comes from words meaning \"new\" and \"form\".",
+  ],
+};
