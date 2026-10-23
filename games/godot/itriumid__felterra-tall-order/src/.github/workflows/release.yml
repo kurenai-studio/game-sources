@@ -1,0 +1,153 @@
+name: Release
+
+# Pushing a `v*` tag exports the game for every platform and attaches the builds to a draft GitHub
+# Release for that tag. Nothing is published automatically: review the draft, edit the notes,
+# then publish it by hand. Releases are immutable once published, so check the draft first.
+#
+# Run it manually (Actions → Release → Run workflow) for a dry run: it exports the same builds
+# and keeps them as workflow artifacts, without creating a release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# Any `permissions:` block replaces the default token scopes, so grant per job.
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      release-id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Tags are vMAJOR.MINOR.PATCH, nothing else, and must match the version in project.godot:
+      # a tag that disagreed would ship builds labeled with a different version than the release.
+      - name: Check the tag is a version and matches the game
+        if: github.ref_type == 'tag'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::$TAG isn't a release tag. Use vMAJOR.MINOR.PATCH, e.g. v0.0.1 (see CONTRIBUTING.md, Versioning)."
+            exit 1
+          fi
+          version=$(sed -n 's/^config\/version="\(.*\)"$/\1/p' project.godot)
+          if [ "$version" != "${TAG#v}" ]; then
+            echo "::error file=project.godot::config/version is $version, but the tag is $TAG"
+            exit 1
+          fi
+
+      # Created once, here, and identified by the ID in the creation response: a draft that was
+      # just created doesn't reliably show up in the release list yet.
+      - name: Create the draft release
+        id: release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          id=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$TAG" -f name="Felterra: Tall Order ${TAG#v}" -F draft=true -F generate_release_notes=true \
+            --jq .id)
+          if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+            echo "::error::Creating the draft release returned no ID."
+            exit 1
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Export and attach the builds
+    needs: prepare
+    # macOS exports every platform, and signs the Mac build with its own codesign.
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The font is a submodule: Itrium Pixel, shared by the games.
+          submodules: true
+      - name: Download Godot
+        run: |
+          curl --fail --location --silent --show-error --output godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+      # Fetched fresh rather than from the export check's cache: a release is built from a clean
+      # slate, so nothing a pull request's run left behind can end up in a shipped build.
+      - name: Download the export templates
+        run: |
+          curl --fail --location --silent --show-error --output templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          folder="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION/-/.}"
+          mkdir -p "$folder"
+          unzip -q templates.tpz -d "$RUNNER_TEMP/templates"
+          mv "$RUNNER_TEMP/templates/templates/"* "$folder/"
+      - name: Export every platform
+        run: tools/export.sh build/release
+      - name: Keep the builds of a dry run
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: builds
+          path: build/release/
+          if-no-files-found: error
+      - name: Attach the builds to the draft
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+        run: |
+          for file in build/release/*; do
+            name=$(basename "$file")
+            # By release ID: looking the draft up by its tag isn't reliable.
+            curl --fail-with-body --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/octet-stream" \
+              --data-binary "@$file" \
+              "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?name=$name" \
+              > /dev/null
+            echo "Attached $name"
+          done
+
+  # Every job passing doesn't prove anything was attached: a step that uploads nothing still
+  # succeeds. So the release itself is checked for every build.
+  verify:
+    name: Check the release has every build
+    needs: [prepare, build]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Only read here, but GitHub shows draft releases only to tokens with push access.
+      contents: write
+    steps:
+      - name: Check the attached files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+        run: |
+          # The builds are named without the version, so every file on this release counts.
+          names=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" --paginate --jq '.[].name')
+          echo "$names"
+          status=0
+          for pattern in '_windows_x86_64\.zip$' '_macos_universal\.zip$' '_linux_x86_64\.zip$' '_linux_arm64\.zip$' '_checksums\.txt$'; do
+            if ! grep -Eq "$pattern" <<< "$names"; then
+              echo "::error::The release has no file matching $pattern"
+              status=1
+            fi
+          done
+          exit $status
