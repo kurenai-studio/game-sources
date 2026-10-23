@@ -1,0 +1,150 @@
+name: .NET Core
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+
+    - name: Set app version
+      run: powershell.exe -Command "./Set-AppVersion.ps1 -BuildDate ((Get-Date).ToString('s')) -GitRef '${{ github.ref }}'"
+
+    - name: Test with dotnet
+      run: dotnet test --configuration Release
+      working-directory: tests/Tetrominoes.Tests
+
+    - name: Compress content
+      run: powershell.exe -Command ./GenerateMgcb.ps1 -Path ./Content.mgcb -Compress -Force
+      working-directory: src/Tetrominoes.OpenGL/Content
+
+    - name: Build with dotnet
+      run: dotnet build --configuration Release
+      working-directory: src/Tetrominoes.OpenGL
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: Tetrominoes.OpenGL
+        path: src/Tetrominoes.OpenGL/bin/Release/netcoreapp3.1
+
+    - name: Publish with dotnet
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        dotnet publish --configuration Release --self-contained --runtime win-x86
+        dotnet publish --configuration Release --self-contained --runtime win-x64
+        dotnet publish --configuration Release --self-contained --runtime linux-x64
+        dotnet publish --configuration Release --self-contained --runtime osx-x64
+      working-directory: src/Tetrominoes.OpenGL
+
+    - name: Archive assets
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        7z a -mx9 Tetrominoes-OpenGL-win-x86.zip ./src/Tetrominoes.OpenGL/bin/Release/netcoreapp3.1/win-x86/publish/*
+        7z a -mx9 Tetrominoes-OpenGL-win-x64.zip ./src/Tetrominoes.OpenGL/bin/Release/netcoreapp3.1/win-x64/publish/*
+        7z a Tetrominoes-OpenGL-linux-x64.tar ./src/Tetrominoes.OpenGL/bin/Release/netcoreapp3.1/linux-x64/publish/*
+        7z a -mx9 Tetrominoes-OpenGL-linux-x64.tar.gz Tetrominoes-OpenGL-linux-x64.tar
+        7z a Tetrominoes-OpenGL-osx-x64.tar ./src/Tetrominoes.OpenGL/bin/Release/netcoreapp3.1/osx-x64/publish/*
+        7z a -mx9 Tetrominoes-OpenGL-osx-x64.tar.gz Tetrominoes-OpenGL-osx-x64.tar
+
+    - name: Create win-x86 nsis installer
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: joncloud/makensis-action@v1
+      with:
+        script-file: win-x86.nsi
+
+    - name: Create win-x64 nsis installer
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: joncloud/makensis-action@v1
+      with:
+        script-file: win-x64.nsi
+
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      id: create_release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
+
+    - name: Upload GitHub release asset win-x86 installer
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-win-x86.exe
+        asset_name: Tetrominoes-OpenGL-win-x86.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
+
+    - name: Upload GitHub release asset win-x64 installer
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-win-x64.exe
+        asset_name: Tetrominoes-OpenGL-win-x64.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
+
+    - name: Upload GitHub release asset win-x86 zip
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-win-x86.zip
+        asset_name: Tetrominoes-OpenGL-win-x86.zip
+        asset_content_type: application/zip
+
+    - name: Upload GitHub release asset win-x64 zip
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-win-x64.zip
+        asset_name: Tetrominoes-OpenGL-win-x64.zip
+        asset_content_type: application/zip
+
+    - name: Upload GitHub release asset linux-x64 gzip
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-linux-x64.tar.gz
+        asset_name: Tetrominoes-OpenGL-linux-x64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload GitHub release asset osx-x64 gzip
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./Tetrominoes-OpenGL-osx-x64.tar.gz
+        asset_name: Tetrominoes-OpenGL-osx-x64.tar.gz
+        asset_content_type: application/gzip
