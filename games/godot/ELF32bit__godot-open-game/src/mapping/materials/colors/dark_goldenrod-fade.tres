@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dy6i8mywu3qa6"]
+
+[ext_resource type="Shader" uid="uid://dweh5jnnmp7ip" path="res://characters/shaders/fade.gdshader" id="1_oc7uf"]
+[ext_resource type="Texture2D" uid="uid://veemsu8otsru" path="res://mapping/textures/colors/dark_goldenrod.tga" id="2_q8q7g"]
+
+[resource]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("1_oc7uf")
+shader_parameter/albedo_texture = ExtResource("2_q8q7g")
+shader_parameter/fade = 0.0
+shader_parameter/fade_index = 0.0

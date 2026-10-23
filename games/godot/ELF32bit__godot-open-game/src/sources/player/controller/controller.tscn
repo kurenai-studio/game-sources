@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://c3a6p01wxklcf"]
+
+[ext_resource type="Script" uid="uid://l85kl0kwjnnr" path="res://sources/player/controller/controller.gd" id="1_xxgcw"]
+[ext_resource type="PackedScene" uid="uid://dp4ir50jt2kwu" path="res://sources/player/camera/camera.tscn" id="2_ew1sx"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6mcb7"]
+radius = 0.35
+height = 1.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_6p3mc"]
+margin = 0.05
+radius = 0.1
+
+[node name="CharacterBody3D" type="CharacterBody3D" unique_id=157933444]
+collision_layer = 18808884
+collision_mask = 259
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+floor_constant_speed = true
+platform_on_leave = 2
+script = ExtResource("1_xxgcw")
+jump_count_max = 2
+swim_blocking_layers = 8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1530996554]
+shape = SubResource("CapsuleShape3D_6mcb7")
+
+[node name="HEAD" type="Marker3D" parent="." unique_id=1259660148]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="HEAD" unique_id=2056986626]
+remote_path = NodePath("../../SpringArm3D")
+update_rotation = false
+update_scale = false
+
+[node name="SpringArm3D" type="SpringArm3D" parent="." unique_id=2100629973]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+top_level = true
+collision_mask = 265
+shape = SubResource("SphereShape3D_6p3mc")
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="SpringArm3D" unique_id=823954158]
+remote_path = NodePath("../../Camera3D")
+update_scale = false
+
+[node name="Camera3D" parent="." unique_id=114068645 instance=ExtResource("2_ew1sx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+select_distance = 100.0
+select_mask = 2147483648
+collision_mask = 2147483905

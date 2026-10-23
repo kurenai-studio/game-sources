@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://cpq7gi016pc4i"]
+
+[ext_resource type="Script" uid="uid://cy2n5pegtahoo" path="res://sources/player/player.gd" id="1_6mcb7"]
+[ext_resource type="PackedScene" uid="uid://c3a6p01wxklcf" path="res://sources/player/controller/controller.tscn" id="1_xhrqs"]
+[ext_resource type="PackedScene" uid="uid://c3pmhhunn1icj" path="res://sources/player/highlighter/highlighter.tscn" id="2_hhpt7"]
+[ext_resource type="PackedScene" uid="uid://glp6e5viuk2y" path="res://sources/sensors/proximity.tscn" id="3_c3xfw"]
+[ext_resource type="PackedScene" uid="uid://c20777ho4ge14" path="res://characters/maps/servbot.map" id="3_hhpt7"]
+[ext_resource type="Script" uid="uid://dqbbtsale030y" path="res://sources/player/components/animations.gd" id="4_j2hga"]
+[ext_resource type="Script" uid="uid://dg0ek5us04kgj" path="res://sources/player/components/physics.gd" id="6_j2hga"]
+[ext_resource type="Script" uid="uid://bvn18m5fpcpbm" path="res://sources/player/components/selector.gd" id="7_hhpt7"]
+[ext_resource type="PackedScene" uid="uid://b2kc3ld0pfhsi" path="res://characters/decals/shadow.tscn" id="7_twe6k"]
+[ext_resource type="PackedScene" uid="uid://buvuuo854xy1q" path="res://characters/maps/origami.map" id="8_nucx5"]
+
+[sub_resource type="Animation" id="Animation_0c75n"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation:y")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [-1.5707964]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation:x")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0.08726647]
+}
+
+[sub_resource type="Animation" id="Animation_nucx5"]
+resource_name = "rotate"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation:y")
+tracks/0/interp = 2
+tracks/0/loop_wrap = false
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [-1.5707964, 1.571, -1.571]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation:x")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5, 1, 1.5, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.08726647, 0.348, 0.174, 0.348, 0.08726647]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_0c75n"]
+_data = {
+&"RESET": SubResource("Animation_0c75n"),
+&"rotate": SubResource("Animation_nucx5")
+}
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_nucx5"]
+radius = 0.15
+
+[node name="PLAYER" type="Node3D" unique_id=204903554]
+script = ExtResource("1_6mcb7")
+
+[node name="CharacterBody3D" parent="." unique_id=157933444 instance=ExtResource("1_xhrqs")]
+
+[node name="MeshInstance3D" parent="CharacterBody3D" unique_id=1271892564 instance=ExtResource("3_hhpt7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4965405, 0)
+script = ExtResource("4_j2hga")
+
+[node name="PROXIMITY" parent="CharacterBody3D" unique_id=619298737 instance=ExtResource("3_c3xfw")]
+directional = true
+collision_mask = 1073741824
+
+[node name="PHYSICS" type="Node" parent="CharacterBody3D" unique_id=1676253670]
+script = ExtResource("6_j2hga")
+
+[node name="SHADOW" parent="CharacterBody3D" unique_id=316526103 instance=ExtResource("7_twe6k")]
+
+[node name="__EXPERIMENT__" type="Node3D" parent="CharacterBody3D" unique_id=2096107280]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="CharacterBody3D/__EXPERIMENT__" unique_id=1709922180]
+root_node = NodePath("../SpringArm3D-2")
+callback_mode_process = 0
+libraries/ = SubResource("AnimationLibrary_0c75n")
+autoplay = &"rotate"
+speed_scale = 0.25
+
+[node name="SpringArm3D-2" type="SpringArm3D" parent="CharacterBody3D/__EXPERIMENT__" unique_id=1875156134]
+transform = Transform3D(-4.371139e-08, -0.08715574, -0.99619466, 0, 0.99619466, -0.08715574, 1, -3.8096983e-09, -4.354505e-08, 0, 0.25, 0)
+collision_mask = 265
+shape = SubResource("SphereShape3D_nucx5")
+spring_length = 0.75
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="CharacterBody3D/__EXPERIMENT__/SpringArm3D-2" unique_id=1641176924]
+remote_path = NodePath("../../origami")
+update_rotation = false
+update_scale = false
+
+[node name="origami" parent="CharacterBody3D/__EXPERIMENT__" unique_id=102470997 instance=ExtResource("8_nucx5")]
+transform = Transform3D(-6.5567156e-09, 0, 0.15000017, 0, 0.15, 0, -0.15000017, 0, -6.5567156e-09, 0, 0.25, 0)
+
+[node name="HIGHLIGHTER" parent="." unique_id=408866960 instance=ExtResource("2_hhpt7")]
+
+[node name="SELECTOR" type="Node" parent="." unique_id=249059869]
+script = ExtResource("7_hhpt7")

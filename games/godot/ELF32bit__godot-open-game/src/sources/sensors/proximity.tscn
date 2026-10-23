@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://glp6e5viuk2y"]
+
+[ext_resource type="Script" uid="uid://prk1rs83bggx" path="res://sources/sensors/proximity.gd" id="1_rufkn"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_iagks"]
+radius = 10.0
+
+[node name="PROXIMITY" type="Node3D" unique_id=619298737]
+script = ExtResource("1_rufkn")
+
+[node name="Area3D" type="Area3D" parent="." unique_id=559939259]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1476624966]
+shape = SubResource("SphereShape3D_iagks")

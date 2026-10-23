@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bxiwhb0b6wsnh"]
+
+[ext_resource type="Texture2D" uid="uid://b266w0bcl5ml2" path="res://particles/textures/flame.tga" id="1_0sn21"]
+[ext_resource type="Shader" uid="uid://ccwwaxoxr5mde" path="res://particles/shaders/flame.gdshader" id="1_t5eqo"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_t5eqo")
+shader_parameter/albedo_texture = ExtResource("1_0sn21")

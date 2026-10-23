@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dehqa53rsv1o1"]
+
+[ext_resource type="Script" uid="uid://bx13s8tubikcq" path="res://interfaces/scripts/inventory_item.gd" id="1_cqnhl"]
+
+[sub_resource type="Gradient" id="Gradient_cqnhl"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_cqnhl"]
+gradient = SubResource("Gradient_cqnhl")
+
+[sub_resource type="Gradient" id="Gradient_8hhc7"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_x337p"]
+gradient = SubResource("Gradient_8hhc7")
+
+[node name="TextureButton" type="TextureButton" unique_id=910045127]
+custom_minimum_size = Vector2(64, 64)
+offset_right = 64.0
+offset_bottom = 64.0
+button_mask = 7
+keep_pressed_outside = true
+texture_normal = SubResource("GradientTexture2D_cqnhl")
+texture_hover = SubResource("GradientTexture2D_x337p")
+ignore_texture_size = true
+script = ExtResource("1_cqnhl")

@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://baoerh5l65nln"]
+
+[ext_resource type="Script" uid="uid://bsr377kbvubn4" path="res://characters/scripts/servbot.gd" id="1_kp10h"]
+[ext_resource type="PackedScene" uid="uid://c20777ho4ge14" path="res://characters/maps/servbot.map" id="1_ndfsl"]
+[ext_resource type="Script" uid="uid://bqcfviiv61v5o" path="res://characters/scripts/servbot+.gd" id="2_xwaio"]
+[ext_resource type="PackedScene" uid="uid://b2kc3ld0pfhsi" path="res://characters/decals/shadow.tscn" id="4_xwaio"]
+[ext_resource type="PackedScene" uid="uid://b27ep55qr3k2l" path="res://characters/decals/selection.tscn" id="5_tyik6"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ndfsl"]
+radius = 0.35
+height = 1.0
+
+[node name="SERVBOT" type="Node3D" unique_id=521952876]
+script = ExtResource("1_kp10h")
+
+[node name="AnimatableBody3D" type="AnimatableBody3D" parent="." unique_id=819905450]
+collision_layer = 3221225472
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("2_xwaio")
+
+[node name="MeshInstance3D" parent="AnimatableBody3D" unique_id=1198848599 instance=ExtResource("1_ndfsl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AnimatableBody3D" unique_id=1194540637]
+shape = SubResource("CapsuleShape3D_ndfsl")
+
+[node name="DECALS" type="Node3D" parent="AnimatableBody3D" unique_id=1494709043]
+
+[node name="SHADOW" parent="AnimatableBody3D/DECALS" unique_id=316526103 instance=ExtResource("4_xwaio")]
+
+[node name="SELECTION" parent="AnimatableBody3D/DECALS" unique_id=314863522 instance=ExtResource("5_tyik6")]

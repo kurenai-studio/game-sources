@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://dp4ir50jt2kwu"]
+
+[ext_resource type="Script" uid="uid://dty8o85hc8bsj" path="res://sources/player/camera/camera.gd" id="1_q0ghj"]
+
+[node name="Camera3D" type="Camera3D" unique_id=851637526]
+current = true
+script = ExtResource("1_q0ghj")
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=2002571660]
+enabled = false
+target_position = Vector3(0, 0, 0)
+collision_mask = 0

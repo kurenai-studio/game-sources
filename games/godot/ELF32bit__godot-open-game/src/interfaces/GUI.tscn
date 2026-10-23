@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dny1i1lhese6e"]
+
+[ext_resource type="Script" uid="uid://c1yk6m407ajtv" path="res://interfaces/GUI.gd" id="1_yej8v"]
+[ext_resource type="PackedScene" uid="uid://bkvt5w6nb6a42" path="res://interfaces/scenes/screen_effects.tscn" id="2_677rn"]
+[ext_resource type="Script" uid="uid://drx8jse8forqe" path="res://interfaces/scripts/cursor.gd" id="3_6x4kl"]
+[ext_resource type="PackedScene" uid="uid://c5cs12fhwc0vq" path="res://interfaces/scenes/inventory.tscn" id="4_cyuop"]
+
+[node name="GUI" type="Control" unique_id=522783262]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_yej8v")
+
+[node name="MOUSE_CURSOR" type="Node" parent="." unique_id=1466912036]
+script = ExtResource("3_6x4kl")
+
+[node name="SCREEN_EFFECTS" parent="." unique_id=1034507215 instance=ExtResource("2_677rn")]
+layout_mode = 1
+
+[node name="INVENTORY" parent="." unique_id=1501650880 instance=ExtResource("4_cyuop")]
+visible = false
+layout_mode = 1

@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://c5cs12fhwc0vq"]
+
+[ext_resource type="Script" uid="uid://b438c7xmn7h3" path="res://interfaces/scripts/inventory.gd" id="1_6h5qr"]
+[ext_resource type="PackedScene" uid="uid://dehqa53rsv1o1" path="res://interfaces/scenes/inventory_item.tscn" id="2_ikh4y"]
+
+[sub_resource type="Gradient" id="Gradient_ikh4y"]
+colors = PackedColorArray(1, 0, 0, 1, 1, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ikh4y"]
+gradient = SubResource("Gradient_ikh4y")
+
+[node name="INVENTORY" type="Control" unique_id=1501650880]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_6h5qr")
+
+[node name="Control" type="Control" parent="." unique_id=318350796]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -314.0
+offset_top = -306.0
+offset_right = -46.0
+offset_bottom = -38.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="TextureRect" type="TextureRect" parent="Control" unique_id=957823499]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_ikh4y")
+
+[node name="GridContainer" type="GridContainer" parent="Control" unique_id=1952890382]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 4
+
+[node name="TextureButton-1" parent="Control/GridContainer" unique_id=910045127 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-2" parent="Control/GridContainer" unique_id=828008727 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-3" parent="Control/GridContainer" unique_id=31000911 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-4" parent="Control/GridContainer" unique_id=301181163 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-5" parent="Control/GridContainer" unique_id=1716712291 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-6" parent="Control/GridContainer" unique_id=1002394603 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-7" parent="Control/GridContainer" unique_id=944668624 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-8" parent="Control/GridContainer" unique_id=297328812 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-9" parent="Control/GridContainer" unique_id=1859970919 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-10" parent="Control/GridContainer" unique_id=1895486050 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-11" parent="Control/GridContainer" unique_id=252437608 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-12" parent="Control/GridContainer" unique_id=68443064 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-13" parent="Control/GridContainer" unique_id=1529330791 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-14" parent="Control/GridContainer" unique_id=1476177531 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-15" parent="Control/GridContainer" unique_id=568596530 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
+
+[node name="TextureButton-16" parent="Control/GridContainer" unique_id=1392900432 instance=ExtResource("2_ikh4y")]
+layout_mode = 2
