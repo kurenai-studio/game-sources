@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Achtung die Kurve</title>
+
+    <meta charset="utf-8"/>
+    <meta name="description" content="Example of the HTML5 canvas game 'Achtung die Kurve'. Also known under the name 'Zatacka'." />
+
+    <meta name="author" content="Mathias Paumgarten" />
+    <meta name="author" content="David Strauß" />
+
+    <link href='./stylesheets/style.css' rel='stylesheet' type='text/css'>
+
+    <script type="text/javascript" src="./javascripts/jquery.js"></script>
+</head>
+<body>
+
+    <div id="rightColumn">
+        <h1>Achtung die Kurve</h1>
+        <p>
+            Play with your friends on a single keyboard and try to survive as long as possible!
+            You can fork the project over at <a href="http://github.com/stravid/achtung-die-kurve/">GitHub</a>!
+        </p>
+
+        <p>
+            <a href="/impressum">Imprint (German)</a><br />
+            <a href="/datenschutzerklaerung">Privacy Policy (German)</a>
+        </p>
+
+        <p>
+            <a href="http://mathias-paumgarten.com">Mathias Paumgarten</a><br />
+            <a href="http://stravid.com">David Strauß</a>
+        </p>
+
+        <form onsubmit="return false;">
+            <div id="startGameContainer" class="hide">
+                <fieldset>
+                    <input type="button" id="startGame" class="button" value="Start Game" />
+                </fieldset>
+            </div>
+            <div id="playerListContainer" class="hide">
+                <h2>Players</h2>
+                <ul id="playerList">
+                </ul>
+            </div>
+            <div id="addPlayerContainer">
+                <h2>Add Player</h2>
+                <fieldset>
+                    <table cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="left">
+                                <input type="text" id="playerNameInput" placeholder="Player Name"/>
+                            </td>
+                            <td class="right">
+                                <select id="playerControlsSelect"></select>
+                            </td>
+                        </tr>
+                    </table>
+                    <br />
+                    <p>
+                        Names are not shared with anyone and will be deleted when you close the browser tab.
+                    </p>
+                    <input type="button" id="addPlayerButton" class="button" value="Add Player"/>
+                </fieldset>
+            </div>
+        </form>
+    </div>
+
+    <div id="leftColumn">
+        <canvas id="canvas" class="hide"></canvas>
+
+        <div id="helpContainer" class="show">
+            <h2 class="huge">Help</h2>
+            <h3 class="yellow">Introduction</h3>
+            <p>
+                The goal of the game is to survive as long as possible. You and your friends share the keyboard to control the line.
+                The lines are constantly moving forward. The players can only adjust the direction of the line.
+            </p>
+            <p>
+                A player loses if his line touches a line or the border of the game. He then has to wait for the start of the next round to play again. For every player you survive you get a point.
+            </p>
+            <p>
+                <strong>Achtung die Kurve is played on a single screen, so make sure you have some friends around!</strong>
+            </p>
+            <h3 class="yellow">Getting Started</h3>
+            <p>
+                In order to play you have to add atleast two players. To do so you type in the players name in the input field on the right hand side and choose a pair of keys to control the line. Then click on the "Add Player" button and the new player is listed in the player list. The color helps you to identify your line in the game.
+            </p>
+            <p>
+                Once you have added two players you get the "Start Game" button, located above the list of players. Press it. A new game starts. Enjoy.
+            </p>
+        </div>
+
+        <div id="upgradeContainer" class="hide">
+            <h2 class="huge">Install a modern browser!</h2>
+            <p>
+                It looks like your browser does not support the &lt;canvas&gt; tag. This means you can't play Achtung die Kurve!
+            </p>
+            <p>
+                That's a real shame.. so we encourage you to install a modern browser like <a href="http://www.google.com/chrome/">Google Chrome</a>!
+            </p>
+        </div>
+    </div>
+
+    <script src="./javascripts/adk.minified.js"></script>
+    <script src="./javascripts/script.js"></script>
+</body>
+</html>
