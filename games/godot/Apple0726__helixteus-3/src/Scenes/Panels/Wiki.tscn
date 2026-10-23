@@ -1,0 +1,114 @@
+[gd_scene format=3 uid="uid://c8o5lvjlxgrgs"]
+
+[ext_resource type="PackedScene" uid="uid://1hq6qpr1oa3i" path="res://Scenes/AdvButton.tscn" id="1"]
+[ext_resource type="Script" uid="uid://cxu1q2e6hdt1n" path="res://Scripts/Wiki.gd" id="3"]
+[ext_resource type="PackedScene" uid="uid://ddf2xjwcht77u" path="res://Scenes/CloseButton.tscn" id="5"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="6"]
+
+[node name="Background" type="Panel" unique_id=1609923472]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -512.0
+offset_top = -296.0
+offset_right = 512.0
+offset_bottom = 296.0
+theme = ExtResource("6")
+script = ExtResource("3")
+
+[node name="Title" type="Label" parent="." unique_id=1770542399]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 0
+anchor_right = 1.0
+offset_bottom = 24.0
+theme_override_font_sizes/font_size = 18
+text = "INGAME_WIKI"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" parent="." unique_id=1194913221 instance=ExtResource("5")]
+layout_mode = 1
+offset_left = -32.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 32.0
+
+[node name="Panel" type="ScrollContainer" parent="." unique_id=1963226555]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -624.0
+offset_top = -232.0
+offset_right = -8.0
+offset_bottom = 232.0
+
+[node name="Text" type="Label" parent="Panel" unique_id=207363991]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1018855952]
+clip_contents = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 30.0
+offset_top = -232.0
+offset_right = 384.0
+offset_bottom = 232.0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=1338256485]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="KeyboardShortcuts" parent="ScrollContainer/VBoxContainer" unique_id=1411745588 instance=ExtResource("1")]
+visible = false
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "KEYBOARD_SHORTCUTS"
+
+[node name="Aurora" parent="ScrollContainer/VBoxContainer" unique_id=1413324677 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "AURORA"
+
+[node name="LevelUnlocks" parent="ScrollContainer/VBoxContainer" unique_id=521105718 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "LEVEL_UNLOCKS"
+
+[node name="DarkMatter" parent="ScrollContainer/VBoxContainer" unique_id=1500110077 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "DARK_MATTER"
+
+[node name="B_strength" parent="ScrollContainer/VBoxContainer" unique_id=845454489 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "B_STRENGTH"
+
+[node name="Redshift" parent="ScrollContainer/VBoxContainer" unique_id=619235885 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "REDSHIFT"
+
+[node name="DarkEnergy" parent="ScrollContainer/VBoxContainer" unique_id=1463567763 instance=ExtResource("1")]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+button_text = "DARK_ENERGY"
+
+[connection signal="close_button_pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/KeyboardShortcuts" to="." method="_on_KeyboardShortcuts_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/Aurora" to="." method="_on_Aurora_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/LevelUnlocks" to="." method="_on_LevelUnlocks_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/DarkMatter" to="." method="_on_DarkMatter_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/B_strength" to="." method="_on_B_strength_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/Redshift" to="." method="_on_FM_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/DarkEnergy" to="." method="_on_DarkEnergy_pressed"]

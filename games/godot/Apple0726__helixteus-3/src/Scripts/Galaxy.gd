@@ -1,0 +1,379 @@
+extends Node2D
+
+@onready var game = get_node("/root/Game")
+
+var dimensions:float
+var dimensions_temp:float
+
+const DIST_MULT = 200.0
+const STAR_AUTOSCALE_MIN_THRESHOLD = 0.15
+var overlays = []
+var star_texture = [	preload("res://Graphics/Effects/spotlight_4.png"),
+						preload("res://Graphics/Effects/spotlight_5.png"),
+						preload("res://Graphics/Effects/spotlight_6.png"),
+]
+var g_i:Dictionary
+var bldgs:Dictionary = {}
+var ancient_bldgs:Dictionary = {}
+var MSs:Dictionary = {}
+
+static var star_btns = []
+
+var load_bldg_info_thread:Thread
+
+func size_sort(a:Dictionary, b:Dictionary):
+	var star_a:Dictionary = a.stars[0]
+	var star_b:Dictionary = b.stars[0]
+	for i in range(1, len(a.stars)):
+		if a.stars[i].luminosity > star_a.luminosity:
+			star_a = a.stars[i]
+	for i in range(1, len(b.stars)):
+		if b.stars[i].luminosity > star_b.luminosity:
+			star_b = b.stars[i]
+	return star_a.size > star_b.size
+
+func _ready():
+	if star_btns.is_empty():
+		for i in max(ProcGenSettings.max_number_of_systems_elliptical, ProcGenSettings.max_number_of_systems_spiral):
+			var star_btn = TextureButton.new()
+			star_btn.texture_click_mask = preload("res://Graphics/Misc/StarCM.png")
+			star_btn.pivot_offset_ratio = Vector2.ONE * 0.5
+			star_btns.append(star_btn)
+	load_bldg_info_thread = Thread.new()
+	load_bldg_info_thread.start(load_bldg_info)
+	
+	g_i = game.galaxy_data[game.c_g]
+	for i in len(game.system_data):
+		var s_i = game.system_data[i]
+		if g_i.has("conquered") and not s_i.has("conquered"):
+			s_i["conquered"] = true
+			game.system_data_persistent[i].conquered = true
+			game.stats_univ.planets_conquered += s_i.planet_num
+			game.stats_dim.planets_conquered += s_i.planet_num
+			game.stats_global.planets_conquered += s_i.planet_num
+	
+	var await_counter:int = 0
+	var sorted_systems_by_size = game.system_data.duplicate(true)
+	sorted_systems_by_size.sort_custom(size_sort)
+	for i in len(sorted_systems_by_size):
+		var s_i = sorted_systems_by_size[i]
+		if not is_inside_tree():
+			return
+		var star:Dictionary = s_i.stars[0]
+		for j in range(1, len(s_i.stars)):
+			if s_i.stars[j].luminosity > star.luminosity:
+				star = s_i.stars[j]
+		var star_btn = star_btns[i]
+		star_btn.texture_normal = star_texture[int(star.temperature) % 3]
+		star_btn.modulate = Helper.get_star_modulate(star["class"])
+		var galaxy_tween = create_tween()
+		star_btn.self_modulate.a = 0.0
+		galaxy_tween.tween_property(star_btn, "self_modulate:a", 1.0, 0.3)
+		add_child(star_btn)
+		star_btn.mouse_entered.connect(on_system_over.bind(s_i.l_id, star_btn))
+		star_btn.mouse_exited.connect(on_system_out)
+		star_btn.pressed.connect(on_system_click.bind(s_i.id, s_i.l_id))
+		star_btn.rotation = sin(star.temperature) * 180
+		var radius = pow(star["size"] / game.SYSTEM_SCALE_DIV, 0.35)
+		star_btn.scale = Vector2.ONE * radius * 1024.0 / star_btn.texture_normal.get_width()
+		star_btn.position = s_i["pos"] - star_btn.texture_normal.get_size() / 2.0
+		dimensions_temp = max(dimensions_temp, s_i.pos.length())
+		Helper.add_overlay(star_btn, self, "system", s_i, overlays)
+		star_btn.scale /= clamp(get_parent().scale.x, STAR_AUTOSCALE_MIN_THRESHOLD, 2.0) / STAR_AUTOSCALE_MIN_THRESHOLD
+		await_counter += 1
+		if await_counter % int(60000.0 / Engine.get_frames_per_second()) == 0:
+			await get_tree().process_frame
+	game.add_space_HUD()
+	if is_instance_valid(game.overlay):
+		game.overlay.refresh_options(game.overlay_data[game.c_v].overlay)
+	dimensions = dimensions_temp
+
+func load_bldg_info():
+	for i in len(game.system_data):
+		var s_i = game.system_data[i]
+		var planet_data_persistent:Array = game.open_obj("Systems", s_i.id)
+		for p_i_persistent in planet_data_persistent:
+			if p_i_persistent.is_empty():
+				continue
+			if p_i_persistent.has("tile_num") and p_i_persistent.bldg.has("name"):
+				if bldgs.has(s_i.l_id):
+					bldgs[s_i.l_id][p_i_persistent.bldg.name] = bldgs[s_i.l_id].get(p_i_persistent.bldg.name, 0) + p_i_persistent.tile_num
+				else:
+					bldgs[s_i.l_id] = {p_i_persistent.bldg.name: p_i_persistent.tile_num}
+			if p_i_persistent.has("MS"):
+				if MSs.has(s_i.l_id):
+					MSs[s_i.l_id][p_i_persistent.MS] = MSs[s_i.l_id].get(p_i_persistent.MS, 0) + 1
+				else:
+					MSs[s_i.l_id] = {p_i_persistent.MS: 1}
+			var tile_data_persistent:Array = game.open_obj("Planets", p_i_persistent.id)
+			for tile_persistent in tile_data_persistent:
+				if tile_persistent == null:
+					continue
+				if tile_persistent.has("bldg"):
+					if bldgs.has(s_i.l_id):
+						bldgs[s_i.l_id][tile_persistent.bldg.name] = bldgs[s_i.l_id].get(tile_persistent.bldg.name, 0) + 1
+					else:
+						bldgs[s_i.l_id] = {tile_persistent.bldg.name: 1}
+				elif tile_persistent.has("ancient_bldg"):
+					if ancient_bldgs.has(s_i.l_id):
+						ancient_bldgs[s_i.l_id][tile_persistent.ancient_bldg.name] = ancient_bldgs[s_i.l_id].get(tile_persistent.ancient_bldg.name, 0) + 1
+					else:
+						ancient_bldgs[s_i.l_id] = {tile_persistent.ancient_bldg.name: 1}
+		for _star in s_i.stars:
+			if _star.has("MS"):
+				if MSs.has(s_i.l_id):
+					MSs[s_i.l_id][_star.MS] = MSs[s_i.l_id].get(_star.MS, 0) + 1
+				else:
+					MSs[s_i.l_id] = {_star.MS: 1}
+
+func _draw():
+	if g_i.has("wormholes"):
+		for wh_data in g_i.wormholes:
+			draw_line(game.system_data[wh_data.from].pos, game.system_data[wh_data.to].pos, Color(0.6, 0.4, 1.0, 1.0))
+
+func on_system_over (l_id:int, star_btn):
+	if l_id >= len(game.system_data):
+		return
+	var s_i = game.system_data[l_id]
+	var _name:String
+	if s_i.has("name"):
+		_name = s_i.name
+	else:
+		_name = "%s %s" % [tr("SYSTEM"), l_id]
+		match len(game.system_data[l_id].stars):
+			2:
+				_name = "%s %s" % [tr("BINARY_SYSTEM"), l_id]
+			3:
+				_name = "%s %s" % [tr("TERNARY_SYSTEM"), l_id]
+			4:
+				_name = "%s %s" % [tr("QUADRUPLE_SYSTEM"), l_id]
+			5:
+				_name = "%s %s" % [tr("QUINTUPLE_SYSTEM"), l_id]
+	for grid in get_tree().get_nodes_in_group("Grids"):
+		if grid.name != "Grid_%s" % l_id:
+			var tween = create_tween()
+			tween.tween_property(grid, "modulate", Color(1, 1, 1, 0), 0.1)
+	for grid in get_tree().get_nodes_in_group("MSGrids"):
+		if grid.name != "MSGrid_%s" % l_id:
+			var tween = create_tween()
+			tween.tween_property(grid, "modulate", Color(1, 1, 1, 0), 0.1)
+	game.show_tooltip("%s\n%s: %s\n%s: %s" % [_name, tr("PLANETS"), s_i.planet_num, tr("DIFFICULTY"), Helper.format_num(s_i.diff)])
+	if not is_instance_valid(game.space_HUD):
+		return
+	var bldg_info_node = game.space_HUD.get_node("HBoxContainer/BldgInfo")
+	var ancient_bldg_info_node = game.space_HUD.get_node("HBoxContainer/AncientBldgInfo")
+	var MS_info_node = game.space_HUD.get_node("HBoxContainer/MSInfo")
+	if bldgs.has(l_id):
+		for bldg in bldgs[l_id]:
+			var bldg_count = preload("res://Scenes/EntityCount.tscn").instantiate()
+			bldg_info_node.add_child(bldg_count)
+			bldg_count.get_node("Texture2D").texture = game.bldg_textures[bldg]
+			bldg_count.get_node("Label").text = "x %s" % Helper.format_num(bldgs[l_id][bldg])
+	if ancient_bldgs.has(l_id):
+		for ancient_bldg in ancient_bldgs[l_id]:
+			var ancient_bldg_count = preload("res://Scenes/EntityCount.tscn").instantiate()
+			ancient_bldg_info_node.add_child(ancient_bldg_count)
+			ancient_bldg_count.get_node("Texture2D").texture = game.ancient_bldg_textures[ancient_bldg]
+			ancient_bldg_count.get_node("Label").text = "x %s" % Helper.format_num(ancient_bldgs[l_id][ancient_bldg])
+	if MSs.has(l_id):
+		for MS in MSs[l_id]:
+			var MS_count = preload("res://Scenes/EntityCount.tscn").instantiate()
+			MS_info_node.add_child(MS_count)
+			MS_count.get_node("Texture2D").texture = load("res://Graphics/Megastructures/%s_0.png" % MS)
+			MS_count.get_node("Label").text = "x %s" % Helper.format_num(MSs[l_id][MS])
+
+func on_system_out ():
+	for grid in get_tree().get_nodes_in_group("Grids"):
+		var tween = create_tween()
+		tween.tween_property(grid, "modulate", Color(1, 1, 1, 1), 0.1)
+	for grid in get_tree().get_nodes_in_group("MSGrids"):
+		var tween = create_tween()
+		tween.tween_property(grid, "modulate", Color(1, 1, 1, 1), 0.1)
+	game.hide_tooltip()
+	if is_instance_valid(game.space_HUD):
+		game.space_HUD.clear_bldg_info()
+
+func on_system_click (id:int, l_id:int):
+	var view = self.get_parent()
+	if not view.dragged:
+		game.switch_view("system", {"fn":"set_custom_coords", "fn_args":[["c_s", "c_s_g"], [l_id, id]]})
+	view.dragged = false
+
+func change_overlay(overlay_id:int, gradient:Gradient, object:Dictionary = {}):
+	var _overlays = overlays
+	if not object.is_empty():
+		_overlays = [object]
+	var c_vl = game.overlay_data.galaxy.custom_values[overlay_id]
+	match overlay_id:
+		0:
+			for overlay in _overlays:
+				var offset = inverse_lerp(c_vl.left, c_vl.right, game.system_data[overlay.id].planet_num)
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		1:
+			for overlay in _overlays:
+				var offset = inverse_lerp(c_vl.left, c_vl.right, len(game.system_data[overlay.id].stars))
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		2:
+			for overlay in _overlays:
+				if game.system_data[overlay.id].has("discovered"):
+					overlay.obj.modulate = gradient.sample(0)
+				else:
+					overlay.obj.modulate = gradient.sample(1)
+		3:
+			for overlay in _overlays:
+				if game.system_data[overlay.id].has("explored"):
+					overlay.obj.modulate = gradient.sample(0)
+				else:
+					overlay.obj.modulate = gradient.sample(1)
+		4:
+			for overlay in _overlays:
+				if game.system_data[overlay.id].has("conquered"):
+					overlay.obj.modulate = gradient.sample(0)
+				else:
+					overlay.obj.modulate = gradient.sample(1)
+		5:
+			for overlay in _overlays:
+				var offset = inverse_lerp(c_vl.left, c_vl.right, game.system_data[overlay.id].diff)
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		6:
+			for overlay in _overlays:
+				var temp = game.get_max_star_prop(overlay.id, "temperature")
+				var offset = inverse_lerp(c_vl.left, c_vl.right, temp)
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		7:
+			for overlay in _overlays:
+				var size = game.get_max_star_prop(overlay.id, "size")
+				var offset = inverse_lerp(c_vl.left, c_vl.right, size)
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		8:
+			for overlay in _overlays:
+				var luminosity = game.get_max_star_prop(overlay.id, "luminosity")
+				var offset = inverse_lerp(c_vl.left, c_vl.right, luminosity)
+				Helper.set_overlay_visibility(gradient, overlay, offset)
+		9:
+			var matched_objs_display = []
+			var matched_objs = []
+			game.overlay.get_matched_objs(matched_objs_display, matched_objs)
+			for overlay in _overlays:
+				var found = false
+				for obj in matched_objs:
+					if bldgs.has(overlay.id) and bldgs[overlay.id].has(obj):
+						found = true
+						break
+					if ancient_bldgs.has(overlay.id) and ancient_bldgs[overlay.id].has(obj):
+						found = true
+						break
+					if MSs.has(overlay.id) and MSs[overlay.id].has(obj):
+						found = true
+						break
+				if found:
+					overlay.obj.modulate = gradient.sample(0)
+				else:
+					overlay.obj.modulate = gradient.sample(1)
+			game.overlay.update_filter_text(matched_objs_display)
+
+func _on_Galaxy_tree_exited():
+	load_bldg_info_thread.wait_to_finish()
+
+var sorted_systems_by_diff:Array = []
+var system_conquer_start_index:int = 0
+
+func sort_systems(ascending:bool):
+	sorted_systems_by_diff = game.system_data.duplicate(true)
+	sorted_systems_by_diff.sort_custom(diff_sort)
+	if not ascending:
+		sorted_systems_by_diff.reverse()
+
+func diff_sort(a:Dictionary, b:Dictionary):
+	return a.diff < b.diff
+
+func _process(delta: float) -> void:
+	if g_i.has("conquer_start_date"):
+		if sorted_systems_by_diff.is_empty():
+			system_conquer_start_index = 0
+			sort_systems(g_i.conquer_order)
+		var curr_time = Time.get_unix_time_from_system()
+		var fighters_rekt = g_i.combined_strength <= 0
+		var galaxy_conquered = true
+		var breaker:int = 0
+		var progress = (curr_time - g_i.conquer_start_date) / g_i.time_for_one_sys * 100.0
+		while breaker < 100:
+			if fighters_rekt:
+				break
+			breaker += 1
+			if progress >= 100:
+				for i in range(system_conquer_start_index, len(sorted_systems_by_diff)):
+					var system = sorted_systems_by_diff[i]
+					if system.has("conquered"):
+						system_conquer_start_index = i
+						continue
+					galaxy_conquered = false
+					if g_i.combined_strength < system.diff:
+						g_i.combined_strength = 0
+						fighters_rekt = true
+						for j in len(game.fighter_data):
+							if game.fighter_data[j] and game.fighter_data[j].get("c_g_g", -1) == game.c_g_g:
+								game.fighter_data[j] = null
+						g_i.erase("conquer_start_date")
+						g_i.erase("time_for_one_sys")
+						g_i.erase("sys_num")
+						g_i.erase("sys_conquered")
+						g_i.erase("combined_strength")
+						g_i.erase("conquer_order")
+						breaker = 100
+						game.popup_window(tr("ALL_FIGHTERS_REKT"))
+						break
+					if not system.has("conquered"):
+						g_i.combined_strength -= system.diff
+						game.system_data[system.l_id].conquered = true
+						game.system_data_persistent[system.l_id].conquered = true
+						system.conquered = true
+						game.stats_univ.planets_conquered += system.planet_num
+						game.stats_dim.planets_conquered += system.planet_num
+						game.stats_global.planets_conquered += system.planet_num
+						game.stats_univ.systems_conquered += 1
+						game.stats_dim.systems_conquered += 1
+						game.stats_global.systems_conquered += 1
+						g_i.sys_conquered += 1
+						g_i.conquer_start_date += g_i.time_for_one_sys
+						progress = (curr_time - g_i.conquer_start_date) / g_i.time_for_one_sys * 100.0
+						break
+			else:
+				galaxy_conquered = false
+				break
+		if galaxy_conquered:
+			if not g_i.has("conquered"):
+				game.stats_univ.galaxies_conquered += 1
+				game.stats_dim.galaxies_conquered += 1
+				game.stats_global.galaxies_conquered += 1
+				g_i.conquered = true
+				g_i.erase("conquer_start_date")
+				g_i.erase("time_for_one_sys")
+				g_i.erase("sys_num")
+				g_i.erase("sys_conquered")
+				g_i.erase("combined_strength")
+				g_i.erase("conquer_order")
+				if not game.bldg_unlocked.has(Building.SOLAR_PANEL):
+					game.bldg_unlocked[Building.SOLAR_PANEL] = true
+				for j in len(game.fighter_data):
+					if game.fighter_data[j] and game.fighter_data[j].get("c_g_g", -1) == game.c_g_g:
+						game.fighter_data[j].erase("exploring")
+				game.popup_window(tr("CONQUERED_GALAXY"), "", [tr("DISBAND")], [disband_fighters], tr("KEEP"))
+			set_process(false)
+	else:
+		set_process(false)
+
+func disband_fighters():
+	for i in len(game.fighter_data):
+		if game.fighter_data[i] and game.fighter_data[i].get("c_g_g", -1) == game.c_g_g:
+			game.fighter_data[i] = null
+
+func _on_tree_exiting() -> void:
+	for star_btn in star_btns:
+		if is_ancestor_of(star_btn):
+			remove_child(star_btn)
+
+func scale_objects(new_scale:float):
+	if new_scale > STAR_AUTOSCALE_MIN_THRESHOLD and new_scale < 2.0 and not game.overlay_data[game.c_v].visible:
+		for i in len(game.system_data):
+			star_btns[i].scale = Vector2.ONE / new_scale * STAR_AUTOSCALE_MIN_THRESHOLD * overlays[i].original_scale

@@ -1,0 +1,377 @@
+extends "Panel.gd"
+
+static var filter_text:String = ""
+
+var editable:bool = false
+var is_int:bool = true
+var hovered_over:String = ""
+@onready var option_btn = $HBoxContainer/OptionButton
+@onready var toggle_btn = $HBoxContainer/CheckBox
+@onready var grayscale_btn = $SettingsPanel/VBox/Grayscale
+@onready var hide_obj_btn = $SettingsPanel/VBox/HideObj
+var config = ConfigFile.new()
+var err = config.load("user://settings.cfg")
+
+func _ready():
+	set_polygon($GUI.size, $GUI.position)
+	toggle_btn.text = tr("TOGGLE") + " (F3)"
+	$Control/ClickToEdit.visible = not game.help.has("overlay")
+
+
+func _input(event):
+	super(event)
+	if not $Filter.has_focus() and not $Control/LeftNumEdit.has_focus() and not $Control/RightNumEdit.has_focus():
+		for i in min(10, $HBoxContainer/OptionButton.item_count):
+			var j = (i + 1) % 10
+			if Input.is_action_just_pressed(str(j)):
+				$HBoxContainer/OptionButton.selected = i
+				refresh_options(i)
+
+func refresh_overlay():
+	$HBoxContainer/HSlider.value = game.overlay_CS
+	option_btn.clear()
+	match game.c_v:
+		"galaxy":
+			option_btn.add_item(tr("NUMBER_OF_PLANETS"))
+			option_btn.add_item(tr("STAR_NUM"))
+			option_btn.add_item(tr("SYSTEM_ENTERED"))
+			option_btn.add_item(tr("ENTERED_BY_SHIPS"))
+			option_btn.add_item(tr("SYSTEM_CONQUERED"))
+			option_btn.add_item(tr("DIFFICULTY"))
+			option_btn.add_item(tr("HOTTEST_STAR_TEMPERATURE"))
+			option_btn.add_item(tr("BIGGEST_STAR_SIZE"))
+			option_btn.add_item(tr("BRIGHTEST_STAR_LUMINOSITY"))
+			option_btn.add_item(tr("HAS_BLDG_MS"))
+			$HBoxContainer/HSlider.min_value = 0.1
+			$HBoxContainer/HSlider.max_value = 4.0
+			$HBoxContainer/HSlider.step = 0.1
+		"cluster":
+			option_btn.add_item(tr("NUMBER_OF_SYSTEMS"))
+			option_btn.add_item(tr("GALAXY_ENTERED"))
+			option_btn.add_item(tr("ENTERED_BY_SHIPS"))
+			option_btn.add_item(tr("GALAXY_CONQUERED"))
+			option_btn.add_item(tr("DIFFICULTY"))
+			option_btn.add_item(tr("B_STRENGTH"))
+			option_btn.add_item(tr("DARK_MATTER"))
+			option_btn.add_item(tr("IS_GIGASTRUCTURE"))
+			option_btn.add_item(tr("HAS_BLDG_MS"))
+			$HBoxContainer/HSlider.min_value = 0.5
+			$HBoxContainer/HSlider.max_value = 20.0
+			$HBoxContainer/HSlider.step = 0.5
+	toggle_btn.button_pressed = game.overlay_data[game.c_v].visible
+	if err == OK:
+		grayscale_btn.button_pressed = config.get_value("misc", "grayscale", false)
+		hide_obj_btn.button_pressed = config.get_value("misc", "hide_obj", false)
+		if grayscale_btn.button_pressed:
+			$Control/Gradient.texture.gradient = load("res://Resources/GrayscaleOverlay.tres")
+		else:
+			$Control/Gradient.texture.gradient = load("res://Resources/DefaultOverlay.tres")
+	$Filter.text = filter_text
+	option_btn.selected = game.overlay_data[game.c_v].overlay
+	refresh_options(game.overlay_data[game.c_v].overlay)
+
+func _on_OptionButton_item_selected(index):
+	refresh_options(index)
+
+func get_obj_min_max(obj:String, property:String):
+	var overlays = game.view.obj.overlays
+	var _min = game["%s_data" % [obj]][overlays[0].id][property]
+	var _max = _min
+	for i in range(1, len(overlays)):
+		var id:int = overlays[i].id
+		var prop = game["%s_data" % [obj]][id][property]
+		if prop < _min:
+			_min = prop
+		if prop > _max:
+			_max = prop
+	return {"_min":_min, "_max":_max}
+
+func get_star_prop_min_max(prop:String):
+	var overlays = game.view.obj.overlays
+	var _min = game.get_max_star_prop(overlays[0].id, prop)
+	var _max = _min
+	for i in range(1, len(overlays)):
+		var id:int = overlays[i].id
+		var T = game.get_max_star_prop(id, prop)
+		if T < _min:
+			_min = T
+		if T > _max:
+			_max = T
+	return {"_min":_min, "_max":_max}
+
+func get_star_num_min_max():
+	var overlays = game.view.obj.overlays
+	var _min = 1
+	var _max = 1
+	for i in range(0, len(overlays)):
+		var id:int = overlays[i].id
+		var n = len(game.system_data[id].stars)
+		if n > _max:
+			_max = n
+	return {"_min":_min, "_max":_max}
+
+func refresh_options(index:int, recalculate:bool = true):
+	var c_vl = game.overlay_data[game.c_v].custom_values[index]
+	var min_max:Dictionary
+	$Control/Reset.visible = false if c_vl == null else c_vl.modified
+	var unit:String = ""
+	var show_filter = false
+	if game.c_v == "galaxy":
+		match index:
+			0:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("system", "planet_num")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				unit = ""
+			1:
+				if recalculate and not c_vl.modified:
+					min_max = get_star_num_min_max()
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				unit = ""
+			2, 3, 4, 9:
+				editable = false
+			5:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("system", "diff")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = ""
+			6:
+				if recalculate and not c_vl.modified:
+					min_max = get_star_prop_min_max("temperature")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = " K"
+			7:
+				if recalculate and not c_vl.modified:
+					min_max = get_star_prop_min_max("size")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = ""
+			8:
+				if recalculate and not c_vl.modified:
+					min_max = get_star_prop_min_max("luminosity")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = ""
+		show_filter = index == 9
+	elif game.c_v == "cluster":
+		match index:
+			0:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("galaxy", "system_num")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				unit = ""
+			1, 2, 3, 7, 8:
+				editable = false
+			4:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("galaxy", "diff")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = ""
+			5:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("galaxy", "B_strength")
+					c_vl.left = Helper.clever_round(min_max._min * 1e9)
+					c_vl.right = Helper.clever_round(min_max._max * 1e9)
+				editable = true
+				is_int = false
+				unit = " nT"
+			6:
+				if recalculate and not c_vl.modified:
+					min_max = get_obj_min_max("galaxy", "dark_matter")
+					c_vl.left = min_max._min
+					c_vl.right = min_max._max
+				editable = true
+				is_int = false
+				unit = ""
+		show_filter = index == 8
+	if show_filter:
+		$Control.position.x = 564.0
+		$Control.size.x = 376.0
+		$Filter.show()
+		$Filter.grab_focus()
+		$Filter.select(0)
+	else:
+		$Control.position.x = 336.0
+		$Control.size.x = 604.0
+		$Filter.hide()
+	if editable:
+		$Control/LeftNumEdit.text = "%s%s" % [Helper.e_notation(c_vl.left) if c_vl.left >= 1000000 else c_vl.left, unit]
+		$Control/RightNumEdit.text = "%s%s" % [Helper.e_notation(c_vl.right) if c_vl.right >= 1000000 else c_vl.right, unit]
+	$Control/LeftNumEdit.visible = editable
+	$Control/RightNumEdit.visible = editable
+	$Control/Yes.visible = not editable
+	$Control/No.visible = not editable
+	game.overlay_data[game.c_v].overlay = index
+	if game.overlay_data[game.c_v].visible:
+		send_overlay_info(index)
+
+func send_overlay_info(index):
+	game.view.obj.change_overlay(index, $Control/Gradient.texture.gradient)
+
+func _on_HSlider_mouse_entered():
+	game.show_tooltip(tr("CIRCLE_SIZE"))
+
+func _on_mouse_exited():
+	game.hide_tooltip()
+
+func _on_HSlider_value_changed(value):
+	if game.view.obj:
+		game.overlay_CS = value
+		Helper.change_circle_size(value, game.view.obj.overlays)
+
+func _on_close_button_pressed():
+	visible = false
+	game.block_scroll = false
+
+func _on_Reset_mouse_entered():
+	game.show_tooltip("RESET_TO_DEFAULT")
+
+func _on_Reset_pressed():
+	game.overlay_data[game.c_v].custom_values[option_btn.selected].modified = false
+	refresh_options(option_btn.selected, true)
+	game.hide_tooltip()
+
+func _on_Overlay_visibility_changed():
+	if not is_inside_tree():
+		return
+	if visible:
+		get_parent().move_child(self, get_parent().get_child_count())
+		game.sub_panel = self
+	else:
+		game.sub_panel = null
+
+
+func _on_CheckBox_toggled(button_pressed):
+	if grayscale_btn.button_pressed:
+		if button_pressed:
+			game.get_node("GrayscaleRect/AnimationPlayer").play("Fade")
+		else:
+			game.get_node("GrayscaleRect/AnimationPlayer").play_backwards("Fade")
+	game.overlay_data[game.c_v].visible = button_pressed
+	if game.overlay_data[game.c_v].visible:
+		send_overlay_info(game.overlay_data[game.c_v].overlay)
+	toggle_btn.button_pressed = game.overlay_data[game.c_v].visible
+	Helper.toggle_overlay(game.view.obj.overlays, button_pressed)
+
+
+func _on_LeftNumEdit_text_entered(new_text):
+	if is_int:
+		game.overlay_data[game.c_v].custom_values[option_btn.selected].left = int(new_text)
+	else:
+		game.overlay_data[game.c_v].custom_values[option_btn.selected].left = float(new_text)
+	game.overlay_data[game.c_v].custom_values[option_btn.selected].modified = true
+	refresh_options(option_btn.selected, false)
+	$Control/LeftNumEdit.release_focus()
+	game.help.overlay = true
+	$Control/ClickToEdit.visible = false
+
+func _on_RightNumEdit_text_entered(new_text):
+	if is_int:
+		game.overlay_data[game.c_v].custom_values[option_btn.selected].right = int(new_text)
+	else:
+		game.overlay_data[game.c_v].custom_values[option_btn.selected].right = float(new_text)
+	game.overlay_data[game.c_v].custom_values[option_btn.selected].modified = true
+	refresh_options(option_btn.selected, false)
+	$Control/RightNumEdit.release_focus()
+	game.help.overlay = true
+	$Control/ClickToEdit.visible = false
+
+
+func _on_Settings_mouse_entered():
+	game.show_tooltip(tr("OVERLAY_SETTINGS"))
+
+
+func _on_Settings_mouse_exited():
+	game.hide_tooltip()
+
+
+func _on_HideObj_toggled(button_pressed):
+	if err == OK:
+		config.set_value("misc", "hide_obj", button_pressed)
+		config.save("user://settings.cfg")
+	if game.overlay_data[game.c_v].visible:
+		send_overlay_info(game.overlay_data[game.c_v].overlay)
+
+
+func _on_Settings_pressed():
+	game.hide_tooltip()
+	$SettingsPanel.visible = not $SettingsPanel.visible
+
+
+func _on_grayscale_toggled(toggled_on: bool) -> void:
+	if grayscale_btn.button_pressed and toggle_btn.button_pressed:
+		game.get_node("GrayscaleRect/AnimationPlayer").play("Fade")
+	else:
+		if game.get_node("GrayscaleRect").modulate.a > 0:
+			game.get_node("GrayscaleRect/AnimationPlayer").play_backwards("Fade")
+	if toggled_on:
+		$Control/Gradient.texture.gradient = load("res://Resources/GrayscaleOverlay.tres")
+	else:
+		$Control/Gradient.texture.gradient = load("res://Resources/DefaultOverlay.tres")
+	if err == OK:
+		config.set_value("misc", "grayscale", toggled_on)
+		config.save("user://settings.cfg")
+	if game.overlay_data[game.c_v].visible:
+		send_overlay_info(game.overlay_data[game.c_v].overlay)
+
+
+func _on_filter_focus_entered() -> void:
+	game.view.move_with_keyboard = false
+
+
+func _on_filter_focus_exited() -> void:
+	game.view.move_with_keyboard = true
+
+func _on_filter_text_changed(new_text: String) -> void:
+	filter_text = new_text
+	send_overlay_info(game.overlay_data[game.c_v].overlay)
+
+func get_matched_objs(matched_objs_display: Array, matched_objs: Array):
+	if filter_text == "*" or len(filter_text) >= 2:
+		for i in len(Building.names):
+			var bldg_name = Building.names[i]
+			if filter_text == "*" or filter_text.to_lower() in tr(bldg_name.to_upper() + "_NAME").to_lower():
+				matched_objs_display.append(tr(bldg_name.to_upper() + "_NAME_S"))
+				matched_objs.append(i)
+		for i in len(AncientBuilding.names):
+			var bldg_name = AncientBuilding.names[i]
+			if filter_text == "*" or filter_text.to_lower() in tr(bldg_name.to_upper()).to_lower():
+				matched_objs_display.append(tr(bldg_name.to_upper()))
+				matched_objs.append(i)
+		for MS_name in Megastructure.names:
+			if filter_text == "*" or filter_text.to_lower() in tr("M_" + MS_name + "_NAME").to_lower():
+				matched_objs_display.append(tr("M_" + MS_name + "_NAME"))
+				matched_objs.append(MS_name)
+
+func update_filter_text(matched_objs_display: Array):
+	var filtered_obj_str = ""
+	for i in len(matched_objs_display):
+		var obj = matched_objs_display[i]
+		filtered_obj_str += obj
+		if i < len(matched_objs_display) - 1:
+			filtered_obj_str += ", "
+	if filter_text == "*":
+		game.overlay.get_node("Filter/Label").text = tr("SHOWING_ALL")
+	elif filtered_obj_str == "":
+		game.overlay.get_node("Filter/Label").text = ""
+	else:
+		game.overlay.get_node("Filter/Label").text = tr("SHOWING_X").format({"obj": filtered_obj_str})

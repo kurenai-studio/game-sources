@@ -1,0 +1,64 @@
+extends "Projectile.gd"
+
+var deflects_remaining:int
+var ignore_defense_buffs = false
+
+func _ready() -> void:
+	super()
+	area_entered.connect(_on_area_entered)
+	$Trail.default_color = trail_color
+	$Trail.show()
+	spawn_sound_player.pitch_scale = randf_range(0.7, 1.4)
+	spawn_sound_player.volume_db = -3.0
+	spawn_sound_player.play()
+
+func _on_area_entered(area: Area2D) -> void:
+	if check_boundary(area) or not is_instance_valid(shooter):
+		return
+	var weapon_data = {
+		"type":Battle.DamageType.PHYSICAL,
+		"damage":damage,
+		"shooter_attack":shooter.attack + shooter.attack_buff,
+		"shooter_mass":shooter.get_mass(),
+		"shooter_type":shooter.type,
+		"shooter_velocity":shooter.velocity,
+		"weapon_accuracy":weapon_accuracy,
+		"orientation":Vector2.from_angle(rotation),
+		"velocity":speed * Vector2.from_angle(rotation),
+		"mass":mass,
+		"knockback":mass * Vector2.from_angle(rotation),
+	}
+	if crit_hit_mult != 1.0:
+		weapon_data["crit_hit_mult"] = crit_hit_mult
+	if ignore_defense_buffs:
+		weapon_data["ignore_defense_buffs"] = true
+	if not status_effects.is_empty():
+		weapon_data["status_effects"] = status_effects
+	if not buffs.is_empty():
+		weapon_data["buffs"] = buffs
+	if area.damage_entity(weapon_data, shooter):
+		if status_effects.has(Battle.StatusEffect.WET):
+			var water_explosion = preload("res://Scenes/Battle/Explosion.tscn").instantiate()
+			battle_GUI.battle_scene.add_child(water_explosion)
+			water_explosion.position = position
+			water_explosion.rotation = randf_range(0.0, 2.0 * PI)
+			water_explosion.scale = Vector2.ONE * 0.5
+			water_explosion.play("water_explosion")
+			water_explosion.animation_finished.connect(water_explosion.queue_free)
+		if deflects_remaining == 0:
+			queue_free()
+		else:
+			# The bullet can now hit anything, regardless of the shooter
+			collision_mask = 1 + 2 + 4 + 32
+			# Unless the shooter is a ship and has the necessary upgrade
+			if shooter.type == Battle.EntityType.SHIP and shooter.bullet_levels[2] >= 3:
+				collision_mask = 1 + 4 + 32
+			var incidence_angle = atan2(position.y - area.position.y, position.x - area.position.x)
+			rotation = Vector2.from_angle(rotation).bounce(Vector2.from_angle(incidence_angle)).angle()
+			deflects_remaining -= 1
+		add_hit_sound(preload("res://Audio/SFX/object_hit.ogg"), -3.0)
+		if area.HP <= 0 and shooter.type == Battle.EntityType.SHIP and shooter.ship_class == ShipClass.OFFENSIVE:
+			shooter.buff_from_class_passive_ability("attack", 3)
+	else:
+		if shooter.type == Battle.EntityType.SHIP and shooter.ship_class == ShipClass.ACCURATE:
+			shooter.buff_from_class_passive_ability("accuracy", 3)

@@ -1,0 +1,653 @@
+[gd_scene format=3 uid="uid://dmtuc03fuk5dc"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_ousv4"]
+[ext_resource type="Script" uid="uid://dsplquhp0nmmw" path="res://Scripts/Battle/BattleGUI.gd" id="1_phavr"]
+[ext_resource type="Texture2D" uid="uid://cq01wa1mq6mrr" path="res://Graphics/Planets/3.png" id="3_hjvsu"]
+[ext_resource type="Texture2D" uid="uid://blgh1lvsfpiu8" path="res://Graphics/GUI/Border.png" id="3_wyejc"]
+[ext_resource type="Texture2D" uid="uid://cvetejccba6ge" path="res://Graphics/Stars/Star.png" id="4_pv2pb"]
+[ext_resource type="Texture2D" uid="uid://bc6latfcdvj1t" path="res://Graphics/Weapons/bullet1.png" id="4_xdmes"]
+[ext_resource type="Texture2D" uid="uid://bblxs0wnkibch" path="res://Graphics/Weapons/laser1.png" id="5_lfxuw"]
+[ext_resource type="Texture2D" uid="uid://cyogaq3sj1anp" path="res://Graphics/Weapons/bomb1.png" id="6_xd3wr"]
+[ext_resource type="Texture2D" uid="uid://c1v73luqy7pi5" path="res://Graphics/Weapons/light1.png" id="7_18k07"]
+[ext_resource type="Texture2D" uid="uid://b8xut3yn8djrb" path="res://Graphics/Buttons/target.png" id="8_oca3i"]
+[ext_resource type="Texture2D" uid="uid://do2jj66kerck5" path="res://Graphics/Effects/push_4.png" id="9_oca3i"]
+[ext_resource type="Texture2D" uid="uid://csfu1k8w75bsv" path="res://Graphics/Effects/spotlight_8_s.png" id="10_38hmk"]
+[ext_resource type="PackedScene" uid="uid://bgrr0ylbsnodx" path="res://Scenes/WeaponLevels.tscn" id="10_hjvsu"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_oca3i"]
+device = -1
+physical_keycode = 90
+unicode = 122
+
+[sub_resource type="Shortcut" id="Shortcut_hjvsu"]
+events = [SubResource("InputEventKey_oca3i")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_38hmk"]
+device = -1
+physical_keycode = 32
+unicode = 32
+
+[sub_resource type="Shortcut" id="Shortcut_oca3i"]
+events = [SubResource("InputEventKey_38hmk")]
+
+[sub_resource type="Shader" id="Shader_oca3i"]
+code = "shader_type canvas_item;
+
+uniform float amplitude = 0.0;
+uniform float frequency = 10.0;
+
+void vertex() {
+	VERTEX += vec2(amplitude * sin(frequency * TIME), 0);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hjvsu"]
+shader = SubResource("Shader_oca3i")
+shader_parameter/amplitude = 0.0
+shader_parameter/frequency = 10.0
+
+[sub_resource type="Animation" id="Animation_pv2pb"]
+resource_name = "Blink"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.023529412), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_cgaef"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.15686275)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hovds"]
+_data = {
+&"Blink": SubResource("Animation_pv2pb"),
+&"RESET": SubResource("Animation_cgaef")
+}
+
+[sub_resource type="InputEventKey" id="InputEventKey_pv2pb"]
+device = -1
+physical_keycode = 49
+unicode = 49
+
+[sub_resource type="Shortcut" id="Shortcut_cgaef"]
+events = [SubResource("InputEventKey_pv2pb")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_cgaef"]
+device = -1
+physical_keycode = 50
+unicode = 50
+
+[sub_resource type="Shortcut" id="Shortcut_hovds"]
+events = [SubResource("InputEventKey_cgaef")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_hovds"]
+device = -1
+physical_keycode = 51
+unicode = 51
+
+[sub_resource type="Shortcut" id="Shortcut_hnnox"]
+events = [SubResource("InputEventKey_hovds")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_hnnox"]
+device = -1
+physical_keycode = 52
+unicode = 52
+
+[sub_resource type="Shortcut" id="Shortcut_rr6bc"]
+events = [SubResource("InputEventKey_hnnox")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_rr6bc"]
+device = -1
+physical_keycode = 53
+unicode = 53
+
+[sub_resource type="Shortcut" id="Shortcut_ypwpy"]
+events = [SubResource("InputEventKey_rr6bc")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_ypwpy"]
+device = -1
+physical_keycode = 54
+unicode = 54
+
+[sub_resource type="Shortcut" id="Shortcut_yhfhx"]
+events = [SubResource("InputEventKey_ypwpy")]
+
+[sub_resource type="Curve" id="Curve_pv2pb"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_38hmk"]
+
+[sub_resource type="Shader" id="Shader_38hmk"]
+code = "shader_type canvas_item;
+
+uniform float strength:hint_range(0.0, 1.0) = 0.5;
+
+void fragment() {
+	COLOR.rgb *= step(UV.x, strength) * 0.6 + 0.4;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_oca3i"]
+shader = SubResource("Shader_38hmk")
+shader_parameter/strength = 0.5
+
+[sub_resource type="Gradient" id="Gradient_38hmk"]
+offsets = PackedFloat32Array(0, 0.253012, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_oca3i"]
+gradient = SubResource("Gradient_38hmk")
+
+[sub_resource type="LabelSettings" id="LabelSettings_38hmk"]
+font_size = 28
+font_color = Color(1, 0, 0, 1)
+shadow_size = 16
+shadow_color = Color(0.403922, 0, 0, 0.552941)
+shadow_offset = Vector2(0, 0)
+
+[node name="BattleGUI" type="Control" unique_id=240221385]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+theme = ExtResource("1_ousv4")
+script = ExtResource("1_phavr")
+metadata/_edit_lock_ = true
+
+[node name="PlanetBG" type="Sprite2D" parent="." unique_id=813839640]
+modulate = Color(0.09, 0.09, 0.09, 1)
+light_mask = 4
+z_index = -1
+position = Vector2(1088, 336)
+texture = ExtResource("3_hjvsu")
+
+[node name="PlanetLight" type="PointLight2D" parent="." unique_id=345747065]
+position = Vector2(1088, 336)
+energy = 8.88
+range_item_cull_mask = 4
+texture = ExtResource("4_pv2pb")
+
+[node name="Back" type="Button" parent="." unique_id=302051613]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 124.0
+grow_vertical = 0
+shortcut = SubResource("Shortcut_hjvsu")
+shortcut_in_tooltip = false
+
+[node name="Speedup" type="Button" parent="." unique_id=203782000]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -48.0
+offset_top = -56.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 2
+shortcut = SubResource("Shortcut_oca3i")
+shortcut_in_tooltip = false
+
+[node name="Polygon2D" type="Polygon2D" parent="Speedup" unique_id=537901714]
+material = SubResource("ShaderMaterial_hjvsu")
+position = Vector2(16, 8)
+color = Color(1, 1, 1, 0.505882)
+polygon = PackedVector2Array(0, 0, 0, 32, 20, 16)
+
+[node name="MainPanel" type="NinePatchRect" parent="." unique_id=1871469353]
+layout_mode = 0
+offset_left = 216.0
+offset_top = 616.0
+offset_right = 1064.0
+offset_bottom = 720.0
+texture = ExtResource("3_wyejc")
+patch_margin_left = 15
+patch_margin_top = 11
+patch_margin_right = 15
+patch_margin_bottom = 11
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="ColorRect" type="ColorRect" parent="MainPanel" unique_id=2126065808]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.15686275)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="MainPanel/ColorRect" unique_id=2010984611]
+libraries/ = SubResource("AnimationLibrary_hovds")
+autoplay = &"Blink"
+
+[node name="Bullet" type="Button" parent="MainPanel" unique_id=1517902186]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 44.0
+offset_right = 140.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_cgaef")
+shortcut_in_tooltip = false
+icon = ExtResource("4_xdmes")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Laser" type="Button" parent="MainPanel" unique_id=160809070]
+layout_mode = 0
+offset_left = 204.0
+offset_top = 44.0
+offset_right = 260.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_hovds")
+shortcut_in_tooltip = false
+icon = ExtResource("5_lfxuw")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Bomb" type="Button" parent="MainPanel" unique_id=1333951764]
+layout_mode = 0
+offset_left = 324.0
+offset_top = 44.0
+offset_right = 380.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_hnnox")
+shortcut_in_tooltip = false
+icon = ExtResource("6_xd3wr")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Light" type="Button" parent="MainPanel" unique_id=1528665096]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 44.0
+offset_right = 504.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_rr6bc")
+shortcut_in_tooltip = false
+icon = ExtResource("7_18k07")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Move" type="Button" parent="MainPanel" unique_id=512116868]
+layout_mode = 0
+offset_left = 580.0
+offset_top = 44.0
+offset_right = 636.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_ypwpy")
+shortcut_in_tooltip = false
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureRect" type="TextureRect" parent="MainPanel/Move" unique_id=661031091]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_oca3i")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Push" type="Button" parent="MainPanel" unique_id=1255722463]
+layout_mode = 0
+offset_left = 712.0
+offset_top = 44.0
+offset_right = 768.0
+offset_bottom = 84.0
+shortcut = SubResource("Shortcut_yhfhx")
+shortcut_in_tooltip = false
+icon = ExtResource("9_oca3i")
+icon_alignment = 1
+expand_icon = true
+
+[node name="BulletLabel" type="Label" parent="MainPanel" unique_id=450621177]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 12.0
+offset_right = 156.0
+offset_bottom = 35.0
+text = "BULLET"
+horizontal_alignment = 1
+
+[node name="BulletLevels" parent="MainPanel" unique_id=2015051404 instance=ExtResource("10_hjvsu")]
+layout_mode = 0
+offset_left = 148.0
+offset_top = 44.0
+offset_right = 188.0
+offset_bottom = 84.0
+
+[node name="LaserLabel" type="Label" parent="MainPanel" unique_id=1464578258]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 12.0
+offset_right = 276.0
+offset_bottom = 35.0
+text = "LASER"
+horizontal_alignment = 1
+
+[node name="LaserLevels" parent="MainPanel" unique_id=1106320758 instance=ExtResource("10_hjvsu")]
+layout_mode = 0
+offset_left = 268.0
+offset_top = 44.0
+offset_right = 308.0
+offset_bottom = 84.0
+
+[node name="BombLabel" type="Label" parent="MainPanel" unique_id=2018487111]
+layout_mode = 0
+offset_left = 308.0
+offset_top = 12.0
+offset_right = 396.0
+offset_bottom = 35.0
+text = "BOMB"
+horizontal_alignment = 1
+
+[node name="BombLevels" parent="MainPanel" unique_id=1178007523 instance=ExtResource("10_hjvsu")]
+layout_mode = 0
+offset_left = 388.0
+offset_top = 44.0
+offset_right = 428.0
+offset_bottom = 84.0
+
+[node name="LightLabel" type="Label" parent="MainPanel" unique_id=1841128692]
+layout_mode = 0
+offset_left = 432.0
+offset_top = 12.0
+offset_right = 520.0
+offset_bottom = 35.0
+text = "LIGHT"
+horizontal_alignment = 1
+
+[node name="LightLevels" parent="MainPanel" unique_id=2052017889 instance=ExtResource("10_hjvsu")]
+layout_mode = 0
+offset_left = 512.0
+offset_top = 44.0
+offset_right = 552.0
+offset_bottom = 84.0
+
+[node name="MoveLabel" type="Label" parent="MainPanel" unique_id=1731065614]
+layout_mode = 0
+offset_left = 536.0
+offset_top = 12.0
+offset_right = 680.0
+offset_bottom = 35.0
+text = "MOVE"
+horizontal_alignment = 1
+
+[node name="PushLabel" type="Label" parent="MainPanel" unique_id=2083613900]
+layout_mode = 0
+offset_left = 696.0
+offset_top = 12.0
+offset_right = 784.0
+offset_bottom = 35.0
+text = "PUSH"
+horizontal_alignment = 1
+
+[node name="TurnOrderHBox" type="HBoxContainer" parent="." unique_id=1897331951]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -640.0
+offset_right = 640.0
+offset_bottom = 112.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Info" type="Label" parent="." unique_id=446688148]
+layout_mode = 0
+offset_left = 232.0
+offset_top = 648.0
+offset_right = 1044.0
+offset_bottom = 671.0
+horizontal_alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="Info" unique_id=678733446]
+layout_mode = 0
+offset_left = 376.0
+offset_top = -56.0
+offset_right = 440.0
+offset_bottom = -4.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LightEmissionConePanel" type="Panel" parent="." unique_id=2113551757]
+visible = false
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme = ExtResource("1_ousv4")
+
+[node name="Spotlight8S" type="Sprite2D" parent="LightEmissionConePanel" unique_id=1170412375]
+position = Vector2(168, 80)
+texture = ExtResource("10_38hmk")
+
+[node name="Spotlight8S2" type="Sprite2D" parent="LightEmissionConePanel" unique_id=1217191162]
+position = Vector2(168, 36)
+texture = ExtResource("10_38hmk")
+
+[node name="ScrollUp" type="Label" parent="LightEmissionConePanel" unique_id=1807114664]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 140.0
+offset_bottom = 35.0
+text = "SCROLL_UP"
+horizontal_alignment = 2
+
+[node name="ScrollDown" type="Label" parent="LightEmissionConePanel" unique_id=1663559261]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 56.0
+offset_right = 140.0
+offset_bottom = 79.0
+text = "SCROLL_DOWN"
+horizontal_alignment = 2
+
+[node name="Polygon2D" type="Polygon2D" parent="LightEmissionConePanel" unique_id=771059689]
+color = Color(1, 1, 1, 0.270588)
+antialiased = true
+polygon = PackedVector2Array(152, 52, 168, 84, 184, 52)
+uv = PackedVector2Array(403, -75, 410, -43)
+
+[node name="Polygon2D2" type="Polygon2D" parent="LightEmissionConePanel" unique_id=371496163]
+antialiased = true
+polygon = PackedVector2Array(164, 8, 168, 40, 172, 8)
+
+[node name="LaserConePanel" type="Panel" parent="." unique_id=810793746]
+visible = false
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 100.0
+
+[node name="ScrollUp" type="Label" parent="LaserConePanel" unique_id=488464626]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 12.0
+offset_right = 140.0
+offset_bottom = 35.0
+text = "SCROLL_UP"
+horizontal_alignment = 2
+
+[node name="ScrollDown" type="Label" parent="LaserConePanel" unique_id=1611678467]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 56.0
+offset_right = 140.0
+offset_bottom = 79.0
+text = "SCROLL_DOWN"
+horizontal_alignment = 2
+
+[node name="Line2D4" type="Line2D" parent="LaserConePanel" unique_id=1002255313]
+position = Vector2(0, 46)
+points = PackedVector2Array(172, 8, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="Line2D5" type="Line2D" parent="LaserConePanel" unique_id=2127162961]
+position = Vector2(0, 46)
+points = PackedVector2Array(156, 14, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="Line2D6" type="Line2D" parent="LaserConePanel" unique_id=560937722]
+position = Vector2(0, 46)
+points = PackedVector2Array(188, 14, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="Line2D" type="Line2D" parent="LaserConePanel" unique_id=2063329438]
+points = PackedVector2Array(172, 8, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="Line2D2" type="Line2D" parent="LaserConePanel" unique_id=2142533000]
+points = PackedVector2Array(168, 12, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="Line2D3" type="Line2D" parent="LaserConePanel" unique_id=73740420]
+points = PackedVector2Array(176, 12, 172, 40)
+width = 2.0
+width_curve = SubResource("Curve_pv2pb")
+
+[node name="PushStrengthPanel" type="Panel" parent="." unique_id=1547992910]
+visible = false
+layout_mode = 0
+offset_right = 136.0
+offset_bottom = 348.0
+mouse_filter = 2
+theme = ExtResource("1_ousv4")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_38hmk")
+
+[node name="BarShadow" type="Panel" parent="PushStrengthPanel" unique_id=1496386970]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 44.0
+offset_right = 72.0
+offset_bottom = 300.0
+
+[node name="Bar" type="TextureRect" parent="PushStrengthPanel" unique_id=732323989]
+material = SubResource("ShaderMaterial_oca3i")
+layout_mode = 0
+offset_left = 56.0
+offset_top = 300.0
+offset_right = 312.0
+offset_bottom = 316.0
+rotation = -1.5708
+texture = SubResource("GradientTexture1D_oca3i")
+
+[node name="Label" type="Label" parent="PushStrengthPanel" unique_id=140321663]
+layout_mode = 0
+offset_left = -8.0
+offset_top = -28.0
+offset_right = 144.0
+offset_bottom = -5.0
+text = "MOVEMENT_USED"
+horizontal_alignment = 1
+
+[node name="MovementUsedLower" type="Label" parent="PushStrengthPanel" unique_id=151169810]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 312.0
+offset_right = 92.0
+offset_bottom = 335.0
+text = "30.0 m"
+horizontal_alignment = 1
+
+[node name="MovementUsed" type="Label" parent="PushStrengthPanel" unique_id=548898484]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 160.0
+offset_right = 156.0
+offset_bottom = 183.0
+text = "30.0 m"
+
+[node name="MovementUsedUpper" type="Label" parent="PushStrengthPanel" unique_id=46099615]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 8.0
+offset_right = 105.0
+offset_bottom = 31.0
+text = "100.0 m"
+horizontal_alignment = 1
+
+[node name="ScreenFlash" type="ColorRect" parent="." unique_id=412260835]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="Defeat" type="Label" parent="." unique_id=820306650]
+visible = false
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -96.0
+offset_top = 116.0
+offset_right = 96.0
+offset_bottom = 155.0
+grow_horizontal = 2
+text = "Defeat"
+label_settings = SubResource("LabelSettings_38hmk")
+horizontal_alignment = 1
+
+[connection signal="pressed" from="Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="Speedup" to="." method="_on_speedup_pressed"]
+[connection signal="visibility_changed" from="MainPanel" to="." method="_on_main_panel_visibility_changed"]
+[connection signal="mouse_entered" from="MainPanel/Bullet" to="." method="_on_bullet_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Bullet" to="." method="_on_bullet_pressed"]
+[connection signal="mouse_entered" from="MainPanel/Laser" to="." method="_on_laser_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Laser" to="." method="_on_laser_pressed"]
+[connection signal="mouse_entered" from="MainPanel/Bomb" to="." method="_on_bomb_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Bomb" to="." method="_on_bomb_pressed"]
+[connection signal="mouse_entered" from="MainPanel/Light" to="." method="_on_light_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Light" to="." method="_on_light_pressed"]
+[connection signal="mouse_entered" from="MainPanel/Move" to="." method="_on_move_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Move" to="." method="_on_move_pressed"]
+[connection signal="mouse_entered" from="MainPanel/Push" to="." method="_on_push_mouse_entered"]
+[connection signal="pressed" from="MainPanel/Push" to="." method="_on_push_pressed"]

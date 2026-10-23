@@ -1,0 +1,571 @@
+[gd_scene format=3 uid="uid://csljwgggftgxb"]
+
+[ext_resource type="Script" uid="uid://chr84rkr56yr2" path="res://Scripts/ShipPanel.gd" id="3"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="3_xp52f"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_ekxvq"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_5824e"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="7"]
+[ext_resource type="PackedScene" uid="uid://rkeuei54m30i" path="res://Scenes/Drives.tscn" id="8"]
+[ext_resource type="Shader" uid="uid://hfa3ri2g3507" path="res://Shaders/FloatAnimation.gdshader" id="9_aivc5"]
+[ext_resource type="Texture2D" uid="uid://chrk4kwpyhk0l" path="res://Graphics/Buttons/SystemView.png" id="9_dhoc8"]
+[ext_resource type="Texture2D" uid="uid://47ckp0wuhpfy" path="res://Graphics/Icons/current.png" id="10_800g5"]
+[ext_resource type="Texture2D" uid="uid://bu4pbsuqutf1m" path="res://Graphics/Buttons/Upgrade.png" id="10_to3oq"]
+[ext_resource type="Texture2D" uid="uid://bc6latfcdvj1t" path="res://Graphics/Weapons/bullet1.png" id="10_w02ne"]
+[ext_resource type="Texture2D" uid="uid://di3sx4ynm6kot" path="res://Graphics/Science/CD.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="11_s3b4g"]
+[ext_resource type="PackedScene" uid="uid://bgrr0ylbsnodx" path="res://Scenes/WeaponLevels.tscn" id="11_xmdl6"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="12_3x4ks"]
+[ext_resource type="Texture2D" uid="uid://bblxs0wnkibch" path="res://Graphics/Weapons/laser1.png" id="12_xmdl6"]
+[ext_resource type="Texture2D" uid="uid://cyogaq3sj1anp" path="res://Graphics/Weapons/bomb1.png" id="13_k28a8"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="13_y4ybd"]
+[ext_resource type="Texture2D" uid="uid://csmhsuosfqrec" path="res://Graphics/Icons/XP.png" id="14_gqpul"]
+[ext_resource type="Texture2D" uid="uid://c1v73luqy7pi5" path="res://Graphics/Weapons/light1.png" id="14_qvlxj"]
+[ext_resource type="Texture2D" uid="uid://bl07f3wef0muv" path="res://Graphics/Icons/HP.png" id="15_0livu"]
+[ext_resource type="Texture2D" uid="uid://7ffsf7xuvfw2" path="res://Graphics/Icons/attack.png" id="16_grg2r"]
+[ext_resource type="Texture2D" uid="uid://cqiyti2xdxtcw" path="res://Graphics/Icons/defense.png" id="17_uo1ep"]
+[ext_resource type="Texture2D" uid="uid://bn520d6r5iwik" path="res://Graphics/Icons/accuracy.png" id="18_befyh"]
+[ext_resource type="Texture2D" uid="uid://bapj1r8e5pwia" path="res://Graphics/Icons/agility.png" id="19_d6hw1"]
+
+[sub_resource type="SystemFont" id="SystemFont_l1il0"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_wweft"]
+font = SubResource("SystemFont_l1il0")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8pffm"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pdtjp"]
+bg_color = Color(0, 0.0196078, 0.109804, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.372549, 0.372549, 1, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_aaq6n"]
+font_size = 13
+font_color = Color(0.52549, 0.52549, 1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pjijs"]
+shader = ExtResource("9_aivc5")
+shader_parameter/amplitude = 10.0
+shader_parameter/frequency = 6.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_sx08b"]
+font_size = 14
+
+[node name="Background" type="Control" unique_id=1200622783]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 36.0
+theme = ExtResource("7")
+script = ExtResource("3")
+metadata/_edit_lock_ = true
+
+[node name="GUI" type="TextureRect" parent="." unique_id=64531827]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("3_xp52f")
+metadata/_edit_lock_ = true
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=680082366]
+layout_mode = 0
+offset_left = 1138.0
+offset_top = 67.0
+offset_right = 1187.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_ekxvq")
+texture_hover = ExtResource("5_5824e")
+
+[node name="Title" type="Label" parent="." unique_id=348979618]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 168.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 18
+text = "SHIPS"
+label_settings = SubResource("LabelSettings_wweft")
+vertical_alignment = 1
+
+[node name="Ships" type="Panel" parent="." unique_id=1209156304]
+clip_contents = true
+layout_mode = 0
+offset_left = 604.0
+offset_top = 148.0
+offset_right = 1120.0
+offset_bottom = 620.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_8pffm")
+
+[node name="DriveButton" type="TextureButton" parent="Ships" unique_id=258318824]
+layout_mode = 0
+offset_left = 156.0
+offset_top = 404.0
+offset_right = 196.0
+offset_bottom = 444.0
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="GoToShips" type="TextureButton" parent="Ships" unique_id=29186299]
+layout_mode = 0
+offset_left = 312.0
+offset_top = 408.0
+offset_right = 352.0
+offset_bottom = 448.0
+texture_normal = ExtResource("9_dhoc8")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Battlefield" type="Panel" parent="Ships" unique_id=322065651]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 40.0
+offset_right = 480.0
+offset_bottom = 392.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_pdtjp")
+
+[node name="InitialPositionsLabel" type="Label" parent="Ships/Battlefield" unique_id=554091070]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 164.0
+offset_bottom = 25.0
+text = "SHIP_INITIAL_POSITIONS"
+label_settings = SubResource("LabelSettings_aaq6n")
+
+[node name="Selected" type="TextureRect" parent="Ships/Battlefield" unique_id=1979453905]
+visible = false
+material = SubResource("ShaderMaterial_pjijs")
+layout_mode = 0
+offset_left = 68.0
+offset_top = 40.0
+offset_right = 168.0
+offset_bottom = 140.0
+scale = Vector2(0.295, 0.295)
+texture = ExtResource("10_800g5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TravelTimeRemaining" type="Label" parent="Ships" unique_id=1152174843]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 8.0
+offset_right = 480.0
+offset_bottom = 31.0
+horizontal_alignment = 1
+
+[node name="Label" type="Label" parent="." unique_id=101178477]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 176.0
+offset_top = 292.0
+offset_right = 492.0
+offset_bottom = 432.0
+grow_horizontal = 2
+label_settings = SubResource("LabelSettings_sx08b")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ShipStats" type="Panel" parent="." unique_id=1376717621]
+visible = false
+layout_mode = 0
+offset_left = 152.0
+offset_top = 148.0
+offset_right = 556.0
+offset_bottom = 620.0
+
+[node name="ShipDetails" type="Control" parent="ShipStats" unique_id=1305776051]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="ShipStats/ShipDetails" unique_id=1527038168]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 8.0
+offset_right = 86.0
+offset_bottom = 40.0
+grow_horizontal = 2
+text = "Level 1 Standard Ship"
+horizontal_alignment = 1
+
+[node name="Respec" type="Button" parent="ShipStats/ShipDetails" unique_id=517604014]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 52.0
+offset_right = 60.0
+offset_bottom = 85.0
+grow_horizontal = 2
+text = "Respec (free)"
+
+[node name="LevelUp" type="Button" parent="ShipStats/ShipDetails" unique_id=1565562317]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 118.0
+offset_top = 52.0
+offset_right = 154.0
+offset_bottom = 85.0
+grow_horizontal = 2
+icon = ExtResource("10_to3oq")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Bullet" type="Control" parent="ShipStats/ShipDetails" unique_id=2134917824]
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 324.0
+offset_right = 72.0
+offset_bottom = 364.0
+
+[node name="Icon" type="TextureRect" parent="ShipStats/ShipDetails/Bullet" unique_id=1471086203]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 28.0
+offset_bottom = 16.0
+texture = ExtResource("10_w02ne")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WeaponLevels" parent="ShipStats/ShipDetails/Bullet" unique_id=1050862918 instance=ExtResource("11_xmdl6")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = -8.0
+offset_right = 72.0
+offset_bottom = 32.0
+
+[node name="Laser" type="Control" parent="ShipStats/ShipDetails" unique_id=29295324]
+anchors_preset = 0
+offset_left = 124.0
+offset_top = 324.0
+offset_right = 164.0
+offset_bottom = 364.0
+
+[node name="Icon" type="TextureRect" parent="ShipStats/ShipDetails/Laser" unique_id=788962482]
+layout_mode = 0
+offset_right = 28.0
+offset_bottom = 20.0
+texture = ExtResource("12_xmdl6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WeaponLevels" parent="ShipStats/ShipDetails/Laser" unique_id=519201823 instance=ExtResource("11_xmdl6")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = -8.0
+offset_right = 72.0
+offset_bottom = 32.0
+
+[node name="Bomb" type="Control" parent="ShipStats/ShipDetails" unique_id=818730690]
+anchors_preset = 0
+offset_left = 216.0
+offset_top = 324.0
+offset_right = 256.0
+offset_bottom = 364.0
+
+[node name="Icon" type="TextureRect" parent="ShipStats/ShipDetails/Bomb" unique_id=1798217973]
+layout_mode = 0
+offset_right = 28.0
+offset_bottom = 20.0
+texture = ExtResource("13_k28a8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WeaponLevels" parent="ShipStats/ShipDetails/Bomb" unique_id=939469018 instance=ExtResource("11_xmdl6")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = -8.0
+offset_right = 72.0
+offset_bottom = 32.0
+
+[node name="Light" type="Control" parent="ShipStats/ShipDetails" unique_id=1391057480]
+anchors_preset = 0
+offset_left = 304.0
+offset_top = 324.0
+offset_right = 344.0
+offset_bottom = 364.0
+
+[node name="Icon" type="TextureRect" parent="ShipStats/ShipDetails/Light" unique_id=356054492]
+layout_mode = 0
+offset_right = 28.0
+offset_bottom = 20.0
+texture = ExtResource("14_qvlxj")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WeaponLevels" parent="ShipStats/ShipDetails/Light" unique_id=426790673 instance=ExtResource("11_xmdl6")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = -8.0
+offset_right = 72.0
+offset_bottom = 32.0
+
+[node name="XP" type="Control" parent="ShipStats/ShipDetails" unique_id=21203001]
+anchors_preset = 0
+offset_top = -16.0
+offset_right = 40.0
+offset_bottom = 24.0
+
+[node name="ColorRect" type="ColorRect" parent="ShipStats/ShipDetails/XP" unique_id=1437782757]
+layout_mode = 0
+offset_left = 76.0
+offset_top = 433.0
+offset_right = 328.0
+offset_bottom = 453.0
+color = Color(0.59, 0.46669, 0.2537, 1)
+
+[node name="TextureProgressGained" type="TextureProgressBar" parent="ShipStats/ShipDetails/XP" unique_id=1472869627]
+modulate = Color(1, 0.819608, 0.611765, 1)
+layout_mode = 0
+offset_left = 76.0
+offset_top = 433.0
+offset_right = 328.0
+offset_bottom = 453.0
+step = 0.0
+value = 60.0
+nine_patch_stretch = true
+texture_under = ExtResource("11_s3b4g")
+texture_progress = ExtResource("12_3x4ks")
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="ShipStats/ShipDetails/XP" unique_id=398103399]
+modulate = Color(0.921569, 0.631373, 0.203922, 1)
+layout_mode = 0
+offset_left = 76.0
+offset_top = 433.0
+offset_right = 328.0
+offset_bottom = 453.0
+step = 0.0
+value = 50.0
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 1
+stretch_margin_right = 3
+stretch_margin_bottom = 1
+texture_over = ExtResource("13_y4ybd")
+texture_progress = ExtResource("12_3x4ks")
+
+[node name="XPGained" type="Label" parent="ShipStats/ShipDetails/XP" unique_id=1368881433]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 428.0
+offset_right = 402.0
+offset_bottom = 459.0
+scale = Vector2(0.9, 0.9)
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="ShipStats/ShipDetails/XP" unique_id=1313673949]
+layout_mode = 0
+offset_left = 76.0
+offset_top = 432.0
+offset_right = 328.0
+offset_bottom = 455.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 / 20"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="ShipStats/ShipDetails/XP" unique_id=1285337601]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 428.0
+offset_right = 68.0
+offset_bottom = 456.0
+texture = ExtResource("14_gqpul")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Stats" type="Control" parent="ShipStats/ShipDetails" unique_id=1597708522]
+anchors_preset = 0
+offset_left = 56.0
+offset_top = 88.0
+offset_right = 96.0
+offset_bottom = 128.0
+metadata/_edit_lock_ = true
+
+[node name="HPIcon" type="TextureRect" parent="ShipStats/ShipDetails/Stats" unique_id=600122997]
+layout_mode = 0
+offset_left = -24.0
+offset_top = 24.0
+offset_bottom = 48.0
+texture = ExtResource("15_0livu")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="AttackIcon" type="TextureRect" parent="ShipStats/ShipDetails/Stats" unique_id=759724717]
+layout_mode = 0
+offset_left = -24.0
+offset_top = 56.0
+offset_bottom = 80.0
+texture = ExtResource("16_grg2r")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DefenseIcon" type="TextureRect" parent="ShipStats/ShipDetails/Stats" unique_id=975786532]
+layout_mode = 0
+offset_left = -24.0
+offset_top = 88.0
+offset_bottom = 112.0
+texture = ExtResource("17_uo1ep")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="AccuracyIcon" type="TextureRect" parent="ShipStats/ShipDetails/Stats" unique_id=1454425789]
+layout_mode = 0
+offset_left = -24.0
+offset_top = 120.0
+offset_bottom = 144.0
+texture = ExtResource("18_befyh")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="AgilityIcon" type="TextureRect" parent="ShipStats/ShipDetails/Stats" unique_id=292245209]
+layout_mode = 0
+offset_left = -24.0
+offset_top = 152.0
+offset_bottom = 176.0
+texture = ExtResource("19_d6hw1")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HP" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=76879977]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 24.0
+offset_right = 344.0
+offset_bottom = 47.0
+text = "0"
+vertical_alignment = 1
+
+[node name="HPLabel" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=892623988]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 152.0
+offset_bottom = 47.0
+text = "HEALTH_POINTS"
+vertical_alignment = 1
+
+[node name="AttackLabel" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=1935466495]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 152.0
+offset_bottom = 79.0
+text = "ATTACK"
+vertical_alignment = 1
+
+[node name="DefenseLabel" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=1525337874]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 88.0
+offset_right = 152.0
+offset_bottom = 111.0
+text = "DEFENSE"
+vertical_alignment = 1
+
+[node name="AccuracyLabel" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=2061089725]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 120.0
+offset_right = 152.0
+offset_bottom = 143.0
+text = "ACCURACY"
+vertical_alignment = 1
+
+[node name="AgilityLabel" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=216483330]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 152.0
+offset_right = 152.0
+offset_bottom = 175.0
+text = "AGILITY"
+vertical_alignment = 1
+
+[node name="Attack" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=1148427338]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 56.0
+offset_right = 344.0
+offset_bottom = 79.0
+text = "0"
+vertical_alignment = 1
+
+[node name="Defense" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=1946483812]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 88.0
+offset_right = 344.0
+offset_bottom = 111.0
+text = "0"
+vertical_alignment = 1
+
+[node name="Accuracy" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=1539340373]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 120.0
+offset_right = 344.0
+offset_bottom = 143.0
+text = "0"
+vertical_alignment = 1
+
+[node name="Agility" type="Label" parent="ShipStats/ShipDetails/Stats" unique_id=710910183]
+layout_mode = 0
+offset_left = 188.0
+offset_top = 152.0
+offset_right = 344.0
+offset_bottom = 175.0
+text = "0"
+vertical_alignment = 1
+
+[node name="Drives" parent="." unique_id=436184121 instance=ExtResource("8")]
+visible = false
+layout_mode = 0
+offset_left = 332.0
+offset_top = 189.0
+offset_right = 956.0
+offset_bottom = 581.0
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="mouse_entered" from="Ships/DriveButton" to="." method="_on_DriveButton_mouse_entered"]
+[connection signal="mouse_exited" from="Ships/DriveButton" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Ships/DriveButton" to="." method="_on_DriveButton_pressed"]
+[connection signal="mouse_entered" from="Ships/GoToShips" to="." method="_on_GoToShips_mouse_entered"]
+[connection signal="mouse_exited" from="Ships/GoToShips" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Ships/GoToShips" to="." method="_on_GoToShips_pressed"]
+[connection signal="pressed" from="ShipStats/ShipDetails/Respec" to="." method="_on_respec_pressed"]
+[connection signal="mouse_entered" from="ShipStats/ShipDetails/LevelUp" to="." method="_on_level_up_mouse_entered"]
+[connection signal="mouse_exited" from="ShipStats/ShipDetails/LevelUp" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ShipStats/ShipDetails/LevelUp" to="." method="_on_level_up_pressed"]
+[connection signal="mouse_entered" from="ShipStats/ShipDetails/Bullet/Icon" to="." method="_on_weaponIcon_mouse_entered" binds= ["bullet"]]
+[connection signal="mouse_exited" from="ShipStats/ShipDetails/Bullet/Icon" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ShipStats/ShipDetails/Laser/Icon" to="." method="_on_weaponIcon_mouse_entered" binds= ["laser"]]
+[connection signal="mouse_exited" from="ShipStats/ShipDetails/Laser/Icon" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ShipStats/ShipDetails/Bomb/Icon" to="." method="_on_weaponIcon_mouse_entered" binds= ["bomb"]]
+[connection signal="mouse_exited" from="ShipStats/ShipDetails/Bomb/Icon" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ShipStats/ShipDetails/Light/Icon" to="." method="_on_weaponIcon_mouse_entered" binds= ["light"]]
+[connection signal="mouse_exited" from="ShipStats/ShipDetails/Light/Icon" to="." method="_on_mouse_exited"]

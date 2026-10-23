@@ -1,0 +1,2443 @@
+[gd_scene format=3 uid="uid://bg2sov0myafl8"]
+
+[ext_resource type="PackedScene" uid="uid://bx7irdxpbnhbb" path="res://Scenes/DimensionType.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://5s56ablx84rs" path="res://Scenes/UniverseIcon.tscn" id="3_wld1s"]
+[ext_resource type="Texture2D" uid="uid://c0gbngpg4gt08" path="res://Graphics/Icons/Physics.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://msw2mrevisf1" path="res://Graphics/Icons/Mathematics.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://pvvxdd2l5ygb" path="res://Graphics/Icons/DimensionalPower.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://ecxdst7pxscm" path="res://Graphics/Icons/Chemistry.png" id="7"]
+[ext_resource type="Script" uid="uid://c0n8fyqh4jyv6" path="res://Scripts/Dimension.gd" id="8"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="9"]
+[ext_resource type="Texture2D" uid="uid://3sf8hsnh7wdv" path="res://Graphics/Icons/Engineering.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://d37q4ouoi8g0s" path="res://Graphics/Icons/Biology.png" id="11"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="12"]
+[ext_resource type="Texture2D" uid="uid://pt7gqtb4i3nf" path="res://Graphics/Icons/Philosophy.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://xofw3xp7bjgh" path="res://Graphics/Formulas/BuildingUpgrade.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://dxfbwfqmfrwy8" path="res://Graphics/Formulas/ShipHitChance.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://4tf3teqmkahc" path="res://Graphics/Misc/Bar.png" id="17"]
+[ext_resource type="Texture2D" uid="uid://dqchg3okkvtsv" path="res://Graphics/Misc/BarUnder.png" id="18"]
+[ext_resource type="Texture2D" uid="uid://dfevqh5sw4lvg" path="res://Graphics/Formulas/AuroraSpawn.png" id="18_drllu"]
+[ext_resource type="Shader" uid="uid://cxlvuojtpdoj2" path="res://Shaders/StarGradient.gdshader" id="18_tqqip"]
+[ext_resource type="PackedScene" uid="uid://cq2nl2mljdwdf" path="res://Scenes/CustomSpinBox.tscn" id="19"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="20"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="22"]
+[ext_resource type="Texture2D" uid="uid://c5vs37303m06e" path="res://Graphics/Icons/table.png" id="23"]
+[ext_resource type="Texture2D" uid="uid://dsgm11owxjjnv" path="res://Graphics/Formulas/DRs.png" id="24"]
+[ext_resource type="Texture2D" uid="uid://hjl8rhhr18ke" path="res://Graphics/Icons/help.png" id="25"]
+[ext_resource type="Texture2D" uid="uid://dknejw0qyrq3e" path="res://Graphics/Icons/H2O.png" id="26"]
+[ext_resource type="Texture2D" uid="uid://nftxad1vjg02" path="res://Graphics/Icons/CH4.png" id="27"]
+[ext_resource type="Texture2D" uid="uid://ls22171bsol7" path="res://Graphics/Icons/CO2.png" id="28"]
+[ext_resource type="Texture2D" uid="uid://bv5gxhoyaba7e" path="res://Graphics/Atoms/He.png" id="29"]
+[ext_resource type="Texture2D" uid="uid://d0i4bvt6quewi" path="res://Graphics/Atoms/H.png" id="30"]
+[ext_resource type="Texture2D" uid="uid://xolenfgc7711" path="res://Graphics/Icons/NH3.png" id="31"]
+[ext_resource type="Texture2D" uid="uid://dlhewnhi4crpn" path="res://Graphics/Formulas/AncientBuildingCost.png" id="31_7v8j0"]
+[ext_resource type="Texture2D" uid="uid://bxbsgfw7reha5" path="res://Graphics/Atoms/O.png" id="32"]
+[ext_resource type="Texture2D" uid="uid://brrod2d1fgtut" path="res://Graphics/Atoms/Ne.png" id="33"]
+[ext_resource type="Texture2D" uid="uid://gbbvl1ua0wyb" path="res://Graphics/Atoms/Xe.png" id="34"]
+[ext_resource type="PackedScene" uid="uid://wkedpxaexn03" path="res://Scenes/Plotter.tscn" id="35"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vyadf"]
+bg_color = Color(0.0745098, 0.0745098, 0.0745098, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7ettq"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.129412, 0.129412, 0.129412, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.294118, 0.294118, 0.294118, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="Animation" id="6"]
+resource_name = "FlashButton"
+length = 0.6
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.223529), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="7"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_v6efg"]
+_data = {
+&"FlashButton": SubResource("6"),
+&"RESET": SubResource("7")
+}
+
+[sub_resource type="Animation" id="Animation_gp2ko"]
+resource_name = "Fade"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_q2bul"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ak7dn"]
+_data = {
+&"Fade": SubResource("Animation_gp2ko"),
+&"RESET": SubResource("Animation_q2bul")
+}
+
+[sub_resource type="Animation" id="Animation_nf555"]
+resource_name = "Fade"
+length = 2.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 0.8, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1), Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("..")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"refresh_subjects_grid"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_2dw8a"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_a687h"]
+_data = {
+&"Fade": SubResource("Animation_nf555"),
+&"RESET": SubResource("Animation_2dw8a")
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mmkh4"]
+bg_color = Color(0.0941176, 0.0941176, 0.0941176, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_3lwqu"]
+font_size = 20
+
+[sub_resource type="Curve" id="11"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p6fsf"]
+shader = ExtResource("18_tqqip")
+shader_parameter/threshold = 0.63
+
+[sub_resource type="Gradient" id="12"]
+offsets = PackedFloat32Array(0, 0.0977199, 0.192182, 0.286645, 0.394137, 0.488599, 0.583062, 0.684039, 0.785016, 0.892508, 1)
+colors = PackedColorArray(0.0980392, 0, 0, 1, 1, 0.709804, 0.423529, 1, 1, 0.854902, 0.709804, 1, 1, 0.929412, 0.890196, 1, 1, 1, 1, 1, 0.835294, 0.878431, 1, 1, 0.635294, 0.752941, 1, 1, 0.54902, 0.694118, 1, 1, 0.52549, 1, 0.458824, 1, 1, 0, 1, 1, 0.258824, 0, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="13"]
+gradient = SubResource("12")
+
+[sub_resource type="Animation" id="8"]
+resource_name = "Fade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1)]
+}
+
+[sub_resource type="Animation" id="10"]
+resource_name = "FadeOut"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="9"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_dhvf2"]
+_data = {
+&"Fade": SubResource("8"),
+&"FadeOut": SubResource("10"),
+&"RESET": SubResource("9")
+}
+
+[node name="Dimension" type="Control" unique_id=1880229774]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("9")
+script = ExtResource("8")
+
+[node name="Universes" type="Control" parent="." unique_id=1309808508]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Scroll" type="ScrollContainer" parent="Universes" unique_id=1122335498]
+custom_minimum_size = Vector2(288, 0)
+layout_mode = 0
+offset_top = 84.0
+offset_right = 288.0
+offset_bottom = 720.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_vyadf")
+
+[node name="VBox" type="VBoxContainer" parent="Universes/Scroll" unique_id=620579491]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="UniverseIcon" parent="Universes/Scroll/VBox" unique_id=1140247053 instance=ExtResource("3_wld1s")]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Universes" unique_id=1586585475]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 248.0
+offset_bottom = 40.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_7ettq")
+text = "DISCOVERED_UNIVERSES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SendProbes" type="Button" parent="Universes" unique_id=48143485]
+layout_mode = 0
+offset_top = 684.0
+offset_right = 288.0
+offset_bottom = 720.0
+text = "SEND_PROBES"
+
+[node name="ColorRect" type="ColorRect" parent="Universes/SendProbes" unique_id=1384659321]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Universes/SendProbes" unique_id=945680688]
+libraries/ = SubResource("AnimationLibrary_v6efg")
+
+[node name="Panel" type="Panel" parent="." unique_id=1070319863]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 48.0
+offset_right = 684.0
+offset_bottom = 720.0
+
+[node name="UnivInfo" type="Label" parent="." unique_id=889938610]
+layout_mode = 0
+offset_left = 304.0
+offset_top = 64.0
+offset_right = 672.0
+offset_bottom = 656.0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="UnivInfo" unique_id=1247127464]
+libraries/ = SubResource("AnimationLibrary_ak7dn")
+
+[node name="Subjects" type="ScrollContainer" parent="." unique_id=6590652]
+layout_mode = 0
+offset_left = 684.0
+offset_top = 48.0
+offset_right = 1280.0
+offset_bottom = 720.0
+
+[node name="Grid" type="GridContainer" parent="Subjects" unique_id=1038594951]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+columns = 2
+
+[node name="Maths" parent="Subjects/Grid" unique_id=2053682290 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("5")
+btn_text = "MODIFY_FORMULAS"
+subject = "maths"
+
+[node name="Physics" parent="Subjects/Grid" unique_id=523745650 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("4")
+btn_text = "REWRITE_PHYSICS_LAWS"
+subject = "physics"
+
+[node name="Chemistry" parent="Subjects/Grid" unique_id=731676093 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("7")
+btn_text = "EXPERIMENT_WITH_MOLECULES"
+subject = "chemistry"
+
+[node name="Biology" parent="Subjects/Grid" unique_id=464322590 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("11")
+btn_text = "FIDDLE_WITH_DNA"
+subject = "biology"
+
+[node name="Philosophy" parent="Subjects/Grid" unique_id=1253118956 instance=ExtResource("3")]
+visible = false
+layout_mode = 2
+texture = ExtResource("14")
+subject = "philosophy"
+
+[node name="Engineering" parent="Subjects/Grid" unique_id=2078109028 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("10")
+btn_text = "DO_ENGINEERING"
+subject = "engineering"
+
+[node name="Dimensional_Power" parent="Subjects/Grid" unique_id=1347137061 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("6")
+subject = "dimensional_power"
+
+[node name="BlackRect" type="ColorRect" parent="." unique_id=1451395097]
+visible = false
+layout_mode = 0
+offset_left = 448.0
+offset_top = 48.0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BlackRect" unique_id=1402536799]
+libraries/ = SubResource("AnimationLibrary_a687h")
+
+[node name="DimBonusesInfo" type="Label" parent="." unique_id=1512073714]
+visible = false
+layout_mode = 0
+offset_left = 800.0
+offset_top = 360.0
+offset_right = 1248.0
+offset_bottom = 384.0
+text = "DIM_BONUSES_INFO"
+
+[node name="TopInfo" type="Control" parent="." unique_id=747841012]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -680.0
+
+[node name="DimensionN" type="Label" parent="TopInfo" unique_id=1728931357]
+layout_mode = 0
+offset_left = 16.0
+offset_right = 480.0
+offset_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 5
+theme_override_font_sizes/font_size = 18
+text = "Dimension #1"
+vertical_alignment = 1
+
+[node name="DRs" parent="TopInfo" unique_id=190709485 instance=ExtResource("12")]
+custom_minimum_size = Vector2(384, 0)
+layout_mode = 0
+offset_left = 448.0
+offset_top = 16.0
+offset_right = 832.0
+offset_bottom = 48.0
+text = "[center] [img]Graphics/Icons/help.png[/img][/center]"
+help_text = "DR_DESC"
+adv_help = true
+adv_icons = [ExtResource("24")]
+icon_size = 80
+align = 1
+
+[node name="Reset" type="Button" parent="TopInfo" unique_id=1867947891]
+layout_mode = 0
+offset_left = 1064.0
+offset_top = 8.0
+offset_right = 1233.0
+offset_bottom = 42.0
+grow_horizontal = 0
+text = "New dimension"
+
+[node name="ModifyDimension" type="Control" parent="." unique_id=1199621657]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Reset" type="Control" parent="ModifyDimension" unique_id=2100275160]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="DimResetInfo" type="Label" parent="ModifyDimension/Reset" unique_id=965175333]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 104.0
+offset_right = 416.0
+offset_bottom = 172.0
+text = "DIM_JUST_RESET_INFO"
+autowrap_mode = 3
+
+[node name="Generate" type="Button" parent="ModifyDimension/Reset" unique_id=1162153029]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 272.0
+offset_right = 348.0
+offset_bottom = 306.0
+text = "GENERATE_STARTING_UNIVERSE"
+
+[node name="Maths" type="ScrollContainer" parent="ModifyDimension" unique_id=700274371]
+visible = false
+custom_minimum_size = Vector2(388, 0)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Maths" unique_id=759653401]
+custom_minimum_size = Vector2(300, 1200)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="CostGrowthFactors" type="Panel" parent="ModifyDimension/Maths/Control" unique_id=1690031384]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 96.0
+offset_right = 392.0
+offset_bottom = 798.0
+
+[node name="CostGrowthFactor" type="TextureRect" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1991065857]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 0
+offset_left = 52.0
+offset_top = 45.0
+offset_right = 356.0
+offset_bottom = 77.0
+texture = ExtResource("15")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label4" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=226928380]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 368.0
+offset_bottom = 40.0
+text = "Cost growth factors"
+
+[node name="Label" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=693698945]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 107.0
+offset_right = 338.0
+offset_bottom = 131.0
+text = "BUILDING_COSTS"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1516560780]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 143.0
+offset_right = 296.0
+offset_bottom = 175.0
+text = "q = "
+vertical_alignment = 1
+
+[node name="Label5" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=725152948]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 259.0
+offset_right = 296.0
+offset_bottom = 291.0
+text = "q_MV = "
+vertical_alignment = 1
+
+[node name="Label6" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1378920517]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 308.0
+offset_right = 296.0
+offset_bottom = 340.0
+text = "q_MSMB = "
+vertical_alignment = 1
+
+[node name="BUCGF" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=173526429 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 64.0
+offset_top = 143.0
+offset_right = 144.0
+offset_bottom = 175.0
+step = 0.0
+
+[node name="Label3" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1580784482]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 223.0
+offset_right = 344.0
+offset_bottom = 247.0
+text = "MINERAL_UPGRADES"
+
+[node name="RichTextLabel" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=2009296583 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 208.0
+offset_top = 262.0
+offset_right = 248.0
+offset_bottom = 290.0
+help_text = "MV_NAME"
+
+[node name="RichTextLabel2" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=993809670 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 237.0
+offset_top = 311.0
+offset_right = 276.0
+offset_bottom = 339.0
+help_text = "MSMB_NAME"
+
+[node name="MUCGF_MV" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=321634332 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 104.0
+offset_top = 259.0
+offset_right = 184.0
+offset_bottom = 291.0
+step = 0.01
+
+[node name="MUCGF_MSMB" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1482585998 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 132.0
+offset_top = 308.0
+offset_right = 212.0
+offset_bottom = 340.0
+step = 0.01
+
+[node name="Label9" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1002643673]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 435.0
+offset_right = 344.0
+offset_bottom = 459.0
+text = "SHIP_XP_REQ"
+
+[node name="Label12" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1404179056]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 526.0
+offset_right = 344.0
+offset_bottom = 550.0
+text = "SHIP_STATS"
+
+[node name="Label10" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=560387768]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 471.0
+offset_right = 296.0
+offset_bottom = 503.0
+text = "q = "
+vertical_alignment = 1
+
+[node name="SLUGF_XP" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1897015942 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 64.0
+offset_top = 471.0
+offset_right = 144.0
+offset_bottom = 503.0
+step = 0.001
+
+[node name="Label11" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1848717061]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 562.0
+offset_right = 296.0
+offset_bottom = 594.0
+text = "q = "
+vertical_alignment = 1
+
+[node name="SLUGF_Stats" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=888141883 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 64.0
+offset_top = 562.0
+offset_right = 144.0
+offset_bottom = 594.0
+step = 0.001
+
+[node name="Label14" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=519766459]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 614.0
+offset_right = 344.0
+offset_bottom = 638.0
+text = "UNIV_XP_REQ"
+
+[node name="Label15" type="Label" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=605814914]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 646.0
+offset_right = 76.0
+offset_bottom = 674.0
+text = "q = "
+vertical_alignment = 1
+
+[node name="ULUGF" parent="ModifyDimension/Maths/Control/CostGrowthFactors" unique_id=1346663738 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 64.0
+offset_top = 645.0
+offset_right = 144.0
+offset_bottom = 677.0
+step = 0.001
+
+[node name="Label7" type="Label" parent="ModifyDimension/Maths/Control" unique_id=1598728622]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 816.0
+offset_right = 352.0
+offset_bottom = 840.0
+text = "IRM"
+
+[node name="Label16" type="Label" parent="ModifyDimension/Maths/Control" unique_id=850941147]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 912.0
+offset_right = 365.0
+offset_bottom = 936.0
+text = "COSHEF"
+
+[node name="Label12" type="Label" parent="ModifyDimension/Maths/Control" unique_id=924756063]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1104.0
+offset_right = 352.0
+offset_bottom = 1128.0
+text = "MMBSVR"
+
+[node name="Label18" type="Label" parent="ModifyDimension/Maths/Control" unique_id=2008541821]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 852.0
+offset_right = 129.0
+offset_bottom = 880.0
+text = "IR_mult = "
+vertical_alignment = 1
+
+[node name="Label17" type="Label" parent="ModifyDimension/Maths/Control" unique_id=899599855]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 1028.0
+offset_right = 312.0
+offset_bottom = 1056.0
+text = "a = "
+vertical_alignment = 1
+
+[node name="Label19" type="Label" parent="ModifyDimension/Maths/Control" unique_id=973102611]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 1136.0
+offset_right = 312.0
+offset_bottom = 1164.0
+text = "r = "
+vertical_alignment = 1
+
+[node name="RichTextLabel4" parent="ModifyDimension/Maths/Control" unique_id=274807350 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 852.0
+offset_right = 273.0
+offset_bottom = 880.0
+help_text = "IR_MULT_HELP"
+
+[node name="RichTextLabel5" parent="ModifyDimension/Maths/Control" unique_id=1068762204 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 184.0
+offset_top = 1138.0
+offset_right = 232.0
+offset_bottom = 1166.0
+help_text = "RATIO_HELP"
+
+[node name="ShipHitChance" type="TextureRect" parent="ModifyDimension/Maths/Control" unique_id=1225884461]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 0
+offset_left = 42.0
+offset_top = 940.0
+offset_right = 346.0
+offset_bottom = 1012.0
+texture = ExtResource("16")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IRM" parent="ModifyDimension/Maths/Control" unique_id=2132925053 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 140.0
+offset_top = 848.0
+offset_right = 216.0
+offset_bottom = 880.0
+step = 0.001
+
+[node name="COSHEF" parent="ModifyDimension/Maths/Control" unique_id=342535235 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 84.0
+offset_top = 1024.0
+offset_right = 160.0
+offset_bottom = 1056.0
+
+[node name="MMBSVR" parent="ModifyDimension/Maths/Control" unique_id=1144639480 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 84.0
+offset_top = 1132.0
+offset_right = 160.0
+offset_bottom = 1164.0
+
+[node name="Defaults" type="Control" parent="ModifyDimension/Maths/Control" unique_id=889497082]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BUCGF" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=98127857]
+layout_mode = 0
+offset_left = 191.0
+offset_top = 243.0
+offset_right = 233.0
+offset_bottom = 267.0
+text = "(1.3)"
+vertical_alignment = 1
+
+[node name="BUCGF_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/BUCGF" unique_id=1020201864]
+layout_mode = 0
+offset_left = 52.0
+offset_right = 80.0
+offset_bottom = 26.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="MUCGF_MV" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=541605781]
+layout_mode = 0
+offset_left = 263.296
+offset_top = 359.0
+offset_right = 305.296
+offset_bottom = 383.0
+text = "(1.9)"
+vertical_alignment = 1
+
+[node name="MUCGF_MV_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/MUCGF_MV" unique_id=1331962544]
+layout_mode = 0
+offset_left = 53.704
+offset_top = -3.0
+offset_right = 81.704
+offset_bottom = 23.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="MUCGF_MSMB" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=776344095]
+layout_mode = 0
+offset_left = 291.296
+offset_top = 408.0
+offset_right = 333.296
+offset_bottom = 432.0
+text = "(1.6)"
+vertical_alignment = 1
+
+[node name="MUCGF_MSMB_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/MUCGF_MSMB" unique_id=1509495009]
+layout_mode = 0
+offset_left = 54.704
+offset_top = -3.0
+offset_right = 82.704
+offset_bottom = 23.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="IRM" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=801869193]
+layout_mode = 0
+offset_left = 277.0
+offset_top = 852.0
+offset_right = 319.0
+offset_bottom = 876.0
+text = "(1.2)"
+vertical_alignment = 1
+
+[node name="SLUGF_XP" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=1496387872]
+layout_mode = 0
+offset_left = 187.0
+offset_top = 571.0
+offset_right = 229.0
+offset_bottom = 595.0
+text = "(1.3)"
+vertical_alignment = 1
+
+[node name="SLUGF_XP_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/SLUGF_XP" unique_id=1363243984]
+layout_mode = 0
+offset_left = 55.0
+offset_top = -2.0
+offset_right = 83.0
+offset_bottom = 24.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="SLUGF_Stats" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=1163350611]
+layout_mode = 0
+offset_left = 187.0
+offset_top = 663.0
+offset_right = 240.0
+offset_bottom = 687.0
+text = "(1.15)"
+vertical_alignment = 1
+
+[node name="SLUGF_Stats_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/SLUGF_Stats" unique_id=848546094]
+layout_mode = 0
+offset_left = 65.0
+offset_top = -2.0
+offset_right = 93.0
+offset_bottom = 24.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="COSHEF" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=1569733148]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 1028.0
+offset_right = 253.0
+offset_bottom = 1052.0
+text = "(1.5)"
+vertical_alignment = 1
+
+[node name="MMBSVR" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=1257406270]
+layout_mode = 0
+offset_left = 232.0
+offset_top = 1137.0
+offset_right = 285.0
+offset_bottom = 1161.0
+text = "(10)"
+vertical_alignment = 1
+
+[node name="ULUGF" type="Label" parent="ModifyDimension/Maths/Control/Defaults" unique_id=1593115994]
+layout_mode = 0
+offset_left = 187.0
+offset_top = 747.0
+offset_right = 229.0
+offset_bottom = 771.0
+text = "(1.63)"
+vertical_alignment = 1
+
+[node name="ULUGF_Table" type="TextureRect" parent="ModifyDimension/Maths/Control/Defaults/ULUGF" unique_id=2058318525]
+layout_mode = 0
+offset_left = 59.0
+offset_top = -3.0
+offset_right = 87.0
+offset_bottom = 23.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Physics" type="ScrollContainer" parent="ModifyDimension" unique_id=1511022853]
+visible = false
+custom_minimum_size = Vector2(388, 672)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Physics" unique_id=460062423]
+custom_minimum_size = Vector2(300, 1550)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label3" type="Label" parent="ModifyDimension/Physics/Control" unique_id=253692393]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 108.0
+offset_right = 349.0
+offset_bottom = 139.0
+text = "AURORAS"
+label_settings = SubResource("LabelSettings_3lwqu")
+
+[node name="Label7" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1058225217]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 164.0
+offset_right = 349.0
+offset_bottom = 189.0
+text = "SPAWN_PROBABILITY"
+
+[node name="TextureRect" type="TextureRect" parent="ModifyDimension/Physics/Control" unique_id=1772652405]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 188.0
+offset_right = 354.0
+offset_bottom = 244.0
+texture = ExtResource("18_drllu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label8" type="Label" parent="ModifyDimension/Physics/Control" unique_id=818754278]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 252.0
+offset_right = 74.0
+offset_bottom = 277.0
+text = "a = "
+
+[node name="aurora_spawn_probability" parent="ModifyDimension/Physics/Control" unique_id=2141311213 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 82.0
+offset_top = 248.0
+offset_right = 145.063
+offset_bottom = 280.0
+step = 0.01
+value = 0.35
+
+[node name="Label9" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1494477385]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 308.0
+offset_right = 350.0
+offset_bottom = 333.0
+text = "AURORA_WIDTH_MULTIPLIER"
+
+[node name="Label5" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1809521459]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 508.0
+offset_right = 349.0
+offset_bottom = 539.0
+text = "STARS"
+label_settings = SubResource("LabelSettings_3lwqu")
+
+[node name="aurora_width_multiplier" parent="ModifyDimension/Physics/Control" unique_id=125011795 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 82.0
+offset_top = 348.0
+offset_right = 145.063
+offset_bottom = 380.0
+value = 1.0
+max_value = 3.0
+
+[node name="perpendicular_auroras" parent="ModifyDimension/Physics/Control" unique_id=195925319 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 82.0
+offset_top = 440.0
+offset_right = 145.063
+offset_bottom = 472.0
+step = 0.005
+max_value = 1.0
+
+[node name="RichTextLabel3" parent="ModifyDimension/Physics/Control" unique_id=1389344771 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 400.0
+offset_right = 382.0
+offset_bottom = 430.0
+text = "PERPENDICULAR_AURORAS [img]Graphics/Icons/help.png[/img]"
+label_text = "PERPENDICULAR_AURORAS"
+help_text = "PERPENDICULAR_AURORAS_DESC"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Physics/Control" unique_id=405701024]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 568.0
+offset_right = 349.0
+offset_bottom = 593.0
+text = "INFLUENCE_OF_B_TO_MASS"
+
+[node name="BI" parent="ModifyDimension/Physics/Control" unique_id=1807912290 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 32.0
+offset_top = 612.0
+offset_right = 95.0625
+offset_bottom = 644.0
+step = 0.01
+value = 0.3
+
+[node name="BInfluence" type="TextureRect" parent="ModifyDimension/Physics/Control" unique_id=2060878506]
+layout_mode = 0
+offset_left = 136.0
+offset_top = 618.0
+offset_right = 156.0
+offset_bottom = 637.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label4" type="Label" parent="ModifyDimension/Physics/Control" unique_id=824930550]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 692.0
+offset_right = 128.0
+offset_bottom = 717.0
+text = "AMOUNT"
+
+[node name="B" type="Label" parent="ModifyDimension/Physics/Control" unique_id=717322871]
+layout_mode = 0
+offset_left = 244.0
+offset_top = 696.0
+offset_right = 380.0
+offset_bottom = 721.0
+text = "for B = 1 nT"
+
+[node name="BSlider" type="HSlider" parent="ModifyDimension/Physics/Control" unique_id=2055863448]
+layout_mode = 0
+offset_left = 136.0
+offset_top = 700.0
+offset_right = 236.0
+offset_bottom = 716.0
+min_value = 0.1
+max_value = 1000.0
+step = 0.1
+value = 0.1
+exp_edit = true
+
+[node name="Line2D" type="Line2D" parent="ModifyDimension/Physics/Control" unique_id=1784510065]
+position = Vector2(8, 502)
+points = PackedVector2Array(356, 412, 36, 412, 36, 232)
+width = 2.0
+
+[node name="Line2D2" type="Line2D" parent="ModifyDimension/Physics/Control" unique_id=564944462]
+position = Vector2(0, 498)
+points = PackedVector2Array(44, 236, 44, 224)
+width_curve = SubResource("11")
+
+[node name="Line2D3" type="Line2D" parent="ModifyDimension/Physics/Control" unique_id=118639770]
+position = Vector2(320, 678)
+points = PackedVector2Array(44, 236, 56, 236)
+width_curve = SubResource("11")
+
+[node name="StarGradient" type="TextureRect" parent="ModifyDimension/Physics/Control" unique_id=1848191454]
+material = SubResource("ShaderMaterial_p6fsf")
+layout_mode = 0
+offset_left = 44.0
+offset_top = 750.0
+offset_right = 364.0
+offset_bottom = 914.0
+texture = SubResource("13")
+expand_mode = 1
+
+[node name="PDFPlotter" parent="ModifyDimension/Physics/Control" unique_id=1405873060 instance=ExtResource("35")]
+layout_mode = 0
+offset_left = 44.0
+offset_top = 750.0
+offset_right = 364.0
+offset_bottom = 914.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ModifyDimension/Physics/Control" unique_id=1872311793]
+layout_mode = 0
+offset_left = 66.0
+offset_top = 913.0
+offset_right = 378.0
+offset_bottom = 953.0
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=1993899206]
+layout_mode = 2
+text = "M"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=871616245]
+layout_mode = 2
+text = "K"
+
+[node name="Label3" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=1561858892]
+layout_mode = 2
+text = "G"
+
+[node name="Label4" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=361446587]
+layout_mode = 2
+text = "F"
+
+[node name="Label5" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=1115321186]
+layout_mode = 2
+text = "A"
+
+[node name="Label6" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=477587431]
+layout_mode = 2
+text = "B"
+
+[node name="Label7" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=1367653946]
+layout_mode = 2
+text = "O"
+
+[node name="Label8" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=383037579]
+layout_mode = 2
+text = "Q"
+
+[node name="Label9" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=1882697135]
+layout_mode = 2
+text = "R"
+
+[node name="Label10" type="Label" parent="ModifyDimension/Physics/Control/HBoxContainer" unique_id=234547557]
+layout_mode = 2
+text = "Z"
+
+[node name="Label6" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1077479343]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 980.0
+offset_right = 349.0
+offset_bottom = 1011.0
+text = "UNIVERSES"
+label_settings = SubResource("LabelSettings_3lwqu")
+
+[node name="Label" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1829795914]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 1032.0
+offset_right = 349.0
+offset_bottom = 1057.0
+text = "MIN_VAL_OF_UNIV_PROPERTIES"
+
+[node name="RichTextLabel" parent="ModifyDimension/Physics/Control" unique_id=810148966 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 136.0
+offset_top = 1076.0
+offset_right = 172.0
+offset_bottom = 1106.0
+help_text = "MIN_VAL_OF_UNIV_PROPERTIES_DESC"
+
+[node name="MVOUP" parent="ModifyDimension/Physics/Control" unique_id=1515396997 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 32.0
+offset_top = 1072.0
+offset_right = 95.0625
+offset_bottom = 1104.0
+step = 0.05
+value = 0.5
+max_value = 1.0
+
+[node name="RichTextLabel2" parent="ModifyDimension/Physics/Control" unique_id=1402505647 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1132.0
+offset_right = 384.0
+offset_bottom = 1162.0
+text = "COSTS_OF_UNIV_PROPERTIES [img]Graphics/Icons/help.png[/img]"
+label_text = "COSTS_OF_UNIV_PROPERTIES"
+help_text = "COSTS_OF_UNIV_PROPERTIES_DESC"
+
+[node name="UnivPropertiesLabel" type="Label" parent="ModifyDimension/Physics/Control" unique_id=1346334875]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1188.0
+offset_right = 365.0
+offset_bottom = 1516.0
+text = "Speed of light
+Planck constant
+Boltzmann constant
+Gravitational constant
+Elementary charge
+Dark energy
+Difficulty
+Time speed
+Age of the universe"
+
+[node name="VBox" type="VBoxContainer" parent="ModifyDimension/Physics/Control" unique_id=1611211823]
+layout_mode = 0
+offset_left = 268.0
+offset_top = 1188.0
+offset_right = 344.0
+offset_bottom = 1540.0
+theme_override_constants/separation = 8
+
+[node name="speed_of_light" parent="ModifyDimension/Physics/Control/VBox" unique_id=578586213 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 10.0
+
+[node name="planck" parent="ModifyDimension/Physics/Control/VBox" unique_id=1326715998 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 20.0
+
+[node name="boltzmann" parent="ModifyDimension/Physics/Control/VBox" unique_id=330903996 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 10.0
+
+[node name="gravitational" parent="ModifyDimension/Physics/Control/VBox" unique_id=1718736285 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 30.0
+
+[node name="charge" parent="ModifyDimension/Physics/Control/VBox" unique_id=756782619 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 25.0
+
+[node name="dark_energy" parent="ModifyDimension/Physics/Control/VBox" unique_id=757991061 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 25.0
+
+[node name="difficulty" parent="ModifyDimension/Physics/Control/VBox" unique_id=2022415554 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 10.0
+
+[node name="time_speed" parent="ModifyDimension/Physics/Control/VBox" unique_id=379806168 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 50.0
+
+[node name="age" parent="ModifyDimension/Physics/Control/VBox" unique_id=294116964 instance=ExtResource("19")]
+layout_mode = 2
+step = 1.0
+value = 50.0
+
+[node name="VBox2" type="VBoxContainer" parent="ModifyDimension/Physics/Control" unique_id=1223421120]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 1188.0
+offset_right = 268.0
+offset_bottom = 1552.0
+theme_override_constants/separation = 8
+
+[node name="Defaults" type="Control" parent="ModifyDimension/Physics/Control" unique_id=1210497778]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="aurora_spawn_probability" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1655323087]
+layout_mode = 0
+offset_left = 186.0
+offset_top = 252.0
+offset_right = 228.0
+offset_bottom = 277.0
+text = "(0.35)"
+
+[node name="aurora_width_multiplier" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=467940842]
+layout_mode = 0
+offset_left = 186.0
+offset_top = 352.0
+offset_right = 228.0
+offset_bottom = 377.0
+text = "(1)"
+
+[node name="perpendicular_auroras" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1306300571]
+layout_mode = 0
+offset_left = 186.0
+offset_top = 444.0
+offset_right = 228.0
+offset_bottom = 469.0
+text = "(0)"
+
+[node name="BI" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1119587410]
+layout_mode = 0
+offset_left = 176.0
+offset_top = 616.0
+offset_right = 218.0
+offset_bottom = 641.0
+text = "(0.3)"
+
+[node name="MVOUP" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=965689871]
+layout_mode = 0
+offset_left = 176.0
+offset_top = 1075.0
+offset_right = 218.0
+offset_bottom = 1100.0
+text = "(0.5)"
+
+[node name="speed_of_light" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1769042749]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1191.0
+offset_right = 418.0
+offset_bottom = 1216.0
+text = "(25)"
+
+[node name="planck" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1908293997]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1231.0
+offset_right = 418.0
+offset_bottom = 1256.0
+text = "(30)"
+
+[node name="boltzmann" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=751943967]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1270.0
+offset_right = 418.0
+offset_bottom = 1295.0
+text = "(30)"
+
+[node name="gravitational" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=153333417]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1310.0
+offset_right = 418.0
+offset_bottom = 1335.0
+text = "(40)"
+
+[node name="charge" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=782274077]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1351.0
+offset_right = 418.0
+offset_bottom = 1376.0
+text = "(40)"
+
+[node name="dark_energy" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1102892269]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1391.0
+offset_right = 418.0
+offset_bottom = 1416.0
+text = "(100)"
+
+[node name="difficulty" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1467963656]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1431.0
+offset_right = 418.0
+offset_bottom = 1456.0
+text = "(10)"
+
+[node name="time_speed" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=181470624]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1471.0
+offset_right = 418.0
+offset_bottom = 1496.0
+text = "(50)"
+
+[node name="age" type="Label" parent="ModifyDimension/Physics/Control/Defaults" unique_id=1556052842]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 1512.0
+offset_right = 418.0
+offset_bottom = 1537.0
+text = "(15)"
+
+[node name="Chemistry" type="ScrollContainer" parent="ModifyDimension" unique_id=1280580292]
+visible = false
+custom_minimum_size = Vector2(388, 672)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Chemistry" unique_id=1070052665]
+custom_minimum_size = Vector2(300, 650)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="ModifyDimension/Chemistry/Control" unique_id=1253813546]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 119.0
+offset_right = 346.0
+offset_bottom = 144.0
+text = "EDIT_PHASE_DIAGRAMS"
+
+[node name="PDLabel" type="TextureRect" parent="ModifyDimension/Chemistry/Control" unique_id=2001071317]
+layout_mode = 0
+offset_left = 286.0
+offset_top = 118.0
+offset_right = 302.0
+offset_bottom = 134.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LakeButtons" type="VBoxContainer" parent="ModifyDimension/Chemistry/Control" unique_id=853384214]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 163.0
+offset_right = 118.0
+offset_bottom = 555.0
+
+[node name="H2O" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=449211051]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("26")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CH4" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=1315465526]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("27")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CO2" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=997029806]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("28")
+icon_alignment = 1
+expand_icon = true
+
+[node name="NH3" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=1420251078]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("31")
+icon_alignment = 1
+expand_icon = true
+
+[node name="H" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=1294480465]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("30")
+icon_alignment = 1
+expand_icon = true
+
+[node name="He" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=569061004]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("29")
+icon_alignment = 1
+expand_icon = true
+
+[node name="O" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=1942378550]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("32")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Ne" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=1531428380]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("33")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Xe" type="Button" parent="ModifyDimension/Chemistry/Control/LakeButtons" unique_id=38028867]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("34")
+icon_alignment = 1
+expand_icon = true
+
+[node name="OPMeters" type="VBoxContainer" parent="ModifyDimension/Chemistry/Control" unique_id=556318834]
+layout_mode = 0
+offset_left = 136.0
+offset_top = 163.0
+offset_right = 328.0
+offset_bottom = 555.0
+
+[node name="H2O" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=544598476]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="CH4" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=1193906066]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="CO2" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=1946319137]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="NH3" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=206213469]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="H" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=168607738]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="He" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=1710428193]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="O" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=804381348]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="Ne" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=419699766]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="Xe" type="Label" parent="ModifyDimension/Chemistry/Control/OPMeters" unique_id=145724700]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+
+[node name="Biology" type="ScrollContainer" parent="ModifyDimension" unique_id=2038894693]
+visible = false
+custom_minimum_size = Vector2(388, 672)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Biology" unique_id=1434504655]
+custom_minimum_size = Vector2(300, 650)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="ModifyDimension/Biology/Control" unique_id=59377633]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 119.0
+offset_right = 348.0
+offset_bottom = 144.0
+text = "PLANT_GROWTH_SPEED_MULTIPLIER"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Biology/Control" unique_id=306622596]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 215.0
+offset_right = 348.0
+offset_bottom = 240.0
+text = "PLANT_YIELD_MULT"
+
+[node name="Label3" type="Label" parent="ModifyDimension/Biology/Control" unique_id=471804286]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 335.0
+offset_right = 348.0
+offset_bottom = 360.0
+text = "LAKES"
+
+[node name="PGSM" parent="ModifyDimension/Biology/Control" unique_id=470137509 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 40.0
+offset_top = 159.0
+offset_right = 101.479
+offset_bottom = 191.0
+value = 1.0
+min_value = 1.0
+
+[node name="PYM" parent="ModifyDimension/Biology/Control" unique_id=2036388106 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 40.0
+offset_top = 255.0
+offset_right = 101.479
+offset_bottom = 287.0
+value = 1.0
+min_value = 1.0
+
+[node name="PGSMLabel" type="TextureRect" parent="ModifyDimension/Biology/Control" unique_id=417857180]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 166.0
+offset_right = 168.0
+offset_bottom = 182.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PYMLabel" type="TextureRect" parent="ModifyDimension/Biology/Control" unique_id=1599843687]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 262.0
+offset_right = 168.0
+offset_bottom = 277.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LakeButtons" type="GridContainer" parent="ModifyDimension/Biology/Control" unique_id=866403324]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 367.0
+offset_right = 388.0
+offset_bottom = 455.0
+columns = 5
+
+[node name="H2O" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=1954697216]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("26")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CH4" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=172160553]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("27")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CO2" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=1937511597]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("28")
+icon_alignment = 1
+expand_icon = true
+
+[node name="NH3" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=1053256248]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("31")
+icon_alignment = 1
+expand_icon = true
+
+[node name="H" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=133132191]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("30")
+icon_alignment = 1
+expand_icon = true
+
+[node name="He" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=1573272902]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("29")
+icon_alignment = 1
+expand_icon = true
+
+[node name="O" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=800897531]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("32")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Ne" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=2110710711]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("33")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Xe" type="Button" parent="ModifyDimension/Biology/Control/LakeButtons" unique_id=39896067]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("34")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Lake" type="Control" parent="ModifyDimension/Biology/Control" unique_id=925616549]
+custom_minimum_size = Vector2(0, 50)
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 487.0
+offset_right = 388.0
+offset_bottom = 537.0
+
+[node name="Operator" type="Label" parent="ModifyDimension/Biology/Control/Lake" unique_id=1393386329]
+layout_mode = 0
+offset_left = 20.0
+offset_top = -4.0
+offset_right = 44.0
+offset_bottom = 24.0
+text = "x"
+
+[node name="Bonus" parent="ModifyDimension/Biology/Control/Lake" unique_id=1409735796 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 44.0
+offset_top = -8.0
+offset_right = 120.0
+offset_bottom = 24.0
+step = 0.5
+value = 1.0
+
+[node name="LakeDesc" type="RichTextLabel" parent="ModifyDimension/Biology/Control/Lake" unique_id=1609790567]
+layout_mode = 0
+offset_top = 48.0
+offset_right = 356.0
+offset_bottom = 152.0
+mouse_filter = 1
+bbcode_enabled = true
+
+[node name="Engineering" type="ScrollContainer" parent="ModifyDimension" unique_id=928904946]
+visible = false
+custom_minimum_size = Vector2(388, 672)
+clip_contents = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Engineering" unique_id=1646918336]
+custom_minimum_size = Vector2(300, 700)
+layout_mode = 2
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=404974679]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 119.0
+offset_right = 346.0
+offset_bottom = 144.0
+text = "BASE_COST_MULT"
+
+[node name="BCM" parent="ModifyDimension/Engineering/Control" unique_id=169128488 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 38.0
+offset_top = 159.0
+offset_right = 99.4792
+offset_bottom = 191.0
+step = 0.02
+value = 1.0
+
+[node name="RichTextLabel" parent="ModifyDimension/Engineering/Control" unique_id=1650674484 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 150.0
+offset_top = 163.0
+offset_right = 186.0
+offset_bottom = 193.0
+help_text = "BASE_COST_MULT_DESC"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=1460659110]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 215.0
+offset_right = 346.0
+offset_bottom = 240.0
+text = "PICKAXE_SPEED_MULT"
+
+[node name="PS" parent="ModifyDimension/Engineering/Control" unique_id=1027720716 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 38.0
+offset_top = 255.0
+offset_right = 99.4792
+offset_bottom = 287.0
+step = 0.5
+value = 1.0
+
+[node name="Label3" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=1390214244]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 315.0
+offset_right = 346.0
+offset_bottom = 340.0
+text = "ROVER_STAT_MULT"
+
+[node name="RSM" parent="ModifyDimension/Engineering/Control" unique_id=296880382 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 38.0
+offset_top = 363.0
+offset_right = 99.4792
+offset_bottom = 395.0
+step = 0.2
+value = 1.0
+
+[node name="RichTextLabel2" parent="ModifyDimension/Engineering/Control" unique_id=360939696 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 424.0
+offset_right = 384.0
+offset_bottom = 454.0
+text = "CONSTRUCT_ANCIENT_BUILDINGS [img]Graphics/Icons/help.png[/img]"
+label_text = "CONSTRUCT_ANCIENT_BUILDINGS"
+help_text = "CONSTRUCT_ANCIENT_BUILDINGS_DESC"
+
+[node name="Label4" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=689666735]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 476.0
+offset_right = 128.0
+offset_bottom = 501.0
+text = "MAX_TIER"
+
+[node name="max_ancient_building_tier" parent="ModifyDimension/Engineering/Control" unique_id=714737235 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 120.0
+offset_top = 472.0
+offset_right = 181.479
+offset_bottom = 504.0
+step = 1.0
+is_integer = true
+
+[node name="AncientBuildingFormula" type="TextureRect" parent="ModifyDimension/Engineering/Control" unique_id=1830585330]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 524.0
+offset_right = 256.0
+offset_bottom = 552.0
+texture = ExtResource("31_7v8j0")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label5" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=1316638246]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 576.0
+offset_right = 128.0
+offset_bottom = 601.0
+text = "a = "
+
+[node name="ancient_building_a_value" parent="ModifyDimension/Engineering/Control" unique_id=1570802612 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 120.0
+offset_top = 572.0
+offset_right = 181.479
+offset_bottom = 604.0
+
+[node name="Label7" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=1153585807]
+layout_mode = 0
+offset_left = 292.0
+offset_top = 576.0
+offset_right = 412.0
+offset_bottom = 601.0
+text = "10^-a = "
+
+[node name="RichTextLabel3" parent="ModifyDimension/Engineering/Control" unique_id=1830568141 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 212.0
+offset_top = 576.0
+offset_right = 248.0
+offset_bottom = 606.0
+help_text = "AB_FORMULA_A_DESC"
+
+[node name="Label6" type="Label" parent="ModifyDimension/Engineering/Control" unique_id=1587403617]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 624.0
+offset_right = 132.0
+offset_bottom = 649.0
+text = "b = "
+
+[node name="ancient_building_b_value" parent="ModifyDimension/Engineering/Control" unique_id=923697623 instance=ExtResource("19")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 120.0
+offset_top = 620.0
+offset_right = 181.479
+offset_bottom = 652.0
+step = 0.01
+value = 1.5
+
+[node name="RichTextLabel4" parent="ModifyDimension/Engineering/Control" unique_id=651936652 instance=ExtResource("12")]
+layout_mode = 0
+offset_left = 212.0
+offset_top = 624.0
+offset_right = 248.0
+offset_bottom = 654.0
+help_text = "AB_FORMULA_B_DESC"
+
+[node name="Defaults" type="Control" parent="ModifyDimension/Engineering/Control" unique_id=2068617210]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ancient_building_a_value" type="Label" parent="ModifyDimension/Engineering/Control/Defaults" unique_id=630337983]
+layout_mode = 0
+offset_left = 244.0
+offset_top = 576.0
+offset_right = 284.0
+offset_bottom = 601.0
+text = "(0.0)"
+
+[node name="ancient_building_b_value" type="Label" parent="ModifyDimension/Engineering/Control/Defaults" unique_id=82284049]
+layout_mode = 0
+offset_left = 244.0
+offset_top = 624.0
+offset_right = 284.0
+offset_bottom = 649.0
+text = "(1.5)"
+
+[node name="Dimensional_Power" type="ScrollContainer" parent="ModifyDimension" unique_id=1473965559]
+visible = false
+custom_minimum_size = Vector2(388, 672)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 680.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mmkh4")
+
+[node name="Control" type="Control" parent="ModifyDimension/Dimensional_Power" unique_id=1682726250]
+custom_minimum_size = Vector2(300, 850)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Level" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1642562283]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 19.0
+offset_right = 82.0
+offset_bottom = 43.0
+text = "LEVEL"
+
+[node name="SpecialBonuses" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=559098090]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 19.0
+offset_right = 322.0
+offset_bottom = 43.0
+text = "EFFECTS"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1646562625]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 72.0
+offset_right = 82.0
+offset_bottom = 682.0
+theme_override_constants/separation = 68
+
+[node name="Label" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=1489272747]
+layout_mode = 2
+text = "1"
+
+[node name="Label6" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=673431411]
+modulate = Color(0.831373, 0.690196, 1, 1)
+layout_mode = 2
+text = "2"
+
+[node name="Label2" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=826273956]
+modulate = Color(0.764706, 0.564706, 1, 1)
+layout_mode = 2
+text = "3"
+
+[node name="Label3" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=874133089]
+modulate = Color(0.654902, 0.368627, 1, 1)
+layout_mode = 2
+text = "4"
+
+[node name="Label4" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=1612246404]
+modulate = Color(0.572549, 0.215686, 1, 1)
+layout_mode = 2
+text = "5"
+
+[node name="Label5" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=575544986]
+modulate = Color(0.454902, 0, 1, 1)
+layout_mode = 2
+text = "6"
+
+[node name="Label7" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=1009950010]
+modulate = Color(0.454902, 0, 1, 1)
+layout_mode = 2
+text = "7"
+
+[node name="Label8" type="Label" parent="ModifyDimension/Dimensional_Power/Control/VBoxContainer" unique_id=1868503973]
+modulate = Color(0.454902, 0, 1, 1)
+layout_mode = 2
+text = "8"
+
+[node name="Line2D" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1495698629]
+position = Vector2(-18, -9)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D2" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=304684271]
+modulate = Color(0.831373, 0.690196, 1, 1)
+position = Vector2(-18, 87)
+points = PackedVector2Array(88, 92, 148, 92)
+width = 1.0
+
+[node name="Line2D3" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=2111004547]
+modulate = Color(0.764706, 0.564706, 1, 1)
+position = Vector2(-18, 179)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D4" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1937870180]
+modulate = Color(0.654902, 0.368627, 1, 1)
+position = Vector2(-18, 271)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D5" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1484377636]
+modulate = Color(0.572549, 0.215686, 1, 1)
+position = Vector2(-18, 367)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D6" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=186926000]
+modulate = Color(0.454902, 0, 1, 1)
+position = Vector2(-18, 463)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D7" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1812536535]
+modulate = Color(0.454902, 0, 1, 1)
+position = Vector2(-18, 554)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="Line2D8" type="Line2D" parent="ModifyDimension/Dimensional_Power/Control" unique_id=37597557]
+modulate = Color(0.454902, 0, 1, 1)
+position = Vector2(-18, 644)
+points = PackedVector2Array(88, 92, 152, 92)
+width = 1.0
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="ModifyDimension/Dimensional_Power/Control" unique_id=387265084]
+layout_mode = 0
+offset_left = 94.0
+offset_top = 83.0
+offset_right = 113.0
+offset_bottom = 736.0
+min_value = 1.0
+max_value = 8.0
+step = 0.0
+value = 3.0
+fill_mode = 2
+nine_patch_stretch = true
+texture_under = ExtResource("18")
+texture_progress = ExtResource("17")
+
+[node name="Label1" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1060105948]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 71.0
+offset_right = 386.0
+offset_bottom = 122.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "QOL_PERKS"
+autowrap_mode = 3
+
+[node name="Label2" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1392634747]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 167.0
+offset_right = 386.0
+offset_bottom = 218.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "UNLOCK_PHY_CHEM_BIO"
+autowrap_mode = 3
+
+[node name="Label3" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1807421363]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 259.0
+offset_right = 386.0
+offset_bottom = 310.0
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "MORE_OP_CAPACITY"
+autowrap_mode = 3
+
+[node name="Label4" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=293885208]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 351.0
+offset_right = 386.0
+offset_bottom = 402.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "MODIFY_CAVE_BATTLE_TIME"
+autowrap_mode = 3
+
+[node name="Label5" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1595557664]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 447.0
+offset_right = 386.0
+offset_bottom = 498.0
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "MORE_PP"
+autowrap_mode = 3
+
+[node name="Label6" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1332907549]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 543.0
+offset_right = 386.0
+offset_bottom = 594.0
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "TP_COST_POWER_VARIES"
+autowrap_mode = 3
+
+[node name="Label7" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=2088200911]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 636.0
+offset_right = 386.0
+offset_bottom = 687.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "CBD_SECOND_PATH_CHANGE"
+autowrap_mode = 3
+
+[node name="Label8" type="Label" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1679636818]
+layout_mode = 0
+offset_left = 146.0
+offset_top = 724.0
+offset_right = 386.0
+offset_bottom = 856.0
+theme_override_colors/font_color = Color(0.635294, 0.635294, 0.635294, 1)
+text = "Unlock a special area to encounter the final boss (lol of course this area doesn't exist yet (nor the final boss))"
+autowrap_mode = 3
+
+[node name="EffectsHelp" type="TextureRect" parent="ModifyDimension/Dimensional_Power/Control" unique_id=1587297721]
+layout_mode = 0
+offset_left = 252.0
+offset_top = 20.0
+offset_right = 268.0
+offset_bottom = 36.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OPMeter" type="Panel" parent="ModifyDimension" unique_id=279900091]
+visible = false
+layout_mode = 0
+offset_top = 48.0
+offset_right = 416.0
+offset_bottom = 140.0
+
+[node name="OPMeterText" parent="ModifyDimension/OPMeter" unique_id=32795079 instance=ExtResource("12")]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 10.0
+offset_right = 0.0
+offset_bottom = 38.0
+text = "[center]THE_OPMETER [img]Graphics/Icons/help.png[/img][/center]"
+label_text = "THE_OPMETER"
+help_text = "THE_OPMETER_DESC"
+align = 1
+
+[node name="OPMeter" type="TextureProgressBar" parent="ModifyDimension/OPMeter" unique_id=245866591]
+modulate = Color(1, 0.4, 0, 1)
+layout_mode = 0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 20.0
+offset_top = -1.0
+offset_right = -20.0
+offset_bottom = 26.0
+max_value = 10.0
+step = 0.0
+value = 4.0
+allow_greater = true
+nine_patch_stretch = true
+stretch_margin_left = 9
+stretch_margin_right = 9
+texture_under = ExtResource("21")
+texture_over = ExtResource("22")
+texture_progress = ExtResource("20")
+
+[node name="TooOP" type="Label" parent="ModifyDimension/OPMeter" unique_id=1678402943]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -47.0
+offset_right = -23.0
+offset_bottom = -20.0
+text = "TOO_OP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=464205813]
+visible = false
+layout_mode = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="ColorRect" unique_id=1743003458]
+libraries/ = SubResource("AnimationLibrary_dhvf2")
+
+[node name="Label" type="Label" parent="ColorRect" unique_id=1810971423]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 64.0
+offset_top = -12.0
+offset_right = -64.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "aw"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="Universes/SendProbes" to="." method="_on_SendProbes_pressed"]
+[connection signal="animation_finished" from="BlackRect/AnimationPlayer" to="." method="_on_black_rect_animation_finished"]
+[connection signal="mouse_entered" from="TopInfo/Reset" to="." method="_on_Reset_mouse_entered"]
+[connection signal="mouse_exited" from="TopInfo/Reset" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TopInfo/Reset" to="." method="_on_Reset_pressed"]
+[connection signal="pressed" from="ModifyDimension/Reset/Generate" to="." method="_on_Generate_pressed"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/CostGrowthFactors/CostGrowthFactor" to="." method="_on_CostGrowthFactor_mouse_entered"]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/CostGrowthFactors/CostGrowthFactor" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/ShipHitChance" to="." method="_on_ShipHitChance_mouse_entered"]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/ShipHitChance" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/BUCGF/BUCGF_Table" to="." method="_on_Table_mouse_entered" binds= ["BUCGF", 100.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/BUCGF/BUCGF_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/MUCGF_MV/MUCGF_MV_Table" to="." method="_on_Table_mouse_entered" binds= ["MUCGF_MV", 100.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/MUCGF_MV/MUCGF_MV_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/MUCGF_MSMB/MUCGF_MSMB_Table" to="." method="_on_Table_mouse_entered" binds= ["MUCGF_MSMB", 100.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/MUCGF_MSMB/MUCGF_MSMB_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/SLUGF_XP/SLUGF_XP_Table" to="." method="_on_Table_mouse_entered" binds= ["SLUGF_XP", 20.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/SLUGF_XP/SLUGF_XP_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/SLUGF_Stats/SLUGF_Stats_Table" to="." method="_on_Table_mouse_entered" binds= ["SLUGF_Stats", 10.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/SLUGF_Stats/SLUGF_Stats_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Maths/Control/Defaults/ULUGF/ULUGF_Table" to="." method="_on_Table_mouse_entered" binds= ["ULUGF", 10.0]]
+[connection signal="mouse_exited" from="ModifyDimension/Maths/Control/Defaults/ULUGF/ULUGF_Table" to="." method="_on_Table_mouse_exited"]
+[connection signal="value_changed" from="ModifyDimension/Physics/Control/aurora_spawn_probability" to="." method="_on_BI_value_changed"]
+[connection signal="value_changed" from="ModifyDimension/Physics/Control/aurora_width_multiplier" to="." method="_on_BI_value_changed"]
+[connection signal="value_changed" from="ModifyDimension/Physics/Control/perpendicular_auroras" to="." method="_on_BI_value_changed"]
+[connection signal="value_changed" from="ModifyDimension/Physics/Control/BI" to="." method="_on_BI_value_changed"]
+[connection signal="mouse_entered" from="ModifyDimension/Physics/Control/BInfluence" to="." method="_on_HelpLabel_mouse_entered" binds= ["INFLUENCE_OF_B_TO_MASS_HELP"]]
+[connection signal="mouse_exited" from="ModifyDimension/Physics/Control/BInfluence" to="." method="_on_mouse_exited"]
+[connection signal="value_changed" from="ModifyDimension/Physics/Control/BSlider" to="." method="_on_BSlider_value_changed"]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/PDLabel" to="." method="_on_HelpLabel_mouse_entered" binds= ["PHASE_DIAGRAM_HELP"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/PDLabel" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/H2O" to="." method="_on_Lake_mouse_entered" binds= ["H2O"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/H2O" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/H2O" to="." method="_on_LakePD_pressed" binds= ["H2O"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/CH4" to="." method="_on_Lake_mouse_entered" binds= ["CH4"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/CH4" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/CH4" to="." method="_on_LakePD_pressed" binds= ["CH4"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/CO2" to="." method="_on_Lake_mouse_entered" binds= ["CO2"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/CO2" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/CO2" to="." method="_on_LakePD_pressed" binds= ["CO2"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/NH3" to="." method="_on_Lake_mouse_entered" binds= ["NH3"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/NH3" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/NH3" to="." method="_on_LakePD_pressed" binds= ["NH3"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/H" to="." method="_on_Lake_mouse_entered" binds= ["H"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/H" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/H" to="." method="_on_LakePD_pressed" binds= ["H"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/He" to="." method="_on_Lake_mouse_entered" binds= ["HE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/He" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/He" to="." method="_on_LakePD_pressed" binds= ["He"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/O" to="." method="_on_Lake_mouse_entered" binds= ["O"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/O" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/O" to="." method="_on_LakePD_pressed" binds= ["O"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/Ne" to="." method="_on_Lake_mouse_entered" binds= ["NE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/Ne" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/Ne" to="." method="_on_LakePD_pressed" binds= ["Ne"]]
+[connection signal="mouse_entered" from="ModifyDimension/Chemistry/Control/LakeButtons/Xe" to="." method="_on_Lake_mouse_entered" binds= ["XE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Chemistry/Control/LakeButtons/Xe" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Chemistry/Control/LakeButtons/Xe" to="." method="_on_LakePD_pressed" binds= ["Xe"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/PGSMLabel" to="." method="_on_HelpLabel_mouse_entered" binds= ["PGSM_DESC"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/PGSMLabel" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/PYMLabel" to="." method="_on_HelpLabel_mouse_entered" binds= ["PYM_DESC"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/PYMLabel" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/H2O" to="." method="_on_Lake_mouse_entered" binds= ["H2O"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/H2O" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/H2O" to="." method="_on_Lake_pressed" binds= ["H2O"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/CH4" to="." method="_on_Lake_mouse_entered" binds= ["CH4"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/CH4" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/CH4" to="." method="_on_Lake_pressed" binds= ["CH4"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/CO2" to="." method="_on_Lake_mouse_entered" binds= ["CO2"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/CO2" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/CO2" to="." method="_on_Lake_pressed" binds= ["CO2"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/NH3" to="." method="_on_Lake_mouse_entered" binds= ["NH3"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/NH3" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/NH3" to="." method="_on_Lake_pressed" binds= ["NH3"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/H" to="." method="_on_Lake_mouse_entered" binds= ["H"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/H" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/H" to="." method="_on_Lake_pressed" binds= ["H"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/He" to="." method="_on_Lake_mouse_entered" binds= ["HE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/He" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/He" to="." method="_on_Lake_pressed" binds= ["He"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/O" to="." method="_on_Lake_mouse_entered" binds= ["O"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/O" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/O" to="." method="_on_Lake_pressed" binds= ["O"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/Ne" to="." method="_on_Lake_mouse_entered" binds= ["NE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/Ne" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/Ne" to="." method="_on_Lake_pressed" binds= ["Ne"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/LakeButtons/Xe" to="." method="_on_Lake_mouse_entered" binds= ["XE"]]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/LakeButtons/Xe" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ModifyDimension/Biology/Control/LakeButtons/Xe" to="." method="_on_Lake_pressed" binds= ["Xe"]]
+[connection signal="mouse_entered" from="ModifyDimension/Biology/Control/Lake/LakeDesc" to="." method="_on_LakeDesc_mouse_entered"]
+[connection signal="mouse_exited" from="ModifyDimension/Biology/Control/Lake/LakeDesc" to="." method="_on_LakeDesc_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Engineering/Control/AncientBuildingFormula" to="." method="_on_ancient_building_formula_mouse_entered"]
+[connection signal="mouse_exited" from="ModifyDimension/Engineering/Control/AncientBuildingFormula" to="." method="_on_ancient_building_formula_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Dimensional_Power/Control/Label1" to="." method="_on_text_mouse_entered" binds= ["QOL_PERKS_DESC"]]
+[connection signal="mouse_exited" from="ModifyDimension/Dimensional_Power/Control/Label1" to="." method="_on_mouse_exited"]
+[connection signal="mouse_exited" from="ModifyDimension/Dimensional_Power/Control/Label2" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Dimensional_Power/Control/Label4" to="." method="_on_text_mouse_entered" binds= ["MODIFY_CAVE_BATTLE_TIME_DESC"]]
+[connection signal="mouse_exited" from="ModifyDimension/Dimensional_Power/Control/Label4" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Dimensional_Power/Control/Label7" to="." method="_on_text_mouse_entered" binds= ["CBD_SECOND_PATH_CHANGE_DESC"]]
+[connection signal="mouse_exited" from="ModifyDimension/Dimensional_Power/Control/Label7" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="ModifyDimension/Dimensional_Power/Control/EffectsHelp" to="." method="_on_EffectsHelp_mouse_entered"]
+[connection signal="mouse_exited" from="ModifyDimension/Dimensional_Power/Control/EffectsHelp" to="." method="_on_mouse_exited"]
+[connection signal="visibility_changed" from="ColorRect" to="." method="_on_ColorRect_visibility_changed"]
+[connection signal="animation_finished" from="ColorRect/AnimationPlayer" to="." method="_on_AnimationPlayer_animation_finished"]

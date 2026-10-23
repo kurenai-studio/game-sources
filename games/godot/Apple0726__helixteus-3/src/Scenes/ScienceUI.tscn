@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://ba8tbwvf85ejf"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1"]
+[ext_resource type="Script" uid="uid://cvom3nske3315" path="res://Scripts/ScienceUI.gd" id="2"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_ekqg7"]
+device = -1
+physical_keycode = 90
+unicode = 122
+
+[sub_resource type="Shortcut" id="2"]
+events = [SubResource("InputEventKey_ekqg7")]
+
+[node name="Control" type="Control" unique_id=1192147974]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1")
+script = ExtResource("2")
+
+[node name="Back" type="Button" parent="." unique_id=474024070]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -36.0
+offset_right = 112.0
+shortcut = SubResource("2")
+shortcut_in_tooltip = false
+
+[node name="ZoomHelp" type="Label" parent="." unique_id=1521543407]
+visible = false
+layout_mode = 0
+offset_top = 644.0
+offset_right = 1280.0
+offset_bottom = 667.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="Back" to="." method="_on_Back_pressed"]

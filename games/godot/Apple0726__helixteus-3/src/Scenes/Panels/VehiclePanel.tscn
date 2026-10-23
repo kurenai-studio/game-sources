@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://c8h07pagkspbb"]
+
+[ext_resource type="Script" uid="uid://bteffy74v8yeg" path="res://Scripts/VehiclePanel.gd" id="3"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="3_x1xxg"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="4"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_dyol1"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_71ifv"]
+[ext_resource type="PackedScene" uid="uid://1hq6qpr1oa3i" path="res://Scenes/AdvButton.tscn" id="6_8kohr"]
+
+[sub_resource type="SystemFont" id="SystemFont_sxpbd"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_i3vqf"]
+font = SubResource("SystemFont_sxpbd")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="InputEventKey" id="InputEventKey_s0e3r"]
+device = -1
+physical_keycode = 49
+unicode = 49
+
+[sub_resource type="Shortcut" id="Shortcut_55dlh"]
+events = [SubResource("InputEventKey_s0e3r")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_x1mkm"]
+device = -1
+physical_keycode = 50
+unicode = 50
+
+[sub_resource type="Shortcut" id="Shortcut_rwedt"]
+events = [SubResource("InputEventKey_x1mkm")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_55dlh"]
+device = -1
+keycode = 51
+unicode = 51
+
+[sub_resource type="Shortcut" id="Shortcut_x1mkm"]
+events = [SubResource("InputEventKey_55dlh")]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_78r6f"]
+bg_color = Color(0.0509804, 0.0509804, 0.0509804, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.192157, 0.192157, 0.192157, 1)
+border_blend = true
+
+[node name="Background" type="Control" unique_id=630509925]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 48.0
+offset_bottom = 48.0
+theme = ExtResource("4")
+script = ExtResource("3")
+
+[node name="GUI" type="TextureRect" parent="." unique_id=1274129183]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("3_x1xxg")
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1044665807]
+layout_mode = 0
+offset_left = 1136.0
+offset_top = 67.0
+offset_right = 1185.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_dyol1")
+texture_hover = ExtResource("5_71ifv")
+
+[node name="Title" type="Label" parent="." unique_id=1992259775]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 317.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 18
+text = "VEHICLES"
+label_settings = SubResource("LabelSettings_i3vqf")
+vertical_alignment = 1
+
+[node name="ProbeTimer" type="Timer" parent="." unique_id=961271618]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=2031375352]
+layout_mode = 0
+offset_left = 216.0
+offset_top = 512.0
+offset_right = 672.0
+offset_bottom = 552.0
+theme_override_constants/separation = 20
+
+[node name="Rovers" parent="HBoxContainer" unique_id=330632952 instance=ExtResource("6_8kohr")]
+custom_minimum_size = Vector2(130, 30)
+layout_mode = 2
+shortcut = SubResource("Shortcut_55dlh")
+shortcut_in_tooltip = false
+button_text = "ROVERS"
+
+[node name="Fighters" parent="HBoxContainer" unique_id=1818182600 instance=ExtResource("6_8kohr")]
+custom_minimum_size = Vector2(130, 30)
+layout_mode = 2
+shortcut = SubResource("Shortcut_rwedt")
+shortcut_in_tooltip = false
+button_text = "FIGHTERS"
+
+[node name="Probes" parent="HBoxContainer" unique_id=2101236758 instance=ExtResource("6_8kohr")]
+custom_minimum_size = Vector2(130, 30)
+layout_mode = 2
+shortcut = SubResource("Shortcut_x1mkm")
+shortcut_in_tooltip = false
+button_text = "PROBES"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=598106551]
+layout_mode = 0
+offset_left = 192.0
+offset_top = 192.0
+offset_right = 1088.0
+offset_bottom = 512.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_78r6f")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=62872276]
+layout_mode = 2
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="timeout" from="ProbeTimer" to="." method="_on_Timer_timeout"]
+[connection signal="mouse_entered" from="HBoxContainer/Rovers" to="." method="show_KBS_tooltip" binds= ["1"]]
+[connection signal="mouse_exited" from="HBoxContainer/Rovers" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="HBoxContainer/Rovers" to="." method="_on_rovers_pressed"]
+[connection signal="mouse_entered" from="HBoxContainer/Fighters" to="." method="show_KBS_tooltip" binds= ["2"]]
+[connection signal="mouse_exited" from="HBoxContainer/Fighters" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="HBoxContainer/Fighters" to="." method="_on_fighters_pressed"]
+[connection signal="mouse_entered" from="HBoxContainer/Probes" to="." method="show_KBS_tooltip" binds= ["3"]]
+[connection signal="mouse_exited" from="HBoxContainer/Probes" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="HBoxContainer/Probes" to="." method="_on_probes_pressed"]

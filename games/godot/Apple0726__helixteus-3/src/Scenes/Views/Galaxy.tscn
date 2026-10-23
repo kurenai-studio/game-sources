@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://cr4ei0mqj4lco"]
+
+[ext_resource type="Script" uid="uid://cxygygii0lwmu" path="res://Scripts/Galaxy.gd" id="1"]
+
+[node name="Galaxy" type="Node2D" unique_id=2136717651]
+script = ExtResource("1")
+
+[connection signal="tree_exited" from="." to="." method="_on_Galaxy_tree_exited"]
+[connection signal="tree_exiting" from="." to="." method="_on_tree_exiting"]

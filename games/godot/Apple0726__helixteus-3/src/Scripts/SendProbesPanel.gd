@@ -1,0 +1,147 @@
+extends "Panel.gd"
+
+var costs:Dictionary = {}
+var probe_num:int = 0
+var exploring_probe_num:int = 0
+var sorted_objs:Array = []
+var n:int = 0
+var obj_index:int = -1
+var obj_to_discover:int = -1
+var undiscovered_obj_num:int = 0
+var dist_mult:float = 1
+var dist_exp:int
+
+func _ready():
+	set_polygon($GUI.size, $GUI.position)
+
+func refresh():
+	probe_num = 0
+	exploring_probe_num = 0
+	costs.clear()
+	undiscovered_obj_num = 0
+	n = len(game.u_i.cluster_data)
+	for cluster in game.u_i.cluster_data:
+		if not cluster.visible:
+			undiscovered_obj_num += 1
+	for probe in game.probe_data:
+		if probe and probe.tier == 0:
+			probe_num += 1
+			if probe.has("start_date"):
+				exploring_probe_num += 1
+	dist_exp = n - undiscovered_obj_num + exploring_probe_num
+	dist_mult = pow(1.01, dist_exp)
+	sorted_objs = game.u_i.cluster_data.duplicate(true)
+	sorted_objs.sort_custom(dist_sort)
+	var exploring_probe_offset:int = exploring_probe_num
+	for i in len(sorted_objs):
+		if not sorted_objs[i].visible:
+			if exploring_probe_offset == 0:
+				obj_to_discover = sorted_objs[i].id
+				obj_index = i
+				break
+			else:
+				exploring_probe_offset -= 1
+	if probe_num - exploring_probe_num <= 0:
+		$Panel/Label.text = tr("NO_PROBES")
+		$Panel/Control.hide()
+	else:
+		$Panel/Label.text = "%s: %s\n%s: %s\n%s: %s" % [tr("PROBE_NUM_IN_UNIV"), probe_num, tr("EXPLORING_PROBE_NUM"), exploring_probe_num, tr("UNDISCOVERED_CLUSTER_NUM"), undiscovered_obj_num]
+		$Panel/Control.show()
+	refresh_energy()
+	$Panel/Control/SendAll.text = "%s (x %s)" % [tr("SEND_ALL_PROBES"), min(probe_num - exploring_probe_num, undiscovered_obj_num - exploring_probe_num)]
+	
+func refresh_energy(send_all:bool = false):
+	fill_costs(dist_mult)
+	var costs2:Dictionary = costs.duplicate(true)
+	costs2.erase("time")
+	if not send_all:
+		Helper.put_rsrc($Panel/Control/Costs, 36, costs2, true, true)
+	$Panel/Control/Time.text = Helper.time_to_str(costs.time)
+	
+func dist_sort(a:Dictionary, b:Dictionary):
+	if a.pos.length() < b.pos.length():
+		return true
+	return false
+
+func _on_Send_pressed(send_all:bool = false):
+	if game.check_enough(costs):
+		var curr_time = Time.get_unix_time_from_system()
+		var probe_sent:bool = false
+		for probe in game.probe_data:
+			if probe and probe.tier == 0 and not probe.has("start_date"):
+				probe.start_date = curr_time
+				probe.explore_length = costs.time
+				probe.obj_to_discover = obj_to_discover
+				probe_sent = true
+				break
+		if not probe_sent and send_all:
+			game.popup(tr("PROBE_SENT"), 1.5)
+			return false
+		game.deduct_resources(costs)
+		if send_all:
+			dist_exp += 1
+			dist_mult = pow(1.01, dist_exp)
+			if obj_index < n:
+				obj_index += 1
+				obj_to_discover = sorted_objs[obj_index].id
+				refresh_energy(true)
+			else:
+				return false
+		else:
+			game.popup(tr("PROBE_SENT"), 1.5)
+			refresh()
+	else:
+		game.popup(tr("NOT_ENOUGH_RESOURCES"), 1.5)
+		if send_all:
+			refresh()
+		return false
+	return true
+
+func _on_HSlider_value_changed(value):
+	refresh_energy()
+
+
+func _on_SendAll_pressed():
+	refresh_energy()
+	while _on_Send_pressed(true):
+		var no_more_probes = true
+		for probe in game.probe_data:
+			if probe and probe.tier == 0 and not probe.has("start_date"):
+				no_more_probes = false
+				break	
+		if no_more_probes:
+			game.popup(tr("PROBE_SENT"), 1.5)
+			break
+	refresh()
+
+func fill_costs(_dist_mult:float):
+	var slider_factor = pow(10, $Panel/Control/HSlider.value / 25.0 - 2)
+	costs["energy"] = 2e18 * slider_factor * _dist_mult / game.u_i.speed_of_light
+	costs["Pu"] = 1000 * slider_factor * _dist_mult / game.u_i.speed_of_light
+	costs["time"] = 1500 / pow(slider_factor, 0.4) * _dist_mult / game.u_i.time_speed / game.u_i.speed_of_light
+	
+func _on_SendAll_mouse_entered():
+	var costs2:Dictionary = {}
+	var min_time:int = 0
+	var max_time:int = 0
+	var temp_dist_exp = dist_exp
+	var temp_dist_mult = pow(1.01, temp_dist_exp)
+	for i in int(min(probe_num - exploring_probe_num, undiscovered_obj_num)):
+		fill_costs(temp_dist_mult)
+		temp_dist_exp += 1
+		temp_dist_mult = pow(1.01, temp_dist_exp)
+		if costs2.is_empty():
+			costs2 = costs.duplicate(true)
+		else:
+			for cost in costs2:
+				if cost != "time":
+					costs2[cost] += costs[cost]
+		if min_time == 0:
+			min_time = costs.time
+		max_time = costs.time
+	costs2.erase("time")
+	Helper.put_rsrc($Panel/Control/Costs, 36, costs2, true, true)
+	$Panel/Control/Time.text = "%s - %s"% [Helper.time_to_str(min_time), Helper.time_to_str(max_time)]
+
+func _on_SendAll_mouse_exited():
+	refresh_energy()

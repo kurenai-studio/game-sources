@@ -1,0 +1,767 @@
+[gd_scene format=3 uid="uid://dt6rr51kda1rb"]
+
+[ext_resource type="Script" uid="uid://bd5yb7w0y4d8b" path="res://Scripts/Game.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://gcp7f61r2ee1" path="res://Graphics/Buttons/settings.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://wamlqxf857g2" path="res://Graphics/Title screen/Godot.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://cfoqvd83nesv4" path="res://Graphics/Title screen/GitHub.png" id="6"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="7"]
+[ext_resource type="PackedScene" uid="uid://cv6s3gfjcs8ae" path="res://Scenes/BackupPanel.tscn" id="7_vvhu1"]
+[ext_resource type="AudioStream" uid="uid://dhpvp5nnsy2a1" path="res://Audio/SFX/click.ogg" id="8"]
+[ext_resource type="Shader" uid="uid://bgo11pvuyabnf" path="res://Shaders/StarField2.gdshader" id="8_axm3r"]
+[ext_resource type="Texture2D" uid="uid://dxr8x86jdcd2p" path="res://Graphics/Tiles/Highlight.jpg" id="8_vvhu1"]
+[ext_resource type="PackedScene" uid="uid://bx5co4ssobffh" path="res://Scenes/Languages.tscn" id="9"]
+[ext_resource type="Shader" uid="uid://dyuhjqkup4nnm" path="res://Shaders/Starfield.gdshader" id="9_0dcpd"]
+[ext_resource type="Texture2D" uid="uid://crjpo3xaanqvb" path="res://Graphics/Title screen/Discord.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://mo4yu6npin41" path="res://Graphics/Title screen/BGTitle.png" id="12_lbihj"]
+[ext_resource type="Shader" uid="uid://cx4wx23pi5ith" path="res://Shaders/Cluster.gdshader" id="19_4v34t"]
+[ext_resource type="Texture2D" uid="uid://koi0aarpqj30" path="res://Graphics/Ships/Ship0.png" id="26"]
+[ext_resource type="Shader" uid="uid://dxhqjhwrfucit" path="res://Shaders/Blur.gdshader" id="30"]
+[ext_resource type="PackedScene" uid="uid://dtk1md86gqsln" path="res://Scenes/Fire.tscn" id="33"]
+[ext_resource type="Shader" uid="uid://cp1b7vqtf0wsg" path="res://Shaders/ScienceTree.gdshader" id="34"]
+[ext_resource type="PackedScene" uid="uid://c5qfs6oo128dp" path="res://Scenes/Nebula.tscn" id="35"]
+[ext_resource type="PackedScene" uid="uid://ca730ks6x5s88" path="res://Scenes/Screenshake.tscn" id="36"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fsurd"]
+shader = ExtResource("8_axm3r")
+shader_parameter/position = Vector2(0, 0)
+shader_parameter/iterations = 18
+shader_parameter/formuparam = 0.53
+shader_parameter/volsteps = 8
+shader_parameter/stepsize = 0.1
+shader_parameter/zoom = 0.8
+shader_parameter/tile = 0.85
+shader_parameter/speed = 0.0
+shader_parameter/brightness = 0.0015
+shader_parameter/darkmatter = 0.3
+shader_parameter/distfading = 0.73
+shader_parameter/saturation = 0.85
+shader_parameter/rotation = Vector2(0, 0)
+shader_parameter/colorampMix = 0.5
+shader_parameter/isColoramp = false
+shader_parameter/max_alpha = 1.0
+shader_parameter/red_p = 1.0
+shader_parameter/green_p = 2.0
+shader_parameter/blue_p = 4.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tvths"]
+shader = ExtResource("19_4v34t")
+shader_parameter/color = Color(1, 1, 1, 1)
+shader_parameter/fog_size = 50.0
+shader_parameter/fog_mvt_spd = 0.0
+shader_parameter/fog_mvt_spd_2 = 0.0
+shader_parameter/OCTAVES = 3
+shader_parameter/seed = 1
+shader_parameter/alpha = 1.0
+shader_parameter/expo = 0.3
+
+[sub_resource type="SystemFont" id="SystemFont_xvdaj"]
+font_names = PackedStringArray("Sans-Serif")
+
+[sub_resource type="SystemFont" id="SystemFont_lbihj"]
+fallbacks = Array[Font]([SubResource("SystemFont_xvdaj")])
+font_names = PackedStringArray("Noto Sans")
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_ycps2"]
+font = SubResource("SystemFont_lbihj")
+font_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rajel"]
+content_margin_left = 15.0
+content_margin_top = 15.0
+content_margin_right = 15.0
+content_margin_bottom = 15.0
+bg_color = Color(0.129412, 0.129412, 0.129412, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.294118, 0.294118, 0.294118, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="Gradient" id="7"]
+colors = PackedColorArray(0.230469, 0.230469, 0.230469, 1, 0.578125, 0.578125, 0.578125, 1)
+
+[sub_resource type="GradientTexture2D" id="8"]
+gradient = SubResource("7")
+
+[sub_resource type="Animation" id="9"]
+resource_name = "Fade"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ju8om"]
+_data = {
+&"Fade": SubResource("9")
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3xr3d"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5acvv"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3pnlf"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Gradient" id="Gradient_i07u7"]
+offsets = PackedFloat32Array(0.0239521, 0.101796)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_b50pl"]
+gradient = SubResource("Gradient_i07u7")
+
+[sub_resource type="LabelSettings" id="LabelSettings_ubx28"]
+font_size = 20
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 1)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="Animation" id="Animation_g0rgc"]
+resource_name = "FadeMusic"
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:volume_db")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(-40, -0.25, 0, 0.25, 0, 0, -0.2, -7.24913, 0.25, 0),
+"times": PackedFloat32Array(0, 1)
+}
+
+[sub_resource type="Animation" id="Animation_bbkxg"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:volume_db")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_g33d0"]
+_data = {
+&"FadeMusic": SubResource("Animation_g0rgc"),
+&"RESET": SubResource("Animation_bbkxg")
+}
+
+[sub_resource type="ShaderMaterial" id="12"]
+shader = ExtResource("34")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ol7ro"]
+shader = ExtResource("9_0dcpd")
+shader_parameter/position = Vector2(0, 0)
+shader_parameter/time = 0.0
+shader_parameter/iterations = 15
+shader_parameter/formuparam2 = 0.79
+shader_parameter/volsteps = 10
+shader_parameter/stepsize = 0.12
+shader_parameter/zoom = 1.0
+shader_parameter/tile = 0.85
+shader_parameter/speed2 = 0.2
+shader_parameter/brightness = 0.0015
+shader_parameter/distfading = 0.92
+shader_parameter/saturation = 0.9
+shader_parameter/transverseSpeed = 1.0
+shader_parameter/cloud = 0.045
+shader_parameter/color = Color(0.027451, 0, 1, 1)
+shader_parameter/max_alpha = 1.0
+shader_parameter/red_p = 1.0
+shader_parameter/green_p = 2.0
+shader_parameter/blue_p = 4.0
+
+[sub_resource type="Shader" id="Shader_vvhu1"]
+code = "shader_type canvas_item;
+
+uniform float alpha:hint_range(0.0, 1.0, 0.1) = 1.0;
+uniform float starlight_angle:hint_range(0.0, 2.0 * 3.1415) = 0.0;
+uniform vec3 starlight_color:source_color = vec3(1.0);
+uniform float starlight_energy:hint_range(0.0, 2.0) = 1.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	COLOR.a *= alpha;
+	vec2 center = 0.4 * vec2(cos(starlight_angle + 3.1415), sin(starlight_angle + 3.1415)) + vec2(0.5);
+	float shade = cos(starlight_angle) * 1.5 * (UV.x - center.x) + sin(starlight_angle) * 1.5 * (UV.y - center.y);
+	float shade2 = starlight_energy * smoothstep(0.0, 1.0, shade) + 0.1;
+	COLOR.rgb *= vec3(shade2) * mix(vec3(1.0), starlight_color, shade2 * 0.8);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lbihj"]
+shader = SubResource("Shader_vvhu1")
+shader_parameter/alpha = 1.0
+shader_parameter/starlight_angle = 3.822000181545
+shader_parameter/starlight_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_energy = 2.0
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_rajel"]
+load_path = "res://.godot/imported/Background.png-4971a717328ff48d2a17022a2c61f185.ctex"
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vvhu1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rajel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vvhu1"]
+bg_color = Color(1, 1, 1, 0.18100001)
+
+[sub_resource type="InputEventKey" id="InputEventKey_vvhu1"]
+device = -1
+physical_keycode = 69
+unicode = 101
+
+[sub_resource type="Shortcut" id="Shortcut_75ca2"]
+events = [SubResource("InputEventKey_vvhu1")]
+
+[sub_resource type="Animation" id="15"]
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UI/Panel:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_0twxn"]
+_data = {
+&"Fade": SubResource("15")
+}
+
+[sub_resource type="InputEventKey" id="InputEventKey_ptddw"]
+device = -1
+physical_keycode = 80
+unicode = 112
+
+[sub_resource type="Shortcut" id="17"]
+events = [SubResource("InputEventKey_ptddw")]
+
+[sub_resource type="Animation" id="19"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WhiteStars:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="20"]
+resource_name = "StarFade"
+length = 3.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WhiteStars:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_f72sx"]
+_data = {
+&"RESET": SubResource("19"),
+&"StarFade": SubResource("20")
+}
+
+[sub_resource type="ShaderMaterial" id="1"]
+shader = ExtResource("30")
+shader_parameter/amount = 0.0
+
+[node name="Game" type="Node2D" unique_id=772411254]
+script = ExtResource("2")
+
+[node name="ShaderExport" type="SubViewportContainer" parent="." unique_id=673711098]
+visible = false
+offset_top = 720.0
+offset_right = 1920.0
+offset_bottom = 1800.0
+mouse_filter = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="ShaderExport" unique_id=1592758284]
+disable_3d = true
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 0
+
+[node name="Starfield" type="ColorRect" parent="ShaderExport/SubViewport" unique_id=798864660]
+material = SubResource("ShaderMaterial_fsurd")
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="ShaderExport/SubViewport" unique_id=766742959]
+visible = false
+material = SubResource("ShaderMaterial_tvths")
+offset_right = 512.0
+offset_bottom = 512.0
+
+[node name="click" type="AudioStreamPlayer" parent="." unique_id=1129675963]
+stream = ExtResource("8")
+volume_db = 14.116
+bus = &"SFX"
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=506348500]
+layer = 2
+
+[node name="Panels" type="CanvasLayer" parent="." unique_id=1375824707]
+layer = 3
+
+[node name="Control" type="Control" parent="Panels" unique_id=739912279]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=775074560]
+layer = 4
+
+[node name="Version" type="Label" parent="UI" unique_id=63835983]
+offset_left = 944.0
+offset_top = 696.0
+offset_right = 1280.0
+offset_bottom = 719.0
+label_settings = SubResource("LabelSettings_ycps2")
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="PopupBackground" type="ColorRect" parent="UI" unique_id=1534844771]
+visible = false
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0.564706)
+
+[node name="Panel" type="PanelContainer" parent="UI" unique_id=1808386366]
+visible = false
+offset_left = 1008.0
+offset_top = 368.0
+offset_right = 1156.0
+offset_bottom = 382.0
+grow_horizontal = 0
+grow_vertical = 2
+theme = ExtResource("7")
+theme_override_styles/panel = SubResource("StyleBoxFlat_rajel")
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel" unique_id=332843812]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BackupPanel" parent="UI" unique_id=196156599 instance=ExtResource("7_vvhu1")]
+visible = false
+offset_left = 976.0
+offset_top = 112.0
+offset_right = 1180.0
+offset_bottom = 204.0
+
+[node name="ClusterBG" parent="." unique_id=827445502 instance=ExtResource("35")]
+visible = false
+color = Color(0.686275, 0, 1, 1)
+
+[node name="GrayscaleRect" type="TextureRect" parent="." unique_id=788157412]
+modulate = Color(1, 1, 1, 0)
+offset_top = 720.0
+offset_right = 720.0
+offset_bottom = 2000.0
+rotation = -1.5708
+mouse_filter = 2
+texture = SubResource("8")
+expand_mode = 1
+metadata/_edit_lock_ = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="GrayscaleRect" unique_id=992026056]
+libraries/ = SubResource("AnimationLibrary_ju8om")
+
+[node name="BGFlash" type="TextureRect" parent="." unique_id=475104107]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1280.0
+offset_bottom = 720.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_vvhu1")
+expand_mode = 1
+
+[node name="Tooltips" type="CanvasLayer" parent="." unique_id=67989299]
+layer = 5
+
+[node name="FPS" type="Label" parent="Tooltips" unique_id=1919394774]
+visible = false
+offset_right = 184.0
+offset_bottom = 23.0
+label_settings = SubResource("LabelSettings_ycps2")
+
+[node name="Command" type="LineEdit" parent="Tooltips" unique_id=569374309]
+visible = false
+offset_top = 696.0
+offset_right = 336.0
+offset_bottom = 720.0
+
+[node name="CtrlShift" type="HBoxContainer" parent="Tooltips" unique_id=337592791]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 89.0
+offset_bottom = 19.0
+grow_horizontal = 0
+mouse_filter = 2
+alignment = 2
+
+[node name="Ctrl" type="Label" parent="Tooltips/CtrlShift" unique_id=692779304]
+visible = false
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_3xr3d")
+text = "Ctrl"
+
+[node name="Shift" type="Label" parent="Tooltips/CtrlShift" unique_id=649637287]
+visible = false
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_5acvv")
+text = "Shift"
+
+[node name="Alt" type="Label" parent="Tooltips/CtrlShift" unique_id=1756644314]
+visible = false
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_3pnlf")
+text = "Alt"
+
+[node name="ItemCursor" type="Control" parent="Tooltips" unique_id=1714175047]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+
+[node name="TextureRect" type="TextureRect" parent="Tooltips/ItemCursor" unique_id=495076456]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 72.0
+offset_bottom = 72.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Polygon2D" type="Polygon2D" parent="Tooltips/ItemCursor" unique_id=54543548]
+texture = SubResource("GradientTexture1D_b50pl")
+texture_rotation = -0.785398
+polygon = PackedVector2Array(0, 0, 0, 24, 24, 0)
+
+[node name="Num" type="Label" parent="Tooltips/ItemCursor" unique_id=1198112830]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 52.0
+offset_right = 96.0
+offset_bottom = 81.0
+theme = ExtResource("7")
+label_settings = SubResource("LabelSettings_ubx28")
+
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=1248171106]
+bus = &"Music"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="MusicPlayer" unique_id=783020801]
+libraries/ = SubResource("AnimationLibrary_g33d0")
+
+[node name="ScienceTreeBG" type="ColorRect" parent="." unique_id=658314139]
+visible = false
+modulate = Color(1, 1, 1, 0)
+material = SubResource("12")
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 1)
+
+[node name="StarfieldUniverse" type="ColorRect" parent="." unique_id=1465379148]
+visible = false
+material = SubResource("ShaderMaterial_ol7ro")
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="TitleBackground" type="Node2D" parent="." unique_id=223377479]
+
+[node name="Planet" type="Sprite2D" parent="TitleBackground" unique_id=1732072700]
+modulate = Color(1, 1, 1, 0.70500004)
+show_behind_parent = true
+material = SubResource("ShaderMaterial_lbihj")
+position = Vector2(1064, 504)
+
+[node name="Main" type="Sprite2D" parent="TitleBackground" unique_id=1682833574]
+modulate = Color(1, 1, 1, 0.6)
+position = Vector2(640, 360)
+scale = Vector2(2.54, 2.54)
+texture = SubResource("CompressedTexture2D_rajel")
+
+[node name="TitleText" type="TextureRect" parent="." unique_id=1793583189]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1280.0
+offset_bottom = 720.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("12_lbihj")
+metadata/_edit_lock_ = true
+
+[node name="Title" type="Control" parent="." unique_id=617922282]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Title" unique_id=870828861]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 416.0
+offset_right = 960.0
+offset_bottom = 658.0
+theme_override_constants/separation = 18
+alignment = 2
+
+[node name="Continue" type="Button" parent="Title/VBoxContainer" unique_id=163979397]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0.19793725, 0.19793722, 0.19793722, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vvhu1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_rajel")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vvhu1")
+shortcut = SubResource("Shortcut_75ca2")
+shortcut_feedback = false
+shortcut_in_tooltip = false
+text = "Continue Save1"
+
+[node name="NewGame" type="Button" parent="Title/VBoxContainer" unique_id=158765359]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0.19793725, 0.19793722, 0.19793722, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vvhu1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_rajel")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vvhu1")
+text = "NEW_GAME"
+
+[node name="LoadGame" type="Button" parent="Title/VBoxContainer" unique_id=2136819336]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0.19793725, 0.19793722, 0.19793722, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vvhu1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_rajel")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vvhu1")
+text = "LOAD_GAME"
+
+[node name="Settings" type="Button" parent="Title/VBoxContainer" unique_id=1410258520]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0.19793725, 0.19793722, 0.19793722, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vvhu1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_rajel")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vvhu1")
+text = "SETTINGS"
+
+[node name="Mods" type="Button" parent="Title/VBoxContainer" unique_id=1105579111]
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0.19793725, 0.19793722, 0.19793722, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vvhu1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_rajel")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vvhu1")
+text = "MODS"
+
+[node name="Discord" type="TextureButton" parent="Title" unique_id=994551793]
+layout_mode = 0
+offset_left = 841.0
+offset_top = 666.0
+offset_right = 897.0
+offset_bottom = 722.0
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="GitHub" type="TextureButton" parent="Title" unique_id=1390906521]
+layout_mode = 0
+offset_left = 921.0
+offset_top = 666.0
+offset_right = 977.0
+offset_bottom = 714.0
+texture_normal = ExtResource("6")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Godot" type="TextureButton" parent="Title" unique_id=1890597678]
+layout_mode = 0
+offset_left = 1001.0
+offset_top = 666.0
+offset_right = 1049.0
+offset_bottom = 714.0
+texture_normal = ExtResource("5")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Languages" parent="Title" unique_id=831156007 instance=ExtResource("9")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_right = 1280.0
+offset_bottom = 720.0
+grow_horizontal = 1
+grow_vertical = 1
+metadata/_edit_lock_ = true
+
+[node name="Autosave" type="Timer" parent="." unique_id=786789800]
+
+[node name="CollectPanelTimer" type="Timer" parent="." unique_id=1149337831]
+one_shot = true
+
+[node name="CollectPanelAnim" type="AnimationPlayer" parent="." unique_id=1910063159]
+libraries/ = SubResource("AnimationLibrary_0twxn")
+
+[node name="Ship" type="TextureButton" parent="." unique_id=1336021592]
+visible = false
+offset_right = 68.0
+offset_bottom = 44.0
+pivot_offset = Vector2(34, 22)
+texture_normal = ExtResource("26")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Fire" parent="Ship" unique_id=805395075 instance=ExtResource("33")]
+show_behind_parent = true
+position = Vector2(8, 20)
+scale = Vector2(0.7, 0.7)
+local_coords = true
+
+[node name="Settings" type="CanvasLayer" parent="." unique_id=1496934615]
+layer = 4
+
+[node name="Settings" type="TextureButton" parent="Settings" unique_id=731722659]
+offset_left = 1244.0
+offset_top = 4.0
+offset_right = 1276.0
+offset_bottom = 36.0
+shortcut = SubResource("17")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Stars" type="CanvasLayer" parent="." unique_id=713435008]
+layer = -2
+
+[node name="Starfield" type="TextureRect" parent="Stars" unique_id=550702297]
+modulate = Color(1, 1, 1, 0)
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+metadata/_edit_lock_ = true
+
+[node name="WhiteStars" type="Node2D" parent="Stars" unique_id=254598734]
+visible = false
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Stars" unique_id=841623461]
+libraries/ = SubResource("AnimationLibrary_f72sx")
+
+[node name="Stars" type="Node2D" parent="Stars" unique_id=947199422]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2113558490]
+position = Vector2(640, 360)
+
+[node name="Screenshake" parent="Camera2D" unique_id=994485755 instance=ExtResource("36")]
+
+[node name="ProbeTimer" type="Timer" parent="." unique_id=172490870]
+autostart = true
+
+[node name="SpaceportTimer" type="Timer" parent="." unique_id=1008050411]
+
+[node name="MMTimer" type="Timer" parent="." unique_id=445352232]
+wait_time = 0.1
+one_shot = true
+autostart = true
+
+[node name="Blur" type="CanvasLayer" parent="." unique_id=1678901885]
+
+[node name="BlurRect" type="ColorRect" parent="Blur" unique_id=1775542818]
+material = SubResource("1")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.364706, 0.968627, 0.968627, 1)
+metadata/_edit_lock_ = true
+
+[connection signal="text_submitted" from="Tooltips/Command" to="." method="_on_command_text_submitted"]
+[connection signal="pressed" from="Title/VBoxContainer/NewGame" to="." method="_on_NewGame_pressed"]
+[connection signal="pressed" from="Title/VBoxContainer/LoadGame" to="." method="_on_LoadGame_pressed"]
+[connection signal="pressed" from="Title/VBoxContainer/Settings" to="." method="_on_Settings_pressed"]
+[connection signal="pressed" from="Title/VBoxContainer/Mods" to="." method="_on_Mods_pressed"]
+[connection signal="mouse_entered" from="Title/Discord" to="." method="_on_Discord_mouse_entered"]
+[connection signal="mouse_exited" from="Title/Discord" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Title/Discord" to="." method="_on_Discord_pressed"]
+[connection signal="mouse_entered" from="Title/GitHub" to="." method="_on_GitHub_mouse_entered"]
+[connection signal="mouse_exited" from="Title/GitHub" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Title/GitHub" to="." method="_on_GitHub_pressed"]
+[connection signal="mouse_entered" from="Title/Godot" to="." method="_on_Godot_mouse_entered"]
+[connection signal="mouse_exited" from="Title/Godot" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Title/Godot" to="." method="_on_Godot_pressed"]
+[connection signal="timeout" from="Autosave" to="." method="_on_Autosave_timeout"]
+[connection signal="timeout" from="CollectPanelTimer" to="." method="_on_CollectPanelTimer_timeout"]
+[connection signal="animation_finished" from="CollectPanelAnim" to="." method="_on_CollectPanelAnim_animation_finished"]
+[connection signal="mouse_entered" from="Ship" to="." method="_on_Ship_mouse_entered"]
+[connection signal="mouse_exited" from="Ship" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Ship" to="." method="_on_Ship_pressed"]
+[connection signal="mouse_entered" from="Settings/Settings" to="." method="_on_Settings_mouse_entered"]
+[connection signal="mouse_exited" from="Settings/Settings" to="." method="_on_Settings_mouse_exited"]
+[connection signal="pressed" from="Settings/Settings" to="." method="_on_Settings_pressed"]
+[connection signal="animation_finished" from="Stars/AnimationPlayer" to="." method="_on_StarFade_animation_finished"]
+[connection signal="timeout" from="ProbeTimer" to="." method="_on_probe_timer_timeout"]
+[connection signal="timeout" from="SpaceportTimer" to="." method="_on_spaceport_timer_timeout"]
+[connection signal="timeout" from="MMTimer" to="." method="_on_MMTimer_timeout"]

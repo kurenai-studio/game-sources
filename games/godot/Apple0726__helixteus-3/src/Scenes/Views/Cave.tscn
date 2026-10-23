@@ -1,0 +1,1277 @@
+[gd_scene format=3 uid="uid://biq34iioj6uf8"]
+
+[ext_resource type="Shader" uid="uid://gevhgabt3grd" path="res://Shaders/Laser.gdshader" id="1"]
+[ext_resource type="Script" uid="uid://2ovarm7fdxfj" path="res://Scripts/Cave/Cave.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://bvyftln8m3hgm" path="res://Scenes/FilterButton.tscn" id="3"]
+[ext_resource type="Texture2D" uid="uid://4tf3teqmkahc" path="res://Graphics/Misc/Bar.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://qbiggp0bodp1" path="res://Graphics/Cave/MiningLaser.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://hvuwdl8ox0yv" path="res://Graphics/Icons/stone.png" id="8"]
+[ext_resource type="PackedScene" uid="uid://cpfkb4haasun3" path="res://Scenes/CaveHole.tscn" id="9"]
+[ext_resource type="Texture2D" uid="uid://64ywd74o1wk7" path="res://Graphics/Cave/Rover top down.png" id="11"]
+[ext_resource type="AudioStream" uid="uid://bcj4nufp7rpc0" path="res://Audio/SFX/mining_laser_loop.ogg" id="12_yvdt3"]
+[ext_resource type="Texture2D" uid="uid://vj3h3by1epm8" path="res://Graphics/Cave/Objects/exit.png" id="13"]
+[ext_resource type="AudioStream" uid="uid://8f3xetlywr8l" path="res://Audio/SFX/laser.ogg" id="13_dfqh5"]
+[ext_resource type="Shader" uid="uid://dose2l8hnixm6" path="res://Shaders/Fire.gdshader" id="14"]
+[ext_resource type="Texture2D" uid="uid://3aket0dmatt4" path="res://Graphics/Cave/minimap.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://csyq1ka6cgn87" path="res://Graphics/Cave/MMIcons/Rover.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://dctvflbbcrqs4" path="res://Graphics/Cave/Projectiles/mining_laser_glow.png" id="16_6cmh4"]
+[ext_resource type="Texture2D" uid="uid://cslf5agen531d" path="res://Graphics/Cave/MMIcons/NextFloor.png" id="17"]
+[ext_resource type="Texture2D" uid="uid://uyvtci76f3tm" path="res://Graphics/Clusters/0.png" id="17_f1kta"]
+[ext_resource type="AudioStream" uid="uid://djsyjnactuti8" path="res://Audio/SFX/break_rock.ogg" id="18_dfqh5"]
+[ext_resource type="PackedScene" uid="uid://2s0chovxmhln" path="res://Scenes/InventorySlot.tscn" id="20"]
+[ext_resource type="Texture2D" uid="uid://cbployr7rnqpu" path="res://Graphics/Cave/MMIcons/Exit.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://dxr8x86jdcd2p" path="res://Graphics/Tiles/Highlight.jpg" id="22"]
+[ext_resource type="Texture2D" uid="uid://bl07f3wef0muv" path="res://Graphics/Icons/HP.png" id="23"]
+[ext_resource type="PackedScene" uid="uid://di212twja6t76" path="res://Scenes/Dialogue.tscn" id="24"]
+[ext_resource type="Texture2D" uid="uid://d03u105amdf1c" path="res://Graphics/Icons/Inventory.png" id="25"]
+[ext_resource type="Texture2D" uid="uid://cdblvpftr6875" path="res://icon.png" id="28"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="29"]
+[ext_resource type="Texture2D" uid="uid://by5owi4dvg1i" path="res://Graphics/Misc/Glow.png" id="30"]
+[ext_resource type="Texture2D" uid="uid://cvetejccba6ge" path="res://Graphics/Stars/Star.png" id="31"]
+[ext_resource type="Texture2D" uid="uid://t47m4j5cowx1" path="res://Graphics/Cave/RE/armor_3.png" id="35"]
+[ext_resource type="PackedScene" uid="uid://ca730ks6x5s88" path="res://Scenes/Screenshake.tscn" id="36"]
+[ext_resource type="Shader" uid="uid://5ev6tfbaretb" path="res://Shaders/Shine.gdshader" id="37"]
+[ext_resource type="Texture2D" uid="uid://cksgkxw6a815w" path="res://Graphics/Effects/spotlight_8.png" id="38"]
+[ext_resource type="Texture2D" uid="uid://doyhcr5ker08v" path="res://Graphics/Cave/DebrisAnim.png" id="39"]
+[ext_resource type="Texture2D" uid="uid://can3vijhtjeb4" path="res://Graphics/Cave/RoverHurt.png" id="40"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="41"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="42"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="43"]
+[ext_resource type="Texture2D" uid="uid://dl0tbc2d816cj" path="res://Graphics/Misc/noise_combined.png" id="45"]
+[ext_resource type="PackedScene" uid="uid://bbykejbtwsdag" path="res://Scenes/KeyboardShortcuts.tscn" id="47"]
+
+[sub_resource type="Shader" id="Shader_yslmc"]
+code = "shader_type canvas_item;
+
+const float planet_texture_size = 4000.0;
+uniform float texture_zoom = 1.0;
+uniform vec2 texture_offset = vec2(0.0);
+uniform vec4 modulate_color = vec4(1.0);
+uniform float reflection_strength:hint_range(0.0, 3.0, 0.1) = 1.0;
+uniform float reflection_power:hint_range(1.0, 3.0, 0.1) = 1.0;
+
+varying vec2 WorldSpace;
+
+void vertex() {
+	WorldSpace = vec4(VERTEX, 0.0, 1.0).xy + texture_offset;
+}
+
+void fragment() {
+	COLOR.rgb = texture(TEXTURE, WorldSpace / planet_texture_size * texture_zoom).rgb;
+	COLOR *= modulate_color;
+}
+
+void light() {
+	float reflection = pow(COLOR.r + COLOR.g + COLOR.b, reflection_power) * reflection_strength;
+	LIGHT = vec4(LIGHT_COLOR.rgb * LIGHT_ENERGY * reflection, LIGHT_COLOR.a);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0yyna"]
+shader = SubResource("Shader_yslmc")
+shader_parameter/texture_zoom = 1.0
+shader_parameter/texture_offset = Vector2(0, 0)
+shader_parameter/modulate_color = Vector4(1, 1, 1, 1)
+shader_parameter/reflection_strength = 0.5000000074506
+shader_parameter/reflection_power = 2.0000000149012003
+
+[sub_resource type="Shader" id="Shader_844bs"]
+code = "shader_type canvas_item;
+
+void fragment() {
+	vec3 orig_color = texture(TEXTURE, UV).rgb;
+	COLOR.rgb = vec3((orig_color.r + orig_color.g + orig_color.b) / 3.0);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f1kta"]
+shader = SubResource("Shader_844bs")
+
+[sub_resource type="CapsuleShape2D" id="27"]
+radius = 23.3054
+height = 151.187
+
+[sub_resource type="CircleShape2D" id="3"]
+radius = 52.0
+
+[sub_resource type="Gradient" id="Gradient_0vr4p"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_dgtdf"]
+gradient = SubResource("Gradient_0vr4p")
+
+[sub_resource type="ParticleProcessMaterial" id="4"]
+angle_min = -90.0
+angle_max = 90.0
+direction = Vector3(0, 0, 0)
+spread = 180.0
+initial_velocity_min = 150.0
+initial_velocity_max = 150.0
+gravity = Vector3(0, 0, 0)
+scale_min = 4.0
+scale_max = 4.0
+color_ramp = SubResource("GradientTexture1D_dgtdf")
+
+[sub_resource type="ParticleProcessMaterial" id="78"]
+emission_shape = 2
+emission_sphere_radius = 1.0
+direction = Vector3(0, 0, 0)
+spread = 180.0
+gravity = Vector3(0, 0, 0)
+color = Color(0.435294, 0.435294, 0.435294, 1)
+
+[sub_resource type="ShaderMaterial" id="28"]
+shader = ExtResource("1")
+shader_parameter/beams = 1
+shader_parameter/energy = 8.0
+shader_parameter/roughness = 2
+shader_parameter/frequency = 10
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.022
+shader_parameter/outline_thickness = 0.06
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 3.0
+shader_parameter/outline_glow = 0.0
+shader_parameter/color = Color(1, 1, 1, 1)
+shader_parameter/outline_color = Color(1, 0.439216, 0, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="SegmentShape2D" id="87"]
+b = Vector2(200, 0)
+
+[sub_resource type="Animation" id="82"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [1.0]
+}
+
+[sub_resource type="Animation" id="85"]
+resource_name = "RayDisappear"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../Glow:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(2, 2, 2, 1), Color(1, 1, 1, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:material:shader_parameter/progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [1.0, 0.0]
+}
+
+[sub_resource type="Animation" id="83"]
+resource_name = "RayFade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../Glow:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(2, 2, 2, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:material:shader_parameter/progress")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_nn2up"]
+_data = {
+&"RESET": SubResource("82"),
+&"RayDisappear": SubResource("85"),
+&"RayFade": SubResource("83")
+}
+
+[sub_resource type="ShaderMaterial" id="84"]
+shader = ExtResource("1")
+shader_parameter/beams = 1
+shader_parameter/energy = 8.0
+shader_parameter/roughness = 2
+shader_parameter/frequency = 10
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.188
+shader_parameter/outline_thickness = 0.0
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 1.089
+shader_parameter/outline_glow = 1.059
+shader_parameter/color = Color(0.909804, 1, 1, 1)
+shader_parameter/outline_color = Color(0.501961, 1, 0.960784, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="20"]
+shader = ExtResource("1")
+shader_parameter/beams = 1
+shader_parameter/energy = 20.0
+shader_parameter/roughness = 3
+shader_parameter/frequency = 10
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.021
+shader_parameter/outline_thickness = 0.044
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 0.0
+shader_parameter/outline_glow = 0.0
+shader_parameter/color = Color(0.91, 1.5, 1.5, 1)
+shader_parameter/outline_color = Color(0.501961, 1, 0.960784, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="21"]
+shader = ExtResource("1")
+shader_parameter/beams = 1
+shader_parameter/energy = 10.0
+shader_parameter/roughness = 8
+shader_parameter/frequency = 15
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.012
+shader_parameter/outline_thickness = 0.043
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 0.0
+shader_parameter/outline_glow = 0.0
+shader_parameter/color = Color(0.91, 2, 2, 1)
+shader_parameter/outline_color = Color(0.5, 1, 0.96, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="22"]
+shader = ExtResource("14")
+shader_parameter/color = Color(1, 0, 0, 1)
+shader_parameter/fog_size = 6.0
+shader_parameter/fog_mvt_spd = 1.0
+shader_parameter/OCTAVES = 4
+
+[sub_resource type="Animation" id="79"]
+resource_name = "Invincible"
+length = 0.3
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0.388235), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="80"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_qwwb7"]
+_data = {
+&"Invincible": SubResource("79"),
+&"RESET": SubResource("80")
+}
+
+[sub_resource type="RectangleShape2D" id="86"]
+size = Vector2(130, 46)
+
+[sub_resource type="CircleShape2D" id="93"]
+radius = 12.0
+
+[sub_resource type="CircleShape2D" id="99"]
+radius = 68.0
+
+[sub_resource type="CircleShape2D" id="30"]
+
+[sub_resource type="CircleShape2D" id="155"]
+radius = 12.0
+
+[sub_resource type="ShaderMaterial" id="91"]
+shader = ExtResource("37")
+
+[sub_resource type="CanvasItemMaterial" id="92"]
+particles_animation = true
+particles_anim_h_frames = 6
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Gradient" id="Gradient_aht2i"]
+offsets = PackedFloat32Array(0, 0.757709, 1)
+colors = PackedColorArray(0.89059, 0.89059, 0.89059, 1, 0.830335, 0.830335, 0.830335, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_8ir1m"]
+gradient = SubResource("Gradient_aht2i")
+
+[sub_resource type="ParticleProcessMaterial" id="90"]
+particle_flag_rotate_y = true
+emission_shape = 1
+emission_sphere_radius = 15.1
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 0, 0)
+spread = 180.0
+initial_velocity_min = 100.0
+initial_velocity_max = 150.0
+angular_velocity_min = -300.0
+angular_velocity_max = 300.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.2
+color_ramp = SubResource("GradientTexture1D_8ir1m")
+
+[sub_resource type="CanvasItemMaterial" id="100"]
+
+[sub_resource type="Animation" id="26"]
+resource_name = "Flash"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 0.509804, 0.509804, 0.192157), Color(1, 0.509804, 0.509804, 0.376471), Color(1, 0.509804, 0.509804, 0.192157)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_0rm4p"]
+_data = {
+&"Flash": SubResource("26")
+}
+
+[sub_resource type="CanvasItemMaterial" id="101"]
+
+[sub_resource type="Animation" id="7"]
+resource_name = "Flash"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(0.509804, 1, 0.509804, 0.192157), Color(0.509804, 1, 0.509804, 0.266667), Color(0.509804, 1, 0.509804, 0.192157)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ukgm0"]
+_data = {
+&"Flash": SubResource("7")
+}
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8fs2k"]
+texture = ExtResource("22")
+texture_region_size = Vector2i(200, 200)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_yvdt3"]
+tile_size = Vector2i(200, 200)
+sources/0 = SubResource("TileSetAtlasSource_8fs2k")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8fs2k"]
+content_margin_left = 20.0
+content_margin_top = 15.0
+content_margin_right = 20.0
+content_margin_bottom = 15.0
+bg_color = Color(0.129412, 0.129412, 0.129412, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.294118, 0.294118, 0.294118, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fabes"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+bg_color = Color(0.129412, 0.129412, 0.129412, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.294118, 0.294118, 0.294118, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2lgmg"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+bg_color = Color(0.129412, 0.129412, 0.129412, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.294118, 0.294118, 0.294118, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="Shader" id="151"]
+code = "shader_type canvas_item;
+
+uniform vec4 color:source_color = vec4(3.0, 1.5, 1.0, 1.0);
+uniform float speed = 0.1;
+uniform float alpha = 1.0;
+
+void fragment() {
+	vec2 uv = vec2(UV.x * 2.5, UV.y * 1.406);
+	vec2 uv1 = vec2(uv.x + TIME * speed, uv.y);
+	vec2 uv2 = vec2(uv.x - TIME * speed, uv.y);
+	vec2 uv3 = vec2(uv.x, uv.y + TIME * speed);
+	
+	float noise_r = texture(TEXTURE, uv1).r;
+	float noise_g = texture(TEXTURE, uv2).g;
+	float noise_b = texture(TEXTURE, uv3).b;
+	
+	float new_alpha = noise_r * noise_g * noise_b;
+	
+	vec3 new_color = vec3(noise_r, noise_g, noise_b);
+	COLOR.rgb = color.rgb;
+	vec2 c = UV - vec2(0.5);
+	float dist = length(c);
+	COLOR.a = new_alpha * 12.0 * pow(dist, 3) * alpha;
+}"
+
+[sub_resource type="ShaderMaterial" id="152"]
+shader = SubResource("151")
+shader_parameter/color = Color(1, 0.556863, 0, 1)
+shader_parameter/speed = 0.1
+shader_parameter/alpha = 0.0
+
+[sub_resource type="Animation" id="15"]
+length = 6.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AuroraModulate:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2, 3, 4, 5, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(0.784314, 1, 0.784314, 1), Color(0.784314, 1, 1, 1), Color(0.784314, 0.784314, 1, 1), Color(1, 0.784314, 1, 1), Color(1, 0.784314, 0.784314, 1), Color(1, 1, 0.784314, 1), Color(0.784314, 1, 0.784314, 1)]
+}
+
+[sub_resource type="Animation" id="16"]
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Rover/Glow:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_jgan7"]
+_data = {
+&"Aurora": SubResource("15"),
+&"RoverSprint": SubResource("16")
+}
+
+[sub_resource type="Animation" id="17"]
+length = 6.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AuroraModulate:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2, 3, 4, 5, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(0.705882, 1, 0.705882, 1), Color(0.705882, 1, 1, 1), Color(0.705882, 0.705882, 1, 1), Color(1, 0.705882, 1, 1), Color(1, 0.705882, 0.705882, 1), Color(1, 1, 0.705882, 1), Color(0.705882, 1, 0.705882, 1)]
+}
+
+[sub_resource type="Animation" id="18"]
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Rover/Glow:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_bdome"]
+_data = {
+&"Aurora": SubResource("17"),
+&"RoverSprint": SubResource("18")
+}
+
+[sub_resource type="Environment" id="Environment_n75r6"]
+background_mode = 3
+glow_levels/1 = 1.0
+glow_levels/2 = 1.0
+glow_blend_mode = 0
+adjustment_enabled = true
+
+[node name="Cave" type="Node2D" unique_id=1454837089]
+script = ExtResource("2")
+
+[node name="Floor" type="Sprite2D" parent="." unique_id=637143610]
+z_index = -1
+texture_repeat = 2
+material = SubResource("ShaderMaterial_0yyna")
+centered = false
+region_enabled = true
+
+[node name="Lava" type="Node2D" parent="." unique_id=1387510094]
+
+[node name="Ash" type="TileMapLayer" parent="." unique_id=1662477646]
+material = SubResource("ShaderMaterial_f1kta")
+occlusion_enabled = false
+rendering_quadrant_size = 100
+
+[node name="Debris" type="Node2D" parent="." unique_id=779234761]
+
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1016247985]
+rendering_quadrant_size = 100
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1020749965]
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+
+[node name="Screenshake" parent="Camera2D" unique_id=468332233 instance=ExtResource("36")]
+
+[node name="Exit" type="Area2D" parent="." unique_id=1799236235]
+position = Vector2(212, 4)
+collision_layer = 32
+collision_mask = 2
+
+[node name="ExitColl" type="CollisionShape2D" parent="Exit" unique_id=2104473906]
+position = Vector2(-0.277153, -97.738)
+rotation = 1.57108
+shape = SubResource("27")
+
+[node name="Sprite2D" type="Sprite2D" parent="Exit" unique_id=1662441151]
+modulate = Color(1, 1, 2, 1)
+texture = ExtResource("13")
+
+[node name="GoUpColl" type="CollisionShape2D" parent="Exit" unique_id=104287186]
+shape = SubResource("3")
+disabled = true
+
+[node name="PointLight2D" type="PointLight2D" parent="Exit" unique_id=1179598820]
+position = Vector2(0, -98)
+enabled = false
+shadow_enabled = true
+texture = ExtResource("31")
+
+[node name="Hole" parent="." unique_id=941425539 instance=ExtResource("9")]
+
+[node name="MiningParticles" type="GPUParticles2D" parent="." unique_id=210433829]
+amount = 25
+lifetime = 0.2
+process_material = SubResource("4")
+
+[node name="Rover" type="CharacterBody2D" parent="." unique_id=1237360256]
+position = Vector2(220, 228)
+collision_layer = 2
+collision_mask = 37
+
+[node name="PointLight2D" type="PointLight2D" parent="Rover" unique_id=982111051]
+energy = 0.8
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 1)
+texture = ExtResource("31")
+texture_scale = 3.0
+
+[node name="HPBG" type="ColorRect" parent="Rover" unique_id=48189733]
+offset_left = -48.0
+offset_top = 76.0
+offset_right = 48.0
+offset_bottom = 88.0
+color = Color(0, 0.4, 0, 1)
+
+[node name="InvBG" type="ColorRect" parent="Rover" unique_id=1620283493]
+offset_left = -48.0
+offset_top = 96.0
+offset_right = 48.0
+offset_bottom = 108.0
+color = Color(0.321569, 0.164706, 0, 1)
+
+[node name="Bar" type="TextureProgressBar" parent="Rover" unique_id=201456748]
+modulate = Color(0, 1, 0, 1)
+offset_left = -48.0
+offset_top = 76.0
+offset_right = 48.0
+offset_bottom = 88.0
+value = 50.0
+nine_patch_stretch = true
+texture_progress = ExtResource("4")
+
+[node name="InvBar" type="TextureProgressBar" parent="Rover" unique_id=1846977235]
+modulate = Color(0.678431, 0.282353, 0, 1)
+offset_left = -48.0
+offset_top = 96.0
+offset_right = 48.0
+offset_bottom = 108.0
+value = 50.0
+nine_patch_stretch = true
+texture_progress = ExtResource("4")
+
+[node name="AshParticles" type="GPUParticles2D" parent="Rover" unique_id=358644271]
+emitting = false
+amount = 100
+process_material = SubResource("78")
+
+[node name="Glow" type="Sprite2D" parent="Rover" unique_id=1129092727]
+modulate = Color(1, 1, 1, 0)
+light_mask = -2147483647
+position = Vector2(0, -1)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("30")
+
+[node name="Sprite2D" type="Sprite2D" parent="Rover" unique_id=393075934]
+light_mask = 5
+scale = Vector2(0.288352, 0.288352)
+texture = ExtResource("11")
+
+[node name="MiningLaser" type="Sprite2D" parent="Rover" unique_id=1137287356]
+light_mask = 2
+material = SubResource("28")
+scale = Vector2(14, 14)
+texture = ExtResource("5")
+centered = false
+offset = Vector2(0, -8)
+
+[node name="PointLight2D" type="PointLight2D" parent="Rover/MiningLaser" unique_id=84250140]
+position = Vector2(8.28572, -0.285713)
+scale = Vector2(0.131034, 0.131034)
+energy = 2.0
+texture = ExtResource("16_6cmh4")
+
+[node name="PointLight2D2" type="PointLight2D" parent="Rover/MiningLaser" unique_id=1819870141]
+position = Vector2(8.28572, -0.285713)
+scale = Vector2(0.131034, 0.131034)
+energy = 0.5
+texture = ExtResource("16_6cmh4")
+
+[node name="LaserSoundLoop" type="AudioStreamPlayer2D" parent="Rover/MiningLaser" unique_id=991334468]
+stream = ExtResource("12_yvdt3")
+volume_db = -3.94
+bus = &"SFX"
+
+[node name="LaserSound" type="AudioStreamPlayer2D" parent="Rover/MiningLaser" unique_id=1023538754]
+stream = ExtResource("13_dfqh5")
+volume_db = -5.516
+bus = &"SFX"
+
+[node name="RayOfDoom" type="Area2D" parent="Rover" unique_id=1789726445]
+visible = false
+collision_layer = 0
+collision_mask = 20
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover/RayOfDoom" unique_id=981389710]
+position = Vector2(0, -32)
+shape = SubResource("87")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Rover/RayOfDoom" unique_id=3991781]
+position = Vector2(0, 32)
+shape = SubResource("87")
+
+[node name="Ray" type="RayCast2D" parent="Rover/RayOfDoom" unique_id=122603972]
+enabled = false
+target_position = Vector2(100, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Rover/RayOfDoom" unique_id=319082626]
+root_node = NodePath("../Sprite2D")
+libraries/ = SubResource("AnimationLibrary_nn2up")
+
+[node name="Sprite2D" type="Sprite2D" parent="Rover/RayOfDoom" unique_id=642878859]
+material = SubResource("84")
+scale = Vector2(31, 1)
+texture = ExtResource("5")
+centered = false
+offset = Vector2(0, -8)
+
+[node name="Glow" type="Sprite2D" parent="Rover/RayOfDoom" unique_id=2048325865]
+modulate = Color(1, 1, 1, 0)
+rotation = 1.5708
+scale = Vector2(2, 2)
+texture = ExtResource("38")
+
+[node name="RayCast2D" type="RayCast2D" parent="Rover" unique_id=2047211869]
+
+[node name="Stun" type="Node2D" parent="Rover" unique_id=1812676397]
+visible = false
+position = Vector2(0, -6.29962)
+
+[node name="Sprite2D" type="Sprite2D" parent="Rover/Stun" unique_id=870139709]
+material = SubResource("20")
+position = Vector2(32, 38.2996)
+rotation = 0.496553
+scale = Vector2(1.45224, 1.45224)
+texture = ExtResource("28")
+offset = Vector2(-21.4132, -17.9986)
+
+[node name="Sprite2" type="Sprite2D" parent="Rover/Stun" unique_id=30991510]
+material = SubResource("21")
+position = Vector2(8, 30.2996)
+rotation = -0.583007
+scale = Vector2(0.965229, 0.965229)
+texture = ExtResource("22")
+offset = Vector2(-21.4132, -17.9986)
+
+[node name="Burn" type="Sprite2D" parent="Rover" unique_id=72079587]
+visible = false
+material = SubResource("22")
+position = Vector2(20, -48)
+scale = Vector2(7.6875, 7.6875)
+texture = ExtResource("28")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Rover" unique_id=733760674]
+libraries/ = SubResource("AnimationLibrary_qwwb7")
+
+[node name="EnergyBallTimer" type="Timer" parent="Rover" unique_id=1282297020]
+
+[node name="DashTimer" type="Timer" parent="Rover" unique_id=285526116]
+wait_time = 0.7
+one_shot = true
+
+[node name="SuffocationTimer" type="Timer" parent="Rover" unique_id=1274786878]
+wait_time = 0.3
+
+[node name="BurnTimer" type="Timer" parent="Rover" unique_id=1531038769]
+
+[node name="LavaTimer" type="Timer" parent="Rover" unique_id=1603747167]
+
+[node name="InvincibilityCooldown" type="Timer" parent="Rover" unique_id=726509460]
+wait_time = 2.0
+one_shot = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover" unique_id=1329506536]
+shape = SubResource("86")
+
+[node name="BreakRocksWithDash" type="Area2D" parent="Rover" unique_id=1796575350]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover/BreakRocksWithDash" unique_id=229844341]
+shape = SubResource("93")
+
+[node name="InteractArea" type="Area2D" parent="Rover" unique_id=1657909781]
+collision_layer = 2
+collision_mask = 32
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover/InteractArea" unique_id=1657479930]
+shape = SubResource("99")
+
+[node name="FloorCollisionDetector" type="Area2D" parent="Rover" unique_id=1302715914]
+collision_layer = 2
+collision_mask = 64
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover/FloorCollisionDetector" unique_id=949302637]
+shape = SubResource("30")
+
+[node name="CrackDetector" type="Area2D" parent="Rover" unique_id=1613618200]
+collision_layer = 128
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Rover/CrackDetector" unique_id=1688139548]
+shape = SubResource("155")
+
+[node name="BreakRockSound" type="AudioStreamPlayer2D" parent="Rover" unique_id=394875908]
+stream = ExtResource("18_dfqh5")
+bus = &"SFX"
+
+[node name="RoDEffects" type="Node2D" parent="." unique_id=2019073024]
+
+[node name="Sprite2D" type="Sprite2D" parent="RoDEffects" unique_id=2000620859]
+visible = false
+material = SubResource("91")
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("17_f1kta")
+
+[node name="Particles" type="GPUParticles2D" parent="RoDEffects" unique_id=764850567]
+material = SubResource("92")
+scale = Vector2(3, 3)
+emitting = false
+amount = 200
+texture = ExtResource("39")
+lifetime = 0.5
+randomness = 1.0
+process_material = SubResource("90")
+
+[node name="TileHighlightLeft" type="Sprite2D" parent="." unique_id=771399582]
+modulate = Color(1, 0.509804, 0.509804, 0.192157)
+light_mask = -2147483647
+material = SubResource("100")
+position = Vector2(0, -1)
+texture = ExtResource("22")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="TileHighlightLeft" unique_id=1431141025]
+libraries/ = SubResource("AnimationLibrary_0rm4p")
+autoplay = &"Flash"
+
+[node name="TileHighlightRight" type="Sprite2D" parent="." unique_id=1383372479]
+modulate = Color(0.509804, 1, 0.509804, 0.192157)
+light_mask = -2147483647
+material = SubResource("101")
+position = Vector2(-208, 96)
+texture = ExtResource("22")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="TileHighlightRight" unique_id=410867510]
+libraries/ = SubResource("AnimationLibrary_ukgm0")
+autoplay = &"Flash"
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=968562353]
+
+[node name="UseItem" type="TextureButton" parent="UI" unique_id=1029630391]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 1
+metadata/_edit_lock_ = true
+
+[node name="Minimap" type="Sprite2D" parent="UI" unique_id=875273010]
+self_modulate = Color(0, 0, 0, 1)
+clip_children = 2
+light_mask = -2147483647
+texture = ExtResource("15")
+centered = false
+
+[node name="Floor" type="TileMapLayer" parent="UI/Minimap" unique_id=1060057737]
+modulate = Color(0.46, 0.46, 0.46, 1)
+light_mask = -2147483647
+tile_set = SubResource("TileSet_yvdt3")
+
+[node name="Hole" type="Sprite2D" parent="UI/Minimap" unique_id=1570377759]
+light_mask = -2147483647
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("17")
+
+[node name="Exit" type="Sprite2D" parent="UI/Minimap" unique_id=1201382416]
+light_mask = -2147483647
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("21")
+
+[node name="MinimapBG" type="Sprite2D" parent="UI" unique_id=835374783]
+visible = false
+self_modulate = Color(0, 0, 0, 1)
+light_mask = -2147483647
+texture = ExtResource("15")
+centered = false
+
+[node name="Error" type="Label" parent="UI" unique_id=2143281118]
+visible = false
+offset_left = 1038.0
+offset_top = 100.0
+offset_right = 1236.0
+offset_bottom = 230.0
+text = "Error: high-energy electromagnetic waves in this cave are disrupting the rover's radar."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Rover" type="Sprite2D" parent="UI" unique_id=549946154]
+light_mask = -2147483647
+texture = ExtResource("16")
+
+[node name="UI2" type="CanvasLayer" parent="." unique_id=1841666694]
+layer = 2
+
+[node name="RightClickSlot" parent="UI2" unique_id=58043139 instance=ExtResource("20")]
+offset_top = 600.0
+offset_bottom = -60.0
+
+[node name="BottomLeft" type="HBoxContainer" parent="UI2" unique_id=2120283013]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -104.0
+offset_right = 216.0
+mouse_filter = 2
+theme = ExtResource("29")
+theme_override_constants/separation = 0
+
+[node name="VBox" type="VBoxContainer" parent="UI2/BottomLeft" unique_id=1301251353]
+layout_mode = 2
+mouse_filter = 2
+alignment = 2
+
+[node name="ActiveItem" type="Label" parent="UI2/BottomLeft/VBox" unique_id=283439326]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InventorySlots" type="HBoxContainer" parent="UI2/BottomLeft/VBox" unique_id=170083540]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Filter" type="Button" parent="UI2/BottomLeft" unique_id=1618263300]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+text = "Filter"
+
+[node name="Filters" type="PanelContainer" parent="UI2" unique_id=563866870]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -184.0
+offset_top = -128.0
+offset_right = -36.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 1
+theme = ExtResource("29")
+
+[node name="Grid" type="GridContainer" parent="UI2/Filters" unique_id=1820963768]
+layout_mode = 2
+columns = 4
+
+[node name="stone" parent="UI2/Filters/Grid" unique_id=1475079955 instance=ExtResource("3")]
+layout_mode = 2
+texture = ExtResource("8")
+
+[node name="HP" type="Panel" parent="UI2" unique_id=1015593930]
+offset_left = 1052.0
+offset_top = 616.0
+offset_right = 1276.0
+offset_bottom = 656.0
+theme = ExtResource("29")
+
+[node name="Bar" type="TextureProgressBar" parent="UI2/HP" unique_id=126057497]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -176.0
+offset_top = -12.0
+offset_right = -8.0
+offset_bottom = 12.0
+step = 0.0
+value = 20.0
+nine_patch_stretch = true
+stretch_margin_left = 10
+stretch_margin_right = 10
+texture_under = ExtResource("42")
+texture_over = ExtResource("43")
+texture_progress = ExtResource("41")
+tint_under = Color(0, 1, 0, 1)
+tint_over = Color(0, 1, 0, 1)
+tint_progress = Color(0, 1, 0, 1)
+
+[node name="HPIcon" type="TextureRect" parent="UI2/HP" unique_id=773925791]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = -16.0
+offset_right = 40.0
+offset_bottom = 16.0
+texture = ExtResource("23")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="UI2/HP" unique_id=2121450953]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 8.0
+offset_right = 216.0
+offset_bottom = 32.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 15
+text = "20 / 20"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Inventory" type="Panel" parent="UI2" unique_id=600876122]
+offset_left = 1052.0
+offset_top = 660.0
+offset_right = 1276.0
+offset_bottom = 700.0
+theme = ExtResource("29")
+
+[node name="Icon" type="TextureRect" parent="UI2/Inventory" unique_id=1272967924]
+layout_mode = 0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = -16.0
+offset_right = 40.0
+offset_bottom = 16.0
+texture = ExtResource("25")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Bar" type="TextureProgressBar" parent="UI2/Inventory" unique_id=690797446]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -176.0
+offset_top = -12.0
+offset_right = -8.0
+offset_bottom = 12.0
+value = 20.0
+nine_patch_stretch = true
+stretch_margin_left = 10
+stretch_margin_right = 10
+texture_under = ExtResource("42")
+texture_over = ExtResource("43")
+texture_progress = ExtResource("41")
+tint_under = Color(0.670588, 0.376471, 0, 1)
+tint_over = Color(0.670588, 0.376471, 0, 1)
+tint_progress = Color(0.670588, 0.376471, 0, 1)
+
+[node name="Label" type="Label" parent="UI2/Inventory" unique_id=2029789388]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 8.0
+offset_right = 216.0
+offset_bottom = 32.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 15
+text = "0 / 4000 kg"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Panel" type="PanelContainer" parent="UI2" unique_id=1470917666]
+visible = false
+offset_left = 1080.0
+offset_top = 272.0
+offset_right = 1152.0
+offset_bottom = 318.0
+theme = ExtResource("29")
+theme_override_styles/panel = SubResource("StyleBoxFlat_8fs2k")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI2/Panel" unique_id=1696332272]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CaveInfo" type="HBoxContainer" parent="UI2" unique_id=729615587]
+offset_right = 319.0
+offset_bottom = 27.0
+theme = ExtResource("29")
+theme_override_constants/separation = 0
+
+[node name="Floor" type="Label" parent="UI2/CaveInfo" unique_id=254297655]
+layout_mode = 2
+mouse_filter = 1
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_fabes")
+text = "B1F"
+
+[node name="Difficulty" type="Label" parent="UI2/CaveInfo" unique_id=1510886607]
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 1
+theme_override_styles/normal = SubResource("StyleBoxFlat_2lgmg")
+text = "Difficulty: 1"
+
+[node name="Modifiers" type="Label" parent="UI2/CaveInfo" unique_id=1795726666]
+visible = false
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 1
+theme = ExtResource("29")
+theme_override_styles/normal = SubResource("StyleBoxFlat_2lgmg")
+text = "MODIFIERS"
+
+[node name="AvgDmg" type="Label" parent="UI2/CaveInfo" unique_id=1450213877]
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 1
+theme = ExtResource("29")
+theme_override_styles/normal = SubResource("StyleBoxFlat_2lgmg")
+text = "Average enemy damage: 1"
+
+[node name="Ctrls" type="Label" parent="UI2/CaveInfo" unique_id=140038103]
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 1
+theme = ExtResource("29")
+theme_override_styles/normal = SubResource("StyleBoxFlat_2lgmg")
+text = "CONTROLS"
+
+[node name="Controls" parent="UI2" unique_id=925865266 instance=ExtResource("47")]
+visible = false
+offset_left = 544.0
+offset_top = 125.0
+offset_right = 792.0
+offset_bottom = 285.0
+
+[node name="Dialogue" parent="UI2" unique_id=944599911 instance=ExtResource("24")]
+
+[node name="Ability" type="Panel" parent="UI2" unique_id=1049698812]
+offset_top = 40.0
+offset_right = 64.0
+offset_bottom = 104.0
+theme = ExtResource("29")
+
+[node name="Timer" type="Timer" parent="UI2/Ability" unique_id=627327876]
+one_shot = true
+
+[node name="TextureRect" type="TextureRect" parent="UI2/Ability" unique_id=1655445940]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("35")
+
+[node name="Panel" type="Panel" parent="UI2/Ability" unique_id=986572114]
+show_behind_parent = true
+layout_mode = 0
+offset_left = 60.0
+offset_right = 88.0
+offset_bottom = 24.0
+
+[node name="Num" type="Label" parent="UI2/Ability/Panel" unique_id=1987949230]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+text = "2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="UI2/Ability" unique_id=1840979046]
+visible = false
+modulate = Color(1, 1, 1, 0.423529)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+max_value = 1.0
+step = 0.0
+value = 0.4
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("4")
+
+[node name="HurtTexture" type="TextureRect" parent="UI2" unique_id=745140830]
+modulate = Color(1, 1, 1, 0)
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = ExtResource("40")
+metadata/_edit_lock_ = true
+
+[node name="Burning" type="TextureRect" parent="UI2" unique_id=1378056011]
+visible = false
+texture_repeat = 2
+material = SubResource("152")
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = ExtResource("45")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1222371986]
+libraries/ = SubResource("AnimationLibrary_jgan7")
+
+[node name="AuroraPlayer" type="AnimationPlayer" parent="." unique_id=1479649258]
+libraries/ = SubResource("AnimationLibrary_bdome")
+
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=2016604463]
+
+[node name="AuroraModulate" type="Node2D" parent="." unique_id=1098801665]
+modulate = Color(0.705882, 1, 0.705882, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1879415946]
+environment = SubResource("Environment_n75r6")
+
+[node name="CheckAchievements" type="Timer" parent="." unique_id=1817436839]
+
+[connection signal="area_entered" from="Exit" to="." method="_on_Exit_area_entered"]
+[connection signal="area_exited" from="Exit" to="." method="_on_area_exited"]
+[connection signal="area_entered" from="Hole" to="." method="_on_Hole_area_entered"]
+[connection signal="area_exited" from="Hole" to="." method="_on_area_exited"]
+[connection signal="body_entered" from="Rover/RayOfDoom" to="." method="_on_RayOfDoom_body_entered"]
+[connection signal="body_exited" from="Rover/RayOfDoom" to="." method="_on_RayOfDoom_body_exited"]
+[connection signal="animation_finished" from="Rover/RayOfDoom/AnimationPlayer" to="." method="_on_AnimationPlayer_animation_finished"]
+[connection signal="timeout" from="Rover/EnergyBallTimer" to="." method="_on_EnergyBallTimer_timeout"]
+[connection signal="timeout" from="Rover/DashTimer" to="." method="_on_DashTimer_timeout"]
+[connection signal="timeout" from="Rover/SuffocationTimer" to="." method="_on_SuffocationTimer_timeout"]
+[connection signal="timeout" from="Rover/BurnTimer" to="." method="_on_BurnTimer_timeout"]
+[connection signal="timeout" from="Rover/LavaTimer" to="." method="_on_LavaTimer_timeout"]
+[connection signal="body_entered" from="Rover/BreakRocksWithDash" to="." method="_on_BreakRocksWithDash_body_entered"]
+[connection signal="body_exited" from="Rover/BreakRocksWithDash" to="." method="_on_BreakRocksWithDash_body_exited"]
+[connection signal="body_entered" from="Rover/FloorCollisionDetector" to="." method="_on_FloorCollisionDetector_body_entered"]
+[connection signal="body_exited" from="Rover/FloorCollisionDetector" to="." method="_on_FloorCollisionDetector_body_exited"]
+[connection signal="pressed" from="UI2/BottomLeft/Filter" to="." method="_on_Filter_pressed"]
+[connection signal="mouse_entered" from="UI2/Filters/Grid/stone" to="." method="on_filter_mouse_entered" binds= ["stone"]]
+[connection signal="mouse_exited" from="UI2/Filters/Grid/stone" to="." method="on_filter_mouse_exited"]
+[connection signal="mouse_entered" from="UI2/CaveInfo/Floor" to="." method="_on_Floor_mouse_entered"]
+[connection signal="mouse_exited" from="UI2/CaveInfo/Floor" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="UI2/CaveInfo/Difficulty" to="." method="_on_Difficulty_mouse_entered"]
+[connection signal="mouse_exited" from="UI2/CaveInfo/Difficulty" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="UI2/CaveInfo/Modifiers" to="." method="_on_Modifiers_mouse_entered"]
+[connection signal="mouse_exited" from="UI2/CaveInfo/Modifiers" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="UI2/CaveInfo/Ctrls" to="." method="_on_ctrls_mouse_entered"]
+[connection signal="mouse_exited" from="UI2/CaveInfo/Ctrls" to="." method="_on_ctrls_mouse_exited"]
+[connection signal="dialogue_finished" from="UI2/Dialogue" to="." method="_on_dialogue_finished"]
+[connection signal="mouse_entered" from="UI2/Ability" to="." method="_on_Ability_mouse_entered"]
+[connection signal="mouse_exited" from="UI2/Ability" to="." method="_on_mouse_exited"]
+[connection signal="timeout" from="UI2/Ability/Timer" to="." method="_on_AbilityTimer_timeout"]
+[connection signal="timeout" from="CheckAchievements" to="." method="_on_CheckAchievements_timeout"]

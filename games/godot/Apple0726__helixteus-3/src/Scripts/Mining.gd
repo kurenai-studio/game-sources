@@ -1,0 +1,405 @@
+extends Control
+
+@onready var game = get_node("/root/Game")
+@onready var p_i = game.planet_data[game.c_p]
+@onready var wid:int = round(Helper.get_wid(p_i.size))
+@onready var id:int = game.c_t
+@onready var tile = game.tile_data[id]
+var tile_texture
+var tile_tween
+var BG_tween
+var layer:String
+var metal_sprites = []
+var circ_vel:Vector2 = Vector2.ONE
+var points:float#Points for minigame
+@onready var circ = $Circle
+@onready var spd_mult_node = $Mults/SpdMult
+var circ_disabled = false#Useful if pickaxe breaks and auto buy isn't on
+var mouse_pos:Vector2
+var speed_mult:float = 1.0
+var aurora_mult:float = 1.0
+var rsrc_mined:Dictionary = {}
+
+func _ready():
+	Helper.set_back_btn($Back)
+	tile = game.tile_data[id]
+	if game.tile_data_persistent[id] == null:
+		game.tile_data_persistent[id] = {}
+	if not tile.has("mining"):
+		tile.mining = {
+			"progress": 0.0,
+		}
+		game.tile_data_persistent[id]["mining"] = tile.mining
+	if not tile.has("depth"):
+		tile["depth"] = 0
+	if not game.tile_data_persistent[id].has("depth"):
+		game.tile_data_persistent[id]["depth"] = tile.depth
+	seed(p_i.seed)
+	tile_texture = load("res://Graphics/Tiles/Mosaics/%s.jpg" % randi_range(1, 8))
+	$Tile/TextureRect.texture = tile_texture
+	$Tile/TextureRect.material.set_shader_parameter("texture_zoom", randf_range(0.5, 2.0))
+	if tile.has("bridge"):
+		tile.erase("bridge")
+		game.tile_data_persistent[id].erase("bridge")
+	if tile.has("aurora"):
+		aurora_mult = tile.aurora + 1.0
+		$Mults/AuroraMult.visible = true
+		$Mults/AuroraMult.text = "[aurora au_int=%s][center]%s: x %s" % [tile.aurora, tr("AURORA_MULTIPLIER"), Helper.clever_round(aurora_mult)]
+	if game.pickaxe.has("name"):
+		$Pickaxe/Sprite2D.texture = load("res://Graphics/Pickaxes/" + game.pickaxe.name + ".png")
+		$Pickaxe/Sprite2D.scale *= 512.0 / $Pickaxe/Sprite2D.texture.get_width()
+		$Pickaxe/Sprite2D.offset *= $Pickaxe/Sprite2D.texture.get_width() / 512.0
+		update_pickaxe()
+	update_info(true)
+	generate_rock(false)
+	Helper.put_rsrc($Panel/VBoxContainer, 42, tile.mining.contents)
+	$Help.visible = game.help.has("mining")
+	circ.visible = not game.help.has("mining")
+	$Help/Label.text = tr("MINE_HELP")
+	$LayerInfo.visible = game.show.has("mining_layer")
+	if $LayerInfo.visible:
+		$LayerAnim.play("Layer fade")
+		$LayerAnim.seek(1, true)
+	$AutoReplace.button_pressed = game.auto_replace
+
+func update_info(first_time:bool = false):
+	var upper_depth
+	var lower_depth 
+	var unit:String = "m"
+	if tile.has("crater"):
+		layer = "crater"
+		upper_depth = tile.crater.init_depth
+		lower_depth = 3 * tile.crater.init_depth
+		$CrustBG.modulate.a = 0.25
+	elif tile.depth <= p_i.crust_start_depth:
+		layer = "surface"
+		upper_depth = 0
+		lower_depth = p_i.crust_start_depth
+		$CrustBG.modulate.a = 0.25
+	elif tile.depth <= p_i.mantle_start_depth:
+		if layer != "crust":
+			if first_time:
+				$CrustBG.modulate.a = 0.25
+			else:
+				if is_instance_valid(BG_tween) and BG_tween.is_running():
+					BG_tween.kill()
+				BG_tween = create_tween()
+				BG_tween.set_parallel(true)
+				BG_tween.tween_property($CrustBG, "modulate", Color(1, 1, 1, 0.25), 3)
+		layer = "crust"
+		upper_depth = p_i.crust_start_depth + 1
+		lower_depth = p_i.mantle_start_depth
+	elif tile.depth <= p_i.core_start_depth:
+		if layer != "mantle":
+			if first_time:
+				$CrustBG.modulate.a = 0
+				if Settings.enable_shaders:
+					$MantleBG.visible = true
+					$MantleBG.material.set_shader_parameter("alpha", 0.5)
+				else:
+					$MantleBGNoShader.visible = true
+					$MantleBGNoShader.modulate.a = 0.45
+			else:
+				if is_instance_valid(BG_tween) and BG_tween.is_running():
+					BG_tween.kill()
+				BG_tween = create_tween()
+				BG_tween.set_parallel(true)
+				BG_tween.tween_property($CrustBG, "modulate:a", 0.0, 3)
+				if Settings.enable_shaders:
+					$MantleBG.visible = true
+					BG_tween.tween_property($MantleBG.material, "shader_parameter/alpha", 0.5, 3)
+				else:
+					$MantleBGNoShader.visible = true
+					BG_tween.tween_property($MantleBGNoShader, "modulate", Color(1, 1, 1, 0.45), 3)
+		layer = "mantle"
+		upper_depth = floor(p_i.mantle_start_depth / 1000.0)
+		lower_depth = floor(p_i.core_start_depth / 1000.0)
+		unit = "km"
+	else:
+		layer = "core"
+		upper_depth = floor(p_i.core_start_depth / 1000.0)
+		lower_depth = floor(p_i.size / 2.0)
+		unit = "km"
+	$LayerInfo/Layer.text = "[center]%s: %s %s" % [tr("LAYER"), tr(layer.to_upper()), "[img]Graphics/Icons/help.png[/img]"]
+	$LayerInfo/Layer.help_text = layer.to_upper() + "_DESC"
+	if unit == "m":
+		$LayerInfo/Depth.position.y = remap(tile.depth, upper_depth, lower_depth, 172, 628)
+		$LayerInfo/Depth/Label.text = "%d %s" % [tile.depth, unit]
+		$LayerInfo/Upper.text = "%d %s" % [upper_depth, unit]
+		$LayerInfo/Lower.text = "%d %s" % [lower_depth, unit]
+	else:
+		$LayerInfo/Depth.position.y = remap(floor(tile.depth / 1000.0), upper_depth, lower_depth, 172, 628)
+		$LayerInfo/Depth/Label.text = "%s %s" % [floor(tile.depth / 1000.0), unit]
+		$LayerInfo/Upper.text = "%.1f %s" % [upper_depth, unit]
+		$LayerInfo/Lower.text = "%.1f %s" % [lower_depth, unit]
+	$Tile/SquareBar.set_progress(tile.mining.progress)
+	$Tile/Cracks.frame = min(floor(tile.mining.progress / 20), 4)
+
+func update_pickaxe():
+	$HBox/Durability/Numbers.text = "%s / %s" % [game.pickaxe.durability, game.pickaxes_info[game.pickaxe.name].durability]
+	if game.pickaxe.has("liquid_id"):
+		$HBox/Liquid.visible = true
+		$HBox/Liquid/Numbers.text = "%s / %s" % [game.pickaxe.liquid_durability, Item.data[game.pickaxe.liquid_id].durability]
+		$HBox/Liquid/Bar.value = game.pickaxe.liquid_durability / float(Item.data[game.pickaxe.liquid_id].durability) * 100
+	else:
+		$HBox/Liquid.visible = false
+	$HBox/Durability/Bar.value = game.pickaxe.durability / float(game.pickaxes_info[game.pickaxe.name].durability) * 100
+
+func generate_rock(new:bool):
+	if tile.depth == 0:
+		$Tile/TextureRect.material.set_shader_parameter("texture_offset", Vector2(id % wid, id / wid) * 200.0 + Vector2(randf_range(0.0, 4000.0), randf_range(0.0, 4000.0)))
+	else:
+		seed(p_i.seed + int(tile.depth))
+		$Tile/TextureRect.material.set_shader_parameter("texture_offset", Vector2(id % wid, id / wid) * 200.0 + Vector2(randf_range(0.0, 4000.0), randf_range(0.0, 4000.0)))
+	var tile_sprite = $Tile
+	tile_sprite.scale = Vector2.ONE * 0.3
+	if is_instance_valid(tile_tween):
+		tile_tween.kill()
+	tile_tween = create_tween()
+	tile_tween.tween_property(tile_sprite, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_CIRC).set_ease(Tween.EASE_OUT)
+	for met_sprite in metal_sprites:
+		met_sprite.queue_free()
+	metal_sprites = []
+	if not tile.mining.has("contents") or new:
+		tile.mining.contents = Helper.generate_rock(tile, p_i).duplicate(true)
+	if tile.mining.has("current_deposit"):
+		var met = tile.mining.current_deposit.met
+		var amount = tile.mining.contents[met]
+		for i in clamp(round(amount / 2.0), 1, 80):
+			var met_sprite = Sprite2D.new()
+			met_sprite.texture = game.metal_textures[met]
+			met_sprite.centered = true
+			met_sprite.scale *= randf_range(0.15, 0.2)
+			var half_size_in_px = met_sprite.scale.x * 128
+			met_sprite.rotation = randf_range(0, 2 * PI)
+			met_sprite.position.x = randf_range(half_size_in_px + 5, 195 - half_size_in_px)
+			met_sprite.position.y = randf_range(half_size_in_px + 5, 195 - half_size_in_px)
+			metal_sprites.append(met_sprite)
+			tile_sprite.add_child(met_sprite)
+
+func _input(event):
+	if event is InputEventMouse:
+		mouse_pos = event.position
+		$Pickaxe.position = mouse_pos - Vector2(512, 576)
+
+func _unhandled_key_input(event):
+	Helper.set_back_btn($Back)
+
+func _on_Back_pressed():
+	game.switch_view("planet")
+	queue_free()
+
+var crumbles = []
+
+func place_crumbles(num:int, sc:float, v:float):
+	for i in num:
+		var crumble = Sprite2D.new()
+		crumble.texture = tile_texture
+		crumble.scale *= sc * 0.2
+		crumble.centered = true
+		add_child(crumble)
+		move_child($Circle, get_child_count())
+		crumble.position = mouse_pos
+		crumbles.append({"sprite":crumble, "velocity":Vector2(randf_range(-2, 2), randf_range(-8, -4)) * v, "angular_velocity":randf_range(-0.08, 0.08)})
+
+# Called by HelpAnim node
+func hide_help():
+	$Help.visible = false
+	game.help.erase("mining")
+	var tween = create_tween()
+	circ.modulate.a = 0
+	circ.visible = true
+	tween.tween_property(circ, "modulate", Color(1, 1, 1, 0.5), 2)
+
+var help_counter = 0
+func pickaxe_hit():
+	if not game.pickaxe.has("name") or not tile.has("depth"):
+		return
+	var add_progress:float = 2.0 * game.pickaxe.speed
+	add_progress *= speed_mult
+	add_progress *= pow(game.maths_bonus.IRM, game.infinite_research.MMS)
+	add_progress *= game.pickaxe.get("speed_mult", 1.0)
+	add_progress *= tile.get("mining_outpost_bonus", 1.0)
+	add_progress *= max(1.0, game.u_i.time_speed * tile.get("time_speed_bonus", 1.0) * 0.1)
+	if tile.depth > floor(p_i.size * 500.0):
+		if not game.achievement_data.random.has("reach_center_of_planet"):
+			game.earn_achievement("random", "reach_center_of_planet")
+		var VEI:float = log(add_progress / 500.0 * randf_range(0.7, 1.3) + exp(3.0))
+		game.tile_data[id].erase("depth")
+		game.tile_data_persistent[id].erase("depth")
+		game.generate_volcano(id, VEI, true)
+		game.switch_view("planet")
+		if game.help.has("artificial_volcano"):
+			game.popup_window(tr("CREATED_FIRST_ARTIFICIAL_VOLCANO") % Helper.clever_round(VEI), tr("ARTIFICIAL_VOLCANO"))
+			game.help.erase("artificial_volcano")
+		else:
+			game.popup(tr("CREATED_ARTIFICIAL_VOLCANO") % Helper.clever_round(VEI), 4.0)
+		if Settings.screen_shake:
+			game.get_node("Camera2D/Screenshake").start(1.5, 20, 3)
+		return
+	if game.pickaxe.name == "stick" and add_progress * 100 > floor(p_i.size * 500.0):
+		if not game.achievement_data.random.has("use_stick_to_mine_from_surface_to_core"):
+			game.earn_achievement("random", "use_stick_to_mine_from_surface_to_core")
+	if tile.mining.has("current_deposit"):
+		var amount_multiplier = -abs(2.0/tile.mining.current_deposit.size * (tile.mining.current_deposit.progress - 1) - 1) + 1
+		$HitMetalSound.pitch_scale = randf_range(0.8, 1.2)
+		$HitMetalSound.volume_db = -3 - (1 - amount_multiplier) * 10
+		$HitRockSound.volume_db = -10 - (amount_multiplier) * 10
+		$HitMetalSound.play()
+		$HitRockSound.play()
+	else:
+		$HitRockSound.volume_db = -10
+		$HitRockSound.pitch_scale = randf_range(0.8, 1.2)
+		$HitRockSound.play()
+	if $Help.visible:
+		help_counter += 1
+		if help_counter >= 10:
+			$HelpAnim.play("Help fade")
+	place_crumbles(3, 0.1, 1)
+	tile.mining.progress += add_progress
+	game.pickaxe.durability -= 1
+	if game.pickaxe.has("liquid_durability"):
+		game.pickaxe.liquid_durability -= 1
+		if game.pickaxe.liquid_durability <= 0:
+			game.pickaxe.erase("liquid_durability")
+			game.pickaxe.erase("liquid_id")
+			game.pickaxe.erase("speed_mult")
+	var rock_gen:bool = false
+	if tile.mining.progress >= 100 and $LayerInfo.visible:
+		$ResourcesMined.visible = true
+	if tile.mining.progress >= 1000:
+		add_rsrc_mined(tile.mining.contents)
+		Helper.get_rsrc_from_rock(tile.mining.contents, tile, p_i, id)
+		var new_contents:Dictionary = Helper.mass_generate_rock(tile, p_i, (tile.mining.progress - 100) / 100)
+		add_rsrc_mined(new_contents)
+		game.add_resources(new_contents)
+		var tiles_mined:int = int(tile.mining.progress / 100)
+		tile.depth += tiles_mined
+		game.tile_data_persistent[id].depth += tiles_mined
+		game.stats_univ.tiles_mined_mining += tiles_mined
+		game.stats_dim.tiles_mined_mining += tiles_mined
+		game.stats_global.tiles_mined_mining += tiles_mined
+		tile.mining.progress = fmod(tile.mining.progress, 100)
+		rock_gen = true
+		generate_rock(true)
+	else:
+		while tile.mining.progress >= 100:
+			add_rsrc_mined(tile.mining.contents)
+			Helper.get_rsrc_from_rock(tile.mining.contents, tile, p_i, id)
+			tile.mining.progress -= 100
+			rock_gen = true
+			game.stats_univ.tiles_mined_mining += 1
+			game.stats_dim.tiles_mined_mining += 1
+			game.stats_global.tiles_mined_mining += 1
+			tile.depth += 1
+			game.tile_data_persistent[id].depth += 1
+			generate_rock(true)
+	if rock_gen:
+		Helper.put_rsrc($Panel/VBoxContainer, 42, tile.mining.contents)
+	if rock_gen:
+		$MiningSound.pitch_scale = randf_range(0.8, 1.2)
+		$MiningSound.play()
+		game.show.stone = true
+		game.HUD.stone.visible = true
+		if not $LayerInfo.visible and tile.depth >= 5:
+			game.show.mining_layer = true
+			$LayerAnim.play("Layer fade")
+			$LayerInfo.visible = true
+			$ResourcesMined.visible = true
+		place_crumbles(10, 0.2, 2)
+		game.HUD.refresh()
+	update_info()
+	update_pickaxe()
+	Helper.put_rsrc($ResourcesMined/Grid, 32, rsrc_mined)
+	if game.pickaxe.durability == 0:
+		var curr_pick_info = game.pickaxes_info[game.pickaxe.name]
+		var costs = curr_pick_info.costs
+		if $AutoReplace.button_pressed and game.check_enough(costs):
+			game.deduct_resources(costs)
+			game.pickaxe.durability = curr_pick_info.durability
+			update_pickaxe()
+		else:
+			game.pickaxe.erase("name")
+			game.pickaxe.erase("durability")
+			game.pickaxe.erase("speed")
+			circ_disabled = true
+			game.popup(tr("PICKAXE_BROKE"), 1.5)
+			$Pickaxe.visible = false
+
+func add_rsrc_mined(_contents:Dictionary):
+	for content in _contents:
+		if content == "stone":
+			var stone_amount:float = Helper.get_sum_of_dict(_contents[content])
+			rsrc_mined[content] = (rsrc_mined[content] + stone_amount) if rsrc_mined.has(content) else stone_amount
+		else:
+			rsrc_mined[content] = (rsrc_mined[content] + _contents[content]) if rsrc_mined.has(content) else _contents[content]
+
+func _process(delta):
+	for cr in crumbles:
+		cr.sprite.position += cr.velocity * delta * 60 * game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)
+		cr.velocity.y += 0.6 * delta * 60 * game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)
+		cr.sprite.rotation += cr.angular_velocity * delta * 60 * game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)
+		if cr.sprite.position.y > 1000:
+			cr.sprite.free()
+			crumbles.erase(cr)
+	if circ.visible and not circ_disabled:
+		circ.position += circ_vel * max(1, pow(points / 60.0, 0.4)) * delta * 60 * game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)
+		if circ.position.x < 284:
+			circ_vel.x = -sign(circ_vel.x) * randf_range(1 / 1.2, 1.2)
+			circ.position.x = 284
+		if circ.position.x > 484 - 100 * circ.scale.x:
+			circ_vel.x = -sign(circ_vel.x) * randf_range(1 / 1.2, 1.2)
+			circ.position.x = 484 - 100 * circ.scale.x
+		if circ.position.y < 284:
+			circ_vel.y = -sign(circ_vel.y) * randf_range(1 / 1.2, 1.2)
+			circ.position.y = 284
+		if circ.position.y > 484 - 100 * circ.scale.x:
+			circ_vel.y = -sign(circ_vel.y) * randf_range(1 / 1.2, 1.2)
+			circ.position.y = 484 - 100 * circ.scale.x
+		if spd_mult_node.visible:
+			speed_mult = Helper.clever_round((points * ((game.MUs.MSMB - 1) * 0.1 + 1) / 3000.0 + 1) * game.pickaxe.get("speed_mult", 1.0) * tile.get("mining_outpost_bonus", 1.0))
+			spd_mult_node.text = tr("SPEED_MULTIPLIER") + ": x %s" % [speed_mult]
+		spd_mult_node.visible = bool(points) or game.pickaxe.has("speed_mult")
+		if Input.is_action_pressed("left_click") and Geometry2D.is_point_in_circle(mouse_pos, circ.position + 50 * circ.scale, 50 * circ.scale.x):
+			points += delta * 60.0 * pow(game.u_i.time_speed * tile.get("time_speed_bonus", 1.0), 2)
+			spd_mult_node["theme_override_colors/font_color"] = Color(0, 1, 0, 1)
+		else:
+			if points > 0:
+				points = max(points - 3 * delta * 60.0 * pow(game.u_i.time_speed * tile.get("time_speed_bonus", 1.0), 2), 0)
+				spd_mult_node["theme_override_colors/font_color"] = Color(1, 0, 0, 1)
+
+func _on_Button_button_down():
+	if game.pickaxe.has("name"):
+		circ_disabled = false
+		$PickaxeAnim.get_animation("Pickaxe swing").loop_mode = true
+		$PickaxeAnim.play("Pickaxe swing", -1, min(10.0, game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)))
+
+func _on_Button_button_up():
+	circ_disabled = true
+	$PickaxeAnim.get_animation("Pickaxe swing").loop_mode = false
+	$PickaxeAnim.play("Pickaxe swing", -1, -min(10.0, game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)))
+
+func _on_CheckBox_mouse_entered():
+	game.show_tooltip(tr("AUTO_REPLACE_DESC"))
+
+func _on_CheckBox_mouse_exited():
+	game.hide_tooltip()
+
+func _on_AutoReplace_pressed():
+	game.auto_replace = $AutoReplace.button_pressed
+
+
+func _on_AuroraMult_mouse_entered():
+	game.show_tooltip(tr("AURORA_MULT_INFO") % [aurora_mult, aurora_mult])
+
+
+func _on_AuroraMult_mouse_exited():
+	game.hide_tooltip()
+
+
+func _on_Grid_resized():
+	if $ResourcesMined/Grid.size.x > $ResourcesMined.size.x:
+		$ResourcesMined.custom_minimum_size.x = $ResourcesMined/Grid.size.x + 40
+		$ResourcesMined.position.x = 892 - $ResourcesMined.custom_minimum_size.x / 2.0
+	if $ResourcesMined/Grid.size.y + 40 > $ResourcesMined.size.y:
+		$ResourcesMined.custom_minimum_size.y = $ResourcesMined/Grid.size.y + 40

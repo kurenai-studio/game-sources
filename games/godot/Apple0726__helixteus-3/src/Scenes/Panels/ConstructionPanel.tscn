@@ -1,0 +1,298 @@
+[gd_scene format=3 uid="uid://b3nhmyabvl606"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_q53tt"]
+[ext_resource type="Texture2D" uid="uid://nqbxkpmiwy3c" path="res://Graphics/Buildings/mineral_extractor.png" id="2_ktgp8"]
+[ext_resource type="Script" uid="uid://b2f8lrwsgj701" path="res://Scripts/ConstructPanel.gd" id="2_v0xsx"]
+[ext_resource type="Texture2D" uid="uid://d3kwtgk0sw40p" path="res://Graphics/Icons/minerals.png" id="3_qlc6f"]
+[ext_resource type="Texture2D" uid="uid://cdqb8dr8jf33" path="res://Graphics/Buildings/mineral_silo.png" id="4_pprlh"]
+[ext_resource type="Texture2D" uid="uid://bqcnfk18r8y88" path="res://Graphics/Materials/glass.png" id="5_vrfgh"]
+[ext_resource type="Texture2D" uid="uid://cddrdlitvu8q2" path="res://Graphics/Buildings/central_business_district.png" id="6_uh0od"]
+[ext_resource type="Texture2D" uid="uid://crncbjr12yfpx" path="res://Graphics/Cave/Rover.png" id="7_nh4w1"]
+[ext_resource type="Texture2D" uid="uid://da22ie3xwunob" path="res://Graphics/Buildings/Ancient/mineral_replicator.png" id="8_2xax1"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_011nl"]
+device = -1
+physical_keycode = 49
+unicode = 49
+
+[sub_resource type="Shortcut" id="Shortcut_fmpb7"]
+events = [SubResource("InputEventKey_011nl")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_fmpb7"]
+device = -1
+physical_keycode = 50
+unicode = 50
+
+[sub_resource type="Shortcut" id="Shortcut_qnrsh"]
+events = [SubResource("InputEventKey_fmpb7")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_qnrsh"]
+device = -1
+physical_keycode = 51
+unicode = 51
+
+[sub_resource type="Shortcut" id="Shortcut_3s1yl"]
+events = [SubResource("InputEventKey_qnrsh")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_0pwsi"]
+device = -1
+physical_keycode = 52
+unicode = 52
+
+[sub_resource type="Shortcut" id="Shortcut_5gctx"]
+events = [SubResource("InputEventKey_0pwsi")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_3s1yl"]
+device = -1
+physical_keycode = 53
+unicode = 53
+
+[sub_resource type="Shortcut" id="Shortcut_0pwsi"]
+events = [SubResource("InputEventKey_3s1yl")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_5gctx"]
+device = -1
+physical_keycode = 54
+unicode = 54
+
+[sub_resource type="Shortcut" id="Shortcut_80jhv"]
+events = [SubResource("InputEventKey_5gctx")]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_seglp"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+
+[node name="Control" type="Control" unique_id=1531337071]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_v0xsx")
+
+[node name="BlackRect" type="ColorRect" parent="." unique_id=239580919]
+custom_minimum_size = Vector2(1280, 720)
+layout_mode = 0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.192157)
+
+[node name="Panel" type="Panel" parent="." unique_id=1706779863]
+layout_mode = 1
+offset_left = -2.0
+offset_top = 120.0
+offset_right = 138.0
+offset_bottom = 600.0
+mouse_filter = 1
+theme = ExtResource("1_q53tt")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=1390845863]
+show_behind_parent = true
+layout_mode = 0
+offset_left = 140.0
+offset_right = 189.0
+offset_bottom = 204.0
+theme_override_constants/separation = 0
+
+[node name="Basic" type="Button" parent="Panel/VBoxContainer" unique_id=2116318835]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_fmpb7")
+shortcut_in_tooltip = false
+icon = ExtResource("3_qlc6f")
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Basic" unique_id=835362533]
+layout_mode = 0
+offset_left = 60.0
+offset_right = 156.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "BASIC"
+vertical_alignment = 1
+
+[node name="Storage" type="Button" parent="Panel/VBoxContainer" unique_id=1409083340]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_qnrsh")
+shortcut_in_tooltip = false
+icon = ExtResource("4_pprlh")
+alignment = 0
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Storage" unique_id=2058986201]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_right = 164.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "STORAGE"
+vertical_alignment = 1
+
+[node name="Production" type="Button" parent="Panel/VBoxContainer" unique_id=1185242767]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_3s1yl")
+shortcut_in_tooltip = false
+icon = ExtResource("5_vrfgh")
+alignment = 0
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Production" unique_id=1192385398]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_right = 192.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "PRODUCTION"
+vertical_alignment = 1
+
+[node name="Support" type="Button" parent="Panel/VBoxContainer" unique_id=419621603]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_5gctx")
+shortcut_in_tooltip = false
+icon = ExtResource("6_uh0od")
+alignment = 0
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Support" unique_id=1068763602]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_right = 164.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "SUPPORT"
+vertical_alignment = 1
+
+[node name="Vehicles" type="Button" parent="Panel/VBoxContainer" unique_id=2081186535]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_0pwsi")
+shortcut_in_tooltip = false
+icon = ExtResource("7_nh4w1")
+alignment = 0
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Vehicles" unique_id=1660941763]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_right = 160.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "VEHICLES"
+vertical_alignment = 1
+
+[node name="Ancient" type="Button" parent="Panel/VBoxContainer" unique_id=781122401]
+show_behind_parent = true
+texture_filter = 4
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_80jhv")
+shortcut_in_tooltip = false
+icon = ExtResource("8_2xax1")
+alignment = 0
+icon_alignment = 2
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer/Ancient" unique_id=2085606760]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 60.0
+offset_right = 160.0
+offset_bottom = 48.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "ANCIENT"
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel" unique_id=68086824]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_seglp")
+horizontal_scroll_mode = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/ScrollContainer" unique_id=1817506256]
+texture_filter = 4
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/ScrollContainer/VBoxContainer" unique_id=615497680]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/ScrollContainer/VBoxContainer/HBoxContainer" unique_id=520094430]
+layout_mode = 2
+text = "TIER"
+
+[node name="Tier" type="SpinBox" parent="Panel/ScrollContainer/VBoxContainer/HBoxContainer" unique_id=1219583566]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 1.0
+alignment = 1
+update_on_text_changed = true
+
+[node name="Button" type="Button" parent="Panel/ScrollContainer/VBoxContainer" unique_id=1124004419]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+icon = ExtResource("2_ktgp8")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Label" type="Label" parent="Panel" unique_id=1980410984]
+layout_mode = 0
+offset_top = -28.0
+offset_right = 140.0
+offset_bottom = -3.0
+text = "CONSTRUCT"
+horizontal_alignment = 1
+
+[connection signal="tree_exited" from="." to="." method="_on_tree_exited"]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Basic" to="." method="_on_basic_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Basic" to="." method="_on_basic_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Basic" to="." method="_on_tab_pressed" binds= ["Basic"]]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Storage" to="." method="_on_storage_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Storage" to="." method="_on_storage_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Storage" to="." method="_on_tab_pressed" binds= ["Storage"]]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Production" to="." method="_on_production_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Production" to="." method="_on_production_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Production" to="." method="_on_tab_pressed" binds= ["Production"]]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Support" to="." method="_on_support_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Support" to="." method="_on_support_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Support" to="." method="_on_tab_pressed" binds= ["Support"]]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Vehicles" to="." method="_on_vehicles_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Vehicles" to="." method="_on_vehicles_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Vehicles" to="." method="_on_tab_pressed" binds= ["Vehicles"]]
+[connection signal="mouse_entered" from="Panel/VBoxContainer/Ancient" to="." method="_on_ancient_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/VBoxContainer/Ancient" to="." method="_on_ancient_mouse_exited"]
+[connection signal="pressed" from="Panel/VBoxContainer/Ancient" to="." method="_on_tab_pressed" binds= ["Ancient"]]
+[connection signal="value_changed" from="Panel/ScrollContainer/VBoxContainer/HBoxContainer/Tier" to="." method="_on_tier_value_changed"]

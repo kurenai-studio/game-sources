@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://ddf2xjwcht77u"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1"]
+[ext_resource type="Texture2D" uid="uid://cwhonpxb3ml" path="res://Graphics/Buttons/CloseButton.png" id="2"]
+[ext_resource type="Script" uid="uid://brbby2682bgx4" path="res://Scripts/CloseButton.gd" id="3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_an3vt"]
+bg_color = Color(0.254902, 0.254902, 0.254902, 1)
+border_width_left = 2
+border_width_top = 2
+border_color = Color(0.6, 0.6, 0.6, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s4den"]
+bg_color = Color(0.337255, 0.337255, 0.337255, 1)
+border_width_left = 2
+border_width_top = 2
+border_color = Color(0.6, 0.6, 0.6, 1)
+border_blend = true
+shadow_size = 2
+shadow_offset = Vector2(1, 1)
+
+[node name="TextureButton" type="Button" unique_id=1428064308]
+modulate = Color(1, 0.278431, 0.278431, 1)
+custom_minimum_size = Vector2(24, 24)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -48.0
+offset_top = 6.0
+offset_right = -24.0
+offset_bottom = 30.0
+grow_horizontal = 0
+theme = ExtResource("1")
+theme_override_styles/normal = SubResource("StyleBoxFlat_an3vt")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_an3vt")
+theme_override_styles/hover = SubResource("StyleBoxFlat_s4den")
+theme_override_styles/focus = SubResource("StyleBoxFlat_an3vt")
+icon = ExtResource("2")
+expand_icon = true
+script = ExtResource("3")
+
+[connection signal="mouse_entered" from="." to="." method="_on_TextureButton_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_TextureButton_mouse_exited"]
+[connection signal="pressed" from="." to="." method="_on_TextureButton_pressed"]

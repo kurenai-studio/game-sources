@@ -1,0 +1,221 @@
+[gd_scene format=3 uid="uid://cmh2bqka73geo"]
+
+[ext_resource type="PackedScene" uid="uid://1hq6qpr1oa3i" path="res://Scenes/AdvButton.tscn" id="1"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="3_ccyro"]
+[ext_resource type="Script" uid="uid://4a5huwgb0jgi" path="res://Scripts/Inventory.gd" id="4"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_v8thl"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_wur6g"]
+
+[sub_resource type="SystemFont" id="SystemFont_sxpbd"]
+font_names = PackedStringArray("Arial")
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_td60h"]
+font = SubResource("SystemFont_sxpbd")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="InputEventKey" id="InputEventKey_nsba8"]
+device = -1
+physical_keycode = 49
+unicode = 49
+
+[sub_resource type="Shortcut" id="Shortcut_r71ax"]
+events = [SubResource("InputEventKey_nsba8")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_r71ax"]
+device = -1
+physical_keycode = 50
+unicode = 50
+
+[sub_resource type="Shortcut" id="Shortcut_4it63"]
+events = [SubResource("InputEventKey_r71ax")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_4it63"]
+device = -1
+physical_keycode = 51
+unicode = 51
+
+[sub_resource type="Shortcut" id="Shortcut_xx8it"]
+events = [SubResource("InputEventKey_4it63")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_xx8it"]
+device = -1
+physical_keycode = 52
+unicode = 52
+
+[sub_resource type="Shortcut" id="Shortcut_030ye"]
+events = [SubResource("InputEventKey_xx8it")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_030ye"]
+device = -1
+physical_keycode = 53
+unicode = 53
+
+[sub_resource type="Shortcut" id="Shortcut_y03jv"]
+events = [SubResource("InputEventKey_030ye")]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vohlb"]
+bg_color = Color(0.0509804, 0.0509804, 0.0509804, 1)
+border_width_left = 4
+border_width_top = 4
+border_color = Color(0.192157, 0.192157, 0.192157, 1)
+border_blend = true
+
+[node name="Panel" type="Control" unique_id=1356881999]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme = ExtResource("3")
+script = ExtResource("4")
+
+[node name="GUI" type="TextureRect" parent="." unique_id=1668956434]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("3_ccyro")
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1424891662]
+layout_mode = 0
+offset_left = 1136.0
+offset_top = 67.0
+offset_right = 1185.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_v8thl")
+texture_hover = ExtResource("5_wur6g")
+
+[node name="Title" type="Label" parent="." unique_id=1322830995]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 1152.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 18
+text = "INVENTORY"
+label_settings = SubResource("LabelSettings_td60h")
+vertical_alignment = 1
+
+[node name="TabBar" type="HBoxContainer" parent="." unique_id=140897578]
+layout_mode = 1
+offset_left = 164.0
+offset_top = 542.0
+offset_right = 1104.0
+offset_bottom = 580.0
+theme_override_constants/separation = 60
+
+[node name="Items" parent="TabBar" unique_id=38644487 instance=ExtResource("1")]
+layout_mode = 2
+size_flags_horizontal = 3
+shortcut = SubResource("Shortcut_r71ax")
+shortcut_in_tooltip = false
+button_text = "ITEMS"
+
+[node name="Materials" parent="TabBar" unique_id=1016764359 instance=ExtResource("1")]
+layout_mode = 2
+size_flags_horizontal = 3
+shortcut = SubResource("Shortcut_4it63")
+shortcut_in_tooltip = false
+button_text = "MATERIALS"
+
+[node name="Metals" parent="TabBar" unique_id=1444941876 instance=ExtResource("1")]
+layout_mode = 2
+size_flags_horizontal = 3
+shortcut = SubResource("Shortcut_xx8it")
+shortcut_in_tooltip = false
+button_text = "METALS"
+
+[node name="Atoms" parent="TabBar" unique_id=1657356390 instance=ExtResource("1")]
+layout_mode = 2
+size_flags_horizontal = 3
+shortcut = SubResource("Shortcut_030ye")
+shortcut_in_tooltip = false
+button_text = "ATOMS"
+
+[node name="Particles" parent="TabBar" unique_id=1439151768 instance=ExtResource("1")]
+layout_mode = 2
+size_flags_horizontal = 3
+shortcut = SubResource("Shortcut_y03jv")
+shortcut_in_tooltip = false
+button_text = "PARTICLES"
+
+[node name="Information" type="Label" parent="." unique_id=1287403413]
+layout_mode = 0
+offset_left = 176.0
+offset_top = 124.0
+offset_right = 1088.0
+offset_bottom = 172.0
+text = "Information"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control" type="Panel" parent="." unique_id=1783725380]
+layout_mode = 1
+offset_left = 144.0
+offset_top = 176.0
+offset_right = 1120.0
+offset_bottom = 544.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_vohlb")
+
+[node name="VBox" type="VBoxContainer" parent="Control" unique_id=1534245317]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 36.0
+offset_top = 16.0
+offset_right = -36.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Control" type="Control" parent="Control/VBox" unique_id=1011189877]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="Control/VBox" unique_id=92201185]
+layout_mode = 2
+size_flags_horizontal = 5
+theme_override_constants/h_separation = 30
+theme_override_constants/v_separation = 30
+columns = 5
+
+[node name="Inventory" type="GridContainer" parent="Control/VBox" unique_id=874955917]
+layout_mode = 2
+size_flags_horizontal = 5
+theme_override_constants/h_separation = -1
+theme_override_constants/v_separation = -1
+columns = 15
+
+[node name="BuySell" type="Label" parent="Control/VBox" unique_id=1036398916]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+text = "CLICK_TO_BUY_SELL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="mouse_entered" from="TabBar/Items" to="." method="show_KBS_tooltip" binds= ["1"]]
+[connection signal="mouse_exited" from="TabBar/Items" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabBar/Items" to="." method="_on_Items_pressed"]
+[connection signal="mouse_entered" from="TabBar/Materials" to="." method="show_KBS_tooltip" binds= ["2"]]
+[connection signal="mouse_exited" from="TabBar/Materials" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabBar/Materials" to="." method="_on_Materials_pressed"]
+[connection signal="mouse_entered" from="TabBar/Metals" to="." method="show_KBS_tooltip" binds= ["3"]]
+[connection signal="mouse_exited" from="TabBar/Metals" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabBar/Metals" to="." method="_on_Metals_pressed"]
+[connection signal="mouse_entered" from="TabBar/Atoms" to="." method="show_KBS_tooltip" binds= ["4"]]
+[connection signal="mouse_exited" from="TabBar/Atoms" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabBar/Atoms" to="." method="_on_Atoms_pressed"]
+[connection signal="mouse_entered" from="TabBar/Particles" to="." method="show_KBS_tooltip" binds= ["5"]]
+[connection signal="mouse_exited" from="TabBar/Particles" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabBar/Particles" to="." method="_on_Particles_pressed"]

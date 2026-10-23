@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://detb1207m3upi"]
+
+[ext_resource type="Script" uid="uid://c0u6ub4binw3j" path="res://Scripts/Cluster.gd" id="1"]
+
+[node name="Cluster" type="Node2D" unique_id=1909199926]
+script = ExtResource("1")
+
+[connection signal="tree_exited" from="." to="." method="_on_tree_exited"]

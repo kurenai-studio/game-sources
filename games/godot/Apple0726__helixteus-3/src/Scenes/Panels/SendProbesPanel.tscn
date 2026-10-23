@@ -1,0 +1,158 @@
+[gd_scene format=3 uid="uid://c4filbuq4b5ct"]
+
+[ext_resource type="Texture2D" uid="uid://bn8t8jmrkuvdk" path="res://Graphics/Icons/time.png" id="1"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="3_fas0x"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_jl7m8"]
+[ext_resource type="Script" uid="uid://bfkt6ri6r6vye" path="res://Scripts/SendProbesPanel.gd" id="5"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_0o8k3"]
+
+[sub_resource type="SystemFont" id="SystemFont_l1il0"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_fas0x"]
+font = SubResource("SystemFont_l1il0")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[node name="SendProbesPanel" type="Control" unique_id=368901344]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+pivot_offset = Vector2(533, 300)
+theme = ExtResource("3")
+script = ExtResource("5")
+
+[node name="GUI" type="TextureRect" parent="." unique_id=412626771]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("3_fas0x")
+metadata/_edit_lock_ = true
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1293319745]
+layout_mode = 0
+offset_left = 1138.0
+offset_top = 67.0
+offset_right = 1187.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_jl7m8")
+texture_hover = ExtResource("5_0o8k3")
+
+[node name="Title" type="Label" parent="." unique_id=1853866638]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 467.0
+offset_bottom = 110.0
+text = "SEND_PROBES"
+label_settings = SubResource("LabelSettings_fas0x")
+vertical_alignment = 1
+
+[node name="Panel" type="Panel" parent="." unique_id=1878322498]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 152.0
+offset_right = 1120.0
+offset_bottom = 608.0
+
+[node name="Label" type="Label" parent="Panel" unique_id=1837415612]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 944.0
+offset_bottom = 236.0
+
+[node name="Control" type="Control" parent="Panel" unique_id=1089785225]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="NoProbes" type="Label" parent="Panel/Control" unique_id=1867810973]
+layout_mode = 0
+offset_left = -96.0
+offset_top = 24.0
+offset_right = 840.0
+offset_bottom = 48.0
+
+[node name="Send" type="Button" parent="Panel/Control" unique_id=1355520088]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 408.0
+offset_right = 424.0
+offset_bottom = 448.0
+text = "SEND_A_PROBE"
+
+[node name="SendAll" type="Button" parent="Panel/Control" unique_id=1601650957]
+layout_mode = 0
+offset_left = 536.0
+offset_top = 408.0
+offset_right = 784.0
+offset_bottom = 448.0
+
+[node name="Label2" type="Label" parent="Panel/Control" unique_id=65466662]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 208.0
+offset_right = 336.0
+offset_bottom = 240.0
+text = "LESS_ENERGY"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Label3" type="Label" parent="Panel/Control" unique_id=1695476385]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 208.0
+offset_right = 804.0
+offset_bottom = 240.0
+text = "FASTER_TRAVEL"
+vertical_alignment = 1
+
+[node name="HSlider" type="HSlider" parent="Panel/Control" unique_id=1638193314]
+layout_mode = 0
+offset_left = 368.0
+offset_top = 216.0
+offset_right = 608.0
+offset_bottom = 232.0
+value = 50.0
+
+[node name="TimeIcon" type="TextureRect" parent="Panel/Control" unique_id=948951659]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 328.0
+offset_right = 432.0
+offset_bottom = 368.0
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Costs" type="HBoxContainer" parent="Panel/Control" unique_id=1388148739]
+layout_mode = 0
+offset_left = 296.0
+offset_top = 264.0
+offset_right = 680.0
+offset_bottom = 304.0
+theme_override_constants/separation = 20
+
+[node name="Time" type="Label" parent="Panel/Control" unique_id=1027520574]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 336.0
+offset_right = 568.0
+offset_bottom = 360.0
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="pressed" from="Panel/Control/Send" to="." method="_on_Send_pressed"]
+[connection signal="mouse_entered" from="Panel/Control/SendAll" to="." method="_on_SendAll_mouse_entered"]
+[connection signal="mouse_exited" from="Panel/Control/SendAll" to="." method="_on_SendAll_mouse_exited"]
+[connection signal="pressed" from="Panel/Control/SendAll" to="." method="_on_SendAll_pressed"]
+[connection signal="value_changed" from="Panel/Control/HSlider" to="." method="_on_HSlider_value_changed"]

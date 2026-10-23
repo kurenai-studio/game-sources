@@ -1,0 +1,155 @@
+[gd_scene format=3 uid="uid://byh1hjd76sl65"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_6wj2k"]
+[ext_resource type="Script" uid="uid://b0v2ktsjl35hf" path="res://Scripts/StarButton.gd" id="1_vfiau"]
+[ext_resource type="Texture2D" uid="uid://t70si4f413j5" path="res://Graphics/Effects/spotlight_4.png" id="1_w4ys2"]
+[ext_resource type="Shader" uid="uid://u62js3345ubk" path="res://Shaders/Star.gdshader" id="2_dveyw"]
+[ext_resource type="Texture2D" uid="uid://dn0b5qn5vtand" path="res://Graphics/Science/MAE.png" id="4_77icn"]
+[ext_resource type="Texture2D" uid="uid://dbwkbfheei7ln" path="res://Graphics/Megastructures/PK_turret.png" id="6_bbh3e"]
+[ext_resource type="Texture2D" uid="uid://b8xut3yn8djrb" path="res://Graphics/Buttons/target.png" id="6_jgu31"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_18mo0"]
+resource_local_to_scene = true
+shader = ExtResource("2_dveyw")
+shader_parameter/time_offset = 0.0
+shader_parameter/brightness_offset = 1.0
+shader_parameter/twinkle_speed = 0.8
+shader_parameter/amplitude = 0.1
+shader_parameter/alpha = 1.0
+shader_parameter/color = Color(1, 1, 1, 1)
+
+[node name="Button" type="Button" unique_id=41489719]
+custom_minimum_size = Vector2(0, 140)
+offset_right = 416.0
+offset_bottom = 140.0
+theme = ExtResource("1_6wj2k")
+script = ExtResource("1_vfiau")
+
+[node name="Star" type="TextureRect" parent="." unique_id=463013424]
+material = SubResource("ShaderMaterial_18mo0")
+layout_mode = 0
+offset_right = 102.0
+offset_bottom = 100.0
+mouse_filter = 2
+texture = ExtResource("1_w4ys2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Temperature" type="Label" parent="." unique_id=179582001]
+layout_mode = 0
+offset_left = 122.0
+offset_top = 56.0
+offset_right = 186.0
+offset_bottom = 78.0
+text = "5500 K"
+
+[node name="ClassType" type="Label" parent="." unique_id=2042547832]
+layout_mode = 0
+offset_left = 122.0
+offset_top = 20.0
+offset_right = 270.0
+offset_bottom = 42.0
+text = "G2 Hypergiant"
+
+[node name="Mass" type="Label" parent="." unique_id=438392165]
+layout_mode = 0
+offset_left = 308.0
+offset_top = 40.0
+offset_right = 392.0
+offset_bottom = 64.0
+text = "1.0 M☉"
+vertical_alignment = 1
+
+[node name="Luminosity" type="Label" parent="." unique_id=1462094496]
+layout_mode = 0
+offset_left = 308.0
+offset_top = 64.0
+offset_right = 392.0
+offset_bottom = 88.0
+text = "1.0 L☉"
+vertical_alignment = 1
+
+[node name="Radius" type="Label" parent="." unique_id=86400574]
+layout_mode = 0
+offset_left = 308.0
+offset_top = 16.0
+offset_right = 392.0
+offset_bottom = 40.0
+text = "1.0 R☉"
+vertical_alignment = 1
+
+[node name="MS" type="TextureRect" parent="." unique_id=2079244330]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 60.0
+offset_right = 92.0
+offset_bottom = 88.0
+texture = ExtResource("4_77icn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Construct" type="Button" parent="." unique_id=646953395]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 100.0
+offset_right = 185.0
+offset_bottom = 133.0
+mouse_filter = 1
+text = "Construct (C)"
+
+[node name="Destroy" type="Button" parent="." unique_id=1555636640]
+layout_mode = 0
+offset_left = 244.0
+offset_top = 100.0
+offset_right = 346.0
+offset_bottom = 133.0
+mouse_filter = 1
+text = "Destroy (X)"
+
+[node name="PK" type="Button" parent="." unique_id=1841618773]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="TextureRect" type="TextureRect" parent="PK" unique_id=511987009]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_bbh3e")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="View" type="Button" parent="." unique_id=1569848771]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = -8.0
+grow_vertical = 0
+
+[node name="TextureRect" type="TextureRect" parent="View" unique_id=1225057479]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_jgu31")
+expand_mode = 1
+stretch_mode = 5

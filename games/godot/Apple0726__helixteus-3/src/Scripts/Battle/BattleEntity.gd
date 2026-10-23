@@ -1,0 +1,528 @@
+@abstract
+class_name BattleEntity
+extends Node2D
+
+signal next_turn
+
+@onready var game = get_node("/root/Game")
+
+@export var type:int
+
+var METERS_PER_AGILITY:float
+var PIXELS_PER_METER:float
+
+var battle_scene:Node2D
+var battle_GUI:BattleGUI
+var turn_order_box:Button
+var turn_number = 0
+
+var lv:int
+var HP:int
+var total_HP:int
+var attack:float
+var defense:float
+var accuracy:float
+var agility:float:
+	get:
+		return agility
+	set(value):
+		agility = value
+		agility_updated_callback()
+var initiative:int
+var turn_order:int
+var go_through_movement_cost:float # in meters
+var velocity:Vector2 = Vector2.ZERO:
+	get:
+		return velocity
+	set(value):
+		velocity = value
+		if velocity.length() < 3.0:
+			velocity = Vector2.ZERO
+		update_velocity_arrow()
+var movement_remaining:float # in meters
+var total_movement_base:float # in meters. Includes permanent/static modifications from passive abilities, but does not include temporary modifications from (de)buffs
+var total_movement:float # in meters, after all modifications
+
+var moving_from_velocity = false # Used to determine whether to deal damage to an entity when this entity collides with it
+var velocity_process_mult = 1.0
+var collision_shape_radius:float
+var draw_collision_shape = 0: # 0 = false, 1 = draw but no highlight, 2 = draw & highlight
+	set(value):
+		draw_collision_shape = value
+		queue_redraw()
+
+var attack_buff:float = 0.0
+var defense_buff:float = 0.0
+var accuracy_buff:float = 0.0
+var agility_buff:float = 0.0:
+	get:
+		return agility_buff
+	set(value):
+		agility_buff = value
+		agility_updated_callback()
+var status_effects = {}
+var status_effect_resistances = {}
+var passive_abilities = []
+var mass_mult:float = 1.0
+var regen_per_turn = 0
+var buff_decay_rate = 1.0
+var debuff_decay_rate = 1.0
+var status_effects_decay_rate = 1.0
+var random_buff_timer_initial = INF
+var random_buff_timer = INF
+var aim_mult = 1.0
+var physical_damage_mult = 1.0
+var turn_taken = false
+
+var default_tooltip_text:String
+var override_tooltip_text:String = ""
+var default_override_tooltip_dict = {
+	"light_intensity_mult": "",
+	"light_intensity_mult_info": "",
+}
+var default_tooltip_icons = [Data.HP_icon, Data.attack_icon, Data.defense_icon, Data.accuracy_icon, Data.agility_icon]
+var override_tooltip_dict:Dictionary
+var override_tooltip_icons = [Data.attack_icon, Data.defense_icon, Data.accuracy_icon, Data.agility_icon]
+
+var collision_sound_player:AudioStreamPlayer2D
+
+var force_end_turn_timer:Timer
+
+func _ready() -> void:
+	battle_scene = get_parent()
+	battle_GUI = get_parent().battle_GUI
+	override_tooltip_dict = default_override_tooltip_dict.duplicate()
+	if has_node("Info/Initiative"):
+		$Info/Initiative.modulate.a = 0.0
+	refresh_default_tooltip_text()
+	if type != Battle.EntityType.BOUNDARY:
+		self.area_entered.connect(on_collide)
+		for effect in Battle.StatusEffect.N:
+			status_effects[effect] = 0.0
+	$Info/StatusEffects.entity = self
+	$Info/Buffs.entity = self
+	update_velocity_arrow()
+	collision_sound_player = AudioStreamPlayer2D.new()
+	add_child(collision_sound_player)
+	collision_sound_player.stream = preload("res://Audio/SFX/collision.ogg")
+	collision_sound_player.bus = "SFX"
+	collision_sound_player.max_polyphony = 8
+	force_end_turn_timer = Timer.new()
+	add_child(force_end_turn_timer)
+	force_end_turn_timer.timeout.connect(end_turn)
+
+func _draw() -> void:
+	if is_instance_valid(battle_scene) and type != Battle.EntityType.BOUNDARY:
+		var ship_node = battle_scene.get_selected_ship()
+		if is_instance_valid(ship_node):
+			if draw_collision_shape == 1:
+				draw_circle(Vector2.ZERO, collision_shape_radius + ship_node.collision_shape_radius + 2.0, Color(1.0, 0.6, 0.0, 0.2), true, -1.0)
+			elif draw_collision_shape == 2:
+				draw_circle(Vector2.ZERO, collision_shape_radius + ship_node.collision_shape_radius + 2.0, Color(1.0, 0.6, 0.0, 0.8), true, -1.0)
+
+func format_buff_tooltip(base, modifier):
+	base = Helper.clever_snap(base)
+	modifier = Helper.clever_snap(modifier)
+	default_tooltip_text += "\n@i \t%s" % (base)
+	if modifier > 0:
+		default_tooltip_text += " + %s = %s" % [modifier, base + modifier]
+	elif modifier < 0:
+		default_tooltip_text += " - %s = %s" % [abs(modifier), base + modifier]
+	
+	
+func refresh_default_tooltip_text():
+	default_tooltip_text = "@i \t%s / %s" % [HP, total_HP]
+	format_buff_tooltip(attack, attack_buff)
+	format_buff_tooltip(defense, defense_buff)
+	format_buff_tooltip(accuracy, accuracy_buff)
+	format_buff_tooltip(agility, agility_buff)
+	if velocity != Vector2.ZERO:
+		default_tooltip_text += "\nv = " + ("(%.1f, %.1f) m/s\n|v| = %.1f m/s" % [velocity.x, velocity.y, velocity.length()])
+	
+func initialize_stats(data:Dictionary):
+	lv = data.lv
+	HP = data.HP
+	total_HP = data.HP
+	attack = data.attack
+	defense = data.defense
+	accuracy = data.accuracy
+	agility = data.agility
+	if Battle.PassiveAbility.MORE_MASS in passive_abilities:
+		mass_mult *= 1.5
+	if Battle.PassiveAbility.FASTER_DEBUFF_STATUS_DISAPPEAR in passive_abilities:
+		debuff_decay_rate = 2.0
+		status_effects_decay_rate = 2.0
+	if Battle.PassiveAbility.SLOWER_BUFF_DISAPPEAR in passive_abilities:
+		buff_decay_rate = 0.5
+	if Battle.PassiveAbility.HEAL_EVERY_TURN in passive_abilities:
+		regen_per_turn = ceil(total_HP * 0.1)
+	if Battle.PassiveAbility.EXTRA_MOVEMENT in passive_abilities:
+		total_movement_base *= 1.5
+	if Battle.PassiveAbility.RANDOM_3_BUFF in passive_abilities:
+		random_buff_timer = 3
+		random_buff_timer_initial = 3
+	if Battle.PassiveAbility.INCREASED_AIM in passive_abilities:
+		aim_mult *= 2.0
+	if Battle.PassiveAbility.PHYSICAL_DAMAGE_RESISTANT in passive_abilities:
+		physical_damage_mult = 0.75
+	if Battle.PassiveAbility.STUN_FREEZE_IMMUNE in passive_abilities:
+		status_effect_resistances[Battle.StatusEffect.STUN] = 1.0
+		status_effect_resistances[Battle.StatusEffect.FROZEN] = 1.0
+	if Battle.PassiveAbility.BURN_CORRODING_IMMUNE in passive_abilities:
+		status_effect_resistances[Battle.StatusEffect.BURN] = 1.0
+		status_effect_resistances[Battle.StatusEffect.CORRODING] = 1.0
+	if Battle.PassiveAbility.WET_EXPOSED_IMMUNE in passive_abilities:
+		status_effect_resistances[Battle.StatusEffect.WET] = 1.0
+		status_effect_resistances[Battle.StatusEffect.EXPOSED] = 1.0
+	if Battle.PassiveAbility.RADIOACTIVE_IMMUNE in passive_abilities:
+		status_effect_resistances[Battle.StatusEffect.RADIOACTIVE] = 1.0
+	for effect in Battle.StatusEffect.N:
+		if not effect in status_effect_resistances:
+			status_effect_resistances[effect] = 0.0
+
+func roll_initiative():
+	var range:int = 2 + log(randf()) / log(0.2)
+	initiative = randi_range(agility - range, agility + range)
+
+func show_initiative(_initiative: int):
+	$Info/Initiative.text = tr("INITIATIVE") + ": " + str(_initiative)
+	var tween = create_tween()
+	tween.tween_property($Info/Initiative, "modulate:a", 1.0, 0.5)
+	tween.tween_property($Info/Initiative, "modulate:a", 0.0, 1.0).set_delay(2.0)
+	create_tween().tween_property($Info/Initiative, "position:y", $Info/Initiative.position.y - 15.0, 1.0).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CIRC)
+
+func take_turn():
+	turn_number += 1
+	entities_already_collided.clear()
+	if is_instance_valid(turn_order_box):
+		turn_order_box.get_node("ChangeSizeAnim").play("ChangeSize")
+		#turn_order_box.modulate.a = 1.0
+	if regen_per_turn > 0:
+		heal_entity(regen_per_turn)
+	var burn_turns = status_effects[Battle.StatusEffect.BURN]
+	if burn_turns > 0.0:
+		damage_entity_status_effect(int(ceil(burn_turns * 0.05 * total_HP)))
+		if HP <= 0:
+			return
+	var wet_turns = status_effects[Battle.StatusEffect.WET]
+	if wet_turns > 0:
+		if game.planet_data[game.c_p].temperature > 373.0:
+			status_effects[Battle.StatusEffect.BURN] = wet_turns * clamp(remap(game.planet_data[game.c_p].temperature, 373.0, 3000.0, 1.0, 3.0), 1.0, 3.0)
+			status_effects[Battle.StatusEffect.WET] = 0.0
+		elif game.planet_data[game.c_p].temperature < 263.0:
+			status_effects[Battle.StatusEffect.FROZEN] = wet_turns * clamp(remap(game.planet_data[game.c_p].temperature, 263.0, 0.0, 1.0, 3.0), 1.0, 3.0)
+			status_effects[Battle.StatusEffect.WET] = 0.0
+	if status_effects[Battle.StatusEffect.CORRODING] > 0.0:
+		defense_buff -= 2
+		agility_buff -= 2
+	total_movement = total_movement_base
+	movement_remaining = total_movement
+	random_buff_timer -= 1
+	if Battle.PassiveAbility.BUFFS_AT_LOW_HP in passive_abilities and HP < 0.4:
+		var buff_amount:int = remap(float(HP) / total_HP, 0.0, 0.4, 4.8 + lv / 5.0, 0)
+		attack_buff = min(attack_buff + buff_amount, max(attack_buff, buff_amount))
+		defense_buff = min(defense_buff + buff_amount, max(defense_buff, buff_amount))
+		accuracy_buff = min(accuracy_buff + buff_amount, max(accuracy_buff, buff_amount))
+		agility_buff = min(agility_buff + buff_amount, max(agility_buff, buff_amount))
+	if random_buff_timer <= 0:
+		match randi() % 4:
+			0:
+				attack_buff += random_buff_timer_initial
+			1:
+				defense_buff += random_buff_timer_initial
+			2:
+				accuracy_buff += random_buff_timer_initial
+			3:
+				agility_buff += random_buff_timer_initial
+		random_buff_timer = random_buff_timer_initial
+	if velocity != Vector2.ZERO:
+		moving_from_velocity = true
+		if battle_scene.animations_sped_up:
+			velocity_process_mult = 5.0
+			await get_tree().create_timer(0.2).timeout
+		else:
+			velocity_process_mult = 1.0
+			await get_tree().create_timer(1.0).timeout
+		moving_from_velocity = false
+
+func decrement_status_effects_buffs():
+	for effect in status_effects:
+		status_effects[effect] = max(0.0, status_effects[effect] - status_effects_decay_rate)
+	if attack_buff > 0:
+		attack_buff = max(attack_buff - buff_decay_rate, 0.0)
+	elif attack_buff < 0:
+		attack_buff = min(attack_buff + debuff_decay_rate, 0.0)
+	if defense_buff > 0:
+		defense_buff = max(defense_buff - buff_decay_rate, 0.0)
+	elif defense_buff < 0:
+		defense_buff = min(defense_buff + debuff_decay_rate, 0.0)
+	if accuracy_buff > 0:
+		accuracy_buff = max(accuracy_buff - buff_decay_rate, 0.0)
+	elif accuracy_buff < 0:
+		accuracy_buff = min(accuracy_buff + debuff_decay_rate, 0.0)
+	if agility_buff > 0:
+		agility_buff = max(agility_buff - buff_decay_rate, 0.0)
+	elif agility_buff < 0:
+		agility_buff = min(agility_buff + debuff_decay_rate, 0.0)
+	update_info_labels()
+
+func _physics_process(delta: float) -> void:
+	if moving_from_velocity:
+		position += velocity * delta * velocity_process_mult
+		if position.x < -640.0 or position.x > 1920.0 or position.y < -360.0 or position.y > 1080.0:
+			HP = 0
+			entity_defeated_callback()
+
+
+func end_turn():
+	force_end_turn_timer.stop()
+	var type_str = ""
+	if type == Battle.EntityType.SHIP:
+		type_str = "ship"
+	elif type == Battle.EntityType.ENEMY:
+		type_str = "enemy"
+	battle_scene.logs += "\nend_turn() (%s %s)\n" % [type_str, turn_order]
+	if status_effects[Battle.StatusEffect.EXTRA_TURNS] > 0.0:
+		battle_scene.logs += "extra turn\n"
+		status_effects[Battle.StatusEffect.EXTRA_TURNS] -= 1.0
+		$Info/StatusEffects.update()
+	else:
+		if is_instance_valid(turn_order_box):
+			turn_order_box.get_node("ChangeSizeAnim").play_backwards("ChangeSize")
+		if not turn_taken:
+			turn_taken = true
+			emit_signal("next_turn")
+	battle_scene.logs += "\nend_turn() end (%s %s)\n" % [type_str, turn_order]
+
+func agility_updated_callback():
+	if has_node("CollisionShapeFinder/CollisionShape2D"):
+		$CollisionShapeFinder/CollisionShape2D.shape.radius = (agility + agility_buff) * METERS_PER_AGILITY * PIXELS_PER_METER
+
+func damage_entity_status_effect(damage: int):
+	battle_scene.add_damage_text(false, position + Vector2.UP * 80.0, damage, false, Vector2.UP * 150.0)
+	HP = max(HP - damage, 0)
+	update_entity_HP()
+
+func heal_entity(amount: int):
+	battle_scene.add_damage_text(false, position + Vector2.UP * 80.0, -amount)
+	HP = min(HP + amount, total_HP)
+	update_entity_HP(Vector2.ZERO, true)
+
+func damage_entity(weapon_data: Dictionary, shooter: BattleEntity = null):
+	var total_agility = agility + agility_buff
+	if Battle.StatusEffect.STUN in status_effects or Battle.StatusEffect.FROZEN in status_effects:
+		total_agility = 0
+	var relative_velocity_accuracy_mod = abs(0.1 * velocity.rotated(PI / 2.0).dot(weapon_data.get("orientation", Vector2.ZERO)))
+	var dodged = 1.0 / (1.0 + exp((weapon_data.get("weapon_accuracy", 10.0) - total_agility - relative_velocity_accuracy_mod + 9.2) / 5.8)) > randf()
+	if dodged:
+		battle_scene.add_damage_text(true, position)
+	else:
+		var damage_multiplier:float
+		if weapon_data.has("shooter_attack"):
+			var attack_defense_difference:int = weapon_data.shooter_attack - defense
+			if not weapon_data.has("ignore_defense_buffs") or defense_buff < 0:
+				attack_defense_difference -= defense_buff
+			if attack_defense_difference >= 0:
+				damage_multiplier = attack_defense_difference * 0.125 + 1.0
+			else:
+				damage_multiplier = 1.0 / (1.0 - 0.125 * attack_defense_difference)
+		var actual_damage:int = max(1, weapon_data.damage * damage_multiplier)
+		var crit_hit_chance_base = 0.03
+		if weapon_data.shooter_type == Battle.EntityType.SHIP:
+			crit_hit_chance_base += (game.MUs.CHR - 1) * 0.005
+		var crit_chance = weapon_data.get("crit_hit_chance_mult", 1.0) * crit_hit_chance_base * weapon_data.get("crit_hit_mult", 1.0) * (10.0 if status_effects[Battle.StatusEffect.EXPOSED] > 0.0 else 1.0)
+		var critical = randf() < crit_chance
+		if critical:
+			actual_damage *= 2
+		var damage_nullified = weapon_data.has("nullify_damage_chance") and randf() < weapon_data.nullify_damage_chance
+		if damage_nullified:
+			actual_damage = 0
+			critical = false
+			if float(actual_damage) / total_HP > 0.5:
+				agility_buff -= 4
+				status_effects[Battle.StatusEffect.STUN] += 2.0
+			elif float(actual_damage) / total_HP > 0.35:
+				agility_buff -= 3
+			elif float(actual_damage) / total_HP > 0.2:
+				agility_buff -= 2
+		if Battle.PassiveAbility.PHYSICAL_DAMAGE_RESISTANT in passive_abilities and weapon_data.type == Battle.DamageType.PHYSICAL:
+			actual_damage = ceil(actual_damage * 0.75)
+		if weapon_data.shooter_type == Battle.EntityType.SHIP:
+			if weapon_data.type == Battle.DamageType.PHYSICAL:
+				actual_damage = ceil(actual_damage * log(game.u_i.planck - 1.0 + exp(1.0)))
+			elif weapon_data.type == Battle.DamageType.EMG:
+				actual_damage = ceil(actual_damage * log(game.u_i.speed_of_light - 1.0 + exp(1.0)))
+		var relative_velocity = velocity - weapon_data.get("shooter_velocity", Vector2.ZERO) # target relative to shooter
+		if weapon_data.type == Battle.DamageType.PHYSICAL:
+			# Increase or decrease damage depending on whether the projectile is moving in the same or opposite direction as the entity
+			var velocity_dot = relative_velocity.normalized().dot(weapon_data.velocity.normalized())
+			var velocity_damage_mult:float = 1.0
+			if velocity_dot < 0.0: # Opposite -> increase damage
+				velocity_damage_mult = 1.0 + -velocity_dot * relative_velocity.length() * 0.003
+			elif velocity_dot > 0.0: # Same -> decrease damage
+				velocity_damage_mult = 1.0 / (1.0 + velocity_dot * relative_velocity.length() * 0.003)
+			actual_damage *= velocity_damage_mult
+		var knockback = weapon_data.get("knockback", Vector2.ZERO)
+		if knockback != Vector2.ZERO:
+			if relative_velocity.dot(knockback) > 0.0: # Reduce effect of knockback if the entity is moving in the same direction as the knockback
+				knockback *= min(1.0, knockback.length() / relative_velocity.length())
+			knockback *= weapon_data.get("shooter_mass", 0.0) / get_mass()
+			if critical:
+				knockback *= 1.2
+			velocity += knockback
+		battle_scene.add_damage_text(false, position, actual_damage, critical, 0.03 * weapon_data.get("velocity", Vector2.ZERO) * sqrt(weapon_data.get("mass", 0.0)))
+		HP = max(HP - actual_damage, 0)
+		var label_knockback = weapon_data.velocity.normalized() * weapon_data.get("mass", 0.0) * 0.5 / total_HP
+		if label_knockback.length() > weapon_data.velocity.length():
+			label_knockback = label_knockback.normalized() * weapon_data.velocity.length()
+		update_entity_HP(label_knockback)
+		if HP > 0:
+			if weapon_data.has("status_effects"):
+				for effect in weapon_data.status_effects:
+					var st = weapon_data.status_effects[effect]
+					var base_probability = 1.0
+					var base_turns
+					if st is Array:
+						base_probability = st[0]
+						base_turns = st[1]
+					else:
+						base_turns = st
+					if randf() < base_probability * (1.0 - status_effect_resistances[effect]):
+						status_effects[effect] = base_turns * pow((status_effects[effect] + base_turns) / base_turns, 0.8)
+			if weapon_data.has("buffs"):
+				for buff in weapon_data.buffs:
+					var base_buff = weapon_data.buffs[buff]
+					if sign(self["%s_buff" % buff]) != sign(base_buff):
+						self["%s_buff" % buff] += base_buff
+					else:
+						self["%s_buff" % buff] = base_buff * pow(abs((self["%s_buff" % buff] + base_buff) / base_buff), 0.8)
+			update_info_labels()
+		else:
+			if shooter != null and shooter.type == Battle.EntityType.SHIP and shooter.ship_class == ShipClass.OFFENSIVE:
+				shooter.buff_from_class_passive_ability("attack", 3)
+	return not dodged
+
+var flash_tween
+
+func update_entity_HP(label_knockback: Vector2 = Vector2.ZERO, healed: bool = false):
+	$Info/HP.value = HP
+	if has_node("Sprite2D"):
+		if healed:
+			$Sprite2D.material.set_shader_parameter("flash_color", Color(0.7, 1.0, 0.7))
+		else:
+			$Sprite2D.material.set_shader_parameter("flash_color", Color.RED)
+		$Sprite2D.material.set_shader_parameter("flash", 1.0)
+	if HP <= 0:
+		self.call_deferred("set_monitoring", false)
+		self.call_deferred("set_monitorable", false)
+		entity_defeated_callback(label_knockback)
+	else:
+		if has_node("Sprite2D"):
+			if flash_tween and flash_tween.is_running():
+				flash_tween.kill()
+			flash_tween = create_tween()
+			flash_tween.tween_property($Sprite2D.material, "shader_parameter/flash", 0.0, 0.4)
+
+func update_info_labels():
+	$Info/StatusEffects.update()
+	$Info/Buffs.update()
+
+var entity_dying_tween
+
+func entity_defeated_callback(knockback:Vector2 = Vector2.ZERO):
+	if entity_dying_tween:
+		return
+	var type_str = ""
+	if type == Battle.EntityType.SHIP:
+		type_str = "ship"
+	elif type == Battle.EntityType.ENEMY:
+		type_str = "enemy"
+	battle_scene.logs += "\nentity_defeated_callback() (%s %s)\n" % [type_str, turn_order]
+	entity_dying_tween = create_tween().set_parallel()
+	entity_dying_tween.tween_property($Info, "modulate:a", 0.0, 0.75)
+	entity_dying_tween.tween_property(self, "position", position + knockback, 1.5)
+	entity_dying_tween.tween_property($Sprite2D.material, "shader_parameter/alpha", 0.0, 1.0).set_delay(0.75)
+	entity_dying_tween.tween_callback(queue_free).set_delay(2.0)
+	if battle_scene.initiative_order[battle_scene.whose_turn_is_it_index] == self:
+		entity_dying_tween.tween_callback(end_turn).set_delay(1.5)
+	entity_dying_tween.set_speed_scale(5.0 if battle_scene.animations_sped_up else 1.0)
+	if is_instance_valid(turn_order_box):
+		turn_order_box.get_node("FadeAnim").play("FadeOutAnim")
+	if type == Battle.EntityType.ENEMY:
+		battle_scene.HX_nodes.erase(self)
+		if lv >= battle_scene.max_level_ship + 30 and not game.achievement_data.random.has("rekt_enemy_30_levels_higher"):
+			game.earn_achievement("random", "rekt_enemy_30_levels_higher")
+	elif type == Battle.EntityType.SHIP:
+		battle_scene.ship_nodes.erase(self)
+	elif type == Battle.EntityType.OBSTACLE:
+		battle_scene.obstacle_nodes.erase(self)
+	battle_scene.logs += "\nentity_defeated_callback() end (%s %s)\n" % [type_str, turn_order]
+
+func update_velocity_arrow(offset: Vector2 = Vector2.ZERO):
+	var magnitude = (velocity + offset).length()
+	$VelocityArrow.resize_arrow(magnitude)
+	var color = Data.intensity_gradient.sample(inverse_lerp(0.0, 500.0, magnitude)).to_html(false)
+	$VelocityArrow/Polygon2D.modulate = color
+	$VelocityArrow.rotation = (velocity + offset).angle()
+
+func push_entity_attempt(agility_pusher: int, agility_pushee: int, position_difference_normalized: Vector2, relative_velocity: Vector2):
+	return 1.0 / (1.0 + exp((agility_pusher - agility_pushee - abs(0.05 * position_difference_normalized.rotated(PI / 2.0).dot(relative_velocity)) + 9.2) / 5.8)) < randf()
+
+func calculate_velocity_change(entity_to_push:BattleEntity, movement:float, position_difference_normalized: Vector2, relative_velocity: Vector2):
+	var base_velocity_change:Vector2 = (entity_to_push.position - position).normalized() * movement * get_mass() / entity_to_push.get_mass()
+	var dot_product = position_difference_normalized.dot(relative_velocity.normalized()) # Between -1.0 and 1.0
+	if dot_product <= 0.0:
+		return base_velocity_change
+	# Nerf push effect if push strength is small compared to relative velocity
+	var velocity_push_strength_ratio = base_velocity_change.length() / relative_velocity.length()
+	# velocity_push_strength_ratio has more of an effect if pushing in the same direction as the entity's velocity
+	var push_effect_coefficient = pow(remap(velocity_push_strength_ratio, 0.5, 5.0, 0.2, 1.0), pow(dot_product, 3.0))
+	return base_velocity_change * push_effect_coefficient
+
+func collide_with_entity(collider: BattleEntity, collidee: BattleEntity):
+	var damage: float = 0.0
+	var collider_mass = collider.get_mass()
+	var collider_weapon_data = {
+		"type":Battle.DamageType.PHYSICAL,
+		"damage": collider_mass * collider.velocity.length_squared() * 4.0e-6,
+		"shooter_type":collider.type,
+		"orientation":collider.velocity.normalized(),
+		"velocity":0.3 * collider.velocity,
+	}
+	var collidee_mass = collidee.get_mass()
+	if collidee.damage_entity(collider_weapon_data):
+		var collider_kinetic_energy = collider_mass * collider.velocity.length_squared()
+		var collidee_velocity_gain = min(sqrt(collider_kinetic_energy / collidee_mass), collider.velocity.length())
+		if not collidee.moving_from_velocity:
+			var collidee_weapon_data = {
+				"type":Battle.DamageType.PHYSICAL,
+				"damage": collidee_mass * collider.velocity.length_squared() * 4.0e-6,
+				"shooter_type":collidee.type,
+				"weapon_accuracy":INF,
+				"orientation":collidee.velocity.normalized(),
+				"velocity":Vector2.ZERO,
+			}
+			collider.damage_entity(collidee_weapon_data)
+			if collidee.velocity == Vector2.ZERO:
+				collidee.velocity = collider.velocity.normalized() * collidee_velocity_gain
+			else:
+				collidee.velocity += collider.velocity.normalized() * collidee_velocity_gain
+		var velocity_loss = sqrt(collidee_mass * pow(collidee_velocity_gain, 2) / collider_mass)
+		if velocity_loss > collider.velocity.length():
+			collider.velocity = Vector2.ZERO
+		else:
+			collider.velocity -= collider.velocity.normalized() * velocity_loss
+		collision_sound_player.play()
+
+# Needed for when 2 entities collide with each other and not deal double damage
+var entities_already_collided = []
+
+func on_collide(area):
+	if type == Battle.EntityType.BOUNDARY or area.type == Battle.EntityType.BOUNDARY:
+		return
+	if moving_from_velocity and area not in entities_already_collided:
+		collide_with_entity(self, area)
+		area.entities_already_collided.append(self)
+
+func get_mass():
+	return remap(HP, 0.0, total_HP, total_HP * 0.66, total_HP) * mass_mult

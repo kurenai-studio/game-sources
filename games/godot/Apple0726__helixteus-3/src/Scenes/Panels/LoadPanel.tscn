@@ -1,0 +1,167 @@
+[gd_scene format=3 uid="uid://b8i2nx6456f0t"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_ag2oi"]
+[ext_resource type="Script" uid="uid://dh30edm5xmv1l" path="res://Scripts/LoadPanel.gd" id="2_ffmmh"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="3_23g72"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_yhdsg"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_ggvls"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="6_ffmmh"]
+
+[sub_resource type="SystemFont" id="SystemFont_l1il0"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_cla8g"]
+font = SubResource("SystemFont_l1il0")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[node name="LoadPanel" type="Control" unique_id=1278116139]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 32.0
+offset_bottom = 32.0
+mouse_filter = 1
+theme = ExtResource("1_ag2oi")
+script = ExtResource("2_ffmmh")
+metadata/_edit_horizontal_guides_ = [360.0]
+
+[node name="GUI" type="NinePatchRect" parent="." unique_id=1668252692]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("3_23g72")
+patch_margin_left = 408
+patch_margin_top = 80
+patch_margin_right = 80
+patch_margin_bottom = 64
+axis_stretch_horizontal = 1
+metadata/_edit_horizontal_guides_ = [596.0]
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=378724350]
+layout_mode = 0
+offset_left = 1139.0
+offset_top = 67.0
+offset_right = 1188.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_yhdsg")
+texture_hover = ExtResource("5_ggvls")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1769203718]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 128.0
+offset_top = 152.0
+offset_right = 1120.0
+offset_bottom = 544.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBox" type="HBoxContainer" parent="ScrollContainer" unique_id=329073522]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 40
+
+[node name="Label" type="Label" parent="." unique_id=1544785175]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+offset_left = 120.0
+offset_top = 72.0
+offset_right = 265.0
+offset_bottom = 110.0
+size_flags_vertical = 3
+text = "LOAD_GAME"
+label_settings = SubResource("LabelSettings_cla8g")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Import" type="FileDialog" parent="." unique_id=1736822414]
+title = "Import save"
+size = Vector2i(963, 400)
+ok_button_text = "Open"
+mode_overrides_title = false
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.hx3 ; HX3 save files")
+
+[node name="Export" type="FileDialog" parent="." unique_id=1090129413]
+size = Vector2i(898, 400)
+mode_overrides_title = false
+access = 2
+filters = PackedStringArray("*.hx3 ; HX3 save files")
+
+[node name="PopupBackground" type="ColorRect" parent="." unique_id=1320866463]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1248.0
+offset_bottom = 688.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.564706)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1470312973]
+layout_mode = 0
+offset_left = 712.0
+offset_top = 88.0
+offset_right = 1120.0
+offset_bottom = 121.0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="ImportSave" type="Button" parent="HBoxContainer" unique_id=1304227581]
+layout_mode = 2
+text = "IMPORT_SAVE"
+
+[node name="ShowInFileManager" type="Button" parent="HBoxContainer" unique_id=172646765]
+layout_mode = 2
+text = "SHOW_IN_FILE_MANAGER"
+
+[node name="TotalFileSize" parent="." unique_id=1511434500 instance=ExtResource("6_ffmmh")]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 600.0
+offset_right = 832.0
+offset_bottom = 630.0
+text = "[center]PERSISTENT_STORAGE [img]Graphics/Icons/help.png[/img][/center]"
+label_text = "PERSISTENT_STORAGE"
+help_text = "PERSISTENT_STORAGE_DESC"
+align = 1
+
+[node name="ExportingLabel" type="Label" parent="." unique_id=1063705637]
+visible = false
+layout_mode = 0
+offset_left = 488.0
+offset_top = 88.0
+offset_right = 728.0
+offset_bottom = 120.0
+text = "EXPORTING"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Loading" type="Label" parent="." unique_id=360104415]
+layout_mode = 0
+offset_left = 512.0
+offset_top = 344.0
+offset_right = 768.0
+offset_bottom = 376.0
+text = "LOADING"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="file_selected" from="Import" to="." method="_on_Import_file_selected"]
+[connection signal="visibility_changed" from="Import" to="." method="_on_import_visibility_changed"]
+[connection signal="file_selected" from="Export" to="." method="_on_Export_file_selected"]
+[connection signal="visibility_changed" from="Export" to="." method="_on_export_visibility_changed"]
+[connection signal="pressed" from="HBoxContainer/ImportSave" to="." method="_on_ImportSave_pressed"]
+[connection signal="pressed" from="HBoxContainer/ShowInFileManager" to="." method="_on_show_in_file_manager_pressed"]

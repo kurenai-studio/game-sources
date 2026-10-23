@@ -1,0 +1,254 @@
+extends "Panel.gd"
+
+var target_p_i:Dictionary = {}
+var p_id:int
+var star:Dictionary
+var star_id:int
+var planet_btn_scene = preload("res://Scenes/PlanetData.tscn")
+var additional_energy:float
+var charging_time:float
+var rekt_planet:bool = false
+var rsrc:Dictionary
+var c_s_g:int = -1
+
+func _ready():
+	set_process(false)
+	set_polygon($GUI.size, $GUI.position)
+
+func select_planet(p_i:Dictionary, id:int, btn):
+	for child in $Scroll/Planets.get_children():
+		if child != btn:
+			child.button_pressed = false
+	if star.has("charging_time"):
+		return
+	p_id = id
+	target_p_i = p_i
+	refresh_planet_info()
+
+func refresh():
+	if c_s_g != game.c_s_g:
+		$Control.visible = false
+		$StartCharging.visible = false
+		c_s_g = game.c_s_g
+	for child in $Scroll/Planets.get_children():
+		child.free()
+	for i in len(game.planet_data):
+		var p_i = game.planet_data[i]
+		if p_i.is_empty():
+			continue
+		var btn = planet_btn_scene.instantiate()
+		$Scroll/Planets.add_child(btn)
+		btn.get_node("HBoxContainer/TextureRect").texture = game.planet_textures[p_i.type - 3]
+		btn.get_node("HBoxContainer/Diameter").text = "%s km" % [p_i.size]
+		btn.get_node("HBoxContainer/Distance").text = "%s AU" % [Helper.clever_round(p_i.distance / 569.25)]
+		if not (p_i.size <= int(4000 * pow(game.u_i.gravitational, 0.5)) or star.MS_lv == 1 and p_i.size <= int(40000 * pow(game.u_i.gravitational, 0.5)) or star.MS_lv == 2):
+			btn.get_node("HBoxContainer/Diameter")["theme_override_colors/font_color"] = Color.RED
+			btn.get_node("HBoxContainer/Distance")["theme_override_colors/font_color"] = Color.RED
+		btn.get_node("TF").visible = p_i.has("tile_num")
+		btn.get_node("MS").visible = p_i.has("MS")
+		btn.pressed.connect(select_planet.bind(p_i, i, btn))
+		btn.get_node("TF").mouse_entered.connect(on_TF_over)
+		btn.get_node("TF").mouse_exited.connect(on_mouse_exit)
+		btn.get_node("MS").mouse_entered.connect(on_MS_over)
+		btn.get_node("MS").mouse_exited.connect(on_mouse_exit)
+	if star.has("charging_time"):
+		target_p_i = game.planet_data[star.p_id]
+		set_process(true)
+		$Control.visible = false
+		$Control2.visible = true
+		$StartCharging.text = tr("CANCEL_CHARGING")
+	else:
+		set_process(false)
+		rekt_planet = false
+		$StartCharging.visible = false
+		$Control2.visible = false
+		$StartCharging.text = tr("START_CHARGING")
+
+func on_TF_over():
+	game.show_tooltip(tr("PLANET_TFED"))
+
+func on_MS_over():
+	game.show_tooltip(tr("PLANET_HAS_MS"))
+
+func on_mouse_exit():
+	game.hide_tooltip()
+
+func refresh_planet_info():
+	var value = $Control/HSlider.value
+	var energy_cost = pow(target_p_i.size / 10000.0, 3) * 1e16
+	var time_base = energy_cost / star.luminosity / 1e12
+	charging_time = time_base * (1 - value)
+	additional_energy = time_base * star.luminosity * value * 1e15
+	$Control.visible = true
+	$Desc.hide()
+	$StartCharging.visible = true
+	$Control/EnergyCost.text = Helper.format_num(additional_energy)
+	if charging_time <= 1.0:
+		charging_time = 1.0
+	$Control/TimeCost.text = Helper.time_to_str(charging_time)
+	var R = target_p_i.size * 1000.0 / 2#in meters
+	var surface_volume = Helper.get_sph_V(R, R - target_p_i.crust_start_depth)#in m^3
+	var crust_volume = Helper.get_sph_V(R - target_p_i.crust_start_depth, R - target_p_i.mantle_start_depth)
+	var mantle_volume = Helper.get_sph_V(R - target_p_i.mantle_start_depth, R - target_p_i.core_start_depth)
+	var core_volume = Helper.get_sph_V(R - target_p_i.core_start_depth)
+	var stone = {}
+	add_stone(stone, target_p_i.crust, (surface_volume + crust_volume) * ((5600 + target_p_i.mantle_start_depth * 0.01) / 2.0))
+	add_stone(stone, target_p_i.mantle, mantle_volume * ((5690 + (target_p_i.mantle_start_depth + target_p_i.core_start_depth) * 0.01) / 2.0))
+	add_stone(stone, target_p_i.core, core_volume * ((5700 + (target_p_i.core_start_depth + R) * 0.01) / 2.0))
+	rsrc = {"stone":stone}
+	var max_star_temp = game.get_max_star_prop(game.c_s, "temperature")
+	var au_int = 12000.0 * game.galaxy_data[game.c_g].B_strength * max_star_temp
+	var au_mult = 1.0 + au_int
+	$Control/MMM.text = "[aurora au_int=%s]%s: %s" % [au_int, tr("MAT_MET_MULT"), Helper.format_num(Helper.clever_round(au_mult, 4))]
+	for mat in target_p_i.surface:
+		rsrc[mat] = surface_volume * target_p_i.surface[mat].chance * target_p_i.surface[mat].amount * au_mult * game.u_i.planck
+	for met in game.met_info:
+		if met in ["nanocrystal", "mythril"] and game.c_g_g == 0:
+			continue
+		rsrc[met] = Helper.get_sph_V(R - game.met_info[met].min_depth, R - game.met_info[met].max_depth) / game.met_info[met].rarity * au_mult * game.u_i.planck
+	Helper.put_rsrc($Control/ScrollContainer/GridContainer, 36, rsrc)
+
+func add_stone(stone:Dictionary, layer:Dictionary, amount:float):
+	for comp in layer:
+		if stone.has(comp):
+			stone[comp] += layer[comp] * amount * game.u_i.planck
+		else:
+			stone[comp] = layer[comp] * amount * game.u_i.planck
+
+func _on_HSlider_value_changed(value):
+	refresh_planet_info()
+
+
+func _on_StartCharging_pressed():
+	if rekt_planet:
+		if game.c_v != "system":
+			return
+		target_p_i = game.planet_data[star.p_id]
+		var p_id_g = -1
+		if not target_p_i.is_empty():
+			p_id_g = target_p_i.id
+			if Settings.screen_shake:
+				game.get_node("Camera2D/Screenshake").start(2.0, 10, 5)
+			var planet_pos:Vector2 = Vector2.from_angle(target_p_i.angle) * target_p_i.distance * game.view.obj.scale_mult
+			var BG_flash = game.get_node("BGFlash")
+			BG_flash.modulate.a = 0.6
+			var tween = create_tween()
+			tween.tween_property(BG_flash, "modulate:a", 0.0, 0.5)
+			game.popup(tr("PLANET_REKT") % target_p_i.name, 2.5)
+			if target_p_i.has("bookmarked"):
+				game.bookmarks.planet.erase(str(target_p_i.id))
+				game.HUD.planet_grid_btns.remove_child(game.HUD.planet_grid_btns.get_node(str(target_p_i.id)))
+			if target_p_i.has("MS") and target_p_i.MS == "MME":
+				game.autocollect.MS.minerals -= Helper.get_MME_output(target_p_i)
+				game.mineral_capacity -= Helper.get_MME_capacity(target_p_i)
+			if target_p_i.has("tile_num"):
+				if target_p_i.bldg.name == Building.RESEARCH_LAB:
+					game.autocollect.rsrc.SP -= target_p_i.bldg.path_1_value * target_p_i.tile_num
+				elif target_p_i.bldg.name == Building.MINERAL_SILO:
+					game.mineral_capacity -= target_p_i.bldg.path_1_value * target_p_i.tile_num
+				elif target_p_i.has("auto_GH"): # TODO TFed atom manipulators, boring machines, individual tiles
+					for p in target_p_i.auto_GH.produce:
+						game.autocollect.mets[p] -= target_p_i.auto_GH.produce[p]
+					game.autocollect.mats.cellulose += target_p_i.auto_GH.cellulose_drain
+			var dir = DirAccess.open("user://%s/Univ%s/Planets/%s.hx3" % [game.c_sv, game.c_u, target_p_i.id])
+			if dir:
+				dir.remove("user://%s/Univ%s/Planets/%s.hx3" % [game.c_sv, game.c_u, target_p_i.id])
+			target_p_i.clear()
+			game.planet_data_persistent[star.p_id] = null
+			game.view.obj.get_node("PlanetDestroyedSound").position = planet_pos
+			game.view.obj.get_node("PlanetDestroyedSound").play()
+			game.view.obj.refresh_planets()
+			game.add_resources(star.rsrc)
+			update_view_history(p_id_g)
+		star.erase("charging_time")
+		star.erase("charge_start_date")
+		star.erase("rsrc")
+		set_process(false)
+		$StartCharging.visible = false
+		rekt_planet = false
+		game.HUD.refresh()
+		refresh()
+	elif star.has("charging_time"):
+		star.erase("charging_time")
+		star.erase("charge_start_date")
+		star.erase("rsrc")
+		$Control.visible = true
+		$Desc.hide()
+		$Control2.visible = false
+		set_process(false)
+		$StartCharging.text = tr("START_CHARGING")
+	elif star.MS_lv == 0 and target_p_i.size <= int(4000 * pow(game.u_i.gravitational, 0.5)) or star.MS_lv == 1 and target_p_i.size <= int(40000 * pow(game.u_i.gravitational, 0.5)) or star.MS_lv == 2:
+		if c_s_g == game.ships_travel_data.c_g_coords.s and p_id == game.ships_travel_data.c_coords.p:
+			game.popup(tr("PK_ERROR"), 2.0)
+			return
+		for fighter in game.fighter_data:
+			if fighter != null and fighter.tier == 0 and c_s_g == fighter.c_s_g and p_id == fighter.c_p:
+				game.popup(tr("PK_ERROR"), 2.0)
+				return
+		if game.energy >= additional_energy:
+			game.energy -= additional_energy
+			star.charge_start_date = Time.get_unix_time_from_system()
+			star.charging_time = charging_time
+			star.p_id = p_id
+			star.rsrc = rsrc.duplicate(true)
+			$Control.visible = false
+			$Control2.visible = true
+			$StartCharging.text = tr("CANCEL_CHARGING")
+			set_process(true)
+			var planet_pos = Vector2.from_angle(game.planet_data[p_id].angle)
+			star.turret_angle = atan2(planet_pos.y, planet_pos.x)
+			get_tree().get_nodes_in_group("stars_system")[star_id].get_node("MS/Turret").rotation = star.turret_angle
+			game.HUD.refresh()
+		else:
+			game.popup(tr("NOT_ENOUGH_ENERGY"), 1.5)
+	else:
+		game.popup(tr("PLANET_TOO_OP"), 2.0)
+
+func update_view_history(p_id_g:int):
+	var planet_rekt_dict = {
+		"view":"planet", 
+		"c_c":game.c_c,
+		"c_g_g":game.c_g_g,
+		"c_g":game.c_g,
+		"c_s_g":c_s_g,
+		"c_s":game.c_s,
+		"c_p_g":p_id_g,
+		"c_p":p_id,
+	}
+	for i in len(game.view_history):
+		if game.view_history[i].hash() == planet_rekt_dict.hash():
+			game.view_history.remove_at(i)
+			if game.view_history_pos >= i:
+				game.view_history_pos -= 1
+			return
+
+func _process(delta):
+	var curr_time = Time.get_unix_time_from_system()
+	var start_date = star.charge_start_date
+	var length = star.charging_time
+	var progress = (curr_time - start_date) / float(length)
+	$Control2/TimeCost.text = Helper.time_to_str(length - (curr_time - start_date))
+	$Control2/TextureProgressBar.value = progress
+	$Control2/TimeIcon.visible = progress < 1
+	if progress <= 0.5:
+		$Control2/Charging.text = tr("PK_CHARGING_MESSAGE_1")
+	elif progress <= 0.9:
+		$Control2/Charging.text = tr("PK_CHARGING_MESSAGE_2")
+	elif progress <= 1:
+		$Control2/Charging.text = tr("PK_CHARGING_MESSAGE_3")
+	elif progress >= 1:
+		$Control2/TimeCost.text = ""
+		$Control2/Charging.text = tr("PLANET_READY_TO_BE_REKT") % target_p_i.name
+		set_process(false)
+		$StartCharging.visible = true
+		$Desc.hide()
+		$StartCharging.text = tr("FIRE")
+		rekt_planet = true
+
+
+func _on_MMM_mouse_entered():
+	game.show_tooltip(tr("MMM_DESC"))
+
+
+func _on_MMM_mouse_exited():
+	game.hide_tooltip()
