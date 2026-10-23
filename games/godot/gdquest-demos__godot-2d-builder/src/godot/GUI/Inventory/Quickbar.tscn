@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bom6j112u7wqf"]
+
+[ext_resource type="Script" uid="uid://ctny4f8igprik" path="res://GUI/Inventory/Quickbar.gd" id="1"]
+[ext_resource type="PackedScene" path="res://GUI/Inventory/QuickbarInventoryPanel.tscn" id="4"]
+
+[node name="Quickbar" type="HBoxContainer" unique_id=961660846]
+offset_right = 665.0
+offset_bottom = 77.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+alignment = 1
+script = ExtResource("1")
+InventoryPanelScene = ExtResource("4")

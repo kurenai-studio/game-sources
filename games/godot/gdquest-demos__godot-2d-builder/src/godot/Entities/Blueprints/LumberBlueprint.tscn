@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://ccjnineh3bp7j"]
+
+[ext_resource type="Script" uid="uid://depvrlid144wo" path="res://Entities/Blueprints/BlueprintEntity.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bunwc0u4elj4a" path="res://Shared/blueprints.svg" id="2"]
+
+[node name="LumberBlueprint" type="Node2D" unique_id=1865730609]
+script = ExtResource("1")
+stack_size = 25
+placeable = false
+description = "Log from a chopped tree."
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=433413466]
+position = Vector2(0, -25)
+texture = ExtResource("2")
+region_enabled = true
+region_rect = Rect2(575, 238, 69, 75)
