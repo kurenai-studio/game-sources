@@ -1,0 +1,175 @@
+name: Android release
+
+# Merge to main -> reads config/version from project.godot; if tag v<version> does not
+#   exist yet, tests run, a signed APK is built, and the tag + GitHub Release are created
+#   (Obtainium picks it up from the repository URL). Merges that keep the same version
+#   build nothing, so bump config/version in the PR that should ship.
+# Push a tag like v0.2.0 -> same build, released under that tag.
+# Manual run (workflow_dispatch) -> tests + APK uploaded as a build artifact only.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.7.2
+  # SHA-256 of the release signing certificate. The build fails if the APK is signed with
+  # anything else, so the signing identity can never change silently between releases.
+  EXPECTED_CERT_SHA256: 686d38e47afbf1919b8af90098315bb5e41a55ea663405daac1dfe5f1893e7ce
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.plan.outputs.build }}
+      tag: ${{ steps.plan.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Decide what to build
+        id: plan
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            echo "tag push: release $GITHUB_REF_NAME"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            ver=$(sed -n 's/^config\/version="\(.*\)"$/\1/p' project.godot)
+            if [[ ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "config/version in project.godot must look like 1.2.3, got '$ver'"; exit 1
+            fi
+            if git ls-remote --exit-code --tags origin "refs/tags/v$ver" > /dev/null; then
+              echo "v$ver is already released; bump config/version in project.godot to ship a new one"
+              echo "build=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "new version: release v$ver"
+              echo "build=true" >> "$GITHUB_OUTPUT"
+              echo "tag=v$ver" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "manual run: dev build, no release"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+  android:
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.plan.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Godot + export templates
+        run: |
+          base=https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip && sudo mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          tdir=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$tdir" && unzip -q templates.tpz -d /tmp/tpl && mv /tmp/tpl/templates/* "$tdir"/
+          rm -f godot.zip templates.tpz
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-${GODOT_VERSION%.*}.tres <<EOT
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOT
+
+      - name: Import project
+        run: godot --headless --path . --import || true
+
+      - name: Run tests
+        run: |
+          godot --headless --path . -s res://tests/run_tests.gd 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          if grep -q "SCRIPT ERROR" test.log; then echo "script errors during tests"; exit 1; fi
+          exit $status
+
+      # The drawn-path preview must match the move it previews (bot games on every lesson,
+      # campaign dig and prototype; exits 1 on a mismatch). ~1 min. The old balance simulation
+      # (tools/simulate.gd: one-step bots, ~7 min, never failed) is run by hand when tuning.
+      - name: Preview check
+        run: godot --headless --path . -s res://tools/preview_check.gd -- 2
+
+      - name: Set version
+        id: ver
+        run: |
+          if [[ -n "$RELEASE_TAG" ]]; then
+            name="${RELEASE_TAG#v}"
+            IFS=. read -r ma mi pa <<< "${name%%-*}"
+            # monotonically increasing and derived from the tag: v0.1.0 -> 1000, v1.2.3 -> 1002003
+            code=$(( ma * 1000000 + mi * 1000 + pa ))
+            file="astro-miner-${RELEASE_TAG}-android.apk"
+          else
+            name="0.0.${GITHUB_RUN_NUMBER}-dev"
+            code=1
+            file="astro-miner-dev-${GITHUB_RUN_NUMBER}-android.apk"
+          fi
+          sed -i "s/^version\/code=.*/version\/code=${code}/" export_presets.cfg
+          sed -i "s/^version\/name=.*/version\/name=\"${name}\"/" export_presets.cfg
+          sed -i "s/^config\/version=.*/config\/version=\"${name}\"/" project.godot
+          grep '^version/' export_presets.cfg
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Decode and check keystore
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          printf '%s' "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          # prints only a hash prefix and lengths, never secret values
+          echo "keystore sha256 prefix: $(sha256sum "$RUNNER_TEMP/release.keystore" | cut -c1-16), password length: ${#KS_PASS}"
+          keytool -list -keystore "$RUNNER_TEMP/release.keystore" -storepass "$KS_PASS" -alias "$KS_ALIAS" > /dev/null
+
+      - name: Export APK
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p build
+          out="build/${{ steps.ver.outputs.file }}"
+          godot --headless --path . --export-release "Android" "$out"
+          test -s "$out"
+          bt="$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME"/build-tools | sort -V | tail -1)
+          "$bt"/apksigner verify --print-certs "$out" | tee certs.txt
+          grep -qi "SHA-256 digest: ${EXPECTED_CERT_SHA256}" certs.txt || { echo "unexpected signing certificate"; exit 1; }
+          "$bt"/aapt dump badging "$out" | head -1
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: astro-miner-apk
+          path: build/*.apk
+
+      - name: Publish GitHub Release
+        if: env.RELEASE_TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out="build/${{ steps.ver.outputs.file }}"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$out" --clobber
+          else
+            # creates the tag on this commit when it does not exist yet (merge to main);
+            # a tag made with the workflow token does not start another run
+            gh release create "$RELEASE_TAG" "$out" --target "$GITHUB_SHA" \
+              --title "Astro Miner $RELEASE_TAG" --generate-notes
+          fi

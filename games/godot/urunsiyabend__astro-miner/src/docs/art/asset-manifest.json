@@ -1,0 +1,1199 @@
+{
+  "schema_version": 1,
+  "art_direction_brief": "docs/art/art-direction.md",
+  "style_target": "docs/art/style-target-c2.png",
+  "geometry_blockout": "docs/art/topdown-blockout.png",
+  "budget_note": "gemini-3.1-flash-image: 2 CU per image; one 2x2 sheet = one family of 4. Jobs over 20 CU need approval.",
+  "assets": [
+    {
+      "id": "soil_a",
+      "role": "plain ground",
+      "path": "assets/tiles/soil_a.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference d9c6c54c-4a6f-4fe9-8582-13722451c132, output 71e108b7-bd64-4fa5-ad60-2c0777ebe6c4), keyed with docs/art/tools/key.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-14",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Image 1 is a flat blockout of four game tiles seen from straight above; Image 2 is the art style reference. Paint the four tiles of Image 1 in the hand-painted stylised style of Image 2 (painterly brush texture, lavender-purple soil tops with small pebbles, warm brown layered earth with strata, thin warm outlines, soft warm light). Keep Image 1's camera and geometry exactly: viewed from straight above, each tile's top face is a square with softly rounded corners, and only a thin band of the brown earth front face shows beneath it; no side faces, no isometric angle. Top left: plain soil tile with a few tiny pebbles. Top right: the same soil tile with different pebbles and a small crack. Bottom left: the same tile with a square pit dug into its top, darker earth floor and inner walls visible. Bottom right: the same tile with a chunky cracked grey boulder with purple crystal veins sitting on top, seen from above. Keep the flat solid pure green background, no shadows on it, no text."
+      },
+      "verification": {
+        "native_scale_reviewed": true,
+        "in_engine_reviewed": true,
+        "technical_checks_passed": true,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "soil_b",
+      "role": "plain ground variant",
+      "path": "assets/tiles/soil_b.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference d9c6c54c-4a6f-4fe9-8582-13722451c132, output 71e108b7-bd64-4fa5-ad60-2c0777ebe6c4), keyed with docs/art/tools/key.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-14",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Image 1 is a flat blockout of four game tiles seen from straight above; Image 2 is the art style reference. Paint the four tiles of Image 1 in the hand-painted stylised style of Image 2 (painterly brush texture, lavender-purple soil tops with small pebbles, warm brown layered earth with strata, thin warm outlines, soft warm light). Keep Image 1's camera and geometry exactly: viewed from straight above, each tile's top face is a square with softly rounded corners, and only a thin band of the brown earth front face shows beneath it; no side faces, no isometric angle. Top left: plain soil tile with a few tiny pebbles. Top right: the same soil tile with different pebbles and a small crack. Bottom left: the same tile with a square pit dug into its top, darker earth floor and inner walls visible. Bottom right: the same tile with a chunky cracked grey boulder with purple crystal veins sitting on top, seen from above. Keep the flat solid pure green background, no shadows on it, no text."
+      },
+      "verification": {
+        "native_scale_reviewed": true,
+        "in_engine_reviewed": true,
+        "technical_checks_passed": true,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "pit",
+      "role": "dug cell (all depths for now)",
+      "path": "assets/tiles/pit.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference d9c6c54c-4a6f-4fe9-8582-13722451c132, output 71e108b7-bd64-4fa5-ad60-2c0777ebe6c4), keyed with docs/art/tools/key.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-14",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Image 1 is a flat blockout of four game tiles seen from straight above; Image 2 is the art style reference. Paint the four tiles of Image 1 in the hand-painted stylised style of Image 2 (painterly brush texture, lavender-purple soil tops with small pebbles, warm brown layered earth with strata, thin warm outlines, soft warm light). Keep Image 1's camera and geometry exactly: viewed from straight above, each tile's top face is a square with softly rounded corners, and only a thin band of the brown earth front face shows beneath it; no side faces, no isometric angle. Top left: plain soil tile with a few tiny pebbles. Top right: the same soil tile with different pebbles and a small crack. Bottom left: the same tile with a square pit dug into its top, darker earth floor and inner walls visible. Bottom right: the same tile with a chunky cracked grey boulder with purple crystal veins sitting on top, seen from above. Keep the flat solid pure green background, no shadows on it, no text."
+      },
+      "verification": {
+        "native_scale_reviewed": true,
+        "in_engine_reviewed": true,
+        "technical_checks_passed": true,
+        "approved_by": ""
+      },
+      "notes": "replace with pit_1..pit_3, one per depth"
+    },
+    {
+      "id": "rock",
+      "role": "rock cell (all layer counts for now)",
+      "path": "assets/tiles/rock.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference d9c6c54c-4a6f-4fe9-8582-13722451c132, output 71e108b7-bd64-4fa5-ad60-2c0777ebe6c4), keyed with docs/art/tools/key.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-14",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Image 1 is a flat blockout of four game tiles seen from straight above; Image 2 is the art style reference. Paint the four tiles of Image 1 in the hand-painted stylised style of Image 2 (painterly brush texture, lavender-purple soil tops with small pebbles, warm brown layered earth with strata, thin warm outlines, soft warm light). Keep Image 1's camera and geometry exactly: viewed from straight above, each tile's top face is a square with softly rounded corners, and only a thin band of the brown earth front face shows beneath it; no side faces, no isometric angle. Top left: plain soil tile with a few tiny pebbles. Top right: the same soil tile with different pebbles and a small crack. Bottom left: the same tile with a square pit dug into its top, darker earth floor and inner walls visible. Bottom right: the same tile with a chunky cracked grey boulder with purple crystal veins sitting on top, seen from above. Keep the flat solid pure green background, no shadows on it, no text."
+      },
+      "verification": {
+        "native_scale_reviewed": true,
+        "in_engine_reviewed": true,
+        "technical_checks_passed": true,
+        "approved_by": ""
+      },
+      "notes": "replace with rock_1..rock_3 (rubble, stone, basalt)"
+    },
+    {
+      "id": "pit_1",
+      "role": "dug 1 layer",
+      "path": "assets/tiles/pit_1.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "pit_2",
+      "role": "dug 2 layers",
+      "path": "assets/tiles/pit_2.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "pit_3",
+      "role": "dug 3+ layers",
+      "path": "assets/tiles/pit_3.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "floor_bare",
+      "role": "exhausted cell, dry and cracked",
+      "path": "assets/tiles/floor_bare.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "rock_1",
+      "role": "rubble, 1 layer",
+      "path": "assets/tiles/rock_1.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "rock_2",
+      "role": "stone, 2 layers",
+      "path": "assets/tiles/rock_2.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "rock_3",
+      "role": "basalt, 3 layers",
+      "path": "assets/tiles/rock_3.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x307",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "ore_ferrite",
+      "role": "Ferrite chunk (orange, square silhouette)",
+      "path": "assets/tiles/ore_ferrite.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "ore_cryo",
+      "role": "Cryo chunk (cyan, round silhouette)",
+      "path": "assets/tiles/ore_cryo.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "ore_lumen",
+      "role": "Lumen chunk (yellow, triangle silhouette)",
+      "path": "assets/tiles/ore_lumen.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "crystal",
+      "role": "crystal pickup",
+      "path": "assets/tiles/crystal.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "cell",
+      "role": "energy cell pickup",
+      "path": "assets/tiles/cell.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "charge",
+      "role": "blast charge",
+      "path": "assets/tiles/charge.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "robot",
+      "role": "mining robot, facing down",
+      "path": "assets/tiles/robot.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "island_edge",
+      "role": "hanging rocks under bottom-edge tiles",
+      "path": "assets/tiles/island_edge.png",
+      "status": "planned",
+      "technical": {
+        "dimensions": "256x128",
+        "alpha": true,
+        "anchor": "top-left of cell",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "visual_locks": [
+        "top-down camera",
+        "front band ~20%",
+        "palette",
+        "outline",
+        "brushwork"
+      ],
+      "source": {
+        "kind": "planned",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image, blockout init + C2 reference",
+        "creator": "",
+        "created_at": "",
+        "license": "",
+        "attribution": "",
+        "prompt_or_source_record": ""
+      },
+      "verification": {
+        "native_scale_reviewed": false,
+        "in_engine_reviewed": false,
+        "technical_checks_passed": false,
+        "approved_by": ""
+      },
+      "notes": ""
+    },
+    {
+      "id": "generator_off",
+      "role": "generator obstacle, uncharged (2x2)",
+      "path": "assets/obstacles/generator_off.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "512x512",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output e217ecdd-ac5a-4c02-8975-8eb64a007a93), sheet docs/art/sources/obstacles_a.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "generator_on",
+      "role": "generator obstacle, switched on (2x2)",
+      "path": "assets/obstacles/generator_on.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "512x512",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output e217ecdd-ac5a-4c02-8975-8eb64a007a93), sheet docs/art/sources/obstacles_a.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "cage",
+      "role": "cage cover over a gem",
+      "path": "assets/obstacles/cage.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output e217ecdd-ac5a-4c02-8975-8eb64a007a93), sheet docs/art/sources/obstacles_a.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "cage_cracked",
+      "role": "cage, damaged (spare)",
+      "path": "assets/obstacles/cage_cracked.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output e217ecdd-ac5a-4c02-8975-8eb64a007a93), sheet docs/art/sources/obstacles_a.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "core",
+      "role": "energy core token (Deliver goal)",
+      "path": "assets/obstacles/core.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output 0032eb5b-3e40-495e-9892-73c0b3ae5add), sheet docs/art/sources/obstacles_b.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "dock",
+      "role": "dock socket where cores are delivered",
+      "path": "assets/obstacles/dock.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 80b5b101-a3c5-4243-bede-6bbfdacc1d17, output 0032eb5b-3e40-495e-9892-73c0b3ae5add), sheet docs/art/sources/obstacles_b.png, keyed with docs/art/tools/key_noscipy.py, style reference: rocks + ores + teleporter + drill sprites",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 game pieces for a cute space-mining match-3 puzzle game, laid out on an even 3x3 grid, each piece centred in its own cell with generous empty space around it, on a flat solid pure green (#00FF00) background. The reference image only sets the art style: hand-painted stylised mobile-game art with painterly brush texture, chunky readable silhouettes, thin dark warm outlines, soft warm light from the top left, white-grey metal with orange trim and small orange lights like the reference's machine, glowing cyan/violet energy. Camera for every piece: front view seen slightly from above (like the reference's rocks and gems), NOT isometric, no diamond-shaped bases, no floor or platform under the pieces, no cast shadows on the background.\nTop row: (1) a compact square power generator machine, unpowered: chunky white-grey metal casing with orange trim, a big round dark glass dome in the middle with a dead grey coil inside, small unlit lamps on the corners, cables and bolts; it fills its square cell almost edge to edge. (2) the exact same generator powered up: the glass dome blazing with bright cyan energy and a crackling lightning coil, the corner lamps glowing orange, small sparks. (3) the same unpowered generator, with only the left half of its corner lamps lit (half charged).\nMiddle row: (4) an energy core: a glowing bright cyan-green energy orb held in a small round metal cradle with orange clamps, compact and roughly round like a gem. (5) the same energy core seen slightly differently, more glow. (6) a docking socket seen from above: a flat round metal hatch with a glowing cyan ring and an arrow pointing down into it.\nBottom row: (7) a square cage of thick riveted dark-steel bars with orange bolts at the corners, like a lock over a game tile: only a frame and bars, completely empty and open inside so the green background shows clearly through the middle and between the bars. (8) the same cage, dented and cracked, one bar bent. (9) the same cage made of icy violet crystal bars, empty and open inside.\nNo text, no letters, no numbers, no extra objects, flat solid pure green background everywhere."
+      }
+    },
+    {
+      "id": "hand",
+      "role": "tutorial pointer hand (guided moves)",
+      "path": "assets/ui/tutorial/hand.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "153x256",
+        "alpha": true,
+        "anchor": "fingertip at (0.22, 0.0) of its size (BoardView.HAND_TIP)",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 7da7e9e7-87f2-4fdb-a909-8740ad7c1ddd, output 198d1457-bab8-4256-8de1-17ce77d8d8fe), source docs/art/sources/hand.png, keyed green",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A tutorial pointer hand for a cute mobile match-3 puzzle game: ONE cartoon hand in a white glove, index finger extended and pointing straight up ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "pulsar",
+      "role": "Pulsar power-up (4 in a row)",
+      "path": "assets/ui/specials/pulsar.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference f98b95bc-4d5b-4c61-83d1-2ecb4c988fb5, output d63fff6d-9e7b-441b-abb3-4cf7bddb6322), sheet docs/art/sources/powerups.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 power-up pieces for a cute space-mining match-3 puzzle game ... PULSAR, NOVA, SCOUT DRONE, BLACK HOLE, TARGET LOCK reticle ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "nova",
+      "role": "Nova power-up (L/T)",
+      "path": "assets/ui/specials/nova.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference f98b95bc-4d5b-4c61-83d1-2ecb4c988fb5, output d63fff6d-9e7b-441b-abb3-4cf7bddb6322), sheet docs/art/sources/powerups.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 power-up pieces for a cute space-mining match-3 puzzle game ... PULSAR, NOVA, SCOUT DRONE, BLACK HOLE, TARGET LOCK reticle ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "blackhole",
+      "role": "Black hole power-up (5 in a row)",
+      "path": "assets/ui/specials/blackhole.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference f98b95bc-4d5b-4c61-83d1-2ecb4c988fb5, output d63fff6d-9e7b-441b-abb3-4cf7bddb6322), sheet docs/art/sources/powerups.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 power-up pieces for a cute space-mining match-3 puzzle game ... PULSAR, NOVA, SCOUT DRONE, BLACK HOLE, TARGET LOCK reticle ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "drone",
+      "role": "Scout drone power-up (2x2)",
+      "path": "assets/ui/specials/drone.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference f98b95bc-4d5b-4c61-83d1-2ecb4c988fb5, output d63fff6d-9e7b-441b-abb3-4cf7bddb6322), sheet docs/art/sources/powerups.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 power-up pieces for a cute space-mining match-3 puzzle game ... PULSAR, NOVA, SCOUT DRONE, BLACK HOLE, TARGET LOCK reticle ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "reticle",
+      "role": "drone lock-on reticle",
+      "path": "assets/ui/specials/reticle.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference f98b95bc-4d5b-4c61-83d1-2ecb4c988fb5, output d63fff6d-9e7b-441b-abb3-4cf7bddb6322), sheet docs/art/sources/powerups.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-19",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 power-up pieces for a cute space-mining match-3 puzzle game ... PULSAR, NOVA, SCOUT DRONE, BLACK HOLE, TARGET LOCK reticle ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "web",
+      "role": "webbed floor tile (painted over the soil tile)",
+      "path": "assets/obstacles/web.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI muse-image (inference d396f2d3-88b1-41be-a6d5-dc92845b1e05, output 35f4435b-e34b-4327-b37a-fe88c0d82bbb), sheet docs/art/sources/web_tiles_muse.png, option 2 (picked by the user from 18 shown in game)",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "9 DIFFERENT design options for one board tile ... a floor tile COMPLETELY COVERED by woven spider silk ... (2) a glowing pale lavender silk sheet with bright white web strands (3) dense fluffy cotton-candy silk, white and pink, with web strands"
+      }
+    },
+    {
+      "id": "web_thick",
+      "role": "webbed floor tile (painted over the soil tile) , thick",
+      "path": "assets/obstacles/web_thick.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI muse-image (inference d396f2d3-88b1-41be-a6d5-dc92845b1e05, output 35f4435b-e34b-4327-b37a-fe88c0d82bbb), sheet docs/art/sources/web_tiles_muse.png, option 3 (picked by the user from 18 shown in game)",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "9 DIFFERENT design options for one board tile ... a floor tile COMPLETELY COVERED by woven spider silk ... (2) a glowing pale lavender silk sheet with bright white web strands (3) dense fluffy cotton-candy silk, white and pink, with web strands"
+      }
+    },
+    {
+      "id": "web_icon",
+      "role": "web goal icon",
+      "path": "assets/obstacles/web_icon.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2d4caa4f-c40c-4dd2-ba0f-c05a8c582cd1, output 9eff1964-c3d4-4343-94fa-159680806c3e), sheet docs/art/sources/webs.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 pieces ... CAVE WEB seen from straight above ... THICK WEB ... cute alien cave spider ... spider nest ... web emblem icon ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "web_puff",
+      "role": "web torn effect (spare)",
+      "path": "assets/obstacles/web_puff.png",
+      "status": "spare",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2d4caa4f-c40c-4dd2-ba0f-c05a8c582cd1, output 9eff1964-c3d4-4343-94fa-159680806c3e), sheet docs/art/sources/webs.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 pieces ... CAVE WEB seen from straight above ... THICK WEB ... cute alien cave spider ... spider nest ... web emblem icon ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "spider",
+      "role": "cave spider (for the spider nest, later)",
+      "path": "assets/obstacles/spider.png",
+      "status": "spare",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2d4caa4f-c40c-4dd2-ba0f-c05a8c582cd1, output 9eff1964-c3d4-4343-94fa-159680806c3e), sheet docs/art/sources/webs.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 pieces ... CAVE WEB seen from straight above ... THICK WEB ... cute alien cave spider ... spider nest ... web emblem icon ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "nest",
+      "role": "spider nest (spreader, later)",
+      "path": "assets/obstacles/nest.png",
+      "status": "spare",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2d4caa4f-c40c-4dd2-ba0f-c05a8c582cd1, output 9eff1964-c3d4-4343-94fa-159680806c3e), sheet docs/art/sources/webs.png, keyed with docs/art/tools/key_noscipy.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "A sprite sheet of 9 pieces ... CAVE WEB seen from straight above ... THICK WEB ... cute alien cave spider ... spider nest ... web emblem icon ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "rock_burst",
+      "role": "rock break burst (stone pieces flying apart)",
+      "path": "assets/obstacles/rock_burst.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2773b96e-fb77-44ec-b340-26989694d886, output fb33711f-0819-4329-9d34-2cbd046918cb), sheet docs/art/sources/rock_burst.png, green keyed without the largest-blob filter (scattered pieces)",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "9 effect pieces ... ROCK SHATTER BURST ... rock dust puff ... impact flash ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "rock_dust",
+      "role": "rock break dust cloud",
+      "path": "assets/obstacles/rock_dust.png",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2773b96e-fb77-44ec-b340-26989694d886, output 1682f209-e6d6-4791-89f5-f8595e4e5ded), sheet docs/art/sources/rock_fx.png, green keyed without the largest-blob filter (scattered pieces)",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "9 effect pieces ... ROCK SHATTER BURST ... rock dust puff ... impact flash ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "rock_flash",
+      "role": "impact flash (spare)",
+      "path": "assets/obstacles/rock_flash.png",
+      "status": "spare",
+      "technical": {
+        "dimensions": "256x256",
+        "alpha": true,
+        "anchor": "centre",
+        "frames": 1,
+        "filtering": "linear+mipmaps"
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI gemini-3.1-flash-image (inference 2773b96e-fb77-44ec-b340-26989694d886, output 1682f209-e6d6-4791-89f5-f8595e4e5ded), sheet docs/art/sources/rock_fx.png, green keyed without the largest-blob filter (scattered pieces)",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "9 effect pieces ... ROCK SHATTER BURST ... rock dust puff ... impact flash ... flat solid pure green background"
+      }
+    },
+    {
+      "id": "rockbreak",
+      "role": "SFX: rockbreak (3 takes)",
+      "path": "assets/sfx/rockbreak_0..2.wav",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "44.1 kHz mono 16-bit",
+        "alpha": false,
+        "anchor": "",
+        "frames": 3,
+        "filtering": ""
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI mirelo-sfx-2 (inference 3f03a6e8-837f-4a65-862f-d4bebdc8d44d), processed with tools/audio/sfx_proc.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Stylised mobile puzzle game sound: a chunky stone block shattering into pieces, a satisfying crunchy crack followed by small pebbles scattering and a light dusty crumble, crisp, punchy and bright, cartoon-like, short. Dry, no reverb, no music."
+      }
+    },
+    {
+      "id": "rockcrack",
+      "role": "SFX: rockcrack (3 takes)",
+      "path": "assets/sfx/rockcrack_0..2.wav",
+      "status": "in-game",
+      "technical": {
+        "dimensions": "44.1 kHz mono 16-bit",
+        "alpha": false,
+        "anchor": "",
+        "frames": 3,
+        "filtering": ""
+      },
+      "source": {
+        "kind": "generated",
+        "url_or_tool": "Layer AI mirelo-sfx-2 (inference e4601469-727e-493a-b5ac-37be75d0786d), processed with tools/audio/sfx_proc.py",
+        "creator": "Claude Code for urunsiyabend",
+        "created_at": "2026-10-20",
+        "license": "Generated in the owner's Layer workspace",
+        "attribution": "",
+        "prompt_or_source_record": "Stylised mobile puzzle game sound: a single sharp crack in a stone block, the rock splitting a little but not breaking, a crisp chunky click-crack with a tiny pebble tick, short and punchy. Dry, no reverb, no music."
+      }
+    }
+  ]
+}
