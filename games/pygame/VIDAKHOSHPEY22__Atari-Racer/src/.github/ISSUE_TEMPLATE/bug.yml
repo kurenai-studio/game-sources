@@ -1,0 +1,59 @@
+name: Bug Report
+description: Something is not working.
+labels: ["bug"]
+assignees: ["TheM1ddleM1n"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 📌 Project Environment Note
+        * **Target File:** `atari.py` (This template will only apply to bugs found in `atari.py`)
+        * **Required Python Version:** `3.13`
+        
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How do we make the bug happen?
+      placeholder: |
+        1. Ran atari.py in my own terminal
+        2. Saw the Pygame window pop up
+        3. Game couldn't run because of an error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+      placeholder: |
+        The game should have no errors
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: Tell me what happened?
+      placeholder: |
+        The game crashed with a Syntax/Logic Error
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Error Output
+      description: Paste any error messages from your terminal.
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running?
+      placeholder: e.g. Windows 11, MacOS Sequoia, Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: "Anything else? Pro tip: 'please fix this bug' will NOT help."
