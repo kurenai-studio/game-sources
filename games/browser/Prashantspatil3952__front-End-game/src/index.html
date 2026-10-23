@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>EVOLVE — Offline Canvas Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game" aria-label="Evolve game">
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <canvas id="uiCanvas" aria-hidden="true"></canvas>
+
+    <section class="hud" aria-live="polite">
+      <p class="top-copy">With every bounce, the ball evolves!...</p>
+      <div class="stats" aria-label="Game statistics">
+        <div class="stat">
+          <span class="stat-value" id="bounceCount">0</span>
+          <span class="stat-label">BOUNCES</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stageValue">I</span>
+          <span class="stat-label">EVOLUTION</span>
+        </div>
+      </div>
+      <p class="bottom-copy">Did you recognize the music?</p>
+      <p class="control-copy">SPACE / TAP — PAUSE · RESUME</p>
+
+      <button id="pauseButton" class="icon-button" type="button" aria-label="Pause game" title="Pause / Resume">Ⅱ</button>
+      <button id="resetButton" class="reset-button" type="button">RESET</button>
+    </section>
+
+    <div id="pauseOverlay" class="pause-overlay" hidden>
+      <div class="pause-card">
+        <div class="pause-mark">Ⅱ</div>
+        <h1>PAUSED</h1>
+        <p>Your run is frozen exactly where you left it.</p>
+        <button id="resumeButton" type="button">RESUME</button>
+        <small>Press SPACE to continue</small>
+      </div>
+    </div>
+  </main>
+
+  <script src="game.js" defer></script>
+</body>
+</html>
