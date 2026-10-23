@@ -1,0 +1,171 @@
+[gd_scene load_steps=9 format=3 uid="uid://dwl37y77358r2"]
+
+[ext_resource type="PackedScene" uid="uid://f31q7ameb6hm" path="res://scenes/hero.tscn" id="1_2n3he"]
+[ext_resource type="Script" path="res://scenes/game.gd" id="1_17qkh"]
+[ext_resource type="PackedScene" uid="uid://dfg2gs8kx1te8" path="res://scenes/terrain/terrain_chunk_1.tscn" id="2_kfbcc"]
+[ext_resource type="Texture2D" uid="uid://cdq2ghbi8fy0l" path="res://resources/sprites/Environment/Sol.png" id="4_g6on4"]
+[ext_resource type="PackedScene" uid="uid://df4mxycb4gc4m" path="res://scenes/end_screen.tscn" id="5_52ho5"]
+
+[sub_resource type="Animation" id="Animation_xw7t4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Infinity/Sun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(883, 281)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../CanvasLayer/SunsetTint:color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 0.00392157, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_afjr1"]
+resource_name = "sunset"
+length = 300.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Infinity/Sun:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 300),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(883, 281), Vector2(883, 800)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../CanvasLayer/SunsetTint:color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 200, 240.9, 270.2, 300),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 0.00392157, 0, 0), Color(1, 0.00392157, 0, 0), Color(0.533333, 0.368627, 0, 0.270588), Color(0.419608, 0.0196078, 0.00392157, 0.54902), Color(0, 0, 0, 0.839216)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_jq34w"]
+_data = {
+"RESET": SubResource("Animation_xw7t4"),
+"sunset": SubResource("Animation_afjr1")
+}
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_17qkh")
+
+[node name="Lore" type="Label" parent="."]
+offset_left = -251.0
+offset_top = 121.0
+offset_right = 1680.0
+offset_bottom = 398.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 100
+text = "Daylight plant vampires 
+want you death!"
+horizontal_alignment = 1
+
+[node name="Tutorial" type="Label" parent="."]
+offset_left = 1928.0
+offset_top = 65.0
+offset_right = 3859.0
+offset_bottom = 202.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 100
+text = "Press Space to jump"
+
+[node name="Cheer1" type="Label" parent="."]
+offset_left = 2799.0
+offset_top = 235.0
+offset_right = 4730.0
+offset_bottom = 372.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Escape them!"
+
+[node name="Tutorial2" type="Label" parent="."]
+offset_left = 2721.0
+offset_top = 343.0
+offset_right = 4652.0
+offset_bottom = 480.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 100
+text = "Pick your build carefully"
+
+[node name="Cheer2" type="Label" parent="."]
+offset_left = 3269.0
+offset_top = 507.0
+offset_right = 5200.0
+offset_bottom = 644.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Slaughter them!"
+
+[node name="Tutorial3" type="Label" parent="."]
+offset_left = 4404.0
+offset_top = 127.0
+offset_right = 6335.0
+offset_bottom = 264.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 100
+text = "And survive till dusk.."
+
+[node name="Terrain" type="Node2D" parent="."]
+
+[node name="TerrainChunk1" parent="Terrain" instance=ExtResource("2_kfbcc")]
+
+[node name="Hero" parent="." instance=ExtResource("1_2n3he")]
+position = Vector2(974, 593)
+
+[node name="Bullets" type="Node2D" parent="."]
+
+[node name="SunsetAnimator" type="AnimationPlayer" parent="."]
+root_node = NodePath("../ParallaxBackground")
+libraries = {
+"": SubResource("AnimationLibrary_jq34w")
+}
+autoplay = "sunset"
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+
+[node name="Infinity" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0, 0)
+
+[node name="Sun" type="Sprite2D" parent="ParallaxBackground/Infinity"]
+position = Vector2(883, 281)
+texture = ExtResource("4_g6on4")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="SunsetTint" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.00392157, 0, 0)
+
+[node name="EndScreen" parent="CanvasLayer" instance=ExtResource("5_52ho5")]
+visible = false
+
+[node name="SunsetTime" type="Timer" parent="."]
+
+[connection signal="died" from="Hero" to="." method="lose"]
+[connection signal="timeout" from="SunsetTime" to="." method="win"]
