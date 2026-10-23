@@ -1,0 +1,203 @@
+name: Test
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    name: Headless smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          run_smoke: "true"
+
+  script-tests:
+    name: Script test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          run_tests: "true"
+
+  release-tag-validation:
+    name: Release tag validation (workflow inputs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Run release tag validation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tests/test_release_tag_validation.sh
+
+  macos-validation:
+    name: macOS validation
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: macos
+          run_smoke: "true"
+          run_tests: "true"
+
+  export-validation:
+    name: Export validation (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Export Linux build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export-validation/linux
+          "${{ steps.godot.outputs.godot_binary }}" \
+            --headless --path . --export-release "Linux/X11" ./build/export-validation/linux/windowstead.x86_64
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="build/export-validation/linux/windowstead.x86_64"
+          PCK="build/export-validation/linux/windowstead.pck"
+          if [ ! -s "$BINARY" ]; then
+            echo "::error::Export binary not found or empty: $BINARY"
+            exit 1
+          fi
+          if [ ! -s "$PCK" ]; then
+            echo "::error::Export PCK not found or empty: $PCK"
+            exit 1
+          fi
+          echo "Export validation passed — binary and PCK present"
+
+  export-validation-windows:
+    name: Export validation (Windows)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Export Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export-validation/windows
+          "${{ steps.godot.outputs.godot_binary }}" \
+            --headless --path . --export-release "Windows Desktop" ./build/export-validation/windows/windowstead.exe
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="build/export-validation/windows/windowstead.exe"
+          PCK="build/export-validation/windows/windowstead.pck"
+          if [ ! -s "$BINARY" ]; then
+            echo "::error::Export binary not found or empty: $BINARY"
+            exit 1
+          fi
+          if [ ! -s "$PCK" ]; then
+            echo "::error::Export PCK not found or empty: $PCK"
+            exit 1
+          fi
+          echo "Export validation passed — binary and PCK present"
+
+  export-validation-macos:
+    name: Export validation (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: macos
+          install_templates: "true"
+
+      - name: Export macOS build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export-validation/macos
+          "${{ steps.godot.outputs.godot_binary }}" \
+            --headless --path . --export-release "macOS" ./build/export-validation/macos/windowstead.app
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/export-validation/macos/windowstead.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::Export app bundle not found: $APP"
+            exit 1
+          fi
+          if [ ! -f "$APP/Contents/MacOS/windowstead" ]; then
+            echo "::error::App bundle missing executable: $APP/Contents/MacOS/windowstead"
+            exit 1
+          fi
+          echo "Export validation passed — app bundle present with executable"
+
+  export-validation-web:
+    name: Export validation (Web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Export Web build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export-validation/web
+          "${{ steps.godot.outputs.godot_binary }}" \
+            --headless --path . --export-release "Web" ./build/export-validation/web/windowstead.html
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIR="build/export-validation/web"
+          MISSING=0
+          for ext in html pck wasm js; do
+            ARTIFACT="$DIR/windowstead.$ext"
+            if [ ! -s "$ARTIFACT" ]; then
+              echo "::error::Expected Web export artifact missing or empty: $ARTIFACT"
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" -ne 0 ]; then
+            echo "::error::Web export validation failed — see missing artifacts above"
+            exit 1
+          fi
+          echo "Export validation passed — .html/.pck/.wasm/.js all present"

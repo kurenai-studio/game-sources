@@ -1,0 +1,166 @@
+# Spec — Windowstead
+
+## Gameplay overview
+
+Windowstead is a tiny autonomous colony sim running as a desktop-resident companion. Workers — **Jun** and **Mara** — manage resources, construct buildings, and keep the settlement fed. The player sets priorities and places buildings; the workers handle the rest.
+
+## Resource system
+
+Three resources: **wood**, **stone**, **food**.
+
+Resources exist in two pools:
+- **Resources** — the player's stockpile (central storage). Workers haul here first.
+- **Harvested** — tracked separately, used for the food economy and goal progress.
+
+### Resource nodes
+
+The world grid is seeded with:
+- **Trees** (wood) — 6 units each, deterministic placement via hash function
+- **Rocks** (stone) — 5 units each
+- **Berries** (food) — 4 units each
+
+Nodes deplete as workers gather. Empty nodes become `ground` tiles.
+
+### Ambient events
+
+Every 66 ticks (~1 minute at normal speed), a random event fires:
+1. **Trail mix** — Food +2 from a neighbor
+2. **Break** — A random worker takes a 6-tick break
+3. **Supply drop** — A new resource node spawns on an empty tile
+
+## Economy / building costs
+
+| Structure | Wood | Stone | Unlock requirement |
+|-----------|------|-------|-------------------|
+| Hut | 6 | 2 | None (always available) |
+| Workshop | 4 | 6 | Hut must be complete |
+| Garden | 3 | 1 | Workshop must be complete |
+
+### Structure bonuses (on completion)
+
+| Structure | Bonus |
+|-----------|-------|
+| Hut | Food +1, +2 worker capacity |
+| Workshop | Unlocks garden; +0.16 build speed to other structures |
+| Garden | Food +3 |
+
+### Build process
+
+1. Player clicks a build button → placement mode activates
+2. Player clicks an empty `ground` tile → build is queued
+3. Workers follow priority order to complete builds:
+   - **Gather** resources from nodes
+   - **Haul** resources to stockpile
+   - **Deliver** resources to the build site
+   - **Build** — once all costs are delivered, workers spend ticks on progress
+
+Build speed: base 0.34 progress per tick. Workshop completion adds +0.16 to non-workshop builds. Food shortages apply a slowdown factor (see below).
+
+## Worker AI
+
+### Task priority
+
+Workers choose tasks by priority order, configurable via UI (rank up/down for each task type). Default: **build → haul → gather**.
+
+Colony stances (see `colony_stance.gd`) can nudge task selection without requiring manual re-ordering.
+
+### Task selection
+
+For each priority level, workers:
+1. Gather available tasks of that kind
+2. Sort by Manhattan distance (closest first)
+3. Pick the nearest task
+
+### Task types
+
+| Kind | Behavior |
+|------|---------|
+| **Gather** | Move to resource node, collect 1 unit, then haul to stockpile |
+| **Haul** | Carry resource from stockpile to build site (if build exists) or back to stockpile |
+| **Build** | Move to building site, add progress per tick |
+
+### Worker states
+
+- **Working** — executing a task
+- **Idle** — no task assigned (rare — workers always find something to do)
+- **Breaking** — `break_ticks` > 0, skipped each tick until it reaches 0
+
+### Movement
+
+Workers move one tile per tick along the shortest Manhattan path. Position interpolation is animated on `WorldOverlay` using eased lerp between `prev_pos` and `pos`.
+
+### Worker capacity
+
+Base worker cap: **2** (Jun and Mara). Each completed **Hut** adds +2 to the cap. Workers cannot be recruited beyond the current cap.
+
+### Recruitment
+
+Recruiting a new worker has no direct cost, but triggers a food tradeoff:
+- The first 2 workers are free (BASE_WORKER_CAP = 2).
+- Each worker above the threshold consumes **1 food** every **10 ticks**.
+- Recruiting beyond housing capacity shows a warning and requires building more huts.
+
+## Food economy
+
+### Food upkeep
+
+Workers beyond the base cap (2) consume 1 food per cycle (every 10 ticks). This is tracked via `Constants.FOOD_PER_EXTRA_WORKER` and `Constants.FOOD_UPKEEP_INTERVAL_TICKS`.
+
+### Low-food slowdown
+
+Food levels affect worker speed through soft penalties:
+
+| Food level | Effect |
+|------------|--------|
+| > 3 | Normal speed (100%) |
+| ≤ 3, > 1 | Gradual slowdown from 50% to 100% (linear interpolation) |
+| ≤ 1 | Workers pause (0% speed), except when gathering food |
+
+Thresholds: `LOW_FOOD_THRESHOLD := 3`, `STARVATION_FOOD_THRESHOLD := 1`.
+
+## Goal system
+
+### Rotating goals
+
+A rotating goal cycle provides short-term objectives with rewards. Goals are selected deterministically from a fixed catalog (`rotating_goal.gd`):
+
+| Goal ID | Type | Target | Reward |
+|---------|------|--------|--------|
+| `gather_wood` | resource | 10 wood | +1 food |
+| `gather_stone` | resource | 5 stone | +1 food |
+| `gather_food` | resource | 8 food | +1 food |
+| `build_hut` | build | 1 hut | haul speed +10% |
+| `build_workshop` | build | 1 workshop | next recruit -1 food |
+| `build_garden` | build | 1 garden | ambient event improves |
+| `any_build` | build_complete | any 1 | +1 food |
+
+Goal types: `resource` (tracked via harvested amounts), `build` (count of completed structures), `build_complete` (total builds).
+
+Once a goal is completed, the next non-completed goal from the catalog becomes active. Completed goal IDs are tracked to prevent immediate repeats.
+
+### Milestones
+
+Fixed early-game milestones (`milestone_manager.gd`) sit above rotating micro-goals, providing longer-term direction during the colony's first hours.
+
+## Tick system
+
+- **Base tick**: 0.9 seconds
+- **Speed settings**: Slow (×1.6), Normal (×1.0), Fast (×0.65)
+- **Focus mode**: ×2.5 multiplier (slows everything)
+- **Event interval**: Every 66 ticks (~60 seconds at normal speed)
+
+## UI layout
+
+The game uses two dock orientation families selected when starting a colony:
+- **Bottom** — primary horizontal strip, 32×5 logical grid, controls anchored to the right
+- **Side** — vertical strip on the left or right edge, 10×24 logical grid, controls anchored near the bottom
+
+Each family has different tile sizes, padding, and overlay placement. Tile pixel size can scale from zoom and available work area, but the logical grid shape is saved with the colony and is not changed mid-game.
+
+## Save / load
+
+- Auto-saves every tick (via `persist()`).
+- Manual save via UI button.
+- Load checks version compatibility, saved dock style, and layout bounds.
+- New game clears all state, asks for dock style, and re-seeds the world.
+- Save format version: 2 (added goal system fields in migration from v1).
