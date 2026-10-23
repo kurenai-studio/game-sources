@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "name": "Debug pong-sdl",
+            "program": "${workspaceFolder:pong-sdl}/.build/debug/pong-sdl",
+            "args": [],
+            "cwd": "${workspaceFolder:pong-sdl}",
+            "preLaunchTask": "swift: Build Debug pong-sdl"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "name": "Release pong-sdl",
+            "program": "${workspaceFolder:pong-sdl}/.build/release/pong-sdl",
+            "args": [],
+            "cwd": "${workspaceFolder:pong-sdl}",
+            "preLaunchTask": "swift: Build Release pong-sdl"
+        }
+    ]
+}
