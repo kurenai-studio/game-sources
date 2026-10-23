@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://b0q5vd8k2h61f"]
+
+[ext_resource type="PackedScene" uid="uid://bxmrcspoxnn64" path="res://assets/quaternius/Raft/model/raft.glb" id="1_fewt6"]
+[ext_resource type="Texture2D" uid="uid://d1dl078j1kl4u" path="res://assets/quaternius/Raft/model/raft_raft_color_pallete.png" id="2_lwt1f"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bksbd"]
+size = Vector3(1.39642, 0.608811, 2.90103)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ro2p"]
+albedo_texture = ExtResource("2_lwt1f")
+
+[node name="Boat" type="StaticBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+shape = SubResource("BoxShape3D_bksbd")
+
+[node name="raft" parent="." instance=ExtResource("1_fewt6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+
+[node name="Raft" parent="raft" index="0"]
+material_override = SubResource("StandardMaterial3D_6ro2p")
+
+[editable path="raft"]

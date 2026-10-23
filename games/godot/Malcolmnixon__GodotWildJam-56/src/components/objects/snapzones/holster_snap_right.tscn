@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://2w6vn1n6hjrf"]
+
+[ext_resource type="PackedScene" uid="uid://ce7vysyvondf8" path="res://addons/godot-xr-tools/objects/snap_zone.tscn" id="1_5jqk0"]
+
+[node name="HolsterSnapRight" type="Node3D"]
+transform = Transform3D(-1, -8.74228e-08, 0, 8.74228e-08, -1, 0, 0, 0, 1, 0.0693851, -0.0587159, 0.204011)
+
+[node name="SnapZone" parent="." instance=ExtResource("1_5jqk0")]
+grab_distance = 0.0
+snap_require = "KnifeHolster"
+snap_exclude = "WatchHolster"
+grab_exclude = "RightHandFunctionPickup"
+
+[node name="SnapZone2" parent="." instance=ExtResource("1_5jqk0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.044, -0.004, -0.021)
+grab_distance = 0.0
+snap_require = "WatchHolster"
+snap_exclude = "KnifeHolster"
+grab_exclude = "RightHandFunctionPickup"
