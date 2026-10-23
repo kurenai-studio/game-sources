@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Space Miner</title>
+  </head>
+  <body>
+    <main id="game">
+      <div id="hud" aria-live="polite">
+        <div class="hud-row">
+          <span>Score</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="hud-row">
+          <span>Crystals</span>
+          <strong id="crystals">0</strong>
+        </div>
+        <div class="hud-row">
+          <span>Speed</span>
+          <strong id="speed">1.0x</strong>
+        </div>
+      </div>
+
+      <section id="game-over" class="hidden">
+        <h1>Game Over</h1>
+        <p id="final-score">Score: 0</p>
+        <button id="restart-button" type="button">Restart</button>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
