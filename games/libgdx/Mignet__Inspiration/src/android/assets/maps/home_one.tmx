@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="22" height="15" tilewidth="32" tileheight="32" nextobjectid="8">
+ <properties>
+  <property name="mapName" value="Home1"/>
+ </properties>
+ <tileset firstgid="1" name="tile06" tilewidth="32" tileheight="32" tilecount="400" columns="20">
+  <image source="tiles/tile06.png" width="640" height="640"/>
+  <tile id="300">
+   <animation>
+    <frame tileid="261" duration="160"/>
+    <frame tileid="301" duration="160"/>
+   </animation>
+  </tile>
+  <tile id="320">
+   <animation>
+    <frame tileid="281" duration="160"/>
+    <frame tileid="321" duration="160"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="401" name="TOOLS" tilewidth="32" tileheight="32" tilecount="9" columns="9">
+  <image source="tiles/TOOLS.png" width="288" height="32"/>
+ </tileset>
+ <layer name="ground" width="22" height="15">
+  <data encoding="base64" compression="zlib">
+   eJzLZmBgyMaDzxOQx4aXAXE9AfyYCDXoGGTuZAL4OxFq0DHIXE0gDobS2DA3IwODLIkYZG4qEKfhMXc3A3nm4jKP2ubKovHPU8lcDzT+YxqZ+53MdEYofEHpgdx0hg9PolF6WDbIzG2HYmSz2gcxBgCmV2rI
+  </data>
+ </layer>
+ <layer name="floor" width="22" height="15">
+  <data encoding="base64" compression="zlib">
+   eJyV0r2OAVEUB/AzYoNKZUOUahpqiWr7Tah4AR8JLyAkRKuwD7DWKyDEC1B4BMkkCpSSqabxv9k7cVx3mPtPfpl7TiZnPnJces5B0zNN3CJyld5VqX9hCitYs/4G/iQ1Get5dhZ1xLrXc1iADXvZs6WlZDPqbJEUriVIs7lb2IEDTWjJs652NO8dJD3ov6i9VKEGEYhC7M3cCfy8qL20oQNp+v83Bc0934ZEBjCUZ8dnbsOQSAjErw3DB+TZvJzmGTwV8t+zT0hAElLw9Waut0tlqNPjnpWlIO/EU6THfeqS/56NDebq0iP9ns0M5xSVWuyZrbnvKF1Y78z6J3YO6uTzDNEfGX6HmhuW1FfP
+  </data>
+ </layer>
+ <layer name="block" width="22" height="15">
+  <data encoding="base64" compression="zlib">
+   eJybxMhAMzCJEYJxyVHDbJg5yHxiMCH3YDMfmxwlduLzFy4+NrfgModUgMuP1DQXlxgtzCU3ngjFH7lxS6o/qZm2CKkhNl8QkifWDGLClRAgtwwhJzwBENdCnQ==
+  </data>
+ </layer>
+ <objectgroup name="npc">
+  <object id="3" name="mother" x="32" y="256" width="32" height="32">
+   <properties>
+    <property name="Dir" value="RIGHT"/>
+    <property name="State" value="FIXED"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup name="event">
+  <object id="1" name="door101" gid="408" x="96" y="480" width="32" height="32">
+   <properties>
+    <property name="CMD" value="MapTo,yaka_port,8,20,DOWN"/>
+   </properties>
+  </object>
+  <object id="2" name="door101" gid="408" x="128" y="480" width="32" height="32">
+   <properties>
+    <property name="CMD" value="MapTo,yaka_port,9,20,DOWN"/>
+   </properties>
+  </object>
+  <object id="4" name="door102" gid="408" x="0" y="96" width="32" height="32">
+   <properties>
+    <property name="CMD" value="MapTo,home_two,4,12,RIGHT"/>
+   </properties>
+  </object>
+  <object id="5" name="door102" gid="408" x="0" y="64" width="32" height="32">
+   <properties>
+    <property name="CMD" value="MapTo,home_two,4,12,RIGHT"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer name="ceiling" width="22" height="15" opacity="0.7">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFIBAExfQGuynUzw7EHEDMSWVz8YEgEjGxIJtEDAOM5Htl0IFJNDJ3GY3MpRV4DsTtJGJ0/bgAOeYCAO23Gr4=
+  </data>
+ </layer>
+</map>
