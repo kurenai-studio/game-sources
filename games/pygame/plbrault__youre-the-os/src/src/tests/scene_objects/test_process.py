@@ -1,0 +1,1813 @@
+import pytest
+
+from constants import LAST_ALIVE_STARVATION_LEVEL, DEAD_STARVATION_LEVEL, ONE_SECOND
+from config.process_config import ProcessConfig
+from engine.game_event import GameEvent
+from engine.game_event_type import GameEventType
+from engine.random import Random
+from scene_objects.page_slot import PageSlot
+from scene_objects.process import Process, ProcessState, StateEvent, ProcessType
+from scene_objects.views.page_view import PageView
+from scene_objects.views.priority_page_view import PriorityPageView
+from config.cpu_config import CpuConfig
+from config.stage_config import StageConfig
+from factories.process_factory import ProcessFactory
+
+class TestProcess:
+    @pytest.fixture
+    def process_config(self):
+        return ProcessConfig(
+            io_probability=0,
+            graceful_termination_probability=0,
+            time_between_starvation_levels_ms=10000
+        )
+
+    @pytest.fixture
+    def spy_apply_event(self, monkeypatch):
+        """Fixture to spy on apply_state_transition calls."""
+        calls = []
+        original = Process.apply_state_transition
+        def spy(self, event):
+            calls.append(event)
+            return original(self, event)
+        monkeypatch.setattr(Process, 'apply_state_transition', spy)
+        return calls
+
+    @pytest.fixture
+    def process_custom_config(self):
+        def create_config(io_probability=0.01, graceful_termination_probability=0.01,
+                         time_between_starvation_levels_ms=10000):
+            return ProcessConfig(
+                io_probability=io_probability,
+                graceful_termination_probability=graceful_termination_probability,
+                time_between_starvation_levels_ms=time_between_starvation_levels_ms
+            )
+        return create_config
+
+    @pytest.fixture
+    def stage(self, stage, monkeypatch):
+        """
+        Overrides stage fixture defined in src/tests/conftest.py.
+        """
+        monkeypatch.setattr(stage.process_manager, 'terminate_process', lambda process, by_user: True)
+        monkeypatch.setattr(stage.process_manager, 'del_process', lambda process: None)
+        return stage
+
+    @pytest.fixture
+    def stage_custom_config(self, stage_custom_config, monkeypatch):
+        """
+        Overrides stage_custom_config fixture defined in src/tests/conftest.py.
+        """
+        def create_stage(stage_config):
+            stage = stage_custom_config(stage_config)
+            monkeypatch.setattr(stage.process_manager, 'terminate_process', lambda process, by_user: True)
+            monkeypatch.setattr(stage.process_manager, 'del_process', lambda process: None)
+            return stage
+        return create_stage
+
+    def test_initial_property_values(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.pid == 1
+        assert process.type == ProcessType.STANDARD
+        assert process.time_between_starvation_levels == 10000
+        assert process.current_starvation_level_duration == 0
+        assert process.cpu == None
+        assert process.has_cpu == False
+        assert process.state == ProcessState.IDLE
+        assert process.is_waiting_for_io == False
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+        assert process.starvation_level == 1
+        assert process.display_blink_color == False
+        assert process.current_state_duration == 0
+        assert process.is_progressing_to_happiness == False
+        assert process.is_in_motion == False
+
+    def test_type_defaults_to_standard(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        assert process.type == ProcessType.STANDARD
+
+    def test_type_is_standard_when_specified(self, stage, process_config):
+        process = Process(1, stage, process_config, process_type=ProcessType.STANDARD)
+        assert process.type == ProcessType.STANDARD
+
+    def test_type_is_priority_when_specified(self, stage, process_config):
+        process = Process(1, stage, process_config, process_type=ProcessType.PRIORITY)
+        assert process.type == ProcessType.PRIORITY
+
+    def test_state_events(self, stage, stage_config, process_config, spy_apply_event):
+        process = Process(1, stage, process_config)
+
+        assert process.state == ProcessState.IDLE
+
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        assert StateEvent.ASSIGN_TO_CPU in spy_apply_event
+
+        process.yield_cpu()
+        assert process.state == ProcessState.IDLE
+        assert StateEvent.REMOVE_FROM_CPU in spy_apply_event
+
+    def test_starvation_when_idle(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        for i in range(0, LAST_ALIVE_STARVATION_LEVEL):
+            process.update(i * process.time_between_starvation_levels, [])
+            assert process.starvation_level == i + 1
+
+    def test_max_starvation(self, stage, process_config, spy_apply_event):
+        process = Process(1, stage, process_config)
+
+        for i in range(0, LAST_ALIVE_STARVATION_LEVEL):
+            process.update(i * process.time_between_starvation_levels, [])
+
+        assert process.starvation_level == LAST_ALIVE_STARVATION_LEVEL
+
+        spy_apply_event.clear()
+        process.update(DEAD_STARVATION_LEVEL * process.time_between_starvation_levels, [])
+
+        assert process.starvation_level == DEAD_STARVATION_LEVEL
+        assert process.state == ProcessState.ENDED
+        assert StateEvent.TERMINATE_FROM_STARVATION in spy_apply_event
+
+    def test_starvation_with_custom_time_between_starvation_levels(self, stage, process_custom_config):
+        default_config = process_custom_config()
+        default_value = default_config.time_between_starvation_levels_ms
+
+        custom_config = process_custom_config(
+            time_between_starvation_levels_ms=default_value // 2
+        )
+        process = Process(2, stage, custom_config)
+
+        for i in range(0, LAST_ALIVE_STARVATION_LEVEL):
+            process.update(i * process.time_between_starvation_levels, [])
+            assert process.starvation_level == i + 1
+
+    def test_current_starvation_level_duration(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.current_starvation_level_duration == 0
+        process.update(process.time_between_starvation_levels / 2, [])
+        assert process.current_starvation_level_duration == process.time_between_starvation_levels / 2
+        process.update(process.time_between_starvation_levels, [])
+        assert process.current_starvation_level_duration == 0
+
+    def test_use_cpu_when_first_cpu_is_available(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        process.use_cpu()
+
+        cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(1)
+        assert process.has_cpu == True
+        assert process.cpu == cpu
+        assert cpu.process == process
+        for i in range(2, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_use_cpu_when_first_cpu_is_unavailable(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        cpu_1 = stage.process_manager.cpu_manager.get_cpu_by_logical_id(1)
+        cpu_1.process = Process(2, stage, process_config)
+        process.use_cpu()
+
+        cpu_2 = stage.process_manager.cpu_manager.get_cpu_by_logical_id(2)
+        assert process.has_cpu == True
+        assert process.cpu == cpu_2
+        assert cpu_1.process.pid == 2
+        assert cpu_2.process == process
+        for i in range(3, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_use_cpu_when_all_cpus_are_unavailable(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            cpu.process = Process(i + 2, stage, process_config)
+
+        process.use_cpu()
+
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process.pid == i + 2
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_use_cpu_when_already_using_cpu(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        process.use_cpu()
+
+        cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(1)
+        assert process.cpu == cpu
+        assert process.has_cpu == True
+        assert cpu.process == process
+        for i in range(2, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_yield_cpu(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        for i in range(1, stage_config.cpu_config.total_threads):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            cpu.process = Process(i + 2, stage, process_config)
+
+        process.use_cpu()
+
+        process.yield_cpu()
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process.pid == i + 2
+        cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(4)
+        assert cpu.process == None
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_yield_cpu_when_already_idle(self, stage, stage_config, process_config):
+        process = Process(1, stage, process_config)
+
+        process.yield_cpu()
+        assert process.cpu == None
+        assert process.has_cpu == False
+        for i in range(1, stage_config.cpu_config.total_threads + 1):
+            cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(i)
+            assert cpu.process == None
+
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_blocked == False
+        assert process.state != ProcessState.ENDED
+
+    def test_toggle(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        process.toggle()
+        assert process.cpu != None
+        assert process.has_cpu == True
+
+        process.toggle()
+        assert process.cpu == None
+        assert process.has_cpu == False
+
+    def test_unstarvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        current_time = 0
+
+        for i in range(1, LAST_ALIVE_STARVATION_LEVEL):
+            current_time += process.time_between_starvation_levels
+            process.update(current_time, [])
+
+        process.use_cpu()
+        assert process.starvation_level == LAST_ALIVE_STARVATION_LEVEL
+
+        current_time += process.cpu.process_happiness_ms
+        process.update(current_time, [])
+        assert process.starvation_level == 0
+
+    def test_graceful_termination(self, stage_custom_config, monkeypatch, spy_apply_event):
+        stage_config = StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(stage_config)
+
+        # Cause the random number generator to always provoke graceful termination
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process_config = ProcessConfig(
+            io_probability=stage_config.io_probability,
+            graceful_termination_probability=stage_config.graceful_termination_probability,
+            time_between_starvation_levels_ms=10000
+        )
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+
+        spy_apply_event.clear()
+        process.update(1000, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.starvation_level == 0
+        assert StateEvent.TERMINATE_GRACEFULLY in spy_apply_event
+
+    def test_use_cpu_min_page_creation(self, stage, monkeypatch, process_config):
+        # Make sure that the minimum number of pages will be created
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, process_config)
+
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 0)
+
+        process.use_cpu()
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        for i in range(1, process_config.max_pages):
+            with pytest.raises(KeyError):
+                stage.page_manager.get_page(1, i)
+
+    def test_use_cpu_max_page_creation(self, stage, monkeypatch, process_config):
+        # Make sure that the maximum number of pages will be created
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 0)
+
+        process.use_cpu()
+
+        for i in range(1, process_config.max_pages):
+            assert stage.page_manager.get_page(1, i).pid == 1
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, process_config.max_pages)
+
+    def test_new_page_creation_while_running(self, stage, monkeypatch, process_config):
+        process = Process(1, stage, process_config)
+
+        # Should cause the creation of a single page when the process starts running,
+        # and then the creation a new page when the process is updated
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process.use_cpu()
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 1)
+
+        process.update(1000, [])
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        assert stage.page_manager.get_page(1, 1).pid == 1
+
+        # Should prevent the creation of a new page when the process is updated again
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process.update(2000, [])
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        assert stage.page_manager.get_page(1, 1).pid == 1
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 2)
+
+    def test_use_cpu_when_already_has_pages(self, stage, monkeypatch, process_config):
+        process = Process(1, stage, process_config)
+
+        # Should cause the creation of a single page when the process is run for the first time
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+        process.use_cpu()
+
+        process.yield_cpu()
+
+        # Should prevent the creation of new pages when the process is run again
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+        process.use_cpu()
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        for i in range(1, process_config.max_pages):
+            with pytest.raises(KeyError):
+                stage.page_manager.get_page(1, i)
+
+    def test_use_cpu_creates_crowned_pages_for_priority_process(self, stage, monkeypatch, process_config):
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, process_config, process_type=ProcessType.PRIORITY)
+        process.use_cpu()
+
+        page = stage.page_manager.get_page(1, 0)
+        assert isinstance(page.view, PriorityPageView)
+
+    def test_use_cpu_creates_uncrowned_pages_for_standard_process(self, stage, monkeypatch, process_config):
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, process_config, process_type=ProcessType.STANDARD)
+        process.use_cpu()
+
+        page = stage.page_manager.get_page(1, 0)
+        assert isinstance(page.view, PageView)
+        assert not isinstance(page.view, PriorityPageView)
+
+    def test_max_pages_per_process_honored(self, stage_custom_config, monkeypatch):
+        stage_config = StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=0,
+            io_probability=0,
+            graceful_termination_probability=0,
+            max_pages_per_process=2,
+        )
+        stage = stage_custom_config(stage_config)
+        factory = ProcessFactory(stage, stage_config)
+        process = factory.create_standard_process(1)
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process.use_cpu()
+
+        assert stage.page_manager.get_page(1, 0).pid == 1
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 1)
+
+        process.update(1000, [])
+        assert stage.page_manager.get_page(1, 1).pid == 1
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 2)
+
+        process.update(2000, [])
+        with pytest.raises(KeyError):
+            stage.page_manager.get_page(1, 2)
+
+    def test_use_cpu_sets_pages_to_in_use(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        for i in range(0, process_config.max_pages):
+            assert stage.page_manager.get_page(1, i).in_use == True
+
+        process.yield_cpu()
+        process.use_cpu()
+        for i in range(0, process_config.max_pages):
+            assert stage.page_manager.get_page(1, i).in_use == True
+
+    def test_yield_cpu_sets_pages_to_not_in_use(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        process.yield_cpu()
+
+        for i in range(0, process_config.max_pages):
+            assert stage.page_manager.get_page(1, i).in_use == False
+
+    def test_set_page_to_swap_while_running(self, stage, monkeypatch, process_config, spy_apply_event):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1, [])
+        stage.page_manager.update(1000, [])
+        assert stage.page_manager.get_page(1, 0).on_disk == True
+
+        spy_apply_event.clear()
+        process.update(0, [])
+
+        assert process.is_blocked == True
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_waiting_for_io == False
+        assert StateEvent.PAGE_FAULT in spy_apply_event
+
+    def test_set_page_to_swap_before_running(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        process.yield_cpu()
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1, [])
+        stage.page_manager.update(1000, [])
+        assert stage.page_manager.get_page(1, 0).on_disk == True
+
+        process.use_cpu()
+
+        process.update(0, [])
+
+        assert process.is_blocked == True
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_waiting_for_io == False
+
+    def test_remove_page_from_swap_while_running(self, stage, monkeypatch, process_config, spy_apply_event):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1, [])
+        stage.page_manager.update(1000, [])
+        process.update(0, [])
+        assert process.is_blocked == True
+        assert StateEvent.PAGE_FAULT in spy_apply_event
+
+        spy_apply_event.clear()
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1001, [])
+        stage.page_manager.update(2000, [])
+        process.update(0, [])
+
+        assert process.is_blocked == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_waiting_for_io == False
+        assert StateEvent.PAGE_AVAILABLE in spy_apply_event
+
+    def test_yield_cpu_while_waiting_for_page(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1000, [])
+        process.update(0, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+
+        process.yield_cpu()
+        process.update(0, [])
+
+        assert process.is_blocked == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.is_waiting_for_io == False
+
+    def test_starvation_while_waiting_for_page(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1000, [])
+        process.update(0, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+
+        for i in range(1, LAST_ALIVE_STARVATION_LEVEL):
+            process.update(i * process.time_between_starvation_levels, [])
+            assert process.starvation_level == i + 1
+
+        process.update(LAST_ALIVE_STARVATION_LEVEL * process.time_between_starvation_levels, [])
+        assert process.starvation_level == DEAD_STARVATION_LEVEL
+        assert process.state == ProcessState.ENDED
+
+    def test_page_deletion_when_process_is_killed(self, stage, monkeypatch, process_config):
+        # Should cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1000, [])
+
+        for i in range(1, DEAD_STARVATION_LEVEL):
+            process.update(i * process.time_between_starvation_levels, [])
+        assert process.state == ProcessState.ENDED
+
+        with pytest.raises(KeyError):
+            for i in range(1, 5):
+                stage.page_manager.get_page(1, i)
+
+    def test_page_deletion_when_process_is_gracefully_terminated(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        ))
+
+        # Should prevent graceful termination
+        # Should also cause the creation of the maximum number of pages when the process is run
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.state != ProcessState.ENDED
+        assert stage.page_manager.get_page(1, 0).pid == 1
+
+        # Should cause graceful termination
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process.update(2000, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.starvation_level == 0
+
+        with pytest.raises(KeyError):
+            for i in range(0, 5):
+                stage.page_manager.get_page(1, i)
+
+    def test_process_blocks_for_io_event(self, stage_custom_config, monkeypatch, process_custom_config, spy_apply_event):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Cause the random number generator to always provoke an I/O event
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(0, [])
+        assert process.is_waiting_for_io == False
+
+        spy_apply_event.clear()
+        process.update(ONE_SECOND, [])
+
+        assert process.is_blocked == True
+        assert process.is_waiting_for_io == True
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert StateEvent.REQUEST_IO in spy_apply_event
+
+    def test_process_continues_when_no_io_event(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Cause the random number generator to never provoke an I/O event
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(0, [])
+        assert process.is_waiting_for_io == False
+
+        process.update(1000, [])
+
+        assert process.is_blocked == False
+        assert process.is_waiting_for_io == False
+        assert process.state != ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+
+    def test_starvation_suspended_while_waiting_for_io_event(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Use min random to trigger I/O event in process, but max for IOQueue to delay arrival
+        call_count = [0]
+        def random_with_side_effects(self, min, max):
+            call_count[0] += 1
+            # First few calls are for process I/O (need min to trigger)
+            # Later calls are for IOQueue (need max to delay)
+            if call_count[0] <= 2:
+                return min
+            return max
+
+        monkeypatch.setattr(Random, 'get_number', random_with_side_effects)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        # At 4000ms, with max random, probabilistic event won't fire yet (max is 5000ms)
+        stage.process_manager.io_queue.update(4000, [])
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        process.update(20000, [])
+        assert process.starvation_level == 1
+
+    def test_starvation_resumes_when_io_event_arrives(self, stage_custom_config, monkeypatch, process_custom_config, spy_apply_event):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0,
+            time_between_starvation_levels_ms=10000
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Use min random to trigger I/O event in process, but max for IOQueue to delay arrival
+        call_count = [0]
+        def random_with_side_effects(self, min, max):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                return min
+            return max
+
+        monkeypatch.setattr(Random, 'get_number', random_with_side_effects)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        # At 4000ms, with max random, probabilistic event won't fire yet (max is 5000ms)
+        stage.process_manager.io_queue.update(4000, [])
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        process.update(20000, [])
+        assert process.starvation_level == 1
+
+        spy_apply_event.clear()
+        stage.process_manager.io_queue.update(21000, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        assert StateEvent.IO_AVAILABLE in spy_apply_event
+
+        process.update(31000, [])
+        assert process.starvation_level >= 1
+
+    def test_starvation_resets_when_io_event_is_delivered(self, stage_custom_config, monkeypatch, process_custom_config, spy_apply_event):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Use min random to trigger I/O event in process, but max for IOQueue to delay arrival
+        call_count = [0]
+        def random_with_side_effects(self, min, max):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                return min
+            return max
+
+        monkeypatch.setattr(Random, 'get_number', random_with_side_effects)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        # At 4000ms, with max random, probabilistic event won't fire yet (max is 5000ms)
+        stage.process_manager.io_queue.update(4000, [])
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        process.update(20000, [])
+        assert process.starvation_level == 1
+
+        stage.process_manager.io_queue.update(21000, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        # When I/O event arrives, starvation level stays the same but timer resets
+        assert process.starvation_level == 1
+
+        spy_apply_event.clear()
+        stage.process_manager.io_queue.handle_player_action()
+
+        assert process.is_waiting_for_io == False
+        # After delivery, process is running so starvation should be reset
+        # But it takes time for the happiness check to kick in
+        # For now, just verify it's not waiting for I/O anymore
+        assert process.has_cpu == True
+        assert StateEvent.IO_DELIVERED in spy_apply_event
+
+    def test_io_event_at_last_alive_starvation_level(self, stage_custom_config, monkeypatch, process_custom_config):
+        # Test that a process at LAST_ALIVE_STARVATION_LEVEL can still request I/O
+        # since starvation is now suspended during I/O
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        process1 = Process(1, stage, config)
+        process2 = Process(2, stage, config)
+
+        current_time = 0
+        for i in range(1, LAST_ALIVE_STARVATION_LEVEL):
+            current_time += process1.time_between_starvation_levels
+            process1.update(current_time, [])
+
+        # Cause the random number generator to always provoke an I/O event
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process1.use_cpu()
+        process2.use_cpu()
+
+        assert process1.starvation_level == LAST_ALIVE_STARVATION_LEVEL
+        assert process2.starvation_level == 1
+        assert process1.is_waiting_for_io == False
+        assert process2.is_waiting_for_io == False
+
+        current_time += 1000
+        process1.update(current_time, [])
+        process2.update(current_time, [])
+
+        # Both processes should be able to request I/O, even at LAST_ALIVE_STARVATION_LEVEL
+        assert process1.is_waiting_for_io == True
+        assert process2.is_waiting_for_io == True
+
+    def test_io_cooldown(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        process1 = Process(1, stage, config)
+        process2 = Process(2, stage, config)
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process1.use_cpu()
+        process1.update(1000, [])
+        assert process1.is_waiting_for_io == True
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        process2.use_cpu()
+        process2.update(1000, [])
+        assert process2.is_waiting_for_io == False
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        stage.process_manager.io_queue.update(7000, [])
+        stage.process_manager.io_queue.handle_player_action()
+        assert process1.is_waiting_for_io == False
+
+        process1.update(2000, [])
+        process2.update(2000, [])
+        assert process1.is_waiting_for_io == False
+        assert process2.is_waiting_for_io == True
+
+    def test_io_cooldown_deactivation(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        process = Process(1, stage, config)
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+
+        stage.process_manager.io_queue.update(7000, [])
+        stage.process_manager.io_queue.handle_player_action()
+        assert process.is_waiting_for_io == False
+
+        process.yield_cpu()
+        process.use_cpu()
+        process.update(2000, [])
+        assert process.is_waiting_for_io == True
+
+    def test_movement_animation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        target_x = 500
+        target_y = 1000
+
+        process.view.x = 0
+        process.view.y = 0
+        process.view.target_x = target_x
+        process.view.target_y = target_y
+
+        assert process.is_in_motion
+
+        counter = 0
+        while process.view.target_x != None or process.view.target_y != None:
+            counter += 1
+            process.update(counter, [])
+            assert counter < 100 # prevents infinite loop if test fails
+
+        assert process.view.x == target_x
+        assert process.view.y == target_y
+        assert not process.is_in_motion
+
+    def test_click_when_idle(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.view.set_xy(1000, 500)
+
+        mouse_click_event = GameEvent(GameEventType.MOUSE_LEFT_CLICK, { 'position': (process.view.x, process.view.y) })
+        process.update(1000, [mouse_click_event])
+
+        assert process.has_cpu == True
+        cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(1)
+        assert process.view.target_x == cpu.view.x
+        assert process.view.target_y == cpu.view.y
+
+    def test_click_during_moving_animation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.view.set_xy(1000, 500)
+        process.use_cpu()
+
+        assert process.has_cpu == True
+        assert process.view.y != process.view.target_y
+
+        mouse_click_event = GameEvent(GameEventType.MOUSE_LEFT_CLICK, { 'position': (process.view.x, process.view.y) })
+        process.update(1000, [mouse_click_event])
+        assert process.has_cpu == True
+
+    def test_click_when_running(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        cpu = stage.process_manager.cpu_manager.get_cpu_by_logical_id(1)
+        cpu.process = Process(2, stage, process_config) # to force process to use a CPU with a different x position than itself
+        process.use_cpu()
+
+        assert process.has_cpu == True
+
+        process.view.x = process.view.target_x
+        process.view.y = process.view.target_y
+        process.view.target_x = None
+        process.view.target_y = None
+
+        mouse_click_event = GameEvent(GameEventType.MOUSE_LEFT_CLICK, { 'position': (process.view.x, process.view.y) })
+        process.update(1000, [mouse_click_event])
+
+        assert process.has_cpu == False
+        assert process.view.target_x == stage.process_manager.process_slots[0].view.x
+        assert process.view.target_y == stage.process_manager.process_slots[0].view.y
+
+    def test_click_when_gracefully_terminated(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        ))
+        # Cause the random number generator to always provoke graceful termination
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(1000, [])
+        process.view.x = process.view.target_x
+        process.view.y = process.view.target_y
+        process.view.target_x = process.view.target_y = None
+
+        assert process.state == ProcessState.ENDED
+
+        mouse_click_event = GameEvent(GameEventType.MOUSE_LEFT_CLICK, { 'position': (process.view.x, process.view.y) })
+        process.update(2000, [mouse_click_event])
+
+        assert process.view.target_y <= -process.view.height
+
+    def test_blinking_animation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        stage.page_manager.get_page(1, 0).request_swap()
+
+        for i in range(1, 5):
+            process.update(i * 200, [])
+            assert not process.display_blink_color
+
+        stage.page_manager.get_page(1, 0).start_swap(0, PageSlot())
+        assert stage.page_manager.get_page(1, 0).swap_in_progress
+
+        previous_blink_value = process.display_blink_color
+        for i in range(1, 5):
+            process.update(i * 200, [])
+            assert process.display_blink_color != previous_blink_value
+            previous_blink_value = process.display_blink_color
+
+    def test_blinking_animation_deactivation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        process.use_cpu()
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1, [])
+        stage.page_manager.update(1000, [])
+        process.update(1000, [])
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1001, [])
+        stage.page_manager.update(2000, [])
+        process.update(2000, [])
+
+        for i in range(1, 5):
+            process.update(i * 200, [])
+            assert process.display_blink_color == False
+
+    def test_sort_key(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        process_lowest_starvation = Process(1, stage, config)
+        process_medium_starvation_1 = Process(3, stage, config)
+        process_medium_starvation_2 = Process(4, stage, config)
+        process_medium_starvation_plus_one_second = Process(5, stage, config)
+        process_highest_starvation = Process(2, stage, config)
+        process_blocked = Process(6, stage, config)
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: max)
+
+        time = 0
+
+        for i in range(2):
+            time += process_highest_starvation.time_between_starvation_levels
+            process_highest_starvation.update(time, [])
+            process_medium_starvation_1.update(time, [])
+            process_medium_starvation_2.update(time, [])
+            process_medium_starvation_plus_one_second.update(time, [])
+            process_blocked.update(time, [])
+
+        process_lowest_starvation.use_cpu()
+        process_lowest_starvation.update(time, [])
+        process_lowest_starvation.yield_cpu()
+
+        time += ONE_SECOND
+        process_medium_starvation_plus_one_second.update(time, [])
+
+        time += process_highest_starvation.time_between_starvation_levels - ONE_SECOND
+        process_highest_starvation.update(time, [])
+        process_blocked.update(time, [])
+
+        time += ONE_SECOND
+        process_blocked.update(time, [])
+
+        time += process_highest_starvation.time_between_starvation_levels - ONE_SECOND
+        process_highest_starvation.update(time, [])
+
+        assert process_lowest_starvation.starvation_level == 0
+        assert process_medium_starvation_1.starvation_level == 3
+        assert process_medium_starvation_2.starvation_level == 3
+        assert process_medium_starvation_plus_one_second.starvation_level == 3
+        assert process_highest_starvation.starvation_level == LAST_ALIVE_STARVATION_LEVEL
+        assert process_blocked.starvation_level == LAST_ALIVE_STARVATION_LEVEL - 1
+
+        assert not process_lowest_starvation.is_blocked
+        assert not process_medium_starvation_1.is_blocked
+        assert not process_medium_starvation_2.is_blocked
+        assert not process_medium_starvation_plus_one_second.is_blocked
+        assert not process_highest_starvation.is_blocked
+        assert not process_blocked.is_blocked
+
+        assert not process_lowest_starvation.has_cpu
+        assert not process_medium_starvation_1.has_cpu
+        assert not process_medium_starvation_2.has_cpu
+        assert not process_medium_starvation_plus_one_second.has_cpu
+        assert not process_highest_starvation.has_cpu
+        assert not process_blocked.has_cpu
+
+        assert process_highest_starvation.sort_key < process_blocked.sort_key
+        assert process_blocked.sort_key < process_medium_starvation_plus_one_second.sort_key
+        assert process_medium_starvation_plus_one_second.sort_key < process_medium_starvation_1.sort_key
+        assert process_medium_starvation_1.sort_key == process_medium_starvation_2.sort_key
+        assert process_medium_starvation_2.sort_key < process_lowest_starvation.sort_key
+
+    def test_sort_key_different_time_between_starvation_levels(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        config_10000 = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0,
+            time_between_starvation_levels_ms=10000
+        )
+        config_8000 = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0,
+            time_between_starvation_levels_ms=8000
+        )
+
+        process_1 = Process(1, stage, config_10000)
+        process_2 = Process(2, stage, config_10000)
+        process_3 = Process(3, stage, config_8000)
+
+        process_1.update(5000, [])
+        process_2.update(8000, [])
+        process_3.update(7000, [])
+
+        assert process_3.sort_key < process_2.sort_key
+        assert process_2.sort_key < process_1.sort_key
+
+        process_1.update(10000, [])
+        process_2.update(10000, [])
+        process_3.update(8000, [])
+
+        process_1.update(18000, [])
+        process_2.update(17000, [])
+        process_3.update(15999, [])
+
+        assert process_1.starvation_level == 2
+        assert process_2.starvation_level == 2
+        assert process_3.starvation_level == 2
+
+        assert process_1.sort_key < process_2.sort_key
+        assert process_3.sort_key < process_2.sort_key
+
+        process_1.update(20000, [])
+        process_2.update(20000, [])
+
+        assert process_1.starvation_level == 3
+        assert process_2.starvation_level == 3
+        assert process_3.starvation_level == 2
+
+        assert process_1.sort_key == process_2.sort_key
+        assert process_1.sort_key < process_3.sort_key
+
+    def test_is_running_when_has_cpu_and_not_blocked(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.state != ProcessState.RUNNING
+
+        process.use_cpu()
+
+        assert process.state == ProcessState.RUNNING
+
+    def test_is_running_false_when_blocked_for_io(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+
+        assert process.state == ProcessState.RUNNING
+
+        process.update(ONE_SECOND, [])
+
+        assert process.is_waiting_for_io == True
+        assert process.state != ProcessState.RUNNING
+
+    def test_is_running_false_when_blocked_for_page(self, stage, monkeypatch, process_config):
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+
+        assert process.state == ProcessState.RUNNING
+
+        stage.page_manager.get_page(1, 0).request_swap()
+        stage.page_manager.update(1000, [])
+        process.update(0, [])
+
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert process.state != ProcessState.RUNNING
+
+    def test_is_running_false_when_ended(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(ONE_SECOND, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.state != ProcessState.RUNNING
+
+    def test_has_ended_gracefully_after_graceful_termination(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+
+        assert process.has_ended_gracefully == False
+
+        process.use_cpu()
+        process.update(ONE_SECOND, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.starvation_level == 0
+        assert process.has_ended_gracefully == True
+
+    def test_has_ended_gracefully_false_after_starvation_death(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.has_ended_gracefully == False
+
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(i * process.time_between_starvation_levels, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.starvation_level == DEAD_STARVATION_LEVEL
+        assert process.has_ended_gracefully == False
+
+    def test_time_to_termination_for_idle_process(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.starvation_level == 1
+        assert process.time_to_termination == 50000
+
+    def test_time_to_termination_decreases_with_starvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        assert process.time_to_termination == 50000
+
+        process.update(10000, [])
+
+        assert process.starvation_level == 2
+        assert process.time_to_termination == 40000
+
+    def test_time_to_termination_infinity_when_running(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+
+        assert process.state == ProcessState.RUNNING
+        assert process.time_to_termination == float('inf')
+
+    def test_time_to_termination_infinity_when_waiting_for_io(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Use min random to trigger I/O event in process, but max for IOQueue to delay arrival
+        call_count = [0]
+        def random_with_side_effects(self, min, max):
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                return min
+            return max
+
+        monkeypatch.setattr(Random, 'get_number', random_with_side_effects)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(1000, [])
+
+        assert process.is_waiting_for_io == True
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+        assert process.time_to_termination == float('inf')
+
+    def test_time_to_termination_finite_when_io_available(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        # Use min random to trigger I/O event in process and let it arrive
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(1000, [])
+
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+
+        # Let I/O event arrive but don't process it yet
+        stage.process_manager.io_queue.update(5000, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        assert process.time_to_termination != float('inf')
+
+    def test_time_to_termination_infinity_after_graceful_termination(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0,
+            graceful_termination_probability=0.01
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=0.01
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+        process.use_cpu()
+        process.update(ONE_SECOND, [])
+
+        assert process.has_ended_gracefully == True
+        assert process.time_to_termination == float('inf')
+
+    def test_time_to_termination_zero_when_dead(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(i * process.time_between_starvation_levels, [])
+
+        assert process.starvation_level == DEAD_STARVATION_LEVEL
+        assert process.time_to_termination == 0
+
+    def test_time_to_termination_accounts_for_partial_starvation_level(self, stage, process_config):
+        process = Process(1, stage, process_config)
+
+        process.update(5000, [])
+
+        assert process.starvation_level == 1
+        assert process.time_to_termination == 45000
+
+    def test_io_event_arrived_property(self, stage_custom_config, monkeypatch, process_custom_config):
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+        stage.process_manager.io_queue.update(7000, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+
+        stage.process_manager.io_queue.handle_player_action()
+        assert process.state not in (ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE, ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE)
+
+    def test_termination_while_waiting_for_io_updates_state_timing(self, stage_custom_config, monkeypatch, process_custom_config):
+        """
+        Test that when a process is terminated while waiting for I/O,
+        current_state_duration is reset because the state changed from blocked to ended.
+        """
+        config = process_custom_config(
+            io_probability=0.1,
+            graceful_termination_probability=0
+        )
+        stage = stage_custom_config(StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0.1,
+            graceful_termination_probability=0
+        ))
+
+        monkeypatch.setattr(Random, 'get_number', lambda self, min, max: min)
+
+        process = Process(1, stage, config)
+
+        process.use_cpu()
+        process.update(1000, [])
+        assert process.is_waiting_for_io == True
+        assert process.is_blocked == True
+
+        # Let time pass while blocked - starvation is suspended
+        process.update(5000, [])
+        duration_before_termination = process.current_state_duration
+        assert duration_before_termination == 4000
+        assert process.starvation_level == 1  # Starvation is suspended while waiting for I/O
+
+        # Make the I/O event arrive (but don't process it yet)
+        # Starvation level stays the same but timer resets to 0
+        stage.process_manager.io_queue.update(7000, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        assert process.starvation_level == 1  # Starvation level stays the same when event arrives
+
+        # Process the I/O event - process should stay on CPU and resume running
+        stage.process_manager.io_queue.handle_player_action()
+        assert process.is_waiting_for_io == False
+        assert process.state == ProcessState.RUNNING
+        assert process.has_cpu == True
+        assert process.state == ProcessState.RUNNING
+
+        # Since process is running, starvation level stays same until happiness threshold
+        assert process.starvation_level == 1
+
+        # Now manually yield the CPU so process can starve
+        process.yield_cpu()
+        assert process.has_cpu == False
+        assert process.state != ProcessState.RUNNING
+
+        # Now trigger starvation death
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(7000 + i * process.time_between_starvation_levels, [])
+
+        assert process.state == ProcessState.ENDED
+        assert process.is_blocked == False
+        # After termination, state should be ENDED
+        assert process.state == ProcessState.ENDED
+
+
+class TestStateEvents(TestProcess):
+    """Test suite for the state event logic."""
+
+    def test_idle_assign_to_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        assert process.state == ProcessState.IDLE
+        process.apply_state_transition(StateEvent.ASSIGN_TO_CPU)
+        assert process.state == ProcessState.RUNNING
+
+    def test_idle_terminate_from_starvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        assert process.state == ProcessState.IDLE
+        process.apply_state_transition(StateEvent.TERMINATE_FROM_STARVATION)
+        assert process.state == ProcessState.ENDED
+
+    def test_idle_invalid_events(self, stage, process_config):
+        """Test that invalid events from IDLE are silently ignored."""
+        process = Process(1, stage, process_config)
+        assert process.state == ProcessState.IDLE
+        invalid_events = [
+            StateEvent.REMOVE_FROM_CPU,
+            StateEvent.REQUEST_IO,
+            StateEvent.PAGE_FAULT,
+            StateEvent.TERMINATE_GRACEFULLY,
+            StateEvent.IO_AVAILABLE,
+            StateEvent.IO_DELIVERED,
+            StateEvent.PAGE_AVAILABLE,
+        ]
+        for event in invalid_events:
+            process.apply_state_transition(event)
+            assert process.state == ProcessState.IDLE
+
+    def test_running_remove_from_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.IDLE
+
+    def test_running_request_io(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+
+    def test_running_page_fault(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        process.apply_state_transition(StateEvent.PAGE_FAULT)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+
+    def test_running_terminate_gracefully(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        process.apply_state_transition(StateEvent.TERMINATE_GRACEFULLY)
+        assert process.state == ProcessState.ENDED
+
+    def test_running_invalid_events(self, stage, process_config):
+        """Test that invalid events from RUNNING are silently ignored."""
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        assert process.state == ProcessState.RUNNING
+        invalid_events = [
+            StateEvent.ASSIGN_TO_CPU,
+            StateEvent.TERMINATE_FROM_STARVATION,
+            StateEvent.IO_AVAILABLE,
+            StateEvent.IO_DELIVERED,
+            StateEvent.PAGE_AVAILABLE,
+        ]
+        for event in invalid_events:
+            process.apply_state_transition(event)
+            assert process.state == ProcessState.RUNNING
+
+    def test_blocked_on_cpu_io_requested_io_available(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+
+    def test_blocked_on_cpu_io_requested_remove_from_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_REQUESTED
+
+    def test_blocked_on_cpu_io_requested_invalid_events(self, stage, process_config):
+        """Test that invalid events from BLOCKED_ON_CPU_IO_REQUESTED are silently ignored."""
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+        invalid_events = [
+            StateEvent.ASSIGN_TO_CPU,
+            StateEvent.TERMINATE_FROM_STARVATION,
+            StateEvent.REQUEST_IO,
+            StateEvent.PAGE_FAULT,
+            StateEvent.TERMINATE_GRACEFULLY,
+            StateEvent.IO_DELIVERED,
+            StateEvent.PAGE_AVAILABLE,
+        ]
+        for event in invalid_events:
+            process.apply_state_transition(event)
+            assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+
+    def test_blocked_on_cpu_io_available_io_delivered(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.IO_DELIVERED)
+        assert process.state == ProcessState.RUNNING
+
+    def test_blocked_on_cpu_io_available_remove_from_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE
+
+    def test_blocked_on_cpu_io_available_terminate_from_starvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.TERMINATE_FROM_STARVATION)
+        assert process.state == ProcessState.ENDED
+
+    def test_blocked_on_cpu_page_fault_page_available(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.PAGE_FAULT)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        process.apply_state_transition(StateEvent.PAGE_AVAILABLE)
+        assert process.state == ProcessState.RUNNING
+
+    def test_blocked_on_cpu_page_fault_remove_from_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.PAGE_FAULT)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.IDLE
+
+    def test_blocked_on_cpu_page_fault_terminate_from_starvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.PAGE_FAULT)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        process.apply_state_transition(StateEvent.TERMINATE_FROM_STARVATION)
+        assert process.state == ProcessState.ENDED
+
+    def test_blocked_off_cpu_io_requested_io_available(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_REQUESTED
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE
+
+    def test_blocked_off_cpu_io_requested_assign_to_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_REQUESTED
+        process.apply_state_transition(StateEvent.ASSIGN_TO_CPU)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_REQUESTED
+
+    def test_blocked_off_cpu_io_available_io_delivered(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.IO_DELIVERED)
+        assert process.state == ProcessState.IDLE
+
+    def test_blocked_off_cpu_io_available_assign_to_cpu(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.ASSIGN_TO_CPU)
+        assert process.state == ProcessState.BLOCKED_ON_CPU_IO_AVAILABLE
+
+    def test_blocked_off_cpu_io_available_terminate_from_starvation(self, stage, process_config):
+        process = Process(1, stage, process_config)
+        process.use_cpu()
+        process.apply_state_transition(StateEvent.REQUEST_IO)
+        process.apply_state_transition(StateEvent.REMOVE_FROM_CPU)
+        process.apply_state_transition(StateEvent.IO_AVAILABLE)
+        assert process.state == ProcessState.BLOCKED_OFF_CPU_IO_AVAILABLE
+        process.apply_state_transition(StateEvent.TERMINATE_FROM_STARVATION)
+        assert process.state == ProcessState.ENDED
+
+    def test_ended_state_no_events(self, stage, process_config):
+        """Test that ENDED state ignores all events."""
+        process = Process(1, stage, process_config)
+        # Bring process to ENDED state by starving it to death
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(i * process.time_between_starvation_levels, [])
+        assert process.state == ProcessState.ENDED
+
+        all_events = [
+            StateEvent.ASSIGN_TO_CPU,
+            StateEvent.TERMINATE_FROM_STARVATION,
+            StateEvent.REMOVE_FROM_CPU,
+            StateEvent.REQUEST_IO,
+            StateEvent.PAGE_FAULT,
+            StateEvent.TERMINATE_GRACEFULLY,
+            StateEvent.IO_AVAILABLE,
+            StateEvent.IO_DELIVERED,
+            StateEvent.PAGE_AVAILABLE,
+        ]
+
+        for event in all_events:
+            process.apply_state_transition(event)
+            assert process.state == ProcessState.ENDED

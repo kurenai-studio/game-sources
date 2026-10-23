@@ -1,0 +1,1574 @@
+import pytest
+from types import SimpleNamespace
+
+import game_monitor
+from constants import DEAD_STARVATION_LEVEL
+from config.stage_config import StageConfig
+from config.cpu_config import CpuConfig
+from scenes.stage import Stage
+from scene_objects.process import ProcessState
+
+
+class TestSchedulerDataClasses:
+    """Tests for the data classes used in the Scheduler skeleton."""
+
+    def test_page_dataclass(self):
+        """Test Page dataclass properties."""
+        # Import locally to avoid polluting module namespace
+        import sys
+        sys.path.insert(0, '..')
+        from automation.api import Page
+        
+        page = Page(pid=1, idx=2, on_disk=False, in_use=True)
+        assert page.pid == 1
+        assert page.idx == 2
+        assert page.on_disk is False
+        assert page.in_use is True
+        assert page.key == (1, 2)
+        # Verify new swap state fields have correct defaults
+        assert page.waiting_to_swap is False
+        assert page.swap_in_progress is False
+        assert page.swap_percentage_completed == 0.0
+
+    def test_page_dataclass_swap_state_fields(self):
+        """Test Page dataclass swap state fields can be set."""
+        from automation.api import Page
+        
+        page = Page(
+            pid=1, idx=0, on_disk=False, in_use=True,
+            waiting_to_swap=True, swap_in_progress=False, swap_percentage_completed=0.0
+        )
+        assert page.waiting_to_swap is True
+        assert page.swap_in_progress is False
+        
+        page.swap_in_progress = True
+        page.waiting_to_swap = False
+        page.swap_percentage_completed = 0.5
+        assert page.swap_in_progress is True
+        assert page.waiting_to_swap is False
+        assert page.swap_percentage_completed == 0.5
+
+    def test_page_equality(self):
+        """Test Page equality comparison with tuple."""
+        from automation.api import Page
+        
+        page = Page(pid=1, idx=2, on_disk=False, in_use=True)
+        assert page == (1, 2)
+        assert not (page == (1, 3))
+
+    def test_process_dataclass(self):
+        """Test Process dataclass properties."""
+        from automation.api import Process
+        
+        process = Process(pid=42)
+        assert process.pid == 42
+        assert process.has_cpu is False
+        assert process.starvation_level == 1
+        assert process.waiting_for_io is False
+        assert process.waiting_for_page is False
+        assert process.has_ended is False
+        assert process.pages == []
+        assert process.key == 42
+
+    def test_process_equality(self):
+        """Test Process equality comparison with int."""
+        from automation.api import Process
+        
+        process = Process(pid=42)
+        assert process == 42
+        assert not (process == 43)
+
+    def test_io_queue_dataclass(self):
+        """Test IoQueue dataclass."""
+        from automation.api import IoQueue
+        
+        io_queue = IoQueue()
+        assert io_queue.io_count == 0
+        
+        io_queue.io_count = 5
+        assert io_queue.io_count == 5
+
+
+class TestSchedulerStateUpdates:
+    """Tests for Scheduler state update handlers via public interface."""
+
+    @pytest.fixture
+    def scheduler(self):
+        """Create a fresh Scheduler instance for each test."""
+        from automation.api import Scheduler
+        instance = Scheduler()
+        instance.processes = {}
+        instance.pages = {}
+        instance.used_cpus = 0
+        instance.io_queue.io_count = 0
+        return instance
+
+    def test_io_queue_event_updates_state(self, scheduler):
+        """Test IO_QUEUE event updates io_count."""
+        events = [SimpleNamespace(etype='IO_QUEUE', io_count=3)]
+        scheduler(events)
+        assert scheduler.io_queue.io_count == 3
+
+    def test_proc_new_event_creates_process(self, scheduler):
+        """Test PROC_NEW event creates a new process."""
+        events = [SimpleNamespace(etype='PROC_NEW', pid=1)]
+        scheduler(events)
+        
+        assert 1 in scheduler.processes
+        assert scheduler.processes[1].pid == 1
+        assert scheduler.processes[1].starvation_level == 1
+
+    def test_proc_cpu_event_assigns_to_cpu(self, scheduler):
+        """Test PROC_CPU event when assigning to CPU."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].has_cpu is True
+        assert scheduler.used_cpus == 1
+
+    def test_proc_cpu_event_releases_from_cpu(self, scheduler):
+        """Test PROC_CPU event when releasing from CPU."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=False),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].has_cpu is False
+        assert scheduler.used_cpus == 0
+
+    def test_proc_starv_event_updates_starvation(self, scheduler):
+        """Test PROC_STARV event updates starvation level and time_to_termination."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_STARV', pid=1, starvation_level=4, time_to_termination=20000),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].starvation_level == 4
+        assert scheduler.processes[1].time_to_termination == 20000
+
+    def test_proc_wait_io_event_updates_state(self, scheduler):
+        """Test PROC_WAIT_IO event updates waiting_for_io."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_WAIT_IO', pid=1, waiting_for_io=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].waiting_for_io is True
+
+    def test_proc_wait_page_event_updates_state(self, scheduler):
+        """Test PROC_WAIT_PAGE event updates waiting_for_page."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_WAIT_PAGE', pid=1, waiting_for_page=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].waiting_for_page is True
+
+    def test_proc_term_event_marks_ended(self, scheduler):
+        """Test PROC_TERM event marks process as ended."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_TERM', pid=1),
+        ]
+        scheduler(events)
+        
+        assert scheduler.processes[1].has_ended is True
+
+    def test_proc_kill_event_removes_process(self, scheduler):
+        """Test PROC_KILL event removes process."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_KILL', pid=1),
+        ]
+        scheduler(events)
+        
+        assert 1 not in scheduler.processes
+
+    def test_proc_kill_event_releases_cpu_when_process_had_cpu(self, scheduler):
+        """Test PROC_KILL event decrements used_cpus when the killed process was on a CPU."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+            SimpleNamespace(etype='PROC_KILL', pid=1),
+        ]
+        scheduler(events)
+
+        assert 1 not in scheduler.processes
+        assert scheduler.used_cpus == 0
+
+    def test_proc_kill_event_keeps_used_cpus_when_process_had_no_cpu(self, scheduler):
+        """Test PROC_KILL event does not decrement used_cpus when the killed process was off CPU."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_NEW', pid=2),
+            SimpleNamespace(etype='PROC_CPU', pid=2, cpu=True),
+            SimpleNamespace(etype='PROC_KILL', pid=1),
+        ]
+        scheduler(events)
+
+        assert 1 not in scheduler.processes
+        assert scheduler.used_cpus == 1
+
+    def test_proc_kill_event_does_not_release_cpu_twice(self, scheduler):
+        """Test PROC_KILL event does not decrement used_cpus again after a PROC_CPU release."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=False),
+            SimpleNamespace(etype='PROC_KILL', pid=1),
+        ]
+        scheduler(events)
+
+        assert 1 not in scheduler.processes
+        assert scheduler.used_cpus == 0
+
+    def test_proc_end_event_removes_process(self, scheduler):
+        """Test PROC_END event removes process and decrements used_cpus."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+            SimpleNamespace(etype='PROC_END', pid=1),
+        ]
+        scheduler(events)
+        
+        assert 1 not in scheduler.processes
+        assert scheduler.used_cpus == 0
+
+    def test_page_new_event_creates_page(self, scheduler):
+        """Test PAGE_NEW event creates a new page."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+        ]
+        scheduler(events)
+        
+        assert (1, 0) in scheduler.pages
+        page = scheduler.pages[(1, 0)]
+        assert page.pid == 1
+        assert page.idx == 0
+        assert page.on_disk is False
+        assert page.in_use is True
+        assert page in scheduler.processes[1].pages
+
+    def test_page_use_event_updates_state(self, scheduler):
+        """Test PAGE_USE event updates page in_use status."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=False),
+            SimpleNamespace(etype='PAGE_USE', pid=1, idx=0, use=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.pages[(1, 0)].in_use is True
+
+    def test_page_swap_queue_event_updates_state(self, scheduler):
+        """Test PAGE_SWAP_QUEUE event updates waiting_to_swap status."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_SWAP_QUEUE', pid=1, idx=0, waiting=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.pages[(1, 0)].waiting_to_swap is True
+        assert scheduler.pages[(1, 0)].swap_in_progress is False
+
+    def test_page_swap_queue_cancelled_resets_state(self, scheduler):
+        """Test PAGE_SWAP_QUEUE with waiting=False resets swap state."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_SWAP_QUEUE', pid=1, idx=0, waiting=True),
+            SimpleNamespace(etype='PAGE_SWAP_QUEUE', pid=1, idx=0, waiting=False),
+        ]
+        scheduler(events)
+        
+        assert scheduler.pages[(1, 0)].waiting_to_swap is False
+        assert scheduler.pages[(1, 0)].swap_in_progress is False
+        assert scheduler.pages[(1, 0)].swap_percentage_completed == 0.0
+
+    def test_page_swap_start_event_updates_state(self, scheduler):
+        """Test PAGE_SWAP_START event updates swap_in_progress status."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_SWAP_QUEUE', pid=1, idx=0, waiting=True),
+            SimpleNamespace(etype='PAGE_SWAP_START', pid=1, idx=0),
+        ]
+        scheduler(events)
+        
+        assert scheduler.pages[(1, 0)].waiting_to_swap is False
+        assert scheduler.pages[(1, 0)].swap_in_progress is True
+        assert scheduler.pages[(1, 0)].swap_percentage_completed == 0.0
+
+    def test_page_swap_event_updates_state(self, scheduler):
+        """Test PAGE_SWAP event updates page on_disk status and resets swap state."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_SWAP_QUEUE', pid=1, idx=0, waiting=True),
+            SimpleNamespace(etype='PAGE_SWAP_START', pid=1, idx=0),
+            SimpleNamespace(etype='PAGE_SWAP', pid=1, idx=0, swap=True),
+        ]
+        scheduler(events)
+        
+        assert scheduler.pages[(1, 0)].on_disk is True
+        assert scheduler.pages[(1, 0)].swap_in_progress is False
+        assert scheduler.pages[(1, 0)].swap_percentage_completed == 0.0
+
+    def test_page_free_event_removes_page(self, scheduler):
+        """Test PAGE_FREE event removes page."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_FREE', pid=1, idx=0),
+        ]
+        scheduler(events)
+        
+        assert (1, 0) not in scheduler.pages
+        assert len(scheduler.processes[1].pages) == 0
+
+
+class TestSchedulerActionGeneration:
+    """Tests for Scheduler action generation methods via public interface."""
+
+    @pytest.fixture
+    def scheduler(self):
+        """Create a fresh Scheduler instance for each test."""
+        from automation.api import Scheduler
+        instance = Scheduler()
+        instance.processes = {}
+        instance.pages = {}
+        instance.used_cpus = 0
+        instance.io_queue.io_count = 0
+        return instance
+
+    def test_move_page_returns_page_action(self, scheduler):
+        """Test move_page generates a page action returned by __call__."""
+        # Actions must be generated within schedule() during __call__
+        def custom_schedule():
+            scheduler.move_page(pid=1, idx=2)
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 1
+        assert result[0]['type'] == 'page'
+        assert result[0]['pid'] == 1
+        assert result[0]['idx'] == 2
+
+    def test_move_process_returns_process_action(self, scheduler):
+        """Test move_process generates a process action returned by __call__."""
+        def custom_schedule():
+            scheduler.move_process(pid=42)
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 1
+        assert result[0]['type'] == 'process'
+        assert result[0]['pid'] == 42
+        assert result[0]['to_e_core'] is False
+
+    def test_move_process_with_to_e_core_returns_process_action(self, scheduler):
+        """Test move_process with to_e_core=True generates correct action."""
+        def custom_schedule():
+            scheduler.move_process(pid=42, to_e_core=True)
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 1
+        assert result[0]['type'] == 'process'
+        assert result[0]['pid'] == 42
+        assert result[0]['to_e_core'] is True
+
+    def test_move_process_with_default_to_e_core_returns_process_action(self, scheduler):
+        """Test move_process with default to_e_core=False generates correct action."""
+        def custom_schedule():
+            scheduler.move_process(pid=42)
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 1
+        assert result[0]['type'] == 'process'
+        assert result[0]['pid'] == 42
+        assert result[0]['to_e_core'] is False
+
+    def test_do_io_returns_io_action(self, scheduler):
+        """Test do_io generates an io_queue action returned by __call__."""
+        def custom_schedule():
+            scheduler.do_io()
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 1
+        assert result[0]['type'] == 'io_queue'
+
+    def test_multiple_actions_accumulated(self, scheduler):
+        """Test multiple actions accumulate and are returned together."""
+        def custom_schedule():
+            scheduler.move_process(1, to_e_core=True)
+            scheduler.move_page(1, 0)
+            scheduler.do_io()
+        scheduler.schedule = custom_schedule
+        
+        result = scheduler([])
+        
+        assert len(result) == 3
+        # Check that the move_process action includes to_e_core parameter
+        process_action = next(a for a in result if a['type'] == 'process')
+        assert process_action['to_e_core'] is True
+
+    def test_call_returns_fresh_actions(self, scheduler):
+        """Test __call__ clears actions between calls."""
+        call_count = [0]
+        def custom_schedule():
+            call_count[0] += 1
+            if call_count[0] == 1:
+                scheduler.move_process(1)
+        scheduler.schedule = custom_schedule
+        
+        result1 = scheduler([])
+        # Note: result1 references the internal queue, so we must check it
+        # before the next call clears the queue
+        assert len(result1) == 1
+        
+        result2 = scheduler([])
+        assert result2 == []
+
+
+class TestSchedulerIntegration:
+    """Integration tests for Scheduler __call__ method."""
+
+    @pytest.fixture
+    def scheduler(self):
+        """Create a fresh Scheduler instance for each test."""
+        from automation.api import Scheduler
+        instance = Scheduler()
+        instance.processes = {}
+        instance.pages = {}
+        instance.used_cpus = 0
+        instance.io_queue.io_count = 0
+        return instance
+
+    def test_call_processes_events_and_returns_actions(self, scheduler):
+        """Test that __call__ processes input events and returns action events."""
+        events = [SimpleNamespace(etype='PROC_NEW', pid=1)]
+        
+        result = scheduler(events)
+        
+        assert 1 in scheduler.processes
+        assert result == []
+
+    def test_call_handles_unknown_events_gracefully(self, scheduler):
+        """Test that unknown event types don't cause errors."""
+        events = [SimpleNamespace(etype='UNKNOWN_EVENT', data='test')]
+        
+        result = scheduler(events)
+        assert result == []
+
+    def test_full_process_lifecycle(self, scheduler):
+        """Test a complete process lifecycle through events."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=False),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=True),
+            SimpleNamespace(etype='PAGE_USE', pid=1, idx=0, use=True),
+            SimpleNamespace(etype='PROC_TERM', pid=1),
+            SimpleNamespace(etype='PAGE_USE', pid=1, idx=0, use=False),
+            SimpleNamespace(etype='PROC_CPU', pid=1, cpu=False),
+        ]
+        
+        scheduler(events)
+        
+        assert 1 in scheduler.processes
+        assert scheduler.processes[1].has_ended is True
+        assert scheduler.processes[1].has_cpu is False
+        assert scheduler.used_cpus == 0
+
+    def test_process_killed_cleans_up(self, scheduler):
+        """Test that PROC_KILL properly cleans up process and its pages."""
+        events = [
+            SimpleNamespace(etype='PROC_NEW', pid=1),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=0, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_NEW', pid=1, idx=1, swap=False, use=True),
+            SimpleNamespace(etype='PAGE_FREE', pid=1, idx=0),
+            SimpleNamespace(etype='PAGE_FREE', pid=1, idx=1),
+            SimpleNamespace(etype='PROC_KILL', pid=1),
+        ]
+        
+        scheduler(events)
+        
+        assert 1 not in scheduler.processes
+        assert (1, 0) not in scheduler.pages
+        assert (1, 1) not in scheduler.pages
+
+
+class TestGameObjectsEmitEvents:
+    """Tests that real game objects emit events to game_monitor.
+    
+    These tests verify that the actual game objects (ProcessManager, PageManager, etc.)
+    call the appropriate game_monitor.notify_* functions when state changes occur.
+    """
+
+    def test_process_manager_emits_process_new_event(self, stage):
+        """Test that ProcessManager emits PROC_NEW event when creating processes at startup."""
+        # Run updates to trigger process creation at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        events = game_monitor.get_events()
+        proc_new_events = [e for e in events if e.etype == 'PROC_NEW']
+
+        # Stage config has num_processes_at_startup = 14
+        assert len(proc_new_events) >= 14, "ProcessManager should emit PROC_NEW for each process at startup"
+        assert proc_new_events[0].pid == 1, "First process should have pid=1"
+
+    def test_process_emits_page_new_event_when_using_cpu(self, stage, monkeypatch):
+        """Test that Process emits PAGE_NEW event when it starts using CPU and creates pages."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+
+        # Ensure CPU is available
+        cpu = stage.process_manager.cpu_manager.select_free_cpu()
+        assert cpu is not None, "Need a free CPU for this test"
+
+        game_monitor.clear_events()
+
+        # When process uses CPU for the first time, it creates pages
+        process.use_cpu()
+
+        events = game_monitor.get_events()
+        page_new_events = [e for e in events if e.etype == 'PAGE_NEW']
+
+        assert len(page_new_events) >= 1, "Process.use_cpu should emit PAGE_NEW events when creating pages"
+
+    def test_io_queue_emits_io_queue_event_on_process(self, stage):
+        """Test that IoQueue emits IO_QUEUE event when processing events."""
+        io_queue = stage.process_manager.io_queue
+        
+        callback_called = []
+        io_queue.wait_for_event(0, lambda: None, lambda: callback_called.append(True))
+        
+        io_queue.update(6000, [])
+        
+        game_monitor.clear_events()
+        
+        io_queue.handle_player_action()
+        
+        events = game_monitor.get_events()
+        io_queue_events = [e for e in events if e.etype == 'IO_QUEUE']
+        
+        assert len(io_queue_events) >= 1, "IoQueue.handle_player_action should emit IO_QUEUE event"
+        assert io_queue_events[0].io_count == 0, "After processing, io_count should be 0"
+
+    def test_process_emits_cpu_event_when_toggled(self, stage):
+        """Test that Process emits PROC_CPU event when toggled on/off CPU."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+
+        game_monitor.clear_events()
+
+        # Toggle process (should assign to CPU)
+        process.toggle()
+        
+        events = game_monitor.get_events()
+        proc_cpu_events = [e for e in events if e.etype == 'PROC_CPU']
+        
+        assert len(proc_cpu_events) >= 1, "Process.toggle should emit PROC_CPU event"
+
+    def test_process_emits_starvation_event_when_level_changes(self, stage):
+        """Test that Process emits PROC_STARV event when starvation level changes."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+
+        # Put process on CPU first so it becomes happy
+        process.toggle()
+
+        game_monitor.clear_events()
+
+        # Run update to trigger happiness (starvation -> 0)
+        process.update(current_time + process.cpu.process_happiness_ms + 1000, [])
+
+        events = game_monitor.get_events()
+        starv_events = [e for e in events if e.etype == 'PROC_STARV']
+
+        assert len(starv_events) >= 1, "Process should emit PROC_STARV when starvation level changes"
+
+    def test_process_emits_wait_page_event(self, stage):
+        """Test that Process emits PROC_WAIT_PAGE event when waiting for page."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Get page through PageManager and request swap
+        page = stage.page_manager.get_page(process.pid, 0)
+        page.request_swap()
+
+        # Run updates until swap completes and page is on disk
+        swap_time = current_time
+        for _ in range(100):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if page.on_disk:
+                break
+
+        game_monitor.clear_events()
+
+        # Update process to trigger page availability check
+        process.update(swap_time, [])
+
+        events = game_monitor.get_events()
+        wait_page_events = [e for e in events if e.etype == 'PROC_WAIT_PAGE']
+
+        assert len(wait_page_events) >= 1, "Process should emit PROC_WAIT_PAGE when waiting for page"
+
+    def test_process_emits_wait_page_false_event_when_yielding_cpu_during_page_fault(self, stage):
+        """Test that Process emits PROC_WAIT_PAGE with waiting_for_page=False when it yields
+        the CPU while blocked on a page fault."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.use_cpu()
+
+        # Get page through PageManager and request swap
+        page = stage.page_manager.get_page(process.pid, 0)
+        page.request_swap()
+
+        # Run updates until swap completes and page is on disk
+        swap_time = current_time
+        for _ in range(100):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if page.on_disk:
+                break
+
+        process.update(swap_time, [])
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+
+        game_monitor.clear_events()
+
+        process.yield_cpu()
+
+        events = game_monitor.get_events()
+        wait_page_events = [e for e in events if e.etype == 'PROC_WAIT_PAGE' and e.pid == process.pid]
+
+        assert len(wait_page_events) == 1, "Process should emit PROC_WAIT_PAGE when it stops waiting for page"
+        assert wait_page_events[0].waiting_for_page is False
+
+    def test_scheduler_releases_cpu_when_process_on_cpu_dies_from_starvation(self, stage):
+        """Test that the Scheduler's used_cpus goes back to zero after a process that was
+        blocked on a page fault while on a CPU is killed by starvation, and that the freed
+        CPU slot can be claimed again by another process without inflating used_cpus."""
+        from automation.api import Scheduler
+        scheduler = Scheduler()
+        game_monitor.clear_events()
+
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.use_cpu()
+
+        # Get page through PageManager and request swap
+        page = stage.page_manager.get_page(process.pid, 0)
+        page.request_swap()
+
+        # Run updates until swap completes and page is on disk
+        swap_time = current_time
+        for _ in range(100):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if page.on_disk:
+                break
+
+        process.update(swap_time, [])
+        scheduler(game_monitor.get_events())
+        game_monitor.clear_events()
+
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert scheduler.used_cpus == 1
+        held_cpu = process.cpu
+
+        # Leave the page fault unresolved until the process dies from starvation
+        for i in range(1, DEAD_STARVATION_LEVEL):
+            process.update(swap_time + i * process.time_between_starvation_levels, [])
+        scheduler(game_monitor.get_events())
+        game_monitor.clear_events()
+
+        assert process.state == ProcessState.ENDED
+        assert process.pid not in scheduler.processes
+        assert scheduler.used_cpus == 0
+
+        # The freed CPU slot can be claimed again by another process
+        other_process = stage.process_manager.get_process(2)
+        other_process.use_cpu()
+        scheduler(game_monitor.get_events())
+        game_monitor.clear_events()
+
+        assert other_process.cpu is held_cpu
+        assert scheduler.used_cpus == 1
+
+    def test_scheduler_clears_waiting_for_page_when_page_recovered_off_cpu(self, stage):
+        """Test that the Scheduler no longer reports waiting_for_page after a process yields the
+        CPU during a page fault, its page is swapped back to RAM, and it is rescheduled."""
+        from automation.api import Scheduler
+        scheduler = Scheduler()
+        game_monitor.clear_events()
+
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.use_cpu()
+
+        # Get page through PageManager and request swap
+        page = stage.page_manager.get_page(process.pid, 0)
+        page.request_swap()
+
+        # Run updates until swap completes and page is on disk
+        swap_time = current_time
+        for _ in range(100):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if page.on_disk:
+                break
+
+        process.update(swap_time, [])
+        scheduler(game_monitor.get_events())
+        game_monitor.clear_events()
+
+        assert process.state == ProcessState.BLOCKED_ON_CPU_PAGE_FAULT
+        assert scheduler.processes[process.pid].waiting_for_page is True
+
+        # Yield the CPU during the page fault, then bring the page back to RAM
+        process.yield_cpu()
+        page.request_swap()
+        for _ in range(100):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if not page.on_disk:
+                break
+
+        # Reschedule the process now that its page is in RAM
+        process.use_cpu()
+        process.update(swap_time, [])
+        scheduler(game_monitor.get_events())
+        game_monitor.clear_events()
+
+        assert process.state == ProcessState.RUNNING
+        assert scheduler.processes[process.pid].waiting_for_page is False
+
+    def test_page_emits_swap_event_when_swap_completes(self, stage):
+        """Test that Page emits PAGE_SWAP event when swap completes."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Get page through PageManager
+        page = stage.page_manager.get_page(process.pid, 0)
+
+        game_monitor.clear_events()
+
+        # Request swap
+        page.request_swap()
+
+        # Run update loop until swap completes
+        swap_time = current_time
+        max_iterations = 1000
+        for _ in range(max_iterations):
+            stage.page_manager.update(swap_time, [])
+            page.update(swap_time, [])
+            swap_time += 100
+            if page.on_disk:
+                break
+
+        events = game_monitor.get_events()
+        swap_events = [e for e in events if e.etype == 'PAGE_SWAP']
+
+        assert len(swap_events) >= 1, "Page should emit PAGE_SWAP when swap completes"
+
+    def test_page_emits_swap_queue_event_when_swap_requested(self, stage):
+        """Test that Page emits PAGE_SWAP_QUEUE event when swap is requested."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Get page through PageManager
+        page = stage.page_manager.get_page(process.pid, 0)
+
+        game_monitor.clear_events()
+
+        # Request swap
+        page.request_swap()
+
+        events = game_monitor.get_events()
+        swap_queue_events = [e for e in events if e.etype == 'PAGE_SWAP_QUEUE']
+
+        assert len(swap_queue_events) >= 1, "Page should emit PAGE_SWAP_QUEUE when swap requested"
+        assert swap_queue_events[0].pid == page.pid
+        assert swap_queue_events[0].idx == page.idx
+        assert swap_queue_events[0].waiting is True
+
+    def test_page_emits_swap_start_event_when_swap_begins(self, stage):
+        """Test that Page emits PAGE_SWAP_START event when swap actually starts."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Get page through PageManager
+        page = stage.page_manager.get_page(process.pid, 0)
+
+        game_monitor.clear_events()
+
+        # Request swap
+        page.request_swap()
+
+        # Run update to start the swap
+        stage.page_manager.update(current_time, [])
+
+        events = game_monitor.get_events()
+        swap_start_events = [e for e in events if e.etype == 'PAGE_SWAP_START']
+
+        assert len(swap_start_events) >= 1, "Page should emit PAGE_SWAP_START when swap starts"
+        assert swap_start_events[0].pid == page.pid
+        assert swap_start_events[0].idx == page.idx
+
+    def test_page_emits_swap_queue_cancelled_when_swap_cancelled(self, stage):
+        """Test that Page emits PAGE_SWAP_QUEUE with waiting=False when swap is cancelled."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Get page through PageManager
+        page = stage.page_manager.get_page(process.pid, 0)
+
+        # Request swap
+        page.request_swap()
+
+        game_monitor.clear_events()
+
+        # Cancel swap
+        page.request_swap_cancellation()
+
+        events = game_monitor.get_events()
+        swap_queue_events = [e for e in events if e.etype == 'PAGE_SWAP_QUEUE']
+        
+        assert len(swap_queue_events) >= 1, "Page should emit PAGE_SWAP_QUEUE when swap cancelled"
+        assert swap_queue_events[0].waiting is False
+
+    def test_process_emits_page_free_when_killed(self, stage, stage_config):
+        """Test that Process emits PAGE_FREE events when killed."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup and put on CPU (creates pages)
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Count how many pages were actually created by checking page manager
+        pages_for_process = []
+        for idx in range(stage_config.max_pages_per_process):
+            try:
+                page = stage.page_manager.get_page(process.pid, idx)
+                if page is not None:
+                    pages_for_process.append(page)
+            except KeyError:
+                pass  # Page doesn't exist
+        num_pages = len(pages_for_process)
+        assert num_pages > 0, "Process should have created at least one page"
+
+        game_monitor.clear_events()
+
+        # Remove process from CPU so it can starve
+        process.yield_cpu()
+
+        # Starve the process to death
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(current_time + i * process.time_between_starvation_levels, [])
+
+        events = game_monitor.get_events()
+        page_free_events = [e for e in events if e.etype == 'PAGE_FREE']
+
+        assert len(page_free_events) == num_pages, \
+            f"Process should emit PAGE_FREE for all {num_pages} pages when killed"
+
+    def test_process_emits_proc_kill_when_killed(self, stage):
+        """Test that Process emits PROC_KILL event when killed."""
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup
+        process = stage.process_manager.get_process(1)
+
+        game_monitor.clear_events()
+
+        # Starve the process to death
+        for i in range(1, DEAD_STARVATION_LEVEL + 1):
+            process.update(current_time + i * process.time_between_starvation_levels, [])
+
+        events = game_monitor.get_events()
+        kill_events = [e for e in events if e.etype == 'PROC_KILL']
+
+        assert len(kill_events) >= 1, "Process should emit PROC_KILL when killed"
+
+    def test_process_emits_proc_term_when_gracefully_terminated(self, stage_custom_config):
+        """Test that Process emits PROC_TERM event when gracefully terminated."""
+        # Create stage with 100% graceful termination probability
+        config = StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=1.0  # 100%
+        )
+        stage = stage_custom_config(config)
+
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup and put on CPU
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        game_monitor.clear_events()
+
+        # Update process to trigger graceful termination
+        process.update(current_time + 1000, [])
+
+        events = game_monitor.get_events()
+        term_events = [e for e in events if e.etype == 'PROC_TERM']
+
+        assert len(term_events) >= 1, "Process should emit PROC_TERM when gracefully terminated"
+
+    def test_process_emits_proc_end_when_terminated_and_yields_cpu(self, stage_custom_config):
+        """Test that Process emits PROC_END event when terminated process yields CPU."""
+        # Create stage with 100% graceful termination probability
+        config = StageConfig(
+            cpu_config=CpuConfig(num_cores=4),
+            num_processes_at_startup=14,
+            num_ram_rows=8,
+            new_process_probability=0,
+            io_probability=0,
+            graceful_termination_probability=1.0  # 100%
+        )
+        stage = stage_custom_config(config)
+
+        # Run updates to create processes at startup
+        current_time = 0
+        for _ in range(20):
+            stage.process_manager.update(current_time, [])
+            current_time += 1000
+
+        # Use existing process from stage setup and put on CPU
+        process = stage.process_manager.get_process(1)
+        process.toggle()
+
+        # Gracefully terminate via update
+        process.update(current_time + 1000, [])
+
+        game_monitor.clear_events()
+
+        # Yield CPU (this should trigger PROC_END)
+        process.yield_cpu()
+
+        events = game_monitor.get_events()
+        end_events = [e for e in events if e.etype == 'PROC_END']
+
+        assert len(end_events) >= 1, "Process should emit PROC_END when terminated process yields CPU"
+
+
+class TestStageAutomationIntegration:
+    """Integration tests for Stage scene automation via public interface."""
+
+    @pytest.fixture
+    def stage_with_script(self, stage_config, scene_manager):
+        """Create a stage with a simple automation script."""
+        script_source = '''
+def scheduler(events):
+    actions = []
+    for event in events:
+        if event.etype == 'PROC_NEW':
+            actions.append({'type': 'process', 'pid': event.pid})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        return stage
+
+    @pytest.fixture
+    def stage_without_script(self, stage_config, scene_manager):
+        """Create a stage without an automation script."""
+        stage = Stage('Test Stage', stage_config, script=None, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        return stage
+
+    def test_stage_with_script_responds_to_process_events(
+            self, stage_with_script, monkeypatch):
+        """Test that stage with script handles process events via update."""
+        toggled_calls = []
+        
+        class MockProcess:
+            def __init__(self, pid):
+                self.pid = pid
+                self._has_cpu = False
+            def toggle(self, to_e_core=False):
+                toggled_calls.append((self.pid, to_e_core))
+            def has_cpu(self):
+                return self._has_cpu
+        
+        monkeypatch.setattr(
+            stage_with_script.process_manager, 
+            'get_process', 
+            lambda pid: MockProcess(pid)
+        )
+        
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+        
+        # Call update to trigger script processing
+        stage_with_script.update(0, [])
+        
+        # Verify the toggle was called with the correct parameters
+        assert len(toggled_calls) == 1
+        pid, to_e_core = toggled_calls[0]
+        assert pid == 1
+        assert to_e_core is False  # Default value when not specified
+
+    def test_script_uses_to_e_core_parameter(self, stage_config, scene_manager, monkeypatch):
+        """Test that script can use to_e_core parameter in move_process."""
+        script_source = '''
+def scheduler(events):
+    actions = []
+    for event in events:
+        if event.etype == 'PROC_NEW':
+            # Move process to efficient core
+            actions.append({'type': 'process', 'pid': event.pid, 'to_e_core': True})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        
+        toggle_calls = []
+        
+        class MockProcess:
+            def __init__(self, pid):
+                self.pid = pid
+                self._has_cpu = False
+            def toggle(self, to_e_core=False):
+                toggle_calls.append((self.pid, to_e_core, self._has_cpu))
+            @property
+            def has_cpu(self):
+                return self._has_cpu
+        
+        # Create a mock process instance
+        mock_process = MockProcess(1)
+        
+        monkeypatch.setattr(
+            stage.process_manager, 
+            'get_process', 
+            lambda pid: mock_process
+        )
+        
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+        
+        stage.update(0, [])
+        
+        # Verify toggle was called with to_e_core=True when has_cpu is False
+        assert len(toggle_calls) == 1
+        pid, to_e_core, had_cpu = toggle_calls[0]
+        assert pid == 1
+        assert to_e_core is True
+        assert had_cpu is False  # Process didn't have CPU, so should toggle with to_e_core=True
+
+    def test_stage_without_script_does_not_crash(self, stage_without_script):
+        """Test that stage without script handles update without errors."""
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+        
+        # Should not raise
+        stage_without_script.update(0, [])
+
+    def test_script_with_page_action(self, stage_config, scene_manager, monkeypatch):
+        """Test that script page actions trigger page swaps."""
+        script_source = '''
+def scheduler(events):
+    actions = []
+    for event in events:
+        if event.etype == 'PAGE_NEW':
+            actions.append({'type': 'page', 'pid': event.pid, 'idx': event.idx})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        
+        swapped_pages = []
+        
+        class MockPage:
+            def __init__(self, pid, idx):
+                self.pid = pid
+                self.idx = idx
+            def request_swap(self):
+                swapped_pages.append((self.pid, self.idx))
+        
+        monkeypatch.setattr(
+            stage.page_manager,
+            'get_page',
+            lambda pid, idx: MockPage(pid, idx)
+        )
+        
+        game_monitor.clear_events()
+        game_monitor.notify_page_new(1, 0, False, True)
+        
+        stage.update(0, [])
+        
+        assert (1, 0) in swapped_pages
+
+    def test_script_with_io_action(self, stage_config, scene_manager, monkeypatch):
+        """Test that script io_queue actions trigger IO processing."""
+        script_source = '''
+def scheduler(events):
+    actions = []
+    for event in events:
+        if event.etype == 'IO_QUEUE' and event.io_count > 0:
+            actions.append({'type': 'io_queue'})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        
+        io_processed = []
+        
+        monkeypatch.setattr(
+            stage.process_manager.io_queue,
+            'handle_player_action',
+            lambda: io_processed.append(True)
+        )
+        
+        game_monitor.clear_events()
+        game_monitor.notify_io_event_count(5)
+        
+        stage.update(0, [])
+        
+        assert len(io_processed) == 1
+
+    def test_script_error_does_not_crash_stage(
+            self, stage_with_script, monkeypatch, capsys):
+        """Test that script errors are handled gracefully."""
+        def raise_error(pid):
+            raise ValueError("Test error")
+        
+        monkeypatch.setattr(
+            stage_with_script.process_manager,
+            'get_process',
+            raise_error
+        )
+        
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+        
+        # Should not raise
+        stage_with_script.update(0, [])
+        
+        # Error should be printed to stderr
+        captured = capsys.readouterr()
+        assert 'ValueError' in captured.err
+
+    def test_script_without_scheduler_function(self, stage_config, scene_manager):
+        """Test that script without scheduler function is handled gracefully."""
+        script_source = '''
+# No scheduler defined
+x = 1
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+        
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+        
+        # Should not raise
+        stage.update(0, [])
+
+    def test_script_has_access_to_cpu_core_types(self, stage_config, scene_manager, monkeypatch):
+        """Test that script has access to cpu_core_types global variable."""
+        actions_received = []
+
+        def capture_action(pid):
+            actions_received.append(True)
+
+        class MockProcess:
+            def __init__(self):
+                self.has_cpu = False
+            def toggle(self, to_e_core=False):
+                capture_action(1)
+
+        # Script returns action only if cpu_core_types is available and valid
+        script_source = '''
+def scheduler(events):
+    actions = []
+    # Only return action if cpu_core_types is usable
+    if len(cpu_core_types) > 0:
+        for event in events:
+            if event.etype == 'PROC_NEW':
+                actions.append({'type': 'process', 'pid': event.pid})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+
+        monkeypatch.setattr(
+            stage.process_manager,
+            'get_process',
+            lambda pid: MockProcess()
+        )
+
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+
+        # If cpu_core_types wasn't available, no action would have been generated
+        # and toggle wouldn't have been called
+        stage.update(0, [])
+
+        assert len(actions_received) == 1  # Proof that the script executed successfully
+
+    def test_script_has_correct_cpu_core_types_values(self, scene_manager, monkeypatch):
+        """Test that cpu_core_types contains correct values for a known configuration."""
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from config.cpu_config import CpuConfig, CoreType
+        from config.stage_config import StageConfig
+
+        # Create a specific test configuration:
+        # - 4 cores total
+        # - Core 0-1: PERFORMANCE (2 threads each)
+        # - Core 2-3: EFFICIENT (1 thread each)
+        # Expected: ['PERFORMANCE', 'PERFORMANCE', 'PERFORMANCE', 'PERFORMANCE', 'EFFICIENT', 'EFFICIENT']
+        test_stage_config = StageConfig(
+            cpu_config=CpuConfig(
+                num_cores=4,
+                core_types=[CoreType.PERFORMANCE, CoreType.PERFORMANCE, CoreType.EFFICIENT, CoreType.EFFICIENT],
+                num_threads_per_core=[2, 2, 1, 1]
+            )
+        )
+
+        expected_cpu_core_types = [
+            'PERFORMANCE', 'PERFORMANCE',  # Core 0: 2 threads
+            'PERFORMANCE', 'PERFORMANCE',  # Core 1: 2 threads
+            'EFFICIENT',                    # Core 2: 1 thread
+            'EFFICIENT'                     # Core 3: 1 thread
+        ]
+
+        actions_received = []
+
+        def capture_action(pid):
+            actions_received.append(True)
+
+        class MockProcess:
+            def __init__(self):
+                self.has_cpu = False
+            def toggle(self, to_e_core=False):
+                capture_action(1)
+
+        # Script validates cpu_core_types and returns action if correct
+        script_source = f'''
+def scheduler(events):
+    expected = {expected_cpu_core_types}
+    actions = []
+    if cpu_core_types == expected:
+        for event in events:
+            if event.etype == 'PROC_NEW':
+                actions.append({{'type': 'process', 'pid': event.pid}})
+    return actions
+'''
+        compiled = compile(script_source, '<test>', 'exec')
+        stage = Stage('Test Stage', test_stage_config, script=compiled, standalone=True)
+        stage.scene_manager = scene_manager
+        stage.setup()
+
+        monkeypatch.setattr(
+            stage.process_manager,
+            'get_process',
+            lambda pid: MockProcess()
+        )
+
+        game_monitor.clear_events()
+        game_monitor.notify_process_new(1)
+
+        # If cpu_core_types had wrong values, no action would have been generated
+        stage.update(0, [])
+
+        # Proof that cpu_core_types had the expected values
+        assert len(actions_received) == 1
+
+class TestAutoModule:
+    """Tests for the auto.py module functions."""
+
+    @pytest.fixture
+    def temp_script(self, tmp_path):
+        """Create a temporary script file."""
+        script_file = tmp_path / "test_script.py"
+        script_file.write_text("def scheduler(events): return []\n")
+        return str(script_file)
+
+    @pytest.fixture
+    def temp_sandbox_module(self, tmp_path, monkeypatch):
+        """Create a temporary sandbox module with a stage."""
+        module_dir = tmp_path / "test_sandbox"
+        module_dir.mkdir()
+        (module_dir / "__init__.py").write_text("")
+
+        stage_file = module_dir / "test_config.py"
+        stage_file.write_text('''
+from config.stage_config import StageConfig
+from config.cpu_config import CpuConfig
+from scenes.stage import Stage
+
+config = StageConfig(
+    cpu_config=CpuConfig(num_cores=2),
+    num_processes_at_startup=5,
+    num_ram_rows=4,
+)
+stage = Stage("Test Sandbox", config)
+''')
+        monkeypatch.syspath_prepend(str(tmp_path))
+        return "test_sandbox.test_config"
+
+    def test_parse_arguments_default_difficulty(self, temp_script, monkeypatch):
+        """Test parse_arguments with default (normal) difficulty."""
+        import sys
+        from auto import parse_arguments
+        from config.difficulty_levels import default_difficulty
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script])
+        filename, result = parse_arguments()
+
+        assert filename == temp_script
+        config, name = result
+        assert config == default_difficulty.config
+        assert "NORMAL" in name.upper()
+
+    def test_parse_arguments_easy_difficulty(self, temp_script, monkeypatch):
+        """Test parse_arguments with --easy flag."""
+        import sys
+        from auto import parse_arguments
+        from config.difficulty_levels import difficulty_levels_map
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--easy'])
+        filename, result = parse_arguments()
+
+        config, name = result
+        assert config == difficulty_levels_map['easy'].config
+        assert "EASY" in name.upper()
+
+    def test_parse_arguments_hard_difficulty(self, temp_script, monkeypatch):
+        """Test parse_arguments with --hard flag."""
+        import sys
+        from auto import parse_arguments
+        from config.difficulty_levels import difficulty_levels_map
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--hard'])
+        filename, result = parse_arguments()
+
+        config, name = result
+        assert config == difficulty_levels_map['hard'].config
+        assert "HARD" in name.upper()
+
+    def test_parse_arguments_harder_difficulty(self, temp_script, monkeypatch):
+        """Test parse_arguments with --harder flag."""
+        import sys
+        from auto import parse_arguments
+        from config.difficulty_levels import difficulty_levels_map
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--harder'])
+        filename, result = parse_arguments()
+
+        config, name = result
+        assert config == difficulty_levels_map['harder'].config
+        assert "HARDER" in name.upper()
+
+    def test_parse_arguments_insane_difficulty(self, temp_script, monkeypatch):
+        """Test parse_arguments with --insane flag."""
+        import sys
+        from auto import parse_arguments
+        from config.difficulty_levels import difficulty_levels_map
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--insane'])
+        filename, result = parse_arguments()
+
+        config, name = result
+        assert config == difficulty_levels_map['insane'].config
+        assert "INSANE" in name.upper()
+
+    def test_parse_arguments_sandbox_with_stage(self, temp_script, temp_sandbox_module, monkeypatch):
+        """Test parse_arguments with --sandbox flag loads stage from module."""
+        import sys
+        from auto import parse_arguments
+        from scenes.stage import Stage
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--sandbox', temp_sandbox_module])
+        filename, result = parse_arguments()
+
+        assert isinstance(result, Stage)
+        assert result.name == "Test Sandbox"
+
+    def test_parse_arguments_sandbox_not_found(self, temp_script, monkeypatch, capsys):
+        """Test parse_arguments with --sandbox for non-existent module."""
+        import sys
+        from auto import parse_arguments
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--sandbox', 'nonexistent.module'])
+
+        with pytest.raises(SystemExit) as exc_info:
+            parse_arguments()
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err
+
+    def test_parse_arguments_sandbox_missing_stage(self, temp_script, tmp_path, monkeypatch, capsys):
+        """Test parse_arguments with --sandbox when module has no stage."""
+        import sys
+        from auto import parse_arguments
+
+        module_dir = tmp_path / "bad_sandbox"
+        module_dir.mkdir()
+        (module_dir / "__init__.py").write_text("")
+        (module_dir / "no_stage.py").write_text("x = 1\n")
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        monkeypatch.setattr(sys, 'argv', ['auto', temp_script, '--sandbox', 'bad_sandbox.no_stage'])
+
+        with pytest.raises(SystemExit) as exc_info:
+            parse_arguments()
+
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "stage" in captured.err
+
+    def test_compile_auto_script_absolute_path(self, temp_script):
+        """Test compile_auto_script with absolute path."""
+        from auto import compile_auto_script
+
+        compiled = compile_auto_script(temp_script)
+        assert compiled is not None
+        assert hasattr(compiled, 'co_filename')
+
+    def test_compile_auto_script_relative_path(self, tmp_path, monkeypatch):
+        """Test compile_auto_script with relative path."""
+        from auto import compile_auto_script
+        import os
+
+        script_file = tmp_path / "rel_script.py"
+        script_file.write_text("def scheduler(events): return []\n")
+
+        monkeypatch.chdir(tmp_path)
+        os.makedirs("../subdir", exist_ok=True)
+        rel_script = tmp_path.parent / "subdir" / "script.py"
+        rel_script.write_text("def scheduler(events): return []\n")
+
+        compiled = compile_auto_script(str(rel_script))
+        assert compiled is not None

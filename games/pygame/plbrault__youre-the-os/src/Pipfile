@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pygame-ce = "*"
+
+[dev-packages]
+pygbag = "==0.9.2"
+pylint = "*"
+autopep8 = "*"
+pytest = "*"
+
+[requires]
+python_version = "3.14"
+
+[scripts]
+desktop = "python ./run-desktop.py"
+auto = "python ./run-auto.py"
+sandbox = "python ./run-sandbox.py"
+web = "python ./run-web.py"
+pylint = "pylint ./src"
