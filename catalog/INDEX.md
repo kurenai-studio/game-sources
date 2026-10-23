@@ -130,3 +130,7 @@
 | games/unity/Valks-Games__Space-RPG-Game | https://github.com/Valks-Games/Space-RPG-Game | MIT | unity | e | 2026-10-22 |
 | games/unity/Xenomega__Sycophant | https://github.com/Xenomega/Sycophant | MIT | unity | e | 2026-10-22 |
 | games/unity/yushroom__MonumentVally-Demo | https://github.com/yushroom/MonumentVally-Demo | MIT | unity | e | 2026-10-22 |
+| games/browser/fakee516__neon-breaker | https://github.com/fakee516/neon-breaker | MIT | browser | c | 2026-10-23 |
+| games/threejs/pieterubeltje__rocket-dash | https://github.com/pieterubeltje/rocket-dash | MIT | threejs | c | 2026-10-23 |
+| games/browser/byilias29-max__30-noches | https://github.com/byilias29-max/30-noches | MIT | browser | c | 2026-10-23 |
+| games/phaser/mangobanaani__cannons | https://github.com/mangobanaani/cannons | GPL-3.0 | phaser | c | 2026-10-23 |
