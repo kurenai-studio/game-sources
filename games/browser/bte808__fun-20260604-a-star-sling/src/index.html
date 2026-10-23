@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Star Sling is a tiny daily canvas game where you sling a star core through a fresh constellation field."
+    />
+    <title>Star Sling</title>
+    <link rel="icon" href="docs/preview.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar" aria-label="Game status">
+        <div class="brand-block">
+          <p class="eyebrow">Daily field <span id="date-chip">2026-06-04</span></p>
+          <h1>Star Sling</h1>
+        </div>
+        <div class="score-strip" aria-label="Round numbers">
+          <div>
+            <span>Score</span>
+            <strong id="score-value">0</strong>
+          </div>
+          <div>
+            <span>Stars</span>
+            <strong id="star-count">0/7</strong>
+          </div>
+          <div>
+            <span>Shots</span>
+            <strong id="shot-count">0/8</strong>
+          </div>
+          <div>
+            <span>Best</span>
+            <strong id="best-score">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="play-layout" aria-label="Star Sling play surface">
+        <div class="canvas-zone">
+          <canvas id="field" width="900" height="560" aria-label="Constellation sling field"></canvas>
+          <div class="field-readout" id="status-line">Press Start Round.</div>
+        </div>
+
+        <aside class="control-panel" aria-label="Round controls">
+          <div class="date-row">
+            <label for="challenge-date">Date</label>
+            <input id="challenge-date" type="date" value="2026-06-04" />
+            <button id="load-date-button" type="button">Load</button>
+          </div>
+
+          <div class="round-actions">
+            <button id="start-button" class="primary-action" type="button">Start Round</button>
+            <button id="retry-button" type="button">Retry</button>
+          </div>
+
+          <div class="meter-stack" aria-label="Round meters">
+            <div>
+              <span>Heat</span>
+              <meter id="heat-meter" min="0" max="3" value="0"></meter>
+            </div>
+            <div>
+              <span>Grade</span>
+              <strong id="grade-value">-</strong>
+            </div>
+          </div>
+
+          <div id="result-panel" class="result-panel" hidden>
+            <h2 id="result-title">Result</h2>
+            <p id="result-meta">No run yet.</p>
+            <div class="result-actions">
+              <button id="copy-button" type="button">Copy Score</button>
+              <button id="copy-link-button" type="button">Copy Link</button>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
