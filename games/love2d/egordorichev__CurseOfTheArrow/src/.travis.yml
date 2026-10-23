@@ -1,0 +1,20 @@
+language: go
+
+go:
+  - "1.10"
+
+sudo: required
+
+install: ./.travis/install.sh
+
+script: ./.travis/script.sh
+
+before_deploy: ./.travis/before_deploy.sh
+
+deploy:
+  # Deploy a new CurseOfTheArrow release.
+  - provider: script
+    script: bash ./.travis/deploy_release.sh
+    skip-cleanup: true
+    on:
+      tags: true
