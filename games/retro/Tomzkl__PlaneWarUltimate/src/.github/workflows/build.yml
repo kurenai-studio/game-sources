@@ -1,0 +1,55 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Download Raylib
+        run: |
+          curl -L -o raylib.zip https://github.com/raysan5/raylib/releases/download/6.0/raylib-6.0_win64_msvc16.zip
+          tar -xf raylib.zip
+          echo "RAYLIB_PATH=${{ github.workspace }}/raylib-6.0_win64_msvc16" >> $env:GITHUB_ENV
+
+      - name: Build Release
+        run: |
+          msbuild MyFirstGame.sln /p:Configuration=Release /p:Platform=x64 /p:RaylibPath="${{ env.RAYLIB_PATH }}"
+
+      - name: Package Release
+        run: |
+          mkdir publish/PlaneWarUltimate
+          cp x64/Release/MyFirstGame.exe publish/PlaneWarUltimate/
+          cp ${{ env.RAYLIB_PATH }}/lib/raylib.dll publish/PlaneWarUltimate/
+          cp -r resources publish/PlaneWarUltimate/resources
+          echo "Plane War Ultimate v${{ github.ref_name }}" > publish/PlaneWarUltimate/README.txt
+          echo "" >> publish/PlaneWarUltimate/README.txt
+          echo "1. Double-click PlaneWarUltimate.exe to play" >> publish/PlaneWarUltimate/README.txt
+          echo "2. Controls: WASD move, SPACE shoot, P pause, R restart" >> publish/PlaneWarUltimate/README.txt
+
+      - name: Create Zip
+        run: |
+          cd publish
+          Compress-Archive -Path PlaneWarUltimate -DestinationPath ../PlaneWarUltimate_${{ github.ref_name }}_win64.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Plane War Ultimate ${{ github.ref_name }}
+          files: PlaneWarUltimate_${{ github.ref_name }}_win64.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
