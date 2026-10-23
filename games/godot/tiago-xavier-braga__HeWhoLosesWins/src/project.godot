@@ -1,0 +1,61 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="He Who Loses Wins"
+run/main_scene="res://scenes/ui/start_menu.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.19215687, 0.19215687, 0.1764706, 1)
+boot_splash/image="res://assets/textures/ui/txt_boot_splash.png"
+config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="res://resources/audio_bus_layout.tres"
+
+[autoload]
+
+LeafTween="*uid://qbx4dagkdwpi"
+GameSettings="*res://scripts/game/game_settings.gd"
+Sfx="*res://scripts/audio/sfx.gd"
+Music="*res://scenes/audio/music.tscn"
+SaveKit="*uid://cbq26gcqu6ro"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/leaf_tween/plugin.cfg", "res://addons/save_kit/plugin.cfg")
+
+[gui]
+
+theme/custom="res://resources/ui_theme.tres"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+
+[save_kit]
+
+save_key="he_who_loses_wins"
+defaults_file="res://resources/save_defaults.json"
+custom_storage=""
