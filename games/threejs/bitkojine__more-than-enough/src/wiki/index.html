@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Only the wiki's own files run or load (pictures may also be data: and
+     blob: URLs, for the texture pack shown and downloaded here). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta name="referrer" content="no-referrer" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0e0b" />
+<title data-i18n="wiki.title"></title>
+<meta name="description" content="" data-i18n-content="wiki.description" />
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml" />
+<link rel="icon" href="../icons/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png" />
+<link rel="stylesheet" href="wiki.css" />
+</head>
+<body>
+<div class="layout">
+  <nav data-i18n-aria-label="wiki.nav">
+    <a class="brand" href="#home"><img src="../icons/icon.svg" alt="" width="28" height="28"><span data-i18n="wiki.brand"></span></a>
+    <div class="version"></div>
+    <a class="play" href="../"><span aria-hidden="true">&#9654;</span> <span data-i18n="wiki.play"></span></a>
+    <button id="language" class="language" type="button"><span data-i18n="sheet.language"></span>: <span data-i18n="language.name"></span></button>
+    <input id="search" type="search" data-i18n-placeholder="wiki.searchBox" data-i18n-aria-label="wiki.searchBox" />
+    <ul id="toc"></ul>
+  </nav>
+
+  <main>
+    <section id="results" aria-live="polite" hidden></section>
+
+    <article id="home"></article>
+
+    <article id="controls" hidden></article>
+
+    <article id="perfect" hidden></article>
+
+    <article id="screen" hidden></article>
+
+    <article id="world" hidden></article>
+
+    <article id="gathering" hidden></article>
+
+    <article id="mine" hidden></article>
+
+    <article id="buildings" hidden></article>
+
+    <article id="stockpile" hidden></article>
+
+    <article id="upgrades" hidden></article>
+
+    <article id="beyond" hidden></article>
+
+    <article id="milestones" hidden></article>
+
+    <article id="things" hidden></article>
+
+    <article id="textures" hidden></article>
+
+    <article id="saving" hidden></article>
+
+    <article id="ideas" hidden></article>
+
+  </main>
+</div>
+<script type="module" src="wiki.js"></script>
+</body>
+</html>

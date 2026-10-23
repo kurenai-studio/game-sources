@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- What the page may load and run (test/unit/security.test.js keeps the
+     inline script's hash in step). connect-src names the room service. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-eEhbGB8L7GioktMj0MvqRGI5IC+ZM5LBP0QJJPgTCL4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://rooms.robertasrudys.com wss://rooms.robertasrudys.com http://localhost:8787 ws://localhost:8787; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta name="referrer" content="no-referrer" />
+<title data-i18n="game.title"></title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#05070a" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<!-- The picture a shared link shows (icons/social.svg; crawlers need the full address). -->
+<meta property="og:image" content="https://play.robertasrudys.com/icons/social.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="apple-mobile-web-app-title" content="" data-i18n-content="game.shortTitle" />
+<meta name="application-name" content="" data-i18n-content="game.title" />
+<!-- scripts/stage-site.sh stamps a build hash onto every asset URL (here and
+     in each module import) so GitHub Pages' 10-minute cache can't serve a
+     stale build. Keep plain paths in the source. -->
+<link rel="stylesheet" href="style.css" />
+<script>
+  // Fail loud: anything that breaks the game (an exception, a module that
+  // failed to load) is shown on screen with what broke, never a frozen map.
+  (function () {
+    // This runs before the game's modules (which may be what failed), so it
+    // carries its own few words in every language; test/unit/i18n.test.js
+    // checks they match. The language is picked as src/i18n/i18n.js does.
+    var CRASH_TEXT = {
+      en: { title: 'The game broke', reload: 'Reload', game: 'Game', failedToLoad: 'Failed to load', unhandled: 'Unhandled promise rejection' },
+      lt: { title: 'Žaidimas sugedo', reload: 'Perkrauti', game: 'Žaidimas', failedToLoad: 'Nepavyko įkelti', unhandled: 'Neapdorotas pažado atmetimas' }
+    };
+    function language() {
+      var asked = null;
+      try { asked = new URLSearchParams(location.search).get('lang') || localStorage.getItem('mte.lang'); } catch (e) { asked = null; }
+      if (asked && CRASH_TEXT[asked]) return asked;
+      var wanted = (navigator.languages || []).concat([navigator.language]);
+      for (var i = 0; i < wanted.length; i++) {
+        var code = String(wanted[i] || '').slice(0, 2).toLowerCase();
+        if (CRASH_TEXT[code]) return code;
+      }
+      return 'en';
+    }
+    var words = CRASH_TEXT[language()];
+    // Everything we know about an error: its kind and message (Safari's
+    // stack leaves both out), where it was thrown, and the stack.
+    function describe(err, where) {
+      if (!err || typeof err !== 'object') return String(err) + (where ? '\n  at ' + where : '');
+      var head = (err.name || 'Error') + ': ' + (err.message || '(no message)');
+      var stack = String(err.stack || '');
+      if (stack.indexOf(head) === 0) stack = stack.slice(head.length).replace(/^\n/, '');
+      return head + (stack ? '\n' + stack : where ? '\n  at ' + where : '');
+    }
+    var shown = false;
+    function crash(what) {
+      var box = document.getElementById('crash');
+      if (!box) return document.addEventListener('DOMContentLoaded', function () { crash(what); });
+      var text = typeof what === 'string' ? what : describe(what);
+      var pre = box.querySelector('pre');
+      if (!shown) {
+        shown = true;
+        box.querySelector('strong').textContent = words.title;
+        box.querySelector('button').textContent = words.reload;
+        box.querySelector('button').addEventListener('click', function () { location.reload(); });
+        pre.textContent = words.game + ' v' + (window.MTE_VERSION || '?') + ', ' + new Date().toISOString() + '\n' + navigator.userAgent + '\n\n';
+      }
+      box.hidden = false;
+      pre.textContent += text + '\n\n';
+      if (window.console) console.error('[MTE crash] ' + text);
+    }
+    window.MTE_CRASH = crash;
+    function ours(url) { return !url || url.indexOf(location.origin + '/') === 0; }
+    window.addEventListener('error', function (e) {
+      var el = e.target;
+      if (el && el !== window && (el.src || el.href)) return crash(words.failedToLoad + ' ' + (el.src || el.href));
+      // An error the browser hides from us ("Script error.", no error object)
+      // or one from another origin was thrown by code that isn't the game:
+      // iOS Safari runs its own and share extensions' scripts in the page when
+      // the Share sheet opens. Note it and keep playing.
+      if (e.error == null || !ours(e.filename)) {
+        if (window.console) console.warn('[MTE] ignored an error from a script that is not the game: ' +
+          (e.message || '(no message)') + (e.filename ? ' at ' + e.filename + ':' + e.lineno + ':' + e.colno : ''));
+        return;
+      }
+      crash(describe(e.error, e.filename && e.filename + ':' + e.lineno + ':' + e.colno));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) {
+      crash(words.unhandled + ': ' + describe(e.reason));
+    });
+  })();
+</script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- The heads-up display. Status along the top (trophies, the resource
+       bar, settings), situational status down the left edge (battery, depth), every
+       action in the bottom-right thumb cluster. See docs/ui.md. -->
+  <div id="hud">
+    <div id="topbar">
+      <button id="btnAwards" class="hudBtn" type="button" data-i18n-aria-label="hud.awards"><svg class="trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 0 1-10 0z" /><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3" /><path d="M12 13v4M8 21h8M9.5 17h5v4h-5z" /></svg><span id="awardCount">0</span></button>
+      <div id="resources"></div>
+      <button id="btnSettings" class="hudBtn" type="button" data-i18n-aria-label="settings.title"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg></button>
+    </div>
+    <!-- The version, always in view. After an update it rolls from the old
+         number to the new one and keeps a dot until you look; tapping it
+         opens the changelog. Never a dialog (src/game/news.js). -->
+    <button id="btnVersion" type="button" translate="no"><span class="was" aria-hidden="true"></span><span class="now"></span></button>
+    <div id="friends" role="group" data-i18n-aria-label="together.friends" hidden></div>
+    <pre id="perf" aria-live="off" hidden></pre>
+    <div id="milestone" role="status" aria-live="polite" hidden><svg class="trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 0 1-10 0z" /><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3" /><path d="M12 13v4M8 21h8M9.5 17h5v4h-5z" /></svg><small><span class="label"></span> <span class="of"></span></small><strong></strong><span class="next"></span></div>
+  </div>
+
+  <div id="depthMeter" aria-live="polite">
+    <div id="battery" role="img" hidden><i><b></b></i><span></span></div>
+    <div id="depth" hidden><small data-i18n="hud.layer"></small><b></b></div>
+    <div id="depthGauge" aria-hidden="true" hidden></div>
+  </div>
+
+  <div id="controls" role="group" data-i18n-aria-label="hud.controls">
+    <div id="zoomControls" data-i18n-aria-label="hud.zoom">
+      <button id="btnZoomIn" type="button" data-i18n-aria-label="hud.zoomIn">+</button>
+      <button id="zoomLevel" type="button"><span id="zoomText">1×</span></button>
+      <button id="btnZoomOut" type="button" data-i18n-aria-label="hud.zoomOut">&minus;</button>
+      <button id="btnMap" type="button" data-i18n-aria-label="map.title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" /><path d="M9 4v14M15 6v14" /></svg></button>
+    </div>
+    <!-- Invite: hold up your sign with a QR code a friend scans to join (a new
+         world goes online the first time). A main action like Gather, on the
+         other thumb. See docs/ui.md. -->
+    <button id="btnInvite" class="btn" type="button" aria-pressed="false" data-i18n-aria-label="together.button.aria" hidden>
+      <svg class="big" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z" fill="none" stroke="currentColor" stroke-width="2" /><path d="M5.5 5.5h2v2h-2zM16.5 5.5h2v2h-2zM5.5 16.5h2v2h-2zM14 14h3v3h-3zM18 18h3v3h-3zM18 14h3v2h-3zM14 18h2v3h-2z" fill="currentColor" /></svg><span class="cap" id="inviteLabel"></span>
+    </button>
+    <div id="thumbDock">
+      <button id="btnBuild" class="btn" type="button" data-i18n-aria-label="button.build.aria">
+        <img class="big" data-look="ui.build" alt=""><span class="cap" data-i18n="button.build"></span><span class="newTag" data-i18n="badge.new"></span>
+      </button>
+      <button id="btnUpgrade" class="btn" type="button" data-i18n-aria-label="button.upgrade.aria">
+        <img class="big" data-look="ui.upgrade" alt=""><span class="cap" data-i18n="button.upgrade"></span><span class="newTag" data-i18n="badge.new"></span>
+      </button>
+      <button id="btnMine" class="btn" type="button" hidden>
+        <img class="big" id="mineIcon" data-look="ui.climbDown" alt=""><span class="cap" id="mineLabel"></span>
+      </button>
+      <button id="btnPerfect" class="btn" type="button" data-i18n-aria-label="button.perfect.aria">
+        <img class="big" data-look="ui.perfect" alt=""><img class="badge" id="perfectBadge" data-look="ui.explore" alt=""><span class="cap" data-i18n="button.perfect"></span><span class="tip" id="autoTip" role="status" hidden></span>
+      </button>
+      <button id="btnAction" class="btn" type="button">
+        <img class="big" id="actionIcon" data-look="ui.gather" alt=""><span class="cap" id="actionLabel"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Every list in the game is this one sheet: tabs (or, for a screen
+       outside them, its title) beside a ×, and a scrolling body. A screen
+       opened from Settings has ‹ before its title, back to Settings. Swipe it
+       down by the handle or tap the map to close. -->
+  <div id="sheet" aria-hidden="true">
+    <div id="sheetGrab" aria-hidden="true"><span></span></div>
+    <div id="sheetHead">
+      <button id="btnBack" class="hudBtn" type="button" data-i18n-aria-label="sheet.back" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+      <div id="sheetTitle"></div>
+      <div id="tabs" role="tablist">
+        <button class="tab active" type="button" role="tab" data-tab="upgrades" data-i18n="sheet.upgrades"></button>
+        <button class="tab" type="button" role="tab" data-tab="build" data-i18n="sheet.build"></button>
+        <button class="tab" id="tabBeyond" type="button" role="tab" data-tab="beyond" data-i18n="sheet.beyond"></button>
+        <button class="tab" type="button" role="tab" data-tab="awards" data-i18n="sheet.awards"></button>
+      </div>
+      <button id="btnClose" class="hudBtn" type="button" data-i18n-aria-label="sheet.close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+    </div>
+    <div id="sheetBody"></div>
+    <!-- The world map: what you've explored, region names, home and you. -->
+    <div id="mapPanel" hidden>
+      <canvas id="worldMap"></canvas>
+      <div id="mapTools">
+        <button id="btnMapIn" type="button" data-i18n-aria-label="hud.zoomIn">+</button>
+        <button id="btnMapOut" type="button" data-i18n-aria-label="hud.zoomOut">&minus;</button>
+        <button id="btnMapMe" type="button" data-i18n-aria-label="map.centre"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg></button>
+      </div>
+    </div>
+    <!-- Invite links (playing together): each one, who made it, how many
+         joined with it, and a way to stop it. Filled by src/game/together.js. -->
+    <div id="invitesPanel" hidden></div>
+    <!-- Worlds: your own and every shared world you've been in, to switch
+         between them. Filled by src/game/worlds.js. -->
+    <div id="worldsPanel" hidden></div>
+    <!-- Players: everyone in the shared world you're in, how they're doing
+         and how far away; the owner can remove them. Filled by src/game/players.js. -->
+    <div id="playersPanel" hidden></div>
+    <!-- What's new: every release's notes, newest first. Filled by src/game/news.js. -->
+    <div id="newsPanel" hidden></div>
+    <div id="settingsPanel" class="setPanel" hidden>
+      <div class="setGroup">
+        <button id="btnWorlds" class="setRow" type="button" hidden><span data-i18n="worlds.title"></span><b><span id="worldNow"></span> &rsaquo;</b></button>
+        <button id="btnPlayers" class="setRow" type="button" hidden><span data-i18n="players.title"></span><b><span id="playersCount"></span> &rsaquo;</b></button>
+        <button id="btnInvites" class="setRow" type="button" hidden><span data-i18n="invites.title"></span><b aria-hidden="true">&rsaquo;</b></button>
+      </div>
+      <div class="setGroup">
+        <button id="btnMute" class="setRow" type="button"><span data-i18n="settings.sound"></span><b id="muteState"></b></button>
+        <button id="btnMusic" class="setRow" type="button"><span data-i18n="settings.music"></span><b id="musicState"></b></button>
+        <button id="btnAway" class="setRow" type="button" aria-pressed="false"><span data-i18n="settings.away"></span><b id="awayState"></b></button>
+        <button id="btnDrag" class="setRow" type="button" aria-pressed="false"><span data-i18n="sheet.drag"></span><b id="dragMode"></b></button>
+        <button id="btnLanguage" class="setRow" type="button"><span data-i18n="sheet.language"></span><b data-i18n="language.name"></b></button>
+      </div>
+      <div class="setGroup">
+        <a id="wikiLink" class="setRow" href="wiki/" target="_blank" rel="noopener"><span data-i18n="sheet.wiki"></span><b aria-hidden="true">&#8599;</b></a>
+        <a id="privacyLink" class="setRow" href="privacy/" target="_blank" rel="noopener"><span data-i18n="privacy.link"></span><b aria-hidden="true">&#8599;</b></a>
+      </div>
+      <div class="setGroup">
+        <button id="btnNerds" class="setRow" type="button"><span data-i18n="nerds.title"></span><b aria-hidden="true">&rsaquo;</b></button>
+      </div>
+    </div>
+    <!-- For nerds: the technical things most players never need. -->
+    <div id="nerdsPanel" class="setPanel" hidden>
+      <div class="setGroup">
+        <button id="btnTextures" class="setRow" type="button"><span data-i18n="sheet.textures"></span><b id="packName"></b></button>
+        <button id="btnTexturesDefault" class="setRow" type="button" hidden><span data-i18n="sheet.texturesDefault"></span></button>
+      </div>
+      <div class="setGroup">
+        <button id="btnBackupSave" class="setRow" type="button"><span data-i18n="backup.save"></span><b aria-hidden="true">&darr;</b></button>
+        <button id="btnBackupLoad" class="setRow" type="button"><span data-i18n="backup.load"></span><b aria-hidden="true">&uarr;</b></button>
+      </div>
+      <div class="setGroup">
+        <a id="btnAutoplayLab" class="setRow" href="?autoplay" target="_blank" rel="noopener"><span data-i18n="lab.title"></span><b aria-hidden="true">&rsaquo;</b></a>
+        <button id="btnPerf" class="setRow" type="button" aria-pressed="false"><span data-i18n="nerds.perf"></span><b id="perfState"></b></button>
+      </div>
+      <div id="version"><span id="brand" translate="no">byrforr</span><span id="verText"></span></div>
+      <input id="packFile" type="file" accept=".json,application/json,image/*" multiple hidden />
+      <input id="backupFile" type="file" accept=".json,application/json" hidden />
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <!-- An admin's copy of a shared world (src/game/copy.js): says so all the time. -->
+  <div id="copyBadge" role="status" hidden></div>
+  <div id="place" role="status" aria-live="polite" hidden><small></small><strong></strong></div>
+  <div id="packReport" class="scrim" role="alert" hidden>
+    <div class="dialog warn">
+      <strong data-i18n="pack.notUsed"></strong>
+      <ul></ul>
+      <div class="choices"><button type="button" class="secondary" data-i18n="pack.close"></button></div>
+    </div>
+  </div>
+  <!-- A frozen character (its progress was hacked): a joke "FBI" badge, the
+       Fair-play Bureau of Investigation, and the only way on is back to
+       your own world. src/game/fbi.js -->
+  <div id="fbi" class="scrim" role="alertdialog" aria-labelledby="fbiTitle" hidden>
+    <div class="dialog">
+      <svg class="fbiBadge" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="56" fill="#0f2a4a" stroke="#e8c15a" stroke-width="5" />
+        <circle cx="60" cy="60" r="46" fill="none" stroke="#e8c15a" stroke-width="1.5" stroke-dasharray="3 4" />
+        <path d="M60 14 l9 18 20 3 -14 14 3 20 -18 -9 -18 9 3 -20 -14 -14 20 -3z" fill="#e8c15a" opacity="0.22" />
+        <path d="M42 66 q18 -26 36 0 z" fill="#5fe0d0" />
+        <rect x="56" y="66" width="8" height="12" rx="3" fill="#cfeee9" />
+        <circle cx="52" cy="58" r="2.4" fill="#e9fffb" /><circle cx="66" cy="55" r="2" fill="#e9fffb" />
+        <text x="60" y="100" text-anchor="middle" data-i18n="fbi.badge"></text>
+      </svg>
+      <small class="fbiBureau" data-i18n="fbi.bureau"></small>
+      <strong id="fbiTitle" data-i18n="fbi.title"></strong>
+      <p data-i18n="fbi.text"></p>
+      <div class="choices"><button type="button" class="primary" data-i18n="fbi.ok"></button></div>
+    </div>
+  </div>
+  <div id="ask" class="scrim" role="alertdialog" aria-labelledby="askTitle" hidden>
+    <div class="dialog">
+      <strong id="askTitle"></strong>
+      <p></p>
+      <a class="askLink" target="_blank" rel="noopener" hidden></a>
+      <div class="choices"><button type="button" class="secondary"></button><button type="button" class="primary"></button></div>
+    </div>
+  </div>
+  <div id="fork" class="scrim" role="alertdialog" aria-labelledby="forkTitle" hidden>
+    <div class="dialog">
+      <strong id="forkTitle" data-i18n="fork.title"></strong>
+      <div class="picks"></div>
+    </div>
+  </div>
+  <div id="crash" role="alert" hidden>
+    <strong></strong>
+    <pre></pre>
+    <button type="button"></button>
+  </div>
+
+  <script type="module" src="src/game/main.js"></script>
+</body>
+</html>
