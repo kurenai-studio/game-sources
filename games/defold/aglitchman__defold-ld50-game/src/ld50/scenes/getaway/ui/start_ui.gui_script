@@ -1,0 +1,72 @@
+local level_state = require("ld50.scenes.getaway.level_state")
+local global_state = require("ld50.scripts.global_state")
+local xgui = require("ld50.scripts.xgui")
+
+local function toggle_buttons_alpha(self)
+    if self.hiding then
+        return
+    end
+
+    if xgui.get_alpha(self.help_button_d) == 1 then
+        xgui.set_alpha(self.help_button_a, 1)
+        xgui.set_alpha(self.help_button_d, 0.5)
+    else
+        xgui.set_alpha(self.help_button_a, 0.5)
+        xgui.set_alpha(self.help_button_d, 1)
+    end
+end
+
+function init(self)
+    xgui.init_node(self, "title_text1", 0)
+    xgui.init_node(self, "title_text2", 0)
+    xgui.init_node(self, "credits_text", 0)
+    xgui.init_node(self, "help_button_a", 0)
+    xgui.init_node(self, "help_button_d", 0)
+    xgui.init_node(self, "help_split", 0)
+    xgui.init_node(self, "help_tap_to_start", 1)
+    xgui.init_node(self, "tap_to_start_text", 0)
+
+    local y1 = xgui.get_y(self.title_text1)
+    xgui.set_y(self.title_text1, y1 - 200)
+    gui.animate(self.title_text1, "position.y", y1, gui.EASING_OUTBACK, 0.5)
+    xgui.anim_alpha(self.title_text1, 1, 0.5)
+
+    local y2 = xgui.get_y(self.title_text2)
+    xgui.set_y(self.title_text2, y2 - 200)
+    gui.animate(self.title_text2, "position.y", y2, gui.EASING_OUTBACK, 0.5, 0.2)
+    xgui.anim_alpha(self.title_text2, 1, 0.5, 0.2)
+
+    xgui.anim_alpha(self.credits_text, 1, 0.5, 0.5)
+
+    xgui.anim_alpha(self.tap_to_start_text, 1, 0.5, 0.5)
+    xgui.anim_alpha(self.help_button_a, 0.5, 0.5, 0.5)
+    xgui.anim_alpha(self.help_button_d, 1, 0.5, 0.5, function (self)
+        timer.delay(0.5, true, toggle_buttons_alpha)
+    end)
+    xgui.anim_alpha(self.help_split, 1, 0.5, 0.5)
+end
+
+function final(self)
+end
+
+function update(self, dt)
+    gui.set_alpha(self.help_tap_to_start, global_state.touch_control and 1 or 0)
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("hide") then
+        if self.hiding then
+            return
+        end
+        self.hiding = true
+
+        local duration = 0.25
+        for i, n in ipairs(self.all_nodes) do
+            xgui.anim_alpha(n, 0, duration, 0)
+        end
+        timer.delay(duration + 0.01, false, function (self)
+            msg.post("#delete_go", "delete_go")
+        end)
+    end
+end
+
