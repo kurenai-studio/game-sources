@@ -1,0 +1,301 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "Behavior",
+"language": "GDScript",
+"path": "res://source/behavior/Behavior.gd"
+}, {
+"base": "Entity",
+"class": "Character",
+"language": "GDScript",
+"path": "res://source/entity/character/Character.gd"
+}, {
+"base": "Character",
+"class": "Creature",
+"language": "GDScript",
+"path": "res://source/entity/character/creature/Creature.gd"
+}, {
+"base": "Spatial",
+"class": "Editor",
+"language": "GDScript",
+"path": "res://source/editor/Editor.gd"
+}, {
+"base": "CanvasLayer",
+"class": "EditorHUD",
+"language": "GDScript",
+"path": "res://source/editor/EditorHUD.gd"
+}, {
+"base": "Character",
+"class": "Elemental",
+"language": "GDScript",
+"path": "res://source/entity/character/elemental/Elemental.gd"
+}, {
+"base": "Spatial",
+"class": "ElementalVFXPicker",
+"language": "GDScript",
+"path": "res://source/entity/character/elemental/ElementalVFXPicker.gd"
+}, {
+"base": "Spatial",
+"class": "Entity",
+"language": "GDScript",
+"path": "res://source/entity/Entity.gd"
+}, {
+"base": "Spatial",
+"class": "Game",
+"language": "GDScript",
+"path": "res://source/game/Game.gd"
+}, {
+"base": "Entity",
+"class": "Item",
+"language": "GDScript",
+"path": "res://source/entity/item/Item.gd"
+}, {
+"base": "PanelContainer",
+"class": "LevelPanel",
+"language": "GDScript",
+"path": "res://source/editor/LevelPanelString.gd"
+}, {
+"base": "Reference",
+"class": "Loader",
+"language": "GDScript",
+"path": "res://source/global/Loader.gd"
+}, {
+"base": "Entity",
+"class": "Location",
+"language": "GDScript",
+"path": "res://source/map/Location.gd"
+}, {
+"base": "Spatial",
+"class": "Map",
+"language": "GDScript",
+"path": "res://source/map/Map.gd"
+}, {
+"base": "Resource",
+"class": "MapData",
+"language": "GDScript",
+"path": "res://source/map/MapData.gd"
+}, {
+"base": "PanelContainer",
+"class": "ModeSelection",
+"language": "GDScript",
+"path": "res://source/editor/ModeSelection.gd"
+}, {
+"base": "Node",
+"class": "MusicBooth",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/music/MusicBooth.gd"
+}, {
+"base": "Entity",
+"class": "Obstacle",
+"language": "GDScript",
+"path": "res://source/entity/obstacle/Obstacle.gd"
+}, {
+"base": "Particles",
+"class": "OneShotParticles",
+"language": "GDScript",
+"path": "res://assets/graphics/particles/OneShotParticles.gd"
+}, {
+"base": "Spatial",
+"class": "Orb",
+"language": "GDScript",
+"path": "res://source/booster/Orb.gd"
+}, {
+"base": "Spatial",
+"class": "OrthoCamera",
+"language": "GDScript",
+"path": "res://source/camera/OrthoCamera.gd"
+}, {
+"base": "PanelContainer",
+"class": "PathPanel",
+"language": "GDScript",
+"path": "res://source/editor/PathPanel.gd"
+}, {
+"base": "Resource",
+"class": "SaveData",
+"language": "GDScript",
+"path": "res://source/misc/SaveData.gd"
+}, {
+"base": "PanelContainer",
+"class": "SelectionPanel",
+"language": "GDScript",
+"path": "res://source/editor/SelectionPanel.gd"
+}, {
+"base": "Spatial",
+"class": "Sigil",
+"language": "GDScript",
+"path": "res://source/booster/Sigil.gd"
+}, {
+"base": "Node",
+"class": "Song",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/music/Song.gd"
+}, {
+"base": "Node",
+"class": "Sound",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/sfx/Sound.gd"
+}, {
+"base": "Node",
+"class": "SoundBooth",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/sfx/SoundBooth.gd"
+}, {
+"base": "Node",
+"class": "StingerContainer",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/music/containers/StingerContainer.gd"
+}, {
+"base": "Entity",
+"class": "Terrain",
+"language": "GDScript",
+"path": "res://source/entity/terrain/Terrain.gd"
+}, {
+"base": "Control",
+"class": "TitleScreen",
+"language": "GDScript",
+"path": "res://source/menu/TitleScreen.gd"
+}, {
+"base": "Node",
+"class": "TrackContainer",
+"language": "GDScript",
+"path": "res://addons/audio_booth/source/music/containers/TrackContainer.gd"
+} ]
+_global_script_class_icons={
+"Behavior": "",
+"Character": "",
+"Creature": "",
+"Editor": "",
+"EditorHUD": "",
+"Elemental": "",
+"ElementalVFXPicker": "",
+"Entity": "",
+"Game": "",
+"Item": "",
+"LevelPanel": "",
+"Loader": "",
+"Location": "",
+"Map": "",
+"MapData": "",
+"ModeSelection": "",
+"MusicBooth": "",
+"Obstacle": "",
+"OneShotParticles": "",
+"Orb": "",
+"OrthoCamera": "",
+"PathPanel": "",
+"SaveData": "",
+"SelectionPanel": "",
+"Sigil": "",
+"Song": "",
+"Sound": "",
+"SoundBooth": "",
+"StingerContainer": "",
+"Terrain": "",
+"TitleScreen": "",
+"TrackContainer": ""
+}
+
+[application]
+
+config/name="Elementary"
+run/main_scene="res://source/menu/TitleScreen.tscn"
+config/icon="res://icon.png"
+
+[autoload]
+
+Global="*res://source/global/Global.gd"
+Music="*res://source/global/Music.tscn"
+SFX="*res://source/global/SFX.tscn"
+Scene="*res://source/global/Scene.gd"
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+window/stretch/mode="2d"
+window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "audio_booth" )
+
+[input]
+
+scroll_up={
+"deadzone": 0.5,
+"events": [ Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"button_mask":0,"position":Vector2( 0, 0 ),"global_position":Vector2( 0, 0 ),"factor":1.0,"button_index":4,"pressed":false,"doubleclick":false,"script":null)
+ ]
+}
+scroll_down={
+"deadzone": 0.5,
+"events": [ Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"button_mask":0,"position":Vector2( 0, 0 ),"global_position":Vector2( 0, 0 ),"factor":1.0,"button_index":5,"pressed":false,"doubleclick":false,"script":null)
+ ]
+}
+mouse_left={
+"deadzone": 0.5,
+"events": [ Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"button_mask":0,"position":Vector2( 0, 0 ),"global_position":Vector2( 0, 0 ),"factor":1.0,"button_index":1,"pressed":false,"doubleclick":false,"script":null)
+ ]
+}
+mouse_right={
+"deadzone": 0.5,
+"events": [ Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"button_mask":0,"position":Vector2( 0, 0 ),"global_position":Vector2( 0, 0 ),"factor":1.0,"button_index":2,"pressed":false,"doubleclick":false,"script":null)
+ ]
+}
+drop={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":32,"unicode":0,"echo":false,"script":null)
+ ]
+}
+restart={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777221,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":82,"unicode":0,"echo":false,"script":null)
+ ]
+}
+rotate_left={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":81,"unicode":0,"echo":false,"script":null)
+ ]
+}
+rotate_right={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":69,"unicode":0,"echo":false,"script":null)
+ ]
+}
+move_left={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":65,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777231,"unicode":0,"echo":false,"script":null)
+ ]
+}
+move_right={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":68,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777233,"unicode":0,"echo":false,"script":null)
+ ]
+}
+move_up={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":87,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777232,"unicode":0,"echo":false,"script":null)
+ ]
+}
+move_down={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":83,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777234,"unicode":0,"echo":false,"script":null)
+ ]
+}
+
+[rendering]
+
+environment/default_environment="res://default_env.tres"

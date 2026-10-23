@@ -1,0 +1,19 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://data/terrains/BrittleStone.gd" type="Script" id=1]
+[ext_resource path="res://source/entity/terrain/Terrain.tscn" type="PackedScene" id=2]
+[ext_resource path="res://assets/graphics/materials/terrain/terrain_brittle_stone.tres" type="Material" id=3]
+[ext_resource path="res://assets/graphics/models/Tile_Stone_Brittle_1.obj" type="ArrayMesh" id=4]
+[ext_resource path="res://assets/graphics/particles/BrittleStoneParticles.tscn" type="PackedScene" id=5]
+
+[node name="BrittleStone" instance=ExtResource( 2 )]
+script = ExtResource( 1 )
+height = 0.06
+speed = 1.2
+alias = "BrittleStone"
+is_brittle = true
+particles = ExtResource( 5 )
+
+[node name="MeshInstance" parent="Meshes" index="0"]
+mesh = ExtResource( 4 )
+material/0 = ExtResource( 3 )

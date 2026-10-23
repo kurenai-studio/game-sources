@@ -1,0 +1,21 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://source/entity/terrain/Terrain.tscn" type="PackedScene" id=1]
+[ext_resource path="res://data/terrains/Lava.gd" type="Script" id=2]
+[ext_resource path="res://assets/graphics/materials/terrain/terrain_lava_1.tres" type="Material" id=3]
+[ext_resource path="res://assets/graphics/models/Tile_Lava_1.obj" type="ArrayMesh" id=5]
+
+[sub_resource type="SpatialMaterial" id=1]
+resource_local_to_scene = true
+
+[node name="Lava" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+broadcast = [ 2 ]
+alias = "Lava"
+
+[node name="MeshInstance" parent="Meshes" index="0"]
+mesh = ExtResource( 5 )
+material/0 = ExtResource( 3 )
+
+[node name="Debug" parent="." index="4"]
+material_override = SubResource( 1 )

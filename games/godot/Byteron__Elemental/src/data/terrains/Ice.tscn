@@ -1,0 +1,14 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://data/terrains/Ice.gd" type="Script" id=1]
+[ext_resource path="res://source/entity/terrain/Terrain.tscn" type="PackedScene" id=2]
+[ext_resource path="res://assets/graphics/materials/terrain/terrain_ice.tres" type="Material" id=3]
+[ext_resource path="res://assets/graphics/models/Tile_Ice_1.obj" type="ArrayMesh" id=6]
+
+[node name="Ice" instance=ExtResource( 2 )]
+script = ExtResource( 1 )
+alias = "Ice"
+
+[node name="MeshInstance" parent="Meshes" index="0"]
+mesh = ExtResource( 6 )
+material/0 = ExtResource( 3 )
