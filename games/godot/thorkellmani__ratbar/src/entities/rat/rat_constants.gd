@@ -1,0 +1,14 @@
+extends Node
+
+class_name RatConstants
+
+const DEAD_BAND_FLOOR: float = -80.0
+const DEAD_BAND_CEILING: float = 80.0
+
+enum CRISIS { UNAFFECTED, BURNOUT, REBELLION }
+enum STATUS { STRESS, HEALTH, INEBRIATION, RADICALIZATION, EXTRA_STRESS}
+enum STATE {
+	WORKING = 0,
+	TRAVELLING = 1,
+	IDLE = 3,
+}

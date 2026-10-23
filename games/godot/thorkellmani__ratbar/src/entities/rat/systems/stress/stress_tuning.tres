@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="StressTuning" load_steps=10 format=3 uid="uid://lt8yfsep476"]
+
+[ext_resource type="Script" uid="uid://bywxxpkilu1ry" path="res://entities/rat/systems/stress/stress_tier.gd" id="1_tier"]
+[ext_resource type="Script" uid="uid://bmnq7ifql5fjh" path="res://entities/rat/systems/stress/stress_tuning.gd" id="2_tuning"]
+
+[sub_resource type="Resource" id="fast_recovery"]
+script = ExtResource("1_tier")
+label = "Fast recovery"
+upper_average_urgency = 0.28
+stress_change_per_game_hour = -6.0
+
+[sub_resource type="Resource" id="recovery"]
+script = ExtResource("1_tier")
+label = "Recovery"
+upper_average_urgency = 0.34
+stress_change_per_game_hour = -3.0
+
+[sub_resource type="Resource" id="slow_recovery"]
+script = ExtResource("1_tier")
+label = "Slow recovery"
+upper_average_urgency = 0.38
+stress_change_per_game_hour = -1.0
+
+[sub_resource type="Resource" id="steady"]
+script = ExtResource("1_tier")
+label = "Steady"
+upper_average_urgency = 0.42
+
+[sub_resource type="Resource" id="slow_buildup"]
+script = ExtResource("1_tier")
+label = "Slow buildup"
+upper_average_urgency = 0.48
+stress_change_per_game_hour = 2.0
+
+[sub_resource type="Resource" id="buildup"]
+script = ExtResource("1_tier")
+label = "Buildup"
+upper_average_urgency = 0.58
+stress_change_per_game_hour = 6.0
+
+[sub_resource type="Resource" id="fast_buildup"]
+script = ExtResource("1_tier")
+label = "Fast buildup"
+upper_average_urgency = 1.0
+stress_change_per_game_hour = 12.0
+
+[resource]
+script = ExtResource("2_tuning")
+tiers = Array[ExtResource("1_tier")]([SubResource("fast_recovery"), SubResource("recovery"), SubResource("slow_recovery"), SubResource("steady"), SubResource("slow_buildup"), SubResource("buildup"), SubResource("fast_buildup")])
