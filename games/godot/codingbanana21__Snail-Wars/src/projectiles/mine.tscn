@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cbu0sbk2cxs8j"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_1y4n3"]
+[ext_resource type="Texture2D" uid="uid://cdrohksna380c" path="res://assets/images/land_mine.png" id="2_lkg0g"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lbhrr"]
+size = Vector2(6, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1y4n3"]
+size = Vector2(9, 16)
+
+[node name="Mine" unique_id=791496552 instance=ExtResource("1_1y4n3")]
+damage = 35
+size = 4
+knockback = 30
+speed = 0
+min_speed = 0
+timer = 0.0
+players_projectile = false
+effect_by_wind = false
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+rotation = -1.5707964
+texture = ExtResource("2_lkg0g")
+
+[node name="CollisionShape2D" parent="." index="2" unique_id=679883136]
+position = Vector2(5, 0)
+shape = SubResource("RectangleShape2D_lbhrr")
+
+[node name="DetectBox" parent="." index="3" unique_id=289666369]
+collision_mask = 6
+
+[node name="CollisionShape2D" parent="DetectBox" index="0" unique_id=1905896826]
+position = Vector2(2.5, 0)
+shape = SubResource("RectangleShape2D_1y4n3")

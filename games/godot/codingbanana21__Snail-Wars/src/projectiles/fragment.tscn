@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://cpgh3wttxjdj2"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_1ak3v"]
+[ext_resource type="Texture2D" uid="uid://cdi5eipdsfw53" path="res://assets/images/bomb.png" id="2_h2h75"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3xfjl"]
+radius = 2.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_h2h75"]
+radius = 4.0
+
+[node name="Fragment" unique_id=791496552 instance=ExtResource("1_1ak3v")]
+scale = Vector2(0.5, 0.5)
+damage = 3
+size = 2
+knockback = 10
+min_speed = 0
+projectile_hp = 4
+hit_stun_time = 0.05
+players_projectile = false
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_h2h75")
+
+[node name="CollisionShape2D" parent="." index="2" unique_id=679883136]
+shape = SubResource("CircleShape2D_3xfjl")
+
+[node name="CollisionShape2D" parent="DetectBox" parent_id_path=PackedInt32Array(289666369) index="0" unique_id=1905896826]
+shape = SubResource("CircleShape2D_h2h75")

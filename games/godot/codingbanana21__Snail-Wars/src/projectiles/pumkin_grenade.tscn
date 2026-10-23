@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://chxtj7vdfmh1k"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_upu3b"]
+[ext_resource type="Texture2D" uid="uid://cd6j10f3xc22c" path="res://assets/images/pumkin_grenade.png" id="2_ssk2y"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ispoe"]
+radius = 5.0
+
+[node name="PumkinGrenade" unique_id=791496552 instance=ExtResource("1_upu3b")]
+damage = 15
+size = 3
+knockback = 30
+timer = 1.0
+bounce = true
+end_player_turn = false
+spawns = Array[String](["grenade", "pumkin_grenade", "pumkin_grenade"])
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_ssk2y")
+
+[node name="CollisionShape2D" parent="." index="2" unique_id=679883136]
+shape = SubResource("CircleShape2D_ispoe")
+
+[node name="CollisionShape2D" parent="DetectBox" parent_id_path=PackedInt32Array(289666369) index="0" unique_id=1905896826]
+shape = null

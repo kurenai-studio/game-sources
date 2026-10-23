@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://c5s70cvfixvep"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_s7eb1"]
+[ext_resource type="Texture2D" uid="uid://cbnwe1cqap1py" path="res://assets/images/present.png" id="2_hm0fc"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j484f"]
+size = Vector2(12, 11)
+
+[node name="Present" unique_id=791496552 instance=ExtResource("1_s7eb1")]
+damage = 15
+size = 3
+knockback = 0
+speed = 0
+min_speed = 300
+gravity = 300
+spawn_at_mouse = true
+end_player_turn = false
+effect_by_wind = false
+spawns = Array[String](["air_strike", "pumkin_grenade", "teleporta", "tnt", "cake_tnt"])
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_hm0fc")
+
+[node name="CollisionShape2D" parent="." index="2" unique_id=679883136]
+position = Vector2(0, 1.5)
+
+[node name="CollisionShape2D" parent="DetectBox" parent_id_path=PackedInt32Array(289666369) index="0" unique_id=1905896826]
+position = Vector2(0, 1.5)
+shape = SubResource("RectangleShape2D_j484f")

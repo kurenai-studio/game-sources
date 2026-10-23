@@ -1,0 +1,381 @@
+[gd_scene format=3 uid="uid://dbu738lf8tcco"]
+
+[ext_resource type="Script" uid="uid://ce6yxby0frcqe" path="res://scripts/menu.gd" id="1_flqon"]
+[ext_resource type="AudioStream" uid="uid://6kba5togvlgl" path="res://assets/sounds/battleThemeA.mp3" id="2_hstxw"]
+[ext_resource type="Texture2D" uid="uid://drlmc4vi0ri0h" path="res://maps/water.png" id="2_rcqid"]
+[ext_resource type="LabelSettings" uid="uid://cm76igu117yxn" path="res://assets/fonts/label_settings.tres" id="3_1ajci"]
+[ext_resource type="FontFile" uid="uid://beb0vnnahy1kh" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="4_7b55j"]
+[ext_resource type="Texture2D" uid="uid://b7fgok4ioqjf" path="res://assets/images/tnt.png" id="5_5pajh"]
+[ext_resource type="Texture2D" uid="uid://bdm5g2j38707a" path="res://assets/images/snail.png" id="6_j7ex8"]
+[ext_resource type="PackedScene" uid="uid://d13cid3q1ddw8" path="res://scenes/map_button.tscn" id="7_7b55j"]
+[ext_resource type="Texture2D" uid="uid://b3h4dly8ovb37" path="res://assets/images/rocket.png" id="7_a8gd2"]
+[ext_resource type="Texture2D" uid="uid://qlt5j1ltdxr2" path="res://assets/images/grenade.png" id="8_hstxw"]
+[ext_resource type="Texture2D" uid="uid://cdi5eipdsfw53" path="res://assets/images/bomb.png" id="9_8egab"]
+[ext_resource type="Texture2D" uid="uid://blounwen1686h" path="res://assets/images/bullet.png" id="10_gw5y6"]
+[ext_resource type="Texture2D" uid="uid://h8kw05ufxj51" path="res://assets/images/fire.png" id="11_5pajh"]
+[ext_resource type="Texture2D" uid="uid://x4hcewvk3glh" path="res://assets/images/drill.png" id="11_svtp6"]
+[ext_resource type="Texture2D" uid="uid://cdrohksna380c" path="res://assets/images/land_mine.png" id="12_1dfpl"]
+[ext_resource type="Texture2D" uid="uid://ffe73y1go1j4" path="res://assets/images/leaf.png" id="12_a8gd2"]
+[ext_resource type="Texture2D" uid="uid://c0trkmwdkg627" path="res://assets/images/teleporta.png" id="13_1ajci"]
+[ext_resource type="Texture2D" uid="uid://cbnwe1cqap1py" path="res://assets/images/present.png" id="14_7b55j"]
+[ext_resource type="Texture2D" uid="uid://cd6j10f3xc22c" path="res://assets/images/pumkin_grenade.png" id="16_j7ex8"]
+
+[node name="MainMenu" type="Node2D" unique_id=2137944541]
+script = ExtResource("1_flqon")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1504345978]
+_spawnable_scenes = PackedStringArray("uid://baxuf5v76y51l")
+spawn_path = NodePath("..")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=828849114]
+stream = ExtResource("2_hstxw")
+volume_db = -10.0
+autoplay = true
+
+[node name="Menu" type="Node2D" parent="." unique_id=1796283150]
+
+[node name="Background2" type="ColorRect" parent="Menu" unique_id=620597901]
+z_index = -1
+offset_left = -1287.0
+offset_top = -238.0
+offset_right = 1217.0
+offset_bottom = 162.0
+color = Color(0.6007436, 0.75808835, 0.7835647, 0.5411765)
+
+[node name="Water" type="Polygon2D" parent="Menu" unique_id=194337542]
+texture_repeat = 2
+color = Color(1, 1, 1, 0.60784316)
+texture = ExtResource("2_rcqid")
+polygon = PackedVector2Array(-1277, -27, -1185, 10, -1098, -22, -983, 10, -859, -20, -730, 13, -618, -24, -528, 6, -393, -45, -274, 1, -127, -43, -23, 1, 105, -43, 206, -15, 312, -42, 440, -6, 541, -61, 661, -10, 739, -59, 851, -15, 955, -66, 1083, -12, 1175, -56, 1215, -16, 1254, 679, -1315, 693)
+
+[node name="Maps" type="Node2D" parent="Menu" unique_id=1864789542]
+
+[node name="MapLabel" type="Label" parent="Menu/Maps" unique_id=2111666030]
+offset_left = -205.0
+offset_top = -323.0
+offset_right = 159.0
+offset_bottom = -307.0
+scale = Vector2(0.5, 0.5)
+text = "Big maps (Players 18-32)"
+label_settings = ExtResource("3_1ajci")
+
+[node name="B1MapButton" parent="Menu/Maps" unique_id=132146067 instance=ExtResource("7_7b55j")]
+offset_left = -192.0
+offset_top = -307.0
+offset_right = -34.0
+offset_bottom = -283.0
+text = "Mine time"
+icon = ExtResource("5_5pajh")
+map = "b1"
+
+[node name="B2MapButton" parent="Menu/Maps" unique_id=2026389007 instance=ExtResource("7_7b55j")]
+offset_left = -192.0
+offset_top = -275.0
+offset_right = -44.0
+offset_bottom = -251.0
+text = "The cave"
+icon = ExtResource("11_svtp6")
+map = "b2"
+
+[node name="MapLabel2" type="Label" parent="Menu/Maps" unique_id=498424789]
+offset_left = 35.0
+offset_top = -323.0
+offset_right = 451.0
+offset_bottom = -307.0
+scale = Vector2(0.5, 0.5)
+text = "Medium maps (Players 8-18)"
+label_settings = ExtResource("3_1ajci")
+
+[node name="M1MapButton" parent="Menu/Maps" unique_id=2021083051 instance=ExtResource("7_7b55j")]
+offset_left = 64.0
+offset_top = -307.0
+offset_right = 208.0
+offset_bottom = -283.0
+text = "Original"
+icon = ExtResource("7_a8gd2")
+
+[node name="M2MapButton" parent="Menu/Maps" unique_id=1499827498 instance=ExtResource("7_7b55j")]
+offset_left = 64.0
+offset_top = -275.0
+offset_right = 208.0
+offset_bottom = -251.0
+text = "Split"
+icon = ExtResource("8_hstxw")
+map = "m2"
+
+[node name="M3MapButton" parent="Menu/Maps" unique_id=421375843 instance=ExtResource("7_7b55j")]
+offset_left = 64.0
+offset_top = -243.0
+offset_right = 212.0
+offset_bottom = -219.0
+text = "The rock"
+icon = ExtResource("9_8egab")
+map = "m3"
+
+[node name="MapLabel3" type="Label" parent="Menu/Maps" unique_id=218978788]
+offset_left = -201.0
+offset_top = -236.0
+offset_right = 177.0
+offset_bottom = -220.0
+scale = Vector2(0.5, 0.5)
+text = "Small maps (Players 2-8)"
+label_settings = ExtResource("3_1ajci")
+
+[node name="S1MapButton" parent="Menu/Maps" unique_id=1199257575 instance=ExtResource("7_7b55j")]
+offset_left = -192.0
+offset_top = -219.0
+offset_right = -44.0
+offset_bottom = -195.0
+text = "Islands"
+icon = ExtResource("10_gw5y6")
+map = "s1"
+
+[node name="S2MapButton" parent="Menu/Maps" unique_id=279227966 instance=ExtResource("7_7b55j")]
+offset_left = -192.0
+offset_top = -187.0
+offset_right = -44.0
+offset_bottom = -163.0
+text = "Over it"
+icon = ExtResource("11_5pajh")
+map = "s2"
+
+[node name="S3MapButton" parent="Menu/Maps" unique_id=1492122498 instance=ExtResource("7_7b55j")]
+offset_left = -192.0
+offset_top = -155.0
+offset_right = -44.0
+offset_bottom = -131.0
+text = "Pillars"
+icon = ExtResource("12_a8gd2")
+map = "s3"
+
+[node name="MapLabel4" type="Label" parent="Menu/Maps" unique_id=913343943]
+anchors_preset = -1
+offset_left = 40.0
+offset_top = -208.0
+offset_right = 454.0
+offset_bottom = -192.0
+scale = Vector2(0.5, 0.5)
+text = "Gimmick maps (Players 16-32)"
+label_settings = ExtResource("3_1ajci")
+metadata/_edit_use_anchors_ = true
+
+[node name="G1MapButton" parent="Menu/Maps" unique_id=1936396846 instance=ExtResource("7_7b55j")]
+offset_left = 48.0
+offset_top = -187.0
+offset_right = 242.0
+offset_bottom = -163.0
+text = "Super Mines"
+icon = ExtResource("12_1dfpl")
+map = "g1"
+
+[node name="Settings" type="Node2D" parent="Menu" unique_id=1465944648]
+
+[node name="PerTeamHSlider" type="HSlider" parent="Menu/Settings" unique_id=2044711407]
+unique_name_in_owner = true
+offset_left = -192.0
+offset_top = -123.0
+offset_right = -42.0
+offset_bottom = -99.0
+theme_override_icons/grabber = ExtResource("6_j7ex8")
+theme_override_icons/grabber_highlight = ExtResource("7_a8gd2")
+min_value = 1.0
+max_value = 8.0
+value = 4.0
+rounded = true
+
+[node name="PerTeamLabel" type="Label" parent="Menu/Settings" unique_id=911952572]
+unique_name_in_owner = true
+offset_left = -177.0
+offset_top = -119.0
+offset_right = 85.0
+offset_bottom = -103.0
+scale = Vector2(0.5, 0.5)
+text = "4 Players Per Team"
+label_settings = ExtResource("3_1ajci")
+metadata/_edit_use_anchors_ = true
+
+[node name="WeaponsHSlider" type="HSlider" parent="Menu/Settings" unique_id=858606506]
+unique_name_in_owner = true
+offset_left = -192.0
+offset_top = -103.0
+offset_right = -42.0
+offset_bottom = -79.0
+theme_override_icons/grabber = ExtResource("6_j7ex8")
+theme_override_icons/grabber_highlight = ExtResource("7_a8gd2")
+min_value = 1.0
+max_value = 4.0
+value = 1.0
+rounded = true
+
+[node name="WeaponsLabel" type="Label" parent="Menu/Settings" unique_id=1362672685]
+unique_name_in_owner = true
+offset_left = -157.0
+offset_top = -99.0
+offset_right = 19.0
+offset_bottom = -83.0
+scale = Vector2(0.5, 0.5)
+text = "Weapon set 1"
+label_settings = ExtResource("3_1ajci")
+
+[node name="TeamsHSlider" type="HSlider" parent="Menu/Settings" unique_id=1112265823]
+unique_name_in_owner = true
+offset_left = -192.0
+offset_top = -82.0
+offset_right = -42.0
+offset_bottom = -58.0
+theme_override_icons/grabber = ExtResource("6_j7ex8")
+theme_override_icons/grabber_highlight = ExtResource("7_a8gd2")
+min_value = 1.0
+max_value = 4.0
+value = 2.0
+rounded = true
+
+[node name="TeamsLabel" type="Label" parent="Menu/Settings" unique_id=1984247566]
+unique_name_in_owner = true
+offset_left = -137.0
+offset_top = -78.0
+offset_right = -33.0
+offset_bottom = -62.0
+scale = Vector2(0.5, 0.5)
+text = "2 teams"
+label_settings = ExtResource("3_1ajci")
+
+[node name="PlayerHP" type="LineEdit" parent="Menu/Settings" unique_id=774327031]
+unique_name_in_owner = true
+offset_left = -162.0
+offset_top = -43.0
+offset_right = -82.0
+offset_bottom = -19.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "100"
+
+[node name="PlayerHPLabel" type="Label" parent="Menu/Settings" unique_id=1266939834]
+unique_name_in_owner = true
+offset_left = -189.0
+offset_top = -50.0
+offset_right = 87.0
+offset_bottom = -34.0
+scale = Vector2(0.5, 0.5)
+text = "Player HP"
+label_settings = ExtResource("3_1ajci")
+horizontal_alignment = 1
+
+[node name="WaterLevel" type="LineEdit" parent="Menu/Settings" unique_id=1655597267]
+unique_name_in_owner = true
+offset_left = -162.0
+offset_top = -8.0
+offset_right = -82.0
+offset_bottom = 16.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "0"
+
+[node name="LevelLabel" type="Label" parent="Menu/Settings" unique_id=513843222]
+unique_name_in_owner = true
+offset_left = -189.0
+offset_top = -15.0
+offset_right = 87.0
+offset_bottom = 1.0
+scale = Vector2(0.5, 0.5)
+text = "Water Level"
+label_settings = ExtResource("3_1ajci")
+horizontal_alignment = 1
+
+[node name="WaterRise" type="LineEdit" parent="Menu/Settings" unique_id=216585441]
+unique_name_in_owner = true
+offset_left = -162.0
+offset_top = 27.0
+offset_right = -82.0
+offset_bottom = 51.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "0"
+
+[node name="WaterRiseLabel" type="Label" parent="Menu/Settings" unique_id=2110826948]
+unique_name_in_owner = true
+offset_left = -189.0
+offset_top = 20.0
+offset_right = 87.0
+offset_bottom = 36.0
+scale = Vector2(0.5, 0.5)
+text = "Water Rise Amount"
+label_settings = ExtResource("3_1ajci")
+horizontal_alignment = 1
+
+[node name="Multiplayer" type="Node2D" parent="Menu" unique_id=2022603963]
+
+[node name="OnlineServer" type="Button" parent="Menu/Multiplayer" unique_id=270750038]
+anchors_preset = -1
+anchor_left = -0.1875
+anchor_right = -0.1875
+offset_left = 44.0
+offset_top = -116.0
+offset_right = 242.0
+offset_bottom = -92.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "Make Server"
+icon = ExtResource("14_7b55j")
+
+[node name="LocalServer" type="Button" parent="Menu/Multiplayer" unique_id=281650061]
+anchors_preset = -1
+anchor_left = -0.1875
+anchor_right = -0.1875
+offset_left = 44.0
+offset_top = -86.0
+offset_right = 326.0
+offset_bottom = -62.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "Make Local Server"
+icon = ExtResource("16_j7ex8")
+
+[node name="Client" type="Button" parent="Menu/Multiplayer" unique_id=36848596]
+anchors_preset = -1
+anchor_left = -0.1875
+anchor_right = -0.1875
+offset_left = 44.0
+offset_top = -57.0
+offset_right = 236.0
+offset_bottom = -33.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+text = "Join Server"
+icon = ExtResource("13_1ajci")
+
+[node name="IP" type="LineEdit" parent="Menu/Multiplayer" unique_id=1524088550]
+unique_name_in_owner = true
+offset_left = 44.0
+offset_top = -29.0
+offset_right = 336.0
+offset_bottom = -4.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+placeholder_text = "Ip address"
+
+[node name="IPCheckBox" type="CheckBox" parent="Menu/Multiplayer" unique_id=1401204926]
+unique_name_in_owner = true
+offset_left = 43.0
+offset_right = 239.0
+offset_bottom = 24.0
+theme_override_fonts/font = ExtResource("4_7b55j")
+button_pressed = true
+text = "Remember IP"
+
+[node name="Background" type="CanvasLayer" parent="Menu" unique_id=1758057930]
+layer = -100
+
+[node name="Background" type="ColorRect" parent="Menu/Background" unique_id=756968751]
+offset_left = -19.0
+offset_top = -29.0
+offset_right = 1190.0
+offset_bottom = 686.0
+color = Color(0.6509804, 0.79607844, 0.81960785, 1)
+metadata/_edit_use_anchors_ = true
+
+[connection signal="make_map" from="Menu/Maps/B1MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/B2MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/M1MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/M2MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/M3MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/S1MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/S2MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/S3MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="make_map" from="Menu/Maps/G1MapButton" to="." method="_on_map_button_make_map"]
+[connection signal="pressed" from="Menu/Multiplayer/OnlineServer" to="." method="_on_online_server_pressed"]
+[connection signal="pressed" from="Menu/Multiplayer/LocalServer" to="." method="_on_local_server_pressed"]
+[connection signal="pressed" from="Menu/Multiplayer/Client" to="." method="_on_client_pressed"]

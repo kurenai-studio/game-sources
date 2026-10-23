@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://bug2waxs7ycy8"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_acmeg"]
+[ext_resource type="Texture2D" uid="uid://ffe73y1go1j4" path="res://assets/images/leaf.png" id="2_3yxug"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8hw32"]
+radius = 7.0
+
+[node name="Leaf" unique_id=791496552 instance=ExtResource("1_acmeg")]
+damage = 35
+size = 3
+knockback = 80
+life_steel = 30
+gravity = 300
+timer = 1.5
+effect_by_wind = false
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_3yxug")
+
+[node name="DetectBox" parent="." index="3" unique_id=289666369]
+collision_layer = 2
+collision_mask = 2
+
+[node name="CollisionShape2D" parent="DetectBox" index="0" unique_id=1905896826]
+shape = SubResource("CircleShape2D_8hw32")

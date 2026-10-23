@@ -1,0 +1,119 @@
+[gd_scene format=3 uid="uid://ctdjq1dj1itqd"]
+
+[ext_resource type="Script" uid="uid://clhp10dxg5hpt" path="res://scripts/player.gd" id="1_3vyb7"]
+[ext_resource type="Texture2D" uid="uid://bdm5g2j38707a" path="res://assets/images/snail.png" id="3_dqkch"]
+[ext_resource type="LabelSettings" uid="uid://cm76igu117yxn" path="res://assets/fonts/label_settings.tres" id="3_qhqgy"]
+[ext_resource type="Texture2D" uid="uid://dyocank7ysnuk" path="res://assets/images/arrow.png" id="5_qlg0r"]
+[ext_resource type="AudioStream" uid="uid://bh853f128q8t7" path="res://assets/sounds/ooff1.mp3" id="6_fjrip"]
+[ext_resource type="Texture2D" uid="uid://bekdgnnikk6tf" path="res://assets/images/shot.png" id="6_tuyoq"]
+[ext_resource type="AudioStream" uid="uid://dga6pd2qr6mhc" path="res://assets/sounds/looser.mp3" id="7_fjrip"]
+[ext_resource type="AudioStream" uid="uid://jugofiux0t1q" path="res://assets/sounds/ooff2.mp3" id="7_y4r1p"]
+[ext_resource type="AudioStream" uid="uid://dov8abymctmg1" path="res://assets/sounds/impressive.mp3" id="8_smehm"]
+[ext_resource type="AudioStream" uid="uid://ca6ny0aoftjrj" path="res://assets/sounds/bang_01.ogg" id="9_ur7pv"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_y4r1p"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+properties/1/path = NodePath(".:player_number")
+properties/1/spawn = true
+properties/1/replication_mode = 2
+properties/2/path = NodePath(".:team_number")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath("Snail:flip_h")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fjrip"]
+size = Vector2(14, 14)
+
+[node name="Player" type="CharacterBody2D" unique_id=1048355818 groups=["Player"]]
+collision_layer = 3
+collision_mask = 3
+script = ExtResource("1_3vyb7")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=630701173]
+_spawnable_scenes = PackedStringArray("uid://cubfm8w8o5obj")
+spawn_path = NodePath("..")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1716998312]
+replication_config = SubResource("SceneReplicationConfig_y4r1p")
+
+[node name="Snail" type="Sprite2D" parent="." unique_id=1069079524]
+texture = ExtResource("3_dqkch")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=634553446]
+position = Vector2(0, 4)
+shape = SubResource("RectangleShape2D_fjrip")
+
+[node name="NameLabel" type="Label" parent="." unique_id=338090993]
+offset_left = -28.5
+offset_top = -31.5
+offset_right = 87.5
+offset_bottom = -15.5
+scale = Vector2(0.5, 0.5)
+text = "Player"
+label_settings = ExtResource("3_qhqgy")
+horizontal_alignment = 1
+
+[node name="TeamLabel" type="Label" parent="." unique_id=330105742]
+offset_left = -29.0
+offset_top = -42.5
+offset_right = 87.0
+offset_bottom = -26.5
+scale = Vector2(0.5, 0.5)
+text = "Team"
+label_settings = ExtResource("3_qhqgy")
+horizontal_alignment = 1
+
+[node name="HpLabel" type="Label" parent="." unique_id=1171433253]
+offset_left = -29.0
+offset_top = -21.5
+offset_right = 87.0
+offset_bottom = -5.5
+scale = Vector2(0.5, 0.5)
+text = "100"
+label_settings = ExtResource("3_qhqgy")
+horizontal_alignment = 1
+
+[node name="ShotBar" type="TextureProgressBar" parent="." unique_id=229378025]
+offset_right = 48.0
+offset_bottom = 16.0
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, -8)
+max_value = 10.0
+step = 0.1
+texture_progress = ExtResource("6_tuyoq")
+tint_progress = Color(1, 1, 0, 1)
+
+[node name="TurnArrow" type="Sprite2D" parent="." unique_id=1626282355]
+visible = false
+texture = ExtResource("5_qlg0r")
+
+[node name="NextPlayerTimer" type="Timer" parent="." unique_id=968713583]
+wait_time = 2.0
+one_shot = true
+
+[node name="Ooff" type="AudioStreamPlayer" parent="." unique_id=523737660]
+stream = ExtResource("6_fjrip")
+pitch_scale = 1.7
+
+[node name="Ooff2" type="AudioStreamPlayer" parent="." unique_id=1652067544]
+stream = ExtResource("7_y4r1p")
+pitch_scale = 1.8
+
+[node name="Looser" type="AudioStreamPlayer" parent="." unique_id=167378126]
+stream = ExtResource("7_fjrip")
+volume_db = 10.0
+pitch_scale = 1.7
+
+[node name="Impressive" type="AudioStreamPlayer" parent="." unique_id=253486996]
+stream = ExtResource("8_smehm")
+volume_db = 10.0
+pitch_scale = 1.6
+
+[node name="Bomb" type="AudioStreamPlayer" parent="." unique_id=669141404]
+stream = ExtResource("9_ur7pv")
+
+[connection signal="timeout" from="NextPlayerTimer" to="." method="_on_next_player_timer_timeout"]
