@@ -1,0 +1,300 @@
+[gd_scene format=3 uid="uid://b6wgvjivbsi74"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_gex3w"]
+[ext_resource type="Script" uid="uid://8beebjvd6x7i" path="res://Scripts/SPRPanel.gd" id="2_3ftvt"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="2_hl87v"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="3_3ftvt"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="4_fvh1i"]
+[ext_resource type="Texture2D" uid="uid://ds6nct7g63284" path="res://Graphics/Icons/Arrow.png" id="5_erxk5"]
+[ext_resource type="Texture2D" uid="uid://bm01hxs45q3ga" path="res://Graphics/Icons/energy.png" id="6_7bp5m"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="7_miisb"]
+[ext_resource type="Texture2D" uid="uid://bn8t8jmrkuvdk" path="res://Graphics/Icons/time.png" id="8_d3pn6"]
+[ext_resource type="Texture2D" uid="uid://bnlcxaqltwepa" path="res://Graphics/Buttons/Switch.png" id="9_147xw"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="10_g065t"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="11_dtnhh"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="12_ysdh3"]
+[ext_resource type="Texture2D" uid="uid://c464cktjcl0bt" path="res://Graphics/Particles/subatomic_particles.png" id="14_3ftvt"]
+
+[sub_resource type="SystemFont" id="SystemFont_l1il0"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_v7luf"]
+font = SubResource("SystemFont_l1il0")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="Theme" id="1"]
+Button/colors/font_color = Color(0.88, 0.88, 0.88, 1)
+Button/colors/font_color_disabled = Color(0.9, 0.9, 0.9, 0.2)
+Button/colors/font_color_hover = Color(0.94, 0.94, 0.94, 1)
+Button/colors/font_color_pressed = Color(1, 1, 1, 1)
+Button/constants/h_separation = 2
+Button/fonts/font = null
+Button/styles/disabled = null
+Button/styles/focus = null
+Button/styles/hover = null
+Button/styles/normal = null
+Button/styles/pressed = null
+
+[sub_resource type="InputEventKey" id="InputEventKey_viy6l"]
+device = -1
+physical_keycode = 71
+unicode = 103
+
+[sub_resource type="Shortcut" id="Shortcut_3ftvt"]
+events = [SubResource("InputEventKey_viy6l")]
+
+[node name="SPRPanel" type="Control" unique_id=1470302766]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -640.0
+offset_top = -360.0
+offset_right = -600.0
+offset_bottom = -320.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(533, 300)
+theme = ExtResource("1_gex3w")
+script = ExtResource("2_3ftvt")
+metadata/_edit_vertical_guides_ = [828.0]
+
+[node name="GUI" type="TextureRect" parent="." unique_id=2049732480]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+texture = ExtResource("2_hl87v")
+metadata/_edit_lock_ = true
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1223738930]
+layout_mode = 0
+offset_left = 1138.0
+offset_top = 67.0
+offset_right = 1187.0
+offset_bottom = 116.0
+texture_normal = ExtResource("3_3ftvt")
+texture_hover = ExtResource("4_fvh1i")
+
+[node name="Title" type="Label" parent="." unique_id=1613714603]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 0
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 496.0
+offset_bottom = 110.0
+label_settings = SubResource("LabelSettings_v7luf")
+vertical_alignment = 1
+
+[node name="Desc" type="Label" parent="." unique_id=5370865]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 756.0
+offset_top = 332.0
+offset_right = 756.0
+offset_bottom = 380.0
+grow_horizontal = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=26623442]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 212.0
+offset_right = 479.0
+offset_bottom = 608.0
+
+[node name="GridContainer" type="GridContainer" parent="ScrollContainer" unique_id=1447989336]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource("1")
+columns = 4
+
+[node name="Panel" type="Panel" parent="." unique_id=24071072]
+layout_mode = 0
+offset_left = 532.0
+offset_top = 160.0
+offset_right = 1126.0
+offset_bottom = 612.0
+
+[node name="Transform" type="Button" parent="Panel" unique_id=680625303]
+layout_mode = 0
+offset_left = 228.0
+offset_top = 408.0
+offset_right = 364.0
+offset_bottom = 445.0
+shortcut = SubResource("Shortcut_3ftvt")
+shortcut_in_tooltip = false
+text = "TRANSFORM"
+
+[node name="Control2" type="Control" parent="Panel" unique_id=341604548]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Arrow" type="TextureRect" parent="Panel/Control2" unique_id=1383062827]
+layout_mode = 0
+offset_left = 272.0
+offset_top = 128.0
+offset_right = 324.0
+offset_bottom = 166.0
+texture = ExtResource("5_erxk5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel/Control2" unique_id=2111503666]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 0
+offset_left = 92.0
+offset_top = 116.0
+offset_right = 216.0
+offset_bottom = 316.0
+horizontal_scroll_mode = 0
+
+[node name="From" type="VBoxContainer" parent="Panel/Control2/ScrollContainer" unique_id=728026385]
+layout_mode = 2
+
+[node name="To" type="VBoxContainer" parent="Panel/Control2" unique_id=130052920]
+layout_mode = 0
+offset_left = 384.0
+offset_top = 120.0
+offset_right = 424.0
+offset_bottom = 160.0
+
+[node name="Control" type="Control" parent="Panel" unique_id=1639124424]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HSlider" type="HSlider" parent="Panel/Control" unique_id=2064294778]
+layout_mode = 0
+offset_left = 108.0
+offset_top = 80.0
+offset_right = 484.0
+offset_bottom = 96.0
+max_value = 1.0
+step = 0.01
+
+[node name="EnergyCost" type="TextureRect" parent="Panel/Control" unique_id=1626440112]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 292.0
+offset_right = 132.0
+offset_bottom = 332.0
+texture = ExtResource("6_7bp5m")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EnergyCostText" parent="Panel/Control" unique_id=747303207 instance=ExtResource("7_miisb")]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 300.0
+offset_right = 364.0
+offset_bottom = 330.0
+adv_help = true
+
+[node name="TimeCost" type="TextureRect" parent="Panel/Control" unique_id=539358563]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 348.0
+offset_right = 132.0
+offset_bottom = 380.0
+texture = ExtResource("8_d3pn6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimeCostText" type="Label" parent="Panel/Control" unique_id=992241109]
+layout_mode = 0
+offset_left = 164.0
+offset_top = 348.0
+offset_right = 268.0
+offset_bottom = 380.0
+text = "0"
+vertical_alignment = 1
+
+[node name="Switch" type="TextureButton" parent="Panel/Control" unique_id=56703630]
+layout_mode = 0
+offset_left = 284.0
+offset_top = 188.0
+offset_right = 312.0
+offset_bottom = 216.0
+texture_normal = ExtResource("9_147xw")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ReactionInProgress" type="Control" parent="Panel" unique_id=730616483]
+anchors_preset = 0
+offset_left = -408.0
+offset_top = -120.0
+offset_right = -368.0
+offset_bottom = -80.0
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="Panel/ReactionInProgress" unique_id=835416211]
+modulate = Color(0.65098, 0.27451, 1, 1)
+layout_mode = 0
+offset_left = 508.0
+offset_top = 204.0
+offset_right = 860.0
+offset_bottom = 212.0
+max_value = 1.0
+step = 0.0
+value = 0.2
+nine_patch_stretch = true
+stretch_margin_left = 9
+stretch_margin_right = 9
+texture_under = ExtResource("10_g065t")
+texture_over = ExtResource("11_dtnhh")
+texture_progress = ExtResource("12_ysdh3")
+
+[node name="TimeRemainingIcon" type="TextureRect" parent="Panel/ReactionInProgress" unique_id=1927821402]
+layout_mode = 0
+offset_left = 880.0
+offset_top = 196.0
+offset_right = 904.0
+offset_bottom = 220.0
+texture = ExtResource("8_d3pn6")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TimeRemainingText" type="Label" parent="Panel/ReactionInProgress" unique_id=1867774212]
+layout_mode = 0
+offset_left = 916.0
+offset_top = 196.0
+offset_right = 1000.0
+offset_bottom = 220.0
+text = "0"
+vertical_alignment = 1
+
+[node name="SPTexture" type="TextureRect" parent="." unique_id=1407600108]
+layout_mode = 0
+offset_left = 252.0
+offset_top = 164.0
+offset_right = 292.0
+offset_bottom = 200.0
+texture = ExtResource("14_3ftvt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SubatomicParticles" type="Label" parent="." unique_id=1038243629]
+layout_mode = 0
+offset_left = 308.0
+offset_top = 164.0
+offset_right = 472.0
+offset_bottom = 200.0
+text = "0 mol"
+vertical_alignment = 1
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="pressed" from="Panel/Transform" to="." method="_on_Transform_pressed"]
+[connection signal="value_changed" from="Panel/Control/HSlider" to="." method="_on_HSlider_value_changed"]
+[connection signal="pressed" from="Panel/Control/Switch" to="." method="_on_Switch_pressed"]

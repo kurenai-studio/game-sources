@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://jvv1p6pen1hx"]
+
+[sub_resource type="Gradient" id="1"]
+offsets = PackedFloat32Array(0, 0.525822, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.513726, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="2"]
+gradient = SubResource("1")
+
+[sub_resource type="ParticleProcessMaterial" id="5"]
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
+gravity = Vector3(0, 0, 0)
+scale_min = 0.0
+scale_max = 0.0
+color_ramp = SubResource("2")
+
+[node name="GPUParticles2D" type="GPUParticles2D" unique_id=68658141]
+amount = 30
+lifetime = 2.0
+randomness = 1.0
+fixed_fps = 10
+visibility_rect = Rect2(0, 0, 140, 140)
+process_material = SubResource("5")

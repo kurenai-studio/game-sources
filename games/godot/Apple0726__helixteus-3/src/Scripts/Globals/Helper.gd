@@ -1,0 +1,1924 @@
+extends Node
+#A place to put frequently used functions
+
+@onready var game = get_node("/root/Game")
+#var game
+
+func set_btn_color(btn):
+	if not btn.get_parent_control():
+		return
+	for other_btn in btn.get_parent_control().get_children():
+		other_btn["theme_override_colors/font_color"] = Color(1, 1, 1, 1)
+		other_btn["theme_override_colors/font_color_hover"] = Color(1, 1, 1, 1)
+		other_btn["theme_override_colors/font_color_pressed"] = Color(1, 1, 1, 1)
+	btn["theme_override_colors/font_color"] = Color(0, 1, 1, 1)
+	btn["theme_override_colors/font_color_hover"] = Color(0, 1, 1, 1)
+	btn["theme_override_colors/font_color_pressed"] = Color(0, 1, 1, 1)
+
+func get_rsrc_available_text(rsrc_available:float, rsrc_cost:float, mass_str:String = "", html:bool = false):
+	if html:
+		if rsrc_available >= rsrc_cost:
+			return "[color=#00ff00]{cost} ({available})[/color]".format({"available": format_num(clever_round(rsrc_available, 3, false, true), 3), "cost": format_num(clever_round(rsrc_cost, 3, false, true), 3)}) + " " + mass_str
+		else:
+			return "[color=#ff0000]{cost} ({available})[/color]".format({"available": format_num(clever_round(rsrc_available, 3, false, true), 3), "cost": format_num(clever_round(rsrc_cost, 3, false, true), 3)}) + " " + mass_str
+	else:
+		return "{cost} ({available})".format({"available": format_num(clever_round(rsrc_available, 3, false, true), 3), "cost": format_num(clever_round(rsrc_cost, 3, false, true), 3)}) + " " + mass_str
+
+#put_rsrc helper function
+func format_text(text_node, texture, path:String, show_available:bool, rsrc_cost:float, rsrc_available:float, mass_str:String = ""):
+	if path != "":
+		texture.texture_normal = load("res://Graphics/" + path + ".png")
+	var text:String
+	var color:Color = Color.WHITE
+	if show_available:
+		text = get_rsrc_available_text(rsrc_available, rsrc_cost, mass_str)
+		if rsrc_available >= rsrc_cost:
+			color = Color.GREEN
+		else:
+			color = Color.RED
+	else:
+		var minus:String = "-" if rsrc_cost < 0 else ""
+		rsrc_cost = abs(rsrc_cost)
+		var num_str:String = e_notation(rsrc_cost) if rsrc_cost < 0.0001 else format_num(clever_round(rsrc_cost, 3, false, true), 6)
+		if rsrc_cost == 0:
+			num_str = "0"
+		text = "%s%s %s" % [minus, num_str, mass_str]
+	text_node.text = text
+	text_node["theme_override_colors/font_color"] = color
+
+# collapse_threshold: number of icons beyond which the text is not displayed (only icons are displayed)
+func put_rsrc(container, min_size, rsrcs, remove:bool = true, show_available:bool = false, mouse_events:bool = true, collapse_threshold:int = -1):
+	if remove:
+		for child in container.get_children():
+			child.queue_free()
+	var data = []
+	for rsrc_name in rsrcs:
+		var rsrc = preload("res://Scenes/Resource.tscn").instantiate()
+		var texture_node = rsrc.get_node("Texture2D")
+		var rsrc_display_name = ""
+		var text_node = rsrc.get_node("Text")
+		var is_enough_node = rsrc.get_node("Texture2D/IsEnough")
+		text_node.visible = collapse_threshold == -1 or len(rsrcs.keys()) <= collapse_threshold
+		is_enough_node.visible = not text_node.visible
+		var current_rsrc:float
+		var mass_str = ""
+		var rsrc_type = ""
+		var rsrc_amount:float = 0.0
+		if rsrc_name is int:
+			rsrc_display_name = Item.name(rsrc_name)
+			rsrc_amount = rsrcs[rsrc_name]
+			texture_node.texture_normal = load("res://Graphics/%s/%s.png" % [Item.icon_directory(Item.data[rsrc_name].type), Item.data[rsrc_name].item_name])
+			text_node.text = Helper.format_num(floor(rsrcs[rsrc_name]))
+		else:
+			rsrc_display_name = tr(rsrc_name.to_upper())
+			if rsrc_name in ["money", "minerals", "energy", "SP"]:
+				current_rsrc = game[rsrc_name]
+				rsrc_amount = rsrcs[rsrc_name]
+				format_text(text_node, texture_node, "Icons/" + rsrc_name, show_available, rsrc_amount, current_rsrc)
+			elif rsrc_name == "stone":
+				current_rsrc = get_sum_of_dict(game.stone)
+				if rsrc_display_name == "Stone" and Settings.op_cursor:
+					rsrc_display_name = "Rok"
+				mass_str = "kg"
+				if rsrcs[rsrc_name] is float:
+					rsrc_amount = rsrcs[rsrc_name]
+				elif rsrcs[rsrc_name] is Dictionary:
+					rsrc_amount = get_sum_of_dict(rsrcs[rsrc_name])
+				format_text(text_node, texture_node, "Icons/stone", show_available, rsrc_amount, current_rsrc, mass_str)
+			elif rsrc_name == "time":
+				texture_node.texture_normal = Data.time_icon
+				text_node.text = time_to_str(rsrcs[rsrc_name])
+			elif game.mats.has(rsrc_name):
+				rsrc_type = "mats"
+				current_rsrc = game.mats[rsrc_name]
+				rsrc_amount = rsrcs[rsrc_name]
+				mass_str = "kg"
+				format_text(text_node, texture_node, "Materials/" + rsrc_name, show_available, rsrc_amount, current_rsrc, mass_str)
+			elif game.mets.has(rsrc_name):
+				rsrc_type = "mets"
+				current_rsrc = game.mets[rsrc_name]
+				rsrc_amount = rsrcs[rsrc_name]
+				mass_str = "kg"
+				format_text(text_node, texture_node, "Metals/" + rsrc_name, show_available, rsrc_amount, current_rsrc, mass_str)
+			elif game.atoms.has(rsrc_name):
+				rsrc_type = "atoms"
+				current_rsrc = game.atoms[rsrc_name]
+				rsrc_amount = rsrcs[rsrc_name]
+				rsrc_display_name = tr(("%s_NAME" % rsrc_name).to_upper())
+				mass_str = "mol"
+				format_text(text_node, texture_node, "Atoms/" + rsrc_name, show_available, rsrc_amount, current_rsrc, mass_str)
+			elif game.particles.has(rsrc_name):
+				rsrc_type = "particles"
+				current_rsrc = game.particles[rsrc_name]
+				rsrc_amount = rsrcs[rsrc_name]
+				mass_str = "mol"
+				format_text(text_node, texture_node, "Particles/" + rsrc_name, show_available, rsrc_amount, current_rsrc, mass_str)
+		if show_available and rsrc_name != "time":
+			texture_node.material = ShaderMaterial.new()
+			texture_node.material.shader = preload("res://Shaders/Resource.gdshader")
+			texture_node.material.set_shader_parameter("fill", current_rsrc / rsrc_amount)
+			if current_rsrc < rsrc_amount:
+				is_enough_node.texture = preload("res://Graphics/Icons/Annotator/cross.png")
+		texture_node.custom_minimum_size = Vector2(1, 1) * min_size
+		data.append({"rsrc":rsrc, "name":rsrc_name})
+		rsrc.rsrc_display_name = rsrc_display_name
+		rsrc.rsrcs_required = rsrc_amount
+		if rsrc_name is String:
+			rsrc.rsrc_name = rsrc_name
+			rsrc.rsrc_type = rsrc_type
+			rsrc.mass_str = mass_str
+			rsrc.show_available = show_available
+		container.add_child(rsrc)
+		if mouse_events:
+			rsrc.connect_mouse_events()
+	return data
+
+#Converts time in seconds to string format
+func time_to_str (time:float): # time is in seconds
+	if time < 0:
+		time = 0
+	var seconds = int(floor(time)) % 60
+	var second_zero = "0" if seconds < 10 else ""
+	var minutes = int(floor(time / 60)) % 60
+	var minute_zero = "0" if minutes < 10 else ""
+	var hours = int(floor(time / 3600)) % 24
+	var days = int(floor (time / 86400)) % 365
+	var years = int(floor (time / 31536000))
+	var year_str = "" if years == 0 else ("%s%s " % [years, tr("YEARS")])
+	var day_str = "" if days == 0 else ("%s%s " % [days, tr("DAYS")])
+	var hour_str = "" if hours == 0 else ("%s:" % hours)
+	return "%s%s%s%s%s:%s%s" % [year_str, day_str, hour_str, minute_zero, minutes, second_zero, seconds]
+
+func log10(n):
+	return log(n) / log(10)
+
+func get_state(T:float, P:float, node):
+	var v = node.get_pos_from_TP(T, P)
+	if Geometry2D.is_point_in_polygon(v, node.get_node("Superfluid").polygon):
+		return "sc"
+	elif Geometry2D.is_point_in_polygon(v, node.get_node("Liquid").polygon):
+		return "l"
+	elif Geometry2D.is_point_in_polygon(v, node.get_node("Gas").polygon):
+		return "g"
+	else:
+		return "s"
+
+func set_visibility(node):
+	for other_node in node.get_parent_control().get_children():
+		other_node.visible = false
+	node.visible = true
+
+func get_item_name (_name:String):
+	if _name.substr(0, 9) == "overclock":
+		return tr("OVERCLOCK") + " " + get_roman_num(int(_name[9]))
+	if _name.substr(0, 5) == "drill":
+		return tr("DRILL") + " " + get_roman_num(int(_name[5]))
+	if _name.substr(0, 17) == "portable_wormhole":
+		return tr("PORTABLE_WORMHOLE") + " " + get_roman_num(int(_name[17]))
+	if len(_name.split("_")) > 1 and _name.split("_")[1] == "seeds":
+		return tr("X_SEEDS") % tr(_name.split("_")[0].to_upper())
+	return tr(_name.to_upper())
+
+func get_plant_name(name:String):
+	return tr("PLANT_TITLE").format({"metal":tr(name.split("_")[0].to_upper())})
+
+func get_wid(size:float):
+	return min(round(pow(size / 5000.0, 0.7) * 8.0 * ProcGenSettings.planet_tile_dimensions) + 1, ProcGenSettings.max_planet_tile_dimensions)
+
+func e_notation(num:float, sd:int = 4):#e notation
+	if num == 0:
+		return "0"
+	var e = floor(log10(num))
+	var n = num * pow(10, -e)
+	var n2 = clever_round(n, sd)
+	if n2 == 10:
+		n2 = 1
+		e += 1
+	return "%se%d" %  [n2, e]
+
+
+func format_num(num:float, clever_round:bool = false, threshold:int = 6):
+	if clever_round:
+		num = clever_round(num)
+	var sgn = ""
+	if num < 0:
+		num *= -1
+		sgn = "-"
+	if num < pow(10, threshold):
+		var string = str(num)
+		var arr = string.split(".")
+		var whole_number_length = len(arr[0])
+		var decimals = "." + arr[1]
+		if arr[1] == "0":
+			decimals = ""
+		var mod = whole_number_length % 3
+		var res = string[0]
+		for i in range(1, whole_number_length):
+			if i % 3 == mod:
+				res += ","
+			res += string[i]
+		return sgn + res + decimals
+	else:
+		var suff:String = ""
+		var p:float = log(num) / log(10)
+		if is_equal_approx(p, ceil(p)):
+			p = ceil(p)
+		else:
+			p = int(p)
+		var OOM_gap:int = 3
+		if Settings.notation == "standard":
+			OOM_gap = int(tr("STANDARD_LARGE_NUMBER_NOTATION_OOM_GAP"))
+		if Settings.notation == "scientific" and p >= 3 or p >= OOM_gap * 11:
+			return e_notation(num, 3)
+		if p < OOM_gap:
+			suff = ""
+		elif p < OOM_gap * 2:
+			suff = "k" if Settings.notation == "SI" else Data.standard_large_number_notations[0]
+		elif p < OOM_gap * 3:
+			suff = "M" if Settings.notation == "SI" else Data.standard_large_number_notations[1]
+		elif p < OOM_gap * 4:
+			suff = "G" if Settings.notation == "SI" else Data.standard_large_number_notations[2]
+		elif p < OOM_gap * 5:
+			suff = "T" if Settings.notation == "SI" else Data.standard_large_number_notations[3]
+		elif p < OOM_gap * 6:
+			suff = "P" if Settings.notation == "SI" else Data.standard_large_number_notations[4]
+		elif p < OOM_gap * 7:
+			suff = "E" if Settings.notation == "SI" else Data.standard_large_number_notations[5]
+		elif p < OOM_gap * 8:
+			suff = "Z" if Settings.notation == "SI" else Data.standard_large_number_notations[6]
+		elif p < OOM_gap * 9:
+			suff = "Y" if Settings.notation == "SI" else Data.standard_large_number_notations[7]
+		elif p < OOM_gap * 10:
+			suff = "R" if Settings.notation == "SI" else Data.standard_large_number_notations[8]
+		elif p < OOM_gap * 11:
+			suff = "Q" if Settings.notation == "SI" else Data.standard_large_number_notations[9]
+		var div = max(pow(10, snapped(p - 1 - (OOM_gap - 2) / 2, OOM_gap)), 1)
+		var final_num = clever_round(num / div, 3)
+		if step_decimals(final_num) == 0:
+			return "%s%d%s" % [sgn, final_num, suff]
+		else:
+			return "%s%s%s" % [sgn, final_num, suff]
+
+#Assumes that all values of dict are floats/integers
+func get_sum_of_dict(dict:Dictionary):
+	var sum = 0.0
+	for el in dict.values():
+		sum += el
+	return sum
+
+func get_el_color(element:String):
+	match element:
+		"O":
+			return Color(1, 0.2, 0.2, 1)
+		"Si":
+			return Color(0.7, 0.7, 0.7, 1)
+		"Ca":
+			return Color(0.8, 1, 0.8, 1)
+		"Al":
+			return Color(0.6, 0.6, 0.6, 1)
+		"Mg":
+			return Color(0.69, 0.69, 0.53, 1)
+		"Na":
+			return Color(0.92, 0.98, 1, 1)
+		"Ni":
+			return Color(0.8, 0.8, 0.8, 1)
+		"H", "Fe":
+			return Color(0.9, 0.9, 0.9, 1)
+		"He":
+			return Color(0.8, 0.5, 1.0, 1)
+		"H2O":
+			return Color(0.2, 0.7, 1.0, 1)
+		"C":
+			return Color(0.15, 0.15, 0.15, 1)
+		_:
+			return Color(randf() * 0.5, randf() * 0.5, randf() * 0.5, 1)
+
+func mult_dict_by(dict:Dictionary, value:float):
+	var dict2:Dictionary = dict.duplicate(true)
+	for el in dict:
+		dict2[el] = dict[el] * value
+	return dict2
+
+func get_crush_info(tile_obj):
+	var time = Time.get_unix_time_from_system()
+	var crush_spd = tile_obj.bldg.path_1_value * game.u_i.time_speed * tile_obj.get("time_speed_bonus", 1.0)
+	var progress = max(0, (time - tile_obj.bldg.start_date) * crush_spd / tile_obj.bldg.stone_qty)
+	var qty_left = max(0, round(tile_obj.bldg.stone_qty - (time - tile_obj.bldg.start_date) * crush_spd))
+	return {"crush_spd":crush_spd, "progress":progress, "qty_left":qty_left}
+
+func get_prod_info(tile_obj):
+	var time = Time.get_unix_time_from_system()
+	var spd = tile_obj.bldg.path_1_value * game.u_i.time_speed * tile_obj.get("time_speed_bonus", 1.0) * get_IR_mult(tile_obj.bldg.name)
+	#qty1: resource being used. qty2: resource being produced
+	var qty_left = clever_round(max(0, tile_obj.bldg.qty1 - (time - tile_obj.bldg.start_date) * spd / tile_obj.bldg.ratio))
+	var qty_made = clever_round(min(tile_obj.bldg.qty2, (time - tile_obj.bldg.start_date) * spd))
+	var progress = qty_made / tile_obj.bldg.qty2#1 = complete
+	return {"spd":spd, "progress":progress, "qty_made":qty_made, "qty_left":qty_left}
+
+var overlay_texture = preload("res://Graphics/Elements/Default.png")
+func add_overlay(parent, self_node, c_v:String, obj_info:Dictionary, overlays:Array):
+	overlays.append({
+		"obj":parent,
+		"id":obj_info.l_id,
+		"original_texture":parent.texture_normal,
+		"original_clickmask":parent.texture_click_mask,
+		"original_scale":parent.scale,
+		"original_modulate":parent.modulate})
+
+func toggle_overlay(overlays, overlay_visible):
+	for overlay in overlays:
+		if overlay_visible:
+			overlay.obj.texture_normal = overlay_texture
+			overlay.obj.texture_click_mask = null
+			overlay.obj.scale = Vector2.ONE * game.overlay_CS
+		else:
+			overlay.obj.texture_normal = overlay.original_texture
+			overlay.obj.texture_click_mask = overlay.original_clickmask
+			if game.c_v == "galaxy":
+				overlay.obj.scale = overlay.original_scale / clamp(game.view.scale.x, game.view.obj.STAR_AUTOSCALE_MIN_THRESHOLD, 2.0) * game.view.obj.STAR_AUTOSCALE_MIN_THRESHOLD
+			else:
+				overlay.obj.scale = overlay.original_scale
+			overlay.obj.modulate = overlay.original_modulate
+
+func change_circle_size(value, overlays):
+	if game.overlay_data[game.c_v].visible:
+		for overlay in overlays:
+			overlay.obj.scale = Vector2.ONE * value
+
+func save_obj(type:String, id:int, arr:Array):
+	var file_path:String = "user://%s/Univ%s/%s/%s.hx3" % [game.c_sv, game.c_u, type, id]
+	var save = FileAccess.open_compressed(file_path + "~", FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	save.store_var(arr)
+	save.close()
+	DirAccess.copy_absolute(file_path + "~", file_path)
+
+func get_rover_weapon_text(id:int):
+	return "{laser_name}\n{damage_text}: {damage}\n{cooldown_text}: {cooldown}{secs}".format({
+		"laser_name":tr(Item.data[id].item_name.to_upper()),
+		"damage_text":tr("DAMAGE"),
+		"damage":Item.data[id].damage,
+		"cooldown_text":tr("COOLDOWN"),
+		"cooldown":Item.data[id].cooldown,
+		"secs": tr("S_SECOND"),
+	})
+
+func get_rover_mining_text(id:int):
+	return "{mining_laser_name}\n{mining_speed_text}: {mining_speed}\n{mining_range_text}: {mining_range}".format({
+		"mining_laser_name":tr(Item.data[id].item_name.to_upper()),
+		"mining_speed_text":tr("MINING_SPEED"),
+		"mining_speed":Item.data[id].speed,
+		"mining_range_text":tr("RANGE"),
+		"mining_range":Item.data[id].range,
+	})
+
+func set_back_btn(back_btn):
+	back_btn.text = "<- %s (%s)" % [tr("BACK"), OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_Z))]
+
+func show_dmg(dmg:float, pos:Vector2, parent, size:int = 40, missed:bool = false, crit:bool = false):
+	var lb:Label = Label.new()
+	#lb["custom_fonts/font"] = dmg_txt_rsrc
+	lb.light_mask = 0
+	if missed:
+		lb["theme_override_colors/font_color"] = Color(1, 1, 0, 1)
+		lb.text = tr("MISSED")
+	else:
+		lb["theme_override_colors/font_color"] = Color(1, 0.2, 0.2, 1)
+		lb.text = "- %s" % format_num(dmg)
+		if crit:
+			lb.text = "%s\n- %s" % [tr("CRITICAL"), format_num(dmg)]
+		else:
+			lb.text = "- %s" % format_num(dmg)
+	lb["theme_override_colors/font_outline_color"] = Color.BLACK
+	lb["theme_override_constants/outline_size"] = 3
+	lb.position = pos - Vector2(0, 40)
+	lb["theme_override_font_sizes/font_size"] = size
+	parent.add_child(lb)
+	var dur = 1.5 if crit else 1.0
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(lb, "modulate", Color(1, 1, 1, 0), dur)
+	tween.tween_property(lb, "position", pos - Vector2(0, 55), dur).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(lb.queue_free).set_delay(dur)
+	#lb.light_mask = 2
+
+func add_minerals(amount:float, add:bool = true):
+	var min_cap = 200 + (game.mineral_capacity - 200) * get_IR_mult(Building.MINERAL_SILO)
+	var mineral_space_available:float = round(min_cap) - round(game.minerals)
+	if mineral_space_available >= amount:
+		if add:
+			game.minerals += amount
+		return {"added":amount, "remainder":0}
+	else:
+		if game.science_level.has("ASM2") and Settings.autosell:
+			if add:
+				game.add_resources({"money":(game.minerals + amount - min_cap) * (game.MUs.MV + 4)})
+				game.minerals = min_cap
+			return {"added":amount, "remainder":0}
+		elif game.science_level.has("ASM") and Settings.autosell:
+			if add:
+				var diff:float = round(amount) - round(mineral_space_available)
+				game.minerals = fmod(diff, round(min_cap))
+				game.add_resources({"money":max(1, ceil(diff / min_cap)) * round(min_cap) * (game.MUs.MV + 4)})
+			return {"added":amount, "remainder":0}
+		else:
+			if add:
+				game.minerals = min_cap
+			return {"added":mineral_space_available, "remainder":amount - mineral_space_available}
+
+func get_total_energy_cap():
+	return 7500 + (game.energy_capacity - 7500) * get_IR_mult(Building.BATTERY) + game.capacity_bonus_from_substation * get_IR_mult(Building.POWER_PLANT) * game.u_i.time_speed
+
+func add_energy(amount:float):
+	var energy_cap = get_total_energy_cap()
+	var energy_space_available:float = round(energy_cap) - round(game.energy)
+	if energy_space_available >= amount:
+		game.energy += amount
+		return {"added":amount, "remainder":0}
+	else:
+		game.energy = energy_cap
+		return {"added":energy_space_available, "remainder":amount - energy_space_available}
+
+func get_layer(tile:Dictionary, p_i:Dictionary):
+	var layer:String = ""
+	if tile.has("crater") and tile.crater.has("init_depth"):
+		layer = "crater"
+	elif tile.depth <= p_i.crust_start_depth:
+		layer = "surface"
+	elif tile.depth <= p_i.mantle_start_depth:
+		layer = "crust"
+	elif tile.depth <= p_i.core_start_depth:
+		layer = "mantle"
+	else:
+		layer = "core"
+	return layer
+
+func get_rock_layer(tile:Dictionary, p_i:Dictionary):
+	var layer:String = ""
+	if tile.depth <= p_i.mantle_start_depth:
+		layer = "crust"
+	elif tile.depth <= p_i.core_start_depth:
+		layer = "mantle"
+	else:
+		layer = "core"
+	return layer
+
+func get_rsrc_from_rock(contents:Dictionary, tile:Dictionary, p_i:Dictionary, tile_id:int):
+	var layer:String = get_layer(tile, p_i)
+	for content in contents:
+		var amount = contents[content]
+		if game.mats.has(content):
+			game.mats[content] += amount
+			if not game.show.has("plant_button") and content == "soil":
+				game.show.plant_button = true
+			if game.help.has("materials"):
+				game.popup_window(tr("YOU_MINED_MATERIALS"), tr("MATERIALS"))
+				game.help.erase("materials")
+			if not game.show.has("materials"):
+				game.show.materials = true
+				game.HUD.craft.visible = true
+				if is_instance_valid(game.inventory):
+					game.inventory.get_node("TabBar/Materials").visible = true
+		elif game.mets.has(content):
+			if not game.help.has("metals"):
+				game.popup_window(tr("YOU_MINED_METALS"), tr("METALS"))
+				game.help.metals = true
+			if not game.show.has("metals"):
+				game.show.metals = true
+				if is_instance_valid(game.inventory):
+					game.inventory.get_node("TabBar/Metals").visible = true
+			game.mets[content] += amount
+		elif content == "stone":
+			game.add_resources({"stone":contents.stone})
+		elif content == "ship_locator":
+			if not game.objective.is_empty() and game.objective.type == game.ObjectiveType.SIGNAL and game.objective.id == 11:
+				game.objective.current += 1
+			game.second_ship_hints.ship_locator = true
+			tile.erase("ship_locator_depth")
+		else:
+			game[content] += amount
+		if tile.has("artifact") and tile.depth >= 5000:
+			game.fourth_ship_hints.artifact_found = true
+			tile.erase("artifact")
+			if game.fourth_ship_hints.boss_rekt:
+				game.popup_window("%s\n%s" % [tr("ARTIFACT_FOUND_DESC"), tr("ARTIFACT_FOUND_DESC2")], tr("ARTIFACT_FOUND"))
+			else:
+				game.popup_window(tr("ARTIFACT_FOUND_DESC"), tr("ARTIFACT_FOUND"))
+		if not game.show.has(content):
+			game.show[content] = true
+		if content == "sand" and not game.bldg_unlocked.has(Building.GLASS_FACTORY) and game.mats.sand >= 1000.0:
+			show_bldg_unlocked_popup(Building.GLASS_FACTORY)
+		if content == "coal" and not game.bldg_unlocked.has(Building.STEAM_ENGINE) and game.mats.coal >= 1000.0:
+			show_bldg_unlocked_popup(Building.STEAM_ENGINE)
+		if content == "stone" and not game.bldg_unlocked.has(Building.STONE_CRUSHER) and get_sum_of_dict(game.stone) > 10000.0:
+			show_bldg_unlocked_popup(Building.STONE_CRUSHER)
+	if tile.mining.has("current_deposit") and tile.mining.current_deposit.progress > tile.mining.current_deposit.size - 1:
+		tile.mining.erase("current_deposit")
+	if tile.has("crater") and tile.crater.has("init_depth") and tile.depth > 3 * tile.crater.init_depth:
+		tile.erase("crater")
+		game.tile_data_persistent[tile_id]["crater_removed"] = true
+
+func show_bldg_unlocked_popup(bldg:int):
+	game.bldg_unlocked[bldg] = true
+	if game.dim_num == 1 and game.c_u == 0:
+		var bldg_unlocked_popup = load("res://Scenes/BuildingUnlockedPopup.tscn").instantiate()
+		bldg_unlocked_popup.setup(bldg)
+		game.get_node("UI").add_child(bldg_unlocked_popup)
+
+func remove_crater_bonuses(tile_data:Array, tile_id:int, metal:String):
+	var wid:int = sqrt(len(tile_data))
+	var i:int = tile_id % wid
+	var j:int = tile_id / wid
+	for k in range(max(0, i - 1), min(i + 1 + 1, wid)):
+		for l in range(max(0, j - 1), min(j + 1 + 1, wid)):
+			var id2 = k % wid + l * wid
+			var _tile = tile_data[id2]
+			if Vector2(k, l) == Vector2(i, j) or _tile.has("cave") or _tile.has("volcano") or _tile.has("lake") or _tile.has("wormhole"):
+				continue
+			if _tile.resource_production_bonus.has("SP"):
+				_tile.resource_production_bonus.SP -= game.met_info[metal].rarity - 0.8
+				if is_equal_approx(_tile.resource_production_bonus.SP, 1.0):
+					_tile.resource_production_bonus.erase("SP")
+	
+func mass_generate_rock(tile:Dictionary, p_i:Dictionary, depth:int):
+	var aurora_mult = tile.get("aurora", 0.0) + 1.0
+	var h_mult = game.u_i.planck
+	var contents = {}
+	var other_volume = 0#in m^3
+	#We assume all materials have a density of 1.5g/cm^3 to simplify things
+	var rho = 1.5
+	#Material quantity penalty the further you go from surface
+	var depth_limit_mult = max(1, 1 + (((2 * tile.depth + depth) / 2.0) - p_i.crust_start_depth) / float(p_i.crust_start_depth))
+	for mat in p_i.surface.keys():
+		var chance_mult:float = min(p_i.surface[mat].chance / depth_limit_mult * aurora_mult, 1)
+		var amount = p_i.surface[mat].amount * randf_range(0.8, 1.2) / depth_limit_mult * aurora_mult * chance_mult * depth * h_mult
+		if amount < 1:
+			continue
+		contents[mat] = amount
+		other_volume += amount / rho / 1000
+	for met in game.met_info:
+		if met in ["nanocrystal", "mythril"] and game.c_g_g == 0:
+			continue
+		var met_info = game.met_info[met]
+		var chance_mult:float = 0.25 * aurora_mult
+		var amount:float
+		if tile.has("crater") and met == tile.crater.metal:
+			chance_mult = min(7.0 / (7.0 + 1 / (chance_mult * 6.0)), 1)
+			amount = randf_range(0.5, 0.55) * min(depth, 2 * tile.crater.init_depth)
+		else:
+			chance_mult = min(7.0 / (7.0 + 1 / chance_mult), 1)
+			var end_depth:int = tile.depth + depth
+			var met_start_depth:int = met_info.min_depth + p_i.crust_start_depth
+			var met_end_depth:int = met_info.max_depth + p_i.crust_start_depth
+			var num_tiles:int = end_depth - met_start_depth
+			var num_tiles2:int = met_end_depth - tile.depth
+			var num_tiles3:int = clamp(min(num_tiles, num_tiles2), 0, min(depth, met_end_depth - met_start_depth))
+			amount = randf_range(1.0, 1.2) * num_tiles3
+		amount *= 20 * chance_mult * aurora_mult * h_mult / pow(met_info.rarity, 0.5)
+		if amount < 0.001:
+			continue
+		contents[met] = amount
+		other_volume += amount / met_info.density / 1000 / h_mult
+		#   									                          	    V Every km, rock density goes up by 0.01
+	var stone_amount = max(0, clever_round((depth - other_volume) * 1000 * (2.85 + (2 * min(tile.depth + depth, 1000.0 * p_i.size / 2.0)) / 200000.0) * h_mult))
+	contents["stone"] = get_stone_comp_from_amount(p_i[get_rock_layer(tile, p_i)], stone_amount)
+	return contents
+
+func get_stone_comp_from_amount(p_i_layer:Dictionary, amount:float):
+	var stone = {}
+	for comp in p_i_layer:
+		stone[comp] = p_i_layer[comp] * amount
+	return stone
+
+func generate_rock(tile:Dictionary, p_i:Dictionary):
+	var aurora_mult = tile.get("aurora", 0.0) + 1.0
+	var h_mult = game.u_i.planck
+	var contents = {}
+	var other_volume = 0#in m^3
+	#We assume all materials have a density of 1.5g/cm^3 to simplify things
+	var rho = 1.5
+	#Material quantity penalty the further you go from surface
+	var depth_limit_mult = max(1, 1 + (tile.depth - p_i.crust_start_depth) / float(p_i.crust_start_depth))
+	if depth_limit_mult > 0.01:
+		for mat in p_i.surface.keys():
+			if p_i.has("tile_num"):
+				var amount = p_i.surface[mat].amount * p_i.surface[mat].chance / depth_limit_mult * h_mult
+				contents[mat] = amount
+				other_volume += amount / rho / 1000 / h_mult
+			elif randf() < p_i.surface[mat].chance / depth_limit_mult * aurora_mult:
+				var amount = clever_round(p_i.surface[mat].amount * randf_range(0.8, 1.2) / depth_limit_mult * aurora_mult * h_mult)
+				if amount < 1:
+					continue
+				contents[mat] = amount
+				other_volume += amount / rho / 1000 / h_mult
+	if get_layer(tile, p_i) != "surface" and not tile.mining.has("current_deposit"):
+		for met in game.met_info:
+			if met in ["nanocrystal", "mythril"] and game.c_g_g == 0:
+				continue
+			var crater_metal = tile.has("crater") and tile.crater.has("init_depth") and met == tile.crater.metal
+			if game.met_info[met].min_depth < tile.depth - p_i.crust_start_depth and tile.depth - p_i.crust_start_depth < game.met_info[met].max_depth or crater_metal:
+				if randf() < 0.25 * (6 if crater_metal else 1) * aurora_mult / pow(game.met_info[met].rarity, 0.2):
+					tile.mining.current_deposit = {"met":met, "size":randi_range(4, 10), "progress":1}
+	if tile.mining.has("current_deposit"):
+		var met = tile.mining.current_deposit.met
+		var size = tile.mining.current_deposit.size
+		var progress2 = tile.mining.current_deposit.progress
+		var amount_multiplier = -abs(2.0/size * progress2 - 1) + 1
+		var crater_metal = tile.has("crater") and tile.crater.has("init_depth") and met == tile.crater.metal
+		var amount = clever_round(20 * (2.0 if crater_metal else 1.0) * randf_range(1.0, 1.2) * amount_multiplier * aurora_mult * h_mult / pow(game.met_info[met].rarity, 0.5))
+		contents[met] = amount
+		other_volume += amount / game.met_info[met].density / 1000 / h_mult
+		tile.mining.current_deposit.progress += 1
+		#   									                          	    V Every km, rock density goes up by 0.01
+	var stone_amount = max(0, clever_round((1 - other_volume) * 1000 * (2.85 + tile.depth / 100000.0) * h_mult))
+	if stone_amount != 0:
+		contents["stone"] = get_stone_comp_from_amount(p_i[get_rock_layer(tile, p_i)], stone_amount)
+	return contents
+
+func get_IR_mult(bldg_name):
+	var sc:int
+	if bldg_name in [Building.POWER_PLANT, Building.SOLAR_PANEL, Building.STEAM_ENGINE]:
+		sc = Science.ENERGY_PRODUCTION_EFFICIENCY
+	elif bldg_name in [Building.ATOM_MANIPULATOR, Building.SUBATOMIC_PARTICLE_REACTOR]:
+		sc = Science.PARTICLE_MANIPULATION_EFFICIENCY
+	elif bldg_name in [Building.MINERAL_SILO, Building.BATTERY]:
+		sc = Science.STORAGE_EFFICIENCY
+	elif bldg_name == Building.RESEARCH_LAB:
+		sc = Science.RESEARCH_EFFICIENCY
+	elif bldg_name == Building.MINERAL_EXTRACTOR:
+		sc = Science.MINERAL_EXTRACTION_EFFICIENCY
+	return pow(game.maths_bonus.IRM, game.science_level[sc])
+
+func add_ship_XP(id:int, XP:float):
+	var ship_data = game.ship_data
+	ship_data[id].XP += XP
+	while ship_data[id].XP >= ship_data[id].XP_to_lv:
+		ship_data[id].XP -= ship_data[id].XP_to_lv
+		ship_data[id].XP_to_lv = round(ship_data[id].XP_to_lv * game.maths_bonus.SLUGF_XP)
+		ship_data[id].lv += 1
+		if ship_data[id].lv % 3 == 2:
+			ship_data[id].unallocated_weapon_levels = ship_data[id].get("unallocated_weapon_levels", 0) + 1
+			ship_data[id]["leveled_up"] = true
+		if ship_data[id].lv % 2 == 1: # One more allocatable stat point
+			ship_data[id]["leveled_up"] = true
+		ship_data[id].HP += ShipClass.class_modifiers[ship_data[id].ship_class].HP_increase_on_levelup
+
+func calculate_total_ship_XP(id:int):
+	var q = game.maths_bonus.SLUGF_XP
+	return Constants.base_ship_XP_to_lv * max(0, q * (1 - pow(q, game.ship_data[id].lv - 1)) / (1 - q)) + game.ship_data[id].XP
+
+func add_label(txt:String, idx:int = -1, center:bool = true, autowrap:bool = false):
+	var vbox = game.get_node("UI/Panel/VBox")
+	var label = Label.new()
+	if autowrap:
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if autowrap:
+		label.size.x = 250
+		label.custom_minimum_size.x = 250
+	if center:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.text = txt
+	vbox.add_child(label)
+	if idx != -1:
+		vbox.move_child(label, idx)
+
+#solar panels
+func get_SP_production(temp:float, value:float):
+	return value * temp / 273.0
+
+#atm extractor
+func get_AE_production(pressure:float, value:float):
+	return value * pressure
+
+func get_PCNC_production(pressure:float, value:float):
+	return value / pressure
+
+func update_rsrc(p_i, tile, rsrc = null, active:bool = false):
+	var curr_time = Time.get_unix_time_from_system()
+	var current_bar_value = 0
+	var capacity_bar_value = 0
+	var rsrc_text = ""
+	if tile.has("ancient_bldg"):
+		if tile.ancient_bldg.has("repair_cost"):
+			return
+		if tile.ancient_bldg.name == AncientBuilding.CELLULOSE_SYNTHESIZER:
+			current_bar_value = tile.ancient_bldg.get("production", 0.0)
+			rsrc_text = "%s kg/s" % format_num(current_bar_value, true)
+		elif tile.ancient_bldg.name == AncientBuilding.NUCLEAR_FUSION_REACTOR:
+			current_bar_value = tile.ancient_bldg.get("production", 0.0)
+			rsrc_text = "%s/s" % format_num(round(current_bar_value))
+		elif tile.ancient_bldg.name == AncientBuilding.SUBSTATION:
+			current_bar_value = round(tile.ancient_bldg.get("capacity_bonus", 0.0) * get_IR_mult(Building.POWER_PLANT) * game.u_i.time_speed)
+			rsrc_text = "+ %s" % format_num(current_bar_value)
+		if is_instance_valid(rsrc):
+			rsrc.set_current_bar_value(current_bar_value)
+			rsrc.set_capacity_bar_value(capacity_bar_value)
+			rsrc.set_text(rsrc_text)
+		return
+	if not is_instance_valid(rsrc) and tile.bldg.name in [Building.STONE_CRUSHER, Building.GREENHOUSE, Building.STEAM_ENGINE, Building.SUBATOMIC_PARTICLE_REACTOR]:
+		return
+	var prod:float = p_i.tile_num if p_i.has("tile_num") else 1
+	if tile.bldg.name == Building.ATMOSPHERE_EXTRACTOR:
+		prod *= tile.bldg.path_1_value * get_prod_mult(tile) * p_i.pressure
+		rsrc_text = "%s mol/%s" % [format_num(prod, true), tr("S_SECOND")]
+	elif tile.bldg.name == Building.MINERAL_EXTRACTOR:
+		prod *= tile.bldg.path_1_value * get_prod_mult(tile) * tile.resource_production_bonus.get("minerals", 1.0)
+		rsrc_text = "%s/%s" % [format_num(prod, true), tr("S_SECOND")]
+	elif tile.bldg.name == Building.SOLAR_PANEL:
+		prod *= get_SP_production(p_i.temperature, tile.bldg.path_1_value * get_prod_mult(tile)) * tile.resource_production_bonus.get("energy", 1.0)
+		rsrc_text = "%s/%s" % [format_num(prod, true), tr("S_SECOND")]
+	elif tile.bldg.name == Building.POWER_PLANT:
+		prod *= tile.bldg.path_1_value * get_prod_mult(tile) * tile.resource_production_bonus.get("energy", 1.0)
+		rsrc_text = "%s/%s" % [format_num(prod, true), tr("S_SECOND")]
+	elif tile.bldg.name == Building.RESEARCH_LAB:
+		prod *= tile.bldg.path_1_value * get_prod_mult(tile) * tile.resource_production_bonus.get("SP", 1.0)
+		rsrc_text = "%s/%s" % [format_num(prod, true), tr("S_SECOND")]
+	elif tile.bldg.name == Building.STONE_CRUSHER:
+		if tile.bldg.has("stone"):
+			var c_i = get_crush_info(tile)
+			rsrc_text = format_num(c_i.qty_left) + " kg"
+			capacity_bar_value = 1 - c_i.progress
+		else:
+			rsrc_text = ""
+			capacity_bar_value = 0
+	elif tile.bldg.name == Building.GLASS_FACTORY:
+		if tile.bldg.has("qty1"):
+			var prod_i = get_prod_info(tile)
+			rsrc_text = "%s kg" % [prod_i.qty_made]
+			capacity_bar_value = prod_i.progress
+		else:
+			rsrc_text = ""
+			capacity_bar_value = 0
+	elif tile.bldg.name == Building.STEAM_ENGINE:
+		if tile.bldg.has("qty1"):
+			var prod_i = get_prod_info(tile)
+			rsrc_text = format_num(round(prod_i.qty_made))
+			capacity_bar_value = prod_i.progress
+		else:
+			rsrc_text = ""
+			capacity_bar_value = 0
+	elif tile.bldg.name == Building.GREENHOUSE:
+		if tile.has("auto_GH"):
+			rsrc_text = "%s kg/s" % format_num(tile.auto_GH.produce[tile.auto_GH.seed.split("_")[0]] * (tile.get("aurora", 0.0) + 1.0), true)
+		else:
+			rsrc_text = ""
+	elif tile.bldg.name == Building.BORING_MACHINE:
+		prod = tile.bldg.path_1_value * get_prod_mult(tile) * tile.get("mining_outpost_bonus", 1.0)
+		rsrc_text = "%s m/s" % format_num(prod, true)
+		current_bar_value = fposmod((curr_time - tile.bldg.collect_date) * prod, 1.0)
+	else:
+		if Mods.added_buildings.has(tile.bldg.name):
+			Mods.mod_list[Mods.added_buildings[tile.bldg.name].mod].calculate(p_i, tile, rsrc, curr_time)
+	if is_instance_valid(rsrc):
+		rsrc.set_current_bar_value(current_bar_value)
+		rsrc.set_capacity_bar_value(capacity_bar_value)
+		rsrc.set_text(rsrc_text)
+
+func get_prod_mult(tile):
+	var time_bonus = game.u_i.time_speed * tile.get("time_speed_bonus", 1.0)
+	return get_IR_mult(tile.bldg.name) * (time_bonus if Data.path_1.has(tile.bldg.name) and Data.path_1[tile.bldg.name].has("time_based") else 1.0) * tile.bldg.get("overclock_mult", 1.0)
+
+func has_IR(bldg_name:String):
+	return bldg_name in [Building.MINERAL_EXTRACTOR, Building.POWER_PLANT, Building.RESEARCH_LAB, Building.MINERAL_SILO, Building.SOLAR_PANEL, Building.ATOM_MANIPULATOR, Building.SUBATOMIC_PARTICLE_REACTOR]
+
+func add_item_to_coll(dict:Dictionary, item:String, num):
+	if num is Dictionary:
+		if not dict.has("stone"):
+			dict["stone"] = {}
+		for el in num:
+			if dict.stone.has(el):
+				dict.stone[el] += num[el]
+			else:
+				dict.stone[el] = num[el]
+	else:
+		if num == 0:
+			return
+		if dict.has(item):
+			dict[item] += num
+		else:
+			dict[item] = num
+
+func ships_on_planet(p_id:int):#local planet id
+	return game.c_c == game.ships_travel_data.c_coords.c and game.c_g == game.ships_travel_data.c_coords.g and game.c_s == game.ships_travel_data.c_coords.s and p_id == game.ships_travel_data.c_coords.p
+
+func update_ship_travel():
+	if game.ships_travel_data.travel_view == "-" or game.ships_travel_data.travel_length == NAN:
+		return 1
+	var progress:float = (Time.get_unix_time_from_system() - game.ships_travel_data.travel_start_date) / float(game.ships_travel_data.travel_length)
+	if progress >= 1:
+		game.get_node("Ship").mouse_filter = TextureButton.MOUSE_FILTER_IGNORE
+		game.ships_travel_data.travel_view = "-"
+		game.ships_travel_data.c_coords = game.ships_travel_data.dest_coords.duplicate(true)
+		game.ships_travel_data.c_g_coords = game.ships_travel_data.dest_g_coords.duplicate(true)
+		var s_i = game.open_obj("Galaxies", game.ships_travel_data.c_g_coords.g)[game.ships_travel_data.c_coords.s]
+		var p_i = game.open_obj("Systems", game.ships_travel_data.c_g_coords.s)[game.ships_travel_data.c_coords.p]
+		if p_i.has("ancient_bldgs") and p_i.ancient_bldgs.has(AncientBuilding.SPACEPORT) and not p_i.ancient_bldgs[AncientBuilding.SPACEPORT][0].has("repair_cost"):
+			var tier = p_i.ancient_bldgs[AncientBuilding.SPACEPORT][0].tier
+			game.autocollect["passive_xp_tier"] = tier
+			game.autocollect["passive_xp_mult"] = s_i.diff
+			game.start_spaceport_timer()
+			game.HUD.set_ship_btn_shader()
+	return progress
+
+func add_autocollect(p_i:Dictionary, tile:Dictionary, mult_diff:float):
+	var overclock_mult:float = tile.bldg.get("overclock_mult", 1.0)
+	if tile.bldg.name == Building.RESEARCH_LAB:
+		game.autocollect.rsrc.SP += tile.bldg.path_1_value * mult_diff * tile.resource_production_bonus.get("SP", 1.0) * overclock_mult
+	elif tile.bldg.name == Building.MINERAL_EXTRACTOR:
+		game.autocollect.rsrc.minerals += tile.bldg.path_1_value * mult_diff * tile.resource_production_bonus.get("minerals", 1.0) * overclock_mult
+	elif tile.bldg.name == Building.POWER_PLANT:
+		game.autocollect.rsrc.energy += tile.bldg.path_1_value * mult_diff * tile.resource_production_bonus.get("energy", 1.0) * overclock_mult
+	elif tile.bldg.name == Building.SOLAR_PANEL:
+		var SP_prod = Helper.get_SP_production(p_i.temperature, tile.bldg.path_1_value * mult_diff * tile.resource_production_bonus.get("energy", 1.0) * overclock_mult)
+		game.autocollect.rsrc.energy += SP_prod
+	elif tile.bldg.name == Building.ATMOSPHERE_EXTRACTOR:
+		var base = tile.bldg.path_1_value * mult_diff * p_i.pressure * overclock_mult
+		for el in p_i.atmosphere:
+			var base_prod:float = base * p_i.atmosphere[el]
+			Helper.add_atom_production(el, base_prod)
+		Helper.add_energy_from_NFR(p_i, base)
+		Helper.add_cellulose_from_CS(p_i, base)
+	elif tile.bldg.name == Building.GREENHOUSE and tile.has("auto_GH"):
+		game.autocollect.mats.cellulose -= tile.auto_GH.cellulose_drain * (mult_diff - 1.0)
+		tile.auto_GH.cellulose_drain *= mult_diff
+		var extra_produce:Dictionary = tile.auto_GH.produce.duplicate(true)
+		for rsrc in extra_produce.keys():
+			extra_produce[rsrc] *= mult_diff - 1.0
+			tile.auto_GH.produce[rsrc] *= mult_diff
+		add_GH_produce_to_autocollect(extra_produce, 1.0)
+		
+
+func add_energy_from_NFR(p_i:Dictionary, base:float):
+	if not p_i.ancient_bldgs.has(AncientBuilding.NUCLEAR_FUSION_REACTOR):
+		return
+	for nfr in p_i.ancient_bldgs[AncientBuilding.NUCLEAR_FUSION_REACTOR]:
+		if nfr.has("repair_cost"):
+			continue
+		var prod_mult = get_NFR_prod_mult(nfr.tier)
+		var S = 0.0
+		if p_i.atmosphere.has("NH3"):
+			S += 3.0 * p_i.atmosphere.NH3
+		if p_i.atmosphere.has("CH4"):
+			S += 4.0 * p_i.atmosphere.CH4
+		if p_i.atmosphere.has("H2O"):
+			S += 2.0 * p_i.atmosphere.H2O
+		if p_i.atmosphere.has("H"):
+			S += 1.0 * p_i.atmosphere.H
+		S *= base * prod_mult
+		game.autocollect.rsrc.energy += S
+		game.tile_data[nfr.tile].ancient_bldg.production = game.tile_data[nfr.tile].ancient_bldg.get("production", 0) + S
+
+func add_cellulose_from_CS(p_i:Dictionary, base:float):
+	if not p_i.ancient_bldgs.has(AncientBuilding.CELLULOSE_SYNTHESIZER):
+		return
+	for cs in p_i.ancient_bldgs[AncientBuilding.CELLULOSE_SYNTHESIZER]:
+		if cs.has("repair_cost"):
+			continue
+		var prod_mult = get_CS_prod_mult(cs.tier)
+		var cellulose = {"C":0, "H":0, "O":0}
+		if p_i.atmosphere.has("NH3"):
+			cellulose.H += p_i.atmosphere.NH3 * 3
+		if p_i.atmosphere.has("CH4"):
+			cellulose.C += p_i.atmosphere.CH4
+			cellulose.H += p_i.atmosphere.CH4 * 4
+		if p_i.atmosphere.has("H2O"):
+			cellulose.H += p_i.atmosphere.H2O * 2
+			cellulose.O += p_i.atmosphere.H2O
+		if p_i.atmosphere.has("CO2"):
+			cellulose.C += p_i.atmosphere.CO2
+			cellulose.O += p_i.atmosphere.CO2 * 2
+		if p_i.atmosphere.has("H"):
+			cellulose.H += p_i.atmosphere.H
+		if p_i.atmosphere.has("O"):
+			cellulose.O += p_i.atmosphere.O
+		cellulose.C /= 6.0
+		cellulose.H /= 10.0
+		cellulose.O /= 5.0
+		var cellulose_molecules:float = [cellulose.C, cellulose.H, cellulose.O].min()
+		game.autocollect.mats.cellulose += base * prod_mult * cellulose_molecules
+		game.tile_data[cs.tile].ancient_bldg.production = game.tile_data[cs.tile].ancient_bldg.get("production", 0) + base * prod_mult * cellulose_molecules
+
+func add_atom_production(el:String, base_prod:float):
+	if el == "NH3":
+		game.autocollect.atoms.N = 1 * base_prod + game.autocollect.atoms.get("N", 0)
+		game.autocollect.atoms.H = 3 * base_prod + game.autocollect.atoms.get("H", 0)
+	elif el == "CO2":
+		game.autocollect.atoms.C = 1 * base_prod + game.autocollect.atoms.get("C", 0)
+		game.autocollect.atoms.O = 2 * base_prod + game.autocollect.atoms.get("O", 0)
+	elif el == "CH4":
+		game.autocollect.atoms.C = 1 * base_prod + game.autocollect.atoms.get("C", 0)
+		game.autocollect.atoms.H = 4 * base_prod + game.autocollect.atoms.get("H", 0)
+	elif el == "H2O":
+		game.autocollect.atoms.H = 2 * base_prod + game.autocollect.atoms.get("H", 0)
+		game.autocollect.atoms.O = 1 * base_prod + game.autocollect.atoms.get("O", 0)
+	else:
+		game.autocollect.atoms[el] = 1 * base_prod + game.autocollect.atoms.get(el, 0)
+
+func get_reaction_info(tile):
+	var MM_value:float = clamp((Time.get_unix_time_from_system() - tile.bldg.start_date) / tile.bldg.difficulty * tile.bldg.path_1_value * get_IR_mult(tile.bldg.name) * game.u_i.time_speed * tile.get("time_speed_bonus", 1.0), 0, tile.bldg.qty)
+	return {"MM_value":MM_value, "progress":MM_value / tile.bldg.qty}
+
+func update_MS_rsrc(dict:Dictionary):
+	var curr_time = Time.get_unix_time_from_system()
+	var prod:float
+	if dict.has("tile_num"):
+		if dict.bldg.name == Building.ATMOSPHERE_EXTRACTOR:
+			prod = 1.0 / get_AE_production(dict.pressure, dict.bldg.path_1_value) / dict.tile_num / game.u_i.time_speed / dict.get("time_speed_bonus", 1.0)
+		else:
+			prod = 1.0 / dict.bldg.path_1_value
+			if dict.bldg.name != Building.BORING_MACHINE:
+				prod /= dict.tile_num
+			prod /= get_prod_mult(dict)
+		var stored = dict.bldg.stored
+		var c_d = dict.bldg.collect_date
+		var c_t = curr_time
+		if dict.bldg.has("path_2_value"):
+			var cap = dict.bldg.path_2_value * dict.bldg.IR_mult
+			if dict.bldg.name != Building.BORING_MACHINE:
+				cap = round(cap * dict.tile_num)
+			else:
+				cap = round(cap)
+			var ac_b:bool = dict.bldg.name in [Building.POWER_PLANT, Building.MINERAL_EXTRACTOR]
+			if stored < cap and c_t - c_d > prod and (not dict.has("autocollect") and ac_b or not ac_b):
+				var rsrc_num = floor((c_t - c_d) / prod)
+				dict.bldg.stored += rsrc_num
+				dict.bldg.collect_date += prod * rsrc_num
+				if dict.bldg.stored >= cap:
+					dict.bldg.stored = cap
+		else:
+			if c_t - c_d > prod:
+				if not dict.has("autocollect"):
+					var rsrc_num = floor((c_t - c_d) / prod)
+					dict.bldg.stored += rsrc_num
+					dict.bldg.collect_date += prod * rsrc_num
+		return min((c_t - c_d) / prod, 1)
+	else:
+		return 0
+
+func get_DS_output(star:Dictionary, next_lv:int = 0):
+	return Data.MS_output["DS_%s" % ((star.MS_lv + next_lv) if star.has("MS_lv") else next_lv - 1)] * star.luminosity * game.u_i.planck * 0.5
+
+func get_DS_capacity(star:Dictionary, next_lv:int = 0):
+	if next_lv == -1 and star.has("MS") and star.MS_lv == 0:
+		return 0
+	return Data.MS_output["DS_%s" % ((star.MS_lv + next_lv) if star.has("MS_lv") else next_lv - 1)] * pow(star.size, 2) * game.u_i.planck * 5000.0 * game.u_i.charge
+
+func get_MB_output(star:Dictionary):
+	return Data.MS_output.MB * star.luminosity * game.u_i.planck
+
+func get_MME_output(p_i:Dictionary, next_lv:int = 0):
+	return Data.MS_output["MME_%s" % ((p_i.MS_lv + next_lv) if p_i.has("MS_lv") else next_lv - 1)] * pow(p_i.size / 12000.0, 2) * max(1, pow(p_i.pressure, 0.5))
+
+func get_MME_capacity(p_i:Dictionary, next_lv:int = 0):
+	if next_lv == -1 and p_i.has("MS") and p_i.MS_lv == 0:
+		return 0
+	return Data.MS_output["MME_%s" % ((p_i.MS_lv + next_lv) if p_i.has("MS_lv") else next_lv - 1)] * pow(p_i.size / 1200.0, 2)
+
+func get_conquer_all_data():
+	var max_ship_lv:int = 0
+	var HX_data:Array = []
+	for ship in game.ship_data:
+		max_ship_lv = max(ship.lv, max_ship_lv)
+	var furthest_unconquered_planet_distance = 0
+	var closest_unconquered_planet_distance = INF
+	for planet in game.planet_data:
+		if planet.has("conquered") or not planet.has("HX_data"):
+			continue
+		furthest_unconquered_planet_distance = max(furthest_unconquered_planet_distance, planet.distance)
+		for HX in planet.HX_data:
+			if HX.lv > max_ship_lv - 5:
+				HX_data.append(HX)
+	var energy_cost = 70000 * (furthest_unconquered_planet_distance) / pow(game.u_i.speed_of_light, 2)
+	if game.science_level.has("FTL"):
+		energy_cost /= 10.0
+	if game.science_level.has("IGD"):
+		energy_cost /= 100.0
+	return {"HX_data":HX_data, "energy_cost":round(energy_cost)}
+
+var hbox_theme = preload("res://Resources/default_theme.tres")
+var text_border_theme = preload("res://Resources/TextBorder.tres")
+func add_lv_boxes(obj:Dictionary, v:Vector2, sc:float = 1.0):
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.theme = hbox_theme
+	hbox["theme_override_constants/separation"] = -1
+	if obj.bldg.has("path_1"):
+		var path_1 = Label.new()
+		path_1.name = "Path1"
+		path_1.text = str(int(obj.bldg.path_1))
+		path_1.connect("mouse_entered",Callable(self,"on_path_enter").bind("1", obj))
+		path_1.connect("mouse_exited",Callable(self,"on_path_exit"))
+		path_1["theme_override_styles/normal"] = text_border_theme
+		hbox.add_child(path_1)
+		hbox.mouse_filter = hbox.MOUSE_FILTER_IGNORE
+		path_1.mouse_filter = path_1.MOUSE_FILTER_PASS
+	if obj.bldg.has("path_2"):
+		var path_2 = Label.new()
+		path_2.name = "Path2"
+		path_2.text = str(int(obj.bldg.path_2))
+		path_2.connect("mouse_entered",Callable(self,"on_path_enter").bind("2", obj))
+		path_2.connect("mouse_exited",Callable(self,"on_path_exit"))
+		path_2["theme_override_styles/normal"] = text_border_theme
+		path_2.mouse_filter = path_2.MOUSE_FILTER_PASS
+		hbox.add_child(path_2)
+	if obj.bldg.has("path_3"):
+		var path_3 = Label.new()
+		path_3.name = "Path3"
+		path_3.text = str(int(obj.bldg.path_3))
+		path_3.connect("mouse_entered",Callable(self,"on_path_enter").bind("3", obj))
+		path_3.connect("mouse_exited",Callable(self,"on_path_exit"))
+		path_3["theme_override_styles/normal"] = text_border_theme
+		path_3.mouse_filter = path_3.MOUSE_FILTER_PASS
+		hbox.add_child(path_3)
+	hbox.size.x = 200
+	hbox.scale *= sc
+	hbox.position = v - Vector2(100, 100) * sc
+	#hbox.visible = get_parent().scale.x >= 0.25
+	return hbox
+
+func on_path_enter(path:String, obj:Dictionary):
+	game.hide_tooltip()
+	if not obj.is_empty() and obj.has("bldg"):
+		game.show_tooltip("%s %s %s %d" % [tr("PATH"), path, tr("LEVEL"), obj.bldg["path_" + path]])
+
+func on_path_exit():
+	game.hide_tooltip()
+
+func clever_round (num:float, sd:int = 3, st:bool = false, _floor:bool = false):#sd: significant digits
+	var e = floor(log10(abs(num)))
+	if e < -4 and st:
+		return e_notation(num, sd)
+	if sd < e + 1:
+		if _floor:
+			return floor(num)
+		else:
+			return round(num)
+	return snapped(num, pow(10, e - sd + 1))
+
+func clever_snap(num):
+	# Used to avoid displaying ".0" in floats
+	if step_decimals(num) == 0:
+		return int(num)
+	return snapped(num, 0.1)
+
+func get_star_modulate (star_class:String):
+	var w = int(star_class[1]) / 10.0#weight for lerps
+	var m:Color
+	match star_class[0]:
+		"Y":
+			m = lerp(Data.star_color.Y0, Data.star_color.Y9, w)
+		"T":
+			m = lerp(Data.star_color.T0, Data.star_color.Y0, w)
+		"L":
+			m = lerp(Data.star_color.L0, Data.star_color.T0, w)
+		"M":
+			m = lerp(Data.star_color.M0, Data.star_color.L0, w)
+		"K":
+			m = lerp(Data.star_color.K0, Data.star_color.M0, w)
+		"G":
+			m = lerp(Data.star_color.G0, Data.star_color.K0, w)
+		"F":
+			m = lerp(Data.star_color.F0, Data.star_color.G0, w)
+		"A":
+			m = lerp(Data.star_color.A0, Data.star_color.F0, w)
+		"B":
+			m = lerp(Data.star_color.B0, Data.star_color.A0, w)
+		"O":
+			m = lerp(Data.star_color.O0, Data.star_color.B0, w)
+		"Q":
+			m = lerp(Data.star_color.Q0, Data.star_color.O0, w)
+		"R":
+			m = lerp(Data.star_color.R0, Data.star_color.Q0, w)
+		"Z":
+			m = lerp(Data.star_color.Z0, Data.star_color.R0, w)
+	return m
+
+func get_final_value(p_i:Dictionary, dict:Dictionary, path:int, n:int = 1):
+	var bldg:int = dict.bldg.name
+	var mult:float = get_prod_mult(dict)
+	if bldg in [Building.BORING_MACHINE, Building.GREENHOUSE, Building.ATOM_MANIPULATOR, Building.SUBATOMIC_PARTICLE_REACTOR]:
+		n = 1
+	if path == 1:
+		if bldg == Building.SOLAR_PANEL:
+			return clever_round(get_SP_production(p_i.temperature, dict.bldg.path_1_value * mult * dict.resource_production_bonus.get("energy", 1.0) * dict.get("substation_data", {}).get("bonus", 1.0)) * n)
+		elif bldg == Building.ATMOSPHERE_EXTRACTOR:
+			return clever_round(get_AE_production(p_i.pressure, dict.bldg.path_1_value) * n * mult)
+		elif bldg in [Building.MINERAL_SILO]:
+			return dict.bldg.path_1_value * get_IR_mult(bldg) * n
+		elif bldg == Building.BATTERY:
+			return dict.bldg.path_1_value * mult * get_IR_mult(Building.BATTERY) * n * game.u_i.charge
+		elif bldg in [Building.SUBATOMIC_PARTICLE_REACTOR]:
+			return dict.bldg.path_1_value * mult * n * game.u_i.charge
+		elif bldg == Building.MINERAL_EXTRACTOR:
+			return dict.bldg.path_1_value * mult * n * dict.resource_production_bonus.get("minerals", 1.0)
+		elif bldg == Building.POWER_PLANT:
+			return dict.bldg.path_1_value * mult * n * dict.resource_production_bonus.get("energy", 1.0)
+		elif bldg == Building.RESEARCH_LAB:
+			return dict.bldg.path_1_value * mult * n * dict.resource_production_bonus.get("SP", 1.0)
+		elif bldg == Building.BORING_MACHINE:
+			return dict.bldg.path_1_value * mult * n * dict.get("mining_outpost_bonus", 1.0)
+		else:
+			return dict.bldg.path_1_value * mult * n
+	elif path == 2:
+		if bldg == Building.SUBATOMIC_PARTICLE_REACTOR:
+			return dict.bldg.path_2_value * mult * n * game.u_i.charge
+		elif bldg in [Building.STEAM_ENGINE, Building.STONE_CRUSHER, Building.GLASS_FACTORY]:
+			return dict.bldg.path_2_value * n
+		else:
+			return dict.bldg.path_2_value * mult * n
+	elif path == 3:
+		if bldg == Building.STEAM_ENGINE:
+			return dict.bldg.path_3_value * get_IR_mult(Building.STEAM_ENGINE)
+		else:
+			return dict.bldg.path_3_value
+
+func get_bldg_tooltip(p_i:Dictionary, dict:Dictionary, n:float = 1):
+	var tooltip:String = ""
+	var bldg:int = dict.bldg.name
+	var path_1_value = get_final_value(p_i, dict, 1, n) if dict.bldg.has("path_1_value") else 0.0
+	var path_2_value = get_final_value(p_i, dict, 2, n) if dict.bldg.has("path_2_value") else 0.0
+	var path_3_value = get_final_value(p_i, dict, 3, n) if dict.bldg.has("path_3_value") else 0.0
+	return get_bldg_tooltip2(bldg, path_1_value, path_2_value, path_3_value)
+
+func get_bldg_tooltip2(bldg:int, path_1_value, path_2_value, path_3_value):
+	match bldg:
+		Building.MINERAL_EXTRACTOR, Building.POWER_PLANT, Building.SOLAR_PANEL, Building.ATMOSPHERE_EXTRACTOR, Building.BORING_MACHINE:
+			return (Data.path_1[bldg].desc) % [format_num(path_1_value, true)]
+		Building.ATOM_MANIPULATOR, Building.SUBATOMIC_PARTICLE_REACTOR:
+			return (Data.path_1[bldg].desc + "\n" + Data.path_2[bldg].desc) % [format_num(path_1_value, true), format_num(path_2_value, true)]
+		Building.STONE_CRUSHER, Building.GLASS_FACTORY, Building.STEAM_ENGINE:
+			return "%s\n%s\n%s" % [Data.path_1[bldg].desc % format_num(path_1_value, true), Data.path_2[bldg].desc % format_num(path_2_value, true), Data.path_3[bldg].desc % clever_round(path_3_value)]
+		Building.RESEARCH_LAB:
+			return (Data.path_1[bldg].desc) % [format_num(path_1_value, true)]
+		Building.MINERAL_SILO, Building.BATTERY:
+			return (Data.path_1[bldg].desc) % [format_num(round(path_1_value))]
+		Building.ROVER_CONSTRUCTION_CENTER, Building.SHIPYARD:
+			return (Data.path_1[bldg].desc % format_num(path_1_value, true)) + "\n[color=#88CCFF]" + tr("CLICK_TO_CONFIGURE") + "[/color]"
+		Building.GREENHOUSE:
+			return (Data.path_1[bldg].desc + "\n" + Data.path_2[bldg].desc) % [format_num(path_1_value, true), format_num(path_2_value, true)]
+		Building.CENTRAL_BUSINESS_DISTRICT:
+			return "%s\n%s\n%s" % [
+				Data.path_1[bldg].desc % clever_round(path_1_value),
+				Data.path_2[bldg].desc % path_2_value,
+				Data.path_3[bldg].desc % "{n}x{n}".format({"n":int(path_3_value)})]
+		_:
+			return ""
+
+func set_overlay_visibility(gradient:Gradient, overlay, offset:float):
+	overlay.obj.modulate = gradient.sample(offset)
+	overlay.obj.visible = (not game.overlay.hide_obj_btn.button_pressed or offset >= 0 and offset <= 1)
+	overlay.obj.modulate.a = 1.0 if overlay.obj.visible else 0.0
+
+func remove_recursive(path):
+	# Open directory
+	var directory = DirAccess.open(path)
+	if directory:
+		# List directory content
+		directory.list_dir_begin() # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
+		var file_name = directory.get_next()
+		while file_name != "":
+			if directory.current_is_dir():
+				remove_recursive(path + "/" + file_name)
+			else:
+				directory.remove(file_name)
+			file_name = directory.get_next()
+		
+		# Remove current path
+		directory.remove(path)
+	else:
+		print("Error removing " + path)
+
+func get_directory_properties(path, blacklist:Array = []):
+	var total_size = 0
+	var total_files = 0
+	var directory = DirAccess.open(path)
+	if directory:
+		directory.list_dir_begin()
+		var file_name = directory.get_next()
+		while file_name != "":
+			var file_path = path + "/" + file_name
+			if directory.current_is_dir():
+				if file_name not in blacklist:
+					var properties = get_directory_properties(file_path, blacklist)
+					total_size += properties.size
+					total_files += properties.files
+			else:
+				var file = FileAccess.open_compressed(file_path, FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+				if file:
+					total_size += file.get_length()
+					total_files += 1
+					file.close()
+			file_name = directory.get_next()
+	return {"size": total_size, "files": total_files}
+
+func get_SC_output(expected_rsrc:Dictionary, amount:float, path_3_value:float, total_stone:float):
+	for el in game.stone:
+		var item:String
+		var el_num = 0
+		if el == "Si":
+			item = "silicon"
+			el_num = game.stone[el] * amount / total_stone / 30.0
+		elif el == "Fe" and game.science_level.has("ISC"):
+			item = "iron"
+			el_num = game.stone[el] * amount / total_stone / 30.0
+		elif el == "Al" and game.science_level.has("ISC"):
+			item = "aluminium"
+			el_num = game.stone[el] * amount / total_stone / 50.0
+		elif el == "O":
+			item = "sand"
+			el_num = game.stone[el] * amount / total_stone / 2.0
+		elif el == "Ti" and game.science_level.has("ISC"):
+			item = "titanium"
+			el_num = game.stone[el] * amount / total_stone / 500.0
+		el_num = snapped(el_num * path_3_value, 0.001)
+		if el_num != 0:
+			expected_rsrc[item] = el_num
+
+func flatten(arr:Array):
+	var arr2:Array = []
+	for i in len(arr):
+		arr2.append_array(arr[i])
+	return arr2
+
+func add_to_dict(dict:Dictionary, key, value):
+	if dict.has(key):
+		dict[key] += value
+	else:
+		dict[key] = value
+
+func add_dict_to_dict(dict1:Dictionary, dict2:Dictionary):
+	for key in dict2:
+		if dict1.has(key):
+			dict1[key] += dict2[key]
+		else:
+			dict1[key] = dict2[key]
+
+func get_modifier_string(modifiers:Dictionary, au_str:String, icons:Array):
+	var au_str_end:String = "[/aurora]" if au_str != "" else ""
+	var st:String = ""
+	for modifier in modifiers:
+		if Data.cave_modifiers[modifier].has("double_treasure_at"):
+			var treasure_bonus_str:String = ""
+			var cave_mod:float = modifiers[modifier]
+			var double_treasure_at:float = Data.cave_modifiers[modifier].double_treasure_at
+			var mod_color:String = ""
+			if cave_mod > 1.0:
+				if double_treasure_at > 1.0:
+					mod_color = Data.intensity_gradient.sample(inverse_lerp(1.0, double_treasure_at, cave_mod) / 2.0).to_html(false)
+					if not Data.cave_modifiers[modifier].has("no_treasure_mult"):
+						treasure_bonus_str = " (x%s %s@i%s)" % [clever_round(remap(cave_mod, 1.0, double_treasure_at, 0, 1) + 1.0), au_str_end, au_str]
+						icons.append(preload("res://Graphics/Icons/Inventory.png"))
+				else:
+					mod_color = lerp(Color.GREEN, Color.WHITE, inverse_lerp(1.0 / double_treasure_at, 1.0, cave_mod)).to_html(false)
+				st += "\n%s: %s+%s%%[/color]%s%s" % [
+					tr(modifier.to_upper()),
+					au_str_end + "[color=#%s]" % mod_color,
+					clever_round((cave_mod - 1.0) * 100.0),
+					au_str,
+					treasure_bonus_str,
+				]
+			else:
+				if double_treasure_at < 1.0:
+					mod_color = Data.intensity_gradient.sample(inverse_lerp(1.0, double_treasure_at, cave_mod) / 2.0).to_html(false)
+					if not Data.cave_modifiers[modifier].has("no_treasure_mult"):
+						treasure_bonus_str = " (x%s %s@i%s)" % [clever_round(remap(1.0 / cave_mod, 1.0, 1.0 / double_treasure_at, 0, 1) + 1.0), au_str_end, au_str]
+						icons.append(preload("res://Graphics/Icons/Inventory.png"))
+				else:
+					mod_color = lerp(Color.GREEN, Color.WHITE, inverse_lerp(1.0 / double_treasure_at, 1.0, cave_mod)).to_html(false)
+				st += "\n%s: %s-%s%%[/color]%s%s" % [
+					tr(modifier.to_upper()),
+					au_str_end + "[color=#%s]" % mod_color,
+					clever_round((1.0 - cave_mod) * 100.0),
+					au_str,
+					treasure_bonus_str,
+				]
+		elif Data.cave_modifiers[modifier].has("treasure_if_true"):
+			st += "\n%s[color=red]%s[/color]%s (x%s %s@i%s)" % [
+				"[/aurora]" if au_str != "" else "",
+				tr(modifier.to_upper()),
+				au_str,
+				Data.cave_modifiers[modifier].treasure_if_true,
+				au_str_end,
+				au_str,
+			]
+			icons.append(preload("res://Graphics/Icons/Inventory.png"))
+	return st
+
+func get_time_div(time:float):
+	var time_speed:float
+	if game.subject_levels.dimensional_power >= 4:
+		time_speed = log(game.u_i.time_speed - 1.0 + exp(1.0))
+	else:
+		time_speed = game.u_i.time_speed
+	return round(time / time_speed * 100.0) / 100.0
+
+func get_RE_info(RE_name:String):
+	if RE_name == "armor_3":
+		return (tr("RE_" + RE_name.to_upper()) % get_time_div(15.0))
+	elif RE_name == "armor_4":
+		return (tr("RE_" + RE_name.to_upper()) % [get_time_div(0.5), get_time_div(2.0)])
+	elif RE_name == "armor_5":
+		return (tr("RE_" + RE_name.to_upper()) % get_time_div(1.5))
+	elif RE_name == "laser_2":
+		return (tr("RE_" + RE_name.to_upper()) % get_time_div(10.0))
+	elif RE_name == "laser_4":
+		return (tr("RE_" + RE_name.to_upper()) % [get_time_div(1.0), get_time_div(0.8)])
+	elif RE_name == "laser_5":
+		return (tr("RE_" + RE_name.to_upper()) % [get_time_div(0.5), get_time_div(1.0)])
+	elif RE_name == "laser_8":
+		return (tr("RE_" + RE_name.to_upper()) % get_time_div(11.0))
+	else:
+		return tr("RE_" + RE_name.to_upper())
+
+func remove_GH_produce_from_autocollect(produce:Dictionary, au_int:float):
+	for p in produce:
+		if p == "minerals":
+			game.autocollect.mats.minerals = max(game.autocollect.mats.minerals - produce[p], 0.0)
+		elif game.mat_info.has(p):
+			game.autocollect.mats[p] = max(game.autocollect.mats[p] - produce[p], 0.0)
+		elif game.met_info.has(p):
+			var met_prod = produce[p] * (au_int + 1.0)
+			game.autocollect.mets[p] = max(game.autocollect.mets[p] - met_prod, 0.0)
+
+func add_GH_produce_to_autocollect(produce:Dictionary, au_int:float):
+	for p in produce:
+		if p == "minerals":
+			game.autocollect.mats.minerals = produce[p] + game.autocollect.mats.get(p, 0.0)
+		elif game.mat_info.has(p):
+			game.autocollect.mats[p] = produce[p] + game.autocollect.mats.get(p, 0.0)
+		elif game.met_info.has(p):
+			var met_prod = produce[p] * (au_int + 1.0)
+			game.autocollect.mets[p] = met_prod + game.autocollect.mets.get(p, 0.0)
+
+func set_resolution(index:int):
+	var res:Vector2 = get_viewport().size
+	#get_viewport().size_2d_override_stretch = true 
+	if index == 0:
+		get_viewport().size_2d_override_stretch = false
+		if ((get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN) or (get_window().mode == Window.MODE_FULLSCREEN)):
+			res = DisplayServer.screen_get_size()
+			game.current_viewport_dimensions = res
+			get_viewport().size = res
+			get_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if (false) else Window.MODE_WINDOWED
+			get_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if (true) else Window.MODE_WINDOWED
+		else:
+			res = Vector2(1280, 720)
+	elif index == 1:
+		res = Vector2(3820, 2160)
+	elif index == 2:
+		res = Vector2(2560, 1440)
+	elif index == 3:
+		res = Vector2(1920, 1080)
+	elif index == 4:
+		res = Vector2(1280, 720)
+	elif index == 5:
+		res = Vector2(853, 480)
+	elif index == 6:
+		res = Vector2(640, 360)
+	elif index == 7:
+		res = Vector2(427, 240)
+	elif index == 8:
+		res = Vector2(256, 144)
+	elif index == 9:
+		res = Vector2(128, 72)
+	elif index == 10:
+		res = Vector2(64, 36)
+	elif index == 11:
+		res = Vector2(32, 18)
+	elif index == 12:
+		res = Vector2(16, 9)
+	game.current_viewport_dimensions = res
+	get_viewport().size = res
+
+func get_roman_num(num:int):
+	if num > 3999:
+		return str(num)
+	var strs = [["","I","II","III","IV","V","VI","VII","VIII","IX"],["","X","XX","XXX","XL","L","LX","LXX","LXXX","XC"],["","C","CC","CCC","CD","D","DC","DCC","DCCC","CM"],["","M",Building.BORING_MACHINE,"MMM"]];
+	var num_str:String = str(num)
+
+	var res = ""
+	var n = num_str.length()
+	var c = 0;
+	while c < n:
+		res = strs[c][int(num_str[n - c - 1])] + res
+		c += 1
+	return res
+
+func get_spaceport_exit_cost_reduction(tier:int):
+	if tier > 1:
+		return 1.0
+	else:
+		return 0.5
+
+func get_spaceport_travel_cost_reduction(tier:int):
+	if tier > 4:
+		return 1.0
+	else:
+		return [0.25, 0.75, 0.99, 0.9999][tier-1]
+
+func get_spaceport_xp_mult(tier:int):
+	return pow(4, tier-1)
+
+func get_ancient_bldg_area(tier:int):
+	return tier * 2 + 1
+
+func get_MR_Obs_Outpost_prod_mult(tier:int):
+	return 2.5 * pow(4, tier-1)
+
+func get_substation_prod_mult(tier:int):
+	return 1.5 * pow(3, tier-1)
+
+func get_substation_capacity_bonus(tier:int):
+	return 1200 * pow(3, tier-1)
+
+func get_AG_au_int_mult(tier:int):
+	return 2.0 * pow(3, tier-1)
+
+func get_AG_num_auroras(tier:int):
+	return 10 * pow(2, tier-1)
+
+func get_NFR_prod_mult(tier:int):
+	return 500 * pow(4, tier-1)
+
+func get_CS_prod_mult(tier:int):
+	return 10 * pow(4, tier-1)
+
+func set_ancient_bldg_bonuses(p_i:Dictionary, ancient_bldg:Dictionary, tile_id:int, wid:int):
+	var x_pos = tile_id % wid
+	var y_pos = tile_id / wid
+	var tier = ancient_bldg.tier
+	var n = Helper.get_ancient_bldg_area(tier)
+	var building_to_resource = {
+		AncientBuilding.MINERAL_REPLICATOR:"minerals",
+		AncientBuilding.OBSERVATORY:"SP",
+		AncientBuilding.SUBSTATION:"energy",
+	}
+	if ancient_bldg.name in [AncientBuilding.MINERAL_REPLICATOR, AncientBuilding.OBSERVATORY]:
+		var mult = Helper.get_MR_Obs_Outpost_prod_mult(tier)
+		var rsrc = building_to_resource[ancient_bldg.name]
+		for i in n:
+			var x:int = x_pos + i - n / 2
+			if x < 0 or x >= wid:
+				continue
+			for j in n:
+				var y:int = y_pos + j - n / 2
+				if y < 0 or y >= wid or x == x_pos and y == y_pos:
+					continue
+				var id:int = x + y * wid
+				var tile = game.tile_data[id]
+				tile.resource_production_bonus[rsrc] = tile.resource_production_bonus.get(rsrc, 1.0) + (mult - 1.0)
+				if tile.has("bldg"):
+					var overclock_mult:float = tile.bldg.get("overclock_mult", 1.0)
+					var diff = tile.bldg.path_1_value * overclock_mult * (mult - 1.0)
+					if ancient_bldg.name == AncientBuilding.MINERAL_REPLICATOR and tile.bldg.name == Building.MINERAL_EXTRACTOR:
+						game.autocollect.rsrc.minerals += diff
+					elif ancient_bldg.name == AncientBuilding.OBSERVATORY and tile.bldg.name == Building.RESEARCH_LAB:
+						game.autocollect.rsrc.SP += diff
+	elif ancient_bldg.name == AncientBuilding.SUBSTATION:
+		for i in n:
+			var x:int = x_pos + i - n / 2
+			if x < 0 or x >= wid:
+				continue
+			for j in n:
+				var y:int = y_pos + j - n / 2
+				if y < 0 or y >= wid or x == x_pos and y == y_pos:
+					continue
+				var id:int = x + y * wid
+				var tile = game.tile_data[id]
+				var mult = Helper.get_substation_prod_mult(tier)
+				tile.resource_production_bonus.energy = tile.resource_production_bonus.get("energy", 0.0) + mult
+				if tile.has("substation_data"):
+					tile.substation_data.bonus += mult - 1.0
+				else:
+					tile.substation_data = {
+						"bonus":mult,
+						"origin_tile_id":tile_id,
+					}
+					if game.tile_data_persistent[id] == null:
+						game.tile_data_persistent[id] = {}
+					game.tile_data_persistent[id].substation_data = tile.substation_data
+				if tile.has("bldg"):
+					var overclock_mult:float = tile.bldg.get("overclock_mult", 1.0)
+					var base = tile.bldg.path_1_value * overclock_mult * mult
+					var diff = tile.bldg.path_1_value * overclock_mult * (mult - 1.0)
+					var cap_bonus_mult = Helper.get_substation_capacity_bonus(tier)# 1200 seconds for tier 1, more for tier 2 etc.
+					if tile.bldg.name == Building.POWER_PLANT:
+						game.autocollect.rsrc.energy += diff
+						ancient_bldg["capacity_bonus"] = ancient_bldg.get("capacity_bonus", 0) + base * cap_bonus_mult
+						game.capacity_bonus_from_substation += ancient_bldg.capacity_bonus
+					elif tile.bldg.name == Building.SOLAR_PANEL:
+						var energy_prod = Helper.get_SP_production(p_i.temperature, diff * tile.resource_production_bonus.get("energy", 1.0))
+						var energy_prod_base = Helper.get_SP_production(p_i.temperature, base * tile.resource_production_bonus.get("energy", 1.0))
+						game.autocollect.rsrc.energy += energy_prod
+						ancient_bldg["capacity_bonus"] = ancient_bldg.get("capacity_bonus", 0) + energy_prod_base * cap_bonus_mult
+						game.capacity_bonus_from_substation += ancient_bldg.capacity_bonus
+				ancient_bldg["capacity_bonus"] = ancient_bldg.get("capacity_bonus", 0)
+	elif ancient_bldg.name == AncientBuilding.MINING_OUTPOST:
+		for i in n:
+			var x:int = x_pos + i - n / 2
+			if x < 0 or x >= wid:
+				continue
+			for j in n:
+				var y:int = y_pos + j - n / 2
+				if y < 0 or y >= wid or x == x_pos and y == y_pos:
+					continue
+				var id:int = x + y * wid
+				var tile = game.tile_data[id]
+				var mult = Helper.get_MR_Obs_Outpost_prod_mult(tier)
+				tile.mining_outpost_bonus = tile.get("mining_outpost_bonus", 0.0) + mult
+				if game.tile_data_persistent[id] == null:
+					game.tile_data_persistent[id] = {}
+				game.tile_data_persistent[id]["mining_outpost_bonus"] = tile["mining_outpost_bonus"]
+	elif ancient_bldg.name in [AncientBuilding.NUCLEAR_FUSION_REACTOR, AncientBuilding.CELLULOSE_SYNTHESIZER]:
+		for tile in game.tile_data:
+			if tile.has("bldg") and tile.bldg.name == Building.ATMOSPHERE_EXTRACTOR:
+				var overclock_mult = tile.bldg.get("overclock_mult", 1.0)
+				var base = 1.0
+				if ancient_bldg.name == AncientBuilding.NUCLEAR_FUSION_REACTOR:
+					base = tile.bldg.path_1_value * overclock_mult * p_i.pressure * tile.get("time_speed_bonus", 1.0)
+					Helper.add_energy_from_NFR(p_i, base)
+				elif ancient_bldg.name == AncientBuilding.CELLULOSE_SYNTHESIZER:
+					base = tile.bldg.path_1_value * overclock_mult * p_i.pressure * tile.get("time_speed_bonus", 1.0)
+					Helper.add_cellulose_from_CS(p_i, base)
+	elif ancient_bldg.name == AncientBuilding.SPACEPORT:
+		if game.science_level.has("ISP") and game.c_s_g == game.ships_travel_data.c_g_coords.s and game.c_p == game.ships_travel_data.c_coords.p:
+			game.autocollect["passive_xp_tier"] = ancient_bldg.tier
+			game.autocollect["passive_xp_mult"] = game.system_data[game.c_s].diff
+			game.start_spaceport_timer()
+
+func update_CBD_affected_tiles(CBD_tile:Dictionary, CBD_tile_id:int, p_i:Dictionary):
+	var wid:int = sqrt(len(game.tile_data))
+	var x_pos:int = CBD_tile_id % wid
+	var y_pos:int = CBD_tile_id / wid
+	CBD_tile.bldg.x_pos = x_pos
+	CBD_tile.bldg.y_pos = y_pos
+	CBD_tile.bldg.wid = wid
+	var second_path_str = "overclock"
+	if game.subject_levels.dimensional_power >= 7:
+		second_path_str = "time_speed"
+	var n:int = CBD_tile.bldg.path_3_value
+	for i in n:
+		var x:int = x_pos + i - n / 2
+		if x < 0 or x >= wid:
+			continue
+		for j in n:
+			var y:int = y_pos + j - n / 2
+			if y < 0 or y >= wid or x == x_pos and y == y_pos:
+				continue
+			var affected_tile_id = x % wid + y * wid
+			var affected_tile = game.tile_data[affected_tile_id]
+			if not affected_tile.has("cost_div_dict"):
+				affected_tile.cost_div = CBD_tile.bldg.path_1_value
+				affected_tile.cost_div_dict = {}
+			else:
+				affected_tile.cost_div = max(affected_tile.cost_div, CBD_tile.bldg.path_1_value)
+			affected_tile.cost_div_dict[CBD_tile_id] = CBD_tile.bldg.path_1_value
+			
+			# Update CBD path 2 bonus to affected tile
+			if not affected_tile.has("%s_dict" % second_path_str):
+				affected_tile["%s_dict" % second_path_str] = {}
+			var new_bonus = max(affected_tile.get("%s_bonus" % second_path_str, 1.0), CBD_tile.bldg.path_2_value)
+			if second_path_str == "time_speed" and affected_tile.has("bldg"):
+				var old_time_speed = affected_tile.get("time_speed_bonus", 1.0)
+				if new_bonus > old_time_speed:
+					Helper.add_autocollect(p_i, affected_tile, new_bonus / old_time_speed)
+			affected_tile["%s_bonus" % second_path_str] = new_bonus
+			affected_tile["%s_dict" % second_path_str][CBD_tile_id] = CBD_tile.bldg.path_2_value
+			
+			if game.tile_data_persistent[affected_tile_id] == null:
+				game.tile_data_persistent[affected_tile_id] = {}
+			game.tile_data_persistent[affected_tile_id].cost_div = affected_tile.cost_div
+			game.tile_data_persistent[affected_tile_id].cost_div_dict = affected_tile.cost_div_dict
+			game.tile_data_persistent[affected_tile_id]["%s_bonus" % second_path_str] = affected_tile["%s_bonus" % second_path_str]
+			game.tile_data_persistent[affected_tile_id]["%s_dict" % second_path_str] = affected_tile["%s_dict" % second_path_str]
+
+func add_items_to_inventory(item_name, item_amount:int, item_base_costs:Dictionary, no_space_in_inventory_string:String, add_item_success_string:String):
+	var items_left = game.add_items(item_name, item_amount)
+	if items_left > 0:
+		var refund = item_base_costs.duplicate(true)
+		for rsrc in item_base_costs:
+			refund[rsrc] = item_base_costs[rsrc] * items_left
+		game.add_resources(refund)
+		game.popup(no_space_in_inventory_string, 2.0)
+	else:
+		game.popup(add_item_success_string, 1.5)
+		#set_item_info(item_name, item_desc, item_base_costs, item_type, item_dir)
+	if game.HUD:
+		game.HUD.update_hotbar()
+
+func get_logarithmic_time_speed(dimensional_power:int, base_time_speed:float):
+	if dimensional_power >= 4:
+		return log(base_time_speed - 1.0 + exp(1.0))
+	else:
+		return base_time_speed
+
+func get_cluster_tooltip(c_id:int):
+	var c_i = game.u_i.cluster_data[c_id]
+	var _name:String
+	if c_i.has("name"):
+		_name = c_i.name
+	else:
+		if c_i["class"] == game.ClusterType.GROUP:
+			_name = tr("GALAXY_GROUP") + " %s" % c_id
+		else:
+			_name = tr("GALAXY_CLUSTER") + " %s" % c_id
+	var tooltip:String = "%s\n%s: %s\n%s: %s" % [_name, tr("GALAXIES"), c_i.galaxy_num, tr("REDSHIFT"), c_i.redshift]
+	if not c_i.modifiers.is_empty():
+		tooltip += "\n{modifiers_label}: ".format({"modifiers_label": tr("MODIFIERS")})
+		for mod in c_i.modifiers:
+			var color = "ffffff"
+			if game.cluster_modifier_data[mod].p > 100.0:
+				color = "4444ff"
+			elif game.cluster_modifier_data[mod].p > 10.0:
+				color = "00ff00"
+			tooltip += "\n - [color=#{color}]{modifier}[/color]".format({
+				"color":color,
+				"modifier":tr(game.cluster_modifier_data[mod].name)
+			})
+	return tooltip
+
+func set_universe_btn_shader(univ_btn, univ_info:Dictionary):
+	univ_btn.material = ShaderMaterial.new()
+	univ_btn.material.shader = preload("res://Shaders/Cluster.gdshader")
+	univ_btn.material.resource_local_to_scene = true
+	var c:Color
+	if univ_info.lv < 100:
+		c = Color.WHITE
+	elif univ_info.lv < 120:
+		c = lerp(Color.WHITE, Color.GREEN, remap(univ_info.lv, 100, 120, 0.0, 1.0))
+	else:
+		var hue:float = 0.4 + log(univ_info.lv - 119) / 10.0
+		var sat:float = 1.0 - floor(hue - 0.4) / 5.0
+		c = Color.from_hsv(fmod(hue, 1.0), sat, 1.0)
+	univ_btn.material.set_shader_parameter("color", c)
+	univ_btn.material.set_shader_parameter("fog_size", 22 * sqrt(univ_info.dark_energy))
+	univ_btn.material.set_shader_parameter("fog_mvt_spd_2", 0.1 * univ_info.time_speed)
+	univ_btn.material.set_shader_parameter("seed", univ_info.id)
+	univ_btn.material.set_shader_parameter("alpha", 0.65)
+	univ_btn.material.set_shader_parameter("expo", min(0.27, remap(univ_info.lv, 1, 100, 0.12, 0.27)))
+
+func set_tile_data_persistent(tile_id:int, key:String, value):
+	if game.tile_data_persistent[tile_id] == null:
+		game.tile_data_persistent[tile_id] = {}
+	game.tile_data_persistent[tile_id][key] = value
+
+var export_save_files_exported = 0
+
+func export_save(save_to_export:String, path:String):
+	export_save_files_exported = 0
+	var file = FileAccess.open_compressed(path, FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	var success = true
+	if file:
+		var save_dict = {"univs":[]}
+		var file2 = FileAccess.open_compressed("user://%s/save_info.hx3" % save_to_export, FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+		if file2:
+			save_dict.save_info = file2.get_var()
+			file2.close()
+			var directory = DirAccess.open("user://%s" % save_to_export)
+			if directory:
+				directory.list_dir_begin() # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
+				var file_name = directory.get_next()
+				while file_name != "":
+					if directory.current_is_dir() and file_name.substr(0, 4) == "Univ":
+						var export_univ_res:Dictionary = await export_univ(file_name, save_to_export)
+						if export_univ_res.error:
+							success = false
+							break
+						else:
+							save_dict.univs.append(export_univ_res.univ_data.duplicate(true))
+					file_name = directory.get_next()
+				if success:
+					file.store_var(save_dict)
+			else:
+				success = false
+		else:
+			success = false
+		file.close()
+	else:
+		success = false
+	return success
+	
+func export_univ(univ_str:String, save_to_export:String):
+	var error = false
+	var univ_data:Dictionary = {
+		"caves":{},
+		"clusters":{},
+		"galaxies":{},
+		"planets":{},
+		"systems":{},
+	}
+	var file = FileAccess.open_compressed("user://%s/%s/main.hx3" % [save_to_export, univ_str], FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+	if file:
+		univ_data.main = file.get_var()
+		file.close()
+	else:
+		error = true
+	if not error:
+		error = await export_univ_folder(univ_data, univ_str, "Caves", save_to_export)
+	if not error:
+		error = await export_univ_folder(univ_data, univ_str, "Clusters", save_to_export)
+	if not error:
+		error = await export_univ_folder(univ_data, univ_str, "Galaxies", save_to_export)
+	if not error:
+		error = await export_univ_folder(univ_data, univ_str, "Planets", save_to_export)
+	if not error:
+		error = await export_univ_folder(univ_data, univ_str, "Systems", save_to_export)
+	return {"error":error, "univ_data":univ_data}
+
+var max_data_to_export_before_await = 1000000
+var export_save_data_exported = 0
+
+func export_univ_folder(univ_data:Dictionary, univ_str:String, folder:String, save_to_export:String):
+	var directory = DirAccess.open("user://%s/%s/%s" % [save_to_export, univ_str, folder])
+	if directory:
+		directory.list_dir_begin() # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
+		var file_name = directory.get_next()
+		while file_name != "":
+			if not directory.current_is_dir():
+				var file = FileAccess.open_compressed("user://%s/%s/%s/%s" % [save_to_export, univ_str, folder, file_name], FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+				if file:
+					univ_data[folder.to_lower()][file_name] = file.get_var()
+					export_save_data_exported += file.get_length()
+					file.close()
+					export_save_files_exported += 1
+					if export_save_data_exported > max_data_to_export_before_await:
+						await get_tree().process_frame
+						export_save_data_exported = 0
+				else:
+					return true
+			file_name = directory.get_next()
+	else:
+		return true
+
+func get_file_size_string(bytes:int):
+	var prefix:String = ""
+	var p:float = log(bytes) / log(10.0)
+	if is_equal_approx(p, ceil(p)):
+		p = ceil(p)
+	else:
+		p = int(p)
+	var base = float(bytes)
+	if p < 3:
+		prefix = ""
+	elif p < 6:
+		prefix = "K"
+		base /= 1024.0
+	elif p < 9:
+		prefix = "M"
+		base /= pow(1024.0, 2)
+	elif p < 12:
+		prefix = "G"
+		base /= pow(1024.0, 3)
+	else: # God forbid a save file grow this big
+		prefix = "T"
+		base /= pow(1024.0, 4)
+	return "{bytes} {prefix}{b_byte}".format({
+		"bytes":clever_round(base),
+		"prefix":prefix,
+		"b_byte":tr("B_BYTE")})
+
+func import_save(save_name:String, path:String):
+	var importing_file = FileAccess.open_compressed(path, FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+	if importing_file:
+		var save_dict:Dictionary = importing_file.get_var()
+		var directory = DirAccess.open("user://")
+		var final_save_name:String = save_name
+		if directory.dir_exists(save_name):
+			var dupl:int = 2
+			while DirAccess.open("user://%s%s" % [save_name, dupl]):
+				dupl += 1
+			final_save_name = "%s%s" % [save_name, dupl]
+		else:
+			final_save_name = save_name
+		if directory.make_dir(final_save_name) == OK:
+			var save_info_file = FileAccess.open_compressed("user://%s/save_info.hx3" % final_save_name, FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+			if save_info_file:
+				save_info_file.store_var(save_dict.save_info)
+				for i in len(save_dict.univs):
+					if directory.make_dir("user://%s/Univ%s" % [final_save_name, i]) == OK:
+						var univ_file = FileAccess.open_compressed("user://%s/Univ%s/main.hx3" % [final_save_name, i], FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+						if univ_file:
+							univ_file.store_var(save_dict.univs[i].main)
+						make_obj_dir(save_dict, i, "user://%s/Univ%s" % [final_save_name, i], "Caves")
+						make_obj_dir(save_dict, i, "user://%s/Univ%s" % [final_save_name, i], "Clusters")
+						make_obj_dir(save_dict, i, "user://%s/Univ%s" % [final_save_name, i], "Galaxies")
+						make_obj_dir(save_dict, i, "user://%s/Univ%s" % [final_save_name, i], "Planets")
+						make_obj_dir(save_dict, i, "user://%s/Univ%s" % [final_save_name, i], "Systems")
+						univ_file.close()
+						game.popup(tr("IMPORT_SUCCESS") % final_save_name, 2.0)
+			save_info_file.close()
+	importing_file.close()
+
+func make_obj_dir(save_dict:Dictionary, univ:int, path:String, obj:String):
+	var directory = DirAccess.open(path)
+	if directory.make_dir("%s/%s" % [path, obj]) == OK:
+		for obj_file_name in save_dict.univs[univ][obj.to_lower()].keys():
+			var file = FileAccess.open_compressed("%s/%s/%s" % [path, obj, obj_file_name], FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+			if file:
+				file.store_var(save_dict.univs[univ][obj.to_lower()][obj_file_name])
+			file.close()
+
+func get_save_info(save_name:String):
+	var save_info = FileAccess.open_compressed("user://%s/save_info.hx3" % [save_name], FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+	var try_backup = false
+	var save_info_dict
+	if save_info == null:
+		try_backup = true
+	else:
+		save_info_dict = save_info.get_var()
+		if save_info_dict is not Dictionary:
+			try_backup = true
+	if try_backup:
+		save_info = FileAccess.open_compressed("user://%s/save_info.hx3~" % [save_name], FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+		if save_info == null:
+			return null
+		else:
+			save_info_dict = save_info.get_var()
+			if save_info_dict is not Dictionary:
+				return null
+	save_info.close()
+	return save_info_dict
+
+func get_save_info_old(save_name:String):
+	var save_info = FileAccess.open("user://%s/save_info.hx3" % [save_name], FileAccess.READ)
+	var try_backup = false
+	var save_info_dict
+	if save_info == null:
+		try_backup = true
+	else:
+		save_info_dict = save_info.get_var()
+		if save_info_dict is not Dictionary:
+			try_backup = true
+	if try_backup:
+		save_info = FileAccess.open("user://%s/save_info.hx3~" % [save_name], FileAccess.READ)
+		if save_info == null:
+			return null
+		else:
+			save_info_dict = save_info.get_var()
+			if save_info_dict is not Dictionary:
+				return null
+	save_info.close()
+	return save_info_dict
+
+func add_text_to_RTL(RTL:RichTextLabel, txt:String, imgs:Array, size:int = 17, resize_RTL:bool = false):
+	RTL.text = ""
+	var arr = txt.split("@i")#@i: where images are placed
+	var i = 0
+	for st in arr:
+		RTL.append_text(st)
+		if i < len(imgs) and imgs[i]:
+			RTL.add_image(imgs[i], 0, size)
+		i += 1
+	var font:Font = preload("res://Resources/default_theme.tres").default_font
+	if resize_RTL:
+		var arr2 = txt.split("\n")
+		var max_width = 0
+		for st in arr2:
+			var bb_start:int = st.find("[")
+			var bb_end:int = st.find("]")
+			while bb_start != -1 and bb_end != -1:
+				st = st.replace(st.substr(bb_start, bb_end - bb_start + 1), "")
+				bb_start = st.find("[")
+				bb_end = st.find("]")
+			var width = min(font.get_string_size(st).x + 40, 400)
+			max_width = max(width, max_width)
+		await get_tree().process_frame
+		if is_instance_valid(RTL):
+			RTL.size.x = RTL.get_content_width() + 40
+			RTL.size.y = RTL.get_content_height() + 30
+
+# get_sphere_volume
+func get_sph_V(outer:float, inner:float = 0):
+	outer /= 150.0#I have to reduce the size of planets otherwise it's too OP
+	inner /= 150.0
+	return 4/3.0 * PI * (pow(outer, 3) - pow(inner, 3))
+
+func update_volumes(bus:int, value:float):
+	AudioServer.set_bus_volume_db(bus, value)
+	AudioServer.set_bus_mute(bus,value <= -40)
+
+func setup_discord():
+	#discord_sdk.app_id = 1101755847325003846 # Application ID
+	#if discord_sdk.get_is_discord_working():
+		#discord_sdk.large_image = "game"
+		#discord_sdk.large_image_text = "Helixteus 3"
+		#discord_sdk.start_timestamp = int(Time.get_unix_time_from_system())
+	pass
+
+func refresh_discord(details:String = "", state:String = "", small_image:String = "", small_image_text:String = ""):
+	#if discord_sdk.get_is_discord_working():
+		#if details == "clear":
+			#discord_sdk.clear()
+			#return
+		#if not Settings.discord:
+			#return
+		#if details != "":
+			#discord_sdk.details = details
+		#if state != "":
+			#discord_sdk.state = state
+		#if small_image != "":
+			#discord_sdk.small_image = small_image
+		#if small_image_text != "":
+			#discord_sdk.small_image_text = small_image_text
+		#discord_sdk.refresh()
+	pass

@@ -1,0 +1,92 @@
+class_name Debris
+extends Node2D
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = "text"
+var id:int
+var sprite_frame:int
+var particle_lifetime:float = 4.0
+var particle_amount:int
+var aurora_intensity:float = 0.0
+var lava_intensity:float = 0.0
+var debris_collision_shape:CollisionPolygon2D
+var crack_threshold:float = 0
+var cracked_mining_factor:float = 1.0
+var time_speed:float = 1.0
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	$Sprite2D.frame = sprite_frame
+	debris_collision_shape = get_node(str(sprite_frame) + "/CollisionPolygon2D")
+	debris_collision_shape.disabled = false
+	$LightOccluder2D.occluder.polygon = debris_collision_shape.polygon
+	$Sprite2D.material.set_shader_parameter("aurora", aurora_intensity > 0.0)
+	$Sprite2D.material.set_shader_parameter("has_lava", lava_intensity > 0.0)
+	$Sprite2D/LavaLight.enabled = lava_intensity > 0.0
+	$GPUParticles2D.modulate = self_modulate
+	$Sprite2D.modulate = self_modulate
+	crack_threshold = 60 * randf() / pow(scale.x, 3)
+	$Area2D/CollisionPolygon2D.polygon = debris_collision_shape.polygon
+	$Area2D.body_entered.connect(remove_debris)
+
+func remove_debris(body: Node2D):
+	if body.get_class() == "TileMapLayer":
+		queue_free()
+
+func set_crack():
+	$Crack.monitoring = true
+	var L = len(debris_collision_shape.polygon)
+	var idx = randi() % L
+	var pos = debris_collision_shape.polygon[idx]
+	var next_pos:Vector2
+	if idx == L-1:
+		next_pos = debris_collision_shape.polygon[0]
+	else:
+		next_pos = debris_collision_shape.polygon[idx+1]
+	$Crack/AnimationPlayer.play("New Anim", -1, time_speed)
+	$Crack/GPUParticles2D.speed_scale = time_speed
+	$Crack/GPUParticles2D.emitting = true
+	$Crack/Sprite2D.visible = true
+	$Crack.position = (next_pos + pos) / 2.0
+	$Crack.rotation = atan2(next_pos.y - pos.y, next_pos.x - pos.x) - PI/2
+
+
+func destroy_rock():
+	_on_Timer_timeout()
+	particle_amount = int(scale.x * 20)
+	var damping_max = clamp(remap(scale.x, 1.2, 0.5, 800, 1500), 800, 1500)
+	$GPUParticles2D.process_material.damping_min = damping_max * 0.8
+	$GPUParticles2D.process_material.damping_max = damping_max
+	$Sprite2D.visible = false
+	debris_collision_shape.call_deferred("set_disabled", true)
+	$LightOccluder2D.occluder_light_mask = 0
+	$GPUParticles2D.emitting = true
+	var timer = Timer.new()
+	add_child(timer)
+	timer.connect("timeout", queue_free)
+	timer.start(particle_lifetime)
+	$BreakSound.pitch_scale = randf_range(0.8, 1.2)
+	$BreakSound.play()
+	if scale.x > 1.5:
+		$BreakSoundBigBoulder.volume_db = clamp(remap(scale.x, 1.5, 10.0, -3.0, 2.0), -3.0, 2.0)
+		$BreakSoundBigBoulder.play()
+
+
+func _on_Crack_area_entered(area):
+	if $Crack/Timer.is_stopped():
+		$Crack/Timer.start((1.5 + 1.5 * randf()) / time_speed)
+	cracked_mining_factor = 2.0
+
+
+func _on_Crack_area_exited(area):
+	cracked_mining_factor = 1.0
+
+
+func _on_Timer_timeout():
+	$Crack.monitoring = false
+	if $Crack/AnimationPlayer.is_playing():
+		$Crack/AnimationPlayer.stop()
+		$Crack/Sprite2D.visible = false
+	$Crack/GPUParticles2D.emitting = false
+	cracked_mining_factor = 1.0

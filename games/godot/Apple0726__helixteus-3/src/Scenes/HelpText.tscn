@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://c8jr3e5aiyj1n"]
+
+[ext_resource type="Script" uid="uid://beaqxkvmwnoxd" path="res://Scripts/HelpText.gd" id="1"]
+
+[node name="RichTextLabel" type="RichTextLabel" unique_id=1511434500]
+offset_right = 200.0
+offset_bottom = 30.0
+bbcode_enabled = true
+text = " [img]Graphics/Icons/help.png[/img]"
+script = ExtResource("1")
+adv_help = false
+
+[connection signal="mouse_entered" from="." to="." method="_on_RichTextLabel_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_RichTextLabel_mouse_exited"]
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]

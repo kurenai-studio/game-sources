@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://c85ho5kdv83p8"]
+
+[ext_resource type="Texture2D" uid="uid://dxr8x86jdcd2p" path="res://Graphics/Tiles/Highlight.jpg" id="1_11r1q"]
+[ext_resource type="Script" uid="uid://b6bysupl6nmty" path="res://Scripts/Battle/Weapons/BattleLaser.gd" id="1_c45pl"]
+[ext_resource type="AudioStream" uid="uid://8f3xetlywr8l" path="res://Audio/SFX/laser.ogg" id="3_dwe2u"]
+
+[sub_resource type="Shader" id="Shader_cd4p5"]
+code = "shader_type canvas_item;
+
+uniform float modulate: hint_range(0.0, 1.0) = 1.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	COLOR.rgb = vec3(1.0, 0.0, 0.0);
+	COLOR.gb += vec2(1.0, 1.0) * pow(0.97 - abs(UV.y - 0.5), 10);
+	COLOR.a = pow(1.0 - abs(UV.y - 0.5), 10) * modulate;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cd4p5"]
+resource_local_to_scene = true
+shader = SubResource("Shader_cd4p5")
+shader_parameter/modulate = 1.0
+
+[node name="BattleLaser" type="Node2D" unique_id=1559069705]
+script = ExtResource("1_c45pl")
+
+[node name="ColorLaser" type="Sprite2D" parent="." unique_id=1739722649]
+modulate = Color(1, 0, 0, 1)
+material = SubResource("ShaderMaterial_cd4p5")
+position = Vector2(0, -48)
+scale = Vector2(1, 0.48)
+texture = ExtResource("1_11r1q")
+centered = false
+
+[node name="WhiteLaser" type="Sprite2D" parent="." unique_id=312599685]
+modulate = Color(1, 1, 1, 0.98)
+position = Vector2(0, -1)
+scale = Vector2(1, 0.01)
+texture = ExtResource("1_11r1q")
+centered = false
+
+[node name="RayCast2D" type="RayCast2D" parent="." unique_id=1233377307]
+target_position = Vector2(50, 0)
+collision_mask = 37
+hit_from_inside = true
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="." unique_id=1585588814]
+stream = ExtResource("3_dwe2u")
+volume_db = -2.0
+bus = &"SFX"

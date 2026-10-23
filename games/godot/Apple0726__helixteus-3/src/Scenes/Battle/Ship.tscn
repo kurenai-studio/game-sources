@@ -1,0 +1,1065 @@
+[gd_scene format=3 uid="uid://cxykmxd6r2wgm"]
+
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="1"]
+[ext_resource type="Script" uid="uid://cfrufmr2v8ebl" path="res://Scripts/Battle/Ship.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://fo4yl8v4ld8c" path="res://Scenes/Battle/FireWeaponAim.tscn" id="2_ogdx2"]
+[ext_resource type="Shader" uid="uid://c17je4akgvnni" path="res://Shaders/Ship.gdshader" id="3_cptad"]
+[ext_resource type="Texture2D" uid="uid://ctnki8fjf2n7" path="res://Graphics/Ships/Ship3 top down.png" id="4_4hicg"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://dvgpvly0jmhh1" path="res://Graphics/Ships/Ship2 light.png" id="6_4hicg"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="6_ymlex"]
+[ext_resource type="PackedScene" uid="uid://m8wrm55x0xbe" path="res://Scenes/Battle/StatusEffects.tscn" id="8_ymlex"]
+[ext_resource type="PackedScene" uid="uid://ni58sxlrjgg4" path="res://Scenes/Battle/Buffs.tscn" id="9_0r8nl"]
+[ext_resource type="Texture2D" uid="uid://b1dcgxga387up" path="res://Graphics/Effects/spotlight_1.png" id="10"]
+[ext_resource type="AudioStream" uid="uid://das6rwveoi8io" path="res://Audio/SFX/overclock.ogg" id="17_53138"]
+[ext_resource type="PackedScene" uid="uid://b3b68o5fd52pr" path="res://Scenes/Battle/VelocityArrow.tscn" id="22_mql8i"]
+
+[sub_resource type="ShaderMaterial" id="4"]
+resource_local_to_scene = true
+shader = ExtResource("3_cptad")
+shader_parameter/amplitude = 0.0
+shader_parameter/frequency = 6.0
+shader_parameter/alpha = 1.0
+shader_parameter/flash = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_angle = 0.37600001786
+shader_parameter/starlight_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_energy = 1.0
+
+[sub_resource type="Animation" id="Animation_mql8i"]
+resource_name = "Blink"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [3.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_p0q1a"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_p3fke"]
+_data = {
+&"Blink": SubResource("Animation_mql8i"),
+&"RESET": SubResource("Animation_p0q1a")
+}
+
+[sub_resource type="Animation" id="Animation_p3fke"]
+resource_name = "Double blink"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.766667, 0.8, 0.933333, 0.966667, 1.1, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.766667, 0.8, 0.933333, 0.966667, 1.1, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 2.0, 0.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4hicg"]
+_data = {
+&"Double blink": SubResource("Animation_p3fke"),
+&"RESET": SubResource("Animation_p0q1a")
+}
+
+[sub_resource type="Animation" id="Animation_l5d5n"]
+resource_name = "Blink"
+length = 1.5
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.133333, 0.166667, 0.366667, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.133333, 0.166667, 0.366667, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_6gyfg"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4y570"]
+_data = {
+&"Blink": SubResource("Animation_l5d5n"),
+&"RESET": SubResource("Animation_6gyfg")
+}
+
+[sub_resource type="Animation" id="Animation_4y570"]
+resource_name = "Blink"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.333333, 0.433333, 0.7, 0.733333, 0.866667, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_dh6q3"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vlg7s"]
+_data = {
+&"Blink": SubResource("Animation_4y570"),
+&"RESET": SubResource("Animation_dh6q3")
+}
+
+[sub_resource type="Animation" id="Animation_vlg7s"]
+resource_name = "Blink"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1.5, 1.53333, 1.63333, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 3.0, 0.0, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../WhiteRight:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.5, 1.53333, 1.63333, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 3.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_n4bmm"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../WhiteRight:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_itm55"]
+_data = {
+&"Blink": SubResource("Animation_vlg7s"),
+&"RESET": SubResource("Animation_n4bmm")
+}
+
+[sub_resource type="Animation" id="Animation_ymlex"]
+resource_name = "Blink"
+length = 1.5
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.03333333, 0.06666666, 0.16666667, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../WhiteRight:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.03333333, 0.06666666, 0.16666667, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../WhiteRearLeft:energy")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.73333335, 0.7666667, 0.86666673, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("../WhiteRearRight:energy")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.73333335, 0.7666667, 0.86666673, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("../WhiteFront:energy")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.73333335, 0.7666667, 0.86666673, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_itm55"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../WhiteRight:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../WhiteRearLeft:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../WhiteRearRight:energy")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("../WhiteFront:energy")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ikbbp"]
+_data = {
+&"Blink": SubResource("Animation_ymlex"),
+&"RESET": SubResource("Animation_itm55")
+}
+
+[sub_resource type="Animation" id="Animation_ikbbp"]
+resource_name = "Blink"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WhiteRight:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.23333333, 0.26666668, 0.46666667, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("WhiteLeft:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.23333333, 0.26666668, 0.4666667, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("WhiteRight2:energy")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.9, 0.93333334, 1.1333332, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("WhiteLeft2:energy")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.9, 0.93333334, 1.1333332, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("WhiteRear:energy")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 1.6, 1.6333333, 1.8333334, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("WhiteFront:energy")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 1.2666667, 1.3, 1.5, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("WhiteLeftWing:energy")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 1.2666667, 1.3, 1.5, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("WhiteRightWing:energy")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 1.2666667, 1.3, 1.5, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 2.0, 0.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_25wa2"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WhiteRight:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("WhiteLeft:energy")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("WhiteRight2:energy")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("WhiteLeft2:energy")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("WhiteRear:energy")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("WhiteFront:energy")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("WhiteLeftWing:energy")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("WhiteRightWing:energy")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_utm2p"]
+_data = {
+&"Blink": SubResource("Animation_ikbbp"),
+&"RESET": SubResource("Animation_25wa2")
+}
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fh3h1"]
+resource_local_to_scene = true
+radius = 36.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_4hicg"]
+resource_local_to_scene = true
+font_size = 14
+shadow_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Shader" id="25"]
+code = "shader_type canvas_item;
+uniform float amplitude = 5;
+uniform float frequency = 3.0;
+uniform bool aurora = false;
+uniform float light = 1.0;
+
+void vertex() {
+  VERTEX += vec2(0, amplitude * sin(frequency * TIME));
+}
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	if (aurora) {
+		COLOR.rb += 0.3 * sin((UV.x + UV.y) * 6.0 + TIME * 10.0) + 0.3;
+	}
+	COLOR.rgb *= light;
+}"
+
+[sub_resource type="ShaderMaterial" id="28"]
+resource_local_to_scene = true
+shader = SubResource("25")
+shader_parameter/amplitude = 6.0
+shader_parameter/frequency = 6.0
+shader_parameter/aurora = false
+shader_parameter/light = 1.0
+
+[sub_resource type="Gradient" id="32"]
+offsets = PackedFloat32Array(0, 0.518692, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="27"]
+gradient = SubResource("32")
+
+[sub_resource type="ParticleProcessMaterial" id="33"]
+emission_shape = 2
+emission_sphere_radius = 1.0
+direction = Vector3(0, -1, 0)
+spread = 75.94
+gravity = Vector3(0, 0, 0)
+color = Color(1, 0.603922, 0, 1)
+color_ramp = SubResource("27")
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_mql8i"]
+radius = 120.0
+
+[sub_resource type="Animation" id="Animation_4hicg"]
+resource_name = "Flash"
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [1.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_fh3h1"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:energy")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_mql8i"]
+_data = {
+&"Flash": SubResource("Animation_4hicg"),
+&"RESET": SubResource("Animation_fh3h1")
+}
+
+[node name="Ship" type="Area2D" unique_id=697437636]
+collision_layer = 2
+collision_mask = 55
+script = ExtResource("2")
+
+[node name="FireWeaponAim" parent="." unique_id=894484458 instance=ExtResource("2_ogdx2")]
+visible = false
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=485336625]
+light_mask = 3
+material = SubResource("4")
+texture = ExtResource("4_4hicg")
+
+[node name="Ship1Lights" type="Node2D" parent="Sprite2D" unique_id=531901869]
+visible = false
+
+[node name="Red" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=1215199160]
+position = Vector2(-80, -223)
+color = Color(1, 0, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Green" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=2146927858]
+position = Vector2(-73, 222)
+color = Color(0, 1, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="White" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=353661995]
+position = Vector2(-13, 1)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship1Lights/White" unique_id=88003046]
+libraries/ = SubResource("AnimationLibrary_p3fke")
+autoplay = &"Blink"
+
+[node name="WhiteLeft" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=1121275477]
+position = Vector2(-165, -223)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship1Lights/WhiteLeft" unique_id=1122466762]
+libraries/ = SubResource("AnimationLibrary_4hicg")
+autoplay = &"Double blink"
+
+[node name="WhiteRight" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=1272676768]
+position = Vector2(-160, 222.99998)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship1Lights/WhiteRight" unique_id=1296997773]
+libraries/ = SubResource("AnimationLibrary_4hicg")
+autoplay = &"Double blink"
+
+[node name="WhiteRearLeft" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=1668284236]
+position = Vector2(-231, -122)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship1Lights/WhiteRearLeft" unique_id=481936880]
+libraries/ = SubResource("AnimationLibrary_4y570")
+autoplay = &"Blink"
+
+[node name="WhiteRearRight" type="PointLight2D" parent="Sprite2D/Ship1Lights" unique_id=1818155031]
+position = Vector2(-232, 125)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship1Lights/WhiteRearRight" unique_id=973216828]
+libraries/ = SubResource("AnimationLibrary_4y570")
+autoplay = &"Blink"
+
+[node name="Ship2Lights" type="Node2D" parent="Sprite2D" unique_id=367182497]
+visible = false
+
+[node name="Red" type="PointLight2D" parent="Sprite2D/Ship2Lights" unique_id=380543574]
+position = Vector2(-63, -172)
+color = Color(1, 0, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Green" type="PointLight2D" parent="Sprite2D/Ship2Lights" unique_id=1387478333]
+position = Vector2(-63, 170)
+color = Color(0, 1, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="White" type="PointLight2D" parent="Sprite2D/Ship2Lights" unique_id=1528287064]
+position = Vector2(147, 0)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship2Lights/White" unique_id=8391029]
+libraries/ = SubResource("AnimationLibrary_vlg7s")
+autoplay = &"Blink"
+
+[node name="WhiteLeft" type="PointLight2D" parent="Sprite2D/Ship2Lights" unique_id=1893573905]
+position = Vector2(-248, -155)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship2Lights/WhiteLeft" unique_id=874859061]
+libraries/ = SubResource("AnimationLibrary_itm55")
+autoplay = &"Blink"
+
+[node name="WhiteRight" type="PointLight2D" parent="Sprite2D/Ship2Lights" unique_id=399049313]
+position = Vector2(-246, 153)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Ship3Lights" type="Node2D" parent="Sprite2D" unique_id=1895054737]
+visible = false
+
+[node name="Red" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=2049982308]
+position = Vector2(-131, -214)
+color = Color(1, 0, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Ship" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=1124859365]
+scale = Vector2(4, 4)
+energy = 0.89
+range_item_cull_mask = 2
+texture = ExtResource("6_4hicg")
+
+[node name="Green" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=431557267]
+position = Vector2(-133, 213)
+color = Color(0, 1, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteFront" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=1226395197]
+position = Vector2(239, 0)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteLeft" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=1135710939]
+position = Vector2(-116, -211)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship3Lights/WhiteLeft" unique_id=2023553820]
+libraries/ = SubResource("AnimationLibrary_ikbbp")
+autoplay = &"Blink"
+
+[node name="WhiteRight" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=1133885473]
+position = Vector2(-120, 209)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRearLeft" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=410205965]
+position = Vector2(-226, -41)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRearRight" type="PointLight2D" parent="Sprite2D/Ship3Lights" unique_id=248796945]
+position = Vector2(-227, 37)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Ship4Lights" type="Node2D" parent="Sprite2D" unique_id=1065715036]
+
+[node name="Red" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=2143853970]
+position = Vector2(-39, -183)
+color = Color(1, 0, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="Green" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=2138978049]
+position = Vector2(-35, 180)
+color = Color(0, 1, 0, 1)
+energy = 1.5
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteLeft" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=1577926001]
+position = Vector2(-90, -33)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteLeft2" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=997908105]
+position = Vector2(-164, -21)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRight" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=684659336]
+position = Vector2(-90, 33)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRight2" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=1238430807]
+position = Vector2(-167, 21)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRear" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=1514116100]
+position = Vector2(-225, 0)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteFront" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=907436819]
+position = Vector2(234, 0)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteLeftWing" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=171341791]
+position = Vector2(-93, -180)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="WhiteRightWing" type="PointLight2D" parent="Sprite2D/Ship4Lights" unique_id=974899344]
+position = Vector2(-93, 180)
+energy = 0.0
+range_item_cull_mask = 2
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Sprite2D/Ship4Lights" unique_id=1100811973]
+libraries/ = SubResource("AnimationLibrary_utm2p")
+autoplay = &"Blink"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=126018853]
+visible = false
+rotation = 1.5708
+shape = SubResource("CircleShape2D_fh3h1")
+
+[node name="Polygon2D" type="Polygon2D" parent="CollisionShape2D" unique_id=1457863183]
+color = Color(1, 1, 1, 0)
+polygon = PackedVector2Array(-36, 0.00013032, -0.00013032, -36, 36, -0.00013032, 0.00013032, 36)
+
+[node name="Info" type="Control" parent="." unique_id=1401963852]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme = ExtResource("6_ymlex")
+
+[node name="Label" type="Label" parent="Info" unique_id=189958895]
+layout_mode = 0
+offset_left = -28.0
+offset_top = 52.0
+offset_right = 52.0
+offset_bottom = 68.75
+text = "Lv 1"
+label_settings = SubResource("LabelSettings_4hicg")
+
+[node name="Icon" type="TextureRect" parent="Info" unique_id=1895671064]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = -68.0
+offset_top = 52.0
+offset_right = -44.0
+offset_bottom = 76.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="HP" type="TextureProgressBar" parent="Info" unique_id=1992195944]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_left = -112.0
+offset_top = 32.0
+offset_right = -48.0
+offset_bottom = 40.0
+rotation = -1.5708
+value = 50.0
+nine_patch_stretch = true
+texture_under = ExtResource("1")
+texture_progress = ExtResource("6")
+
+[node name="Initiative" type="Label" parent="Info" unique_id=1035551684]
+layout_mode = 0
+offset_left = -80.0
+offset_top = -72.0
+offset_right = 72.0
+offset_bottom = -49.0
+text = "Initiative: 10"
+label_settings = SubResource("LabelSettings_4hicg")
+horizontal_alignment = 1
+
+[node name="StatusEffects" parent="Info" unique_id=1258505592 instance=ExtResource("8_ymlex")]
+layout_mode = 0
+offset_left = -173.0
+offset_top = -40.0
+offset_right = -93.0
+offset_bottom = 68.0
+columns = 2
+
+[node name="Buffs" parent="Info" unique_id=98842806 instance=ExtResource("9_0r8nl")]
+layout_mode = 0
+offset_left = -80.0
+offset_top = 72.0
+offset_right = 60.0
+offset_bottom = 112.0
+
+[node name="Effects" type="Sprite2D" parent="." unique_id=758978088]
+material = SubResource("28")
+position = Vector2(0, 6.29962)
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="Effects" unique_id=485303394]
+visible = false
+modulate = Color(2, 2, 2, 1)
+amount = 24
+texture = ExtResource("10")
+lifetime = 2.0
+process_material = SubResource("33")
+
+[node name="RayCast2D" type="RayCast2D" parent="." unique_id=1509338369]
+enabled = false
+collision_mask = 39
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="PushArea" type="Area2D" parent="." unique_id=1441690305]
+collision_layer = 0
+collision_mask = 38
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PushArea" unique_id=838498323]
+rotation = 1.5708
+shape = SubResource("CircleShape2D_mql8i")
+debug_color = Color(0.556863, 0.560784, 0, 0.0941176)
+
+[node name="VelocityArrow" parent="." unique_id=908545511 instance=ExtResource("22_mql8i")]
+
+[node name="FireProjectileFlash" type="PointLight2D" parent="." unique_id=1166325875]
+scale = Vector2(1.5, 1.5)
+energy = 0.0
+texture = ExtResource("10")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="FireProjectileFlash" unique_id=1604517819]
+libraries/ = SubResource("AnimationLibrary_mql8i")
+
+[node name="ExtraTurnSound" type="AudioStreamPlayer2D" parent="." unique_id=150639459]
+stream = ExtResource("17_53138")
+volume_db = -15.0
+bus = &"SFX"
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
+[connection signal="visibility_changed" from="FireWeaponAim" to="." method="_on_fire_weapon_aim_visibility_changed"]
+[connection signal="area_entered" from="PushArea" to="." method="_on_push_area_area_entered"]
+[connection signal="area_exited" from="PushArea" to="." method="_on_push_area_area_exited"]

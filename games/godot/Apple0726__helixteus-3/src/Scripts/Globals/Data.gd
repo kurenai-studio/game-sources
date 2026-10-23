@@ -1,0 +1,634 @@
+extends Node
+
+enum ProjType {STANDARD, LASER, BUBBLE, PURPLE}#For caves
+
+var path_1 = {	Building.MINERAL_EXTRACTOR:			{"value":0.36, "pw":1.15, "time_based":true, "metal_costs":{"lead":20, "copper":35, "iron":50, "aluminium":70, "silver":100, "gold":150, "platinum":250}},
+				Building.POWER_PLANT:				{"value":0.6, "pw":1.15, "time_based":true, "metal_costs":{"lead":20, "copper":30, "iron":40, "aluminium":40, "silver":40, "gold":40}},
+				Building.RESEARCH_LAB:				{"value":0.06, "pw":1.15, "time_based":true, "metal_costs":{"lead":100, "copper":150, "iron":150, "aluminium":150, "silver":150, "gold":150, "platinum":150}},
+				Building.BATTERY:					{"value":12000, "pw":1.17, "is_value_integer":true, "metal_costs":{"lead":35, "copper":25, "iron":35, "aluminium":40, "silver":40, "gold":40}},
+				Building.MINERAL_SILO:				{"value":100, "pw":1.15, "is_value_integer":true, "metal_costs":{"lead":35, "copper":25, "iron":35, "aluminium":40, "silver":40, "gold":40}},
+				Building.ROVER_CONSTRUCTION_CENTER:	{"value":1.0, "pw":1.07, "metal_costs":{"lead":500, "copper":2500, "iron":8000, "aluminium":16000, "silver":32000, "gold":64000, "platinum":128000}},
+				Building.STONE_CRUSHER:				{"value":50.0, "pw":1.15, "time_based":true, "metal_costs":{"lead":300, "copper":300, "iron":300, "aluminium":300, "silver":300, "gold":300}},
+				Building.GLASS_FACTORY:				{"value":1, "pw":1.15, "time_based":true, "metal_costs":{"lead":350, "copper":350, "iron":350, "aluminium":350, "silver":350, "gold":350}},
+				Building.STEAM_ENGINE:				{"value":40.0, "pw":1.15, "time_based":true, "metal_costs":{"lead":200, "copper":200, "iron":200, "aluminium":200, "silver":200, "gold":200}},
+				Building.BORING_MACHINE:			{"value":0.02, "pw":1.1, "time_based":true, "metal_costs":{"lead":500, "copper":700, "iron":900, "aluminium":1100, "silver":1300, "gold":1500}},
+				Building.GREENHOUSE:				{"value":1.0, "pw":1.11, "metal_costs":{"lead":500, "copper":500, "iron":600, "aluminium":600, "silver":700, "gold":700}},
+				Building.SOLAR_PANEL:				{"value":2.0, "pw":1.15, "time_based":true, "metal_costs":{"lead":70, "copper":70, "iron":70, "aluminium":70, "silver":70, "gold":70}},
+				Building.ATMOSPHERE_EXTRACTOR:		{"value":0.2, "pw":1.15, "time_based":true, "metal_costs":{"lead":200, "copper":200, "iron":200, "aluminium":200, "silver":200, "gold":200}},
+				Building.ATOM_MANIPULATOR:			{"value":1.0, "pw":1.16, "metal_costs":{"lead":50000, "copper":50000, "iron":50000, "aluminium":50000, "silver":50000, "gold":50000}},
+				Building.SUBATOMIC_PARTICLE_REACTOR:{"value":1.0, "pw":1.16, "metal_costs":{"lead":270000, "copper":270000, "iron":270000, "aluminium":270000, "silver":270000, "gold":270000}},
+				Building.SHIPYARD:					{"value":1.0, "pw":1.16, "metal_costs":{"lead":640000, "copper":640000, "iron":640000, "aluminium":960000, "silver":960000, "gold":1280000}},
+				Building.CENTRAL_BUSINESS_DISTRICT:	{"value":1.111111, "pw":1.03, "cost_mult":1.5, "metal_costs":{"lead":2000, "copper":4000, "iron":8000, "aluminium":16000, "silver":32000, "gold":64000, "platinum":128000}},
+}
+var path_2 = {	Building.STONE_CRUSHER:				{"value":4000, "pw":1.16, "is_value_integer":true, "metal_costs":{"lead":300, "copper":300, "iron":300, "aluminium":300, "silver":300, "gold":300}},
+				Building.GLASS_FACTORY:				{"value":600, "pw":1.16, "is_value_integer":true, "metal_costs":{"lead":350, "copper":350, "iron":350, "aluminium":350, "silver":350, "gold":350}},
+				Building.STEAM_ENGINE:				{"value":100, "pw":1.16, "is_value_integer":true, "metal_costs":{"lead":350, "copper":350, "iron":350, "aluminium":350, "silver":350, "gold":350}},
+				Building.GREENHOUSE:				{"value":1.0, "pw":1.07, "metal_costs":{"lead":1000, "copper":1000, "iron":1200, "aluminium":1200, "silver":1400, "gold":1400}},
+				Building.ATOM_MANIPULATOR:			{"value":1.0, "pw":1.05, "metal_costs":{"lead":50000, "copper":50000, "iron":50000, "aluminium":50000, "silver":50000, "gold":50000}},
+				Building.SUBATOMIC_PARTICLE_REACTOR:{"value":1.0, "pw":1.05, "metal_costs":{"lead":270000, "copper":270000, "iron":270000, "aluminium":270000, "silver":270000, "gold":270000}},
+				Building.CENTRAL_BUSINESS_DISTRICT:	{"value":1.1, "step":0.02, "metal_costs":{"lead":2000, "copper":4000, "iron":8000, "aluminium":16000, "silver":32000, "gold":64000, "platinum":128000}},
+}
+var path_3 = {	Building.STONE_CRUSHER:				{"value":1.0, "pw":1.01, "cap":70, "metal_costs":{"lead":600, "copper":1800, "iron":5400, "aluminium":16200, "silver":48600, "gold":145800}},
+				Building.GLASS_FACTORY:				{"value":1.0, "pw":1.01, "cap":70, "metal_costs":{"lead":600, "copper":1800, "iron":5400, "aluminium":16200, "silver":48600, "gold":145800}},
+				Building.STEAM_ENGINE:				{"value":1.0, "pw":1.04, "metal_costs":{"lead":700, "copper":1400, "iron":2800, "aluminium":5600, "silver":11200, "gold":22400}},
+				Building.CENTRAL_BUSINESS_DISTRICT:	{"value":3, "step":2, "cost_mult":12, "cost_pw":2.7, "is_value_integer":true},
+}
+
+var costs = {	Building.MINERAL_EXTRACTOR:			{"money":100.0, "energy":40.0},
+				Building.POWER_PLANT:				{"money":80.0},
+				Building.RESEARCH_LAB:				{"money":2000.0, "energy":600.0},
+				Building.BATTERY:					{"money":400.0, "energy":100.0},
+				Building.MINERAL_SILO:				{"money":500.0, "energy":60.0},
+				Building.ROVER_CONSTRUCTION_CENTER:	{"money":5000.0, "energy":400.0},
+				Building.STONE_CRUSHER:				{"money":900.0, "energy":150.0},
+				Building.GLASS_FACTORY:				{"money":1500.0, "energy":1000.0},
+				Building.STEAM_ENGINE:				{"money":1500.0, "energy":500.0},
+				Building.BORING_MACHINE:			{"money":13000.0, "energy":7000.0},
+				Building.GREENHOUSE:				{"money":10000.0, "energy":1500.0, "glass":50.0, "soil":100.0},
+				Building.SOLAR_PANEL:				{"money":4000.0},
+				Building.ATMOSPHERE_EXTRACTOR:		{"money":41500.0, "energy":15000.0},
+				Building.ATOM_MANIPULATOR:			{"money":580000.0, "energy":8200.0},
+				Building.SUBATOMIC_PARTICLE_REACTOR:{"money":3500000.0, "energy":61300.0},
+				Building.SHIPYARD:					{"money":5.0e8, "energy":900000.0},
+				Building.PROBE_CONSTRUCTION_CENTER:	{"money":2.5e12, "energy":7.8e10},
+				Building.CENTRAL_BUSINESS_DISTRICT:	{"money":7000.0, "energy":1000.0},
+				"rover":{"money":2000.0, "energy":400.0},
+}
+
+var MS_costs = {	"DS_0":{"money":1.3e10, "stone":8.0e8, "silicon":400000, "copper":250000, "iron":1600000, "aluminium":500000, "titanium":50000},
+					"DS_1":{"money":3.8e11, "stone":2.7e10, "silicon":1.5e7, "copper":1.2e7, "iron":8.0e7, "aluminium":2.2e7, "titanium":2.1e6},
+					"DS_2":{"money":1.5e13, "stone":9.6e11, "silicon":5.3e8, "copper":4.0e8, "iron":3.2e9, "aluminium":8.7e8, "titanium":8.8e7},
+					"DS_3":{"money":6.4e14, "stone":3.5e13, "silicon":2.5e10, "copper":1.5e10, "iron":1.4e11, "aluminium":3.0e10, "titanium":3.0e9},
+					"DS_4":{"money":2.5e16, "stone":1.1e15, "silicon":8.8e11, "copper":5.6e11, "iron":5.5e12, "aluminium":1.0e12, "titanium":9.6e10},
+					"SE_0":{"money":700000, "stone":50000, "energy":10000, "copper":800, "iron":1000, "aluminium":300},
+					"SE_1":{"money":10000000, "stone":500000, "energy":45000, "copper":6000, "iron":10000, "aluminium":3000},
+					"MME_0":{"money":2.0e7, "stone":1.0e6, "copper":1500, "iron":12000, "aluminium":5000, "titanium":300},
+					"MME_1":{"money":6.5e8, "stone":5.0e7, "copper":70000, "iron":650000, "aluminium":200000, "titanium":12000},
+					"MME_2":{"money":2.4e10, "stone":2.0e9, "copper":2.5e6, "iron":2.5e7, "aluminium":7.5e6, "titanium":500000},
+					"MME_3":{"money":9.5e11, "stone":7.0e10, "copper":8.0e7, "iron":1.0e9, "aluminium":3.0e8, "titanium":1.5e7},
+					"CBS_0":{"money":1.0e11, "stone":6.0e8, "silicon":1200000, "copper":750000, "iron":1400000, "platinum":90000},
+					"CBS_1":{"money":1.0e11*40, "stone":6.0e8*30, "silicon":1200000*40, "copper":750000*40, "iron":1400000*30, "platinum":90000*50},
+					"CBS_2":{"money":1.0e11*40*40, "stone":6.0e8*30*30, "silicon":1200000*40*30, "copper":750000*40*30, "iron":1400000*30*30, "platinum":90000*50*50},
+					"CBS_3":{"money":1.0e11*40*40*40, "stone":6.0e8*30*30*30, "silicon":1200000*40*30*30, "copper":750000*40*30*30, "iron":1400000*30*30*30, "platinum":90000*50*50*50},
+					"MB":{"money":5.5e17, "stone":1.0e13, "copper":3.0e11, "aluminium":2.0e12, "nanocrystal":8.0e10, "quillite":1.5e10},
+					"PK_0":{"money":2.0e15, "stone":4.0e14, "iron":1.0e11, "aluminium":1.75e10},
+					"PK_1":{"money":9.5e16, "stone":4.0e16, "iron":8.5e12, "aluminium":8.0e12},
+					"PK_2":{"money":6.5e19, "stone":8.75e20, "iron":2.25e16, "aluminium":1.5e15},
+}
+
+var MS_output = {	"DS_0":1.0e7,
+					"DS_1":3.8e8,
+					"DS_2":1.5e10,
+					"DS_3":5.8e11,
+					"DS_4":2.2e13,
+					"DS_5":2.2e13,
+					"MME_0":4800,
+					"MME_1":254000,
+					"MME_2":8.0e7,
+					"MME_3":3.0e9,
+					"MB":2.0e10,
+}
+
+var MUs = {	"MV":{"base_cost":100.0, "pw":1.9},
+			"MSMB":{"base_cost":100.0, "pw":1.6},
+			"IS":{"base_cost":500.0, "pw":1.9},
+			"STMB":{"base_cost":600.0, "pw":1.6},
+			"SHSR":{"base_cost":2000.0, "pw":1.9},
+			"CHR":{"base_cost":2000.0, "pw":1.7},
+}
+
+var ambient_music = [
+	preload("res://Audio/ambient1.ogg"),
+	preload("res://Audio/ambient2.ogg"),
+	preload("res://Audio/ambient3.ogg"),
+]
+var money_icon = preload("res://Graphics/Icons/money.png")
+var minerals_icon = preload("res://Graphics/Icons/minerals.png")
+var energy_icon = preload("res://Graphics/Icons/energy.png")
+var time_icon = preload("res://Graphics/Icons/time.png")
+var stone_icon = preload("res://Graphics/Icons/stone.png")
+var SP_icon = preload("res://Graphics/Icons/SP.png")
+var glass_icon = preload("res://Graphics/Materials/glass.png")
+var cellulose_icon = preload("res://Graphics/Materials/cellulose.png")
+var sand_icon = preload("res://Graphics/Materials/sand.png")
+var coal_icon = preload("res://Graphics/Materials/coal.png")
+var MM_icon = preload("res://Graphics/Icons/MM.png")
+var atom_icon = preload("res://Graphics/Science/ATM.png")
+var subatomic_particles_icon = preload("res://Graphics/Particles/subatomic_particles.png")
+
+var HP_icon = preload("res://Graphics/Icons/HP.png")
+var attack_icon = preload("res://Graphics/Icons/attack.png")
+var defense_icon = preload("res://Graphics/Icons/defense.png")
+var accuracy_icon = preload("res://Graphics/Icons/accuracy.png")
+var agility_icon = preload("res://Graphics/Icons/agility.png")
+
+var desc_icons = {	Building.MINERAL_EXTRACTOR:[[minerals_icon]],
+					Building.POWER_PLANT:[[energy_icon]],
+					Building.RESEARCH_LAB:[[SP_icon]],
+					Building.BATTERY:[[energy_icon]],
+					Building.MINERAL_SILO:[[minerals_icon]],
+					Building.STONE_CRUSHER:[[stone_icon], [stone_icon], []],
+					Building.GLASS_FACTORY:[[glass_icon], [sand_icon], []],
+					Building.STEAM_ENGINE:[[energy_icon], [coal_icon], []],
+					Building.SOLAR_PANEL:[[energy_icon]],
+					Building.CENTRAL_BUSINESS_DISTRICT:[[], [], []]
+}
+
+var rsrc_icons = {	Building.MINERAL_EXTRACTOR:minerals_icon,
+					Building.POWER_PLANT:energy_icon,
+					Building.RESEARCH_LAB:SP_icon,
+					Building.STONE_CRUSHER:stone_icon,
+					Building.GLASS_FACTORY:glass_icon,
+					Building.STEAM_ENGINE:energy_icon,
+					Building.BORING_MACHINE:stone_icon,
+					Building.SOLAR_PANEL:energy_icon,
+					Building.ATMOSPHERE_EXTRACTOR:atom_icon,
+					Building.ATOM_MANIPULATOR:atom_icon,
+					Building.SUBATOMIC_PARTICLE_REACTOR:subatomic_particles_icon,
+}
+
+var default_stats:Dictionary = {
+		"bldgs_built":0,
+		"MS_constructed":0,
+		"total_money_earned":0,
+		"wormholes_activated":0,
+		"planets_conquered":1,
+		"systems_conquered":0,
+		"galaxies_conquered":0,
+		"clusters_conquered":0,
+		"enemies_rekt_in_battle":0,
+		"enemies_rekt_in_caves":0,
+		"chests_looted":0,
+		"tiles_mined_mining":0,
+		"tiles_mined_caves":0,
+		"biggest_planet":0,
+		"biggest_star":1,
+		"hottest_star":5500,
+		"highest_au_int":0,
+		"star_classes":{
+			"Y":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"T":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"L":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"M":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"K":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"G":[0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+			"F":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"A":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"B":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"O":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"Q":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"R":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"Z":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		},
+		"star_types":{
+			StarType.BROWN_DWARF:0,
+			StarType.WHITE_DWARF:0,
+			StarType.MAIN_SEQUENCE:1,
+			StarType.GIANT:0,
+			StarType.SUPERGIANT:0,
+			StarType.HYPERGIANT:0,
+		},
+		"clicks":0,
+		"right_clicks":0,
+		"scrolls":0,
+		"mouse_travel_distance":0,
+		"keyboard_presses":0,
+}
+var univ_prop_weights:Dictionary = {
+	"speed_of_light":25,
+	"planck":30,
+	"boltzmann":30,
+	"gravitational":40,
+	"charge":40,
+	"dark_energy":100,
+	"age":15,
+	"difficulty":10,
+	"time_speed":50,
+	"antimatter":100,
+	}
+
+var standard_large_number_notations = []
+var achievements:Dictionary
+
+func reload():
+	standard_large_number_notations = tr("STANDARD_LARGE_NUMBER_NOTATION").split(" < ")
+	path_1[Building.MINERAL_EXTRACTOR].desc = tr("EXTRACTS_X") % ["@i %s/" + tr("S_SECOND")]
+	path_1[Building.ATMOSPHERE_EXTRACTOR].desc = tr("EXTRACTS_X") % ["%s mol/" + tr("S_SECOND")]
+	path_1[Building.POWER_PLANT].desc = tr("GENERATES_X") % ["@i %s/" + tr("S_SECOND")]
+	path_1[Building.RESEARCH_LAB].desc = tr("PRODUCES_X") % ["@i %s/" + tr("S_SECOND")]
+	path_1[Building.ROVER_CONSTRUCTION_CENTER].desc = tr("MULT_ROVER_STAT_BY") % ["%s"]
+	path_1[Building.SHIPYARD].desc = tr("MULT_FIGHTER_STAT_BY") % ["%s"]
+	path_1[Building.MINERAL_SILO].desc = tr("STORES_X") % [" @i %s"]
+	path_1[Building.BATTERY].desc = tr("STORES_X") % [" @i %s"]
+	path_1[Building.STONE_CRUSHER].desc = tr("CRUSHES_X") % ["@i %s kg/" + tr("S_SECOND")]
+	path_1[Building.GLASS_FACTORY].desc = tr("PRODUCES_X") % ["@i %s kg/" + tr("S_SECOND")]
+	path_1[Building.STEAM_ENGINE].desc = tr("GENERATES_X") % ["@i %s/" + tr("S_SECOND")]
+	path_1[Building.BORING_MACHINE].desc = tr("X_M_PER_SECOND") % ["%s", tr("S_SECOND")]
+	path_1[Building.GREENHOUSE].desc = tr("X_PLANT_GROWTH")
+	path_1[Building.SOLAR_PANEL].desc = tr("GENERATES_X") % ["@i %s/" + tr("S_SECOND")]
+	path_1[Building.ATOM_MANIPULATOR].desc = "%s: %%s" % [tr("BASE_SPEED")]
+	path_1[Building.SUBATOMIC_PARTICLE_REACTOR].desc = "%s: %%s" % [tr("BASE_SPEED")]
+	path_2[Building.STONE_CRUSHER].desc = tr("CAN_STORE_UP_TO") % [" @i %s kg"]
+	path_2[Building.GLASS_FACTORY].desc = tr("CAN_STORE_UP_TO") % [" @i %s kg"]
+	path_2[Building.STEAM_ENGINE].desc = tr("CAN_STORE_UP_TO") % [" @i %s kg"]
+	path_2[Building.GREENHOUSE].desc = tr("X_PLANT_PRODUCE")
+	path_3[Building.STONE_CRUSHER].desc = tr("OUTPUT_MULTIPLIER")
+	path_3[Building.GLASS_FACTORY].desc = tr("OUTPUT_MULTIPLIER")
+	path_3[Building.STEAM_ENGINE].desc = tr("OUTPUT_MULTIPLIER")
+	path_1[Building.CENTRAL_BUSINESS_DISTRICT].desc = tr("CBD_PATH_1")
+	path_2[Building.CENTRAL_BUSINESS_DISTRICT].desc = tr("CBD_PATH_2")
+	path_3[Building.CENTRAL_BUSINESS_DISTRICT].desc = tr("CBD_PATH_3")
+	path_2[Building.ATOM_MANIPULATOR].desc = tr("DIVIDES_ENERGY_COSTS_BY")
+	path_2[Building.SUBATOMIC_PARTICLE_REACTOR].desc = tr("DIVIDES_ENERGY_COSTS_BY")
+	achievements = { 
+		"money":{
+			"0":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1000, false, 308), "rsrc":tr("MONEY")}),
+			"1":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e6, false, 308), "rsrc":tr("MONEY")}),
+			"2":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e9, false, 308), "rsrc":tr("MONEY")}),
+			"3":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e12, false, 308), "rsrc":tr("MONEY")}),
+			"4":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e15, false, 308), "rsrc":tr("MONEY")}),
+			"5":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e18, false, 308), "rsrc":tr("MONEY")}),
+			"6":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e21, false, 308), "rsrc":tr("MONEY")}),
+			"7":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e24, false, 308), "rsrc":tr("MONEY")}),
+			"8":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e27, false, 308), "rsrc":tr("MONEY")}),
+			"9":tr("SAVE_OBJECTIVE").format({"num":Helper.format_num(1e30, false, 308), "rsrc":tr("MONEY")}),
+		},
+		"conquest":{
+			"0":tr("CONQUER_OBJECTIVE").format({"num":2, "object":tr("PLANETS")}),
+			"1":tr("CONQUER_OBJECTIVE").format({"num":10, "object":tr("PLANETS")}),
+			"2":tr("CONQUER_OBJECTIVE").format({"num":100, "object":tr("PLANETS")}),
+			"3":tr("CONQUER_OBJECTIVE").format({"num":Helper.format_num(1000, false, 308), "object":tr("PLANETS")}),
+			"4":tr("CONQUER_OBJECTIVE").format({"num":Helper.format_num(10000, false, 308), "object":tr("PLANETS")}),
+			"5":tr("CONQUER_OBJECTIVE").format({"num":Helper.format_num(100000, false, 308), "object":tr("PLANETS")}),
+			"6":tr("CONQUER_OBJECTIVE").format({"num":Helper.format_num(1.0e6, false, 308), "object":tr("PLANETS")}),
+			"fully_conquer_system":tr("FULLY_CONQUER_SYSTEM"),
+			"fully_conquer_galaxy":tr("FULLY_CONQUER_GALAXY"),
+			"fully_conquer_cluster":tr("FULLY_CONQUER_CLUSTER"),
+		},
+		"construct":{
+			"0":tr("BUILD_OBJECTIVE").format({"num":100, "bldg":tr("BUILDINGS")}),
+			"1":tr("BUILD_OBJECTIVE").format({"num":Helper.format_num(10000, false, 308), "bldg":tr("BUILDINGS")}),
+			"2":tr("BUILD_OBJECTIVE").format({"num":Helper.format_num(1.0e6, false, 308), "bldg":tr("BUILDINGS")}),
+			"3":tr("BUILD_OBJECTIVE").format({"num":Helper.format_num(1.0e8, false, 308), "bldg":tr("BUILDINGS")}),
+			"4":tr("BUILD_OBJECTIVE").format({"num":Helper.format_num(1.0e10, false, 308), "bldg":tr("BUILDINGS")}),
+			"5":tr("BUILD_OBJECTIVE").format({"num":Helper.format_num(1.0e12, false, 308), "bldg":tr("BUILDINGS")}),
+		},
+		"exploration":{
+			"B_star":tr("FIND_CLASS_X_STAR") % "B",
+			"O_star":tr("FIND_CLASS_X_STAR") % "O",
+			"Q_star":tr("FIND_CLASS_X_STAR") % "Q",
+			"R_star":tr("FIND_CLASS_X_STAR") % "R",
+			"Z_star":tr("FIND_CLASS_X_STAR") % "Z",
+			"HG_star":tr("FIND_HYPERGIANT_STAR"),
+			"HG_V_star":tr("FIND_HYPERGIANT_X_STAR") % "V",
+			"HG_X_star":tr("FIND_HYPERGIANT_X_STAR") % "X",
+			"HG_XX_star":tr("FIND_HYPERGIANT_X_STAR") % "XX",
+			"HG_L_star":tr("FIND_HYPERGIANT_X_STAR") % "L",
+			"20_planet_system":tr("FIND_X_PLANET_SYSTEM") % 20,
+			"25_planet_system":tr("FIND_X_PLANET_SYSTEM") % 25,
+			"30_planet_system":tr("FIND_X_PLANET_SYSTEM") % 30,
+			"35_planet_system":tr("FIND_X_PLANET_SYSTEM") % 35,
+			"40_planet_system":tr("FIND_X_PLANET_SYSTEM") % 40,
+			"diamond_crater":tr("FIND_X_CRATER") % tr("DIAMOND"),
+			"nanocrystal_crater":tr("FIND_X_CRATER") % tr("NANOCRYSTAL"),
+			"mythril_crater":tr("FIND_X_CRATER") % tr("MYTHRIL"),
+			"aurora_cave":tr("FIND_AURORA_CAVE"),
+			"volcano_cave":tr("FIND_VOLCANO_CAVE"),
+			"volcano_aurora_cave":tr("FIND_VOLCANO_AURORA_CAVE"),
+			"find_neon_lake":tr("FIND_NEON_LAKE"),
+			"find_xenon_lake":tr("FIND_XENON_LAKE"),
+			"reach_floor_8":tr("REACH_FLOOR_X_CAVE") % 8,
+			"reach_floor_16":tr("REACH_FLOOR_X_CAVE") % 16,
+			"reach_floor_24":tr("REACH_FLOOR_X_CAVE") % 24,
+			"reach_floor_32":tr("REACH_FLOOR_X_CAVE") % 32,
+			"planet_with_nothing":tr("PLANET_WITH_NOTHING"),
+			"tier_2_ancient_bldg":tr("FIND_TIER_X_ANCIENT_BLDG") % 2,
+			"tier_3_ancient_bldg":tr("FIND_TIER_X_ANCIENT_BLDG") % 3,
+			"tier_4_ancient_bldg":tr("FIND_TIER_X_ANCIENT_BLDG") % 4,
+			"tier_5_ancient_bldg":tr("FIND_TIER_X_ANCIENT_BLDG") % 5,
+			"find_all_ancient_bldgs":tr("FIND_ALL_ANCIENT_BLDGS") % 7,
+		},
+		"progression":{
+			"build_MS":tr("BUILD_A_MS"),
+			"build_GS":tr("BUILD_A_GS"),
+			"new_universe":tr("DISCOVER_NEW_UNIV"),
+			"new_dimension":tr("RENEW_DIMENSION"),
+			"2nd_ship":tr("FIND_2ND_SHIP"),
+			"3rd_ship":tr("FIND_3RD_SHIP"),
+			"4th_ship":tr("FIND_4TH_SHIP"),
+		},
+		"random":{
+			"clear_out_cave_floor":tr("CLEAR_OUT_CAVE_FLOOR"),
+			"destroy_BBB":tr("DESTROY_BBB"),
+			"reach_center_of_planet":tr("REACH_CENTER_OF_PLANET"),
+			"1000_year_journey":tr("1000_YEAR_JOURNEY"),
+			"build_tri_probe_in_slow_univ":tr("BUILD_TRI_PROBE_IN_SLOW_UNIV"),
+			"use_stick_to_mine_from_surface_to_core":tr("USE_STICK_TO_MINE_FROM_SURFACE_TO_CORE"),
+			"rekt_enemy_30_levels_higher":tr("REKT_ENEMY_30_LEVELS_HIGHER"),
+			"op_gh":tr("OP_GH"),
+		},
+	}
+
+#Science for unlocking game features
+var science_unlocks = {
+	Science.ADVANCED_SPACE_CONSTRUCTION: {"cost": [5.0], "prereqs": {}},
+	Science.AUTOSELL_MINERALS: {"cost": [100.0], "prereqs": {}},
+	Science.AUTOSELL_EXCESS_MINERALS: {"cost": [20000.0], "prereqs": {Science.AUTOSELL_MINERALS: 1}},
+	Science.COMPACT_ITEMS: {"cost": [4800.0, 4.8e6, 4.8e9], "prereqs": {}},
+	Science.MINERAL_EXTRACTION_EFFICIENCY: {"cost": [], "prereqs": {}, "infinite_research": {"cost":250.0, "pw":6.8}},
+	Science.ENERGY_PRODUCTION_EFFICIENCY: {"cost": [], "prereqs": {}, "infinite_research": {"cost":400.0, "pw":6.8}},
+	Science.RESEARCH_EFFICIENCY: {"cost": [], "prereqs": {}, "infinite_research": {"cost":1250.0, "pw":7.2}},
+	Science.STORAGE_EFFICIENCY: {"cost": [], "prereqs": {}, "infinite_research": {"cost":500.0, "pw":7.0}},
+	Science.MANUAL_MINING_SPEED: {"cost": [], "prereqs": {}, "infinite_research": {"cost":150.0, "pw":6.0}},
+	Science.PARTICLE_MANIPULATION_EFFICIENCY: {"cost": [], "prereqs": {Science.SUBATOMIC_PARTICLES: 1}, "infinite_research": {"cost":1.0e8, "pw":6.6}},
+	
+	Science.ROVER_CONSTRUCTION: {"cost": [100.0, 5.0e6, 3.0e13], "prereqs": {Science.ADVANCED_SPACE_CONSTRUCTION: 1}, "infinite_research": {"cost":3.0e13, "pw":6.1}},
+	Science.SPACE_AGRICULTURE: {"cost": [500.0], "prereqs": {Science.ADVANCED_SPACE_CONSTRUCTION: 1}},
+	Science.PLANT_FERTILIZATION: {"cost": [90000.0], "prereqs": {Science.SPACE_AGRICULTURE: 1}},
+	Science.IMPROVED_STONE_CRUSHER: {"cost": [250.0], "prereqs": {Science.ADVANCED_SPACE_CONSTRUCTION: 1}},
+	Science.AUTO_MINING: {"cost": [10000.0], "prereqs": {Science.ADVANCED_SPACE_CONSTRUCTION: 1}},
+	Science.ATOM_MANIPULATION: {"cost": [200000.0], "prereqs": {Science.ADVANCED_SPACE_CONSTRUCTION: 1}},
+	
+	Science.SHIP_CONTROL: {"cost": [350.0], "prereqs": {Science.ROVER_CONSTRUCTION: 1}},
+	Science.IMPROVED_ROVER_LASERS: {"cost":
+		[1000.0, # Orange
+		12000.0, # Yellow
+		70000.0, # etc.
+		350000.0,
+		2.4e6,
+		2.8e7,
+		4.05e8,
+		6.5e9,
+		1.0e12]
+	, "prereqs": {Science.ROVER_CONSTRUCTION: 1}, "infinite_research": {"cost":2.5e14, "pw":5.8}},
+	
+	Science.IMPROVED_SPACEPORT: {"cost": [50000.0], "prereqs": {Science.SHIP_CONTROL: 1}},
+	Science.MACRO_ENGINEERING: {"cost": [100000.0], "prereqs": {Science.SHIP_CONTROL: 1}},
+	Science.FTL_DRIVE: {"cost": [128000.0, 9.5e7], "prereqs": {Science.SHIP_CONTROL: 1}},
+	Science.CHEMICAL_DRIVE: {"cost": [2400.0], "prereqs": {Science.SHIP_CONTROL: 1}},
+	Science.ION_DRIVE: {"cost": [4.5e6], "prereqs": {Science.CHEMICAL_DRIVE: 1}},
+	Science.PLUTONIUM_DRIVE: {"cost": [1.2e12], "prereqs": {Science.ION_DRIVE: 1}},
+	
+	Science.SUBATOMIC_PARTICLES: {"cost": [1.25e7], "prereqs": {Science.ATOM_MANIPULATION: 1}},
+	Science.ADVANCED_METAL_MANIPULATION: {"cost": [1.0e9], "prereqs": {Science.ATOM_MANIPULATION: 1}},
+	Science.EXOTIC_MATERIAL_MANIPULATION: {"cost": [1.0e15], "prereqs": {Science.ADVANCED_METAL_MANIPULATION: 1}},
+	
+	Science.FIGHTERS: {"cost": [3.45e9, 1.4e18], "prereqs": {Science.FTL_DRIVE: 2}, "infinite_research": {"cost":7.5e19, "pw":5.4}},
+	
+	Science.SPACE_ELEVATOR: {"cost": [700000.0], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.TERRAFORMING: {"cost": [5.6e8], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.MEGA_MINERAL_EXTRACTOR: {"cost": [1.7e9, 6.0e10, 2.4e12], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.DYSON_SPHERE: {"cost": [1.2e11, 4.8e12, 2.1e14, 8.0e15], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.CENTRAL_BUSINESS_SYSTEM: {"cost": [4.0e11, 1.4e13, 4.9e14], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.PLANETKILLER: {"cost": [5.25e14, 3.4e16], "prereqs": {Science.MACRO_ENGINEERING: 1}},
+	Science.MATRIOSHKA_BRAIN: {"cost": [2.6e16], "prereqs": {Science.DYSON_SPHERE: 4}},
+	Science.GIGASTRUCTURE_CONSTRUCTION: {"cost": [1.0e19], "prereqs": {Science.MATRIOSHKA_BRAIN: 1}},
+	Science.TRIANGULUM_PROBE_CONSTRUCTION: {"cost": [1.0e23], "prereqs": {Science.GIGASTRUCTURE_CONSTRUCTION: 1}, "infinite_research": {"cost":5.0e24, "pw":6.1}},
+}
+
+var battle_weapon_stats = {
+	"bullet": {	"damage":3.5,
+				"accuracy":1.0,
+				"shots_fired":[2, 3, 6, 15],
+				"mass":[8.0, 8.0, 16.0, 28.0],
+				"damage_multiplier":[1.0, 1.0, 1.4, 2.1],
+				"crit_hit_mult":[1.0, 1.5, 2.3, 3.4],
+				"deflects":[2, 2, 3, 4],
+				"ignore_defense_buffs":[false, false, true, true],
+				"status_effects":{
+					Battle.StatusEffect.CORRODING:[0, 2, 3, 0],
+					Battle.StatusEffect.RADIOACTIVE:[0, 0, 0, 3],
+					Battle.StatusEffect.WET:[0, 1, 2, 0],
+					Battle.StatusEffect.FROZEN:[0, 0, 0, 4],
+				},
+			},
+	"laser": {	"damage":2.0,
+				"accuracy":1.8,
+				"status_effects":{
+					Battle.StatusEffect.STUN:[[0.8, 1], [0.8, 1], [0.8, 2], [0.8, 2]],
+				},
+				"consecutive_fires":[1, 2, 2, 3],
+				"multishot":[1, 1, 3, 5],
+				"pierce":[1, 2, 2, 2],
+			},
+	"bomb": {	"damage":6.0,
+				"accuracy":0.65,
+				"shots_fired":[1, 1, 1, 3],
+				"AoE_radius":[100.0, 130.0, 180.0, 300.0],
+				"mass":[40.0, 60.0, 90.0, 150.0],
+				"damage_multiplier":[1.0, 1.0, 1.5, 2.0],
+				"status_effects":{
+					Battle.StatusEffect.BURN:[1, 2, 2, 2],
+					Battle.StatusEffect.STUN:[0, 0, 0, [0.5, 1]],
+				},
+			},
+	"light": {	"damage":3.0,
+				"accuracy":INF,
+				"damage_multiplier":[1.0, 1.0, 1.4, 1.6]},
+}
+
+#the numbers are the elements' abundance relative to hydrogen
+var elements = {
+	"NH3":0.05,
+	"CO2":0.01,
+	"H":1.0,
+	"He":0.325,
+	"CH4":0.2,
+	"O":0.014,
+	"H2O":0.15,
+	"Ne":0.01813,
+	"Xe":0.00022,
+}
+
+var molar_mass = {
+	"H":1.008,
+	"He":4.0026,
+	"C":12.011,
+	"N":14.001,
+	"O":15.999,
+	"F":18.998,
+	"Ne":20.18,
+	"Na":22.99,
+	"Mg":24.305,
+	"Al":26.982,
+	"Si":28.085,
+	"P":30.974,
+	"S":32.06,
+	"K":39.098,
+	"Ca":40.078,
+	"Ti":47.867,
+	"Cr":51.996,
+	"Mn":54.938,
+	"Fe":55.845,
+	"Co":58.933,
+	"Ni":58.693,
+	"Xe":131.29,
+	"Ta":180.95,
+	"W":183.84,
+	"Os":190.23,
+	"Ir":192.22,
+	"Pt":195.08,
+	"U":238.03,
+	"Np":237,
+	"Pu":244,
+}
+
+var cave_modifiers:Dictionary = {#tier 1 modifiers can apply to any cave (outside starting system), tier 2 modifiers cannot be applied to caves in starting galaxy
+	"enemy_attack_rate":{"double_treasure_at":1.2, "tier":1, "max":5},
+	"enemy_number":{"double_treasure_at":1.3, "tier":1},
+	"enemy_HP":{"double_treasure_at":1.5, "tier":1},
+	"chest_number":{"double_treasure_at":0.8, "no_treasure_mult":true, "tier":1},
+	"darkness":{"double_treasure_at":2.0, "tier":1, "max":3},
+	"enemy_size":{"double_treasure_at":0.6, "tier":2, "min":0.3, "one_direction":1},
+	"rover_size":{"double_treasure_at":0.9, "tier":2},
+	"minimap_disabled":{"treasure_if_true":3.0, "tier":2},
+}
+var lake_colors = {
+	"H2O":	{	"s":Color(1.0, 1.0, 1.0, 1.0),
+				"l":Color(0.343, 0.71, 0.88, 1.0),
+				"sc":Color(0.68, 0.86, 1.0)},
+	"CO2":{ 	"s":Color(0.66, 0.66, 0.66),
+				"l":Color(0.66, 0.66, 0.66),
+				"sc":Color(0.66, 0.66, 0.66)},
+	"CH4":{		"s":Color(0.77, 0.435, 0.077, 1.0),
+				"l":Color(0.63, 0.39, 0.13),
+				"sc":Color(0.63, 0.39, 0.13)},
+	"H":{		"s":Color(0.7, 1.381, 0.7, 1.0),
+				"l":Color(0.7, 1, 0.7),
+				"sc":Color(0.85, 1, 0.85)},
+	"He":{		"s":Color(0.884, 0.71, 1.0, 1.0),
+				"l":Color(0.78, 0.43, 1.0),
+				"sc":Color(0.87, 0.66, 1.0)},
+	"Ne":{		"s":Color(0.2, 1.0, 0.6),
+				"l":Color(0.1, 1.0, 0.3),
+				"sc":Color(0.2, 1.0, 0.6)},
+	"Xe":{		"s":Color(0.5, 0.25, 1.0),
+				"l":Color(0.5, 0.25, 1.0),
+				"sc":Color(0.5, 0.25, 1.0)},
+	"NH3":{		"s":Color(0.774, 0.724, 1.327, 1.0),
+				"l":Color(0.7, 0.65, 1.0),
+				"sc":Color(0.5, 0.45, 1.0)},
+	"O":{		"s":Color(0.8, 0.8, 1),
+				"l":Color(0.8, 0.8, 1),
+				"sc":Color(0.8, 0.8, 1)},
+}
+var lake_bonus_values = {
+	"H2O":{"s":1.5, "l":2.5, "sc":3, "operator":"x"},
+	"CH4":{"s":0.4, "l":0.15, "sc":0.3, "operator":"÷"},
+	"CO2":{"s":120, "l":300, "sc":180, "operator":"x"},
+	"H":{"s":1, "l":2, "sc":1, "operator":"+"},
+	"He":{"s":750, "l":1800, "sc":600, "operator":"x"},
+	"Ne":{"s":0.4, "l":1.0, "sc":0.6, "operator":"x"},
+	"Xe":{"s":1, "l":2, "sc":1, "operator":"+"},
+	"O":{"s":2, "l":4, "sc":3, "operator":"x"},
+	"NH3":{"s":0.4, "l":0.15, "sc":0.3, "operator":"÷"},
+}
+
+var lake_SP_bonus = {
+	"H2O":1.0,
+	"CH4":0.6,
+	"CO2":1.8,
+	"H":0.5,
+	"He":0.8,
+	"Ne":18.0,
+	"Xe":90.0,
+	"O":3.0,
+	"NH3":1.4,
+}
+
+var default_help = {
+				"materials":true,
+				"mining":true,
+				"STM":true,
+				"battle":true,
+				"battle2":true,
+				"battle3":true,
+				"plant_something_here":true,
+				"boulder_desc":true,
+				"aurora_desc":true,
+				"crater_desc":true,
+				"inventory_shortcuts":true,
+				"hotbar_shortcuts":true,
+				"rover_shortcuts":true,
+				"mass_buy":true,
+				"rover_inventory_shortcuts":true,
+				"science_tree":true,
+				"sprint_mode":true,
+				"cave_controls":true,
+				"active_wormhole":true,
+				"inactive_wormhole":true,
+				"cave_diff_info":true,
+				"downgrade":true,
+				"artificial_volcano":true,
+				"flash_send_probe_btn":true,
+				"hide_dimension_stuff":true,
+				"battle_help":true,
+		}
+
+var ancient_bldg_icons = {
+	AncientBuilding.SPACEPORT:[energy_icon, energy_icon],
+	AncientBuilding.MINERAL_REPLICATOR:[minerals_icon],
+	AncientBuilding.SUBSTATION:[energy_icon, energy_icon, energy_icon],
+#	AncientBuilding.AURORA_GENERATOR:[],
+	AncientBuilding.NUCLEAR_FUSION_REACTOR:[energy_icon],
+	AncientBuilding.MINING_OUTPOST:[],
+	AncientBuilding.OBSERVATORY:[SP_icon],
+	AncientBuilding.CELLULOSE_SYNTHESIZER:[cellulose_icon],
+}
+
+var ancient_bldg_repair_cost_multipliers = {
+	AncientBuilding.SPACEPORT:1.2,
+	AncientBuilding.MINERAL_REPLICATOR:2.4,
+	AncientBuilding.SUBSTATION:2.5,
+#	AncientBuilding.AURORA_GENERATOR:3.0,
+	AncientBuilding.NUCLEAR_FUSION_REACTOR:8.5,
+	AncientBuilding.MINING_OUTPOST:1.0,
+	AncientBuilding.OBSERVATORY:2.8,
+	AncientBuilding.CELLULOSE_SYNTHESIZER:1.5,
+}
+
+var ancient_building_costs = {
+	AncientBuilding.SPACEPORT:{"money":1e5, "energy":2e4, "SP":1e4},
+	AncientBuilding.MINERAL_REPLICATOR:{"money":1.5e5, "energy":8e4, "SP":3e4},
+	AncientBuilding.SUBSTATION:{"money":3e5, "energy":2.5e4, "SP":1e4},
+	AncientBuilding.NUCLEAR_FUSION_REACTOR:{"money":1e6, "energy":3.5e5, "SP":9e4},
+	AncientBuilding.MINING_OUTPOST:{"money":8e4, "energy":1.2e4, "SP":7e3},
+	AncientBuilding.OBSERVATORY:{"money":1.2e5, "energy":1.5e4, "SP":1e4},
+	AncientBuilding.CELLULOSE_SYNTHESIZER:{"money":2e5, "energy":6e4, "SP":2.5e4},
+}
+
+var MS_num_stages:Dictionary = {"DS":4, "MME":3, "CBS":3, "PK":2, "SE":1, "MB":0}
+
+var ancient_bldg_tier_colors = [
+	Color.WHITE,
+	Color(0, 0.9, 0.0),
+	Color(0.2, 0.2, 1.0),
+	Color(1.0, 0.2, 1.0),
+	Color(1.0, 0.5, 0.0),
+	Color(1.0, 1.0, 0.2),
+	Color.RED,
+]
+
+var star_color = {
+	"Y9":Color(0.098, 0.0, 0.0, 1.0),
+	"Y0":Color(0.259, 0.0, 0.0, 1.0),
+	"T0":Color(0.459, 0.0, 0.0, 1.0),
+	"L0":Color(0.741, 0.125, 0.090, 1.0),
+	"M0":Color(1.0, 0.710, 0.424, 1.0),
+	"K0":Color(1.0, 0.855, 0.710, 1.0),
+	"G0":Color(1.0, 0.929, 0.890, 1.0),
+	"F0":Color(0.976, 0.961, 1.0, 1.0),
+	"A0":Color(0.835, 0.878, 1.0, 1.0),
+	"B0":Color(0.635, 0.753, 1.0, 1.0),
+	"O0":Color(0.549, 0.694, 1.0, 1.0),
+	"Q0":Color(0.525, 1.0, 0.459, 1.0),
+	"R0":Color(1.0, 0.392, 1.0, 1.0),
+	"Z0":Color(0.392, 0.118, 1.0, 1.0),
+}
+
+var intensity_gradient = preload("res://Resources/IntensityGradient.tres")
+
+var starting_universe_data = {
+	"id":0, "lv":1, "xp":0, "xp_to_lv":10, "shapes":[], "name":tr("UNIVERSE"),
+	"view":{"pos":Vector2(640, 360), "zoom":2}
+}

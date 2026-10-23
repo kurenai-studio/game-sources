@@ -1,0 +1,267 @@
+extends "Panel.gd"
+
+var tab:String
+var buy_sell_scene = preload("res://Scenes/Panels/BuySellPanel.tscn")
+var buy_sell
+@onready var inventory_grid = $Control/VBox/Inventory
+@onready var grid = $Control/VBox/GridContainer
+@onready var info = $Information
+var item_hovered:int = -1
+var hbox_data:Array = []
+var send_to_rover:int = -1 # Used when the player sends items to rover and the inventory panel opens
+
+func _ready():
+	set_polygon($GUI.size, $GUI.position)
+	buy_sell = buy_sell_scene.instantiate()
+	buy_sell.visible = false
+	add_child(buy_sell)
+	_on_Items_pressed()
+	$TabBar/Items._on_Button_pressed()
+
+func refresh():
+	set_process(true)
+	if tab == "items":
+		$TabBar/Items._on_Button_pressed()
+		_on_Items_pressed()
+	elif tab == "materials":
+		_on_Materials_pressed()
+	elif tab == "metals":
+		_on_Metals_pressed()
+	elif tab == "atoms":
+		_on_Atoms_pressed()
+	elif tab == "particles":
+		_on_Particles_pressed()
+	$TabBar/Materials.visible = game.show.has("materials")
+	$TabBar/Metals.visible = game.show.has("metals")
+	$TabBar/Atoms.visible = game.show.has("atoms")
+	$TabBar/Particles.visible = game.show.has("particles")
+
+func _on_Items_pressed():
+	tab = "items"
+	info.text = tr("INV_ITEMS_DESC")
+	inventory_grid.visible = true
+	grid.visible = false
+	for item in inventory_grid.get_children():
+		item.queue_free()
+	for i in len(game.items):
+		var slot = preload("res://Scenes/InventorySlot.tscn").instantiate()
+		var item_slot = game.items[i]
+		if item_slot != null:
+			slot.get_node("Label").text = str(item_slot.num)
+			slot.get_node("TextureRect").texture = load("res://Graphics/%s/%s.png" % [Item.icon_directory(Item.data[item_slot.id].type), Item.data[item_slot.id].item_name])
+			slot.get_node("Button").mouse_entered.connect(on_slot_over.bind(i))
+			slot.get_node("Button").mouse_exited.connect(on_slot_out)
+			slot.get_node("Button").pressed.connect(on_slot_pressed)
+		inventory_grid.add_child(slot)
+	$Control/VBox/BuySell.visible = false
+
+func on_slot_over(item_slot:int):
+	item_hovered = item_slot
+	var item_id:int = game.items[item_hovered].id
+	var tooltip_txt = "{name} (x{amount})\n{desc}".format({"name":Item.name(item_id), "amount":game.items[item_hovered].num, "desc":Item.description(item_id)})
+	game.show_tooltip(tooltip_txt, {"additional_text": "{clickToUse}\n{moreActions}".format({"clickToUse":tr("CLICK_TO_USE"), "moreActions":tr("RIGHT_CLICK_FOR_MORE_ACTIONS")})})
+
+func on_slot_out():
+	item_hovered = -1
+	game.hide_tooltip()
+
+func on_slot_pressed():
+	var item_id:int = game.items[item_hovered].id
+	game.use_item(item_id, send_to_rover)
+	send_to_rover = -1
+
+func _on_Materials_pressed():
+	tab = "materials"
+	info.text = tr("INV_MAT_DESC")
+	inventory_grid.visible = false
+	grid.visible = true
+	hbox_data = Helper.put_rsrc(grid, 48, game.mats, true, false, false)
+	for mat in hbox_data:
+		var texture = mat.rsrc.get_node("Texture2D")
+		mat.rsrc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not game.show.has(mat.name):
+			texture.modulate = Color(0.2, 0.2, 0.2)
+			mat.rsrc.get_node("Text")["theme_override_colors/font_color"] = Color.DIM_GRAY
+			mat.rsrc.get_node("Text").text = "?"
+			mat.rsrc.set_process(false)
+			continue
+		texture.mouse_entered.connect(show_mat.bind(mat.name))
+		texture.mouse_exited.connect(game.hide_tooltip)
+		texture.pressed.connect(show_buy_sell.bind("Materials", mat.name))
+	$Control/VBox/BuySell.visible = true
+
+func _on_Metals_pressed():
+	tab = "metals"
+	info.text = tr("INV_MET_DESC")
+	inventory_grid.visible = false
+	grid.visible = true
+	hbox_data = Helper.put_rsrc(grid, 48, game.mets, true, false, false)
+	for met in hbox_data:
+		var texture = met.rsrc.get_node("Texture2D")
+		met.rsrc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not game.show.has(met.name):
+			texture.modulate = Color(0.2, 0.2, 0.2)
+			met.rsrc.get_node("Text")["theme_override_colors/font_color"] = Color.DIM_GRAY
+			met.rsrc.get_node("Text").text = "?"
+			met.rsrc.set_process(false)
+			continue
+		texture.mouse_entered.connect(show_met.bind(met.name))
+		texture.mouse_exited.connect(game.hide_tooltip)
+		texture.pressed.connect(show_buy_sell.bind("Metals", met.name))
+	$Control/VBox/BuySell.visible = true
+
+func _on_Atoms_pressed():
+	tab = "atoms"
+	info.text = tr("INV_ATOMS_DESC")
+	inventory_grid.visible = false
+	grid.visible = true
+	hbox_data = Helper.put_rsrc(grid, 48, game.atoms, true, false, false)
+	for atom in hbox_data:
+		var texture = atom.rsrc.get_node("Texture2D")
+		atom.rsrc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not game.show.has(atom.name):
+			texture.modulate = Color(0.2, 0.2, 0.2)
+			atom.rsrc.get_node("Text")["theme_override_colors/font_color"] = Color.DIM_GRAY
+			atom.rsrc.get_node("Text").text = "?"
+			atom.rsrc.set_process(false)
+			continue
+		texture.mouse_entered.connect(show_atom.bind(atom.name))
+		texture.mouse_exited.connect(game.hide_tooltip)
+	$Control/VBox/BuySell.visible = false
+
+func _on_Particles_pressed():
+	tab = "particles"
+	info.text = tr("INV_PARTICLES_DESC")
+	inventory_grid.visible = false
+	grid.visible = true
+	hbox_data = Helper.put_rsrc(grid, 48, game.particles, true, false, false)
+	for particles in hbox_data:
+		var texture = particles.rsrc.get_node("Texture2D")
+		if not game.show.has(particles.name):
+			texture.modulate = Color(0.2, 0.2, 0.2)
+			particles.rsrc.get_node("Text")["theme_override_colors/font_color"] = Color.DIM_GRAY
+			particles.rsrc.get_node("Text").text = "?"
+			particles.rsrc.set_process(false)
+			continue
+		texture.mouse_entered.connect(show_part.bind(particles.name))
+		texture.mouse_exited.connect(game.hide_tooltip)
+	$Control/VBox/BuySell.visible = false
+
+func show_buy_sell(type:String, obj:String):
+	var amount = 0
+	var value = 0
+	if type == "Materials":
+		amount = game.mats[obj]
+		value = game.mat_info[obj].value
+	elif type == "Metals":
+		amount = game.mets[obj]
+		value = game.met_info[obj].value
+	var forced = false
+	if game.money <= 0:
+		if amount <= 0:
+			game.popup("PURCHASE_SALE_IMPOSSIBLE", 1.5)
+			return
+		buy_sell.is_selling = true
+		forced = true
+	elif amount <= 0:
+		buy_sell.is_selling = false
+		forced = true
+	if not forced:
+		if Settings.auto_switch_buy_sell:
+			buy_sell.is_selling = game.money < amount * value * game.maths_bonus.MMBSVR * 5.0
+		else:
+			buy_sell.is_selling = true
+	buy_sell.visible = true
+	game.sub_panel = buy_sell
+	buy_sell.refresh(type, obj)
+
+func show_mat(mat:String):
+	var st:String = "%s\n%s" % [get_str(mat), get_str(mat, "_DESC")]
+	if game.autocollect.mats.has(mat) and not is_zero_approx(game.autocollect.mats[mat]):
+		st += "\n" + (tr("YOU_PRODUCE") if game.autocollect.mats[mat] > 0 else tr("YOU_USE")) % ("%s/%s" % [Helper.format_num(abs(game.autocollect.mats[mat]), true), tr("S_SECOND")])
+	game.show_tooltip(st)
+
+func show_atom(atom:String):
+	var st:String = get_str(atom, "_NAME")
+	if game.autocollect.atoms.has(atom) and not is_zero_approx(game.autocollect.atoms[atom]):
+		st += "\n" + (tr("YOU_PRODUCE") if game.autocollect.atoms[atom] > 0 else tr("YOU_USE")) % ("%s mol/%s" % [Helper.format_num(abs(game.autocollect.atoms[atom]), true), tr("S_SECOND")])
+	game.show_tooltip(st)
+
+func show_met(met:String):
+	var st:String = "%s\n%s" % [get_str(met), get_str(met, "_DESC")]
+	if game.autocollect.mets.has(met) and not is_zero_approx(game.autocollect.mets[met]):
+		st += "\n" + (tr("YOU_PRODUCE") if game.autocollect.mets[met] > 0 else tr("YOU_USE")) % ("%s/%s" % [Helper.format_num(abs(game.autocollect.mets[met]), true), tr("S_SECOND")])
+	game.show_tooltip(st)
+
+func get_str(obj:String, desc:String = ""):
+	return tr(obj.to_upper() + desc)
+
+func _input(event):
+	super(event)
+	if item_hovered != -1:
+		var item_id:int = game.items[item_hovered].id
+		if Input.is_action_just_released("right_click"):
+			var throw_one_dict = {
+				"button_text":tr("THROW_ONE") + " (X)",
+				"button_callable":throw_one_callable.bind(item_hovered),
+				}
+			var throw_all_dict = {
+				"button_text":tr("THROW_ALL") + " (Shift X)",
+				"button_callable":throw_all_callable.bind(item_hovered),
+				}
+			var hotbar_dict = {
+				"button_text":tr("ADD_TO_HOTBAR") + " (H)",
+				"button_callable":add_remove_from_hotbar.bind(item_hovered),
+				}
+			game.add_right_click_menu([throw_one_dict, throw_all_dict, hotbar_dict])
+		elif Input.is_action_just_released("shift X"):
+			throw_all_callable(item_hovered)
+		elif Input.is_action_just_released("X"):
+			throw_one_callable(item_hovered)
+		if Input.is_action_just_released("H"):
+			add_remove_from_hotbar(item_hovered)
+
+func throw_one_callable(_item_hovered:int):
+	game.remove_items(game.items[_item_hovered].id, 1, _item_hovered)
+	_on_Items_pressed()
+	if game.items[item_hovered] == null:
+		item_hovered = -1
+		game.hide_tooltip()
+
+func throw_all_callable(_item_hovered:int):
+	game.items[_item_hovered] = null
+	_on_Items_pressed()
+	item_hovered = -1
+	game.hide_tooltip()
+
+func add_remove_from_hotbar(_item_hovered:int):
+	var item_id = game.items[_item_hovered].id
+	if game.hotbar.find(item_id) == -1:
+		game.hotbar.append(item_id)
+	else:
+		game.hotbar.erase(item_id)
+	game.HUD.update_hotbar()
+	
+
+func show_part(_name:String):
+	var st:String = "%s\n%s" % [tr(_name.to_upper()), tr(_name.to_upper() + "_DESC")]
+	game.show_tooltip(st)
+
+func _process(delta):
+	if tab == "materials":
+		for hbox in hbox_data:
+			hbox.rsrc.rsrcs_required = game.mats[hbox.name]
+	elif tab == "metals":
+		for hbox in hbox_data:
+			hbox.rsrc.rsrcs_required = game.mets[hbox.name]
+	elif tab == "atoms":
+		for hbox in hbox_data:
+			hbox.rsrc.rsrcs_required = game.atoms[hbox.name]
+	elif tab == "particles":
+		for hbox in hbox_data:
+			hbox.rsrc.rsrcs_required = game.particles[hbox.name]
+
+
+func _on_visibility_changed() -> void:
+	if not visible:
+		send_to_rover = -1

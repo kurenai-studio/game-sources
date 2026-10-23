@@ -1,0 +1,99 @@
+Things to know about commands: 
+
+- All commands and parameters are non case-sensitive, so you can write /setmat coal 1000 or /SETMAT Coal 1000
+- You can write a command anywhere in the game by pressing /
+- Press up and down arrow keys to scroll through command history
+- Press esc to cancel writing a command
+- You can even write scientific notation: /setMoney 1e6
+
+Commands list:
+
+/setMoney [value]
+- Sets your money to [value]
+- Example: /setMoney 10000
+
+/setMin [value]
+- Sets your minerals to [value]
+
+/setMinCap [value]
+- Sets your minerals capacity to [value]
+
+/setStone [value]
+- Sets your stone to [value] (100% silicon)
+
+/setEnergy [value]
+- Sets your energy to [value]
+
+/setEnergyCap [value]
+- Sets your energy capacity to [value] (affected by infinite research)
+
+/setSP [value]
+- Sets your science points to [value]
+
+/setMat [material] [value]
+- Sets the amount of [material] to [value]
+- Example: /setMat coal 10000
+
+/setMet [metal] [value]
+- Sets the amount of [metal] to [value]
+- Example: /setMet lead 10000
+
+/setAtom [atom] [value]
+- Sets the amount of [atom] to [value]
+- Example: /setatom c 100
+
+/setPart [particle] [value]
+- Sets the amount of [particle] to [value]
+- Possible values of [particle]: subatomic_particles
+- Example: /setpart subatomic_particles 1.5e6
+
+/speedup
+- Finish investigating any wormholes on current planet, speeds up all probes and accelerates ship travel
+
+/setMULv [upgrade] [value]
+- Sets [upgrade]'s mineral upgrade level to [value]
+- Possible values of [upgrade]: mv, msmb, is, stmb, shsr
+- Example: /setMULv mv 5
+
+/setLv [value]
+- Sets player level to [value]
+- Example: /setLv 5
+
+/switchView [view]
+- Makes you view [view]. Useful if you get stuck somewhere
+- Possible values of [view]: planet, system, galaxy, cluster, universe, dimension
+- Example: /switchview planet
+
+/setUnivProp [property] [value]
+- Sets the current universe's [property] to [value]
+- Possible values of [property]: speed_of_light, planck, boltzmann, gravitational, charge, dark_energy, difficulty, time_speed, antimatter, age
+- Example: /setunivprop time_speed 5.4
+
+/get2ndship
+- Get 2nd ship. Only works if you have exactly 1 ship
+
+/get3rdship
+- Get 3rd ship. Only works if you have exactly 2 ships
+
+/get4thship
+- Get 4th ship. Only works if you have exactly 3 ships
+
+/addShipXP [ship ID] [XP type] [amount]
+- Gives [amount] XP to [ship ID]'s [XP type]
+- Possible values of [ship ID]: 0, 1, 2, 3
+- Possible values of [XP type]: xp, bullet, laser, bomb, light
+- Example: `/addshipxp 1 laser 300
+
+/zerocosts [true/false/1/0]
+- Toggles or sets whether all resource costs are ignored
+- Without arguments, toggles the state on/off
+- With arguments, sets to true/1 (ignore costs) or false/0 (restore costs)
+- When enabled, all purchases (buildings, ancient buildings, megastructures, rover parts, upgrades, science, etc.) will not check or deduct resources
+- Example: /zerocosts true or /zerocosts 1 (enable), /zerocosts false or /zerocosts 0 (disable)
+
+/showclusters
+- Instantly show all clusters without having to send probes
+
+/setXP [amount]
+- Sets universe XP to [amount]
+- Example: `/setxp 0`

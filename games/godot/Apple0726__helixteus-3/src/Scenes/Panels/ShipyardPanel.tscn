@@ -1,0 +1,138 @@
+[gd_scene format=3 uid="uid://babu1swh21k4r"]
+
+[ext_resource type="Script" uid="uid://e4ah4nehqecc" path="res://Scripts/ShipyardPanel.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dcgeiryc4u16w" path="res://Graphics/Ships/Fighter.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://blgh1lvsfpiu8" path="res://Graphics/GUI/Border.png" id="3_kxk2r"]
+[ext_resource type="Texture2D" uid="uid://if1usn38yajs" path="res://Graphics/Icons/craft.png" id="3_mjt7u"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="4"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_6hhqd"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="5"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_ctm45"]
+
+[node name="ShipyardPanel" type="Control" unique_id=1721755435]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme = ExtResource("4")
+script = ExtResource("1")
+metadata/_edit_horizontal_guides_ = [360.0]
+
+[node name="GUI" type="NinePatchRect" parent="." unique_id=2082136818]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 224.0
+offset_right = 960.0
+offset_bottom = 496.0
+mouse_filter = 1
+texture = ExtResource("3_kxk2r")
+patch_margin_left = 15
+patch_margin_top = 11
+patch_margin_right = 189
+patch_margin_bottom = 11
+axis_stretch_horizontal = 1
+metadata/_edit_horizontal_guides_ = [596.0]
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1731745625]
+layout_mode = 0
+offset_left = 908.0
+offset_top = 240.0
+offset_right = 939.0
+offset_bottom = 272.0
+texture_normal = ExtResource("4_6hhqd")
+texture_hover = ExtResource("5_ctm45")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="." unique_id=365407694]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 352.0
+offset_top = 236.0
+offset_right = 888.0
+offset_bottom = 276.0
+grow_horizontal = 2
+text = "CONSTRUCT_FIGHTERS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Construct" type="Button" parent="." unique_id=71491529]
+layout_mode = 1
+offset_left = 884.0
+offset_top = 436.0
+offset_right = 936.0
+offset_bottom = 476.0
+
+[node name="TextureRect" type="TextureRect" parent="Construct" unique_id=521991608]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_mjt7u")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1814610594]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 352.0
+offset_top = 392.0
+offset_right = 848.0
+offset_bottom = 440.0
+grow_vertical = 0
+vertical_scroll_mode = 3
+
+[node name="HBox" type="HBoxContainer" parent="ScrollContainer" unique_id=1413412927]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=713269260]
+layout_mode = 0
+offset_left = 360.0
+offset_top = 316.0
+offset_right = 568.0
+offset_bottom = 420.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpinBox" type="SpinBox" parent="." unique_id=1229929656]
+layout_mode = 0
+offset_left = 600.0
+offset_top = 352.0
+offset_right = 692.0
+offset_bottom = 383.0
+value = 1.0
+rounded = true
+allow_greater = true
+
+[node name="Strength" parent="." unique_id=839345313 instance=ExtResource("5")]
+layout_mode = 0
+offset_left = 724.0
+offset_top = 356.0
+offset_right = 972.0
+offset_bottom = 386.0
+help_text = "FLEET_STRENGTH_INFO"
+
+[node name="OptionButton" type="OptionButton" parent="." unique_id=1476380309]
+layout_mode = 0
+offset_left = 556.0
+offset_top = 284.0
+offset_right = 725.0
+offset_bottom = 318.0
+alignment = 1
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
+[connection signal="pressed" from="Construct" to="." method="_on_Construct_pressed"]
+[connection signal="value_changed" from="SpinBox" to="." method="_on_SpinBox_value_changed"]
+[connection signal="item_selected" from="OptionButton" to="." method="_on_OptionButton_item_selected"]

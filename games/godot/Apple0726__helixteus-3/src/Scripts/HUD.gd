@@ -1,0 +1,703 @@
+extends Control
+
+@onready var game = get_node("/root/Game")
+@onready var click_sound = game.get_node("click")
+@onready var money_text = $Top/Resources/Money/Text
+@onready var minerals_text = $Top/Resources/Minerals/Text
+@onready var stone_text = $Top/Resources/Stone/Text
+@onready var soil_text = $Top/Resources/Soil/Text
+@onready var energy_text = $Top/Resources/Energy/Text
+@onready var glass_text = $Top/Resources/Glass/Text
+@onready var cellulose_text = $Top/Resources/Cellulose/Text
+@onready var SP_text = $Top/Resources/SP/Text
+@onready var minerals = $Top/Resources/Minerals
+@onready var stone = $Top/Resources/Stone
+@onready var SP = $Top/Resources/SP
+@onready var ships = $Buttons/Ships
+@onready var shop = $Buttons/Shop
+@onready var craft = $Buttons/Craft
+@onready var MU = $Buttons/MineralUpgrades
+@onready var sc_tree = $Buttons/ScienceTree
+@onready var lv_txt = $Top/Lv/Level
+@onready var lv_progress = $Top/Lv/TextureProgressBar
+@onready var bookmark_btns = $Bookmarks/BookmarksList/Buttons/VBoxContainer
+@onready var planet_b_btn = $Bookmarks/BookMarkButtons/Planets
+@onready var system_b_btn = $Bookmarks/BookMarkButtons/Systems
+@onready var galaxy_b_btn = $Bookmarks/BookMarkButtons/Galaxies
+@onready var cluster_b_btn = $Bookmarks/BookMarkButtons/Clusters
+@onready var dimension_btn = $Bottom/DimensionBtn
+@onready var switch_btn = $Bottom/SwitchBtn
+@onready var switch_btn_texture = $Bottom/SwitchBtn/TextureRect
+@onready var prev_btn = $Bottom/PrevView
+@onready var next_btn = $Bottom/NextView
+@onready var ships_btn = $Buttons/Ships
+var on_button = false
+var config = ConfigFile.new()
+var ship2map
+var emma_cave_shortcut:bool = false
+var current_bookmark_type:String = "planet"
+
+func _on_Button_pressed():
+	click_sound.play()
+	game.toggle_panel(game.settings)
+
+func _ready():
+	refresh()
+	set_ship_btn_shader()
+
+func refresh_visibility():
+	minerals.visible = game.show.has("minerals")
+	$Bottom/Panel.visible = game.show.has("minerals")
+	shop.visible = game.show.has("shop")
+	stone.visible = game.show.has("stone")
+	SP.visible = game.show.has("SP")
+	sc_tree.visible = game.show.has("SP")
+	$Buttons/Vehicles.visible = game.show.has("vehicles_button")
+	craft.visible = game.show.has("materials")
+	ships.visible = len(game.ship_data) > 0
+	MU.visible = game.show.has("minerals")
+	$Top/Resources/Cellulose.visible = game.science_level.has("SA")
+
+func refresh_bookmarks():
+	for btn in bookmark_btns.get_children():
+		btn.queue_free()
+	if current_bookmark_type == "planet":
+		for p_b in game.bookmarks.planet.values():
+			add_p_b(p_b)
+	elif current_bookmark_type == "system":
+		for s_b in game.bookmarks.system.values():
+			add_s_b(s_b)
+	elif current_bookmark_type == "galaxy":
+		for g_b in game.bookmarks.galaxy.values():
+			add_g_b(g_b)
+	elif current_bookmark_type == "cluster":
+		for c_b in game.bookmarks.cluster.values():
+			add_c_b(c_b)
+
+func add_p_b(p_b:Dictionary):
+	var btn = Button.new()
+	btn.text = game.bookmarks.planet[str(p_b.c_p_g)].name
+	btn.connect("pressed",Callable(self,"on_bookmark_pressed").bind("planet", p_b))
+	bookmark_btns.add_child(btn)
+
+func add_s_b(s_b:Dictionary):
+	var btn = Button.new()
+	btn.text = game.bookmarks.system[str(s_b.c_s_g)].name
+	btn.connect("pressed",Callable(self,"on_bookmark_pressed").bind("system", s_b))
+	bookmark_btns.add_child(btn)
+
+func add_g_b(g_b:Dictionary):
+	var btn = Button.new()
+	btn.text = game.bookmarks.galaxy[str(g_b.c_g_g)].name
+	btn.connect("pressed",Callable(self,"on_bookmark_pressed").bind("galaxy", g_b))
+	bookmark_btns.add_child(btn)
+
+func add_c_b(c_b:Dictionary):
+	var btn = Button.new()
+	btn.text = game.bookmarks.cluster[str(c_b.c_c)].name
+	btn.connect("pressed",Callable(self,"on_bookmark_pressed").bind("cluster", c_b))
+	bookmark_btns.add_child(btn)
+
+func on_bookmark_pressed(view:String, bookmark:Dictionary):
+	game.switch_view(view, {"fn":"set_bookmark_coords", "fn_args":[bookmark]})
+
+func _process(delta):
+	$Top/AutosaveLight.modulate.g = lerp(0.3, 1.0, game.get_node("Autosave").time_left / Settings.autosave_interval)
+
+func update_XP():
+	while game.u_i.xp >= game.u_i.xp_to_lv:
+		game.u_i.lv += 1
+		game.u_i.xp -= game.u_i.xp_to_lv
+		game.u_i.xp_to_lv = round(game.u_i.xp_to_lv * game.maths_bonus.ULUGF)
+		#if not game.objective.is_empty() and game.objective.type == game.ObjectiveType.LEVEL:
+			#game.objective.current += 1
+		if game.subject_levels.dimensional_power == 0 and game.u_i.lv == 32:
+			game.popup_window(tr("LEVEL_32_REACHED"), "%s 32" % tr("LEVEL"))
+		if game.u_i.lv == 60:
+			Helper.show_bldg_unlocked_popup(Building.PROBE_CONSTRUCTION_CENTER)
+	var d_u_info = ""
+	if game.dim_num > 1 or len(game.universe_data) > 1:
+		d_u_info = " (Dim #%s, Univ %s)" % [game.dim_num, game.c_u + 1]
+	Helper.refresh_discord("Level %s%s" % [game.u_i.lv, d_u_info])
+	lv_txt.text = tr("LV") + " %s" % [game.u_i.lv]
+	lv_progress.value = game.u_i.xp / float(game.u_i.xp_to_lv)
+
+func update_minerals():
+	var min_cap = round(200 + (game.mineral_capacity - 200) * Helper.get_IR_mult(Building.MINERAL_SILO))
+	minerals_text.text = "%s / %s" % [Helper.format_num(round(game.minerals)), Helper.format_num(min_cap)]
+	if game.minerals >= min_cap:
+		if not game.science_level.has("ASM") and not $Bottom/Panel/AnimationPlayer.is_playing():
+			$Bottom/Panel/AnimationPlayer.play("Flash")
+	else:
+		if $Top/Resources/Minerals/Text.is_connected("mouse_entered",Callable(self,"_on_MineralsText_mouse_entered")):
+			$Top/Resources/Minerals/Text.disconnect("mouse_entered",Callable(self,"_on_MineralsText_mouse_entered"))
+
+func update_money_energy_SP():
+	var planet = game.view.obj
+	if game.c_v == "planet" and is_instance_valid(planet) and planet.bldg_to_construct != -1:
+		var money_cost = game.view.obj.constr_costs_total.money
+		var energy_cost = game.view.obj.constr_costs_total.get("energy", 0.0)
+		var SP_cost = game.view.obj.constr_costs_total.get("SP", 0.0)
+		var glass_cost = game.view.obj.constr_costs_total.get("glass", 0.0)
+		var soil_cost = game.view.obj.constr_costs_total.get("soil", 0.0)
+		money_text.text = "%s / %s" % [Helper.format_num(floor(game.money)), Helper.format_num(round(money_cost))]
+		energy_text.text = "%s / %s" % [Helper.format_num(floor(game.energy)), Helper.format_num(round(energy_cost))]
+		SP_text.text = "%s / %s" % [Helper.format_num(floor(game.SP)), Helper.format_num(round(SP_cost))]
+		glass_text.text = "%s / %s kg" % [Helper.format_num(round(game.mats.glass)), Helper.format_num(round(glass_cost))]
+		soil_text.text = "%s / %s kg" % [Helper.format_num(round(game.mats.soil)), Helper.format_num(round(soil_cost))]
+		money_text["theme_override_colors/font_color"] = Color.GREEN if game.money >= money_cost else Color.RED
+		energy_text["theme_override_colors/font_color"] = Color.GREEN if game.energy >= energy_cost else Color.RED
+		SP_text["theme_override_colors/font_color"] = Color.GREEN if game.SP >= SP_cost else Color.RED
+		glass_text["theme_override_colors/font_color"] = Color.GREEN if game.mats.glass >= glass_cost else Color.RED
+		soil_text["theme_override_colors/font_color"] = Color.GREEN if game.mats.soil >= soil_cost else Color.RED
+	else:
+		money_text["theme_override_colors/font_color"] = Color.WHITE
+		energy_text["theme_override_colors/font_color"] = Color.WHITE
+		SP_text["theme_override_colors/font_color"] = Color.WHITE
+		money_text.text = Helper.format_num(floor(game.money))
+		energy_text.text = "%s / %s" % [Helper.format_num(floor(game.energy)), Helper.format_num(round(Helper.get_total_energy_cap()))]
+		SP_text.text = Helper.format_num(floor(game.SP))
+		$Top/Resources/Soil.visible = game.autocollect.mats.has("soil")
+		soil_text.text = "%s kg" % Helper.format_num(game.mats.soil, true)
+		soil_text["theme_override_colors/font_color"] = Color.WHITE if game.mats.soil > 0 else Color.RED
+	if $Top/Resources/Cellulose.visible:
+		cellulose_text.text = "%s kg" % Helper.format_num(game.mats.cellulose, true)
+		cellulose_text["theme_override_colors/font_color"] = Color.WHITE if game.mats.cellulose > 0 else Color.RED
+	var total_stone:float = round(Helper.get_sum_of_dict(game.stone))
+	stone_text.text = Helper.format_num(total_stone) + " kg"
+
+func remove_duplicate_view_data():
+	for i in range(len(game.view_history) - 1):
+		if game.view_history[i].hash() == game.view_history[i+1].hash():
+			game.view_history.remove_at(i+1)
+			if game.view_history_pos >= i+1:
+				game.view_history_pos -= 1
+
+func refresh():
+	if not game or not is_inside_tree():
+		return
+	$Top/Name/Name.caret_blink_interval = 0.5 / game.u_i.time_speed
+	if len(game.view_history) > 1:
+		remove_duplicate_view_data()
+	prev_btn.visible = game.view_history_pos > 0 and game.c_v in ["universe", "cluster", "galaxy", "system", "planet"]
+	next_btn.visible = game.view_history_pos != len(game.view_history) - 1 and game.c_v in ["universe", "cluster", "galaxy", "system", "planet"]
+	dimension_btn.visible = (len(game.universe_data) > 1 or not game.help.has("hide_dimension_stuff")) and game.c_v in ["cluster", "galaxy", "system", "planet"]
+	switch_btn.visible = game.c_v in ["planet", "system", "galaxy", "cluster", "universe"]
+	if config.load("user://settings.cfg") == OK:
+		var autosave_light = config.get_value("saving", "autosave_light", false)
+		set_process(autosave_light)
+		$Top/AutosaveLight.visible = autosave_light
+	update_money_energy_SP()
+	update_minerals()
+	if $Top/Resources/Glass.visible:
+		var GH_glass_cost = Data.costs[Building.GREENHOUSE].glass * game.engineering_bonus.BCM
+		if game.mats.glass >= GH_glass_cost:
+			glass_text["theme_override_colors/font_color"] = Color.GREEN
+		else:
+			glass_text["theme_override_colors/font_color"] = Color.RED
+		glass_text.text = "%s / %s kg" % [Helper.format_num(game.mats.glass, true), GH_glass_cost]
+	update_XP()
+	update_hotbar()
+	$Bookmarks.visible = game.show.has("bookmarks") and game.c_v != "science_tree"
+	system_b_btn.visible = game.show.has("s_bk_button")
+	galaxy_b_btn.visible = game.show.has("g_bk_button")
+	cluster_b_btn.visible = game.show.has("c_bk_button")
+	if game.c_v == "planet":
+		$Bookmarks/Bookmarked.button_pressed = game.planet_data[game.c_p].has("bookmarked")
+		$Bookmarks/Bookmarked.visible = true
+		$Top/Name/Name.text = game.planet_data[game.c_p].name
+		switch_btn_texture.texture = preload("res://Graphics/Buttons/SystemView.png")
+	elif game.c_v == "system":
+		$Bookmarks/Bookmarked.button_pressed = game.system_data[game.c_s].has("bookmarked")
+		$Bookmarks/Bookmarked.visible = true
+		$Top/Name/Name.text = game.system_data[game.c_s].name
+		switch_btn_texture.texture = load("res://Graphics/Galaxies/%s.png" % game.galaxy_data[game.c_g].type)
+	elif game.c_v == "galaxy":
+		$Bookmarks/Bookmarked.button_pressed = game.galaxy_data[game.c_g].has("bookmarked")
+		$Bookmarks/Bookmarked.visible = true
+		$Top/Name/Name.text = game.galaxy_data[game.c_g].name
+		switch_btn_texture.texture = preload("res://Graphics/Clusters/0.png")
+	elif game.c_v == "cluster":
+		$Bookmarks/Bookmarked.button_pressed = game.u_i.cluster_data[game.c_c].has("bookmarked")
+		$Bookmarks/Bookmarked.visible = true
+		$Top/Name/Name.text = game.u_i.cluster_data[game.c_c].name
+		switch_btn_texture.texture = preload("res://Graphics/Clusters/universe.png")
+	else:
+		$Bookmarks/Bookmarked.visible = false
+		if game.c_v == "universe":
+			$Top/Name/Name.text = game.u_i.name
+			switch_btn_texture.texture = preload("res://Graphics/Buttons/DimensionView.png")
+	for view in $Bottom/ViewHistory/VBox.get_children():
+		view.queue_free()
+	for view in game.view_history:
+		var label = Label.new()
+		label.text = "%s p %s, s %s" % [view.view, view.c_p_g, view.c_s_g]
+		$Bottom/ViewHistory/VBox.add_child(label)
+	$Buttons/Ships/Levelup.hide()
+	for ship in game.ship_data:
+		if ship.has("leveled_up"):
+			$Buttons/Ships/Levelup.show()
+			break
+	$Top/ClusterInfo.visible = game.c_c != 0 and game.c_v != "universe"
+	if $Top/ClusterInfo.visible:
+		$Top/ClusterInfo/Redshift.text = "%.2f" % game.u_i.cluster_data[game.c_c].redshift
+	set_ship_btn_shader()
+	refresh_visibility()
+	refresh_bookmarks()
+	await get_tree().process_frame
+	game.refresh_achievements()
+
+func _on_Shop_pressed():
+	click_sound.play()
+	game.toggle_panel("shop_panel")
+
+func _on_Shop_mouse_entered():
+	game.show_tooltip(tr("SHOP") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_R)))
+
+func _on_Inventory_mouse_entered():
+	game.show_tooltip(tr("INVENTORY") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_E)))
+
+func _on_Inventory_pressed():
+	click_sound.play()
+	game.toggle_panel("inventory")
+
+func _on_Craft_mouse_entered():
+	game.show_tooltip(tr("CRAFT") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_T)))
+
+func _on_Craft_pressed():
+	click_sound.play()
+	game.toggle_panel("craft_panel")
+
+func _on_ScienceTree_pressed():
+	click_sound.play()
+	if game.c_v != "science_tree":
+		game.switch_view("science_tree")
+
+func _on_ScienceTree_mouse_entered():
+	game.show_tooltip(tr("SCIENCE_TREE") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_I)))
+
+func _on_MineralUpgrades_pressed():
+	game.toggle_panel("MU_panel")
+
+func _on_MineralUpgrades_mouse_entered():
+	game.show_tooltip(tr("MINERAL_UPGRADES") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_U)))
+
+func _on_Texture_mouse_entered(extra_arg_0):
+	var tooltip:String = tr(extra_arg_0)
+	if extra_arg_0 == "CELLULOSE":
+		if game.autocollect.mats.cellulose > 0:
+			tooltip += "\n" + tr("YOU_PRODUCE") % ("%s/%s" % [Helper.format_num(abs(game.autocollect.mats.cellulose), true), tr("S_SECOND")])
+		else:
+			tooltip += "\n" + tr("YOU_USE") % ("%s/%s" % [Helper.format_num(abs(game.autocollect.mats.cellulose), true), tr("S_SECOND")])
+			if not is_zero_approx(game.autocollect.mats.cellulose):
+				tooltip += " (%s)" % tr("OUT_OF_X_IN").format({"rsrc":tr("CELLULOSE"), "time":Helper.time_to_str(game.mats.cellulose / abs(game.autocollect.mats.cellulose))})
+	elif extra_arg_0 == "SOIL" and game.autocollect.mats.has("soil"):
+		tooltip += "\n" + tr("YOU_USE") % ("%s/%s" % [Helper.format_num(abs(game.autocollect.mats.soil), true), tr("S_SECOND")])
+		if not is_zero_approx(game.autocollect.mats.soil):
+			tooltip += " (%s)" % tr("OUT_OF_X_IN").format({"rsrc":tr("SOIL"), "time":Helper.time_to_str(game.mats.soil / abs(game.autocollect.mats.soil))})
+	elif game.autocollect.has("rsrc"):
+		var min_mult:float = pow(game.maths_bonus.IRM, game.infinite_research.MEE) * game.u_i.time_speed
+		var energy_mult:float = pow(game.maths_bonus.IRM, game.infinite_research.EPE) * game.u_i.time_speed
+		var SP_mult:float = pow(game.maths_bonus.IRM, game.infinite_research.RLE) * game.u_i.time_speed
+		var rsrc_amount = 0.0
+		if extra_arg_0 == "MINERALS":
+			rsrc_amount = (game.autocollect.rsrc.minerals + game.autocollect.GS.minerals + game.autocollect.MS.minerals) * min_mult + (game.autocollect.mats.get("minerals", 0) if game.mats.cellulose > 0 else 0)
+			tooltip += "\n" + tr("YOU_PRODUCE") % ("%s/%s" % [Helper.format_num(rsrc_amount, true), tr("S_SECOND")])
+		elif extra_arg_0 == "ENERGY":
+			rsrc_amount = (game.autocollect.rsrc.energy + game.autocollect.GS.energy + game.autocollect.MS.energy) * energy_mult
+			tooltip += "\n" + tr("YOU_PRODUCE") % ("%s/%s" % [Helper.format_num(rsrc_amount, true), tr("S_SECOND")])
+		elif extra_arg_0 == "SP":
+			rsrc_amount = (game.autocollect.rsrc.SP + game.autocollect.GS.SP + game.autocollect.MS.SP) * SP_mult
+			tooltip += "\n" + tr("YOU_PRODUCE") % ("%s/%s" % [Helper.format_num(rsrc_amount, true), tr("S_SECOND")])
+	if extra_arg_0 == "STONE" and tooltip == "Stone" and Settings.op_cursor:
+		tooltip = "Rok"
+	game.show_tooltip(tooltip)
+
+func _on_mouse_exited():
+	game.hide_tooltip()
+
+func update_hotbar():
+	for child in $Bottom/Hotbar.get_children():
+		child.queue_free()
+	for i in len(game.hotbar):
+		var item = game.hotbar[i]
+		var slot = preload("res://Scenes/InventorySlot.tscn").instantiate()
+		var num = game.get_item_num(item)
+		slot.get_node("Label").text = str(num)
+		slot.get_node("TextureRect").texture = load("res://Graphics/{dir}/{name}.png".format({"dir":Item.icon_directory(Item.data[item].type), "name":Item.data[item].item_name}))
+		var slot_btn = slot.get_node("Button")
+		slot_btn.shortcut = Shortcut.new()
+		slot_btn.shortcut.events.append(InputEventKey.new())
+		slot_btn.shortcut.events[0].physical_keycode = KEY_1 + i
+		slot_btn.shortcut_in_tooltip = false
+		slot_btn.mouse_entered.connect(on_slot_over.bind(i))
+		slot_btn.mouse_exited.connect(on_slot_out)
+		if num > 0:
+			slot_btn.pressed.connect(on_slot_press.bind(i))
+		$Bottom/Hotbar.add_child(slot)
+
+var slot_over = -1
+func on_slot_over(i:int):
+	slot_over = i
+	var num = " (%s)" % [i + 1] if i < 10 else ""
+	var txt = "{name}\n{shortcutLabel}: {shortcut}".format({"name":Item.name(game.hotbar[i]), "shortcutLabel":tr("KEYBOARD_SHORTCUT"), "shortcut":str(i+1) if i < 10 else ""})
+	game.show_tooltip(txt, {"additional_text":"H: " + tr("REMOVE_FROM_HOTBAR")})
+
+func on_slot_out():
+	slot_over = -1
+	game.hide_tooltip()
+
+func on_slot_press(i:int):
+	if not is_instance_valid(game.overlay) or not game.overlay.visible:
+		var name = game.hotbar[i]
+		game.use_item(name)
+
+func _on_Label_mouse_exited():
+	emma_cave_shortcut = false
+	game.hide_tooltip()
+
+var bookmark_shown:bool = false
+func _input(event):
+	if Input.is_action_just_released("H") and slot_over != -1:
+		game.hotbar.remove_at(slot_over)
+		game.hide_tooltip()
+		slot_over = -1
+		update_hotbar()
+		refresh()
+	if Input.is_action_just_released("F2") and game.c_v in ["planet", "system", "galaxy", "cluster", "universe"]:
+		$Top/Name/Name.grab_focus()
+	if event is InputEventMouseMotion:
+		if bookmark_shown and not Geometry2D.is_point_in_polygon(event.position, $MouseOut.polygon):
+			bookmark_shown = false
+			$AnimationPlayer.play_backwards("BookmarkAnim")
+		if not bookmark_shown and Geometry2D.is_point_in_polygon(event.position, $MouseIn.polygon):
+			bookmark_shown = true
+			$AnimationPlayer.play("BookmarkAnim")
+		$Nice.position = event.position
+
+func _on_ConvertMinerals_mouse_entered():
+	game.show_tooltip(tr("SELL_MINERALS") + " (%s)" % OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_COMMA)))
+
+func _on_ConvertMinerals_pressed():
+	game.sell_all_minerals()
+	$Bottom/Panel/AnimationPlayer.stop()
+	$Bottom/Panel/ColorRect.color.a = 0.0
+
+func _on_Ships_pressed():
+	game.toggle_panel("ships_panel")
+
+func _on_Ships_mouse_entered():
+	game.show_tooltip("%s (%s)" % [tr("SHIPS"), OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_Y))])
+
+func _on_AutosaveLight_mouse_entered():
+	game.show_tooltip(tr("AUTOSAVE_LIGHT_DESC"))
+
+func _on_MineralsText_mouse_entered():
+	game.show_tooltip(tr("FULL_MINERALS"))
+
+func _on_Ship2Map_mouse_entered():
+	game.show_tooltip(tr("GALAXY_MAP"))
+
+func _on_Vehicles_mouse_entered():
+	game.show_tooltip(tr("VEHICLES") + " (V)")
+
+func _on_Vehicles_pressed():
+	if not Input.is_action_pressed("shift"):
+		click_sound.play()
+		game.toggle_panel("vehicle_panel")
+
+func _on_Wiki_mouse_entered():
+	game.show_tooltip(tr("INGAME_WIKI"))
+
+func _on_Wiki_pressed():
+	game.toggle_panel("wiki")
+
+func _on_Dialogue_dialogue_finished(_NPC_id:int, _dialogue_id:int):
+	$Dialogue.NPC_id = -1
+
+func _on_Planets_pressed():
+	planet_b_btn.get_node("TextureRect").modulate.a = 1.0
+	system_b_btn.get_node("TextureRect").modulate.a = 0.5
+	galaxy_b_btn.get_node("TextureRect").modulate.a = 0.5
+	cluster_b_btn.get_node("TextureRect").modulate.a = 0.5
+	current_bookmark_type = "planet"
+	refresh_bookmarks()
+
+func _on_Systems_pressed():
+	planet_b_btn.get_node("TextureRect").modulate.a = 0.5
+	system_b_btn.get_node("TextureRect").modulate.a = 1.0
+	galaxy_b_btn.get_node("TextureRect").modulate.a = 0.5
+	cluster_b_btn.get_node("TextureRect").modulate.a = 0.5
+	current_bookmark_type = "system"
+	refresh_bookmarks()
+
+func _on_Galaxies_pressed():
+	planet_b_btn.get_node("TextureRect").modulate.a = 0.5
+	system_b_btn.get_node("TextureRect").modulate.a = 0.5
+	galaxy_b_btn.get_node("TextureRect").modulate.a = 1.0
+	cluster_b_btn.get_node("TextureRect").modulate.a = 0.5
+	current_bookmark_type = "galaxy"
+	refresh_bookmarks()
+
+func _on_Clusters_pressed():
+	planet_b_btn.get_node("TextureRect").modulate.a = 0.5
+	system_b_btn.get_node("TextureRect").modulate.a = 0.5
+	galaxy_b_btn.get_node("TextureRect").modulate.a = 0.5
+	cluster_b_btn.get_node("TextureRect").modulate.a = 1.0
+	current_bookmark_type = "cluster"
+	refresh_bookmarks()
+
+func _on_Bookmarked_pressed():
+	if game.c_v == "planet":
+		var p_i:Dictionary = game.planet_data[game.c_p]
+		if p_i.has("bookmarked"):
+			game.bookmarks.planet.erase(str(game.c_p_g))
+			p_i.erase("bookmarked")
+			game.planet_data_persistent[game.c_p].erase("bookmarked")
+		else:
+			var bookmark:Dictionary = {
+				"type":p_i.type,
+				"name":p_i.name,
+				"c_p":game.c_p,
+				"c_p_g":game.c_p_g,
+				"c_s":game.c_s,
+				"c_s_g":game.c_s_g,
+				"c_g":game.c_g,
+				"c_g_g":game.c_g_g,
+				"c_c":game.c_c}
+			p_i.bookmarked = true
+			game.planet_data_persistent[game.c_p].bookmarked = true
+			game.bookmarks.planet[str(game.c_p_g)] = bookmark
+	elif game.c_v == "system":
+		var s_i:Dictionary = game.system_data[game.c_s]
+		if s_i.has("bookmarked"):
+			game.bookmarks.system.erase(str(game.c_s_g))
+			s_i.erase("bookmarked")
+			game.system_data_persistent[game.c_s].erase("bookmarked")
+		else:
+			var star:Dictionary = s_i.stars[0]
+			for i in range(1, len(s_i.stars)):
+				if s_i.stars[i].luminosity > star.luminosity:
+					star = s_i.stars[i]
+			var bookmark:Dictionary = {
+				"modulate":Helper.get_star_modulate(star["class"]),
+				"name":s_i.name,
+				"c_s":game.c_s,
+				"c_s_g":game.c_s_g,
+				"c_g":game.c_g,
+				"c_g_g":game.c_g_g,
+				"c_c":game.c_c}
+			s_i.bookmarked = true
+			game.system_data_persistent[game.c_s].bookmarked = true
+			game.bookmarks.system[str(game.c_s_g)] = bookmark
+	elif game.c_v == "galaxy":
+		var g_i:Dictionary = game.galaxy_data[game.c_g]
+		if g_i.has("bookmarked"):
+			game.bookmarks.galaxy.erase(str(game.c_g_g))
+			g_i.erase("bookmarked")
+			game.galaxy_data_persistent[game.c_g].erase("bookmarked")
+		else:
+			var bookmark:Dictionary = {
+				"type":g_i.type,
+				"name":g_i.name,
+				"c_g":game.c_g,
+				"c_g_g":game.c_g_g,
+				"c_c":game.c_c}
+			g_i.bookmarked = true
+			game.galaxy_data_persistent[game.c_g].bookmarked = true
+			game.bookmarks.galaxy[str(game.c_g_g)] = bookmark
+	elif game.c_v == "cluster":
+		var c_i:Dictionary = game.u_i.cluster_data[game.c_c]
+		if c_i.has("bookmarked"):
+			game.bookmarks.cluster.erase(str(game.c_c))
+			c_i.erase("bookmarked")
+		else:
+			var bookmark:Dictionary = {
+				"name":c_i.name,
+				"c_c":game.c_c}
+			c_i.bookmarked = true
+			game.bookmarks.cluster[str(game.c_c)] = bookmark
+	refresh_bookmarks()
+
+func _on_Bookmarked_mouse_entered():
+	if $Bookmarks/Bookmarked.button_pressed:
+		game.show_tooltip("%s (B)" % tr("REMOVE_FROM_BOOKMARKS"))
+	else:
+		game.show_tooltip("%s (B)" % tr("ADD_TO_BOOKMARKS"))
+
+
+func _on_Bookmarked_mouse_exited():
+	game.hide_tooltip()
+
+
+func _on_Planets_mouse_entered():
+	game.show_tooltip(tr("PLANETS"))
+
+
+func _on_Systems_mouse_entered():
+	game.show_tooltip(tr("STAR_SYSTEMS"))
+
+
+func _on_Galaxies_mouse_entered():
+	game.show_tooltip(tr("GALAXIES"))
+
+
+func _on_Clusters_mouse_entered():
+	game.show_tooltip(tr("CLUSTERS"))
+
+
+func _on_Name_text_entered(new_text):
+	$Top/Name/Name.release_focus()
+	if game.c_v == "planet":
+		game.planet_data[game.c_p].name = new_text
+		game.planet_data_persistent[game.c_p].name = new_text
+		if new_text.substr(0, 9).to_lower() == "bad apple":
+			var LOD = 1
+			var e = 9
+			while len(new_text) > e and new_text[e] == "!":
+				LOD += 1
+				e += 1
+			game.view.obj.play_bad_apple(LOD, "'" in new_text)
+		if game.bookmarks.planet.has(str(game.c_p_g)):
+			game.bookmarks.planet[str(game.c_p_g)].name = new_text
+	elif game.c_v == "system":
+		game.system_data[game.c_s].name = new_text
+		game.system_data_persistent[game.c_s].name = new_text
+		if game.bookmarks.system.has(str(game.c_s_g)):
+			game.bookmarks.system[str(game.c_s_g)].name = new_text
+	elif game.c_v == "galaxy":
+		game.galaxy_data[game.c_g].name = new_text
+		game.galaxy_data_persistent[game.c_g].name = new_text
+		if game.bookmarks.galaxy.has(str(game.c_g_g)):
+			game.bookmarks.galaxy[str(game.c_g_g)].name = new_text
+	elif game.c_v == "cluster":
+		game.u_i.cluster_data[game.c_c].name = new_text
+		if game.bookmarks.cluster.has(str(game.c_c)):
+			game.bookmarks.cluster[str(game.c_c)].name = new_text
+	elif game.c_v == "universe":
+		game.u_i.name = new_text
+	refresh_bookmarks()
+
+
+func _on_Dimension_pressed():
+	game.switch_view("dimension")
+
+
+func _on_Dimension_mouse_entered():
+	game.show_tooltip(tr("VIEW_DIMENSION"))
+
+
+func _on_SwitchBtn_mouse_entered():
+	var u_i:Dictionary = game.u_i
+	var view_str:String = ""
+	if game.c_v == "universe":
+		view_str = tr("VIEW_DIMENSION")
+		if not game.show.has("dimensions") and game.help.has("flash_send_probe_btn"):
+			view_str += "\n%s" %tr("CONSTR_TP_TO_UNLOCK")
+	elif game.c_v == "cluster":
+		view_str = tr("VIEW_UNIVERSE")
+		if u_i.lv < 60:
+			view_str += "\n%s" % [tr("REACH_X_TO_UNLOCK") % [tr("LV") + " 60"]]
+	elif game.c_v == "galaxy":
+		view_str = tr("VIEW_CLUSTER")
+		if u_i.lv < 40:
+			view_str += "\n%s" % [tr("REACH_X_TO_UNLOCK") % [tr("LV") + " 40"]]
+	elif game.c_v == "system":
+		view_str = tr("VIEW_GALAXY")
+		if u_i.lv < 18:
+			view_str += "\n%s" % [tr("REACH_X_TO_UNLOCK") % [tr("LV") + " 18"]]
+	elif game.c_v == "planet":
+		view_str = tr("VIEW_STAR_SYSTEM")
+		if u_i.lv < 8:
+			view_str += "\n%s" % [tr("REACH_X_TO_UNLOCK") % [tr("LV") + " 8"]]
+	game.show_tooltip("%s (%s)" % [view_str, OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(KEY_Z))])
+
+func _on_SwitchBtn_pressed():
+	var u_i:Dictionary = game.u_i
+	match game.c_v:
+		"planet":
+			if u_i.lv >= 8:
+				game.switch_view("system")
+		"system":
+			if u_i.lv >= 18:
+				game.switch_view("galaxy")
+		"galaxy":
+			if u_i.lv >= 40:
+				game.switch_view("cluster")
+		"cluster":
+			if u_i.lv >= 60:
+				game.switch_view("universe")
+		"universe":
+			if game.show.has("dimensions") or not game.help.has("flash_send_probe_btn"):
+				game.switch_view("dimension")
+
+func _on_Stats_mouse_entered():
+	game.show_tooltip("%s & %s" % [tr("ACHIEVEMENTS"), tr("STATISTICS")])
+
+
+func _on_Stats_pressed():
+	game.toggle_panel("stats_panel")
+
+
+func _on_PrevView_pressed():
+	set_view_and_switch(-1)
+
+func _on_NextView_pressed():
+	set_view_and_switch(1)
+
+func set_view_and_switch(shift:int):
+	var view_data:Dictionary = game.view_history[game.view_history_pos + shift].duplicate(true)
+	var view:String = view_data.view
+	view_data.erase("view")
+	game.switch_view(view, {"fn":"set_custom_coords", "fn_args":[view_data.keys(), view_data.values()], "shift":shift})
+
+func _on_PrevView_mouse_entered():
+	game.show_tooltip(tr("PREV_VIEW"))
+
+func _on_NextView_mouse_entered():
+	game.show_tooltip(tr("NEXT_VIEW"))
+
+
+func _on_HUD_tree_entered():
+	$AnimationPlayer2.play("MoveStuff")
+	await get_tree().process_frame
+	show()
+
+
+func _on_MainMenu_mouse_entered():
+	game.show_tooltip(tr("RETURN_TO_MENU"))
+
+
+func _on_MainMenu_pressed():
+	game.show_YN_panel(game.return_to_menu)
+
+func set_ship_btn_shader():
+	if not game.science_level.has("ISC"):
+		return
+	var active = game.autocollect.has("passive_xp_tier")
+	ships_btn.material.set_shader_parameter("active", active)
+	if active:
+		var tier = game.autocollect.passive_xp_tier
+		ships_btn.material.set_shader_parameter("color", Data.ancient_bldg_tier_colors[tier - 1])
+		ships_btn.material.set_shader_parameter("speed", tier * game.u_i.time_speed)
+
+func _on_level_mouse_entered():
+	game.show_tooltip((tr("LEVEL") + " %s\nXP: %s / %s\n%s") % [game.u_i.lv, Helper.format_num(round(game.u_i.xp), 4), Helper.format_num(game.u_i.xp_to_lv, 4), tr("XP_HELP")])
+	if game.u_i.lv == 69 and Settings.op_cursor:
+		$Nice.visible = true
+
+func _on_level_mouse_exited():
+	$Nice.visible = false
+	game.hide_tooltip()
+
+
+func _on_name_focus_entered():
+	game.view.move_with_keyboard = false
+
+
+func _on_name_focus_exited():
+	game.view.move_with_keyboard = true
+
+
+func _on_cluster_info_mouse_entered() -> void:
+	game.show_tooltip(Helper.get_cluster_tooltip(game.c_c))

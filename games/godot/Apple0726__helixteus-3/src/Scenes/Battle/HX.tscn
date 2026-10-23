@@ -1,0 +1,535 @@
+[gd_scene format=3 uid="uid://cpjo82l86k61"]
+
+[ext_resource type="Texture2D" uid="uid://7ffsf7xuvfw2" path="res://Graphics/Icons/attack.png" id="1"]
+[ext_resource type="Script" uid="uid://dhqip0etwjc1x" path="res://Scripts/Battle/HX.gd" id="1_3h40m"]
+[ext_resource type="Shader" uid="uid://dldfqqvdqt4h0" path="res://Shaders/HX.gdshader" id="1_bfi0c"]
+[ext_resource type="Texture2D" uid="uid://dw4gx6xj2i5g7" path="res://Graphics/HX/1_1.png" id="1_t5dxa"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="2"]
+[ext_resource type="PackedScene" uid="uid://fo4yl8v4ld8c" path="res://Scenes/Battle/FireWeaponAim.tscn" id="2_uyhlq"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://dl452yovfklni" path="res://Graphics/Decoratives/BulletHit.jpg" id="5"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="6"]
+[ext_resource type="PackedScene" uid="uid://m8wrm55x0xbe" path="res://Scenes/Battle/StatusEffects.tscn" id="13_lq603"]
+[ext_resource type="Texture2D" uid="uid://b1dcgxga387up" path="res://Graphics/Effects/spotlight_1.png" id="14"]
+[ext_resource type="PackedScene" uid="uid://ni58sxlrjgg4" path="res://Scenes/Battle/Buffs.tscn" id="14_f8wif"]
+[ext_resource type="PackedScene" uid="uid://b3b68o5fd52pr" path="res://Scenes/Battle/VelocityArrow.tscn" id="15_f8wif"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1s5uh"]
+resource_local_to_scene = true
+radius = 100.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f8wif"]
+resource_local_to_scene = true
+radius = 24.0
+
+[sub_resource type="ShaderMaterial" id="2"]
+resource_local_to_scene = true
+shader = ExtResource("1_bfi0c")
+shader_parameter/amplitude = 0.0
+shader_parameter/frequency = 3.0
+shader_parameter/aurora = false
+shader_parameter/light_amount = 1.0
+shader_parameter/alpha = 1.0
+shader_parameter/flash = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_angle = 0.0
+shader_parameter/starlight_enabled = false
+shader_parameter/starlight_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_energy = 1.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_f8wif"]
+font_size = 14
+shadow_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_vw23x"]
+font_size = 14
+shadow_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Animation" id="6"]
+length = 0.5
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.45),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 0, 0, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_54dbw"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4bina"]
+_data = {
+&"Hurt": SubResource("6"),
+&"RESET": SubResource("Animation_54dbw")
+}
+
+[sub_resource type="Animation" id="7"]
+length = 1.3
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(2, 2, 2, 0),
+"points": PackedFloat32Array(0, 0, 0, 0.0333333, 98.836, 160.328, -0.0666667, 0, 0.0666667, 0, 131.046, -0.101375, 8.81121, 0.1, -8.69168, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.2, 0.433333, 1.3)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(2, 2, 0, 0),
+"points": PackedFloat32Array(0, 0, 0, 0.0666667, 0, 64.9324, -0.0166667, -5.28188, 0.0222222, 7.04251, 90.1237, -0.0666667, -1.86603, 0.133333, 10.2632, 360, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 0.3, 1.3)
+}
+
+[sub_resource type="Animation" id="8"]
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.2, 248.756, 357, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 1)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(360, -0.25, 0, 0.2, 104.886, 499.416, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 1)
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="9"]
+step = 0.01
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(2, 2, 0),
+"points": PackedFloat32Array(0, 0, 0, 0.08, 0.432311, 100.674, -0.0892783, -6.72562, 0.15, 11.3, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 1)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(2, 2, 0),
+"points": PackedFloat32Array(0, 0, 0, 0.07, 0.0467681, 28.8433, -0.0781124, -9.89989, 0.15, 19.0108, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 1)
+}
+
+[sub_resource type="Animation" id="Animation_cahjy"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="10"]
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:rotation_degrees")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.1, -0.508904, -11.4519, -0.1, 0.0690498, 0.25, 0, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 1)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:position:x")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.1, -0.211617, 30.9805, -0.1, -0.891861, 0.25, 0, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 1)
+}
+tracks/2/type = "bezier"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Sprite2D:position:y")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(6.29962, -0.25, 0, 0.1, -0.062973, 32.9805, -0.1, -14.4065, 0.25, 0, 6.29962, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.1, 1)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_rpr20"]
+_data = {
+&"Big knockback": SubResource("7"),
+&"Dead": SubResource("8"),
+&"Knockback": SubResource("9"),
+&"RESET": SubResource("Animation_cahjy"),
+&"Small knockback": SubResource("10")
+}
+
+[sub_resource type="Animation" id="11"]
+resource_name = "Miss"
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(0, -15), Vector2(0, -15), Vector2(0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_fxxeq"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:material:shader_parameter/modulate_color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ml7on"]
+_data = {
+&"Miss": SubResource("11"),
+&"RESET": SubResource("Animation_fxxeq")
+}
+
+[sub_resource type="Gradient" id="Gradient_vwroj"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_hnbg8"]
+gradient = SubResource("Gradient_vwroj")
+
+[sub_resource type="ParticleProcessMaterial" id="14"]
+particle_flag_align_y = true
+particle_flag_disable_z = true
+angle_max = 360.0
+direction = Vector3(-1, 0, 0)
+spread = 180.0
+initial_velocity_min = 250.0
+initial_velocity_max = 750.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+color_ramp = SubResource("GradientTexture1D_hnbg8")
+
+[sub_resource type="Gradient" id="Gradient_imv4j"]
+offsets = PackedFloat32Array(0, 0.157895, 0.585526, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_gb66n"]
+gradient = SubResource("Gradient_imv4j")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_x45cj"]
+particle_flag_disable_z = true
+spread = 180.0
+initial_velocity_min = 300.0
+initial_velocity_max = 500.0
+orbit_velocity_max = 0.1
+damping_min = 100.0
+damping_max = 100.0
+scale_max = 4.0
+color_ramp = SubResource("GradientTexture1D_gb66n")
+
+[sub_resource type="Gradient" id="Gradient_ywuum"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ihuwx"]
+gradient = SubResource("Gradient_ywuum")
+
+[sub_resource type="ParticleProcessMaterial" id="22"]
+lifetime_randomness = 1.0
+particle_flag_disable_z = true
+direction = Vector3(-1, 0, 0)
+spread = 180.0
+initial_velocity_min = 150.0
+initial_velocity_max = 300.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_ihuwx")
+
+[sub_resource type="Animation" id="23"]
+resource_name = "LabelAnim"
+length = 0.583
+loop_mode = 1
+step = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Info/Label:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.58),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0.662745), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_u6u7m"]
+_data = {
+&"LabelAnim": SubResource("23")
+}
+
+[node name="HX" type="Area2D" unique_id=1524520358]
+collision_layer = 4
+collision_mask = 39
+script = ExtResource("1_3h40m")
+
+[node name="FireWeaponAim" parent="." unique_id=1281615261 instance=ExtResource("2_uyhlq")]
+visible = false
+
+[node name="CollisionShapeFinder" type="Area2D" parent="." unique_id=852741204]
+collision_layer = 0
+collision_mask = 39
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CollisionShapeFinder" unique_id=1879388046]
+shape = SubResource("CircleShape2D_1s5uh")
+debug_color = Color(0.533333, 0, 0.701961, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1248219929]
+rotation = 1.57413
+shape = SubResource("CircleShape2D_f8wif")
+
+[node name="Polygon2D" type="Polygon2D" parent="CollisionShape2D" unique_id=832326736]
+color = Color(1, 1, 1, 0)
+polygon = PackedVector2Array(-23.9999, 0.0800094, -0.0800094, -23.9999, 23.9999, -0.0800094, 0.0800094, 23.9999)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1286397505]
+material = SubResource("2")
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("1_t5dxa")
+
+[node name="RayCast2D" type="RayCast2D" parent="." unique_id=378535530]
+enabled = false
+collision_mask = 39
+
+[node name="Info" type="Control" parent="." unique_id=25904671]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2")
+
+[node name="Initiative" type="Label" parent="Info" unique_id=1103581102]
+layout_mode = 0
+offset_left = -68.0
+offset_top = -44.0
+offset_right = 68.0
+offset_bottom = -21.0
+text = "Initiative: 10"
+label_settings = SubResource("LabelSettings_f8wif")
+horizontal_alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Info" unique_id=1411462508]
+visible = false
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = -48.0
+offset_top = 32.0
+offset_right = -24.0
+offset_bottom = 56.0
+mouse_filter = 2
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Info" unique_id=1709184364]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -16.0
+offset_top = 32.0
+offset_right = 42.0
+offset_bottom = 56.0
+grow_horizontal = 0
+theme = ExtResource("2")
+text = "15"
+label_settings = SubResource("LabelSettings_vw23x")
+
+[node name="HP" type="TextureProgressBar" parent="Info" unique_id=124666701]
+modulate = Color(0, 1, 0, 1)
+light_mask = 0
+layout_mode = 0
+offset_left = -60.0
+offset_top = 32.0
+offset_right = 4.0
+offset_bottom = 37.0
+rotation = -1.5708
+value = 50.0
+nine_patch_stretch = true
+texture_under = ExtResource("3")
+texture_progress = ExtResource("6")
+
+[node name="StatusEffects" parent="Info" unique_id=876176035 instance=ExtResource("13_lq603")]
+layout_mode = 0
+offset_left = -124.0
+offset_top = -40.0
+offset_right = -44.0
+offset_bottom = 68.0
+columns = 2
+
+[node name="Buffs" parent="Info" unique_id=1571740819 instance=ExtResource("14_f8wif")]
+layout_mode = 0
+offset_left = -68.0
+offset_top = 52.0
+offset_right = 72.0
+offset_bottom = 92.0
+
+[node name="HurtAnimation" type="AnimationPlayer" parent="." unique_id=1868509564]
+libraries/ = SubResource("AnimationLibrary_4bina")
+
+[node name="KnockbackAnimation" type="AnimationPlayer" parent="." unique_id=1541268942]
+libraries/ = SubResource("AnimationLibrary_rpr20")
+
+[node name="MissAnimation" type="AnimationPlayer" parent="." unique_id=794301094]
+libraries/ = SubResource("AnimationLibrary_ml7on")
+
+[node name="VelocityArrow" parent="." unique_id=220905690 instance=ExtResource("15_f8wif")]
+
+[node name="BulletParticles" type="GPUParticles2D" parent="." unique_id=1402859033]
+emitting = false
+amount = 30
+texture = ExtResource("5")
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("14")
+
+[node name="BombParticles" type="GPUParticles2D" parent="." unique_id=1445375475]
+scale = Vector2(2, 2)
+emitting = false
+amount = 150
+lifetime = 3.0
+one_shot = true
+explosiveness = 0.95
+randomness = 1.0
+process_material = SubResource("ParticleProcessMaterial_x45cj")
+
+[node name="LightParticles" type="GPUParticles2D" parent="." unique_id=24202273]
+emitting = false
+amount = 50
+texture = ExtResource("14")
+one_shot = true
+explosiveness = 0.95
+randomness = 1.0
+process_material = SubResource("22")
+
+[node name="LabelAnimation" type="AnimationPlayer" parent="." unique_id=1458712267]
+libraries/ = SubResource("AnimationLibrary_u6u7m")
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
+[connection signal="visibility_changed" from="FireWeaponAim" to="." method="_on_fire_weapon_aim_visibility_changed"]
+[connection signal="area_entered" from="CollisionShapeFinder" to="." method="_on_collision_shape_finder_area_entered"]
+[connection signal="area_exited" from="CollisionShapeFinder" to="." method="_on_collision_shape_finder_area_exited"]

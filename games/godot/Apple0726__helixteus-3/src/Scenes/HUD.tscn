@@ -1,0 +1,1384 @@
+[gd_scene format=3 uid="uid://cahlkepfiewe4"]
+
+[ext_resource type="Texture2D" uid="uid://b0brlrg52bjln" path="res://Graphics/Icons/money.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://bm01hxs45q3ga" path="res://Graphics/Icons/energy.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://d3kwtgk0sw40p" path="res://Graphics/Icons/minerals.png" id="4"]
+[ext_resource type="Script" uid="uid://cxkumkhcmn25n" path="res://Scripts/HUD.gd" id="5"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="7"]
+[ext_resource type="Texture2D" uid="uid://hvuwdl8ox0yv" path="res://Graphics/Icons/stone.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://dnh44vtb4f2xe" path="res://Graphics/Buttons/HUDButtonOver.png" id="10_esw7j"]
+[ext_resource type="Texture2D" uid="uid://0tkum5k543lo" path="res://Graphics/Ships/Probe0.png" id="10_eukkl"]
+[ext_resource type="Texture2D" uid="uid://koi0aarpqj30" path="res://Graphics/Ships/Ship0.png" id="10_tvuu7"]
+[ext_resource type="Texture2D" uid="uid://bsulvp4xkwrwj" path="res://Graphics/Materials/soil.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://if1usn38yajs" path="res://Graphics/Icons/craft.png" id="11_tvuu7"]
+[ext_resource type="Texture2D" uid="uid://dg25fshk35326" path="res://Graphics/Icons/SP.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://d03u105amdf1c" path="res://Graphics/Icons/Inventory.png" id="12_esw7j"]
+[ext_resource type="Texture2D" uid="uid://bu4pbsuqutf1m" path="res://Graphics/Buttons/Upgrade.png" id="12_ljo2x"]
+[ext_resource type="Texture2D" uid="uid://bm03n6sxyvtsr" path="res://Graphics/Buttons/MainMenu.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://d038cge3yomx0" path="res://Graphics/Buttons/convert_minerals.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://4tf3teqmkahc" path="res://Graphics/Misc/Bar.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://chpst12uvadli" path="res://Graphics/Buttons/HUDButton.png" id="16_ij8d5"]
+[ext_resource type="Texture2D" uid="uid://cbg7ol8hmg3w0" path="res://Graphics/Misc/bullet.png" id="18"]
+[ext_resource type="Texture2D" uid="uid://cpco137hhk4m6" path="res://Graphics/Buttons/SwitchView.png" id="20_ljo2x"]
+[ext_resource type="Texture2D" uid="uid://cwuyoxtq8q862" path="res://Graphics/Misc/HUD.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://cy5gx6c6eewnc" path="res://Graphics/Buttons/SwitchViewOver.png" id="21_7gk6a"]
+[ext_resource type="PackedScene" uid="uid://di212twja6t76" path="res://Scenes/Dialogue.tscn" id="23"]
+[ext_resource type="Texture2D" uid="uid://8xmbgjeh4gj0" path="res://Graphics/Buttons/Wiki.png" id="25"]
+[ext_resource type="Texture2D" uid="uid://bqcnfk18r8y88" path="res://Graphics/Materials/glass.png" id="26"]
+[ext_resource type="Texture2D" uid="uid://cq01wa1mq6mrr" path="res://Graphics/Planets/3.png" id="27"]
+[ext_resource type="Texture2D" uid="uid://bafdfq8xre12s" path="res://Graphics/Effects/spotlight_5.png" id="28"]
+[ext_resource type="Texture2D" uid="uid://ddomkxb4yqaya" path="res://Graphics/Galaxies/6.png" id="29"]
+[ext_resource type="Texture2D" uid="uid://bmn03dj3sb6bd" path="res://Graphics/Buttons/NotBookmarked.png" id="30"]
+[ext_resource type="Texture2D" uid="uid://uyvtci76f3tm" path="res://Graphics/Clusters/0.png" id="31"]
+[ext_resource type="Texture2D" uid="uid://di3l36g4r1dp3" path="res://Graphics/Buttons/Bookmarked.png" id="32"]
+[ext_resource type="Texture2D" uid="uid://00skisx0co51" path="res://Graphics/Buttons/DimensionView.png" id="33"]
+[ext_resource type="Texture2D" uid="uid://d0cx2q2op61vi" path="res://Graphics/Materials/cellulose.png" id="34"]
+[ext_resource type="Texture2D" uid="uid://b78p7e1sqq6lc" path="res://Graphics/Buttons/Stats.png" id="35"]
+[ext_resource type="Texture2D" uid="uid://cdwo4dwo5gdl7" path="res://Easter eggs/nice.jpg" id="36_g5ll0"]
+
+[sub_resource type="Animation" id="Animation_lrqkk"]
+resource_name = "BookmarkAnim"
+length = 0.2
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bookmarks:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 2),
+"points": PackedFloat32Array(-180, -0.25, 0, 0.0390581, 142, 0, -0.112119, 1, 0, 0),
+"times": PackedFloat32Array(0, 0.2)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bookmarks:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(108, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_ps4yj"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bookmarks:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(-180, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bookmarks:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(108, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_noa68"]
+_data = {
+&"BookmarkAnim": SubResource("Animation_lrqkk"),
+&"RESET": SubResource("Animation_ps4yj")
+}
+
+[sub_resource type="InputEventKey" id="InputEventKey_f1iy7"]
+device = -1
+physical_keycode = 66
+unicode = 98
+
+[sub_resource type="Shortcut" id="3"]
+events = [SubResource("InputEventKey_f1iy7")]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_135og"]
+
+[sub_resource type="Shader" id="39"]
+code = "shader_type canvas_item;
+
+uniform bool active = false;
+uniform vec4 color:source_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform float speed = 1.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	if (active) {
+		COLOR.rgb += (1.0 - UV.y) * max(0.0, pow(abs(sin(speed * TIME + 3.0 * UV.y)), 20)) * color.rgb;
+	}
+}"
+
+[sub_resource type="ShaderMaterial" id="40"]
+shader = SubResource("39")
+shader_parameter/active = false
+shader_parameter/color = Color(1, 1, 1, 1)
+shader_parameter/speed = 1.0
+
+[sub_resource type="InputEventKey" id="InputEventKey_04cml"]
+device = -1
+physical_keycode = 89
+unicode = 121
+
+[sub_resource type="Shortcut" id="12"]
+events = [SubResource("InputEventKey_04cml")]
+
+[sub_resource type="Shader" id="Shader_4de7i"]
+code = "shader_type canvas_item;
+
+uniform vec4 color:source_color = vec4(1.0);
+uniform float alpha:hint_range(0.0, 1.0) = 0.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	COLOR.rgb += vec3(color.rgb) * alpha;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fio52"]
+shader = SubResource("Shader_4de7i")
+shader_parameter/color = Color(1, 1, 1, 1)
+shader_parameter/alpha = 0.0
+
+[sub_resource type="InputEventKey" id="InputEventKey_d0q5n"]
+device = -1
+physical_keycode = 86
+unicode = 118
+
+[sub_resource type="Shortcut" id="14"]
+events = [SubResource("InputEventKey_d0q5n")]
+
+[sub_resource type="Animation" id="Animation_o7tw1"]
+resource_name = "Flash"
+length = 1.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/alpha")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.8, 1.2, 1.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.6, 0.0, 0.6, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_1ispb"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/alpha")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_bsw7h"]
+_data = {
+&"Flash": SubResource("Animation_o7tw1"),
+&"RESET": SubResource("Animation_1ispb")
+}
+
+[sub_resource type="InputEventKey" id="InputEventKey_817r8"]
+device = -1
+physical_keycode = 84
+unicode = 116
+
+[sub_resource type="Shortcut" id="16"]
+events = [SubResource("InputEventKey_817r8")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_h1pgw"]
+device = -1
+physical_keycode = 69
+unicode = 101
+
+[sub_resource type="Shortcut" id="18"]
+events = [SubResource("InputEventKey_h1pgw")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_tj8tx"]
+device = -1
+physical_keycode = 82
+unicode = 114
+
+[sub_resource type="Shortcut" id="20"]
+events = [SubResource("InputEventKey_tj8tx")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_jk272"]
+device = -1
+physical_keycode = 85
+unicode = 117
+
+[sub_resource type="Shortcut" id="22"]
+events = [SubResource("InputEventKey_jk272")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_m2rrv"]
+device = -1
+physical_keycode = 73
+unicode = 105
+
+[sub_resource type="Shortcut" id="24"]
+events = [SubResource("InputEventKey_m2rrv")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_k5517"]
+device = -1
+physical_keycode = 44
+unicode = 44
+
+[sub_resource type="Shortcut" id="Shortcut_xflk1"]
+events = [SubResource("InputEventKey_k5517")]
+
+[sub_resource type="Animation" id="37"]
+resource_name = "Flash"
+length = 0.5
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.372549), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="38"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4yly8"]
+_data = {
+&"Flash": SubResource("37"),
+&"RESET": SubResource("38")
+}
+
+[sub_resource type="InputEventKey" id="InputEventKey_owolo"]
+device = -1
+physical_keycode = 90
+unicode = 122
+
+[sub_resource type="Shortcut" id="30"]
+events = [SubResource("InputEventKey_owolo")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_86llo"]
+device = -1
+ctrl_pressed = true
+keycode = 4194319
+
+[sub_resource type="Shortcut" id="32"]
+events = [SubResource("InputEventKey_86llo")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_pkq2u"]
+device = -1
+ctrl_pressed = true
+keycode = 4194321
+
+[sub_resource type="Shortcut" id="34"]
+events = [SubResource("InputEventKey_pkq2u")]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jjxme"]
+content_margin_left = 12.0
+content_margin_top = 5.0
+content_margin_right = 12.0
+content_margin_bottom = 2.0
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.341176, 0.341176, 0.341176, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_uu53f"]
+font_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aubol"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.266667, 0.266667, 0.266667, 1)
+border_blend = true
+expand_margin_left = 10.0
+expand_margin_right = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y5ks2"]
+bg_color = Color(0.14902, 0.14902, 0.14902, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.266667, 0.266667, 0.266667, 1)
+border_blend = true
+expand_margin_left = 10.0
+expand_margin_right = 8.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_ljo2x"]
+shadow_size = 3
+shadow_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Animation" id="35"]
+resource_name = "MoveStuff"
+length = 0.3
+step = 0.05
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Buttons:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(1280, -0.25, 0, 0.1, -43, 1232, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bottom:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(84, -0.25, 0, 0.05, -86, 0, -0.2, 2, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3)
+}
+tracks/2/type = "bezier"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Top:position:y")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(-76, -0.25, 0, 0.05, 64, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3)
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bookmarks:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="36"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Buttons:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(1232, -0.0005, 0, 0.0005, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bottom:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.0005, 0, 0.0005, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/2/type = "bezier"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Top:position:y")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.0005, 0, 0.0005, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bookmarks:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_f72sx"]
+_data = {
+&"MoveStuff": SubResource("35"),
+&"RESET": SubResource("36")
+}
+
+[node name="HUD" type="Control" unique_id=934829201]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("7")
+script = ExtResource("5")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1162001255]
+libraries/ = SubResource("AnimationLibrary_noa68")
+
+[node name="MouseIn" type="Polygon2D" parent="." unique_id=976098554]
+visible = false
+polygon = PackedVector2Array(0, 110, 30, 110, 30, 232, 0, 232)
+
+[node name="MouseOut" type="Polygon2D" parent="." unique_id=1696718437]
+visible = false
+position = Vector2(0, -6.10526)
+scale = Vector2(1, 1.02632)
+polygon = PackedVector2Array(0, 80, 224, 79.9997, 224, 231.999, 0, 232)
+
+[node name="Bookmarks" type="Control" parent="." unique_id=908502029]
+layout_mode = 1
+anchors_preset = 0
+offset_left = -180.0
+offset_top = 108.0
+offset_right = -180.0
+offset_bottom = 108.0
+mouse_filter = 1
+
+[node name="Bookmarked" type="TextureButton" parent="Bookmarks" unique_id=1626019730]
+layout_mode = 0
+offset_left = 180.0
+offset_top = -32.0
+offset_right = 216.0
+offset_bottom = -8.0
+toggle_mode = true
+shortcut = SubResource("3")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("30")
+texture_pressed = ExtResource("32")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="BookMarkButtons" type="VBoxContainer" parent="Bookmarks" unique_id=925140482]
+layout_mode = 0
+offset_left = 180.0
+offset_top = -4.0
+offset_right = 216.0
+offset_bottom = 124.0
+theme_override_constants/separation = 0
+
+[node name="Planets" type="Button" parent="Bookmarks/BookMarkButtons" unique_id=1909467212]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Bookmarks/BookMarkButtons/Planets" unique_id=1411657045]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -11.5
+offset_top = -11.5
+offset_right = 11.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("27")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Systems" type="Button" parent="Bookmarks/BookMarkButtons" unique_id=248410572]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Bookmarks/BookMarkButtons/Systems" unique_id=1497783199]
+modulate = Color(1, 1, 1, 0.501961)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -15.0
+offset_right = 16.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Galaxies" type="Button" parent="Bookmarks/BookMarkButtons" unique_id=372701975]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Bookmarks/BookMarkButtons/Galaxies" unique_id=940273584]
+modulate = Color(1, 1, 1, 0.501961)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -14.0
+offset_top = -12.0
+offset_right = 14.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("29")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Clusters" type="Button" parent="Bookmarks/BookMarkButtons" unique_id=1262430773]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Bookmarks/BookMarkButtons/Clusters" unique_id=1855514607]
+modulate = Color(1, 1, 1, 0.501961)
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -14.0
+offset_top = -12.5
+offset_right = 14.0
+offset_bottom = 12.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("31")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BookmarksList" type="Panel" parent="Bookmarks" unique_id=2136708933]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -4.0
+offset_right = 180.0
+offset_bottom = 124.0
+
+[node name="Buttons" type="ScrollContainer" parent="Bookmarks/BookmarksList" unique_id=407592813]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_135og")
+horizontal_scroll_mode = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Bookmarks/BookmarksList/Buttons" unique_id=206199459]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Buttons" type="VBoxContainer" parent="." unique_id=1962798273]
+layout_mode = 0
+offset_left = 1232.0
+offset_top = 48.0
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Ships" type="TextureButton" parent="Buttons" unique_id=312227813]
+material = SubResource("40")
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+keep_pressed_outside = true
+shortcut = SubResource("12")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/Ships" unique_id=711345088]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 11.0
+offset_right = 41.0
+offset_bottom = 43.0
+rotation = -0.17765859
+texture = ExtResource("10_tvuu7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Levelup" type="TextureRect" parent="Buttons/Ships" unique_id=1168865033]
+visible = false
+modulate = Color(1, 1, 1, 0.8117647)
+layout_mode = 0
+offset_left = 32.0
+offset_top = 4.0
+offset_right = 44.0
+offset_bottom = 16.0
+texture = ExtResource("12_ljo2x")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Vehicles" type="TextureButton" parent="Buttons" unique_id=320251580]
+material = SubResource("ShaderMaterial_fio52")
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+keep_pressed_outside = true
+shortcut = SubResource("14")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Buttons/Vehicles" unique_id=292466019]
+libraries/ = SubResource("AnimationLibrary_bsw7h")
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/Vehicles" unique_id=1512117021]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("10_eukkl")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Craft" type="TextureButton" parent="Buttons" unique_id=1651106379]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+keep_pressed_outside = true
+shortcut = SubResource("16")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/Craft" unique_id=1320761029]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("11_tvuu7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Inventory" type="TextureButton" parent="Buttons" unique_id=828297440]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("18")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/Inventory" unique_id=297988315]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("12_esw7j")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Shop" type="TextureButton" parent="Buttons" unique_id=1715720264]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("20")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/Shop" unique_id=1166212740]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MineralUpgrades" type="TextureButton" parent="Buttons" unique_id=1149720442]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("22")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MineralUpgrades" unique_id=621399617]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 44.0
+offset_bottom = 40.0
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScienceTree" type="TextureButton" parent="Buttons" unique_id=685530710]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("24")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/ScienceTree" unique_id=1050677913]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 40.0
+offset_bottom = 36.0
+texture = ExtResource("12")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MainMenu" type="TextureButton" parent="Buttons" unique_id=1201170310]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut_in_tooltip = false
+texture_normal = ExtResource("16_ij8d5")
+texture_hover = ExtResource("10_esw7j")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Buttons/MainMenu" unique_id=461634839]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 44.0
+offset_bottom = 44.0
+texture = ExtResource("14")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Bottom" type="Control" parent="." unique_id=1762867113]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Panel" type="Panel" parent="Bottom" unique_id=553269052]
+layout_mode = 0
+offset_left = 1220.0
+offset_top = 656.0
+offset_right = 1272.0
+offset_bottom = 704.0
+
+[node name="ColorRect" type="ColorRect" parent="Bottom/Panel" unique_id=1625401619]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(1, 1, 1, 0)
+
+[node name="ConvertMinerals" type="TextureButton" parent="Bottom/Panel" unique_id=1556530902]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -22.0
+offset_right = 20.0
+offset_bottom = 22.0
+shortcut = SubResource("Shortcut_xflk1")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("15")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Bottom/Panel" unique_id=1732532704]
+libraries/ = SubResource("AnimationLibrary_4yly8")
+
+[node name="DimensionBtn" type="TextureButton" parent="Bottom" unique_id=1577414492]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 632.0
+offset_right = 96.0
+offset_bottom = 680.0
+texture_normal = ExtResource("20_ljo2x")
+texture_hover = ExtResource("21_7gk6a")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Bottom/DimensionBtn" unique_id=1668441562]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("33")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SwitchBtn" type="TextureButton" parent="Bottom" unique_id=391210438]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = 632.0
+offset_right = 48.0
+offset_bottom = 680.0
+shortcut = SubResource("30")
+shortcut_feedback = false
+shortcut_in_tooltip = false
+texture_normal = ExtResource("20_ljo2x")
+texture_hover = ExtResource("21_7gk6a")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="Bottom/SwitchBtn" unique_id=184254654]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PrevView" type="Button" parent="Bottom" unique_id=1405866806]
+layout_mode = 0
+offset_top = 636.0
+offset_right = 36.0
+offset_bottom = 670.0
+shortcut = SubResource("32")
+shortcut_in_tooltip = false
+text = "<"
+
+[node name="NextView" type="Button" parent="Bottom" unique_id=1227825423]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 636.0
+offset_right = 72.0
+offset_bottom = 670.0
+shortcut = SubResource("34")
+shortcut_in_tooltip = false
+text = ">"
+
+[node name="Hotbar" type="HBoxContainer" parent="Bottom" unique_id=1597170676]
+layout_mode = 0
+offset_top = 680.0
+offset_right = 1829.0
+offset_bottom = 740.0
+scale = Vector2(0.7, 0.7)
+mouse_filter = 2
+alignment = 1
+metadata/_edit_lock_ = true
+
+[node name="ViewHistory" type="ScrollContainer" parent="Bottom" unique_id=670889755]
+visible = false
+layout_mode = 0
+offset_top = 516.0
+offset_right = 216.0
+offset_bottom = 628.0
+
+[node name="VBox" type="VBoxContainer" parent="Bottom/ViewHistory" unique_id=1977722240]
+layout_mode = 2
+
+[node name="Top" type="Control" parent="." unique_id=1446625118]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Objectives" type="Control" parent="Top" unique_id=86440952]
+anchors_preset = 0
+offset_left = 640.0
+offset_top = 4.0
+offset_right = 680.0
+offset_bottom = 44.0
+mouse_filter = 1
+
+[node name="Label" type="Label" parent="Top/Objectives" unique_id=840844026]
+visible = false
+layout_mode = 0
+offset_left = -44.0
+offset_right = 48.0
+offset_bottom = 34.0
+grow_horizontal = 2
+mouse_filter = 0
+text = "Build 5 mineral extractors"
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="Top/Objectives" unique_id=68781718]
+modulate = Color(1, 1, 1, 0.305882)
+layout_mode = 0
+offset_left = -44.0
+offset_right = 100.0
+offset_bottom = 32.0
+mouse_filter = 2
+nine_patch_stretch = true
+texture_progress = ExtResource("16")
+
+[node name="Lv" type="VBoxContainer" parent="Top" unique_id=980507248]
+layout_mode = 0
+offset_top = 38.0
+offset_right = 48.0
+offset_bottom = 77.0
+theme_override_constants/separation = 0
+
+[node name="Level" type="Label" parent="Top/Lv" unique_id=43323047]
+layout_mode = 2
+mouse_filter = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_jjxme")
+text = "Lv 10"
+label_settings = SubResource("LabelSettings_uu53f")
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="Top/Lv" unique_id=1810527173]
+modulate = Color(0, 1, 0, 1)
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+max_value = 1.0
+step = 0.0
+value = 1.0
+nine_patch_stretch = true
+texture_progress = ExtResource("16")
+
+[node name="Name" type="HBoxContainer" parent="Top" unique_id=1742331215]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 38.0
+offset_right = 201.0
+offset_bottom = 72.0
+
+[node name="Name" type="LineEdit" parent="Top/Name" unique_id=1745081332]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_selected_color = Color(0, 0, 0, 1)
+theme_override_colors/caret_color = Color(1, 1, 1, 1)
+theme_override_colors/selection_color = Color(1, 1, 1, 1)
+theme_override_constants/minimum_character_width = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_aubol")
+theme_override_styles/focus = SubResource("StyleBoxFlat_y5ks2")
+expand_to_text_length = true
+shortcut_keys_enabled = false
+select_all_on_focus = true
+caret_blink = true
+caret_blink_interval = 0.5
+
+[node name="TextureRect" type="TextureRect" parent="Top" unique_id=640393901]
+layout_mode = 0
+offset_right = 1280.0
+offset_bottom = 45.0
+texture = ExtResource("21")
+
+[node name="Resources" type="HBoxContainer" parent="Top" unique_id=2144324628]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 1176.0
+offset_bottom = 36.0
+
+[node name="Money" type="Control" parent="Top/Resources" unique_id=1738895474]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.8
+
+[node name="Text" type="Label" parent="Top/Resources/Money" unique_id=1746719651]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 77.0
+offset_bottom = 32.0
+text = "100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Money" unique_id=930411078]
+layout_mode = 0
+offset_left = 10.0
+offset_right = 40.0
+offset_bottom = 37.0
+scale = Vector2(0.8, 0.8)
+texture_normal = ExtResource("2")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Minerals" type="Control" parent="Top/Resources" unique_id=782451320]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.1
+
+[node name="Text" type="Label" parent="Top/Resources/Minerals" unique_id=1804684137]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 116.0
+offset_bottom = 32.0
+mouse_filter = 1
+text = "100/100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Minerals" unique_id=225496605]
+layout_mode = 0
+offset_left = 4.0
+offset_right = 35.0
+offset_bottom = 32.0
+texture_normal = ExtResource("4")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Stone" type="Control" parent="Top/Resources" unique_id=1639978148]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Text" type="Label" parent="Top/Resources/Stone" unique_id=1983248994]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 187.0
+offset_bottom = 32.0
+size_flags_horizontal = 3
+text = "100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Stone" unique_id=1893690942]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -4.0
+offset_right = 254.0
+offset_bottom = 252.0
+scale = Vector2(0.14, 0.14)
+texture_normal = ExtResource("8")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Soil" type="Control" parent="Top/Resources" unique_id=1323890795]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.8
+
+[node name="Text" type="Label" parent="Top/Resources/Soil" unique_id=27252475]
+layout_mode = 0
+offset_left = 44.0
+offset_top = 4.0
+offset_right = 301.0
+offset_bottom = 28.0
+size_flags_horizontal = 3
+text = "100"
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Soil" unique_id=1771964133]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -4.0
+offset_right = 254.0
+offset_bottom = 252.0
+scale = Vector2(0.14, 0.14)
+texture_normal = ExtResource("11")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Glass" type="Control" parent="Top/Resources" unique_id=1361228441]
+visible = false
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Text" type="Label" parent="Top/Resources/Glass" unique_id=1334647608]
+layout_mode = 0
+offset_left = 44.0
+offset_top = 4.0
+offset_right = 301.0
+offset_bottom = 28.0
+size_flags_horizontal = 3
+text = "100"
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Glass" unique_id=739299920]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -4.0
+offset_right = 254.0
+offset_bottom = 252.0
+scale = Vector2(0.14, 0.14)
+texture_normal = ExtResource("26")
+ignore_texture_size = true
+
+[node name="Cellulose" type="Control" parent="Top/Resources" unique_id=705222174]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.8
+
+[node name="Text" type="Label" parent="Top/Resources/Cellulose" unique_id=1675874200]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 157.0
+offset_bottom = 32.0
+size_flags_horizontal = 3
+text = "100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Cellulose" unique_id=1212744648]
+layout_mode = 0
+offset_left = -1.0
+offset_right = 31.0
+offset_bottom = 32.0
+texture_normal = ExtResource("34")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Energy" type="Control" parent="Top/Resources" unique_id=2112954579]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.1
+
+[node name="Text" type="Label" parent="Top/Resources/Energy" unique_id=336863166]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 209.0
+offset_bottom = 32.0
+text = "100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/Energy" unique_id=483700315]
+layout_mode = 0
+offset_left = 4.0
+offset_right = 35.0
+offset_bottom = 32.0
+texture_normal = ExtResource("3")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SP" type="Control" parent="Top/Resources" unique_id=1733076344]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.95
+
+[node name="Text" type="Label" parent="Top/Resources/SP" unique_id=1485195514]
+layout_mode = 0
+offset_left = 44.0
+offset_right = 84.0
+offset_bottom = 32.0
+text = "100"
+vertical_alignment = 1
+
+[node name="Texture2D" type="TextureButton" parent="Top/Resources/SP" unique_id=278295025]
+layout_mode = 0
+offset_left = -6.0
+offset_top = 4.0
+offset_right = 32.0
+offset_bottom = 28.0
+texture_normal = ExtResource("12")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="AutosaveLight" type="TextureRect" parent="Top" unique_id=1441581012]
+modulate = Color(0, 0.301961, 0, 1)
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 12.0
+offset_right = 1144.0
+offset_bottom = 32.0
+texture = ExtResource("18")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wiki" type="TextureButton" parent="Top" unique_id=775693568]
+layout_mode = 0
+offset_left = 1200.0
+offset_right = 1230.0
+offset_bottom = 40.0
+texture_normal = ExtResource("25")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Stats" type="TextureButton" parent="Top" unique_id=1310110897]
+layout_mode = 0
+offset_left = 1156.0
+offset_right = 1186.0
+offset_bottom = 40.0
+texture_normal = ExtResource("35")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="ClusterInfo" type="TextureRect" parent="Top" unique_id=2114101543]
+layout_mode = 0
+offset_left = 1152.0
+offset_top = 60.0
+offset_right = 1216.0
+offset_bottom = 124.0
+texture = ExtResource("31")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Redshift" type="Label" parent="Top/ClusterInfo" unique_id=1879998977]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -11.5
+offset_right = 24.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "1.0"
+label_settings = SubResource("LabelSettings_ljo2x")
+horizontal_alignment = 1
+
+[node name="AnimationPlayer2" type="AnimationPlayer" parent="." unique_id=536407215]
+libraries/ = SubResource("AnimationLibrary_f72sx")
+
+[node name="Dialogue" parent="." unique_id=1458125333 instance=ExtResource("23")]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="Nice" type="TextureRect" parent="." unique_id=192583790]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = ExtResource("36_g5ll0")
+
+[connection signal="tree_entered" from="." to="." method="_on_HUD_tree_entered"]
+[connection signal="mouse_entered" from="Bookmarks/Bookmarked" to="." method="_on_Bookmarked_mouse_entered"]
+[connection signal="mouse_exited" from="Bookmarks/Bookmarked" to="." method="_on_Bookmarked_mouse_exited"]
+[connection signal="pressed" from="Bookmarks/Bookmarked" to="." method="_on_Bookmarked_pressed"]
+[connection signal="mouse_entered" from="Bookmarks/BookMarkButtons/Planets" to="." method="_on_Planets_mouse_entered"]
+[connection signal="mouse_exited" from="Bookmarks/BookMarkButtons/Planets" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bookmarks/BookMarkButtons/Planets" to="." method="_on_Planets_pressed"]
+[connection signal="mouse_entered" from="Bookmarks/BookMarkButtons/Systems" to="." method="_on_Systems_mouse_entered"]
+[connection signal="mouse_exited" from="Bookmarks/BookMarkButtons/Systems" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bookmarks/BookMarkButtons/Systems" to="." method="_on_Systems_pressed"]
+[connection signal="mouse_entered" from="Bookmarks/BookMarkButtons/Galaxies" to="." method="_on_Galaxies_mouse_entered"]
+[connection signal="mouse_exited" from="Bookmarks/BookMarkButtons/Galaxies" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bookmarks/BookMarkButtons/Galaxies" to="." method="_on_Galaxies_pressed"]
+[connection signal="mouse_entered" from="Bookmarks/BookMarkButtons/Clusters" to="." method="_on_Clusters_mouse_entered"]
+[connection signal="mouse_exited" from="Bookmarks/BookMarkButtons/Clusters" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bookmarks/BookMarkButtons/Clusters" to="." method="_on_Clusters_pressed"]
+[connection signal="mouse_entered" from="Buttons/Ships" to="." method="_on_Ships_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/Ships" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/Ships" to="." method="_on_Ships_pressed"]
+[connection signal="mouse_entered" from="Buttons/Vehicles" to="." method="_on_Vehicles_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/Vehicles" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/Vehicles" to="." method="_on_Vehicles_pressed"]
+[connection signal="mouse_entered" from="Buttons/Craft" to="." method="_on_Craft_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/Craft" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/Craft" to="." method="_on_Craft_pressed"]
+[connection signal="mouse_entered" from="Buttons/Inventory" to="." method="_on_Inventory_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/Inventory" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/Inventory" to="." method="_on_Inventory_pressed"]
+[connection signal="mouse_entered" from="Buttons/Shop" to="." method="_on_Shop_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/Shop" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/Shop" to="." method="_on_Shop_pressed"]
+[connection signal="mouse_entered" from="Buttons/MineralUpgrades" to="." method="_on_MineralUpgrades_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/MineralUpgrades" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/MineralUpgrades" to="." method="_on_MineralUpgrades_pressed"]
+[connection signal="mouse_entered" from="Buttons/ScienceTree" to="." method="_on_ScienceTree_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/ScienceTree" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/ScienceTree" to="." method="_on_ScienceTree_pressed"]
+[connection signal="mouse_entered" from="Buttons/MainMenu" to="." method="_on_MainMenu_mouse_entered"]
+[connection signal="mouse_exited" from="Buttons/MainMenu" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Buttons/MainMenu" to="." method="_on_MainMenu_pressed"]
+[connection signal="mouse_entered" from="Bottom/Panel/ConvertMinerals" to="." method="_on_ConvertMinerals_mouse_entered"]
+[connection signal="mouse_exited" from="Bottom/Panel/ConvertMinerals" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bottom/Panel/ConvertMinerals" to="." method="_on_ConvertMinerals_pressed"]
+[connection signal="mouse_entered" from="Bottom/DimensionBtn" to="." method="_on_Dimension_mouse_entered"]
+[connection signal="mouse_exited" from="Bottom/DimensionBtn" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bottom/DimensionBtn" to="." method="_on_Dimension_pressed"]
+[connection signal="mouse_entered" from="Bottom/SwitchBtn" to="." method="_on_SwitchBtn_mouse_entered"]
+[connection signal="mouse_exited" from="Bottom/SwitchBtn" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bottom/SwitchBtn" to="." method="_on_SwitchBtn_pressed"]
+[connection signal="mouse_entered" from="Bottom/PrevView" to="." method="_on_PrevView_mouse_entered"]
+[connection signal="mouse_exited" from="Bottom/PrevView" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bottom/PrevView" to="." method="_on_PrevView_pressed"]
+[connection signal="mouse_entered" from="Bottom/NextView" to="." method="_on_NextView_mouse_entered"]
+[connection signal="mouse_exited" from="Bottom/NextView" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Bottom/NextView" to="." method="_on_NextView_pressed"]
+[connection signal="mouse_entered" from="Top/Objectives/Label" to="." method="_on_ObjectivesLabel_mouse_entered"]
+[connection signal="mouse_exited" from="Top/Objectives/Label" to="." method="_on_Label_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Lv/Level" to="." method="_on_level_mouse_entered"]
+[connection signal="mouse_exited" from="Top/Lv/Level" to="." method="_on_level_mouse_exited"]
+[connection signal="focus_entered" from="Top/Name/Name" to="." method="_on_name_focus_entered"]
+[connection signal="focus_exited" from="Top/Name/Name" to="." method="_on_name_focus_exited"]
+[connection signal="text_submitted" from="Top/Name/Name" to="." method="_on_Name_text_entered"]
+[connection signal="mouse_entered" from="Top/Resources/Money/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["MONEY"]]
+[connection signal="mouse_exited" from="Top/Resources/Money/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_exited" from="Top/Resources/Minerals/Text" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Minerals/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["MINERALS"]]
+[connection signal="mouse_exited" from="Top/Resources/Minerals/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Stone/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["STONE"]]
+[connection signal="mouse_exited" from="Top/Resources/Stone/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Soil/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["SOIL"]]
+[connection signal="mouse_exited" from="Top/Resources/Soil/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Glass/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["GLASS"]]
+[connection signal="mouse_exited" from="Top/Resources/Glass/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Cellulose/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["CELLULOSE"]]
+[connection signal="mouse_exited" from="Top/Resources/Cellulose/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/Energy/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["ENERGY"]]
+[connection signal="mouse_exited" from="Top/Resources/Energy/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Resources/SP/Texture2D" to="." method="_on_Texture_mouse_entered" binds= ["SP"]]
+[connection signal="mouse_exited" from="Top/Resources/SP/Texture2D" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/AutosaveLight" to="." method="_on_AutosaveLight_mouse_entered"]
+[connection signal="mouse_exited" from="Top/AutosaveLight" to="." method="_on_mouse_exited"]
+[connection signal="mouse_entered" from="Top/Wiki" to="." method="_on_Wiki_mouse_entered"]
+[connection signal="mouse_exited" from="Top/Wiki" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Top/Wiki" to="." method="_on_Wiki_pressed"]
+[connection signal="mouse_entered" from="Top/Stats" to="." method="_on_Stats_mouse_entered"]
+[connection signal="mouse_exited" from="Top/Stats" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="Top/Stats" to="." method="_on_Stats_pressed"]
+[connection signal="mouse_entered" from="Top/ClusterInfo" to="." method="_on_cluster_info_mouse_entered"]
+[connection signal="mouse_exited" from="Top/ClusterInfo" to="." method="_on_mouse_exited"]
+[connection signal="dialogue_finished" from="Dialogue" to="." method="_on_Dialogue_dialogue_finished"]

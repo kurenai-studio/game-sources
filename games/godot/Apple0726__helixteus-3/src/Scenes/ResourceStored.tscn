@@ -1,0 +1,137 @@
+[gd_scene format=3 uid="uid://b5ew526etki0u"]
+
+[ext_resource type="Texture2D" uid="uid://d3kwtgk0sw40p" path="res://Graphics/Icons/minerals.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://4tf3teqmkahc" path="res://Graphics/Misc/Bar.png" id="3"]
+[ext_resource type="Script" uid="uid://b05olmk6bovga" path="res://Scripts/ResourceStored.gd" id="4"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_l3c8g"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_umsqh"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[sub_resource type="SystemFont" id="SystemFont_m40e0"]
+font_names = PackedStringArray("Noto Sans")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_h6cwk"]
+line_spacing = 0.0
+font = SubResource("SystemFont_m40e0")
+font_size = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x6v7q"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[node name="RsrcStored" type="Control" unique_id=54191512]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1280.0
+offset_bottom = -720.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4")
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1312314980]
+layout_mode = 0
+offset_left = -39.0
+offset_top = -24.0
+offset_right = 86.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_override_constants/separation = -1
+
+[node name="Panel2" type="Panel" parent="VBox" unique_id=1308858968]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_l3c8g")
+
+[node name="CurrentBar" type="TextureProgressBar" parent="VBox/Panel2" unique_id=612504418]
+modulate = Color(1, 1, 1, 0.521569)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("3")
+
+[node name="Panel3" type="Panel" parent="VBox" unique_id=86868095]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_umsqh")
+
+[node name="Label" type="Label" parent="VBox/Panel3" unique_id=133622372]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -22.5
+offset_right = 127.0
+offset_bottom = 21.5
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_h6cwk")
+vertical_alignment = 1
+
+[node name="CapacityBar" type="TextureProgressBar" parent="VBox/Panel3" unique_id=1732160270]
+modulate = Color(1, 1, 1, 0.521569)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+nine_patch_stretch = true
+texture_progress = ExtResource("3")
+metadata/_edit_lock_ = true
+
+[node name="Panel" type="Panel" parent="." unique_id=1980367141]
+layout_mode = 0
+offset_left = -86.0
+offset_top = -24.0
+offset_right = -38.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_x6v7q")
+
+[node name="Icon" type="TextureRect" parent="Panel" unique_id=153706661]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+mouse_filter = 2
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5

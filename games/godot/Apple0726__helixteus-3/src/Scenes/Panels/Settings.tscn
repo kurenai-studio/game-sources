@@ -1,0 +1,581 @@
+[gd_scene format=3 uid="uid://blgeu8fsfvpi6"]
+
+[ext_resource type="Script" uid="uid://b8vxyycyol8r6" path="res://Scripts/SettingsPanel.gd" id="1_1rej2"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="2_lx04k"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_0r7ov"]
+font_size = 18
+
+[node name="Settings" type="Panel" unique_id=180707210]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -448.0
+offset_top = -288.0
+offset_right = 448.0
+offset_bottom = 288.0
+script = ExtResource("1_1rej2")
+
+[node name="Title" type="Label" parent="." unique_id=1688806520]
+layout_mode = 0
+offset_top = 12.0
+offset_right = 896.0
+offset_bottom = 68.0
+text = "SETTINGS"
+label_settings = SubResource("LabelSettings_0r7ov")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="." unique_id=1973569208]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 892.0
+offset_bottom = 576.0
+current_tab = 0
+
+[node name="SFX" type="TabBar" parent="TabContainer" unique_id=208608145]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Master" type="HSlider" parent="TabContainer/SFX" unique_id=1740914131]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 27.0
+offset_right = 384.0
+offset_bottom = 91.0
+min_value = -40.0
+max_value = 0.0
+
+[node name="Label" type="Label" parent="TabContainer/SFX/Master" unique_id=1230008698]
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 24.0
+text = "MASTER"
+
+[node name="Music" type="HSlider" parent="TabContainer/SFX" unique_id=251406210]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 91.0
+offset_right = 384.0
+offset_bottom = 155.0
+min_value = -40.0
+max_value = 0.0
+
+[node name="Label" type="Label" parent="TabContainer/SFX/Music" unique_id=2127652033]
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 24.0
+text = "MUSIC"
+
+[node name="SFX" type="HSlider" parent="TabContainer/SFX" unique_id=654219151]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 155.0
+offset_right = 384.0
+offset_bottom = 219.0
+min_value = -40.0
+max_value = 0.0
+
+[node name="Label" type="Label" parent="TabContainer/SFX/SFX" unique_id=197580360]
+layout_mode = 0
+offset_right = 320.0
+offset_bottom = 24.0
+text = "SFX"
+
+[node name="MusicPitch" type="CheckButton" parent="TabContainer/SFX" unique_id=269725723]
+layout_mode = 0
+offset_left = 484.0
+offset_top = 27.0
+offset_right = 818.0
+offset_bottom = 67.0
+
+[node name="MusicPitchLabel" parent="TabContainer/SFX" unique_id=925166449 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 485.0
+offset_top = 35.0
+offset_right = 768.0
+offset_bottom = 65.0
+text = "TIME_SPEED_AFFECTS_PITCH [img]Graphics/Icons/help.png[/img]"
+label_text = "TIME_SPEED_AFFECTS_PITCH"
+help_text = "TIME_SPEED_AFFECTS_PITCH_DESC"
+
+[node name="GRAPHICS" type="TabBar" parent="TabContainer" unique_id=294681791]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Vsync" type="CheckButton" parent="TabContainer/GRAPHICS" unique_id=1123561515]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 43.0
+offset_right = 772.0
+offset_bottom = 83.0
+text = "Vsync (requires restart)"
+
+[node name="Fullscreen" type="CheckButton" parent="TabContainer/GRAPHICS" unique_id=1370547237]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 107.0
+offset_right = 772.0
+offset_bottom = 147.0
+
+[node name="FPS" type="Control" parent="TabContainer/GRAPHICS" unique_id=682603999]
+anchors_preset = 0
+offset_left = 168.0
+offset_top = 12.0
+offset_right = 208.0
+offset_bottom = 52.0
+
+[node name="Label" type="Label" parent="TabContainer/GRAPHICS/FPS" unique_id=1037318880]
+layout_mode = 0
+offset_left = 5.68961
+offset_top = 39.129
+offset_right = 87.69
+offset_bottom = 63.129
+text = "MAX_FPS"
+
+[node name="Label2" type="Label" parent="TabContainer/GRAPHICS/FPS" unique_id=1974072728]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 64.0
+offset_right = 204.0
+offset_bottom = 88.0
+text = "60"
+
+[node name="FPS" type="HSlider" parent="TabContainer/GRAPHICS/FPS" unique_id=1231743258]
+layout_mode = 0
+offset_left = -85.954
+offset_top = 68.367
+offset_right = 134.046
+offset_bottom = 84.367
+min_value = 8.0
+max_value = 144.0
+value = 60.0
+rounded = true
+
+[node name="30FPS" type="Button" parent="TabContainer/GRAPHICS/FPS" unique_id=1901919421]
+layout_mode = 0
+offset_left = -96.0
+offset_top = 109.0
+offset_right = -24.0
+offset_bottom = 149.0
+text = "30 FPS"
+
+[node name="60FPS" type="Button" parent="TabContainer/GRAPHICS/FPS" unique_id=1466271214]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 109.0
+offset_right = 76.0
+offset_bottom = 149.0
+text = "60 FPS"
+
+[node name="120FPS" type="Button" parent="TabContainer/GRAPHICS/FPS" unique_id=1253926130]
+layout_mode = 0
+offset_left = 104.0
+offset_top = 109.0
+offset_right = 184.0
+offset_bottom = 149.0
+text = "120 FPS"
+
+[node name="SpaceLOD" type="Control" parent="TabContainer/GRAPHICS" unique_id=523514567]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="StaticSpaceLODLabel" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=1046122720 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 181.0
+offset_right = 384.0
+offset_bottom = 221.0
+text = "[center]STATIC_SPACE_BACKGROUND_LOD [img]Graphics/Icons/help.png[/img][/center]"
+label_text = "STATIC_SPACE_BACKGROUND_LOD"
+help_text = "STATIC_SPACE_BACKGROUND_LOD_DESC"
+align = 1
+
+[node name="StaticSpaceLOD" type="HSlider" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=1613042967]
+layout_mode = 0
+offset_left = 82.046
+offset_top = 225.0
+offset_right = 302.046
+offset_bottom = 241.0
+max_value = 30.0
+value = 15.0
+
+[node name="StaticSpaceLODValue" type="Label" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=1933895324]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 221.0
+offset_right = 372.0
+offset_bottom = 247.0
+text = "15"
+
+[node name="DynamicSpaceLODLabel" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=965151972 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 269.0
+offset_right = 384.0
+offset_bottom = 309.0
+text = "[center]DYNAMIC_SPACE_BACKGROUND_LOD [img]Graphics/Icons/help.png[/img][/center]"
+label_text = "DYNAMIC_SPACE_BACKGROUND_LOD"
+help_text = "DYNAMIC_SPACE_BACKGROUND_LOD_DESC"
+align = 1
+
+[node name="DynamicSpaceLOD" type="HSlider" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=715450667]
+layout_mode = 0
+offset_left = 82.046
+offset_top = 309.0
+offset_right = 302.046
+offset_bottom = 325.0
+max_value = 20.0
+value = 8.0
+
+[node name="DynamicSpaceLODValue" type="Label" parent="TabContainer/GRAPHICS/SpaceLOD" unique_id=1729449388]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 305.0
+offset_right = 372.0
+offset_bottom = 331.0
+text = "8"
+
+[node name="EnableShaders" type="CheckButton" parent="TabContainer/GRAPHICS" unique_id=336419439]
+layout_mode = 0
+offset_left = 492.0
+offset_top = 167.0
+offset_right = 772.0
+offset_bottom = 207.0
+
+[node name="EnableShadersLabel" parent="TabContainer/GRAPHICS" unique_id=462668461 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 453.0
+offset_top = 175.0
+offset_right = 692.0
+offset_bottom = 215.0
+text = "ENABLE_SHADERS [img]Graphics/Icons/help.png[/img]"
+label_text = "ENABLE_SHADERS"
+help_text = "ENABLE_SHADERS_DESC"
+
+[node name="AutosaveLight" type="CheckButton" parent="TabContainer/GRAPHICS" unique_id=1345007580]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 227.0
+offset_right = 772.0
+offset_bottom = 267.0
+text = "AUTOSAVE_LIGHT"
+
+[node name="Screenshake" type="CheckButton" parent="TabContainer/GRAPHICS" unique_id=1064036076]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 287.0
+offset_right = 772.0
+offset_bottom = 327.0
+text = "ENABLE_SCREEN_SHAKE"
+
+[node name="DisplayRes" type="OptionButton" parent="TabContainer/GRAPHICS" unique_id=1465887640]
+visible = false
+layout_mode = 0
+offset_left = 140.0
+offset_top = 87.0
+offset_right = 272.0
+offset_bottom = 116.0
+
+[node name="Label" type="Label" parent="TabContainer/GRAPHICS" unique_id=667759132]
+visible = false
+layout_mode = 0
+offset_left = 72.0
+offset_top = 51.0
+offset_right = 332.0
+offset_bottom = 74.0
+text = "Display resolution"
+
+[node name="KeepWindowSize" type="CheckBox" parent="TabContainer/GRAPHICS" unique_id=1031559161]
+visible = false
+layout_mode = 0
+offset_left = 108.0
+offset_top = 127.0
+offset_right = 294.0
+offset_bottom = 158.0
+text = "Keep window size"
+
+[node name="GAME" type="TabBar" parent="TabContainer" unique_id=523582965]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="AutosellMinerals" type="CheckButton" parent="TabContainer/GAME" unique_id=24641029]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 29.0
+offset_right = 400.0
+offset_bottom = 69.0
+
+[node name="AutosellMineralsLabel" parent="TabContainer/GAME" unique_id=2087312894 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 37.0
+offset_right = 320.0
+offset_bottom = 67.0
+text = "AUTOSELL_MINERALS [img]Graphics/Icons/help.png[/img]"
+label_text = "AUTOSELL_MINERALS"
+help_text = "AUTOSELL_MINERALS_DESC"
+
+[node name="CaveGenInfo" type="CheckButton" parent="TabContainer/GAME" unique_id=876509700]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 93.0
+offset_right = 400.0
+offset_bottom = 133.0
+
+[node name="AutoSwitch" type="CheckButton" parent="TabContainer/GAME" unique_id=2121173532]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 153.0
+offset_right = 400.0
+offset_bottom = 193.0
+
+[node name="RichTextLabel2" parent="TabContainer/GAME" unique_id=894872641 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 101.0
+offset_right = 320.0
+offset_bottom = 131.0
+text = "SHOW_CAVE_GEN_INFO [img]Graphics/Icons/help.png[/img]"
+label_text = "SHOW_CAVE_GEN_INFO"
+help_text = "SHOW_CAVE_GEN_INFO_DESC"
+
+[node name="RichTextLabel3" parent="TabContainer/GAME" unique_id=1581426805 instance=ExtResource("2_lx04k")]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 161.0
+offset_right = 320.0
+offset_bottom = 191.0
+text = "AUTO_SWITCH_SELL_BUY [img]Graphics/Icons/help.png[/img]"
+label_text = "AUTO_SWITCH_SELL_BUY"
+help_text = "AUTO_SWITCH_SELL_BUY_DESC"
+
+[node name="Difficulty" type="Label" parent="TabContainer/GAME" unique_id=1582164056]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 225.0
+offset_right = 400.0
+offset_bottom = 249.0
+mouse_filter = 1
+text = "ENEMY_DIFFICULTY"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer/GAME" unique_id=537572648]
+layout_mode = 0
+offset_left = 58.217987
+offset_top = 262.745
+offset_right = 387.21802
+offset_bottom = 302.745
+alignment = 1
+
+[node name="Easy" type="CheckBox" parent="TabContainer/GAME/HBoxContainer" unique_id=1557194203]
+layout_mode = 2
+text = "EASY"
+
+[node name="Normal" type="CheckBox" parent="TabContainer/GAME/HBoxContainer" unique_id=72429643]
+layout_mode = 2
+text = "NORMAL"
+
+[node name="Hard" type="CheckBox" parent="TabContainer/GAME/HBoxContainer" unique_id=689355541]
+layout_mode = 2
+text = "HARD"
+
+[node name="Autosave" type="HSlider" parent="TabContainer/GAME" unique_id=1392513466]
+layout_mode = 0
+offset_left = 504.0
+offset_top = 71.0
+offset_right = 744.0
+offset_bottom = 111.0
+min_value = 1.0
+max_value = 60.0
+value = 30.0
+rounded = true
+
+[node name="BackupIntervalSlider" type="HSlider" parent="TabContainer/GAME" unique_id=410461669]
+layout_mode = 0
+offset_left = 504.0
+offset_top = 163.0
+offset_right = 744.0
+offset_bottom = 203.0
+min_value = 1.0
+max_value = 60.0
+value = 5.0
+rounded = true
+
+[node name="MaxBackupsSlider" type="HSlider" parent="TabContainer/GAME" unique_id=299000524]
+layout_mode = 0
+offset_left = 504.0
+offset_top = 251.0
+offset_right = 744.0
+offset_bottom = 291.0
+value = 20.0
+rounded = true
+
+[node name="Label2" type="Label" parent="TabContainer/GAME" unique_id=652321819]
+layout_mode = 0
+offset_left = 472.0
+offset_top = 37.0
+offset_right = 796.0
+offset_bottom = 63.0
+text = "AUTOSAVE_INTERVAL"
+horizontal_alignment = 1
+
+[node name="BackupIntervalLabel" type="Label" parent="TabContainer/GAME" unique_id=608686215]
+layout_mode = 0
+offset_left = 472.0
+offset_top = 127.0
+offset_right = 796.0
+offset_bottom = 153.0
+text = "BACKUP_INTERVAL"
+horizontal_alignment = 1
+
+[node name="MaxBackupsLabel" type="Label" parent="TabContainer/GAME" unique_id=1378291797]
+layout_mode = 0
+offset_left = 472.0
+offset_top = 215.0
+offset_right = 796.0
+offset_bottom = 241.0
+text = "MAX_BACKUPS"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="TabContainer/GAME" unique_id=842430868]
+layout_mode = 0
+offset_left = 752.0
+offset_top = 83.0
+offset_right = 864.0
+offset_bottom = 109.0
+text = "30 s"
+
+[node name="BackupIntervalValue" type="Label" parent="TabContainer/GAME" unique_id=1471897477]
+layout_mode = 0
+offset_left = 752.0
+offset_top = 171.0
+offset_right = 860.0
+offset_bottom = 197.0
+text = "5 minutes"
+
+[node name="MaxBackupsValue" type="Label" parent="TabContainer/GAME" unique_id=291458341]
+layout_mode = 0
+offset_left = 752.0
+offset_top = 259.0
+offset_right = 860.0
+offset_bottom = 285.0
+text = "20"
+
+[node name="BackupWithMinimalInterruption" type="CheckBox" parent="TabContainer/GAME" unique_id=1898836278]
+layout_mode = 0
+offset_left = 468.0
+offset_top = 313.0
+offset_right = 855.0
+offset_bottom = 353.0
+text = "BACKUP_WITH_MINIMAL_INTERRUPTION"
+
+[node name="MISC" type="TabBar" parent="TabContainer" unique_id=739482139]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="OPCursor" type="CheckBox" parent="TabContainer/MISC" unique_id=1003290968]
+layout_mode = 0
+offset_left = 576.0
+offset_top = 43.0
+offset_right = 695.0
+offset_bottom = 83.0
+text = "op cursor"
+
+[node name="Discord" type="CheckBox" parent="TabContainer/MISC" unique_id=587381444]
+layout_mode = 0
+offset_left = 139.0
+offset_top = 165.0
+offset_right = 337.0
+offset_bottom = 205.0
+button_pressed = true
+text = "Discord Rich Presence"
+
+[node name="ShowFPS" type="CheckBox" parent="TabContainer/MISC" unique_id=470689829]
+layout_mode = 0
+offset_left = 564.0
+offset_top = 165.0
+offset_right = 762.0
+offset_bottom = 205.0
+text = "Show FPS"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="TabContainer/MISC" unique_id=1788890095]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 83.0
+offset_right = 401.0
+offset_bottom = 123.0
+alignment = 1
+
+[node name="Standard" type="CheckBox" parent="TabContainer/MISC/HBoxContainer2" unique_id=743140207]
+layout_mode = 2
+text = "STANDARD"
+
+[node name="SI" type="CheckBox" parent="TabContainer/MISC/HBoxContainer2" unique_id=1756052503]
+layout_mode = 2
+text = "SI"
+
+[node name="Scientific" type="CheckBox" parent="TabContainer/MISC/HBoxContainer2" unique_id=2077417914]
+layout_mode = 2
+text = "SCIENTIFIC"
+
+[node name="Difficulty2" type="Label" parent="TabContainer/MISC" unique_id=497507029]
+layout_mode = 0
+offset_left = 104.0
+offset_top = 50.0
+offset_right = 370.0
+offset_bottom = 76.0
+mouse_filter = 1
+text = "LARGE_NUMBER_NOTATION"
+horizontal_alignment = 1
+
+[connection signal="value_changed" from="TabContainer/SFX/Master" to="." method="_on_Main_audio_value_changed"]
+[connection signal="value_changed" from="TabContainer/SFX/Music" to="." method="_on_Music_value_changed"]
+[connection signal="value_changed" from="TabContainer/SFX/SFX" to="." method="_on_Sound_Effects_value_changed"]
+[connection signal="toggled" from="TabContainer/SFX/MusicPitch" to="." method="_on_MusicPitch_toggled"]
+[connection signal="toggled" from="TabContainer/GRAPHICS/Vsync" to="." method="_on_Vsync_toggled"]
+[connection signal="toggled" from="TabContainer/GRAPHICS/Fullscreen" to="." method="_on_Fullscreen_toggled"]
+[connection signal="value_changed" from="TabContainer/GRAPHICS/FPS/FPS" to="." method="_on_FPS_value_changed"]
+[connection signal="pressed" from="TabContainer/GRAPHICS/FPS/30FPS" to="." method="_on_fps_pressed" binds= [30]]
+[connection signal="pressed" from="TabContainer/GRAPHICS/FPS/60FPS" to="." method="_on_fps_pressed" binds= [60]]
+[connection signal="pressed" from="TabContainer/GRAPHICS/FPS/120FPS" to="." method="_on_fps_pressed" binds= [120]]
+[connection signal="value_changed" from="TabContainer/GRAPHICS/SpaceLOD/StaticSpaceLOD" to="." method="_on_static_space_lod_value_changed"]
+[connection signal="value_changed" from="TabContainer/GRAPHICS/SpaceLOD/DynamicSpaceLOD" to="." method="_on_dynamic_space_lod_value_changed"]
+[connection signal="toggled" from="TabContainer/GRAPHICS/EnableShaders" to="." method="_on_EnableShaders_toggled"]
+[connection signal="toggled" from="TabContainer/GRAPHICS/AutosaveLight" to="." method="_on_AutosaveLight_toggled"]
+[connection signal="toggled" from="TabContainer/GRAPHICS/Screenshake" to="." method="_on_Screenshake_toggled"]
+[connection signal="item_selected" from="TabContainer/GRAPHICS/DisplayRes" to="." method="_on_DisplayRes_item_selected"]
+[connection signal="toggled" from="TabContainer/GAME/AutosellMinerals" to="." method="_on_AutosellMinerals_toggled"]
+[connection signal="toggled" from="TabContainer/GAME/CaveGenInfo" to="." method="_on_CaveGenInfo_toggled"]
+[connection signal="toggled" from="TabContainer/GAME/AutoSwitch" to="." method="_on_auto_switch_toggled"]
+[connection signal="mouse_entered" from="TabContainer/GAME/HBoxContainer/Easy" to="." method="_on_Easy_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/GAME/HBoxContainer/Easy" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabContainer/GAME/HBoxContainer/Easy" to="." method="_on_Easy_pressed"]
+[connection signal="mouse_entered" from="TabContainer/GAME/HBoxContainer/Normal" to="." method="_on_Normal_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/GAME/HBoxContainer/Normal" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabContainer/GAME/HBoxContainer/Normal" to="." method="_on_Normal_pressed"]
+[connection signal="mouse_entered" from="TabContainer/GAME/HBoxContainer/Hard" to="." method="_on_Hard_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/GAME/HBoxContainer/Hard" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabContainer/GAME/HBoxContainer/Hard" to="." method="_on_Hard_pressed"]
+[connection signal="value_changed" from="TabContainer/GAME/Autosave" to="." method="_on_Autosave_value_changed"]
+[connection signal="value_changed" from="TabContainer/GAME/BackupIntervalSlider" to="." method="_on_backup_interval_slider_value_changed"]
+[connection signal="value_changed" from="TabContainer/GAME/MaxBackupsSlider" to="." method="_on_max_backups_slider_value_changed"]
+[connection signal="toggled" from="TabContainer/GAME/BackupWithMinimalInterruption" to="." method="_on_backup_with_minimal_interruption_toggled"]
+[connection signal="mouse_entered" from="TabContainer/MISC/OPCursor" to="." method="_on_OPCursor_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/MISC/OPCursor" to="." method="_on_OPCursor_mouse_exited"]
+[connection signal="toggled" from="TabContainer/MISC/OPCursor" to="." method="_on_OPCursor_toggled"]
+[connection signal="toggled" from="TabContainer/MISC/Discord" to="." method="_on_discord_toggled"]
+[connection signal="toggled" from="TabContainer/MISC/ShowFPS" to="." method="_on_show_fps_toggled"]
+[connection signal="mouse_entered" from="TabContainer/MISC/HBoxContainer2/Standard" to="." method="_on_Standard_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/MISC/HBoxContainer2/Standard" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabContainer/MISC/HBoxContainer2/Standard" to="." method="_on_Standard_pressed"]
+[connection signal="mouse_entered" from="TabContainer/MISC/HBoxContainer2/SI" to="." method="_on_SI_mouse_entered"]
+[connection signal="mouse_exited" from="TabContainer/MISC/HBoxContainer2/SI" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="TabContainer/MISC/HBoxContainer2/SI" to="." method="_on_SI_pressed"]
+[connection signal="pressed" from="TabContainer/MISC/HBoxContainer2/Scientific" to="." method="_on_Scientific_pressed"]

@@ -1,0 +1,218 @@
+[gd_scene format=3 uid="uid://bx7irdxpbnhbb"]
+
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="2"]
+[ext_resource type="Script" uid="uid://bsiyhgj1nwvfw" path="res://Scripts/DimensionType.gd" id="3"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_epxrv"]
+draw_center = false
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.321569, 0.952941, 0, 1)
+border_blend = true
+
+[sub_resource type="Animation" id="2"]
+resource_name = "New Anim"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.760784), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="3"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_t74kk"]
+_data = {
+&"New Anim": SubResource("2"),
+&"RESET": SubResource("3")
+}
+
+[sub_resource type="Animation" id="Animation_7mwrh"]
+resource_name = "Fade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.301957),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_c4k7c"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:self_modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_tnhku"]
+_data = {
+&"Fade": SubResource("Animation_7mwrh"),
+&"RESET": SubResource("Animation_c4k7c")
+}
+
+[node name="Mathematics" type="Panel" unique_id=1754588657]
+clip_contents = true
+custom_minimum_size = Vector2(250, 320)
+offset_right = 255.0
+offset_bottom = 320.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("3")
+
+[node name="Selected" type="Panel" parent="." unique_id=1611242916]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_epxrv")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Selected" unique_id=1686457991]
+libraries/ = SubResource("AnimationLibrary_t74kk")
+
+[node name="RichTextLabel" parent="." unique_id=1499311694 instance=ExtResource("2")]
+layout_mode = 0
+anchor_right = 1.0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = -7.0
+offset_bottom = 72.0
+text = "[center] [img]Graphics/Icons/help.png[/img][/center]"
+help_text = "_DESC"
+align = 1
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1269495435]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 64.0
+offset_bottom = -94.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Upgrade" type="Button" parent="." unique_id=1866629123]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -40.0
+offset_right = -31.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Upgrade (x DRs)"
+expand_icon = true
+
+[node name="Effects" type="Button" parent="." unique_id=771505426]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -88.0
+offset_right = -31.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Effects"
+
+[node name="ColorRect" type="ColorRect" parent="Effects" unique_id=108664041]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Effects" unique_id=1263024747]
+libraries/ = SubResource("AnimationLibrary_tnhku")
+
+[node name="OPMeter" type="TextureProgressBar" parent="." unique_id=57775677]
+visible = false
+modulate = Color(1, 0.4, 0, 1)
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -107.5
+offset_top = 44.0
+offset_right = 107.5
+offset_bottom = 56.0
+max_value = 10.0
+step = 0.0
+value = 4.0
+allow_greater = true
+nine_patch_stretch = true
+stretch_margin_left = 9
+stretch_margin_right = 9
+texture_under = ExtResource("4")
+texture_over = ExtResource("7")
+texture_progress = ExtResource("6")

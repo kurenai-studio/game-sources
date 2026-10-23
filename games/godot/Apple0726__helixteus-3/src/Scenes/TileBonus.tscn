@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://bxpp7ecqx57tq"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_ikvkt"]
+[ext_resource type="Texture2D" uid="uid://dg25fshk35326" path="res://Graphics/Icons/SP.png" id="2_8plqd"]
+[ext_resource type="Script" uid="uid://dgvc3sttcbv0l" path="res://Scripts/TileBonus.gd" id="2_t0pjy"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ewgeq"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 25
+border_width_top = 10
+border_width_right = 25
+border_width_bottom = 10
+border_color = Color(0, 0, 0, 0)
+border_blend = true
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="Control" type="ColorRect" unique_id=1427270118]
+offset_right = 200.0
+offset_bottom = 200.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+script = ExtResource("2_t0pjy")
+metadata/_edit_horizontal_guides_ = [200.0]
+metadata/_edit_vertical_guides_ = [200.0]
+
+[node name="TileBonus" type="Panel" parent="." unique_id=1466739930]
+custom_minimum_size = Vector2(184, 72)
+layout_mode = 1
+offset_left = 8.0
+offset_top = 116.0
+offset_right = 192.0
+offset_bottom = 188.0
+size_flags_vertical = 3
+mouse_filter = 2
+theme = ExtResource("1_ikvkt")
+theme_override_styles/panel = SubResource("StyleBoxFlat_ewgeq")
+
+[node name="TextureRect" type="TextureRect" parent="TileBonus" unique_id=627791418]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 32.0
+offset_top = -16.0
+offset_right = 64.0
+offset_bottom = 16.0
+grow_vertical = 2
+texture = ExtResource("2_8plqd")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="TileBonus" unique_id=1253577471]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 52.0
+offset_top = -36.0
+offset_right = 168.0
+offset_bottom = 36.0
+grow_vertical = 2
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 28
+text = "x 2"
+horizontal_alignment = 1
+vertical_alignment = 1

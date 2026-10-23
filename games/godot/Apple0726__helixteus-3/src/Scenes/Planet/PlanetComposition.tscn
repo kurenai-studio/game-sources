@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://dlyrx1ng8iawb"]
+
+[ext_resource type="Texture2D" uid="uid://b0sj7mlhw61o" path="res://Graphics/Planets/Other/Shadow.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://cmyhmlmoai4wo" path="res://Graphics/Planets/Other/BG.png" id="2"]
+
+[node name="PlanetComposition" type="Control" unique_id=423379831]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Background" type="TextureButton" parent="." unique_id=1728413018]
+layout_mode = 0
+offset_left = -247.0
+offset_top = -402.0
+offset_right = 393.0
+offset_bottom = 238.0
+pivot_offset = Vector2(247, 402)
+texture_normal = ExtResource("2")
+
+[node name="Shadow" type="TextureRect" parent="." unique_id=856926316]
+layout_mode = 0
+offset_left = -241.171
+offset_top = -397.762
+offset_right = 391.829
+offset_bottom = 236.238
+scale = Vector2(1.005, 1.005)
+pivot_offset = Vector2(247, 402)
+mouse_filter = 2
+texture = ExtResource("1")

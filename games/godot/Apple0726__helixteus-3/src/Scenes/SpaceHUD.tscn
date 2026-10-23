@@ -1,0 +1,333 @@
+[gd_scene format=3 uid="uid://cgbd1tgsqupqm"]
+
+[ext_resource type="Texture2D" uid="uid://bsienpo47qhrv" path="res://Graphics/Buttons/Overlay.png" id="1"]
+[ext_resource type="Script" uid="uid://b0vcns16qktoy" path="res://Scripts/SpaceHUD.gd" id="2"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="3"]
+[ext_resource type="Texture2D" uid="uid://chpst12uvadli" path="res://Graphics/Buttons/HUDButton.png" id="3_xv04q"]
+[ext_resource type="Texture2D" uid="uid://dnh44vtb4f2xe" path="res://Graphics/Buttons/HUDButtonOver.png" id="4_rxdnk"]
+[ext_resource type="Texture2D" uid="uid://t70si4f413j5" path="res://Graphics/Effects/spotlight_4.png" id="4_xvq6k"]
+[ext_resource type="Texture2D" uid="uid://bxbsgfw7reha5" path="res://Graphics/Atoms/O.png" id="5_e5li8"]
+[ext_resource type="Texture2D" uid="uid://d0i4bvt6quewi" path="res://Graphics/Atoms/H.png" id="6_jdctn"]
+[ext_resource type="Texture2D" uid="uid://i4ljifnvpt7i" path="res://Graphics/Buttons/Annotate.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://fdvjy2q5bco" path="res://Graphics/Megastructures/DS_2.png" id="9_42r2j"]
+[ext_resource type="PackedScene" uid="uid://cobxcj7wuwecq" path="res://Scenes/Panels/StarPanel.tscn" id="10_cgit7"]
+[ext_resource type="Texture2D" uid="uid://ddomkxb4yqaya" path="res://Graphics/Galaxies/6.png" id="10_rxdnk"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_rxdnk"]
+device = -1
+physical_keycode = 81
+unicode = 113
+
+[sub_resource type="Shortcut" id="Shortcut_ewh7e"]
+events = [SubResource("InputEventKey_rxdnk")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_o6e2x"]
+device = -1
+keycode = 79
+unicode = 111
+
+[sub_resource type="InputEventKey" id="InputEventKey_42r2j"]
+device = -1
+physical_keycode = 70
+unicode = 102
+
+[sub_resource type="Shortcut" id="2"]
+events = [SubResource("InputEventKey_o6e2x"), SubResource("InputEventKey_42r2j")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_t3ovf"]
+device = -1
+keycode = 78
+unicode = 110
+
+[sub_resource type="Shortcut" id="4"]
+events = [SubResource("InputEventKey_t3ovf")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_1bc5f"]
+device = -1
+physical_keycode = 67
+unicode = 99
+
+[sub_resource type="Shortcut" id="6"]
+events = [SubResource("InputEventKey_1bc5f")]
+
+[sub_resource type="Animation" id="8"]
+resource_name = "MoveButtons"
+length = 0.3
+step = 0.05
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("VBoxContainer:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(-51.8981, -0.25, 0, 0.05, 61.8981, 0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.3)
+}
+
+[sub_resource type="Animation" id="Animation_wvq00"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("VBoxContainer:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(-51.8981, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_sslco"]
+_data = {
+&"MoveButtons": SubResource("8"),
+&"RESET": SubResource("Animation_wvq00")
+}
+
+[node name="SpaceHUD" type="Control" unique_id=531342234]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("3")
+script = ExtResource("2")
+metadata/_edit_vertical_guides_ = [280.0]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=316639980]
+layout_mode = 0
+offset_left = -51.8981
+offset_right = -3.8981209
+offset_bottom = 720.0
+mouse_filter = 2
+theme_override_constants/separation = -1
+alignment = 1
+
+[node name="Stars" type="TextureButton" parent="VBoxContainer" unique_id=41333011]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("Shortcut_ewh7e")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/Stars" unique_id=1522584395]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 44.0
+offset_bottom = 44.0
+texture = ExtResource("4_xvq6k")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ElementOverlay" type="TextureButton" parent="VBoxContainer" unique_id=1743300199]
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("2")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect2" type="TextureRect" parent="VBoxContainer/ElementOverlay" unique_id=957336274]
+layout_mode = 0
+offset_left = 19.898102
+offset_top = 10.0
+offset_right = 39.796204
+offset_bottom = 29.898102
+texture = ExtResource("5_e5li8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/ElementOverlay" unique_id=1643482193]
+layout_mode = 0
+offset_left = 7.898102
+offset_top = 18.0
+offset_right = 27.796204
+offset_bottom = 37.8981
+texture = ExtResource("6_jdctn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Overlay" type="TextureButton" parent="VBoxContainer" unique_id=1730519324]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("2")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/Overlay" unique_id=1214035678]
+layout_mode = 0
+offset_left = -0.10189819
+offset_top = 4.0
+offset_right = 47.8981
+offset_bottom = 44.0
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextureRect2" type="TextureRect" parent="VBoxContainer/Overlay" unique_id=389046371]
+layout_mode = 0
+offset_left = -0.10189819
+offset_top = 4.0
+offset_right = 47.8981
+offset_bottom = 44.0
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Annotate" type="TextureButton" parent="VBoxContainer" unique_id=2033907094]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("4")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/Annotate" unique_id=1564751554]
+layout_mode = 0
+offset_left = 2.8981018
+offset_top = 4.0
+offset_right = 42.8981
+offset_bottom = 44.0
+texture = ExtResource("7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Megastructures" type="TextureButton" parent="VBoxContainer" unique_id=504509314]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("6")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/Megastructures" unique_id=460658780]
+layout_mode = 0
+offset_left = 2.8981018
+offset_top = 4.0
+offset_right = 42.8981
+offset_bottom = 44.0
+texture = ExtResource("9_42r2j")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Gigastructures" type="TextureButton" parent="VBoxContainer" unique_id=1775595908]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+shortcut = SubResource("6")
+shortcut_in_tooltip = false
+texture_normal = ExtResource("3_xv04q")
+texture_hover = ExtResource("4_rxdnk")
+ignore_texture_size = true
+stretch_mode = 5
+flip_h = true
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/Gigastructures" unique_id=119649585]
+layout_mode = 0
+offset_left = 2.8981018
+offset_top = 4.0
+offset_right = 42.8981
+offset_bottom = 44.0
+texture = ExtResource("10_rxdnk")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SendFighters" type="Button" parent="." unique_id=365096652]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 684.0
+offset_right = 360.0
+offset_bottom = 721.0
+text = "SEND_FIGHTERS"
+
+[node name="ConquerAll" type="Button" parent="." unique_id=398785895]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 684.0
+offset_right = 360.0
+offset_bottom = 721.0
+text = "CONQUER_ALL"
+
+[node name="SendProbes" type="Button" parent="." unique_id=627852143]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 684.0
+offset_right = 360.0
+offset_bottom = 721.0
+text = "SEND_PROBES"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=88860969]
+libraries/ = SubResource("AnimationLibrary_sslco")
+
+[node name="StarPanel" parent="." unique_id=1736156736 instance=ExtResource("10_cgit7")]
+visible = false
+layout_mode = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=287622915]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 112.0
+offset_right = 404.0
+offset_bottom = 588.0
+mouse_filter = 2
+
+[node name="BldgInfo" type="VBoxContainer" parent="HBoxContainer" unique_id=1475406639]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="AncientBldgInfo" type="VBoxContainer" parent="HBoxContainer" unique_id=887667325]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="MSInfo" type="VBoxContainer" parent="HBoxContainer" unique_id=1597250009]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[connection signal="mouse_entered" from="VBoxContainer/Stars" to="." method="_on_stars_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/Stars" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/Stars" to="." method="_on_stars_pressed"]
+[connection signal="mouse_entered" from="VBoxContainer/ElementOverlay" to="." method="_on_ElementOverlay_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/ElementOverlay" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/ElementOverlay" to="." method="_on_ElementOverlay_pressed"]
+[connection signal="mouse_entered" from="VBoxContainer/Overlay" to="." method="_on_Overlay_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/Overlay" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/Overlay" to="." method="_on_Overlay_pressed"]
+[connection signal="mouse_entered" from="VBoxContainer/Annotate" to="." method="_on_Annotate_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/Annotate" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/Annotate" to="." method="_on_Annotate_pressed"]
+[connection signal="mouse_entered" from="VBoxContainer/Megastructures" to="." method="_on_Megastructures_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/Megastructures" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/Megastructures" to="." method="_on_Megastructures_pressed"]
+[connection signal="mouse_entered" from="VBoxContainer/Gigastructures" to="." method="_on_Gigastructures_mouse_entered"]
+[connection signal="mouse_exited" from="VBoxContainer/Gigastructures" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="VBoxContainer/Gigastructures" to="." method="_on_Gigastructures_pressed"]
+[connection signal="pressed" from="SendFighters" to="." method="_on_SendFighters_pressed"]
+[connection signal="mouse_entered" from="ConquerAll" to="." method="_on_ConquerAll_mouse_entered"]
+[connection signal="mouse_exited" from="ConquerAll" to="." method="_on_mouse_exited"]
+[connection signal="pressed" from="ConquerAll" to="." method="_on_ConquerAll_pressed"]
+[connection signal="pressed" from="SendProbes" to="." method="_on_SendProbes_pressed"]

@@ -1,0 +1,569 @@
+[gd_scene format=3 uid="uid://ck487g2ydj8tn"]
+
+[ext_resource type="Script" uid="uid://cyxjri20jsfpj" path="res://Scripts/ShipTravelMinigame2.gd" id="1_8lr8q"]
+[ext_resource type="Script" uid="uid://d4i3qiqt3kxlq" path="res://Scripts/STM/STMShip.gd" id="2_dfkgr"]
+[ext_resource type="Texture2D" uid="uid://koi0aarpqj30" path="res://Graphics/Ships/Ship0.png" id="2_v17i1"]
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="3_jfubh"]
+[ext_resource type="Shader" uid="uid://gevhgabt3grd" path="res://Shaders/Laser.gdshader" id="5_4dc0n"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="5_6lon2"]
+[ext_resource type="Texture2D" uid="uid://cxij5pk8nug0r" path="res://Graphics/Misc/BarOver.png" id="6_8qal3"]
+[ext_resource type="Texture2D" uid="uid://yhdxrw2q1yep" path="res://Graphics/HX/Status effects/Stun.png" id="6_us3u3"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="7_6fhtq"]
+[ext_resource type="Texture2D" uid="uid://bf11oh7v1a2eo" path="res://Graphics/Cave/Weapons/red_laser.png" id="8_rnocu"]
+[ext_resource type="Texture2D" uid="uid://cyogaq3sj1anp" path="res://Graphics/Weapons/bomb1.png" id="10_yqhvw"]
+[ext_resource type="Texture2D" uid="uid://c1v73luqy7pi5" path="res://Graphics/Weapons/light1.png" id="11_1xlo5"]
+[ext_resource type="Shader" uid="uid://dyuhjqkup4nnm" path="res://Shaders/Starfield.gdshader" id="13_jjtrq"]
+
+[sub_resource type="Shader" id="Shader_yo3bn"]
+code = "shader_type canvas_item;
+uniform float glow:hint_range(0.0, 1.0, 0.1) = 0.0;
+
+void fragment() {
+	COLOR.rgb = mix(texture(TEXTURE, UV).rgb, vec3(1.0), glow);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nasxo"]
+shader = SubResource("Shader_yo3bn")
+shader_parameter/glow = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_m5dak"]
+radius = 5.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_amlly"]
+radius = 240.0
+
+[sub_resource type="Animation" id="Animation_sgxjs"]
+resource_name = "Bomb grow"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(-3.8147e-06, -3.8147e-06), Vector2(0, -18)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(0.281818, 0.281818), Vector2(0.6, 0.6)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_nuvb4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-3.8147e-06, -3.8147e-06)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.281818, 0.281818)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_6uf2k"]
+_data = {
+&"Bomb grow": SubResource("Animation_sgxjs"),
+&"RESET": SubResource("Animation_nuvb4")
+}
+
+[sub_resource type="Gradient" id="Gradient_vho2s"]
+offsets = PackedFloat32Array(0, 0.309211, 0.671053, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0.819608, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ey7i5"]
+gradient = SubResource("Gradient_vho2s")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ortqj"]
+particle_flag_disable_z = true
+direction = Vector3(1, -1, 0)
+spread = 47.2
+initial_velocity_min = 50.0
+initial_velocity_max = 75.0
+scale_min = 1.5
+scale_max = 1.5
+color_ramp = SubResource("GradientTexture1D_ey7i5")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_urlkg"]
+shader = ExtResource("5_4dc0n")
+shader_parameter/beams = 1
+shader_parameter/energy = 20.0
+shader_parameter/roughness = 3
+shader_parameter/frequency = 10
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.021
+shader_parameter/outline_thickness = 0.044
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 0.0
+shader_parameter/outline_glow = 0.0
+shader_parameter/color = Color(0.91, 1.5, 1.5, 1)
+shader_parameter/outline_color = Color(0.501961, 1, 0.960784, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yb1pm"]
+shader = ExtResource("5_4dc0n")
+shader_parameter/beams = 1
+shader_parameter/energy = 10.0
+shader_parameter/roughness = 8
+shader_parameter/frequency = 15
+shader_parameter/speed = 1.0
+shader_parameter/thickness = 0.012
+shader_parameter/outline_thickness = 0.043
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 0.0
+shader_parameter/outline_glow = 0.0
+shader_parameter/color = Color(0.91, 2, 2, 1)
+shader_parameter/outline_color = Color(0.5, 1, 0.96, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="InputEventKey" id="InputEventKey_dtonr"]
+device = -1
+physical_keycode = 90
+unicode = 122
+
+[sub_resource type="Shortcut" id="Shortcut_8ju2g"]
+events = [SubResource("InputEventKey_dtonr")]
+
+[sub_resource type="Environment" id="Environment_i0p4l"]
+background_mode = 3
+background_canvas_max_layer = -1
+glow_enabled = true
+glow_levels/4 = 0.4
+glow_levels/5 = 0.4
+glow_intensity = 2.04
+glow_strength = 1.16
+glow_bloom = 0.07
+glow_blend_mode = 0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sr1i2"]
+shader = ExtResource("13_jjtrq")
+shader_parameter/position = Vector2(0, 0)
+shader_parameter/time = 0.0
+shader_parameter/iterations = 12
+shader_parameter/formuparam2 = 0.79
+shader_parameter/volsteps = 7
+shader_parameter/stepsize = 0.29
+shader_parameter/zoom = 1.0
+shader_parameter/tile = 0.85
+shader_parameter/speed2 = 0.2
+shader_parameter/brightness = 0.0015
+shader_parameter/distfading = 0.56
+shader_parameter/saturation = 0.9
+shader_parameter/transverseSpeed = 1.0
+shader_parameter/cloud = 0.17
+shader_parameter/color = Color(0.0117647, 0, 0.235294, 1)
+shader_parameter/max_alpha = 1.0
+shader_parameter/red_p = 1.0
+shader_parameter/green_p = 2.0
+shader_parameter/blue_p = 4.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vgp4n"]
+shader = ExtResource("5_4dc0n")
+shader_parameter/beams = 1
+shader_parameter/energy = 3.0
+shader_parameter/roughness = 3
+shader_parameter/frequency = 10
+shader_parameter/speed = 0.2
+shader_parameter/thickness = 0.006
+shader_parameter/outline_thickness = 0.034
+shader_parameter/beam_difference = 0.0
+shader_parameter/glow = 0.0
+shader_parameter/outline_glow = 0.467
+shader_parameter/color = Color(1, 0.937255, 0.937255, 1)
+shader_parameter/outline_color = Color(1, 0, 0, 1)
+shader_parameter/progress = 1.0
+shader_parameter/y_offset = 0.0
+shader_parameter/fixed_edge_size = 0.05
+shader_parameter/noise_scale = Vector2(1, 1)
+
+[sub_resource type="Animation" id="Animation_7ej56"]
+resource_name = "Laser fade"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../GlowLayer/Laser:material:shader_parameter/progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [1.0, 0.0]
+}
+
+[sub_resource type="Animation" id="Animation_dc1j2"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../GlowLayer/Laser:material:shader_parameter/progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [1.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ybdj0"]
+_data = {
+&"Laser fade": SubResource("Animation_7ej56"),
+&"RESET": SubResource("Animation_dc1j2")
+}
+
+[node name="STM" type="Node2D" unique_id=310072882]
+script = ExtResource("1_8lr8q")
+
+[node name="Ship" type="Node2D" parent="." unique_id=929468529]
+script = ExtResource("2_dfkgr")
+
+[node name="BulletTimer" type="Timer" parent="Ship" unique_id=486123143]
+wait_time = 0.15
+
+[node name="LaserTimer" type="Timer" parent="Ship" unique_id=1011597295]
+one_shot = true
+
+[node name="BombTimer" type="Timer" parent="Ship" unique_id=351792364]
+wait_time = 3.0
+one_shot = true
+
+[node name="LightTimer" type="Timer" parent="Ship" unique_id=1484272456]
+wait_time = 8.0
+one_shot = true
+
+[node name="StunTimer" type="Timer" parent="Ship" unique_id=1563441025]
+one_shot = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Ship" unique_id=1646094743]
+material = SubResource("ShaderMaterial_nasxo")
+scale = Vector2(0.115, 0.115)
+texture = ExtResource("2_v17i1")
+
+[node name="Area2D" type="Area2D" parent="Ship" unique_id=1549281410]
+collision_layer = 2
+collision_mask = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ship/Area2D" unique_id=658083170]
+shape = SubResource("CircleShape2D_m5dak")
+
+[node name="LaserArea" type="Area2D" parent="Ship" unique_id=1608596919]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ship/LaserArea" unique_id=362886172]
+shape = SubResource("CircleShape2D_amlly")
+
+[node name="Bomb" type="Sprite2D" parent="Ship" unique_id=154697275]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(-3.8147e-06, -3.8147e-06)
+scale = Vector2(0.281818, 0.281818)
+texture = ExtResource("10_yqhvw")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Ship/Bomb" unique_id=975827497]
+libraries/ = SubResource("AnimationLibrary_6uf2k")
+
+[node name="BombParticles" type="GPUParticles2D" parent="Ship" unique_id=1211408784]
+position = Vector2(8, -24)
+scale = Vector2(0.281818, 0.281818)
+emitting = false
+amount = 32
+process_material = SubResource("ParticleProcessMaterial_ortqj")
+
+[node name="Stun" type="Node2D" parent="Ship" unique_id=1897229828]
+visible = false
+position = Vector2(0, -6.29962)
+scale = Vector2(0.455, 0.455)
+
+[node name="Sprite2D" type="Sprite2D" parent="Ship/Stun" unique_id=1350495504]
+material = SubResource("ShaderMaterial_urlkg")
+position = Vector2(47.1782, 64.5085)
+rotation = 0.496553
+scale = Vector2(2.36037, 2.36037)
+texture = ExtResource("6_us3u3")
+offset = Vector2(-21.4132, -17.9986)
+
+[node name="Sprite2" type="Sprite2D" parent="Ship/Stun" unique_id=860438037]
+material = SubResource("ShaderMaterial_yb1pm")
+position = Vector2(11.3541, 50.4711)
+rotation = -0.583007
+scale = Vector2(1.67193, 1.67193)
+texture = ExtResource("6_us3u3")
+offset = Vector2(-21.4132, -17.9986)
+
+[node name="Control" type="Control" parent="." unique_id=2095135153]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme = ExtResource("3_jfubh")
+
+[node name="Back" type="Button" parent="Control" unique_id=257935650]
+layout_mode = 0
+offset_top = 688.0
+offset_right = 104.0
+offset_bottom = 720.0
+shortcut = SubResource("Shortcut_8ju2g")
+shortcut_in_tooltip = false
+
+[node name="AccTime" type="Label" parent="Control" unique_id=1517873209]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 688.0
+offset_right = 360.0
+offset_bottom = 720.0
+text = "Travel accelerated by "
+vertical_alignment = 1
+
+[node name="BombActivateLabel" type="Label" parent="Control" unique_id=1350286292]
+layout_mode = 0
+offset_left = 92.0
+offset_top = 304.0
+offset_right = 340.0
+offset_bottom = 336.0
+text = "Left click to activate"
+vertical_alignment = 1
+
+[node name="LightActivateLabel" type="Label" parent="Control" unique_id=2009739332]
+layout_mode = 0
+offset_left = 92.0
+offset_top = 452.0
+offset_right = 340.0
+offset_bottom = 484.0
+text = "Right click to activate"
+vertical_alignment = 1
+
+[node name="EnemySpawnTimer" type="Timer" parent="." unique_id=1709614528]
+wait_time = 1.4
+autostart = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2006903156]
+environment = SubResource("Environment_i0p4l")
+
+[node name="GlowLayer" type="CanvasLayer" parent="." unique_id=627925496]
+layer = -1
+
+[node name="Background" type="ColorRect" parent="GlowLayer" unique_id=766563899]
+material = SubResource("ShaderMaterial_sr1i2")
+offset_right = 1280.0
+offset_bottom = 720.0
+metadata/_edit_lock_ = true
+
+[node name="Laser" type="ColorRect" parent="GlowLayer" unique_id=1035681050]
+visible = false
+material = SubResource("ShaderMaterial_vgp4n")
+offset_top = -332.0
+offset_right = 664.0
+offset_bottom = 332.0
+pivot_offset = Vector2(0, 332)
+
+[node name="LaserAnimationPlayer" type="AnimationPlayer" parent="GlowLayer" unique_id=1365662397]
+root_node = NodePath("../../Ship")
+libraries/ = SubResource("AnimationLibrary_ybdj0")
+
+[node name="LaserTimerBar" type="Control" parent="." unique_id=1692652353]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="LaserTimerBar" unique_id=191199537]
+self_modulate = Color(1, 0.278431, 0.278431, 1)
+layout_mode = 0
+offset_left = 28.0
+offset_top = 128.0
+offset_right = 43.0
+offset_bottom = 227.0
+max_value = 1.0
+step = 0.0
+fill_mode = 3
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 1
+stretch_margin_right = 3
+stretch_margin_bottom = 1
+texture_under = ExtResource("5_6lon2")
+texture_over = ExtResource("6_8qal3")
+texture_progress = ExtResource("7_6fhtq")
+
+[node name="ColorRect" type="ColorRect" parent="LaserTimerBar/TextureProgressBar" unique_id=2078793505]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="LaserTimerBar" unique_id=1187045709]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 160.0
+offset_right = 80.0
+offset_bottom = 192.0
+texture = ExtResource("8_rnocu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BombTimerBar" type="Control" parent="." unique_id=1733156349]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="BombTimerBar" unique_id=784787982]
+self_modulate = Color(0.431373, 0.431373, 0.431373, 1)
+layout_mode = 0
+offset_left = 28.0
+offset_top = 272.0
+offset_right = 43.0
+offset_bottom = 371.0
+max_value = 1.0
+step = 0.0
+fill_mode = 3
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 1
+stretch_margin_right = 3
+stretch_margin_bottom = 1
+texture_under = ExtResource("5_6lon2")
+texture_over = ExtResource("6_8qal3")
+texture_progress = ExtResource("7_6fhtq")
+
+[node name="ColorRect" type="ColorRect" parent="BombTimerBar/TextureProgressBar" unique_id=125781761]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="BombTimerBar" unique_id=1339776084]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 304.0
+offset_right = 80.0
+offset_bottom = 336.0
+texture = ExtResource("10_yqhvw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LightTimerBar" type="Control" parent="." unique_id=345002262]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureProgressBar" type="TextureProgressBar" parent="LightTimerBar" unique_id=196810302]
+self_modulate = Color(1, 1, 0.698039, 1)
+layout_mode = 0
+offset_left = 28.0
+offset_top = 420.0
+offset_right = 43.0
+offset_bottom = 519.0
+max_value = 1.0
+step = 0.0
+fill_mode = 3
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 1
+stretch_margin_right = 3
+stretch_margin_bottom = 1
+texture_under = ExtResource("5_6lon2")
+texture_over = ExtResource("6_8qal3")
+texture_progress = ExtResource("7_6fhtq")
+
+[node name="ColorRect" type="ColorRect" parent="LightTimerBar/TextureProgressBar" unique_id=74626298]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="LightTimerBar" unique_id=1180295803]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 452.0
+offset_right = 80.0
+offset_bottom = 484.0
+texture = ExtResource("11_1xlo5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WhiteRect" type="ColorRect" parent="." unique_id=1591582435]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+metadata/_edit_lock_ = true
+
+[connection signal="timeout" from="Ship/BulletTimer" to="Ship" method="_on_bullet_timer_timeout"]
+[connection signal="timeout" from="Ship/LaserTimer" to="Ship" method="_on_laser_timer_timeout"]
+[connection signal="timeout" from="Ship/BombTimer" to="Ship" method="_on_bomb_timer_timeout"]
+[connection signal="timeout" from="Ship/LightTimer" to="Ship" method="_on_light_timer_timeout"]
+[connection signal="timeout" from="Ship/StunTimer" to="Ship" method="_on_stun_timer_timeout"]
+[connection signal="area_entered" from="Ship/LaserArea" to="Ship" method="_on_laser_area_area_entered"]
+[connection signal="area_exited" from="Ship/LaserArea" to="Ship" method="_on_laser_area_area_exited"]
+[connection signal="pressed" from="Control/Back" to="." method="_on_back_pressed"]
+[connection signal="timeout" from="EnemySpawnTimer" to="." method="_on_enemy_spawn_timer_timeout"]
+[connection signal="animation_finished" from="GlowLayer/LaserAnimationPlayer" to="." method="_on_laser_animation_player_animation_finished"]

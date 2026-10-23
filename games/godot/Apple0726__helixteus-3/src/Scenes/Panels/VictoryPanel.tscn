@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://cvlkphcaskboq"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="4"]
+[ext_resource type="Texture2D" uid="uid://baowebna7hgr5" path="res://Graphics/GUI/CloseButtonNormal.png" id="4_mojm2"]
+[ext_resource type="PackedScene" uid="uid://c8jr3e5aiyj1n" path="res://Scenes/HelpText.tscn" id="5"]
+[ext_resource type="Texture2D" uid="uid://c1vwn7p5uxu1r" path="res://Graphics/GUI/CloseButtonHover.png" id="5_8pfal"]
+[ext_resource type="Texture2D" uid="uid://dcvnyb0mloli2" path="res://Graphics/GUI/Panel.png" id="5_lcldk"]
+[ext_resource type="PackedScene" uid="uid://n8w5ffyg17o1" path="res://Scenes/Battle/VictoryShipStats.tscn" id="7_go02j"]
+[ext_resource type="Texture2D" uid="uid://dxjlx3yjmlywi" path="res://Graphics/Ships/Ship2.png" id="8_3r33v"]
+[ext_resource type="Texture2D" uid="uid://b8ga5o8bhm1hb" path="res://Graphics/Ships/Ship1.png" id="8_8c7g3"]
+[ext_resource type="Texture2D" uid="uid://wrc1em7frxle" path="res://Graphics/Ships/Ship3.png" id="10_pobcv"]
+[ext_resource type="Script" uid="uid://cso3e7d4e2gc8" path="res://Scripts/VictoryPanel.gd" id="11"]
+
+[sub_resource type="SystemFont" id="SystemFont_sxpbd"]
+font_names = PackedStringArray("Arial")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_mojm2"]
+font = SubResource("SystemFont_sxpbd")
+font_size = 24
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.372549)
+shadow_offset = Vector2(2, 2)
+
+[node name="VictoryPanel" type="Control" unique_id=764796480]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -640.0
+offset_top = -360.0
+offset_right = -600.0
+offset_bottom = -324.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("4")
+script = ExtResource("11")
+
+[node name="GUI" type="TextureRect" parent="." unique_id=140587853]
+layout_mode = 0
+offset_left = 80.0
+offset_top = 52.0
+offset_right = 1204.0
+offset_bottom = 671.0
+mouse_filter = 2
+texture = ExtResource("5_lcldk")
+metadata/_edit_lock_ = true
+
+[node name="CloseButton" type="TextureButton" parent="." unique_id=1566091410]
+layout_mode = 0
+offset_left = 1138.0
+offset_top = 67.0
+offset_right = 1187.0
+offset_bottom = 116.0
+texture_normal = ExtResource("4_mojm2")
+texture_hover = ExtResource("5_8pfal")
+
+[node name="Title" type="Label" parent="." unique_id=578831535]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 0
+offset_left = 128.0
+offset_top = 72.0
+offset_right = 195.0
+offset_bottom = 110.0
+theme_override_font_sizes/font_size = 18
+text = "VICTORY"
+label_settings = SubResource("LabelSettings_mojm2")
+vertical_alignment = 1
+
+[node name="Bonus" parent="." unique_id=1730843608 instance=ExtResource("5")]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 148.0
+offset_right = 541.0
+offset_bottom = 178.0
+
+[node name="Ship1" parent="." unique_id=530040574 instance=ExtResource("7_go02j")]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 232.0
+offset_right = 260.0
+offset_bottom = 352.0
+
+[node name="Ship2" parent="." unique_id=304248782 instance=ExtResource("7_go02j")]
+layout_mode = 0
+offset_left = 680.0
+offset_top = 232.0
+offset_right = 800.0
+offset_bottom = 352.0
+texture = ExtResource("8_8c7g3")
+
+[node name="Ship3" parent="." unique_id=1319852178 instance=ExtResource("7_go02j")]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 412.0
+offset_right = 260.0
+offset_bottom = 532.0
+texture = ExtResource("8_3r33v")
+
+[node name="Ship4" parent="." unique_id=1935496900 instance=ExtResource("7_go02j")]
+layout_mode = 0
+offset_left = 680.0
+offset_top = 412.0
+offset_right = 800.0
+offset_bottom = 532.0
+texture = ExtResource("10_pobcv")
+
+[node name="Loot" type="Label" parent="." unique_id=1605849929]
+layout_mode = 0
+offset_left = 124.0
+offset_top = 604.0
+offset_right = 167.0
+offset_bottom = 630.0
+text = "LOOT"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=822951033]
+layout_mode = 0
+offset_left = 196.0
+offset_top = 596.0
+offset_right = 1156.0
+offset_bottom = 636.0
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]

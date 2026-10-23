@@ -1,0 +1,198 @@
+[gd_scene format=3 uid="uid://m8wrm55x0xbe"]
+
+[ext_resource type="Theme" uid="uid://cp2u1kgj60ic" path="res://Resources/default_theme.tres" id="1_bn3ag"]
+[ext_resource type="Texture2D" uid="uid://buvqtd7v5l8m2" path="res://Graphics/Icons/Fire.png" id="2_jvqvk"]
+[ext_resource type="Script" uid="uid://digen3xg35h4f" path="res://Scripts/Battle/StatusEffects.gd" id="2_lr2cs"]
+[ext_resource type="Texture2D" uid="uid://b642ran0hp7j4" path="res://Graphics/Icons/Stun.png" id="3_lr2cs"]
+[ext_resource type="Texture2D" uid="uid://pvvxdd2l5ygb" path="res://Graphics/Icons/DimensionalPower.png" id="4_jvqvk"]
+[ext_resource type="Texture2D" uid="uid://bshcbtjw6w01j" path="res://Graphics/Icons/frozen.png" id="5_a6ky5"]
+[ext_resource type="Texture2D" uid="uid://ddk4tb7t6a6my" path="res://Graphics/Icons/corroding.png" id="6_4ih1o"]
+[ext_resource type="Texture2D" uid="uid://dtt8s3bhk46u6" path="res://Graphics/Icons/water.png" id="7_4ih1o"]
+[ext_resource type="Texture2D" uid="uid://0a2b44qb5s11" path="res://Graphics/Icons/exposed.png" id="7_re712"]
+[ext_resource type="Texture2D" uid="uid://brchrwf8vbxe3" path="res://Graphics/Icons/radioactive.png" id="8_pri0e"]
+
+[sub_resource type="SystemFont" id="SystemFont_pri0e"]
+font_names = PackedStringArray("Monospace")
+subpixel_positioning = 0
+multichannel_signed_distance_field = true
+
+[sub_resource type="LabelSettings" id="LabelSettings_re712"]
+font = SubResource("SystemFont_pri0e")
+font_size = 14
+shadow_color = Color(0, 0, 0, 1)
+
+[node name="StatusEffects" type="GridContainer" unique_id=54541607]
+offset_right = 104.0
+offset_bottom = 88.0
+mouse_filter = 2
+theme = ExtResource("1_bn3ag")
+columns = 3
+script = ExtResource("2_lr2cs")
+
+[node name="Burn" type="Control" parent="." unique_id=963613897]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Burn" unique_id=1745980182]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("2_jvqvk")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Burn" unique_id=1529808774]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Stun" type="Control" parent="." unique_id=750657200]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Stun" unique_id=118214156]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("3_lr2cs")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Stun" unique_id=1870565478]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Frozen" type="Control" parent="." unique_id=611764351]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Frozen" unique_id=1561129501]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("5_a6ky5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Frozen" unique_id=1817587863]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Wet" type="Control" parent="." unique_id=2030523280]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Wet" unique_id=261411677]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("7_4ih1o")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Wet" unique_id=1083609256]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Exposed" type="Control" parent="." unique_id=2137360604]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Exposed" unique_id=331886429]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("7_re712")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Exposed" unique_id=154332569]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Corroding" type="Control" parent="." unique_id=205498247]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Corroding" unique_id=814727737]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("6_4ih1o")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Corroding" unique_id=1777065728]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="Radioactive" type="Control" parent="." unique_id=767138517]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="Radioactive" unique_id=266018630]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("8_pri0e")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="Radioactive" unique_id=1691643472]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1
+
+[node name="ExtraTurns" type="Control" parent="." unique_id=1518720041]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="ExtraTurns" unique_id=1000673531]
+layout_mode = 0
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("4_jvqvk")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="ExtraTurns" unique_id=1561982028]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 24.0
+offset_bottom = 20.625
+text = "9"
+label_settings = SubResource("LabelSettings_re712")
+horizontal_alignment = 1

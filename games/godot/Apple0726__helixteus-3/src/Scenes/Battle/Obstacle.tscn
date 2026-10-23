@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://decmehu30cj8j"]
+
+[ext_resource type="Script" uid="uid://n327fjh85gr3" path="res://Scripts/Battle/Obstacle.gd" id="1_gcgyw"]
+[ext_resource type="Texture2D" uid="uid://bq8x02xtiddp1" path="res://Graphics/Cave/Projectiles/bubble.png" id="2_dayuw"]
+[ext_resource type="Texture2D" uid="uid://kr2fdk8dptv1" path="res://Graphics/Misc/BarUnder2.png" id="3_ey2x8"]
+[ext_resource type="PackedScene" uid="uid://b3b68o5fd52pr" path="res://Scenes/Battle/VelocityArrow.tscn" id="3_wikyw"]
+[ext_resource type="Texture2D" uid="uid://bx1hvetixqpwi" path="res://Graphics/Misc/Bar2.png" id="4_fg6fk"]
+[ext_resource type="PackedScene" uid="uid://m8wrm55x0xbe" path="res://Scenes/Battle/StatusEffects.tscn" id="5_c5aoj"]
+[ext_resource type="PackedScene" uid="uid://ni58sxlrjgg4" path="res://Scenes/Battle/Buffs.tscn" id="5_fg6fk"]
+[ext_resource type="Texture2D" uid="uid://7ffsf7xuvfw2" path="res://Graphics/Icons/attack.png" id="6_urlmv"]
+
+[sub_resource type="Shader" id="Shader_ey2x8"]
+code = "shader_type canvas_item;
+uniform float alpha:hint_range(0.0, 1.0, 0.1) = 1.0;
+uniform float flash:hint_range(0.0, 1.0, 0.1) = 0.0;
+uniform vec3 flash_color:source_color = vec3(1.0, 1.0, 1.0);
+uniform float starlight_angle:hint_range(0.0, 2.0 * 3.1415) = 0.0;
+uniform vec3 starlight_color:source_color = vec3(1.0);
+uniform float starlight_energy:hint_range(0.0, 2.0) = 1.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV);
+	COLOR.a *= alpha;
+	vec2 center = 0.4 * vec2(cos(starlight_angle + 3.1415), sin(starlight_angle + 3.1415)) + vec2(0.5);
+	float shade = cos(starlight_angle) * 1.5 * (UV.x - center.x) + sin(starlight_angle) * 1.5 * (UV.y - center.y);
+	float shade2 = starlight_energy * smoothstep(0.0, 1.0, shade) + 0.1;
+	COLOR.rgb *= vec3(shade2) * mix(vec3(1.0), starlight_color, shade2 * 0.8);
+	COLOR.rgb = mix(COLOR.rgb, flash_color, flash);
+}
+
+void light() {
+	LIGHT = vec4(LIGHT_COLOR.rgb * LIGHT_ENERGY, LIGHT_COLOR.a);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fg6fk"]
+resource_local_to_scene = true
+shader = SubResource("Shader_ey2x8")
+shader_parameter/alpha = 1.0
+shader_parameter/flash = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_angle = 0.0
+shader_parameter/starlight_color = Color(1, 1, 1, 1)
+shader_parameter/starlight_energy = 1.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gcgyw"]
+resource_local_to_scene = true
+radius = 84.0
+
+[node name="Node2D" type="Area2D" unique_id=1809285436]
+collision_layer = 32
+collision_mask = 63
+script = ExtResource("1_gcgyw")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1431296579]
+material = SubResource("ShaderMaterial_fg6fk")
+texture = ExtResource("2_dayuw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1779661394]
+shape = SubResource("CircleShape2D_gcgyw")
+
+[node name="Polygon2D" type="Polygon2D" parent="CollisionShape2D" unique_id=1533469464]
+color = Color(1, 1, 1, 0)
+polygon = PackedVector2Array(-163, -91)
+uv = PackedVector2Array(-163, -91)
+
+[node name="VelocityArrow" parent="." unique_id=2026242660 instance=ExtResource("3_wikyw")]
+
+[node name="Info" type="Control" parent="." unique_id=897616701]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="HP" type="TextureProgressBar" parent="Info" unique_id=1924492810]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_left = -130.0
+offset_top = 48.0
+offset_right = -34.0
+offset_bottom = 56.0
+rotation = -1.5708
+value = 50.0
+nine_patch_stretch = true
+texture_under = ExtResource("3_ey2x8")
+texture_progress = ExtResource("4_fg6fk")
+
+[node name="Label" type="Label" parent="Info" unique_id=1296170771]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 88.0
+offset_right = 84.0
+offset_bottom = 112.0
+text = "10"
+
+[node name="Icon" type="TextureRect" parent="Info" unique_id=1902247382]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = -28.0
+offset_top = 88.0
+offset_right = -4.0
+offset_bottom = 112.0
+texture = ExtResource("6_urlmv")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="StatusEffects" parent="Info" unique_id=2120886801 instance=ExtResource("5_c5aoj")]
+layout_mode = 0
+offset_left = -188.0
+offset_top = -40.0
+offset_right = -100.0
+offset_bottom = 68.0
+columns = 2
+
+[node name="Buffs" parent="Info" unique_id=871219607 instance=ExtResource("5_fg6fk")]
+layout_mode = 0
+offset_left = -68.0
+offset_top = 116.0
+offset_right = 68.0
+offset_bottom = 156.0
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
