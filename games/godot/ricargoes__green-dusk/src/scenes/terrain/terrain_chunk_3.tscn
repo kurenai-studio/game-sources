@@ -1,0 +1,97 @@
+[gd_scene load_steps=9 format=3 uid="uid://ble53r5wbcn2e"]
+
+[ext_resource type="PackedScene" uid="uid://ccld1bpjx1tau" path="res://scenes/terrain/terrain_chunk_base.tscn" id="1_y8wmj"]
+[ext_resource type="Texture2D" uid="uid://bblbfii3h2u6y" path="res://resources/sprites/Environment/Floor/chunk3Floor.png" id="2_6kbyr"]
+[ext_resource type="PackedScene" uid="uid://bqlyqc1ygoqus" path="res://scenes/enemies/spawner.tscn" id="3_krvt5"]
+[ext_resource type="PackedScene" uid="uid://bu35il1yoex0l" path="res://scenes/activador.tscn" id="4_0drdk"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dnyoe"]
+size = Vector2(685, 51)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_106xf"]
+size = Vector2(1438, 137)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8g4uc"]
+size = Vector2(964, 198)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j43cn"]
+size = Vector2(1174, 373)
+
+[node name="TerrainChunkBase" instance=ExtResource("1_y8wmj")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("2_6kbyr")
+
+[node name="Spawner" parent="Enemies" index="0" node_paths=PackedStringArray("destination", "activator") instance=ExtResource("3_krvt5")]
+position = Vector2(1099, 629)
+spawning_resource = 1
+destination = NodePath("../../Helpers/Marker2D2")
+activator = NodePath("../../Helpers/Activator")
+
+[node name="Spawner2" parent="Enemies" index="1" node_paths=PackedStringArray("destination", "activator") instance=ExtResource("3_krvt5")]
+position = Vector2(3992, 288)
+destination = NodePath("../../Helpers/Marker2D")
+activator = NodePath("../../Helpers/Activator2")
+
+[node name="Spawner6" parent="Enemies" index="2" node_paths=PackedStringArray("destination", "activator") instance=ExtResource("3_krvt5")]
+position = Vector2(1043, -120)
+destination = NodePath("../../Helpers/Marker2D3")
+activator = NodePath("../../Helpers/Activator")
+
+[node name="Spawner3" parent="Enemies" index="3" node_paths=PackedStringArray("destination", "activator") instance=ExtResource("3_krvt5")]
+position = Vector2(7840, 312)
+destination = NodePath("../../Helpers/Marker2D")
+activator = NodePath("../../Helpers/Activator2")
+
+[node name="Spawner5" parent="Enemies" index="4" node_paths=PackedStringArray("activator") instance=ExtResource("3_krvt5")]
+position = Vector2(8775, 132)
+spawning_resource = 3
+activator = NodePath("../../Helpers/Activator3")
+
+[node name="Spawner4" parent="Enemies" index="5" node_paths=PackedStringArray("destination", "activator") instance=ExtResource("3_krvt5")]
+position = Vector2(6474, -203)
+destination = NodePath("../../Helpers/Marker2D")
+activator = NodePath("../../Helpers/Activator2")
+
+[node name="Activator" parent="Helpers" index="0" instance=ExtResource("4_0drdk")]
+position = Vector2(0, 413)
+
+[node name="Activator2" parent="Helpers" index="1" instance=ExtResource("4_0drdk")]
+position = Vector2(2409, 317)
+
+[node name="Activator3" parent="Helpers" index="2" instance=ExtResource("4_0drdk")]
+position = Vector2(10260, 440)
+
+[node name="Marker2D" type="Marker2D" parent="Helpers" index="3"]
+position = Vector2(6438, 441)
+
+[node name="Marker2D3" type="Marker2D" parent="Helpers" index="4"]
+position = Vector2(1763, -146)
+
+[node name="Marker2D2" type="Marker2D" parent="Helpers" index="5"]
+position = Vector2(1728, 657)
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Hitboxes" index="0"]
+polygon = PackedVector2Array(-2, 707, -3, 1078, 3602, 1076, 3564, 939, 3593, 751, 3633, 731, 3640, 697, 3290, 688, 2684, 605, 2611, 601, 2470, 611, 2334, 640, 2202, 689, 2013, 747, 1837, 817, 1758, 858, 1681, 870, 1126, 868, 1008, 840, 895, 734, 848, 545, 734, 568, 602, 612, 341, 674, 152, 700)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitboxes" index="1"]
+position = Vector2(1572.5, 394.5)
+shape = SubResource("RectangleShape2D_dnyoe")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Hitboxes" index="2"]
+position = Vector2(4720, 622.5)
+shape = SubResource("RectangleShape2D_106xf")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="Hitboxes" index="3"]
+position = Vector2(6425, 978)
+shape = SubResource("RectangleShape2D_8g4uc")
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="Hitboxes" index="4"]
+position = Vector2(7938, 890.5)
+shape = SubResource("RectangleShape2D_j43cn")
+
+[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Hitboxes" index="5"]
+polygon = PackedVector2Array(8668, 880, 8668, 1080, 11516, 1081, 11519, 701, 11037, 713, 10832, 656, 10419, 646, 10206, 711, 10041, 725, 9625, 874, 9176, 871, 9007, 886)
+
+[node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="Hitboxes" index="6"]
+polygon = PackedVector2Array(8617, 373, 8934, 371, 9293, 381, 9619, 419, 9777, 423, 9769, 476, 9228, 428, 8618, 418)

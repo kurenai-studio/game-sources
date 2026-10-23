@@ -1,0 +1,184 @@
+[gd_scene load_steps=22 format=3 uid="uid://f31q7ameb6hm"]
+
+[ext_resource type="Script" path="res://scenes/hero.gd" id="1_omy4t"]
+[ext_resource type="Texture2D" uid="uid://cipplrmttgmy4" path="res://resources/sprites/pj/pjHead.png" id="2_3f0u1"]
+[ext_resource type="Texture2D" uid="uid://dwvr6kpmo3xmj" path="res://resources/sprites/pj/pjBodyJumping.png" id="3_8qtcw"]
+[ext_resource type="Script" path="res://scenes/ui.gd" id="3_fjqen"]
+[ext_resource type="Texture2D" uid="uid://bp2td4rfr1wwv" path="res://resources/sprites/pj/pjJumpingLegs.png" id="3_gquj7"]
+[ext_resource type="Texture2D" uid="uid://bd5pw0yjs0ft3" path="res://resources/ui/empty_v_bar.png" id="3_kjtew"]
+[ext_resource type="Texture2D" uid="uid://bhf0omvlasllj" path="res://resources/sprites/pj/pjBodyRunning.png" id="4_2trbn"]
+[ext_resource type="Texture2D" uid="uid://vt87ye3ybyhb" path="res://resources/ui/bar_v_border.png" id="4_r372t"]
+[ext_resource type="Texture2D" uid="uid://ciownt0dopb4i" path="res://resources/sprites/pj/pjRunningLegs1.png" id="6_ejbq7"]
+[ext_resource type="Texture2D" uid="uid://ced1gvm3ejp8b" path="res://resources/sprites/pj/pjRunningLegs2.png" id="7_34yky"]
+[ext_resource type="PackedScene" uid="uid://cdxbhwtpcrqwx" path="res://scenes/level_up_screen.tscn" id="7_y4fjo"]
+[ext_resource type="PackedScene" uid="uid://c8qbjfx63idyx" path="res://scenes/powerups/pistol.tscn" id="9_jqixl"]
+[ext_resource type="Texture2D" uid="uid://bdexcucrlyfrt" path="res://resources/ui/full_life_bar.png" id="13_axndc"]
+[ext_resource type="Texture2D" uid="uid://cuxvaqlgqpm2c" path="res://resources/ui/full_xp_bar.png" id="14_glpkk"]
+[ext_resource type="Script" path="res://scenes/summary.gd" id="15_1qfb5"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ldks5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_8qtcw")
+}],
+"loop": true,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_2trbn")
+}],
+"loop": true,
+"name": &"run",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_rcvp2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_gquj7")
+}],
+"loop": true,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_ejbq7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_34yky")
+}],
+"loop": true,
+"name": &"run",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_itkei"]
+radius = 24.0
+height = 172.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lk7si"]
+size = Vector2(53, 137)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_er8d3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_33dn5"]
+size = Vector2(1800, 1000)
+
+[node name="Hero" type="CharacterBody2D" groups=["hero"]]
+collision_mask = 4
+floor_stop_on_slope = false
+script = ExtResource("1_omy4t")
+
+[node name="Head" type="Sprite2D" parent="."]
+texture = ExtResource("2_3f0u1")
+
+[node name="Body" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_ldks5")
+animation = &"jump"
+
+[node name="Legs" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_rcvp2")
+animation = &"run"
+autoplay = "run"
+
+[node name="RunningShape" type="CollisionShape2D" parent="."]
+position = Vector2(0, 7)
+shape = SubResource("CapsuleShape2D_itkei")
+
+[node name="JumpingShape" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(5.5, -12.5)
+shape = SubResource("RectangleShape2D_lk7si")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+offset = Vector2(0, -270)
+limit_top = 270
+limit_bottom = 1080
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = ExtResource("3_fjqen")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI"]
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/separation = 20
+
+[node name="VSeparator" type="VSeparator" parent="UI/HBoxContainer"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxEmpty_er8d3")
+
+[node name="LifeBar" type="TextureProgressBar" parent="UI/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 150)
+layout_mode = 2
+value = 50.0
+fill_mode = 3
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 3
+stretch_margin_right = 3
+stretch_margin_bottom = 3
+texture_under = ExtResource("3_kjtew")
+texture_over = ExtResource("4_r372t")
+texture_progress = ExtResource("13_axndc")
+
+[node name="XPBar" type="TextureProgressBar" parent="UI/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 150)
+layout_mode = 2
+value = 50.0
+fill_mode = 3
+nine_patch_stretch = true
+stretch_margin_left = 3
+stretch_margin_top = 3
+stretch_margin_right = 3
+stretch_margin_bottom = 3
+texture_under = ExtResource("3_kjtew")
+texture_over = ExtResource("4_r372t")
+texture_progress = ExtResource("14_glpkk")
+tint_progress = Color(0.988235, 0.933333, 1, 1)
+
+[node name="LevelUpScreen" parent="UI" instance=ExtResource("7_y4fjo")]
+process_mode = 3
+visible = false
+
+[node name="Summary" type="ItemList" parent="UI"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+auto_height = true
+script = ExtResource("15_1qfb5")
+
+[node name="DeathCount" type="Label" parent="UI"]
+unique_name_in_owner = true
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "0 enemies slain"
+
+[node name="PlayerSight" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerSight"]
+shape = SubResource("RectangleShape2D_33dn5")
+
+[node name="Pistol" parent="." instance=ExtResource("9_jqixl")]

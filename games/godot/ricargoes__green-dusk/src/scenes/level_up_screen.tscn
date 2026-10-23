@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://cdxbhwtpcrqwx"]
+
+[ext_resource type="Script" path="res://scenes/level_up_screen.gd" id="1_r55pw"]
+
+[node name="LevelUpScreen" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_r55pw")
+
+[node name="Panel" type="Panel" parent="."]
+custom_minimum_size = Vector2(1000, 400)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Pick an upgrade"
+horizontal_alignment = 1
+
+[node name="Options" type="VBoxContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(800, 300)
+layout_mode = 2
+theme_override_constants/separation = 20
