@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description"
+        content="Desert Nomad - An endless runner game where a lone traveler navigates through dynamic desert weather conditions">
+    <meta name="keywords" content="game, endless runner, desert, HTML5, canvas">
+    <meta name="author" content="Rishi">
+    <title>Desert Nomad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container" role="application" >
+        <canvas id="game-canvas" aria-hidden="true"></canvas>
+
+        <div id="hud" aria-live="off">
+            <div id="score-container" role="status">
+                <span id="score-label">DISTANCE</span>
+                <span id="score">0</span>
+                <span id="score-unit">m</span>
+            </div>
+            <div id="weather-indicator" role="status">
+                <span id="weather-icon">☀️</span>
+                <span id="weather-text">Clear</span>
+            </div>
+            <div id="weather-announcement" aria-live="polite" class="sr-only"></div>
+            <button id="pause-btn">❚❚</button>
+        </div>
+
+        <div id="weather-banner"></div>
+
+        <div id="start-screen" class="overlay active">
+            <div class="overlay-content">
+                <h1 class="game-title">Desert Nomad</h1>
+                <p class="game-subtitle">Survive the endless desert</p>
+                <div class="instructions">
+                    <div class="instruction-row">
+                        <span class="key">SPACE</span>
+                        <span class="action">or TAP to Jump</span>
+                    </div>
+                    <div class="instruction-row">
+                        <span class="key">↓</span>
+                        <span class="action">or SWIPE DOWN to Duck</span>
+                    </div>
+                </div>
+                <button id="start-btn" class="primary-btn">
+                    <span>Start Journey</span>
+                    <div class="btn-glow"></div>
+                </button>
+                <p class="hint">Adapt to changing weather • Avoid hazards • Run forever</p>
+            </div>
+        </div>
+
+        <div id="pause-screen" class="overlay">
+            <div class="overlay-content">
+                <h2>Paused</h2>
+                <div class="settings-panel">
+                    <label class="setting-row">
+                        <span>Sound</span>
+                        <button id="sound-toggle" class="toggle-btn" aria-pressed="true">ON</button>
+                    </label>
+                    <label class="setting-row">
+                        <span>Reduced Effects</span>
+                        <button id="effects-toggle" class="toggle-btn" aria-pressed="false">OFF</button>
+                    </label>
+                </div>
+                <button id="resume-btn" class="primary-btn">Resume</button>
+            </div>
+        </div>
+
+        <div id="gameover-screen" class="overlay">
+            <div class="overlay-content">
+                <h2 class="gameover-title">Journey Ended</h2>
+                <div id="final-score-container">
+                    <span class="final-score-label">Distance Traveled</span>
+                    <span id="final-score">0</span>
+                    <span class="final-score-unit">m</span>
+                </div>
+                <div id="high-score-container">
+                    <span class="high-score-label">Best Distance</span>
+                    <span id="high-score">0</span>
+                    <span class="high-score-unit">m</span>
+                </div>
+                <button id="restart-btn" class="primary-btn">
+                    <span>Try Again</span>
+                    <div class="btn-glow"></div>
+                </button>
+                <p class="hint">Tap or Press SPACE to restart</p>
+            </div>
+        </div>
+        <div id="mobile-controls" aria-hidden="true">
+            <button id="jump-btn" class="mobile-btn">JUMP</button>
+            <button id="duck-btn" class="mobile-btn">DUCK</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
