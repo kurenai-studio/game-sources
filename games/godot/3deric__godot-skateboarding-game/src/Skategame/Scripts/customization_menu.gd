@@ -1,0 +1,263 @@
+class_name CustomizationMenu
+extends Control
+
+@onready var h_slider_skin_color: HSlider = %HSlider_Skin_Color
+@onready var color_picker_button_eye_color: ColorPickerButton = %ColorPickerButton_Eye_Color
+@onready var color_picker_button_top_base: ColorPickerButton = %ColorPickerButton_Top_Base
+@onready var color_picker_button_top_accent: ColorPickerButton = %ColorPickerButton_Top_Accent
+@onready var color_picker_button_top_detail: ColorPickerButton = %ColorPickerButton_Top_Detail
+@onready var color_picker_button_bottom_base: ColorPickerButton = %ColorPickerButton_Bottom_Base
+@onready var color_picker_button_bottom_accent: ColorPickerButton = %ColorPickerButton_Bottom_Accent
+@onready var color_picker_button_bottom_detail: ColorPickerButton = %ColorPickerButton_Bottom_Detail
+@onready var color_picker_button_shoes_base: ColorPickerButton = %ColorPickerButton_Shoes_Base
+@onready var color_picker_button_shoes_accent: ColorPickerButton = %ColorPickerButton_Shoes_Accent
+@onready var color_picker_button_shoes_detail: ColorPickerButton = %ColorPickerButton_Shoes_Detail
+@onready var color_picker_button_wheels: ColorPickerButton = %ColorPickerButton_Wheels
+@onready var color_picker_button_details: ColorPickerButton = %ColorPickerButton_Details
+@onready var color_picker_button_metal: ColorPickerButton = %ColorPickerButton_Metal
+@onready var option_button_deck: OptionButton = %OptionButton_Deck
+@onready var option_button_top_decal: OptionButton = %OptionButton_Top_Decal
+@onready var color_picker_button_hair_color: ColorPickerButton = %ColorPickerButton_Hair_Color
+@onready var option_button_hair: OptionButton = %OptionButton_Hair
+@onready var option_button_top_style: OptionButton = %OptionButton_Top_Style
+@onready var option_button_bottom_style: OptionButton = %OptionButton_Bottom_Style
+@onready var option_button_shoes_style: OptionButton = %OptionButton_Shoes_Style
+@onready var h_slider_size: HSlider = %HSlider_Size
+@onready var check_button_gender: CheckButton = %CheckButton_Gender
+@onready var option_button_helmet_style : OptionButton = %OptionButton_Helmet_Style
+@onready var option_button_glasses_style : OptionButton = %OptionButton_Glasses_Style
+
+func _ready() -> void:
+	_setup_buttons()
+	_setup_options()
+	CustomizationManager.instance.customization_updated.connect(_update_ui_from_data)
+
+
+func _setup_buttons() -> void:
+	h_slider_size.value_changed.connect(_on_h_slider_size_value_changed)
+	h_slider_skin_color.value_changed.connect(_on_h_slider_skin_color_value_changed)
+	color_picker_button_eye_color.color_changed.connect(_on_color_picker_button_eye_color_color_changed)
+	option_button_hair.item_selected.connect(_on_option_button_hair_item_selected)
+	color_picker_button_hair_color.color_changed.connect(_on_color_picker_button_hair_color_color_changed)
+	option_button_top_style.item_selected.connect(_on_option_button_top_style_item_selected)
+	option_button_top_decal.item_selected.connect(_on_option_button_top_decal_item_selected)
+	color_picker_button_top_base.color_changed.connect(_on_color_picker_button_top_base_color_changed)
+	color_picker_button_top_accent.color_changed.connect(_on_color_picker_button_top_accent_color_changed)
+	color_picker_button_top_detail.color_changed.connect(_on_color_picker_button_top_detail_color_changed)
+	option_button_bottom_style.item_selected.connect(_on_option_button_bottom_style_item_selected)
+	color_picker_button_bottom_base.color_changed.connect(_on_color_picker_button_bottom_base_color_changed)
+	color_picker_button_bottom_accent.color_changed.connect(_on_color_picker_button_bottom_accent_color_changed)
+	color_picker_button_bottom_detail.color_changed.connect(_on_color_picker_button_bottom_detail_color_changed)
+	option_button_shoes_style.item_selected.connect(_on_option_button_shoes_style_item_selected)
+	color_picker_button_shoes_base.color_changed.connect(_on_color_picker_button_shoes_base_color_changed)
+	color_picker_button_shoes_accent.color_changed.connect(_on_color_picker_button_shoes_accent_color_changed)
+	color_picker_button_shoes_detail.color_changed.connect(_on_color_picker_button_shoes_detail_color_changed)
+	option_button_deck.item_selected.connect(_on_option_button_deck_item_selected)
+	color_picker_button_wheels.color_changed.connect(_on_color_picker_button_wheels_color_changed)
+	color_picker_button_metal.color_changed.connect(_on_color_picker_button_metal_color_changed)
+	color_picker_button_details.color_changed.connect(_on_color_picker_button_details_color_changed)
+	check_button_gender.toggled.connect(_on_check_button_gender_toggled)
+	option_button_helmet_style.item_selected.connect(_on_option_button_helmet_style_item_selected)
+	option_button_glasses_style.item_selected.connect(_on_option_button_glasses_style_item_selected)
+
+
+func _setup_options() -> void:
+	var data = CustomizationManager.instance.character_data
+	option_button_deck.clear()
+	option_button_deck.add_item("Wood", CharacterData.BoardDecal.Bare)
+	option_button_deck.add_item("Style 1", CharacterData.BoardDecal.Style1)
+	option_button_deck.add_item("Style 2", CharacterData.BoardDecal.Style2)
+	option_button_top_decal.clear()
+	option_button_top_decal.add_item("Empty", CharacterData.TopDecal.Bare)
+	option_button_top_decal.add_item("Style 1", CharacterData.TopDecal.Style1)
+	option_button_top_decal.add_item("Style 2", CharacterData.TopDecal.Style2)
+	option_button_top_decal.add_item("Style 3", CharacterData.TopDecal.Style1)
+	option_button_top_decal.add_item("Style 4", CharacterData.TopDecal.Style2)
+	option_button_hair.clear()
+	option_button_hair.add_item("Bald", CharacterData.HairMesh.Bald)
+	option_button_hair.add_item("Style1", CharacterData.HairMesh.Style1)
+	option_button_hair.add_item("Style2", CharacterData.HairMesh.Style2)
+	option_button_top_style.clear()
+	option_button_top_style.add_item("Bare", CharacterData.TopMesh.Nothing)
+	option_button_top_style.add_item("Hoodie", CharacterData.TopMesh.Hoodie)
+	option_button_top_style.add_item("Shirt", CharacterData.TopMesh.Shirt)
+	option_button_bottom_style.clear()
+	option_button_bottom_style.add_item("Bare", CharacterData.BottomMesh.Nothing)
+	option_button_bottom_style.add_item("Jeans", CharacterData.BottomMesh.Jeans)
+	option_button_bottom_style.add_item("Shorts", CharacterData.BottomMesh.Shorts)
+	option_button_shoes_style.clear()
+	option_button_shoes_style.add_item("Bare", CharacterData.ShoesMesh.Nothing)
+	option_button_shoes_style.add_item("Shoes Flat", CharacterData.ShoesMesh.FlatShoes)
+	option_button_shoes_style.add_item("Sneakers", CharacterData.ShoesMesh.Sneakers)
+	option_button_shoes_style.add_item("Boots", CharacterData.ShoesMesh.Boots)
+	option_button_shoes_style.add_item("Flipflops", CharacterData.ShoesMesh.Flipflops)
+	option_button_helmet_style.clear()
+	option_button_helmet_style.add_item("No Helmet", CharacterData.HelmetMesh.Nothing)
+	option_button_helmet_style.add_item("Basic", CharacterData.HelmetMesh.Base)
+	option_button_helmet_style.add_item("Godot", CharacterData.HelmetMesh.Godot)
+	option_button_glasses_style.clear()
+	option_button_glasses_style.add_item("No Glasses", CharacterData.GlassesMesh.Nothing)
+	option_button_glasses_style.add_item("Sunglasses", CharacterData.GlassesMesh.Sunglasses)
+	color_picker_button_top_base.color = data.top_base_color
+	color_picker_button_top_accent.color = data.top_accent_color
+	color_picker_button_top_detail.color = data.top_detail_color
+	color_picker_button_bottom_base.color = data.bottom_base_color
+	color_picker_button_bottom_accent.color = data.bottom_accent_color
+	color_picker_button_bottom_detail.color = data.bottom_detail_color
+	color_picker_button_shoes_base.color = data.shoes_base_color
+	color_picker_button_shoes_accent.color = data.shoes_accent_color
+	color_picker_button_shoes_detail.color = data.shoes_detail_color
+	color_picker_button_wheels.color = data.board_wheels_color
+	color_picker_button_details.color = data.board_accent_color
+	color_picker_button_metal.color = data.board_metal_color
+	option_button_deck.selected = data.board_decal
+	option_button_top_decal.selected = data.top_decal
+	color_picker_button_eye_color.color = data.eye_color
+	h_slider_skin_color.value = data.skin_color
+	color_picker_button_hair_color.color = data.hair_color
+	option_button_hair.selected = data.hair_mesh
+	option_button_top_style.selected = data.top_mesh
+	option_button_bottom_style.selected = data.bottom_mesh
+	option_button_shoes_style.selected = data.shoes_mesh
+	h_slider_size.value = data.size
+	check_button_gender.button_pressed = bool(data.gender)
+	option_button_helmet_style.selected = data.helmet_mesh
+	
+	
+func _update_ui_from_data() -> void:
+	var data = CustomizationManager.instance.character_data
+	color_picker_button_top_base.color = data.top_base_color
+	color_picker_button_top_accent.color = data.top_accent_color
+	color_picker_button_top_detail.color = data.top_detail_color
+	color_picker_button_bottom_base.color = data.bottom_base_color
+	color_picker_button_bottom_accent.color = data.bottom_accent_color
+	color_picker_button_bottom_detail.color = data.bottom_detail_color
+	color_picker_button_shoes_base.color = data.shoes_base_color
+	color_picker_button_shoes_accent.color = data.shoes_accent_color
+	color_picker_button_shoes_detail.color = data.shoes_detail_color
+	color_picker_button_wheels.color = data.board_wheels_color
+	color_picker_button_details.color = data.board_accent_color
+	color_picker_button_metal.color = data.board_metal_color
+	option_button_deck.selected = data.board_decal
+	option_button_top_decal.selected = data.top_decal
+	color_picker_button_eye_color.color = data.eye_color
+	h_slider_skin_color.value = data.skin_color
+	color_picker_button_hair_color.color = data.hair_color
+	option_button_hair.selected = data.hair_mesh
+	option_button_top_style.selected = data.top_mesh
+	option_button_bottom_style.selected = data.bottom_mesh
+	option_button_shoes_style.selected = data.shoes_mesh
+	h_slider_size.value = data.size
+	check_button_gender.button_pressed = bool(data.gender)
+	option_button_helmet_style.selected = data.helmet_mesh
+	option_button_glasses_style.selected = data.glasses_mesh
+		
+
+func _on_color_picker_button_top_base_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'base', color)
+
+
+func _on_color_picker_button_top_accent_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'accent', color)
+
+
+func _on_color_picker_button_top_detail_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'detail', color)
+
+
+func _on_color_picker_button_bottom_base_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'base', color)
+		
+
+func _on_color_picker_button_bottom_accent_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'accent', color)
+
+
+func _on_color_picker_button_bottom_detail_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'detail', color)
+
+
+func _on_color_picker_button_shoes_base_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'base', color)
+
+
+func _on_color_picker_button_shoes_accent_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'accent', color)
+	
+
+func _on_color_picker_button_shoes_detail_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'detail', color)
+
+
+func _on_color_picker_button_wheels_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Board, 'wheels', color)
+
+
+func _on_color_picker_button_details_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Board, 'accent', color)
+
+
+func _on_color_picker_button_metal_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Board, 'metal', color)
+
+
+func _on_option_button_deck_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_decal(CharacterData.CharacterPart.Board, index)
+
+
+func _on_option_button_top_decal_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_decal(CharacterData.CharacterPart.Top, index)
+
+
+func _on_h_slider_skin_color_value_changed(value: float) -> void:
+	CustomizationManager.instance.update_float(CharacterData.CharacterPart.Body, 'skin_color', value)
+
+
+func _on_color_picker_button_eye_color_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Body, 'eyes', color)
+
+
+func _on_color_picker_button_hair_color_color_changed(color: Color) -> void:
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Hair, 'color', color)
+
+
+func _on_option_button_hair_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Hair, index)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Hair, 'color', color_picker_button_hair_color.color)
+
+
+func _on_option_button_top_style_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Top, index)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'base', color_picker_button_top_base.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'accent', color_picker_button_top_accent.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Top, 'detail', color_picker_button_top_detail.color)
+	CustomizationManager.instance.update_decal(CharacterData.CharacterPart.Top, option_button_top_decal.selected)
+	CustomizationManager.instance.update_float(CharacterData.CharacterPart.Bottom, 'gender', float(check_button_gender.button_pressed))
+
+
+func _on_option_button_bottom_style_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Bottom, index)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'base', color_picker_button_bottom_base.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'accent', color_picker_button_bottom_accent.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Bottom, 'detail', color_picker_button_bottom_detail.color)
+	CustomizationManager.instance.update_float(CharacterData.CharacterPart.Bottom, 'gender', float(check_button_gender.button_pressed))
+
+
+func _on_option_button_shoes_style_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Shoes, index)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'base', color_picker_button_shoes_base.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'accent', color_picker_button_shoes_accent.color)
+	CustomizationManager.instance.update_color(CharacterData.CharacterPart.Shoes, 'detail', color_picker_button_shoes_detail.color)
+
+func _on_option_button_helmet_style_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Helmet, index)
+
+func _on_option_button_glasses_style_item_selected(index: int) -> void:
+	CustomizationManager.instance.update_mesh(CharacterData.CharacterPart.Glasses, index)
+	
+func _on_h_slider_size_value_changed(value: float) -> void:
+	CustomizationManager.instance.update_float(CharacterData.CharacterPart.Body, 'size', value)
+
+
+func _on_check_button_gender_toggled(toggled_on: bool) -> void:
+	CustomizationManager.instance.update_float(CharacterData.CharacterPart.Body, 'gender', float(toggled_on))
