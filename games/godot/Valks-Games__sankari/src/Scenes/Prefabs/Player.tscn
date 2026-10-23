@@ -1,0 +1,65 @@
+[gd_scene load_steps=5 format=3 uid="uid://bfeednkyjlv1t"]
+
+[ext_resource type="Script" path="res://Scripts/Entities/Player/Player.cs" id="2"]
+[ext_resource type="SpriteFrames" uid="uid://di3nq5eobjvgk" path="res://Sprites/Sprite Frames/Player.tres" id="2_pdwy7"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(20, 32)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(20, 32)
+
+[node name="Player" type="CharacterBody2D"]
+z_index = 1
+script = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Raycasts" type="Node2D" parent="."]
+
+[node name="Wall" type="Node2D" parent="Raycasts"]
+
+[node name="Left" type="Node2D" parent="Raycasts/Wall"]
+
+[node name="1" type="RayCast2D" parent="Raycasts/Wall/Left"]
+position = Vector2(-10, -12)
+target_position = Vector2(-3, 0)
+
+[node name="2" type="RayCast2D" parent="Raycasts/Wall/Left"]
+position = Vector2(-10, 3)
+target_position = Vector2(-3, 0)
+
+[node name="Right" type="Node2D" parent="Raycasts/Wall"]
+
+[node name="1" type="RayCast2D" parent="Raycasts/Wall/Right"]
+position = Vector2(10, -12)
+target_position = Vector2(3, 0)
+
+[node name="2" type="RayCast2D" parent="Raycasts/Wall/Right"]
+position = Vector2(10, 3)
+target_position = Vector2(3, 0)
+
+[node name="Ground" type="Node2D" parent="Raycasts"]
+
+[node name="1" type="RayCast2D" parent="Raycasts/Ground"]
+position = Vector2(-9, 16)
+target_position = Vector2(0, 10)
+
+[node name="2" type="RayCast2D" parent="Raycasts/Ground"]
+position = Vector2(0, 16)
+target_position = Vector2(0, 10)
+
+[node name="3" type="RayCast2D" parent="Raycasts/Ground"]
+position = Vector2(9, 16)
+target_position = Vector2(0, 10)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("2_pdwy7")
+animation = &"idle"
+
+[node name="Area2D" type="Area2D" parent="." groups=["Player"]]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("2")

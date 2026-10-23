@@ -1,0 +1,50 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Texture2D" uid="uid://cogb6i16r14qt" path="res://Sprites/Level/Platform.png" id="1"]
+[ext_resource type="Script" path="res://Scripts/Entities/Level/PlatformDisappear.cs" id="2"]
+
+[sub_resource type="Shader" id=2]
+code = "shader_type canvas_item;
+
+uniform float white_progress : hint_range(0,1) = 0;
+
+vec3 interpolate_vec3(vec3 start, vec3 end, float delta){
+    return start + (end - start) * delta;
+}
+
+void fragment(){
+    vec4 origin = texture(TEXTURE, UV);
+    COLOR.rgb = interpolate_vec3(origin.rgb, vec3(1,1,1), white_progress);
+    COLOR.a = origin.a;
+}"
+
+[sub_resource type="ShaderMaterial" id=3]
+shader = SubResource( 2 )
+shader_param/white_progress = 0.0
+
+[sub_resource type="RectangleShape2D" id=1]
+extents = Vector2( 64, 4 )
+
+[sub_resource type="RectangleShape2D" id=4]
+extents = Vector2( 64, 1 )
+
+[node name="Platform Disappear" type="CharacterBody2D" groups=["Platform"]]
+script = ExtResource( 2 )
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource( 3 )
+texture = ExtResource( 1 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource( 1 )
+one_way_collision = true
+
+[node name="Area2D" type="Area2D" parent="."]
+position = Vector2( -16, -4 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2( 16, -1 )
+shape = SubResource( 4 )
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_Area2D_area_entered"]
+[connection signal="area_exited" from="Area2D" to="." method="_on_Area2D_area_exited"]

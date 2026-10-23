@@ -1,0 +1,357 @@
+[gd_scene load_steps=20 format=3 uid="uid://cii878di0nq7s"]
+
+[ext_resource type="PackedScene" uid="uid://drhv6phmlcb2c" path="res://Scenes/Menu.tscn" id="1"]
+[ext_resource type="Script" path="res://Scripts/Linker.cs" id="2"]
+[ext_resource type="Script" path="res://Scripts/Managers/TransitionManager.cs" id="3"]
+[ext_resource type="Script" path="res://Scripts/Managers/LevelUIManager.cs" id="4"]
+[ext_resource type="Texture2D" uid="uid://cs0qaxwrbjork" path="res://Sprites/Level/Coins/Full Coins.png" id="5"]
+[ext_resource type="Theme" uid="uid://g6gh2yrjxny3" path="res://Themes/Main.tres" id="7"]
+[ext_resource type="Script" path="res://Scripts/UI/UIConsoleManager.cs" id="8"]
+[ext_resource type="Script" path="res://Scripts/UI/UIPlayerList.cs" id="9"]
+[ext_resource type="Script" path="res://Scripts/UI/UIMapMenu.cs" id="10"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ry2kl"]
+
+[sub_resource type="AtlasTexture" id="65"]
+atlas = ExtResource("5")
+region = Rect2(0, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="66"]
+atlas = ExtResource("5")
+region = Rect2(15, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="67"]
+atlas = ExtResource("5")
+region = Rect2(30, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="68"]
+atlas = ExtResource("5")
+region = Rect2(45, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="69"]
+atlas = ExtResource("5")
+region = Rect2(60, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="70"]
+atlas = ExtResource("5")
+region = Rect2(75, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="71"]
+atlas = ExtResource("5")
+region = Rect2(90, 0, 15, 16)
+
+[sub_resource type="AtlasTexture" id="72"]
+atlas = ExtResource("5")
+region = Rect2(105, 0, 15, 16)
+
+[sub_resource type="SpriteFrames" id="73"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("65")
+}, {
+"duration": 1.0,
+"texture": SubResource("66")
+}, {
+"duration": 1.0,
+"texture": SubResource("67")
+}, {
+"duration": 1.0,
+"texture": SubResource("68")
+}, {
+"duration": 1.0,
+"texture": SubResource("69")
+}, {
+"duration": 1.0,
+"texture": SubResource("70")
+}, {
+"duration": 1.0,
+"texture": SubResource("71")
+}, {
+"duration": 1.0,
+"texture": SubResource("72")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("2")
+DeveloperMode = true
+LoadFirstLevel = true
+PressPlayOnLaunch = true
+InstantlyLoadLevel = true
+NodePathTransition = NodePath("CanvasLayer/Transition")
+
+[node name="Map" type="Node2D" parent="."]
+
+[node name="Level" type="Node2D" parent="."]
+
+[node name="Music" type="AudioStreamPlayer" parent="."]
+volume_db = -0.478
+pitch_scale = 0.97
+autoplay = true
+
+[node name="SFX Players" type="Node2D" parent="."]
+editor_description = "If there was only one AudioStreamPlayer for SFX then if 2 sounds played at once the 2nd sound would cut out the 1st sound. That is where the SFX players come in handy. All SFX players will be loaded in as children here."
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Menu" parent="CanvasLayer" instance=ExtResource("1")]
+
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("7")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ry2kl")
+
+[node name="Console" type="VBoxContainer" parent="CanvasLayer/PanelContainer"]
+visible = false
+layout_mode = 2
+script = ExtResource("8")
+
+[node name="Console Logs" type="TextEdit" parent="CanvasLayer/PanelContainer/Console"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("7")
+highlight_all_occurrences = true
+
+[node name="Console Input" type="LineEdit" parent="CanvasLayer/PanelContainer/Console"]
+layout_mode = 2
+
+[node name="Transition" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+script = ExtResource("3")
+
+[node name="Player List" type="PanelContainer" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_bottom = 14.0
+grow_horizontal = 0
+script = ExtResource("9")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/Player List"]
+layout_mode = 2
+
+[node name="UIMapMenu" type="MarginContainer" parent="CanvasLayer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("7")
+script = ExtResource("10")
+NodePathHost = NodePath("PanelContainer/Margin/VBox/Net/Host")
+NodePathJoin = NodePath("PanelContainer/Margin/VBox/Net/Join")
+NodePathOnlineUsername = NodePath("PanelContainer/Margin/VBox/VBox/Online Username")
+
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer/UIMapMenu"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/UIMapMenu/PanelContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox"]
+layout_mode = 2
+
+[node name="Host" type="Button" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Host"
+
+[node name="Join" type="Button" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join"
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/VBox"]
+layout_mode = 2
+text = "Online Username"
+
+[node name="Online Username" type="LineEdit" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/VBox"]
+layout_mode = 2
+text = "valk"
+
+[node name="Net" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox"]
+layout_mode = 2
+
+[node name="Host" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net"]
+layout_mode = 2
+size_flags_horizontal = 5
+size_flags_vertical = 0
+
+[node name="Label" type="Label" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+text = "Port"
+
+[node name="Port" type="LineEdit" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+text = "25565"
+
+[node name="Label2" type="Label" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+text = "Password"
+
+[node name="Password" type="LineEdit" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+secret = true
+
+[node name="Padding" type="Control" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+
+[node name="Server Toggle" type="Button" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Open World3D to Other Players"
+
+[node name="Join" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+text = "Server Address"
+
+[node name="IP" type="LineEdit" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+text = "127.0.0.1:25565"
+
+[node name="Label2" type="Label" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+text = "Password"
+
+[node name="Join Password" type="LineEdit" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+
+[node name="Padding" type="Control" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+
+[node name="Join World" type="Button" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join"]
+layout_mode = 2
+text = "Join World3D"
+
+[node name="Padding" type="Control" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox"]
+layout_mode = 2
+
+[node name="Game" type="VBoxContainer" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+
+[node name="Back to Main Menu" type="Button" parent="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Game"]
+layout_mode = 2
+text = "Back to Main Menu"
+
+[node name="Level UI" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4")
+NodePathCoinSprite = NodePath("PanelContainer/HBoxContainer/Coin Sprite2D")
+NodePathLabelCoins = NodePath("PanelContainer/HBoxContainer/Coin Value")
+NodePathControlLives = NodePath("Lives")
+NodePathLabelLives = NodePath("Lives/Lives Value")
+NodePathHealthBar = NodePath("Health Bar")
+NodePathGameOver = NodePath("Game Over/Label")
+
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer/Level UI"]
+layout_mode = 0
+offset_right = 53.0
+offset_bottom = 31.0
+theme = ExtResource("7")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Level UI/PanelContainer"]
+layout_mode = 2
+
+[node name="Coin Sprite2D" type="AnimatedSprite2D" parent="CanvasLayer/Level UI/PanelContainer/HBoxContainer"]
+position = Vector2(14, 14)
+scale = Vector2(1.23333, 1.23333)
+sprite_frames = SubResource("73")
+
+[node name="Padding Left" type="Control" parent="CanvasLayer/Level UI/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(25, 0)
+layout_mode = 2
+
+[node name="Coin Value" type="Label" parent="CanvasLayer/Level UI/PanelContainer/HBoxContainer"]
+layout_mode = 2
+text = "0"
+
+[node name="Lives" type="HBoxContainer" parent="CanvasLayer/Level UI"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="CanvasLayer/Level UI/Lives"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Lives x "
+
+[node name="Lives Value" type="Label" parent="CanvasLayer/Level UI/Lives"]
+layout_mode = 2
+
+[node name="Health Bar" type="HBoxContainer" parent="CanvasLayer/Level UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -186.0
+offset_bottom = 50.0
+grow_horizontal = 0
+alignment = 2
+
+[node name="Game Over" type="HBoxContainer" parent="CanvasLayer/Level UI"]
+layout_mode = 0
+offset_left = 536.0
+offset_top = 304.0
+offset_right = 623.0
+offset_bottom = 344.0
+
+[node name="Label" type="Label" parent="CanvasLayer/Level UI/Game Over"]
+visible = false
+layout_mode = 2
+text = "Game Over"
+
+[connection signal="text_submitted" from="CanvasLayer/PanelContainer/Console/Console Input" to="CanvasLayer/PanelContainer/Console" method="_on_Console_Input_text_entered"]
+[connection signal="pressed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/HBox/Host" to="CanvasLayer/UIMapMenu" method="_on_Host_pressed"]
+[connection signal="pressed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/HBox/Join" to="CanvasLayer/UIMapMenu" method="_on_Join_pressed"]
+[connection signal="text_changed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/VBox/Online Username" to="CanvasLayer/UIMapMenu" method="_on_Online_Username_text_changed"]
+[connection signal="text_changed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host/Port" to="CanvasLayer/UIMapMenu" method="_on_Port_text_changed"]
+[connection signal="text_changed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host/Password" to="CanvasLayer/UIMapMenu" method="_on_Password_text_changed"]
+[connection signal="pressed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Host/Server Toggle" to="CanvasLayer/UIMapMenu" method="_on_Server_Toggle_pressed"]
+[connection signal="text_changed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join/IP" to="CanvasLayer/UIMapMenu" method="_on_IP_text_changed"]
+[connection signal="text_changed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join/Join Password" to="CanvasLayer/UIMapMenu" method="_on_Join_Password_text_changed"]
+[connection signal="pressed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Net/Join/Join World" to="CanvasLayer/UIMapMenu" method="_on_Join_World_pressed"]
+[connection signal="pressed" from="CanvasLayer/UIMapMenu/PanelContainer/Margin/VBox/Game/Back to Main Menu" to="CanvasLayer/UIMapMenu" method="_on_Back_to_Main_Menu_pressed"]
