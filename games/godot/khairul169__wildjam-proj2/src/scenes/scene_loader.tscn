@@ -1,0 +1,73 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://scripts/singleton/scene_loader.gd" type="Script" id=1]
+[ext_resource path="res://sprites/white.png" type="Texture" id=2]
+[ext_resource path="res://characters/cat/default.tscn" type="PackedScene" id=3]
+[ext_resource path="res://fonts/PetitaMedium.ttf" type="DynamicFontData" id=4]
+
+
+[sub_resource type="DynamicFont" id=1]
+
+size = 32
+font_data = ExtResource( 4 )
+
+[node name="scene_loader" type="CanvasLayer"]
+layer = 10
+script = ExtResource( 1 )
+
+[node name="ui" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="bg" type="TextureRect" parent="ui"]
+modulate = Color( 0.129412, 0.129412, 0.129412, 1 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource( 2 )
+expand = true
+
+[node name="character" parent="ui" instance=ExtResource( 3 )]
+editor/display_folded = true
+position = Vector2( 1150, 610 )
+scale = Vector2( 0.2, 0.2 )
+
+[node name="tail" parent="ui/character/sprite" index="1"]
+rotation = -0.118292
+
+[node name="leg_l" parent="ui/character/sprite" index="2"]
+rotation = 0.539596
+
+[node name="leg_r" parent="ui/character/sprite" index="3"]
+rotation = -0.234135
+
+[node name="hand_l" parent="ui/character/sprite" index="4"]
+rotation = -0.462918
+
+[node name="hand_r" parent="ui/character/sprite" index="6"]
+rotation = 0.473021
+
+[node name="gun" parent="ui/character/sprite/hand_r/attachment" index="0"]
+visible = false
+
+[node name="head" parent="ui/character/sprite" index="7"]
+rotation = -0.0225261
+
+[node name="AnimationPlayer" parent="ui/character" index="1"]
+autoplay = "run"
+
+[node name="loading" type="Label" parent="ui"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 1070.0
+margin_top = -60.0
+margin_right = -10.0
+margin_bottom = -23.0
+custom_fonts/font = SubResource( 1 )
+text = "Please Wait..."
+
+
+[editable path="ui/character"]
