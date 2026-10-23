@@ -1,0 +1,490 @@
+class_name StatisticsScreen
+extends Control
+
+const LocalizationManager = preload("res://scripts/services/localization_manager.gd")
+const ThemeManager = preload("res://scripts/services/theme_manager.gd")
+const ResponsiveManager = preload("res://scripts/services/responsive_manager.gd")
+const AmbientBackdrop = preload("res://scenes/ui/ambient_backdrop.gd")
+const GlassPanel = preload("res://scenes/ui/glass_panel.gd")
+const AchievementManager = preload("res://scripts/data/achievement_manager.gd")
+const AdaptiveColumns = preload("res://scenes/ui/adaptive_columns.gd")
+
+## Performance and Progression Statistics Screen (GDD §33, §44)
+## Swiss Editorial layout: High data-density typographic callouts and hairline dividers,
+## completely eliminating bulky card-inside-card dashboard containers.
+
+signal back_requested()
+
+var bg: ColorRect
+var margin: MarginContainer
+var back_btn: Button
+var title: Label
+## The cards; on a wide screen the overview, streak and levels on the left, achievements on the right
+var stats_vbox: AdaptiveColumns
+var _stats_dirty: bool = true
+
+## Set once _ready is done: every screen is still visible during it, before the app shows
+## only the menu, so lists are not built then
+var _started: bool = false
+
+func _init() -> void:
+	set_anchors_preset(PRESET_FULL_RECT)
+
+func _ready() -> void:
+	set_anchors_preset(PRESET_FULL_RECT)
+	_build_ui()
+	_apply_responsive_layout()
+	_update_locale_texts()
+	LocalizationManager.add_listener(_update_locale_texts)
+	ThemeManager.add_listener(_on_theme_changed)
+	_started = true
+
+func _exit_tree() -> void:
+	LocalizationManager.remove_listener(_update_locale_texts)
+	ThemeManager.remove_listener(_on_theme_changed)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_apply_responsive_layout()
+	elif what == NOTIFICATION_VISIBILITY_CHANGED:
+		if is_visible_in_tree() and _stats_dirty:
+			refresh_stats()
+
+func _apply_responsive_layout() -> void:
+	if margin == null:
+		return
+	ResponsiveManager.apply_content_margins(self, margin, ResponsiveManager.MAX_CONTENT_WIDTH, true)
+	if stats_vbox != null:
+		stats_vbox.columns = ResponsiveManager.content_columns(ResponsiveManager.get_viewport_size(self))
+
+func _on_theme_changed() -> void:
+	if bg != null:
+		bg.color = ThemeManager.get_color("bg")
+	if is_visible_in_tree():
+		refresh_stats()
+	else:
+		_stats_dirty = true
+
+func _build_ui() -> void:
+	# Soft accent glows behind the content, so glass cards have something to refract
+	var ambient_bg := AmbientBackdrop.new()
+	ambient_bg.intensity = 0.7
+	ambient_bg.color = ThemeManager.get_color("bg")
+	bg = ambient_bg
+	add_child(bg)
+
+	margin = MarginContainer.new()
+	margin.set_anchors_preset(PRESET_FULL_RECT)
+	add_child(margin)
+
+	var root_vbox := VBoxContainer.new()
+	root_vbox.add_theme_constant_override("separation", 14)
+	margin.add_child(root_vbox)
+
+	# --- 1. Editorial Header ---
+	var header := HBoxContainer.new()
+	header.alignment = BoxContainer.ALIGNMENT_CENTER
+	root_vbox.add_child(header)
+
+	back_btn = Button.new()
+	back_btn.text = ""
+	back_btn.tooltip_text = LocalizationManager.translate("BTN_MENU")
+	back_btn.theme_type_variation = "IconButton"
+	back_btn.icon = ThemeManager.get_icon("chevron-left")
+	back_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	back_btn.add_theme_constant_override("icon_max_width", 20)
+	back_btn.custom_minimum_size = Vector2(44, 44)
+	back_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	back_btn.pressed.connect(func(): back_requested.emit())
+	header.add_child(back_btn)
+
+	title = Label.new()
+	title.size_flags_horizontal = SIZE_EXPAND_FILL
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.theme_type_variation = "Header"
+	header.add_child(title)
+
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(44, 0)
+	header.add_child(spacer)
+
+	var header_sep := HSeparator.new()
+	root_vbox.add_child(header_sep)
+
+	# --- 2. Scrollable Data Canvas ---
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	root_vbox.add_child(scroll)
+
+	stats_vbox = AdaptiveColumns.new()
+	stats_vbox.size_flags_horizontal = SIZE_EXPAND_FILL
+	stats_vbox.separation = 20
+	scroll.add_child(stats_vbox)
+
+func _update_locale_texts() -> void:
+	if back_btn != null:
+		back_btn.text = ""
+		back_btn.tooltip_text = LocalizationManager.translate("BTN_MENU")
+		back_btn.icon = ThemeManager.get_icon("chevron-left")
+	if title != null:
+		title.text = LocalizationManager.translate("STATS_TITLE")
+	# Not from _ready: every screen is still visible then, before the app shows only the menu
+	if is_visible_in_tree() and _started:
+		refresh_stats()
+	else:
+		_stats_dirty = true
+
+func refresh_stats() -> void:
+	_stats_dirty = false
+	if stats_vbox == null:
+		return
+	for c in stats_vbox.get_children():
+		c.queue_free()
+
+	var details := StatisticsManager.get_detailed_statistics()
+	var summary: Dictionary = details.get("summary", {})
+	var is_tr := (LocalizationManager.get_locale() == LocalizationManager.LOCALE_TR)
+	var completed_count: int = int(summary.get("completed_games", 0))
+
+	var is_dark := ThemeManager.is_dark_theme()
+	var surface_col := ThemeManager.get_color("surface")
+	var text_given := ThemeManager.get_color("text_given")
+	var text_sec := ThemeManager.get_color("text_secondary")
+	var accent_col := ThemeManager.get_color("accent")
+
+	# -------------------------------------------------------------------------
+	# 1. Section 1: Overview Callouts (Swiss Editorial, 4 Big Metrics)
+	# -------------------------------------------------------------------------
+	var hero_card := GlassPanel.card(20.0, 18, 14)
+	stats_vbox.add_child(hero_card)
+	var hero_vbox := VBoxContainer.new()
+	hero_vbox.add_theme_constant_override("separation", 12)
+	hero_card.add_child(hero_vbox)
+
+	var hero_header_row := HBoxContainer.new()
+	hero_vbox.add_child(hero_header_row)
+
+	var hero_title := Label.new()
+	hero_title.text = LocalizationManager.upper(LocalizationManager.translate("STAT_ALL_TIME"))
+	hero_title.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(hero_title, 11)
+	hero_title.add_theme_color_override("font_color", text_sec)
+	hero_header_row.add_child(hero_title)
+
+	var comp_rate: float = float(summary.get("completion_rate", 100.0 if completed_count > 0 else 0.0))
+
+	# Row 1: Games Completed & Completion Rate
+	var row1 := HBoxContainer.new()
+	row1.alignment = BoxContainer.ALIGNMENT_CENTER
+	row1.add_theme_constant_override("separation", 16)
+	hero_vbox.add_child(row1)
+
+	# Value over caption, both centred and in one face; an icon beside the value would push it
+	# off its caption's centre line
+	_add_stat_callout(row1, LocalizationManager.format_number(completed_count), LocalizationManager.translate("STAT_COMPLETED_GAMES"))
+	_add_stat_callout(row1, LocalizationManager.format_percentage(int(comp_rate)), LocalizationManager.translate("STAT_COMPLETION_RATE"))
+
+	# Row 2: Average Time & Best Score
+	var row2 := HBoxContainer.new()
+	row2.alignment = BoxContainer.ALIGNMENT_CENTER
+	row2.add_theme_constant_override("separation", 16)
+	hero_vbox.add_child(row2)
+
+	var avg_time_str := GameTimer.format_seconds(summary.get("average_time", 0.0))
+	_add_stat_callout(row2, avg_time_str, LocalizationManager.translate("STAT_AVG_TIME"))
+	_add_stat_callout(row2, "%d" % summary.get("best_score", 0), LocalizationManager.translate("STAT_BEST_SCORE"))
+
+	# -------------------------------------------------------------------------
+	# 2. Section 2: Daily Challenge Streaks (Restrained Liquid Glass Panel)
+	# -------------------------------------------------------------------------
+	var streak_panel := GlassPanel.card(20.0, 18, 14)
+	stats_vbox.add_child(streak_panel)
+
+	var streak_vbox := VBoxContainer.new()
+	streak_vbox.add_theme_constant_override("separation", 10)
+	streak_panel.add_child(streak_vbox)
+
+	var streak_header := HBoxContainer.new()
+	streak_header.alignment = BoxContainer.ALIGNMENT_BEGIN
+	streak_header.add_theme_constant_override("separation", 8)
+	streak_vbox.add_child(streak_header)
+
+	var streak_icon := TextureRect.new()
+	streak_icon.texture = ThemeManager.get_icon("clock-3")
+	streak_icon.custom_minimum_size = Vector2(16, 16)
+	streak_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	streak_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	streak_icon.modulate = accent_col
+	streak_header.add_child(streak_icon)
+
+	var streak_title := Label.new()
+	streak_title.text = LocalizationManager.upper(LocalizationManager.translate("STAT_DAILY_STREAK_BANNER"))
+	streak_title.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(streak_title, 11)
+	streak_title.add_theme_color_override("font_color", text_sec)
+	streak_header.add_child(streak_title)
+
+	var streak_metrics_row := HBoxContainer.new()
+	streak_metrics_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	streak_vbox.add_child(streak_metrics_row)
+
+	var cur_streak: int = int(summary.get("current_streak", 0))
+	var long_streak: int = int(details.get("longest_streak", 0))
+
+	_add_stat_callout(
+		streak_metrics_row,
+		LocalizationManager.format_days(cur_streak),
+		LocalizationManager.translate("STAT_CURRENT_STREAK"),
+		"",
+		false
+	)
+	_add_stat_callout(
+		streak_metrics_row,
+		LocalizationManager.format_days(long_streak),
+		LocalizationManager.translate("STAT_LONGEST_STREAK"),
+		"",
+		false
+	)
+
+	var streak_desc := Label.new()
+	streak_desc.text = LocalizationManager.translate("STAT_DAILY_STREAK_DESC")
+	streak_desc.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(streak_desc, 11)
+	streak_desc.add_theme_color_override("font_color", text_sec)
+	streak_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	streak_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	streak_vbox.add_child(streak_desc)
+
+	# -------------------------------------------------------------------------
+	# 3. Section 3: Performance by Difficulty (Swiss Hairline Data Grid)
+	# -------------------------------------------------------------------------
+	var diff_section_vbox := VBoxContainer.new()
+	diff_section_vbox.add_theme_constant_override("separation", 14)
+	stats_vbox.add_child(diff_section_vbox)
+
+	var diff_title := Label.new()
+	diff_title.text = LocalizationManager.upper(LocalizationManager.translate("STAT_DIFFICULTIES"))
+	diff_title.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(diff_title, 11)
+	diff_title.add_theme_color_override("font_color", text_sec)
+
+	var diff_dict: Dictionary = details.get("difficulties", {})
+
+	# One card for the four levels, rows divided by hairlines (same as the game lists)
+	var diff_card := GlassPanel.card(20.0, 16, 12)
+	diff_section_vbox.add_child(diff_card)
+	var diff_rows := VBoxContainer.new()
+	diff_rows.add_theme_constant_override("separation", 12)
+	diff_card.add_child(diff_rows)
+	# Title inside the card, like Overview and the streak card above it
+	diff_rows.add_child(diff_title)
+
+	for d_name in [DifficultyAnalyzer.LEVEL_EASY, DifficultyAnalyzer.LEVEL_MEDIUM, DifficultyAnalyzer.LEVEL_HARD, DifficultyAnalyzer.LEVEL_EXPERT]:
+		if not diff_dict.has(d_name):
+			continue
+		var entry: Dictionary = diff_dict[d_name]
+		var count: int = int(entry.get("count", 0))
+
+		if diff_rows.get_child_count() > 1:
+			diff_rows.add_child(HSeparator.new())
+		var item_vbox := VBoxContainer.new()
+		item_vbox.add_theme_constant_override("separation", 8)
+		diff_rows.add_child(item_vbox)
+
+		# Header: Difficulty name & completed count
+		var header_hbox := HBoxContainer.new()
+		header_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		item_vbox.add_child(header_hbox)
+
+		var d_lbl := Label.new()
+		d_lbl.text = LocalizationManager.get_difficulty_name(d_name)
+		d_lbl.theme_type_variation = "Subheader"
+		ThemeManager.set_font_size(d_lbl, 15)
+		d_lbl.add_theme_color_override("font_color", text_given)
+		header_hbox.add_child(d_lbl)
+
+		var count_lbl := Label.new()
+		count_lbl.text = LocalizationManager.plural("STAT_GAMES_COUNT", count)
+		count_lbl.theme_type_variation = "Caption"
+		ThemeManager.set_font_size(count_lbl, 12)
+		count_lbl.add_theme_color_override("font_color", text_sec)
+		count_lbl.size_flags_horizontal = SIZE_EXPAND_FILL
+		count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		header_hbox.add_child(count_lbl)
+
+		if count > 0:
+			var grid := GridContainer.new()
+			grid.columns = 2
+			grid.size_flags_horizontal = SIZE_EXPAND_FILL
+			grid.add_theme_constant_override("h_separation", 24)
+			grid.add_theme_constant_override("v_separation", 8)
+			item_vbox.add_child(grid)
+
+			_add_key_value(grid, LocalizationManager.translate("STAT_BEST_TIME_LABEL"), GameTimer.format_seconds(entry.get("best_time", 0.0)), true)
+			_add_key_value(grid, LocalizationManager.translate("STAT_AVG_TIME_LABEL"), GameTimer.format_seconds(entry.get("avg_time", 0.0)), true)
+			_add_key_value(grid, LocalizationManager.translate("STAT_BEST_SCORE_LABEL"), "%d" % entry.get("best_score", 0), false)
+			_add_key_value(grid, LocalizationManager.translate("STAT_AVG_MISTAKES_LABEL"), "%.1f" % entry.get("avg_mistakes", 0.0), false)
+			_add_key_value(grid, LocalizationManager.translate("STAT_AVG_HINTS_LABEL"), "%.1f" % entry.get("avg_hints", 0.0), false)
+		else:
+			var empty_diff := Label.new()
+			empty_diff.text = LocalizationManager.translate("HISTORY_EMPTY")
+			empty_diff.theme_type_variation = "Caption"
+			ThemeManager.set_font_size(empty_diff, 12)
+			empty_diff.add_theme_color_override("font_color", text_sec)
+			item_vbox.add_child(empty_diff)
+
+	_add_achievements_card()
+
+## Section 4: Achievements (GDD §36), earned ones with their date, the rest with their progress
+func _add_achievements_card() -> void:
+	var text_given := ThemeManager.get_color("text_given")
+	var text_sec := ThemeManager.get_color("text_secondary")
+	var accent_col := ThemeManager.get_color("accent")
+	var st := AchievementManager.status()
+
+	var card := GlassPanel.card(20.0, 16, 12)
+	card.name = "AchievementsCard"
+	AdaptiveColumns.set_column(card, 1)
+	stats_vbox.add_child(card)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 12)
+	card.add_child(rows)
+
+	var header := HBoxContainer.new()
+	rows.add_child(header)
+	var title_lbl := Label.new()
+	title_lbl.text = LocalizationManager.upper(LocalizationManager.translate("STAT_ACHIEVEMENTS"))
+	title_lbl.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(title_lbl, 11)
+	title_lbl.add_theme_color_override("font_color", text_sec)
+	title_lbl.size_flags_horizontal = SIZE_EXPAND_FILL
+	header.add_child(title_lbl)
+	var count_lbl := Label.new()
+	count_lbl.text = LocalizationManager.translate("ACH_PROGRESS") % [AchievementManager.unlocked_count(st), AchievementManager.ALL.size()]
+	count_lbl.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(count_lbl, 11)
+	count_lbl.add_theme_color_override("font_color", accent_col)
+	header.add_child(count_lbl)
+
+	for a in AchievementManager.ALL:
+		var id: String = a["id"]
+		var entry: Dictionary = st[id]
+		var unlocked: bool = entry["unlocked"]
+		rows.add_child(HSeparator.new())
+		var row := HBoxContainer.new()
+		row.name = "Achievement_" + id
+		row.add_theme_constant_override("separation", 12)
+		row.modulate.a = 1.0 if unlocked else 0.6
+		rows.add_child(row)
+
+		var ico := TextureRect.new()
+		ico.texture = ThemeManager.get_icon("award" if unlocked else "lock")
+		ico.custom_minimum_size = Vector2(20, 20)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.size_flags_vertical = SIZE_SHRINK_CENTER
+		ico.modulate = accent_col if unlocked else text_sec
+		row.add_child(ico)
+
+		var text_col := VBoxContainer.new()
+		text_col.size_flags_horizontal = SIZE_EXPAND_FILL
+		text_col.add_theme_constant_override("separation", 2)
+		row.add_child(text_col)
+		var name_lbl := Label.new()
+		name_lbl.text = AchievementManager.title(id)
+		name_lbl.theme_type_variation = "Subheader"
+		ThemeManager.set_font_size(name_lbl, 15)
+		name_lbl.add_theme_color_override("font_color", text_given)
+		text_col.add_child(name_lbl)
+		var desc_lbl := Label.new()
+		desc_lbl.text = AchievementManager.description(id)
+		desc_lbl.theme_type_variation = "Caption"
+		ThemeManager.set_font_size(desc_lbl, 12)
+		desc_lbl.add_theme_color_override("font_color", text_sec)
+		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text_col.add_child(desc_lbl)
+
+		# Earned: the date; on the way to a count: how far along; otherwise nothing
+		var side := ""
+		if unlocked:
+			if int(entry["date"]) > 0:
+				side = AchievementManager.date_text(int(entry["date"]))
+		elif int(entry["target"]) > 1:
+			side = LocalizationManager.translate("ACH_PROGRESS") % [int(entry["progress"]), int(entry["target"])]
+		if not side.is_empty():
+			var side_lbl := Label.new()
+			side_lbl.name = "Side"
+			side_lbl.text = side
+			side_lbl.theme_type_variation = "Caption"
+			ThemeManager.set_font_size(side_lbl, 12)
+			side_lbl.add_theme_color_override("font_color", accent_col if unlocked else text_sec)
+			side_lbl.size_flags_vertical = SIZE_SHRINK_CENTER
+			row.add_child(side_lbl)
+
+func _add_stat_callout(parent: Control, val_text: String, label_text: String, icon_name: String = "", is_mono: bool = false) -> void:
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 2)
+	parent.add_child(col)
+
+	var val_row := HBoxContainer.new()
+	val_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	val_row.add_theme_constant_override("separation", 6)
+	col.add_child(val_row)
+
+	if not icon_name.is_empty():
+		var ico := TextureRect.new()
+		ico.texture = ThemeManager.get_icon(icon_name)
+		ico.custom_minimum_size = Vector2(16, 16)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.modulate = ThemeManager.get_color("text_secondary")
+		val_row.add_child(ico)
+
+	var val_lbl := Label.new()
+	val_lbl.text = val_text
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	val_lbl.theme_type_variation = "StatValue"
+	ThemeManager.set_font_size(val_lbl, 24)
+	val_lbl.add_theme_color_override("font_color", ThemeManager.get_color("text_given"))
+	if is_mono:
+		var mono_font := ThemeManager.get_font_mono()
+		if mono_font != null:
+			val_lbl.add_theme_font_override("font", mono_font)
+	val_row.add_child(val_lbl)
+
+	var name_lbl := Label.new()
+	name_lbl.text = label_text
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(name_lbl, 11)
+	name_lbl.add_theme_color_override("font_color", ThemeManager.get_color("text_secondary"))
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(name_lbl)
+
+func _add_key_value(parent: Control, label_text: String, val_text: String, is_mono: bool = false) -> void:
+	var item_vbox := VBoxContainer.new()
+	item_vbox.size_flags_horizontal = SIZE_EXPAND_FILL
+	item_vbox.add_theme_constant_override("separation", 2)
+	parent.add_child(item_vbox)
+
+	var k_lbl := Label.new()
+	k_lbl.text = LocalizationManager.upper(label_text)
+	k_lbl.theme_type_variation = "Caption"
+	ThemeManager.set_font_size(k_lbl, 10)
+	k_lbl.add_theme_color_override("font_color", ThemeManager.get_color("text_secondary"))
+	item_vbox.add_child(k_lbl)
+
+	var v_lbl := Label.new()
+	v_lbl.text = val_text
+	v_lbl.theme_type_variation = "Body"
+	ThemeManager.set_font_size(v_lbl, 14)
+	v_lbl.add_theme_color_override("font_color", ThemeManager.get_color("text_given"))
+	if is_mono:
+		var mono_font := ThemeManager.get_font_mono()
+		if mono_font != null:
+			v_lbl.add_theme_font_override("font", mono_font)
+	item_vbox.add_child(v_lbl)
