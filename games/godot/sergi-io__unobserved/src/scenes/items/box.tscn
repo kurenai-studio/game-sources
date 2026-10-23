@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/item_pickup.gd" id="1"]
+[ext_resource type="Texture2D" path="res://textures/items/box.png" id="2"]
+
+[node name="Box" type="Node2D"]
+script = ExtResource("1")
+item_kind = &"xpbox"
+item_level = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.42, 0.42)
+texture = ExtResource("2")

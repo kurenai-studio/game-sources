@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/planet_variants_line.gd" id="1_0ooxq"]
+[ext_resource type="PackedScene" path="res://scenes/starfield.tscn" id="2_3tnum"]
+
+[node name="PlanetVariantsLine" type="Node2D"]
+script = ExtResource("1_0ooxq")
+
+[node name="Starfield" parent="." instance=ExtResource("2_3tnum")]
+
+[node name="Planets" type="Node2D" parent="."]
+
+[node name="Labels" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+current = true

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cobvdmo6bgwlt"]
+
+[ext_resource type="Script" uid="uid://53wrsamvoknv" path="res://galaxy_entities/planets/planet.gd" id="1_h8ms6"]
+[ext_resource type="Script" uid="uid://gu2xmpsmycio" path="res://galaxy_entities/planets/planet_safe_zone.gd" id="3_ggt7d"]
+
+[node name="Planet" type="Node2D" unique_id=1618193891]
+script = ExtResource("1_h8ms6")
+
+[node name="PlanetVisual" type="Node2D" parent="." unique_id=58987297]
+
+[node name="PlanetSafeZone" type="Sprite2D" parent="." unique_id=2028547590]
+visible = false
+z_index = -1
+script = ExtResource("3_ggt7d")
+fill_color = Color(0, 1, 0, 0.16862746)

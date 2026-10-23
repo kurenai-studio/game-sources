@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://bpf2ldrxvmdvi"]
+
+[ext_resource type="PackedScene" uid="uid://c8un5w7xdtwi0" path="res://scenes/enemy.tscn" id="1_7g8gt"]
+[ext_resource type="Script" uid="uid://1vjm5ek34hi1" path="res://scripts/waves/wave_enemy_rule.gd" id="2_haisk"]
+[ext_resource type="PackedScene" uid="uid://d2mqii7s3e5x5" path="res://scenes/enemy_2.tscn" id="3_ckjo0"]
+[ext_resource type="Script" uid="uid://ceslu7u25pkxu" path="res://scripts/waves/wave_definition.gd" id="4_u7ra5"]
+
+[sub_resource type="Resource" id="Resource_n21yc"]
+script = ExtResource("2_haisk")
+enemy_scene = ExtResource("1_7g8gt")
+weight = 80
+
+[sub_resource type="Resource" id="Resource_k716i"]
+script = ExtResource("2_haisk")
+id = &"enemy_2"
+enemy_scene = ExtResource("3_ckjo0")
+weight = 20
+hp_multiplier = 1.4
+damage_multiplier = 1.24
+
+[resource]
+script = ExtResource("4_u7ra5")
+wave = 9
+id = &"stage1_wave_09"
+display_name = "Stage 1 Wave 09"
+spawn_budget = 68
+max_alive = 100
+spawn_interval = 1.2
+enemy_pools = Array[Resource]([SubResource("Resource_n21yc"), SubResource("Resource_k716i")])

@@ -1,0 +1,474 @@
+[gd_scene format=3 uid="uid://b0lilfl4f7pjh"]
+
+[ext_resource type="PackedScene" uid="uid://dkubuo8lqrdjd" path="res://scenes/starfield.tscn" id="1_starfield"]
+[ext_resource type="Script" uid="uid://cv0if7tc30glu" path="res://scripts/ui/main_menu.gd" id="2_menu"]
+[ext_resource type="Texture2D" uid="uid://pgyldnce4ga" path="res://textures/ui/logo.png" id="3_logo"]
+[ext_resource type="Texture2D" uid="uid://ci4uybjofqk04" path="res://textures/ui/keyboard-instructions.png" id="4_keyboard"]
+[ext_resource type="Texture2D" uid="uid://fn2edjtwhx22" path="res://textures/ui/mouse-instructions.png" id="5_mouse"]
+[ext_resource type="FontFile" uid="uid://rcvhvlx66wbw" path="res://fonts/Electrolize-Regular.ttf" id="6_electrolize"]
+[ext_resource type="AudioStream" uid="uid://1fmmd6x3gih2" path="res://sfx/bg_music_menu.ogg" id="7_menu_music"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_normal"]
+bg_color = Color(0.0392157, 0.054902, 0.0901961, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.262745, 0.67451, 1, 0.72)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_pressed"]
+bg_color = Color(0.0235294, 0.156863, 0.156863, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.631373, 1, 0.870588, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_hover"]
+bg_color = Color(0.0705882, 0.12549, 0.172549, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.321569, 0.937255, 0.823529, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788235, 0.956863, 1, 0.82)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_credits_panel"]
+bg_color = Color(0.027451, 0.0431373, 0.0745098, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.262745, 0.67451, 1, 0.58)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MainMenu" type="Control" unique_id=1701274860]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_menu")
+
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=1204936681]
+process_mode = 3
+stream = ExtResource("7_menu_music")
+autoplay = true
+bus = &"Music"
+
+[node name="Starfield" parent="." unique_id=1688143696 instance=ExtResource("1_starfield")]
+star_density = 1.15
+rare_bright_star_count = 44
+galaxy_background_color = Color(0.028, 0.001, 0.012, 1)
+galaxy_nebula_mid_color = Color(0.117216535, 0.36228824, 0.40860474, 1)
+galaxy_nebula_glow_color = Color(0.031594373, 0.5657232, 0.46546513, 1)
+nebula_intensity = 1.65
+nebula_animation_speed = 0.58
+galaxy_effects_intensity = 1.0
+galaxy_effects_animation_speed = 0.025
+galaxy_effects_density = 0.35
+galaxy_effects_cluster_scale = 0.85
+galaxy_effects_streak_strength = 0.95
+asteroid_belt_enabled = false
+planet_enabled = false
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=201551364]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.00392157, 0.00784314, 0.0196078, 0.18)
+
+[node name="Logo" type="TextureRect" parent="." unique_id=458413738]
+custom_minimum_size = Vector2(600, 96)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 100.56
+offset_right = 300.0
+offset_bottom = 196.56003
+grow_horizontal = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VersionLabel" type="Label" parent="." unique_id=594217728]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 103.0
+offset_top = 179.0
+offset_right = 283.0
+offset_bottom = 203.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.63, 1, 0.870588, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 16
+text = "v0.0.1"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="PrototypeLabel" type="Label" parent="." unique_id=1834010320]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 59.78
+offset_right = 300.0
+offset_bottom = 104.78009
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.63, 1, 0.870588, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 32
+text = "Experimental Prototype"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InstructionsBand" type="ColorRect" parent="." unique_id=1005862329]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 264.03
+offset_bottom = 730.03
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="InstructionsTitle" type="Label" parent="InstructionsBand" unique_id=1361069443]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -380.0
+offset_top = 28.0
+offset_right = 380.0
+offset_bottom = 70.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 30
+text = "Instructions / Controls"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MouseInstructions" type="TextureRect" parent="InstructionsBand" unique_id=1662428997]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -135.0
+offset_right = -50.0
+offset_bottom = 187.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_mouse")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KeyboardInstructions" type="TextureRect" parent="InstructionsBand" unique_id=2007211677]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 50.0
+offset_top = -135.0
+offset_right = 480.0
+offset_bottom = 187.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_keyboard")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StartButton" type="Button" parent="." unique_id=1191223817]
+custom_minimum_size = Vector2(220, 62)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = 231.62
+offset_right = 110.0
+offset_bottom = 293.62
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.823529, 1, 0.945098, 1)
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_start_focus")
+text = "Start"
+
+[node name="OptionsButton" type="Button" parent="." unique_id=1419338625]
+custom_minimum_size = Vector2(220, 62)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = 307.62
+offset_right = 110.0
+offset_bottom = 369.62
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.823529, 1, 0.945098, 1)
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_start_focus")
+text = "Options"
+
+[node name="ExitButton" type="Button" parent="." unique_id=1811308709]
+custom_minimum_size = Vector2(220, 62)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = 383.62
+offset_right = 110.0
+offset_bottom = 445.62
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.823529, 1, 0.945098, 1)
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_start_focus")
+text = "Exit Game"
+
+[node name="CopyrightText" type="RichTextLabel" parent="." unique_id=419110029]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -46.0
+offset_right = 380.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/default_color = Color(0.72, 0.82, 0.88, 0.78)
+theme_override_fonts/normal_font = ExtResource("6_electrolize")
+theme_override_font_sizes/normal_font_size = 14
+bbcode_enabled = true
+text = "[center][color=#b8d1e0]GPL v3 Sergi.io 2026 . -  [/color][url=credits][u][color=#a1ffe6]Attribution & Credits[/color][/u][/url][/center]"
+fit_content = true
+scroll_active = false
+
+[node name="CreditsModal" type="ColorRect" parent="." unique_id=85525489]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.68)
+
+[node name="CreditsPanel" type="PanelContainer" parent="CreditsModal" unique_id=1944137280]
+custom_minimum_size = Vector2(760, 390)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -195.0
+offset_right = 380.0
+offset_bottom = 195.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_credits_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="CreditsModal/CreditsPanel" unique_id=1660090701]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 26
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CreditsModal/CreditsPanel/MarginContainer" unique_id=449384462]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="CreditsModal/CreditsPanel/MarginContainer/VBoxContainer" unique_id=349693143]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 28
+text = "Attribution & Credits"
+horizontal_alignment = 1
+
+[node name="CreditsText" type="RichTextLabel" parent="CreditsModal/CreditsPanel/MarginContainer/VBoxContainer" unique_id=854932562]
+custom_minimum_size = Vector2(0, 232)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.82, 0.91, 0.96, 1)
+theme_override_colors/font_selected_color = Color(0.027451, 0.0431373, 0.0745098, 1)
+theme_override_colors/selection_color = Color(0.631373, 1, 0.870588, 0.85)
+theme_override_fonts/normal_font = ExtResource("6_electrolize")
+theme_override_font_sizes/normal_font_size = 18
+bbcode_enabled = true
+text = "[color=#8fb6c8]Game[/color]
+[b]Designed and programmed by Sergi.io[/b]
+[url=https://sergi.io][color=#76ffd3]https://sergi.io[/color][/url]
+
+[color=#8fb6c8]Engine[/color]
+[b]Godot[/b]
+[url=https://godotengine.org][color=#76ffd3]https://godotengine.org[/color][/url]
+
+[color=#8fb6c8]Planets Sprites[/color]
+[b]Pixel Planet Generator by Deep-Fold[/b]
+[url=https://deep-fold.itch.io/pixel-planet-generator][color=#76ffd3]https://deep-fold.itch.io/pixel-planet-generator[/color][/url]"
+fit_content = true
+scroll_active = false
+
+[node name="CloseButton" type="Button" parent="CreditsModal/CreditsPanel/MarginContainer/VBoxContainer" unique_id=624484550]
+custom_minimum_size = Vector2(160, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.823529, 1, 0.945098, 1)
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_start_focus")
+text = "Close"
+
+[node name="IntroFade" type="ColorRect" parent="." unique_id=1573961345]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="IntroText" type="Label" parent="." unique_id=1231868766]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -130.0
+offset_right = 560.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.976471, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/line_spacing = 12
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 34
+text = "The galaxy is unobserved and awaits conquest.
+Use Beacon Artifacts to reach and colonize distant planets.
+When every world belongs to you, victory is yours."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="PromptLabel" type="Label" parent="." unique_id=1897423602]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = 170.0
+offset_right = 260.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.631373, 1, 0.870588, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.88)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("6_electrolize")
+theme_override_font_sizes/font_size = 24
+text = "Press any key to start..."
+horizontal_alignment = 1
+vertical_alignment = 1

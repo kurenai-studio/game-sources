@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bun13dgfq5on8"]
+
+[ext_resource type="Texture2D" uid="uid://bo7p7jg0tfdou" path="res://textures/ship.png" id="1_q631a"]
+[ext_resource type="Script" uid="uid://ccqx5iinemcfp" path="res://scripts/ship.gd" id="2_8ejnw"]
+[ext_resource type="Script" uid="uid://mct0tgj84kyb" path="res://scripts/artifacts/wormhole_dash_artifact.gd" id="3_wormhole"]
+[ext_resource type="Script" uid="uid://c7oiptbxahmhf" path="res://scripts/artifacts/vortex_artifact.gd" id="4_vortex"]
+[ext_resource type="Script" uid="uid://2qoxym6wie1t" path="res://scripts/artifacts/nuke_artifact.gd" id="5_nuke"]
+[ext_resource type="Script" uid="uid://cbjkue7nbolt6" path="res://scripts/ship_shield_visual.gd" id="6_shield_visual"]
+[ext_resource type="Script" uid="uid://dyrf161kjjwjn" path="res://scripts/artifacts/explorer_beacon_artifact.gd" id="7_explorer_beacon"]
+
+[node name="Ship" type="Node2D" unique_id=672065259]
+script = ExtResource("2_8ejnw")
+turn_speed = 1.5707963267948966
+jet_length_scale_min = 0.1
+jet_length_scale_max = 2.0
+max_hit_points = 50
+
+[node name="Visuals" type="Node2D" parent="." unique_id=804208122]
+
+[node name="shipSprite" type="Sprite2D" parent="Visuals" unique_id=1599315415]
+texture = ExtResource("1_q631a")
+
+[node name="Shield" type="Sprite2D" parent="Visuals/shipSprite" unique_id=213344217]
+visible = false
+z_index = 1
+texture_filter = 1
+scale = Vector2(2.25, 2.25)
+script = ExtResource("6_shield_visual")
+
+[node name="Jets" type="Node2D" parent="Visuals" unique_id=211058947]
+position = Vector2(0, 28.73)
+
+[node name="LeftJet" type="CPUParticles2D" parent="Visuals/Jets" unique_id=122563190]
+visible = false
+position = Vector2(-35, 94.270004)
+rotation = 1.5708
+amount = 50
+lifetime = 0.2
+speed_scale = 10.0
+draw_order = 1
+emission_shape = 1
+emission_sphere_radius = 4.1
+spread = 0.0
+gravity = Vector2(0, 0)
+initial_velocity_max = 100.0
+scale_amount_min = 0.5
+scale_amount_max = 3.0
+color = Color(0.05, 0.72, 1, 0.92)
+
+[node name="RightJet" type="CPUParticles2D" parent="Visuals/Jets" unique_id=193656716]
+visible = false
+position = Vector2(35, 93.270004)
+rotation = 1.5708
+amount = 50
+lifetime = 0.2
+speed_scale = 10.0
+draw_order = 1
+emission_shape = 1
+emission_sphere_radius = 4.1
+spread = 0.0
+gravity = Vector2(0, 0)
+initial_velocity_max = 100.0
+scale_amount_min = 0.5
+scale_amount_max = 3.0
+color = Color(0.05, 0.72, 1, 0.92)
+
+[node name="Artifacts" type="Node" parent="." unique_id=1820970957]
+
+[node name="WormholeDash" type="Node" parent="Artifacts" unique_id=312230251]
+script = ExtResource("3_wormhole")
+
+[node name="Vortex" type="Node" parent="Artifacts" unique_id=1595406221]
+script = ExtResource("4_vortex")
+
+[node name="Nuke" type="Node" parent="Artifacts" unique_id=823297280]
+script = ExtResource("5_nuke")
+
+[node name="ExplorerBeacon" type="Node" parent="Artifacts" unique_id=1978698941]
+script = ExtResource("7_explorer_beacon")

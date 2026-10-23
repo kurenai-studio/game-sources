@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/nuke_explosion_effect.gd" id="1"]
+
+[node name="NukeExplosion" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+
+[node name="SmokePuffs" type="CPUParticles2D" parent="."]
+z_index = 62
+emitting = false
+amount = 220
+lifetime = 6.4
+one_shot = true
+explosiveness = 0.52
+randomness = 0.74
+local_coords = false
+emission_shape = 1
+emission_sphere_radius = 56.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 18.0
+initial_velocity_max = 140.0
+angular_velocity_min = -75.0
+angular_velocity_max = 75.0
+scale_amount_min = 3.4
+scale_amount_max = 9.0
+color = Color(0.24, 0.22, 0.28, 0.58)

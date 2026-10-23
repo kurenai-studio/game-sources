@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://cil7xkas3arq1"]
+
+[ext_resource type="PackedScene" uid="uid://c8un5w7xdtwi0" path="res://scenes/enemy.tscn" id="1_ni80t"]
+[ext_resource type="Script" uid="uid://1vjm5ek34hi1" path="res://scripts/waves/wave_enemy_rule.gd" id="2_ig53o"]
+[ext_resource type="Script" uid="uid://ceslu7u25pkxu" path="res://scripts/waves/wave_definition.gd" id="4_2r7ps"]
+
+[sub_resource type="Resource" id="Resource_ni80t"]
+script = ExtResource("2_ig53o")
+enemy_scene = ExtResource("1_ni80t")
+weight = 80
+
+[resource]
+script = ExtResource("4_2r7ps")
+wave = 2
+id = &"stage1_wave_02"
+display_name = "Stage 1 Wave 02"
+spawn_budget = 6
+max_alive = 6
+spawn_interval = 30.0
+enemy_pools = Array[Resource]([SubResource("Resource_ni80t")])

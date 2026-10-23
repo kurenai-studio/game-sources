@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://xguao1y5kolu"]
+
+[ext_resource type="PackedScene" uid="uid://c8un5w7xdtwi0" path="res://scenes/enemy.tscn" id="1_fqgr3"]
+[ext_resource type="Script" uid="uid://1vjm5ek34hi1" path="res://scripts/waves/wave_enemy_rule.gd" id="2_i4ahs"]
+[ext_resource type="PackedScene" uid="uid://d2mqii7s3e5x5" path="res://scenes/enemy_2.tscn" id="3_cm8cx"]
+[ext_resource type="Script" uid="uid://bo3j1qoaq01cc" path="res://scripts/waves/wave_event.gd" id="4_8fvg6"]
+[ext_resource type="Script" uid="uid://ceslu7u25pkxu" path="res://scripts/waves/wave_definition.gd" id="5_bp80g"]
+
+[sub_resource type="Resource" id="Resource_j8a7l"]
+script = ExtResource("2_i4ahs")
+enemy_scene = ExtResource("1_fqgr3")
+weight = 80
+
+[sub_resource type="Resource" id="Resource_2ib8a"]
+script = ExtResource("2_i4ahs")
+id = &"enemy_2"
+enemy_scene = ExtResource("3_cm8cx")
+weight = 20
+hp_multiplier = 1.55
+damage_multiplier = 1.33
+
+[sub_resource type="Resource" id="Resource_evnx2"]
+script = ExtResource("2_i4ahs")
+enemy_scene = ExtResource("1_fqgr3")
+speed_multiplier = 1.08
+
+[sub_resource type="Resource" id="Resource_ban2w"]
+script = ExtResource("4_8fvg6")
+time = 24.750000000000004
+enemy_rule = SubResource("Resource_evnx2")
+count = 29
+
+[resource]
+script = ExtResource("5_bp80g")
+wave = 12
+id = &"stage1_wave_12"
+display_name = "Stage 1 Wave 12"
+spawn_budget = 111
+max_alive = 500
+spawn_interval = 1.2
+enemy_pools = Array[Resource]([SubResource("Resource_j8a7l"), SubResource("Resource_2ib8a")])
+events = Array[Resource]([SubResource("Resource_ban2w")])

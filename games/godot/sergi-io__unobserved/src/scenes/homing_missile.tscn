@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://d26boe1gbrr1i"]
+
+[ext_resource type="Script" uid="uid://btpbcwg60xwb" path="res://scripts/homing_missile.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bw6ydofqatbi4" path="res://textures/items/homing_missile_fired.png" id="2_j864u"]
+
+[node name="HomingMissile" type="Node2D" unique_id=543485183]
+script = ExtResource("1")
+deploy_duration = 0.22
+deploy_forward_speed = 240.0
+deploy_lateral_speed = 180.0
+turn_speed = 4.0
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1809393781]
+scale = Vector2(0.36, 0.36)
+texture = ExtResource("2_j864u")
+
+[node name="FireTail" type="CPUParticles2D" parent="." unique_id=1499724263]
+z_index = -1
+position = Vector2(0, 18)
+rotation = 1.5707964
+amount = 40
+lifetime = 0.16
+speed_scale = 6.0
+draw_order = 1
+emission_shape = 1
+emission_sphere_radius = 1.6
+spread = 8.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 16.0
+initial_velocity_max = 58.0
+scale_amount_min = 0.35
+scale_amount_max = 1.1
+color = Color(1, 0.42, 0.06, 0.86)

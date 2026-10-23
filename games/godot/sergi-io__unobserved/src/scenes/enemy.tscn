@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://c8un5w7xdtwi0"]
+
+[ext_resource type="Script" uid="uid://byocdp1pt3ljf" path="res://scripts/enemy.gd" id="1_md0e3"]
+[ext_resource type="Texture2D" uid="uid://b6n05pgf2usoe" path="res://textures/enemy1.png" id="2_4ra3w"]
+
+[node name="Enemy" type="Node2D" unique_id=1311220887]
+z_index = -20
+script = ExtResource("1_md0e3")
+xp_reward = 2
+explosion_size = 0.5
+
+[node name="EnemySprite" type="Sprite2D" parent="." unique_id=1630578704]
+scale = Vector2(0.48, 0.48)
+texture = ExtResource("2_4ra3w")

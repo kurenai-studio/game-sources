@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/vortex_effect.gd" id="1"]
+[ext_resource type="Texture2D" path="res://textures/artifacts/vortex-runtime.png" id="2"]
+[ext_resource type="Shader" path="res://shaders/vortex_runtime.gdshader" id="3"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vortex_runtime"]
+shader = ExtResource("3")
+shader_parameter/life_ratio = 1.0
+shader_parameter/lens_strength = 0.086
+shader_parameter/swirl_strength = -0.62
+shader_parameter/texture_opacity = 0.5
+shader_parameter/mirror_strength = 0.78
+shader_parameter/lightning_opacity = 0.92
+shader_parameter/edge_opacity = 0.72
+shader_parameter/core_opacity = 0.3
+shader_parameter/tint_color = Color(0.22, 0.82, 1, 1)
+shader_parameter/accent_color = Color(0.66, 0.24, 1, 1)
+shader_parameter/lightning_color = Color(0.82, 0.95, 1, 1)
+
+[node name="Vortex" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+modulate = Color(1, 1, 1, 1)
+material = SubResource("ShaderMaterial_vortex_runtime")
+texture = ExtResource("2")

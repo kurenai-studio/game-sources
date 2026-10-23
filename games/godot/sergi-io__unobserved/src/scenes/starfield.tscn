@@ -1,0 +1,91 @@
+[gd_scene load_steps=2 format=3 uid="uid://dkubuo8lqrdjd"]
+
+[ext_resource type="Script" path="res://scripts/systems/procedural_galaxy_background.gd" id="1_bkgd"]
+
+[node name="ProceduralGalaxyBackground" type="Node2D" unique_id=617833924]
+script = ExtResource("1_bkgd")
+
+[node name="ParallaxRoot" type="Node2D" parent="." unique_id=704612912]
+z_index = -1000
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=857982905]
+layer = -100
+
+[node name="Background" type="ColorRect" parent="CanvasLayer" unique_id=1729838475]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.002, 0.014, 0.022, 1)
+
+[node name="NebulaLayer1" type="ColorRect" parent="CanvasLayer" unique_id=118915742]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="NebulaLayer2" type="ColorRect" parent="CanvasLayer" unique_id=726411214]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="NebulaLayer3" type="ColorRect" parent="CanvasLayer" unique_id=1423113581]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="NebulaLayer4" type="ColorRect" parent="CanvasLayer" unique_id=941168814]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="GalaxyEffects" type="ColorRect" parent="CanvasLayer" unique_id=211738962]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="FarStars" type="MultiMeshInstance2D" parent="CanvasLayer" unique_id=760853421]
+z_index = 10
+
+[node name="MidStars" type="MultiMeshInstance2D" parent="CanvasLayer" unique_id=870841148]
+z_index = 20
+
+[node name="AsteroidBelt" type="MultiMeshInstance2D" parent="CanvasLayer" unique_id=406838315]
+z_index = 30
+
+[node name="PlanetRim" type="ColorRect" parent="CanvasLayer" unique_id=912108448]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="DebugStats" type="Label" parent="CanvasLayer" unique_id=1571029466]
+offset_left = 18.0
+offset_top = 132.0
+offset_right = 600.0
+offset_bottom = 158.0
+mouse_filter = 2

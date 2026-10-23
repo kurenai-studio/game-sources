@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WaveDefinition" format=3 uid="uid://dthhhir4g8qda"]
+
+[ext_resource type="PackedScene" uid="uid://c8un5w7xdtwi0" path="res://scenes/enemy.tscn" id="1_k5276"]
+[ext_resource type="Script" uid="uid://1vjm5ek34hi1" path="res://scripts/waves/wave_enemy_rule.gd" id="2_dmpt4"]
+[ext_resource type="PackedScene" uid="uid://d2mqii7s3e5x5" path="res://scenes/enemy_2.tscn" id="3_4sfkt"]
+[ext_resource type="Script" uid="uid://ceslu7u25pkxu" path="res://scripts/waves/wave_definition.gd" id="5_cf25r"]
+
+[sub_resource type="Resource" id="Resource_wlky4"]
+script = ExtResource("2_dmpt4")
+enemy_scene = ExtResource("1_k5276")
+weight = 80
+
+[sub_resource type="Resource" id="Resource_k5276"]
+script = ExtResource("2_dmpt4")
+id = &"enemy_2"
+enemy_scene = ExtResource("3_4sfkt")
+weight = 20
+hp_multiplier = 1.1
+damage_multiplier = 1.06
+
+[resource]
+script = ExtResource("5_cf25r")
+wave = 3
+id = &"stage1_wave_03"
+display_name = "Stage 1 Wave 03"
+spawn_budget = 10
+max_alive = 10
+spawn_interval = 1.2
+enemy_pools = Array[Resource]([SubResource("Resource_wlky4"), SubResource("Resource_k5276")])

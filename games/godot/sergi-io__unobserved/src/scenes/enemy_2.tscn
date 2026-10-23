@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://d2mqii7s3e5x5"]
+
+[ext_resource type="Script" uid="uid://byocdp1pt3ljf" path="res://scripts/enemy.gd" id="1_enemy_script"]
+[ext_resource type="Texture2D" uid="uid://bpemvi36bc3mo" path="res://textures/ships/alien_ship_2.png" id="2_enemy_texture"]
+
+[node name="Enemy" type="Node2D" unique_id=1449435083]
+z_index = -20
+script = ExtResource("1_enemy_script")
+hit_points = 6
+xp_reward = 6
+explosion_size = 0.75
+attack_cooldown = 0.7
+damage_per_shot = 2
+beam_width = 7.5
+beam_color = Color(1, 0.42, 0.2, 0.95)
+network_scene_key = &"enemy_2"
+
+[node name="EnemySprite" type="Sprite2D" parent="." unique_id=276757160]
+scale = Vector2(0.84, 0.84)
+texture = ExtResource("2_enemy_texture")

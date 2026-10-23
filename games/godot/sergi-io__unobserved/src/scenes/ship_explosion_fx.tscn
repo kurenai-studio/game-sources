@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://by8rd6u6t87wg"]
+
+[ext_resource type="Script" uid="uid://bsykm5juv8whb" path="res://scripts/ship_explosion_fx.gd" id="1_0xplosion"]
+[node name="ShipExplosionFx" type="Node2D" unique_id=316559141]
+z_index = 500
+script = ExtResource("1_0xplosion")
+
+[node name="ParticleLayer" type="Node2D" parent="." unique_id=1616321549]
+z_index = 18
+
+[node name="FragmentLayer" type="Node2D" parent="." unique_id=261089671]
+z_index = 12
+
+[node name="FireSprite" type="Sprite2D" parent="." unique_id=1481220315]
+z_index = 20
+texture_filter = 1
+
+[node name="SmokeSprite" type="Sprite2D" parent="." unique_id=858603415]
+z_index = 8
+texture_filter = 1
+
+[node name="DistortionSprite" type="Sprite2D" parent="." unique_id=1488615377]
+z_index = 26
+texture_filter = 1
+
+[node name="SparksSprite" type="Sprite2D" parent="." unique_id=1114952623]
+z_index = 22
+texture_filter = 1
