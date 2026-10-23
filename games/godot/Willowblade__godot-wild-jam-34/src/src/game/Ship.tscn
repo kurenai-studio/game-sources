@@ -1,0 +1,42 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://src/game/Ship.gd" type="Script" id=1]
+[ext_resource path="res://src/game/Emitter.tscn" type="PackedScene" id=2]
+[ext_resource path="res://src/game/SmokeEmitter.tscn" type="PackedScene" id=3]
+
+[sub_resource type="CircleShape2D" id=1]
+radius = 200.0
+
+[node name="Ship" type="KinematicBody2D" groups=[
+"orbitable",
+"ships",
+]]
+position = Vector2( 0, 0.132435 )
+script = ExtResource( 1 )
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Hull" type="Sprite" parent="Visual"]
+
+[node name="NormalEmission" parent="." instance=ExtResource( 2 )]
+
+[node name="BoostEmission" parent="." instance=ExtResource( 2 )]
+
+[node name="TurnRightEmission" parent="." instance=ExtResource( 2 )]
+
+[node name="TurnLeftEmission" parent="." instance=ExtResource( 2 )]
+
+[node name="Explosion" parent="." instance=ExtResource( 2 )]
+one_shot = true
+
+[node name="ExplosionArea" type="Area2D" parent="."]
+visible = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExplosionArea"]
+shape = SubResource( 1 )
+
+[node name="SmokeEmitter" parent="." instance=ExtResource( 3 )]
+
+[node name="Weapons" type="Node2D" parent="."]
+
+[node name="ShieldShape" type="CollisionShape2D" parent="."]
