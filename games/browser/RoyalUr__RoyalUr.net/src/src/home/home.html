@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>RoyalUr.net | Play a friend, play online, or play the AI!</title>
+
+    <meta name="og:title" content="RoyalUr.net" />
+    <meta name="twitter:title" content="RoyalUr.net" />
+    <meta property="twitter:url" content="https://royalur.net/" />
+    <meta name="description"
+          content="Can you master the world's oldest board game? Play online, with a friend, or against the AI!" />
+    <meta name="og:description"
+          content="Can you master the world's oldest board game? Play online, with a friend, or against the AI!" />
+    <meta name="twitter:description"
+          content="Can you master the world's oldest board game? Play online, with a friend, or against the AI!" />
+
+    <include src="src/common/head/head_boilerplate.html" />
+    <include src="src/common/head/matomo.html" />
+    <link rel="stylesheet" href="/index.[ver].css" />
+</head>
+<body class="gradient-background">
+    <header id="header">
+        <!-- Rules -->
+        <a class="link" href="/rules">Rules</a>
+        <!-- FAQ -->
+        <a class="link" href="/faq">FAQ</a>
+        <!-- About -->
+        <a class="link" href="/about">About</a>
+    </header>
+
+    <section id="greeting">
+        <div id="greeting-background">
+            <div class="background-image"></div>
+            <div class="dark-overlay"></div>
+        </div>
+
+        <div class="centre-text">
+            <img id="logo" class="shadow" src="/res/logo.[ver].svg" alt="Logo" width="526" height="438" />
+        </div>
+
+        <h1 class="text-shadow">
+            Welcome! We are excited to have you here to share our love of The Royal Game of Ur!
+        </h1>
+        <div class="centre-text"><a class="greeting-button" href="/game">
+            <!-- Left Arrow. -->
+            <svg class="left-arrow shadow" xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 64 64"
+                 width="96" height="96">
+                <path d="M34.484 11.984a1.5 1.5 0 00-1.045 2.577L40.88 22H3.5a1.5 1.5 0 100 3
+                     h37.379l-7.44 7.44a1.5 1.5 0 102.122 2.12l10-10a1.5 1.5 0 000-2.12l-10-10
+                     a1.5 1.5 0 00-1.077-.456z"/>
+            </svg>
+            <!-- Play Button. -->
+            <canvas data-src-inactive="/res/button_play.[ver]"
+                    data-src-active="/res/button_play_active.[ver]"></canvas>
+            <!-- Right Arrow. -->
+            <svg class="right-arrow shadow" xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 64 64"
+                 width="96" height="96">
+                <path d="M34.484 11.984a1.5 1.5 0 00-1.045 2.577L40.88 22H3.5a1.5 1.5 0 100 3
+                     h37.379l-7.44 7.44a1.5 1.5 0 102.122 2.12l10-10a1.5 1.5 0 000-2.12l-10-10
+                     a1.5 1.5 0 00-1.077-.456z" transform="scale(-1,1) translate(-48,0)"/>
+            </svg>
+        </a></div>
+
+        <div id="more-below">
+            <h3 class="text-shadow">
+                Learn more about the game below!
+            </h3>
+
+            <a href="#links">
+                <svg class="shadow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 284.929 284.929">
+                    <path d="M282.082 76.511l-14.274-14.273c-1.902-1.906-4.093-2.856-6.57-2.856-2.471
+                             0-4.661.95-6.563 2.856L142.466 174.441 30.262 62.241c-1.903-1.906-4.093
+                             -2.856-6.567-2.856-2.475 0-4.665.95-6.567 2.856L2.856 76.515C.95 78.417
+                             0 80.607 0 83.082c0 2.473.953 4.663 2.856 6.565l133.043 133.046c1.902 1.903
+                             4.093 2.854 6.567 2.854s4.661-.951 6.562-2.854L282.082 89.647c1.902-1.903
+                             2.847-4.093 2.847-6.565 0-2.475-.945-4.665-2.847-6.571z"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <section id="description" class="banner gradient-background">
+        <h2>What is this?</h2>
+        <div class="content">
+            <p>
+                The Royal Game of Ur is one of the longest-lived games in
+                history, with evidence of it being enjoyed by people that
+                lived over the course of many
+                <span class="italics">thousands</span> of years. This
+                affords the game a huge wealth of history to explore and
+                discover, and in fact, you can
+                <span class="italics">experience this history yourself</span>
+                by playing the game! You would think that a game
+                that has lasted millenia would be fun, and it
+                <span class="italics">is</span> fun!
+            </p>
+            <p>
+                The game is made for two players with a board, 5 or 7 pieces
+                per player, and 4 two-sided dice. The exact rules that were
+                played thousands of years ago is hard to deduce (and likely
+                changed over time!). However, academics have used
+                ancient artifacts and the writing on old cuneiform tablets
+                to discover several likely options. However, the rules for
+                the game that have become the most popular in this millenia
+                are the ones presented in the 2017 YouTube video
+                <a href="https://www.youtube.com/watch?v=WZskjLq040I">Tom Scott vs. Irving Finkel</a>.
+            </p>
+            <figure>
+                <img id="rgu-board" class="shadow" data-src="/res/rgu-board.[ver]"
+                     alt="The board of the Royal Game of Ur" />
+                <figcaption>Scans of an excavated board of the Royal Game of Ur.</figcaption>
+            </figure>
+        </div>
+
+        <h2>Why was RoyalUr.net started?</h2>
+        <div class="content">
+            <p>
+                The video that cemented Irving Finkel as an icon of this game
+                also inspired <a href="https://paddy-lamont.com/">Padraig X. Lamont</a>
+                to start a hobby project. And so, over one Christmas, many slices of
+                Christmas ham, and many hot chocolates, a fledgling version
+                of this website was born! That fledgling hobby project has since
+                grown up, and we are now proud to boast an average of 500 games
+                played every day on RoyalUr.net. However, in an even bigger
+                accomplishment, we are also proud to have grown a rich Discord
+                community of over 700 people that are enthusiastic about the
+                Royal Game of Ur. This community welcomes both serious and casual
+                players, as well as academics! And that is why we are so excited
+                to have you join us here, to share in the game we all love.
+            </p>
+        </div>
+    </section>
+
+    <section id="links" class="banner centre-text simple-background">
+        <h2>Learn the rules, or watch strategy and history videos</h2>
+        <p>
+            Our community has been accumulating knowledge
+            about The Royal Game of Ur, check it out below!
+        </p>
+        <a class="menu-button highlight-shadow" href="/learn">
+            <canvas class="shadow" data-src-inactive="/res/button_learn.[ver]"
+                    data-src-active="/res/button_learn_active.[ver]"></canvas>
+        </a>
+        <a class="menu-button highlight-shadow" href="/watch">
+            <canvas class="shadow" data-src-inactive="/res/button_watch.[ver]"
+                    data-src-active="/res/button_watch_active.[ver]"></canvas>
+        </a>
+    </section>
+
+    <section id="tournaments" class="banner centre-text plain-wood-background text-shadow">
+        <h2>Join our tournaments!</h2>
+        <p>
+            We host tournaments through our Discord, and
+            we'd love to have you join our next one!
+        </p>
+        <a class="read-about-tournaments menu-button" href="/tournaments">
+            <div class="left">
+                <img class="tournaments-logo" data-src="/tournaments/logo.[ver]" alt="Tournaments logo!" />
+            </div>
+            <div class="right">
+                <span class="top">
+                    Read about our
+                </span>
+                <span class="bottom">
+                    tournaments!
+                </span>
+            </div>
+        </a>
+        <a class="join-the-discord menu-button shadow" href="https://discord.gg/FbCp76esgb" target="_blank">
+            <img class="shadow" src="/res/join_the_discord.[ver].svg" alt="Join the Discord!" />
+        </a>
+    </section>
+
+    <include src="src/common/footer/footer_full_width.html" />
+    <include src="src/home/github_corner.html" />
+
+    <!-- JAVASCRIPT TO LOAD IMAGES -->
+    <script src="/index.[ver].js"></script>
+</body>
+</html>

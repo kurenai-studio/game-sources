@@ -1,0 +1,233 @@
+html {
+    scroll-behavior: smooth;
+}
+
+#logo {
+    display: inline-block;
+    height: 30vh;
+    margin-top: 3vh;
+    width: auto;
+    margin-bottom: 2vh;
+    text-decoration: none;
+}
+@media (max-aspect-ratio: 30/35) {
+    #logo {
+        margin-top: 8vh;
+        height: 35vmin;
+    }
+}
+
+#header {
+    position: absolute;
+    top: 0.6em;
+    left: 0;
+    z-index: 999;
+}
+#header a {
+    margin-left: 0.8em;
+    font-family: Nunito, sans-serif;
+    font-size: 1.8em;
+    color: white;
+    text-decoration: none;
+    opacity: 0.6;
+}
+#header a:hover {
+    opacity: 1.0;
+    text-decoration: underline;
+}
+
+#greeting {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding: 1.5vmin;
+    margin: 0;
+    text-align: center;
+}
+#greeting h1,
+#greeting h2,
+#greeting h3 {
+    line-height: 1.5em;
+    color: white;
+}
+#greeting h1,
+#greeting h2 {
+    margin-top: 1em;
+    font-family: Nunito, sans-serif;
+}
+#greeting h1 {
+    font-size: 1.8em;
+}
+#greeting h2 {
+    font-size: 2.4em;
+}
+#greeting h3 {
+    font-size: 1.6em;
+}
+
+#greeting .greeting-button,
+#greeting .greeting-button svg {
+    height: 18vh;
+}
+#greeting .greeting-button {
+    display: inline-block;
+    position: relative;
+    margin-top: 4vh;
+    text-decoration: none;
+}
+#greeting .greeting-button canvas {
+    width: auto;
+    height: 100%;
+    filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.6));
+}
+#greeting .greeting-button:hover canvas {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+}
+#greeting .greeting-button svg {
+    position: absolute;
+    top: 0;
+    fill: white;
+    pointer-events: none;
+}
+#greeting .greeting-button svg.left-arrow {
+    right: 110%;
+    transition: right 0.15s ease-in-out;
+}
+#greeting .greeting-button svg.right-arrow {
+    left: 110%;
+    transition: left 0.15s ease-in-out;
+}
+#greeting .greeting-button:hover svg.left-arrow {
+    right: 105%;
+    transition: right 0.15s ease-in-out;
+}
+#greeting .greeting-button:hover svg.right-arrow {
+    left: 105%;
+    transition: left 0.15s ease-in-out;
+}
+
+#more-below {
+    margin-top: auto;
+}
+#more-below h2 {
+    margin-top: 5vh;
+    font-size: 3em;
+}
+#more-below h3 {
+    font-family: Nunito, sans-serif;
+}
+#more-below svg {
+    fill: black;
+    margin-top: 1vh;
+    height: 5vh;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.2));
+}
+
+.banner {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 4vh;
+    border: 5px solid black;
+    border-left: none;
+    border-right: none;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 1);
+    font-size: 1.15em;
+}
+#links {
+    border-bottom: none;
+}
+.banner .content,
+.banner h2,
+.banner h3,
+.banner p {
+    color: white;
+}
+.banner h2 {
+    margin-top: 1.5vh;
+    margin-bottom: 1vh;
+    font-size: 2em;
+}
+.banner figcaption,
+.banner h3,
+.banner p {
+    font-family: Nunito, sans-serif;
+    font-size: 1.6em;
+}
+.banner .menu-button {
+    display: inline-block;
+    height: 14vh;
+    margin: 2vh;
+}
+.banner .menu-button canvas,
+.banner .menu-button img {
+    width: auto;
+    height: 100%;
+}
+.banner .menu-button:hover canvas {
+    filter: drop-shadow(2px 2px 3px rgba(255, 255, 255, 0.4));
+}
+
+a.read-about-tournaments {
+    color: #3692e7;
+}
+a.read-about-tournaments:hover {
+    color: #57aeff;
+}
+
+a.read-about-tournaments.read-about-tournaments {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    text-decoration: none;
+    padding-right: 2.5vmin;
+}
+.read-about-tournaments .left,
+.read-about-tournaments .right {
+    display: inline-block;
+}
+.read-about-tournaments .left {
+    height: 100%;
+}
+.read-about-tournaments .left {
+    margin-right: 2.5vmin;
+}
+.read-about-tournaments .right span {
+    display: block;
+    text-decoration: none;
+    font-family: Nunito, sans-serif;
+    line-height: 0.88em;
+    text-shadow: 6px 6px 12px rgba(0, 0, 0, 1);
+}
+.read-about-tournaments .right span.top {
+    font-size: 1.6em;
+}
+.read-about-tournaments .right span.bottom {
+    font-size: 3.2em;
+}
+
+.tournaments-logo,
+.join-the-discord:hover {
+    filter: drop-shadow(4px 4px 12px rgba(0, 0, 0, 1));
+}
+
+#footer-full-width {
+    box-shadow: none;
+}
+
+#description {
+    text-align: center;
+}
+
+#description .content {
+    text-align: left;
+    max-width: 800px;
+    line-height: 1.8;
+    padding: 1em;
+    margin-left: auto;
+    margin-right: auto;
+}

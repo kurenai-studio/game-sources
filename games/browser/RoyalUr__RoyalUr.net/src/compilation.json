@@ -1,0 +1,520 @@
+{
+  "sitemap": {
+    "source": "src/sitemap.xml",
+    "dest": "sitemap.xml"
+  },
+
+  "html": {
+    "src/home/home.html": "index.html",
+    "src/game/game.html": "game/index.html",
+    "src/articles/learn/learn.html": "learn/index.html",
+    "src/articles/learn/rules.html": "rules/index.html",
+    "src/articles/learn/watch.html": "watch/index.html",
+    "src/articles/learn/dice.html": "dice/index.html",
+    "src/articles/learn/faq.html": "faq/index.html",
+    "src/articles/privacy.html": "privacy/index.html",
+    "src/articles/about.html": "about/index.html",
+    "src/articles/analysis/royal_ur_analysis.html": "analysis/index.html",
+
+    "src/articles/tournaments/tournaments.html": "tournaments/index.html",
+    "src/articles/tournaments/first.html": "tournaments/first/index.html",
+
+    "src/status/lost.html": "lost.html"
+  },
+  "css": {
+    "index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/home/github_corner.css",
+      "src/home/home.css",
+      "src/home/home_background.css"
+    ],
+    "game/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/game/game.css",
+      "src/game/ui/menu.css",
+      "src/game/ui/loading_spinner.css"
+    ],
+    "articles.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/base/article.css"
+    ],
+    "rules/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/articles/base/article.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/learn/rules.css"
+    ],
+    "dice/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/base/article.css",
+      "src/articles/learn/dice.css"
+    ],
+    "analysis/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/base/article.css",
+      "src/articles/analysis/royal_ur_analysis.css"
+    ],
+    "about/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/articles/base/article.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/about.css"
+    ],
+    "faq/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/articles/base/article.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/learn/faq.css"
+    ],
+    "tournaments/index.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/articles/base/article.css",
+      "src/common/social/twitter_share.css",
+      "src/articles/tournaments/tournaments.css"
+    ],
+    "lost.css": [
+      "src/common/base.css",
+      "src/common/footer/footer.css",
+      "src/common/header/header.css",
+      "src/status/lost.css"
+    ]
+  },
+  "javascript": {
+    "index.js": [
+      "src/common/utils.js",
+      "src/common/resources/resource_loader.js",
+      "src/common/resources/image_system.js",
+      "src/home/home_resources.js"
+    ],
+    "game/index.js": [
+      "src/game/lib/socket.io.js",
+      "src/game/analytics/analytics.js",
+      "src/game/analytics/stats.js",
+      "src/game/game/board.js",
+      "src/game/model/model.js",
+      "src/game/model/dice_model.js",
+
+      "src/game/network/packet_reader.js",
+      "src/game/network/packet_writer.js",
+      "src/game/network/packets.js",
+      "src/game/network/network_packets.js",
+      "src/game/network/ai_packets.js",
+      "src/game/network/network.js",
+      "src/game/game/game.js",
+
+      "src/game/ui/menu.js",
+      "src/game/ui/layout.js",
+
+      "src/game/rendering/particles.js",
+      "src/game/rendering/curves.js",
+      "src/game/rendering/renderer.js",
+      "src/game/rendering/render_menu.js",
+      "src/game/rendering/render_overlays.js",
+      "src/game/rendering/render_game_ui.js",
+      "src/game/rendering/render_dice.js",
+      "src/game/rendering/render_board.js",
+
+      "src/game/ui/screens.js",
+      "src/game/client.js"
+    ],
+    "game/computer_worker.js": [
+      "src/common/utils.js",
+      "src/game/network/packet_reader.js",
+      "src/game/network/packet_writer.js",
+      "src/game/network/packets.js",
+      "src/game/network/ai_packets.js",
+      "src/game/game/board.js",
+      "res/royal_ur_analysis/api/api.js",
+      "src/game/game/simulation.js",
+      "src/game/game/computer_worker.js"
+    ],
+    "game/resources.js": [
+      "src/common/utils.js",
+      "src/common/resources/resource_types.js",
+      "src/common/resources/resource_loader.js",
+      "src/common/resources/audio_system.js",
+      "src/common/resources/image_system.js",
+      "src/game/game_resources.js"
+    ],
+    "article_resources.js": [
+      "src/common/utils.js",
+      "src/common/resources/resource_loader.js",
+      "src/common/resources/image_system.js",
+      "src/articles/base/article_resources.js",
+      "src/articles/base/articles.js"
+    ],
+    "dice/index.js": [
+      "src/common/utils.js",
+      "src/common/resources/resource_loader.js",
+      "src/common/resources/audio_system.js",
+      "src/common/resources/image_system.js",
+      "src/common/resources/resource_types.js",
+      "src/articles/base/article_resources.js",
+
+      "src/game/model/dice_model.js",
+      "src/game/rendering/render_dice.js",
+      "src/articles/learn/dice.js"
+    ]
+  },
+
+  "resources": {
+    "src/.htaccess": ".htaccess",
+    "src/robots.txt": "robots.txt",
+    "res/social/banner.jpg": "banner.jpg",
+    "res/gameplay.mp4": "gameplay.mp4",
+    "res/font/DuranGo.ttf": "res/font_durango.ttf",
+    "res/font/DuranGo.woff": "res/font_durango.woff",
+    "res/font/DuranGo.woff2": "res/font_durango.woff2",
+    "res/font/Nunito.ttf": "res/font_nunito.ttf",
+    "res/font/Nunito.woff": "res/font_nunito.woff",
+    "res/font/Nunito.woff2": "res/font_nunito.woff2",
+    "res/audio/game_found.mp4": "res/game_found.mp4",
+    "res/audio/place_1.mp4": "res/audio_place_1.mp4",
+    "res/audio/place_2.mp4": "res/audio_place_2.mp4",
+    "res/audio/place_3.mp4": "res/audio_place_3.mp4",
+    "res/audio/place_4.mp4": "res/audio_place_4.mp4",
+    "res/audio/pickup_1.mp4": "res/audio_pickup_1.mp4",
+    "res/audio/pickup_2.mp4": "res/audio_pickup_2.mp4",
+    "res/audio/pickup_3.mp4": "res/audio_pickup_3.mp4",
+    "res/audio/error.mp4": "res/audio_error.mp4",
+    "res/audio/kill.mp4": "res/audio_kill.mp4",
+    "res/audio/hover.mp4": "res/audio_hover.mp4",
+    "res/audio/dice_click.mp4": "res/audio_dice_click.mp4",
+    "res/audio/dice_hit.mp4": "res/audio_dice_hit.mp4",
+    "res/audio/dice_select.mp4": "res/audio_dice_select.mp4",
+    "res/audio/firework_explode.mp4": "res/audio_firework_explode.mp4",
+    "res/audio/firework_rocket.mp4": "res/audio_firework_rocket.mp4",
+
+    "res/favicon.png": "favicon.png",
+    "res/logo.svg": "res/logo.svg",
+    "res/logo_text_only.svg": "res/logo_text_only.svg",
+    "res/social/discord.svg": "res/discord.svg",
+    "res/social/reddit.svg": "res/reddit.svg",
+    "res/social/github.svg": "res/github.svg",
+    "res/social/twitter.svg": "res/twitter.svg",
+    "res/social/twitter_small_white.svg": "res/twitter_small_white.svg",
+    "res/social/join_the_discord.svg": "res/join_the_discord.svg",
+    "res/social/star_on_github.svg": "res/star_on_github.svg",
+    "res/buttons/mode_local.svg": "res/mode_local.svg",
+    "res/buttons/mode_online.svg": "res/mode_online.svg",
+    "res/buttons/mode_friend.svg": "res/mode_friend.svg",
+    "res/buttons/mode_computer.svg": "res/mode_computer.svg",
+    "res/buttons/mode_computer_easy.svg": "res/mode_computer_easy.svg",
+    "res/buttons/mode_computer_medium.svg": "res/mode_computer_medium.svg",
+    "res/buttons/mode_computer_hard.svg": "res/mode_computer_hard.svg",
+    "res/buttons/mode_computer_panda.svg": "res/mode_computer_panda.svg",
+    "res/buttons/controls/discord.svg": "res/control_discord.svg",
+    "res/buttons/controls/exit.svg": "res/control_exit.svg",
+    "res/buttons/controls/github.svg": "res/control_github.svg",
+    "res/buttons/controls/learn.svg": "res/control_learn.svg",
+    "res/buttons/controls/settings.svg": "res/control_settings.svg",
+
+    "res/royal_ur_analysis/api/royal_ur_analysis.wasm": "game/royal_ur_analysis.wasm",
+    "res/royal_ur_analysis/api/localedata.properties": "game/localedata.properties",
+    "res/royal_ur_analysis/api/localedata_US.properties": "game/localedata_US.properties",
+    "res/royal_ur_analysis/api/localedata_US_en.properties": "game/localedata_US_en.properties",
+    "res/royal_ur_analysis/api/localedata_DE_de.properties": "game/localedata_DE_de.properties",
+
+    "res/tournament_1_awards/gold-aratkovich.pdf": "tournaments/first/gold-aratkovich.pdf",
+    "res/tournament_1_awards/silver-timogustafson.pdf": "tournaments/first/silver-timogustafson.pdf",
+    "res/tournament_1_awards/bronze-nitt.pdf": "tournaments/first/bronze-nitt.pdf",
+    "res/tournament_1_awards/ellaroman.pdf": "tournaments/first/ellaroman.pdf",
+    "res/tournament_1_awards/georgia.pdf": "tournaments/first/georgia.pdf",
+    "res/tournament_1_awards/jfenton.pdf": "tournaments/first/jfenton.pdf",
+    "res/tournament_1_awards/pixteca.pdf": "tournaments/first/pixteca.pdf",
+    "res/tournament_1_awards/sothatsit.pdf": "tournaments/first/sothatsit.pdf",
+    "res/tournament_1_awards/zakklightman.pdf": "tournaments/first/zakklightman.pdf"
+  },
+
+  "image_size_classes": {
+    "u_u": "Full-Res",
+    "u_2160": "4k",
+    "u_1440": "1440p",
+    "u_1080": "1080p",
+    "u_720": "720p"
+  },
+
+  "image_size_groups": {
+    "menu-button": {
+      "u_2160": "auto x 384",
+      "u_1440": "auto x 256",
+      "u_1080": "auto x 192",
+      "u_720": "auto x 128"
+    },
+    "dice": {
+      "u_2160": "auto x 192",
+      "u_1440": "auto x 128",
+      "u_1080": "auto x 96",
+      "u_720": "auto x 64"
+    },
+    "tile": {
+      "u_2160": "auto x 288",
+      "u_1440": "auto x 192",
+      "u_1080": "auto x 144",
+      "u_720": "auto x 96"
+    },
+    "learn_board": {
+      "u_2160": "1706 x auto",
+      "u_1440": "1280 x auto",
+      "u_1080": "1065 x auto",
+      "u_720": "852 x auto"
+    },
+    "tournament_certificate_thumbnail": {
+      "u_2160": "auto x 968",
+      "u_1440": "auto x 512",
+      "u_1080": "auto x 484",
+      "u_720": "auto x 256"
+    }
+  },
+
+  "images": {
+    "res/tournaments-logo.png": {
+      "dest": "tournaments/logo",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+
+    "res/backgrounds/wood-blue-1.png": {
+      "dest": "res/wood_background",
+      "sizes": { "u_u": "420 x 420" }
+    },
+    "res/backgrounds/wood-brown-1.png": {
+      "dest": "res/plain_wood_background",
+      "sizes": { "u_u": "420 x 420" }
+    },
+    "res/backgrounds/home_background.png": {
+      "dest": "res/home_background",
+      "sizes": { "u_u": "400 x 400" }
+    },
+    "res/backgrounds/board_background.png": {
+      "dest": "res/board_background",
+      "sizes": {},
+      "compression_quality": 60
+    },
+    "res/board_light.png": {
+      "dest": "res/board",
+      "sizes": {
+        "u_2160": "auto x 3072",
+        "u_1440": "auto x 2048",
+        "u_1080": "auto x 1536",
+        "u_720": "auto x 1024"
+      }
+    },
+    "res/board_paths.png": {
+      "dest": "res/board_paths",
+      "size_group": "learn_board"
+    },
+    "res/board_rosettes.png": {
+      "dest": "res/board_rosettes",
+      "size_group": "learn_board"
+    },
+    "res/example_dice.png": {
+      "dest": "res/example_dice",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+    "res/example_move.png": {
+      "dest": "res/example_move",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+    "res/stick_dice.png": {
+      "dest": "res/stick_dice",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "960 x auto",
+        "u_1440": "640 x auto",
+        "u_1080": "480 x auto",
+        "u_720": "320 x auto"
+      }
+    },
+    "res/rgu-complexity.png": {
+      "dest": "res/rgu-complexity",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "960 x auto",
+        "u_1440": "640 x auto",
+        "u_1080": "480 x auto",
+        "u_720": "320 x auto"
+      }
+    },
+    "res/rgu-board.png": {
+      "dest": "res/rgu-board",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+
+    "res/royal_ur_analysis/logo.png": {
+      "dest": "res/analysis/logo",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+    "res/royal_ur_analysis/example_window.png": {
+      "dest": "res/analysis/example_window",
+      "sizes": {
+        "u_u": "auto x auto",
+        "u_2160": "auto x auto",
+        "u_1440": "auto x auto",
+        "u_1080": "auto x auto",
+        "u_720": "auto x auto"
+      }
+    },
+
+    "res/darkTile.png": {
+      "dest": "res/tile_dark",
+      "size_group": "tile"
+    },
+    "res/lightTile.png": {
+      "dest": "res/tile_light",
+      "size_group": "tile"
+    },
+
+    "res/buttons/play.png": {
+      "dest": "res/button_play",
+      "size_group": "menu-button"
+    },
+    "res/buttons/play_active.png":  {
+      "dest": "res/button_play_active",
+      "size_group": "menu-button"
+    },
+    "res/buttons/learn.png": {
+      "dest": "res/button_learn",
+      "size_group": "menu-button"
+    },
+    "res/buttons/learn_active.png": {
+      "dest": "res/button_learn_active",
+      "size_group": "menu-button"
+    },
+    "res/buttons/watch.png": {
+      "dest": "res/button_watch",
+      "size_group": "menu-button"
+    },
+    "res/buttons/watch_active.png": {
+      "dest": "res/button_watch_active",
+      "size_group": "menu-button"
+    },
+
+    "res/dice/up1.png": {
+      "dest": "res/dice_up1",
+      "size_group":  "dice"
+    },
+    "res/dice/up2.png": {
+      "dest": "res/dice_up2",
+      "size_group":  "dice"
+    },
+    "res/dice/up3.png": {
+      "dest": "res/dice_up3",
+      "size_group":  "dice"
+    },
+    "res/dice/down1.png": {
+      "dest": "res/dice_down1",
+      "size_group":  "dice"
+    },
+    "res/dice/down2.png": {
+      "dest": "res/dice_down2",
+      "size_group":  "dice"
+    },
+    "res/dice/down3.png": {
+      "dest": "res/dice_down3",
+      "size_group":  "dice"
+    },
+    "res/dice/darkShadow.png": {
+      "dest": "res/dice_dark_shadow",
+      "size_group":  "dice"
+    },
+    "res/dice/lightShadow.png": {
+      "dest": "res/dice_light_shadow",
+      "size_group":  "dice"
+    },
+
+    "res/tournament_1_awards/gold-aratkovich.png": {
+      "dest": "tournaments/first/gold-aratkovich",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/silver-timogustafson.png": {
+      "dest": "tournaments/first/silver-timogustafson",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/bronze-nitt.png": {
+      "dest": "tournaments/first/bronze-nitt",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/ellaroman.png": {
+      "dest": "tournaments/first/ellaroman",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/georgia.png": {
+      "dest": "tournaments/first/georgia",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/jfenton.png": {
+      "dest": "tournaments/first/jfenton",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/pixteca.png": {
+      "dest": "tournaments/first/pixteca",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/sothatsit.png": {
+      "dest": "tournaments/first/sothatsit",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/zakklightman.png": {
+      "dest": "tournaments/first/zakklightman",
+      "size_group": "tournament_certificate_thumbnail"
+    },
+    "res/tournament_1_awards/diegoraposo.png": {
+      "dest": "tournaments/first/diegoraposo",
+      "size_group": "tournament_certificate_thumbnail"
+    }
+  },
+
+  "annotations": {
+    "board": "res/board_annotation.json"
+  }
+}
