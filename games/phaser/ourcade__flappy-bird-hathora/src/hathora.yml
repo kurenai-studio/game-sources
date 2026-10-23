@@ -1,0 +1,55 @@
+# this could be auto generated with hathora init instead of throwing an error?
+types:
+  Color:
+    - Yellow
+    - Red
+    - Purple
+    - Green
+  State:
+    - Empty
+    - WaitingForPlayers
+    - Countdown
+    - Playing
+    - Finished
+  Vector2:
+    x: float
+    y: float
+  Input:
+    space: boolean
+  # Player has a userId and a location
+  Player:
+    id: UserId
+    ready: boolean
+    location: Vector2
+    velocity: Vector2
+    enabled: boolean
+    lastTimeStamp: int
+    color: Color
+  # GameState has an array of players
+  GameState:
+    state: State
+    time: float
+    startTime: float
+    players: Player[]
+    winner: UserId
+
+methods:
+  joinGame:
+  leaveGame:
+  ready:
+  ping:
+    time: int
+  flap:
+
+# use anonymous login to keep things simple for now
+auth:
+  anonymous: {}
+
+# tell the server to send the value of GameState to all clients (and keep it updated as state changes)
+userState: GameState
+
+# set the error type to string
+error: string
+
+# configure the server tick to run every 50ms (20 times a second)
+tick: 50
