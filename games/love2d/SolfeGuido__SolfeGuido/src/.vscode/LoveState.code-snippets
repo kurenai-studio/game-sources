@@ -1,0 +1,28 @@
+{
+	"LoveState": {
+		"prefix": "LoveState",
+		"body": [
+			"local State = require('src.State')",
+			"",
+			"---@class $0 : State",
+			"local $0 = State:extend()",
+			"",
+			"",
+			"function $0:new()",
+			"\tState.new(self)",
+			"end",
+			"",
+			"function $0:draw()",
+			"\tState.draw(self)",
+			"end",
+			"",
+			"function $0:update(dt)",
+			"\tState.update(self, dt)",
+			"end",
+			"",
+			"return $0"
+		],
+		"description": "Creating a state in lua",
+		"scope": "lua"
+	}
+}
