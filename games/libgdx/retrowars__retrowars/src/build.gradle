@@ -1,0 +1,148 @@
+buildscript {
+    ext.kotlinVersion = '1.6.21'
+
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+
+    version = '1.0'
+    ext {
+        appName = "Super Retro Mega Wars"
+
+        // Generally just used for Android app versioning, but we also use it in our networking to
+        // report back to users if they are using an unsupported version.
+        //
+        // The formatting here must remain as is (equals sign followed by spaces, double quotes, etc)
+        // in order for the F-Droid checkupdates bot to pick them up. Normally it just checks the
+        // android apps build.gradle or AndroidManifest, but we dynamically inject them via these
+        // properties so that both the server and the client have access to the same information.
+        appVersionCode = 70
+        appVersionName = "0.32.5"
+
+        gdxVersion = '1.12.1'
+        kotlinCoroutinesVersion = '1.4.2'
+        ktor_version = '1.6.0'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+task stage(dependsOn: [':server:clean', ':server:dist'])
+
+project(":texture-packer") {
+    apply plugin: "kotlin"
+
+    dependencies {
+        implementation project(":core")
+        implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+        implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+    }
+}
+
+project(":desktop") {
+    apply plugin: "kotlin"
+
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    }
+}
+
+if (!hasProperty('excludeAndroid')) {
+project(":android") {
+    apply plugin: "android"
+    apply plugin: "kotlin-android"
+
+    configurations { natives }
+
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+        api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinCoroutinesVersion"
+    }
+}
+}
+
+project(":core") {
+    apply plugin: "kotlin"
+
+    dependencies {
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+        implementation 'com.github.blueboxware:libgdxplugin:1.23.1'
+        implementation 'com.google.code.gson:gson:2.8.6'
+        implementation 'com.crashinvaders.vfx:gdx-vfx-core:0.5.0'
+        implementation 'com.crashinvaders.vfx:gdx-vfx-effects:0.5.0'
+        implementation "io.ktor:ktor-client-core:$ktor_version"
+        implementation "io.ktor:ktor-server-netty:$ktor_version"
+        implementation "io.ktor:ktor-client-cio:$ktor_version"
+        implementation "io.ktor:ktor-client-gson:$ktor_version"
+        implementation "io.ktor:ktor-gson:$ktor_version"
+        implementation "io.ktor:ktor-client-websockets:$ktor_version"
+        implementation "io.ktor:ktor-websockets:$ktor_version"
+        implementation "ch.qos.logback:logback-classic:1.2.3" // For server related logging (not Android - and hence game - logging, that uses Gdx.app.log)
+        implementation 'org.jmdns:jmdns:3.5.7'
+
+        testImplementation 'junit:junit:4.13.2'
+        testImplementation "org.mockito:mockito-all:1.9.0"
+
+        testImplementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    }
+
+    // https://stackoverflow.com/a/54006518
+    processResources {
+        expand([
+                'appVersionCode': appVersionCode,
+                'appVersionName': appVersionName,
+        ])
+    }
+}
+
+project(":server") {
+    apply plugin: "kotlin"
+
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+        api 'org.slf4j:slf4j-api:1.7.30'
+        implementation 'ch.qos.logback:logback-core:1.2.3'
+        implementation 'ch.qos.logback:logback-classic:1.2.3'
+    }
+}
