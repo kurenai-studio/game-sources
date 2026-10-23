@@ -1,0 +1,91 @@
+local game_started = false
+
+local function raketka_pos_f(ball_pos, raketka_pos, raketka_width)
+	-- положение мяча относительно ракетки
+	local hit_factor = (ball_pos.x - raketka_pos.x) / (raketka_width / 2)
+
+	if hit_factor > 1.0 then hit_factor = 1.0 end
+	if hit_factor < -1.0 then hit_factor = -1.0 end
+
+	local new_dir = vmath.vector3(hit_factor, 0.6, 0)
+	new_dir = vmath.normalize(new_dir)
+
+	return new_dir
+end
+
+function init(self)
+	self.dir = vmath.vector3(0, 0, 0)
+	self.min_speed = 450
+	self.max_speed = 850
+	self.speed = self.min_speed
+	self.mult = 15
+end
+
+function update(self, dt)
+	if not game_started then
+		local raketka_pos = go.get_position("raketka")
+		local pos = vmath.vector3(raketka_pos.x, 49, 0)
+		go.set_position(pos)
+		return
+	end
+	local current_position = go.get_position()
+
+	local new_position = current_position + self.dir * self.speed * dt
+
+	if current_position.x <= 8 then     self.dir.x = 1;  current_position.x = 9 end
+	if current_position.x >= 952 then   self.dir.x = -1; current_position.x = 951 end
+	if current_position.y >= 536 then   self.dir.y = -1; current_position.y = 535 end
+
+	if current_position.y <= 0 then
+		self.dir = vmath.vector3(0, 0, 0)
+		--timer.delay(0.5, false, function()
+			--msg.post("main:/loader#loader", "reload_game")
+			game_started = false
+		--end)
+		-- убрал эту ебаную залупу с таймером потому что работает не так как надо	
+	end
+
+	go.set_position(new_position)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("space_pressed") then
+
+		if not game_started then
+			game_started = true
+			self.dir = vmath.vector3(0.5, 1, 0)
+			return
+		end
+	end
+	if message_id == hash("contact_point_response") then
+		local correction = message.normal * message.distance
+		go.set_position(go.get_position() + correction)
+
+		local hit_horizontal = math.abs(message.normal.x) > math.abs(message.normal.y)
+
+		if message.group == hash("raketka") then
+			if hit_horizontal then
+				self.dir.x = -self.dir.x
+				self.dir.y = math.abs(self.dir.y)
+			else
+				local ball_pos = go.get_position()
+				local raketka_pos = go.get_position(message.other_id)
+				self.dir = raketka_pos_f(ball_pos, raketka_pos, 160)
+				self.speed = self.min_speed
+			end
+			return
+		end
+		if hit_horizontal then
+			self.dir.x = -self.dir.x
+		else
+			self.dir.y = -self.dir.y
+		end
+
+		self.speed = math.min(self.speed + self.mult, self.max_speed)
+
+		if math.abs(self.dir.y) < 0.2 then
+			self.dir.y = self.dir.y > 0 and 0.2 or -0.2
+			self.dir = vmath.normalize(self.dir)
+		end
+	end
+end
