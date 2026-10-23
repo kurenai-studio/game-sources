@@ -1,0 +1,618 @@
+[gd_scene load_steps=22 format=2]
+
+[ext_resource path="res://assets/graphics/PB1.png" type="Texture" id=1]
+[ext_resource path="res://assets/graphics/PB3.png" type="Texture" id=2]
+[ext_resource path="res://assets/graphics/ships/stations/Space_Station_1.png" type="Texture" id=3]
+[ext_resource path="res://src/game/tutorial/TutorialCanvas.gd" type="Script" id=4]
+[ext_resource path="res://src/game/shells/DefaultShell.tscn" type="PackedScene" id=5]
+[ext_resource path="res://src/game/SpeedLines.gd" type="Script" id=6]
+[ext_resource path="res://src/game/HitEmitter.gd" type="Script" id=7]
+[ext_resource path="res://src/game/Projectiles.gd" type="Script" id=8]
+[ext_resource path="res://assets/theme.tres" type="Theme" id=9]
+[ext_resource path="res://src/asteroids/SmallBelt.tscn" type="PackedScene" id=10]
+[ext_resource path="res://assets/graphics/planets/Earthlike.png" type="Texture" id=11]
+[ext_resource path="res://assets/graphics/PB3_2.png" type="Texture" id=12]
+[ext_resource path="res://assets/graphics/NEB1.png" type="Texture" id=13]
+[ext_resource path="res://src/game/Material.tscn" type="PackedScene" id=14]
+[ext_resource path="res://src/game/Station.tscn" type="PackedScene" id=17]
+[ext_resource path="res://src/game/Container.tscn" type="PackedScene" id=19]
+[ext_resource path="res://src/game/ships/armada/ArmadeAgile.tscn" type="PackedScene" id=23]
+[ext_resource path="res://src/game/Planet.tscn" type="PackedScene" id=26]
+[ext_resource path="res://src/game/IGPS.tscn" type="PackedScene" id=27]
+
+[sub_resource type="CircleShape2D" id=1]
+radius = 417.692
+
+[sub_resource type="CircleShape2D" id=2]
+radius = 32.3739
+
+[node name="TutorialCanvas" type="Node2D"]
+script = ExtResource( 4 )
+
+[node name="Player" parent="." instance=ExtResource( 5 )]
+position = Vector2( -5604.51, 6151.12 )
+rotation = 1.57079
+
+[node name="PlayerCamera" type="Camera2D" parent="Player"]
+current = true
+smoothing_enabled = true
+smoothing_speed = 6.0
+drag_margin_bottom = 0.1
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="Player/PlayerCamera"]
+
+[node name="Space_BG2" type="ParallaxLayer" parent="Player/PlayerCamera/ParallaxBackground"]
+motion_scale = Vector2( 0.1, 0.1 )
+motion_mirroring = Vector2( 1000, 600 )
+
+[node name="TextureRect" type="TextureRect" parent="Player/PlayerCamera/ParallaxBackground/Space_BG2"]
+margin_left = -30.0
+margin_top = -30.0
+margin_right = 970.0
+margin_bottom = 570.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource( 1 )
+expand = true
+stretch_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Space_BG3" type="ParallaxLayer" parent="Player/PlayerCamera/ParallaxBackground"]
+motion_scale = Vector2( 0.15, 0.15 )
+motion_mirroring = Vector2( 1000, 600 )
+
+[node name="TextureRect" type="TextureRect" parent="Player/PlayerCamera/ParallaxBackground/Space_BG3"]
+margin_left = -30.0
+margin_top = -30.0
+margin_right = 970.0
+margin_bottom = 570.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource( 2 )
+expand = true
+stretch_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Space_BG4" type="ParallaxLayer" parent="Player/PlayerCamera/ParallaxBackground"]
+visible = false
+motion_scale = Vector2( 0.12, 0.12 )
+motion_mirroring = Vector2( 1000, 600 )
+
+[node name="TextureRect" type="TextureRect" parent="Player/PlayerCamera/ParallaxBackground/Space_BG4"]
+visible = false
+modulate = Color( 1, 1, 1, 0.431373 )
+margin_left = -30.0
+margin_top = -30.0
+margin_right = 970.0
+margin_bottom = 570.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource( 13 )
+expand = true
+stretch_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Space_BG5" type="ParallaxLayer" parent="Player/PlayerCamera/ParallaxBackground"]
+motion_scale = Vector2( 0.5, 0.5 )
+motion_mirroring = Vector2( 1000, 600 )
+
+[node name="TextureRect" type="TextureRect" parent="Player/PlayerCamera/ParallaxBackground/Space_BG5"]
+margin_left = -30.0
+margin_top = -30.0
+margin_right = 970.0
+margin_bottom = 570.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource( 12 )
+expand = true
+stretch_mode = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="DampedSpringJoint2D" type="DampedSpringJoint2D" parent="Player"]
+bias = 0.9
+length = 1.0
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="ArmadeAgile" parent="Enemies" groups=[
+"orbitable",
+"ships",
+] instance=ExtResource( 23 )]
+position = Vector2( -2973.92, 3007.25 )
+
+[node name="DetectionArea" parent="Enemies/ArmadeAgile" index="2"]
+visible = true
+
+[node name="CollisionShape2D" parent="Enemies/ArmadeAgile/DetectionArea" index="0"]
+position = Vector2( -42.8372, -22.679 )
+shape = SubResource( 1 )
+
+[node name="Explosion" parent="Enemies/ArmadeAgile" index="10"]
+one_shot = true
+
+[node name="CollisionShape2D" parent="Enemies/ArmadeAgile/ExplosionArea" index="0"]
+position = Vector2( 0, 0 )
+
+[node name="SmokeEmitter" parent="Enemies/ArmadeAgile" index="13"]
+visible = false
+modulate = Color( 1, 1, 1, 1 )
+
+[node name="Projectiles" type="Node2D" parent="."]
+z_index = -1
+script = ExtResource( 8 )
+
+[node name="SpeedLines" type="Node2D" parent="."]
+position = Vector2( -0.0214844, -1.12845 )
+z_index = 3
+script = ExtResource( 6 )
+
+[node name="Asteroids" type="Node2D" parent="."]
+
+[node name="SmallBelt" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -5611.8, 5854.77 )
+rotation = -0.489177
+
+[node name="SmallBelt2" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -5097.04, 6002.58 )
+rotation = 0.699989
+
+[node name="SmallBelt3" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3103.27, 3354.79 )
+rotation = 2.66955
+
+[node name="SmallBelt24" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -2536.94, 3245.3 )
+rotation = 3.32012
+
+[node name="SmallBelt25" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3038.02, 2605.83 )
+rotation = 2.51435
+
+[node name="SmallBelt26" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -2538.56, 2441.71 )
+rotation = 2.86946
+
+[node name="SmallBelt27" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -2103.31, 2132.52 )
+rotation = 2.50998
+
+[node name="SmallBelt28" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -1599.08, 1942.25 )
+rotation = 2.8493
+
+[node name="SmallBelt29" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -1042.53, 1740.08 )
+rotation = 2.8493
+
+[node name="SmallBelt30" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -538.31, 1599.76 )
+rotation = 5.83161
+
+[node name="SmallBelt31" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -24.5724, 1392.83 )
+rotation = 5.83161
+
+[node name="SmallBelt32" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( 493.922, 1259.64 )
+rotation = 6.65535
+
+[node name="SmallBelt33" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( 815.008, 1604.51 )
+rotation = 8.06627
+
+[node name="SmallBelt34" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( 536.733, 1996.95 )
+rotation = 9.34945
+
+[node name="SmallBelt35" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -7.9231, 2168.2 )
+rotation = 12.3246
+
+[node name="SmallBelt36" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -424.145, 2498.8 )
+rotation = 11.8165
+
+[node name="SmallBelt37" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -928.369, 2743.77 )
+rotation = 12.3175
+
+[node name="SmallBelt38" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -1382.65, 3062.48 )
+rotation = 11.9107
+
+[node name="SmallBelt39" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -1954.26, 3265.37 )
+rotation = 12.4858
+
+[node name="SmallBelt4" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3451.94, 2953.11 )
+rotation = 2.67173
+
+[node name="SmallBelt5" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3855.14, 3321.96 )
+rotation = 2.40727
+
+[node name="SmallBelt6" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3425.04, 3750.58 )
+rotation = 1.65575
+
+[node name="SmallBelt7" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4125.05, 3802.58 )
+rotation = -1.60841
+
+[node name="SmallBelt8" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3337.04, 4314.58 )
+rotation = 1.25706
+
+[node name="SmallBelt9" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4032.35, 4356.46 )
+rotation = 1.33765
+
+[node name="SmallBelt10" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3213.07, 4900.13 )
+rotation = 1.67064
+
+[node name="SmallBelt11" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3877.56, 4892.58 )
+rotation = 1.05507
+
+[node name="SmallBelt12" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3220.62, 5447.58 )
+rotation = 1.28838
+
+[node name="SmallBelt13" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3722.76, 5424.93 )
+rotation = 1.23998
+
+[node name="SmallBelt14" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3073.38, 5983.7 )
+rotation = 1.11199
+
+[node name="SmallBelt15" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3662.36, 5983.7 )
+rotation = 1.45312
+
+[node name="SmallBelt16" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3250.83, 6478.29 )
+rotation = 2.48435
+
+[node name="SmallBelt17" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -5723.78, 6346.15 )
+rotation = 0.983155
+
+[node name="SmallBelt18" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -5353.78, 6791.66 )
+rotation = 0.836009
+
+[node name="SmallBelt19" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4896.94, 7101.25 )
+rotation = -0.0239275
+
+[node name="SmallBelt20" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4338.17, 7010.64 )
+rotation = -0.0506092
+
+[node name="SmallBelt21" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -3737.87, 6814.31 )
+rotation = 2.38546
+
+[node name="SmallBelt22" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4012.27, 6386.15 )
+rotation = 2.64746
+
+[node name="SmallBelt23" parent="Asteroids" instance=ExtResource( 10 )]
+position = Vector2( -4638.56, 6509.01 )
+rotation = 0.0912875
+
+[node name="Stations" type="Node2D" parent="."]
+
+[node name="Station" parent="Stations" instance=ExtResource( 17 )]
+position = Vector2( 493.545, 1665.56 )
+station_name = "tutorial"
+
+[node name="Sprite" parent="Stations/Station" index="0"]
+rotation = 1.57079
+texture = ExtResource( 3 )
+
+[node name="DeliveryArea" parent="Stations/Station" index="1"]
+position = Vector2( -0.552856, 95.8911 )
+
+[node name="Sprite" parent="Stations/Station/DeliveryArea" index="0"]
+texture = null
+
+[node name="CollisionShape2D" parent="Stations/Station/DeliveryArea" index="1"]
+position = Vector2( 0, 0 )
+shape = SubResource( 2 )
+
+[node name="AnchorPoint" parent="Stations/Station" index="3"]
+position = Vector2( 0.472656, 67.1337 )
+
+[node name="Planets" type="Node2D" parent="."]
+
+[node name="Earth" parent="Planets" instance=ExtResource( 26 )]
+position = Vector2( -1260.24, 2080.13 )
+rotation = -2.08819
+planet_name = "earth"
+
+[node name="Sprite" parent="Planets/Earth" index="0"]
+texture = ExtResource( 11 )
+
+[node name="HitEmitter" type="Node2D" parent="."]
+script = ExtResource( 7 )
+
+[node name="IGPS" parent="." instance=ExtResource( 27 )]
+position = Vector2( -931.067, 2212.55 )
+
+[node name="ShellUnlock" parent="IGPS" index="4"]
+visible = false
+
+[node name="ShellUnlock2" parent="IGPS" index="5"]
+visible = false
+
+[node name="ShellUnlock3" parent="IGPS" index="6"]
+visible = false
+
+[node name="ShellUnlock4" parent="IGPS" index="7"]
+visible = false
+
+[node name="Container" parent="." instance=ExtResource( 19 )]
+position = Vector2( -3641.3, 4573.29 )
+destination = "tutorial"
+
+[node name="Texts" type="Node2D" parent="."]
+z_index = -2
+
+[node name="Label" type="RichTextLabel" parent="Texts"]
+margin_left = -5556.08
+margin_top = 6063.89
+margin_right = -5281.08
+margin_bottom = 6318.89
+theme = ExtResource( 9 )
+bbcode_enabled = true
+bbcode_text = "[center]Welcome, new recruit! Time to take off that blindfold. 
+
+We all need money and we understand that that's why you joined the I.G.P.S.:
+Or as we call it...
+
+[tornado]Theeee Inter Galactic Postal Service[/tornado]
+
+
+In this orientation training, you'll get to learn
+how to handle your ship.
+
+But in true I.G.P.S. fashion
+we've got some challenges along the way.
+
+W - Accelerate
+S - Brake
+A - Turn left
+D - Turn right
+[/center]
+
+"
+text = "Welcome, new recruit! Time to take off that blindfold. 
+
+We all need money and we understand that that's why you joined the I.G.P.S.:
+Or as we call it...
+
+Theeee Inter Galactic Postal Service
+
+
+In this orientation training, you'll get to learn
+how to handle your ship.
+
+But in true I.G.P.S. fashion
+we've got some challenges along the way.
+
+W - Accelerate
+S - Brake
+A - Turn left
+D - Turn right
+
+
+"
+fit_content_height = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label6" type="Label" parent="Texts"]
+margin_left = -3715.35
+margin_top = 4604.37
+margin_right = -3371.35
+margin_bottom = 4788.37
+theme = ExtResource( 9 )
+text = "What's this?
+
+A lost package?
+
+Try flying over it to pick it up!
+
+You'll need to deliver it later to pass the assignment
+and get your first paycheck,"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label5" type="Label" parent="Texts"]
+margin_left = -5085.71
+margin_top = 6681.54
+margin_right = -4656.71
+margin_bottom = 6882.54
+theme = ExtResource( 9 )
+text = "Bet you didn't read all that huh?
+
+In short:
+
+W - Accelerate
+S - Brake
+A - Turn left
+D - Turn right
+
+Conveniently, you can control the entire screen with just one hand.
+
+But we're not that kind of game ;)"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label2" type="Label" parent="Texts"]
+margin_left = -3499.53
+margin_top = 6119.0
+margin_right = -3155.53
+margin_bottom = 6303.0
+theme = ExtResource( 9 )
+text = "If you're not comfortable with the way 
+we're telling you to handle your ship, you 
+can always reassign your cockpit controls in 
+the pause screen settings."
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label4" type="Label" parent="Texts"]
+margin_left = -4139.73
+margin_top = 6603.08
+margin_right = -3795.73
+margin_bottom = 6787.08
+theme = ExtResource( 9 )
+text = "Try not to hit any asteroids!
+
+We've lost many new applicants with these rocks.
+
+Kidding!
+
+Young people these days..."
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label3" type="Label" parent="Texts"]
+margin_left = -3972.97
+margin_top = 3830.39
+margin_right = -3621.97
+margin_bottom = 4048.39
+theme = ExtResource( 9 )
+text = "We've hired a professional Armada soldier to train you.
+You'll meet him soon.
+
+He'll try to kill you.
+
+But don't worry, all IGPS ships are equipped to
+hold off Armada ships with ease... 
+
+We won't need to pay him if you kill him, so
+as a first real assignment we hope you can do 
+him the honors. 
+
+You can fire your cannons with the Space button!"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="EnemyText" type="Label" parent="Texts"]
+margin_left = -3259.38
+margin_top = 2930.13
+margin_right = -2908.38
+margin_bottom = 3148.13
+theme = ExtResource( 9 )
+text = "Here he is!
+Get him!"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label8" type="Label" parent="Texts"]
+margin_left = -1106.89
+margin_top = 2427.51
+margin_right = -755.893
+margin_bottom = 2645.51
+theme = ExtResource( 9 )
+text = "Our pride and joy.
+
+The IGPS flagship.
+
+You can earn new and better ships through your
+carreer, and change them here.
+
+
+Continue to deliver your package"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label10" type="Label" parent="Texts"]
+margin_left = -2304.26
+margin_top = 2726.9
+margin_right = -1953.26
+margin_bottom = 2944.9
+theme = ExtResource( 9 )
+text = "What luck!
+
+You might have noticed as you wrecked that poor
+Armada officer - Jeremy, can you send some flowers 
+to his mother - but enemies will drop materials
+
+You should pick these up! Gathering enough will 
+unlock ships of that faction.
+
+Here's another one:
+
+Please return it after your orientation."
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label9" type="Label" parent="Texts"]
+margin_left = -54.838
+margin_top = 1670.2
+margin_right = 296.162
+margin_bottom = 1888.2
+theme = ExtResource( 9 )
+text = "Fly over the landing pad to deliver your package!
+
+Right here -------------------------------------->
+
+
+Thanks! Have fun in your career! We believe in you."
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Material" parent="." instance=ExtResource( 14 )]
+position = Vector2( -1994.41, 2906.43 )
+type = "armada"
+
+[editable path="Enemies/ArmadeAgile"]
+[editable path="Stations/Station"]
+[editable path="Planets/Earth"]
+[editable path="IGPS"]
+[editable path="IGPS/ShellUnlock"]
+[editable path="IGPS/ShellUnlock/Shell"]
+[editable path="IGPS/ShellUnlock2"]
+[editable path="IGPS/ShellUnlock2/Shell"]
+[editable path="IGPS/ShellUnlock3"]
+[editable path="IGPS/ShellUnlock3/Shell"]
+[editable path="IGPS/ShellUnlock4"]
+[editable path="IGPS/ShellUnlock4/Shell"]
