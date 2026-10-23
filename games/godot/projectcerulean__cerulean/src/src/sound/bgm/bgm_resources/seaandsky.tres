@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=5 format=3 uid="uid://ddnjany5v3k6t"]
+
+[ext_resource type="Script" path="res://src/sound/bgm/bgm_resource.gd" id="1"]
+[ext_resource type="AudioStream" uid="uid://co3auqx3e124u" path="res://assets/sound/bgm/seaandsky/seaandsky_rhythm.wav" id="2"]
+[ext_resource type="AudioStream" uid="uid://4tcjuqbrjk4b" path="res://assets/sound/bgm/seaandsky/seaandsky_glide.wav" id="3"]
+[ext_resource type="AudioStream" uid="uid://drs2dre20xkax" path="res://assets/sound/bgm/seaandsky/seaandsky.wav" id="4"]
+
+[resource]
+script = ExtResource( "1" )
+stream_sample_base = ExtResource( "4" )
+stream_sample_glide = ExtResource( "3" )
+stream_sample_rhythm = ExtResource( "2" )

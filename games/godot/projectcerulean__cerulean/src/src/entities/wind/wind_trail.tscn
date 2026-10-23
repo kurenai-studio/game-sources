@@ -1,0 +1,76 @@
+[gd_scene load_steps=13 format=3 uid="uid://c3la8dk8cql35"]
+
+[ext_resource type="PackedScene" uid="uid://yqqga1qlo5lc" path="res://src/entities/effects/trail/trail.tscn" id="1_dpfbh"]
+[ext_resource type="Script" path="res://src/entities/wind/wind_trail.gd" id="1_w4d55"]
+[ext_resource type="Resource" uid="uid://bdx56ettfo3o7" path="res://src/environment/environment_resource.tres" id="2_euocp"]
+[ext_resource type="PackedScene" uid="uid://5erm75pc5fdd" path="res://src/common/water_detector/water_detector.tscn" id="3_o18us"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ve0cu"]
+frequency = 0.005
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_12ms2"]
+seamless = true
+noise = SubResource("FastNoiseLite_ve0cu")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7ehk5"]
+resource_local_to_scene = true
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_nsfxj"]
+resource_local_to_scene = true
+
+[sub_resource type="Curve" id="Curve_crjkb"]
+resource_local_to_scene = true
+_data = [Vector2(0.00576369, 0), 0.0, 2.64193, 0, 0, Vector2(0.501441, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.69064, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_34suf"]
+resource_local_to_scene = true
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_t2wx0"]
+resource_local_to_scene = true
+
+[sub_resource type="Curve" id="Curve_ds6ey"]
+resource_local_to_scene = true
+_data = [Vector2(0.00576369, 0), 0.0, 2.64193, 0, 0, Vector2(0.501441, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.69064, 0.0, 0, 0]
+point_count = 3
+
+[node name="WindTrail" type="Node3D"]
+script = ExtResource("1_w4d55")
+noise_texture = SubResource("NoiseTexture2D_12ms2")
+_environment_resource = ExtResource("2_euocp")
+
+[node name="PositionHorizontalA" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0, 0)
+
+[node name="PositionHorizontalB" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0, 0)
+
+[node name="PositionVerticalA" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="PositionVerticalB" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="Trails" type="Node" parent="."]
+
+[node name="TrailHorizontal" parent="Trails" instance=ExtResource("1_dpfbh")]
+material_override = SubResource("StandardMaterial3D_7ehk5")
+mesh = SubResource("ImmediateMesh_nsfxj")
+skeleton = NodePath("../..")
+trail_width = SubResource("Curve_crjkb")
+
+[node name="TrailVertical" parent="Trails" instance=ExtResource("1_dpfbh")]
+material_override = SubResource("StandardMaterial3D_34suf")
+mesh = SubResource("ImmediateMesh_t2wx0")
+skeleton = NodePath("../..")
+trail_width = SubResource("Curve_ds6ey")
+
+[node name="WaterDetector" parent="." instance=ExtResource("3_o18us")]

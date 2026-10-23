@@ -1,0 +1,685 @@
+[gd_scene load_steps=87 format=3 uid="uid://b4ihx6a2lcbde"]
+
+[ext_resource type="Script" path="res://src/entities/player/player.gd" id="1"]
+[ext_resource type="Resource" uid="uid://bcjspjqf7ynf1" path="res://src/singletons/thumbstick_processor/thumbstick_resource_left.tres" id="2_4s2oi"]
+[ext_resource type="Resource" uid="uid://cnn1ff5x5ry22" path="res://src/entities/player/input/player_input_vector_resource.tres" id="3_2i2xh"]
+[ext_resource type="Resource" uid="uid://dyt784lki51ha" path="res://src/singletons/game_state_manager/game_state_resource.tres" id="5_okm0g"]
+[ext_resource type="Resource" uid="uid://bvia5fo4gt42c" path="res://src/singletons/camera/camera_transform.tres" id="6_ibr24"]
+[ext_resource type="PackedScene" uid="uid://b81k6jxhrod56" path="res://src/common/physics_step_interpolator/physics_step_interpolator.tscn" id="7_3cj2e"]
+[ext_resource type="Resource" uid="uid://dgwswhe5polme" path="res://src/singletons/developer_mode/developer_mode_resource.tres" id="7_ddtdi"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/squash_stretch.gd" id="7_pchkq"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/squash_stretch_spring.gd" id="7_pus1y"]
+[ext_resource type="Script" path="res://src/entities/player/trail_renderer/player_trail_renderer.gd" id="8"]
+[ext_resource type="Material" uid="uid://dh7tbqymoqlu6" path="res://src/entities/player/materials/body_material.tres" id="9_evt60"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/player_mesh_state_glide.gd" id="9_uwrsl"]
+[ext_resource type="Material" uid="uid://c0qs1grnnbj3x" path="res://src/entities/player/materials/detail_material.tres" id="10_kc8d0"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/player_mesh_state_default.gd" id="10_vowrm"]
+[ext_resource type="Script" path="res://src/common/state_machine/state_machine_synchronizer.gd" id="11_mhki8"]
+[ext_resource type="Resource" path="res://src/entities/player/states/player_state_resource.tres" id="12"]
+[ext_resource type="PackedScene" uid="uid://cp108em4abhx8" path="res://src/common/state_machine/state_machine.tscn" id="13_m5ip5"]
+[ext_resource type="Shader" path="res://src/entities/player/materials/ghost_material_pass_1.gdshader" id="14_towh0"]
+[ext_resource type="Shader" path="res://src/entities/player/materials/ghost_material_pass_2.gdshader" id="14_uu16l"]
+[ext_resource type="Shader" path="res://src/entities/player/materials/ghost_material_pass_3.gdshader" id="16_ao4k1"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/player_mesh_state_roll.gd" id="16_e4pes"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/player_mesh_state_sprint.gd" id="17_n38px"]
+[ext_resource type="Resource" uid="uid://bmra0kxfxo4o" path="res://src/sound/sfx/sfx_resources/bounce_pad_high.tres" id="18_1l0sl"]
+[ext_resource type="Script" path="res://src/sound/effects/audio_effect_transition_listener.gd" id="18_nptr4"]
+[ext_resource type="Script" path="res://src/entities/player/mesh/player_mesh_state.gd" id="19_u63br"]
+[ext_resource type="Resource" uid="uid://dd5sh0tn4snb6" path="res://src/entities/player/transform/player_transform_interpolated.tres" id="20_484wt"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_bounce.gd" id="20_rvyx5"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_dive.gd" id="22_4hscj"]
+[ext_resource type="Script" path="res://src/entities/player/water_blob_shadow/player_water_blob_shadow_controller.gd" id="22_43yka"]
+[ext_resource type="Script" path="res://src/entities/player/particles/glide_particle_controller.gd" id="22_an67j"]
+[ext_resource type="Script" path="res://src/entities/player/particles/water_movement_particle_controller.gd" id="22_c1lh1"]
+[ext_resource type="Resource" uid="uid://br5lp056r2vnl" path="res://src/entities/player/water_blob_shadow/player_water_blob_shadow_enabled.tres" id="23_n53dm"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_double_jump.gd" id="23_oc5f6"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_fall.gd" id="23_pac4m"]
+[ext_resource type="Script" path="res://src/entities/player/particles/one_shot_water_splash_particle_controller.gd" id="24_7s8p3"]
+[ext_resource type="Resource" uid="uid://bdx56ettfo3o7" path="res://src/environment/environment_resource.tres" id="24_hgnac"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_glide.gd" id="24_p4auy"]
+[ext_resource type="PackedScene" uid="uid://5erm75pc5fdd" path="res://src/common/water_detector/water_detector.tscn" id="25_e1r3t"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_dodge.gd" id="25_jjldq"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_idle.gd" id="25_rhyuw"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_jump.gd" id="26_7ncmu"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_run.gd" id="27_mdmxu"]
+[ext_resource type="PackedScene" uid="uid://d3llgup5ja26a" path="res://src/entities/blob_shadow/blob_shadow.tscn" id="28_5hoqt"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_roll.gd" id="28_rthcn"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_swim.gd" id="28_tp61u"]
+[ext_resource type="PackedScene" uid="uid://bxjp2ck6k1jt6" path="res://src/common/state_machine/state_resource_manager.tscn" id="29_l8kw8"]
+[ext_resource type="PackedScene" uid="uid://dxo7bfhp6ojpb" path="res://src/common/transform_resource_manager/transform_resource_manager.tscn" id="31_jeewe"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_sprint.gd" id="32_hdfe3"]
+[ext_resource type="Script" path="res://src/entities/player/states/player_state_ghost.gd" id="34_04kqh"]
+[ext_resource type="PackedScene" uid="uid://dtbbw5cfabdva" path="res://src/entities/player/wind_circle/wind_circle_effect_transition_listener.tscn" id="39_qm0ev"]
+[ext_resource type="Script" path="res://src/entities/player/particles/wind_particle_color_setter.gd" id="41_8igcd"]
+[ext_resource type="Material" uid="uid://tkfwgtra634d" path="res://src/entities/player/particles/wind_particle_material.tres" id="42_xipxd"]
+[ext_resource type="Script" path="res://src/entities/player/particles/water_particle_color_setter.gd" id="44_aqs1s"]
+[ext_resource type="Resource" uid="uid://dsjf0vjev2thx" path="res://src/entities/player/transform/player_transform.tres" id="44_ojxtx"]
+[ext_resource type="Material" uid="uid://xotkrggp0wo4" path="res://src/entities/player/particles/water_particle_material.tres" id="45_xi4ar"]
+[ext_resource type="PackedScene" uid="uid://dy4xubkwfcoo7" path="res://src/entities/player/particles/glide_ground_particles.tscn" id="46_3t1mj"]
+[ext_resource type="PackedScene" uid="uid://dv3hd832wkcet" path="res://src/entities/player/particles/glide_water_particles.tscn" id="46_waeco"]
+[ext_resource type="PackedScene" uid="uid://befnqc7tux8io" path="res://src/entities/player/particles/sprint_particles.tscn" id="47_qkkjb"]
+[ext_resource type="PackedScene" uid="uid://dqk00f8kimkyq" path="res://src/entities/player/particles/water_movement_trail_particles.tscn" id="52_vjux7"]
+[ext_resource type="PackedScene" uid="uid://cc5ewmycnd0r" path="res://src/entities/player/particles/water_movement_splash_particles.tscn" id="53_3607o"]
+[ext_resource type="Script" path="res://src/common/state_machine/transition_listeners/bool_property_transition_listener.gd" id="53_u2b6p"]
+[ext_resource type="Texture2D" uid="uid://bwwqf8dpeaubl" path="res://src/entities/player/particles/particle_scale_curve.tres" id="54_gb78k"]
+[ext_resource type="PackedScene" uid="uid://druxleie63kp3" path="res://src/entities/player/interaction_manager/interaction_manager.tscn" id="63_1mayy"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_khrrq"]
+friction = 0.0
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l5dc4"]
+radius = 0.25
+height = 0.5
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_oiwdn"]
+radius = 0.25
+height = 0.5
+
+[sub_resource type="CapsuleMesh" id="2"]
+radius = 0.25
+height = 1.25
+
+[sub_resource type="BoxMesh" id="4"]
+size = Vector3(0.25, 0.25, 0.25)
+
+[sub_resource type="CapsuleMesh" id="6"]
+radius = 0.25
+height = 1.25
+
+[sub_resource type="BoxMesh" id="7"]
+size = Vector3(0.75, 0.75, 0.1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_nmk1b"]
+height = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_gy4cb"]
+radius = 0.25
+height = 0.25
+
+[sub_resource type="SphereMesh" id="SphereMesh_ogxjs"]
+radius = 0.25
+height = 0.55
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_abqj5"]
+radius = 0.25
+height = 1.25
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2bcth"]
+render_priority = 0
+shader = ExtResource("14_towh0")
+shader_parameter/albedo = Color(0.878431, 0.878431, 1, 1)
+shader_parameter/fade = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pcplc"]
+render_priority = -128
+shader = ExtResource("14_uu16l")
+shader_parameter/albedo = Color(0.25098, 0.25098, 0.25098, 0.25098)
+shader_parameter/fade = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mb5wl"]
+render_priority = -127
+shader = ExtResource("16_ao4k1")
+shader_parameter/albedo = Color(0.878431, 0.878431, 1, 1)
+shader_parameter/fade = 0.5
+
+[sub_resource type="AudioEffectLowPassFilter" id="AudioEffectLowPassFilter_xejwy"]
+cutoff_hz = 20500.0
+
+[sub_resource type="AudioEffectLowPassFilter" id="AudioEffectLowPassFilter_v0sjn"]
+cutoff_hz = 1000.0
+
+[sub_resource type="AudioEffectReverb" id="AudioEffectReverb_vxsdq"]
+room_size = 0.5
+spread = 0.5
+wet = 0.0
+
+[sub_resource type="AudioEffectReverb" id="AudioEffectReverb_m7tgk"]
+room_size = 0.5
+spread = 0.5
+dry = 0.8
+wet = 0.1
+
+[sub_resource type="AudioEffectAmplify" id="AudioEffectAmplify_crae5"]
+volume_db = -80.0
+
+[sub_resource type="AudioEffectAmplify" id="AudioEffectAmplify_a1p08"]
+
+[sub_resource type="AudioEffectAmplify" id="AudioEffectAmplify_4ml5m"]
+volume_db = -80.0
+
+[sub_resource type="AudioEffectAmplify" id="AudioEffectAmplify_wy87q"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_yu01e"]
+resource_local_to_scene = true
+particle_flag_damping_as_friction = true
+emission_shape_scale = Vector3(1, 0.5, 1)
+emission_shape = 1
+emission_sphere_radius = 0.25
+direction = Vector3(0, 1, 0)
+initial_velocity_min = 8.0
+initial_velocity_max = 8.0
+gravity = Vector3(0, -30, 0)
+damping_min = 5.0
+damping_max = 5.0
+scale_min = 0.25
+scale_max = 0.5
+scale_curve = ExtResource("54_gb78k")
+
+[node name="Player" type="RigidBody3D" node_paths=PackedStringArray("mesh_anchor")]
+collision_mask = 60
+mass = 42.0
+physics_material_override = SubResource("PhysicsMaterial_khrrq")
+lock_rotation = true
+continuous_cd = true
+linear_damp_mode = 1
+script = ExtResource("1")
+thumbstick_resource_left = ExtResource("2_4s2oi")
+input_vector_resource = ExtResource("3_2i2xh")
+state_resource = ExtResource("12")
+game_state_resource = ExtResource("5_okm0g")
+camera_transform_resource = ExtResource("6_ibr24")
+developer_mode_resource = ExtResource("7_ddtdi")
+mesh_anchor = NodePath("MeshAnchor")
+mesh_anchor_constant_offset = Vector3(0, 0.375, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_l5dc4")
+
+[node name="CollisionShapeVisual" type="MeshInstance3D" parent="CollisionShape3D"]
+visible = false
+mesh = SubResource("CapsuleMesh_oiwdn")
+
+[node name="MeshAnchor" type="Node3D" parent="."]
+
+[node name="PhysicsStepInterpolator" parent="MeshAnchor" instance=ExtResource("7_3cj2e")]
+
+[node name="Mesh" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator"]
+
+[node name="SquashStretch" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.625, 0)
+script = ExtResource("7_pchkq")
+stretch_factor = 0.75
+
+[node name="SquashStretchSpring" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/SquashStretch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+top_level = true
+script = ExtResource("7_pus1y")
+rest_length = 1.25
+
+[node name="Default" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/SquashStretch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.623865, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/SquashStretch/Default"]
+mesh = SubResource("2")
+skeleton = NodePath("")
+surface_material_override/0 = ExtResource("9_evt60")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/SquashStretch/Default/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -0.25)
+mesh = SubResource("4")
+surface_material_override/0 = ExtResource("10_kc8d0")
+
+[node name="SprintParticlesRemoteTransform3D" type="RemoteTransform3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/SquashStretch/Default/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.624, 0.25)
+remote_path = NodePath("../../../../../../../Particles/RemoteTransformTargets/SprintParticles")
+
+[node name="Glide" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+visible = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide"]
+transform = Transform3D(1, 6.51352e-16, 1.49012e-08, 0, -4.37114e-08, -1, -2.98023e-08, 1, -1.6292e-07, 0, 0, 0)
+mesh = SubResource("6")
+skeleton = NodePath("")
+surface_material_override/0 = ExtResource("9_evt60")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D"]
+transform = Transform3D(0.707107, -0.707107, 0, 0.707107, 0.707107, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("7")
+surface_material_override/0 = ExtResource("10_kc8d0")
+
+[node name="TrailPositionLeftInner" type="Marker3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D"]
+transform = Transform3D(1, 0, -1.42109e-14, 0, 1, -1.42109e-14, 0, 0, 1, -0.353553, 0.353553, 0)
+
+[node name="TrailPositionLeftOuter" type="Marker3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D"]
+transform = Transform3D(1, 0, -1.42109e-14, 0, 1, -1.42109e-14, 0, 0, 1, -0.37, 0.37, 0)
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftOuter" instance=ExtResource("25_e1r3t")]
+
+[node name="TrailPositionRightInner" type="Marker3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D"]
+transform = Transform3D(1, 0, -1.42109e-14, 0, 1, -1.42109e-14, 0, 0, 1, 0.353553, -0.353553, 0)
+
+[node name="TrailPositionRightOuter" type="Marker3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D"]
+transform = Transform3D(1, 0, -1.42109e-14, 0, 1, -1.42109e-14, 0, 0, 1, 0.37, -0.37, 0)
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightOuter" instance=ExtResource("25_e1r3t")]
+
+[node name="Roll" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.137999, 0)
+visible = false
+
+[node name="Pivot" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll"]
+transform = Transform3D(-4.37114e-08, 1, -4.37114e-08, 0, -4.37114e-08, -1, -1, -4.37114e-08, 1.91069e-15, 0, 0, 0)
+
+[node name="TiltPivot" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot"]
+transform = Transform3D(1, 0, -2.68659e-16, 0, 1, 0, 2.68659e-16, 0, 1, 0, 0, 0.5)
+
+[node name="RollPivot" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/TiltPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/TiltPivot/RollPivot"]
+transform = Transform3D(1, 0, 2.68657e-16, 0, 1, 0, 2.68657e-16, 0, 1, 0, 0, 0)
+mesh = SubResource("SphereMesh_nmk1b")
+skeleton = NodePath("../../../..")
+surface_material_override/0 = ExtResource("9_evt60")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/TiltPivot/RollPivot/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, -8.35187e-23, 0, -8.35187e-23, 1, -2.11758e-22, -1.31134e-08, -0.3)
+mesh = SubResource("SphereMesh_gy4cb")
+surface_material_override/0 = ExtResource("10_kc8d0")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/TiltPivot/RollPivot/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, -8.35187e-23, 0, -8.35187e-23, 1, -2.11758e-22, 1.31134e-08, 0.3)
+mesh = SubResource("SphereMesh_gy4cb")
+surface_material_override/0 = ExtResource("10_kc8d0")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/TiltPivot/RollPivot/MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 1, -8.35187e-23, 0, -8.35187e-23, 1, -2.11758e-22, -9.25625e-30, 4.04603e-37)
+mesh = SubResource("SphereMesh_ogxjs")
+surface_material_override/0 = ExtResource("10_kc8d0")
+
+[node name="DodgeEffectTargetTransform" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot"]
+transform = Transform3D(-4.37114e-08, -1, 4.37114e-08, 1, -4.37114e-08, 4.37114e-08, -4.37114e-08, 4.37114e-08, 1, -0.5, -2.18557e-08, 0)
+
+[node name="RollParticlesRemoteTransform3D" type="RemoteTransform3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot"]
+transform = Transform3D(-4.37114e-08, -3.59989e-21, -1, 1, -4.37114e-08, -4.37114e-08, -4.37114e-08, -1, 1.91069e-15, -0.25, 1.03655e-08, 0.487136)
+remote_path = NodePath("../../../../../../Particles/RemoteTransformTargets/RollParticles")
+
+[node name="Ghost" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+visible = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Ghost"]
+mesh = SubResource("CapsuleMesh_abqj5")
+surface_material_override/0 = SubResource("ShaderMaterial_2bcth")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Ghost"]
+mesh = SubResource("CapsuleMesh_abqj5")
+surface_material_override/0 = SubResource("ShaderMaterial_pcplc")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/Ghost"]
+mesh = SubResource("CapsuleMesh_abqj5")
+surface_material_override/0 = SubResource("ShaderMaterial_mb5wl")
+
+[node name="StateMachine" parent="MeshAnchor/PhysicsStepInterpolator/Mesh" node_paths=PackedStringArray("initial_state") instance=ExtResource("13_m5ip5")]
+initial_state = NodePath("Idle")
+
+[node name="Bounce" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("9_uwrsl")
+spin_rate = 2.0
+mesh_root = NodePath("../../Glide")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Dive" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("9_uwrsl")
+turn_lerp_weight_xz = 0.01
+turn_lerp_weight_y = 0.01
+mesh_root = NodePath("../../Glide")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Dodge" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("roll_pivot", "tilt_pivot", "mesh_root")]
+script = ExtResource("16_e4pes")
+roll_pivot = NodePath("../../Roll/Pivot/TiltPivot/RollPivot")
+tilt_pivot = NodePath("../../Roll/Pivot/TiltPivot")
+mesh_root = NodePath("../../Roll")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="DoubleJump" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+turn_lerp_weight_min = 0.0
+turn_lerp_weight_max = 0.0
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Fall" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+turn_lerp_weight_min = 0.0
+turn_lerp_weight_max = 0.0
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Ghost" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("19_u63br")
+mesh_root = NodePath("../../Ghost")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Glide" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("9_uwrsl")
+mesh_root = NodePath("../../Glide")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Idle" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Jump" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+turn_lerp_weight_min = 0.0
+turn_lerp_weight_max = 0.0
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Roll" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("roll_pivot", "tilt_pivot", "mesh_root")]
+script = ExtResource("16_e4pes")
+roll_pivot = NodePath("../../Roll/Pivot/TiltPivot/RollPivot")
+tilt_pivot = NodePath("../../Roll/Pivot/TiltPivot")
+mesh_root = NodePath("../../Roll")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Run" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Sprint" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("17_n38px")
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="Swim" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine" node_paths=PackedStringArray("mesh_root")]
+script = ExtResource("10_vowrm")
+turn_lerp_weight_min = 1.0
+turn_lerp_weight_max = 3.0
+mesh_root = NodePath("../../SquashStretch/Default")
+_player_input_vector_resource = ExtResource("3_2i2xh")
+
+[node name="StateMachineSynchronizer" type="Node" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+script = ExtResource("11_mhki8")
+_state_machine_parent = NodePath("../../../../StateMachine")
+_state_machine_child = NodePath("../StateMachine")
+
+[node name="DoubleJumpEffectTargetTransform" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator/Mesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.625, 0)
+
+[node name="TransformResourceManager" parent="MeshAnchor/PhysicsStepInterpolator" instance=ExtResource("31_jeewe")]
+transform_resource = ExtResource("20_484wt")
+
+[node name="BlobShadow" parent="MeshAnchor/PhysicsStepInterpolator" instance=ExtResource("28_5hoqt")]
+
+[node name="WaterBlobShadowController" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator"]
+script = ExtResource("22_43yka")
+player_water_blob_shadow_enabled_resource = ExtResource("23_n53dm")
+
+[node name="RayCast3D" type="RayCast3D" parent="MeshAnchor/PhysicsStepInterpolator/WaterBlobShadowController"]
+target_position = Vector3(0, -1000, 0)
+collision_mask = 12
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/WaterBlobShadowController" instance=ExtResource("25_e1r3t")]
+
+[node name="GlideParticleController" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator" node_paths=PackedStringArray("glide_ground_particles", "glide_water_particles")]
+script = ExtResource("22_an67j")
+glide_ground_particles = NodePath("../../../Particles/RemoteTransformTargets/GlideGroundParticles")
+glide_water_particles = NodePath("../../../Particles/RemoteTransformTargets/GlideWaterParticles")
+player_state_resource = ExtResource("12")
+
+[node name="RayCast3D" type="RayCast3D" parent="MeshAnchor/PhysicsStepInterpolator/GlideParticleController"]
+collision_mask = 12
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/GlideParticleController" instance=ExtResource("25_e1r3t")]
+
+[node name="WaterMovementParticleController" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator" node_paths=PackedStringArray("water_movement_trail_particles", "water_movement_splash_particles")]
+script = ExtResource("22_c1lh1")
+water_movement_trail_particles = NodePath("../../../Particles/RemoteTransformTargets/WaterMovementTrailParticles")
+water_movement_splash_particles = NodePath("../../../Particles/RemoteTransformTargets/WaterMovementSplashParticles")
+player_state_resource = ExtResource("12")
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/WaterMovementParticleController" instance=ExtResource("25_e1r3t")]
+
+[node name="OneShotWaterSplashParticleController" type="Node3D" parent="MeshAnchor/PhysicsStepInterpolator"]
+script = ExtResource("24_7s8p3")
+player_state_resource = ExtResource("12")
+
+[node name="WaterDetector" parent="MeshAnchor/PhysicsStepInterpolator/OneShotWaterSplashParticleController" instance=ExtResource("25_e1r3t")]
+
+[node name="StateMachine" parent="." node_paths=PackedStringArray("initial_state") instance=ExtResource("13_m5ip5")]
+initial_state = NodePath("Idle")
+transition_frame = 1
+
+[node name="Bounce" type="Node" parent="StateMachine"]
+script = ExtResource("20_rvyx5")
+_sfx_resource = ExtResource("18_1l0sl")
+reset_double_jump = true
+gravity_scale = 0.6
+hover_force_downwards_enabled = false
+planar_movement_pid_p_gain_factor = 1.5
+planar_momentum_conservation_factor = 1.0
+
+[node name="StateEnterTimer" type="Timer" parent="StateMachine/Bounce"]
+wait_time = 0.1
+one_shot = true
+
+[node name="Dive" type="Node" parent="StateMachine"]
+script = ExtResource("22_4hscj")
+reset_double_jump = true
+gravity_scale = 0.0
+hover_force_downwards_enabled = false
+
+[node name="StateEnterTimer" type="Timer" parent="StateMachine/Dive"]
+wait_time = 0.5
+one_shot = true
+
+[node name="Dodge" type="Node" parent="StateMachine"]
+script = ExtResource("25_jjldq")
+reset_double_jump = true
+planar_momentum_conservation_factor = 1.0
+
+[node name="DodgeAccelerationTimer" type="Timer" parent="StateMachine/Dodge"]
+wait_time = 0.25
+one_shot = true
+
+[node name="DoubleJump" type="Node" parent="StateMachine"]
+script = ExtResource("23_oc5f6")
+gravity_scale = 0.667
+hover_force_downwards_enabled = false
+planar_movement_pid_p_gain_factor = 1.5
+planar_momentum_conservation_factor = 1.0
+
+[node name="StateEnterTimer" type="Timer" parent="StateMachine/DoubleJump"]
+wait_time = 0.1
+one_shot = true
+
+[node name="Fall" type="Node" parent="StateMachine"]
+script = ExtResource("23_pac4m")
+hover_force_downwards_enabled = false
+planar_movement_pid_p_gain_factor = 1.5
+planar_momentum_conservation_factor = 1.0
+
+[node name="Ghost" type="Node" parent="StateMachine"]
+script = ExtResource("34_04kqh")
+reset_double_jump = true
+gravity_scale = 0.0
+hover_force_downwards_enabled = false
+hover_force_upwards_enabled = false
+
+[node name="Glide" type="Node" parent="StateMachine"]
+script = ExtResource("24_p4auy")
+gravity_scale = 0.05
+hover_force_downwards_enabled = false
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("25_rhyuw")
+reset_double_jump = true
+
+[node name="Jump" type="Node" parent="StateMachine"]
+script = ExtResource("26_7ncmu")
+gravity_scale = 0.667
+hover_force_downwards_enabled = false
+planar_movement_pid_p_gain_factor = 1.5
+planar_momentum_conservation_factor = 1.0
+
+[node name="StateEnterTimer" type="Timer" parent="StateMachine/Jump"]
+wait_time = 0.1
+one_shot = true
+
+[node name="Roll" type="Node" parent="StateMachine"]
+script = ExtResource("28_rthcn")
+reset_double_jump = true
+planar_momentum_conservation_factor = 1.0
+
+[node name="Run" type="Node" parent="StateMachine"]
+script = ExtResource("27_mdmxu")
+reset_double_jump = true
+planar_movement_pid_p_gain_factor = 10.0
+
+[node name="Sprint" type="Node" parent="StateMachine"]
+script = ExtResource("32_hdfe3")
+reset_double_jump = true
+
+[node name="Swim" type="Node" parent="StateMachine"]
+script = ExtResource("28_tp61u")
+reset_double_jump = true
+gravity_scale = 0.5
+hover_force_downwards_enabled = false
+planar_movement_pid_p_gain_factor = 1.5
+
+[node name="StateEnterTimer" type="Timer" parent="StateMachine/Swim"]
+wait_time = 0.5
+one_shot = true
+
+[node name="StateResourceManager" parent="." instance=ExtResource("29_l8kw8")]
+_state_machine = NodePath("../StateMachine")
+state_resource = ExtResource("12")
+
+[node name="CoyoteTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true
+
+[node name="JumpBufferTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true
+
+[node name="TrailRenderers" type="Node" parent="."]
+
+[node name="GlideTrailRendererLeft" type="Node" parent="TrailRenderers" node_paths=PackedStringArray("trail_position_a", "trail_position_b", "_water_detector")]
+script = ExtResource("8")
+trail_position_a = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftInner")
+trail_position_b = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftOuter")
+_water_detector = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftOuter/WaterDetector")
+_environment_resource = ExtResource("24_hgnac")
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Bounce"), NodePath("../../StateMachine/Glide")])
+
+[node name="GlideTrailRendererRight" type="Node" parent="TrailRenderers" node_paths=PackedStringArray("trail_position_a", "trail_position_b", "_water_detector")]
+script = ExtResource("8")
+trail_position_a = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightInner")
+trail_position_b = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightOuter")
+_water_detector = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightOuter/WaterDetector")
+_environment_resource = ExtResource("24_hgnac")
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Bounce"), NodePath("../../StateMachine/Glide")])
+
+[node name="DiveTrailRendererLeft" type="Node" parent="TrailRenderers" node_paths=PackedStringArray("trail_position_a", "trail_position_b", "_water_detector")]
+script = ExtResource("8")
+trail_position_a = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftInner")
+trail_position_b = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftOuter")
+_water_detector = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionLeftOuter/WaterDetector")
+_environment_resource = ExtResource("24_hgnac")
+point_lifetime = 1.0
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Dive")])
+
+[node name="DiveTrailRendererRight" type="Node" parent="TrailRenderers" node_paths=PackedStringArray("trail_position_a", "trail_position_b", "_water_detector")]
+script = ExtResource("8")
+trail_position_a = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightInner")
+trail_position_b = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightOuter")
+_water_detector = NodePath("../../MeshAnchor/PhysicsStepInterpolator/Mesh/Glide/MeshInstance3D/MeshInstance3D/TrailPositionRightOuter/WaterDetector")
+_environment_resource = ExtResource("24_hgnac")
+point_lifetime = 1.0
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Dive")])
+
+[node name="AudioEffects" type="Node" parent="."]
+
+[node name="DiveLowpass" type="Node" parent="AudioEffects"]
+script = ExtResource("18_nptr4")
+audio_effect_dry = SubResource("AudioEffectLowPassFilter_xejwy")
+audio_effect_wet = SubResource("AudioEffectLowPassFilter_v0sjn")
+tween_duration = 0.25
+tween_type = 2
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Dive")])
+
+[node name="DiveReverb" type="Node" parent="AudioEffects"]
+script = ExtResource("18_nptr4")
+audio_effect_dry = SubResource("AudioEffectReverb_vxsdq")
+audio_effect_wet = SubResource("AudioEffectReverb_m7tgk")
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Dive")])
+
+[node name="GlideAmplifyBgmGlide" type="Node" parent="AudioEffects"]
+script = ExtResource("18_nptr4")
+audio_effect_dry = SubResource("AudioEffectAmplify_crae5")
+audio_effect_wet = SubResource("AudioEffectAmplify_a1p08")
+audio_bus_name = &"BgmGlide"
+tween_duration = 2.5
+tween_type = 1
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Bounce"), NodePath("../../StateMachine/Glide")])
+
+[node name="GlideAmplifyBgmRhythm" type="Node" parent="AudioEffects"]
+script = ExtResource("18_nptr4")
+audio_effect_dry = SubResource("AudioEffectAmplify_4ml5m")
+audio_effect_wet = SubResource("AudioEffectAmplify_wy87q")
+audio_bus_name = &"BgmRhythm"
+tween_duration = 2.5
+tween_type = 1
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Bounce"), NodePath("../../StateMachine/Glide"), NodePath("../../StateMachine/Roll"), NodePath("../../StateMachine/Sprint")])
+
+[node name="WaterDetector" parent="." instance=ExtResource("25_e1r3t")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4, 0)
+
+[node name="TransformResourceManager" parent="." instance=ExtResource("31_jeewe")]
+transform_resource = ExtResource("44_ojxtx")
+
+[node name="DoubleJumpVisualEffect" parent="." node_paths=PackedStringArray("target_transform") instance=ExtResource("39_qm0ev")]
+target_transform = NodePath("../MeshAnchor/PhysicsStepInterpolator/Mesh/DoubleJumpEffectTargetTransform")
+_target_states = Array[NodePath]([NodePath("../StateMachine/DoubleJump")])
+
+[node name="DodgeVisualEffect" parent="." node_paths=PackedStringArray("target_transform") instance=ExtResource("39_qm0ev")]
+target_transform = NodePath("../MeshAnchor/PhysicsStepInterpolator/Mesh/Roll/Pivot/DodgeEffectTargetTransform")
+_target_states = Array[NodePath]([NodePath("../MeshAnchor/PhysicsStepInterpolator/Mesh/StateMachine/Dodge")])
+
+[node name="Particles" type="Node" parent="."]
+
+[node name="WaterParticleColorSetter" type="Node" parent="Particles"]
+script = ExtResource("44_aqs1s")
+particle_material = ExtResource("45_xi4ar")
+environment_resource = ExtResource("24_hgnac")
+
+[node name="WindParticleColorSetter" type="Node" parent="Particles"]
+script = ExtResource("41_8igcd")
+particle_material = ExtResource("42_xipxd")
+environment_resource = ExtResource("24_hgnac")
+
+[node name="RemoteTransformTargets" type="Node" parent="Particles"]
+
+[node name="GlideGroundParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("46_3t1mj")]
+
+[node name="GlideWaterParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("46_waeco")]
+
+[node name="RollParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("47_qkkjb")]
+transform = Transform3D(1, 0, -8.35189e-23, 0, 1, -3.59989e-21, -8.35189e-23, 0, 1, -4.61853e-14, -0.625135, 0.25)
+
+[node name="BoolPropertyTransitionListener" type="Node" parent="Particles/RemoteTransformTargets/RollParticles" node_paths=PackedStringArray("target_node")]
+script = ExtResource("53_u2b6p")
+target_node = NodePath("..")
+property = &"emitting"
+_target_states = Array[NodePath]([NodePath("../../../../StateMachine/Dodge"), NodePath("../../../../StateMachine/Roll")])
+
+[node name="SprintParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("47_qkkjb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.625135, 0.25)
+
+[node name="BoolPropertyTransitionListener" type="Node" parent="Particles/RemoteTransformTargets/SprintParticles" node_paths=PackedStringArray("target_node")]
+script = ExtResource("53_u2b6p")
+target_node = NodePath("..")
+property = &"emitting"
+_target_states = Array[NodePath]([NodePath("../../../../StateMachine/Sprint")])
+
+[node name="WaterMovementTrailParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("52_vjux7")]
+
+[node name="WaterMovementSplashParticles" parent="Particles/RemoteTransformTargets" instance=ExtResource("53_3607o")]
+process_material = SubResource("ParticleProcessMaterial_yu01e")
+
+[node name="InteractionManager" parent="." instance=ExtResource("63_1mayy")]

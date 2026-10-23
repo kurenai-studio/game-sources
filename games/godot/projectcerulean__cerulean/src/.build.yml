@@ -1,0 +1,55 @@
+# Build manifest for sourcehut (https://builds.sr.ht/~gullik/cerulean)
+image: debian/bookworm
+
+environment:
+  COMMAND_TIMEOUT: 3600
+  IPFS_FILE_FETCH_TIMEOUT: 30
+  IPFS_FILE_FETCH_ATTEMPTS: 100
+  GODOT_VERSION: 4.3
+  GODOT_LINUX_64_ZIP_SHA512: fd52bb4ba8acc30ca5accd1c566d470ad7282f891ccc0995dfafabcf92bcf76280ce182bf9d80ebd885f3ed2165d01e1fc3f2928436b15498dfbd98656c2a45a
+  KUBO_VERSION: 0.32.1
+  KUBO_LINUX_64_TAR_GZ_SHA512: 36b2951de759710ad81f63f3ec3a75c72323be4c6599e737d7f27b437dce02ed0a1662d676137e98f2e88f0b96e41c4b46b2e1667d874f90e3a7ee437912fda4
+
+packages:
+- curl git make tar unzip
+
+sources:
+- https://git.sr.ht/~gullik/cerulean
+
+tasks:
+- download_kubo: |
+    timeout --verbose "${COMMAND_TIMEOUT}" curl --silent --remote-name --location "https://github.com/ipfs/kubo/releases/download/v${KUBO_VERSION}/kubo_v${KUBO_VERSION}_linux-amd64.tar.gz"
+    echo "${KUBO_LINUX_64_TAR_GZ_SHA512}  kubo_v${KUBO_VERSION}_linux-amd64.tar.gz" | sha512sum --check
+    tar -xvzf "kubo_v${KUBO_VERSION}_linux-amd64.tar.gz" kubo/ipfs
+    [ -x kubo/ipfs ]
+- sync_assets: |
+    timeout --verbose "${COMMAND_TIMEOUT}" kubo/ipfs daemon --init --init-profile server > /dev/null 2>&1 &
+    timeout --verbose "${COMMAND_TIMEOUT}" sh -c 'while ! kubo/ipfs swarm peers > /dev/null 2>&1; do sleep 1; done'
+    cd cerulean
+    for asset_file in $(find assets/ -type f); do success=0; for i in $(seq "${IPFS_FILE_FETCH_ATTEMPTS}"); do if timeout --verbose "${IPFS_FILE_FETCH_TIMEOUT}" ../kubo/ipfs cat "$(cat "${asset_file}")" > /dev/null; then success=1; break; fi; done; [ "${success}" = 1 ]; done
+    git config --local include.path ../.gitconfig
+    rm -rf assets
+    IPFS=../kubo/ipfs timeout --verbose "${COMMAND_TIMEOUT}" git reset --hard
+    kill "$!"
+- download_godot: |
+    timeout --verbose "${COMMAND_TIMEOUT}" curl --silent --remote-name --location "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+    echo "${GODOT_LINUX_64_ZIP_SHA512}  Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" | sha512sum --check
+    unzip "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" "Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+    [ -x "Godot_v${GODOT_VERSION}-stable_linux.x86_64" ]
+- set_version: |
+    cd cerulean
+    sed -i "s/const GIT_HASH: String = \"\"/const GIT_HASH: String = \"$(git rev-parse HEAD)\"/g" src/constants/version.gd
+- run_unit_tests: |
+    cd cerulean
+    timeout --verbose "${COMMAND_TIMEOUT}" sh -c "make GODOT=../Godot_v${GODOT_VERSION}-stable_linux.x86_64 check_scripts"
+    timeout --verbose "${COMMAND_TIMEOUT}" sh -c "make GODOT=../Godot_v${GODOT_VERSION}-stable_linux.x86_64 test"
+- export_game_pack: |
+    cd cerulean
+    timeout --verbose "${COMMAND_TIMEOUT}" sh -c "make GODOT=../Godot_v${GODOT_VERSION}-stable_linux.x86_64 cerulean.pck"
+    cd ..
+    mv cerulean/cerulean.pck .
+    sha512sum cerulean.pck | tee cerulean.pck.sha512
+
+artifacts:
+- cerulean.pck
+- cerulean.pck.sha512
