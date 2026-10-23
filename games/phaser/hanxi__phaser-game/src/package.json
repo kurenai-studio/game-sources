@@ -1,0 +1,22 @@
+{
+  "name": "my-phaser-game",
+  "version": "1.0.0",
+  "description": "A Phaser 3 Hello World game using Bun and TypeScript",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "bun build src/main.ts --outdir dist --target browser && cp -r public/* dist/ && cp index.html dist/",
+    "dev": "bun --watch build src/main.ts --outdir dist --target browser && cp -r public/* dist/ && cp index.html dist/",
+    "serve": "bun build src/main.ts --outdir dist --target browser && cp -r public/* dist/ && cp index.html dist/ && bunx serve dist -p 3000"
+  },
+  "keywords": ["phaser", "game", "typescript", "bun"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "skyext-client": "file:../../../sdk/ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.23",
+    "typescript": "^5.9.3"
+  }
+}
