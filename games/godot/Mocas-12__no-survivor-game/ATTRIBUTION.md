@@ -1,0 +1,14 @@
+# Attribution
+
+- **Name:** no-survivor-game
+- **Upstream:** https://github.com/Mocas-12/no-survivor-game
+- **License:** MIT
+- **Commit:** 90d872670f02e8a3e3ea7893002430225ab3d2f2
+- **Collected by:** a
+- **Collected at:** 2026-10-23T04:09:31-07:00
+- **Claim issue:** #1032
+
+## Upstream credits
+
+- Ships: Quaternius Ultimate Spaceships (CC0)
+- Font: ZCOOL KuaiLe (Google Fonts)
