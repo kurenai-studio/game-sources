@@ -1,0 +1,92 @@
+name: Get Environment
+description: Read environment variables from a file
+inputs:
+  env_file:
+    description: The environment variables file
+    required: true
+  backend_ip:
+    description: Highscore backend IP override
+    required: false
+    default: ''
+  backend_port:
+    description: Highscore backend port override
+    required: false
+    default: ''
+  backend_ip_https:
+    description: Highscore backend HTTPS IP override
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Inject backend secrets into product env
+      if: ${{ inputs.backend_ip != '' || inputs.backend_port != '' || inputs.backend_ip_https != '' }}
+      shell: bash
+      env:
+        ENV_FILE: ${{ inputs.env_file }}
+        BACKEND_IP_VAL: ${{ inputs.backend_ip }}
+        BACKEND_PORT_VAL: ${{ inputs.backend_port }}
+        BACKEND_IP_HTTPS_VAL: ${{ inputs.backend_ip_https }}
+      run: |
+        python3 -c '
+        import os, re
+        env_file = os.environ.get("ENV_FILE")
+        ip = os.environ.get("BACKEND_IP_VAL", "").strip()
+        port = os.environ.get("BACKEND_PORT_VAL", "").strip()
+        https = os.environ.get("BACKEND_IP_HTTPS_VAL", "").strip()
+
+        if env_file and os.path.exists(env_file):
+            with open(env_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            new_lines = []
+            replaced_ip = False
+            replaced_port = False
+            replaced_https = False
+            for line in lines:
+                if ip and re.match(r"^\s*BACKEND_IP\s*=", line):
+                    new_lines.append(f"BACKEND_IP=\"{ip}\"\n")
+                    replaced_ip = True
+                elif port and re.match(r"^\s*BACKEND_PORT\s*=", line):
+                    new_lines.append(f"BACKEND_PORT=\"{port}\"\n")
+                    replaced_port = True
+                elif https and re.match(r"^\s*BACKEND_IP_HTTPS\s*=", line):
+                    new_lines.append(f"BACKEND_IP_HTTPS=\"{https}\"\n")
+                    replaced_https = True
+                else:
+                    new_lines.append(line)
+            if ip and not replaced_ip:
+                new_lines.append(f"BACKEND_IP=\"{ip}\"\n")
+            if port and not replaced_port:
+                new_lines.append(f"BACKEND_PORT=\"{port}\"\n")
+            if https and not replaced_https:
+                new_lines.append(f"BACKEND_IP_HTTPS=\"{https}\"\n")
+            with open(env_file, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+        '
+
+    - name: Get environment variables
+      shell: bash
+      run: |
+        while IFS= read -r line; do
+          # Skip empty lines and comments
+          if [ -z "$line" ] || [[ $line =~ ^[[:space:]]*# ]]; then
+            continue
+          fi
+          # Remove leading/trailing quotes if present
+          cleaned_line=${line//\"/}
+          echo "${cleaned_line}" >> $GITHUB_ENV
+          if [ "${cleaned_line}" == "AUDIO_MIC=true" ]; then
+            echo "ANDROID_RECORD=Record" >> $GITHUB_ENV
+          fi
+          if [ "${cleaned_line}" == "AUDIO_MIC=false" ]; then
+            echo "ANDROID_RECORD=NoRecord" >> $GITHUB_ENV
+          fi
+
+          # Convert PRODUCT_NAME to formats suitable for use a filenames
+          if [[ "${cleaned_line}" =~ ^PRODUCT_NAME= ]]; then
+            product_value=${cleaned_line#PRODUCT_NAME=}
+            echo "PRODUCT_FILE=$(echo ${product_value} | tr ' ' '-')" >> $GITHUB_ENV
+            echo "ITCH_GAME=$(echo ${product_value} | tr ' ' '-' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          fi
+        done < ${{ inputs.env_file }}

@@ -1,0 +1,111 @@
+local Parallax = {}
+
+local AllColors = require("colors")
+local Settings = require("settings")
+
+local colors = {
+  periwinkle_mist = AllColors.periwinkle_mist,
+  skyline_azure = AllColors.skyline_azure,
+  royal_sapphire = AllColors.royal_sapphire,
+  midnight_harbor = AllColors.midnight_harbor,
+}
+
+local color_names = {}
+for name, _ in pairs(colors) do
+  table.insert(color_names, name)
+end
+
+local function get_random_color()
+  local random_index = math.random(#color_names)
+  local random_name = color_names[random_index]
+  return colors[random_name]
+end
+
+local layers = {}
+local num_layers = 4
+local paused = false
+local background_color = AllColors.dark_blue
+local star_colors = { get_random_color() }
+
+function Parallax.set_colors(bg, stars)
+  background_color = bg
+  star_colors = stars
+end
+
+local function get_random_color(colors_table)
+  local colors_to_use = colors_table or star_colors
+  if #colors_to_use == 0 then
+    return get_random_color(colors)
+  end
+  return colors_to_use[math.random(#colors_to_use)]
+end
+
+function Parallax.pause()
+  paused = true
+end
+
+function Parallax.resume()
+  paused = false
+end
+
+function Parallax.load(bg_color, stars)
+  if bg_color and stars then
+    Parallax.set_colors(bg_color, stars)
+  end
+  layers = {}
+  for i = 1, num_layers do
+    local stars_in_layer = math.random(50, 100)
+    -- Calculate base size and apply DPI scaling compensation for mobile
+    local base_size = 1 + (i / num_layers) * 3
+    local mobile_scale_compensation = Settings.IS_MOBILE and (1 / math.max(1, Settings.DPI_SCALE * 3)) or 1
+    local final_size = base_size * mobile_scale_compensation
+
+    layers[i] = {
+      stars = {},
+      -- Deeper layers move slower, closer layers are faster
+      speed = i * 15 + 5,
+      -- Closer layers have bigger stars, scaled appropriately for mobile
+      size = final_size,
+    }
+    for _ = 1, stars_in_layer do
+      table.insert(layers[i].stars, {
+        x = math.random(love.graphics.getWidth()),
+        y = math.random(love.graphics.getHeight()),
+        -- Use different colors for different layers to enhance depth
+        color = get_random_color(),
+      })
+    end
+  end
+end
+
+function Parallax.update(dt, game_state)
+  if paused or game_state == "gameOver" or game_state == "levelCompleted" or game_state == "help" then
+    return
+  end
+  for _, layer in ipairs(layers) do
+    for _, star in ipairs(layer.stars) do
+      star.y = star.y + layer.speed * dt
+      if star.y > love.graphics.getHeight() then
+        star.y = 0
+        star.x = math.random(love.graphics.getWidth())
+      end
+    end
+  end
+end
+
+function Parallax.draw()
+  love.graphics.setBackgroundColor(background_color)
+  for _, layer in ipairs(layers) do
+    for _, star in ipairs(layer.stars) do
+      if star.color then
+        love.graphics.setColor(star.color, star.color, star.color)
+        -- Using rectangles for square pixels, with variable size
+        love.graphics.rectangle("fill", star.x, star.y, layer.size, layer.size)
+      end
+    end
+  end
+  -- Reset color to white after drawing the parallax background
+  love.graphics.setColor(1, 1, 1)
+end
+
+return Parallax
