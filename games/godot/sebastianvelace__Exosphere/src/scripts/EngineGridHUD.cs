@@ -1,0 +1,208 @@
+namespace Exosphere.Game;
+
+using Godot;
+using Exosphere.Simulation.Presentation;
+using Exosphere.Simulation.Parts;
+using Exosphere.Simulation.Propulsion;
+
+// ── Engine grid (left of navball) ───────────────────────────────────────────
+// Positioned by HUDController as a child of AttitudeNavball — local Position,
+// not viewport anchors (CenterBottom+HBox was leaving Size at 0 for some boots).
+public partial class EngineGridHUD : Control
+{
+    private const double TelemetryUpdatePeriodSeconds = 0.10;
+
+    public const float BoardWidth = 120f;
+    public const float BoardHeightCompact = 124f;
+    public const float BoardHeightFull = 210f;
+
+    private static readonly Color DotOff      = InterfaceTheme.Track;
+    private static readonly Color DotOn       = new(0.72f, 0.74f, 0.76f, 1f);
+    private static readonly Color DotOnHot    = InterfaceTheme.Text;
+    private static readonly Color LabelDim    = InterfaceTheme.TextMuted;
+    private static readonly Color ValueBright = InterfaceTheme.Text;
+    private static readonly Color Accent      = InterfaceTheme.TextMuted;
+
+    private Font _labelFont = null!;
+    private Font _valueFont = null!;
+    private StyleBoxFlat _panelStyle = null!;
+    private bool _showReadouts;
+
+    private int    _litEngines;
+    private int    _nominalEngines = 1;
+    private int    _failedEngines;
+    private readonly List<int> _boardRings = new();
+    private double _throttle;
+    private double _thrustKN;
+    private double _twr;
+    private double _ispEff;
+    private double _massFlow;
+    private bool   _twrValid;
+    private readonly List<EngineReadout> _readoutScratch = new();
+    private int _drawEngineIndex;
+    private double _telemetryAccumulator = double.MaxValue;
+
+    public override void _Ready()
+    {
+        _labelFont = InterfaceTheme.LabelFont;
+        _valueFont = InterfaceTheme.MonoFont;
+        _panelStyle = InterfaceTheme.PanelStyle(0.92f, 0, 0);
+        MouseFilter = MouseFilterEnum.Ignore;
+        ClipContents = false;
+        ApplyDensityLayout(force: true);
+    }
+
+    public void ApplyDensityLayout(bool force = false)
+    {
+        bool showReadouts = UserInterfaceSettings.HudDensity == HudDensity.Full;
+        if (!force && showReadouts == _showReadouts && Size.X >= 8f)
+            return;
+
+        _showReadouts = showReadouts;
+        float height = _showReadouts ? BoardHeightFull : BoardHeightCompact;
+        CustomMinimumSize = new Vector2(BoardWidth, height);
+        Size = new Vector2(BoardWidth, height);
+        QueueRedraw();
+    }
+
+    public override void _Process(double delta)
+    {
+        ApplyDensityLayout();
+        if (Size.X < 8f || Size.Y < 8f)
+            Size = CustomMinimumSize;
+
+        _telemetryAccumulator += System.Math.Max(0.0, delta);
+        if (_telemetryAccumulator < TelemetryUpdatePeriodSeconds)
+            return;
+        _telemetryAccumulator = 0.0;
+
+        var vessel = SimulationBridge.Instance?.ActiveVessel;
+        var universe = SimulationBridge.Instance?.Universe;
+        if (vessel == null || universe == null)
+            return;
+
+        var body = universe.GetDominantBody(vessel.Position);
+        _throttle = vessel.Throttle;
+        vessel.FillEngineReadouts(body, _readoutScratch, out var telemetry);
+        int declaredNominal = System.Math.Max(1, telemetry.NominalEngineCount);
+        bool hasOneRowPerEngine = telemetry.ReadoutEngineCount == declaredNominal;
+        _nominalEngines = hasOneRowPerEngine
+            ? telemetry.ReadoutEngineCount
+            : declaredNominal;
+        _litEngines = hasOneRowPerEngine
+            ? EngineHudPresentation.CountDelivered(_readoutScratch)
+            : System.Math.Clamp(vessel.ActiveEngineCount, 0, System.Math.Max(1, _nominalEngines));
+        _failedEngines = hasOneRowPerEngine
+            ? EngineHudPresentation.CountFailures(_readoutScratch)
+            : 0;
+
+        double thrustN = telemetry.ThrustN;
+        _thrustKN = thrustN / 1000.0;
+        _massFlow = telemetry.MassFlowKgS / 1000.0;
+        _ispEff   = telemetry.EffectiveIspSeconds;
+        double localWeight = vessel.GetWeightNewtons(body);
+        _twrValid = localWeight > 0 && thrustN > 0;
+        _twr = _twrValid ? thrustN / localWeight : 0;
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        var size = Size.X >= 8f ? Size : CustomMinimumSize;
+        if (size.X < 8f || size.Y < 8f) return;
+
+        DrawStyleBox(_panelStyle, new Rect2(Vector2.Zero, size));
+        DrawString(_labelFont, new Vector2(10, 16), "ENGINES",
+            HorizontalAlignment.Left, -1, 11, Accent);
+        DrawRect(new Rect2(10f, 22f, size.X - 20f, 1f), InterfaceTheme.Edge);
+        if (_failedEngines > 0)
+            DrawString(_valueFont, new Vector2(size.X - 43f, 16), $"FAIL {_failedEngines}",
+                HorizontalAlignment.Left, -1, 8, InterfaceTheme.Alert);
+
+        float cx = size.X * 0.5f;
+        float cy = 66f;
+        int litRemaining = _litEngines;
+        _drawEngineIndex = 0;
+        EngineHudPresentation.FillBoardRings(_nominalEngines, _boardRings);
+        int ringCount = _boardRings.Count;
+        for (int i = 0; i < ringCount; i++)
+        {
+            float radius = RingRadius(i, ringCount, _nominalEngines);
+            litRemaining = DrawRing(cx, cy, radius, _boardRings[i], litRemaining);
+        }
+
+        string centre = $"{_litEngines}/{_nominalEngines}";
+        var cw = _valueFont.GetStringSize(centre, HorizontalAlignment.Center, -1, 12);
+        DrawString(_valueFont, new Vector2(cx - cw.X * 0.5f, cy + 4), centre,
+            HorizontalAlignment.Left, -1, 12,
+            _litEngines > 0 ? DotOnHot : LabelDim);
+
+        if (!_showReadouts) return;
+        float ry = 122f;
+        ry = DrawReadout(10, ry, "THRUST", $"{_thrustKN:N0} kN", ValueBright);
+        ry = DrawReadout(10, ry, "TWR",
+            _twrValid ? $"{_twr:F2}" : "—",
+            _twrValid ? (_twr >= 1.0 ? ValueBright : InterfaceTheme.Alert) : LabelDim);
+        ry = DrawReadout(10, ry, "ISP",
+            _ispEff > 0 ? $"{_ispEff:F0} s" : "—", ValueBright);
+        DrawReadout(10, ry, "FLOW",
+            _massFlow > 0.001 ? $"{_massFlow:F2} t/s" : "—", ValueBright);
+    }
+
+    private static float RingRadius(int ringIndex, int ringCount, int nominalEngines)
+    {
+        if (nominalEngines == EngineHudPresentation.SuperHeavyTemplateCount)
+            return ringIndex switch { 0 => 40f, 1 => 26f, _ => 11f };
+
+        if (ringCount <= 1) return 26f;
+        float t = ringCount == 1 ? 1f : 1f - ringIndex / (float)(ringCount - 1);
+        return Mathf.Lerp(11f, 40f, t);
+    }
+
+    private int DrawRing(float cx, float cy, float radius, int count, int lit)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            double a = -System.Math.PI / 2.0 + i * (2.0 * System.Math.PI / count);
+            var p = new Vector2(cx + radius * (float)System.Math.Cos(a),
+                                cy + radius * (float)System.Math.Sin(a));
+            bool on = lit > 0;
+            EngineHudIndicatorState indicator = EngineHudIndicatorState.Off;
+            double throttle = _throttle;
+            if (_readoutScratch.Count == _nominalEngines)
+            {
+                var readout = _readoutScratch[_drawEngineIndex];
+                throttle = readout.Throttle;
+                indicator = EngineHudPresentation.Classify(readout);
+                on = EngineHudPresentation.IsDelivered(readout);
+            }
+            else if (on)
+            {
+                lit--;
+            }
+            _drawEngineIndex++;
+            Color c = indicator == EngineHudIndicatorState.Failed
+                ? InterfaceTheme.Alert
+                : indicator == EngineHudIndicatorState.Starting
+                    ? InterfaceTheme.Warning
+                : on
+                    ? (throttle >= 0.85 ? DotOnHot : DotOn)
+                    : DotOff;
+            DrawCircle(p, 2.8f, c);
+            if (on || indicator == EngineHudIndicatorState.Failed)
+                DrawArc(p, 3.8f, 0, Mathf.Tau, 12, new Color(c, 0.35f), 1.2f, true);
+        }
+        return lit;
+    }
+
+    private float DrawReadout(float x, float y, string label, string value, Color valCol)
+    {
+        float width = Size.X >= 8f ? Size.X : CustomMinimumSize.X;
+        DrawString(_labelFont, new Vector2(x, y), label,
+            HorizontalAlignment.Left, -1, 11, LabelDim);
+        var vw = _valueFont.GetStringSize(value, HorizontalAlignment.Right, -1, 12);
+        DrawString(_valueFont, new Vector2(width - 10 - vw.X, y), value,
+            HorizontalAlignment.Left, -1, 12, valCol);
+        return y + 18f;
+    }
+}

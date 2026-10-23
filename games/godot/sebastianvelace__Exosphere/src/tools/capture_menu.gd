@@ -1,0 +1,360 @@
+extends SceneTree
+
+var menu: Control
+var initiating_action: Button
+
+func _initialize() -> void:
+	call_deferred("_capture")
+
+func _capture() -> void:
+	menu = (load("res://scenes/ui/MainMenu.tscn") as PackedScene).instantiate()
+	root.add_child(menu)
+	current_scene = menu
+	for _frame in range(12 if OS.get_environment("CAPTURE_FLIGHT_HUD") == "1" else 45):
+		await process_frame
+	var mode := OS.get_environment("CAPTURE_MENU_MODAL").to_lower()
+	var labels := {
+		"campaign": ["HISTORICAL CAMPAIGN", "CAMPAÑA HISTÓRICA"],
+		"vehicles": ["FREE FLIGHT", "VUELO LIBRE"],
+		"vehicle": ["FREE FLIGHT", "VUELO LIBRE"],
+		"launch": ["FREE FLIGHT", "VUELO LIBRE"],
+		"mission": ["HISTORICAL CAMPAIGN", "CAMPAÑA HISTÓRICA"],
+		"missionlaunch": ["HISTORICAL CAMPAIGN", "CAMPAÑA HISTÓRICA"],
+		"partial": ["HISTORICAL CAMPAIGN", "CAMPAÑA HISTÓRICA"],
+		"vab": ["VEHICLE ASSEMBLY", "ENSAMBLAJE DE VEHÍCULOS"],
+		"flight14": ["EXPLORE FLIGHT 14", "EXPLORAR VUELO 14"],
+		"flight14launch": ["EXPLORE FLIGHT 14", "EXPLORAR VUELO 14"],
+		"settings": ["SETTINGS", "AJUSTES"],
+		"graphics": ["SETTINGS", "AJUSTES"],
+		"continue": ["CONTINUE", "CONTINUAR"],
+	}
+	if labels.has(mode):
+		if not _press(labels[mode]): return
+		await process_frame
+		if mode == "graphics":
+			if not await _check_graphics(): return
+		if mode in ["vehicle", "launch"]:
+			var variant := OS.get_environment("CAPTURE_MENU_VEHICLE")
+			if variant.is_empty(): variant = "starship-flight-12-v3-2026-05-22"
+			var selected := menu.find_child(variant, true, false) as Button
+			if selected == null:
+				_fail("Vehicle missing: " + variant)
+				return
+			selected.emit_signal("pressed")
+			await process_frame
+		if mode in ["mission", "missionlaunch", "partial"]:
+			if not _press(["05  APOLLO 11"] if mode == "partial" else ["01  FREEDOM"]): return
+			await process_frame
+		if mode in ["launch", "missionlaunch", "flight14launch"]:
+			var start_labels := ["START EXPLORATION", "INICIAR EXPLORACIÓN"] if mode == "flight14launch" else (["START MISSION", "INICIAR MISIÓN"] if mode == "missionlaunch" else ["LAUNCH VEHICLE", "LANZAR VEHÍCULO"])
+			if not _press(start_labels): return
+			for _frame in range(24 if OS.get_environment("CAPTURE_FLIGHT_HUD") == "1" or mode == "flight14launch" else 90): await process_frame
+			if not root.has_node("Flight"):
+				_fail("Selected vehicle did not open Flight")
+				return
+			print("MENU_LAUNCH_OK selected_vehicle=" + OS.get_environment("CAPTURE_MENU_VEHICLE"))
+			if mode == "flight14launch":
+				await _explore_flight14()
+				return
+			if OS.get_environment("CAPTURE_FLIGHT_HUD") == "1":
+				await _capture_flight_hud()
+				return
+	for _frame in range(45): await process_frame
+	if mode not in ["launch", "missionlaunch", "flight14launch", "vab"]:
+		if not _validate_layout(mode): return
+		if mode == "flight14":
+			var launch := _find_button(menu, ["START EXPLORATION", "INICIAR EXPLORACIÓN"])
+			if launch == null or launch.disabled:
+				_fail("Flight 14 exploration route is unavailable")
+				return
+		if mode == "continue":
+			if _find_button(menu.get_node("MenuModal"), ["ALPHA"]) == null or _find_button(menu.get_node("MenuModal"), ["ZULU"]) == null:
+				_fail("Continue did not offer both save slots")
+				return
+			print("MENU_CONTINUE_CHOICE_OK")
+		if mode == "vehicles":
+			var count := 0
+			for button in _buttons(menu):
+				if button.name.to_lower().contains("202") or button.name.to_lower().contains("196"):
+					count += 1
+			if count != 10:
+				_fail("Expected 10 launch vehicles; got %d" % count)
+				return
+			print("MENU_CATALOG_OK launchers=10")
+	if mode == "vab":
+		if current_scene == null or current_scene.scene_file_path != "res://scenes/construction/Construction.tscn":
+			_fail("Assembly action did not open Construction")
+			return
+		print("MENU_VAB_OK")
+	var output := OS.get_environment("CAPTURE_MENU_OUTPUT")
+	if output.is_empty(): output = "/tmp/exosphere_menu.png"
+	var error := root.get_viewport().get_texture().get_image().save_png(output)
+	if error != OK:
+		_fail("Could not save menu capture: " + output)
+		return
+	print("MENU_CAPTURE path=%s width=%d height=%d mode=%s" % [output, root.size.x, root.size.y, mode])
+	if mode.is_empty():
+		for button in _buttons(menu):
+			if button.disabled: continue
+			var ancestor := button.get_parent()
+			var home_scroll: ScrollContainer
+			while ancestor != null:
+				if ancestor is ScrollContainer: home_scroll = ancestor
+				ancestor = ancestor.get_parent()
+			if home_scroll == null: continue
+			button.grab_focus()
+			for _frame in range(4): await process_frame
+			if root.gui_get_focus_owner() != button or not home_scroll.get_global_rect().grow(1).encloses(button.get_global_rect()):
+				_fail("Keyboard cannot reveal action: " + button.text)
+				return
+		print("MENU_HOME_FOCUS_OK")
+	if mode not in ["launch", "missionlaunch", "vab"] and menu.has_node("MenuModal"):
+		var escape := InputEventKey.new()
+		escape.keycode = KEY_ESCAPE
+		escape.pressed = true
+		Input.parse_input_event(escape)
+		for _frame in range(3): await process_frame
+		escape.pressed = false
+		Input.parse_input_event(escape)
+		if menu.has_node("MenuModal") or root.gui_get_focus_owner() != initiating_action:
+			_fail("Escape did not close dialog and restore initiating focus")
+			return
+		print("MENU_BACK_OK")
+	quit()
+
+func _check_graphics() -> bool:
+	var initial_scale := root.content_scale_factor
+	var initial_size := root.size
+	# Exercise the real preference control; never write the config in this process.
+	for expected in [0.75, 1.0]:
+		var button := menu.find_child("GraphicsPreset", true, false) as Button
+		if button == null:
+			_fail("Graphics preference action missing")
+			return false
+		button.emit_signal("pressed")
+		for _frame in range(6): await process_frame
+		var current_button := menu.find_child("GraphicsPreset", true, false) as Button
+		if root.gui_get_focus_owner() != current_button:
+			_fail("Keyboard focus did not stay on the graphics preference")
+			return false
+		if not is_equal_approx(root.scaling_3d_scale, expected):
+			_fail("Graphics choice did not apply the 3D resolution")
+			return false
+		if root.content_scale_factor != initial_scale or root.size != initial_size:
+			_fail("3D graphics preset changed the UI resolution or scale")
+			return false
+		if root.msaa_3d != (Viewport.MSAA_DISABLED if expected < 1.0 else Viewport.MSAA_2X):
+			_fail("Graphics choice did not restore antialiasing")
+			return false
+		if not _validate_layout("graphics"): return false
+		if expected < 1.0:
+			var path := OS.get_environment("CAPTURE_MENU_OUTPUT").get_basename() + "-integrated.png"
+			if root.get_texture().get_image().save_png(path) != OK:
+				_fail("Graphics settings capture failed")
+				return false
+	var config := ConfigFile.new()
+	if config.load("user://graphics.cfg") != OK or config.get_value("graphics", "preset", -1) != 2:
+		_fail("Quality preference was not saved by the menu")
+		return false
+	print("GRAPHICS_SETTINGS_OK profile_cycle=integrated,quality ui_unchanged=true saved_quality=true")
+	return true
+
+func _validate_layout(mode: String) -> bool:
+	var viewport_rect := Rect2(Vector2.ZERO, root.get_visible_rect().size)
+	var modal := menu.get_node_or_null("MenuModal") as Control
+	if not mode.is_empty() and modal == null:
+		_fail("Menu route failed: " + mode)
+		return false
+	for button in _buttons(menu):
+		if not button.is_visible_in_tree(): continue
+		if modal != null and not modal.is_ancestor_of(button):
+			if button.focus_mode != Control.FOCUS_NONE:
+				_fail("Background retained keyboard focus under modal")
+				return false
+			continue
+		# Scrolled content can extend below the viewport; its enclosing scroll must fit.
+		var ancestor := button.get_parent()
+		var scroll: ScrollContainer
+		while ancestor != null:
+			if ancestor is ScrollContainer: scroll = ancestor
+			ancestor = ancestor.get_parent()
+		var bounds := scroll.get_global_rect() if scroll != null else button.get_global_rect()
+		if not viewport_rect.grow(1).encloses(bounds):
+			_fail("Control exceeds viewport: " + str(button.get_path()) + " " + str(bounds))
+			return false
+	if modal != null:
+		# Closing must return focus to the initiating action, and reopen cleanly.
+		var close := _find_button(modal, ["CLOSE", "CERRAR"])
+		if close == null:
+			_fail("Missing accessible close action")
+			return false
+	print("MENU_LAYOUT_OK logical_viewport=%s mode=%s" % [viewport_rect.size, mode])
+	return true
+
+func _press(labels: Array) -> bool:
+	var button := _find_button(menu, labels)
+	if button == null or button.disabled:
+		_fail("Missing usable menu action: " + str(labels))
+		return false
+	button.grab_focus()
+	if not menu.has_node("MenuModal"): initiating_action = button
+	button.emit_signal("pressed")
+	return true
+
+func _buttons(node: Node) -> Array[Button]:
+	var result: Array[Button] = []
+	if node is Button: result.append(node as Button)
+	for child in node.get_children(): result.append_array(_buttons(child))
+	return result
+
+func _find_button(node: Node, labels: Array) -> Button:
+	for button in _buttons(node):
+		for label in labels:
+			if button.text.to_upper().begins_with(label): return button
+	return null
+
+func _fail(message: String) -> void:
+	push_error(message)
+	quit(1)
+
+# Exercise the production HUD through the same menu route and keyboard commands
+# as a player. Check actual bounds/visibility before accepting any screenshot.
+func _capture_flight_hud() -> void:
+	var flight := root.get_node("Flight")
+	var hud := flight.get_node("UI/HUDController")
+	hud.call("DismissPadHelp")
+	var band := hud.get_node("FlightBroadcastHUD") as Control
+	print("FLIGHT_INSTRUMENTS " + JSON.stringify(band.call("GetInstrumentState")))
+	var output := OS.get_environment("CAPTURE_MENU_OUTPUT").get_base_dir()
+	DirAccess.make_dir_recursive_absolute(output)
+	for case in ["minimal", "full", "clean", "restored", "cockpit", "exterior", "map", "return"]:
+		if case in ["full", "clean", "restored"]: _key(KEY_F3)
+		if case == "cockpit": flight.get_node("CameraController").call("EnterCockpitView")
+		if case == "exterior": _key(KEY_C)
+		if case in ["map", "return"]: _key(KEY_M)
+		for _frame in range(6): await process_frame
+		var expected: bool = case in ["minimal", "full", "restored", "exterior", "return"]
+		if band.is_visible_in_tree() != expected:
+			_fail("Broadcast visibility incorrect: " + case)
+			return
+		if expected:
+			var bounds := band.get_global_rect()
+			var viewport := Rect2(Vector2.ZERO, root.get_visible_rect().size)
+			if bounds.size.x < viewport.size.x - 1 or bounds.size.y < 60 or not viewport.grow(1).encloses(bounds):
+				_fail("Broadcast band outside viewport or collapsed: " + str(bounds))
+				return
+		var path := output.path_join("hud-" + case + ".png")
+		if root.get_texture().get_image().save_png(path) != OK:
+			_fail("HUD capture failed: " + path)
+			return
+		print("FLIGHT_HUD_OK case=%s visible=%s bounds=%s" % [case, expected, band.get_global_rect()])
+	# Presentation fixture: mechanical staging on the pad, not a powered ascent claim.
+	var initial: Dictionary = band.call("GetInstrumentState")
+	for _stage in range(int(initial["stage_count"]) - 1):
+		_key(KEY_SPACE)
+		for _frame in range(6): await process_frame
+		var staged: Dictionary = band.call("GetInstrumentState")
+		print("FLIGHT_STAGE_INSTRUMENTS " + JSON.stringify(staged))
+		var path := output.path_join("hud-stage-%d.png" % (_stage + 2))
+		if root.get_texture().get_image().save_png(path) != OK:
+			_fail("Staged HUD capture failed: " + path)
+			return
+	print("MENU_CAPTURE flight_hud_matrix=8")
+	quit()
+
+func _key(code: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	Input.parse_input_event(event)
+	var release := event.duplicate() as InputEventKey
+	release.pressed = false
+	Input.parse_input_event(release)
+
+func _explore_flight14() -> void:
+	var bridge := root.find_child("SimulationBridge", true, false)
+	if bridge == null or not bridge.has_method("GetFlight14ExplorationSnapshot"):
+		_fail("Flight 14 preview did not initialize")
+		return
+	var first: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+	if first.is_empty() or first["vessels"] != 1 or first["blocked"] != "":
+		_fail("Invalid loaded Flight 14 preview: " + str(first))
+		return
+	print("FLIGHT14_PREVIEW_STARTED " + JSON.stringify(first))
+	var target_met := float(OS.get_environment("CAPTURE_FLIGHT14_MET"))
+	if target_met <= 0: target_met = 8
+	bridge.call("SetWarpIndex", 7)
+	var previous := ""
+	var render_sparse := OS.get_environment("CAPTURE_FLIGHT14_SPARSE_RENDER") == "1"
+	if render_sparse: RenderingServer.set_render_loop_enabled(false)
+	var next_progress := 300.0
+	while true:
+		await process_frame
+		var state: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+		if state["phase"] != previous or state["met"] >= next_progress:
+			previous = state["phase"]
+			next_progress = float(state["met"]) + 300
+			print("FLIGHT14_PREVIEW_PROGRESS " + JSON.stringify(state))
+		if state["blocked"] != "":
+			_fail("Flight 14 preview blocked: " + str(state))
+			return
+		if state["terminal"] or state["met"] >= target_met:
+			bridge.call("SetWarpIndex", 0)
+			if render_sparse: RenderingServer.set_render_loop_enabled(true)
+			var pause := _find_button(root.get_node("Flight"), ["PAUSE"])
+			if not state["terminal"]:
+				if pause == null: _fail("Preview pause button missing"); return
+				pause.emit_signal("pressed")
+			for _frame in range(8): await process_frame
+			var paused: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+			if abs(float(paused["met"]) - float(state["met"])) > 0.021:
+				_fail("Preview advanced after pause or terminal boundary")
+				return
+			if paused["rendered_vessels"] != paused["vessels"]:
+				_fail("Detached payload/booster renderers missing")
+				return
+			var output := OS.get_environment("CAPTURE_MENU_OUTPUT")
+			if output.is_empty(): output = "/tmp/exosphere_flight14_preview.png"
+			if root.get_texture().get_image().save_png(output) != OK:
+				_fail("Preview capture failed"); return
+			print("FLIGHT14_PREVIEW_OK " + JSON.stringify(paused) + " path=" + output)
+			if not state["terminal"] and target_met <= 20:
+				for keycode in [KEY_W, KEY_Z, KEY_SPACE, KEY_T, KEY_L, KEY_O, KEY_R, KEY_F5, KEY_F9]:
+					var event := InputEventKey.new()
+					event.keycode = keycode
+					event.physical_keycode = keycode
+					event.pressed = true
+					Input.parse_input_event(event)
+					await process_frame
+					event.pressed = false
+					Input.parse_input_event(event)
+					await process_frame
+				var unchanged: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+				for field in ["met", "altitude", "mass", "ship_id", "throttle", "command_x", "command_y", "command_z"]:
+					if unchanged[field] != paused[field]:
+						_fail("Manual/free-flight input changed automatic preview: " + field)
+						return
+				var resume := _find_button(root.get_node("Flight"), ["RESUME"])
+				if resume == null: _fail("Resume missing"); return
+				resume.emit_signal("pressed")
+				for _frame in range(8): await process_frame
+				var resumed: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+				if resumed["paused"] or resumed["met"] <= paused["met"]:
+					_fail("Resume did not advance physics"); return
+				var restart := _find_button(root.get_node("Flight"), ["RESTART"])
+				if restart == null: _fail("Restart missing"); return
+				restart.emit_signal("pressed")
+				for _frame in range(12): await process_frame
+				bridge = root.find_child("SimulationBridge", true, false)
+				var restarted: Dictionary = bridge.call("GetFlight14ExplorationSnapshot")
+				if restarted.is_empty() or restarted["ship_id"] == paused["ship_id"] or restarted["payloads"] != 0:
+					_fail("Restart did not create a fresh loaded pad mission"); return
+				var back := _find_button(root.get_node("Flight"), ["MENU"])
+				if back == null: _fail("Menu missing"); return
+				back.emit_signal("pressed")
+				for _frame in range(4): await process_frame
+				if current_scene.scene_file_path != "res://scenes/ui/MainMenu.tscn":
+					_fail("Preview menu exit failed"); return
+				print("FLIGHT14_PREVIEW_CONTROLS_OK pause=true resume=true restart=true menu=true manual_input_ignored=true")
+			quit(0)
+			return

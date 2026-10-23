@@ -1,0 +1,141 @@
+namespace Exosphere.Simulation;
+
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using Exosphere.Simulation.Math;
+
+/// <summary>
+/// Right-handed local render frame for a surface site. Local +X is east, +Y is geodetic up,
+/// and +Z is south (therefore local -Z is geographic north, matching Godot's -Z forward).
+/// </summary>
+public readonly record struct LaunchSiteFrame(Vector3d East, Vector3d Up, Vector3d South)
+{
+    public Vector3d North => -South;
+    public double Determinant => East.Dot(Up.Cross(South));
+}
+
+/// <summary>
+/// A launch site on a celestial body, loaded from <c>data/launch_sites/*.json</c>.
+///
+/// Latitude is the physically load-bearing field: it fixes the site's co-latitude from
+/// the body's spin axis, and therefore the eastward velocity the pad hands a vehicle for
+/// free (ω·ρ, with ρ the distance from the spin axis). Kennedy at 28.6° N inherits ≈408 m/s;
+/// a polar pad inherits nothing.
+/// </summary>
+public class LaunchSite
+{
+    /// <summary>Unique lower-case identifier (e.g. "kennedy").</summary>
+    public string Id   { get; init; } = "";
+
+    /// <summary>Display name.</summary>
+    public string Name { get; init; } = "";
+
+    /// <summary>Id of the <see cref="CelestialBody"/> the site sits on.</summary>
+    public string BodyId { get; init; } = "";
+
+    /// <summary>Geodetic latitude, +N (degrees).</summary>
+    public double Latitude  { get; init; }
+
+    /// <summary>Longitude, +E (degrees).</summary>
+    public double Longitude { get; init; }
+
+    /// <summary>Pad height above the reference ellipsoid or mean sphere (m).</summary>
+    public double Altitude  { get; init; }
+
+    /// <summary>Launch azimuth (degrees clockwise from north). 90 ⇒ due east.</summary>
+    public double Heading   { get; init; }
+
+    /// <summary>Inertial position of the pad surface on <paramref name="body"/>.</summary>
+    public Vector3d GetPosition(CelestialBody body) =>
+        body.GetSurfacePosition(Latitude, Longitude, Altitude);
+
+    public Vector3d GetPosition(CelestialBody body, double simulationTime) =>
+        body.GetSurfacePositionAtTime(Latitude, Longitude, simulationTime, Altitude);
+
+    /// <summary>Local vertical (geodetic up) at the pad.</summary>
+    public Vector3d GetUpDirection(CelestialBody body) =>
+        body.GetGeodeticUp(GetPosition(body));
+
+    /// <summary>Orthonormal ENU-derived frame used by launch geometry and cameras.</summary>
+    public LaunchSiteFrame GetLocalFrame(CelestialBody body)
+        => BuildLocalFrame(body, GetPosition(body));
+
+    public LaunchSiteFrame GetLocalFrame(CelestialBody body, double simulationTime) =>
+        BuildLocalFrame(body, GetPosition(body, simulationTime));
+
+    private static LaunchSiteFrame BuildLocalFrame(CelestialBody body, Vector3d position)
+    {
+        Vector3d up = body.GetGeodeticUp(position);
+        Vector3d east = body.GetEastDirection(position);
+        if (east.MagnitudeSquared < 1e-12)
+        {
+            Vector3d reference = System.Math.Abs(up.X) < 0.9
+                ? Vector3d.Right : Vector3d.Forward;
+            east = reference.Cross(up).Normalized;
+        }
+        else
+        {
+            // Re-orthonormalize against geodetic up so the pad frame matches WGS-style
+            // local vertical instead of the geocentric radial.
+            east = up.Cross(east).Cross(up).Normalized;
+        }
+        return new LaunchSiteFrame(east, up, east.Cross(up).Normalized);
+    }
+
+    /// <summary>
+    /// Inertial velocity of the pad itself: the free ride the body's rotation gives a
+    /// vehicle still sitting on the ground. Includes the body's own orbital velocity.
+    /// </summary>
+    public Vector3d GetVelocity(CelestialBody body) =>
+        body.Velocity + body.GetSurfaceVelocity(GetPosition(body));
+
+    /// <summary>
+    /// Speed of the eastward boost alone (m/s), excluding the body's orbital motion.
+    /// This is ω·ρ, with ρ the cylindrical distance from the spin axis.
+    /// </summary>
+    public double GetRotationalBoost(CelestialBody body) =>
+        body.GetSurfaceVelocity(GetPosition(body)).Magnitude;
+
+    // ── JSON loading ───────────────────────────────────────────────────────
+
+    public static LaunchSite LoadFromJson(string path)
+    {
+        using var doc = JsonDocument.Parse(System.IO.File.ReadAllText(path));
+        var root = doc.RootElement;
+
+        return new LaunchSite
+        {
+            Id        = root.GetProperty("id").GetString()   ?? "",
+            Name      = root.GetProperty("name").GetString() ?? "",
+            BodyId    = root.GetProperty("body").GetString() ?? "",
+            Latitude  = root.GetProperty("latitude").GetDouble(),
+            Longitude = root.GetProperty("longitude").GetDouble(),
+            Altitude  = root.TryGetProperty("altitude", out var alt) ? alt.GetDouble() : 0.0,
+            Heading   = root.TryGetProperty("heading",  out var hdg) ? hdg.GetDouble() : 90.0,
+        };
+    }
+
+    public static Dictionary<string, LaunchSite> LoadAllFromDirectory(string dirPath)
+    {
+        var result = new Dictionary<string, LaunchSite>(StringComparer.Ordinal);
+        if (!System.IO.Directory.Exists(dirPath)) return result;
+
+        foreach (var file in System.IO.Directory.GetFiles(dirPath, "*.json"))
+        {
+            // The launch-sites directory also carries presentation datasets (for
+            // example OSM/3DEP context) that are intentionally not launch-site
+            // definitions. A physical site must declare a celestial body; skip
+            // metadata-only JSON while keeping malformed site JSON fail-fast in
+            // LoadFromJson below.
+            using (var doc = JsonDocument.Parse(System.IO.File.ReadAllText(file)))
+            {
+                if (!doc.RootElement.TryGetProperty("body", out _))
+                    continue;
+            }
+            var site = LoadFromJson(file);
+            result[site.Id] = site;
+        }
+        return result;
+    }
+}

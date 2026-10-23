@@ -1,0 +1,60 @@
+{
+  "id": "mars",
+  "name": "Mars",
+  "mass": 6.417e+23,
+  "radius": 3389500,
+  "soi": 577000000,
+  "rotational_period": 88642,
+  "axial_tilt": 25.19,
+  "has_atmosphere": true,
+  "atmosphere": {
+    "scale_height": 11100,
+    "sea_level_density": 0.02,
+    "sea_level_pressure": 636,
+    "sea_level_temperature": 210.0,
+    "max_altitude": 100000,
+    "optics": {
+      "rayleigh_scattering": [0.000000116, 0.000000271, 0.000000662],
+      "mie_scattering": [0.000020, 0.000018, 0.000014],
+      "mie_absorption": [0.000002, 0.000004, 0.000008],
+      "ozone_absorption": [0.0, 0.0, 0.0],
+      "spectral_wavelength_min_nm": 400,
+      "spectral_wavelength_max_nm": 700,
+      "spectral_interpolation": "log-linear",
+      "spectral_calibration_temperature_k": 210.0,
+      "spectral_data_status": "reconstructed",
+      "rayleigh_scale_height": 11100,
+      "mie_scale_height": 11000,
+      "ozone_half_width": 0,
+      "mie_anisotropy": 0.76,
+      "sun_illuminance_scale": 14.0,
+      "surface_refractivity": 0.0000039,
+      "refractive_scale_height": 11100,
+      "low_order_diffuse_strength": 0.08
+    },
+    "layers": [
+      {
+        "alt_min": 0,
+        "alt_max": 100000,
+        "temp_base": 210.0,
+        "lapse_rate": -0.00098
+      }
+    ],
+    "molar_mass": 0.04401,
+    "heat_capacity_ratio": 1.29,
+    "surface_gravity": 3.72076,
+    "geopotential_radius": 3389500.0
+  },
+  "surface_gravity": 3.721,
+  "gm": 42828370000000.0,
+  "orbital_elements": {
+    "semi_major_axis": 227900000000.0,
+    "eccentricity": 0.0934,
+    "inclination": 1.85,
+    "longitude_of_node": 49.558,
+    "argument_of_periapsis": 286.502,
+    "mean_anomaly_at_epoch": 19.412,
+    "epoch": 0.0,
+    "reference_body": "sun"
+  }
+}

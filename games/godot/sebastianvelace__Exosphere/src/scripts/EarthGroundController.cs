@@ -1,0 +1,507 @@
+namespace Exosphere.Game;
+
+using Godot;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Math;
+
+/// <summary>
+/// Local TRUE-scale Earth ground patch for low-altitude flight.
+///
+/// The scaled-space backdrop (see <see cref="FloatingOrigin"/>) draws Earth as a
+/// geographic ray surface. This controller overlays measured detail on a tangent-plane mesh
+/// directly under the active vessel, with each vertex dropped by the TRUE sphere
+/// curvature <c>y = -(x²+z²)/(2R)</c>. At 4–10 km altitude the horizon is then far
+/// and essentially flat — exactly as in reality — while coordinates stay float-safe.
+///
+/// The broad local surface uses the measured site-specific NAIP orthoimage and 3DEP
+/// elevation raster when one is available, with a coastal procedural fallback outside
+/// regional coverage. Sampling is anchored to a WORLD-SPACE ground coordinate so
+/// features glide across the patch as the vessel translates. The whole patch
+/// cross-fades into the backdrop on ascent.
+///
+/// Anchored each frame like <see cref="MarsTerrainController"/>; add as a child of
+/// the "World" Node3D. Render scale: 1 unit = <see cref="MetresPerUnit"/> metres.
+/// </summary>
+public partial class EarthGroundController : Node3D
+{
+    /// <summary>Runtime compositor state consumed by deterministic visual captures.</summary>
+    public float LocalPatchOpacity { get; private set; }
+    public bool LocalPatchVisible => Visible && LocalPatchOpacity > 0.001f;
+    public bool RegionalTerrainReady { get; private set; }
+    public bool MacroTerrainReady { get; private set; }
+    public string TerrainSource { get; private set; } = "procedural-only";
+
+    // ── Render scale ─────────────────────────────────────────────────────────
+    private const float  MetresPerUnit = 2.8f;
+    // Fallback only until the live sim body is available. Curvature of the patch
+    // is weakly sensitive to the ~20 km ellipsoid vs mean-radius difference;
+    // anchoring is not, and always reads the body through SimulationBridge.
+
+    // ── Patch geometry (in render UNITS) ─────────────────────────────────────
+    // Circular disc to the geometric horizon at ~50 km (√(2 R h) ≈ 800 km).
+    // 800,000 m / 2.8 ≈ 286,000 units. A square of any size reads as a cookie
+    // from the play camera; the silhouette is a disc with a shader rim fade.
+    private const float PatchRadiusUnits = 280_000f;
+    // The outer silhouette crosses the geometric horizon at 20–40 km. Keep enough
+    // angular and radial samples there that the tangent disc reads as a continuous
+    // limb instead of a polygonal band.
+    private const int   DiscRings        = 96;
+    private const int   DiscSegments     = 256;
+
+    // Vessel-altitude safety: hide the tangent patch once the rocket itself is
+    // well into the scaled-space regime even if a chase camera is somehow low.
+    // The visible pad→globe cross-fade is owned by FloatingOrigin.EarthGlobeAlpha.
+    // Safety cutoff after the shared 12–18 km handoff. The shader fade reaches zero
+    // first; this guard only handles unusual camera/origin states.
+    private const double FadeHi = 90_000.0;
+
+    // Local-ground calibration: a small blue-biased indirect floor keeps the
+    // surface readable at night/twilight without changing the direct solar path.
+    // The first .032 and .08 calibrations remained crushed in the real 1280x720
+    // sunrise/night framebuffer. .12 is the shader's bounded ceiling and is still
+    // earthshine only; direct sunlight remains visibility-gated in the shader.
+    private const float NightFloor = 0.12f;
+    private const float NightFloorTintR = 0.72f;
+    private const float NightFloorTintG = 0.84f;
+    private const float NightFloorTintB = 1.00f;
+    private const float EarthshineGain = 2.80f;
+    private const float EarthshineMinReflectance = 0.055f;
+    private const float DetailStrength = 0.18f;
+    private const float CoastalGrade = 0.28f;
+    private const float TerrainReliefStrength = 0.18f;
+    private const float NightCityGain = 0.34f;
+    private const float TerminatorWidth = 0.16f;
+    // At a 2 km camera altitude the tangent ray crosses many vertical
+    // atmospheric columns; keep the geometric limb nearly opaque instead of
+    // exposing a darker ground sample at the first visible patch row.
+    private const float HorizonHazeStrength = 0.98f;
+    private const float RegionalTerrainExtentM = 10_000f;
+    private const float RegionalHeightMinM = -2.0f;
+    private const float RegionalHeightMaxM = 12.0f;
+    private const float RegionalHeightReferenceM = 0.96f;
+    private const float KennedyHeightMinM = -2.0f;
+    private const float KennedyHeightMaxM = 15.0f;
+    private const float KennedyHeightReferenceM = 3.0f;
+    private const float MacroTerrainExtentM = 50_000f;
+
+    private MeshInstance3D  _mesh = null!;
+    private ShaderMaterial  _mat  = null!;
+    private bool _groundShaderStateInitialized;
+    private float _lastFade = float.NaN;
+    private float _lastHorizonDistance = float.NaN;
+    private float _lastEarthRadius = float.NaN;
+    private Vector3 _lastSunDirection;
+    private MeshInstance3D? _civilGround;
+    private readonly List<MeshInstance3D> _civilMeshes = new();
+    private readonly LaunchSurfaceFade _civilSurfaceFade = new();
+
+    public override void _Ready()
+    {
+        string launchSiteId = SimulationBridge.Instance?.LaunchSiteId ?? "starbase";
+        bool isStarbaseSite = launchSiteId.StartsWith("starbase", StringComparison.OrdinalIgnoreCase);
+        bool isKennedySite = string.Equals(launchSiteId, "kennedy", StringComparison.OrdinalIgnoreCase);
+        string terrainPrefix = isStarbaseSite ? "starbase" : isKennedySite ? "kennedy" : string.Empty;
+        string macroPrefix = isKennedySite ? "cape_canaveral" : terrainPrefix;
+        float siteProfile = isKennedySite ? 1f : 0f;
+        float heightMinM = isKennedySite ? KennedyHeightMinM : RegionalHeightMinM;
+        float heightMaxM = isKennedySite ? KennedyHeightMaxM : RegionalHeightMaxM;
+        float heightReferenceM = isKennedySite ? KennedyHeightReferenceM : RegionalHeightReferenceM;
+
+        _mesh = new MeshInstance3D { Name = "EarthGround", Mesh = BuildMesh() };
+
+        var shader = GD.Load<Shader>("res://assets/shaders/earth_ground.gdshader");
+        if (shader != null)
+        {
+            _mat = new ShaderMaterial { Shader = shader };
+            var atmosphere = SimulationBridge.Instance?.Universe?.GetBody("earth")?.Atmosphere ?? AtmosphereModel.Earth();
+            PlanetMaterials.BindSurfaceOptics(_mat, atmosphere.Optics, atmosphere.MaxAltitude);
+            _mat.SetShaderParameter("fade", 1.0f);
+            _mat.SetShaderParameter("earth_radius", (float)InitialEarthRadiusMetres());
+            _mat.SetShaderParameter("metres_per_unit", MetresPerUnit);
+            var opticalDepth = atmosphere.Optics.VerticalOpticalDepth(0.0);
+            _mat.SetShaderParameter("vertical_optical_depth", new Vector3(
+                (float)opticalDepth.X, (float)opticalDepth.Y, (float)opticalDepth.Z));
+            _mat.SetShaderParameter("night_floor", NightFloor);
+            _mat.SetShaderParameter("night_floor_tint", new Vector3(
+                NightFloorTintR, NightFloorTintG, NightFloorTintB));
+            _mat.SetShaderParameter("earthshine_gain", EarthshineGain);
+            _mat.SetShaderParameter("earthshine_min_reflectance", EarthshineMinReflectance);
+            _mat.SetShaderParameter("detail_strength", DetailStrength);
+            _mat.SetShaderParameter("coastal_grade", CoastalGrade);
+            _mat.SetShaderParameter("terrain_relief_strength", TerrainReliefStrength);
+            _mat.SetShaderParameter("night_city_gain", NightCityGain);
+            _mat.SetShaderParameter("terminator_width", TerminatorWidth);
+            _mat.SetShaderParameter("horizon_haze_strength", HorizonHazeStrength);
+            _mat.SetShaderParameter("site_profile", siteProfile);
+            var dayTexture = GD.Load<Texture2D>("res://assets/textures/earth_day.jpg");
+            if (dayTexture != null) _mat.SetShaderParameter("day_tex", dayTexture);
+            var nightTexture = GD.Load<Texture2D>("res://assets/textures/earth_night.jpg");
+            if (nightTexture != null) _mat.SetShaderParameter("night_tex", nightTexture);
+            Texture2D? regionalOrtho = null;
+            Texture2D? regionalMask = null;
+            Texture2D? regionalHeight = null;
+            Texture2D? macroOrtho = null;
+            Texture2D? macroMask = null;
+            Texture2D? macroHeight = null;
+            if (!string.IsNullOrEmpty(terrainPrefix))
+            {
+                regionalOrtho = GD.Load<Texture2D>($"res://assets/textures/{terrainPrefix}_naip_10km.jpg");
+                regionalMask = GD.Load<Texture2D>($"res://assets/textures/{terrainPrefix}_naip_10km_mask.png");
+                regionalHeight = GD.Load<Texture2D>($"res://assets/textures/{terrainPrefix}_3dep_10km_height.png");
+                macroOrtho = GD.Load<Texture2D>($"res://assets/textures/{macroPrefix}_naip_50km.jpg");
+                macroMask = GD.Load<Texture2D>($"res://assets/textures/{macroPrefix}_naip_50km_mask.png");
+                macroHeight = GD.Load<Texture2D>($"res://assets/textures/{macroPrefix}_3dep_50km_height.png");
+            }
+            LaunchTerrainImagery.Bind(_mat, launchSiteId);
+            RegionalTerrainReady = regionalOrtho != null && regionalMask != null && regionalHeight != null;
+            if (RegionalTerrainReady)
+            {
+                _mat.SetShaderParameter("regional_ortho_tex", regionalOrtho!);
+                _mat.SetShaderParameter("regional_mask_tex", regionalMask!);
+                _mat.SetShaderParameter("regional_height_tex", regionalHeight!);
+                _mat.SetShaderParameter("regional_extent_m", RegionalTerrainExtentM);
+                _mat.SetShaderParameter("regional_height_min_m", heightMinM);
+                _mat.SetShaderParameter("regional_height_max_m", heightMaxM);
+                _mat.SetShaderParameter("regional_height_reference_m", heightReferenceM);
+            }
+            MacroTerrainReady = macroOrtho != null && macroMask != null && macroHeight != null;
+            if (MacroTerrainReady)
+            {
+                _mat.SetShaderParameter("macro_ortho_tex", macroOrtho!);
+                _mat.SetShaderParameter("macro_mask_tex", macroMask!);
+                _mat.SetShaderParameter("macro_height_tex", macroHeight!);
+                _mat.SetShaderParameter("macro_extent_m", MacroTerrainExtentM);
+                _mat.SetShaderParameter("macro_height_min_m", heightMinM);
+                _mat.SetShaderParameter("macro_height_max_m", heightMaxM);
+                _mat.SetShaderParameter("macro_height_reference_m", heightReferenceM);
+            }
+            TerrainSource = RegionalTerrainReady && MacroTerrainReady
+                ? $"NAIP+3DEP:{launchSiteId}"
+                : RegionalTerrainReady ? $"NAIP+3DEP-regional:{launchSiteId}"
+                : MacroTerrainReady ? $"NAIP+3DEP-macro:{launchSiteId}"
+                : "procedural-only";
+            GD.Print($"[EARTH_GROUND_TERRAIN] site={launchSiteId} source={TerrainSource} "
+                + $"ready={RegionalTerrainReady && MacroTerrainReady} "
+                + $"regional={RegionalTerrainExtentM:F0}m macro={MacroTerrainExtentM:F0}m "
+                + $"heightRangeM={heightMinM:F1}..{heightMaxM:F1} referenceM={heightReferenceM:F2}");
+            _mesh.SetSurfaceOverrideMaterial(0, _mat);
+        }
+        else
+        {
+            // Defensive fallback: a plain blue patch if the shader is missing.
+            var fallback = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(0.06f, 0.28f, 0.5f),
+                Roughness   = 0.9f,
+                Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            };
+            _mesh.SetSurfaceOverrideMaterial(0, fallback);
+        }
+
+        // Big disc — keep it from being frustum-culled at grazing angles.
+        _mesh.CustomAabb = new Aabb(
+            new Vector3(-PatchRadiusUnits, -12000f, -PatchRadiusUnits),
+            new Vector3(2f * PatchRadiusUnits, 24000f, 2f * PatchRadiusUnits));
+        _mesh.Transparency = 0f;
+        // The planetary disc is too large for a useful shadow map. Pad concrete
+        // (launch_surface) still receives DirectionalLight shadows.
+        _mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        _mesh.SortingOffset = -2f;
+
+        AddChild(_mesh);
+        Visible = false;
+    }
+
+    public override void _Process(double delta)
+    {
+        var bridge   = SimulationBridge.Instance;
+        var vessel   = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (vessel == null || universe == null)
+        {
+            Visible = false;
+            LocalPatchOpacity = 0f;
+            return;
+        }
+
+        var earth = universe.GetBody("earth");
+        if (earth == null)
+        {
+            Visible = false;
+            LocalPatchOpacity = 0f;
+            return;
+        }
+
+        var dominant = universe.GetDominantBody(vessel.Position);
+        double alt   = vessel.GetAltitude(earth);
+        if (dominant.Id != "earth" || alt > FadeHi)
+        {
+            Visible = false;
+            LocalPatchOpacity = 0f;
+            _groundShaderStateInitialized = false;
+            return;
+        }
+
+        // Retire local detail over the continuous opaque globe at 12–18 km.
+        // EarthGlobeAlpha is the legacy detail-handoff weight, not planet alpha.
+        float fade = 1f - FloatingOrigin.EarthGlobeAlpha(FloatingOrigin.CameraAltOverEarth);
+        if (fade <= 0.001f)
+        {
+            Visible = false;
+            LocalPatchOpacity = 0f;
+            _groundShaderStateInitialized = false;
+            return;
+        }
+        Visible = true;
+        LocalPatchOpacity = fade;
+
+        // Anchor to the live ellipsoid (or sphere), never centre + R_mean · r̂.
+        // A mean-radius sphere buries Kennedy/Starbase by kilometres relative to
+        // the geodetic pad frame SimulationBridge already uses.
+        var up         = earth.GetGeodeticUp(vessel.Position);
+        var surfacePos = earth.GetSurfacePoint(vessel.Position, 0.0);
+        var offsetM    = surfacePos - vessel.Position;                    // metres
+        var renderUp   = new Vector3((float)up.X, (float)up.Y, (float)up.Z);
+        var rotationAxis = ToGodot(earth.RotationAxis).Normalized();
+        var east = rotationAxis.Cross(renderUp).Normalized();
+        if (east.LengthSquared() < 1e-6f)
+            east = Vector3.Forward.Cross(renderUp).Normalized();
+        var north = renderUp.Cross(east).Normalized();
+        var basis = new Basis(east, renderUp, north);
+
+        // metres → units for the render-space translation. Sit the unshaded
+        // disc ~1.5 m below civil concrete/wetland so DirectionalLight shadows
+        // land on the shaded apron instead of being overwritten by this mesh.
+        var offsetU = new Vector3(
+            (float)(offsetM.X / MetresPerUnit),
+            (float)(offsetM.Y / MetresPerUnit),
+            (float)(offsetM.Z / MetresPerUnit));
+        GlobalTransform = new Transform3D(basis, offsetU - renderUp * 0.55f);
+
+        if (_mat != null)
+        {
+            _mat.SetShaderParameter("open_water_patch", vessel.WaterContact is { } water
+                && water.Covers(earth, vessel.Position, universe.CurrentTime));
+            PlanetMaterials.BindSurfaceLuts(_mat);
+            PlanetMaterials.BindEarthClouds(_mat, earth, universe.CurrentTime);
+            if (bridge?.LaunchSiteOrNull is { } site)
+            {
+                var siteOffset = surfacePos - site.GetPosition(earth, universe.CurrentTime);
+                _mat.SetShaderParameter("site_patch_offset_m", new Vector2(
+                    (float)siteOffset.Dot(new Vector3d(east.X, east.Y, east.Z)),
+                    (float)siteOffset.Dot(new Vector3d(north.X, north.Y, north.Z))));
+            }
+            _mat.SetShaderParameter("backdrop_far_units", GetViewport().GetCamera3D()?.Far ?? 420_000f);
+            _mat.SetShaderParameter("physical_camera_up", FloatingOrigin.CameraEarthRadialUp);
+            _mat.SetShaderParameter("physical_camera_altitude_m", (float)FloatingOrigin.CameraEarthRadialAltitudeM);
+            _mat.SetShaderParameter("physical_planet_radius_m", (float)FloatingOrigin.CameraEarthRadiusM);
+            var sun = universe.GetBody("sun");
+            var sunDirection = Vector3.Zero;
+            if (sun != null)
+            {
+                var physicalDirection = (sun.Position - vessel.Position).Normalized;
+                sunDirection = ToGodot(SunController.Instance != null
+                    ? SunController.Instance.GetVisualSunDirection(
+                        earth, vessel.Position, physicalDirection)
+                    : physicalDirection);
+            }
+            if (!_groundShaderStateInitialized || FloatDiffers(_lastFade, fade))
+            {
+                _mat.SetShaderParameter("fade", fade);
+                _lastFade = fade;
+            }
+            if (sun != null)
+            {
+                if (!_groundShaderStateInitialized
+                    || _lastSunDirection.DistanceSquaredTo(sunDirection) > 1e-10f)
+                {
+                    _mat.SetShaderParameter("sun_dir", sunDirection);
+                    _lastSunDirection = sunDirection;
+                }
+            }
+
+            // Map the patch to the real Earth texture: the sub-vessel point and the patch's
+            // east/north axes, expressed in the texture/mesh-local frame (undo the planet
+            // tilt that the backdrop uses), so the ground shows the real launch-site terrain.
+            var tiltInv  = FloatingOrigin.EarthTextureBasis.Inverse();
+            var subP     = tiltInv * renderUp;
+            var eastL    = tiltInv * basis.X;    // patch +X (east)  in texture space
+            var northL   = tiltInv * basis.Z;    // patch +Z (north) in texture space
+            _mat.SetShaderParameter("sub_p", subP);
+            _mat.SetShaderParameter("east_local", eastL);
+            _mat.SetShaderParameter("north_local", northL);
+
+            // True geometric horizon distance d = sqrt(2·R·h), in render units. Ground
+            // beyond this hazes into the sky so the far curvature reads as a flat horizon.
+            double localRadius = FloatingOrigin.VisualSurfaceRadiusMetres(earth, vessel.Position);
+            if (!_groundShaderStateInitialized
+                || FloatDiffers(_lastEarthRadius, (float)localRadius))
+            {
+                _mat.SetShaderParameter("earth_radius", (float)localRadius);
+                _lastEarthRadius = (float)localRadius;
+            }
+            double cameraAltitude = System.Math.Max(FloatingOrigin.CameraAltOverEarth, 50.0);
+            double hMetres = System.Math.Sqrt(2.0 * localRadius * cameraAltitude);
+            float horizonDistance = (float)(hMetres / MetresPerUnit);
+            if (!_groundShaderStateInitialized
+                || FloatDiffers(_lastHorizonDistance, horizonDistance))
+            {
+                _mat.SetShaderParameter("horizon_dist", horizonDistance);
+                _lastHorizonDistance = horizonDistance;
+            }
+            _groundShaderStateInitialized = true;
+        }
+
+        FadeCivilGroundBox(FloatingOrigin.CameraAltOverEarth);
+    }
+
+    /// <summary>
+    /// Civil apron and OLM foundation read as cookies from a few kilometres up.
+    /// Fade only those local civil meshes; StarbaseFarField owns the contextual
+    /// complex and follows the Earth globe handoff independently.
+    /// </summary>
+    private void FadeCivilGroundBox(double cameraAltitudeM)
+    {
+        if (_civilMeshes.Count == 0)
+            CollectCivilGroundMeshes();
+        if (_civilMeshes.Count == 0) return;
+
+        float hide = Smoothstep(150f, 700f, (float)cameraAltitudeM);
+        for (int i = _civilMeshes.Count - 1; i >= 0; i--)
+        {
+            var mesh = _civilMeshes[i];
+            if (mesh == null || !IsInstanceValid(mesh))
+            {
+                _civilMeshes.RemoveAt(i);
+                continue;
+            }
+            _civilSurfaceFade.Apply(mesh, 1f - hide);
+        }
+    }
+
+    private void CollectCivilGroundMeshes()
+    {
+        _civilMeshes.Clear();
+        Node? pad = LaunchPadController.Instance
+            ?? GetTree().Root.FindChild("LaunchPadController", true, false);
+        if (pad == null) return;
+        foreach (string name in new[]
+                 {
+                     "Ground",
+                     "OrbitalPadApron",
+                     "OlmFoundationMat",
+                 })
+        {
+            if (pad.FindChild(name, true, false) is MeshInstance3D mesh)
+                _civilMeshes.Add(mesh);
+        }
+        _civilGround = _civilMeshes.Count > 0 ? _civilMeshes[0] : null;
+    }
+
+    private static float Smoothstep(float edge0, float edge1, float x)
+    {
+        float t = Mathf.Clamp((x - edge0) / (edge1 - edge0), 0f, 1f);
+        return t * t * (3f - 2f * t);
+    }
+
+    // Orient the patch (default +Y normal) so it lies tangent to the surface.
+    private static Basis AlignUp(Vector3 up)
+    {
+        up = up.Normalized();
+        Vector3 reference = Mathf.Abs(up.Dot(Vector3.Right)) < 0.9f ? Vector3.Right : Vector3.Forward;
+        Vector3 x = reference.Cross(up).Normalized();
+        Vector3 z = up.Cross(x).Normalized();
+        return new Basis(x, up, z);
+    }
+
+    private static double InitialEarthRadiusMetres()
+    {
+        var earth = SimulationBridge.Instance?.Universe?.GetBody("earth");
+        if (earth == null) return 6_371_000.0;
+        return earth.MaximumRadius > 1.0 ? earth.MaximumRadius : earth.Radius;
+    }
+
+    private static Vector3 ToGodot(Vector3d value) => new(
+        (float)value.X, (float)value.Y, (float)value.Z);
+
+    private static bool FloatDiffers(float a, float b) =>
+        float.IsNaN(a) || float.IsNaN(b) || Mathf.Abs(a - b) > 1e-4f;
+
+
+
+    /// <summary>
+    /// Geodetic disc whose vertices drop by ellipsoid sagitta
+    /// <c>y = -(x²+z²)/(2R)</c>. Polar rings keep a circular silhouette so the
+    /// play camera never sees a square cookie. UV2 carries patch-local (x,z) in metres.
+    /// </summary>
+    private static ArrayMesh BuildMesh()
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+
+        double radiusUnits = InitialEarthRadiusMetres() / MetresPerUnit;
+        double invTwoR = 1.0 / (2.0 * radiusUnits);
+
+        float Curve(float x, float z) => (float)(-(x * (double)x + z * (double)z) * invTwoR);
+        Vector3 Vert(float x, float z) => new(x, Curve(x, z), z);
+
+        Vector3 centre = Vert(0f, 0f);
+        for (int ring = 0; ring < DiscRings; ring++)
+        {
+            float t0 = ring / (float)DiscRings;
+            float t1 = (ring + 1) / (float)DiscRings;
+            float r0 = RingRadius(t0);
+            float r1 = RingRadius(t1);
+            for (int s = 0; s < DiscSegments; s++)
+            {
+                float a0 = s * Mathf.Tau / DiscSegments;
+                float a1 = (s + 1) * Mathf.Tau / DiscSegments;
+                float c0 = Mathf.Cos(a0), s0 = Mathf.Sin(a0);
+                float c1 = Mathf.Cos(a1), s1 = Mathf.Sin(a1);
+                Vector3 inner0 = Vert(r0 * c0, r0 * s0);
+                Vector3 outer0 = Vert(r1 * c0, r1 * s0);
+                Vector3 outer1 = Vert(r1 * c1, r1 * s1);
+                Vector3 inner1 = Vert(r0 * c1, r0 * s1);
+                if (ring == 0)
+                {
+                    AddTri(st, centre, outer0, outer1);
+                }
+                else
+                {
+                    AddTri(st, inner0, outer0, outer1);
+                    AddTri(st, inner0, outer1, inner1);
+                }
+            }
+        }
+
+        st.GenerateNormals();
+        return st.Commit();
+    }
+
+    /// <summary>
+    /// Pack rings so the inner ~30 km (play-camera nadir at 6–20 km) has small
+    /// triangles instead of a 5 km centre fan that under-samples the coast.
+    /// </summary>
+    private static float RingRadius(float t)
+    {
+        const float innerFrac = 0.42f;
+        float innerR = 30_000f / MetresPerUnit;
+        if (t <= innerFrac)
+            return innerR * (t / innerFrac);
+        float u = (t - innerFrac) / (1f - innerFrac);
+        return Mathf.Lerp(innerR, PatchRadiusUnits, Mathf.Pow(u, 1.20f));
+    }
+
+    private static void AddTri(SurfaceTool st, Vector3 a, Vector3 b, Vector3 c)
+    {
+        EmitVert(st, a); EmitVert(st, b); EmitVert(st, c);
+    }
+
+    private static void EmitVert(SurfaceTool st, Vector3 v)
+    {
+        // Stash the patch-local horizontal coords in METRES in UV2 for the shader,
+        // matching `ground_offset` (also metres) so the two add at the same scale.
+        st.SetUV2(new Vector2(v.X * MetresPerUnit, v.Z * MetresPerUnit));
+        st.AddVertex(v);
+    }
+}

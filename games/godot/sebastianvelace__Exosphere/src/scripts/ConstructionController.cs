@@ -1,0 +1,1527 @@
+namespace Exosphere.Game;
+
+using Exosphere.Simulation.Construction;
+using Exosphere.Simulation.Parts;
+using Godot;
+using System.Text.Json;
+
+public partial class ConstructionController : Control
+{
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+    private PartCatalog? _catalog;
+    private VesselAssembly? _assembly;
+    private string? _vehicleVariantId;
+
+    private ItemList _catalogList = null!;
+    private ItemList _stackList = null!;
+    private ItemList _craftBrowser = null!;
+    private LineEdit _catalogSearch = null!;
+    private OptionButton _categoryFilter = null!;
+    private OptionButton _parentNode = null!;
+    private OptionButton _childNode = null!;
+    private LineEdit _craftName = null!;
+    private Label _stats = null!;
+    private Label _status = null!;
+    private Label _validation = null!;
+    private Button _launchButton = null!;
+    private Button _undoButton = null!;
+    private Button _redoButton = null!;
+    private Label _previewEmpty = null!;
+    private VesselRenderer? _previewRenderer;
+    private readonly Stack<VesselCraftDefinition> _undo = new();
+    private readonly Stack<VesselCraftDefinition> _redo = new();
+    private readonly List<Control> _compactOptionalControls = new();
+
+    // ── Direct 3D manipulation (preview picking) ──────────────────────────
+    private SubViewport?        _previewViewport;
+    private Camera3D?           _previewCamera;
+    private MeshInstance3D?     _previewFloor;
+    private VabPickingLayer?    _picking;
+    private MeshInstance3D?     _highlight;
+    private StandardMaterial3D? _highlightMat;
+    private string?             _selectedInstanceId;
+    private bool                _previewRenderingActive;
+    private bool                _previewUpdateModeInitialized;
+
+    // ── Orbit camera (RMB-drag rotate, wheel zoom, auto-frame on rebuild) ─────
+    // The preview camera used to be pinned at one fixed pose with no way to look at
+    // what you just built — the Flight scene has free orbit/zoom, the VAB had none.
+    private float _camYawDeg = 12f;
+    private float _camPitchDeg = 14f;
+    private float _camDistance = 90f;
+    private float _camTargetY = 20f;
+    private bool  _camDragging;
+    private Vector2 _camLastMouse;
+    private const float CamMinDistance = 2.5f;
+    private const float CamMaxDistance = 320f;
+
+    public override void _Ready()
+    {
+        BuildUi();
+        Resized += UpdateResponsiveLayout;
+        UpdateResponsiveLayout();
+        LoadCatalog();
+    }
+
+    public VesselAssembly? CurrentAssembly => _assembly;
+
+    private void LoadCatalog()
+    {
+        string path = GameDataPath.Combine("parts");
+        _catalog = PartCatalog.LoadFromDirectory(path);
+        _assembly = new VesselAssembly(_catalog);
+        _picking?.Configure(_catalog);
+
+        PopulateCatalogList();
+
+        Refresh();
+        RefreshCraftBrowser();
+        SetStatus("Catalog loaded.");
+    }
+
+    // Índice 1 en el dropdown de categoría es el filtro sintético "Generic" (por
+    // vehicle_family, no por category) — todo lo demás mapea 1:1 a una categoría real.
+    // Dropdown index 1 is the synthetic "Generic" filter (by vehicle_family, not
+    // category) — everything else maps 1:1 to a real category.
+    private static readonly string[] CategoryFilterValues =
+        { "", "", "command", "fuel_tank", "engine", "decoupler", "landing",
+          "structure", "fairing", "electrical", "rcs" };
+
+    private void PopulateCatalogList()
+    {
+        if (_catalogList == null || _catalog == null) return;
+        string search = _catalogSearch?.Text.Trim() ?? "";
+        int selected = _categoryFilter?.Selected ?? 0;
+        bool genericOnly = selected == 1;
+        string category = selected >= 0 && selected < CategoryFilterValues.Length
+            ? CategoryFilterValues[selected] : "";
+
+        // Genéricas primero (piezas reutilizables, sin vehículo específico), luego el
+        // resto agrupado por familia de vehículo — así una búsqueda no mezcla al azar
+        // un tanque genérico con el Saturno V AS-503 y el New Glenn en la misma lista
+        // sin ninguna distinción visual.
+        // Generic parts first (reusable, not tied to a specific vehicle), then
+        // everything else grouped by vehicle family — so a search doesn't randomly
+        // interleave a generic tank with the Saturn V AS-503 and New Glenn with no
+        // visual distinction at all.
+        var ordered = _catalog.AllParts
+            .Where(part =>
+                (category.Length == 0 || part.CategoryStr.Equals(category, StringComparison.OrdinalIgnoreCase))
+                && (!genericOnly || part.VehicleFamily.Equals("generic", StringComparison.OrdinalIgnoreCase))
+                && (search.Length == 0
+                    || part.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || part.Id.Contains(search, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(part => part.VehicleFamily.Equals("generic", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(part => part.VehicleFamily, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(part => part.Name, StringComparer.OrdinalIgnoreCase);
+
+        _catalogList.Clear();
+        foreach (var part in ordered)
+        {
+            // Kept to name + mass only: this list sits in a fixed-width sidebar and
+            // Godot's ItemList elides long single-line text rather than wrapping it, so
+            // packing category + family into every row (as before) just pushed the part
+            // NAME itself off the visible edge. The category is a filter click away; the
+            // generic-first sort already groups by family visually without repeating it
+            // as text on every single row.
+            int idx = _catalogList.AddItem($"{part.Name}  ·  {part.MassDry / 1000.0:F1} t");
+            _catalogList.SetItemMetadata(idx, part.Id);
+        }
+    }
+
+    private void BuildUi()
+    {
+        SetAnchorsPreset(LayoutPreset.FullRect);
+
+        var background = new ColorRect { Color = InterfaceTheme.Void };
+        background.SetAnchorsPreset(LayoutPreset.FullRect);
+        background.MouseFilter = MouseFilterEnum.Ignore;
+        AddChild(background);
+
+        var page = new VBoxContainer { Name = "Page" };
+        page.SetAnchorsPreset(LayoutPreset.FullRect);
+        page.OffsetLeft = 24;
+        page.OffsetTop = 18;
+        page.OffsetRight = -24;
+        page.OffsetBottom = -20;
+        page.AddThemeConstantOverride("separation", 12);
+        AddChild(page);
+
+        // Cabecera mínima: solo orientación (dónde estoy, cómo salgo). El VAB no tenía
+        // título ni ayuda de vuelta al menú — el jugador tenía que ya saber que [Esc] vuelve.
+        // Minimal header: orientation only (where am I, how do I leave). The VAB had no
+        // title and no back-to-menu hint at all — the player had to already know [Esc] works.
+        var header = new HBoxContainer();
+        page.AddChild(header);
+        var title = new Label { Text = "VEHICLE ASSEMBLY", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.ApplyDisplay(title, 20);
+        title.Modulate = InterfaceTheme.Text;
+        header.AddChild(title);
+        var menuHint = new Label { Text = "[ESC] MENU" };
+        InterfaceTheme.ApplyBody(menuHint, 12);
+        menuHint.Modulate = InterfaceTheme.TextFaint;
+        header.AddChild(menuHint);
+
+        var root = new HBoxContainer { Name = "Layout", SizeFlagsVertical = SizeFlags.ExpandFill };
+        root.AddThemeConstantOverride("separation", 14);
+        page.AddChild(root);
+
+        // ── Left: part library (narrow, fixed) ────────────────────────────────
+        var catalogBox = BuildPanel(root, "PART LIBRARY", minWidth: 336, expand: false);
+
+        var filters = new HBoxContainer();
+        filters.AddThemeConstantOverride("separation", 8);
+        catalogBox.AddChild(filters);
+        _catalogSearch = new LineEdit { PlaceholderText = "Search parts…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _catalogSearch.TextChanged += _ => PopulateCatalogList();
+        InterfaceTheme.StyleField(_catalogSearch);
+        filters.AddChild(_catalogSearch);
+        _categoryFilter = new OptionButton { CustomMinimumSize = new Vector2(118, 0) };
+        foreach (string category in new[]
+                 {
+                     "All", "Generic only", "Command", "Fuel tank", "Engine", "Decoupler",
+                     "Landing", "Structure", "Fairing", "Electrical", "RCS",
+                 })
+            _categoryFilter.AddItem(category);
+        _categoryFilter.ItemSelected += _ => PopulateCatalogList();
+        InterfaceTheme.StyleField(_categoryFilter);
+        filters.AddChild(_categoryFilter);
+
+        _catalogList = new ItemList
+        {
+            Name = "CatalogList",
+            CustomMinimumSize = new Vector2(0, 260),
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        _catalogList.ItemSelected += _ => { RefreshNodeChoices(); RefreshNodeMarkers(); };
+        _catalogList.ItemActivated += _ => OnQuickAdd();
+        InterfaceTheme.StyleField(_catalogList);
+        catalogBox.AddChild(_catalogList);
+
+        var catalogHint = new Label
+        {
+            Text = "Double-click to add · select a part, then a catalog part, to attach",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        InterfaceTheme.ApplyBody(catalogHint, 11);
+        catalogHint.Modulate = InterfaceTheme.TextFaint;
+        catalogBox.AddChild(catalogHint);
+
+        // Navegador de craft files guardados / Saved craft-file browser — pinned at a
+        // fixed, compact height (secondary to the catalog, not another full column).
+        var savedVehiclesLabel = InterfaceTheme.SectionLabel("SAVED VEHICLES");
+        catalogBox.AddChild(savedVehiclesLabel);
+        _compactOptionalControls.Add(savedVehiclesLabel);
+        _craftBrowser = new ItemList { Name = "CraftBrowser", CustomMinimumSize = new Vector2(0, 84) };
+        _craftBrowser.ItemActivated += OnCraftBrowserActivated;
+        InterfaceTheme.StyleField(_craftBrowser);
+        catalogBox.AddChild(_craftBrowser);
+        _compactOptionalControls.Add(_craftBrowser);
+
+        var browserRow = ButtonRow();
+        catalogBox.AddChild(browserRow);
+        _compactOptionalControls.Add(browserRow);
+        var refreshCrafts = CompactButton("Refresh");
+        refreshCrafts.Pressed += RefreshCraftBrowser;
+        browserRow.AddChild(refreshCrafts);
+        var loadSelected = CompactButton("Load selected");
+        loadSelected.Pressed += OnLoadSelectedCraft;
+        browserRow.AddChild(loadSelected);
+
+        // ── Center: the 3D preview — the actual reward, so it gets the space ───
+        var previewCard = BuildPanel(root, "", minWidth: 0, expand: true);
+        previewCard.AddThemeConstantOverride("separation", 8);
+
+        var viewportContainer = new SubViewportContainer
+        {
+            Name = "PreviewContainer",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            Stretch = true,
+        };
+        // Recibimos input del ratón sobre la preview para hacer picking 3D.
+        // We receive mouse input over the preview to drive 3D picking.
+        viewportContainer.GuiInput += OnPreviewGuiInput;
+        previewCard.AddChild(viewportContainer);
+
+        var viewport = new SubViewport
+        {
+            Size = new Vector2I(1024, 1024),
+            TransparentBg = true,
+            // The empty VAB does not need a rendered target. UpdatePreview enables
+            // this only after a vessel exists; manual picking remains available
+            // because it queries the SubViewport's physics world directly.
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled,
+            // Hacemos el raycast manualmente sobre DirectSpaceState; no usamos el
+            // picking automático de Godot. / We raycast manually against
+            // DirectSpaceState; Godot's automatic object picking stays off.
+            PhysicsObjectPicking = false,
+        };
+        // Give the preview its own 3D world explicitly. Without this, the
+        // viewport can render its nodes but World3D may remain null on the first
+        // input event, making the VAB raycast throw instead of selecting a part.
+        viewport.World3D = new World3D();
+        GraphicsSettings.ApplyViewport(viewport);
+        viewportContainer.AddChild(viewport);
+        _previewViewport = viewport;
+        SetPreviewRenderingActive(active: false);
+
+        _previewEmpty = new Label
+        {
+            Text = "NO VEHICLE ON THE FLOOR\nPick a command part on the left, double-click to begin",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        InterfaceTheme.ApplyBody(_previewEmpty, 14);
+        _previewEmpty.Modulate = InterfaceTheme.TextFaint;
+        _previewEmpty.SetAnchorsPreset(LayoutPreset.FullRect);
+        viewportContainer.AddChild(_previewEmpty);
+
+        var previewRoot = new Node3D { Name = "PreviewRoot" };
+        viewport.AddChild(previewRoot);
+
+        // A real assembly preview needs a scale cue and contact shadow. Keep the
+        // floor local to the VAB SubViewport so it cannot leak into Flight or change
+        // any launch-site surface. Its material is procedural, bounded and authored
+        // for studio epoxy/concrete panels rather than a flat unlit rectangle.
+        var floor = new MeshInstance3D
+        {
+            Name = "PreviewFloor",
+            Mesh = new PlaneMesh
+            {
+                Size = new Vector2(180f, 180f),
+                SubdivideWidth = 2,
+                SubdivideDepth = 2,
+            },
+            Visible = false,
+        };
+        var floorShader = GD.Load<Shader>("res://assets/shaders/vab_floor.gdshader");
+        var floorMaterial = new ShaderMaterial { Shader = floorShader };
+        floorMaterial.SetShaderParameter("base_color", new Color(0.14f, 0.16f, 0.18f));
+        floorMaterial.SetShaderParameter("seam_color", new Color(0.028f, 0.036f, 0.045f));
+        floorMaterial.SetShaderParameter("panel_size", new Vector2(12f, 12f));
+        floorMaterial.SetShaderParameter("seam_width", 0.12f);
+        floorMaterial.SetShaderParameter("wear_strength", 0.16f);
+        floorMaterial.SetShaderParameter("grain_strength", 0.055f);
+        floor.SetSurfaceOverrideMaterial(0, floorMaterial);
+        previewRoot.AddChild(floor);
+        _previewFloor = floor;
+
+        previewRoot.AddChild(new DirectionalLight3D
+        {
+            Name = "PreviewLight",
+            LightEnergy = 1.8f,
+            LightColor = new Color(1.0f, 0.98f, 0.94f),
+            RotationDegrees = new Vector3(-45f, -35f, 0f),
+        });
+        // The preview has no flight-scene WorldEnvironment or solar sky. A single
+        // key therefore leaves the metallic hull nearly black on its unlit side,
+        // especially on the Super Heavy stack. This bounded cool fill is a studio
+        // presentation light only; it does not participate in flight lighting or
+        // atmospheric physics and keeps the silhouette/material cues readable.
+        previewRoot.AddChild(new DirectionalLight3D
+        {
+            Name = "PreviewFill",
+            LightEnergy = 0.62f,
+            LightColor = new Color(0.62f, 0.72f, 0.88f),
+            ShadowEnabled = false,
+            RotationDegrees = new Vector3(24f, 145f, 0f),
+        });
+        var camera = new Camera3D
+        {
+            Name = "PreviewCamera",
+            Fov = 32f,
+            Current = true,
+        };
+        previewRoot.AddChild(camera);
+        _previewCamera = camera;
+        ApplyCameraOrbit();
+        _previewRenderer = new VesselRenderer { Name = "PreviewVessel" };
+        previewRoot.AddChild(_previewRenderer);
+        // The viewport was initialized before the renderer node existed. Reapply the
+        // current demand state so an empty VAB cannot briefly process this node.
+        SetPreviewRenderingActive(_previewRenderingActive);
+
+        // Capa de picking (hermana del renderer): cuerpos de colisión invisibles
+        // por pieza y por nodo disponible. / Picking layer (renderer sibling):
+        // invisible collision bodies per part and per available node.
+        _picking = new VabPickingLayer { Name = "Picking" };
+        previewRoot.AddChild(_picking);
+
+        // Resaltado de la pieza seleccionada: una cápsula translúcida.
+        // Selected-part highlight: a translucent capsule.
+        _highlight = new MeshInstance3D { Name = "Highlight", Visible = false };
+        _highlightMat = new StandardMaterial3D
+        {
+            AlbedoColor     = new Color(1.0f, 0.85f, 0.20f, 0.28f),
+            Transparency    = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode     = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            CullMode        = BaseMaterial3D.CullModeEnum.Disabled,
+            EmissionEnabled = true,
+            Emission        = new Color(0.9f, 0.7f, 0.1f),
+        };
+        previewRoot.AddChild(_highlight);
+
+        _status = new Label { Name = "Status", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        InterfaceTheme.ApplyBody(_status, 12, medium: true);
+        _status.Modulate = InterfaceTheme.TextMuted;
+        previewCard.AddChild(_status);
+
+        var hint = new Label
+        {
+            Name = "Hint",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            Text = "Click a part to select it, then click a catalog part on the left. "
+                 + "Green node = fits, red = wrong size/type. Right-drag orbits, wheel "
+                 + "zooms, [Del] clears the selection.",
+        };
+        InterfaceTheme.ApplyBody(hint, 11);
+        hint.Modulate = InterfaceTheme.TextFaint;
+        previewCard.AddChild(hint);
+
+        // ── Right: what you built + what to do next ────────────────────────────
+        var mid = BuildPanel(root, "VEHICLE STACK", minWidth: 320, expand: false);
+
+        var nameRow = new HBoxContainer();
+        nameRow.AddThemeConstantOverride("separation", 8);
+        mid.AddChild(nameRow);
+        var nameLabel = new Label { Text = "Name" };
+        InterfaceTheme.ApplyBody(nameLabel, 12);
+        nameLabel.Modulate = InterfaceTheme.TextMuted;
+        nameRow.AddChild(nameLabel);
+        _craftName = new LineEdit { Text = "Constructed Vessel", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.StyleField(_craftName);
+        nameRow.AddChild(_craftName);
+
+        _stackList = new ItemList { Name = "StackList", CustomMinimumSize = new Vector2(0, 130) };
+        _stackList.ItemSelected += OnStackListSelected;
+        InterfaceTheme.StyleField(_stackList);
+        mid.AddChild(_stackList);
+
+        _stats = new Label { Name = "Stats" };
+        InterfaceTheme.ApplyMono(_stats, 13);
+        _stats.Modulate = InterfaceTheme.Text;
+        mid.AddChild(_stats);
+        _validation = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        InterfaceTheme.ApplyBody(_validation, 12, medium: true);
+        mid.AddChild(_validation);
+
+        mid.AddChild(new HSeparator());
+
+        mid.AddChild(InterfaceTheme.SectionLabel("QUICK BUILD"));
+        var quickRow = ButtonRow();
+        mid.AddChild(quickRow);
+        var newCraft = CompactButton("New");
+        newCraft.Pressed += OnNewCraft;
+        quickRow.AddChild(newCraft);
+        var starter = CompactButton("Starter");
+        starter.Pressed += OnStarterRocket;
+        quickRow.AddChild(starter);
+        var starship = CompactButton("Starship");
+        starship.Pressed += OnStarshipTemplate;
+        quickRow.AddChild(starship);
+
+        var historicalLabel = InterfaceTheme.SectionLabel("HISTORICAL PRESETS");
+        mid.AddChild(historicalLabel);
+        _compactOptionalControls.Add(historicalLabel);
+        var presetRow = ButtonRow();
+        mid.AddChild(presetRow);
+        _compactOptionalControls.Add(presetRow);
+        var falcon9 = CompactButton("Falcon 9 B5", muted: true);
+        falcon9.TooltipText = "Dated May 2025 preset with standard fairing";
+        falcon9.Pressed += () => OnVehicleVariant("falcon9_block5_standard_2025.json");
+        presetRow.AddChild(falcon9);
+        var falcon9Extended = CompactButton("F9 Extended", muted: true);
+        falcon9Extended.TooltipText = "Dated May 2025 preset with extended fairing";
+        falcon9Extended.Pressed += () => OnVehicleVariant("falcon9_block5_extended_2025.json");
+        presetRow.AddChild(falcon9Extended);
+        var flight12 = CompactButton("Starship F12", muted: true);
+        flight12.TooltipText = "Dated May 2026 V3/Raptor 3 restricted public-data model";
+        flight12.Pressed += () => OnVehicleVariant("starship_flight12_v3_2026.json");
+        presetRow.AddChild(flight12);
+
+        var editLabel = InterfaceTheme.SectionLabel("EDIT");
+        mid.AddChild(editLabel);
+        _compactOptionalControls.Add(editLabel);
+        var editRow = ButtonRow();
+        mid.AddChild(editRow);
+        _compactOptionalControls.Add(editRow);
+        _undoButton = CompactButton("Undo");
+        _undoButton.Pressed += OnUndo;
+        editRow.AddChild(_undoButton);
+        _redoButton = CompactButton("Redo");
+        _redoButton.Pressed += OnRedo;
+        editRow.AddChild(_redoButton);
+        var delete = CompactButton("Delete");
+        delete.Pressed += OnDelete;
+        editRow.AddChild(delete);
+
+        // Manual node-by-node attach: the least-used path (double-click and 3D-click
+        // cover almost everything), collapsed by default so it doesn't compete with
+        // the fast path for attention.
+        var advancedToggle = new Button
+        {
+            Text = "▸ Advanced: manual node attach",
+            Flat = true,
+            Alignment = HorizontalAlignment.Left,
+        };
+        advancedToggle.AddThemeFontOverride("font", InterfaceTheme.BodyFont);
+        advancedToggle.AddThemeFontSizeOverride("font_size", 12);
+        advancedToggle.AddThemeColorOverride("font_color", InterfaceTheme.TextMuted);
+        advancedToggle.AddThemeColorOverride("font_hover_color", InterfaceTheme.Text);
+        mid.AddChild(advancedToggle);
+        _compactOptionalControls.Add(advancedToggle);
+
+        var advancedBody = new VBoxContainer { Visible = false };
+        advancedBody.AddThemeConstantOverride("separation", 8);
+        mid.AddChild(advancedBody);
+        _compactOptionalControls.Add(advancedBody);
+        advancedToggle.Pressed += () =>
+        {
+            advancedBody.Visible = !advancedBody.Visible;
+            advancedToggle.Text = advancedBody.Visible
+                ? "▾ Advanced: manual node attach"
+                : "▸ Advanced: manual node attach";
+        };
+
+        var nodeGrid = new GridContainer { Columns = 2 };
+        nodeGrid.AddThemeConstantOverride("h_separation", 8);
+        nodeGrid.AddThemeConstantOverride("v_separation", 6);
+        advancedBody.AddChild(nodeGrid);
+        var parentLabel = new Label { Text = "Parent node" };
+        InterfaceTheme.ApplyBody(parentLabel, 12);
+        parentLabel.Modulate = InterfaceTheme.TextMuted;
+        nodeGrid.AddChild(parentLabel);
+        _parentNode = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.StyleField(_parentNode);
+        nodeGrid.AddChild(_parentNode);
+        var childLabel = new Label { Text = "Child node" };
+        InterfaceTheme.ApplyBody(childLabel, 12);
+        childLabel.Modulate = InterfaceTheme.TextMuted;
+        nodeGrid.AddChild(childLabel);
+        _childNode = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.StyleField(_childNode);
+        nodeGrid.AddChild(_childNode);
+
+        var advancedRow = ButtonRow();
+        advancedBody.AddChild(advancedRow);
+        var addRoot = CompactButton("Set root");
+        addRoot.Pressed += OnSetRoot;
+        advancedRow.AddChild(addRoot);
+        var attach = CompactButton("Attach");
+        attach.Pressed += OnAttach;
+        advancedRow.AddChild(attach);
+
+        var fileLabel = InterfaceTheme.SectionLabel("FILE");
+        mid.AddChild(fileLabel);
+        _compactOptionalControls.Add(fileLabel);
+        var fileRow = ButtonRow();
+        mid.AddChild(fileRow);
+        _compactOptionalControls.Add(fileRow);
+        var save = CompactButton("Save");
+        save.Pressed += OnSave;
+        fileRow.AddChild(save);
+        var load = CompactButton("Load");
+        load.Pressed += OnLoad;
+        fileRow.AddChild(load);
+        var export = CompactButton("Export");
+        export.Pressed += OnExport;
+        fileRow.AddChild(export);
+
+        var spacer = new Control { SizeFlagsVertical = SizeFlags.ExpandFill };
+        mid.AddChild(spacer);
+
+        _launchButton = new Button { Text = "LAUNCH", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.StyleButton(_launchButton, primary: true, minSize: new Vector2(0, 48), fontSize: 16);
+        _launchButton.Pressed += OnLaunch;
+        mid.AddChild(_launchButton);
+
+        // The compact profile hides secondary authoring tools, not the build
+        // result, validation or launch action. This leaves the central preview
+        // and the primary flight path usable at 1280×720 without clipping the
+        // bottom of the right panel.
+        UpdateResponsiveLayout();
+    }
+
+    private void UpdateResponsiveLayout()
+    {
+        float width = Size.X;
+        float height = Size.Y;
+        bool compact = width < 1500f || height < 820f;
+        foreach (var control in _compactOptionalControls)
+            control.Visible = !compact;
+
+        if (_catalogList != null)
+            _catalogList.CustomMinimumSize = new Vector2(0, compact ? 0 : 260);
+        if (_stackList != null)
+            _stackList.CustomMinimumSize = new Vector2(0, compact ? 98 : 130);
+    }
+
+    /// <summary>Card: a glass-panel-backed column added to <paramref name="parent"/>,
+    /// with an optional display-font title. Returns the inner content container to add
+    /// children to. <paramref name="minWidth"/> pins a fixed-width sidebar (0 = flexible);
+    /// <paramref name="expand"/> controls whether it grows to fill leftover row space.</summary>
+    private static VBoxContainer BuildPanel(Container parent, string title, int minWidth, bool expand)
+    {
+        var wrap = new PanelContainer
+        {
+            SizeFlagsHorizontal = expand ? SizeFlags.ExpandFill : SizeFlags.Fill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        if (minWidth > 0) wrap.CustomMinimumSize = new Vector2(minWidth, 0);
+        wrap.AddThemeStyleboxOverride("panel", InterfaceTheme.PanelStyle());
+        parent.AddChild(wrap);
+
+        var content = new VBoxContainer();
+        content.AddThemeConstantOverride("separation", 10);
+        wrap.AddChild(content);
+
+        if (!string.IsNullOrEmpty(title))
+        {
+            var heading = new Label { Text = title };
+            InterfaceTheme.ApplyDisplay(heading, 15);
+            heading.Modulate = InterfaceTheme.TextMuted;
+            content.AddChild(heading);
+        }
+        return content;
+    }
+
+    private static HBoxContainer ButtonRow()
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 6);
+        return row;
+    }
+
+    /// <summary>A toolbar-sized button (much smaller than InterfaceTheme's 238x50
+    /// main-menu CTA) that shares one width in an equal-split <see cref="ButtonRow"/>.
+    /// <paramref name="muted"/> dims the label for secondary actions (dated presets)
+    /// so the primary quick-build path stays visually dominant.</summary>
+    private static Button CompactButton(string text, bool muted = false)
+    {
+        var button = new Button { Text = text, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        InterfaceTheme.StyleButton(button, minSize: new Vector2(0, 36), fontSize: 12, paddingX: 6, paddingY: 8);
+        if (muted) button.AddThemeColorOverride("font_color", InterfaceTheme.TextMuted);
+        return button;
+    }
+
+    private void OnSetRoot()
+    {
+        if (_assembly == null || _catalog == null) return;
+        string? partId = SelectedCatalogPartId();
+        if (partId == null) { SetStatus("Select a catalog part first."); return; }
+
+        try
+        {
+            RecordUndo();
+            _assembly.AddRoot(partId);
+            Refresh();
+            SetStatus("Root part set.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void OnAttach()
+    {
+        if (_assembly == null) return;
+        string? parentId = SelectedAssemblyInstanceId();
+        string? partId = SelectedCatalogPartId();
+        string? parentNode = SelectedOptionMetadata(_parentNode);
+        string? childNode = SelectedOptionMetadata(_childNode);
+        if (parentId == null || partId == null || parentNode == null || childNode == null)
+        {
+            SetStatus("Select a parent part, catalog part, and compatible nodes.");
+            return;
+        }
+
+        try
+        {
+            RecordUndo();
+            _assembly.AttachPart(parentId, parentNode, partId, childNode);
+            Refresh();
+            SetStatus("Part attached.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void OnDelete()
+    {
+        if (_assembly == null) return;
+        string? instanceId = SelectedAssemblyInstanceId();
+        if (instanceId == null) { SetStatus("Select an assembly part first."); return; }
+        RecordUndo();
+        _assembly.DeletePart(instanceId);
+        Refresh();
+        SetStatus("Part removed.");
+    }
+
+    private void OnExport()
+    {
+        if (_assembly == null) return;
+        try
+        {
+            var vessel = _assembly.ToVessel(CraftName());
+            SetStatus($"Export ready: {vessel.Name}, {vessel.Parts.Parts.Count} parts.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void OnSave()
+    {
+        if (_assembly == null) return;
+        try
+        {
+            string dir = CraftDirectory();
+            System.IO.Directory.CreateDirectory(dir);
+            string path = System.IO.Path.Combine(dir, $"{SafeCraftFileName()}.json");
+            var craft = _assembly.ToCraftDocument(CraftName());
+            craft.VehicleVariantId = _vehicleVariantId;
+            System.IO.File.WriteAllText(path, JsonSerializer.Serialize(craft, JsonOptions));
+            RefreshCraftBrowser();
+            SetStatus($"Saved craft: {path}");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void OnLoad()
+    {
+        string path = System.IO.Path.Combine(CraftDirectory(), $"{SafeCraftFileName()}.json");
+        if (!System.IO.File.Exists(path))
+        {
+            SetStatus($"Craft file not found: {path}");
+            return;
+        }
+        LoadCraftFromPath(path);
+    }
+
+    // Carga un craft desde una ruta concreta / load a craft from an explicit path.
+    private bool LoadCraftFromPath(string path)
+    {
+        if (_catalog == null) return false;
+        try
+        {
+            var craft = ReadCraftDocument(path);
+            _assembly = VesselAssembly.FromCraft(_catalog, craft);
+            _vehicleVariantId = craft.VehicleVariantId;
+            _undo.Clear();
+            _redo.Clear();
+            _craftName.Text = craft.Name;
+            Refresh();
+            AutoFrameCamera();
+            SetStatus($"Loaded craft: {craft.Name} ({craft.Parts.Count} parts)");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+            return false;
+        }
+    }
+
+    // Reconstruye la lista de craft guardados desde user://crafts.
+    // Rebuilds the saved-craft list from user://crafts.
+    private void RefreshCraftBrowser()
+    {
+        _craftBrowser.Clear();
+        string dir = CraftDirectory();
+        if (!System.IO.Directory.Exists(dir))
+        {
+            int empty = _craftBrowser.AddItem("(no saved crafts)");
+            _craftBrowser.SetItemDisabled(empty, true);
+            return;
+        }
+
+        string[] files = System.IO.Directory.GetFiles(dir, "*.json");
+        System.Array.Sort(files);
+        if (files.Length == 0)
+        {
+            int empty = _craftBrowser.AddItem("(no saved crafts)");
+            _craftBrowser.SetItemDisabled(empty, true);
+            return;
+        }
+
+        foreach (string file in files)
+        {
+            string label = DescribeCraftFile(file);
+            int idx = _craftBrowser.AddItem(label);
+            _craftBrowser.SetItemMetadata(idx, file);
+        }
+    }
+
+    // Lee un craft para mostrar nombre + nº de piezas + masa (best-effort).
+    // Reads a craft to show name + part count + mass (best-effort).
+    private string DescribeCraftFile(string path)
+    {
+        string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+        try
+        {
+            var craft = ReadCraftDocument(path);
+
+            string detail = $"{craft.Parts.Count} parts";
+            if (_catalog != null && craft.Parts.Count > 0)
+            {
+                try
+                {
+                    var metrics = VesselAssembly.FromCraft(_catalog, craft).ComputeMetrics();
+                    detail += $", {metrics.WetMass / 1000.0:F1} t";
+                }
+                catch
+                {
+                    // Craft no reconstruible (catálogo cambiado); mostramos solo el conteo.
+                    // Craft can't be rebuilt (catalog changed); show count only.
+                }
+            }
+            return $"{craft.Name}  [{detail}]";
+        }
+        catch
+        {
+            return $"{fileName}  [unreadable]";
+        }
+    }
+
+    private static CraftDocumentV2 ReadCraftDocument(string path)
+    {
+        string json = System.IO.File.ReadAllText(path);
+        using var parsed = JsonDocument.Parse(json);
+        if (parsed.RootElement.TryGetProperty("FormatVersion", out _))
+        {
+            return JsonSerializer.Deserialize<CraftDocumentV2>(json, JsonOptions)
+                ?? throw new InvalidDataException("Craft document is empty.");
+        }
+        var legacy = JsonSerializer.Deserialize<VesselCraftDefinition>(json, JsonOptions)
+            ?? throw new InvalidDataException("Legacy craft document is empty.");
+        return CraftDocumentMigration.FromLegacy(legacy);
+    }
+
+    private void OnCraftBrowserActivated(long index) => LoadCraftAt((int)index);
+
+    private void OnLoadSelectedCraft()
+    {
+        int[] selected = _craftBrowser.GetSelectedItems();
+        if (selected.Length == 0) { SetStatus("Select a saved craft first."); return; }
+        LoadCraftAt(selected[0]);
+    }
+
+    private void LoadCraftAt(int index)
+    {
+        if (index < 0 || index >= _craftBrowser.ItemCount) return;
+        var meta = _craftBrowser.GetItemMetadata(index);
+        if (meta.VariantType == Variant.Type.Nil) return; // entrada vacía / empty placeholder
+        LoadCraftFromPath(meta.AsString());
+    }
+
+    private void OnLaunch()
+    {
+        if (_assembly == null) return;
+        try
+        {
+            var validation = _assembly.ValidateForLaunch();
+            if (!validation.CanLaunch)
+            {
+                SetStatus(validation.Errors[0]);
+                return;
+            }
+            bool falcon = _vehicleVariantId?.StartsWith(
+                "falcon9-", StringComparison.OrdinalIgnoreCase) == true;
+            bool flight12 = string.Equals(
+                _vehicleVariantId,
+                "starship-flight-12-v3-2026-05-22",
+                StringComparison.OrdinalIgnoreCase);
+            var launchCraft = _assembly.ToCraftDocument(CraftName());
+            launchCraft.VehicleVariantId = _vehicleVariantId;
+            CraftLaunchRequest.Set(new LaunchIntent
+            {
+                Mode = "sandbox",
+                VehicleVariantId = _vehicleVariantId,
+                LaunchSiteId = falcon ? "kennedy"
+                    : flight12 ? "starbase_pad2"
+                    : "starbase",
+                FlightProfileId = falcon ? "falcon9-block5-ascent" : "manual",
+                Craft = launchCraft,
+            });
+            GetTree().ChangeSceneToFile("res://scenes/flight/Flight.tscn");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void Refresh()
+    {
+        _stackList.Clear();
+        if (_assembly != null && _catalog != null)
+        {
+            if (_assembly.Parts.Count == 0)
+            {
+                int empty = _stackList.AddItem("Build from the library → double-click a command part");
+                _stackList.SetItemDisabled(empty, true);
+            }
+            foreach (var part in _assembly.Parts)
+            {
+                PartDefinition def = _catalog[part.DefinitionId];
+                string prefix = part.ParentInstanceId == null ? "ROOT" : "  +";
+                int idx = _stackList.AddItem($"{prefix} {def.Name}");
+                _stackList.SetItemMetadata(idx, part.InstanceId);
+            }
+
+            var m = _assembly.ComputeMetrics();
+            _stats.Text =
+                $"Wet mass: {m.WetMass / 1000.0:F1} t\n" +
+                $"Dry mass: {m.DryMass / 1000.0:F1} t\n" +
+                $"Propellant: {m.PropellantMass / 1000.0:F1} t\n" +
+                $"SL thrust: {m.SeaLevelThrust / 1000.0:F0} kN\n" +
+                $"SL TWR: {m.SeaLevelTwr:F2}\n" +
+                $"Vac delta-v: {m.VacuumDeltaV:F0} m/s";
+
+            var validation = _assembly.ValidateForLaunch();
+            _launchButton.Disabled = !validation.CanLaunch;
+            _validation.Text = validation.CanLaunch
+                ? (validation.Warnings.Count == 0
+                    ? "● READY FOR FLIGHT"
+                    : $"● READY · {string.Join(" · ", validation.Warnings)}")
+                : $"○ BUILD CHECK · {string.Join(" · ", validation.Errors)}";
+            _validation.Modulate = validation.CanLaunch ? new Color("63e6a6") : new Color("ffb454");
+
+            UpdatePreview();
+        }
+        else
+        {
+            _stats.Text = "Wet mass: —\nDry mass: —\nPropellant: —\nSL thrust: —\nSL TWR: —\nVac delta-v: —";
+            _validation.Text = "○ BUILD CHECK · Add a command part to start the vehicle.";
+            _validation.Modulate = new Color("ffb454");
+            _launchButton.Disabled = true;
+        }
+
+        _undoButton.Disabled = _undo.Count == 0;
+        _redoButton.Disabled = _redo.Count == 0;
+
+        RefreshNodeChoices();
+    }
+
+    private void UpdatePreview()
+    {
+        if (_assembly == null || _previewRenderer == null) return;
+
+        try
+        {
+            if (_assembly.Parts.Count == 0)
+            {
+                SetPreviewRenderingActive(active: false);
+                _previewRenderer.Visible = false;
+                if (_previewFloor != null) _previewFloor.Visible = false;
+                _previewEmpty.Visible = true;
+                _picking?.RebuildSelectionBodies(_assembly);
+                ClearSelection();
+                return;
+            }
+
+            SetPreviewRenderingActive(active: true);
+            _previewRenderer.Visible = true;
+            if (_previewFloor != null) _previewFloor.Visible = true;
+            _previewEmpty.Visible = false;
+            _previewRenderer.BuildFromVessel(_assembly.ToVessel(CraftName()));
+        }
+        catch
+        {
+            SetPreviewRenderingActive(active: false);
+            _previewRenderer.Visible = false;
+            if (_previewFloor != null) _previewFloor.Visible = false;
+        }
+
+        // Reconstruimos los cuerpos de picking tras cada cambio de asamblea, y
+        // revalidamos la selección/resaltado y los marcadores de nodo.
+        // Rebuild picking bodies after every assembly change, then revalidate the
+        // selection/highlight and the node markers.
+        _picking?.RebuildSelectionBodies(_assembly);
+        if (_selectedInstanceId != null && _assembly.Parts.All(p => p.InstanceId != _selectedInstanceId))
+            ClearSelection();
+        else
+            UpdateHighlight();
+        RefreshNodeMarkers();
+    }
+
+    private void SetPreviewRenderingActive(bool active)
+    {
+        if (_previewViewport == null) return;
+
+        bool changed = !_previewUpdateModeInitialized || _previewRenderingActive != active;
+        _previewRenderingActive = active;
+        _previewUpdateModeInitialized = true;
+
+        _previewViewport.RenderTargetUpdateMode = active
+            ? SubViewport.UpdateMode.Always
+            : SubViewport.UpdateMode.Disabled;
+        if (_previewRenderer != null)
+            _previewRenderer.ProcessMode = active
+                ? ProcessModeEnum.Inherit
+                : ProcessModeEnum.Disabled;
+
+        if (changed)
+            GD.Print($"PERF_VAB_PREVIEW stage=update_mode active={active.ToString().ToLowerInvariant()} " +
+                     $"viewport_mode={(active ? "always" : "disabled")} " +
+                     $"renderer_process={(active ? "inherit" : "disabled")}");
+    }
+
+    private void RefreshNodeChoices()
+    {
+        _parentNode.Clear();
+        _childNode.Clear();
+        if (_assembly == null || _catalog == null) return;
+
+        string? parentId = SelectedAssemblyInstanceId();
+        if (parentId != null)
+        {
+            foreach (var node in _assembly.AvailableNodes(parentId))
+                AddNodeOption(_parentNode, node);
+        }
+
+        string? partId = SelectedCatalogPartId();
+        if (partId != null && _catalog.TryGet(partId, out var def))
+        {
+            foreach (var node in def.AttachmentNodes.Where(n => !n.Type.Equals("engine_bell", StringComparison.OrdinalIgnoreCase)))
+                AddNodeOption(_childNode, node);
+        }
+    }
+
+    private static void AddNodeOption(OptionButton option, AttachmentNodeDef node)
+    {
+        int idx = option.ItemCount;
+        option.AddItem($"{node.Id} ({node.Type}, {node.Size})");
+        option.SetItemMetadata(idx, node.Id);
+    }
+
+    private string? SelectedCatalogPartId()
+    {
+        int[] selected = _catalogList.GetSelectedItems();
+        return selected.Length == 0 ? null : _catalogList.GetItemMetadata(selected[0]).AsString();
+    }
+
+    private string? SelectedAssemblyInstanceId()
+    {
+        // La selección en la preview 3D tiene prioridad; si no, caemos a la lista.
+        // The 3D preview selection wins; otherwise fall back to the stack list.
+        if (_selectedInstanceId != null) return _selectedInstanceId;
+        int[] selected = _stackList.GetSelectedItems();
+        return selected.Length == 0 ? null : _stackList.GetItemMetadata(selected[0]).AsString();
+    }
+
+    private static string? SelectedOptionMetadata(OptionButton option)
+    {
+        int selected = option.Selected;
+        return selected < 0 ? null : option.GetItemMetadata(selected).AsString();
+    }
+
+    private void OnQuickAdd()
+    {
+        if (_assembly == null || _catalog == null) return;
+        string? partId = SelectedCatalogPartId();
+        if (partId == null) return;
+
+        try
+        {
+            if (_assembly.Parts.Count == 0)
+            {
+                RecordUndo();
+                var root = _assembly.AddRoot(partId);
+                Refresh();
+                SelectInstance(root.InstanceId, syncList: true);
+                SetStatus($"Started with {_catalog[partId].Name}.");
+                return;
+            }
+
+            string? parentId = SelectedAssemblyInstanceId();
+            if (parentId == null || _assembly.CompatibleAttachments(parentId, partId).Count == 0)
+            {
+                parentId = _assembly.Parts
+                    .Reverse()
+                    .FirstOrDefault(p => _assembly.CompatibleAttachments(p.InstanceId, partId).Count > 0)
+                    ?.InstanceId;
+            }
+            if (parentId == null)
+            {
+                SetStatus("No free compatible node. Select a different part or green node.");
+                return;
+            }
+
+            RecordUndo();
+            var attached = _assembly.AttachPartAutomatically(parentId, partId);
+            Refresh();
+            SelectInstance(attached.InstanceId, syncList: true);
+            SetStatus($"Attached {_catalog[partId].Name} automatically.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void OnNewCraft()
+    {
+        if (_catalog == null) return;
+        if (_assembly != null && _assembly.Parts.Count > 0)
+            RecordUndo();
+        _assembly = new VesselAssembly(_catalog);
+        _vehicleVariantId = null;
+        _craftName.Text = "Constructed Vessel";
+        ClearSelection();
+        Refresh();
+        _camYawDeg = 12f; _camPitchDeg = 14f; _camTargetY = 20f; _camDistance = 90f;
+        ApplyCameraOrbit();
+        SetStatus("New vehicle. Double-click a command part to begin.");
+    }
+
+    // A suborbital hop to space: TWR ~2, ~90 s burn, ~3 km/s ideal delta-v. The Merlin-class
+    // engine_liquid_sl needs tens of tonnes of propellant and is not a starter engine.
+    private void OnStarterRocket() => BuildTemplate(
+        "Starter Rocket",
+        "command_pod_mk1",
+        "fuel_tank_small",
+        "engine_liquid_small");
+
+    private void OnStarshipTemplate() => BuildTemplate(
+        "Starship / Super Heavy",
+        "starship_command",
+        "starship_tank",
+        "starship_engines",
+        "starship_landing_gear",
+        "decoupler_heavy",
+        "super_heavy_booster");
+
+    private void OnVehicleVariant(string fileName)
+    {
+        if (_catalog == null) return;
+        try
+        {
+            if (_assembly != null) RecordUndo();
+            string path = GameDataPath.Combine("vehicles", fileName);
+            var variant = VehicleVariantDefinition.LoadFromJson(path);
+            _assembly = variant.Build(_catalog);
+            _vehicleVariantId = variant.Id;
+            _craftName.Text = variant.Name;
+            ClearSelection();
+            Refresh();
+            AutoFrameCamera();
+            SelectInstance(_assembly.Parts[^1].InstanceId, syncList: true);
+            SetStatus(
+                $"Loaded dated preset {variant.Id} ({variant.AsOfDate:yyyy-MM-dd}). " +
+                "Estimated values are identified in data/provenance.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void BuildTemplate(string name, params string[] definitionIds)
+    {
+        if (_catalog == null || definitionIds.Length == 0) return;
+        try
+        {
+            if (_assembly != null) RecordUndo();
+            var next = new VesselAssembly(_catalog);
+            _vehicleVariantId = null;
+            var current = next.AddRoot(definitionIds[0]);
+            foreach (string definitionId in definitionIds.Skip(1))
+                current = next.AttachPartAutomatically(current.InstanceId, definitionId);
+            _assembly = next;
+            _craftName.Text = name;
+            ClearSelection();
+            Refresh();
+            AutoFrameCamera();
+            SelectInstance(current.InstanceId, syncList: true);
+            SetStatus($"Loaded {name} template. Edit any part before launch.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void RecordUndo()
+    {
+        if (_assembly == null) return;
+        _undo.Push(_assembly.ToCraft(CraftName()));
+        _redo.Clear();
+    }
+
+    private void OnUndo()
+    {
+        if (_catalog == null || _assembly == null || _undo.Count == 0) return;
+        _redo.Push(_assembly.ToCraft(CraftName()));
+        RestoreHistory(_undo.Pop(), "Undid last build action.");
+    }
+
+    private void OnRedo()
+    {
+        if (_catalog == null || _assembly == null || _redo.Count == 0) return;
+        _undo.Push(_assembly.ToCraft(CraftName()));
+        RestoreHistory(_redo.Pop(), "Redid build action.");
+    }
+
+    private void RestoreHistory(VesselCraftDefinition craft, string status)
+    {
+        if (_catalog == null) return;
+        _assembly = VesselAssembly.FromCraft(_catalog, craft);
+        _vehicleVariantId = null;
+        _craftName.Text = craft.Name;
+        ClearSelection();
+        Refresh();
+        SetStatus(status);
+    }
+
+    // ── Direct 3D manipulation ────────────────────────────────────────────
+
+    // Selección desde la lista textual → sincroniza el resaltado de la preview.
+    // Selection from the text list → syncs the preview highlight.
+    private void OnStackListSelected(long index)
+    {
+        string? id = index < 0 || index >= _stackList.ItemCount
+            ? null
+            : _stackList.GetItemMetadata((int)index).AsString();
+        SelectInstance(id, syncList: false);
+        RefreshNodeChoices();
+    }
+
+    // Click sobre la preview 3D: raycast desde la cámara hacia los cuerpos de
+    // picking. Si pega en un marcador de nodo → adjunta; si pega en una pieza →
+    // la selecciona; si no pega en nada → deselecciona.
+    // Click on the 3D preview: raycast from the camera against the picking
+    // bodies. Hit a node marker → attach; hit a part → select; miss → deselect.
+    private void OnPreviewGuiInput(InputEvent ev)
+    {
+        if (ev is InputEventMouseButton mb)
+        {
+            if (mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+            {
+                HandlePreviewClick(mb.Position);
+            }
+            else if (mb.ButtonIndex == MouseButton.Right)
+            {
+                // RMB drag orbits — mirrors the Flight scene's camera convention
+                // (right-drag orbit, left click reserved for selection/interaction)
+                // instead of the VAB's previous fixed, uncontrollable camera.
+                _camDragging = mb.Pressed;
+                _camLastMouse = mb.Position;
+            }
+            else if (mb.ButtonIndex == MouseButton.WheelUp)
+            {
+                _camDistance = Mathf.Clamp(_camDistance * 0.88f, CamMinDistance, CamMaxDistance);
+                ApplyCameraOrbit();
+            }
+            else if (mb.ButtonIndex == MouseButton.WheelDown)
+            {
+                _camDistance = Mathf.Clamp(_camDistance * 1.12f, CamMinDistance, CamMaxDistance);
+                ApplyCameraOrbit();
+            }
+        }
+        else if (ev is InputEventMouseMotion mm && _camDragging)
+        {
+            Vector2 delta = mm.Position - _camLastMouse;
+            _camLastMouse = mm.Position;
+            _camYawDeg -= delta.X * 0.35f;
+            _camPitchDeg = Mathf.Clamp(_camPitchDeg - delta.Y * 0.35f, -5f, 80f);
+            ApplyCameraOrbit();
+        }
+    }
+
+    /// <summary>Positions the preview camera from the current yaw/pitch/distance/target
+    /// orbit state. Called on every orbit/zoom input and after auto-framing.</summary>
+    private void ApplyCameraOrbit()
+    {
+        if (_previewCamera == null) return;
+        float yaw = Mathf.DegToRad(_camYawDeg);
+        float pitch = Mathf.DegToRad(_camPitchDeg);
+        var target = new Vector3(0f, _camTargetY, 0f);
+        var offset = new Vector3(
+            Mathf.Sin(yaw) * Mathf.Cos(pitch),
+            Mathf.Sin(pitch),
+            Mathf.Cos(yaw) * Mathf.Cos(pitch)) * _camDistance;
+        _previewCamera.LookAtFromPosition(target + offset, target, Vector3.Up);
+    }
+
+    /// <summary>
+    /// Frames the whole current assembly in view: centers the orbit target on the
+    /// vehicle's vertical midpoint and sets a distance that fits its full height,
+    /// derived from the camera's vertical FOV. Called after every rebuild
+    /// (template load, variant load, craft load, attach/delete) so a freshly loaded
+    /// Starship stack doesn't render tiny and off-center in the corner of the preview.
+    /// Leaves yaw/pitch alone so a manual orbit isn't reset by every edit.
+    /// </summary>
+    /// <summary>
+    /// Frames the whole current assembly in view. Measures the ACTUAL rendered mesh
+    /// bounds (every <see cref="VisualInstance3D"/> under <see cref="_previewRenderer"/>)
+    /// rather than recomputing node-offset positions independently — the picking
+    /// layer's own node positions are authored in real meters (e.g. Super Heavy is
+    /// ~67.5 m), which does not match the coordinate space the renderer actually draws
+    /// in, so an independent meter-based bounds estimate put the camera nowhere near
+    /// the visible geometry. Measuring the real drawn AABB sidesteps that mismatch
+    /// entirely: it frames exactly what is on screen, whatever scale it's drawn at.
+    /// </summary>
+    private void AutoFrameCamera()
+    {
+        if (_previewCamera == null || _previewRenderer == null) return;
+
+        Aabb? bounds = null;
+        void Visit(Node node, Transform3D parentXform)
+        {
+            Transform3D xform = node is Node3D n3 ? parentXform * n3.Transform : parentXform;
+            if (node is VisualInstance3D vi)
+            {
+                var local = vi.GetAabb();
+                var world = xform * local;
+                bounds = bounds == null ? world : bounds.Value.Merge(world);
+            }
+            foreach (var child in node.GetChildren())
+                Visit(child, xform);
+        }
+        Visit(_previewRenderer, Transform3D.Identity);
+        if (bounds == null) return;
+
+        var box = bounds.Value;
+        float height = Mathf.Max(box.Size.Y, 1f);
+        float radius = Mathf.Max(box.Size.X, box.Size.Z) * 0.5f;
+        _camTargetY = box.Position.Y + box.Size.Y * 0.5f;
+
+        // Put the floor just below the actual rendered bounds. This is derived from
+        // the same AABB used to frame the camera, so custom craft scales and staged
+        // Starship sections cannot float above or clip through the studio surface.
+        if (_previewFloor != null)
+            _previewFloor.Position = new Vector3(0f, box.Position.Y - 0.08f, 0f);
+
+        float halfFov = Mathf.DegToRad(_previewCamera.Fov * 0.5f);
+        float byHeight = (height * 0.52f) / Mathf.Max(0.05f, Mathf.Tan(halfFov));
+        float byRadius = (radius * 1.05f) / Mathf.Max(0.05f, Mathf.Tan(halfFov));
+        _camDistance = Mathf.Clamp(Mathf.Max(byHeight, byRadius), CamMinDistance, CamMaxDistance);
+
+        ApplyCameraOrbit();
+    }
+
+    private void HandlePreviewClick(Vector2 localPos)
+    {
+        if (_previewViewport == null || _previewCamera == null || _picking == null) return;
+
+        // La posición viene en coords del contenedor; escalamos al tamaño real
+        // del SubViewport (el contenedor estira la imagen).
+        // localPos is in container coords; scale it to the SubViewport's real
+        // size (the container stretches the rendered image).
+        var container = _previewViewport.GetParent<SubViewportContainer>();
+        Vector2 vpSize = _previewViewport.Size;
+        Vector2 cSize = container.Size;
+        Vector2 vpPos = cSize.X > 0 && cSize.Y > 0
+            ? new Vector2(localPos.X / cSize.X * vpSize.X, localPos.Y / cSize.Y * vpSize.Y)
+            : localPos;
+
+        Vector3 from = _previewCamera.ProjectRayOrigin(vpPos);
+        Vector3 dir  = _previewCamera.ProjectRayNormal(vpPos);
+
+        var world = _previewViewport.World3D;
+        if (world == null)
+        {
+            SetStatus("Preview physics is not ready yet.");
+            return;
+        }
+        var space = world.DirectSpaceState;
+        var query = new PhysicsRayQueryParameters3D
+        {
+            From = from,
+            To   = from + dir * 1000f,
+            CollisionMask = _picking.PickCollisionMask,
+            CollideWithAreas  = false,
+            CollideWithBodies = true,
+        };
+        var hit = space.IntersectRay(query);
+        if (hit.Count == 0)
+        {
+            ClearSelection();
+            RefreshNodeChoices();
+            SetStatus("Selection cleared.");
+            return;
+        }
+
+        var collider = hit["collider"].As<Node>();
+        string kind = collider != null ? (string)collider.GetMeta(VabPickingLayer.MetaKind, "") : "";
+
+        if (kind == VabPickingLayer.KindNode)
+        {
+            string instanceId = (string)collider!.GetMeta(VabPickingLayer.MetaInstance, "");
+            string nodeId     = (string)collider.GetMeta(VabPickingLayer.MetaNode, "");
+            AttachAtNode(instanceId, nodeId);
+        }
+        else if (kind == VabPickingLayer.KindPart)
+        {
+            string instanceId = (string)collider!.GetMeta(VabPickingLayer.MetaInstance, "");
+            SelectInstance(instanceId, syncList: true);
+            RefreshNodeChoices();
+            SetStatus("Part selected.");
+        }
+    }
+
+    // Adjunta la pieza de catálogo elegida en el nodo clickeado. Resuelve el
+    // childNode compatible automáticamente (el primero que encaje).
+    // Attaches the chosen catalog part at the clicked node, auto-resolving the
+    // first compatible child node.
+    private void AttachAtNode(string parentInstanceId, string parentNodeId)
+    {
+        if (_assembly == null || _catalog == null) return;
+        string? partId = SelectedCatalogPartId();
+        if (partId == null) { SetStatus("Select a catalog part first."); return; }
+        if (!_catalog.TryGet(partId, out var childDef)) { SetStatus("Unknown catalog part."); return; }
+
+        var parentPart = _assembly.Parts.FirstOrDefault(p => p.InstanceId == parentInstanceId);
+        if (parentPart == null) return;
+        var parentDef  = _catalog[parentPart.DefinitionId];
+        var parentNode = parentDef.AttachmentNodes.FirstOrDefault(n => n.Id == parentNodeId);
+        if (parentNode == null) return;
+
+        var childNode = childDef.AttachmentNodes
+            .FirstOrDefault(n => VesselAssembly.NodesAreCompatible(parentNode, n));
+        if (childNode == null)
+        {
+            // Name the actual rule instead of a bare "doesn't fit" — this is the
+            // exact numeric compatibility rule (stack size, node type) a player is
+            // otherwise expected to infer from raw integers in a dropdown.
+            string reason = parentNode.Type.Equals("stack", StringComparison.OrdinalIgnoreCase)
+                ? $"needs a stack node of size {parentNode.Size}"
+                : $"needs a {parentNode.Type} node";
+            SetStatus($"{childDef.Name} can't attach here — this node {reason}.");
+            return;
+        }
+
+        try
+        {
+            RecordUndo();
+            var attached = _assembly.AttachPart(parentInstanceId, parentNodeId, partId, childNode.Id);
+            Refresh();
+            SelectInstance(attached.InstanceId, syncList: true);
+            SetStatus($"Attached {childDef.Name}.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus(ex.Message);
+        }
+    }
+
+    // Selecciona una pieza (o ninguna) y actualiza resaltado, lista y marcadores.
+    // Selects a part (or none) and updates highlight, list, and markers.
+    private void SelectInstance(string? instanceId, bool syncList)
+    {
+        _selectedInstanceId = instanceId;
+        UpdateHighlight();
+        RefreshNodeMarkers();
+
+        if (syncList)
+        {
+            _stackList.DeselectAll();
+            if (instanceId != null)
+            {
+                for (int i = 0; i < _stackList.ItemCount; i++)
+                {
+                    if (_stackList.GetItemMetadata(i).AsString() == instanceId)
+                    {
+                        _stackList.Select(i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private void ClearSelection() => SelectInstance(null, syncList: true);
+
+    // Coloca y dimensiona la cápsula de resaltado sobre la pieza seleccionada.
+    // Places and sizes the highlight capsule over the selected part.
+    private void UpdateHighlight()
+    {
+        if (_highlight == null || _picking == null) return;
+        if (_selectedInstanceId == null
+            || !_picking.TryGetPartBounds(_selectedInstanceId, out var center, out var radius, out var halfHeight))
+        {
+            _highlight.Visible = false;
+            return;
+        }
+
+        _highlight.Mesh = new CapsuleMesh
+        {
+            Radius = radius * 1.08f,
+            Height = Mathf.Max(halfHeight * 2f, radius * 2f) * 1.04f,
+        };
+        if (_highlightMat != null)
+            _highlight.SetSurfaceOverrideMaterial(0, _highlightMat);
+        _highlight.Position = center;
+        _highlight.Visible  = true;
+    }
+
+    // Muestra los marcadores de nodo si hay pieza seleccionada + pieza de catálogo.
+    // Shows node markers when a part is selected and a catalog part is chosen.
+    private void RefreshNodeMarkers()
+    {
+        _picking?.ShowNodeMarkers(_selectedInstanceId, SelectedCatalogPartId());
+    }
+
+    // [Del] borra el subárbol seleccionado desde la preview.
+    // [Del] removes the selected subtree from the preview.
+    public override void _UnhandledKeyInput(InputEvent ev)
+    {
+        if (ev is not InputEventKey { Pressed: true, Echo: false } k) return;
+
+        if (k.Keycode == Key.Escape)
+        {
+            GetTree().ChangeSceneToFile("res://scenes/ui/MainMenu.tscn");
+            GetViewport().SetInputAsHandled();
+        }
+        else if (k.Keycode == Key.Delete && _selectedInstanceId != null)
+        {
+            OnDelete();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (k.CtrlPressed && k.Keycode == Key.Z)
+        {
+            OnUndo();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (k.CtrlPressed && k.Keycode == Key.Y)
+        {
+            OnRedo();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    private void SetStatus(string message)
+    {
+        if (_status != null) _status.Text = message;
+        GD.Print($"[VAB] {message}");
+    }
+
+    private string CraftName()
+    {
+        string name = _craftName?.Text.Trim() ?? "";
+        return string.IsNullOrWhiteSpace(name) ? "Constructed Vessel" : name;
+    }
+
+    private string SafeCraftFileName()
+    {
+        var chars = CraftName()
+            .Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_')
+            .ToArray();
+        string name = new string(chars).Trim('_');
+        return string.IsNullOrWhiteSpace(name) ? "craft" : name;
+    }
+
+    private static string CraftDirectory() =>
+        ProjectSettings.GlobalizePath("user://crafts");
+}

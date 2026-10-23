@@ -1,0 +1,543 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$ROOT/tools/lib/playtest_contracts.sh"
+
+HARNESS_SCRIPT="$ROOT/tools/visual_playtest.sh"
+bash -n "$HARNESS_SCRIPT"
+
+# Renderer and resolution must be explicit, bounded, and shared by every launch path.
+if ! rg -q '^RENDERER="compatibility"$' "$HARNESS_SCRIPT" \
+  || ! rg -q -- '--renderer\).*RENDERER="\$2"' "$HARNESS_SCRIPT"; then
+  echo "FAIL renderer default or --renderer parser is missing" >&2
+  exit 1
+fi
+if ! rg -q 'GODOT_RENDERER_ARGS=\(--rendering-driver opengl3\)' "$HARNESS_SCRIPT" \
+  || ! rg -q 'GODOT_RENDERER_ARGS=\(--rendering-driver vulkan --rendering-method forward_plus\)' "$HARNESS_SCRIPT"; then
+  echo "FAIL renderer names do not map to the expected Godot driver/method arguments" >&2
+  exit 1
+fi
+if ! rg -q 'echo "renderer=\$RENDERER"' "$HARNESS_SCRIPT" \
+  || ! rg -q 'RENDERER name=%s args=%s' "$HARNESS_SCRIPT"; then
+  echo "FAIL renderer identity is missing from the run summary or logs" >&2
+  exit 1
+fi
+if bash "$HARNESS_SCRIPT" --renderer invalid --verify-only >/dev/null 2>&1; then
+  echo "FAIL invalid renderer was accepted" >&2
+  exit 1
+fi
+if ! grep -q '^RESOLUTION="1920x1080"$' "$HARNESS_SCRIPT"; then
+  echo "FAIL default capture resolution is not 1920x1080" >&2
+  exit 1
+fi
+if ! grep -q -- '--resolution).*RESOLUTION="\$2"' "$HARNESS_SCRIPT"; then
+  echo "FAIL --resolution parser is missing" >&2
+  exit 1
+fi
+if ! grep -q -- '--display).*EXTERNAL_DISPLAY="\$2"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'DISPLAY="\$EXTERNAL_DISPLAY" xdpyinfo' "$HARNESS_SCRIPT"; then
+  echo "FAIL external display path is missing" >&2
+  exit 1
+fi
+if ! grep -q 'RESOLUTION_WIDTH < 640' "$HARNESS_SCRIPT" \
+  || ! grep -q 'RESOLUTION_HEIGHT < 360' "$HARNESS_SCRIPT" \
+  || ! grep -q 'RESOLUTION_WIDTH \* RESOLUTION_HEIGHT > 33177600' "$HARNESS_SCRIPT"; then
+  echo "FAIL --resolution bounds are missing or too permissive" >&2
+  exit 1
+fi
+screen_count="$(grep -c -- '-screen 0 \${RESOLUTION}x24' "$HARNESS_SCRIPT")"
+if [[ "$screen_count" -ne 1 ]]; then
+  echo "FAIL expected the centralized xvfb-run path to use the validated resolution, got $screen_count" >&2
+  exit 1
+fi
+godot_resolution_count="$(grep -c -- '--resolution "\$RESOLUTION"' "$HARNESS_SCRIPT")"
+if [[ "$godot_resolution_count" -ne 1 ]]; then
+  echo "FAIL expected the centralized Godot launch to receive --resolution, got $godot_resolution_count" >&2
+  exit 1
+fi
+if grep -q -- '-screen 0 1920x1080x24' "$HARNESS_SCRIPT"; then
+  echo "FAIL hard-coded 1920x1080 Xvfb screen remains" >&2
+  exit 1
+fi
+if ! grep -q 'validate_png()' "$HARNESS_SCRIPT" \
+  || ! grep -q 'zlib.decompress' "$HARNESS_SCRIPT" \
+  || ! grep -q 'expected_scanline_bytes' "$HARNESS_SCRIPT"; then
+  echo "FAIL visual artifacts are not fully decoded and dimension-checked" >&2
+  exit 1
+fi
+if ! grep -q 'MODE" == "hotstage"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'MAX_RUNTIME_SEC=3600' "$HARNESS_SCRIPT"; then
+  echo "FAIL hot-stage mode has no llvmpipe-safe wall-clock budget" >&2
+  exit 1
+fi
+if ! grep -q 'verify_post_run_contracts' "$HARNESS_SCRIPT"; then
+  echo "FAIL verify-only does not run post-capture telemetry gates" >&2
+  exit 1
+fi
+if ! grep -q 'SUMMARY reason=SHIP_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_NODES ship padVisible=False' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_PLANET body=earth slug=ship_vacuum visible=True' "$HARNESS_SCRIPT"; then
+  echo "FAIL standalone Starship mode still accepts an unrelated valid PNG" >&2
+  exit 1
+fi
+if grep -q 'END { exit !(seen\["ship_vacuum"\]' "$HARNESS_SCRIPT"; then
+  echo "FAIL ship throttle-matrix awk uses mawk-incompatible exit !(...) wrapping" >&2
+  exit 1
+fi
+if ! grep -q 'seen\["ship_vacuum_off"\] == 1 && bad != 1' "$HARNESS_SCRIPT"; then
+  echo "FAIL ship throttle-matrix awk no longer proves full/half/shutdown delivered thrust" >&2
+  exit 1
+fi
+if ! grep -q 'ship_detail_steel' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ship_detail_tps' "$HARNESS_SCRIPT" \
+  || ! grep -q 'GetEastDirection(vessel.Position)' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ToGodot(-inspectionEast)' "$HARNESS_SCRIPT" \
+  || ! grep -q 'hud.Visible = false' "$HARNESS_SCRIPT" \
+  || ! grep -q 'SetExternalChaseFrame(90f, 4f, 23f)' "$HARNESS_SCRIPT" \
+  || ! grep -q 'SetExternalChaseFrame(270f, 4f, 23f)' "$HARNESS_SCRIPT"; then
+  echo "FAIL standalone Starship mode lacks deterministic steel/TPS detail views" >&2
+  exit 1
+fi
+if ! grep -q 'noseContrast = upperBySlug\["ship_detail_steel"\] - upperBySlug\["ship_detail_tps"\]' "$HARNESS_SCRIPT" \
+  || ! grep -q 'noseContrast >= 0.003' "$HARNESS_SCRIPT"; then
+  echo "FAIL standalone Starship mode does not prove the steel/TPS nose split in framebuffer evidence" >&2
+  exit 1
+fi
+if ! grep -q 'ship_flaps_windward' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ship_flaps_leeward' "$HARNESS_SCRIPT" \
+  || ! grep -q -- '--flaps) MODE="flaps"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'SUMMARY reason=FLAPS_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_FLAPS slug=' "$HARNESS_SCRIPT" \
+  || ! grep -q 'GetNodesInGroup(group)' "$HARNESS_SCRIPT" \
+  || ! grep -q 'root.IsAncestorOf(mesh)' "$HARNESS_SCRIPT" \
+  || ! grep -q 'materialSplits={materialSplits}' "$HARNESS_SCRIPT" \
+  || ! grep -q 'orientedFaces={orientedFaces}' "$HARNESS_SCRIPT" \
+  || ! grep -q 'splits != 4 || oriented != 4' "$HARNESS_SCRIPT" \
+  || ! grep -q 'readable < 4' "$HARNESS_SCRIPT"; then
+  echo "FAIL standalone Starship mode lacks fail-closed flap inspection evidence" >&2
+  exit 1
+fi
+if ! grep -q -- '--enginebay) MODE="enginebay"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'SUMMARY reason=ENGINEBAY_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_ENGINEBAY slug=' "$HARNESS_SCRIPT" \
+  || ! grep -q 'vacuum == 3 && sea == 3' "$HARNESS_SCRIPT" \
+  || ! grep -q 'DeliveredThrottle(vessel, body) < 0.95' "$HARNESS_SCRIPT" \
+  || ! grep -q 'allowCloseup: true' "$HARNESS_SCRIPT"; then
+  echo "FAIL engine-bay mode lacks spooled six-engine and underside framebuffer evidence" >&2
+  exit 1
+fi
+if ! grep -q 'SUMMARY reason=SMOKE_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_LAUNCH slug=pad present=True visible=True' "$HARNESS_SCRIPT"; then
+  echo "FAIL smoke mode does not prove the single hero launch complex" >&2
+  exit 1
+fi
+if ! grep -q 'DismissPadHelp()' "$HARNESS_SCRIPT"; then
+  echo "FAIL visual captures can be contaminated by the production mission-controls overlay" >&2
+  exit 1
+fi
+if ! grep -q 'simultaneous delivered Super Heavy and Ship plume output' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VISUAL_PLUME ' "$HARNESS_SCRIPT"; then
+  echo "FAIL hot-stage gate does not verify dual delivered plume telemetry" >&2
+  exit 1
+fi
+if ! grep -q 'VISUAL_PLUME_LOD' "$ROOT/scripts/PlumeSystem.cs" \
+  || ! grep -q 'farField: farField' "$ROOT/scripts/PlumeSystem.cs" \
+  || ! grep -q 'far_field' "$ROOT/assets/shaders/raptor_plume.gdshader"; then
+  echo "FAIL plume far-field LOD is not wired through CPU, telemetry, and shader" >&2
+  exit 1
+fi
+echo "PASS renderer selection and bounded --resolution share one Godot launch path"
+echo "PASS plume far-field LOD is wired through CPU, telemetry, and shader"
+
+if ! rg -q 'BuildMappedFarFieldContext' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'OSM\+EarthGround' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'source=\{source\}' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'StarbaseOpenMapPath' "$ROOT/scripts/StarbaseFarField.cs"; then
+  echo "FAIL Starbase far-field is not tied to the mapped OSM/EarthGround context" >&2
+  exit 1
+fi
+echo "PASS Starbase far-field reuses mapped OSM/EarthGround context with source telemetry"
+
+if ! rg -q -- '--starbase-far' "$HARNESS_SCRIPT" \
+  || ! rg -q 'MODE="starbase_far"' "$HARNESS_SCRIPT" \
+  || ! rg -q 'ProcessStarbaseFarField' "$HARNESS_SCRIPT" \
+  || ! rg -q 'STARBASE_FAR_OK' "$HARNESS_SCRIPT" \
+  || ! rg -q 'VISUAL_STARBASE_FAR' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_2km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_5km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_8km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_12km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_20km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'starbase_far_40km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'BuildMappedFarRelief' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'edgeFade=radial' "$HARNESS_SCRIPT"; then
+  echo "FAIL Starbase corridor visual fixture is not wired into the harness" >&2
+  exit 1
+fi
+echo "PASS Starbase 2–40 km transition fixture is wired into the harness"
+
+if ! rg -q -- '--kennedy-far' "$HARNESS_SCRIPT" \
+  || ! rg -q 'MODE="kennedy_far"' "$HARNESS_SCRIPT" \
+  || ! rg -q 'ProcessKennedyFarField' "$HARNESS_SCRIPT" \
+  || ! rg -q 'KENNEDY_FAR_OK' "$HARNESS_SCRIPT" \
+  || ! rg -q 'VISUAL_KENNEDY_TERRAIN' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_2km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_5km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_8km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_12km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_20km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'kennedy_far_40km' "$HARNESS_SCRIPT" \
+  || ! rg -q 'LaunchSiteId, "kennedy"' "$HARNESS_SCRIPT" \
+  || ! rg -q 'source=\{ground\?\.TerrainSource' "$HARNESS_SCRIPT"; then
+  echo "FAIL Kennedy LC-39A terrain fixture is not wired into the harness" >&2
+  exit 1
+fi
+echo "PASS Kennedy LC-39A 2–40 km terrain fixture is wired into the harness"
+
+if ! rg -q 'float lookAtY = shot\.AltitudeM >= 20_000\.0' "$HARNESS_SCRIPT" \
+  || ! rg -q 'earthGlobeAlpha=1\\.000 .*groundVisible=False .*padVisible=False .*farFieldVisible=False' "$HARNESS_SCRIPT"; then
+  echo "FAIL high-altitude Starbase fixture does not prove the single-globe handoff" >&2
+  exit 1
+fi
+echo "PASS high-altitude Starbase fixture tracks camera altitude and proves globe ownership"
+
+if ! rg -q 'FarContextMat' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'kind switch' "$ROOT/scripts/StarbaseFarField.cs" \
+  || ! rg -q 'new BoxMesh \{ Size = new Vector3\(lengthM \* U, 0\.025f \* U, 2\.2f \* U\) \}' "$ROOT/scripts/StarbaseFarField.cs"; then
+  echo "FAIL mapped far-field context does not preserve semantic alpha compositing" >&2
+  exit 1
+fi
+echo "PASS mapped roads, shore, water, wetland, and yard keep semantic alpha compositing"
+
+if rg -q 'GeoSea' "$ROOT/scripts/StarbaseGeospatialContext.cs" \
+  || ! rg -q 'BuildGeospatialCoastline\(feature, wetSand\)' "$ROOT/scripts/StarbaseGeospatialContext.cs" \
+  || ! rg -q 'new BoxMesh \{ Size = new Vector3\(lengthM \* U, 0\.025f \* U, 2\.2f \* U\) \}' "$ROOT/scripts/StarbaseGeospatialContext.cs"; then
+  echo "FAIL close Starbase context still contains a synthetic sea ribbon or elevated shoreline" >&2
+  exit 1
+fi
+echo "PASS close Starbase context uses OSM water footprints without a synthetic sea ribbon"
+
+# Both Godot launch paths must override the default user://logs destination.
+# That default can fail to create its parent directory in the Xvfb environment
+# and caused Godot 4.6.3 to abort before the scene loaded.
+launch_count="$(grep -c -- '--log-file "\$GODOT_LOG_FILE"' "$HARNESS_SCRIPT")"
+if [[ "$launch_count" -ne 1 ]]; then
+  echo "FAIL expected one explicit --log-file argument in the centralized Godot launch, got $launch_count" >&2
+  exit 1
+fi
+if ! grep -q 'GODOT_LOG_FILE="\${CONSOLE_LOG}.godot"' "$HARNESS_SCRIPT"; then
+  echo "FAIL Godot native log is not isolated beside the per-run console log" >&2
+  exit 1
+fi
+if ! grep -q 'mkdir -p "\$(dirname "\$GODOT_LOG_FILE")"' "$HARNESS_SCRIPT"; then
+  echo "FAIL Godot native log parent directory is not created explicitly" >&2
+  exit 1
+fi
+echo "PASS explicit per-launch Godot log contract"
+
+if ! grep -q -- '--orbital-reentry' "$HARNESS_SCRIPT" \
+  || ! grep -q 'MODE="orbital_reentry"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ProcessOrbitalReentry' "$HARNESS_SCRIPT"; then
+  echo "FAIL normal orbital reentry mode is not wired into the harness" >&2
+  exit 1
+fi
+if ! rg -q -- '--entry-physics' "$HARNESS_SCRIPT" \
+  || ! rg -q 'MODE="entry_physics"' "$HARNESS_SCRIPT" \
+  || ! rg -q 'ProcessPhysicalEntry' "$HARNESS_SCRIPT" \
+  || ! rg -q 'SeedPhysicalEntryInterfaceForValidation' "$HARNESS_SCRIPT"; then
+  echo "FAIL non-demo physical-entry mode is not wired into the harness" >&2
+  exit 1
+fi
+if ! rg -q 'double activeEntryWarp = _orbitalReentryEntry' "$HARNESS_SCRIPT" \
+  || ! rg -q 'activeEntryWarp' "$HARNESS_SCRIPT"; then
+  echo "FAIL orbital reentry harness can pause after ENTRY when preparation has handed off" >&2
+  exit 1
+fi
+if ! grep -q -- '--orbit' "$HARNESS_SCRIPT" \
+  || ! grep -q 'MODE="orbit"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ORBIT_DIRECT_OK' "$HARNESS_SCRIPT"; then
+  echo "FAIL direct orbital visual mode is not wired into the harness" >&2
+  exit 1
+fi
+if ! grep -q 'LogTelemetry(slug, \$"headless://' "$HARNESS_SCRIPT"; then
+  echo "FAIL headless captures do not preserve planet framing telemetry" >&2
+  exit 1
+fi
+if ! grep -q -- '--atmosphere-ground' "$HARNESS_SCRIPT" \
+  || ! grep -q 'MODE="atmosphere_ground"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ATMOSPHERE_GROUND_OK' "$HARNESS_SCRIPT"; then
+  echo "FAIL fast Earth-ground atmosphere matrix is not wired into the harness" >&2
+  exit 1
+fi
+if ! grep -q -- '--atmosphere-orbit' "$HARNESS_SCRIPT" \
+  || ! grep -q 'MODE="atmosphere_orbit"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ATMOSPHERE_ORBIT_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q -- '--earth-view' "$HARNESS_SCRIPT" \
+  || ! grep -q 'VisualEarthView' "$HARNESS_SCRIPT" \
+  || ! grep -q 'viewUp=' "$HARNESS_SCRIPT" \
+  || ! grep -q 'earth_day_gain_090' "$ROOT/scripts/RenderPerformanceProbe.cs" \
+  || ! grep -q 'earth_day_gain_075' "$ROOT/scripts/RenderPerformanceProbe.cs" \
+  || ! grep -q 'earth_cloud_amount_065' "$ROOT/scripts/RenderPerformanceProbe.cs" \
+  || ! grep -q 'earth_cloud_amount_040' "$ROOT/scripts/RenderPerformanceProbe.cs"; then
+  echo "FAIL scaled-space Earth shader A/B harness is not wired" >&2
+  exit 1
+fi
+if ! grep -q -- '--clear-solar-eclipse' "$HARNESS_SCRIPT" \
+  || ! grep -q 'SetVisualClearSolarOcclusion' "$ROOT/scripts/SunController.cs" \
+  || ! grep -q 'clearSolarEclipse' "$HARNESS_SCRIPT"; then
+  echo "FAIL deterministic clear-solar-eclipse visual fixture is not wired" >&2
+  exit 1
+fi
+if awk '
+  /private void ProcessOrbitalReentry\(/ { inside = 1 }
+  inside && /BeginReentryDemonstration/ { found = 1 }
+  inside && /^    \/\/ Reuses the exact same deterministic-70km-entry/ { inside = 0 }
+  END { exit found ? 0 : 1 }
+' "$HARNESS_SCRIPT"; then
+  echo "FAIL orbital reentry harness calls the deterministic demo entry point" >&2
+  exit 1
+fi
+if ! grep -q 'source=map_deorbit_autopilot' "$HARNESS_SCRIPT" \
+  || ! grep -q 'normalFlow=True demo=False' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ORBITAL_REENTRY_OK' "$HARNESS_SCRIPT" \
+  || ! grep -q 'ORBITAL_REENTRY_DEORBIT_STALLED' "$HARNESS_SCRIPT"; then
+  echo "FAIL normal orbital reentry fail-closed evidence is incomplete" >&2
+  exit 1
+fi
+if ! grep -q 'status="PARTIAL"' "$HARNESS_SCRIPT" \
+  || ! grep -q 'PARTIAL reason=INTERRUPTED' "$HARNESS_SCRIPT"; then
+  echo "FAIL interrupted visual runs are not marked PARTIAL" >&2
+  exit 1
+fi
+echo "PASS normal orbital reentry is opt-in, non-demo, and fail-closed"
+
+TEST_DIR="$(mktemp -d /tmp/exo_contract_test.XXXXXX)"
+trap 'rm -rf "$TEST_DIR"' EXIT
+
+write_good_log() {
+  local target="$1"
+  {
+    echo "=== Exosphere visual playtest fixture mode=ascent ==="
+    echo "TRACE_ASCENT t=1 guidance=Ascent finite=True destroyed=False structuralLost=False"
+    echo "TRACE_ASCENT t=2 guidance=Ascent finite=True destroyed=False structuralLost=False"
+    echo "TRANSITION_ASCENT t=3 from=Ascent guidance=Coast"
+    echo "TRACE_ASCENT t=3 guidance=Coast finite=True destroyed=False structuralLost=False"
+    echo "TRACE_ASCENT t=4 guidance=Coast finite=True destroyed=False structuralLost=False"
+    echo "TRANSITION_ASCENT t=5 from=Coast guidance=Insert"
+    echo "TRACE_ASCENT t=5 guidance=Insert finite=True destroyed=False structuralLost=False"
+    echo "CAPTURE orbit pe=146729.1 atmoTop=140000.0"
+    echo "SUMMARY reason=ASCENT_ORBIT_OK"
+  } > "$target"
+}
+
+expect_failure() {
+  local name="$1"
+  local log="$2"
+  if verify_ascent_log_contract "$log" >/dev/null 2>&1; then
+    echo "FAIL: contract accepted invalid fixture: $name" >&2
+    return 1
+  fi
+  echo "PASS invalid fixture rejected: $name"
+}
+
+good="$TEST_DIR/good.log"
+write_good_log "$good"
+verify_ascent_log_contract "$good"
+echo "PASS valid ascent fixture accepted"
+
+bad_periapsis="$TEST_DIR/bad-periapsis.log"
+write_good_log "$bad_periapsis"
+sed -i 's/pe=146729.1/pe=-1200.0/' "$bad_periapsis"
+expect_failure "suborbital orbit label" "$bad_periapsis"
+
+missing_insert="$TEST_DIR/missing-insert.log"
+write_good_log "$missing_insert"
+sed -i '/guidance=Insert/d' "$missing_insert"
+expect_failure "missing insertion phase" "$missing_insert"
+
+non_finite="$TEST_DIR/non-finite.log"
+write_good_log "$non_finite"
+sed -i 's/finite=True/finite=False/' "$non_finite"
+expect_failure "non-finite state" "$non_finite"
+
+fallback="$TEST_DIR/fallback.log"
+write_good_log "$fallback"
+echo "FALLBACK JumpToOrbit(200km)" >> "$fallback"
+expect_failure "teleport fallback" "$fallback"
+
+regression="$TEST_DIR/insert-to-coast.log"
+write_good_log "$regression"
+echo "FAIL invariant=insert_to_coast from=Insert guidance=Coast" >> "$regression"
+expect_failure "insert-to-coast regression" "$regression"
+
+short_trace="$TEST_DIR/short-trace.log"
+write_good_log "$short_trace"
+sed -i '1,3d' "$short_trace"
+expect_failure "insufficient diagnostic sampling" "$short_trace"
+
+destroyed="$TEST_DIR/destroyed.log"
+write_good_log "$destroyed"
+sed -i 's/destroyed=False/destroyed=True/' "$destroyed"
+expect_failure "destroyed vehicle state" "$destroyed"
+
+malformed_orbit="$TEST_DIR/malformed-orbit.log"
+write_good_log "$malformed_orbit"
+sed -i 's/pe=146729.1/pe=NaN/' "$malformed_orbit"
+expect_failure "non-numeric orbital evidence" "$malformed_orbit"
+
+stalled="$TEST_DIR/stalled.log"
+write_good_log "$stalled"
+echo "FAIL invariant=physics_stalled noProgressFor=60.1" >> "$stalled"
+expect_failure "stalled physics invariant" "$stalled"
+
+nul_bytes="$TEST_DIR/nul-bytes.log"
+write_good_log "$nul_bytes"
+printf '\0corrupt-tail\n' >> "$nul_bytes"
+expect_failure "concurrent-writer NUL corruption" "$nul_bytes"
+
+duplicate_run="$TEST_DIR/duplicate-run.log"
+write_good_log "$duplicate_run"
+echo "SUMMARY reason=ABORT" >> "$duplicate_run"
+expect_failure "duplicate run boundary" "$duplicate_run"
+
+echo "visual_playtest_contract_test: 1 valid and 11 invalid fixtures passed"
+
+write_png_fixture() {
+  local target="$1"
+  python3 - "$target" <<'PY'
+import struct
+import sys
+import zlib
+
+path = sys.argv[1]
+width, height = 800, 450
+raw = b"".join(
+    b"\x00" + bytes((24 + (y % 16), 42 + (y % 12), 68 + (y % 10), 255)) * width
+    for y in range(height)
+)
+
+def chunk(kind, payload):
+    return (struct.pack(">I", len(payload)) + kind + payload
+            + struct.pack(">I", zlib.crc32(kind + payload) & 0xffffffff))
+
+png = (b"\x89PNG\r\n\x1a\n"
+       + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+       + chunk(b"IDAT", zlib.compress(raw, 1))
+       + chunk(b"IEND", b""))
+with open(path, "wb") as stream:
+    stream.write(png)
+PY
+}
+
+orbital_out="$TEST_DIR/orbital-good-out"
+mkdir -p "$orbital_out"
+for slug in orbital_reentry_orbit orbital_reentry_entry orbital_reentry_peak_heating \
+  orbital_reentry_retro_burn orbital_reentry_caught; do
+  write_png_fixture "$orbital_out/exo_play_${slug}.png"
+done
+orbital_good="$TEST_DIR/orbital-good.log"
+cat > "$orbital_good" <<'EOF'
+=== Exosphere visual playtest fixture mode=orbital_reentry ===
+NORMAL_REENTRY_SETUP source=JumpToOrbit altitude=250000 pe=250000 ap=250000 atmoTop=140000 launchSite=starbase demo=False flownAscent=False
+NORMAL_REENTRY_ARMED source=map_deorbit_autopilot targetPe=60000 dv=95.0 phase=COAST launchSite=starbase demo=False
+TRACE_ORBITAL_REENTRY t=1 alt=250000 vUp=0 spd=7700 pe=250000 ap=250000 phase=COAST throttle=0 failedEngines=0 catchArmed=False catchPins=True destroyed=False normalFlow=True demo=False
+TRACE_ORBITAL_REENTRY t=2 alt=70000 vUp=-1200 spd=1800 pe=50000 ap=250000 phase=ENTRY throttle=0 failedEngines=0 catchArmed=True catchPins=True destroyed=False normalFlow=True demo=False
+CHECK orbital_reentry caught=True pins=2 relativeSpeed=0.030 angularSpeed=0.0000 normalFlow=True demo=False
+SUMMARY reason=ORBITAL_REENTRY_OK frames=120
+EOF
+if ! bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only \
+    --out-dir "$orbital_out" --log "$orbital_good" --resolution 800x450 >/dev/null; then
+  echo "FAIL valid normal orbital reentry fixture rejected" >&2
+  exit 1
+fi
+if ! rg -q '^renderer=compatibility$' "$orbital_out/run-summary.txt" \
+  || ! rg -q '^renderer_args=--rendering-driver opengl3$' "$orbital_out/run-summary.txt"; then
+  echo "FAIL default Compatibility renderer is missing from run-summary.txt" >&2
+  exit 1
+fi
+if ! bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only --renderer forward_plus \
+    --out-dir "$orbital_out" --log "$orbital_good" --resolution 800x450 >/dev/null; then
+  echo "FAIL valid Forward Plus verify-only fixture rejected" >&2
+  exit 1
+fi
+if ! rg -q '^renderer=forward_plus$' "$orbital_out/run-summary.txt" \
+  || ! rg -q '^renderer_args=--rendering-driver vulkan --rendering-method forward_plus$' \
+    "$orbital_out/run-summary.txt"; then
+  echo "FAIL Forward Plus renderer is missing from run-summary.txt" >&2
+  exit 1
+fi
+echo "PASS valid normal orbital reentry fixture accepted"
+
+orbital_renderer="$TEST_DIR/orbital-renderer.log"
+cp "$orbital_good" "$orbital_renderer"
+echo 'RENDERER_ACTUAL gl_compatibility' >> "$orbital_renderer"
+if ! bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only \
+    --out-dir "$orbital_out" --log "$orbital_renderer" --resolution 800x450 >/dev/null; then
+  echo "FAIL matching actual renderer was rejected" >&2
+  exit 1
+fi
+if ! rg -q '^renderer_actual=gl_compatibility$' "$orbital_out/run-summary.txt"; then
+  echo "FAIL actual renderer was not preserved in the summary" >&2
+  exit 1
+fi
+if bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only --renderer forward_plus \
+    --out-dir "$orbital_out" --log "$orbital_renderer" --resolution 800x450 >/dev/null 2>&1; then
+  echo "FAIL requested Forward Plus accepted Compatibility evidence" >&2
+  exit 1
+fi
+echo "PASS renderer mismatch rejected using actual runtime evidence"
+
+orbital_demo="$TEST_DIR/orbital-demo.log"
+sed 's/demo=False/demo=True/g' "$orbital_good" > "$orbital_demo"
+if bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only \
+    --out-dir "$orbital_out" --log "$orbital_demo" --resolution 800x450 >/dev/null 2>&1; then
+  echo "FAIL demo-only orbital fixture was accepted" >&2
+  exit 1
+fi
+echo "PASS demo-only orbital fixture rejected"
+
+orbital_no_catch="$TEST_DIR/orbital-no-catch.log"
+sed '/CHECK orbital_reentry/d' "$orbital_good" > "$orbital_no_catch"
+if bash "$HARNESS_SCRIPT" --orbital-reentry --verify-only \
+    --out-dir "$orbital_out" --log "$orbital_no_catch" --resolution 800x450 >/dev/null 2>&1; then
+  echo "FAIL no-catch orbital fixture was accepted" >&2
+  exit 1
+fi
+echo "PASS no-catch orbital fixture rejected"
+
+echo "visual_playtest_contract_test: normal orbital reentry fixtures passed"
+
+entry_out="$TEST_DIR/entry-physics-good-out"
+mkdir -p "$entry_out"
+for slug in entry_physics_interface entry_physics_peak_heating entry_physics_transonic; do
+  write_png_fixture "$entry_out/exo_play_${slug}.png"
+done
+entry_good="$TEST_DIR/entry-physics-good.log"
+cat > "$entry_good" <<'EOF'
+=== Exosphere visual playtest fixture mode=entry_physics ===
+VISUAL_SUN override=True elevationDeg=25.00 phase=DAY clearSolarEclipse=False physicalSunPositionUnchanged=True
+VISUAL_CAMERA preset=edl_side yawDeg=0.00 pitchDeg=-2.00 distance=42.00 fov=54.00 mode=ShipChase
+PHYSICAL_ENTRY_SETUP source=entry_interface altitude=120000 inertialSpeed=7600 airspeed=7176.0 inertialFlightPathDeg=-1.60 reserve=0.060 normalFlow=True demo=False orientationWritesAfterSeed=0 angularVelocityResetsAfterSeed=0
+TRACE_ENTRY_PHYSICS t=2.00 alt=118900.0 spd=7590.0 mach=25.100 qPa=12.0 gammaDeg=-1.600 alphaDeg=70.000 bankDeg=0.000 energyJkg=-1000.0 hM2s=1.0 ld=0.3000 aeroG=0.0100 heatWm2=1000.0 guidanceDt=0.020000 guidanceUpdates=100 phase=ENTRY destroyed=False normalFlow=True demo=False
+TRACE_ENTRY_PHYSICS t=310.00 alt=18000.0 spd=390.0 mach=1.150 qPa=18000.0 gammaDeg=-12.000 alphaDeg=70.000 bankDeg=5.000 energyJkg=-2000.0 hM2s=0.5 ld=0.3000 aeroG=0.8000 heatWm2=20000.0 guidanceDt=0.020000 guidanceUpdates=15500 phase=AERO_DESCENT destroyed=False normalFlow=True demo=False
+CHECK entry_physics interface=True peakHeating=True transonic=True finalMach=1.150 peakQPa=48000.0 peakHeatWm2=420000.0 peakG=3.200 minimumWindward=0.9100 guidanceDt=0.020000 guidanceUpdates=15500 cadenceValid=True envelopeValid=True normalFlow=True demo=False orientationWritesAfterSeed=0
+SUMMARY reason=ENTRY_PHYSICS_OK frames=600
+EOF
+if ! bash "$HARNESS_SCRIPT" --entry-physics --verify-only \
+    --out-dir "$entry_out" --log "$entry_good" --resolution 800x450 >/dev/null; then
+  echo "FAIL valid non-demo physical-entry fixture rejected" >&2
+  exit 1
+fi
+echo "PASS valid non-demo physical-entry fixture accepted"
+
+entry_demo="$TEST_DIR/entry-physics-demo.log"
+sed 's/demo=False/demo=True/g' "$entry_good" > "$entry_demo"
+if bash "$HARNESS_SCRIPT" --entry-physics --verify-only \
+    --out-dir "$entry_out" --log "$entry_demo" --resolution 800x450 >/dev/null 2>&1; then
+  echo "FAIL demo physical-entry evidence was accepted" >&2
+  exit 1
+fi
+echo "PASS demo physical-entry evidence rejected"
+
+echo "visual_playtest_contract_test: physical-entry fixtures passed"

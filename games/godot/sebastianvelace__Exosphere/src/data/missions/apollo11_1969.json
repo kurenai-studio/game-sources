@@ -1,0 +1,195 @@
+{
+  "id": "mission-apollo11-1969",
+  "sequence": 5,
+  "program": "NASA Apollo Program",
+  "titleEn": "Apollo 11 — The Eagle Has Landed",
+  "titleEs": "Apollo 11 — El Águila ha alunizado",
+  "summaryEn": "Launch AS-506, reach Earth parking orbit, complete TLI, separate CSM-107, extract LM-5 Eagle, hard-dock Columbia to Eagle, insert the docked stack into lunar orbit, then fly Eagle through descent orbit insertion and powered descent to a soft landing. The return to Earth is a later slice.",
+  "summaryEs": "Lanza AS-506, alcanza la órbita de estacionamiento, completa TLI, separa CSM-107, extrae el LM-5 Eagle, acopla Columbia con Eagle e inserta el conjunto en órbita lunar y lleva al Eagle por la inserción en órbita de descenso y el descenso propulsado hasta un alunizaje suave. El regreso a la Tierra queda para una tanda posterior.",
+  "historicalDate": "1969-07-16",
+  "vehicleVariantId": "apollo11-saturn5-as506-csm107-lm5-1969-07-16",
+  "launchSiteId": "kennedy",
+  "flightProfileId": "apollo11-lunar-landing-return",
+  "crewIds": [
+    "neil-a-armstrong",
+    "edwin-e-buzz-aldrin-jr",
+    "michael-collins"
+  ],
+  "prerequisiteMissionIds": [
+    "mission-apollo8-1968"
+  ],
+  "objectives": [
+    {
+      "id": "earth-parking-orbit",
+      "titleEn": "Reach the Earth parking orbit",
+      "titleEs": "Alcanza la órbita de estacionamiento terrestre",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "ORBIT",
+      "required": true
+    },
+    {
+      "id": "translunar-injection",
+      "titleEn": "Complete translunar injection",
+      "titleEs": "Completa la inyección translunar",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "TLI",
+      "required": true
+    },
+    {
+      "id": "lunar-approach",
+      "titleEn": "Separate CSM-107 for transposition",
+      "titleEs": "Separa CSM-107 para la transposición",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "LUNAR_APPROACH",
+      "required": true
+    },
+    {
+      "id": "columbia-eagle-docking",
+      "titleEn": "Hard-dock Columbia to Eagle",
+      "titleEs": "Acopla Columbia con Eagle",
+      "metric": "docking_achieved",
+      "comparison": "true",
+      "target": 1,
+      "required": true
+    },
+    {
+      "id": "lunar-orbit-insertion",
+      "titleEn": "Insert the docked stack into lunar orbit",
+      "titleEs": "Inserta el conjunto acoplado en órbita lunar",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "LOI",
+      "required": true
+    },
+    {
+      "id": "circular-lunar-orbit",
+      "titleEn": "Circularize in low lunar orbit",
+      "titleEs": "Circulariza en órbita lunar baja",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "LUNAR_ORBIT",
+      "required": true
+    },
+    {
+      "id": "lunar-landing",
+      "titleEn": "Land Eagle softly on the Moon",
+      "titleEs": "Aluniza el Eagle con suavidad",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "LANDED",
+      "required": true
+    }
+  ],
+  "limits": [
+    {
+      "id": "crew-survival",
+      "titleEn": "Keep all three crew alive",
+      "titleEs": "Mantén vivos a los tres tripulantes",
+      "metric": "crew_alive",
+      "comparison": "true",
+      "target": 1,
+      "required": true
+    },
+    {
+      "id": "command-module-survival",
+      "titleEn": "Keep the flown spacecraft intact",
+      "titleEs": "Mantén intacta la nave en vuelo",
+      "metric": "vessel_destroyed",
+      "comparison": "false",
+      "target": 0,
+      "required": true
+    }
+  ],
+  "procedure": [
+    {
+      "id": "launch",
+      "titleEn": "Launch on the lunar window",
+      "titleEs": "Lanzá en la ventana lunar",
+      "hintEn": "Press [L]: the count holds until the Moon's window opens, then Mission Control flies the Saturn V. Or hold [Z] to fly it yourself.",
+      "hintEs": "Pulsá [L]: la cuenta espera a que abra la ventana de la Luna y Control de Misión vuela el Saturn V. O mantené [Z] para volarlo vos.",
+      "doneWhenPhase": "LIFTOFF"
+    },
+    {
+      "id": "orbit",
+      "titleEn": "Reach the Earth parking orbit",
+      "titleEs": "Llegá a la órbita de estacionamiento",
+      "hintEn": "[G] flies the ascent, [Space] stages. [F3] shows apoapsis and periapsis. [K] hands this step to Mission Control and back.",
+      "hintEs": "[G] vuela el ascenso, [Espacio] separa etapas. [F3] muestra apoapsis y periapsis. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "earth-parking-orbit"
+    },
+    {
+      "id": "tli",
+      "titleEn": "Burn for the Moon (TLI)",
+      "titleEs": "Encendé rumbo a la Luna (TLI)",
+      "hintEn": "Open the map with [M], press [2] to plan the Moon transfer and [Enter] to fly it at the right moment. [K] hands this step to Mission Control and back.",
+      "hintEs": "Abrí el mapa con [M], pulsá [2] para planificar la transferencia a la Luna y [Enter] para ejecutarla en el momento justo. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "translunar-injection"
+    },
+    {
+      "id": "dock",
+      "titleEn": "Transposition and docking with Eagle",
+      "titleEs": "Transposición y acople con el Eagle",
+      "hintEn": "Separate from the S-IVB, turn around and dock with Eagle's port. [K] hands this step to Mission Control and back.",
+      "hintEs": "Separate de la S-IVB, girá y acoplá con el puerto del Eagle. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "columbia-eagle-docking"
+    },
+    {
+      "id": "loi",
+      "titleEn": "Brake into lunar orbit (LOI)",
+      "titleEs": "Frená en órbita lunar (LOI)",
+      "hintEn": "At the closest point to the Moon point retrograde and burn until the orbit closes. [K] hands this step to Mission Control and back.",
+      "hintEs": "En el punto más cercano a la Luna apuntá retrógrado y quemá hasta que la órbita se cierre. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "lunar-orbit-insertion"
+    },
+    {
+      "id": "circular",
+      "titleEn": "Circularize in low lunar orbit",
+      "titleEs": "Circularizá en órbita lunar baja",
+      "hintEn": "Burn retrograde again at the closest point to round the orbit off near 110 km. [K] hands this step to Mission Control and back.",
+      "hintEs": "Volvé a quemar retrógrado en el punto más cercano para redondear la órbita cerca de 110 km. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "circular-lunar-orbit"
+    },
+    {
+      "id": "landing",
+      "titleEn": "Land Eagle on the Moon",
+      "titleEs": "Alunizá el Eagle",
+      "hintEn": "Eagle undocks, lowers its orbit to 15 km and brakes down to the surface; touch down under 3 m/s. [K] hands this step to Mission Control and back.",
+      "hintEs": "El Eagle se desacopla, baja su órbita a 15 km y frena hasta la superficie; tocá a menos de 3 m/s. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "lunar-landing"
+    }
+  ],
+  "anomalies": [],
+  "rewards": [
+    {
+      "id": "historical-completion",
+      "amount": 275,
+      "unlockIds": [
+        "mission-sts1-1981",
+        "vehicle-family-apollo-lm"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "apollo11-press-kit",
+      "url": "https://www.nasa.gov/wp-content/uploads/static/apollo50th/pdf/A11_PressKit.pdf",
+      "accessedDate": "2026-08-07",
+      "description": "AS-506 / CSM-107 / LM-5 identity, masses and TD&E overview."
+    },
+    {
+      "id": "apollo11-mission-report",
+      "url": "https://www.nasa.gov/history/alsj/a11/A11_MissionReport.pdf",
+      "accessedDate": "2026-08-08",
+      "description": "Apollo 11 mission report — transposition, docking, LOI and lunar ops."
+    }
+  ]
+}

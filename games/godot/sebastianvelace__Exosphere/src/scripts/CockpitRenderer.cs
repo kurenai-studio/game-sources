@@ -1,0 +1,127 @@
+namespace Exosphere.Game;
+
+using Godot;
+
+/// <summary>
+/// First-person cockpit interior (Crew-Dragon style). Built in vessel-LOCAL space and parented to
+/// the vessel render node so it inherits the floating-origin orientation. CONTRACT: pilot eye at
+/// local (0, 36, 0.6) u, forward = +Y (nose), up = -Z. Open at the front (windshield to space);
+/// a raked dashboard below the sightline holds three screens (Screen0 centre / Screen1 left /
+/// Screen2 right) that <see cref="CockpitInstruments"/> drives with live telemetry. Visible only
+/// in the Cockpit camera mode.
+/// </summary>
+public partial class CockpitRenderer : Node3D
+{
+    public const float AuthoredEyeY = 36f;
+    public const float AuthoredEyeZ = 0.6f;
+    // Presentation-only fill: the IVA shell is closed to the scene sun, so a small
+    // emissive floor keeps the frame/console readable without lighting the exterior.
+    private const float InteriorKeyEnergy = 0.62f;
+    private const float InteriorFillEnergy = 0.36f;
+    private const float EyeY = AuthoredEyeY;
+    private const float EyeZ = AuthoredEyeZ;
+
+    public bool CockpitVisible { get => Visible; set => Visible = value; }
+
+    public override void _Ready()
+    {
+        Visible = false;
+        Build();
+    }
+
+    private void Build()
+    {
+        var wall   = Mat(new Color(0.18f, 0.20f, 0.24f), 0.62f, 0.05f);
+        var floorM = Mat(new Color(0.08f, 0.09f, 0.11f), 0.82f, 0.02f);
+        var panel  = Mat(new Color(0.09f, 0.10f, 0.13f), 0.4f, 0.3f);   // dark console
+        var trim   = Mat(new Color(0.16f, 0.18f, 0.22f), 0.55f, 0.28f);
+        var frameM = Mat(new Color(0.12f, 0.14f, 0.17f), 0.50f, 0.35f);
+        var seatM  = Mat(new Color(0.12f, 0.13f, 0.16f), 0.72f, 0.0f);
+        var accent = Mat(new Color(0.28f, 0.32f, 0.37f), 0.42f, 0.48f);
+
+        // Keep the sealed shell from collapsing to pure black during eclipse/night
+        // captures. These values are deliberately below the display emission and do
+        // not replace the two local lights below.
+        wall.EmissionEnabled = true;
+        wall.Emission = new Color(0.008f, 0.012f, 0.020f);
+        trim.EmissionEnabled = true;
+        trim.Emission = new Color(0.012f, 0.018f, 0.030f);
+        frameM.EmissionEnabled = true;
+        frameM.Emission = new Color(0.009f, 0.015f, 0.026f);
+        accent.EmissionEnabled = true;
+        accent.Emission = new Color(0.018f, 0.030f, 0.050f);
+
+        var screenM = Mat(new Color(0.02f, 0.04f, 0.08f), 0.2f, 0f);
+        screenM.EmissionEnabled = true; screenM.Emission = new Color(0.06f, 0.12f, 0.22f);
+
+        // ── Enclosing shell — open at the FRONT (windshield). Ceiling/walls/back/floor only. ──
+        Spawn("Ceiling", new BoxMesh { Size = new Vector3(2.3f, 2.7f, 0.10f) }, wall,  new Vector3(0, EyeY - 0.4f, -0.85f), new Vector3(-10, 0, 0));
+        Spawn("WallL",   new BoxMesh { Size = new Vector3(0.10f, 3.0f, 1.7f) }, wall,  new Vector3(-1.12f, EyeY - 0.2f, 0.15f));
+        Spawn("WallR",   new BoxMesh { Size = new Vector3(0.10f, 3.0f, 1.7f) }, wall,  new Vector3( 1.12f, EyeY - 0.2f, 0.15f));
+        Spawn("Back",    new BoxMesh { Size = new Vector3(2.3f, 0.10f, 1.9f) }, wall,  new Vector3(0, EyeY - 1.7f, 0.15f));
+        Spawn("Floor",   new BoxMesh { Size = new Vector3(2.3f, 3.2f, 0.10f) }, floorM, new Vector3(0, EyeY - 0.1f, 1.05f));
+
+        // ── Dashboard: a wide raked console below the forward sightline ────────────
+        Spawn("Dash",     new BoxMesh { Size = new Vector3(2.1f, 0.78f, 0.12f) }, panel, new Vector3(0, EyeY + 1.22f, 1.34f), new Vector3(54, 0, 0));
+        Spawn("DashEdge", new BoxMesh { Size = new Vector3(2.15f, 0.06f, 0.16f) }, trim, new Vector3(0, EyeY + 0.86f, 1.12f), new Vector3(54, 0, 0));
+        Spawn("CentrePedestal", new BoxMesh { Size = new Vector3(0.34f, 1.25f, 0.30f) }, panel,
+            new Vector3(0, EyeY + 0.15f, 0.93f), new Vector3(10, 0, 0));
+
+        // Three screens on the dashboard, auto-oriented to face the pilot eye.
+        var sq = new QuadMesh { Size = new Vector2(0.46f, 0.30f) };
+        AddScreen("Screen0", sq, screenM, new Vector3(0f,     EyeY + 0.90f, 1.02f));
+        AddScreen("Screen1", sq, screenM, new Vector3(-0.58f, EyeY + 0.90f, 1.02f));
+        AddScreen("Screen2", sq, screenM, new Vector3(0.58f,  EyeY + 0.90f, 1.02f));
+        // ── Windshield frame (the front is open to space; this just outlines it) ───
+        Spawn("WsTop",     new BoxMesh { Size = new Vector3(2.0f, 0.09f, 0.09f) }, frameM, new Vector3(0, EyeY + 1.9f, -0.55f));
+        Spawn("WsPillarL", new BoxMesh { Size = new Vector3(0.09f, 1.7f, 0.09f) }, frameM, new Vector3(-1.0f, EyeY + 1.45f, 0.0f),  new Vector3(38, 0, 0));
+        Spawn("WsPillarR", new BoxMesh { Size = new Vector3(0.09f, 1.7f, 0.09f) }, frameM, new Vector3( 1.0f, EyeY + 1.45f, 0.0f),  new Vector3(38, 0, 0));
+        Spawn("WsCentre",  new BoxMesh { Size = new Vector3(0.05f, 1.6f, 0.05f) }, frameM, new Vector3(0f,    EyeY + 1.5f, -0.05f), new Vector3(38, 0, 0));
+        Spawn("OverheadPanel", new BoxMesh { Size = new Vector3(1.15f, 0.72f, 0.06f) }, panel,
+            new Vector3(0, EyeY + 0.62f, -0.79f), new Vector3(-10, 0, 0));
+        for (int i = -4; i <= 4; i++)
+            Spawn($"OverheadSwitch{i}", new BoxMesh { Size = new Vector3(0.055f, 0.12f, 0.045f) },
+                accent, new Vector3(i * 0.105f, EyeY + 0.72f, -0.835f));
+
+        // ── Seats (two side by side, reclined) ─────────────────────────────────────
+        for (int s = -1; s <= 1; s += 2)
+        {
+            float x = s * 0.42f;
+            Spawn($"SeatPan{s}",  new BoxMesh { Size = new Vector3(0.5f, 0.55f, 0.16f) }, seatM, new Vector3(x, EyeY - 0.55f, 1.0f));
+            Spawn($"SeatBack{s}", new BoxMesh { Size = new Vector3(0.5f, 0.16f, 0.75f) }, seatM, new Vector3(x, EyeY - 0.8f, 0.55f), new Vector3(14, 0, 0));
+        }
+
+        // ── Soft interior lighting (sealed hull gets no sun) ───────────────────────
+        AddChild(new OmniLight3D { Position = new Vector3(0, EyeY + 0.4f, -0.5f), OmniRange = 4.0f, LightEnergy = InteriorKeyEnergy, LightColor = new Color(0.72f, 0.79f, 0.92f) });
+        AddChild(new OmniLight3D { Position = new Vector3(0, EyeY + 1.0f, 0.7f),  OmniRange = 2.8f, LightEnergy = InteriorFillEnergy, LightColor = new Color(0.45f, 0.61f, 0.84f) });
+        _ = EyeZ;
+    }
+
+    // Places a screen quad and orients its visible (+Z) face toward the pilot eye.
+    private void AddScreen(string name, Mesh mesh, StandardMaterial3D mat, Vector3 pos)
+    {
+        var eye = new Vector3(0, EyeY, EyeZ);
+        Vector3 f = (eye - pos).Normalized();
+        Vector3 upRef = new Vector3(0, 0, -1);
+        if (Mathf.Abs(f.Dot(upRef)) > 0.95f) upRef = new Vector3(0, 1, 0);
+        Vector3 right = upRef.Cross(f).Normalized();
+        Vector3 up    = f.Cross(right).Normalized();
+        var n = new MeshInstance3D { Name = name, Mesh = mesh };
+        n.Transform = new Transform3D(new Basis(right, up, f), pos);
+        n.SetSurfaceOverrideMaterial(0, mat);
+        AddChild(n);
+    }
+
+    private void Spawn(string name, Mesh mesh, StandardMaterial3D mat, Vector3 pos, Vector3? rotDeg = null)
+    {
+        var n = new MeshInstance3D { Name = name, Mesh = mesh, Position = pos };
+        if (rotDeg is { } r) n.RotationDegrees = r;
+        n.MaterialOverride = mat;
+        AddChild(n);
+    }
+
+    private static StandardMaterial3D Mat(Color albedo, float roughness, float metallic) => new()
+    {
+        AlbedoColor = albedo, Roughness = roughness, Metallic = metallic,
+    };
+}

@@ -1,0 +1,1079 @@
+namespace Exosphere.Simulation.Parts;
+
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Propulsion;
+
+public class Part
+{
+    public string InstanceId { get; }
+    public PartDefinition Definition { get; }
+
+    public Part(PartDefinition def, string? instanceId = null)
+    {
+        Definition = def ?? throw new ArgumentNullException(nameof(def));
+        InstanceId = string.IsNullOrWhiteSpace(instanceId)
+            ? Guid.NewGuid().ToString()
+            : instanceId;
+        ResetResources();
+        InitializeEngineStates();
+    }
+
+    // ── Recursos actuales ─────────────────────────────────────────────────
+    public double LiquidFuel      { get; set; }
+    public double Oxidizer        { get; set; }
+    public double SolidFuel       { get; set; }
+    public double Monopropellant  { get; set; }
+    /// <summary>Whether this part's attitude RCS is live (see <c>rcs_attitude_starts_enabled</c>).</summary>
+    public bool RcsAttitudeEnabled { get; set; }
+    public double ElectricCharge  { get; set; }
+
+    /// <summary>Protected feed inventory, still included in wet mass. Defaults to no isolation.</summary>
+    public double ReservedLiquidFuel { get; private set; }
+    public double ReservedOxidizer { get; private set; }
+    public double AvailableLiquidFuel => System.Math.Max(0, LiquidFuel-ReservedLiquidFuel);
+    public double AvailableOxidizer => System.Math.Max(0, Oxidizer-ReservedOxidizer);
+
+    public void ReserveLandingPropellant(double liquidFuelKg, double oxidizerKg)
+    {
+        if (!double.IsFinite(liquidFuelKg) || !double.IsFinite(oxidizerKg)
+            || liquidFuelKg < 0 || oxidizerKg < 0 || liquidFuelKg > LiquidFuel || oxidizerKg > Oxidizer)
+            throw new ArgumentOutOfRangeException(nameof(liquidFuelKg));
+        ReservedLiquidFuel = liquidFuelKg;
+        ReservedOxidizer = oxidizerKg;
+    }
+
+    /// <summary>Open the protected feed without creating resources or repairing failed engines.</summary>
+    public void OpenLandingPropellantFeed()
+    {
+        ReservedLiquidFuel = 0;
+        ReservedOxidizer = 0;
+        if (LiquidFuel > 0 && Oxidizer > 0) FuelDepleted = false;
+    }
+
+    // ── Estado físico ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Structure temperature (K) — the load-bearing skin BEHIND the thermal protection.
+    /// This is what has to survive: <see cref="ThermalRatio"/> and burn-through are measured
+    /// against it, because the vehicle is lost when the structure fails, not when the tiles
+    /// glow (they are supposed to glow).
+    /// </summary>
+    public double Temperature     { get; set; } = 290.0;  // K
+
+    /// <summary>
+    /// Outer TPS/skin temperature (K) — the tile face that meets the plasma. Thin and low
+    /// mass, so it climbs fast and settles at radiative equilibrium (~1700 K at peak entry
+    /// heating) while insulating the structure behind it.
+    /// </summary>
+    public double SkinTemperature { get; set; } = 290.0;  // K
+
+    public double ThermalDamage   { get; set; } = 0.0;    // 0..1 progressive burn-through
+    public bool   IsBroken        { get; set; }
+    public bool   IsDeployed      { get; set; }
+    public bool   IsStagingActive { get; set; } = true;
+    public double ThermalRatio => Definition.HeatTolerance > 0.0
+        ? Temperature / Definition.HeatTolerance
+        : 0.0;
+    public bool IsThermallyBurned => ThermalDamage >= 1.0;
+
+    // ── Control del motor ─────────────────────────────────────────────────
+    public double   ThrottleLevel { get; set; }          // [0, 1]
+    public Vector3d GimbalOffset  { get; set; } = Vector3d.Zero;  // deflexión normalizada
+    private readonly List<EngineInstanceState> _engineStates = new();
+    private readonly List<(Vector3d PositionM, Vector3d ThrustVectorN)>
+        _thrustGeometryScratch = new();
+    private readonly List<(string InstanceId, Vector3d PositionM, Vector3d ThrustDirection)>
+        _faultIsolationGeometryScratch = new();
+    private readonly List<(
+        EngineInstanceState State,
+        Vector3d PositionM,
+        double ThrustN,
+        double GimbalRangeDeg)> _gimbalAuthorityScratch = new();
+    public IReadOnlyList<EngineInstanceState> EngineStates => _engineStates;
+    public IReadOnlyList<EngineFailureInjection> ScheduledEngineFailures =>
+        Array.Empty<EngineFailureInjection>();
+    public bool HasEngineRuntime => _engineStates.Count > 0;
+    /// <summary>Fuel depletion cuts the engine command without creating an engine failure.</summary>
+    public bool FuelDepleted { get; private set; }
+    private double _activeEngineFraction = 1.0;
+
+    /// <summary>
+    /// Fraction of the engines represented by this aggregate part that are selected.
+    /// Defaults to one (the complete cluster). EDL can select a discrete 1/2/3-engine
+    /// centre cluster without pretending all six Raptors deep-throttle together.
+    /// </summary>
+    public double ActiveEngineFraction
+    {
+        get => _activeEngineFraction;
+        set => _activeEngineFraction = System.Math.Clamp(value, 0.0, 1.0);
+    }
+
+    public int SelectedEngineCount => Definition.Category == PartCategory.Engine
+        ? (int)System.Math.Round(System.Math.Max(1, Definition.EngineCount) * ActiveEngineFraction)
+        : 0;
+
+    public void SelectEngineCount(int count)
+    {
+        int total = System.Math.Max(1, Definition.EngineCount);
+        ActiveEngineFraction = System.Math.Clamp(count, 0, total) / (double)total;
+    }
+
+    private void InitializeEngineStates()
+    {
+        if (Definition.Category != PartCategory.Engine
+            || string.IsNullOrWhiteSpace(Definition.EngineModelId)
+            || Definition.ResolvedEngineModel == null)
+            return;
+        int count = System.Math.Max(1, Definition.EngineCount);
+        for (int i = 0; i < count; i++)
+        {
+            var mount = Definition.ResolvedEngineCluster?.Engines
+                .ElementAtOrDefault(i);
+            string modelId = !string.IsNullOrWhiteSpace(mount?.EngineModelId)
+                ? mount.EngineModelId
+                : Definition.EngineModelId;
+            _engineStates.Add(new EngineInstanceState
+            {
+                // Preserve the save/test-stand identity contract. Mount ids describe
+                // physical topology; runtime ids remain scoped to the part instance.
+                InstanceId = $"{InstanceId}:engine:{i + 1:00}",
+                EngineModelId = modelId,
+            });
+        }
+    }
+
+    public void AdvanceEngineRuntime(double commandedThrottle, double dt)
+    {
+        double effectiveCommandedThrottle = FuelDepleted ? 0.0 : commandedThrottle;
+        if (!HasEngineRuntime)
+        {
+            SpoolToward(effectiveCommandedThrottle, dt);
+            return;
+        }
+        if (!double.IsFinite(commandedThrottle) || !double.IsFinite(dt) || dt < 0.0)
+            throw new ArgumentOutOfRangeException(nameof(commandedThrottle));
+
+        int selected = SelectedEngineCount;
+        double floored = ApplyThrottleFloor(effectiveCommandedThrottle);
+        int selectedHealthy = 0;
+        for (int i = 0; i < _engineStates.Count; i++)
+        {
+            var state = _engineStates[i];
+            bool operational = state.State != EngineLifecycleState.Failed
+                && state.FailureCode == null;
+            bool selectedForCommand = operational && selectedHealthy < selected;
+            if (operational) selectedHealthy++;
+            // Keep the stage-level demand visible in telemetry after a hard failure. The
+            // engine computer has been asked to produce thrust, but its actual response is
+            // zero; clearing CommandedThrottle here would erase the very residual an onboard
+            // peer-engine isolator needs to diagnose the fault.
+            double command = state.State == EngineLifecycleState.Failed
+                ? floored
+                : selectedForCommand ? floored : 0.0;
+            state.CommandedThrottle = command;
+            AdvanceEngineState(state, command, dt);
+            AdvanceChamberPressure(state, dt);
+            AdvanceGimbal(state, i, selectedForCommand, dt);
+            AdvanceEngineThermalState(state, dt);
+        }
+
+        RefreshAggregateThrottle();
+    }
+
+    // Legacy test-only hook retained so historical asymmetric-thrust fixtures can
+    // still be replayed; no gameplay or automatic runtime path calls this method.
+    public bool FailEngine(string instanceId, string failureCode)
+    {
+        var engine = _engineStates.FirstOrDefault(
+            e => string.Equals(e.InstanceId, instanceId, StringComparison.Ordinal));
+        if (engine == null || engine.State == EngineLifecycleState.Failed) return false;
+        engine.State = EngineLifecycleState.Failed;
+        engine.StateElapsedSeconds = 0.0;
+        engine.ActualThrottle = 0.0;
+        engine.ChamberPressureFraction = 0.0;
+        engine.FailureCode = string.IsNullOrWhiteSpace(failureCode)
+            ? "INJECTED_FAILURE"
+            : failureCode;
+        RefreshAggregateThrottle();
+        return true;
+    }
+
+    public void MarkFuelDepleted()
+    {
+        FuelDepleted = true;
+        foreach (var engine in _engineStates)
+        {
+            engine.CommandedThrottle = 0.0;
+            engine.ActualThrottle = 0.0;
+            engine.ChamberPressureFraction = 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Cuts transient propulsion state at a discontinuous navigation jump. A vessel
+    /// teleport is an unpowered-coast boundary, so carrying chamber pressure or a gimbal
+    /// angle into the first destination tick would create a real residual torque even
+    /// though the vessel throttle was reset to zero. Restart counters and failure codes
+    /// intentionally survive; this only removes instantaneous runtime state.
+    /// </summary>
+    public void ResetEngineRuntimeForTeleport()
+    {
+        foreach (var engine in _engineStates)
+        {
+            engine.CommandedThrottle = 0.0;
+            engine.ActualThrottle = 0.0;
+            engine.ChamberPressureFraction = 0.0;
+            engine.GimbalDeg = Vector3d.Zero;
+            engine.GimbalVelocityDegPerS = Vector3d.Zero;
+            if (engine.State != EngineLifecycleState.Failed)
+            {
+                engine.State = EngineLifecycleState.Off;
+                engine.StateElapsedSeconds = 0.0;
+            }
+        }
+        RefreshAggregateThrottle();
+    }
+
+    public void ScheduleEngineFailure(EngineFailureInjection injection)
+    {
+        injection.Validate();
+        if (!_engineStates.Any(state =>
+                string.Equals(
+                    state.InstanceId,
+                    injection.EngineInstanceId,
+                    StringComparison.Ordinal)))
+            throw new ArgumentException(
+                $"Unknown engine instance '{injection.EngineInstanceId}'.",
+                nameof(injection));
+        // Failure injection was removed from gameplay. Keep the method as a
+        // save/test compatibility shim, but never enqueue a state transition.
+    }
+
+    public void RestoreScheduledEngineFailures(
+        IEnumerable<EngineFailureInjection> injections)
+    {
+        // Ignore schedules from older saves; they are no longer part of the
+        // propulsion model.
+    }
+
+    public void RestoreEngineStates(IEnumerable<EngineInstanceState> states)
+    {
+        if (!HasEngineRuntime) return;
+        var restored = states.ToDictionary(s => s.InstanceId, StringComparer.Ordinal);
+        foreach (var target in _engineStates)
+        {
+            if (!restored.TryGetValue(target.InstanceId, out var source)) continue;
+            target.State = source.State == EngineLifecycleState.Failed
+                ? EngineLifecycleState.Off
+                : source.State;
+            target.StateElapsedSeconds = source.StateElapsedSeconds;
+            target.CommandedThrottle = source.CommandedThrottle;
+            target.ActualThrottle = source.ActualThrottle;
+            target.GimbalDeg = source.GimbalDeg;
+            target.GimbalVelocityDegPerS = source.GimbalVelocityDegPerS;
+            target.ChamberPressureFraction = source.ChamberPressureFraction;
+            target.TemperatureK = source.TemperatureK;
+            target.StartAttempts = source.StartAttempts;
+            target.StartsCompleted = source.StartsCompleted;
+            target.FailureCode = null;
+        }
+    }
+
+    public IEnumerable<EngineTelemetry> GetEngineTelemetry(double ambientPressure)
+    {
+        if (!HasEngineRuntime) yield break;
+        foreach (var state in _engineStates)
+        {
+            var performance = EvaluateEnginePerformance(state, ambientPressure);
+            yield return new EngineTelemetry(
+                state.InstanceId,
+                state.State,
+                state.CommandedThrottle,
+                state.ActualThrottle,
+                performance.ThrustN,
+                performance.MassFlowKgS,
+                state.ChamberPressureFraction,
+                Definition.MixtureRatio,
+                state.GimbalDeg,
+                state.TemperatureK,
+                ResolveEngineModel(state)?.MaximumSafeTemperatureK
+                    ?? double.PositiveInfinity,
+                state.StartAttempts,
+                state.StartsCompleted,
+                state.FailureCode);
+        }
+    }
+
+    private void AdvanceEngineThermalState(
+        EngineInstanceState state,
+        double dt)
+    {
+        var model = ResolveEngineModel(state);
+        double chamber = state.ChamberPressureFraction;
+        double target = model != null
+            ? 290.0 + (model.NominalOperatingTemperatureK - 290.0) * chamber
+            : chamber > 1e-3 ? 900.0 + 350.0 * chamber : 290.0;
+        double timeConstant = model != null
+            ? chamber > 1e-3
+                ? model.ThermalTimeConstantSeconds
+                : model.CooldownTimeConstantSeconds
+            : chamber > 1e-3 ? 1.0 / 1.5 : 4.0;
+        double alpha = 1.0 - System.Math.Exp(-dt / timeConstant);
+        state.TemperatureK += (target - state.TemperatureK) * alpha;
+    }
+
+    public double GetEngineFeedLimitKgS(int engineIndex)
+    {
+        var branches = Definition.ResolvedEngineCluster?.FeedNetwork.Branches;
+        return branches != null && engineIndex >= 0 && engineIndex < branches.Count
+            ? branches[engineIndex].MaximumFlowKgS
+            : double.PositiveInfinity;
+    }
+
+    /// <summary>
+    /// Returns the live performance sample for one runtime engine instance without creating
+    /// the compatibility <see cref="EngineTelemetry"/> record. Physics consumption uses this
+    /// path because telemetry records are presentation data and must not be allocated once per
+    /// engine on every <see cref="Vessel.Tick"/>.
+    /// </summary>
+    internal EnginePerformanceSample GetEngineInstancePerformance(
+        int engineIndex,
+        double ambientPressure)
+    {
+        if ((uint)engineIndex >= (uint)_engineStates.Count)
+            throw new ArgumentOutOfRangeException(nameof(engineIndex));
+        return EvaluateEnginePerformance(_engineStates[engineIndex], ambientPressure);
+    }
+
+    private EnginePerformanceSample EvaluateEnginePerformance(
+        EngineInstanceState state,
+        double ambientPressure)
+    {
+        double effectiveThrottle = FuelDepleted || state.State == EngineLifecycleState.Failed
+            ? 0.0
+            : state.ChamberPressureFraction;
+        if (ResolveEngineModel(state) is { } model)
+            return EnginePerformanceEvaluator.Evaluate(
+                model, ambientPressure, effectiveThrottle);
+
+        double ratedPerEngine =
+            GetLegacyRatedFullThrottleThrustMagnitude(ambientPressure)
+            / System.Math.Max(1, _engineStates.Count);
+        double isp = GetLegacyIsp(ambientPressure);
+        double thrust = ratedPerEngine * effectiveThrottle;
+        double flow = isp > 1.0 ? thrust / (isp * 9.80665) : 0.0;
+        return new EnginePerformanceSample(
+            thrust, isp, flow, state.ChamberPressureFraction);
+    }
+
+    private void AdvanceChamberPressure(EngineInstanceState state, double dt)
+    {
+        double target = FuelDepleted || state.State == EngineLifecycleState.Failed
+            ? 0.0
+            : state.ActualThrottle;
+        double seconds = target >= state.ChamberPressureFraction
+            ? System.Math.Max(Definition.EngineStartupSeconds * 1.25, 1e-6)
+            : System.Math.Max(Definition.EngineShutdownSeconds * 1.25, 1e-6);
+        double step = dt / seconds;
+        double delta = target - state.ChamberPressureFraction;
+        state.ChamberPressureFraction = System.Math.Clamp(
+            System.Math.Abs(delta) <= step
+                ? target
+                : state.ChamberPressureFraction + System.Math.Sign(delta) * step,
+            0.0,
+            1.0);
+    }
+
+    private void AdvanceGimbal(
+        EngineInstanceState state,
+        int engineIndex,
+        bool selected,
+        double dt)
+    {
+        var model = ResolveEngineModel(state);
+        double range = model?.GimbalRangeDeg ?? Definition.GimbalRange;
+        bool mountCanGimbal =
+            Definition.ResolvedEngineCluster?.Engines.ElementAtOrDefault(engineIndex)
+                ?.Gimballed ?? true;
+        // A differential-TVC command (R5b) for this specific instance takes priority over
+        // the part-wide GimbalOffset every other mount of this part still shares.
+        var commanded = state.GimbalCommandOverride ?? GimbalOffset;
+        var target = selected && mountCanGimbal
+            ? new Vector3d(
+                System.Math.Clamp(commanded.X, -1.0, 1.0) * range,
+                0.0,
+                System.Math.Clamp(commanded.Z, -1.0, 1.0) * range)
+            : Vector3d.Zero;
+        if (model == null
+            || model.GimbalRateDegPerS <= 0.0
+            || model.GimbalAccelerationDegPerS2 <= 0.0)
+        {
+            state.GimbalDeg = target;
+            state.GimbalVelocityDegPerS = Vector3d.Zero;
+            return;
+        }
+
+        var x = AdvanceGimbalAxis(
+            state.GimbalDeg.X,
+            state.GimbalVelocityDegPerS.X,
+            target.X,
+            model.GimbalRateDegPerS,
+            model.GimbalAccelerationDegPerS2,
+            dt);
+        var z = AdvanceGimbalAxis(
+            state.GimbalDeg.Z,
+            state.GimbalVelocityDegPerS.Z,
+            target.Z,
+            model.GimbalRateDegPerS,
+            model.GimbalAccelerationDegPerS2,
+            dt);
+        state.GimbalDeg = new Vector3d(x.position, 0.0, z.position);
+        state.GimbalVelocityDegPerS = new Vector3d(x.velocity, 0.0, z.velocity);
+    }
+
+    private static (double position, double velocity) AdvanceGimbalAxis(
+        double position,
+        double velocity,
+        double target,
+        double maximumRate,
+        double maximumAcceleration,
+        double dt)
+    {
+        if (dt <= 0.0) return (position, velocity);
+        double error = target - position;
+        double desiredVelocity = System.Math.Clamp(
+            error / dt, -maximumRate, maximumRate);
+        double velocityStep = maximumAcceleration * dt;
+        double newVelocity = velocity
+            + System.Math.Clamp(
+                desiredVelocity - velocity, -velocityStep, velocityStep);
+        double movement = newVelocity * dt;
+        if (System.Math.Abs(movement) >= System.Math.Abs(error)
+            && System.Math.Sign(movement) == System.Math.Sign(error))
+            return (target, 0.0);
+        return (position + movement, newVelocity);
+    }
+
+    private void AdvanceEngineState(
+        EngineInstanceState state,
+        double command,
+        double dt)
+    {
+        state.StateElapsedSeconds += dt;
+        if (command <= 1e-3
+            && state.State is not (
+                EngineLifecycleState.Off
+                or EngineLifecycleState.Shutdown
+                or EngineLifecycleState.Purge))
+            Transition(state, EngineLifecycleState.Shutdown);
+
+        switch (state.State)
+        {
+            case EngineLifecycleState.Off:
+                state.ActualThrottle = 0.0;
+                if (command > 1e-3)
+                    Transition(state, EngineLifecycleState.Chill);
+                break;
+            case EngineLifecycleState.Chill:
+                if (state.StateElapsedSeconds >= Definition.EngineChillSeconds)
+                    Transition(state, EngineLifecycleState.SpinPrime);
+                break;
+            case EngineLifecycleState.SpinPrime:
+                if (state.StateElapsedSeconds >= Definition.EngineSpinPrimeSeconds)
+                {
+                    state.StartAttempts++;
+                    Transition(state, EngineLifecycleState.Ignition);
+                }
+                break;
+            case EngineLifecycleState.Ignition:
+                if (state.StateElapsedSeconds >= Definition.EngineIgnitionSeconds)
+                {
+                    state.StartsCompleted++;
+                    Transition(state, EngineLifecycleState.Ramp);
+                }
+                break;
+            case EngineLifecycleState.Ramp:
+                MoveThrottle(
+                    state,
+                    command,
+                    System.Math.Max(Definition.EngineStartupSeconds, 1e-6),
+                    dt);
+                if (System.Math.Abs(state.ActualThrottle - command) <= 1e-6)
+                    Transition(state, EngineLifecycleState.Running);
+                break;
+            case EngineLifecycleState.Running:
+                MoveThrottle(
+                    state,
+                    command,
+                    command >= state.ActualThrottle
+                        ? System.Math.Max(Definition.EngineStartupSeconds, 1e-6)
+                        : System.Math.Max(Definition.EngineShutdownSeconds, 1e-6),
+                    dt);
+                break;
+            case EngineLifecycleState.Shutdown:
+                MoveThrottle(
+                    state,
+                    0.0,
+                    System.Math.Max(Definition.EngineShutdownSeconds, 1e-6),
+                    dt);
+                if (state.ActualThrottle <= 1e-6)
+                    Transition(state, EngineLifecycleState.Purge);
+                break;
+            case EngineLifecycleState.Purge:
+                state.ActualThrottle = 0.0;
+                if (command > 1e-3)
+                    Transition(state, EngineLifecycleState.Chill);
+                else if (state.StateElapsedSeconds >= Definition.EnginePurgeSeconds)
+                    Transition(state, EngineLifecycleState.Off);
+                break;
+        }
+    }
+
+    private static void MoveThrottle(
+        EngineInstanceState state,
+        double target,
+        double fullRangeSeconds,
+        double dt)
+    {
+        double maximumStep = dt / fullRangeSeconds;
+        double delta = target - state.ActualThrottle;
+        state.ActualThrottle = System.Math.Abs(delta) <= maximumStep
+            ? target
+            : state.ActualThrottle + System.Math.Sign(delta) * maximumStep;
+    }
+
+    private static void Transition(
+        EngineInstanceState state,
+        EngineLifecycleState next)
+    {
+        state.State = next;
+        state.StateElapsedSeconds = 0.0;
+    }
+
+    private void RefreshAggregateThrottle()
+    {
+        int selected = SelectedEngineCount;
+        if (selected <= 0)
+        {
+            ThrottleLevel = 0.0;
+            return;
+        }
+
+        double total = 0.0;
+        int selectedHealthy = 0;
+        foreach (var state in _engineStates)
+        {
+            if (state.State == EngineLifecycleState.Failed || state.FailureCode != null)
+                continue;
+            if (selectedHealthy++ >= selected) break;
+            total += state.ActualThrottle;
+        }
+        ThrottleLevel = selected > 0 ? total / selected : 0.0;
+    }
+
+    // ── Masa actual (seca + propelante) ───────────────────────────────────
+    public double CurrentMass =>
+        EffectiveMassDry + LiquidFuel + Oxidizer + SolidFuel + Monopropellant;
+
+    /// <summary>
+    /// Optional correction applied on top of <see cref="PartDefinition.MassDry"/>
+    /// (e.g. LM extracted from an opaque SLA envelope). Negative removes dry mass.
+    /// </summary>
+    public double MassDryOffset { get; set; }
+
+    public double EffectiveMassDry =>
+        System.Math.Max(0.0, Definition.MassDry + MassDryOffset);
+
+    // ── Deep-throttle floor (Raptor 2 ≈ 40 %) ─────────────────────────────
+    /// <summary>
+    /// Returns <paramref name="requested"/> snapped UP to the engine's documented minimum
+    /// throttle (<see cref="PartDefinition.MinThrottle"/>) — but only when it is genuinely
+    /// firing: a request of (near) 0 is a deliberate shutdown and is left at 0, never floored.
+    /// A real Raptor either runs at ≥40 % or is off; it does not hover at 12 %. Ascent and EDL
+    /// opt into this; EDL combines the floor with discrete engine selection for lower thrust.
+    /// </summary>
+    public double ApplyThrottleFloor(double requested)
+    {
+        if (Definition.Category != PartCategory.Engine) return requested;
+        double floor = Definition.MinThrottle;
+        if (floor <= 0.0 || requested <= 1e-3) return requested;          // off stays off
+        return System.Math.Clamp(System.Math.Max(requested, floor), 0.0, 1.0);
+    }
+
+    // ── Inicializar recursos al máximo de capacidad ───────────────────────
+    public void ResetResources()
+    {
+        ReservedLiquidFuel = 0;
+        ReservedOxidizer = 0;
+        FuelDepleted   = false;
+        LiquidFuel     = Definition.FuelCapacityLF;
+        Oxidizer       = Definition.FuelCapacityOx;
+        SolidFuel      = Definition.FuelCapacitySolid;
+        Monopropellant = Definition.FuelCapacityMono;
+        RcsAttitudeEnabled = Definition.RcsAttitudeStartsEnabled;
+        ElectricCharge = Definition.ECCapacity;
+    }
+
+    // ── Startup / shutdown spool transient ────────────────────────────────
+    // A real Raptor cannot step its thrust instantly: the turbopumps spin up over a fraction
+    // of a second and the chamber pressure builds before full thrust. We model that with a
+    // first-order ramp of ThrottleLevel toward a commanded value. Startup at ~2.0/s reaches
+    // 100 % in ~0.5 s; shutdown uses a faster 5.0/s (~0.2 s) so cutoff does not keep injecting
+    // landing impulse as long as chamber-pressure buildup. Callers that want an instant set
+    // still just assign ThrottleLevel directly.
+    public const double SpoolRate = 2.0;           // startup throttle units per second
+    public const double ShutdownSpoolRate = 5.0;   // shutdown throttle units per second
+
+    /// <summary>
+    /// Advances <see cref="ThrottleLevel"/> toward <paramref name="commanded"/> at no more than
+    /// the direction-specific spool rate over <paramref name="dt"/>. Returns the new level.
+    /// </summary>
+    public double SpoolToward(double commanded, double dt)
+    {
+        commanded = System.Math.Clamp(commanded, 0.0, 1.0);
+        double delta   = commanded - ThrottleLevel;
+        double rate = delta < 0.0 ? ShutdownSpoolRate : SpoolRate;
+        double maxStep = rate * dt;
+        if (System.Math.Abs(delta) <= maxStep) ThrottleLevel = commanded;
+        else ThrottleLevel += System.Math.Sign(delta) * maxStep;
+        return ThrottleLevel;
+    }
+
+    private const double SeaLevelPressurePa = 101_325.0;
+
+    /// <summary>
+    /// Pressure-corrected specific impulse (s): Isp_vac in vacuum, Isp_sl at Earth
+    /// sea level, and linear extrapolation above one atmosphere. The extrapolation is
+    /// intentionally not capped so dense-atmosphere back-pressure can cause flameout.
+    /// </summary>
+    public double GetIsp(double ambientPressure = 0.0)
+    {
+        if (HasEngineRuntime)
+        {
+            double thrust = 0.0;
+            double flow = 0.0;
+            foreach (var state in _engineStates)
+            {
+                var sample = EvaluateEnginePerformance(state, ambientPressure);
+                thrust += sample.ThrustN;
+                flow += sample.MassFlowKgS;
+            }
+            return flow > 1e-12 ? thrust / (flow * 9.80665) : 0.0;
+        }
+        return GetLegacyIsp(ambientPressure);
+    }
+
+    private double GetLegacyIsp(double ambientPressure)
+    {
+        double pf = System.Math.Max(0.0, ambientPressure / SeaLevelPressurePa);
+        return System.Math.Max(0.0,
+            Definition.IspVac + (Definition.IspSL - Definition.IspVac) * pf);
+    }
+
+    /// <summary>
+    /// Current propellant mass flow (kg/s) this engine is drawing: ṁ = F(p)/(Isp(p)·g₀),
+    /// using the pressure-corrected thrust at the present throttle. 0 when not firing.
+    /// </summary>
+    public double GetMassFlow(double ambientPressure = 0.0)
+    {
+        if (Definition.Category != PartCategory.Engine
+            || IsBroken || !IsStagingActive || FuelDepleted)
+            return 0.0;
+        if (HasEngineRuntime)
+        {
+            double massFlow = 0.0;
+            foreach (var state in _engineStates)
+                massFlow += EvaluateEnginePerformance(state, ambientPressure).MassFlowKgS;
+            return massFlow;
+        }
+        if (ThrottleLevel <= 0.0) return 0.0;
+        double isp = GetIsp(ambientPressure);
+        if (isp < 1.0) return 0.0;
+        return GetThrustMagnitude(ambientPressure) / (isp * 9.80665);
+    }
+
+    /// <summary>
+    /// Pressure-corrected thrust magnitude (N) for this engine at the given ambient
+    /// pressure (Pa).  A rocket engine's thrust rises with altitude because the
+    /// pressure term in the thrust equation falls:
+    ///     F(p) = F_vac − (p / p₀) · (F_vac − F_sl)
+    /// so F = F_sl at sea level (p = p₀) and F = F_vac in vacuum (p = 0).
+    /// Falls back to vacuum thrust when no sea-level figure is provided.
+    /// </summary>
+    public double GetThrustMagnitude(double ambientPressure = 0.0)
+    {
+        if (FuelDepleted) return 0.0;
+        if (!HasEngineRuntime)
+            return GetFullThrottleThrustMagnitude(ambientPressure) * ThrottleLevel;
+
+        double thrust = 0.0;
+        foreach (var state in _engineStates)
+            thrust += EvaluateEnginePerformance(state, ambientPressure).ThrustN;
+        return thrust;
+    }
+
+    /// <summary>Pressure-corrected thrust of the selected engines at 100% throttle (N).</summary>
+    public double GetFullThrottleThrustMagnitude(double ambientPressure = 0.0)
+    {
+        if (!HasEngineRuntime)
+            return GetRatedFullThrottleThrustMagnitude(ambientPressure) * ActiveEngineFraction;
+
+        double thrust = 0.0;
+        int selectedHealthy = 0;
+        foreach (var state in _engineStates)
+        {
+            if (state.State == EngineLifecycleState.Failed || state.FailureCode != null)
+                continue;
+            if (selectedHealthy++ >= SelectedEngineCount) break;
+            var model = ResolveEngineModel(state);
+            if (model != null)
+                thrust += EnginePerformanceEvaluator.Evaluate(
+                    model, ambientPressure, model.MaximumThrottle).ThrustN;
+        }
+        return thrust;
+    }
+
+    /// <summary>Pressure-corrected rated thrust of the complete represented cluster.</summary>
+    public double GetRatedFullThrottleThrustMagnitude(double ambientPressure = 0.0)
+    {
+        if (!HasEngineRuntime)
+            return GetLegacyRatedFullThrottleThrustMagnitude(ambientPressure);
+
+        double thrust = 0.0;
+        foreach (var state in _engineStates)
+        {
+            var model = ResolveEngineModel(state);
+            if (model != null)
+                thrust += EnginePerformanceEvaluator.Evaluate(
+                    model, ambientPressure, model.MaximumThrottle).ThrustN;
+        }
+        return thrust;
+    }
+
+    private EngineModelDefinition? ResolveEngineModel(EngineInstanceState state)
+    {
+        if (Definition.ResolvedEngineModels.TryGetValue(
+                state.EngineModelId, out var model))
+            return model;
+        return Definition.ResolvedEngineModel;
+    }
+
+    private double GetLegacyRatedFullThrottleThrustMagnitude(double ambientPressure)
+    {
+        double fVac = Definition.ThrustVac;
+        double fSL  = Definition.ThrustSL > 0.0 ? Definition.ThrustSL : fVac;
+        // Do not cap at one atmosphere. Dense worlds such as Venus impose far more
+        // back-pressure than Earth, eventually reducing net nozzle thrust to zero.
+        double pf   = System.Math.Max(0.0, ambientPressure / SeaLevelPressurePa);
+        double f    = fVac - pf * (fVac - fSL);
+        return System.Math.Max(0.0, f);
+    }
+
+    // ── Vector de empuje en espacio local de la pieza (+Y = arriba) ───────
+    // Overload sin presión: usa empuje de vacío (compatibilidad).
+    public Vector3d GetThrustVector() => GetThrustVector(0.0);
+
+    /// <summary>
+    /// Thrust vector in the part's local frame (+Y = up), pressure-corrected and gimballed.
+    /// With per-engine runtime (R5d), this is the vector sum of each mount's own thrust
+    /// direction × magnitude — fixed engines are no longer diluted by averaging gimbal
+    /// across the whole cluster.
+    /// </summary>
+    public Vector3d GetThrustVector(double ambientPressure)
+    {
+        if (Definition.Category != PartCategory.Engine
+            || IsBroken || !IsStagingActive
+            || (!HasEngineRuntime && ThrottleLevel <= 0.0))
+            return Vector3d.Zero;
+
+        // R5d — sum per-mount thrust vectors so each engine's magnitude is independent of
+        // other mounts' gimbal. Averaging GimbalDeg across mixed fixed/gimballed clusters
+        // previously tilted the entire thrust budget by a diluted angle.
+        if (HasEngineRuntime)
+        {
+            var net = Vector3d.Zero;
+            var geometry = GetEngineInstanceThrustGeometrySnapshot(ambientPressure);
+            for (int i = 0; i < geometry.Count; i++)
+                net += geometry[i].ThrustVectorN;
+            return net;
+        }
+
+        double thrust = GetThrustMagnitude(ambientPressure);
+        if (thrust <= 0.0) return Vector3d.Zero;
+
+        // Legacy single-engine / no-runtime path: GimbalOffset.{X,Z} ∈ [-1,1] is the
+        // normalized deflection; tilt the aggregate thrust off +Y by that angle.
+        double gimbalRange = Definition.GimbalRange;
+        double normalizedX = System.Math.Clamp(GimbalOffset.X, -1.0, 1.0);
+        double normalizedZ = System.Math.Clamp(GimbalOffset.Z, -1.0, 1.0);
+        double gimbalRad = gimbalRange * MathUtils.DEG_TO_RAD;
+        double ax = normalizedX * gimbalRad;
+        double az = normalizedZ * gimbalRad;
+        var dir = new Vector3d(System.Math.Sin(ax), 1.0, System.Math.Sin(az)).Normalized;
+        return dir * thrust;
+    }
+
+    /// <summary>
+    /// Per-engine-instance thrust geometry in the part's local frame (+Y = up): mount
+    /// position and gimballed thrust vector for every live engine instance, pressure-
+    /// corrected at <paramref name="ambientPressure"/>. <see cref="GetThrustVector"/>
+    /// for runtime clusters is the vector sum of these thrust vectors (R5d). This
+    /// exposes each mount's real 3D position and direction so a caller can compute
+    /// genuine torque (τ = r×F) instead of a scalar lever approximation. Legacy
+    /// (non-cluster) parts yield exactly one tuple built from the legacy
+    /// <see cref="GetThrustVector"/> path so behaviour is unchanged for every part
+    /// that has no engine cluster data.
+    /// </summary>
+    public IEnumerable<(Vector3d PositionM, Vector3d ThrustVectorN)>
+        GetEngineInstanceThrustGeometry(double ambientPressure)
+    {
+        BuildEngineInstanceThrustGeometry(_thrustGeometryScratch, ambientPressure);
+        return _thrustGeometryScratch;
+    }
+
+    internal IReadOnlyList<(Vector3d PositionM, Vector3d ThrustVectorN)>
+        GetEngineInstanceThrustGeometrySnapshot(double ambientPressure)
+    {
+        BuildEngineInstanceThrustGeometry(_thrustGeometryScratch, ambientPressure, zeroGimbal: false);
+        return _thrustGeometryScratch;
+    }
+
+    internal IReadOnlyList<(Vector3d PositionM, Vector3d ThrustVectorN)>
+        GetEngineInstanceZeroGimbalThrustGeometrySnapshot(double ambientPressure)
+    {
+        BuildEngineInstanceThrustGeometry(_thrustGeometryScratch, ambientPressure, zeroGimbal: true);
+        return _thrustGeometryScratch;
+    }
+
+    /// <summary>
+    /// Returns the stable mount geometry needed by onboard fault isolation. Unlike the
+    /// thrust geometry snapshot, this keeps a direction for an engine whose delivered
+    /// thrust has fallen to zero, so a flight computer can still predict the missing
+    /// torque from its physical mount.
+    /// </summary>
+    internal IReadOnlyList<(string InstanceId, Vector3d PositionM, Vector3d ThrustDirection)>
+        GetEngineInstanceFaultIsolationGeometrySnapshot()
+    {
+        _faultIsolationGeometryScratch.Clear();
+        if (!HasEngineRuntime)
+        {
+            _faultIsolationGeometryScratch.Add((
+                InstanceId,
+                new Vector3d(0.0, Definition.ThrustPositionYM, 0.0),
+                Vector3d.Up));
+            return _faultIsolationGeometryScratch;
+        }
+
+        for (int i = 0; i < _engineStates.Count; i++)
+        {
+            var state = _engineStates[i];
+            var mount = Definition.ResolvedEngineCluster?.Engines.ElementAtOrDefault(i);
+            var position = mount != null
+                ? mount.Position + new Vector3d(0.0, Definition.ThrustPositionYM, 0.0)
+                : new Vector3d(0.0, Definition.ThrustPositionYM, 0.0);
+            var baseDirection = mount?.Direction ?? Vector3d.Up;
+            var direction = TiltDirection(baseDirection, state.GimbalDeg.X, state.GimbalDeg.Z);
+            if (direction.MagnitudeSquared < 1e-12)
+                direction = Vector3d.Up;
+
+            _faultIsolationGeometryScratch.Add((state.InstanceId, position, direction.Normalized));
+        }
+
+        return _faultIsolationGeometryScratch;
+    }
+
+    private void BuildEngineInstanceThrustGeometry(
+        List<(Vector3d PositionM, Vector3d ThrustVectorN)> destination,
+        double ambientPressure,
+        bool zeroGimbal = false)
+    {
+        destination.Clear();
+        if (!HasEngineRuntime)
+        {
+            destination.Add((
+                new Vector3d(0.0, Definition.ThrustPositionYM, 0.0),
+                GetThrustVector(ambientPressure)));
+            return;
+        }
+
+        for (int i = 0; i < _engineStates.Count; i++)
+        {
+            var state = _engineStates[i];
+            var mount = Definition.ResolvedEngineCluster?.Engines.ElementAtOrDefault(i);
+            // mount.Position is the engine's position within the cluster's own thrust plane
+            // (every current data/engine_clusters/*.json has y=0 there); ThrustPositionYM is
+            // the separate offset of that plane from the part's local origin (its geometric
+            // centre) — both must be summed to get the mount's real position in part-local
+            // space, exactly like the legacy scalar lever in GetPitchYawAngularAcceleration.
+            var position = mount != null
+                ? mount.Position + new Vector3d(0.0, Definition.ThrustPositionYM, 0.0)
+                : new Vector3d(0.0, Definition.ThrustPositionYM, 0.0);
+            var baseDirection = mount != null
+                ? mount.Direction
+                : Vector3d.Up;
+
+            double thrust = EvaluateEnginePerformance(state, ambientPressure).ThrustN;
+            var gimbal = zeroGimbal ? Vector3d.Zero : state.GimbalDeg;
+            var direction = TiltDirection(baseDirection, gimbal.X, gimbal.Z);
+            destination.Add((position, direction * thrust));
+        }
+    }
+
+    /// <summary>
+    /// Clears every live engine instance's <see cref="EngineInstanceState.GimbalCommandOverride"/>
+    /// back to <c>null</c>. Called once per tick before a differential-TVC solve (R5b)
+    /// re-populates it, so a command from a previous tick — or from a tick where the pilot
+    /// stopped commanding attitude — never lingers on an instance the current tick doesn't
+    /// touch.
+    /// </summary>
+    public void ClearGimbalCommandOverrides()
+    {
+        foreach (var state in _engineStates)
+            state.GimbalCommandOverride = null;
+    }
+
+    /// <summary>
+    /// Per-engine-instance ingredients for differential gimbal allocation (R5b): mount
+    /// position, zero-deflection thrust magnitude and this instance's own gimbal range —
+    /// the same raw data <see cref="GetEngineInstanceThrustGeometry"/> uses, but without the
+    /// live <see cref="EngineInstanceState.GimbalDeg"/> baked in, so a caller can linearize
+    /// "how much lateral force a unit normalized gimbal command would add" instead of reading
+    /// the already-deflected thrust vector. Skips instances that cannot presently gimbal
+    /// (unselected, ungimballed mount, zero thrust) — a caller allocates torque only across
+    /// instances that can actually receive a command.
+    /// </summary>
+    public IEnumerable<(EngineInstanceState State, Vector3d PositionM, double ThrustN, double GimbalRangeDeg)>
+        GetEngineInstanceGimbalAuthority(double ambientPressure)
+    {
+        BuildEngineInstanceGimbalAuthority(_gimbalAuthorityScratch, ambientPressure);
+        return _gimbalAuthorityScratch;
+    }
+
+    internal IReadOnlyList<(EngineInstanceState State, Vector3d PositionM, double ThrustN, double GimbalRangeDeg)>
+        GetEngineInstanceGimbalAuthoritySnapshot(double ambientPressure)
+    {
+        BuildEngineInstanceGimbalAuthority(_gimbalAuthorityScratch, ambientPressure);
+        return _gimbalAuthorityScratch;
+    }
+
+    private void BuildEngineInstanceGimbalAuthority(
+        List<(EngineInstanceState State, Vector3d PositionM, double ThrustN, double GimbalRangeDeg)> destination,
+        double ambientPressure)
+    {
+        destination.Clear();
+        if (!HasEngineRuntime || IsBroken || !IsStagingActive) return;
+
+        int selected = SelectedEngineCount;
+        int selectedHealthy = 0;
+        for (int i = 0; i < _engineStates.Count; i++)
+        {
+            var state = _engineStates[i];
+            if (state.State == EngineLifecycleState.Failed || state.FailureCode != null)
+                continue;
+            if (selectedHealthy++ >= selected) break;
+            var mount = Definition.ResolvedEngineCluster?.Engines.ElementAtOrDefault(i);
+            bool gimballed = mount?.Gimballed ?? true;
+            if (!gimballed) continue;
+
+            // Same ThrustPositionYM offset as GetEngineInstanceThrustGeometry above — this
+            // must stay in sync with it, since SolveDifferentialGimbal's lever arm and
+            // GetTotalTorque's lever arm need to agree on where each mount actually is.
+            var position = mount != null
+                ? mount.Position + new Vector3d(0.0, Definition.ThrustPositionYM, 0.0)
+                : new Vector3d(0.0, Definition.ThrustPositionYM, 0.0);
+            double thrust = EvaluateEnginePerformance(state, ambientPressure).ThrustN;
+            if (thrust <= 0.0) continue;
+
+            double range = ResolveEngineModel(state)?.GimbalRangeDeg ?? Definition.GimbalRange;
+            if (range <= 0.0) continue;
+
+            destination.Add((state, position, thrust, range));
+        }
+    }
+
+    /// <summary>
+    /// Tilts <paramref name="baseDirection"/> by (<paramref name="gimbalXDeg"/>,
+    /// <paramref name="gimbalZDeg"/>) degrees. For the vertical case (<c>baseDirection ≈
+    /// (0,1,0)</c>, true of every mount in every current data file) this reproduces the
+    /// exact expression <see cref="GetThrustVector"/> already uses, so the two stay
+    /// bit-for-bit consistent at zero deflection. For a general (non-vertical) base
+    /// direction — untested by real data today, but must not crash or misbehave — an
+    /// orthonormal basis is built around it and the same sine tilt is applied within the
+    /// plane perpendicular to it; this branch is synthetic/general-purpose.
+    /// </summary>
+    private static Vector3d TiltDirection(
+        Vector3d baseDirection, double gimbalXDeg, double gimbalZDeg)
+    {
+        double ax = gimbalXDeg * MathUtils.DEG_TO_RAD;
+        double az = gimbalZDeg * MathUtils.DEG_TO_RAD;
+        var up = baseDirection.Normalized;
+        if (up == Vector3d.Zero) up = Vector3d.Up;
+
+        // Vertical fast path: identical formula to GetThrustVector's tilt.
+        if ((up - Vector3d.Up).MagnitudeSquared < 1e-12)
+            return new Vector3d(
+                System.Math.Sin(ax), 1.0, System.Math.Sin(az)).Normalized;
+
+        // General case: build an orthonormal basis (right, up, fwd) around the base
+        // direction and apply the same sine tilt within that local frame.
+        var reference = System.Math.Abs(up.Y) < 0.999 ? Vector3d.Up : Vector3d.Right;
+        var right = reference.Cross(up).Normalized;
+        if (right == Vector3d.Zero) right = Vector3d.Right;
+        var fwd = up.Cross(right).Normalized;
+        return (right * System.Math.Sin(ax) + up + fwd * System.Math.Sin(az)).Normalized;
+    }
+
+    // ── Consumir propelante por dt segundos. Retorna false si se agota. ──
+    public bool ConsumePropellant(double dt, double ambientPressure = 0.0)
+    {
+        if (Definition.Category != PartCategory.Engine
+            || ThrottleLevel <= 0.0 || IsBroken || !IsStagingActive)
+            return true;
+
+        // ISP interpolado por presión (vac ↔ sl).
+        // pf = 0 en vacío (p=0) → Isp_vac;  pf = 1 a nivel del mar → Isp_sl.
+        double pressureFraction = System.Math.Max(0.0, ambientPressure / SeaLevelPressurePa);
+        double isp = System.Math.Max(0.0,
+            Definition.IspVac + (Definition.IspSL - Definition.IspVac) * pressureFraction);
+        if (isp < 1.0) return false;
+
+        // Flujo másico ṁ = F(p) / (Isp(p)·g₀), g₀ = 9.80665 m/s².
+        // Se usa el empuje corregido por presión para que ṁ sea consistente
+        // con el empuje realmente producido (GetThrustMagnitude).
+        double thrust       = GetThrustMagnitude(ambientPressure);
+        double massFlowRate = thrust / (isp * 9.80665);  // kg/s
+
+        var fuelType = Definition.FuelTypeStr;
+
+        if (fuelType.Contains("liquidfuel", StringComparison.OrdinalIgnoreCase)
+            || fuelType.Contains("liquid_fuel+oxidizer", StringComparison.OrdinalIgnoreCase)
+            || fuelType.Contains("liquidfuelandoxidizer", StringComparison.OrdinalIgnoreCase))
+        {
+            // Reparte ṁ entre LF y Ox según la proporción REALMENTE cargada en la pieza,
+            // de modo que el O/F del motor (p. ej. 3.55 para Raptor) se respete y ambos
+            // recursos se agoten juntos. (Antes se usaba un 9:11 fijo → O/F ≈ 1.22, erróneo.)
+            // Esto deja este camino coherente con PartGraph.ConsumePropellant, la ruta
+            // autoritativa que invoca Vessel.Tick.
+            double total  = LiquidFuel + Oxidizer;
+            double lfFrac = Definition.MixtureRatio > 0.0
+                ? 1.0 / (1.0 + Definition.MixtureRatio)
+                : total > 1e-9 ? LiquidFuel / total : 0.45;
+            double lfRate = massFlowRate * lfFrac;
+            double oxRate = massFlowRate * (1.0 - lfFrac);
+            if (AvailableLiquidFuel < lfRate * dt || AvailableOxidizer < oxRate * dt) return false;
+            LiquidFuel -= lfRate * dt;
+            Oxidizer   -= oxRate * dt;
+        }
+        else if (fuelType.Contains("solid", StringComparison.OrdinalIgnoreCase))
+        {
+            if (SolidFuel < massFlowRate * dt) return false;
+            SolidFuel -= massFlowRate * dt;
+        }
+        else if (fuelType.Contains("mono", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Monopropellant < massFlowRate * dt) return false;
+            Monopropellant -= massFlowRate * dt;
+        }
+        return true;
+    }
+}

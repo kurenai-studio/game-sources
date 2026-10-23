@@ -1,0 +1,89 @@
+{
+  "id": "venus",
+  "name": "Venus",
+  "mass": 4.867e+24,
+  "radius": 6051800,
+  "soi": 616000000,
+  "rotational_period": -20996798,
+  "axial_tilt": 177.36,
+  "has_atmosphere": true,
+  "atmosphere": {
+    "scale_height": 15000,
+    "sea_level_density": 65.0,
+    "sea_level_pressure": 9200000,
+    "sea_level_temperature": 737.0,
+    "max_altitude": 250000,
+    "optics": {
+      "rayleigh_scattering": [0.000045, 0.000070, 0.000120],
+      "mie_scattering": [0.000090, 0.000082, 0.000062],
+      "mie_absorption": [0.000008, 0.000018, 0.000042],
+      "ozone_absorption": [0.0, 0.0, 0.0],
+      "spectral_wavelength_min_nm": 400,
+      "spectral_wavelength_max_nm": 700,
+      "spectral_interpolation": "log-linear",
+      "spectral_calibration_temperature_k": 737.0,
+      "spectral_data_status": "reconstructed",
+      "rayleigh_scale_height": 15000,
+      "mie_scale_height": 15000,
+      "ozone_half_width": 0,
+      "mie_anisotropy": 0.85,
+      "sun_illuminance_scale": 10.0,
+      "surface_refractivity": 0.012,
+      "refractive_scale_height": 15000,
+      "low_order_diffuse_strength": 0.40,
+      "cloud_base_altitude": 48000,
+      "cloud_top_altitude": 70000,
+      "cloud_extinction": 0.00028,
+      "cloud_coverage": 0.96,
+      "cloud_wind_radians_per_second": 0.000004
+    },
+    "layers": [
+      {
+        "alt_min": 0,
+        "alt_max": 60000,
+        "temp_base": 737.0,
+        "lapse_rate": -0.0079
+      },
+      {
+        "alt_min": 60000,
+        "alt_max": 90000,
+        "temp_base": 263.0,
+        "lapse_rate": -0.00256667
+      },
+      {
+        "alt_min": 90000,
+        "alt_max": 100000,
+        "temp_base": 186.0,
+        "lapse_rate": -0.0011
+      },
+      {
+        "alt_min": 100000,
+        "alt_max": 150000,
+        "temp_base": 175.0,
+        "lapse_rate": 0.0
+      },
+      {
+        "alt_min": 150000,
+        "alt_max": 241000,
+        "temp_base": 175.0,
+        "lapse_rate": 0.0006044
+      }
+    ],
+    "molar_mass": 0.04401,
+    "heat_capacity_ratio": 1.29,
+    "surface_gravity": 8.87,
+    "geopotential_radius": 6051800.0
+  },
+  "surface_gravity": 8.87,
+  "gm": 324859000000000.0,
+  "orbital_elements": {
+    "semi_major_axis": 108200000000.0,
+    "eccentricity": 0.0067,
+    "inclination": 3.39,
+    "longitude_of_node": 76.68,
+    "argument_of_periapsis": 54.85,
+    "mean_anomaly_at_epoch": 50.416,
+    "epoch": 0.0,
+    "reference_body": "sun"
+  }
+}

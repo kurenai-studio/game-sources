@@ -1,0 +1,348 @@
+namespace ExosphereSimulation.Tests;
+
+using System.IO;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Math;
+
+/// <summary>
+/// RF-01: the launch frame. A pad's latitude fixes the free eastward velocity the body's
+/// rotation hands the vehicle (ω·R·cos φ). These tests pin that boost to the real number
+/// for Kennedy and guard the frame invariants the ascent guidance depends on.
+///
+/// Regression they exist to prevent: the pad used to spawn along the inertial +Y axis,
+/// which — because the spin axis is +Y tilted by the 23.44° axial tilt — sat at latitude
+/// 66.6°, near the arctic circle. It inherited 185 m/s instead of 408 m/s.
+/// </summary>
+public class LaunchSiteFrameTests
+{
+    [Fact]
+    public void Kennedy_InheritsRealEastwardBoost()
+    {
+        var earth  = LoadBody("earth");
+        var kennedy = LoadSite("kennedy");
+
+        double boost = kennedy.GetRotationalBoost(earth);
+
+        // Acceptance criterion from the astronaut realism master plan (RF-01).
+        Assert.InRange(boost, 405.0, 411.0);
+    }
+
+    [Fact]
+    public void Kennedy_BoostMatchesClosedFormOmegaRho()
+    {
+        var earth   = LoadBody("earth");
+        var kennedy = LoadSite("kennedy");
+        var pos     = kennedy.GetPosition(earth);
+        double rho  = (pos - earth.Position).Cross(earth.RotationAxis).Magnitude;
+        double expected = earth.AngularSpeed * rho;
+
+        Assert.Equal(expected, kennedy.GetRotationalBoost(earth), 1);
+    }
+
+    [Fact]
+    public void PadSpawn_SitsAtTheLatitudeTheDataClaims()
+    {
+        var earth   = LoadBody("earth");
+        var kennedy = LoadSite("kennedy");
+
+        double actualLat = earth.GetLatitude(kennedy.GetPosition(earth));
+
+        // The old +Y spawn reported 66.56° here while the data said 28.61°.
+        Assert.Equal(kennedy.Latitude, actualLat, 3);
+    }
+
+    [Fact]
+    public void RotationalBoost_PointsDueEast()
+    {
+        var earth   = LoadBody("earth");
+        var kennedy = LoadSite("kennedy");
+
+        var pos  = kennedy.GetPosition(earth);
+        var vel  = earth.GetSurfaceVelocity(pos);
+        var east = earth.GetEastDirection(pos);
+        var up   = kennedy.GetUpDirection(earth);
+
+        // Material velocity is ω⃗ × r⃗ (geocentric east). The pad up is geodetic, so a
+        // tiny radial component remains — the WGS deflection of the vertical.
+        Assert.True(vel.Normalized.Dot(east) > 0.999);
+        Assert.InRange(vel.Normalized.Dot(up), -0.01, 0.01);
+    }
+
+    [Fact]
+    public void EastIsPerpendicularToUpAndToTheSpinAxis()
+    {
+        var earth = LoadBody("earth");
+        var pos   = earth.GetSurfacePosition(28.6, -80.6);
+        var east  = earth.GetEastDirection(pos);
+        var up    = earth.GetGeodeticUp(pos);
+        east = up.Cross(east).Cross(up).Normalized;
+
+        Assert.Equal(0.0, east.Dot(up),                 6);
+        Assert.Equal(0.0, east.Dot(earth.RotationAxis), 3);
+        Assert.Equal(1.0, east.Magnitude,               6);
+    }
+
+    [Theory]
+    [InlineData(0.0)]     // equator: the full ride
+    [InlineData(28.6)]    // Kennedy
+    [InlineData(45.9)]    // Baikonur
+    [InlineData(-33.0)]   // southern hemisphere: same boost, still eastward
+    public void BoostFollowsCosineOfLatitude(double latitude)
+    {
+        var earth = LoadBody("earth");
+        var pos   = earth.GetSurfacePosition(latitude, 0.0);
+        double rho = (pos - earth.Position).Cross(earth.RotationAxis).Magnitude;
+        double expected = earth.AngularSpeed * rho;
+        double actual   = earth.GetSurfaceVelocity(pos).Magnitude;
+
+        Assert.Equal(expected, actual, 0);
+        Assert.True(earth.GetSurfaceVelocity(pos).Dot(earth.GetEastDirection(pos)) > 0.0,
+            "rotation carries the surface east in both hemispheres");
+    }
+
+    [Fact]
+    public void PolarPad_InheritsNothing()
+    {
+        var earth = LoadBody("earth");
+        var pole  = earth.GetSurfacePosition(90.0, 0.0);
+
+        Assert.Equal(0.0, earth.GetSurfaceVelocity(pole).Magnitude, 3);
+    }
+
+    [Fact]
+    public void SurfacePosition_RoundTripsThroughLatitude()
+    {
+        var earth = LoadBody("earth");
+
+        foreach (double lat in new[] { -60.0, -28.6, 0.0, 28.6, 60.0 })
+        foreach (double lon in new[] { -170.0, -80.6, 0.0, 90.0, 175.0 })
+        {
+            var pos = earth.GetSurfacePosition(lat, lon);
+            Assert.Equal(lat, earth.GetLatitude(pos), 6);
+        }
+    }
+
+    [Fact]
+    public void SurfacePosition_HonoursPadAltitude()
+    {
+        var earth   = LoadBody("earth");
+        var kennedy = LoadSite("kennedy");
+
+        Assert.Equal(kennedy.Altitude, earth.GetAltitude(kennedy.GetPosition(earth)), 3);
+    }
+
+    [Fact]
+    public void LaunchSiteData_LoadsFromDisk()
+    {
+        var sites = LaunchSite.LoadAllFromDirectory(
+            Path.Combine(FindRepoRoot().FullName, "data", "launch_sites"));
+
+        Assert.True(sites.ContainsKey("kennedy"), "kennedy.json should load");
+        Assert.True(sites.ContainsKey("starbase"), "starbase.json should load");
+        Assert.Equal("earth", sites["kennedy"].BodyId);
+        Assert.Equal(28.608389, sites["kennedy"].Latitude, 6);
+    }
+
+    [Fact]
+    public void StarbaseUsesBocaChicaAndFaaScaleBaseline()
+    {
+        var site = LoadSite("starbase");
+        var spec = LaunchComplexSpec.StarbasePostDeluge;
+
+        Assert.InRange(site.Latitude, 25.99, 26.01);
+        Assert.InRange(site.Longitude, -97.17, -97.14);
+        Assert.Equal("starbase", spec.LaunchSiteId);
+        Assert.Equal(19.812, spec.VehicleInterfaceElevation, 6);
+        Assert.Equal(146.304, spec.OlitHeight, 6);
+        Assert.Equal(3.048, spec.LightningRodHeight, 6);
+        Assert.Equal(15, spec.CommodityTankCount);
+        Assert.Equal(30.48, spec.CommodityTankMaxHeight, 6);
+        Assert.Empty(spec.Validate());
+    }
+
+    [Fact]
+    public void TimedSurfacePositionMovesAtRotationalSurfaceVelocity()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        const double time = 12_345.0;
+        const double dt = 0.001;
+        var p0 = site.GetPosition(earth, time);
+        var p1 = site.GetPosition(earth, time + dt);
+        var finiteDifference = (p1 - p0) / dt;
+        var expected = earth.GetSurfaceVelocity(p0);
+
+        Assert.InRange((finiteDifference - expected).Magnitude, 0.0, 0.05);
+    }
+
+    [Fact]
+    public void TimedSurfacePositionCompletesOneSiderealDay()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        var start = site.GetPosition(earth, 0.0);
+        var quarterDay = site.GetPosition(earth, earth.RotationalPeriod * 0.25);
+        var fullDay = site.GetPosition(earth, earth.RotationalPeriod);
+
+        Assert.True((quarterDay - start).Magnitude > earth.Radius * 0.9,
+            "the launch surface must visibly rotate during a quarter day");
+        Assert.InRange((fullDay - start).Magnitude, 0.0, 0.05);
+    }
+
+    [Fact]
+    public void TimedLaunchFrameRemainsUprightAndRightHanded()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        var frame = site.GetLocalFrame(earth, 86_164.0);
+        var position = site.GetPosition(earth, 86_164.0);
+
+        Assert.Equal(1.0, frame.Determinant, 10);
+        Assert.Equal(1.0, frame.Up.Dot(earth.GetGeodeticUp(position)), 10);
+        Assert.True(earth.GetSurfaceVelocity(position).Dot(frame.East) > 0.0);
+    }
+
+    [Fact]
+    public void ReleasedVehicleWithSurfaceVelocityDoesNotShootSidewaysFromPad()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        const double t = 1_000.0;
+        const double dt = 1.0;
+        double interfaceHeight = LaunchComplexSpec.StarbasePostDeluge.VehicleInterfaceElevation;
+        var frame = site.GetLocalFrame(earth, t);
+        var vesselStart = site.GetPosition(earth, t) + frame.Up * interfaceHeight;
+        var inheritedVelocity = earth.GetSurfaceVelocity(vesselStart);
+        var linearVesselAfterOneSecond = vesselStart + inheritedVelocity * dt;
+        var padAfterOneSecond = site.GetPosition(earth, t + dt);
+        var relative = linearVesselAfterOneSecond - padAfterOneSecond;
+
+        // First-order motion of pad and vehicle is identical. Remaining error is only the
+        // sub-centimetre curvature term from approximating the vehicle path as a tangent.
+        Assert.InRange(System.Math.Abs(relative.Dot(frame.East)), 0.0, 0.05);
+        Assert.InRange(System.Math.Abs(relative.Dot(frame.North)), 0.0, 0.05);
+        Assert.InRange(relative.Dot(frame.Up), interfaceHeight - 0.05, interfaceHeight + 0.05);
+    }
+
+    [Fact]
+    public void RotatingStarbaseHasConstantBodyFixedCoordinates()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        var atStart = (site.GetPosition(earth, 0.0) - earth.Position).Normalized;
+        var afterHourInertial = (site.GetPosition(earth, 3_600.0) - earth.Position).Normalized;
+        var afterHourBodyFixed = earth.ToBodyFixedDirection(afterHourInertial, 3_600.0);
+
+        Assert.Equal(atStart.X, afterHourBodyFixed.X, 10);
+        Assert.Equal(atStart.Y, afterHourBodyFixed.Y, 10);
+        Assert.Equal(atStart.Z, afterHourBodyFixed.Z, 10);
+    }
+
+    [Fact]
+    public void BodyFixedDownrangeIgnoresPurePlanetaryRotation()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("starbase");
+        var launch = (site.GetPosition(earth, 0.0) - earth.Position).Normalized;
+        var later = (site.GetPosition(earth, 120.0) - earth.Position).Normalized;
+        var laterFixed = earth.ToBodyFixedDirection(later, 120.0).Normalized;
+        double downrange = System.Math.Acos(System.Math.Clamp(
+            launch.Dot(laterFixed), -1.0, 1.0)) * earth.Radius;
+
+        Assert.InRange(downrange, 0.0, 0.1);
+    }
+
+    [Fact]
+    public void StarbaseJ2000SolarElevationIsFinite()
+    {
+        var universe = Universe.LoadFromDataDirectory(
+            Path.Combine(FindRepoRoot().FullName, "data"));
+        var earth = universe.GetBody("earth");
+        var sun = universe.GetBody("sun");
+        Assert.NotNull(earth);
+        Assert.NotNull(sun);
+
+        var pad = LoadSite("starbase").GetPosition(earth);
+        var up = earth.GetGeodeticUp(pad);
+        double sinEl = up.Dot((sun.Position - pad).Normalized);
+        double deg = System.Math.Asin(System.Math.Clamp(sinEl, -1.0, 1.0))
+            * 180.0 / System.Math.PI;
+
+        Assert.True(double.IsFinite(deg), $"Starbase solar elevation at t=0 was {deg}");
+    }
+
+    [Fact]
+    public void KennedyRenderFrameIsOrthonormalRightHandedAndRadiallyUpright()
+    {
+        var earth = LoadBody("earth");
+        var frame = LoadSite("kennedy").GetLocalFrame(earth);
+
+        Assert.Equal(1.0, frame.East.Magnitude, 12);
+        Assert.Equal(1.0, frame.Up.Magnitude, 12);
+        Assert.Equal(1.0, frame.South.Magnitude, 12);
+        Assert.Equal(0.0, frame.East.Dot(frame.Up), 12);
+        Assert.Equal(0.0, frame.Up.Dot(frame.South), 12);
+        Assert.Equal(0.0, frame.South.Dot(frame.East), 12);
+        Assert.Equal(1.0, frame.Determinant, 12);
+        Assert.InRange((frame.North - frame.Up.Cross(frame.East)).Magnitude, 0.0, 1e-12);
+    }
+
+    [Fact]
+    public void PadOriginIsDirectlyBelowGroundHeldVesselInLocalFrame()
+    {
+        var earth = LoadBody("earth");
+        var site = LoadSite("kennedy");
+        var frame = site.GetLocalFrame(earth);
+        var surface = site.GetPosition(earth);
+        var vessel = surface + frame.Up * 12.0;
+        var offset = surface - vessel;
+
+        Assert.Equal(-12.0, offset.Dot(frame.Up), 8);
+        Assert.Equal(0.0, offset.Dot(frame.East), 8);
+        Assert.Equal(0.0, offset.Dot(frame.North), 8);
+    }
+
+    [Theory]
+    [InlineData(-60.0, -170.0)]
+    [InlineData(-28.6, 90.0)]
+    [InlineData(0.0, 0.0)]
+    [InlineData(28.6, -80.6)]
+    [InlineData(60.0, 175.0)]
+    public void SurfaceFramesRemainRightHandedAcrossTheGlobe(double latitude, double longitude)
+    {
+        var earth = LoadBody("earth");
+        var site = new LaunchSite { Latitude = latitude, Longitude = longitude };
+        var frame = site.GetLocalFrame(earth);
+
+        Assert.Equal(1.0, frame.Determinant, 10);
+        Assert.Equal(0.0, frame.East.Dot(frame.Up), 10);
+        Assert.Equal(0.0, frame.Up.Dot(frame.South), 10);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    private static CelestialBody LoadBody(string id) =>
+        CelestialBody.LoadFromJson(
+            Path.Combine(FindRepoRoot().FullName, "data", "bodies", $"{id}.json"));
+
+    private static LaunchSite LoadSite(string id) =>
+        LaunchSite.LoadFromJson(
+            Path.Combine(FindRepoRoot().FullName, "data", "launch_sites", $"{id}.json"));
+
+    private static DirectoryInfo FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "data"))
+                && File.Exists(Path.Combine(dir.FullName, "ExosphereSimulation.sln")))
+            {
+                return dir;
+            }
+
+            dir = dir.Parent;
+        }
+
+        throw new DirectoryNotFoundException("repo root not found");
+    }
+}

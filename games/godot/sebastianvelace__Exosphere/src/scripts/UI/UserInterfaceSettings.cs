@@ -1,0 +1,197 @@
+namespace Exosphere.Game;
+
+using Godot;
+
+public enum InterfaceLanguage { English, Spanish }
+
+/// <summary>
+/// Exterior Minimal uses the broadcast band with live engine boards and navball.
+/// Full adds diagnostic panels. Clean retains only the navball and critical alerts.
+/// </summary>
+public enum HudDensity { Full, Minimal, Clean }
+
+public static class UserInterfaceSettings
+{
+    private const string Path = "user://interface.cfg";
+    private const int HudLayoutVersion = 1;
+    public static InterfaceLanguage Language { get; private set; } = InterfaceLanguage.English;
+    public static bool ReducedMotion { get; private set; }
+    public static float UiScale { get; private set; } = 1.0f;
+    public static HudDensity HudDensity { get; private set; } = HudDensity.Minimal;
+    /// <summary>Testing aid: campaign missions start without their prerequisites.</summary>
+    public static bool UnlockAllMissions { get; private set; }
+
+    public static void Load()
+    {
+        var config = new ConfigFile();
+        if (config.Load(Path) != Error.Ok) return;
+        Language = (InterfaceLanguage)(int)config.GetValue(
+            "interface", "language", (int)InterfaceLanguage.English);
+        ReducedMotion = (bool)config.GetValue("interface", "reduced_motion", false);
+        UnlockAllMissions = (bool)config.GetValue("campaign", "unlock_all_missions", false);
+        UiScale = System.Math.Clamp(
+            (float)config.GetValue("interface", "ui_scale", 1.0f), 1.0f, 1.5f);
+        HudDensity = (HudDensity)System.Math.Clamp(
+            (int)config.GetValue("interface", "hud_density", (int)HudDensity.Minimal),
+            (int)HudDensity.Full,
+            (int)HudDensity.Clean);
+        // Legacy Clean displayed the old engine/telemetry cluster. Offer the new band
+        // once when upgrading; an explicit Clean choice after migration stays clean.
+        if ((int)config.GetValue("interface", "hud_layout_version", 0) < HudLayoutVersion)
+        {
+            if (HudDensity == HudDensity.Clean) HudDensity = HudDensity.Minimal;
+            Save();
+        }
+    }
+
+    public static void SetLanguage(InterfaceLanguage language)
+    {
+        Language = language;
+        Save();
+    }
+
+    public static void SetReducedMotion(bool value)
+    {
+        ReducedMotion = value;
+        Save();
+    }
+
+    public static void SetUnlockAllMissions(bool value)
+    {
+        UnlockAllMissions = value;
+        Save();
+    }
+
+    public static void SetUiScale(float value)
+    {
+        UiScale = System.Math.Clamp(value, 1.0f, 1.5f);
+        Save();
+    }
+
+    public static void SetHudDensity(HudDensity value)
+    {
+        HudDensity = value;
+        Save();
+    }
+
+    /// <summary>Advances Minimal → Full → Clean → Minimal and persists the result.</summary>
+    public static HudDensity CycleHudDensity()
+    {
+        SetHudDensity(HudDensity switch
+        {
+            HudDensity.Minimal => HudDensity.Full,
+            HudDensity.Full => HudDensity.Clean,
+            _ => HudDensity.Minimal,
+        });
+        return HudDensity;
+    }
+
+    private static void Save()
+    {
+        var config = new ConfigFile();
+        config.Load(Path);
+        config.SetValue("interface", "language", (int)Language);
+        config.SetValue("interface", "reduced_motion", ReducedMotion);
+        config.SetValue("interface", "ui_scale", UiScale);
+        config.SetValue("interface", "hud_density", (int)HudDensity);
+        config.SetValue("interface", "hud_layout_version", HudLayoutVersion);
+        config.SetValue("campaign", "unlock_all_missions", UnlockAllMissions);
+        config.Save(Path);
+    }
+}
+
+public static class UiText
+{
+    private static readonly Dictionary<string, (string en, string es)> Strings = new()
+    {
+        ["flight14_home"] = ("From Starbase to orbit. Explore the mission, or take command of your own flight.", "De Starbase a la órbita. Explora la misión o toma el mando de tu propio vuelo."),
+        ["flight14_details"] = ("EXPLORE FLIGHT 14  →", "EXPLORAR VUELO 14  →"),
+        ["flight14_label"] = ("FEATURED MISSION", "MISIÓN DESTACADA"),
+        ["flight14_card_title"] = ("THE ORBITAL MISSION", "LA MISIÓN ORBITAL"),
+        ["in_development"] = ("IN DEVELOPMENT", "EN DESARROLLO"),
+        ["phase_ascent"] = ("01   Ascent & orbital insertion", "01   Ascenso e inserción orbital"),
+        ["phase_deploy"] = ("02   Satellite deployment", "02   Despliegue de satélites"),
+        ["phase_return"] = ("03   Deorbit, entry & terminal burn", "03   Desorbitado, reentrada y frenado final"),
+        ["flight14_pending"] = ("Explore the current continuous simulation: launch, orbital insertion, 26 payload releases, deorbit and atmospheric descent. Estimated guidance and hardware; reconstruction is still in development.", "Explora la simulación continua actual: lanzamiento, inserción orbital, 26 despliegues, desorbitado y descenso atmosférico. Guiado y vehículo estimados; la reconstrucción sigue en desarrollo."),
+        ["reference_only"] = ("MISSION BRIEFING / REFERENCE", "INFORMACIÓN DE MISIÓN / REFERENCIA"),
+        ["flight14_scope"] = ("Automatic flight. Camera and time acceleration remain available. Continues through estimated water entry and ten seconds of sealed-hull motion. Exact ocean targeting, flooding and independent booster recovery remain pending.", "Vuelo automático. Puedes mover la cámara y acelerar el tiempo. Continúa hasta la entrada al agua estimada y diez segundos de movimiento del casco sellado. Destino oceánico exacto, inundación y recuperación independiente del booster pendientes."),
+        ["flight14_launch_preview"] = ("START EXPLORATION  →", "INICIAR EXPLORACIÓN  →"),
+        ["choose_existing_vehicle"] = ("FREE FLIGHT / CHOOSE A VEHICLE", "VUELO LIBRE / ELEGIR VEHÍCULO"),
+        ["free_flight"] = ("FREE FLIGHT", "VUELO LIBRE"),
+        ["vehicle_selection"] = ("SELECT YOUR VEHICLE", "SELECCIONA TU VEHÍCULO"),
+        ["free_flight_description"] = ("Choose a launch vehicle, review its dated configuration, then launch from its home pad.", "Elige un cohete, revisa su configuración fechada y despega desde su base."),
+        ["configuration_date"] = ("CONFIGURATION", "CONFIGURACIÓN"),
+        ["manual_flight_note"] = ("Manual flight, unrestricted objectives. Flight assistance remains available in the flight controls. Historical mission events are enabled only in Campaign.", "Vuelo manual con objetivos libres. Las asistencias están disponibles en los controles de vuelo. Los eventos de misiones históricas se activan en la campaña."),
+        ["launch_vehicle"] = ("LAUNCH VEHICLE  →", "LANZAR VEHÍCULO  →"),
+        ["change_vehicle"] = ("CHANGE VEHICLE", "CAMBIAR VEHÍCULO"),
+        ["mission_planned"] = ("This mission is planned. Its playable definition and vehicle are not available yet.", "Esta misión está planificada. Su definición jugable y vehículo aún no están disponibles."),
+        ["apollo11_partial"] = ("Partial mission: it ends with Eagle on the Moon. The lunar ascent, rendezvous and return to Earth are still in development.", "Misión parcial: termina con el Eagle en la Luna. El despegue lunar, el encuentro y el regreso a la Tierra siguen en desarrollo."),
+        ["mission_procedure"] = ("PROCEDURE", "PROCEDIMIENTO"),
+        ["mission_control_hint"] = ("Stuck on a step? [K] hands it to Mission Control and [K] again takes it back.", "¿Trabado en un paso? [K] se lo pasa a Control de Misión y otra vez [K] te lo devuelve."),
+        ["mission_objectives"] = ("OBJECTIVES", "OBJETIVOS"),
+        ["mission_limits"] = ("FLIGHT LIMITS", "LÍMITES DE VUELO"),
+        ["mission_prerequisites"] = ("Complete first", "Completa primero"),
+        ["mission_date"] = ("HISTORICAL DATE", "FECHA HISTÓRICA"),
+        ["mission_status"] = ("STATUS", "ESTADO"),
+        ["start_mission"] = ("START MISSION  →", "INICIAR MISIÓN  →"),
+        ["back_to_missions"] = ("BACK TO MISSIONS", "VOLVER A MISIONES"),
+        ["dossier"] = ("ORBITAL\nFLIGHT DOSSIER", "DOSSIER DE\nVUELO ORBITAL"),
+        ["subtitle"] = ("Historical missions and unrestricted flight, governed by one physics model.",
+            "Misiones históricas y vuelo libre, gobernados por un único modelo físico."),
+        ["continue"] = ("CONTINUE", "CONTINUAR"),
+        ["campaign"] = ("HISTORICAL CAMPAIGN", "CAMPAÑA HISTÓRICA"),
+        ["sandbox"] = ("SANDBOX FLIGHT", "VUELO SANDBOX"),
+        ["vab"] = ("VEHICLE ASSEMBLY", "ENSAMBLAJE DE VEHÍCULOS"),
+        ["scenarios"] = ("SCENARIOS", "ESCENARIOS"),
+        ["reentry"] = ("REENTRY TEST", "PRUEBA DE REENTRADA"),
+        ["saves"] = ("SAVED FLIGHTS", "PARTIDAS GUARDADAS"),
+        ["settings"] = ("SETTINGS", "AJUSTES"),
+        ["quit"] = ("QUIT", "SALIR"),
+        ["mission"] = ("SELECTED DOSSIER", "DOSSIER SELECCIONADO"),
+        ["dossier_vehicle_title"] = ("FALCON 9 BLOCK 5\nPAYLOAD DEPLOYMENT",
+            "FALCON 9 BLOCK 5\nDESPLIEGUE DE CARGA"),
+        ["dossier_vehicle_value"] = ("F9 B5 / STANDARD FAIRING", "F9 B5 / COFIA ESTÁNDAR"),
+        ["dossier_site_value"] = ("KENNEDY LC-39A", "KENNEDY LC-39A"),
+        ["dossier_objective_value"] = ("200 KM PARKING ORBIT", "ÓRBITA DE ESTACIONAMIENTO 200 KM"),
+        ["dossier_physics_value"] = ("FULL / ASSISTS AVAILABLE", "COMPLETA / ASISTENCIAS DISPONIBLES"),
+        ["dossier_note"] = (
+            "Published performance values remain distinct from simulator estimates. " +
+            "Open Vehicle Assembly to inspect the dated preset and its sources.",
+            "Los valores publicados se mantienen separados de las estimaciones del simulador. " +
+            "Abre el ensamblaje para revisar el preset fechado y sus fuentes."),
+        ["dossier_profile"] = ("PROFILE  F9-B5-2025-05", "PERFIL  F9-B5-2025-05"),
+        ["flight_operations"] = ("FLIGHT OPERATIONS", "OPERACIONES DE VUELO"),
+        ["footer_controls"] = ("ENTER  SELECT     ESC  BACK", "ENTER  SELECCIONAR     ESC  ATRÁS"),
+        ["physics_ready"] = ("PHYSICS CORE READY", "NÚCLEO FÍSICO LISTO"),
+        ["vehicle"] = ("VEHICLE", "VEHÍCULO"),
+        ["site"] = ("LAUNCH SITE", "SITIO DE LANZAMIENTO"),
+        ["objective"] = ("OBJECTIVE", "OBJETIVO"),
+        ["physics"] = ("PHYSICS", "FÍSICA"),
+        ["settings_title"] = ("SETTINGS", "AJUSTES"),
+        ["graphics_profile"] = ("GRAPHICS PROFILE", "PERFIL GRÁFICO"),
+        ["graphics_automatic"] = ("AUTO", "AUTO"),
+        ["graphics_integrated"] = ("INTEGRATED GPU", "GPU INTEGRADA"),
+        ["graphics_quality"] = ("QUALITY", "CALIDAD"),
+        ["graphics_integrated_note"] = ("75% world resolution, lighter cloud lighting and fewer reflections. Telemetry stays sharp.", "Resolución del mundo al 75%, iluminación de nubes más ligera y menos reflejos. La telemetría conserva su nitidez."),
+        ["graphics_quality_note"] = ("Native world resolution with detailed cloud lighting and reflections. Best for dedicated graphics.", "Resolución nativa con iluminación de nubes y reflejos detallados. Recomendado para gráficos dedicados."),
+        ["language"] = ("LANGUAGE", "IDIOMA"),
+        ["motion"] = ("REDUCED MOTION", "MOVIMIENTO REDUCIDO"),
+        ["unlock_all_missions"] = ("UNLOCK ALL MISSIONS (TESTING)", "DESBLOQUEAR TODAS LAS MISIONES (PRUEBAS)"),
+        ["hud_density"] = ("FLIGHT TELEMETRY", "TELEMETRÍA DE VUELO"),
+        ["hud_minimal"] = ("BROADCAST", "TRANSMISIÓN"),
+        ["hud_full"] = ("BROADCAST + DIAGNOSTICS", "TRANSMISIÓN + DIAGNÓSTICOS"),
+        ["hud_clean"] = ("NAVBALL ONLY", "SOLO NAVBALL"),
+        ["scale"] = ("UI SCALE", "ESCALA DE INTERFAZ"),
+        ["close"] = ("CLOSE", "CERRAR"),
+        ["no_saves"] = ("No saved flights yet.", "Aún no hay partidas guardadas."),
+        ["campaign_preview"] = ("Campaign sequence", "Secuencia de campaña"),
+        ["scenario_title"] = ("SCENARIO LIBRARY", "BIBLIOTECA DE ESCENARIOS"),
+    };
+
+    public static string Get(string key)
+    {
+        var value = Strings[key];
+        return UserInterfaceSettings.Language == InterfaceLanguage.Spanish
+            ? value.es : value.en;
+    }
+}

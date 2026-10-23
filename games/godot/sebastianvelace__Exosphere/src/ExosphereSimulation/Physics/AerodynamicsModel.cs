@@ -1,0 +1,534 @@
+namespace Exosphere.Simulation.Physics;
+
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Parts;
+
+/// <summary>
+/// Re-entry aerodynamics helpers: dynamic pressure, Mach effects, and an
+/// orientation-dependent drag model. A blunt body (broadside / belly-flop) presents
+/// a large area and a high drag coefficient and brakes hard in the atmosphere; a
+/// streamlined nose-/tail-first attitude presents a small area and a low coefficient.
+/// Pure SI (kg/m³, m/s, m², N). Sin Godot.
+/// </summary>
+public static class AerodynamicsModel
+{
+    /// <summary>Drag force (world space, N), opposing the surface-relative velocity.</summary>
+    public static Vector3d ComputeDrag(
+        double density,
+        Vector3d surfaceVelocity,
+        double dragCoefficient,
+        double referenceArea)
+    {
+        double speed = surfaceVelocity.Magnitude;
+        if (speed < 1e-3) return Vector3d.Zero;
+        double magnitude = 0.5 * density * speed * speed * dragCoefficient * referenceArea;
+        return surfaceVelocity.Normalized * (-magnitude);
+    }
+
+    /// <summary>Dynamic pressure q = ½·ρ·v² (Pa).</summary>
+    public static double ComputeDynamicPressure(double density, double speed) =>
+        0.5 * density * speed * speed;
+
+    /// <summary>γ·R_specific of Earth air (J/(kg·K)), the default for callers without an atmosphere.</summary>
+    public const double EarthAirSoundSpeedConstant = 1.4 * 287.0;
+
+    /// <summary>
+    /// Mach number from airspeed (m/s) and local temperature (K): M = v / √(γ·R·T).
+    /// <paramref name="soundSpeedConstant"/> is γ·R_specific of the gas
+    /// (<see cref="AtmosphereModel.SoundSpeedConstant"/>); Earth air by default.
+    /// </summary>
+    public static double ComputeMach(double speed, double temperature,
+        double soundSpeedConstant = EarthAirSoundSpeedConstant)
+    {
+        double sos = System.Math.Sqrt(System.Math.Max(1.0, soundSpeedConstant)
+            * System.Math.Max(1.0, temperature));
+        return speed / sos;
+    }
+
+    /// <summary>
+    /// Cd multiplier across the transonic drag-rise peak (≈2× near Mach 1), decaying through
+    /// the supersonic band and settling to a hypersonic plateau. The transonic rise is real
+    /// wave drag on a slender body as local flow goes sonic over the surface. The hypersonic
+    /// plateau is real too: past roughly Mach 5-6 the normal-shock density ratio asymptotes
+    /// (Oswatitsch's Mach-independence principle), so pressure coefficients stop varying with
+    /// Mach and the multiplier has nowhere left to go — it is ramped smoothly from the M5
+    /// value down to exactly 1.0 over 5.0 ≤ mach &lt; 8.0 rather than dropping there in a step.
+    /// The plateau is 1.0 by construction, not by omission: the caller's base coefficient
+    /// (<see cref="ComputeReentryDrag"/>'s broadside cd = 1.5) is already the Newtonian
+    /// blunt-body value, so an additional bluffness multiplier here would double-count drag
+    /// and push Cd past the flat-plate Newtonian maximum of 2.0 — physically impossible for
+    /// any convex body. Do not reintroduce a hypersonic plateau multiplier above 1.0.
+    /// </summary>
+    public static double GetMachDragMultiplier(double mach)
+    {
+        const double hypersonicPlateau = 1.0;
+        if (mach < 0.8) return 1.0;
+        if (mach < 1.0) return 1.0 + (mach - 0.8) * 5.0;
+        if (mach < 1.2) return 2.0;
+        if (mach < 5.0) return 2.0 - (mach - 1.2) * 0.25;
+        if (mach < 8.0)
+        {
+            const double atFive = 2.0 - 3.8 * 0.25;  // 1.05, matches the mach<5 branch's limit
+            return atFive + (hypersonicPlateau - atFive) * ((mach - 5.0) / 3.0);
+        }
+
+        return hypersonicPlateau;
+    }
+
+    /// <summary>Axial reference area (m²) from the declared physical envelope.</summary>
+    public static double EstimateReferenceArea(PartGraph graph)
+    {
+        double radius = graph.MaximumDiameter * 0.5;
+        return System.Math.PI * radius * radius;
+    }
+
+    // ── Orientation-dependent re-entry aero (cilindro Starship/SH) ─────────────
+    //
+    // El vehículo se modela como un cilindro de núcleo de 9 m. El área presentada y
+    // la "romería" (bluffness) dependen del ángulo entre su eje longitudinal (local
+    // +Y) y el flujo: de morro/cola (axial) ⇒ área pequeña y Cd bajo; de costado
+    // (belly-flop) ⇒ área lateral grande y Cd alto. Reproduce la reentrada de alta
+    // resistencia de Starship y el flip-and-burn vertical de baja resistencia.
+
+    /// <summary>Starship/Super-Heavy core diameter (m).</summary>
+    public const double CoreDiameter = 9.0;
+
+    /// <summary>
+    /// Effective frontal area (m²) for a stack of <paramref name="partCount"/> parts at an
+    /// axial alignment <paramref name="cosAlpha"/> = |axis·flow| (1 = nose/tail-on, 0 = broadside).
+    /// Interpolates between the axial cross-section (πr²) and the broadside slab (D·L).
+    /// </summary>
+    public static double EffectiveArea(int partCount, double cosAlpha)
+        => EffectiveArea(
+            System.Math.Max(CoreDiameter, partCount * 12.0),
+            CoreDiameter,
+            cosAlpha);
+
+    /// <summary>
+    /// Effective projected area for a cylindrical vehicle with an explicit length and
+    /// diameter. This is the authoritative path for Starship; the part-count overload only
+    /// remains for legacy craft whose JSON does not yet declare dimensions.
+    /// </summary>
+    public static double EffectiveArea(double length, double diameter, double cosAlpha)
+    {
+        diameter = System.Math.Max(0.1, diameter);
+        length = System.Math.Max(diameter, length);
+        double radius      = diameter * 0.5;
+        double axialArea   = System.Math.PI * radius * radius;
+        double lateralArea = diameter * length;
+        double aa          = System.Math.Clamp(cosAlpha * cosAlpha, 0.0, 1.0);
+        return lateralArea + (axialArea - lateralArea) * aa;
+    }
+
+    /// <summary>
+    /// Effective drag coefficient blended between a blunt broadside body (≈1.5) and a
+    /// streamlined axial body (≈0.6) by the axial alignment <paramref name="cosAlpha"/>.
+    /// </summary>
+    public static double EffectiveDragCoefficient(double cosAlpha)
+    {
+        double aa = System.Math.Clamp(cosAlpha * cosAlpha, 0.0, 1.0);
+        return 1.5 + (0.6 - 1.5) * aa;
+    }
+
+    // ── Body lift (R6) ─────────────────────────────────────────────────────────
+    //
+    // Un cilindro simétrico volando con ángulo de ataque genera sustentación de
+    // cuerpo perpendicular al flujo, en el plano eje-flujo, hacia el lado del morro.
+    // Modelo Newtoniano simplificado CL = CLmax·sin(2α): cero de morro (α=0) y de
+    // costado puro (α=90°), máximo a 45°. Con CLmax 0.7 y el Cd/área combinados del
+    // modelo de drag, a α≈70° da L/D ≈ 0.3 — el régimen real de la Starship en EDL.
+
+    /// <summary>Peak body-lift coefficient of the 9 m cylinder (at 45° angle of attack).</summary>
+    public const double MaxLiftCoefficient = 0.7;
+
+    /// <summary>Nominal Starship entry angle of attack: high drag with positive body lift.</summary>
+    public const double NominalEntryAngleOfAttackDegrees = 70.0;
+
+    /// <summary>
+    /// Builds the longitudinal-axis target for a lift-up atmospheric entry. The resulting
+    /// axis is <paramref name="angleOfAttackDegrees"/> away from prograde and lies in the
+    /// velocity/local-up plane, so body lift points away from the planet instead of merely
+    /// accepting a ballistic, zero-lift broadside descent.
+    /// </summary>
+    public static Vector3d ComputeLiftUpEntryAxis(
+        Vector3d localUp,
+        Vector3d velocityDirection,
+        double angleOfAttackDegrees = NominalEntryAngleOfAttackDegrees)
+        => ComputeEntryAxis(localUp, velocityDirection, angleOfAttackDegrees, liftSign: 1.0);
+
+    /// <summary>
+    /// Builds the same high-drag entry attitude while biasing body lift toward the body.
+    /// A catch approach has a fixed downrange target; using a small, deliberate down-lift
+    /// bias prevents a shallow 80 km deorbit from skipping back into orbit before the low
+    /// altitude flip. This is guidance, not a force override: the force still comes from
+    /// <see cref="ComputeLift"/> and the normal atmospheric integrator.
+    /// </summary>
+    public static Vector3d ComputeLiftDownEntryAxis(
+        Vector3d localUp,
+        Vector3d velocityDirection,
+        double angleOfAttackDegrees = NominalEntryAngleOfAttackDegrees)
+        => ComputeEntryAxis(localUp, velocityDirection, angleOfAttackDegrees, liftSign: -1.0);
+
+    /// <summary>
+    /// Builds a high-drag entry axis whose body lift points toward an explicit world-space
+    /// direction. The requested lift is projected perpendicular to the flow, so a terminal
+    /// guidance law can bias a belly-flop toward a moving landing corridor without changing
+    /// the aerodynamic model or applying a direct force.
+    /// </summary>
+    public static Vector3d ComputeEntryAxisForLift(
+        Vector3d velocityDirection,
+        Vector3d liftDirection,
+        double angleOfAttackDegrees = NominalEntryAngleOfAttackDegrees)
+    {
+        var flow = velocityDirection.Normalized;
+        var lift = liftDirection - flow * liftDirection.Dot(flow);
+        if (lift.Magnitude < 1e-6)
+            return ComputeLiftDownEntryAxis(Vector3d.Up, flow, angleOfAttackDegrees);
+        return (flow * System.Math.Cos(
+                    System.Math.Clamp(angleOfAttackDegrees, 0.0, 90.0) * MathUtils.DEG_TO_RAD)
+                + lift.Normalized * System.Math.Sin(
+                    System.Math.Clamp(angleOfAttackDegrees, 0.0, 90.0) * MathUtils.DEG_TO_RAD))
+            .Normalized;
+    }
+
+    /// <summary>
+    /// Restores a filtered entry reference to the requested angle of attack. Filtering the
+    /// flow and longitudinal axis independently can otherwise change their mutual angle and
+    /// silently turn a belly-flop into an axial dive. The reference axis supplies only the
+    /// desired lift side; the returned axis always preserves the aerodynamic alpha.
+    /// </summary>
+    public static Vector3d ConstrainEntryAxisToAngle(
+        Vector3d velocityDirection,
+        Vector3d referenceAxis,
+        double angleOfAttackDegrees = NominalEntryAngleOfAttackDegrees)
+    {
+        var flow = velocityDirection.Normalized;
+        if (flow.MagnitudeSquared < 1e-12)
+            return referenceAxis.Normalized;
+
+        var liftDirection = referenceAxis - flow * referenceAxis.Dot(flow);
+        if (liftDirection.Magnitude < 1e-6)
+            return ComputeLiftUpEntryAxis(Vector3d.Up, flow, angleOfAttackDegrees);
+
+        return ComputeEntryAxisForLift(flow, liftDirection, angleOfAttackDegrees);
+    }
+
+    private static Vector3d ComputeEntryAxis(
+        Vector3d localUp,
+        Vector3d velocityDirection,
+        double angleOfAttackDegrees,
+        double liftSign)
+    {
+        var flow = velocityDirection.Normalized;
+        var liftUp = localUp - flow * localUp.Dot(flow);
+        if (liftUp.Magnitude < 1e-6)
+            liftUp = System.Math.Abs(flow.Dot(Vector3d.Up)) < 0.9
+                ? (Vector3d.Up - flow * Vector3d.Up.Dot(flow)).Normalized
+                : (Vector3d.Right - flow * Vector3d.Right.Dot(flow)).Normalized;
+        else
+            liftUp = liftUp.Normalized;
+
+        double alpha = System.Math.Clamp(angleOfAttackDegrees, 0.0, 90.0)
+            * MathUtils.DEG_TO_RAD;
+        return (flow * System.Math.Cos(alpha) + liftUp * (liftSign * System.Math.Sin(alpha))).Normalized;
+    }
+
+    /// <summary>
+    /// Body-lift coefficient CL = CLmax·sin(2α) from the signed axial alignment
+    /// <paramref name="cosAlpha"/> = axis·flow. Zero nose-/tail-on and at exact broadside;
+    /// negative when flying tail-first so the lift flips to the correct side.
+    /// </summary>
+    public static double EffectiveLiftCoefficient(double cosAlpha)
+    {
+        double c = System.Math.Clamp(cosAlpha, -1.0, 1.0);
+        return MaxLiftCoefficient * 2.0 * c * System.Math.Sqrt(1.0 - c * c);
+    }
+
+    /// <summary>
+    /// Body-lift force (world space, N): perpendicular to the surface-relative flow, in the
+    /// axis-flow plane, toward the side the nose points. <paramref name="longitudinalAxis"/>
+    /// is the vessel's long axis (local +Y, nose direction) expressed in world space.
+    /// </summary>
+    public static Vector3d ComputeLift(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        int partCount)
+        => ComputeLift(
+            density,
+            surfaceVelocity,
+            longitudinalAxis,
+            System.Math.Max(CoreDiameter, partCount * 12.0),
+            CoreDiameter);
+
+    public static Vector3d ComputeLift(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        double vehicleLength,
+        double vehicleDiameter)
+    {
+        double speed = surfaceVelocity.Magnitude;
+        if (density <= 0.0 || speed < 1e-3) return Vector3d.Zero;
+
+        var flowDir     = surfaceVelocity.Normalized;
+        var axis        = longitudinalAxis.Normalized;
+        double cosAlpha = axis.Dot(flowDir);
+
+        var perp = axis - flowDir * cosAlpha;
+        double perpLen = perp.Magnitude;
+        if (perpLen < 1e-6) return Vector3d.Zero;   // axial flight: no lift plane defined
+
+        double cl   = EffectiveLiftCoefficient(cosAlpha);
+        double area = EffectiveArea(vehicleLength, vehicleDiameter, System.Math.Abs(cosAlpha));
+        double magnitude = 0.5 * density * speed * speed * cl * area;
+        return (perp / perpLen) * magnitude;
+    }
+
+    /// <summary>
+    /// Blunt-capsule aerodynamic force (world space, N). Pressure on the heat shield acts
+    /// along the body axis, so the force is q·S·C_A along the axis away from the windward
+    /// face; a trim angle α tilts it into drag q·S·C_A·cos α and lift q·S·C_A·sin α (L/D = tan α).
+    /// A small cross-flow term keeps a tumbling capsule from losing all drag broadside.
+    /// </summary>
+    public static Vector3d ComputeCapsuleForce(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        double diameter,
+        double axialForceCoefficient)
+    {
+        double speed = surfaceVelocity.Magnitude;
+        if (density <= 0.0 || speed < 1e-3) return Vector3d.Zero;
+        var flow = surfaceVelocity / speed;
+        var axis = longitudinalAxis.Normalized;
+        double c = axis.Dot(flow);
+        double qs = 0.5 * density * speed * speed * System.Math.PI * 0.25 * diameter * diameter;
+        double sign = c <= 0.0 ? 1.0 : -1.0;
+        return axis * (sign * qs * axialForceCoefficient * System.Math.Abs(c))
+            - flow * (qs * axialForceCoefficient * 0.5 * (1.0 - c * c));
+    }
+
+    /// <summary>
+    /// Full re-entry drag force (world space, N) for a vessel: orientation-dependent
+    /// area and Cd, with the transonic Mach multiplier folded in. <paramref name="surfaceVelocity"/>
+    /// is the velocity relative to the rotating atmosphere; <paramref name="longitudinalAxis"/> is
+    /// the vessel's long axis (local +Y) expressed in world space.
+    /// </summary>
+    public static Vector3d ComputeReentryDrag(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        int partCount,
+        double temperature)
+        => ComputeReentryDrag(
+            density,
+            surfaceVelocity,
+            longitudinalAxis,
+            System.Math.Max(CoreDiameter, partCount * 12.0),
+            CoreDiameter,
+            temperature);
+
+    public static Vector3d ComputeReentryDrag(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        double vehicleLength,
+        double vehicleDiameter,
+        double temperature,
+        double axialDragCoefficient = 0.6,
+        double soundSpeedConstant = EarthAirSoundSpeedConstant)
+    {
+        double speed = surfaceVelocity.Magnitude;
+        if (density <= 0.0 || speed < 1e-3) return Vector3d.Zero;
+
+        double cosAlpha = System.Math.Abs(longitudinalAxis.Normalized.Dot(surfaceVelocity.Normalized));
+        double area     = EffectiveArea(vehicleLength, vehicleDiameter, cosAlpha);
+        double aa = System.Math.Clamp(cosAlpha * cosAlpha, 0.0, 1.0);
+        double cd = 1.5 + (
+            System.Math.Max(0.05, axialDragCoefficient) - 1.5) * aa;
+        double machMul  = GetMachDragMultiplier(ComputeMach(speed, temperature, soundSpeedConstant));
+
+        double magnitude = 0.5 * density * speed * speed * cd * area * machMul;
+        return surfaceVelocity.Normalized * (-magnitude);
+    }
+
+    // ── Aerodynamic attitude dynamics ────────────────────────────────────────
+
+    /// <summary>
+    /// Angular acceleration caused by the aerodynamic force acting behind the centre of
+    /// mass, plus rate damping from the surrounding air. This turns the vehicle through a
+    /// real torque/inertia relationship rather than applying a fixed "weathervane" rate.
+    /// The returned vector is in world space (rad/s²).
+    /// </summary>
+    public static Vector3d ComputeAttitudeAngularAcceleration(
+        double density,
+        Vector3d surfaceVelocity,
+        Vector3d longitudinalAxis,
+        Vector3d angularVelocity,
+        double vehicleLength,
+        double vehicleDiameter,
+        double transverseMomentOfInertia,
+        double temperature,
+        double? aerodynamicCenterOffsetYM = null,
+        double soundSpeedConstant = EarthAirSoundSpeedConstant)
+    {
+        double speed = surfaceVelocity.Magnitude;
+        if (density <= 0.0 || speed < 1.0 || transverseMomentOfInertia <= 0.0)
+            return Vector3d.Zero;
+
+        var axis = longitudinalAxis.Normalized;
+        var drag = ComputeReentryDrag(
+            density, surfaceVelocity, axis, vehicleLength, vehicleDiameter, temperature,
+            soundSpeedConstant: soundSpeedConstant);
+
+        // A modest static margin. Long launch stacks place their aerodynamic centre farther
+        // behind the CoM than the shorter Ship; limiting it avoids an unrealistically violent
+        // snap at Max-Q while propellant shifts the actual inertia continuously.
+        double defaultOffset = -System.Math.Clamp(vehicleLength * 0.08,
+            vehicleDiameter * 0.35, vehicleDiameter * 1.35);
+        double cpOffset = aerodynamicCenterOffsetYM ?? defaultOffset;
+        var momentArm = axis * cpOffset;
+        var torqueAcceleration = momentArm.Cross(drag) / transverseMomentOfInertia;
+
+        // Air damps pitch/yaw rates, but does not directly erase roll about the nearly
+        // axisymmetric hull. Scale smoothly with q and cap the decay rate for numerical
+        // stability during dense-atmosphere descent.
+        double q = ComputeDynamicPressure(density, speed);
+        double dampingRate = System.Math.Min(1.25, 0.55 * q / 30_000.0);
+        var rollRate = axis * angularVelocity.Dot(axis);
+        var pitchYawRate = angularVelocity - rollRate;
+        var dampingAcceleration = pitchYawRate * (-dampingRate);
+
+        return torqueAcceleration + dampingAcceleration;
+    }
+
+    /// <summary>
+    /// Approximate flap-control angular acceleration from aerodynamic hinge forces. The four
+    /// flaps are represented as a combined control area and a lever arm about the CoM; q creates
+    /// the force, so authority fades naturally in thin air and does not require engine thrust.
+    /// The command uses semantic fields X=pitch, Y=yaw, Z=roll; these are mapped to the
+    /// vehicle's physical local axes X=pitch, Y=roll, Z=yaw.
+    /// </summary>
+    public static Vector3d ComputeFlapControlAngularAcceleration(
+        double density,
+        Vector3d surfaceVelocity,
+        Quaterniond orientation,
+        Vector3d pitchYawRollCommand,
+        double vehicleLength,
+        double vehicleDiameter,
+        double transverseMomentOfInertia)
+        => ComputeFlapControlAngularAcceleration(
+            density,
+            surfaceVelocity,
+            orientation,
+            FlapActuatorState.FromCommand(pitchYawRollCommand),
+            vehicleLength,
+            vehicleDiameter,
+            transverseMomentOfInertia);
+
+    /// <summary>
+    /// Computes flap authority from the actual actuator state. The command overload above is
+    /// retained for analytical callers; runtime integration must use this stateful overload so
+    /// servo slew and saturation are represented before hinge forces are applied.
+    /// </summary>
+    public static Vector3d ComputeFlapControlAngularAcceleration(
+        double density,
+        Vector3d surfaceVelocity,
+        Quaterniond orientation,
+        FlapActuatorState actuatorState,
+        double vehicleLength,
+        double vehicleDiameter,
+        double transverseMomentOfInertia)
+    {
+        if (density <= 0.0 || surfaceVelocity.Magnitude < 1.0
+            || transverseMomentOfInertia <= 0.0 || actuatorState.IsZero)
+            return Vector3d.Zero;
+
+        double q = ComputeDynamicPressure(density, surfaceVelocity.Magnitude);
+        // Four large surfaces: combined projected planform is approximately one-and-a-half
+        // 9 m hull cross-sections, with fore/aft pairs acting far from the mass centre.
+        double combinedFlapArea = 1.40 * vehicleDiameter * vehicleDiameter;
+        double leverArm = 0.45 * vehicleLength;
+        // The flap area is an aggregate of four large surfaces. A coefficient of 1.0
+        // underestimates their hinge moment against the static-margin torque at orbital
+        // entry q; 3.0 keeps the model bounded while giving the onboard EDL controller a
+        // real chance to hold the declared 70° angle of attack.
+        const double controlCoefficient = 3.00;
+        // A Starship belly-flop must be able to recover from the static-margin nose-down
+        // tendency before the low-altitude flip. The previous 1.20 rad/s² ceiling was
+        // below the authority needed in the high-q part of an orbital return; it allowed
+        // the vehicle to rotate axial, lose drag and burn through the aft package. Keep a
+        // finite physical ceiling, but leave enough margin for a controlled recovery.
+        double pitchYawAuthority = System.Math.Min(
+            4.00,
+            q * combinedFlapArea * leverArm * controlCoefficient / transverseMomentOfInertia);
+        double rollAuthority = pitchYawAuthority * 0.55;
+
+        var localAcceleration = new Vector3d(
+            actuatorState.Pitch * pitchYawAuthority,
+            actuatorState.Roll * rollAuthority,
+            actuatorState.Yaw * pitchYawAuthority);
+        return orientation.Rotate(localAcceleration);
+    }
+
+    /// <summary>
+    /// Builds a full attitude for broadside entry: local +Y follows the commanded long
+    /// axis while the tiled local -X belly faces the direction of travel through the air.
+    /// </summary>
+    public static Quaterniond ComputeBellyFirstOrientation(
+        Vector3d longitudinalAxis, Vector3d velocityDirection)
+    {
+        var axis = longitudinalAxis.Normalized;
+        var qAxis = ShortestArc(Vector3d.Up, axis);
+        var currentBelly = qAxis.Rotate(-Vector3d.Right).Normalized;
+        var desiredBelly = velocityDirection - axis * velocityDirection.Dot(axis);
+        if (desiredBelly.Magnitude < 1e-6) return qAxis;
+        desiredBelly = desiredBelly.Normalized;
+
+        double sin = axis.Dot(currentBelly.Cross(desiredBelly));
+        double cos = System.Math.Clamp(currentBelly.Dot(desiredBelly), -1.0, 1.0);
+        var qRoll = Quaterniond.FromAxisAngle(axis, System.Math.Atan2(sin, cos));
+        return (qRoll * qAxis).Normalize();
+    }
+
+    /// <summary>
+    /// Rebuilds a filtered belly-first attitude while restoring the declared aerodynamic
+    /// angle of attack. Quaternion interpolation is useful for smoothing lift-side changes,
+    /// but an intermediate quaternion is not guaranteed to preserve the angle between the
+    /// longitudinal axis and the flow. Re-project the interpolated axis before rebuilding
+    /// the roll so the thermal shield and body-lift model continue to see the same entry
+    /// condition throughout the filter response.
+    /// </summary>
+    public static Quaterniond ConstrainBellyFirstOrientationToAngle(
+        Quaterniond referenceAttitude,
+        Vector3d velocityDirection,
+        double angleOfAttackDegrees = NominalEntryAngleOfAttackDegrees)
+    {
+        var flow = velocityDirection.Normalized;
+        if (flow.MagnitudeSquared < 1e-12)
+            return referenceAttitude.Normalize();
+
+        var referenceAxis = referenceAttitude.Rotate(Vector3d.Up).Normalized;
+        var constrainedAxis = ConstrainEntryAxisToAngle(
+            flow, referenceAxis, angleOfAttackDegrees);
+        return ComputeBellyFirstOrientation(constrainedAxis, flow);
+    }
+
+    private static Quaterniond ShortestArc(Vector3d from, Vector3d to)
+    {
+        var f = from.Normalized;
+        var t = to.Normalized;
+        double dot = f.Dot(t);
+        if (dot > 0.99999) return Quaterniond.Identity;
+        if (dot < -0.99999)
+        {
+            Vector3d perpendicular = System.Math.Abs(f.X) < 0.9
+                ? f.Cross(Vector3d.Right)
+                : f.Cross(Vector3d.Up);
+            return Quaterniond.FromAxisAngle(perpendicular.Normalized, System.Math.PI);
+        }
+        return Quaterniond.FromAxisAngle(f.Cross(t).Normalized,
+            System.Math.Acos(System.Math.Clamp(dot, -1.0, 1.0)));
+    }
+}

@@ -1,0 +1,91 @@
+namespace Exosphere.Simulation.Systems;
+
+using Exosphere.Simulation.Math;
+
+public class PowerSystem
+{
+    public double BatteryKwh    { get; private set; } = 50.0;  // kWh
+    public double MaxBatteryKwh => 50.0;
+    public double SolarOutputKw { get; private set; } = 0.0;   // kW
+    public double BaseLoadKw    => 5.0;   // avionics, computers, SAS standby
+    public double ExtraLoadKw   { get; private set; }
+
+    public bool LowPowerAlert { get; private set; }
+    public bool NoPowerAlert  { get; private set; }
+
+    private const double SolarPanelArea       = 40.0;
+    private const double SolarPanelEfficiency = 0.28;
+    private const double SolarConstant        = 1361.0;
+
+    public PowerState CaptureState() => new()
+    {
+        BatteryKwh = BatteryKwh,
+        SolarOutputKw = SolarOutputKw,
+        ExtraLoadKw = ExtraLoadKw,
+    };
+
+    public void RestoreState(PowerState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        state.Validate();
+        BatteryKwh = state.BatteryKwh;
+        SolarOutputKw = state.SolarOutputKw;
+        ExtraLoadKw = state.ExtraLoadKw;
+        LowPowerAlert = BatteryKwh < MaxBatteryKwh * 0.2;
+        NoPowerAlert = BatteryKwh <= 0.0;
+    }
+
+    public void Reset() => RestoreState(new PowerState());
+
+    public void Tick(double dt, Vector3d vesselPosition, Vector3d sunPosition, bool inEclipse,
+                     double extraLoadKw = 0.0)
+        => Tick(dt, vesselPosition, sunPosition, inEclipse ? 0.0 : 1.0, extraLoadKw);
+
+    public void Tick(double dt, Vector3d vesselPosition, Vector3d sunPosition,
+                     double solarVisibility, double extraLoadKw = 0.0)
+    {
+        ExtraLoadKw = System.Math.Max(0.0, extraLoadKw);
+        solarVisibility = System.Math.Clamp(solarVisibility, 0.0, 1.0);
+
+        if (solarVisibility > 0.0)
+        {
+            double distToSun = (vesselPosition - sunPosition).Magnitude;
+            double auDist    = System.Math.Max(distToSun / 1.496e11, 0.1);
+            double solarFlux = SolarConstant / (auDist * auDist);
+            SolarOutputKw    = solarFlux * SolarPanelArea * SolarPanelEfficiency
+                * solarVisibility / 1000.0;
+        }
+        else
+        {
+            SolarOutputKw = 0.0;
+        }
+
+        double netPowerKw = SolarOutputKw - BaseLoadKw - ExtraLoadKw;
+        double deltaKwh   = netPowerKw * (dt / 3600.0);
+        BatteryKwh = System.Math.Clamp(BatteryKwh + deltaKwh, 0.0, MaxBatteryKwh);
+
+        LowPowerAlert = BatteryKwh < MaxBatteryKwh * 0.2;
+        NoPowerAlert  = BatteryKwh <= 0.0;
+    }
+
+    public double BatteryFraction => BatteryKwh / MaxBatteryKwh;
+
+    /// <summary>
+    /// Projects when the existing low-power alert threshold is reached using the last
+    /// committed net bus load. This is read-only and only valid as a deadline until the
+    /// next solar/eclipsing sample changes <see cref="SolarOutputKw"/>.
+    /// </summary>
+    public double? GetNextAlertDeadlineSeconds()
+    {
+        double threshold = MaxBatteryKwh * 0.2;
+        if (BatteryKwh <= threshold)
+            return 0.0;
+
+        double netPowerKw = SolarOutputKw - BaseLoadKw - ExtraLoadKw;
+        if (!double.IsFinite(netPowerKw) || netPowerKw >= 0.0)
+            return null;
+
+        double seconds = (BatteryKwh - threshold) / -netPowerKw * 3600.0;
+        return double.IsFinite(seconds) && seconds >= 0.0 ? seconds : null;
+    }
+}

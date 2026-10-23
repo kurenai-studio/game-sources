@@ -1,0 +1,252 @@
+namespace Exosphere.Game;
+
+using Exosphere.Simulation.Construction;
+using Exosphere.Simulation.Flight;
+using Exosphere.Simulation.Persistence;
+using Exosphere.Simulation.Systems;
+using Godot;
+
+/// <summary>
+/// Disk adapter for the authoritative, simulation-layer SaveGameV2 codec.
+/// Writes are atomic and legacy partial saves are migrated on read.
+/// Mission saves live under Godot <c>user://saves</c> (cross-platform).
+/// Existing Linux saves under <c>~/.local/share/Exosphere/saves</c> remain readable.
+/// </summary>
+public static class SaveSystem
+{
+    /// <summary>
+    /// Canonical save folder for new writes (Linux + Windows via OS.GetUserDataDir).
+    /// </summary>
+    private static string PrimarySaveDirectory =>
+        ProjectSettings.GlobalizePath("user://saves");
+
+    /// <summary>
+    /// Pre-export Linux path kept only so old slots still load.
+    /// </summary>
+    private static string LegacyLinuxSaveDirectory =>
+        System.IO.Path.Combine(
+            System.Environment.GetFolderPath(
+                System.Environment.SpecialFolder.UserProfile),
+            ".local", "share", "Exosphere", "saves");
+
+    public static SaveGameV2? LastLoadedMetadata { get; private set; }
+
+    /// <summary>
+    /// Mission phase to apply once the deferred MissionManager child exists.
+    /// </summary>
+    public static MissionPhase? PendingMissionPhase { get; set; }
+    public static VesselSystemsState? PendingSystemsState { get; set; }
+    public static Dictionary<string, VesselSystemsState>?
+        PendingMaterializedSystemsStates { get; set; }
+    public static MissionCallbackQueueState? PendingCallbackState { get; set; }
+
+    public static void SaveGame(string slotName = "quicksave")
+    {
+        var bridge = SimulationBridge.Instance;
+        if (bridge?.Universe == null) return;
+
+        string safeSlot = NormalizeSlotName(slotName);
+        System.IO.Directory.CreateDirectory(PrimarySaveDirectory);
+        var save = SaveGameV2Codec.Capture(
+            bridge.Universe, LastLoadedMetadata);
+        save.VesselSystems.Clear();
+        save.Mission.NextCallbackSequence = 1;
+        save.Mission.CallbackEvents = new();
+        if (SystemsController.Instance is { } systemsController)
+        {
+            foreach (var (vesselId, state) in systemsController
+                .CaptureMaterializedSaveStates(bridge.Universe.CurrentTime))
+                save.VesselSystems[vesselId] = state;
+        }
+        if (CampaignRuntime.Instance?.CaptureMissionState() is { } mission)
+            save.Mission = mission;
+        if (CampaignRuntime.Instance?.Campaign?.State is { } campaign)
+            save.Campaign = campaign;
+        save.Mission.Phase =
+            MissionManager.Instance?.Phase.ToString()
+            ?? save.Mission.Phase;
+        if (MissionManager.Instance is { } missionManager)
+        {
+            MissionCallbackQueueState callbackState =
+                missionManager.CaptureCallbackState();
+            save.Mission.NextCallbackSequence = callbackState.NextSequence;
+            save.Mission.CallbackEvents = callbackState.Events;
+        }
+        string path = System.IO.Path.Combine(
+            PrimarySaveDirectory, $"{safeSlot}.json");
+        string temporary = path + ".tmp";
+        System.IO.File.WriteAllText(
+            temporary, SaveGameV2Json.Serialize(save));
+        System.IO.File.Move(temporary, path, overwrite: true);
+        LastLoadedMetadata = save;
+        GD.Print($"[SaveSystem] Saved V2 to {path}");
+    }
+
+    public static bool LoadGame(string slotName = "quicksave")
+    {
+        PendingSystemsState = null;
+        PendingMaterializedSystemsStates = null;
+        PendingCallbackState = null;
+        string safeSlot = NormalizeSlotName(slotName);
+        string? path = ResolveExistingSaveFile(safeSlot);
+        if (path == null || !System.IO.File.Exists(path)) return false;
+
+        var bridge = SimulationBridge.Instance;
+        if (bridge == null) return false;
+
+        try
+        {
+            string text = System.IO.File.ReadAllText(path);
+            var save = SaveGameV2Json.DeserializeOrMigrate(text);
+            string partsPath = GameDataPath.Combine("parts");
+            var catalog = PartCatalog.LoadFromDirectory(partsPath);
+            SaveGameV2Codec.Restore(bridge.Universe, save, catalog);
+            LastLoadedMetadata = save;
+            PendingSystemsState = null;
+            PendingMaterializedSystemsStates = null;
+            PendingCallbackState = null;
+
+            if (SystemsController.Instance is { } systemsController)
+            {
+                if (save.VesselSystems.Count > 0)
+                    systemsController.RestoreMaterializedSaveStates(
+                        save.VesselSystems, save.SimulationTime);
+                else
+                    systemsController.ResetForLoadedSimulation();
+            }
+            else
+            {
+                if (save.VesselSystems.Count > 0)
+                    PendingMaterializedSystemsStates = new(
+                        save.VesselSystems, StringComparer.Ordinal);
+            }
+
+            var callbackState = new MissionCallbackQueueState
+            {
+                NextSequence = save.Mission.NextCallbackSequence,
+                Events = save.Mission.CallbackEvents,
+            };
+            callbackState.Validate();
+            if (MissionManager.Instance is { } missionManager)
+                missionManager.RestoreCallbackState(callbackState);
+            else
+                PendingCallbackState = callbackState;
+
+            int warpIndex = Array.FindIndex(
+                SimulationBridge.WarpLevels,
+                value => System.Math.Abs(value - save.TimeScale) < 1e-9);
+            bridge.SetWarpIndex(warpIndex >= 0 ? warpIndex : 0);
+            bridge.RebuildActiveVesselRenderer();
+
+            if (!string.IsNullOrWhiteSpace(save.Mission.Phase)
+                && Enum.TryParse(
+                    save.Mission.Phase,
+                    ignoreCase: true,
+                    out MissionPhase phase))
+            {
+                if (MissionManager.Instance != null)
+                    MissionManager.Instance.EnterPhase(phase);
+                else
+                    PendingMissionPhase = phase;
+            }
+
+            GD.Print(
+                $"[SaveSystem] Loaded schema {save.SchemaVersion} from {path}");
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            GD.PushError(
+                $"[SaveSystem] Could not load '{path}': {ex.Message}");
+            return false;
+        }
+    }
+
+    public static string[] ListSaveSlots(
+        string? saveDirectory = null)
+    {
+        if (saveDirectory != null)
+            return ListSlotsInDirectory(saveDirectory)
+                .OrderBy(name => name, System.StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+        var names = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (string name in ListSlotsInDirectory(PrimarySaveDirectory))
+            names.Add(name);
+        foreach (string name in ListSlotsInDirectory(LegacyLinuxSaveDirectory))
+            names.Add(name);
+        return names
+            .OrderBy(name => name, System.StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    public static bool HasSaveSlots(string? saveDirectory = null) =>
+        ListSaveSlots(saveDirectory).Length > 0;
+
+    public static CampaignSaveV2 ReadMostRecentCampaignState(
+        string? saveDirectory = null)
+    {
+        IEnumerable<string> candidates = saveDirectory != null
+            ? EnumerateSaveFiles(saveDirectory)
+            : EnumerateSaveFiles(PrimarySaveDirectory)
+                .Concat(EnumerateSaveFiles(LegacyLinuxSaveDirectory));
+
+        foreach (string path in candidates
+                     .OrderByDescending(System.IO.File.GetLastWriteTimeUtc))
+        {
+            try
+            {
+                var save = SaveGameV2Json.DeserializeOrMigrate(
+                    System.IO.File.ReadAllText(path));
+                return save.Campaign;
+            }
+            catch
+            {
+                // A corrupt unrelated slot must not hide a valid campaign profile.
+            }
+        }
+        return new CampaignSaveV2();
+    }
+
+    private static string? ResolveExistingSaveFile(string safeSlot)
+    {
+        string primary = System.IO.Path.Combine(
+            PrimarySaveDirectory, $"{safeSlot}.json");
+        if (System.IO.File.Exists(primary))
+            return primary;
+        string legacy = System.IO.Path.Combine(
+            LegacyLinuxSaveDirectory, $"{safeSlot}.json");
+        if (System.IO.File.Exists(legacy))
+            return legacy;
+        return null;
+    }
+
+    private static string[] ListSlotsInDirectory(string directory)
+    {
+        if (!System.IO.Directory.Exists(directory)) return [];
+        return System.IO.Directory.GetFiles(directory, "*.json")
+            .Select(System.IO.Path.GetFileNameWithoutExtension)
+            .Where(name => name != null)
+            .Cast<string>()
+            .ToArray();
+    }
+
+    private static IEnumerable<string> EnumerateSaveFiles(string directory)
+    {
+        if (!System.IO.Directory.Exists(directory))
+            return [];
+        return System.IO.Directory.GetFiles(directory, "*.json");
+    }
+
+    private static string NormalizeSlotName(string slotName)
+    {
+        string result =
+            System.IO.Path.GetFileNameWithoutExtension(slotName.Trim());
+        if (string.IsNullOrWhiteSpace(result)
+            || result.IndexOfAny(
+                System.IO.Path.GetInvalidFileNameChars()) >= 0)
+            throw new System.ArgumentException(
+                "Invalid save slot name.", nameof(slotName));
+        return result;
+    }
+}
