@@ -1,0 +1,61 @@
+[gd_scene load_steps=13 format=3 uid="uid://dw1acna2ojcj7"]
+
+[ext_resource type="Script" path="res://src/entities/puzzle_elements/barrier/barrier.gd" id="1_8dbv4"]
+[ext_resource type="Shader" path="res://src/entities/puzzle_elements/barrier/barrier.gdshader" id="1_alkq1"]
+[ext_resource type="PackedScene" uid="uid://cp108em4abhx8" path="res://src/common/state_machine/state_machine.tscn" id="3_qy6tp"]
+[ext_resource type="Resource" uid="uid://dlhs0dn5qmwcx" path="res://src/singletons/persistent_data/persistent_data_resource.tres" id="4_htc7t"]
+[ext_resource type="Script" path="res://src/entities/puzzle_elements/barrier/barrier_state.gd" id="4_nmhmp"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rojgn"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4kh3e"]
+size = Vector3(5, 0.5, 5)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_p1s5e"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_g2md3"]
+seamless = true
+noise = SubResource("FastNoiseLite_p1s5e")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_4ow20"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_h16ox"]
+seamless = true
+noise = SubResource("FastNoiseLite_4ow20")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_esmal"]
+resource_local_to_scene = true
+render_priority = 1
+shader = ExtResource("1_alkq1")
+shader_parameter/color = Color(0.376471, 0.196078, 0.192157, 1)
+shader_parameter/noise_threshold = 0.55
+shader_parameter/alpha_factor = 1.0
+shader_parameter/alpha_min = 0.3
+shader_parameter/alpha_max = 0.6
+shader_parameter/noise_time_factor = Vector2(0.1, 0.02)
+shader_parameter/noise_sampler1 = SubResource("NoiseTexture2D_g2md3")
+shader_parameter/noise_sampler2 = SubResource("NoiseTexture2D_h16ox")
+
+[node name="Barrier" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1_8dbv4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_rojgn")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+layers = 8
+mesh = SubResource("BoxMesh_4kh3e")
+surface_material_override/0 = SubResource("ShaderMaterial_esmal")
+
+[node name="StateMachine" parent="." node_paths=PackedStringArray("initial_state") instance=ExtResource("3_qy6tp")]
+initial_state = NodePath("Disabled")
+persistent_data_resource = ExtResource("4_htc7t")
+
+[node name="Disabled" type="Node" parent="StateMachine"]
+script = ExtResource("4_nmhmp")
+
+[node name="Enabled" type="Node" parent="StateMachine"]
+script = ExtResource("4_nmhmp")

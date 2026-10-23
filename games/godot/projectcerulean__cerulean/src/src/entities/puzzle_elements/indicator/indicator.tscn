@@ -1,0 +1,56 @@
+[gd_scene load_steps=10 format=3 uid="uid://cdlxuj1emu411"]
+
+[ext_resource type="Script" path="res://src/entities/puzzle_elements/indicator/indicator.gd" id="1_bsmqb"]
+[ext_resource type="Shader" path="res://src/entities/puzzle_elements/indicator/indicator.gdshader" id="2_a0m1r"]
+[ext_resource type="Script" path="res://src/entities/puzzle_elements/indicator/indicator_mesh.gd" id="2_u67b3"]
+[ext_resource type="Script" path="res://src/common/state_machine/state.gd" id="3_oyjwr"]
+[ext_resource type="PackedScene" uid="uid://cp108em4abhx8" path="res://src/common/state_machine/state_machine.tscn" id="5_6h84w"]
+[ext_resource type="Script" path="res://src/common/state_machine/transition_listeners/property_tweener_transition_listener.gd" id="5_dsacl"]
+[ext_resource type="Resource" uid="uid://dlhs0dn5qmwcx" path="res://src/singletons/persistent_data/persistent_data_resource.tres" id="6_7028p"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_5rgmq"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_t5b7u"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("2_a0m1r")
+shader_parameter/albedo = Color(1, 0.27, 0, 1)
+shader_parameter/roughness = 0.5
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 1.0
+shader_parameter/emission_energy = 1.0
+
+[node name="Indicator" type="Node3D"]
+script = ExtResource("1_bsmqb")
+
+[node name="Mesh" type="Node3D" parent="."]
+script = ExtResource("2_u67b3")
+
+[node name="ColorStateEnabled" type="Node" parent="Mesh" node_paths=PackedStringArray("target_node")]
+script = ExtResource("5_dsacl")
+target_node = NodePath("..")
+property = "activation"
+tween_duration = 0.1
+_target_states = Array[NodePath]([NodePath("../../StateMachine/Enabled")])
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Mesh"]
+layers = 8
+mesh = SubResource("BoxMesh_5rgmq")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("ShaderMaterial_t5b7u")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Mesh"]
+layers = 8
+light_color = Color(1, 0.270588, 0, 1)
+light_energy = 2.0
+
+[node name="StateMachine" parent="." node_paths=PackedStringArray("initial_state") instance=ExtResource("5_6h84w")]
+initial_state = NodePath("Disabled")
+persistent_data_resource = ExtResource("6_7028p")
+
+[node name="Disabled" type="Node" parent="StateMachine"]
+script = ExtResource("3_oyjwr")
+
+[node name="Enabled" type="Node" parent="StateMachine"]
+script = ExtResource("3_oyjwr")
