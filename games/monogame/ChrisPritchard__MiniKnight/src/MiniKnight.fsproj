@@ -1,0 +1,80 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="GameCore.fs" />
+    <Compile Include="Model.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="KnightController.fs" />
+    <Compile Include="OrcController.fs" />
+    <Compile Include="GameController.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <!-- Stuff outside the content pipeline - loaded directly -->
+  <ItemGroup>
+    <None Include="Content\Maps\map1.bmp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Maps\map2.bmp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Maps\map3.bmp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Maps\map4.bmp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Maps\map5.bmp" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\background.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\goldCoin.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\knight.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\orc.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\portalArrive.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\portalDepart.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\spikes.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\stoneFloor.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\goldCoin-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\knight-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\orc-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\portalArrive-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\portalDepart-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sprites\stoneFloor-key.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Coins\coin.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Coins\coin2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Coins\coin3.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\die.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\hit1.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\hit2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\hit3.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\jump.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\walk1.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Knight\walk2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Orcs\die.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Orcs\hit1.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Orcs\hit2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Portal.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\block1.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\block2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\block3.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\swing.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\swing2.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Shared\swing3.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Sounds\Spikes.wav" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Music\Explorer_0.ogg" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Music\menu.ogg" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Content\Music\victory.ogg" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+    
+  <!-- Processed by content pipeline on build into xnb files -->
+  <ItemGroup>
+    <None Include="Content\Content.mgcb" />
+    <None Include="Content\coders_crux.ttf" />
+    <None Include="Content\coders_crux.spritefont" />
+    <MonoGameContentReference Include="**\*.mgcb" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.4" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.0.1641" />
+    <PackageReference Include="runtime.osx.10.10-x64.CoreCompat.System.Drawing" Version="5.8.64" />
+    <PackageReference Include="System.Drawing.Common" Version="4.5.0" />
+  </ItemGroup>
+
+</Project>
