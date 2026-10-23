@@ -1,0 +1,486 @@
+"""Screen-state machine for the human application shell (D-010).
+
+The controller consumes already-converted virtual-coordinate events, decides
+which of them reach the live ``GameSession``, and owns the one shared
+game-reconstruction path (title New Game, pause-menu Restart, game-over
+restart). It never touches the display; ``main.run_game`` keeps window,
+surface, clock, viewport, and pump ownership and supplies the construction
+callable, so headless and programmatic entries never meet this module.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import replace
+from enum import Enum, auto
+
+import pygame
+
+import tutorial
+from config import screen_height, screen_width
+from event.keyboard import KeyboardEvent
+from event.mouse import MouseEvent
+from event.type import KeyboardEventType, MouseEventType
+from geometry.point import Point
+from maps import KNOWN_MAP_IDS
+from settings import DEFAULT_SETTINGS
+from ui.menu_screens import (
+    offer_menu_layout,
+    pause_menu_layout,
+    settings_menu_layout,
+    title_layout,
+)
+
+GameTriple = tuple[object, object, object]
+_MENU_REASON = "menu"
+_LOAD_FAILURE_NOTICE = "Could not load the saved game."
+_VOLUME_STEP = 25
+_VOLUME_MAX = 100
+# GM-09f3 (D-040): the title map picker cycles KNOWN_MAP_IDS; Classic is the
+# default and the first selectable (it leads KNOWN_MAP_IDS' sorted order).
+_DEFAULT_MAP_ID = "classic"
+
+
+class AppScreen(Enum):
+    """Top-level screens owned by the human entry path."""
+
+    TITLE = auto()
+    PLAYING = auto()
+    PAUSE_MENU = auto()
+    GAME_OVER = auto()
+    SETTINGS = auto()
+    TUTORIAL = auto()
+    OFFER = auto()  # GM-10a (D-041): the week-boundary modal over the frozen game
+
+
+def _cycle_volume(value: int) -> int:
+    # Step to the next grid multiple of 25, wrapping past 100 back to 0.
+    nxt = (value // _VOLUME_STEP + 1) * _VOLUME_STEP
+    return 0 if nxt > _VOLUME_MAX else nxt
+
+
+def _is_key_up(event: object, key: int) -> bool:
+    return (
+        isinstance(event, KeyboardEvent)
+        and event.event_type == KeyboardEventType.KEY_UP
+        and event.key == key
+    )
+
+
+def _mouse_up_position(event: object) -> Point | None:
+    if isinstance(event, MouseEvent) and event.event_type == MouseEventType.MOUSE_UP:
+        return event.position
+    return None
+
+
+def _mouse_down_position(event: object) -> Point | None:
+    if isinstance(event, MouseEvent) and event.event_type == MouseEventType.MOUSE_DOWN:
+        return event.position
+    return None
+
+
+def _clicked(layout: dict[str, pygame.Rect], key: str, position: Point) -> bool:
+    return bool(layout[key].collidepoint((position.left, position.top)))
+
+
+class AppController:
+    """Route converted events per screen and expose the live game triple."""
+
+    def __init__(
+        self,
+        build_game: Callable[[str], GameTriple],
+        start_state: AppScreen = AppScreen.TITLE,
+        *,
+        build_from: Callable[[object], GameTriple] | None = None,
+        autosave: object | None = None,
+        highscores: object | None = None,
+        settings: object | None = None,
+        build_tutorial: Callable[[], GameTriple] | None = None,
+    ) -> None:
+        self._build_game = build_game
+        # Every seam is optional with an inert default (D-027/D-028/D-029): a
+        # controller built without them never autosaves, never records a high
+        # score, never persists settings, keeps Continue unavailable, and
+        # behaves exactly as the GM-07a baseline did.
+        self._build_from = build_from
+        self._autosave = autosave
+        self._highscores = highscores
+        self._settings = settings
+        # Optional inert coached-tutorial seam (D-031): without it the Tutorial
+        # entry is a no-op, exactly as Continue is without an autosave.
+        self._build_tutorial = build_tutorial
+        self._tutorial_progress: tutorial.TutorialProgress | None = None
+        self.state = start_state
+        self._armed_menu_control: str | None = None
+        self._settings_origin = AppScreen.TITLE
+        self.notice: str | None = None
+        # The most recent game-over record result, or None when the last
+        # promotion had no seam or minted no record (D-028/MINOR-7).
+        self.last_highscore_result: object | None = None
+        # The presentation-only settings value edited by the SETTINGS screen
+        # (D-029); a seam-less controller keeps the typed defaults in memory.
+        self.current_settings = (
+            settings.load() if settings is not None else DEFAULT_SETTINGS
+        )
+        # GM-09f3 (D-040): the title map picker. `current_map_id` is the map a NEW
+        # game will build; the title cycles it over KNOWN_MAP_IDS, and it seeds the
+        # first build below so the seam is uniformly `build_game(map_id)` (never a
+        # zero-arg vs one-arg split). RESTART, by contrast, rebuilds the CURRENT
+        # game's map (read live off the mediator), not the picker; Continue installs
+        # the saved map and never consults the picker.
+        self.current_map_id = _DEFAULT_MAP_ID
+        self.mediator, self.renderer, self.session = build_game(self.current_map_id)
+        # A cold start directly in TUTORIAL (e.g. run_game(start_state=TUTORIAL))
+        # must build the seeded, game-over-suppressed tutorial and its progress,
+        # not leave the ordinary build_game() triple — which would game-over and
+        # freeze with no overlay (review MODERATE-3). The normal path enters via
+        # the title Tutorial entry; this makes the direct entry equivalent.
+        if start_state is AppScreen.TUTORIAL:
+            self._start_tutorial()
+
+    def _autosave_save(self) -> None:
+        # Persistence is best-effort: the seam swallows its own failures, so a
+        # save that cannot run still lets play or exit proceed (D-027/F3).
+        if self._autosave is not None:
+            self._autosave.save(self.mediator)
+
+    def _autosave_delete(self) -> None:
+        if self._autosave is not None:
+            self._autosave.delete()
+
+    def _record_highscore(self) -> None:
+        # Record the finished run exactly once at the promotion (D-028). The seam
+        # receives the LIVE mediator (GM-09f2) -- the recorder reads BOTH the
+        # deliveries objective and the map identity off it -- so a seam-less
+        # controller touches NO mediator attribute at all (MAJOR-3, now satisfied
+        # even more cleanly: the controller no longer reads .deliveries; the seam
+        # does). Every promotion (re)assigns the result -- to None when the seam is
+        # absent or minted nothing -- so a restart shows no stale best.
+        if self._highscores is not None:
+            self.last_highscore_result = self._highscores.record(self.mediator)
+        else:
+            self.last_highscore_result = None
+
+    def reconcile_game_over(self) -> None:
+        """Promote a finished run to ``GAME_OVER`` exactly once (D-027/D-028).
+
+        Idempotent and a no-op unless the controller is still ``PLAYING`` and the
+        mediator has flipped game over. It drops the autosave so a finished run
+        can never be Continued (D-027) and records the run's high score exactly
+        once (D-028), storing the result for the best indicator. ``handle_event``
+        calls it at the top -- the historical inline promotion -- and
+        ``main.run_game`` calls it once per frame after ``session.advance``, so a
+        tick-driven game over with no promoting event still promotes, records,
+        and shows the indicator the frame it ends, deterministically and
+        independent of any incidental event. The window-close QUIT record in
+        ``main`` stays mutually exclusive: once this promotes, that gate sees
+        ``GAME_OVER`` and never re-records.
+        """
+        if self.state is AppScreen.PLAYING and self.mediator.is_game_over is True:
+            self.state = AppScreen.GAME_OVER
+            self._autosave_delete()
+            self._record_highscore()
+
+    def reconcile_week_boundary(self) -> None:
+        """Promote a pending week boundary to the ``OFFER`` modal (GM-10a/D-041).
+
+        Idempotent and a no-op unless still ``PLAYING`` and NOT game over with a
+        pending boundary. It runs AFTER ``reconcile_game_over`` (both in
+        ``handle_event`` and per-frame in ``main.run_game``), so a tick that ends
+        the game promotes to ``GAME_OVER``, never to an offer (review MAJOR). Any
+        armed gameplay gesture is cancelled through the pinned letterbox-cancel
+        before switching, exactly as pause-menu entry does, so a mid-draft mouse-up
+        cannot leak into or resume stale through the modal (review MAJOR).
+        """
+        # `is True` (not just truthiness) so a stub/MagicMock mediator that
+        # auto-vivifies the attribute as a truthy Mock does NOT falsely enter the
+        # offer -- exactly as reconcile_game_over guards is_game_over. A real
+        # Mediator returns a real bool, so a genuine pending week is never masked.
+        if (
+            self.state is AppScreen.PLAYING
+            and self.mediator.is_game_over is not True
+            and getattr(self.mediator, "is_week_boundary_pending", False) is True
+        ):
+            self.session.dispatch(MouseEvent(MouseEventType.MOUSE_UP, Point(-1, -1)))
+            self._armed_menu_control = None
+            self.state = AppScreen.OFFER
+
+    def handle_event(self, event: object) -> None:
+        """Route one converted event according to the current screen."""
+
+        self.reconcile_game_over()
+        self.reconcile_week_boundary()
+        if self.state is AppScreen.PLAYING:
+            self._handle_playing(event)
+        elif self.state is AppScreen.PAUSE_MENU:
+            self._handle_pause_menu(event)
+        elif self.state is AppScreen.TITLE:
+            self._handle_title(event)
+        elif self.state is AppScreen.GAME_OVER:
+            self._handle_game_over(event)
+        elif self.state is AppScreen.SETTINGS:
+            self._handle_settings(event)
+        elif self.state is AppScreen.TUTORIAL:
+            self._handle_tutorial(event)
+        elif self.state is AppScreen.OFFER:
+            self._handle_offer(event)
+
+    def _start_new_game(self, map_id: str) -> None:
+        # Build a fresh game on `map_id`. The title New Game / Enter pass the picker
+        # (`current_map_id`); RESTART surfaces pass the CURRENT game's map so a
+        # restart replays the same terrain, never the picker's pending choice
+        # (GM-09f3 review MAJOR-1).
+        self.mediator, self.renderer, self.session = self._build_game(map_id)
+        self.notice = None
+        self.state = AppScreen.PLAYING
+
+    def _cycle_map(self) -> None:
+        # The title map picker advances to the next map, wrapping KNOWN_MAP_IDS.
+        # Only ever holds a registered id, so `.index` cannot fail (GM-09f3).
+        index = KNOWN_MAP_IDS.index(self.current_map_id)
+        self.current_map_id = KNOWN_MAP_IDS[(index + 1) % len(KNOWN_MAP_IDS)]
+
+    def _restart_current_game(self) -> None:
+        # Restart replays the CURRENT game's map (read live off the mediator), not
+        # the picker -- so restarting a Continued River game gives River even when
+        # the picker sits on Lake (GM-09f3 review MAJOR-1).
+        self._start_new_game(self.mediator.map_definition.map_id)
+
+    def _continue_game(self) -> None:
+        # Continue is inert without a proven-loadable autosave: peek gates the
+        # attempt (F4), a failed load surfaces a notice and stays on TITLE, and
+        # success releases only the menu reason before swapping in the triple.
+        autosave = self._autosave
+        if autosave is None or not autosave.peek():
+            return
+        try:
+            loaded = autosave.load()
+        except (ValueError, OSError):
+            self.notice = _LOAD_FAILURE_NOTICE
+            return
+        loaded.release_pause_reason(_MENU_REASON)
+        self.mediator, self.renderer, self.session = self._build_from(loaded)
+        self.notice = None
+        self.state = AppScreen.PLAYING
+
+    def _handle_playing(self, event: object) -> None:
+        if _is_key_up(event, pygame.K_ESCAPE):
+            # Abandon any armed gesture through the pinned letterbox-cancel
+            # semantics strictly before freezing gameplay under the menu hold.
+            self.session.dispatch(MouseEvent(MouseEventType.MOUSE_UP, Point(-1, -1)))
+            self.mediator.hold_pause_reason(_MENU_REASON)
+            # Save AFTER holding the menu reason so the document records it; the
+            # letterbox cancel already cleared every armed gesture, so the
+            # saver's quiescence preflight passes (D-027/F1).
+            self._autosave_save()
+            self.state = AppScreen.PAUSE_MENU
+            return
+        self.session.dispatch(event)
+
+    def _close_pause_menu(self, next_state: AppScreen) -> None:
+        # Leaving the menu state always disarms, so a stale press can never
+        # fire a control on a later menu visit.
+        self._armed_menu_control = None
+        self.mediator.release_pause_reason(_MENU_REASON)
+        self.state = next_state
+
+    def _handle_pause_menu(self, event: object) -> None:
+        # Gameplay input is never dispatched here, so the Space toggle cannot
+        # reach the user pause reason and the menu hold stays controller-owned.
+        if _is_key_up(event, pygame.K_ESCAPE):
+            self._close_pause_menu(AppScreen.PLAYING)
+            return
+        layout = pause_menu_layout(screen_width, screen_height)
+        pressed = _mouse_down_position(event)
+        if pressed is not None:
+            self._armed_menu_control = next(
+                (key for key in layout if _clicked(layout, key, pressed)), None
+            )
+            return
+        position = _mouse_up_position(event)
+        if position is None:
+            return
+        # A release fires only the control its own in-menu press armed (review
+        # F2): a bare release -- e.g. a gameplay drag that outlived the Escape
+        # -- is a no-op, and every release disarms.
+        armed = self._armed_menu_control
+        self._armed_menu_control = None
+        if armed is None or not _clicked(layout, armed, position):
+            return
+        if armed == "resume":
+            self._close_pause_menu(AppScreen.PLAYING)
+        elif armed == "restart":
+            self._close_pause_menu(AppScreen.PLAYING)
+            self._restart_current_game()
+        elif armed == "exit_to_title":
+            # Rewrite the byte-identical boundary save BEFORE the menu reason is
+            # released, so a later Continue reloads the menu-entry document.
+            self._autosave_save()
+            self._close_pause_menu(AppScreen.TITLE)
+        elif armed == "settings":
+            # Open settings WITHOUT releasing the menu hold, so Back returns to a
+            # still-paused pause menu (D-029); the armed control is already
+            # cleared above.
+            self._open_settings(AppScreen.PAUSE_MENU)
+
+    def _handle_offer(self, event: object) -> None:
+        # GM-10c (D-043): the week-boundary modal shows one button per offer; each is
+        # ARMED (a down+up on the SAME button) so a stale gameplay mouse-up that
+        # crossed the boundary cannot choose (the GM-10a arming discipline). An armed
+        # click on `offer_i` chooses current_offers[i]: resolve applies it and resumes.
+        offers = self.mediator.current_offers
+        layout = offer_menu_layout(screen_width, screen_height, len(offers))
+        pressed = _mouse_down_position(event)
+        if pressed is not None:
+            self._armed_menu_control = next(
+                (key for key in layout if _clicked(layout, key, pressed)), None
+            )
+            return
+        position = _mouse_up_position(event)
+        if position is None:
+            return
+        armed = self._armed_menu_control
+        self._armed_menu_control = None
+        if armed is None or not _clicked(layout, armed, position):
+            return
+        # The layout keys are exactly offer_0..offer_{len-1} and the sim is frozen
+        # (offers unchanged between press and release), so `armed` is always a live
+        # key and the parsed index is in range; the bound check is a belt-and-braces
+        # guard on the `offers[index]` access, never expected to fire.
+        index = int(armed.removeprefix("offer_"))
+        if index < len(offers):
+            self.mediator.resolve_week_boundary(offers[index])
+            self.state = AppScreen.PLAYING
+
+    def _handle_title(self, event: object) -> None:
+        if _is_key_up(event, pygame.K_RETURN):
+            self._start_new_game(self.current_map_id)
+            return
+        position = _mouse_up_position(event)
+        if position is None:
+            return
+        layout = title_layout(screen_width, screen_height)
+        if _clicked(layout, "new_game", position):
+            self._start_new_game(self.current_map_id)
+        elif _clicked(layout, "continue", position):
+            self._continue_game()
+        elif _clicked(layout, "exit", position):
+            raise SystemExit
+        elif _clicked(layout, "settings", position):
+            self._open_settings(AppScreen.TITLE)
+        elif _clicked(layout, "tutorial", position):
+            self._start_tutorial()
+        elif _clicked(layout, "map", position):
+            # GM-09f3: cycle the picker in place; the title stays put and the label
+            # updates, and the next New Game builds the chosen map.
+            self._cycle_map()
+
+    def _handle_game_over(self, event: object) -> None:
+        # Mirrors the historical loop-inline branch: R restarts, Escape exits,
+        # and clicks resolve through the prepared game-over rects.
+        if isinstance(event, KeyboardEvent):
+            if _is_key_up(event, pygame.K_r):
+                self._restart_current_game()
+            elif _is_key_up(event, pygame.K_ESCAPE):
+                self._autosave_delete()
+                raise SystemExit
+            return
+        position = _mouse_up_position(event)
+        if position is None:
+            return
+        action = self.mediator.handle_game_over_click(position)
+        if action == "restart":
+            self._restart_current_game()
+        elif action == "exit":
+            self._autosave_delete()
+            raise SystemExit
+
+    def _open_settings(self, origin: AppScreen) -> None:
+        # Record where Back returns to; entering from the pause menu keeps the
+        # menu hold, so this never touches the pause reason (D-029).
+        self._settings_origin = origin
+        self.state = AppScreen.SETTINGS
+
+    def _handle_settings(self, event: object) -> None:
+        position = _mouse_up_position(event)
+        if position is None:
+            return
+        layout = settings_menu_layout(screen_width, screen_height)
+        if _clicked(layout, "back", position):
+            self.state = self._settings_origin
+            return
+        updated = self._edited_settings(layout, position)
+        if updated is None:
+            return
+        # Update in memory so the live consumers work even seam-less; persist
+        # once through the seam when one is present (D-029).
+        self.current_settings = updated
+        if self._settings is not None:
+            self._settings.save(updated)
+
+    def _edited_settings(self, layout: dict[str, pygame.Rect], position: Point):
+        current = self.current_settings
+        if _clicked(layout, "fullscreen", position):
+            return replace(current, fullscreen=not current.fullscreen)
+        if _clicked(layout, "reduced_motion", position):
+            return replace(current, reduced_motion=not current.reduced_motion)
+        if _clicked(layout, "master_volume", position):
+            return replace(current, master_volume=_cycle_volume(current.master_volume))
+        if _clicked(layout, "music_volume", position):
+            return replace(current, music_volume=_cycle_volume(current.music_volume))
+        if _clicked(layout, "sfx_volume", position):
+            return replace(current, sfx_volume=_cycle_volume(current.sfx_volume))
+        return None
+
+    def _start_tutorial(self) -> None:
+        # Inert without the seam (like Continue without an autosave). The seam
+        # builds a seeded, game-over-suppressed triple; the tutorial never
+        # autosaves and never records a high score.
+        if self._build_tutorial is None:
+            return
+        self.mediator, self.renderer, self.session = self._build_tutorial()
+        self._tutorial_progress = tutorial.start_progress(self.mediator)
+        self.notice = None
+        self.state = AppScreen.TUTORIAL
+
+    def _handle_tutorial(self, event: object) -> None:
+        if _is_key_up(event, pygame.K_ESCAPE):
+            # Abandon any armed gesture through the pinned letterbox-cancel before
+            # leaving, exactly like _handle_playing (review NIT-5).
+            self.session.dispatch(MouseEvent(MouseEventType.MOUSE_UP, Point(-1, -1)))
+            self.state = AppScreen.TITLE
+            return
+        # Every other converted event is a REAL control driving the live game.
+        self.session.dispatch(event)
+
+    def advance_tutorial(self, elapsed_ms: int) -> None:
+        """Advance the coached tutorial one frame (a no-op unless ``TUTORIAL``).
+
+        Mirrors ``reconcile_game_over``: ``main.run_game`` calls it once per frame
+        after ``session.advance`` so the step machine observes the post-tick
+        mediator (tick-driven deliveries) and feeds the overload dwell timer.
+        """
+        if self.state is not AppScreen.TUTORIAL or self._tutorial_progress is None:
+            return
+        self._tutorial_progress = tutorial.advance(
+            self._tutorial_progress,
+            self.mediator,
+            elapsed_ms,
+            bool(getattr(self.mediator, "is_paused", False)),
+        )
+
+    def tutorial_overlay(self) -> tuple[str, int, int, bool] | None:
+        """The coaching overlay data ``(prompt, ordinal, total, complete)``.
+
+        ``None`` off the tutorial, so ``main`` renders the banner only in
+        ``TUTORIAL`` and never imports the tutorial module itself.
+        """
+        progress = self._tutorial_progress
+        if progress is None:
+            return None
+        return (
+            tutorial.current_prompt(progress),
+            tutorial.step_ordinal(progress),
+            tutorial.STEP_TOTAL,
+            tutorial.is_complete(progress),
+        )

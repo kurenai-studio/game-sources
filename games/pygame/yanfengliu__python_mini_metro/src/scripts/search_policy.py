@@ -1,0 +1,345 @@
+"""Decide by lookahead: simulate each candidate action to the end, keep the best.
+
+Four learned policies have now landed in the same 170-195 band -- cloning,
+cloning plus anchored PPO, a pointer architecture, and DAgger -- while the
+scripted heuristic reaches ~262 from the identical action space and observation.
+Imitation raised fidelity without raising score, so the missing ingredient is not
+a better fit to the teacher.
+
+The nearest published domain agrees. Across the transit-network literature a pure
+neural policy is never the best method; the winners embed a policy inside a
+search. This game makes that unusually cheap, because it serialises exactly -- a
+candidate can be *tried* rather than guessed at.
+
+Two measurements shape the design, and the first one killed the obvious version.
+
+**Decisions are far apart.** On seed 9000 the heuristic acts at decisions
+0-7, 459, 1702, 3411, 3412, 5444 and 7681, out of 8244. The gaps run 450 to 2200
+decisions, so a fixed short horizon cannot even reach the next decision point. A
+150-step horizon scored 144 against the heuristic's 262 precisely because it saw
+each action's immediate cost and none of its delayed payoff, so WAIT won by
+default and search systematically under-acted. Rollouts therefore run to episode
+end -- no horizon, no truncation bias.
+
+**Rollouts are reproducible, and that is not the same as the game being
+deterministic.** Three rollouts from one snapshot return the same number, so the
+RNG state survives serialisation -- which is why this file once concluded that
+one rollout per candidate gives "the exact future" and no averaging is needed.
+That was the reasoning error. Spawns here are random; a reproducible simulator
+lets you replay a future, it does not make that future the only one. The
+serialised state carries the RNG, so a single rollout scores a candidate against
+exactly the future that will happen, and taking the max over such one-sample
+estimates selects the luckiest sample rather than the best action. Measured on
+seed 9000, candidates differ by 17-54 deliveries within one future while one
+FIXED candidate varies by up to 62 across futures -- the noise is the size of the
+signal, and roughly 95% of a published +128.5 margin was luck. So every candidate
+is averaged over several sampled futures, using common random numbers so the
+comparison isolates the action.
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import os
+import random
+import sys
+from concurrent.futures import ProcessPoolExecutor
+
+import numpy as np
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
+
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
+from rl.heuristic import choose  # noqa: E402
+from rl.semantic_env import ACTION_TABLE, ActionKind, SemanticMetroEnv  # noqa: E402
+from save_game import serialize_game  # noqa: E402
+from save_load import deserialize_game  # noqa: E402
+
+# Kinds worth spending a search on. WAIT is always included as the baseline
+# candidate, since "not yet" is frequently the right answer.
+STRUCTURAL = (
+    ActionKind.CONNECT,
+    ActionKind.EXTEND_LINE,
+    ActionKind.PREPEND_LINE,
+    ActionKind.PURCHASE_LINE,
+    ActionKind.ASSIGN_LOCOMOTIVE,
+    ActionKind.ATTACH_CARRIAGE,
+)
+
+
+def _restore(env, document, decision: int) -> None:
+    """Rebuild the env's game from a snapshot, at the same decision count.
+
+    `_decision` is restored rather than reset because the difficulty ramp and
+    several observation features read it -- a rollout that believed it was at
+    decision 0 would be simulating an easier game than the real one.
+    """
+    env._mediator = deserialize_game(document)
+    env._decision = decision
+    env._last_deliveries = env._mediator.deliveries
+    env._line_born = {}
+    # The mask cache belongs to the game that was just discarded. Restoring a
+    # different game behind it would serve that game's legality for this one.
+    env._mask_cache = None
+
+
+def _rollout(env, document, decision: int, action: int, cap: int) -> float:
+    """Apply one candidate, then let the default policy play to the end."""
+    _restore(env, document, decision)
+    total = 0.0
+    _, reward, terminated, truncated, _ = env.step(action)
+    total += float(reward)
+    if terminated or truncated:
+        return total
+    for _ in range(cap):
+        _, reward, terminated, truncated, _ = env.step(choose(env))
+        total += float(reward)
+        if terminated or truncated:
+            break
+    return total
+
+
+def reseeded(document, key: int):
+    """The same board, a different future.
+
+    Rollouts are deterministic given the serialised state, and that state
+    includes the RNG -- so scoring a candidate once measures it against exactly
+    the future that will happen. Replacing the RNG lets a candidate be measured
+    against futures the agent could not have known about.
+    """
+    variant = copy.deepcopy(document)
+    variant["rng"] = {
+        "python": random.Random(key).getstate(),
+        "numpy": np.random.default_rng(key).bit_generator.state,
+    }
+    return variant
+
+
+def expected_value(env, document, decision: int, action: int, cap: int, futures):
+    """Mean return of one candidate across a fixed set of sampled futures.
+
+    A single rollout is a one-sample estimate, and taking the max over noisy
+    one-sample estimates selects the luckiest sample rather than the best action.
+    Measured on seed 9000: candidates differ by 17-54 deliveries within one
+    future, while a fixed candidate varies by up to 62 across futures -- the
+    noise is the size of the signal, so the max was mostly selecting luck.
+
+    `futures` is the SAME list of keys for every candidate at a decision point.
+    That is common random numbers, and it matters: it cancels the shared
+    variation between futures so the comparison isolates the action, at no extra
+    cost.
+    """
+    if not futures:
+        return _rollout(env, document, decision, action, cap)
+    total = 0.0
+    for key in futures:
+        total += _rollout(env, reseeded(document, key), decision, action, cap)
+    return total / len(futures)
+
+
+def _signature(mask) -> frozenset:
+    """Which structural KINDS are currently available.
+
+    Searching at all ~56 points where any structural action is legal costs four
+    times what it buys, because most of those points differ only in which station
+    pair is offered. A change in this signature means a new *capability* arrived
+    -- a line slot, a locomotive, a carriage -- which is exactly when the
+    heuristic's fixed priority order is most likely to be wrong.
+    """
+    return frozenset(
+        ACTION_TABLE[i][0]
+        for i in np.flatnonzero(mask)
+        if ACTION_TABLE[i][0] in STRUCTURAL
+    )
+
+
+def shortlist_for(rng, structural, preferred: int, candidates: int) -> list[int]:
+    """The heuristic's pick, a sample of the alternatives, and WAIT.
+
+    The alternatives are SAMPLED rather than sliced. `structural[:n]` takes the
+    first entries by action-table index, and the table is ordered by
+    (kind, first, second) -- so slicing systematically offers station 0 and 1
+    and never looks at the far side of the map. Sampling removes that bias for
+    the same number of rollouts.
+
+    `preferred` is always included so search can never do worse than the policy
+    it is improving: rolling it out measures exactly what the heuristic would
+    score from here. WAIT is always included so "not yet" stays available.
+    """
+    alternatives = [index for index in structural if index != preferred]
+    room = candidates - (1 if preferred != 0 else 0)
+    if len(alternatives) > room:
+        alternatives = [
+            int(index) for index in rng.choice(alternatives, size=room, replace=False)
+        ]
+    shortlist = ([preferred] if preferred != 0 else []) + alternatives
+    if 0 not in shortlist:
+        shortlist.append(0)
+    return shortlist
+
+
+def play(seed: int, candidates: int, cap: int, futures: int) -> dict:
+    """`futures` is REQUIRED and 0 means clairvoyant.
+
+    With 0, every candidate is scored against the one future that actually
+    happens, because the serialised state carries the RNG. That is not a weaker
+    setting, it is a different and inadmissible experiment: it measures an
+    oracle no observation-conditioned policy can reproduce. It defaulted to 0
+    here while the CLI defaulted to 4, so a programmatic caller silently got the
+    oracle -- which is how a whole dataset of unlearnable labels was generated
+    and how "search beats the heuristic by +128.5" was published.
+    """
+    env = SemanticMetroEnv()
+    env.reset(seed=seed)
+    rng = np.random.default_rng(seed)
+    delivered = 0.0
+    decisions = searches = overrides = 0
+    last_signature: frozenset | None = None
+
+    while True:
+        mask = env.action_masks()
+        structural = [
+            i for i in np.flatnonzero(mask) if ACTION_TABLE[i][0] in STRUCTURAL
+        ]
+        preferred = choose(env)
+        signature = _signature(mask)
+        worth_searching = structural and (preferred != 0 or signature != last_signature)
+
+        if not worth_searching:
+            action = preferred
+        else:
+            last_signature = signature
+            shortlist = shortlist_for(rng, structural, preferred, candidates)
+
+            document = serialize_game(env._mediator)
+            at = env._decision
+            # One draw of future keys, shared by every candidate here.
+            keys = (
+                [int(k) for k in rng.integers(0, 2**31 - 1, size=futures)]
+                if futures
+                else []
+            )
+            scored = [
+                (
+                    expected_value(env, document, at, candidate, cap, keys),
+                    candidate,
+                )
+                for candidate in shortlist
+            ]
+            _restore(env, document, at)
+            searches += 1
+            best = max(scored)[1]
+            overrides += int(best != preferred)
+            action = best
+
+        _, reward, terminated, truncated, _ = env.step(action)
+        delivered += float(reward)
+        decisions += 1
+        if terminated or truncated:
+            break
+
+    mediator = env._mediator
+    result = {
+        "seed": seed,
+        "deliveries": int(delivered),
+        "decisions": decisions,
+        "searches": searches,
+        "overrode_heuristic": overrides,
+        "lines": len(mediator.paths),
+        "longest_line": max((len(p.stations) for p in mediator.paths), default=0),
+        "stations": len(mediator.stations),
+    }
+    env.close()
+    return result
+
+
+def baseline(seed: int) -> int:
+    """The default policy on the same seed, so the comparison is paired."""
+    env = SemanticMetroEnv()
+    env.reset(seed=seed)
+    total = 0.0
+    while True:
+        _, reward, terminated, truncated, _ = env.step(choose(env))
+        total += float(reward)
+        if terminated or truncated:
+            break
+    env.close()
+    return int(total)
+
+
+def _one(job):
+    seed, candidates, cap, futures = job
+    return play(seed, candidates, cap, futures), baseline(seed)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    # 20, the pre-registered minimum. The published "+128.50 +/-117.96,
+    # winning 8/8" was measured at n=8 on a near-bimodal outcome.
+    parser.add_argument("--episodes", type=int, default=20)
+    parser.add_argument("--seed", type=int, default=9000)
+    parser.add_argument("--candidates", type=int, default=6)
+    parser.add_argument("--cap", type=int, default=20_000)
+    parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument(
+        "--futures",
+        type=int,
+        default=4,
+        help=(
+            "sampled futures to average each candidate over; 0 reproduces the "
+            "one-sample search that selected lucky futures rather than good "
+            "actions"
+        ),
+    )
+    args = parser.parse_args(argv)
+
+    print(
+        f"lookahead: {args.candidates} candidates rolled to episode end, "
+        f"averaged over {args.futures or 1} "
+        f"{'sampled future' if args.futures == 1 else 'sampled futures'}"
+        f"{' (ONE-SAMPLE: selects lucky futures)' if not args.futures else ''}, "
+        f"heuristic as the default policy, {args.workers} workers",
+        flush=True,
+    )
+    jobs = [
+        (args.seed + i, args.candidates, args.cap, args.futures)
+        for i in range(args.episodes)
+    ]
+    searched, control = [], []
+    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        for result, default in pool.map(_one, jobs):
+            searched.append(result["deliveries"])
+            control.append(default)
+            print(
+                f"  seed {result['seed']}: search {result['deliveries']:5d} vs "
+                f"heuristic {default:5d}  "
+                f"({result['deliveries'] - default:+5d})   "
+                f"{result['searches']:3d} searches, "
+                f"{result['overrode_heuristic']:3d} overrode, "
+                f"line of {result['longest_line']}/{result['stations']}",
+                flush=True,
+            )
+
+    search_array = np.array(searched, dtype=float)
+    base_array = np.array(control, dtype=float)
+    gap = search_array - base_array
+    stderr = gap.std(ddof=1) / np.sqrt(len(gap)) if len(gap) > 1 else 0.0
+    print(f"\nsearch:    mean {search_array.mean():7.2f}  max {search_array.max():.0f}")
+    print(f"heuristic: mean {base_array.mean():7.2f}  max {base_array.max():.0f}")
+    print(
+        f"paired gap: {gap.mean():+.2f} +/-{1.96 * stderr:.2f}  "
+        f"(search won {int((gap > 0).sum())}/{len(gap)}, "
+        f"tied {int((gap == 0).sum())})"
+    )
+    print(
+        "\nSearch BEATS its own default policy."
+        if gap.mean() - 1.96 * stderr > 0
+        else "\nSearch does NOT beat its own default policy."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

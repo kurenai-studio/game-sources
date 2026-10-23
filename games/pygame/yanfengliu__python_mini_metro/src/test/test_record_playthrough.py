@@ -1,0 +1,65 @@
+"""The recorder must produce a watchable file and a summary that tells the truth.
+
+A recording whose summary understates the run is worse than no recording, because
+it looks like evidence. The scripted-demonstrator policy was removed once random
+play in the semantic lane outscored it roughly ninefold, leaving it a baseline
+that measured nothing.
+"""
+
+import os
+import sys
+import tempfile
+import unittest
+from importlib.util import find_spec
+from pathlib import Path
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../scripts")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
+
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
+if find_spec("PIL") is None:
+    raise unittest.SkipTest("Pillow arrives with the RL extras and is optional")
+
+import record_playthrough  # noqa: E402
+from PIL import Image  # noqa: E402
+
+
+class RecordPlaythroughTest(unittest.TestCase):
+    def _run(self, *argv: str) -> dict:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "run.gif"
+            summary = record_playthrough.record(
+                record_playthrough.parse_args([*argv, "--output", str(output)])
+            )
+            with Image.open(output) as animation:
+                summary["_frames_on_disk"] = getattr(animation, "n_frames", 1)
+            return summary
+
+    def test_writes_a_multi_frame_animation(self):
+        summary = self._run(
+            "--policy", "noop", "--max-decisions", "60", "--stride", "5"
+        )
+
+        self.assertGreater(summary["_frames_on_disk"], 1)
+        self.assertEqual(summary["frames_written"], summary["_frames_on_disk"])
+        self.assertGreaterEqual(summary["frames_captured"], summary["frames_written"])
+        self.assertGreater(summary["bytes"], 0)
+
+    def test_random_play_is_recorded_up_to_its_own_game_over(self):
+        summary = self._run(
+            "--policy", "random", "--seed", "0", "--max-decisions", "3000"
+        )
+
+        self.assertEqual(summary["ended"], "game-over")
+        self.assertLess(summary["decisions"], 3000)
+        self.assertGreater(
+            summary["frames_written"],
+            10,
+            "a real game reaching game over must leave many distinct frames; "
+            "a near-empty animation means capture, not compression, failed",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

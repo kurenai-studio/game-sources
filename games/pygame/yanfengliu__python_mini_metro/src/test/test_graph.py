@@ -1,0 +1,266 @@
+import os
+import sys
+import unittest
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
+
+import pygame
+
+from config import screen_height, screen_width, station_color, station_size
+from entity.get_entity import get_random_stations
+from entity.path import Path
+from entity.station import Station
+from event.mouse import MouseEvent
+from event.type import MouseEventType
+from geometry.circle import Circle
+from geometry.point import Point
+from geometry.rect import Rect
+from graph.graph_algo import bfs, build_station_nodes_dict
+from graph.node import Node
+from mediator import Mediator
+from simulation_context import SimulationContext
+from utils import get_random_position
+
+
+class TestGraph(unittest.TestCase):
+    def setUp(self):
+        self.width, self.height = screen_width, screen_height
+        self.screen = pygame.Surface((self.width, self.height))
+        self.context = SimulationContext(0)
+        self.mediator = Mediator(seed=0)
+        for station in self.mediator.stations:
+            station.draw(self.screen)
+
+    def connect_stations(self, station_idx):
+        self.mediator.react(
+            MouseEvent(
+                MouseEventType.MOUSE_DOWN,
+                self.mediator.stations[station_idx[0]].position,
+            )
+        )
+        for idx in station_idx[1:]:
+            self.mediator.react(
+                MouseEvent(
+                    MouseEventType.MOUSE_MOTION, self.mediator.stations[idx].position
+                )
+            )
+        self.mediator.react(
+            MouseEvent(
+                MouseEventType.MOUSE_UP,
+                self.mediator.stations[station_idx[-1]].position,
+            )
+        )
+
+    def test_build_station_nodes_dict(self):
+        self.mediator.stations = [
+            Station(
+                Rect(
+                    color=station_color,
+                    width=2 * station_size,
+                    height=2 * station_size,
+                ),
+                get_random_position(self.width, self.height, context=self.context),
+            ),
+            Station(
+                Circle(
+                    color=station_color,
+                    radius=station_size,
+                ),
+                get_random_position(self.width, self.height, context=self.context),
+            ),
+        ]
+        for station in self.mediator.stations:
+            station.draw(self.screen)
+
+        self.connect_stations([0, 1])
+
+        station_nodes_dict = build_station_nodes_dict(
+            self.mediator.stations, self.mediator.paths
+        )
+        self.assertCountEqual(list(station_nodes_dict.keys()), self.mediator.stations)
+        for station, node in station_nodes_dict.items():
+            self.assertEqual(node.station, station)
+
+    def test_bfs_two_stations(self):
+        self.mediator.stations = get_random_stations(2, context=self.context)
+        for station in self.mediator.stations:
+            station.draw(self.screen)
+
+        self.connect_stations([0, 1])
+
+        station_nodes_dict = build_station_nodes_dict(
+            self.mediator.stations, self.mediator.paths
+        )
+        start_station = self.mediator.stations[0]
+        end_station = self.mediator.stations[1]
+        start_node = station_nodes_dict[start_station]
+        end_node = station_nodes_dict[end_station]
+        node_path = bfs(start_node, end_node)
+        self.assertSequenceEqual(
+            node_path,
+            [start_node, end_node],
+        )
+
+    def test_bfs_five_stations(self):
+        self.mediator.stations = get_random_stations(5, context=self.context)
+        for station in self.mediator.stations:
+            station.draw(self.screen)
+
+        self.connect_stations([0, 1, 2])
+        self.mediator.purchased_num_paths = 2
+        self.mediator.update_unlocked_num_paths()
+        self.connect_stations([0, 3])
+
+        station_nodes_dict = build_station_nodes_dict(
+            self.mediator.stations, self.mediator.paths
+        )
+        start_node = station_nodes_dict[self.mediator.stations[0]]
+        end_node = station_nodes_dict[self.mediator.stations[2]]
+        node_path = bfs(start_node, end_node)
+        self.assertSequenceEqual(
+            node_path,
+            [
+                Node(self.mediator.stations[0]),
+                Node(self.mediator.stations[1]),
+                Node(self.mediator.stations[2]),
+            ],
+        )
+        start_node = station_nodes_dict[self.mediator.stations[1]]
+        end_node = station_nodes_dict[self.mediator.stations[3]]
+        node_path = bfs(start_node, end_node)
+        self.assertSequenceEqual(
+            node_path,
+            [
+                Node(self.mediator.stations[1]),
+                Node(self.mediator.stations[0]),
+                Node(self.mediator.stations[3]),
+            ],
+        )
+        start_node = station_nodes_dict[self.mediator.stations[0]]
+        end_node = station_nodes_dict[self.mediator.stations[4]]
+        node_path = bfs(start_node, end_node)
+        self.assertSequenceEqual(
+            node_path,
+            [],
+        )
+
+    def test_bfs_prefers_first_inserted_equal_length_route(self):
+        stations = [
+            Station(
+                Rect(station_color, 2 * station_size, 2 * station_size), Point(0, 0)
+            ),
+            Station(Circle(station_color, station_size), Point(10, 0)),
+            Station(Circle(station_color, station_size), Point(10, 10)),
+            Station(
+                Rect(station_color, 2 * station_size, 2 * station_size),
+                Point(20, 0),
+            ),
+        ]
+        for station, station_id in zip(
+            stations, ["start", "left", "right", "end"], strict=True
+        ):
+            station.id = station_id
+
+        left_route = Path((255, 0, 0))
+        for station in (stations[0], stations[1], stations[3]):
+            left_route.add_station(station)
+        right_route = Path((0, 0, 255))
+        for station in (stations[0], stations[2], stations[3]):
+            right_route.add_station(station)
+
+        station_nodes = build_station_nodes_dict(
+            stations, [left_route, left_route, right_route]
+        )
+
+        self.assertSequenceEqual(
+            list(station_nodes[stations[0]].neighbors),
+            [station_nodes[stations[1]], station_nodes[stations[2]]],
+        )
+        self.assertSequenceEqual(
+            bfs(station_nodes[stations[0]], station_nodes[stations[3]]),
+            [
+                station_nodes[stations[0]],
+                station_nodes[stations[1]],
+                station_nodes[stations[3]],
+            ],
+        )
+
+    def test_node_repr(self):
+        station = Station(
+            Rect(station_color, 2 * station_size, 2 * station_size), Point(0, 0)
+        )
+        node = Node(station)
+        self.assertIn("Node-", repr(node))
+
+    def test_node_ids_are_lazy_but_stable_and_unique(self):
+        """The id is generated on first read; it must still behave like an id.
+
+        Nodes are rebuilt roughly 24 times per simulation step, so generating a
+        uuid in the constructor cost ~8% of a profiled episode for a value
+        nothing reads. Making it lazy is only safe while it stays stable across
+        reads and distinct between instances.
+        """
+
+        def make():
+            return Node(
+                Station(
+                    Rect(station_color, 2 * station_size, 2 * station_size),
+                    Point(0, 0),
+                )
+            )
+
+        first, second = make(), make()
+
+        self.assertEqual(first.id, first.id, "the id changed between reads")
+        self.assertNotEqual(first.id, second.id, "two nodes were given the same id")
+        self.assertTrue(first.id.startswith("Node-"), first.id)
+
+    def test_build_station_nodes_dict_skips_being_created_paths(self):
+        station_a = Station(
+            Rect(station_color, 2 * station_size, 2 * station_size), Point(0, 0)
+        )
+        station_b = Station(Circle(station_color, station_size), Point(10, 0))
+        path = Path((0, 0, 0))
+        path.is_being_created = True
+        path.add_station(station_a)
+        path.add_station(station_b)
+
+        station_nodes = build_station_nodes_dict([station_a, station_b], [path])
+        for node in station_nodes.values():
+            self.assertEqual(node.paths, set())
+
+    def test_build_station_nodes_dict_connects_loop_closure(self):
+        station_a = Station(
+            Rect(station_color, 2 * station_size, 2 * station_size), Point(0, 0)
+        )
+        station_b = Station(Circle(station_color, station_size), Point(10, 0))
+        station_c = Station(
+            Rect(station_color, 2 * station_size, 2 * station_size), Point(20, 0)
+        )
+        path = Path((0, 0, 0))
+        path.add_station(station_a)
+        path.add_station(station_b)
+        path.add_station(station_c)
+        path.set_loop()
+
+        station_nodes = build_station_nodes_dict(
+            [station_a, station_b, station_c], [path]
+        )
+
+        self.assertIn(station_nodes[station_c], station_nodes[station_a].neighbors)
+        self.assertIn(station_nodes[station_a], station_nodes[station_c].neighbors)
+        self.assertSequenceEqual(
+            bfs(station_nodes[station_a], station_nodes[station_c]),
+            [station_nodes[station_a], station_nodes[station_c]],
+        )
+
+    def test_equal_nodes_have_same_hash(self):
+        station = Station(
+            Rect(station_color, 2 * station_size, 2 * station_size), Point(0, 0)
+        )
+
+        self.assertEqual(len({Node(station), Node(station)}), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

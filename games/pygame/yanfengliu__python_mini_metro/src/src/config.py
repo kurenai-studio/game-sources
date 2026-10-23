@@ -1,0 +1,214 @@
+from geometry.type import ShapeType
+
+# game
+framerate = 60
+
+# save
+save_dir_name = "saves"
+
+# screen
+screen_width = 1920
+screen_height = 1080
+screen_color = (247, 245, 239)
+
+# station
+num_stations = 20
+initial_num_stations = 3
+station_unlock_first_increment = 10
+station_unlock_increment_step = 20
+station_unlock_milestones = []
+_total_station_unlock_deliveries = 0
+_next_station_unlock_increment = station_unlock_first_increment
+for _ in range(initial_num_stations, num_stations):
+    _total_station_unlock_deliveries += _next_station_unlock_increment
+    station_unlock_milestones.append(_total_station_unlock_deliveries)
+    _next_station_unlock_increment += station_unlock_increment_step
+station_size = 30
+station_capacity = 12
+station_color = (0, 0, 0)
+station_shape_type_list = [
+    ShapeType.RECT,
+    ShapeType.CIRCLE,
+    ShapeType.TRIANGLE,
+    ShapeType.CROSS,
+]
+station_unique_shape_type_list = [
+    ShapeType.DIAMOND,
+    ShapeType.PENTAGON,
+    ShapeType.STAR,
+]
+station_unique_spawn_start_index = 10
+station_unique_spawn_chance = 0.35
+station_passengers_per_row = 4
+station_snap_blip_duration_ms = 400
+station_snap_blip_radius_growth = 40
+station_snap_blip_width = 3
+
+# passenger
+passenger_size = 5
+passenger_color = (128, 128, 128)
+passenger_spawning_start_step = 1
+passenger_spawning_interval_step = 15 * framerate
+passenger_display_buffer = 3 * passenger_size
+passenger_max_wait_time_ms = 40_000
+passenger_blink_warning_time_ms = 10_000
+passenger_blink_interval_ms = 250
+overdue_passenger_threshold = 2
+# Deprecated value alias retained for callers importing the former config name.
+max_waiting_passengers = overdue_passenger_threshold
+
+# metro
+num_metros = 4
+num_carriages = 2
+metro_size = 30
+metro_color = (200, 200, 200)
+metro_outline_color = (30, 30, 30)
+metro_outline_width = 2
+metro_queue_outline_color = (235, 145, 35)
+metro_queue_outline_width = 7
+metro_capacity = 6
+metro_speed_per_ms = 150 / 1000  # pixels / ms
+metro_accel_time_ms = 1000
+metro_decel_time_ms = 1000
+metro_boarding_time_per_passenger_ms = 500
+metro_passengers_per_row = 3
+
+# carriage
+carriage_capacity = 6
+carriage_size = 30
+carriage_body_length = 2 * carriage_size
+carriage_gap = 10
+carriage_color = (185, 185, 185)
+carriage_outline_color = metro_outline_color
+carriage_outline_width = metro_outline_width
+carriage_queue_outline_color = metro_queue_outline_color
+carriage_queue_outline_width = metro_queue_outline_width
+carriage_passengers_per_row = 3
+
+# weekly calendar (GM-10a / D-041): a "week" is a fixed number of sim steps. At
+# 60 steps/s (the 17,17,16 tick cadence) 1200 steps is ~20 s at 1x speed. A
+# provisional balance default -- GM-11 may tune it or make it escalate. Only the
+# human PLAYING shell enables the calendar (Mediator.week_calendar); RL/headless
+# and the tutorial leave it off, so weeks never pause a headless sim.
+WEEK_LENGTH_STEPS = 1200
+
+# weekly offers (GM-10b / D-042): how many DISTINCT upgrade offers the week
+# boundary presents. A provisional balance default -- GM-11 may tune it. On the
+# open CLASSIC map (no tunnel budget) the candidate pool is 3 kinds, so a value
+# above 3 would silently clamp there (see offers.generate_offers).
+OFFERS_PER_WEEK = 2
+
+# path
+path_unlock_milestones = [0, 90, 300, 650]
+num_paths = len(path_unlock_milestones)
+path_width = 10
+path_order_shift = 10
+
+# path editing handles
+path_handle_hit_radius = 36
+path_handle_marker_radius = 12
+path_handle_endpoint_outset = 64
+path_handle_lattice_step = 56
+path_handle_search_rings = 12
+path_handle_viewport_margin = 40
+path_handle_quantization_margin = 8
+path_handle_hud_exclusion = (0, 0, 840, 250)
+path_handle_ring_width = 3
+path_handle_outline_width = 4
+path_handle_leader_width = 3
+path_handle_color = (35, 35, 35)
+path_handle_selected_color = (255, 255, 255)
+path_handle_invalid_color = (215, 45, 45)
+path_handle_removal_width = 5
+
+# button
+button_color = (180, 180, 180)
+button_size = 24
+unlock_blink_count = 3
+unlock_blink_duration_ms = 1000
+
+# path button
+path_button_buffer = 32
+path_button_dist_to_bottom = 24
+path_button_start_left = 500
+path_button_cross_size = 25
+path_button_cross_width = 5
+path_button_locked_ring_width = 5
+path_button_buy_text_color = (0, 0, 0)
+path_button_buy_text_disabled_color = (140, 140, 140)
+path_button_buy_text_font_size = 26
+path_button_buy_text_bottom_gap = 48
+
+# fleet button
+fleet_button_radius = 8
+fleet_button_horizontal_offset = 31
+fleet_button_vertical_offset = 37
+fleet_button_border_width = 2
+fleet_button_icon_width = 3
+fleet_button_enabled_color = (245, 245, 245)
+fleet_button_disabled_color = (205, 205, 205)
+fleet_button_hover_color = (255, 228, 170)
+fleet_button_border_color = (30, 30, 30)
+fleet_button_icon_color = (30, 30, 30)
+fleet_button_disabled_icon_color = (135, 135, 135)
+fleet_button_badge_color = (235, 145, 35)
+fleet_button_badge_text_color = (20, 20, 20)
+fleet_button_badge_radius = 7
+fleet_button_badge_font_size = 14
+
+# four-control resource band, ordered locomotive +, locomotive -, carriage +,
+# carriage - from left to right around each stable path-button slot
+resource_control_horizontal_offsets = (-31, -14, 14, 31)
+resource_control_vertical_offset = 37
+carriage_button_radius = fleet_button_radius
+carriage_button_enabled_color = fleet_button_enabled_color
+carriage_button_disabled_color = fleet_button_disabled_color
+carriage_button_hover_color = fleet_button_hover_color
+carriage_button_border_color = fleet_button_border_color
+carriage_button_border_width = fleet_button_border_width
+carriage_button_icon_color = fleet_button_icon_color
+carriage_button_disabled_icon_color = fleet_button_disabled_icon_color
+carriage_button_icon_width = fleet_button_icon_width
+
+# speed button
+speed_button_width = 78
+speed_button_height = 40
+speed_button_buffer = 12
+speed_button_left_padding = 28
+speed_button_dist_to_bottom = 28
+speed_button_text_font_size = 28
+speed_button_text_color = (20, 20, 20)
+speed_button_border_color = (20, 20, 20)
+speed_button_active_color = (215, 215, 215)
+speed_button_hover_color = (235, 235, 235)
+
+# text
+font_name = "courier"
+hud_font_size = 50
+hud_display_coords = (20, 20)
+hud_line_spacing = 50
+# Deprecated renderer configuration aliases retained for compatibility.
+score_font_size = hud_font_size
+score_display_coords = hud_display_coords
+game_over_font_size = 120
+game_over_hint_font_size = 40
+game_over_title_metric_spacing = 24
+game_over_metric_spacing = 12
+game_over_content_button_gap = 24
+game_over_content_top_margin = 20
+game_over_text_color = (20, 20, 20)
+game_over_overlay_color = (0, 0, 0, 140)
+game_over_button_color = (230, 230, 230)
+game_over_button_border_color = (40, 40, 40)
+game_over_button_border_width = 2
+game_over_button_padding_x = 30
+game_over_button_padding_y = 12
+game_over_button_spacing = 18
+game_over_button_width = 300
+game_over_button_height = 64
+
+# Fraction of the surface height reserved for the playfield. Stations spawn
+# above it and the resource-control band sits below it, so raising
+# station_size without lowering this squeezes the band until the layout
+# stops validating.
+playfield_bottom_ratio = 0.9
