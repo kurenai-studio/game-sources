@@ -1,0 +1,174 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://src/game/UI/OverlayUI.gd" type="Script" id=1]
+[ext_resource path="res://resources/heart_atlastexture.tres" type="Texture" id=2]
+[ext_resource path="res://src/game/UI/game_overlay/HealthRect.tscn" type="PackedScene" id=3]
+[ext_resource path="res://src/game/UI/game_overlay/ItemHBox.tscn" type="PackedScene" id=4]
+[ext_resource path="res://resources/ui_theme.tres" type="Theme" id=5]
+
+[node name="OverlayUI" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource( 5 )
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_lock_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="HB" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/separation = 0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Left" type="ColorRect" parent="HB"]
+margin_right = 96.0
+margin_bottom = 576.0
+rect_min_size = Vector2( 96, 0 )
+size_flags_horizontal = 0
+color = Color( 0, 0, 0, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="MC" type="MarginContainer" parent="HB/Left"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/margin_top = 16
+custom_constants/margin_bottom = 16
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VB" type="VBoxContainer" parent="HB/Left/MC"]
+margin_top = 16.0
+margin_right = 96.0
+margin_bottom = 168.0
+rect_min_size = Vector2( 96, 0 )
+size_flags_vertical = 0
+
+[node name="HeartRect" type="TextureRect" parent="HB/Left/MC/VB"]
+visible = false
+margin_right = 96.0
+margin_bottom = 96.0
+rect_min_size = Vector2( 96, 96 )
+texture = ExtResource( 2 )
+expand = true
+stretch_mode = 6
+
+[node name="HealthHBox" type="VBoxContainer" parent="HB/Left/MC/VB"]
+margin_left = 24.0
+margin_right = 72.0
+margin_bottom = 152.0
+size_flags_horizontal = 4
+
+[node name="HealthRect" parent="HB/Left/MC/VB/HealthHBox" instance=ExtResource( 3 )]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 0.0
+margin_top = 0.0
+margin_right = 48.0
+margin_bottom = 48.0
+
+[node name="HealthRect2" parent="HB/Left/MC/VB/HealthHBox" instance=ExtResource( 3 )]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 0.0
+margin_top = 52.0
+margin_right = 48.0
+margin_bottom = 100.0
+
+[node name="HealthRect3" parent="HB/Left/MC/VB/HealthHBox" instance=ExtResource( 3 )]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 0.0
+margin_top = 104.0
+margin_right = 48.0
+margin_bottom = 152.0
+
+[node name="Control" type="Control" parent="HB"]
+margin_left = 96.0
+margin_right = 928.0
+margin_bottom = 576.0
+size_flags_horizontal = 3
+
+[node name="MC" type="MarginContainer" parent="HB/Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+custom_constants/margin_right = 16
+custom_constants/margin_top = 16
+custom_constants/margin_left = 16
+custom_constants/margin_bottom = 16
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VB" type="VBoxContainer" parent="HB/Control/MC"]
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 816.0
+margin_bottom = 560.0
+mouse_filter = 2
+alignment = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HintLabel" type="Label" parent="HB/Control/MC/VB"]
+margin_top = 525.0
+margin_right = 800.0
+margin_bottom = 544.0
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+text = "Press \"H\" to activate heart"
+align = 1
+valign = 1
+
+[node name="Right" type="ColorRect" parent="HB"]
+margin_left = 928.0
+margin_right = 1024.0
+margin_bottom = 576.0
+rect_min_size = Vector2( 96, 0 )
+size_flags_horizontal = 0
+color = Color( 0, 0, 0, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="InventoryMC" type="MarginContainer" parent="HB/Right"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/margin_top = 16
+custom_constants/margin_bottom = 16
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VB" type="VBoxContainer" parent="HB/Right/InventoryMC"]
+margin_top = 16.0
+margin_right = 109.0
+margin_bottom = 128.0
+rect_min_size = Vector2( 0, 96 )
+size_flags_vertical = 0
+custom_constants/separation = 16
+alignment = 1
+
+[node name="ItemHBox" parent="HB/Right/InventoryMC/VB" instance=ExtResource( 4 )]
+margin_right = 109.0
+margin_bottom = 48.0
+alignment = 1
+
+[node name="ItemHBox2" parent="HB/Right/InventoryMC/VB" instance=ExtResource( 4 )]
+margin_top = 64.0
+margin_right = 109.0
+margin_bottom = 112.0
+alignment = 1
