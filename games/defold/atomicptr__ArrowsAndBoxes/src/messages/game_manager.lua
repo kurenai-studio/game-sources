@@ -1,0 +1,16 @@
+return {
+    on_level_loaded = hash "GameManager::OnLevelLoaded",
+    on_level_tile_hovering = hash "GameManager::OnLevelTileHovering",
+    on_move_player_done = hash "GameManager::OnMovePlayerDone",
+    on_goal_reached = hash "GameManager::OnGoalReached",
+    on_rewind_done = hash "GameManager::OnRewindDone",
+    on_arrow_fired = hash "GameManager::OnArrowFired",
+    on_game_over = hash "GameManager::OnGameOver",
+    restart_game = hash "GameManager::RestartGame",
+    sfx_move_player = hash "GameManager::SfxMovePlayer",
+    sfx_move_player_failed = hash "GameManager::SfxMovePlayerFailed",
+    sfx_move_box = hash "GameManager::SfxMoveBox",
+    sfx_goal_reached = hash "GameManager::SfxGoalReached",
+    sfx_impact_plank = hash "GameManager::SfxImpactPlank",
+    sfx_burn = hash "GameManager::SfxBurn",
+}

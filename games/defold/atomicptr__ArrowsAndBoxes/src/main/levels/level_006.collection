@@ -1,0 +1,23 @@
+name: "level_006"
+instances {
+  id: "level_factory"
+  prototype: "/main/entities/level_factory.go"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "level"
+  data: "components {\n"
+  "  id: \"tilemap\"\n"
+  "  component: \"/main/levels/level_006.tilemap\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/main/components/level.script\"\n"
+  "  properties {\n"
+  "    id: \"num_arrows\"\n"
+  "    value: \"1.0\"\n"
+  "    type: PROPERTY_TYPE_NUMBER\n"
+  "  }\n"
+  "}\n"
+  ""
+}

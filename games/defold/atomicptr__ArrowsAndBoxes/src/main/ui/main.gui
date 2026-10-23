@@ -1,0 +1,408 @@
+script: "/main/ui/main.gui_script"
+fonts {
+  name: "kenney_pixel_square"
+  font: "/assets/fonts/main.font"
+}
+textures {
+  name: "input_prompts"
+  texture: "/assets/textures/input_prompts.tilesource"
+}
+textures {
+  name: "arrows"
+  texture: "/assets/arrows.tilesource"
+}
+nodes {
+  position {
+    x: 320.0
+    y: 180.0
+  }
+  size {
+    x: 640.0
+    y: 360.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -320.0
+    y: -180.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "gamepad_prompts"
+  pivot: PIVOT_SW
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 32.0
+    y: 48.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "gamepad_prompts_anchor"
+  parent: "gamepad_prompts"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 24.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "gp_reset_box"
+  parent: "gamepad_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "input_prompts/gamepad_reset"
+  id: "gp_reset_icon"
+  parent: "gp_reset_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Reset"
+  font: "kenney_pixel_square"
+  id: "gp_reset_text"
+  pivot: PIVOT_W
+  parent: "gp_reset_box"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "gp_rewind_box"
+  parent: "gamepad_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "input_prompts/gamepad_rewind"
+  id: "gp_rewind_icon"
+  parent: "gp_rewind_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Rewind"
+  font: "kenney_pixel_square"
+  id: "gp_rewind_text"
+  pivot: PIVOT_W
+  parent: "gp_rewind_box"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -24.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "gp_interact_box"
+  parent: "gamepad_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "input_prompts/gamepad_interact"
+  id: "gp_interact_icon"
+  parent: "gp_interact_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Shoot Arrow"
+  font: "kenney_pixel_square"
+  id: "gp_interact_text"
+  pivot: PIVOT_W
+  parent: "gp_interact_box"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -320.0
+    y: -180.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "keyboard_prompts"
+  pivot: PIVOT_SW
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 32.0
+    y: 48.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "keyboard_prompts_anchor"
+  parent: "keyboard_prompts"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 24.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "kb_reset_box"
+  parent: "keyboard_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 16.0
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_reset"
+  id: "kb_reset_icon"
+  parent: "kb_reset_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 30.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Reset"
+  font: "kenney_pixel_square"
+  id: "kb_reset_text"
+  pivot: PIVOT_W
+  parent: "kb_reset_box"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "kb_rewind_box"
+  parent: "keyboard_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_rewind1"
+  id: "kb_rewind_icon"
+  parent: "kb_rewind_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 30.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Rewind"
+  font: "kenney_pixel_square"
+  id: "kb_rewind_text"
+  pivot: PIVOT_W
+  parent: "kb_rewind_box"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 16.0
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_rewind2"
+  id: "kb_rewind_icon2"
+  parent: "kb_rewind_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -24.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "kb_interact_box"
+  parent: "keyboard_prompts_anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_interact1"
+  id: "kb_interact_icon1"
+  parent: "kb_interact_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 30.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Shoot Arrow"
+  font: "kenney_pixel_square"
+  id: "kb_interact_text"
+  pivot: PIVOT_W
+  parent: "kb_interact_box"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 16.0
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_interact2"
+  id: "kb_interact_icon2"
+  parent: "kb_interact_box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -320.0
+    y: 180.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "hud"
+  pivot: PIVOT_NW
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 32.0
+    y: -24.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "arrows"
+  parent: "hud"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "arrows/arrow_right_normal"
+  id: "arrows_icon"
+  parent: "arrows"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 48.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Arrows: 0"
+  font: "kenney_pixel_square"
+  id: "arrows_text"
+  parent: "arrows"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

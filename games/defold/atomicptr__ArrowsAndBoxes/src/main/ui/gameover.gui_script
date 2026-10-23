@@ -1,0 +1,55 @@
+local input = require "input.input"
+
+local msg_game_manager = require "messages.game_manager"
+local msg_defold = require "messages.defold"
+local msg_gameover = require "messages.gameover"
+
+---@class GameOver
+---@field gamepad_mode         boolean
+---@field node_keyboard_button userdata
+---@field node_gamepad_button  userdata
+---@field text_arrows          userdata
+
+---@param self GameOver
+function init(self)
+    self.gamepad_mode = false
+
+    self.node_keyboard_button = gui.get_node "keyboard_button"
+    self.node_gamepad_button = gui.get_node "gamepad_button"
+
+    msg.post(".", msg_defold.go.acquire_input_focus)
+end
+
+---@param self GameOver
+local function update_gamepad_state(self)
+    gui.set_enabled(self.node_keyboard_button, not self.gamepad_mode)
+    gui.set_enabled(self.node_gamepad_button, self.gamepad_mode)
+end
+
+---@param self      GameOver
+---@param action_id hash
+---@param action    on_input.action
+function on_input(self, action_id, action)
+    if action_id == input.interact then
+        msg.post("main:/game", msg_game_manager.restart_game)
+        return
+    end
+
+    if action.gamepad then
+        self.gamepad_mode = true
+    else
+        self.gamepad_mode = false
+    end
+
+    update_gamepad_state(self)
+end
+
+---@param self       GameOver
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_gameover.set_gamepad_mode then
+        self.gamepad_mode = message.gamepad_mode or false
+    end
+end

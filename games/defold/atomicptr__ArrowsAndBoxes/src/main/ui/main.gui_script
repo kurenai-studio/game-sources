@@ -1,0 +1,47 @@
+local msg_main_gui = require "messages.main_gui"
+
+---@class MainGui
+---@field gamepad_mode          boolean
+---@field node_keyboard_prompts userdata
+---@field node_gamepad_prompts  userdata
+---@field text_arrows           userdata
+
+---@param self MainGui
+function init(self)
+    self.gamepad_mode = false
+
+    self.node_keyboard_prompts = gui.get_node "keyboard_prompts"
+    self.node_gamepad_prompts = gui.get_node "gamepad_prompts"
+    self.text_arrows = gui.get_node "arrows_text"
+
+    msg.post(".", "acquire_input_focus")
+end
+
+---@param self MainGui
+local function update_gamepad_state(self)
+    gui.set_enabled(self.node_keyboard_prompts, not self.gamepad_mode)
+    gui.set_enabled(self.node_gamepad_prompts, self.gamepad_mode)
+end
+
+---@param self      MainGui
+---@param action_id hash
+---@param action    on_input.action
+function on_input(self, action_id, action)
+    if action.gamepad then
+        self.gamepad_mode = true
+    else
+        self.gamepad_mode = false
+    end
+
+    update_gamepad_state(self)
+end
+
+---@param self       MainGui
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_main_gui.update_arrows_hud then
+        gui.set_text(self.text_arrows, string.format("Arrows: %d", message.value or 0))
+    end
+end

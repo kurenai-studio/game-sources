@@ -1,0 +1,45 @@
+image: "/assets/player.png"
+tile_width: 48
+tile_height: 48
+animations {
+  id: "idle_left"
+  start_tile: 1
+  end_tile: 12
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 10
+  flip_horizontal: 1
+}
+animations {
+  id: "idle_right"
+  start_tile: 1
+  end_tile: 12
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 10
+}
+animations {
+  id: "run_left"
+  start_tile: 13
+  end_tile: 17
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 10
+  flip_horizontal: 1
+}
+animations {
+  id: "run_right"
+  start_tile: 13
+  end_tile: 17
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 10
+}
+animations {
+  id: "shoot_left"
+  start_tile: 25
+  end_tile: 34
+  flip_horizontal: 1
+}
+animations {
+  id: "shoot_right"
+  start_tile: 25
+  end_tile: 34
+}
+extrude_borders: 2

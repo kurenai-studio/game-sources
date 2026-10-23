@@ -1,0 +1,141 @@
+script: "/main/ui/gameover.gui_script"
+fonts {
+  name: "main"
+  font: "/assets/fonts/main.font"
+}
+textures {
+  name: "input_prompts"
+  texture: "/assets/textures/input_prompts.tilesource"
+}
+textures {
+  name: "screen"
+  texture: "/assets/textures/screen.atlas"
+}
+nodes {
+  position {
+    x: 320.0
+    y: 180.0
+  }
+  type: TYPE_BOX
+  texture: "screen/screen"
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 38.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Thank you for playing Arrows and Boxes!"
+  font: "main"
+  id: "thanks_text"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -164.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "With love by <color=#e53b44>@atomicptr</color> and <color=#e53b44>@Waffeln3210</color>"
+  font: "main"
+  id: "made_by_text"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -89.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Press        to restart"
+  font: "main"
+  id: "resume_text"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -15.0
+    y: -89.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/gamepad_interact"
+  id: "gamepad_button"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -89.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "keyboard_button"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -21.0
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_interact1"
+  id: "kb1"
+  parent: "keyboard_button"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -5.0
+  }
+  type: TYPE_BOX
+  texture: "input_prompts/keyboard_interact2"
+  id: "kb2"
+  parent: "keyboard_button"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

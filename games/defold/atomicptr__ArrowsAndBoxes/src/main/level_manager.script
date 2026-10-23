@@ -1,0 +1,120 @@
+local next_level_map = require "main.levels.levels_map"
+
+local msg_defold = require "messages.defold"
+local msg_game_manager = require "messages.game_manager"
+local msg_level = require "messages.level"
+local msg_level_manager = require "messages.level_manager"
+
+---@class LevelManager
+---@field current?  string
+---@field level_id? url
+
+---@param self LevelManager
+---@return string
+local function level_proxy(self)
+    return string.format("main:/levels#level_%s", self.current)
+end
+
+---@param self      LevelManager
+---@param path      string|userdata
+---@param fragment? string|userdata
+local function level_url(self, path, fragment)
+    return msg.url(string.format("level_%s", self.current), path, fragment)
+end
+
+---@param self LevelManager
+local function unload_level(self)
+    if not self.current then
+        return
+    end
+
+    msg.post(level_proxy(self), msg_defold.collectionproxy.disable)
+    msg.post(level_proxy(self), msg_defold.collectionproxy.final)
+    msg.post(level_proxy(self), msg_defold.collectionproxy.unload)
+    self.current = nil
+end
+
+---@param self       LevelManager
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_level_manager.load_level then
+        unload_level(self)
+
+        self.current = message.level
+        assert(self.current)
+
+        print("load level", self.current)
+
+        msg.post(level_proxy(self), msg_defold.collectionproxy.load)
+    elseif message_id == msg_level_manager.load_next_level then
+        if not self.current then
+            self.current = "001"
+        end
+
+        local next = next_level_map[hash(self.current)]
+
+        if not next then
+            next = "001"
+        end
+
+        if next == "gameover" then
+            unload_level(self)
+            msg.post("main:/game", msg_game_manager.on_game_over)
+            return
+        end
+
+        msg.post(".", msg_level_manager.load_level, {
+            level = next,
+        })
+    elseif message_id == msg_level_manager.level_reset then
+        msg.post(".", msg_level_manager.load_level, {
+            level = self.current,
+        })
+    elseif message_id == msg_defold.collectionproxy.proxy_loaded then
+        msg.post(sender, msg_defold.collectionproxy.init)
+        msg.post(sender, msg_defold.collectionproxy.enable)
+
+        msg.post(level_url(self, "/level"), msg_level.setup)
+    elseif message_id == msg_level_manager.on_level_setup_done then
+        self.level_id = sender
+
+        local p = go.get_position()
+
+        msg.post("main:/game#manager", msg_game_manager.on_level_loaded, {
+            map_center_pos = vmath.vector3(p.x + (message.width * 0.5), p.y + (message.height * 0.5), p.z),
+        })
+    elseif message_id == msg_level_manager.move_player then
+        if not self.level_id then
+            msg.post(sender, msg_game_manager.on_move_player_done)
+            return
+        end
+
+        ---@type Direction
+        local direction = message.direction
+        assert(direction ~= nil)
+
+        msg.post(self.level_id, msg_level.move_player, {
+            direction = direction,
+        })
+    elseif message_id == msg_level_manager.rewind_turn then
+        if not self.level_id then
+            msg.post(sender, msg_game_manager.on_rewind_done, {
+                rewinded = false,
+            })
+            return
+        end
+
+        msg.post(self.level_id, msg_level.rewind)
+    elseif message_id == msg_level_manager.fire_arrow then
+        if not self.level_id then
+            msg.post(sender, msg_game_manager.on_arrow_fired, {
+                fired = false,
+            })
+            return
+        end
+
+        msg.post(self.level_id, msg_level.fire_arrow)
+    end
+end
