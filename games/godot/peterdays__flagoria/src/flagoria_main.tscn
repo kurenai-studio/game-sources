@@ -1,0 +1,150 @@
+[gd_scene load_steps=10 format=3 uid="uid://cxtnu53ko1bon"]
+
+[ext_resource type="Script" path="res://flagoria_main.gd" id="1_p55uv"]
+[ext_resource type="Script" path="res://addons/virtual_joystick/scripts/virtual_joystick.gd" id="2_54anv"]
+[ext_resource type="Texture2D" uid="uid://ch2ofsrmxbvo6" path="res://art/kenney_particle-pack/PNG (Transparent)/magic_03.png" id="3_rrhbk"]
+[ext_resource type="TileSet" path="res://art/flagoria/flagoria_tiles_v3.tres" id="4_tiles"]
+[ext_resource type="Script" path="res://Scripts/MainMenu.gd" id="5_u0yu1"]
+[ext_resource type="Theme" path="res://art/ui/main_menu_theme.tres" id="6_menu"]
+[ext_resource type="Script" path="res://Scripts/TileMap.gd" id="7_n5hto"]
+[ext_resource type="Script" path="res://TouchScreenButton.gd" id="7_vw8yj"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bm55c"]
+radius = 250.0
+
+[node name="Flagoria" type="Node2D"]
+script = ExtResource("1_p55uv")
+
+[node name="CanvasLayer1" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="player_joystick" type="Node2D" parent="CanvasLayer1"]
+z_index = 4
+position = Vector2(77, 201)
+scale = Vector2(0.4, 0.4)
+script = ExtResource("2_54anv")
+
+[node name="TouchScreenButton" type="TouchScreenButton" parent="CanvasLayer1"]
+position = Vector2(373, 177)
+scale = Vector2(0.1, 0.1)
+texture_normal = ExtResource("3_rrhbk")
+shape = SubResource("CircleShape2D_bm55c")
+script = ExtResource("7_vw8yj")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="worldMap" type="TileMap" parent="World"]
+tile_set = ExtResource("4_tiles")
+format = 2
+layer_0/name = "ground"
+layer_0/z_index = -1
+layer_1/name = "foliage"
+layer_1/enabled = true
+layer_1/modulate = Color(1, 1, 1, 1)
+layer_1/y_sort_enabled = false
+layer_1/y_sort_origin = 0
+layer_1/z_index = 1
+layer_1/tile_data = PackedInt32Array()
+layer_2/name = "ground_decor"
+layer_2/enabled = true
+layer_2/modulate = Color(1, 1, 1, 1)
+layer_2/y_sort_enabled = false
+layer_2/y_sort_origin = 0
+layer_2/z_index = -1
+layer_2/tile_data = PackedInt32Array()
+script = ExtResource("7_n5hto")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="World"]
+_spawnable_scenes = PackedStringArray("res://Player/character_body_2d.tscn")
+spawn_path = NodePath("..")
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="."]
+
+[node name="MainMenu" type="PanelContainer" parent="CanvasLayer2"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("6_menu")
+script = ExtResource("5_u0yu1")
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer2/MainMenu"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer2/MainMenu/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Flagoria"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MapSettingsButton" type="Button" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Map Settings"
+
+[node name="HostButton" type="Button" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Join"
+
+[node name="AddressEntry" type="LineEdit" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Enter address to join here"
+alignment = 1
+
+[node name="MusicVolumeRow" type="HBoxContainer" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/MusicVolumeRow"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicVolume" type="HSlider" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/MusicVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+
+[node name="MusicValue" type="Label" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/MusicVolumeRow"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SFXVolumeRow" type="HBoxContainer" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/SFXVolumeRow"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "Sound effects"
+
+[node name="SFXVolume" type="HSlider" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/SFXVolumeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+
+[node name="SFXValue" type="Label" parent="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/SFXVolumeRow"]
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[connection signal="pressed" from="CanvasLayer1/TouchScreenButton" to="CanvasLayer1/TouchScreenButton" method="_on_pressed"]
+[connection signal="pressed" from="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/MapSettingsButton" to="CanvasLayer2/MainMenu" method="_on_map_settings_pressed"]
+[connection signal="pressed" from="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/HostButton" to="CanvasLayer2/MainMenu" method="_on_host_button_pressed"]
+[connection signal="pressed" from="CanvasLayer2/MainMenu/MarginContainer/VBoxContainer/JoinButton" to="CanvasLayer2/MainMenu" method="_on_join_button_pressed"]

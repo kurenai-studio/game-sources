@@ -1,0 +1,109 @@
+[gd_scene load_steps=3 format=3 uid="uid://dj8ld1eu80k6b"]
+
+[ext_resource type="TileSet" path="res://art/flagoria/flagoria_tiles_v3.tres" id="2_tiles"]
+
+[sub_resource type="GDScript" id="GDScript_g08kw"]
+script/source = "extends TileMap
+
+var rng = RandomNumberGenerator.new()
+var count = 0
+var moisture = FastNoiseLite.new()
+var temperature = FastNoiseLite.new()
+var altitude = FastNoiseLite.new()
+var items_chance = FastNoiseLite.new()
+const CHUNK_WIDTH = 32
+const CHUNK_HEIGHT = 32
+var player_spawned = false
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	items_chance.frequency = 1
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+#	if not is_multiplayer_authority(): return
+
+	count += 1
+	if (count % 15) == 0 and player_spawned:
+
+		count = 0
+		var curr_player
+		curr_player = get_parent().get_child(2)
+
+#		var curr_player = get_parent().get_child(2)
+		generate_chunk.rpc(curr_player.position)
+#	else:
+#		var current_player_id = str(multiplayer.get_unique_id())
+#		generate_chunk(Vector2(250, 250))
+
+@rpc(\"any_peer\", \"call_local\")
+func generate_chunk(position):
+	var tile_pos = local_to_map(position)
+	for x in range(CHUNK_WIDTH):
+		for y in range(CHUNK_HEIGHT):
+			var new_x = tile_pos.x - CHUNK_WIDTH/2 + x
+			var new_y = tile_pos.y - CHUNK_HEIGHT/2 + y
+			var moist = moisture.get_noise_2d(new_x, new_y)
+			var temp = temperature.get_noise_2d(new_x, new_y)
+			var alt = altitude.get_noise_2d(new_x, new_y)
+			var chance = items_chance.get_noise_2d(new_x, new_y)
+			
+			set_tile_type_z0(Vector2i(new_x, new_y), alt, moist, temp, chance)
+			set_tile_type_z1(Vector2i(new_x, new_y), alt, moist, temp, chance)
+
+
+func set_tile_type_z0(pos_vec, alt, moist, temp, chance):
+	var tile_vec = get_random_ground_vec(chance)
+	if alt <= 0.2:  # water
+		tile_vec = TileCatalog.WATER
+	elif alt > 0.2 and alt < 0.25: # sand
+		tile_vec = TileCatalog.SAND
+	elif alt > 0.25 and moist < 0:  # swamp
+		if alt < 0.26 and chance < 0:
+			tile_vec = TileCatalog.SWAMP_SPECIAL
+		else:
+			tile_vec = TileCatalog.SWAMP
+
+	set_cell(0, pos_vec, TileCatalog.SOURCE_ID, tile_vec)
+
+func get_random_ground_vec(chance):
+	var vec = TileCatalog.GRASS_A
+	if chance < -0.25:
+		vec = TileCatalog.GRASS_A
+	elif chance < 0.25:
+		vec = TileCatalog.GRASS_B
+	elif chance < 0.75:
+		vec = TileCatalog.GRASS_C
+	else:
+		vec = TileCatalog.GRASS_D
+		
+	return vec
+
+func set_tile_type_z1(pos_vec, alt, moist, temp, chance):
+	
+	if moist > 0 and alt > 0.3 and alt <= 0.4 and chance > 0:
+		set_cell(1, pos_vec, TileCatalog.SOURCE_ID, TileCatalog.BUSH)
+	elif moist > 0 and alt > 0.4 and chance > 0.3:
+		set_cell(1, pos_vec, TileCatalog.SOURCE_ID, TileCatalog.TREE)
+"
+
+[node name="World" type="Node2D"]
+
+[node name="worldMap" type="TileMap" parent="."]
+tile_set = ExtResource("2_tiles")
+format = 2
+layer_0/name = "ground"
+layer_0/z_index = -1
+layer_1/name = "foliage"
+layer_1/enabled = true
+layer_1/modulate = Color(1, 1, 1, 1)
+layer_1/y_sort_enabled = false
+layer_1/y_sort_origin = 0
+layer_1/z_index = 1
+layer_1/tile_data = PackedInt32Array()
+script = SubResource("GDScript_g08kw")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("..")
