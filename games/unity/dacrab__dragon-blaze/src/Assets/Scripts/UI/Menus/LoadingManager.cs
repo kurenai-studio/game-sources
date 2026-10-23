@@ -1,0 +1,103 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Core.Constants;
+using Core.Events;
+using Core.Services;
+using UI.Managers;
+
+namespace UI.Menus
+{
+    public sealed class LoadingManager : MonoBehaviour, ISceneLoader
+    {
+        [SerializeField] float loadingProgressThreshold = 0.9f;
+        [SerializeField] float minimumLoadingTime = 0.3f;
+
+        static LoadingManager? instance;
+        bool isLoading;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Bootstrap()
+        {
+            if (instance != null) return;
+            _ = new GameObject(nameof(LoadingManager)).AddComponent<LoadingManager>();
+        }
+
+        void Awake()
+        {
+            if (instance != null) { Destroy(gameObject); return; }
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+            ServiceLocator.Register<ISceneLoader>(this);
+        }
+
+        void OnDestroy()
+        {
+            if (instance != this) return;
+            instance = null;
+            ServiceLocator.Unregister<ISceneLoader>();
+        }
+
+        void OnEnable() => EventBus.Subscribe<LevelCompletedEvent>(OnLevelCompleted);
+        void OnDisable() => EventBus.Unsubscribe<LevelCompletedEvent>(OnLevelCompleted);
+
+        void OnLevelCompleted(LevelCompletedEvent _) => LoadNextLevel();
+
+        void ISceneLoader.LoadNextLevel() => LoadNextLevel();
+        void ISceneLoader.LoadScene(string? sceneName) => _ = LoadAsync(sceneName);
+
+        void LoadNextLevel()
+        {
+            string active = SceneManager.GetActiveScene().name;
+            if (GameConfig.Default.TryGetNextLevel(active, out var next)) _ = LoadAsync(next);
+            else Debug.LogWarning($"[LoadingManager] No next level configured after '{active}'.");
+        }
+
+        async Awaitable LoadAsync(string? sceneName)
+        {
+            if (isLoading) return;
+            isLoading = true;
+            try
+            {
+                var ui = FindFirstObjectByType<UIManager>();
+                ui?.ShowLoadingScreen(true);
+
+                if (string.IsNullOrEmpty(sceneName))
+                {
+                    Debug.LogWarning("[LoadingManager] No scene name provided; falling back to first level.");
+                    sceneName = GameConfig.Default.FirstLevelSceneName;
+                }
+                var op = string.IsNullOrEmpty(sceneName) ? null : SceneManager.LoadSceneAsync(sceneName);
+                if (op == null)
+                {
+                    Debug.LogWarning($"[LoadingManager] Scene '{sceneName}' is not in Build Settings; falling back to first level.");
+                    var fallback = GameConfig.Default.FirstLevelSceneName;
+                    if (string.IsNullOrEmpty(fallback))
+                    {
+                        ui?.ShowLoadingScreen(false);
+                        return;
+                    }
+                    op = SceneManager.LoadSceneAsync(fallback);
+                    if (op == null)
+                    {
+                        ui?.ShowLoadingScreen(false);
+                        return;
+                    }
+                }
+                // Scenes in Build Settings cap async progress at 0.9 until allowSceneActivation, so that is "done".
+                op.allowSceneActivation = false;
+
+                while (op.progress < loadingProgressThreshold)
+                {
+                    ui?.UpdateLoadingImage(op.progress / loadingProgressThreshold);
+                    await Awaitable.NextFrameAsync();
+                }
+
+                ui?.UpdateLoadingImage(1f);
+                await Awaitable.WaitForSecondsAsync(minimumLoadingTime);
+                op.allowSceneActivation = true;
+                ui?.ShowLoadingScreen(false);
+            }
+            finally { isLoading = false; }
+        }
+    }
+}
