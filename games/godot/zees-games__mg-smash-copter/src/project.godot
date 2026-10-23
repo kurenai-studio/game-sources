@@ -1,0 +1,32 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="mg-smash-copter"
+config/description="Two to six teams survive on platforms balanced on single pillars while a cannon rains props on them, then fight it out in the corners with random weapons."
+run/main_scene="res://game/sc.tscn"
+config/features=PackedStringArray("4.7")
+
+[audio]
+
+driver/enable_input=true
+
+[importer_defaults]
+
+texture={
+"detect_3d/compress_to": 0
+}
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
