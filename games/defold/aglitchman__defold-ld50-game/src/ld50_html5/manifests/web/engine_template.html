@@ -1,0 +1,152 @@
+<html>
+    <head>
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:creator" content="@aglitchman" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://aglitchman.github.io/defold-ld50-game/" />
+        <meta property="og:title" content="Merge Getaway - LD50 COMPO" />
+        <meta property="og:description" content="The police unexpectedly started pursuing you. Sooner or later... every criminal will get caught! Merge with cars of the same colour to accelerate and to escape from the police! 🚗🚓💨" />
+        <meta property="og:image" content="https://github.com/aglitchman/defold-ld50-game/raw/main/ld50_html5/cover_opengraph.png" />
+        <style>
+            #loading {
+                color: #fff;
+                float: left;
+                font-weight: bold;
+                font-family: sans-serif;
+                font-size: 14px;
+                font-style: normal;
+                font-stretch: normal;
+                line-height: normal;
+                letter-spacing: 0px;
+                padding-top: 12px;
+            }
+            .link,
+            .button,
+            #loading {
+                margin-right: 12px;
+                margin-left: 12px;
+            }
+            .canvas-app-container {
+                background: #3f3f3f;
+                filter: none;
+            }
+            .canvas-app-canvas {
+                background-size: 60%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app-container" class="canvas-app-container" merge="keep">
+            <div id="canvas-container" class="canvas-app-canvas-container">
+                <canvas
+                    id="canvas"
+                    class="canvas-app-canvas"
+                    tabindex="1"
+                    width="{{display.width}}"
+                    height="{{display.height}}"
+                ></canvas>
+            </div>
+            <div class="buttons-background">
+                {{#html5.show_fullscreen_button}}
+                <div class="button" onclick="Module.toggleFullscreen();">Fullscreen</div>
+                {{/html5.show_fullscreen_button}}
+                {{#html5.show_made_with_defold}}
+                <div id="loading">Loading... 0%</div>
+                <div class="link">
+                    Built with <a href="https://github.com/indiesoftby/defold-scene3d" target="_blank">Scene3D</a> 🌟 
+                    LD50 - <a href="https://ldjam.com/events/ludum-dare/50/merge-getaway" target="_blank">Leave your feedback!</a> 💛
+                </div>
+                {{/html5.show_made_with_defold}}
+            </div>
+        </div>
+        <script id="engine-setup" type="text/javascript">
+            // Defold 1.3.0 only
+            EngineLoader.stream_wasm = false;
+
+            (function () {
+                var statusText;
+                var setStatus = function (status) {
+                    statusText = status;
+                    var el = document.getElementById("loading");
+                    if (el) el.innerText = status;
+                };
+
+                Progress.addListener(function (percentage) {
+                    if (isNaN(percentage)) return;
+                    var el = document.getElementById("loading");
+                    if (el && !statusText) {
+                        if (percentage == 100) {
+                            el.innerText = "";
+                        } else {
+                            el.innerText = "Loading... " + percentage.toFixed(0) + "%";
+                        }
+                    }
+                });
+
+                extra_params.unsupported_webgl_callback = function () {
+                    setStatus("ERROR: WebGL is not supported by your browser.");
+                };
+
+                extra_params.can_not_download_file_callback = function () {
+                    setStatus("ERROR: Can't download files.");
+                };
+            })();
+        </script>
+        <script type="text/javascript">
+            // Pre-1.3.1 workaround for vsync=1
+            (function () {
+                var oldRAF = window.requestAnimationFrame;
+                var dummyFunc = function () {};
+                var prevFrameTime = 0;
+                var accumulator = 0;
+                var FPS = 60; // ("{{display.update_frequency}}" | 0);
+                var VSYNC = "{{display.vsync}}" == "true";
+                if (!FPS || !VSYNC) {
+                    console.log("Semi-fixed timestep requires display.vsync = 1, display.update_frequency > 60");
+                    return;
+                } else {
+                    console.log("Semi-fixed timestep is ON.");
+                }
+                var FIXED_DT = 1000 / FPS;
+                var disableRender = false;
+                var enableRender = function () {
+                    GLFW.params[0x00020003] = false;
+                };
+                Module.__fixedUpdateSupportFunc = function () {
+                    if (disableRender) {
+                        GLFW.params[0x00020003] = true;
+                    }
+                };
+                window.requestAnimationFrame = function (callback) {
+                    oldRAF(function () {
+                        if (!prevFrameTime) prevFrameTime = new Date().getTime() - FIXED_DT;
+                        var frameTime = new Date().getTime();
+
+                        var dt = frameTime - prevFrameTime;
+                        prevFrameTime = frameTime;
+
+                        if (dt > FIXED_DT * 4) dt = FIXED_DT * 4;
+                        accumulator += dt;
+
+                        var prevFunc = window.requestAnimationFrame;
+                        window.requestAnimationFrame = dummyFunc;
+
+                        while (accumulator >= FIXED_DT + FIXED_DT) {
+                            accumulator -= FIXED_DT;
+                            disableRender = true;
+                            callback();
+                            enableRender();
+                        }
+
+                        accumulator -= FIXED_DT;
+                        // TODO: Support 75Hz and more monitors
+                        if (accumulator < 0) accumulator = 0;
+                        disableRender = false;
+                        window.requestAnimationFrame = prevFunc;
+                        callback();
+                    });
+                };
+            })();
+        </script>
+    </body>
+</html>
