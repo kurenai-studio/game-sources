@@ -1,0 +1,17 @@
+# Bot soak
+
+`./game.sh soak [bowl] [minutes]` runs `tools/soak.tscn`: four bot-driven buses in the real `BfhGame` on one bowl (a map here is a bowl id: `bfh_bowl` by default, `bfh_small_bowl`, `bfh_big_bowl`, or a district id), driven by dot-bot's `DotBotSoak` with dot-spawn's `DotSpawnWatch` for stuck and fell-out verdicts, ticked externally at 64 Hz. The movers are the buses (the bot drivers' vehicles); a mover has a goal while any runner is alive. There is no runner bot in play, so the three runners stand still and rounds end when the buses have run them down. The report is `.godot/test-logs/soak-<bowl>.json` plus one `SOAK {...}` line, and the exit code is 1 on failure. There is no navigation mesh, so off-nav and unreachable are off; the harness does not see this game's combat, so its kill and damage counters stay 0.
+
+**Needs the linked `addons/dot_spawn`** (gitignored like the other links, made by dot-bootstrap or `ln -s ../../dot-spawn/addons/dot_spawn addons/dot_spawn`; used by the tool only, never by the game), and an `--import` after adding it.
+
+Object growth is allowed 40 percent (the default is 25), as in the other games' soaks.
+
+First run, 2026-10-22, 1 simulated minute per bowl: no fell-out, no object growth, tick p95 0.5 to 0.7 ms, worst tick 3.6 ms, one round each (stationary runners on a one-minute run).
+
+- **The first run's stuck verdicts were mostly the harness.** It awaited a physics frame only every 32 sim ticks, but the buses are raycast bodies the engine steps once per physics frame, so every bus moved at about a thirtieth of its speed (0.1 to 0.5 m/s) and read as stuck (`bfh_bowl` d2 11.0 s, `bfh_small_bowl` d0 14.5 s). The tool now awaits every tick (`STEPS_PER_FRAME`), which costs one real minute per simulated minute. `bfh_bowl` then passes.
+- **What was real, fixed 2026-10-22** (all six bowls pass; `--trace` prints each bus once a second: position, speed, quarry, ramp-turn phase, stuck clock). Three causes, none of them the quarry being unreachable:
+  - **The turn's legs braked for ever.** A bus within the 0.8 m margin of something at both ends found each new leg blocked on its first tick, flipped, and braked again with no throttle for the stuck rule to see (small bowl: 27 s in front of the foot). A leg now has to move `RAMP_LEG_MOVED` (0.4 m) before the floor can end it; the stall rule still ends a blocked one.
+  - **A turn that does not finish is given up** after `RAMP_TURN_GIVE_UP` (12 s) and the bus rests from the ramp rules for `RAMP_TURN_REST` (8 s), driving its route or nudge (district turning points with buildings round them shuffled for 40 s: hill town, downtown).
+  - **Rocking in place was not stuck.** The back-off's lurches pass 1 m/s and restarted the stuck clock, so a bus among crates shuffled inside 3 m for 20 s (hill town). `_unstick` now counts a bus asking for throttle that has not left a `PINNED_RADIUS` (3 m) circle for `PINNED_SECONDS` (7) as stuck at any speed.
+  - **Districts run the ramp rules only within `STREET_RAMP_NEAR` (24 m) of the foot**; further out the street route carries the bus (suburb: the open-floor turn drove it into a street 45 m away).
+  - **Tried and dropped: holding a bus's quarry until another is 25 percent nearer** (two runners at near-equal distance flipped the nearest, and the bus was ramp-bound and not by turns). It was not what stuck any bowl, and it dropped `bfh_bowl`'s pack pace in `headless_run` from 5.3 to 4.5 m/s (floor 5.0).
