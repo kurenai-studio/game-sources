@@ -1,0 +1,307 @@
+import './bee-facts.css';
+import { LORE_CARDS, type LoreKind } from './lore';
+
+interface FactSource { label: string; url: string }
+interface BeeFact {
+  id: string;
+  /** Which part of the journal: the bee herself, or the meadow around her. */
+  section: 'bee' | 'meadow' | 'lore';
+  /** Lore pages list the game's lore cards of this kind instead of nature and game notes. */
+  loreKind?: LoreKind;
+  label: string;
+  title: string;
+  scope: string;
+  nature: string;
+  game: string;
+  /** Meadow friends: where and when to look for them in the game. */
+  spotting?: string;
+  sources: readonly FactSource[];
+}
+
+/** Interpretive notes, not simulation rules. Research trail: artifacts/bee-facts-sources.md. */
+export const beeFacts: readonly BeeFact[] = [
+  {
+    id: 'vision', section: 'bee', label: 'A different light', title: 'Flowers in another light.', scope: 'Honeybees',
+    nature: 'Honeybees have ultraviolet, blue and green colour receptors. A flower can show them patterns we cannot see. Ultraviolet is part of a richer visual world, rather than a separate night-vision mode.',
+    game: 'Q makes this difference visible to human eyes. The glowing tips that suggest matching flowers are a game guide, not a literal view through a bee’s eyes.',
+    sources: [{ label: 'Honeybee colour vision · Hempel de Ibarra et al.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4035557/' }],
+  },
+  {
+    id: 'food', section: 'bee', label: 'Two kinds of food', title: 'Sweetness and sunshine.', scope: 'Honeybees & other bees',
+    nature: 'Nectar supplies carbohydrates; pollen supplies protein, fats and other nutrients. Honeybee foragers carry nectar in their crop, and can pass some into the gut to fuel their own flight. Not every collected drop is reserved for the colony.',
+    game: 'Hold F or left mouse to sip nectar on a flower. Nectar feeds your wings and fills the hive’s jar. Pollen fills a separate pouch. The shared harvest goal makes one little journey from several kinds of foraging.',
+    sources: [
+      { label: 'Food for bees · University of Minnesota Extension', url: 'https://extension.umn.edu/agriculture/specialty-crops/pollination/habitat' },
+      { label: 'The complex life of the honey bee · Purdue Extension', url: 'https://ag.purdue.edu/department/extension/ppp/resources/ppp-publications/mobile/ppp-116-pol-91.html' },
+    ],
+  },
+  {
+    id: 'pollen', section: 'bee', label: 'A dusting of gold', title: 'Tiny travellers, carried home.', scope: 'Worker honeybees',
+    nature: 'A honeybee grooms pollen from her body and packs it into baskets on her hind legs. A little nectar helps the grains hold together. Loose grains on the body can also travel between flowers.',
+    game: 'Use W A S D to walk through anthers and collect pollen. Your newest colour gathers on your knuckles; older colours remain as flecks. These visible front-leg grains are a game reminder, not real pollen baskets.',
+    sources: [
+      { label: 'Honeybee basic biology · University of Arizona Extension', url: 'https://extension.arizona.edu/publication/honeybee-series-honeybee-basic-biology' },
+      { label: 'Native pollinators · Agriculture and Agri-Food Canada', url: 'https://www.fs.usda.gov/wildflowers/pollinators/documents/AgCanadaNativePollinators.pdf' },
+    ],
+  },
+  {
+    id: 'pollination', section: 'bee', label: 'One flower to another', title: 'A small visit. A new beginning.', scope: 'Pollination & honeybee foraging',
+    nature: 'Pollination moves pollen from an anther to a receptive stigma; successful fertilization comes later. Honeybees often keep visiting one flower species, helping its pollen reach a compatible flower. This flower constancy is a tendency, not an unbreakable rule.',
+    game: 'Carry pollen to another flower of the same type to help it. Each flower earns one mark in your journal. Real seed formation is more involved than a single landing.',
+    sources: [
+      { label: 'Native pollinators · Agriculture and Agri-Food Canada', url: 'https://www.fs.usda.gov/wildflowers/pollinators/documents/AgCanadaNativePollinators.pdf' },
+      { label: 'Flower constancy · Grüter & Ratnieks', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3306322/' },
+    ],
+  },
+  {
+    id: 'water', section: 'bee', label: 'A sip of water', title: 'Water for a hot day.', scope: 'Honeybees',
+    nature: 'Bees need water as well as food. Honeybee water foragers carry it home in their crop; on hot days the hive spreads it thinly and fans it, cooling the nest as it evaporates, and it thins stored honey for feeding the young. A bee can also cool herself in the heat by pushing a small droplet from her crop and letting it evaporate off her head. They sip from shallow, safe places: dew, raindrops on leaves, damp moss, puddle edges, and the beads plants push out along their leaves on humid mornings.',
+    game: 'Morning dew and raindrops sit on the petals, and small pools gather in low clearings in the grass when it rains. Hold F to sip where there is no nectar in reach, or beside a pool on the ground. Water cools you in the heat but is not food. The pools dry away in the hot spell, so sip while you can. When you are too hot and carrying water for the hive, hold F to spend a drop of it cooling yourself; the hive will then need it topped up.',
+    sources: [
+      { label: 'Water collection cools the hive · AskNature', url: 'https://asknature.org/strategy/water-collection-cools-hive/' },
+      { label: 'Water collection by honey bees · Honey Bee Suite', url: 'https://www.honeybeesuite.com/water-collection/' },
+    ],
+  },
+  {
+    id: 'wetdry', section: 'bee', label: 'Wet and dry summers', title: 'Too much rain, too little.', scope: 'Honeybees and meadow flowers; the game simplifies',
+    nature: 'Rain keeps bees at home: on a wet day the foragers can’t fly, so the colony lives on its stores. A run of wet weather is hard on a hive; in the wet British summer of 2012, beekeepers’ honey yields fell to about a quarter of normal and many had to feed their bees. Rain can also dilute or wash nectar out of open flowers. Drought costs in another way: plants short of water make less nectar, and in one study a third less rain cut the energy in each flower’s nectar by about a third.',
+    game: 'In a hard shower open flowers lose some of their nectar, and you can’t sip nectar while the rain is on them (sip the raindrops as water instead); after the rain the sun brings some of it back. Each day’s rain costs the hive a little from its stores. On very damp ground the grasses crowd out some of the poppies and cornflowers. On parched ground every flower holds less nectar, so you have to visit more of them.',
+    spotting: 'Watch a flower’s nectar bar in a shower, then again once the sun is out. On a dry summer, notice how quickly flowers run empty.',
+    sources: [
+      { label: 'Poor weather threatens bee colonies · The Country Smallholder', url: 'https://thecountrysmallholder.com/grow-and-maintain/poor-weather-threatens-bee-colonies-6221542/' },
+      { label: 'Droughts can reduce the caloric value of flower nectar · Agência FAPESP', url: 'https://agencia.fapesp.br/droughts-can-reduce-the-caloric-value-of-flower-nectar-by-up-to-95-study-finds/55140' },
+    ],
+  },
+  {
+    id: 'weather', section: 'bee', label: 'Shelter from Rain', title: 'Let the shower pass.', scope: 'Bumblebees; game weather is simplified',
+    nature: 'Bumblebees can cope with cool, wet weather. Their hairy bodies and the heat from their flight muscles help; staying still reduces their energy needs. A resting bee is not necessarily in trouble, and different bees tolerate weather differently.',
+    game: 'Press E to land or shelter; press E again once settled to rest. A brief rest spends stored nectar to restore energy and speeds daylight; stillness alone is not food. Rain builds cold and drains energy: leaf undersides and dense grass shelter you, but flowers and leaf tops remain exposed. Blue edges warn of cold or low energy. The rapid cold penalty is a game choice, not a measured bee temperature.',
+    sources: [{ label: 'Bumblebees in bad weather · Bumblebee Conservation Trust', url: 'https://www.bumblebeeconservation.org/learn-about-bumblebees/faqs/bad-weather/' }],
+  },
+  {
+    id: 'wetwings', section: 'bee', label: 'Wet wings', title: 'A raindrop is heavy.', scope: 'Insects in rain; game rules are simplified',
+    nature: 'To a bee, a big raindrop weighs about as much as she does. Mosquitoes survive being hit because they are so light that a drop carries them along instead of striking hard; a bee, about fifty times heavier, takes a real knock. A soaked bee usually cannot fly until she has groomed and dried, which is why bees wait out showers in shelter.',
+    game: 'Flying in the open rain, drops strike now and then: a splash, a knock and wetter wings. Wet wings fly slowly and chill faster, and a run of hits knocks you down into the grass. Groom and dry there before flying again; rest with E to dry faster. The grass keeps off most drops, but a broad leaf is driest.',
+    sources: [
+      { label: 'Mosquitoes survive raindrop collisions · PNAS', url: 'https://www.pnas.org/doi/10.1073/pnas.1205446109' },
+      { label: 'Helping bees in rain and storms · Backyard Beekeeping', url: 'https://backyardbeekeeping.iamcountryside.com/health-pests/bee-weather-series-how-to-help-bees-during-spring-rain-and-storms/' },
+    ],
+  },
+  {
+    id: 'heat', section: 'bee', label: 'Sun & shade', title: 'A moment in the shade.', scope: 'Honeybee research; game heat is simplified',
+    nature: 'Flight muscles produce heat, and sunshine adds warmth. Honeybees can adjust their wingbeats and use evaporative cooling to avoid overheating. Hot, dry conditions also increase the danger of water loss. Their heat balance is more subtle than simply running out of energy in the sun.',
+    game: 'Orange edges warn that you’re overheating. E near a broad leaf tucks you underneath; dense grass near the soil also cools you. Flowers and leaf tops stay exposed. Shade stops the extra drain; nectar restores energy. Press E once settled to rest, using stored nectar while daylight advances. Watch the sun on the day strip: its orange glow and heat waves mark the hot spell. Our fast heat penalty is a game simplification.',
+    sources: [
+      { label: 'Keeping cool in flight · Glass et al.', url: 'https://pubmed.ncbi.nlm.nih.gov/38227669/' },
+      { label: 'Foraging in sun and shade · Kovac & Stabentheiner', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3298660/' },
+    ],
+  },
+  {
+    id: 'home', section: 'bee', label: 'The way home', title: 'A harvest worth sharing.', scope: 'Honeybees',
+    nature: 'Back at the hive, successful honeybee foragers can use a waggle dance to share the direction and distance of a profitable flower patch with nestmates. This is a honeybee behaviour, not a dance performed by every kind of bee.',
+    game: 'When you have enough nectar and pollen to make the hive happy, the R (Return Home) control appears as “Way home” in the UI. Press R for guidance, then follow the hive marker to the meadow edge. Your heavier harvest changes the flight home. One outing stands for a whole day; real trips do not follow this clock. In our ending at the hive, two returning bees perform a simplified, simulated waggle dance, tracing little figure-eights. Their dance is decorative and does not communicate flower locations.',
+    sources: [{ label: 'Decoding waggle dances · University of Sussex', url: 'https://www.sussex.ac.uk/lasi/sussexplan/dances' }],
+  },
+  {
+    id: 'foragers', section: 'bee', label: 'Tired & fallen bees', title: 'A short, busy life.', scope: 'Honeybee workers; game simplified',
+    nature: 'In summer a worker honeybee lives only five or six weeks. She spends her last weeks foraging, and works until she wears out: many die out in the field after hundreds of miles of flight. To fly, her flight muscles must be warmer than about 25 °C, and she warms them by shivering. In cold weather a forager can get chilled away from the hive and be unable to fly home; the bee scientist Martin Lindauer once carried chilled bees back to their hive himself. Bees share food mouth to mouth (trophallaxis), mostly inside the hive. Whole colonies are lost to several causes together: Varroa mites and the viruses they spread, other diseases, pesticides, poor nutrition and lost flowers, and a changing climate.',
+    game: 'Now and then a tired forager rests on a leaf or by a pool, too chilled or worn out to fly, most often after rain or in a hot spell. Land beside her and hold F to share a little nectar from your jar (3%): she grooms, warms her wings with a buzz and flies home, and the results count the hive mates you helped. Sharing out in the meadow is our invention; chilled, grounded bees are real. A fallen bee lies still on her side, and her note says what happened to her: often what you must avoid yourself, like cold rain without shelter or heat without water.',
+    spotting: 'Look on the tops of broad leaves and at the rims of pools, especially after a shower or on a hot day. A tired bee stands upright and now and then shivers her wings; a fallen bee lies on her side.',
+    sources: [
+      { label: 'How long do worker honey bees live? · Bee Health, eXtension', url: 'https://bee-health.extension.org/how-long-do-worker-honey-bees-live' },
+      { label: 'Cold flying foragers (Chilcott & Seeley) · American Bee Journal, 2018', url: 'https://americanbeejournal.mydigitalpublication.com/articles/cold-flying-foragers-honey-bees-in-scotland-seek-water-in-winter' },
+      { label: 'Trophallaxis · Wikipedia', url: 'https://en.wikipedia.org/wiki/Trophallaxis' },
+      { label: 'Factors associated with honey bee colony losses (Hristov et al.) · Veterinary Sciences, 2020', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7712510/' },
+    ],
+  },
+  {
+    id: 'flowers', section: 'meadow', label: 'Three meadow flowers', title: 'Each flower has its gift.', scope: 'Corn poppy, oxeye daisy & cornflower',
+    nature: 'Corn poppies make almost no nectar, but more pollen than almost any other meadow flower; bees carry it home in dark grey loads. What looks like one oxeye daisy is really hundreds of tiny flowers: each white “petal” is one, and the yellow centre is packed with more, each holding a little nectar. A cornflower is a head of small flowers too: the big blue outer ones are only for show, and the nectar lies deep in the narrow tubes of the small purple ones at the centre. These open from the outside in, a ring at a time, over several days. A poppy flower lasts only a day or so: then its petals fall and the seed capsule ripens.',
+    game: 'Each flower gives what its real counterpart does best. Poppies hold the most pollen and no nectar; daisies offer some of each, easy to reach. Cornflowers hold the most nectar, but you must walk onto the centre and sip floret by floret around the ring of open ones, their gold beads showing which still hold some. A poppy you pollinate lets a petal fall a little later, and fallen petals lie in the grass under the flowers. Amounts are simplified.',
+    sources: [
+      { label: 'Food for pollinators: urban meadow nectar and pollen · PLOS One', url: 'https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0158117' },
+      { label: 'Bees love poppies · Buzz About Bees', url: 'https://www.buzzaboutbees.net/Bees-poppies.html' },
+      { label: 'Centaurea cyanus (cornflower) · Wikipedia', url: 'https://en.wikipedia.org/wiki/Centaurea_cyanus' },
+    ],
+  },
+  {
+    id: 'summers', section: 'meadow', label: 'Summer to summer', title: 'Next summer’s meadow.', scope: 'Annual & perennial meadow flowers',
+    nature: 'Corn poppies and cornflowers live a single year. Their flowers must be pollinated by pollen from another plant to set seed, and next summer’s flowers grow from that seed. Poppy seed shakes out of the swaying seed head and mostly lands within a metre or so; some waits in the soil for years. Oxeye daisies are perennials that live on from their roots.',
+    game: 'One day stands for a whole summer. Flowers you pollinate come back in greater numbers next summer, many close by; skipped ones leave gaps. Daisies keep their places. The seed in the soil runs out faster than in nature, so your visits matter more.',
+    sources: [
+      { label: 'Papaver rhoeas (corn poppy) · Wikipedia', url: 'https://en.wikipedia.org/wiki/Papaver_rhoeas' },
+      { label: 'Leucanthemum vulgare (oxeye daisy) · Wikipedia', url: 'https://en.wikipedia.org/wiki/Leucanthemum_vulgare' },
+    ],
+  },
+  {
+    id: 'ladybirds', section: 'meadow', label: 'Aphids & ladybirds', title: 'Small hunters on the stems.', scope: 'Ladybirds (lady beetles) & aphids',
+    nature: 'Aphids suck sap from plant stems, often gathering in clusters on cornflowers and poppies. Sap is the sugar a plant would otherwise spend on its flowers: in one study, honeysuckle flowers on stems damaged by aphids made no nectar at all. Ladybirds, adults and larvae alike, eat them in large numbers. When aphids run short, adult ladybirds also take pollen and nectar from shallow, open flowers, or move on to find more prey.',
+    game: 'Aphid clusters live on poppy and cornflower stems (and now and then a daisy’s); ladybirds walk to them and eat them down, and use daisies as backup food. A stem heavy with aphids leaves its flower less nectar: up to about a third of each sip, shown as a faded stretch of the flower’s nectar bar. When a ladybird eats them down, the nectar comes back. A summer with more of those flowers brings more aphids, and more ladybirds follow.',
+    spotting: 'Look low on the stems of poppies and cornflowers, below the flower heads: green aphid clusters on cornflowers, dark ones on poppies, and the ladybirds nearby. Press Ctrl to drop down and fly slowly past the stems. When aphids are scarce, check the daisy faces too. Fly within a bee’s length or so of one to count it.',
+    sources: [{ label: 'Lady beetles · Colorado State University Extension', url: 'https://extension.colostate.edu/resource/lady-beetles/' }, { label: 'Phloem-feeding herbivores and floral development (Rojas-Nossa et al., Plants, 2021)', url: 'https://www.mdpi.com/2223-7747/10/4/815' }],
+  },
+  {
+    id: 'butterflies', section: 'meadow', label: 'Butterflies', title: 'Warmed by the sun.', scope: 'Meadow butterflies',
+    nature: 'Butterflies drink nectar through a long, coiled proboscis, which reaches deep flowers easily. They need warm flight muscles, so in the morning or after rain they bask with their wings open to the sun. When rain comes, they shelter under leaves or low among the plants, wings closed, and wait. They roost the same way each night, most hanging beneath a leaf, and stay put until the morning warms them.',
+    game: 'Four kinds visit the daisies and cornflowers: common blues, meadow browns, small tortoiseshells and small whites. They sip real nectar, so a flower may be emptier after one visits. In rain, and every night, they hang beneath the broad leaves, then bask before feeding again.',
+    spotting: 'In fine weather, look on daisies and cornflowers, never poppies: a butterfly sits with its wings closed and now and then opens them flat to the sun. Approach gently; it lifts off if you come very close or land on its flower. In a shower, tuck under a broad leaf and look along its underside. Just after rain, they bask with open wings on the flowers.',
+    sources: [
+      { label: 'What do butterflies do when it rains? · Scientific American', url: 'https://www.scientificamerican.com/article/what-do-butterflies-do-wh/' },
+      { label: 'Butterflies: warming up · Lewis Ginter Botanical Garden', url: 'https://www.lewisginter.org/butterflieswarming-up/' },
+    ],
+  },
+  {
+    id: 'moths', section: 'meadow', label: 'Moths', title: 'The night shift.', scope: 'Night-flying moths',
+    nature: 'Most moths fly at night, when the butterflies are roosting. Many visit flowers for nectar, and they carry pollen too, often on their furry chests rather than their tongues. A 2020 study of English farmland found pollen from 47 plant species on night-flying moths, including some that bees and butterflies rarely visit. Many of the flowers moths favour are pale, which shows up in dim light.',
+    game: 'In the night between summers, a few small grey-buff moths come up out of the grass as it gets dark and loop round the flowers in quick, jittery circles, mostly the pale daisies. Now and then one settles on a daisy for a moment. In rain they drop back into the grass, and at dawn they go down to rest out the day.',
+    spotting: 'Watch the daisies as the night falls: the moths are the quick, fluttering specks circling them. Meanwhile the butterflies are asleep under the broad leaves, wings closed. Moths are scenery here, not finds to count.',
+    sources: [
+      { label: 'Moths have a secret but vital role as pollinators in the night · UCL', url: 'https://www.ucl.ac.uk/news/2020/may/moths-have-secret-vital-role-pollinators-night' },
+      { label: 'Moths work the pollination night shift · Smithsonian Magazine', url: 'https://www.smithsonianmag.com/smart-news/moths-work-pollination-night-shift-visiting-some-flowers-bees-skip-180974884/' },
+      { label: 'Roosting in the butterfly garden · Birds & Blooms', url: 'https://www.birdsandblooms.com/gardening/attracting-butterflies/roosting-butterfly-garden/' },
+    ],
+  },
+  {
+    id: 'snails', section: 'meadow', label: 'Banded snails', title: 'Out when it’s damp.', scope: 'Banded snails (Cepaea)',
+    nature: 'Banded snails come in yellow, pink or brown, with up to five dark bands. They are most active at night and in damp weather, and prefer dead plant matter. In heat and drought they seal their shell opening with a dried-mucus lid, often after climbing a stem off the hot ground, and wait for rain. As decomposers, they help return nutrients to the soil.',
+    game: 'Snails crawl out in rain, dew and at dusk, leaving silvery trails; tuck into their shells when it is dry; and climb stems to seal themselves on in the hot spell. Many keep to the damp rims of the rain pools. A thin, dry meadow keeps more of them sealed in.',
+    spotting: 'Best in the shower, in the early-morning dew and at dusk, when they are out and a silvery trail leads to them. Look on and under the broad leaves, low on flower stems, and at the rims of the rain pools in the little grass clearings. In the hot spell, look higher up the stems for a shell sealed with a white lid. Come within a few centimetres to count one; they pull in their tentacles when you are close.',
+    sources: [
+      { label: 'Cepaea nemoralis · Animal Diversity Web', url: 'https://animaldiversity.org/accounts/Cepaea_nemoralis/' },
+      { label: 'Land snails ecology · Carnegie Museum of Natural History', url: 'https://carnegiemnh.org/mollusks/land-snails-ecology/' },
+    ],
+  },
+  {
+    id: 'mushrooms', section: 'meadow', label: 'Mushrooms', title: 'Up after the rain.', scope: 'Fairy ring champignon (Marasmius oreades)',
+    nature: 'The fairy ring champignon is a small, tan mushroom of lawns and meadows, with a cap 1–5 cm across on a tough stem up to 6 cm tall. The mushrooms are only the fruit: the fungus itself is a web of threads in the soil, growing slowly outward, so the mushrooms come up in a ring, often in a band of greener grass. They appear after rain from early summer into autumn. In hot, dry weather they shrivel completely, and when rain soaks them again they swell back to their shape and go on making spores. Rings can grow over 10 m across; one near Belfort in France is about 600 m across and thought to be over 700 years old. In French they are ronds de sorcières, witches’ circles.',
+    game: 'Most come up a few together at the damp edges of the rain pools, after the shower. Somewhere in the open grass there is one full fairy ring, in a band of short, dark grass. They dry and brown in the hot spell, and revive when it rains again. To a bee a cap is as big as an umbrella.',
+    spotting: 'After the shower, look along the edges of the rain pools for a few pale tan caps together. The fairy ring is rarer: from the air, look over the open grass for a circle of short, darker grass, and fly down to see its mushrooms. Before the rain there is only the ring of grass. Come close to count them.',
+    sources: [
+      { label: 'Fairy ring · Wikipedia', url: 'https://en.wikipedia.org/wiki/Fairy_ring' },
+      { label: 'Marasmius oreades · Wikipedia', url: 'https://en.wikipedia.org/wiki/Marasmius_oreades' },
+      { label: 'Fairy ring champignon · First Nature', url: 'https://www.first-nature.com/fungi/marasmius-oreades.php' },
+    ],
+  },
+  {
+    id: 'caterpillars', section: 'meadow', label: 'Caterpillars', title: 'Eating in from the edge.', scope: 'Moth caterpillars',
+    nature: 'Caterpillars are the larvae of moths and butterflies. They chew leaves with strong jaws while an upper lip holds the leaf in place, often working in from the edge and leaving curved bites and irregular holes. They grow quickly, shedding their skin about five times, then turn into a pupa and finally an adult. Many are green, which hides them on the leaf.',
+    game: 'A few caterpillars live on the broad leaves, each lying along a leaf edge and eating in, so the bites in the leaf grow while you watch. When one bite is big enough it moves a little way along and starts another.',
+    spotting: 'Look for broad leaves with bites taken out of the edge, then check along that edge on top of the leaf: the caterpillar is green on green. From underneath, sheltering, the bites show as gaps of sky. Come close to count one.',
+    sources: [
+      { label: 'Foliage-feeding caterpillars · UC IPM', url: 'https://ipm.ucanr.edu/home-and-landscape/foliage-feeding-caterpillars/' },
+      { label: 'What do moths eat? · Woodland Trust', url: 'https://www.woodlandtrust.org.uk/blog/2022/05/what-do-moths-eat-feeding-lifecycle-and-other-facts/' },
+    ],
+  },
+  {
+    id: 'ants', section: 'meadow', label: 'Ants', title: 'Keepers of the aphids.', scope: 'Black garden ants (Lasius niger)',
+    nature: 'Black garden ants are 3.5–5 mm long. In meadows they often build low mounds of soil where the ground is damp and the plants are dense. They lay scent trails between the nest and their food, and these keep their paths short and busy. Much of what they eat is honeydew, the sugary liquid aphids give off: the ants guard aphid clusters from predators such as ladybirds, and a large colony can gather about a litre of it in a summer. They drink flower nectar too, but they are poor pollinators: they walk rather than fly between flowers and carry little pollen, so they are called nectar thieves.',
+    game: 'A few colonies live in each meadow, each with a trail from its mound up a poppy or cornflower stem to the aphids. The ants walk around a bee resting in the grass, stop for a moment when two meet head-on, and some carry a grain of soil. When it rains, they go back into the mound until it clears. Now and then a small party climbs a nearby daisy or cornflower to drink its nectar: while they crowd it a bee can’t sip there, and they slowly empty it. In a thin meadow there are fewer flowers to share, so more are raided.',
+    spotting: 'Walk in the grass or fly low by the stems of poppies and cornflowers. Look for a small, bare mound of crumbly soil with a line of tiny dark ants leading from it to a stem and up to the aphids. One trail starts near the first flowers you meet. Come close to the mound or the trail to count it. In a shower the trail goes quiet, so look again once it has cleared. For nectar thieves, look for a few tiny dark ants on a daisy’s yellow disc.',
+    sources: [
+      { label: 'Lasius niger · AntWiki', url: 'https://www.antwiki.org/wiki/Lasius_niger' },
+      { label: 'Ants · Royal Horticultural Society', url: 'https://www.rhs.org.uk/biodiversity/ants' },
+    ],
+  },
+  {
+    id: 'lore-beliefs', section: 'lore', loreKind: 'belief', label: 'Old beliefs & stories', title: 'What people told of bees.', scope: 'Customs, myths, scripture, saints and emblems',
+    nature: 'For thousands of years people have lived beside bees, and told stories about them: customs for the household hive, myths of gods and heroes, saints and their swarms. These are beliefs and stories, not bee biology; the other pages say what real bees do.',
+    game: 'These cards appear now and then while time passes: on a rest, in the quiet view over the meadow, and in the night between summers. Bee lore can be turned off in the field guide.',
+    sources: [
+      { label: 'Bees in mythology · Wikipedia', url: 'https://en.wikipedia.org/wiki/Bees_in_mythology' },
+      { label: 'Telling the bees: the folklore of bees and beekeeping · Folklore Thursday', url: 'https://folklorethursday.com/folklife/telling-the-bees-the-folklore-of-bees-and-beekeeping/' },
+      { label: 'Telling the bees · Wikipedia', url: 'https://en.wikipedia.org/wiki/Telling_the_bees' },
+    ],
+  },
+  {
+    id: 'lore-thought', section: 'lore', loreKind: 'thought', label: 'Once thought', title: 'Old science, gently corrected.', scope: 'What people once believed about real bees',
+    nature: 'Careful watchers got a great deal right about bees long ago, and some things wrong. Each of these cards says what was believed, and what is known now.',
+    game: 'Some cards come with the weather: stones for ballast in a gale, bees staying home before rain.',
+    sources: [
+      { label: 'The Feminine Monarchie · Wikipedia', url: 'https://en.wikipedia.org/wiki/The_Feminine_Monarchie,_or_the_History_of_Bees' },
+      { label: 'Bugonia · Wikipedia', url: 'https://en.wikipedia.org/wiki/Bugonia' },
+      { label: 'Behind the folklore: bees and rain · Royal Meteorological Society', url: 'https://www.rmets.org/metmatters/behind-folklore-bees-and-rain-do-bees-know-when-its-going-rain' },
+    ],
+  },
+  {
+    id: 'lore-verse', section: 'lore', loreKind: 'verse', label: 'In verse', title: 'Bees in old rhymes and poems.', scope: 'Public-domain poems and folk rhymes',
+    nature: 'Poets and beekeepers have put bees into verse for centuries, from working rhymes about swarms and weather to Shakespeare and Dickinson. Only older, public-domain lines are quoted here.',
+    game: 'A thin, patchy meadow brings Dickinson’s prairie; rain on the way brings the weather rhyme.',
+    sources: [
+      { label: 'Henry V, Act 1 Scene 2 · MIT Shakespeare', url: 'https://shakespeare.mit.edu/henryv/henryv.1.2.html' },
+      { label: 'How Doth the Little Busy Bee · Poets.org', url: 'https://poets.org/poem/how-doth-little-busy-bee' },
+      { label: 'A swarm of bees in May · rhymes.org.uk', url: 'https://www.rhymes.org.uk/a5-a-swarm-of-bees.htm' },
+    ],
+  },
+];
+
+// Small original pen-and-wash vignettes. No paint-server IDs or borrowed images.
+const bee = '<g stroke="#576344" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M-3-2C-31-24-9-34 1-8M4-3C32-24 12-34 2-8" fill="#f6f3df"/><ellipse cy="5" rx="10" ry="15" fill="#d6ad55"/><path d="M-8 0h16m-17 7h18m-14 7h11" stroke-width="4"/><ellipse cy="-11" rx="7" ry="6" fill="#576344"/><path d="m-4-15-5-7m13 7 5-7m-17 21-10 7m29-7 10 7m-28-1-8 11m23-11 8 11" fill="none"/></g>';
+const bloom = '<g stroke="#73805a" stroke-width="1.1"><path d="M0 6q-5 22 0 43m0-17q-19-16-19-3 5 10 19 9" fill="none"/><g fill="#efe5b7"><ellipse cy="-13" rx="7" ry="15"/><ellipse cy="-13" rx="7" ry="15" transform="rotate(60)"/><ellipse cy="-13" rx="7" ry="15" transform="rotate(120)"/><ellipse cy="-13" rx="7" ry="15" transform="rotate(180)"/><ellipse cy="-13" rx="7" ry="15" transform="rotate(240)"/><ellipse cy="-13" rx="7" ry="15" transform="rotate(300)"/></g><circle r="10" fill="#c69c45"/></g>';
+const drawings: Record<string, string> = {
+  // Bee lore: a straw skep with a bee for the old beliefs, an open book for what people once thought, a quill for verse.
+  'lore-beliefs': `<path d="M58 104h60" stroke="#8c7a5a" stroke-width="1.2"/><path d="M62 104q-4-46 26-58 30 12 26 58Z" fill="#e2c486" stroke="#8d6f3e" stroke-width="1.3"/><path d="M64 92h48M64 80h48M68 68h40M75 57h26" stroke="#a88a52" stroke-width="1.1"/><path d="M82 104v-9a6 6 0 0 1 12 0v9" fill="#6f5a3a"/><g transform="translate(132 40) rotate(20) scale(.42)">${bee}</g><path d="M118 52q6 8 2 16" stroke="#a48d5c" stroke-dasharray="2 3" fill="none"/>`,
+  'lore-thought': `<path d="M30 92q28-10 56 0 28-10 56 0V48q-28-10-56 0-28-10-56 0Z" fill="#f4ecd2" stroke="#7d8057" stroke-width="1.3"/><path d="M86 48v44M40 58q18-5 36 0m-36 8q18-5 36 0m-36 8q18-5 36 0m20-16q18-5 36 0m-36 8q18-5 36 0" stroke="#a9a07d" stroke-width="1"/><g transform="translate(118 30) rotate(-15) scale(.4)">${bee}</g>`,
+  'lore-verse': `<path d="M40 100q40-6 92 0" stroke="#8c7a5a" stroke-width="1.1" fill="none"/><path d="M118 20Q86 40 66 92l4 2q24-46 52-70Z" fill="#efe7cf" stroke="#7f7351" stroke-width="1.2"/><path d="M66 92l-4 10 8-8" fill="#4a4033"/><path d="M48 70q10-6 20 0m-28 12q14-6 26 0" stroke="#7a8a9b" stroke-width="1.1" fill="none" stroke-linecap="round"/><g transform="translate(46 40) rotate(-20) scale(.4)">${bee}</g>`,
+  flowers: '<g stroke="#7d8a5a" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M36 118q3-28-1-50"/><path d="M86 118q-2-34 0-58"/><path d="M134 118q-3-26 1-46"/><path d="M86 96q-10-6-14 2M134 100q9-5 13 2"/></g><g transform="translate(36 60)"><g transform="rotate(0.0)"><ellipse cy="-8" rx="9" ry="10" fill="#d9694f" stroke="#b44d3a" stroke-width=".8"/></g><g transform="rotate(90.0)"><ellipse cy="-8" rx="9" ry="10" fill="#d9694f" stroke="#b44d3a" stroke-width=".8"/></g><g transform="rotate(180.0)"><ellipse cy="-8" rx="9" ry="10" fill="#d9694f" stroke="#b44d3a" stroke-width=".8"/></g><g transform="rotate(270.0)"><ellipse cy="-8" rx="9" ry="10" fill="#d9694f" stroke="#b44d3a" stroke-width=".8"/></g><circle r="4.2" fill="#3e3a36"/></g><g transform="translate(86 50)"><g transform="rotate(0.0)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(25.7)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(51.4)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(77.1)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(102.9)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(128.6)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(154.3)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(180.0)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(205.7)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(231.4)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(257.1)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(282.9)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(308.6)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><g transform="rotate(334.3)"><ellipse cy="-10" rx="2.8" ry="8" fill="#fbf7ec" stroke="#b9b39a" stroke-width=".6"/></g><circle r="5.2" fill="#e5b84a" stroke="#b98c32" stroke-width=".7"/></g><g transform="translate(134 62)"><g transform="rotate(0.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(40.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(80.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(120.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(160.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(200.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(240.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(280.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><g transform="rotate(320.0)"><path d="M0-4L-3.6-15L0-12.5L3.6-15Z" fill="#5b7fc4" stroke="#3f5f9c" stroke-width=".6" stroke-linejoin="round"/></g><circle r="3.4" fill="#4a5f8f"/></g>',
+  vision: `<g transform="translate(93 59)">${bloom}<circle r="19" fill="none" stroke="#87919b" stroke-dasharray="2 4"/><circle r="5" fill="#778093"/></g><path d="M29 41q17-20 34 0-17 20-34 0Z" fill="none" stroke="#73805a"/><circle cx="46" cy="41" r="5" fill="#8a91a1"/>`,
+  food: '<g stroke="#78805b" stroke-width="1.3" fill="none"><path d="M55 25C50 45 34 53 34 69a22 22 0 0 0 44 0c0-16-16-24-23-44Z" fill="#e8c16d"/><path d="M43 69q-1 13 10 15"/><path d="M100 42q-12 17-7 40 13 19 36 0 5-23-7-40Z" fill="#ead698"/><path d="M99 42h23m-22-5h20m-21 11h24"/></g><g fill="#caa349"><circle cx="107" cy="62" r="3"/><circle cx="120" cy="66" r="3"/><circle cx="113" cy="78" r="3"/></g>',
+  pollen: `<g transform="translate(75 57) rotate(19)">${bee}</g><g fill="#ce9c45"><circle cx="53" cy="81" r="6"/><circle cx="90" cy="93" r="6"/><circle cx="115" cy="40" r="2"/><circle cx="126" cy="52" r="3"/><circle cx="108" cy="57" r="2"/></g><path d="m104 84 20-5" stroke="#869071" stroke-dasharray="2 3"/>`,
+  pollination: `<g transform="translate(39 80) scale(.67)">${bloom}</g><g transform="translate(132 73) scale(.78)">${bloom}</g><g transform="translate(88 34) rotate(30) scale(.52)">${bee}</g><path d="M48 54q35-45 73-8" fill="none" stroke="#a48d5c" stroke-dasharray="2 4"/><g fill="#c39840"><circle cx="66" cy="51" r="2"/><circle cx="108" cy="46" r="2"/></g>`,
+  weather: `<path d="M25 49Q73-14 146 45 90 82 25 49Z" fill="#abb884" stroke="#68774d" stroke-width="1.3"/><path d="M17 60Q73 22 145 45m-75-9 0 23m25-26 8 21m-53-9 4 15" fill="none" stroke="#68774d" stroke-width="1"/><g transform="translate(85 86) rotate(65) scale(.57)">${bee}</g><path d="m28 16-4 9m44-17-4 9m44-7-4 9m43 3-4 9" stroke="#829aa2" stroke-width="1.6" stroke-linecap="round"/>`,
+  heat: `<circle cx="130" cy="27" r="22" fill="#eac082" opacity=".3"/><circle cx="130" cy="27" r="13" fill="#e2ae63" stroke="#bc814b"/><path d="M130 6V2m0 50v-4m-21-21h-4m50 0h-4m-36-15-3-3m33 33 3 3m-3-33 3-3m-33 33-3 3" stroke="#bc814b" stroke-linecap="round"/><path d="M21 64Q62 11 116 55 82 84 21 64Z" fill="#a6b77e" stroke="#65784d" stroke-width="1.3"/><path d="M15 78Q56 41 115 55m-61-2 3 16m18-20 9 16" fill="none" stroke="#65784d"/><ellipse cx="72" cy="93" rx="37" ry="14" fill="#79917a" opacity=".18"/><g transform="translate(68 88) rotate(65) scale(.55)">${bee}</g><path d="M137 67q-5 5 0 10t0 10m15-23q-5 5 0 10t0 10" fill="none" stroke="#c59260" stroke-linecap="round"/>`,
+  wetdry: `<path d="M10 104Q85 88 160 104" stroke="#8a9a6a" stroke-width="1.4" fill="none"/><g transform="translate(46 0)"><path d="M18 34a14 14 0 0 1 27-6 11 11 0 0 1 4 21H14a10 10 0 0 1 4-15z" fill="#d9e1e4" stroke="#7e939c" stroke-width="1.1"/><path d="M20 58l-3 7m14-7-3 7m14-7-3 7" stroke="#6f98b8" stroke-width="1.8" stroke-linecap="round"/><path d="M30 104V78" stroke="#6f8452" stroke-width="1.4"/><g transform="translate(30 76)"><ellipse cx="-5" rx="5" ry="3" fill="#7ea0c9"/><ellipse cx="5" rx="5" ry="3" fill="#7ea0c9"/><circle r="2.4" fill="#4a5a8a"/></g></g><g transform="translate(110 0)"><circle cx="26" cy="34" r="11" fill="#efb34d" stroke="#d08d2e"/><path d="M26 16v-5m0 46v-5M8 34H3m46 0h-5M13 21l-3-3m29 29 3 3m0-29-3 3M13 47l-3 3" stroke="#d08d2e" stroke-width="1.4" stroke-linecap="round"/><path d="M24 104q1-14-3-22" stroke="#9a8a5a" stroke-width="1.4" fill="none"/><g transform="translate(20 82) rotate(130)"><ellipse cy="-4" rx="2.4" ry="4.5" fill="#c9b28a"/><ellipse cy="-4" rx="2.4" ry="4.5" fill="#bba27a" transform="rotate(50)"/></g><path d="M6 104l4-4m10 4 4-5m10 5 3-4" stroke="#a78c5c" stroke-width="1" stroke-linecap="round"/></g>`,
+  water: `<path d="M22 96Q70 60 150 88 92 116 22 96Z" fill="#c7d7cf" stroke="#7d8e84" stroke-width="1.1"/><path d="M48 94q20-6 40 0m12 4q14-4 28 0" stroke="#f3f6ee" stroke-width="1.6" stroke-linecap="round"/><path d="M118 40c-8 12-12 18-12 24a12 12 0 0 0 24 0c0-6-4-12-12-24Z" fill="#b9d2da" stroke="#6f8b95" stroke-width="1.1"/><path d="M113 62q1 6 6 7" stroke="#f4f9f7" stroke-width="1.4" fill="none"/><g transform="translate(62 68) rotate(-20) scale(.55)">${bee}</g>`,
+  foragers: `<path d="M14 70Q66 26 156 44 118 78 14 70Z" fill="#a6b77e" stroke="#65784d" stroke-width="1.2"/><path d="M22 68Q86 44 150 45" fill="none" stroke="#65784d"/><g transform="translate(66 50) rotate(-6) scale(.5)">${bee}</g><path d="M86 60q4-4 8 0" stroke="#c99a3a" stroke-width="1.6" fill="none" stroke-linecap="round"/><ellipse cx="112" cy="104" rx="26" ry="5" fill="#79917a" opacity=".2"/><g transform="translate(116 98) rotate(96) scale(.4)" opacity=".75">${bee}</g>`,
+  wetwings: `<g transform="translate(92 76) rotate(18) scale(.62)">${bee}</g><path d="M78 16c-6 9-9 14-9 18a9 9 0 0 0 18 0c0-4-3-9-9-18Z" fill="#b9d2da" stroke="#6f8b95" stroke-width="1.1"/><path d="M78 46v6m-12-2 4 5m20-5-4 5" stroke="#7f98a1" stroke-width="1.3" stroke-linecap="round"/><path d="m32 20-4 10m112-12-4 10m-8 30-4 10M40 64l-4 10" stroke="#8fa6ad" stroke-width="1.4" stroke-linecap="round"/>`,
+  summers: `<g stroke="#7d8a5a" stroke-width="1.4" fill="none" stroke-linecap="round"><path d="M50 112q2-40-2-62"/><path d="M104 112q-1-10 0-18m18 18q1-8-1-14m-38 14q-1-7 1-12"/></g><path d="M40 50q10-14 18 0-2 12-9 13-7-1-9-13Z" fill="#b9a26b" stroke="#7f6c43"/><path d="M42 46h14" stroke="#7f6c43"/><g fill="#5a4d3e"><circle cx="66" cy="70" r="1.6"/><circle cx="74" cy="80" r="1.6"/><circle cx="62" cy="86" r="1.6"/><circle cx="80" cy="92" r="1.6"/></g><g fill="#8fae6a" stroke="#6c8a4c" stroke-width=".8"><ellipse cx="100" cy="92" rx="5" ry="2.4" transform="rotate(-30 100 92)"/><ellipse cx="108" cy="92" rx="5" ry="2.4" transform="rotate(30 108 92)"/><ellipse cx="119" cy="97" rx="4" ry="2" transform="rotate(-25 119 97)"/><ellipse cx="85" cy="99" rx="4" ry="2" transform="rotate(25 85 99)"/></g><path d="M16 112h140" stroke="#9c8f6a" stroke-width="1.2"/>`,
+  ladybirds: `<path d="M60 118q6-50-2-104" stroke="#7d8a5a" stroke-width="3" fill="none" stroke-linecap="round"/><g fill="#9bbb6a"><circle cx="60" cy="40" r="3"/><circle cx="63" cy="46" r="3"/><circle cx="58" cy="50" r="3"/><circle cx="62" cy="34" r="2.6"/></g><g transform="translate(108 72) rotate(-15)"><ellipse rx="19" ry="16" fill="#c8453a" stroke="#7a2d25" stroke-width="1.2"/><path d="M0-16V16" stroke="#3b2a24" stroke-width="1.2"/><circle cx="-8" cy="-4" r="3.4" fill="#2f2622"/><circle cx="8" cy="-4" r="3.4" fill="#2f2622"/><circle cx="-7" cy="8" r="2.8" fill="#2f2622"/><circle cx="7" cy="8" r="2.8" fill="#2f2622"/><path d="M-11-14q11-10 22 0" fill="#2f2622"/><path d="M-19 2h-7m45 0h7M-16 12l-6 5m38-5 6 5M-15-8l-6-4m36 4 6-4" stroke="#3b2a24" stroke-width="1.1" stroke-linecap="round"/></g>`,
+  moths: `<rect x="6" y="6" width="158" height="112" rx="10" fill="#2f3a4c"/><circle cx="132" cy="30" r="12" fill="#efe6c8" opacity=".9"/><circle cx="137" cy="27" r="11" fill="#2f3a4c" opacity=".55"/><path d="M60 118q3-30-1-56" stroke="#5f6f4e" stroke-width="2" fill="none" stroke-linecap="round"/><g transform="translate(59 60)">${[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(a => `<ellipse cy="-11" rx="3" ry="9" fill="#e9e5d6" opacity=".9" transform="rotate(${a})"/>`).join('')}<circle r="5" fill="#d8b04a"/></g><path d="M38 44q22-26 48-8 18 14 -4 22" fill="none" stroke="#c9c0a6" stroke-width="1" stroke-dasharray="2 3" opacity=".7"/><g transform="translate(86 34) rotate(-15)"><path d="M0 0L-15-6Q-17 4-4 5Z" fill="#b9ae97" stroke="#7d735f" stroke-width=".8"/><path d="M0 0L15-6Q17 4 4 5Z" fill="#a99f88" stroke="#7d735f" stroke-width=".8"/><ellipse rx="2" ry="6" fill="#6e6555"/><path d="M-1-6l-4-5m6 5 4-5" stroke="#8a806b" stroke-width=".8"/></g>`,
+  butterflies: `<path d="M18 36Q80-8 150 34 88 62 18 36Z" fill="#abb884" stroke="#68774d" stroke-width="1.3"/><path d="M26 38Q84 16 146 34" fill="none" stroke="#68774d"/><g transform="translate(86 46) scale(1.6)"><path d="M0 0v34" stroke="#3f3a32" stroke-width="2.4" stroke-linecap="round"/><path d="M0 4C-10 8-16 26-4 30Z" fill="#e8e3cf" stroke="#8a8468" stroke-width="1"/><path d="M0 4C10 10 14 26 3 32Z" fill="#dcd5bb" stroke="#8a8468" stroke-width="1"/><circle cx="-7" cy="18" r="1.8" fill="#5a5448"/></g><path d="m34 76-3 8m96-6-3 8m-86 12-3 8m70-4-3 8" stroke="#829aa2" stroke-width="1.5" stroke-linecap="round"/>`,
+  mushrooms: `<ellipse cx="86" cy="96" rx="66" ry="17" fill="none" stroke="#7f9a5c" stroke-width="7" opacity=".35"/><path d="M14 104q72-9 148 0" stroke="#8c7a5a" stroke-width="1.1" fill="none"/><g transform="translate(34 98) scale(0.8)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(62 108) scale(1)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(104 109) scale(0.95)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(136 100) scale(0.85)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(58 84) scale(0.6)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(118 84) scale(0.6)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><g transform="translate(88 80) scale(0.5)"><path d="M-2 0q-1-14 1-24h3q2 10 1 24Z" fill="#e8dcbf" stroke="#9c8660" stroke-width=".8"/><path d="M-16-22q2-12 16-13 14 1 16 13-16 5-32 0Z" fill="#cfa66d" stroke="#8e6f45" stroke-width=".9"/><path d="M-6-33q6-4 12 0" stroke="#e9d6ae" stroke-width="1.4" fill="none"/></g><path d="m150 30-3 7m-12-5-3 7m24 3-3 7" stroke="#829aa2" stroke-width="1.5" stroke-linecap="round"/>`,
+  caterpillars: `<path d="M18 84Q60 24 152 40 138 70 118 76q-6-10-16-6-4 12-18 10-7-12-18-7-10 13-20 11Q40 88 18 84Z" fill="#a6b77e" stroke="#65784d" stroke-width="1.2"/><path d="M24 80Q76 54 146 42" stroke="#65784d" fill="none"/><g fill="#8cb553" stroke="#5e8a37" stroke-width=".8" transform="translate(12 -8) rotate(-12 90 64)"><ellipse cx="50.0" cy="64" rx="5.2" ry="4.6"/><ellipse cx="58.5" cy="64" rx="5.2" ry="4.6"/><ellipse cx="67.0" cy="64" rx="5.2" ry="4.6"/><ellipse cx="75.5" cy="64" rx="5.2" ry="4.6"/><ellipse cx="84.0" cy="64" rx="5.2" ry="4.6"/><ellipse cx="92.5" cy="64" rx="5.2" ry="4.6"/><ellipse cx="101.0" cy="64" rx="5.2" ry="4.6"/><ellipse cx="109.5" cy="64" rx="5.2" ry="4.6"/><ellipse cx="118.0" cy="64" rx="5.2" ry="4.6"/><ellipse cx="126.5" cy="64" rx="5.2" ry="4.6"/><ellipse cx="41" cy="64" rx="4.8" ry="4.4" fill="#7b8646"/></g><path d="M53 57q18-4 40-7t36-5" stroke="#eef3cf" stroke-width="1" fill="none" transform="translate(0 0)"/>`,
+  ants: `<path d="M14 104q76-7 150 0" stroke="#8c7a5a" stroke-width="1.1" fill="none"/><path d="M22 105q20-26 44 0Z" fill="#a4865e" stroke="#6d553b" stroke-width="1.1"/><g fill="#8b6c49"><circle cx="30" cy="100" r="1.3"/><circle cx="52" cy="98" r="1.1"/><circle cx="68" cy="104" r="1.2"/><circle cx="18" cy="104" r="1"/></g><ellipse cx="44" cy="91.5" rx="4" ry="1.8" fill="#3a2c22"/><path d="M132 104q-4-42 1-88" stroke="#7d8a5a" stroke-width="1.8" fill="none"/><path d="M132 60q15-10 22-2-10 8-22 2" fill="#a6b77e" stroke="#65784d" stroke-width="1"/><g fill="#95b458" stroke="#6f8a3e" stroke-width=".5"><ellipse cx="129" cy="36" rx="2.2" ry="3"/><ellipse cx="135" cy="33" rx="2" ry="2.8"/><ellipse cx="130" cy="29" rx="1.8" ry="2.6"/><ellipse cx="136" cy="40" rx="2" ry="2.7"/><ellipse cx="128" cy="43" rx="1.7" ry="2.4"/></g><g fill="#2c211b"><g transform="translate(70 103) rotate(0)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(84 102) rotate(0)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(97 103) rotate(180)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(110 102) rotate(0)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(122 103) rotate(0)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(131 90) rotate(-90)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(131 76) rotate(90)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(130 62) rotate(-90)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g><g transform="translate(131 50) rotate(-90)"><ellipse cx="-3.6" rx="2.9" ry="1.9"/><ellipse cx=".4" rx="1.8" ry="1.2"/><circle cx="3.6" r="1.5"/><path d="M-1-1l-2-2.5M1-1l1-2.8M-1 1l-2 2.5M1 1l1 2.8M4.5-.6l2.4-1.8M4.5 .6l2.4 1.8" stroke="#2c211b" stroke-width=".6" fill="none"/></g></g><circle cx="121" cy="106" r="1.4" fill="#efe3c4" stroke="#b6a57f" stroke-width=".4"/>`,
+  snails: `<ellipse cx="94" cy="98" rx="52" ry="10" fill="#c7d7cf" stroke="#7d8e84"/><path d="M60 96q30-6 54-2" stroke="#f2f6ef" stroke-width="1.4" fill="none"/><g transform="translate(70 76)"><path d="M-30 14q16-6 44-2 8 1 10 6-26 4-54-4Z" fill="#b39a80" stroke="#7a6655" stroke-width="1.1"/><path d="M14 12l8-16m-2 16 10-14" stroke="#7a6655" stroke-width="1.4" stroke-linecap="round"/><circle cx="22" cy="-4" r="1.8" fill="#4d4038"/><circle cx="30" cy="-2" r="1.8" fill="#4d4038"/><circle r="16" fill="#e9d98c" stroke="#8d7a4a" stroke-width="1.2"/><path d="M0 0a5 5 0 0 1 9 2 9 9 0 0 1-15 5 13 13 0 0 1 9-19" fill="none" stroke="#6b5a3a" stroke-width="2.4"/></g>`,
+  home: `<path d="M86 100h58v-34H86Zm-7-34 36-28 36 28M90 73h50m-50 9h50m-50 9h50" fill="#e6cc8d" stroke="#7c8057" stroke-width="1.3"/><path d="M108 100v-10a7 7 0 0 1 14 0v10" fill="#687354"/><g transform="translate(47 57) rotate(34) scale(.64)">${bee}</g><path d="M31 94C6 69 42 10 81 38" fill="none" stroke="#a89666" stroke-dasharray="2 4"/>`,
+};
+const SECTION_NAMES = { bee: 'Bee facts', meadow: 'The meadow', lore: 'Bee lore' } as const;
+const htmlEscapes: Readonly<Record<string, string>> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escapeHTML = (value: string) => value.replace(/[&<>"']/g, character => htmlEscapes[character]);
+function gameMarkup(value: string): string {
+  return escapeHTML(value).replace(/\b(W A S D|left mouse|Ctrl|Q|E|F|R)\b/g, control =>
+    `<kbd class="fact-key">${control}</kbd>`);
+}
+function sourceLink(source: FactSource): string {
+  const url = new URL(source.url);
+  if (url.protocol !== 'https:') throw new Error('Bee fact sources must use HTTPS.');
+  return `<a href="${escapeHTML(url.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.label)}<span aria-hidden="true"> ↗</span><span class="facts-sr-only"> (opens in a new tab)</span></a>`;
+}
+
+/** A lore page: what the cards are, then every card of that kind with its source. */
+function loreMarkup(fact: BeeFact): string {
+  const cards = LORE_CARDS.filter(card => card.kind === fact.loreKind);
+  return `<div class="fact-lore"><p class="fact-lore-intro">${escapeHTML(fact.nature)}</p>
+    <ol class="fact-lore-cards">${cards.map(card => `<li class="fact-lore-card fact-lore-${card.kind}">${card.label ? `<span class="fact-lore-label">${escapeHTML(card.label)}</span>` : ''}<p>${card.lines.map(escapeHTML).join(card.kind === 'verse' ? '<br>' : ' ')}</p><span class="fact-lore-source">${escapeHTML(card.source)}</span></li>`).join('')}</ol>
+    <p class="fact-lore-game">${escapeHTML(fact.game)}</p></div>`;
+}
+
+export function beeFactsMarkup(): string {
+  return `<section id="bee-facts" class="journal-page bee-facts-page" role="dialog" aria-modal="true" aria-labelledby="bee-facts-title" hidden>
+    <header class="facts-heading"><div><span class="eyebrow">NOTES FROM A SMALL WORLD</span><h2 id="bee-facts-title" tabindex="-1">Bees &amp; the Meadow</h2></div><button class="facts-back" data-action="facts-close">← <span data-facts-return>Field guide</span><kbd>Esc</kbd></button></header>
+    <p class="facts-intro">A bee works hard, even without considering predators and pesticides. Our game is inspired by real bee biology, and by the meadow she shares with flowers, snails, ladybirds and butterflies.</p>
+    <div class="facts-spread">
+      <div class="facts-index" role="tablist" aria-label="Bee and meadow topics" aria-orientation="vertical">${beeFacts.map((fact, index) => {
+        const first = index === 0 || beeFacts[index - 1].section !== fact.section;
+        const number = index - beeFacts.findIndex(other => other.section === fact.section) + 1;
+        const heading = first ? `<span class="facts-group" aria-hidden="true">${SECTION_NAMES[fact.section]}</span>` : '';
+        return `${heading}<button id="fact-tab-${fact.id}" role="tab" data-fact-index="${index}" aria-selected="${index === 0}" aria-controls="fact-panel-${fact.id}" tabindex="${index === 0 ? 0 : -1}"><span aria-hidden="true">${String(number).padStart(2, '0')}</span>${escapeHTML(fact.label)}</button>`;
+      }).join('')}</div>
+      <div class="facts-reader">${beeFacts.map((fact, index) => `<article class="fact-page" id="fact-panel-${fact.id}" role="tabpanel" aria-labelledby="fact-tab-${fact.id}" tabindex="0" ${index === 0 ? '' : 'hidden'}>
+        <div class="fact-opening"><div><span class="fact-scope">${escapeHTML(fact.scope)}</span><h3>${escapeHTML(fact.title)}</h3></div><svg class="fact-drawing" viewBox="0 0 170 124" fill="none" aria-hidden="true"><ellipse cx="86" cy="70" rx="64" ry="46" fill="#ede9d5" opacity=".65"/>${drawings[fact.id]}</svg></div>
+        ${fact.loreKind ? loreMarkup(fact) : `<div class="fact-comparison"><section><h4>In nature</h4><p>${escapeHTML(fact.nature)}</p></section><section><h4>In this game</h4><p>${gameMarkup(fact.game)}</p></section></div>`}
+        ${fact.spotting ? `<div class="fact-spotting"><h4>Where to look</h4><p>${gameMarkup(fact.spotting)}</p></div>` : ''}
+        <div class="fact-sources"><h4>From the field</h4>${fact.sources.map(sourceLink).join('')}</div>
+      </article>`).join('')}</div>
+    </div>
+    <footer class="facts-footer"><span data-facts-status>The meadow is paused. Take your time.</span><span>Sources open in a new tab.</span></footer>
+  </section>`;
+}
