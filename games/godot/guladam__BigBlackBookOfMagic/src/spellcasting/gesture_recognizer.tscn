@@ -1,0 +1,71 @@
+[gd_scene load_steps=4 format=3 uid="uid://cabxhw4h71uap"]
+
+[ext_resource type="Script" path="res://spellcasting/gesture_recognizer.gd" id="1_ovbns"]
+
+[sub_resource type="Curve" id="Curve_62pdv"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.327273), -1.3139, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_0oexs"]
+offsets = PackedFloat32Array(0.529801, 1)
+colors = PackedColorArray(0.227451, 0.823529, 0.929412, 1, 0.858824, 0, 0.521569, 0)
+
+[node name="GestureRecognizer" type="Control" node_paths=PackedStringArray("draw_particle", "debug", "progress")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ovbns")
+input_action = "draw_spell"
+max_ink = 10.0
+draw_particle = NodePath("CPUParticles2D")
+debug = NodePath("")
+progress = NodePath("ProgressBar")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.54902)
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -100.0
+offset_right = 40.0
+offset_bottom = 100.0
+grow_vertical = 2
+fill_mode = 3
+
+[node name="Line2D" type="Line2D" parent="."]
+width = 6.0
+default_color = Color(0.223529, 0.658824, 0.74902, 1)
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 50
+lifetime = 0.5
+randomness = 0.1
+emission_shape = 1
+emission_sphere_radius = 5.0
+direction = Vector2(0, 0)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 65.0
+initial_velocity_max = 85.0
+scale_amount_min = 2.2
+scale_amount_max = 2.2
+scale_amount_curve = SubResource("Curve_62pdv")
+color_ramp = SubResource("Gradient_0oexs")

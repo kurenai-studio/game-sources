@@ -1,0 +1,53 @@
+[gd_scene load_steps=5 format=3 uid="uid://dm8otvxcctv4s"]
+
+[ext_resource type="Script" path="res://spells/spell.gd" id="2_ibjxm"]
+
+[sub_resource type="Animation" id="Animation_br03b"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_uxg4r"]
+resource_name = "float"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0, 1, 2]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_74o5m"]
+_data = {
+"RESET": SubResource("Animation_br03b"),
+"float": SubResource("Animation_uxg4r")
+}
+
+[node name="Spell" type="Sprite2D"]
+texture_filter = 1
+scale = Vector2(3, 3)
+hframes = 3
+script = ExtResource("2_ibjxm")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+autoplay = "float"
+libraries = {
+"": SubResource("AnimationLibrary_74o5m")
+}
