@@ -1,0 +1,337 @@
+[gd_scene format=4 uid="uid://b88do3e7hdkbo"]
+
+[ext_resource type="PackedScene" uid="uid://nqyeapgwcwj5" path="res://scenes/gameplay_scene.tscn" id="1_r63aq"]
+[ext_resource type="PackedScene" uid="uid://cl74ihm1ywf1c" path="res://portal/portal.tscn" id="2_t8527"]
+[ext_resource type="PackedScene" uid="uid://c0trgpacxeqvo" path="res://mutagen/mutagen.tscn" id="3_mm8m8"]
+[ext_resource type="PackedScene" uid="uid://kr56odiaa8ik" path="res://door/door.tscn" id="4_7abwa"]
+[ext_resource type="PackedScene" uid="uid://cgvn6jpbq5a2e" path="res://token/token.tscn" id="5_1c2ek"]
+[ext_resource type="PackedScene" uid="uid://dys3qxb737sue" path="res://goal/goal.tscn" id="6_1c2ek"]
+[ext_resource type="PackedScene" uid="uid://dokihjvu5u8jb" path="res://scenes/stages/stage_5.tscn" id="7_fmg1f"]
+
+[node name="GameplayScene" unique_id=15941419 instance=ExtResource("1_r63aq")]
+
+[node name="Camera2D" parent="." index="1" unique_id=948932488]
+position = Vector2(8, -96)
+
+[node name="TileMapLayer" parent="." index="2" unique_id=1042025763]
+tile_map_data = PackedByteArray("AAD5//v/AAAAAAEAAAD5//z/AAAAAAEAAAD5//3/AAAAAAEAAAD5//7/AAAAAAEAAAD5////AAAAAAEAAAD5/wAAAAAAAAEAAAD6//v/AAAAAAEAAAD7//v/AAAAAAEAAAD8//v/AAAAAAEAAAD8/wUAAAAAAAEAAAD9//v/AAAAAAEAAAD9/wUAAAAAAAEAAAD+//v/AAAAAAEAAAD+/wUAAAAAAAEAAAD//wUAAAAAAAEAAAAAAAUAAAAAAAEAAAABAAUAAAAAAAEAAAACAAUAAAAAAAEAAAADAPv/AAAAAAEAAAADAAUAAAAAAAEAAAAEAPv/AAAAAAEAAAAEAAUAAAAAAAEAAAAFAPv/AAAAAAEAAAAFAAUAAAAAAAEAAAAGAPv/AAAAAAEAAAAGAAUAAAAAAAEAAAAHAPv/AAAAAAEAAAAIAPv/AAAAAAEAAAAIAPz/AAAAAAEAAAAIAP3/AAAAAAEAAAAIAP7/AAAAAAEAAAAIAP//AAAAAAEAAAAIAAAAAAAAAAEAAAD+/+//AAAAAAEAAAD+//D/AAAAAAEAAAD+//H/AAAAAAEAAAD+//L/AAAAAAEAAAD+//f/AAAAAAEAAAD+//j/AAAAAAEAAAD+//n/AAAAAAEAAAD+//r/AAAAAAEAAAADAPD/AAAAAAEAAAADAPH/AAAAAAEAAAADAPL/AAAAAAEAAAADAPf/AAAAAAEAAAADAPj/AAAAAAEAAAADAPn/AAAAAAEAAAADAPr/AAAAAAEAAAADAO//AAAAAAEAAAD5/+b/AAAAAAEAAAD5/+f/AAAAAAEAAAD5/+j/AAAAAAEAAAD5/+n/AAAAAAEAAAD5/+r/AAAAAAEAAAD5/+v/AAAAAAEAAAD5/+z/AAAAAAEAAAD5/+3/AAAAAAEAAAD5/+7/AAAAAAEAAAD6/+b/AAAAAAEAAAD6/+7/AAAAAAEAAAD7/+b/AAAAAAEAAAD7/+7/AAAAAAEAAAD8/+b/AAAAAAEAAAD8/+7/AAAAAAEAAAD9/+b/AAAAAAEAAAD9/+7/AAAAAAEAAAD+/+b/AAAAAAEAAAD+/+7/AAAAAAEAAAD//+b/AAAAAAEAAAAAAOb/AAAAAAEAAAABAOb/AAAAAAEAAAACAOb/AAAAAAEAAAADAOb/AAAAAAEAAAADAO7/AAAAAAEAAAAEAOb/AAAAAAEAAAAEAO7/AAAAAAEAAAAFAOb/AAAAAAEAAAAFAO7/AAAAAAEAAAAGAOb/AAAAAAEAAAAGAO7/AAAAAAEAAAAHAOb/AAAAAAEAAAAHAO7/AAAAAAEAAAAIAOb/AAAAAAEAAAAIAOf/AAAAAAEAAAAIAOj/AAAAAAEAAAAIAOn/AAAAAAEAAAAIAOr/AAAAAAEAAAAIAOv/AAAAAAEAAAAIAOz/AAAAAAEAAAAIAO3/AAAAAAEAAAAIAO7/AAAAAAEAAAD5//L/AAAAAAEAAAD5//f/AAAAAAEAAAD6//L/AAAAAAEAAAD6//f/AAAAAAEAAAD7//L/AAAAAAEAAAD7//f/AAAAAAEAAAD8//L/AAAAAAEAAAD8//f/AAAAAAEAAAD9//L/AAAAAAEAAAD9//f/AAAAAAEAAAAEAPL/AAAAAAEAAAAEAPf/AAAAAAEAAAAFAPL/AAAAAAEAAAAFAPf/AAAAAAEAAAAGAPL/AAAAAAEAAAAGAPf/AAAAAAEAAAAHAPL/AAAAAAEAAAAHAPf/AAAAAAEAAAAIAPL/AAAAAAEAAAAIAPf/AAAAAAEAAADw/+7/AAAAAAEAAADw/+//AAAAAAEAAADw//D/AAAAAAEAAADw//H/AAAAAAEAAADw//L/AAAAAAEAAADw//P/AAAAAAEAAADw//T/AAAAAAEAAADw//X/AAAAAAEAAADw//b/AAAAAAEAAADw//f/AAAAAAEAAADw//j/AAAAAAEAAADw//n/AAAAAAEAAADw//r/AAAAAAEAAADw//v/AAAAAAEAAADx/+7/AAAAAAEAAADx//v/AAAAAAEAAADy/+7/AAAAAAEAAADy//v/AAAAAAEAAADz/+7/AAAAAAEAAADz//v/AAAAAAEAAAD0/+7/AAAAAAEAAAD0//v/AAAAAAEAAAD1/+7/AAAAAAEAAAD1//v/AAAAAAEAAAD2/+7/AAAAAAEAAAD2//v/AAAAAAEAAAD3/+7/AAAAAAEAAAD3//v/AAAAAAEAAAD4/+7/AAAAAAEAAAD4//v/AAAAAAEAAAD5/+//AAAAAAEAAAD5//D/AAAAAAEAAAD5//H/AAAAAAEAAAD5//j/AAAAAAEAAAD5//n/AAAAAAEAAAD5//r/AAAAAAEAAAAIAO//AAAAAAEAAAAIAPD/AAAAAAEAAAAIAPH/AAAAAAEAAAAIAPj/AAAAAAEAAAAIAPn/AAAAAAEAAAAIAPr/AAAAAAEAAAAJAO7/AAAAAAEAAAAJAPv/AAAAAAEAAAAKAO7/AAAAAAEAAAAKAPv/AAAAAAEAAAALAO7/AAAAAAEAAAALAPv/AAAAAAEAAAAMAO7/AAAAAAEAAAAMAPv/AAAAAAEAAAANAO7/AAAAAAEAAAANAPv/AAAAAAEAAAAOAO7/AAAAAAEAAAAOAPv/AAAAAAEAAAAPAO7/AAAAAAEAAAAPAPv/AAAAAAEAAAAQAO7/AAAAAAEAAAAQAPv/AAAAAAEAAAARAO7/AAAAAAEAAAARAO//AAAAAAEAAAARAPD/AAAAAAEAAAARAPH/AAAAAAEAAAARAPL/AAAAAAEAAAARAPP/AAAAAAEAAAARAPT/AAAAAAEAAAARAPX/AAAAAAEAAAARAPb/AAAAAAEAAAARAPf/AAAAAAEAAAARAPj/AAAAAAEAAAARAPn/AAAAAAEAAAARAPr/AAAAAAEAAAARAPv/AAAAAAEAAAD8//P/AAAAAAEAAAD8//T/AAAAAAEAAAD8//X/AAAAAAEAAAD8//b/AAAAAAEAAAAFAPP/AAAAAAEAAAAFAPT/AAAAAAEAAAAFAPX/AAAAAAEAAAAFAPb/AAAAAAEAAAD///D/AAAAAAEAAAAAAPD/AAAAAAEAAAABAPD/AAAAAAEAAAACAPD/AAAAAAEAAAD///n/AAAAAAEAAAAAAPn/AAAAAAEAAAABAPn/AAAAAAEAAAACAPn/AAAAAAEAAAAHAPT/AAAAAAEAAAAHAPX/AAAAAAEAAAAIAPX/AAAAAAEAAAAIAPT/AAAAAAEAAAAKAPT/AAAAAAEAAAAKAPX/AAAAAAEAAAALAPT/AAAAAAEAAAALAPX/AAAAAAEAAAANAPT/AAAAAAEAAAANAPX/AAAAAAEAAAAOAPT/AAAAAAEAAAAOAPX/AAAAAAEAAAAKAPH/AAAAAAEAAAAKAPL/AAAAAAEAAAALAPH/AAAAAAEAAAALAPL/AAAAAAEAAAAKAPf/AAAAAAEAAAALAPf/AAAAAAEAAAAKAPj/AAAAAAEAAAALAPj/AAAAAAEAAAANAPf/AAAAAAEAAAANAPj/AAAAAAEAAAAOAPf/AAAAAAEAAAAOAPj/AAAAAAEAAAAKAPr/AAAAAAEAAAALAPr/AAAAAAEAAAANAPr/AAAAAAEAAAAOAPr/AAAAAAEAAAAQAPf/AAAAAAEAAAAQAPj/AAAAAAEAAAAQAPT/AAAAAAEAAAAQAPX/AAAAAAEAAAANAPH/AAAAAAEAAAANAPL/AAAAAAEAAAAOAPH/AAAAAAEAAAAOAPL/AAAAAAEAAAAKAO//AAAAAAEAAAALAO//AAAAAAEAAAANAO//AAAAAAEAAAAOAO//AAAAAAEAAAAQAPH/AAAAAAEAAAAQAPL/AAAAAAEAAAAQAO//AAAAAAEAAAAQAPr/AAAAAAEAAAD5//b/AAAAAAEAAAD5//P/AAAAAAEAAAD2//L/AAAAAAEAAAD4//L/AAAAAAEAAAD2//H/AAAAAAEAAADz//L/AAAAAAEAAADx//L/AAAAAAEAAADz//H/AAAAAAEAAADz/+//AAAAAAEAAAD2/+//AAAAAAEAAADz//D/AAAAAAEAAADx//f/AAAAAAEAAADz//f/AAAAAAEAAADz//j/AAAAAAEAAADz//n/AAAAAAEAAADz//r/AAAAAAEAAAD4//f/AAAAAAEAAAD3//f/AAAAAAEAAAD2//f/AAAAAAEAAAD2//n/AAAAAAEAAAD2//r/AAAAAAEAAADy//T/AAAAAAEAAADz//T/AAAAAAEAAAD0//T/AAAAAAEAAAD1//T/AAAAAAEAAAD3//T/AAAAAAEAAAD3//X/AAAAAAEAAAD2//X/AAAAAAEAAAD1//X/AAAAAAEAAAD0//X/AAAAAAEAAADy//X/AAAAAAEAAAD7//n/AAAAAAEAAAD8//n/AAAAAAEAAAD7//D/AAAAAAEAAAD8//D/AAAAAAEAAAAGAPD/AAAAAAEAAAAFAPD/AAAAAAEAAAAFAPn/AAAAAAEAAAAGAPn/AAAAAAEAAAAAAPf/AAAAAAEAAAADAPT/AAAAAAEAAAADAPX/AAAAAAEAAAD+//T/AAAAAAEAAAD+//X/AAAAAAEAAAABAPL/AAAAAAEAAAACAPf/AAAAAAEAAAD///L/AAAAAAEAAAD+/+3/AAAAAAEAAAADAO3/AAAAAAEAAAD+/+v/AAAAAAEAAAAAAOv/AAAAAAEAAAABAOv/AAAAAAEAAAADAOv/AAAAAAEAAAADAOz/AAAAAAEAAAAAAOr/AAAAAAEAAAAAAOn/AAAAAAEAAAAAAOj/AAAAAAEAAAABAOf/AAAAAAEAAAABAOj/AAAAAAEAAAABAOn/AAAAAAEAAAABAOr/AAAAAAEAAAAAAOf/AAAAAAEAAAD+/+n/AAAAAAEAAAD+/+j/AAAAAAEAAAADAOn/AAAAAAEAAAADAOj/AAAAAAEAAAD8/+v/AAAAAAEAAAD7/+v/AAAAAAEAAAD7/+z/AAAAAAEAAAAFAOv/AAAAAAEAAAAFAOz/AAAAAAEAAAAGAOz/AAAAAAEAAAAGAOv/AAAAAAEAAAAFAOn/AAAAAAEAAAAFAOj/AAAAAAEAAAAGAOj/AAAAAAEAAAAGAOn/AAAAAAEAAAD8/+j/AAAAAAEAAAD8/+n/AAAAAAEAAAD7/+j/AAAAAAEAAAD7/+n/AAAAAAEAAAAAAO3/AAAAAAEAAAABAO3/AAAAAAEAAAAAAPv/AAAAAAEAAAD///v/AAAAAAEAAAACAPv/AAAAAAEAAAD+/wAAAAAAAAEAAAD+/wEAAAAAAAEAAAD+/wIAAAAAAAEAAAD+/wMAAAAAAAEAAAD+/wQAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAEAAAAAAAEAAAAAAAIAAAAAAAEAAAAAAAMAAAAAAAEAAAAAAAQAAAAAAAEAAAACAAAAAAAAAAEAAAACAAEAAAAAAAEAAAACAAIAAAAAAAEAAAACAAMAAAAAAAEAAAACAAQAAAAAAAEAAAAEAAAAAAAAAAEAAAAEAAEAAAAAAAEAAAAEAAIAAAAAAAEAAAAEAAMAAAAAAAEAAAAEAAQAAAAAAAEAAAAGAAAAAAAAAAEAAAAGAAEAAAAAAAEAAAAGAAIAAAAAAAEAAAAGAAMAAAAAAAEAAAAGAAQAAAAAAAEAAAD8/wAAAAAAAAEAAAD8/wEAAAAAAAEAAAD8/wIAAAAAAAEAAAD8/wMAAAAAAAEAAAD8/wQAAAAAAAEAAAD6/wAAAAAAAAEAAAAHAAAAAAAAAAEAAAD8//7/AAAAAAEAAAD8//3/AAAAAAEAAAAGAP3/AAAAAAEAAAAGAP7/AAAAAAEAAAD6/wEAAAAAAAEAAAD6/wIAAAAAAAEAAAD6/wMAAAAAAAEAAAD6/wQAAAAAAAEAAAD6/wUAAAAAAAEAAAD7/wUAAAAAAAEAAAD3//3/AAAAAAEAAAD3//7/AAAAAAEAAAD3////AAAAAAEAAAD2////AAAAAAEAAAD1////AAAAAAEAAAD1//7/AAAAAAEAAAD1//3/AAAAAAEAAAD2//3/AAAAAAEAAAD2//7/AAAAAAEAAADz//3/AAAAAAEAAADz//7/AAAAAAEAAADz////AAAAAAEAAADy////AAAAAAEAAADx////AAAAAAEAAADx//7/AAAAAAEAAADx//3/AAAAAAEAAADy//3/AAAAAAEAAADy//7/AAAAAAEAAAD4/wIAAAAAAAEAAAD4/wMAAAAAAAEAAAD4/wQAAAAAAAEAAAD3/wQAAAAAAAEAAAD3/wMAAAAAAAEAAAD3/wIAAAAAAAEAAAD2/wIAAAAAAAEAAAD2/wMAAAAAAAEAAAD2/wQAAAAAAAEAAADz/wIAAAAAAAEAAADz/wMAAAAAAAEAAADz/wQAAAAAAAEAAADy/wQAAAAAAAEAAADx/wQAAAAAAAEAAADx/wMAAAAAAAEAAADy/wIAAAAAAAEAAADx/wIAAAAAAAEAAADy/wMAAAAAAAEAAAD0/wMAAAAAAAEAAAD0/wQAAAAAAAEAAADx/wEAAAAAAAEAAADy/wEAAAAAAAEAAAD2/wAAAAAAAAEAAAD3/wAAAAAAAAEAAAD2/wUAAAAAAAEAAAD3/wUAAAAAAAEAAADz/wUAAAAAAAEAAADy/wUAAAAAAAEAAAD0/wUAAAAAAAEAAAD0/wEAAAAAAAEAAADz/wEAAAAAAAEAAAAIAAIAAAAAAAEAAAAIAAMAAAAAAAEAAAAIAAQAAAAAAAEAAAAIAAUAAAAAAAEAAAAJAAUAAAAAAAEAAAAKAAUAAAAAAAEAAAALAAUAAAAAAAEAAAALAAQAAAAAAAEAAAALAAMAAAAAAAEAAAALAAIAAAAAAAEAAAAKAAIAAAAAAAEAAAAJAAIAAAAAAAEAAAAJAAQAAAAAAAEAAAAKAAQAAAAAAAEAAAAKAAMAAAAAAAEAAAAJAAMAAAAAAAEAAAAKAAEAAAAAAAEAAAAKAAAAAAAAAAEAAAALAAAAAAAAAAEAAAALAAEAAAAAAAEAAAANAAAAAAAAAAEAAAANAAEAAAAAAAEAAAAOAAEAAAAAAAEAAAAOAAIAAAAAAAEAAAAPAAIAAAAAAAEAAAAPAAEAAAAAAAEAAAAOAAAAAAAAAAEAAAAPAAAAAAAAAAEAAAANAAIAAAAAAAEAAAANAAQAAAAAAAEAAAAOAAQAAAAAAAEAAAAOAAUAAAAAAAEAAAANAAUAAAAAAAEAAAAPAAQAAAAAAAEAAAAKAP7/AAAAAAEAAAAKAP3/AAAAAAEAAAALAP3/AAAAAAEAAAALAP7/AAAAAAEAAAAMAP7/AAAAAAEAAAAMAP3/AAAAAAEAAAAOAP3/AAAAAAEAAAAOAP7/AAAAAAEAAAAPAP7/AAAAAAEAAAAQAP7/AAAAAAEAAAARAP3/AAAAAAEAAAAQAP3/AAAAAAEAAAAPAP3/AAAAAAEAAAD3/+z/AAAAAAEAAAD3/+v/AAAAAAEAAAD3/+r/AAAAAAEAAAD2/+r/AAAAAAEAAAD2/+v/AAAAAAEAAAD2/+z/AAAAAAEAAAD1/+z/AAAAAAEAAAD1/+v/AAAAAAEAAAD1/+r/AAAAAAEAAADz/+z/AAAAAAEAAADz/+v/AAAAAAEAAADy/+v/AAAAAAEAAADy/+z/AAAAAAEAAADx/+z/AAAAAAEAAADw/+z/AAAAAAEAAADw/+v/AAAAAAEAAADw/+r/AAAAAAEAAADv/+r/AAAAAAEAAADv/+n/AAAAAAEAAADx/+r/AAAAAAEAAADx/+v/AAAAAAEAAADw/+n/AAAAAAEAAADx/+n/AAAAAAEAAADz/+n/AAAAAAEAAADz/+j/AAAAAAEAAAD0/+j/AAAAAAEAAAD1/+j/AAAAAAEAAAD2/+j/AAAAAAEAAAD2/+f/AAAAAAEAAAD3/+j/AAAAAAEAAAD2/+b/AAAAAAEAAAD3/+b/AAAAAAEAAAD3/+f/AAAAAAEAAAD1/+f/AAAAAAEAAAD0/+f/AAAAAAEAAADz/+f/AAAAAAEAAADz/+b/AAAAAAEAAAD0/+b/AAAAAAEAAAD1/+b/AAAAAAEAAADx/+f/AAAAAAEAAADw/+f/AAAAAAEAAADw/+b/AAAAAAEAAADv/+b/AAAAAAEAAADv/+f/AAAAAAEAAADx/+b/AAAAAAEAAAAKAOz/AAAAAAEAAAAKAOv/AAAAAAEAAAAKAOr/AAAAAAEAAAALAOv/AAAAAAEAAAAMAOv/AAAAAAEAAAALAOz/AAAAAAEAAAAMAOz/AAAAAAEAAAAOAOz/AAAAAAEAAAAOAOv/AAAAAAEAAAAPAOv/AAAAAAEAAAAQAOv/AAAAAAEAAAAQAOz/AAAAAAEAAAAPAOz/AAAAAAEAAAARAOr/AAAAAAEAAAAQAOr/AAAAAAEAAAAPAOr/AAAAAAEAAAAOAOr/AAAAAAEAAAAMAOj/AAAAAAEAAAALAOj/AAAAAAEAAAAKAOj/AAAAAAEAAAAKAOf/AAAAAAEAAAALAOf/AAAAAAEAAAAMAOf/AAAAAAEAAAAKAOb/AAAAAAEAAAALAOb/AAAAAAEAAAAOAOj/AAAAAAEAAAAOAOf/AAAAAAEAAAAOAOb/AAAAAAEAAAAPAOb/AAAAAAEAAAAPAOf/AAAAAAEAAAAPAOj/AAAAAAEAAAAQAOj/AAAAAAEAAAAQAOf/AAAAAAEAAAAQAOb/AAAAAAEAAAARAOb/AAAAAAEAAAARAOf/AAAAAAEAAAAMAOr/AAAAAAEAAAALAOr/AAAAAAEAAAD4/+v/AAAAAAEAAAD4/+z/AAAAAAEAAADy/+3/AAAAAAEAAADz/+3/AAAAAAEAAAD4/+f/AAAAAAEAAAD4/+j/AAAAAAEAAAAJAOj/AAAAAAEAAAAJAOf/AAAAAAEAAAAKAO3/AAAAAAEAAAALAO3/AAAAAAEAAAAQAO3/AAAAAAEAAAAPAO3/AAAAAAEAAAAPAOn/AAAAAAEAAAAQAOn/AAAAAAEAAAALAOn/AAAAAAEAAAD2//z/AAAAAAEAAAD3//z/AAAAAAEAAADy//z/AAAAAAEAAAD5/wMAAAAAAAEAAAD5/wQAAAAAAAEAAAD1/wQAAAAAAAEAAAD1/wMAAAAAAAEAAADy/wAAAAAAAAEAAADz/wAAAAAAAAEAAAAHAAMAAAAAAAEAAAAHAAQAAAAAAAEAAAAJAP7/AAAAAAEAAAAOAP//AAAAAAEAAAAPAP//AAAAAAEAAAANAAMAAAAAAAEAAAAMAAIAAAAAAAEAAAAMAAEAAAAAAAEAAADv//j/AAAAAAEAAADu//f/AAAAAAEAAADt//f/AAAAAAEAAADt//b/AAAAAAEAAADu//b/AAAAAAEAAADu//X/AAAAAAEAAADv//X/AAAAAAEAAADv//T/AAAAAAEAAADv//P/AAAAAAEAAADv//f/AAAAAAEAAADv//b/AAAAAAEAAADv//D/AAAAAAEAAADv/+//AAAAAAEAAADv//H/AAAAAAEAAADu//D/AAAAAAEAAADu/+//AAAAAAEAAAASAPD/AAAAAAEAAAASAPH/AAAAAAEAAAASAPL/AAAAAAEAAAASAPP/AAAAAAEAAAASAPT/AAAAAAEAAAATAPP/AAAAAAEAAAATAPL/AAAAAAEAAAATAPH/AAAAAAEAAAAUAPL/AAAAAAEAAAASAPf/AAAAAAEAAAASAPj/AAAAAAEAAAASAPn/AAAAAAEAAAATAPf/AAAAAAEAAAATAPj/AAAAAAEAAAD6/+X/AAAAAAEAAAD7/+X/AAAAAAEAAAD8/+X/AAAAAAEAAAD9/+X/AAAAAAEAAAD8/+T/AAAAAAEAAAD7/+T/AAAAAAEAAAABAOX/AAAAAAEAAAACAOX/AAAAAAEAAAADAOX/AAAAAAEAAAAEAOX/AAAAAAEAAAAFAOX/AAAAAAEAAAACAOT/AAAAAAEAAAADAOT/AAAAAAEAAAAEAOT/AAAAAAEAAAD1/+X/AAAAAAEAAAD2/+X/AAAAAAEAAAAIAOX/AAAAAAEAAAAPAOX/AAAAAAEAAAAQAOX/AAAAAAEAAAAPAOT/AAAAAAEAAAARAAAAAAAAAAEAAAAQAAAAAAAAAAEAAAAQAAEAAAAAAAEAAAD7/wYAAAAAAAEAAAD8/wYAAAAAAAEAAAD9/wYAAAAAAAEAAAD+/wYAAAAAAAEAAAD9/wcAAAAAAAEAAAD8/wcAAAAAAAEAAAACAAYAAAAAAAEAAAADAAYAAAAAAAEAAAAEAAYAAAAAAAEAAAADAAcAAAAAAAEAAADz/wYAAAAAAAEAAADy/wYAAAAAAAEAAADw/wIAAAAAAAEAAADw/wMAAAAAAAEAAAD+/+z/AAAAAAEAAAA=")
+
+[node name="Portal" parent="." index="3" unique_id=1416579862 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-24, -104)
+other = NodePath("../Portal2")
+
+[node name="Portal2" parent="." index="4" unique_id=1018193474 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-24, -120)
+other = NodePath("../Portal")
+
+[node name="Portal3" parent="." index="5" unique_id=1590926766 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(32, -64)
+other = NodePath("../Portal5")
+
+[node name="Portal5" parent="." index="6" unique_id=760051726 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-48, -136)
+other = NodePath("../Portal3")
+
+[node name="Portal4" parent="." index="7" unique_id=29226832 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(48, -80)
+mutation_color = "yellow"
+other = NodePath("../Portal6")
+
+[node name="Portal6" parent="." index="8" unique_id=1401948413 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(56, -48)
+mutation_color = "yellow"
+other = NodePath("../Portal4")
+
+[node name="Portal7" parent="." index="9" unique_id=925426581 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(120, -56)
+mutation_color = "blue"
+other = NodePath("../Portal8")
+
+[node name="Portal8" parent="." index="10" unique_id=1042882963 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(56, -136)
+mutation_color = "blue"
+other = NodePath("../Portal7")
+
+[node name="Portal9" parent="." index="11" unique_id=421293913 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(32, -120)
+mutation_color = "cyan"
+other = NodePath("../Portal10")
+
+[node name="Portal10" parent="." index="12" unique_id=561234220 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-24, -64)
+mutation_color = "cyan"
+other = NodePath("../Portal9")
+
+[node name="Mutagen" parent="." index="13" unique_id=2023622897 instance=ExtResource("3_mm8m8")]
+position = Vector2(-8, -72)
+
+[node name="Mutagen2" parent="." index="14" unique_id=335974401 instance=ExtResource("3_mm8m8")]
+position = Vector2(56, -64)
+
+[node name="Mutagen3" parent="." index="15" unique_id=1150289059 instance=ExtResource("3_mm8m8")]
+position = Vector2(32, -48)
+mutation_color = "green"
+
+[node name="Mutagen4" parent="." index="16" unique_id=1559387861 instance=ExtResource("3_mm8m8")]
+position = Vector2(32, -136)
+mutation_color = "green"
+
+[node name="Mutagen5" parent="." index="17" unique_id=1120242859 instance=ExtResource("3_mm8m8")]
+position = Vector2(56, -120)
+mutation_color = "blue"
+
+[node name="Mutagen6" parent="." index="18" unique_id=580351588 instance=ExtResource("3_mm8m8")]
+position = Vector2(120, -128)
+mutation_color = "blue"
+
+[node name="Mutagen7" parent="." index="19" unique_id=1137301300 instance=ExtResource("3_mm8m8")]
+position = Vector2(120, -104)
+
+[node name="Door" parent="." index="20" unique_id=920625083 instance=ExtResource("4_7abwa")]
+position = Vector2(72, -72)
+
+[node name="Door2" parent="." index="21" unique_id=1838789133 instance=ExtResource("4_7abwa")]
+position = Vector2(96, -56)
+rotation = 1.5707964
+
+[node name="Door3" parent="." index="22" unique_id=1392933369 instance=ExtResource("4_7abwa")]
+position = Vector2(112, -56)
+rotation = 1.5707964
+mutation_color = "blue"
+
+[node name="Door4" parent="." index="23" unique_id=1304323635 instance=ExtResource("4_7abwa")]
+position = Vector2(120, -72)
+mutation_color = "blue"
+
+[node name="Door5" parent="." index="24" unique_id=609490509 instance=ExtResource("4_7abwa")]
+position = Vector2(120, -72)
+mutation_color = "blue"
+
+[node name="Door6" parent="." index="25" unique_id=1700624567 instance=ExtResource("4_7abwa")]
+position = Vector2(72, -112)
+mutation_color = "magenta"
+
+[node name="Door7" parent="." index="26" unique_id=1351005746 instance=ExtResource("4_7abwa")]
+position = Vector2(96, -128)
+rotation = 1.5707964
+mutation_color = "magenta"
+
+[node name="Token" parent="." index="27" unique_id=1113412797 instance=ExtResource("5_1c2ek")]
+position = Vector2(72, -48)
+
+[node name="Token2" parent="." index="28" unique_id=843806813 instance=ExtResource("5_1c2ek")]
+position = Vector2(72, -136)
+
+[node name="Mutagen8" parent="." index="29" unique_id=958460725 instance=ExtResource("3_mm8m8")]
+position = Vector2(-64, -96)
+mutation_color = "green"
+
+[node name="Door8" parent="." index="30" unique_id=1068655466 instance=ExtResource("4_7abwa")]
+position = Vector2(-48, -96)
+rotation = 1.5707964
+mutation_color = "cyan"
+
+[node name="Portal11" parent="." index="31" unique_id=1773463719 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-48, -48)
+mutation_color = "cyan"
+other = NodePath("../Portal12")
+
+[node name="Portal12" parent="." index="32" unique_id=1153304925 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-40, -104)
+mutation_color = "cyan"
+other = NodePath("../Portal11")
+
+[node name="Goal2" parent="." index="33" unique_id=667824316 instance=ExtResource("6_1c2ek")]
+position = Vector2(8, -88)
+next = ExtResource("7_fmg1f")
+
+[node name="Door9" parent="." index="34" unique_id=1988502663 instance=ExtResource("4_7abwa")]
+position = Vector2(-72, -112)
+mutation_color = "green"
+
+[node name="Token3" parent="." index="35" unique_id=2124076076 instance=ExtResource("5_1c2ek")]
+position = Vector2(-64, -128)
+
+[node name="Mutagen9" parent="." index="36" unique_id=1434155267 instance=ExtResource("3_mm8m8")]
+position = Vector2(-72, -136)
+
+[node name="Door10" parent="." index="37" unique_id=1827850275 instance=ExtResource("4_7abwa")]
+position = Vector2(-72, -128)
+rotation = 1.5707964
+
+[node name="Token4" parent="." index="38" unique_id=2088139604 instance=ExtResource("5_1c2ek")]
+position = Vector2(-112, -128)
+
+[node name="Door11" parent="." index="39" unique_id=1678735444 instance=ExtResource("4_7abwa")]
+position = Vector2(-112, -112)
+
+[node name="Mutagen10" parent="." index="40" unique_id=1944703179 instance=ExtResource("3_mm8m8")]
+position = Vector2(-104, -88)
+mutation_color = "blue"
+
+[node name="Door12" parent="." index="41" unique_id=42182984 instance=ExtResource("4_7abwa")]
+position = Vector2(-112, -72)
+mutation_color = "magenta"
+
+[node name="Token5" parent="." index="42" unique_id=325098149 instance=ExtResource("5_1c2ek")]
+position = Vector2(-120, -56)
+
+[node name="Token6" parent="." index="43" unique_id=10106641 instance=ExtResource("5_1c2ek")]
+position = Vector2(-64, -56)
+
+[node name="Door13" parent="." index="44" unique_id=1344386575 instance=ExtResource("4_7abwa")]
+position = Vector2(-72, -64)
+rotation = 1.5707964
+mutation_color = "magenta"
+
+[node name="Door14" parent="." index="45" unique_id=838016830 instance=ExtResource("4_7abwa")]
+position = Vector2(-48, -88)
+rotation = 1.5707964
+mutation_color = "magenta"
+
+[node name="Portal13" parent="." index="46" unique_id=531057793 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-40, -80)
+mutation_color = "magenta"
+other = NodePath("../Portal14")
+
+[node name="Portal14" parent="." index="47" unique_id=1439479032 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(0, -136)
+mutation_color = "magenta"
+other = NodePath("../Portal13")
+
+[node name="Door15" parent="." index="48" unique_id=253612910 instance=ExtResource("4_7abwa")]
+position = Vector2(-24, -176)
+
+[node name="Door16" parent="." index="49" unique_id=891412152 instance=ExtResource("4_7abwa")]
+position = Vector2(-8, -176)
+mutation_color = "magenta"
+
+[node name="Door17" parent="." index="50" unique_id=1833765910 instance=ExtResource("4_7abwa")]
+position = Vector2(16, -176)
+mutation_color = "magenta"
+
+[node name="Door18" parent="." index="51" unique_id=1611541666 instance=ExtResource("4_7abwa")]
+position = Vector2(32, -176)
+mutation_color = "yellow"
+
+[node name="Door20" parent="." index="52" unique_id=921165367 instance=ExtResource("4_7abwa")]
+position = Vector2(56, -152)
+rotation = 1.5707964
+mutation_color = "yellow"
+
+[node name="Mutagen11" parent="." index="53" unique_id=83913093 instance=ExtResource("3_mm8m8")]
+position = Vector2(-8, -200)
+mutation_color = "blue"
+
+[node name="Door19" parent="." index="54" unique_id=527178244 instance=ExtResource("4_7abwa")]
+position = Vector2(-48, -176)
+mutation_color = "yellow"
+
+[node name="Mutagen12" parent="." index="55" unique_id=1128211590 instance=ExtResource("3_mm8m8")]
+position = Vector2(-24, -152)
+mutation_color = "green"
+
+[node name="Token7" parent="." index="56" unique_id=784102542 instance=ExtResource("5_1c2ek")]
+position = Vector2(-48, -152)
+
+[node name="Token8" parent="." index="57" unique_id=1300623359 instance=ExtResource("5_1c2ek")]
+position = Vector2(-48, -200)
+
+[node name="Token9" parent="." index="58" unique_id=1210375059 instance=ExtResource("5_1c2ek")]
+position = Vector2(56, -200)
+
+[node name="Mutagen13" parent="." index="59" unique_id=1044549859 instance=ExtResource("3_mm8m8")]
+position = Vector2(-24, -184)
+
+[node name="Mutagen14" parent="." index="60" unique_id=1050204432 instance=ExtResource("3_mm8m8")]
+position = Vector2(48, -176)
+mutation_color = "green"
+
+[node name="Token10" parent="." index="61" unique_id=1876967534 instance=ExtResource("5_1c2ek")]
+position = Vector2(32, -152)
+
+[node name="Mutagen15" parent="." index="62" unique_id=756086449 instance=ExtResource("3_mm8m8")]
+position = Vector2(16, -200)
+mutation_color = "blue"
+
+[node name="Mutagen16" parent="." index="63" unique_id=769856698 instance=ExtResource("3_mm8m8")]
+position = Vector2(32, -184)
+
+[node name="Portal15" parent="." index="64" unique_id=1506645601 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(32, -160)
+mutation_color = "yellow"
+other = NodePath("../Portal16")
+
+[node name="Portal16" parent="." index="65" unique_id=1110194852 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-8, -48)
+mutation_color = "yellow"
+other = NodePath("../Portal15")
+
+[node name="Door21" parent="." index="66" unique_id=896650551 instance=ExtResource("4_7abwa")]
+position = Vector2(8, -40)
+mutation_color = "yellow"
+
+[node name="Mutagen17" parent="." index="67" unique_id=927637123 instance=ExtResource("3_mm8m8")]
+position = Vector2(8, -24)
+
+[node name="Mutagen18" parent="." index="68" unique_id=1191997523 instance=ExtResource("3_mm8m8")]
+position = Vector2(0, -16)
+mutation_color = "green"
+
+[node name="Mutagen19" parent="." index="69" unique_id=987898505 instance=ExtResource("3_mm8m8")]
+position = Vector2(16, -16)
+mutation_color = "blue"
+
+[node name="Door22" parent="." index="70" unique_id=1605287955 instance=ExtResource("4_7abwa")]
+position = Vector2(-8, 0)
+mutation_color = "yellow"
+
+[node name="Door23" parent="." index="71" unique_id=58567514 instance=ExtResource("4_7abwa")]
+position = Vector2(8, 0)
+mutation_color = "cyan"
+
+[node name="Door24" parent="." index="72" unique_id=686447074 instance=ExtResource("4_7abwa")]
+position = Vector2(24, 0)
+mutation_color = "green"
+
+[node name="Door25" parent="." index="73" unique_id=599525306 instance=ExtResource("4_7abwa")]
+position = Vector2(-24, 0)
+mutation_color = "blue"
+
+[node name="Door26" parent="." index="74" unique_id=1636777619 instance=ExtResource("4_7abwa")]
+position = Vector2(40, 0)
+
+[node name="Door27" parent="." index="75" unique_id=1521888373 instance=ExtResource("4_7abwa")]
+position = Vector2(-40, 0)
+mutation_color = "magenta"
+
+[node name="Token11" parent="." index="76" unique_id=1250565283 instance=ExtResource("5_1c2ek")]
+position = Vector2(-40, 32)
+
+[node name="Token12" parent="." index="77" unique_id=1962539264 instance=ExtResource("5_1c2ek")]
+position = Vector2(-24, 32)
+
+[node name="Token13" parent="." index="78" unique_id=1093938348 instance=ExtResource("5_1c2ek")]
+position = Vector2(8, 32)
+
+[node name="Token15" parent="." index="79" unique_id=408377274 instance=ExtResource("5_1c2ek")]
+position = Vector2(40, 32)
+
+[node name="Token16" parent="." index="80" unique_id=703923182 instance=ExtResource("5_1c2ek")]
+position = Vector2(24, 32)
+
+[node name="Portal17" parent="." index="81" unique_id=178858142 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-8, 32)
+mutation_color = "yellow"
+other = NodePath("../Portal18")
+
+[node name="Portal18" parent="." index="82" unique_id=606419038 node_paths=PackedStringArray("other") instance=ExtResource("2_t8527")]
+position = Vector2(-8, -120)
+mutation_color = "yellow"
+other = NodePath("../Portal17")
+
+[node name="Player" parent="." index="83" unique_id=1337450750]
+position = Vector2(8, -96)
+
+[node name="Mutagen20" parent="." index="85" unique_id=1409446354 instance=ExtResource("3_mm8m8")]
+position = Vector2(-32, -160)
