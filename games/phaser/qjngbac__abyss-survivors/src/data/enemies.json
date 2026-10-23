@@ -1,0 +1,159 @@
+{
+  "enemies": {
+    "bat": {
+      "name": "蝙蝠",
+      "texture": "enemy-bat-fly-1",
+      "frames": [
+        "enemy-bat-fly-1",
+        "enemy-bat-fly-2"
+      ],
+      "hp": 10,
+      "speed": 80,
+      "damage": 8,
+      "xp": 2,
+      "behavior": "chase"
+    },
+    "zombie": {
+      "name": "僵尸",
+      "texture": "enemy-zombie-walk-1",
+      "frames": [
+        "enemy-zombie-walk-1",
+        "enemy-zombie-walk-2"
+      ],
+      "hp": 18,
+      "speed": 55,
+      "damage": 10,
+      "xp": 3,
+      "behavior": "chase"
+    },
+    "skeleton": {
+      "name": "骷髅弓手",
+      "texture": "enemy-skeleton-archer",
+      "hp": 16,
+      "speed": 70,
+      "damage": 8,
+      "xp": 4,
+      "behavior": "ranged",
+      "shootInterval": 2.8,
+      "bulletSpeed": 240
+    },
+    "ghost": {
+      "name": "幽灵",
+      "texture": "enemy-ghost",
+      "hp": 30,
+      "speed": 50,
+      "damage": 12,
+      "xp": 6,
+      "behavior": "chase",
+      "alpha": 0.65
+    },
+    "boar": {
+      "name": "冲锋野猪",
+      "texture": "enemy-boar",
+      "hp": 35,
+      "speed": 60,
+      "damage": 14,
+      "xp": 8,
+      "behavior": "charger"
+    },
+    "troll": {
+      "name": "巨魔精英",
+      "texture": "enemy-troll-elite",
+      "hp": 140,
+      "speed": 42,
+      "damage": 18,
+      "xp": 30,
+      "behavior": "chase",
+      "elite": true
+    },
+    "reaper": {
+      "name": "死神",
+      "texture": "enemy-reaper-boss",
+      "hp": 2600,
+      "speed": 55,
+      "damage": 25,
+      "xp": 100,
+      "behavior": "boss",
+      "bossKind": "reaper",
+      "ringInterval": 4.5,
+      "summonInterval": 8
+    },
+    "trollKing": {
+      "name": "巨魔王",
+      "texture": "enemy-troll-elite",
+      "scale": 2,
+      "hp": 2400,
+      "speed": 48,
+      "damage": 22,
+      "xp": 100,
+      "behavior": "boss",
+      "bossKind": "trollKing",
+      "summonInterval": 6,
+      "slamInterval": 5
+    },
+    "boarKing": {
+      "name": "野猪王",
+      "texture": "enemy-boar",
+      "scale": 2.2,
+      "hp": 3200,
+      "speed": 58,
+      "damage": 26,
+      "xp": 100,
+      "behavior": "boss",
+      "bossKind": "boarKing",
+      "dashEvery": 5,
+      "summonInterval": 10
+    },
+    "trollBrute": {
+      "name": "巨魔头目",
+      "texture": "enemy-troll-elite",
+      "scale": 1.5,
+      "hp": 1100,
+      "speed": 46,
+      "damage": 18,
+      "xp": 60,
+      "behavior": "boss",
+      "bossKind": "trollKing",
+      "summonInterval": 7,
+      "slamInterval": 6
+    },
+    "reaperTrue": {
+      "name": "死神真身",
+      "texture": "enemy-reaper-boss",
+      "scale": 1.25,
+      "hp": 4400,
+      "speed": 60,
+      "damage": 30,
+      "xp": 200,
+      "behavior": "boss",
+      "bossKind": "reaper",
+      "ringInterval": 3.2,
+      "summonInterval": 5.5
+    },
+    "goblin": {
+      "name": "黄金哥布林",
+      "texture": "enemy-zombie-walk-1",
+      "frames": [
+        "enemy-zombie-walk-1",
+        "enemy-zombie-walk-2"
+      ],
+      "hp": 60,
+      "speed": 140,
+      "damage": 0,
+      "xp": 0,
+      "behavior": "flee",
+      "tint": 16766720,
+      "goldGoblin": true,
+      "despawnAfter": 18
+    },
+    "barrel": {
+      "name": "木桶",
+      "texture": "enemy-barrel",
+      "hp": 20,
+      "speed": 0,
+      "damage": 0,
+      "xp": 0,
+      "behavior": "barrel"
+    }
+  }
+}
