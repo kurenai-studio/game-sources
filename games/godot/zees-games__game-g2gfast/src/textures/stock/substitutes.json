@@ -1,0 +1,2901 @@
+{
+ "_": "Stand-ins (Kenney first, else CC0 from ambientCG) for stock materials an imported map's .bsp did not carry. First match wins (String.match globs, lowercase material names). 'none' keeps the tinted prototype grid. 'units' is the world WIDTH of one tile (its height is units * 'aspect', the image's height over width) in Source units; 'mean' is the stand-in's average sRGB colour, which the tint toward the map's measured colour divides by. Chosen 2026-10-04 by looking at private reference copies of the originals; those never enter this repository. [g2g-maps-stock-1]",
+ "entries": [
+  {
+   "match": "dev/*",
+   "none": true,
+   "why": "a developer texture: flat colour, the grid tinted to it is the honest stand-in"
+  },
+  {
+   "match": "tools/*",
+   "none": true,
+   "why": "tool texture"
+  },
+  {
+   "match": "real_dev/*",
+   "none": true,
+   "why": "developer texture"
+  },
+  {
+   "match": "proxychains/angst_props/reflectivity_*",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_*, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/angst_cubemap*",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_70b, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/ico_border",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_70b, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/gray",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_50b, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/giantplayer",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_50b, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/bonus_spin",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour dev/reflectivity_50b, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "proxychains/angst_props/white*",
+   "none": true,
+   "why": "bhop_angst (Proxychains): its own material over the stock flat developer colour white, which the map did not carry; flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-22 [chk-maps]"
+  },
+  {
+   "match": "*/black",
+   "none": true,
+   "why": "flat black in the original (cs_italy/black measured)"
+  },
+  {
+   "match": "*/white",
+   "none": true,
+   "why": "flat white in the original (cs_havana/white measured)"
+  },
+  {
+   "match": "metal/*floor*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "why": "a metal floor: plate (ambientCG MetalPlates006, CC0). Kenney has no metal; the family rule's second source.",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "metal/*",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "why": "metal walls, ceilings, trims: plain brushed metal (ambientCG Metal032, CC0)",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "concrete/*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "why": "smooth light concrete (ambientCG Concrete034, CC0). surf_mesa's ramps are concretefloor039a, and its reference runs show them smooth light grey where the grid drew a dark lattice (2026-10-09)",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0
+  },
+  {
+   "match": "lights/*",
+   "none": true,
+   "why": "a light panel"
+  },
+  {
+   "match": "models/comp/*",
+   "none": true,
+   "why": "arcade cabinet parts: flat colours"
+  },
+  {
+   "match": "de_tides/blend_concrete_dirt",
+   "texture": "floor_ground_dirt.png",
+   "why": "reference: brown packed dirt",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "models/props_wasteland/rockcliff*",
+   "texture": "wall_rock.png",
+   "why": "name and model: rock cliff faces (surf_mesa's walls)",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "cs_havana/woodm",
+   "texture": "floor_wood_planks.png",
+   "why": "reference: dark brown planks",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "de_chateau/woodm",
+   "texture": "floor_wood_planks.png",
+   "why": "reference: dark brown planks",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "de_tides/tides_floor_wood",
+   "texture": "floor_wood_planks_wide.png",
+   "why": "reference: wide weathered planks",
+   "mean": [
+    0.351,
+    0.281,
+    0.239
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "de_dust/rockwall01",
+   "texture": "wall_rock.png",
+   "why": "reference: brown rock",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "cs_havana/rockwall011*",
+   "texture": "wall_rock.png",
+   "why": "reference: dark rock",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "de_dust/groundsand_blend",
+   "texture": "floor_ground_sand.png",
+   "why": "reference: pale sand",
+   "mean": [
+    0.641,
+    0.584,
+    0.547
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "cs_italy/stonewall02",
+   "texture": "wall_brick_stone_center.png",
+   "why": "reference: grey stone courses",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "cs_havana/ground01grass",
+   "texture": "floor_ground_grass.png",
+   "why": "reference: short green grass",
+   "mean": [
+    0.233,
+    0.348,
+    0.28
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "de_aztec/stonework01moss*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference (bhop_aztec footage, 2026-10-20): the mossy stone is mostly pit WALL, grey cobble whose measured olive colour pulls the tint green; a grass texture made whole walls green. [ref-2]"
+  },
+  {
+   "match": "de_aztec/stn01moss*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference (bhop_aztec footage, 2026-10-20): the mossy stone is mostly pit WALL, grey cobble whose measured olive colour pulls the tint green; a grass texture made whole walls green. [ref-2]"
+  },
+  {
+   "match": "de_aztec/stonework01g",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference (bhop_aztec footage, kappA_^ 41 s, 2026-10-20): the pit walls are pale grey cobble, not tan sandstone courses. [ref-2]"
+  },
+  {
+   "match": "de_aztec/stonework01*",
+   "texture": "wall_brick_sand_center.png",
+   "why": "reference: sandstone blocks",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "cs_italy/cobble02",
+   "texture": "floor_stone_pattern_small.png",
+   "why": "reference: grey cobbles",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "de_aztec/stonework05",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: small rough-cut stone courses. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/road01_cheap",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: a muddy brown dirt road. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infwllftop",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: pale cut-stone blocks in courses. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_tides/tides_floor_stone_2",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: dark flagstones. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_walloffice_01",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: a smooth painted office wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/stonewall01",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: small brown rubble stone. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/outwall02",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: grey cut-stone blocks. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/outwall01*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: rubble stone with moss. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/residwall02",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: pale stone blocks. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/stonewall02",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: tan rubble stone. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/templewall02",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name and de_dust family: stone wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/castle01",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: brown rubble stone. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_bigbrk",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: big pale stone blocks. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/walltrim01",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: large grey stone tiles. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukmetwallab",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: corrugated grey metal. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/pi_rust",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: rusted metal sheet (tint keeps the rust colour). Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/steel",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: plain grey steel. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "glass/*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "glass: the original was translucent ($translucent in every glass VMT the reference has; the pictures are smudged tints of grey, brown and blue-black), and maps are built on that: surf_greatriver_v4's spawn is a glass box with the sky behind it. Any image on an opaque mesh (Kenney's framed window panes, a CC0 photo of glass) made that box a dark room, as the opaque grid did. So no texture: the grid in the measured colour, lifted 20%, drawn see-through at 35%, which keeps a glass floor or ramp visible and its scale readable. Chosen by rendering greatriver_v4, mai_remix and bunnyhop_pro both ways (2026-10-10)"
+  },
+  {
+   "match": "*glass*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "any other untextured glass (lamp covers, the mappers' own refract panes when they did not ship): the glass treatment above, so a red lamp glass is a red see-through tint (2026-10-10)"
+  },
+  {
+   "match": "cs_italy/pipe_wall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: smooth dark olive plaster, no courses. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "test_speakers/floor04",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: parquet, wood blocks. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/wallinterior01*",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: grey dressed stone in courses. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/outwall02*",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: the same cut stone blocks as outwall02. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukmetwalli",
+   "texture": "cc0_metal_brushed.jpg",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: blue corrugated sheet metal, as nukmetwallab. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukmetwallf",
+   "texture": "cc0_metal_brushed.jpg",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: white corrugated sheet metal. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/templewall02b",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: the sand-coloured cut stone of templewall02. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_ceiling_facility_01",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: grey suspended-ceiling panels in a square grid; tiles tinted grey keep the grid. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/walltrima",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference: rubble stone in a band. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/offflrc",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: mottled grey stone floor, no joints. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/ceiling01",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: white plaster ceiling. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/flrc01",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: white square floor tiles. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/boxsides*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: a wooden crate's boards. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_prodigy/floor02",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: smooth brown floor, painted concrete in a facility. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/floor02",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: smooth brown floor, the same as de_prodigy/floor02. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infflrc",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: grey cobbles. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/stn01*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "filter": "linear",
+   "why": "reference: smooth tan stone with grime at its foot, no courses (blocks read too busy). Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*gravel*",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: grey gravel (de_train/train_gravel_floor_01); Kenney's dirt tinted to it reads as loose ground. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "halflife/c3a2a_telred1d",
+   "none": true,
+   "why": "reference: flat orange-yellow, the grid tinted to it is the honest stand-in. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/wall03b",
+   "none": true,
+   "why": "reference: patterned wallpaper; nothing in Kenney or CC0 reads as it. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "carpet/*",
+   "none": true,
+   "why": "reference (carpet/offflra): patterned office carpet; Kenney and the CC0 set have no fabric, and every texture read as the wrong material. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*carpet*",
+   "none": true,
+   "why": "carpet, as carpet/* (props/carpetfloor*). Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cable/*",
+   "none": true,
+   "why": "a cable: a few units thick, its colour is all it shows. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/cs_assault/light_shop2_off",
+   "none": true,
+   "why": "a light fitting, as lights/*. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "effects/*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "effects (shields, lasers, overlays) were translucent or additive in the original: the glass treatment, not an opaque slab. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "sprites/*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "a sprite card, translucent in the original: the glass treatment. Added 2026-10-10 (fifth batch) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/yellow",
+   "none": true,
+   "why": "reference: flat yellow, the grid tinted to it is the honest stand-in (2026-10-10)"
+  },
+  {
+   "match": "de_dust/stonetrim05",
+   "none": true,
+   "why": "reference: a decal-like trim strip with fur-like streaks; no stand-in reads as it (2026-10-10)"
+  },
+  {
+   "match": "de_aztec/stairsfake01*",
+   "none": true,
+   "why": "reference: painted stair treads on a flat face; any block or plank texture reads as the wrong thing. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/stonework05*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: rough-cut stone courses, as stonework05. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/trim*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: pale stone blocks. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/azstatc",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: a carved stone relief; stone blocks are the nearest Kenney has. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/templewall04*",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: tan sandstone courses. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/resid*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: pale plaster, weathered; smooth concrete tinted to it. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/dusandcrete",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: sandy concrete slab. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/curb04",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: a concrete kerb. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/sdwlka*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: pavement slab. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/stonework01*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: yellow rubble stone. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/trim0*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: a dressed-stone moulding; flat enough to read as concrete. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/castle0*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: dark castle stonework, as castle01. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_bigtrim",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: stone courses under a moulding. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_archt*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: smooth pale dressed stone with streaks; block textures read as too busy. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_steptop*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: a smooth grey step top. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_bigbrk*",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "reference sheet: big sand bricks, as pi_bigbrk. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukmetwallm",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference sheet: blue-painted concrete, not metal despite the name; the tint keeps the blue. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infflra",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference sheet: red cobbled floor. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_tides/tides_ceiling*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference sheet: dark wooden ceiling boards. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/combine_citadel/*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "no reference (a base-engine model material); name and measured colour: dark blue-grey alien metal panelling, surf_thriller's main structure. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "building_template/building_template011*",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "no reference (base-engine facade); measured a red-brown, which on a city facade is brick. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "building_template/building_template024*",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "no reference (base-engine facade); measured a red-brown, which on a city facade is brick. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "building_template/*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "no reference (base-engine city facades); measured pale greys and tans: rendered and painted concrete, tinted to each one's own colour. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "storefront_template/*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "no reference (base-engine shop fronts); measured greys: concrete. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "halflife/lab1_w*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "no reference; a lab wall, measured a pale green-grey: painted concrete. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/stonewall*",
+   "texture": "wall_stone.png",
+   "why": "name: stone wall",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "nature/sandfloor*",
+   "texture": "floor_ground_sand.png",
+   "why": "name: sand floor",
+   "mean": [
+    0.641,
+    0.584,
+    0.547
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "nature/blenddirtgrass*",
+   "texture": "floor_ground_dirt.png",
+   "why": "name: dirt/grass blend, dirt is the base",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "nature/blenddirtdirt*",
+   "texture": "floor_ground_dirt.png",
+   "why": "name: dirt",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0
+  },
+  {
+   "match": "nature/blendcliffgrass*",
+   "texture": "wall_rock.png",
+   "why": "name: cliff/grass blend, cliff is the base",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "*rockwall*",
+   "texture": "wall_rock.png",
+   "why": "name: rock wall",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "*rockcliff*",
+   "texture": "wall_rock.png",
+   "why": "name: rock cliff",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0
+  },
+  {
+   "match": "*metalfloor*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: a metal floor. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*metal*",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: metal (de_train's ceilings, cs_italy/ironmetal01, ...). Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*cement*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name: cement. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*concrete*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name: concrete. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*snow*",
+   "texture": "cc0_snow.jpg",
+   "filter": "linear",
+   "mean": [
+    0.873,
+    0.936,
+    0.988
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name: snow (ambientCG Snow010A, CC0; Kenney has none). Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "tile/tilefloor02*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "bhop_grove's walls and floors: the footage shows smooth dark slate concrete with faint seams, not the tan tile checker. The CC0 smooth concrete tinted to the map's measured slate (ref-2, 2026-10-20)"
+  },
+  {
+   "match": "tile/*",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: floor tiles. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*tile*",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: tiles (de_train officetile, de_dust dutile, ...). Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*grass*",
+   "texture": "floor_ground_grass.png",
+   "mean": [
+    0.233,
+    0.348,
+    0.28
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: grass, including rock-and-grass terrain blends, which are floors. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*cliff*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: cliff. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*cavewall*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: cave wall. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*/rock*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: rock (de_chateau/rockf, ...). Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*blendrock*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: a rock blend. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*dirt*",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: dirt. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*ground*",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: ground. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*cobble*",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: cobbles. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*brick*",
+   "texture": "wall_brick_stone_center.png",
+   "mean": [
+    0.488,
+    0.498,
+    0.538
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: brick. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*wood*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: wood. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*shingles*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: wooden shingles. Added 2026-10-09 by name, for the maps imported since 10-04 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*marble*",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: marble floors (reference: pale square slabs). Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*plaster*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name: plaster (reference: smooth pale render). Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*pavement*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name: pavement (reference: dark smooth paving). Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*stonewall*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: stone wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*marketwall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: rendered plaster walls. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*sitebwall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: rendered plaster wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukfloor*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: dark smooth concrete floor. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/wll*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: weathered rendered wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/wll*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: weathered rendered wall. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*/trimwall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "reference: rendered wall with a stone base. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*rust*",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: rust. Added 2026-10-10 from the reference sheet [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*crate*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name and reference (cs_italy/picrate1, de_cbble/cratebig01b): wooden crate boards. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*mud*",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: mud floor. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*blend_rock*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: a rock blend. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*sandrock*",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: sand over rock; the rock half is what a surfer's ramp shows. Added 2026-10-10 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "tony/forest_texture4",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "bhop_grove's own VMT (no texture shipped) blends two stock dirt textures (de_cbble/grounddirt over nature/dirtfloor002a, surfaceprop dirt/grass): dirt. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "aoki/aoki_blend*",
+   "none": true,
+   "why": "bhop_exodus's own VMTs blend developer measure textures (dev/dev_measurewall01d, dev/reflectivity_30) with nodraw: developer texture. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*toolsblack*",
+   "none": true,
+   "why": "a mapper's VMT over tools/toolsblack (bhop_overthinker's toolsblack_unlit): flat black, as tools/*. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/antosha/fortony/outline*",
+   "none": true,
+   "why": "bhop_lego3's own VMT names tools/toolsblack: the black outline of the lettering, flat black. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/antosha/fortony/text*",
+   "none": true,
+   "why": "bhop_lego3's own VMT names cs_havana/white: flat white lettering. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/env/surface/wall_mapbounds*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "surf_interference's boundary wall: an alpha-tested UnlitGeneric that only reflects the sky ($envmap envmaps/sky, base texture not shipped). The glass treatment keeps it faint and see-through, as a sky mirror reads; an opaque stand-in would box the map in. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/env/space/crystal*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "surf_interference's crystals: a blank base under an environment map (a reflective crystal). Glass treatment. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/env/space/spaceship0*",
+   "none": true,
+   "why": "surf_interference's ship: $basetexture black_pixel under a reflection, i.e. flat black, plus an untextured glow colour. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*stonefloor*",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference (cs_havana/stonefloor007a): small grey cobbles; stone/stonefloor011a by the same name. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/blendsandsand*",
+   "texture": "floor_ground_sand.png",
+   "mean": [
+    0.641,
+    0.584,
+    0.547
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: a sand-on-sand terrain blend. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "watersource/waterfall*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "a waterfall sheet (translucent, scrolling, no texture shipped): see-through like glass, never an opaque wall across a route. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*waterfall*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "other waterfall sheets: as above. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_foliage/*",
+   "none": true,
+   "why": "a tree model's bark and leaves: Kenney's foliage comes as models with palette swatches, not as a texture for someone else's mesh. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_xen/foliage/*",
+   "none": true,
+   "why": "bhop_frotinity2's vines: VertexLitGeneric with only a colour ($color2), no texture at all; the tinted grid is that colour. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*rubber*",
+   "none": true,
+   "why": "rubber floor and roof sheeting (vehicle/rubbertrainfloor001a, props/rubberroof001a): no Kenney or CC0 stand-in in the set reads as rubber. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*tarp*",
+   "none": true,
+   "why": "reference (de_chateau/cnstrcttarpb): blue fabric tarp; nothing in the set is fabric. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*fabric*",
+   "none": true,
+   "why": "upholstery (props_c17 furniture): nothing in the set is fabric. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/debug/*",
+   "none": true,
+   "why": "debug material: flat white. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "hlmv/*",
+   "none": true,
+   "why": "model-viewer default: flat grey. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nothing/*",
+   "none": true,
+   "why": "mapper's nothing/blacknofog: flat black, not drawn in the original. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "invisible*",
+   "none": true,
+   "why": "a mapper's invisible material: not drawn in the original. Added 2026-10-11 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/*/tree*",
+   "none": true,
+   "why": "a stock tree model's bark-and-leaf atlas (reference: alpha-cut leaves on an atlas): Kenney's foliage is models, not a texture for another mesh. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*bush*",
+   "none": true,
+   "why": "bush and shrub models: leaf atlases, as the trees. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*shrub*",
+   "none": true,
+   "why": "shrub models: leaf atlases, as the trees. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*/fern*",
+   "none": true,
+   "why": "fern models: leaf atlases, as the trees. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*streetlight*",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: a dark painted metal lamp post (an atlas): brushed metal, tinted dark by the measured colour. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*industrialbell*",
+   "texture": "cc0_metal_brushed.jpg",
+   "filter": "linear",
+   "mean": [
+    0.49,
+    0.535,
+    0.578
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: plain grey cast metal. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_aztec/road*",
+   "texture": "floor_ground_dirt.png",
+   "mean": [
+    0.359,
+    0.289,
+    0.248
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: a packed-earth road. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*/log*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "reference: a log's cut end and bark; wood. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/ice",
+   "none": true,
+   "why": "ice: no reference picture and nothing in the set reads as ice; 0.1% of one map. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "neon/*",
+   "none": true,
+   "why": "neon strips: a flat glowing colour, which the tinted grid already is. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "decals/*",
+   "none": true,
+   "why": "decals (number plates, signs): text and symbols of the original; nothing stands in for a sign. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*{cxarrow*",
+   "none": true,
+   "why": "a painted direction-arrow decal; as decals/*. Added 2026-10-11, when the importer stopped drawing the copies mappers had packed [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/door*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_cbble/door*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/dudoor",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/ducrtlrgtp",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/sandwlldoor2",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/pdoor1",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "a wooden door or crate lid by name and surfaceprop wood: planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_tides/tides_roof_*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop wood or a boarded surface (roof boards, parquet, billboard backing, box): planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/ceiling02",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop wood or a boarded surface (roof boards, parquet, billboard backing, box): planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/wfloor-sn*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop wood or a boarded surface (roof boards, parquet, billboard backing, box): planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_train/train_blank_billboard",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop wood or a boarded surface (roof boards, parquet, billboard backing, box): planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "props/cardboardbox*",
+   "texture": "floor_wood_planks.png",
+   "mean": [
+    0.349,
+    0.281,
+    0.24
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop wood or a boarded surface (roof boards, parquet, billboard backing, box): planks. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/stonestep*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/stairoutdoor*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/inftrima",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infwllftopedge",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_tides/tides_floor_stone_*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/chatcolumn*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "surfaceprop stone or rock (steps, trims, columns): rubble stone. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/wallpaper*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/cellarwall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/ceiling*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/cuiceila",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/iceilb*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/iwlld*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/wall0*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/extcol*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/extwall*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/dusandwlltrim*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/templewall02a",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_tides/tides_wall_*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_wall_*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukmetwallp",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infflrd",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "props/acousticceiling*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "props/plasticceiling*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_italy/pwtrim*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "plaster, painted wall, ceiling or smooth floor by name and surfaceprop (plaster, paper, concrete): smooth concrete. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/roofa",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop tile (a tiled roof or floor): large tan tiles. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/iflrd",
+   "texture": "floor_tiles_tan_large.png",
+   "mean": [
+    0.697,
+    0.641,
+    0.605
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop tile (a tiled roof or floor): large tan tiles. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_ceiling_02",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_beam_01",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nuke_officedoor_01",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukdoorsb",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/cs_assault/pylon",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/cs_assault/de_train_handrails_*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "surfaceprop metal (ceiling plate, beam, door, pylon, handrail): metal plates. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*ivy*",
+   "none": true,
+   "why": "alpha-tested ivy leaf cards: foliage, Kenney has no leaf texture. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*/{*",
+   "none": true,
+   "why": "alpha-tested fence, curtain or grate cards (the '{' prefix): see-through in the original, the opaque grid would wall off a route. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/miltree*",
+   "none": true,
+   "why": "a distant tree billboard. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/inftreelinea",
+   "none": true,
+   "why": "a distant tree-line billboard. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/treeline*",
+   "none": true,
+   "why": "a distant tree-line billboard. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/milmountains*",
+   "none": true,
+   "why": "a distant mountain billboard. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/cloud*",
+   "none": true,
+   "why": "a cloud card. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "fakesky/*",
+   "none": true,
+   "why": "a sky helper brush. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "*fakeskybox*",
+   "none": true,
+   "why": "a sky helper brush. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "props/sign*",
+   "none": true,
+   "why": "a street or exit sign: a printed picture. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "props/*button*",
+   "none": true,
+   "why": "a button panel: a printed picture. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "black",
+   "none": true,
+   "why": "flat black. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "grey",
+   "none": true,
+   "why": "flat grey. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "comp/fadetoblack",
+   "none": true,
+   "why": "a fade overlay. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_train/train_*arrow*",
+   "none": true,
+   "why": "a painted direction-arrow decal. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_train/train_*bombsite*",
+   "none": true,
+   "why": "a painted bombsite marker decal. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_assault/*decal*",
+   "none": true,
+   "why": "a window decal. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "vgui/*",
+   "none": true,
+   "why": "a UI image. Added 2026-10-16 (focus-map pass) [g2g-maps-stock-1]"
+  },
+  {
+   "match": "lambda_bunker/lb_xen_debris",
+   "texture": "wall_rock.png",
+   "mean": [
+    0.255,
+    0.21,
+    0.186
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name: xen debris is rock chunks; no reference, judged by name. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "nature/blendsandweed*",
+   "texture": "floor_ground_sand.png",
+   "mean": [
+    0.641,
+    0.584,
+    0.547
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name: sand blended with weeds; same family as nature/blendsandsand*. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/ramps/*_edge",
+   "none": true,
+   "why": "a mapper-custom ramp trim (surf_aquaflow, surf_greensway): a thin glowing edge strip, no packed texture and no reference; the tinted grid keeps the ramp outline readable. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/ramps/ramp_glow",
+   "none": true,
+   "why": "a mapper-custom glow overlay on aquaflow's ramps (its packed texture is a volumetric noclamp sprite); emissive effect, the grid is the honest stand-in. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/antosha/flow/cvet*",
+   "none": true,
+   "why": "a mapper-custom flower/petal prop (cvet = flower); a foliage atlas has no honest Kenney stand-in. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/iflr*",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: infantry floor, as stone/infflrc. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "stone/infwllc",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name, no reference: stone wall. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_intrimb*",
+   "texture": "wall_brick_sand_center.png",
+   "mean": [
+    0.628,
+    0.561,
+    0.525
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name, no reference: interior brick. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_piranesi/pi_road",
+   "texture": "floor_stone_pattern_small.png",
+   "mean": [
+    0.433,
+    0.443,
+    0.49
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: road paving. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/sandtrim*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: plaster trim. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_dust/dust-trim*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: plaster trim. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "cs_havana/trmc",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: trim. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "sin_exteriorceiling_01",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: ceiling. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "customs/surf_vegetables/tides_floor_grainy_*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: grainy floor, a pale concrete-like slab. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "trainrail1",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: rail. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/env/space/pad_grate",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: metal grate. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_building_details/courtyard_template*_bars*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: iron bars. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_rooftop/rooftopcluster*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0,
+   "why": "name, no reference: rooftop machinery. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/cs_assault/chain",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: chain. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/george/tesquo/nukroof*",
+   "texture": "cc0_metal_plates.jpg",
+   "filter": "linear",
+   "mean": [
+    0.272,
+    0.286,
+    0.29
+   ],
+   "units": 128,
+   "aspect": 1.0,
+   "why": "name, no reference: metal roof. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/de_inferno/pillar*",
+   "texture": "wall_stone.png",
+   "mean": [
+    0.469,
+    0.48,
+    0.523
+   ],
+   "units": 128,
+   "aspect": 2.0,
+   "why": "name, no reference: stone pillar. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_nuke/nukwindow*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: nuke window. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_train/train_oldwindows_*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: old window. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/george/tesquo/prodwndw*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: window. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "tony/glas",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: glas = glass. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/effects/*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: effect sheets (funnel, light volume), as effects/*. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_lab/warp_sheet",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: warp sheet effect. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_combine/*_sheet",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "window or see-through by name, drawn as the other glass entries: energy sheet effect. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props_xen/instances/*/foliage/*",
+   "none": true,
+   "why": "stock xen foliage atlas, like the other foliage. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/combine_scanner/*",
+   "none": true,
+   "why": "emissive scanner eye. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/lego3/*",
+   "none": true,
+   "why": "plain coloured plastic brick underside; the grid tinted to it is the stand-in. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/antosha/fortony/*",
+   "none": true,
+   "why": "mapper-custom fishing props. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "fishingnet",
+   "none": true,
+   "why": "fishing net, open weave. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "de_chateau/curtain01a",
+   "none": true,
+   "why": "cloth. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "overlays/*",
+   "none": true,
+   "why": "overlay decal. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "aoki/*",
+   "none": true,
+   "why": "mapper-custom fade/tool. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "proxychains/shaders/*",
+   "none": true,
+   "why": "sky or shader proxy. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "proxy_map/*",
+   "none": true,
+   "why": "dev/measure proxy. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/cs_office/clouds",
+   "none": true,
+   "why": "sprite clouds. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/weapons/*",
+   "none": true,
+   "why": "weapon model skin. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/de_nuke/lifepreserver",
+   "none": true,
+   "why": "small prop. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "graything",
+   "none": true,
+   "why": "unknown flat grey. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/ramps/other_none",
+   "none": true,
+   "why": "mapper-custom tool. Added 2026-10-17 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "full_ramp_end_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "half_ramp_end_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "half_ramp_end_flip_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "ramp_surf_side_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "side_rail_ramp_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "tileable_surf_dec_mat",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "reflectivity_30",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "reflectivity",
+   "none": true,
+   "why": "a Source 2 prototype material (surf_hologram, by Chent): flat colour in the original, so the tinted grid is the honest stand-in. Added 2026-10-18 [maps-vrf-poc-1]"
+  },
+  {
+   "match": "models/props_combine/tprings_globe*",
+   "treatment": "glass",
+   "alpha": 0.35,
+   "lighten": 0.2,
+   "why": "the energy globe of a combine ring prop (surf_omnibus): translucent glow in the original, so the glass treatment, never an opaque ball. Added 2026-10-19 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "models/props/generated_prop/*_neon",
+   "none": true,
+   "why": "a neon strip generated for the map (bhop_frotinity2): flat glowing colour, which the tinted grid already is. Added 2026-10-19 [g2g-maps-stock-1]"
+  },
+  {
+   "match": "hr_concrete_wall_painted_002_grey*",
+   "texture": "cc0_concrete_smooth.jpg",
+   "filter": "linear",
+   "why": "painted concrete wall (surf_intro, by Chent), Source 2 material; added 2026-10-21 [maps-conv-cs2surf-1]; ambientCG Concrete034 (CC0) stands in",
+   "mean": [
+    0.723,
+    0.723,
+    0.723
+   ],
+   "units": 256,
+   "aspect": 1.0
+  },
+  {
+   "match": "orange_blend",
+   "none": true,
+   "why": "flat orange ramps (surf_intro, by Chent), Source 2 material; added 2026-10-21 [maps-conv-cs2surf-1]: the tinted grid is the honest stand-in"
+  },
+  {
+   "match": "meshset",
+   "none": true,
+   "why": "unnamed collision-mesh fragments (surf_intro, by Chent), Source 2 material; added 2026-10-21 [maps-conv-cs2surf-1]"
+  }
+ ]
+}

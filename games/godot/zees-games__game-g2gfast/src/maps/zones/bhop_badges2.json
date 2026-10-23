@@ -1,0 +1,60 @@
+{
+ "id": "bhop_badges2",
+ "author": "Badgeslol",
+ "attribution": {
+  "author": "Badgeslol",
+  "source": "https://gamebanana.com/mods/124525 (Key Authors: Badgeslol (mapper); Special Thanks: tmontana, Ghost1246511 (dream ladder stage), epic^, Nyastle, s-low; submitter Badgeslol)",
+  "archive": "bhop_badges2_2.rar",
+  "recorded": "2026-10-10"
+ },
+ "notes": "Credit, and a start and finish read from the map's own logic (gb-maps-2). 20 team spawns stand in a 512-square room whose trigger plays the opening (screen overlays and a heartbeat); that trigger is the start. The finish is the small trigger that fades out, sets off the confetti and its sound. Between them are checkpoint sections cp1..cp8 (the map renames a player `cpN` and its pits behind each name send to that section's start; they stay pits here, as bhop_pandora2_fix's do) and boost pads (bact/boost names). Its blocks are once-only: each renames the player xhop1..xhop6 in turn, and a teleport on every block behind filter_multi bh12..bh16 (two neighbouring names) sends a player who lands on the same block twice back; those are dropped as conditional, so a block can be touched twice here. Not published.",
+ "zones": [
+  {
+   "kind": "START",
+   "track": 0,
+   "around": {
+    "point": "spawn",
+    "extents": [
+     128,
+     128,
+     96
+    ]
+   },
+   "note": "round `spawn`, where the spawn room sends you (2026-10-11): 20 team spawns stand in a 512-square holding room whose floor is a teleport to `spawn`, so a player is there a second after appearing. The start was the spawn room until then, and the importer had that floor send back to the spawn, which held every player in the room"
+  },
+  {
+   "kind": "SPAWN",
+   "track": 0,
+   "destination": "spawn",
+   "note": "`spawn`, where the spawn room's floor sends you; see the start's note"
+  },
+  {
+   "kind": "END",
+   "track": 0,
+   "around": {
+    "point": [
+     -2480,
+     -1644,
+     -10668
+    ],
+    "extents": [
+     192,
+     192,
+     128
+    ]
+   },
+   "note": "round the 24-unit trigger that fades out and starts the confetti"
+  }
+ ],
+ "conditional_teleports": {
+  "filters": [
+   "bh12",
+   "bh23",
+   "bh34",
+   "bh45",
+   "bh56",
+   "bh16"
+  ],
+  "note": "the once-only blocks: filter_multi of two xhop names, which the blocks give in turn, so these fire for a player landing on a block they already touched"
+ }
+}
