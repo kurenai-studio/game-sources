@@ -1,0 +1,61 @@
+# Godot 4
+.godot/
+/android/
+
+# Every dot-* addon is a separate repository. For local development, symlink them:
+#   ln -s ../../dot-core/addons/dot_core addons/dot_core
+# A shipped build copies them in instead.
+#
+# THIS LIST IS ALSO THE DEPENDENCY MANIFEST. dot-bootstrap derives what to link from
+# these lines rather than keeping a second copy, because the repository that gains a
+# dependency is the repository that has to ignore its link.
+/addons/dot_core
+/addons/dot_lighting
+/addons/dot_vehicle
+/addons/dot_player
+/addons/dot_player_controller
+/addons/dot_player_char
+/addons/dot_props
+/addons/dot_ui
+/addons/dot_settings
+/addons/dot_menu
+/addons/dot_console
+/addons/dot_stats
+/addons/dot_achievements
+/addons/dot_platform
+/addons/dot_user_avatar
+/addons/dot_user
+/addons/dot_auth
+/addons/dot_cloud
+/addons/dot_moderation
+/addons/dot_voice
+/addons/dot_chat
+/addons/dot_game
+/addons/dot_server
+/addons/dot_net
+/addons/dot_audio
+/addons/dot_fx
+/addons/dot_vote
+/addons/dot_map
+/addons/dot_bot
+/addons/dot_spawn
+
+# Exports
+build/
+export_presets.cfg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots are evidence for a review, not assets.
+/screenshots/
+
+# Editors
+.vscode/
+
+# Optional: natural-disasters, which adds lightning and thunder over storms
+# (game/dd_disasters.gd loads it by path; absent, the game runs without it).
+# No leading slash on purpose: game.sh and dot-ci treat every "/addons/x" line as required.
+addons/natural_disasters
+__pycache__/
