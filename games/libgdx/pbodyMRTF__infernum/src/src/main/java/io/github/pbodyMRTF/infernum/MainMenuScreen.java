@@ -1,0 +1,278 @@
+package io.github.pbodyMRTF.infernum;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
+
+import java.util.Random;
+
+public class MainMenuScreen implements Screen {
+
+    final Jgame game;
+    SpriteBatch   batch;
+    ShapeRenderer shapeRenderer;
+
+    private BitmapFont fontMenu;
+    private BitmapFont fontTitle;
+    private BitmapFont fontVersion;
+
+    private Sound Select;
+    private Sound ConfirmSound;
+
+    private float MasterSound;
+
+    private OrthographicCamera camera;
+    private ExtendViewport      viewport;
+    private static final float VIRTUAL_WIDTH  = 1024f;
+    private static final float VIRTUAL_HEIGHT = 768f;
+
+    private GlyphLayout layout = new GlyphLayout();
+
+    private float titleScale     = 1.0f;
+    private float titlePulse     = 0f;
+    private float menuAlpha      = 0f;
+    private float backgroundHue  = 0f;
+    private int   selectedOption = 0;
+    private float selectionBlink = 0f;
+
+    private static final int PARTICLE_COUNT = 50;
+    private float[] particleX     = new float[PARTICLE_COUNT];
+    private float[] particleY     = new float[PARTICLE_COUNT];
+    private float[] particleSpeed = new float[PARTICLE_COUNT];
+    private float[] particleSize  = new float[PARTICLE_COUNT];
+
+    private static final int   MENU_OPTION_COUNT   = 6;
+    private static final int   GAMEPAD_BUTTON_A    = 0;
+    private static final int   GAMEPAD_BUTTON_B    = 1;
+    private static final int   GAMEPAD_AXIS_LEFT_Y = 1;
+    private static final float DEADZONE            = 0.5f;
+
+    private boolean prevButtonA   = false;
+    private boolean prevButtonB   = false;
+    private boolean prevStickUp   = false;
+    private boolean prevStickDown = false;
+
+    private float menuStartX = -150f;
+
+    private final DevConsole devConsole;
+
+    public MainMenuScreen(final Jgame game) {
+        this.game = game;
+        batch         = new SpriteBatch();
+        shapeRenderer = new ShapeRenderer();
+
+        fontTitle   = game.getFont(Jgame.FONT_SIZE_256);
+        fontMenu    = game.getFont(Jgame.FONT_SIZE_32);
+        fontVersion = game.getFont(Jgame.FONT_SIZE_16);
+
+        camera   = new OrthographicCamera();
+        viewport = new ExtendViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
+        camera.position.set(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2, 0);
+        camera.update();
+
+        this.MasterSound = GameScreen.getMasterSound();
+        initParticles();
+        loadAssets();
+
+        devConsole = new DevConsole(game);
+    }
+    private void loadAssets(){
+        Select = Assets.getSound(Assets.Sounds.SELECT);
+        ConfirmSound = Assets.getSound(Assets.Sounds.CONFIRM);
+    }
+
+    private Controller getGamepad() {
+        if (Controllers.getControllers().size > 0)
+            return Controllers.getControllers().first();
+        return null;
+    }
+
+    private boolean gamepadJustPressed(Controller c, int button, boolean prevState) {
+        return c != null && c.getButton(button) && !prevState;
+    }
+
+    private void initParticles() {
+        Random rand = new Random();
+        for (int i = 0; i < PARTICLE_COUNT; i++) {
+            particleX[i]     = rand.nextFloat() * VIRTUAL_WIDTH;
+            particleY[i]     = rand.nextFloat() * VIRTUAL_HEIGHT;
+            particleSpeed[i] = 20 + rand.nextFloat() * 40;
+            particleSize[i]  = 2  + rand.nextFloat() * 4;
+        }
+    }
+
+    @Override
+    public void render(float delta) {
+        updateAnimations(delta);
+
+        Color bgColor = new Color();
+        bgColor.fromHsv(backgroundHue % 360, 0.6f, 0.3f);
+        Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        camera.update();
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        drawParticles(delta);
+
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+
+        fontTitle.getData().setScale(1f + titleScale * 0.04f);
+        fontTitle.setColor(1, 0.3f, 0.2f, 1);
+        layout.setText(fontTitle, game.bundle.get("menu.title"));
+        float titleX = (VIRTUAL_WIDTH - layout.width) / 2f + 72;
+        fontTitle.draw(batch, game.bundle.get("menu.title"), titleX, VIRTUAL_HEIGHT / 2f + 75);
+        fontTitle.getData().setScale(1f);
+        fontTitle.setColor(1, 1, 1, 1);
+
+        // Menü öğeleri
+        float menuStartY = VIRTUAL_HEIGHT / 2f;
+        float spacing    = 50f;
+
+        drawMenuItem(game.bundle.get("menu.start"),    menuStartY,               0);
+        drawMenuItem(game.bundle.get("menu.online"),   menuStartY - spacing,     1);
+        drawMenuItem(game.bundle.get("menu.tutorial"), menuStartY - 2 * spacing, 2);
+        drawMenuItem(game.bundle.get("menu.settings"), menuStartY - 3 * spacing, 3);
+        drawMenuItem(game.bundle.get("menu.credits"),  menuStartY - 4 * spacing, 4);
+        drawMenuItem(game.bundle.get("menu.exit"),     menuStartY - 5 * spacing, 5);
+
+        // Versiyon
+        fontVersion.setColor(0.7f, 0.7f, 0.7f, menuAlpha * 0.6f);
+        fontVersion.draw(batch,
+                game.bundle.format("menu.version", Jgame.Version), -150, 30);
+        fontVersion.setColor(1, 1, 1, 1);
+
+        batch.end();
+
+        devConsole.render(delta);
+
+        handleInput();
+    }
+
+    private void drawMenuItem(String label, float y, int index) {
+        if (selectedOption == index) {
+            fontMenu.setColor(1, 1, 0, menuAlpha * selectionBlink);
+            if (GameConfig.language.equals("en")){
+                fontMenu.draw(batch, "<-", menuStartX + 175f, y);
+            } else {
+                fontMenu.draw(batch, "<-", menuStartX + 225f, y);
+            }
+
+            fontMenu.draw(batch, label, menuStartX, y);
+        } else {
+            fontMenu.setColor(1, 1, 1, menuAlpha);
+            fontMenu.draw(batch, label, menuStartX, y);
+        }
+        fontMenu.setColor(1, 1, 1, 1);
+    }
+
+    private void updateAnimations(float delta) {
+        titlePulse    += delta * 3f;
+        titleScale     = MathUtils.sin(titlePulse) * 0.5f + 0.5f;
+        menuAlpha      = Math.min(menuAlpha + delta * 1.2f, 1f);
+        backgroundHue  = 330 + (MathUtils.sin(titlePulse * 0.1f) * 0.5f + 0.5f) * 60f;
+        selectionBlink = MathUtils.sin(selectionBlink + delta * 4f) * 0.3f + 0.7f;
+    }
+
+    private void drawParticles(float delta) {
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        Random rand = new Random();
+        for (int i = 0; i < PARTICLE_COUNT; i++) {
+            particleY[i] -= particleSpeed[i] * delta;
+            if (particleY[i] < -10) {
+                particleY[i] = VIRTUAL_HEIGHT + 10;
+                particleX[i] = rand.nextFloat() * VIRTUAL_WIDTH;
+            }
+            shapeRenderer.setColor(0.58f, 0.6f, 0.62f, 0.2f);
+            shapeRenderer.circle(particleX[i], particleY[i], particleSize[i]);
+        }
+        shapeRenderer.end();
+    }
+
+    private void handleInput() {
+        // Console toggle her zaman dinlenir; açıkken menü inputu devre dışı kalır
+        if (devConsole.pollToggle()) {
+            return;
+        }
+
+        Controller c = getGamepad();
+
+        float   stickY    = (c != null) ? c.getAxis(GAMEPAD_AXIS_LEFT_Y) : 0f;
+        boolean stickUp   = stickY < -DEADZONE;
+        boolean stickDown = stickY >  DEADZONE;
+
+        boolean navigateUp = Gdx.input.isKeyJustPressed(Input.Keys.UP)
+                || Gdx.input.isKeyJustPressed(Input.Keys.W)
+                || (stickUp && !prevStickUp);
+        boolean navigateDown = Gdx.input.isKeyJustPressed(Input.Keys.DOWN)
+                || Gdx.input.isKeyJustPressed(Input.Keys.S)
+                || (stickDown && !prevStickDown);
+        boolean confirm = Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+                || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                || gamepadJustPressed(c, GAMEPAD_BUTTON_A, prevButtonA);
+
+        if (navigateUp && selectedOption > 0) {
+            Select.play(1 * MasterSound);
+            selectedOption--;
+        }
+        if (navigateDown && selectedOption < MENU_OPTION_COUNT - 1) {
+            Select.play(1 * MasterSound);
+            selectedOption++;
+        }
+
+        if (confirm) {
+            ConfirmSound.play(1 * MasterSound);
+            switch (selectedOption) {
+                case 0: game.setScreen(new SurvivalGameScreen(game));       dispose(); break;
+                case 1: game.setScreen(new OnlineLobbyScreen(game)); dispose(); break;
+                case 2: game.setScreen(new TutorialScreen(game));   dispose(); break;
+                case 3: game.setScreen(new SettingsScreen(game));   dispose(); break;
+                case 4: game.setScreen(new AboutScreen(game));      dispose(); break;
+                case 5: dispose(); Gdx.app.exit();                             break;
+            }
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.Q)) Gdx.app.exit();
+
+        if (c != null) {
+            prevButtonA   = c.getButton(GAMEPAD_BUTTON_A);
+            prevButtonB   = c.getButton(GAMEPAD_BUTTON_B);
+            prevStickUp   = stickUp;
+            prevStickDown = stickDown;
+        } else {
+            prevButtonA = prevButtonB = prevStickUp = prevStickDown = false;
+        }
+    }
+
+    @Override public void show()   {}
+    @Override public void pause()  {}
+    @Override public void resume() {}
+    @Override public void hide()   {}
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        camera.position.set(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2, 0);
+        camera.update();
+        initParticles();
+        devConsole.resize(width, height);
+    }
+
+    @Override
+    public void dispose() {
+        batch.dispose();
+        shapeRenderer.dispose();
+        devConsole.dispose();
+    }
+}

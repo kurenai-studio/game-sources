@@ -1,0 +1,184 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        google()
+    }
+}
+
+apply plugin: "java"
+apply plugin: "application"
+
+version = 'v1.3'
+
+ext {
+    appName = "infernum"
+    gdxVersion = '1.12.1'
+    box2DLightsVersion = '1.5'
+    mainClassName = "io.github.pbodyMRTF.infernum.DesktopLauncher"
+    serverMainClassName = "io.github.pbodyMRTF.infernum.server.GameServer"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    google()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+}
+
+// ============================================================
+// SERVER CONFIGURATION
+// ============================================================
+
+configurations {
+    serverRuntime
+}
+
+// ============================================================
+// DEPENDENCIES
+// ============================================================
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+
+    implementation "com.badlogicgames.gdx-controllers:gdx-controllers-core:2.2.4"
+    implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:2.2.4"
+
+    implementation "com.esotericsoftware:kryonet:2.22.0-RC1"
+
+    // Box2D
+    implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+
+    // Box2D Lights
+    implementation "com.badlogicgames.box2dlights:box2dlights:$box2DLightsVersion"
+
+    // Server
+    serverRuntime "com.esotericsoftware:kryonet:2.22.0-RC1"
+}
+
+// ============================================================
+// APPLICATION
+// ============================================================
+
+application {
+    mainClass = project.ext.mainClassName
+}
+
+// ============================================================
+// VERSION / BUILD LABEL
+// ============================================================
+
+def buildLabel = project.hasProperty("buildLabel")
+        ? project.property("buildLabel").toString()
+        : "Release ${version.toString().replaceFirst(/^v/, '')}"
+
+def generatedVersionDir = layout.buildDirectory.dir("generated/version")
+
+tasks.register("generateVersionProperties") {
+    outputs.dir(generatedVersionDir)
+
+    doLast {
+        def outputDir = generatedVersionDir.get().asFile
+        outputDir.mkdirs()
+
+        def versionFile = new File(outputDir, "version.properties")
+        versionFile.text = "version=${buildLabel}\n"
+    }
+}
+
+// ============================================================
+// SOURCE SETS
+// ============================================================
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src/main/java"]
+        }
+
+        resources {
+            srcDirs = ["src/main/resources"]
+            srcDir generatedVersionDir
+        }
+    }
+}
+
+// Make sure version.properties exists before resources are processed.
+tasks.named("processResources") {
+    dependsOn(tasks.named("generateVersionProperties"))
+}
+
+// ============================================================
+// CLIENT FAT JAR
+// ============================================================
+
+task dist(type: Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Main-Class': project.ext.mainClassName,
+                'Implementation-Title': appName,
+                'Implementation-Version': version
+        )
+    }
+
+    // All runtime dependencies
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    // Project classes + resources
+    from sourceSets.main.output
+
+    archiveBaseName.set(appName)
+    archiveClassifier.set('dist')
+    destinationDirectory.set(file("${buildDir}/dist"))
+}
+
+dist.dependsOn classes
+
+// ============================================================
+// SERVER FAT JAR
+// ============================================================
+
+task serverDist(type: Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Main-Class': project.ext.serverMainClassName,
+                'Implementation-Title': "${appName}-server",
+                'Implementation-Version': version
+        )
+    }
+
+    // Only server + shared classes
+    from(sourceSets.main.output) {
+        include 'io/github/pbodyMRTF/infernum/server/**'
+        include 'io/github/pbodyMRTF/infernum/shared/**'
+    }
+
+    // KryoNet + transitive dependencies
+    from {
+        configurations.serverRuntime.collect {
+            zipTree(it)
+        }
+    }
+
+    archiveBaseName.set("${appName}-server")
+    archiveClassifier.set('dist')
+    destinationDirectory.set(file("${buildDir}/dist"))
+}
+
+serverDist.dependsOn classes
