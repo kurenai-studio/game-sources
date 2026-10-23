@@ -1,0 +1,30 @@
+language: csharp
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty #xenial somaday
+      sudo: required
+    - os: osx
+      osx_image: xcode7.3
+
+before_install:
+- chmod a+x ./Scripts/ci-osx-install.sh
+- chmod a+x ./Scripts/ci-osx-test.sh
+- chmod a+x ./Scripts/ci-linux-install.sh
+- chmod a+x ./Scripts/ci-linux-test.sh
+
+install:
+- if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./Scripts/ci-osx-install.sh; fi;
+- if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./Scripts/ci-linux-install.sh; fi;
+
+script:
+- if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./Scripts/ci-osx-test.sh; fi;
+- if [ "$TRAVIS_OS_NAME" == "linux" ]; then ./Scripts/ci-linux-test.sh; fi;
+
+after_success: # print something readable
+- cat $(pwd)/unit-test-results.xml
+
+after_failure:
+- cat $(pwd)/log-unit-test.txt
+- cat $(pwd)/unit-test-results.xml
