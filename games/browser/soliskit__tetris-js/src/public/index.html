@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tetris</title>
+  <meta name="theme-color" content="#4b0082">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tetris">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+  <!-- Fetch every module at once instead of one import level at a time. -->
+  <link rel="modulepreload" href="game/gameManager.js">
+  <link rel="modulepreload" href="game/gameState.js">
+  <link rel="modulepreload" href="game/inputController.js">
+  <link rel="modulepreload" href="game/position.js">
+  <link rel="modulepreload" href="game/session.js">
+  <link rel="modulepreload" href="game/tetromino.js">
+  <link rel="modulepreload" href="game/tetrominoFactory.js">
+</head>
+<body>
+  <main class="app">
+    <div class="scores glass">
+      <div id="score" class="score">Score: 0</div>
+      <div id="highScore" class="high-score">High Score: 0</div>
+    </div>
+
+    <div class="previews">
+      <canvas id="heldPreview" class="preview glass" width="120" height="120" role="button" tabindex="0" aria-label="Hold" aria-keyshortcuts="H"></canvas>
+      <div class="next">
+        <canvas id="next0" class="preview glass" width="120" height="120"></canvas>
+        <canvas id="next1" class="preview small glass" width="88" height="88"></canvas>
+        <canvas id="next2" class="preview small glass" width="88" height="88"></canvas>
+      </div>
+    </div>
+
+    <div class="board-area">
+      <div class="board glass">
+        <canvas id="tetris" width="300" height="600"></canvas>
+        <p id="gameOverMessage" class="board-message" aria-hidden="true" hidden>Game Over</p>
+      </div>
+    </div>
+
+    <!-- Read out by screen readers when it changes. -->
+    <p id="announcer" class="visually-hidden" role="status"></p>
+
+    <div class="controls">
+      <div id="menuControls">
+        <div class="buttons">
+          <button id="newGameButton" class="glass">New Game</button>
+          <button id="continueGameButton" class="glass">Continue</button>
+        </div>
+        <p id="keyHint" class="hint">Return: New Game</p>
+      </div>
+      <button id="playPauseButton" class="glass round" aria-label="Pause">&#10074;&#10074;</button>
+    </div>
+
+    <!-- Asks before New Game gives up a paused game. Cancel has focus when it
+         opens, so a second Enter keeps the game. -->
+    <dialog id="newGameDialog" class="glass" role="alertdialog" aria-labelledby="newGameQuestion" aria-describedby="newGameWarning">
+      <div class="dialog-content">
+        <p id="newGameQuestion" class="dialog-title">Start a new game?</p>
+        <p id="newGameWarning">This game will be lost.</p>
+        <div class="buttons">
+          <button id="cancelNewGameButton" class="glass" autofocus>Cancel</button>
+          <button id="confirmNewGameButton" class="glass">New Game</button>
+        </div>
+      </div>
+    </dialog>
+  </main>
+  <script type="module" src="script.js"></script>
+</body>
+</html>

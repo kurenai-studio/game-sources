@@ -1,0 +1,36 @@
+{
+	"name": "tetris",
+	"version": "1.0.0",
+	"description": "Tetris for your web browser",
+	"main": "index.js",
+	"type": "module",
+	"engines": {
+		"node": ">=26",
+		"npm": ">=12.2.0"
+	},
+	"scripts": {
+		"start": "node index.js",
+		"test": "node --test --experimental-test-coverage --test-coverage-include=\"public/game/**\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100",
+		"test:e2e": "playwright test && node scripts/browser-coverage.js",
+		"typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.sw.json",
+		"test:mutation": "stryker run",
+		"test:all": "npm run typecheck && npm test && npm run test:e2e"
+	},
+	"author": "David Solis",
+	"license": "MIT",
+	"dependencies": {
+		"express": "^5.2.1"
+	},
+	"overrides": {
+		"qs": "^6.16.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.63.0",
+		"@stryker-mutator/core": "^10.0.0",
+		"istanbul-lib-coverage": "^3.2.2",
+		"istanbul-lib-report": "^3.0.1",
+		"istanbul-reports": "^3.2.0",
+		"typescript": "^7.0.2",
+		"v8-to-istanbul": "^9.3.0"
+	}
+}

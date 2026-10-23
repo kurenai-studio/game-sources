@@ -1,0 +1,195 @@
+Scheduler fault cases: raw run captures
+Capture time (UTC): 2026-10-23 09:06 (case 1), 09:05 (case 2). Single indicative local runs, not statuses.
+Source: soliskit/tetris-js main 9db0855fee0c5cd626317eb847f751531df5a027 (scratch copy /tmp/tj-mut; repo unchanged)
+Node: v22.23.3 (local; indicative only - repo asks Node 26+, CI is authoritative)
+Both test files are scratch files outside the repository; the repository suite does not discover them and they change no repository file.
+Snapshots compare the GameManager's real instance fields: state, score, boardVersion, gameBoard, currentTetromino, nextTetrominos, heldTetromino, canHoldTetromino, isConfirmingNewGame, lockDelayResetCount, lowestRowReached, gameLoopTask, lockDelayTask.
+
+=== CASE 1: setTimeout registers the callback and then throws ===
+Command: node --test --experimental-test-isolation=none /tmp/register-then-throw-assertions.test.js
+
+--- scratch test source (verbatim) ---
+// Scratch test, not part of the repository suite. Blueprint section 14,
+// Scheduler fault cases, case 1: "A scratch scheduler registers a
+// callback/timer and then throws." One indicative local run, not a status.
+// Snapshots compare the GameManager's real instance fields by value.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler } from '/tmp/tj-mut/test/helpers.js';
+
+test('scratch: setTimeout registers the callback and then throws [Scheduler fault cases, case 1]', () => {
+  const storage = createMemoryStorage();
+  const real = createFakeScheduler();
+  let boom = false;
+  const scheduler = {
+    setTimeout: (cb, ms) => { const h = real.setTimeout(cb, ms); if (boom) throw new Error('registration fault'); return h; },
+    clearTimeout: h => real.clearTimeout(h),
+    advance: ms => real.advance(ms),
+    get pending() { return real.pending; }
+  };
+  const game = new GameManager({ scheduler, storage });
+  const snapshot = () => JSON.stringify({
+    state: game.state,
+    score: game.score,
+    boardVersion: game.boardVersion,
+    gameBoard: game.gameBoard,
+    currentTetromino: game.currentTetromino,
+    nextTetrominos: game.nextTetrominos,
+    heldTetromino: game.heldTetromino,
+    canHoldTetromino: game.canHoldTetromino,
+    isConfirmingNewGame: game.isConfirmingNewGame,
+    lockDelayResetCount: game.lockDelayResetCount,
+    lowestRowReached: game.lowestRowReached,
+    gameLoopTask: game.gameLoopTask,
+    lockDelayTask: game.lockDelayTask,
+  });
+
+  let reports = 0;
+  let changes = 0;
+  game.onFault = () => { reports++; };
+  game.onChange = () => { changes++; };
+  boom = true;
+  let escaped = null;
+  try {
+    game.handleAction(PlayerAction.newGame);
+  } catch (e) { escaped = e; }
+
+  assert.equal(escaped, null, 'the registration fault does not escape handleAction');
+  assert.equal(game.state, GameState.gameOver, 'the engine reaches safe failure: game over');
+  assert.equal(game.faults.length, 1, 'the fault is recorded');
+  assert.equal(reports, 1, 'the fault is reported once (test-observable signal)');
+  assert.equal(scheduler.pending, 1, 'the scheduler still holds the registered callback (orphan)');
+  assert.equal(game.gameLoopTask, null, 'no handle was returned, so the loop task field was never set');
+
+  const before = JSON.parse(snapshot());
+  const changesBefore = changes;
+  scheduler.advance(100000); // fires the orphan callback
+  const after = JSON.parse(snapshot());
+
+  assert.ok(changes > changesBefore, 'the orphan callback still executes (the page-change signal fired again)');
+  assert.equal(scheduler.pending, 0, 'no timer is pending after the advance');
+  assert.equal(after.gameLoopTask, null, 'the fired callback re-clears the loop task field');
+  assert.deepEqual(after, before, 'the fired orphan changes no snapshotted field');
+  assert.equal(game.faults.length, 1, 'no further fault is recorded when the orphan fires');
+  assert.equal(reports, 1, 'no further report when the orphan fires');
+});
+
+--- run output (TAP, verbatim) ---
+TAP version 13
+# Subtest: scratch: setTimeout registers the callback and then throws [Scheduler fault cases, case 1]
+ok 1 - scratch: setTimeout registers the callback and then throws [Scheduler fault cases, case 1]
+  ---
+  duration_ms: 4.754113
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25.221865
+
+=== CASE 2: clearTimeout throws during failSafe ===
+Command: node --test --experimental-test-isolation=none /tmp/cancel-throw-assertions.test.js
+
+--- scratch test source (verbatim) ---
+// Scratch test, not part of the repository suite. Blueprint "Scheduler fault
+// cases", case 2: cancellation throwing during failSafe. One indicative local
+// run, not a status. Snapshots compare the GameManager's real instance fields
+// (no undefined properties): state, score, boardVersion, gameBoard,
+// currentTetromino, nextTetrominos, heldTetromino, canHoldTetromino,
+// isConfirmingNewGame, lockDelayResetCount, lowestRowReached, gameLoopTask,
+// lockDelayTask.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler } from '/tmp/tj-mut/test/helpers.js';
+
+test('scratch: clearTimeout throws during failSafe [Scheduler fault cases, case 2]', () => {
+  const storage = createMemoryStorage();
+  const sentinel = '{"sentinel":"last good save stand-in"}';
+  storage.setItem('tetris.savedGameSession', sentinel);
+  const real = createFakeScheduler();
+  let boom = false;
+  const scheduler = {
+    setTimeout: (cb, ms) => real.setTimeout(cb, ms),
+    clearTimeout: h => { if (boom) throw new Error('cancel fault'); return real.clearTimeout(h); },
+    advance: ms => real.advance(ms),
+    get pending() { return real.pending; }
+  };
+  const game = new GameManager({ scheduler, storage });
+  const snapshot = () => JSON.stringify({
+    state: game.state,
+    score: game.score,
+    boardVersion: game.boardVersion,
+    gameBoard: game.gameBoard,
+    currentTetromino: game.currentTetromino,
+    nextTetrominos: game.nextTetrominos,
+    heldTetromino: game.heldTetromino,
+    canHoldTetromino: game.canHoldTetromino,
+    isConfirmingNewGame: game.isConfirmingNewGame,
+    lockDelayResetCount: game.lockDelayResetCount,
+    lowestRowReached: game.lowestRowReached,
+    gameLoopTask: game.gameLoopTask,
+    lockDelayTask: game.lockDelayTask,
+  });
+
+  game.handleAction(PlayerAction.newGame);
+  assert.equal(game.state, GameState.playing);
+  assert.equal(scheduler.pending, 1, 'the gravity timer is pending before the fault');
+
+  let reports = 0;
+  game.onFault = () => { reports++; };
+  boom = true;
+  let escaped = null;
+  try {
+    game.guard(() => { throw new Error('engine failure'); });
+  } catch (e) { escaped = e; }
+
+  assert.equal(escaped && escaped.message, 'cancel fault', 'the cancellation fault escapes guard() to the caller');
+  assert.equal(game.state, GameState.gameOver, 'the game is stopped at game over');
+  assert.equal(game.faults.length, 0, 'the original fault is not recorded');
+  assert.equal(reports, 0, 'the original fault is not reported (no test-observable signal)');
+  assert.equal(scheduler.pending, 1, 'one timer is left pending');
+  assert.notEqual(game.gameLoopTask, null, 'the loop task field is left set when its cancellation throws');
+  assert.equal(storage.getItem('tetris.savedGameSession'), sentinel, 'stored content is unchanged');
+
+  boom = false;
+  const before = JSON.parse(snapshot());
+  scheduler.advance(100000); // fires the pending timer: its callback nulls gameLoopTask, then dropTetromino runs
+  const after = JSON.parse(snapshot());
+
+  assert.equal(after.gameLoopTask, null, 'the fired timer callback clears the loop task field');
+  const { gameLoopTask: b1, ...beforeRest } = before;
+  const { gameLoopTask: a1, ...afterRest } = after;
+  assert.deepEqual(afterRest, beforeRest, 'every other snapshotted field is unchanged when the pending timer fires');
+  assert.equal(after.state, GameState.gameOver, 'the game stays over after the pending timer fires');
+  assert.equal(scheduler.pending, 0, 'no timer is pending after the advance');
+  assert.equal(game.faults.length, 0, 'no fault is recorded when the pending timer fires');
+  assert.equal(reports, 0, 'no report is made when the pending timer fires');
+  assert.equal(storage.getItem('tetris.savedGameSession'), sentinel, 'stored content is still unchanged');
+});
+
+--- run output (TAP, verbatim) ---
+TAP version 13
+# Subtest: scratch: clearTimeout throws during failSafe [Scheduler fault cases, case 2]
+ok 1 - scratch: clearTimeout throws during failSafe [Scheduler fault cases, case 2]
+  ---
+  duration_ms: 6.987526
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32.90786

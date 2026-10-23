@@ -1,0 +1,108 @@
+Score safe-integer predicate weakening: raw run capture
+Capture times (UTC, 2026-10-23): baseline/mutation/probe runs ~08:42; the file-discovery hook run ~08:45. Same source, same Node, no edits to the copy between them.
+Source: soliskit/tetris-js main 9db0855fee0c5cd626317eb847f751531df5a027 (scratch copy /tmp/tj-mut; repo unchanged)
+Node: v22.23.3 (local; indicative only - repo asks Node 26+, CI is authoritative)
+Command for every run: node --test --experimental-test-isolation=none   (bare discovery, no file arguments)
+(Node-22 option spelling per docs/tetris-audit/mutation-run-2026-10-19.md)
+
+=== RUNTIME FILE-DISCOVERY EVIDENCE ===
+Hook command: node --import /tmp/hook2.mjs --test --experimental-test-isolation=none
+Hook source (/tmp/hook2.mjs, verbatim):
+  import { register } from 'node:module';
+  register('data:text/javascript,export async function load(url, context, next) { if (url.includes("/test/") && url.endsWith(".js")) console.error("LOADED_FILE " + url); return next(url, context); }');
+Executed files recorded by the hook (16 total: fifteen .test.js files plus test/helpers.js, which contains no tests):
+  LOADED_FILE test/audit/d74-N1.test.js
+  LOADED_FILE test/helpers.js
+  LOADED_FILE test/audit/d74-f21-f22-p7.test.js
+  LOADED_FILE test/audit/l1-clear-after.test.js
+  LOADED_FILE test/audit/l1-trace.test.js
+  LOADED_FILE test/factory.test.js
+  LOADED_FILE test/game.test.js
+  LOADED_FILE test/gameManager.test.js
+  LOADED_FILE test/inputController.test.js
+  LOADED_FILE test/model.test.js
+  LOADED_FILE test/safety.test.js
+  LOADED_FILE test/server.test.js
+  LOADED_FILE test/session.test.js
+  LOADED_FILE test/staticFiles.test.js
+  LOADED_FILE test/tetromino.test.js
+  LOADED_FILE test/traceability.test.js
+
+Note on the 1 todo (present in every run): TAP line "not ok 2 - F21: the invariant check flags a board with a missing row or cell [D74] # TODO F21 (D74): Confirmed Defect, injected scope - the invariant check accepts holed boards; the fix PR removes this mark" (source: test/audit/d74-f21-f22-p7.test.js, the test's todo option). Unrelated to scores; unchanged by every mutation and probe.
+
+=== BASELINE (bare) ===
+# tests 374
+# pass 373
+# fail 0
+# todo 1
+
+=== MUTATION A: gameManager.js:423 Number.isSafeInteger -> Number.isInteger (SAF-4 invariant guard) ===
+--- a/public/game/gameManager.js
++++ b/public/game/gameManager.js
+-    if (!Number.isSafeInteger(this.score) || this.score < 0 || this.score % 100 !== 0) return 'score is invalid';
++    if (!Number.isInteger(this.score) || this.score < 0 || this.score % 100 !== 0) return 'score is invalid';
+run:
+# tests 374
+# pass 373
+# fail 0
+# todo 1
+
+=== MUTATION B: session.js:162 isSafeInteger -> isInteger (saved-game restore guard) ===
+--- a/public/game/session.js
++++ b/public/game/session.js
+-  if (!isSafeInteger(score) || score < 0 || score % 100 !== 0) return null;
++  if (!isInteger(score) || score < 0 || score % 100 !== 0) return null;
+run:
+# tests 374
+# pass 373
+# fail 0
+# todo 1
+
+=== MUTATION C: gameManager.js:145 Number.isSafeInteger -> Number.isInteger (stored high-score sanitize) ===
+--- a/public/game/gameManager.js
++++ b/public/game/gameManager.js
+-    return Number.isSafeInteger(value) ? Math.max(value, 0) : 0;
++    return Number.isInteger(value) ? Math.max(value, 0) : 0;
+run:
+# tests 374
+# pass 373
+# fail 0
+# todo 1
+
+=== PROBE A (throw at GM:423 guard; failures prove the line executes) ===
+# tests 374
+# pass 194
+# fail 179
+# todo 1
+
+=== PROBE B (throw at session.js:162 guard) ===
+# tests 374
+# pass 326
+# fail 47
+# todo 1
+
+=== PROBE C (throw at GM:145 sanitize) ===
+# tests 374
+# pass 358
+# fail 15
+# todo 1
+
+=== counterexample arithmetic (node) ===
+100000000000000000 isInteger: true isSafeInteger: false %100: 0
+9007199254741000 isInteger: true isSafeInteger: false %100: 0
+1152921504606847000 isInteger: true isSafeInteger: false %100: 76
+MAX_SAFE_INTEGER: 9007199254740991
+
+=== current vs weakened guard behavior on 9007199254741000 (node) ===
+GM:423 current rejects: true
+GM:423 weakened rejects: false
+GM:145 current sanitize: 0  weakened sanitize: 9007199254741000
+
+=== e2e static search (score literals) ===
+      5 Score: 0
+      2 Score: 100
+      2 Score: 300
+      1 Score: 4200
+      3 score: 300
+
+final clean check after all reverts (verified): 0

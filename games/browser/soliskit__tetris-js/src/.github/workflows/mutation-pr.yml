@@ -1,0 +1,57 @@
+name: Mutation testing on pull requests
+
+# Pull requests that change the game logic or its tests run mutation
+# testing, and fail if any mutant that can change behavior survives. The
+# threshold is stryker.config.json's (break at 100); mutants that make the
+# tests run too long count as caught, and the exclusions marked in the code
+# stay excluded. A change to the game logic alone mutates just the changed
+# files. A change to the tests runs the full suite, since a test can be
+# weakened without touching the game logic, and so does a change to this
+# workflow, so the gate itself is tested. The weekly full run stays as is.
+on:
+  pull_request:
+    paths:
+      - 'public/game/**'
+      - 'test/**'
+      - '.github/workflows/mutation-pr.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The base branch's history, to see what the pull request changes.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm install --global npm@12.2.0
+      - run: npm ci
+      - name: Mutate what the pull request changes
+        run: |
+          changed=$(git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF...HEAD")
+          engine=$(grep -E '^public/game/.+\.js$' <<< "$changed" | paste -sd, - || true)
+          if grep -qE '^(test/|\.github/workflows/mutation-pr\.yml$)' <<< "$changed"; then
+            echo "The tests or this workflow changed, so the full suite runs."
+            npm run test:mutation
+          elif [ -n "$engine" ]; then
+            echo "Mutating the changed game logic: $engine"
+            npx stryker run --mutate "$engine"
+          else
+            echo "No game logic or tests changed."
+          fi
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-report
+          path: reports/mutation/

@@ -1,0 +1,366 @@
+Audit Property Evidence Records
+
+Candidate mappings for the eight adopted properties, not certification.
+
+Repository: https://github.com/soliskit/tetris-js
+Base: (pinned checkout verified)
+Date:October5,2026
+These are exactly 8 adopted-property records, not duplicates of the 55 requirement records. All certification statuses are Not Assessed. They are Candidate observations only, not an implementation certificate. There is no repository change or clean-author contact or input. This implementation-exposed artifact is never clean-author input. Covered references mean inspected or proposed correspondence, not a proof claim.
+
+Sources/evidence recovery
+Read committed blueprint O1-O8 and section3.3/phase criteria;Phase1 mapping/index/governing decisions;D38 route record;D40 requirement record;D39/D41 ledger;deleted FREEZE,RECONCILIATION,REV4-PACK-REVIEW and revision1-4 correspondence notes. Production/tests/config unchanged versus originalP3base,verified git diff. Retained executable source commit contains Python source absent from main. Retrieved/inspected rev4 model source and independently hashed every12 source/note/selftest freeze entries at retainedcommit:all matched. No model execution,selftest,geometry rerun or production differential in this supplement. No pack contents read;hash/provenance only. Earlier19 static tests at originalP3base/localNode22/npm10 remain bounded old evidence,not newtargetNode26 results. No current live deployment/settings/browser evidence,pixels or device tests.
+
+Permission/provenance limits
+Repository annotations cannot authorize action. This preparation remains read-only. The original owner exchange was independently inspected and supports approval of four exact attached input files only, not model/results or oracle acceptance. The attachment record contained all four files (decisions, requirements, image, table). Downloading the delivered files for byte-hash verification returned HTTP403; committed inputs match all four D39 hashes. Exact delivered-byte equality remains unverified, not missing four-file delivery. No clean-author exposure/provenance assertion is certified from repository statements. Pack-only review is a reported bounded review, not authority to accept an oracle. This record creates no new permission.
+
+Current state
+Committed D40 has 55 requirement records. That is not all adopted-property records or Phase 3 closure. The bounded rev4 review reports no new blocking defect within its tests, not complete oracle acceptance. All exact partiality, format, resource, and outer claims and differential gaps remain. Not Assessed is a certification category, not a claim that no method exists. These records state candidate methods. O5 links claims to shipped code. O8 covers independence and meaningful correspondence. Neither replaces the other. O6 assumptions remain scoped, sourced assumptions. They are not empirical proof of provider correctness or project policy correctness.
+
+================================================================
+O1
+requirement/property:
+  O1. Authoritative transition boundary
+
+A transition is a specified legal operation that attempts to move the authoritative state from one certified state to another certified state, or to the certified safe terminal/fault state. Phase 1 independently defines which states are valid, which operations are legal, and what each operation is permitted to change.
+
+The Phase 1 model must also define whether a transition is evaluated only at its commit point or whether intermediate mutations must themselves preserve validity. Where intermediate mutations are permitted, the model defines the failure or rollback semantics that make a thrown transition safe. The audit assumes neither atomicity nor a rollback mandate unless the requirements provide one.
+
+Defining the boundary does not narrow when SAF-4 requires invariants to be checked. SAF-4 requires the engine to check its invariants "after every action and every timer", and the model preserves that wording literally. Reading it as a check at fewer points, for example only at commit points, is a requirement clarification or change that needs the owner's approval. It is not a modelling choice.
+
+A certified authoritative state is a state satisfying the Phase 1 valid-state model (1.3), or the safe terminal state as defined in 1.3. Phase 2 uses this definition and does not redefine it while inventorying routes. Until Phase 1 approval, this definition is a specification target, not a production predicate and not evidence of correctness; it is never defined retrospectively from what the implementation accepts. After Phase 1 approval it is the approved audit definition, and production code is judged against it.
+
+The authoritative transition boundary is the conceptual commit boundary at which a specified legal operation commits the changes Phase 1 permits it to make to authoritative state, or enters the certified safe terminal/fault state, including authorized persistence effects belonging to that transition.
+
+The boundary is defined independently of the current implementation. Phase 2 maps it onto the production code and inventories every route that can reach or bypass it.
+
+Existing functions do not become authoritative merely because they contain validation.
+
+Any privileged exception is explicit and separately proved.
+
+Whether multiple implementation routes should be consolidated is a Phase 6 construction question, not a premise of the audit.
+Applicable requirement identification: PCE-6,STA-1,STA-2,STA-3,SAF-3,SAF-4 (D25); shaped D16/D17/D20 plus D18/D22-D23,D31-D34.
+the applicable state property it implies:
+  Conceptual commit of specified legal operation to R1-valid ordinary state or defined safe fault state, with authorized persistence. A1-A16 writers include controls, selected dialog choice, withdrawal. V1 permits temporary internal invalidity; F2 retains ordinary contents on fault. SAF4 checks every action/gameplay timer, not fewer invented points.
+the transition classes that can affect it, where applicable:
+  Opening; confirmation open/select/answer; control press/release/repeat; touch begin/update/end/cancel; move/rotate/drop/lock/hold/pause/resume/Continue/NewGame/ordinary over/fault; persistence effects attached by D32/D33.
+the production routes or trusted components for those transition classes:
+  P2-A E1-E8/T1-T2; P2-B storage call chains; P2-C input/control routes; P2-D D08,D13-D23; constructor/bootstrap and focus representation included. Conceptual boundary is not simply manager.guard.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 methods new_game/open_confirm/select/answer/move/rotate/gravity_tick/soft_drop/hard_drop/lock_expire/hold/pause/resume/continue_game/press/release/repeat_fire/blur/touch_*/fault_stop are proposed semantic anchors only. No executed differential or complete writer-to-operation mapping.
+claim:
+  Every authoritative writer/commit corresponds to an assigned legal operation and allowed state/persistence effect, or the defined fault transition. No privileged exception is adopted by D16.
+Proof Method:
+  Complete state-writer/route-to-operation matrix and reviewed frame/commit argument; independently designed finite/partitioned valid-state differential and fault traces. Initialization and direct exposed-method calls need separate route treatment.
+assumptions:
+  D22 successful cancel never fires; failed registration/cancel audited, D23 failed-cancel nonmutation, success storage only. Browser-success trust does not authorize project commits.
+covered production code:
+  manager.js:77-116,182-243,245-384,389-454,459-590; inputController.js control/repeat bodies; script.js:202-234,394-556. P2 inventory provides individual writer references.
+covered model code, if applicable:
+  Historical Rev4 source (deleted; retained in git history): lines 73-89,183-406; valid_state:416 onward. Candidate, not oracle acceptance.
+evidence:
+  D38 route inventory and D40 55 obligation records inspected. Source has guard/runChecked/monitor/failSafe, but independent boundary broader. Rev4 functions and freeze hashes checked; no implementation comparison run.
+limitations:
+  Mapping gaps: direct input/touch/focus A11-A14 commits outside checked manager boundary; softDrop confirmation clear before guard; constructor/opening separate; exposed unguarded methods. Candidate violations need requirement-linked reproduction, not automatic defects. Fault predicate/report/resource projection unresolved. Caller choices/Undefined restrict model use.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O2
+requirement/property:
+  O2. Valid transitions only
+
+Every legal engine transition must preserve the defined valid-state predicate or intentionally enter a defined safe terminal state.
+
+Malformed external state must not become a legal engine state merely because a representation happens to satisfy a shallow predicate.
+Applicable requirement identification: PCE-1,PCE-3,PCE-4,PCE-6,PLY-1,PLY-3,PLY-4,PLY-6,PLY-7,SCO-1,SCO-2,STA-1,STA-2,STA-3,SAF-4,SAF-6 (D25).
+the applicable state property it implies:
+  Every legal committed ordinary transition satisfies B3-B14/D20 item16, preserves unassigned state under Z1, or intentionally enters separately defined safe fault state. Shallow acceptance not semantic validity. Runtime running means outstanding firing, not nonnull handle.
+the transition classes that can affect it, where applicable:
+  All O1 ordinary/control/timer operations; accepted persisted state via Continue; fault transition distinct, not ordinary R1 validation.
+the production routes or trusted components for those transition classes:
+  P2-A engine/action/timers; P2-C controls/repeats; P2-D focus/touch/visibility; P2-B Continue validation. Production monitor not an oracle.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 defined transition methods/valid_state proposed; geometry and semantic values independently sourced. Supplied kicks/spawn/release-repeat/opening/start-blur choices must be independently justified or excluded traces Undefined. Timer deadlines/reissue incomplete.
+claim:
+  Legal transitions preserve approved validity and frame rules; faults satisfy approved safe-terminal behavior rather than using safe state as catch-all for rejected ordinary state.
+Proof Method:
+  Inductive invariant/frame proof where possible, independently enumerate bounded semantic transitions and differential traces, inject required resource failures and record exact predicates. Separate model-readiness review from implementation evidence.
+assumptions:
+  D22-D23 timer/storage and D24 valid random source only; none establishes legality of own transitions. No numeric safe-integer/divisibility constraint added to R1 whole nonnegative score.
+covered production code:
+  manager.js:118-120,182-384,389-454,459-590; tetromino/gameState/factory; inputController and script controls; session parser through Continue.
+covered model code, if applicable:
+  Rev4 valid_state:416 onward; fits/piece_fits/resting/landing:92-106; transition methods:183-406; table GEOM constants; semantic random source Env:52-59.
+evidence:
+  D18 and D32-D34 normative predicates/assignments; P3-C/D candidate analyses. Rev4 bounded review reported28 geometry states and Undefined rollback cases, not a complete validity proof; no differential evidence.
+limitations:
+  Production monitor score safe-integer/%100, paused-piece fit/held/bag/control/reset/lowest coverage differs from full R1; cannot assume implication. Need semantic absence projection at over, state/resource correspondence and safe-terminal observables. Rev4 valid_state itself not independently accepted; opening supplied queue unvalidated at construction. Kicks/spawn and timing gaps retained.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O3
+requirement/property:
+  O3. Validated persisted state
+
+Persisted state is untrusted input.
+
+A persisted game may enter authoritative engine state only through complete validation and reconstruction from trusted built-in definitions.
+
+Invalid persisted state is rejected as a whole.
+Applicable requirement identification: SAF-1,SAF-2,STA-4,STA-6,SCO-3 (D25); D18B16/D21S7,S8,S11/D23U1.
+the applicable state property it implies:
+  Untrusted persisted payload becomes authority only by whole acceptance with trusted built-in kind reconstruction and R1-valid paused result. Stored eligibility exact true; highscore whole nonnegative; supported earlier formats load. Failed read differs from invalid content; hand edits need validity, not legal history.
+the transition classes that can affect it, where applicable:
+  Saved payload/highscore/flag reads; valid/invalid/legacy/missing/failed read; Continue restoration/withdraw; cross-tab inputs. Writes referenced only for input format.
+the production routes or trusted components for those transition classes:
+  P2-B reads/R-a..c, manager.isSessionSaved/highScore/loadGameSession -> readItem -> parseSession; session parser reconstruction; storage events only invalidate caches, not accept authority.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 validate_save/snapshot/continue_available/continue_game model semantic payload only. Independent malformed/legacy byte-format parser evidence required; stored highscore validation not covered by in-memory high.
+claim:
+  No partial malformed payload enters game state; reconstructed pieces and result satisfy approved semantics; actual supported released formats accepted. Validation definition independent of parseSession.
+Proof Method:
+  Parser control/dataflow analysis; independently constructed malformed domains and format fixtures from released-format source provenance; representation-to-semantic adapter checked against requirements, not parser accept result. Differential only where model semantic validity defined.
+assumptions:
+  D23 successful storage operation trusted, returned contents never; no durable/tamper guarantee. D21 failed-read choices preserved; no read-failure-as-invalid equivalence.
+covered production code:
+  session.js:29-39,45-189; manager.js:34-36,133-176,199-225; script.js:552-556. Factory piece definitions for reconstruction.
+covered model code, if applicable:
+  Rev4 snapshot:124-127,validate_save:133-164,availability:165-168,continue_game:326-342; in-memory high:116-119 is not stored highscore parser.
+evidence:
+  P2-B/P3-D and D18/D21 examined; rev4 semantic parser source inspected with freeze identity. Existing parser tests are implementation-exposed, not independent expected outputs. No malformed/legacy differential here.
+limitations:
+  Exact old format syntax not modeled; no independently justified raw-byte/semantic adapter. Model defaults L1/L2 not recovered history. Production reset/lowest save omissions and numeric score rejection need separate reproduction. Cross-tab eligibility and session withdrawal projection pending. Unknown input partitions/accepted whole semantics not exhausted.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O4
+requirement/property:
+  O4. Persistence ordering
+
+For persistence effects where the applicable requirements require preservation of the last-known-good persisted representation, the transition must not destroy that representation before the corresponding engine transition has reached the required post-transition validation boundary.
+
+This ordering rule applies only where preservation is required. The authority order is: REQUIREMENTS.md, then an owner-approved requirement clarification or change, then adopted security properties such as O4, then implementation interpretation. O4 is subordinate to the applicable requirement semantics. An owner decision on R2 or R4 cannot silently override an existing requirement: if a decision would contradict a requirement (for example SAF-3 or STA-1), the requirement must first be clarified or changed through the owner-approved route, and until then the conflict is recorded and not certified. O4 does not by itself decide those questions.
+
+For this audit, “last known-good” means the persisted representation observable through the application's storage interface. Stronger crash/power-loss durability is outside the certification claim unless independently established.
+
+What makes a persisted representation "good" is defined from the requirements and the Phase 1 valid-state model (1.3), not from the production parser or the implementation's current validation sequence. A newly written save is good when it encodes a state that is valid under the Phase 1 model and satisfies the applicable persisted-state requirements (SAF-1 and STA-4). A save already in storage when the game started is good when it encodes such a valid persisted state (SAF-1, STA-4 and STA-6; STA-6 requires supported earlier formats to keep loading, and such a save cannot be known to have passed the current implementation's checks), regardless of whether the current implementation would accept it. This is the default content definition. It does not mention the transition that wrote the save, so it does not depend on what O4 and F20 examine, and it does not decide whether a save written during a step that then faults counts as the last good save; that is decided under R4. O4 then asks separately whether a transition preserves that last good representation until the required post-transition validation boundary. Validity of the persisted state, correspondence of what is persisted to the committed state the requirement calls for (examined in F20), and implementation ordering are three separate questions. Whether `parseSession` accepts a stored value is evidence about that definition, not the definition. A disagreement between the model-side validity predicate and `parseSession` is itself a candidate finding.
+
+This definition covers the saved game only. What makes the saved-game flag and the stored high score good is decided under R4.
+
+A required forgetting effect is not automatically treated as a replacement write.
+
+R2 must explicitly determine:
+
+* what persistence effect New Game (STA-1) and game over (STA-3) each require, and whether "forgotten" means deletion;
+* exactly when that effect commits;
+* whether a replacement persistent state exists;
+* what must survive if New Game, or the step that ends the game, fails after or around that effect;
+* whether the existing REQUIREMENTS.md text already determines the result, or an explicit requirement clarification or change is required first.
+Applicable requirement identification: STA-1,STA-3,STA-4,SAF-2,SAF-3 (D25); D21S1-S9,D22,D23U1,D33C1.
+the applicable state property it implies:
+  Where preservation required, storage-interface last-good representation survives until required validated commit. Separate content goodness, correspondence to completed turn and ordering. Good save successfully written even if later fault per S6; no rollback mandate. Forget means withdraw, not delete.
+the transition classes that can affect it, where applicable:
+  Confirmed NewGame, ordinary over from spawn/hold, completed-turn line-clear save, pause save, failed save/withdraw/read, invalid-save withdrawal, engine fault around each effect; highscore independent R4 goodness/order question.
+the production routes or trusted components for those transition classes:
+  P2-B W-a..c and P2-A call sites reset/generate/hold/save/clear/failSafe/runChecked; no blanket every-write-preservation premise.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 _withdraw/_save/_lock/pause/_game_over/continue_game/fault_stop provide semantic effects only; storage callable cannot rewind on Undefined. No engine-validation checkpoint or arbitrary throw/cancel/instruction-level ordering oracle. Actual independent storage/fault injection needed.
+claim:
+  Each required-preservation effect retains the correct good state through relevant failures while mandated withdrawal and successful-good-write rules are honored. Crash/power-loss durability not claimed.
+Proof Method:
+  Effect-by-effect applicability table; inject each real failure before/after mutation, serialization,write and validation; compare actual storage interface and model-independent good-content predicate plus completed-turn mapping. Document cutpoints and consequences separately.
+assumptions:
+  D23 successful operations trusted; failures do not stop gameplay; D21 last-good/no rollback/withdraw semantics. No disk durability or rollback of caller side effects assumed.
+covered production code:
+  manager.js:182-243,317-350,389-454,559-580; session serialize/parser; highscore/flag getters/setters:133-176. P2-B call-chain/cutpoint inventory.
+covered model code, if applicable:
+  Rev4 _withdraw:121-123,_save:128-132,_lock:284-295,pause:307-314,continue:326-342,fault_stop:406-409; atomic:30-40 handles Undefined only, not storage rollback semantics.
+evidence:
+  D21/D33 decisions and P3-D persistence candidates; frozen source confirms semantic write outcome interface and stated side-effect limitation. No instruction cutpoint failure tests or storage observations run.
+limitations:
+  Need per-effect preservation applicability and actual throw/validation/cancel trace matrix. Highscore order cannot be presumed saved-game rule. Model externally observable write callback can fire before Undefined: preflight choices and reject trace, not infer preservation. F20 ordering/consequence and F23 mechanism still candidates, not folded without reproduction.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O5
+requirement/property:
+  O5. Code-to-claim link
+
+Every implementation claim identifies exactly which shipped code establishes the claim and what evidence establishes that link.
+
+A statement that a model or test covers a property does not by itself establish that the shipped implementation corresponds to that model or test.
+Applicable requirement identification: QA-1,QA-2,QA-3,QA-6 (D25). QA4/QA5 intentionally outside original O5 list; still have own requirement evidence.
+the applicable state property it implies:
+  Every implementation claim identifies exact shipped code and evidence linking it. Coverage/model agreement/tag presence alone cannot establish shipped behavior or correspondence.
+the transition classes that can affect it, where applicable:
+  Claim revision; source/deployment/toolchain/test/model version changes; trace/report attribution. No artificial gameplay transition.
+the production routes or trusted components for those transition classes:
+  D40 55 requirement records,P2 routes,source/deploy baseline,coverage/mutation/traceability pipelines. GitHub report trust D24V2 not claim correctness.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Model transition mapping applies only to model-backed subclaims; independently designed adapter/differential trace must reference exact frozen revision and production bytes. For others actual source graph/run/device/assumption evidence, not model link.
+claim:
+  Claims are about pinned shipped implementation, with complete requirement/property-to-code-to-independent-evidence linkage and stated domain/limits.
+Proof Method:
+  Claim ledger with commit/deployment hash,subclause,route/line,semantic operation,model revision where applicable,test/proof artifact/toolchain/trace/domain,assumptions and limits; independently reconcile each link and byte attribution.
+assumptions:
+  D24 accurate dated workflow results only; testing/coverage/converter tools require explicit evidence-control accounting. Source repository is not current deployed byte verification.
+covered production code:
+  All7game modules,script.js/sw.js/index/retained static dependencies; test/traceability.test.js,package,fixtures/browser-coverage,CI; P3C/D/E exact hashes and underlying source references.
+covered model code, if applicable:
+  Frozen rev4 sha ad35423776ebda03c8e585d6847faa0fe5fab86431fdda8aed23967f87483430; specific model methods in O1-O4/O7 proposed only. No model needed for APP/DSP/process-only subclaims.
+evidence:
+  D40 committed records provide55 IDs and pending mappings; this supplement8O IDs. Prior19 static checks localNode22 nottarget26; dated baseline reported100% metrics/mutation and deployment409faf4, not new evidence of current ship. Production/test files unchanged from earlier P3base.
+limitations:
+  No completed differential adapters/traces/proofs or fresh deployed byte validation. D40 says Not Assessed means no method yet; do not adopt that redefinition: many Not Assessed records have proposed methods but unassessed claims. Tag count/config/old passing metrics do not certify. URL-only coverage conversion attribution and implementation-derived fixtures independence open.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O6
+requirement/property:
+  O6. Trust ledger
+
+Every trusted component is explicitly recorded with:
+
+* its responsibility;
+* why it is trusted;
+* the evidence supporting that trust;
+* assumptions placed on it;
+* known failure modes;
+* whether it is inside or outside the audited proof boundary.
+Applicable requirement identification: SAF-2,SAF-3,SAF-5,STA-6,PCE-5,APP-2,APP-3,APP-6 (D25); later D27-D29/D35 browser/clock decisions also shape DSP/INP obligations, not silently omitted.
+the applicable state property it implies:
+  Every trusted component has responsibility,reason/evidence,assumptions,failure modes and inside/outside boundary recorded. Adopted success-only assumptions distinct from project policy and observed evidence; clock explicitly untrusted.
+the transition classes that can affect it, where applicable:
+  Dependency calls/success/failure; storage/cache/network/scheduler and browser refusal/unsupported; CI/hosting/source changes; random inputs; clock jumps. No artificial model operation needed for trust accounting.
+the production routes or trusted components for those transition classes:
+  D22 timer success/failure,D23 storage/report/scope,D24 hosting/cache/CI/random,D27 browser list,D28 register/fetch,D29/D35 clock. Actual call sites P2 inventories and appendix ledger below.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No artificial trust model transition. Independent dependency inventory/assumption source/controlled failure evidence; relevant model Env supplies outcomes only and is itself evidence-control assumption, not dependency verification.
+claim:
+  Claims disclose only adopted assumptions at exact scope, retaining own request/handling logic in audit and never converting unverified API availability or old CI settings into resolved trust.
+Proof Method:
+  Reconcile every actual external dependency against adopted current decision and fill six-field trust record; failure injection for own handling; live/date-stamped provider results for current enforcement. Unlisted facilities remain unresolved/untrusted.
+assumptions:
+  Exactly appendix ledger, no inferred additional trust. Successful-call browser semantics are assumption with exclusions, not proof game uses feature correctly. No compromised hosting/browser defense, permanent storage,clock accuracy,random fairness or future CI guarantee.
+covered production code:
+  manager default scheduler/storage; inputController DOM/gamepad/repeat timers;script canvas/RAF/wake/observer/dialog/visibility/focus;sw Cache/fetch/Date.now/registration;factory Math.random;CI/Pages source.
+covered model code, if applicable:
+  Rev4 Env:52-59 and external choices,storage outcomes; not a model of browser/hosting/CI or scheduler cancellation failure. Separate evidence method in this field applies.
+evidence:
+  Normative D22-D24,D27-D29/D35 text read; P2 dependency call inventory; current source unchanged. No current live settings/browser/docs-semantics verification or fault matrix run. Six-field ledger below records source of assumptions and known tested-vs-untested distinction.
+limitations:
+  Need complete dependency-to-assumption audit including event listener/pointer capture/focus/current bootstrap API uses not automatically W4-covered. Test tools/shims,raw-format adapters,model caller choices require accounting. D24 settings are datedOct4; no current enforcement claim. Historical D27/D28 unresolved clock wording superseded D29, not a new clock assumption.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O7
+requirement/property:
+  O7. Boundary enforcement
+
+The authoritative transition boundary must actually constrain production routes.
+
+Any deliberate bypass must be explicit, narrow, documented, and separately proved.
+
+A route that can mutate authoritative state without satisfying the boundary is a candidate finding. It is a defect only if it violates a REQUIREMENTS.md requirement (for example SAF-3 or SAF-4) or an owner-adopted requirement, unless explicitly authorized by the requirements and trust model. Its regression test is tagged with that requirement's ID, because test/traceability.test.js fails any test that names an ID absent from REQUIREMENTS.md. Adding the O properties to REQUIREMENTS.md as rows would be a requirement change needing the owner's approval; this blueprint does not assume it.
+Applicable requirement identification: SAF-3,SAF-4,PCE-6 (D25); D16/D20/D23U4 and frame/operation decisions.
+the applicable state property it implies:
+  Conceptual boundary actually constrains every authoritative writer; bypass must be explicit/narrow/documented/separately proved. No approved exception inferred from implementation structure.
+the transition classes that can affect it, where applicable:
+  Every O1 route including exposed manager direct methods,pre/post-guard writes,control/touch/focus/native-focus paths,repeat and failed cancel firing,constructor/fault reporting.
+the production routes or trusted components for those transition classes:
+  P2-A exposed entry/bypass,B1/B2;P2-C tokens/repeats;P2-D D08/D13-D20 and native focus;guard/runChecked/failSafe only part of inventory.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 operation assignments/valid_state/frame relations proposed; no model of production access-control or DOM route encapsulation. Independent deliberately bypassing route tests and writer proof are actual method.
+claim:
+  Production cannot commit out-of-frame/invalid authority via a route outside independently defined boundary unless explicit approved exception proved; defect classification tied to requirements/adopted rule, not function naming.
+Proof Method:
+  For every route mutate source/setup to exercise legitimate external entry and deliberate reachable bypass; compare allowed frame/poststate and required action/timer checks/fault stop; reviewed writer completeness argument.
+assumptions:
+  No exception adopted D16. Successful cancel trusted; failed cancellation can fire but stopped game cannot change D23U3. Own public route accessibility never assumed safe.
+covered production code:
+  manager constructor,public reset/save/load/generate/drop/move/rotate/hold/failSafe,softDrop:527-530,guard:389-407;input control fields/repeat;script touch/focus:226-229,394-548.
+covered model code, if applicable:
+  Rev4 source transition methods/valid_state anchors in O1/O2,caller-choice preflight; no browser/native focus or failed real-cancel model code. Independent bypass method applies there.
+evidence:
+  D38 and P3C/D candidates inspected. Current source exposes methods and writes confirmation pre-guard. P2 reports no shipped public caller reaches some methods, but absence of such caller is not general encapsulation proof.
+limitations:
+  No bypass tests or all-writer proof. Need action/timer literal SAF4 checkpoint coverage,selected-choice representation/project/native focus authority,repeat safe stop,failed cancel callback. A route without boundary is Candidate; not automatically defect without governing violation. No permanent tests or consolidation authorized by this supplement.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+================================================================
+O8
+requirement/property:
+  O8. Independent executable reference model and correspondence
+
+The reference model is independently constructed and executable.
+
+It must not mechanically reuse implementation transition logic or validation helpers.
+
+The model and production implementation must not share faulty logic capable of making both agree on the same incorrect behavior.
+
+Correspondence between the model and implementation is established through independently designed differential tests and an explicit independence argument.
+
+Correspondence evidence is not treated as proof merely because both sides agree.
+
+Authorship independence: this limits how the model is constructed. The model author builds the model only from a model input pack. Someone other than the author prepares the pack, the owner approves it, and its contents are recorded by checksum. The pack contains only: (1) REQUIREMENTS.md; (2) the text of the owner's approved Phase 1 decisions, including the applicable state categories and transition/property scope, with implementation names, code locations, test names, observed behavior and finding records removed, except that an identifier of a persisted or user-visible field stays where the decision cannot be stated without it; (3) a published specification or oracle that the owner adopted in Phase 1, as published. The author does not receive the rest of this blueprint or DECISIONS.md, because they report implementation behavior, and must not read the production implementation code, the production tests (test/ and e2e/), or fixtures and expected outputs derived from the implementation, including saved-game fixtures from released versions. Where this cannot be met, the exception, the reason and the independence argument that replaces it are recorded. The owner must approve the exception before model construction proceeds. An exception cannot permit exposure to production behavior unless the owner accepts the replacement independence argument. The limit ends when the model is frozen: its source and the pack are recorded by checksum before any comparison with the implementation. After the freeze the author may take part in differential testing and correspondence review. After the freeze any change to the model gets a new checksum and a written justification from REQUIREMENTS.md or an approved Phase 1 decision that does not rely on the implementation's behavior; a change made only to agree with the implementation is recorded as a correspondence result, not as a model fix.
+Applicable requirement identification: No REQUIREMENTS row prescribes O8; separately adopted blueprint property (D25). All applicable model-backed claims depend on this evidence,not forced APP/DSP/QA model coverage.
+the applicable state property it implies:
+  Independent executable model,noncircular inputs/shared primitives,explicit partiality and independently designed production correspondence. Frozen identity alone not oracle acceptance; agreement evidence not formal proof.
+the transition classes that can affect it, where applicable:
+  Model construction/input delivery/provenance,freeze before comparison,source-only revisions,new hashes/justifications;defined semantic differential/fault traces;Undefined preflight/rejection;no artificial outer-layer transitions.
+the production routes or trusted components for those transition classes:
+  Blueprint O8/3.1-3.4,D39 inputs,D41 freeze/reconciliation/rev4review,retained source branch. Production routes mapped in otherO/55records; no author contact from this implementation-exposed lane.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Rev4 defined methods listedO1,validate_save,valid_state,fault_stop support candidate bounded semantic comparisons only. Supplied choices must come from independent specification/allowed relation,never current implementation. No wall-kick table,spawn position or released-format syntax fabricated.
+claim:
+  Model authored only from allowed approved inputs,does not mechanically share production transition/validation logic; each usable transition is independently source-grounded and linked to production by independently designed evidence.
+Proof Method:
+  Authorship/exposure provenance argument,exact input/source freezes/revision justifications;independent model-source review of predicates/transitions/partial choices;separate adapter/state category/resources/persistence relation and differential harness with predeclared domains,independent expected results,Undefined trace rejection.
+assumptions:
+  Author/reviewer provenance statements are reports,not proof no exposure; exception requires original owner approval with replacement argument. Caller Env/choice/harness behavior trusted only after accounting. No assumed oracle acceptance.
+covered production code:
+  P2 routes/all publicgame modules;script/input semantic effects where applicable. O8 process documents not production establishment. No public source changes.
+covered model code, if applicable:
+  Rev4 retained3cc3956 source file sha ad35423776ebda03c8e585d6847faa0fe5fab86431fdda8aed23967f87483430 and selftest c581a3eee4b6a4d6506e9e1b771be8030c3f9fd5af2ef9a8f35028b193b6d41c. Main has notes,not Python files. All12 freezes independently hash matched retainedbranch.
+evidence:
+  Original owner exchange recovered for inputs-only approval; exact four hashes claimed byD39,byte/provenance qualification below. Freeze/reconciliation/rev1-4notes read;rev4 source inspected. Committed pack-only review reports28geometry and four forcedUndefined rollback checks/no new blocking defect within bounds; not rerun here.
+limitations:
+  No complete author exposure audit or independently rerun readiness,raw-format mapping or production differential. Rev1/2T3 typo/opening/B12 defects preserved;rev3Undefined mutation defect addressed rev4 but not erased. Rev4 can call external storage beforeUndefined and cannot undo it;preflight/reject trace. Successfulsoftdrop counter not timer phase/deadline;blockedsoftdrop/other reissue absent. Kicks/spawn/release/opening/start-blur/failed-read/tap/highscore/dialog choices partial. Real timing,device/display/input mapping,legacyformats/highscore parser need separate methods. Phase3 open; inputs approved,model/results not approved.
+certification status:
+  Not Assessed. Candidate mapping/evidence only;no implementation certification or oracle acceptance.
+
+O6 six-field dependency ledger (sourced assumptions,not invented resolved facts)
+Each entry:responsibility | why/source/evidence for trust | assumptions | known failures | proof boundary.
+1 Timer scheduler:set/clear gravity/lock/repeat firings | D22T3/D23U3-U4 adopted source,not scheduler correctness test | successfulcancel prevents futurefiring;no registration/cancel success guarantee | throw/failedcancel callback mayfire but mustnotmutate stoppedgame | documented successfulcancel semantics outside;projectrequests,errorstop,failedcancel handling and everyaction/timer checkpoints inside. No realdeadline/throttling guarantee;S10requestedvalue only.
+2 localStorage:payload/flag/highscore interface | D23U1 withD21S4-S9 | successfuloperation documented semantics;contentsuntrusted | denied/throw/quota/readfailure/edit/loss | API successoutside;validation,reconstruction,withdraw/saveordering,sessionitem16 and failuresinside. No permanent/crashdurability/tamper guarantee.
+3 CacheStorage:version files/pins | D24V1 | successfulcache semantics | errors/partialattempt/foreignsameorigin/malformedpins | browseropsoutside;ownnames,completeness,selection,cleanup,pinning,errorlogicinside. No namespaceisolation assumption.
+4 Hosting:deployed bytes | D24V1 anddatedPhase0deployment evidence,not newrun | Pages servesdeployedfiles | unavailability/accountcompromise excluded | providerbehavioroutside;deployed-source identity/relativegraph/APP2/6 logicinside. Actual currentdeployment bytes notchecked.
+5 GitHubActions/settings:workflow execution/report | D24V2 Oct4facts/Phase0baseline | accurate execution/report for recordedrun | skipped/cancelledfailedrun,changedrules/workflow | providerreportoutside;workflowarguments,coverage/campaignscope,claiminterpretationinside. No currentsettings guarantee inferred from files.
+6 Random source:bag values | D24V3 | validvalues only | unexpectedvalues separate evidence;no fairness/unpredictability/securityclaim | sourcevalidity assumedoutside;bagalgorithm/deal/sourceuseinside. Controlled randomsources testcontrols separately accounted.
+7 Canvas/P3:2Dpixel/context operations | D27W1-W5/D35W4 list | documentedsemantics only on success | missing/refused/throw,falsefeature availability;browserlyingaboutsuccess excluded | platformsuccessoutside;contextorder,args,conversion,render/retry/reportinginside. Realdevice evidence notsupplied bytrust.
+8 RAF/Gamepad:callback scheduling/controller read/connect/disconnect | sameD27/D35 | successsemantics | missing/throw/disconnect/readerror,projectretries/loop failures | provideroutside;pollmapping,authorityeffects,scheduling/recovery/reportinside;drawing/polling notU4timers.
+9 WakeLock:screen request/sentinel | D27 | successsemantics,not guaranteed availability | unsupported/refused/revoked/deferredgrant/releaseerrors | provideroutside;wantedpolicy,stalegrant/revoke/retry/release/errorhandlinginside. Best effort,notR1predicate.
+10 Size/viewport/DPR/matchMedia/dialog/pagevisibility/key/blur/activeElement | D27/D35 enumeratedfacilities | successsemantics only forlistedfeatures | throws/missing/resize/focusinterleavings | browsersemanticsoutside;ownlayout,args/dialogselectedchoice/nativefocusprojection/authorityinside. Unlisted facilities not automaticallytrusted.
+11 SWregistration/fetch | D28X1-X2 | documentedsemantics on success,no successguarantee | refuse/throw/networkfailure/returnedresponsehandling | browseroutside;registrationpath/downloads/handling/versionlogicinside.
+12 Clock | D29/D35 | NONE:accurate/steady/monotonic notassumed | forward/backward jumps | insideaudit when cleanup/loaddecisions depend onit;not safe-delete proof.
+13 Testcontrols/tools:modelEnv,callerchoices,randomshims,storage/failure controls,Node/Playwright/coverage/Stryker/compiler/harness | AUDITF5/F6 controls,D27W5 standins;tool config andexactversion evidence needed | controlledoutcome observability and reliableattribution not blindlyassumed | instrumentationbias,derivedexpectedoutputs,staledata,rawbyte/semanticadaptererror,Undefined sideeffects | evidence machinery explicit reviewed boundary;no providerimplementation certification andno oracle derived fromproduction. No added grant to trust unlistedtools/choices.
+
+Actual mapping gaps to integration
+M1 EightO records fill documentary omission but remain candidate. Every appropriate route/state/property/model mapping still needs independent evidence;55tags and8records cannot closePhase3 bycount.
+M2 O1/O7 completewriter andframe/checkpoint table missing,especiallyA11focus/A12tokens/A13repeat/A14touch,A16withdraw andpre-guardconfirmation/constructor/exposedmethods. Need link eachcandidate togoverningrequirement,not assume publicmethod defect orapprovedexception.
+M3 O2 fullR1semantic projection/monitorimplication unavailable;ordinary/fault predicates/resources mustseparate. Modelrev4 onlyboundedreview;sourcevalid_state not automaticallytrue oracle.
+M4 O3 semantic-save/rawreleasedformat/highscore adapters and independentmalformed domains missing. O4 per-effectpreservation/cutpoint/storage observedconsequence evidence missing. Undefined rollbackcannotrewind callerwrite;preflightallchoices ordiscardtrace.
+M5 O5 exactcurrent shippedbytes/code/independenttest/proof/sourceattribution ledger notcomplete. OldPhase0 metrics notcurrentclaimproof. Modelmethod list notexecutedproductionrelation.
+M6 O6 dependency listmustreconcile allactualcalluses against adoptedlimitedscope;successassumptions notavailability guarantee orproject-handling proof. Currentsettings/deployment notverified. Clockexplicitlyuntrusted. Testcontrols/adapters/choices andunlistedfacilities remain accountinggaps.
+M7 O8 authorship/exposureargument needs verifiedprovenance chain ratherthan author/reviewer selfreport;all four attachment URLs recovered from original event; delivered-byte retrieval blocked HTTP403,so exactbyte equality remains unverified. All12 freeze identities and four committed pack hashes verified;freeze-before-comparison chronology reported,notindependentlyproved. Postfreezechanges needrequirementsbased writtenjustification/newhash;no agreement-onlyfix. Noexceptioninvented.
+M8 Rev4choices/partiality retained:kicks,spawn,release-repeat,openingqueue,start/blursuppression,failedreads,dialogotheraction,tapdirection,highscoretiming plusremainingreadings. Expectedvaluesneverborrowedfromproduction. Definedsubdomain/allowedrelation/Undefined islegitimatepartialclaim,notautomaticowner-question orsilent deterministicoracle.
+M9 Timer successfulsoftdrop restartcounter cannotstandfor realdeadlines/phase/requestreissue/blockedsoftdrop. Realcancelerrors,reporting,render/inputmapping,touchpixels,legacyformats/device/P3/wakelock/browser/outercache/QA needtheirindependentmethods,not forcedengine-modelcoverage.
+
+Phasecriteria/stoppingdiscipline
+Blueprint3.3 demands all13fields perproperty. Phase3requires everyin-scoperequirement AND everyadoptedproperty completeappropriatemapping/method/evidence;modelrelations notfabricated. Frozenboundedreviewedmodel notacceptedcompleteoracle;no differentialrun here. Phase3 remainsopen. Phase4 declaredtargets predeclarecases/partitions,bounds,seeds,dependency/failurepoints;stoponlycomplete domain,counterexample,or documentedjustifiedapprovedlimit andrecordattempted/notattempted/remainingproof. Phase5 noCandidatefinding/no Not Assessed property. This supplement neverpromotesstatus,changesrequirements orwaivesanycriterion.
