@@ -1,0 +1,16 @@
+/* Shared game window (Patrician III-style): parchment body, wood-and-brass title bar. */
+.pwin{background:#f4ead0;color:#302719;border:3px solid #6b4f2a;outline:1px solid #c9a35f;outline-offset:-5px;box-shadow:0 14px 44px #000a,inset 0 0 60px #d8c39a55;border-radius:2px}
+.pwin-handle{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;color:#f5e3b3;background:linear-gradient(#6d543a,#4a3722 55%,#3d2d1b);border-bottom:2px solid #c9a35f;cursor:move;touch-action:none;position:sticky;top:0;z-index:1}
+.pwin-title{font:22px Georgia,"Times New Roman",serif;letter-spacing:.5px;text-shadow:0 1px 0 #0009}
+.pwin-close{background:linear-gradient(#8a6a3f,#5e4526);color:#ffe9bb;border:1px solid #c9a35f;border-radius:3px;padding:4px 10px;font:13px Georgia,serif;cursor:pointer;min-height:32px}
+.pwin-close:hover{filter:brightness(1.15)}
+.pwin-close:focus-visible{outline:3px solid #ffd876;outline-offset:-2px}
+.pwin-body{padding:12px}
+.needs-scroll{overflow-x:auto;max-width:100%}.needs-table{border-collapse:collapse;min-width:650px;width:100%;font-size:.88rem}.needs-table th,.needs-table td{padding:.4rem .5rem;border-bottom:1px solid #b7aa8d;text-align:right;vertical-align:top}.needs-table th:first-child,.needs-table td:last-child{text-align:left}.needs-ledger summary{cursor:pointer;font-weight:bold;margin:.7rem 0}.needs-ledger p{line-height:1.45}
+
+.needs-table td:last-child{max-width:230px;white-space:normal}.needs-table thead th:last-child{text-align:left}.needs-scroll{border-right:2px solid #b7aa8d}.needs-ledger small{line-height:1.3}
+
+.needs-scroll-hint{display:none;font-size:.85rem;font-style:italic}@media(max-width:650px){.needs-scroll-hint{display:block}}
+/* Give trade decisions the available screen instead of a narrow decorative overlay. */
+body.in-city-3d .city-window[data-city-panel="market"]{top:8px;right:12px;width:min(1000px,calc(100vw - 24px));max-height:calc(100dvh - var(--game-header-height,96px) - 92px);box-sizing:border-box}
+@media(max-width:600px){body.in-city-3d .city-window[data-city-panel="market"]{right:6px;width:calc(100vw - 12px);max-height:calc(100dvh - var(--game-header-height,120px) - 220px)}}
