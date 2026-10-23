@@ -1,0 +1,85 @@
+#phaser {
+	background-color: #181a1c;
+}
+
+.App {
+	background-color: #181a1c;
+	/*min-height: 40vh;*/
+	display: flex;
+	flex-direction: row;
+	/*	align-items: center;*/
+	justify-content: center;
+	/*font-size: calc(10px + 2vmin);*/
+	color: white;
+	text-align: center;
+}
+
+.punnett {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: 15px;
+	flex-grow: 1;
+}
+.punnettTitle {
+	font-size: 2em;
+	margin: 0;
+}
+
+.dashboard {
+	margin: 15px;
+	flex-grow: 3;
+	outline: solid 2px;
+}
+
+.bottomContainer {
+	z-index: 2;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+.bottomInnerContainer {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: 15px;
+	min-height: 500px;
+}
+
+.arrowButtons {
+	z-index: 4;
+	background-color: #383c41;
+	transition: all 0.8s;
+	width: 4%;
+	padding: 0%;
+	border-width: 2px;
+	border-style: solid;
+	border-color: #383c41;
+
+	display: flex;
+	justify-content: center;
+}
+
+.arrowButtons .leftArrow {
+	writing-mode: vertical-rl;
+	font-size: 1.5em;
+	color: white;
+	transform: rotate(180deg);
+	margin-top: 25vh;
+	padding: 0;
+}
+
+.arrowButtons .rightArrow {
+	writing-mode: vertical-rl;
+	font-size: 1.5em;
+	color: white;
+	margin-top: 25vh;
+	padding: 0;
+}
+/*.tooltip {
+	display: flex;
+	justify-content: flex-start;
+	z-index: 98;
+	border: solid;
+} */
