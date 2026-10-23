@@ -1,0 +1,260 @@
+local Entity = require("scenes.game.Entity")
+local TurretShield = require("scenes.game.turret.shield")
+local Sprite = require("lib.2d.Sprite")
+local utils = require("lib.utils")
+local Circle = require("lib.2d.Circle")
+local Color = require("lib.Color")
+local gameData = require("gameData")
+
+local basicGun = require("scenes.game.turret.guns.basic")
+
+---@class Turret: Entity
+local Turret = class("Turret", Entity)
+
+local scale = 0.15
+
+local joystick = love.joystick.getJoysticks()[1]
+local manualRotationSpeed = 20
+
+Turret.damageSound = love.audio.newSource("scenes/game/turret/audio/damage.ogg", "static")
+Turret.deathSound = love.audio.newSource("scenes/game/turret/audio/death.ogg", "static")
+Turret.heatSound = love.audio.newSource("scenes/game/turret/audio/heat.ogg", "stream")
+Turret.overheatSound = love.audio.newSource("scenes/game/turret/audio/overheat.ogg", "static")
+
+Turret.bulletRotation = 0       ---@type number
+Turret.bulletTargetRotation = 0 ---@type number
+Turret.targetRotation = 0       ---@type number
+Turret.rotationSpeed = 5        ---@type number
+Turret.cannon = nil             ---@type Sprite
+Turret.base = nil               ---@type Sprite
+Turret.currentGun = nil         ---@type TurretGun
+Turret.projectiles = {}         ---@type Projectile[]
+Turret.ai = false               ---@type boolean
+
+function Turret:init()
+    self.heatSound:setLooping(true)
+    self.heatSound:setVolume(0)
+    self.heatSound:play()
+
+    self.base = Sprite:new("scenes/game/turret/img/base.png")
+    self.base.enableShadow = true
+
+    self.currentGun = self:addChild(basicGun:setPosition(0.2, 0))
+    self.currentGun.turret = self
+    self.currentGun.heat = 0
+
+    self:setScaleAll(scale)
+    self.x = 0.5
+    self.y = 0.5
+
+    self:addChild(self.base)
+
+    local t = nil
+    self:onEvent("damaged", function ()
+        if t then t:stop() end
+
+        local range = 0.005
+        local function r() return 0.5 + math.randomf(-range, range) end
+
+        t = self:createTween()
+                  :addKeyframe(self, { x = r(), y = r() }, 0.05)
+                  :addKeyframe(self, { x = 0.5, y = 0.5 }, 0.05)
+        t:play()
+    end)
+
+    self:onEvent("died", function ()
+        self.heatSound:stop()
+        self:shockwave()
+    end)
+
+    self:onEvent("removed", function ()
+        self.heatSound:stop()
+    end)
+
+    local customHp = utils.config.getFlagNumberValue("turretHp")
+    self.ai = utils.config.hasFlag("ai")
+
+    if customHp then
+        self.hp = customHp
+    end
+end
+
+function Turret:processControls(delta)
+     if utils.system.hasMouse() then
+        local x, y = utils.system.getMousePos()
+        self.bulletTargetRotation = self:rotationTo(x, y)
+        
+        x = x - self.x
+        y = y - self.y
+
+        local ratio = gameData.width / gameData.height
+        
+        if ratio > 1 then
+            x = x * ratio
+        else
+            x = x / ratio
+        end
+
+        self.targetRotation = self:rotationTo(self.x + x, self.y + y)
+    end
+
+    if love.mouse and love.mouse.isDown(1) then
+        self:fire()
+    end
+
+    if joystick then
+        if joystick:isGamepadDown("a") then
+            self:fire()
+        end
+
+        if joystick:isGamepadDown("dpleft") then
+            self.targetRotation = self.targetRotation - manualRotationSpeed * delta
+        end
+
+        if joystick:isGamepadDown("dpright") then
+            self.targetRotation = self.targetRotation + manualRotationSpeed * delta
+        end
+    end
+end
+
+function Turret:processAi()
+    local target = self:getClosestTarget()
+
+    if not target then
+        return
+    end
+
+    self.targetRotation = self:rotationTo(target.x, target.y)
+    self.bulletTargetRotation = self.targetRotation
+
+    local angleDiff = utils.math.rotationDiff(self.rotation, self.targetRotation)
+
+    if angleDiff < 10 then
+        self:fire()
+    end
+end
+
+function Turret:update(delta)
+    if not self.ai then    
+        self:processControls(delta)
+    else
+        self:processAi()
+    end
+
+    self.bulletRotation = math.lerpAngle(self.bulletRotation, self.bulletTargetRotation, self.rotationSpeed * delta)
+    self.rotation = math.lerpAngle(self.rotation, self.targetRotation, self.rotationSpeed * delta)
+    
+    local gun = self.currentGun
+
+    if gun then
+        local heatSound = self.heatSound
+        local ratio = gun.heat / gun.heatCapacity
+
+        local targetPitch = 0.2
+        local targetVolume = 0
+        local speed = 5 * delta
+
+        if not gun.overheat then
+            targetPitch = math.clamp(ratio * 1.5, 0.2, 3)
+            targetVolume = ratio * 1.5
+        end
+
+        heatSound:setPitch(math.lerp(heatSound:getPitch(), targetPitch, speed))
+        heatSound:setVolume(math.lerp(heatSound:getVolume(), targetVolume, speed))
+    end
+end
+
+---@param powerUp PowerUp
+function Turret:powerUpReceived(powerUp)
+    self:shockwave(50, powerUp.originalColor, 30)
+end
+
+---@return GameScene
+function Turret:getGame()
+    return self.parent.parent ---@type GameScene
+end
+
+---@return Entity?
+function Turret:getClosestTarget()
+    local game = self:getGame()
+
+    local target = nil
+    local targetDist = math.huge
+
+    for i, v in ipairs(game.arena.children) do
+        if not v:isA("Projectile") then
+            goto continue
+        end
+
+        if v:isA("TurretBullet") then
+            goto continue
+        end
+
+        if v:isA("PowerUp") and v:isSafe() then
+            goto continue
+        end
+
+        local dist = v:distanceToNode(self)
+        
+        if dist < targetDist then
+            target = v
+            targetDist = dist
+        end
+
+        ::continue::
+    end
+
+    return target
+end
+
+-- TODO: Fix freeze on fire on 3DS
+function Turret:fire()
+    if os.time() < self:getGame().startTime + 0.2 then
+        return
+    end
+
+    self.currentGun:fire()
+end
+
+---@param radius? number
+---@param color? Color
+function Turret:shockwave(radius, color, speed)
+    radius = radius or 250
+    speed = speed or 40
+
+    local cir = Circle:new()
+
+    cir.fillColor = Color.TRANSPARENT:clone()
+    cir.outlineColor = color or Color.WHITE:clone()
+    cir.outlineSize = 10
+    cir.radius = 0
+    cir.x = self.x
+    cir.y = self.y
+
+    local targetColor = cir.outlineColor:clone()
+    targetColor.a = 0
+
+    local t = self.parent:createTween()
+    t:addKeyframe(cir, {
+        radius = radius,
+        outlineColor = targetColor
+    }, radius / speed)
+
+    t:onEvent("finished", function ()
+        cir:destroy()
+    end)
+
+    t:play()
+
+    self.parent:addChild(cir)
+end
+
+function Turret:spawnShield()
+    local shield = TurretShield:new()
+    shield.x = 0.5
+    shield.y = 0.5
+
+    self.parent:addChild(shield)
+end
+
+return Turret
