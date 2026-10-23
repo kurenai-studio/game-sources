@@ -1,0 +1,116 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 200.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -279.0
+  }
+  scale {
+    x: 3.0
+    y: 3.0
+  }
+  size {
+    x: 300.0
+    y: 80.0
+  }
+  color {
+    x: 0.686
+    y: 0.894
+    z: 0.953
+  }
+  type: TYPE_TEXT
+  text: "0 / 60"
+  font: "text"
+  id: "text_counter"
+  parent: "root"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "group"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  type: TYPE_BOX
+  texture: "gui/image_star_gui"
+  id: "icon_star_back"
+  parent: "group"
+  inherit_alpha: true
+  alpha: 0.4
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  rotation {
+    z: 90.0
+  }
+  size {
+    x: 600.0
+    y: 600.0
+  }
+  type: TYPE_PIE
+  texture: "gui/pixel"
+  id: "mask"
+  parent: "group"
+  inherit_alpha: true
+  outerBounds: PIEBOUNDS_RECTANGLE
+  pieFillAngle: -10.0
+  clipping_mode: CLIPPING_MODE_STENCIL
+  clipping_visible: false
+}
+nodes {
+  rotation {
+    z: -90.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  color {
+    x: 0.686
+    y: 0.894
+    z: 0.953
+  }
+  type: TYPE_BOX
+  texture: "gui/image_star_gui"
+  id: "icon_star"
+  parent: "mask"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

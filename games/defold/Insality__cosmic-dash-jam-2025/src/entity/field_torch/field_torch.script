@@ -1,0 +1,7 @@
+local panthera = require("panthera.panthera")
+local animation = require("entity.field_torch.field_torch_panthera")
+
+function init(self)
+	self.animation = panthera.create_go(animation)
+	panthera.play(self.animation, "idle", panthera.OPTIONS_LOOP)
+end

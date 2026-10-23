@@ -1,0 +1,67 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  pivot: PIVOT_SW
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 43.0
+    y: 47.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_slide"
+  id: "icon"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 69.0
+    y: 46.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 80.0
+    y: 40.0
+  }
+  color {
+    x: 0.686
+    y: 0.894
+    z: 0.953
+  }
+  type: TYPE_TEXT
+  text: "25"
+  font: "text"
+  id: "text"
+  pivot: PIVOT_W
+  parent: "root"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

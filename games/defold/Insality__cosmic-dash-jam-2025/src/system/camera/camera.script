@@ -1,0 +1,7 @@
+local panthera = require("panthera.panthera")
+local animation = require("system.camera.camera_panthera")
+
+function init(self)
+	self.animation = panthera.create_go(animation)
+	panthera.play(self.animation, "idle", panthera.OPTIONS_LOOP)
+end

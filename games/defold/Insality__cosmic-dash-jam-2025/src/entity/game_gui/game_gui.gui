@@ -1,0 +1,390 @@
+script: "/entity/game_gui/game_gui.gui_script"
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  position {
+    x: 540.0
+    y: 960.0
+  }
+  size {
+    x: 1080.0
+    y: 1920.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 540.0
+    y: 960.0
+  }
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "NE_Anchor"
+  pivot: PIVOT_NE
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: -120.0
+    y: -120.0
+  }
+  size {
+    x: 200.0
+    y: 200.0
+  }
+  type: TYPE_BOX
+  id: "button_menu"
+  parent: "NE_Anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_menu"
+  id: "icon_menu"
+  parent: "button_menu"
+  inherit_alpha: true
+  alpha: 0.6
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 960.0
+  }
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "N_Anchor"
+  pivot: PIVOT_N
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: -310.0
+  }
+  type: TYPE_TEMPLATE
+  id: "level_header"
+  parent: "N_Anchor"
+  inherit_alpha: true
+  template: "/widget/level_header/level_header.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/root"
+  parent: "level_header"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "level_header/text"
+  parent: "level_header/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "level_header/fill_dots"
+  parent: "level_header/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/fill_dots/root"
+  parent: "level_header/fill_dots"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "level_header/fill_dots/fill_dot"
+  parent: "level_header/fill_dots/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/fill_dots/fill_dot/root"
+  parent: "level_header/fill_dots/fill_dot"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/fill_dots/fill_dot/dot"
+  parent: "level_header/fill_dots/fill_dot/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/button_level_prev"
+  parent: "level_header/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/icon_level_prev"
+  parent: "level_header/button_level_prev"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/button_level_next"
+  parent: "level_header/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_header/icon_level_next"
+  parent: "level_header/button_level_next"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -120.0
+  }
+  type: TYPE_TEMPLATE
+  id: "star_counter"
+  parent: "N_Anchor"
+  inherit_alpha: true
+  template: "/widget/star_counter/star_counter.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/root"
+  parent: "star_counter"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "star_counter/single_star_1"
+  parent: "star_counter/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_1/root"
+  parent: "star_counter/single_star_1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_1/group"
+  parent: "star_counter/single_star_1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_1/icon"
+  parent: "star_counter/single_star_1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "star_counter/single_star_2"
+  parent: "star_counter/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_2/root"
+  parent: "star_counter/single_star_2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_2/group"
+  parent: "star_counter/single_star_2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_2/icon"
+  parent: "star_counter/single_star_2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "star_counter/single_star_3"
+  parent: "star_counter/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_3/root"
+  parent: "star_counter/single_star_3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_3/group"
+  parent: "star_counter/single_star_3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "star_counter/single_star_3/icon"
+  parent: "star_counter/single_star_3/group"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -960.0
+  }
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "S_Anchor"
+  pivot: PIVOT_S
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: 150.0
+  }
+  type: TYPE_TEMPLATE
+  id: "text_level_hint"
+  parent: "S_Anchor"
+  inherit_alpha: true
+  template: "/widget/text_level_hint/text_level_hint.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "text_level_hint/root"
+  parent: "text_level_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "text_level_hint/text"
+  parent: "text_level_hint/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -540.0
+    y: 960.0
+  }
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "NW_Anchor"
+  pivot: PIVOT_NE
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 120.0
+    y: -120.0
+  }
+  size {
+    x: 200.0
+    y: 200.0
+  }
+  type: TYPE_BOX
+  id: "button_restart"
+  parent: "NW_Anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.996
+    y: 0.992
+    z: 0.773
+  }
+  type: TYPE_BOX
+  texture: "gui/button_restart"
+  id: "icon_restart"
+  parent: "button_restart"
+  inherit_alpha: true
+  alpha: 0.7
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -540.0
+    y: -960.0
+  }
+  size {
+    x: 32.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "SW_Anchor"
+  pivot: PIVOT_SW
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 30.0
+    y: 30.0
+  }
+  type: TYPE_TEMPLATE
+  id: "slide_counter"
+  parent: "SW_Anchor"
+  inherit_alpha: true
+  template: "/widget/slide_counter/slide_counter.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "slide_counter/root"
+  parent: "slide_counter"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "slide_counter/icon"
+  parent: "slide_counter/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "slide_counter/text"
+  parent: "slide_counter/root"
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

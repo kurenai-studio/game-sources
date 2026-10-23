@@ -1,0 +1,25 @@
+local world = require("game.world")
+
+---@param entity entity.tile_corner
+local function init_entity(self, entity)
+	local field_corner = entity.field_corner
+	msg.post("corner_NE", field_corner == "NE" and "enable" or "disable")
+	msg.post("corner_NW", field_corner == "NW" and "enable" or "disable")
+	msg.post("corner_SE", field_corner == "SE" and "enable" or "disable")
+	msg.post("corner_SW", field_corner == "SW" and "enable" or "disable")
+end
+
+
+function init(self)
+	msg.post("#", "init")
+end
+
+
+function on_message(self, message_id)
+	if message_id == hash("init") then
+		local entity = world.game_object:get_entity(go.get_id()) --[[@as entity.tile_corner]]
+		if entity then
+			init_entity(self, entity)
+		end
+	end
+end

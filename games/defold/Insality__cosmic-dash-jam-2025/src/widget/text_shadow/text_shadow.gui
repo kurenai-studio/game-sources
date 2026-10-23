@@ -1,0 +1,83 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 960.0
+    y: 300.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: -90.0
+  }
+  scale {
+    x: 8.5
+    y: 8.5
+  }
+  size {
+    x: 120.0
+    y: 30.0
+  }
+  color {
+    x: 0.933
+    y: 0.475
+    z: 0.482
+  }
+  type: TYPE_TEXT
+  text: "DUELS"
+  font: "text"
+  id: "text"
+  pivot: PIVOT_S
+  parent: "root"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+  text_tracking: -0.02
+}
+nodes {
+  position {
+    y: 85.0
+  }
+  scale {
+    x: 8.5
+    y: -8.5
+  }
+  size {
+    x: 120.0
+    y: 30.0
+  }
+  color {
+    x: 0.933
+    y: 0.475
+    z: 0.482
+  }
+  type: TYPE_TEXT
+  text: "DUELS"
+  font: "text"
+  id: "text_reflection"
+  pivot: PIVOT_S
+  parent: "root"
+  inherit_alpha: true
+  alpha: 0.25
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+  text_tracking: -0.02
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

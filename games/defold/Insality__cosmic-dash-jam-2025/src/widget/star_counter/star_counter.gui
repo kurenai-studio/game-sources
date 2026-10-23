@@ -1,0 +1,107 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: -200.0
+  }
+  type: TYPE_TEMPLATE
+  id: "single_star_1"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/star_counter/single_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_1/root"
+  parent: "single_star_1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_1/group"
+  parent: "single_star_1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_1/icon"
+  parent: "single_star_1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "single_star_2"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/star_counter/single_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_2/root"
+  parent: "single_star_2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_2/group"
+  parent: "single_star_2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_2/icon"
+  parent: "single_star_2/group"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 200.0
+  }
+  type: TYPE_TEMPLATE
+  id: "single_star_3"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/star_counter/single_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_3/root"
+  parent: "single_star_3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_3/group"
+  parent: "single_star_3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "single_star_3/icon"
+  parent: "single_star_3/group"
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
