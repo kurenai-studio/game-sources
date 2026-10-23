@@ -51,9 +51,11 @@
 
 - 分支：`bot/<letter>/<owner>-<repo>`
 - 标题：`add: OWNER/REPO (license)`
-- 内容：仅新增该游戏目录 + 必要时更新 `catalog/INDEX.md` / `claimed.json`
-- 描述必须含：上游链接、许可证、commit SHA、体积粗估
-- squash-merge；master **只 COMMENT 审查，不 APPROVE**（与画布项目一致时可沿用）
+- 内容：**只新增** `games/<engine>/<owner>__<repo>/`（SOURCE.json + ATTRIBUTION.md + LICENSE + src/）
+- **禁止修改** `catalog/INDEX.md` 与 `catalog/claimed.json`（由 master 在 squash-merge 后更新，避免全员互相撞 catalog）
+- 开 PR 前：`git fetch && git rebase origin/main`；有冲突只解自己的 `games/` 路径
+- 描述必须含：上游链接、许可证、commit SHA、体积粗估、对应 claim Issue
+- squash-merge；master **只 COMMENT 审查，不 APPROVE**
 - CI：无强制构建；审查重点是许可证与归因完整性
 
 ## 执行约束（全员）
