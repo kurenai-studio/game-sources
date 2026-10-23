@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name'
+        required: true
+        type: string
+      release_title:
+        description: 'Release title'
+        required: true
+        type: string
+      prerelease:
+        description: 'Pre-release'
+        required: true
+        type: boolean
+      changelog:
+        description: 'Changelog entries (comma-separated)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build release artifacts
+        run: ./gradlew clean :lwjgl3:jar :teavm:build
+
+      - name: Build native packages
+        run: |
+          set -euo pipefail
+
+          ./gradlew :lwjgl3:packageWinX64
+          ./gradlew :lwjgl3:packageMacM1
+          ./gradlew :lwjgl3:packageMacX64
+          ./gradlew :lwjgl3:packageLinuxX64
+
+      - name: Package artifacts
+        run: |
+          set -euo pipefail
+
+          mkdir -p release
+
+          copy_native_package() {
+            local target="$1"
+            local output_name="$2"
+            local -a package_files
+
+            mapfile -t package_files < <(find lwjgl3/build/construo/dist -maxdepth 1 -name "*-${target}.zip" -type f | sort)
+            if [ "${#package_files[@]}" -ne 1 ]; then
+              printf 'Expected exactly one package for %s, found %s\n' "$target" "${#package_files[@]}" >&2
+              printf '%s\n' "${package_files[@]}" >&2
+              exit 1
+            fi
+
+            cp "${package_files[0]}" "release/${output_name}"
+          }
+
+          mapfile -t jar_files < <(find lwjgl3/build/libs -maxdepth 1 -name '*.jar' -type f | sort)
+          if [ "${#jar_files[@]}" -ne 1 ]; then
+            printf 'Expected exactly one jar, found %s\n' "${#jar_files[@]}" >&2
+            printf '%s\n' "${jar_files[@]}" >&2
+            exit 1
+          fi
+
+          cp "${jar_files[0]}" release/
+          copy_native_package winX64 rolling-forever-windows-x64.zip
+          copy_native_package macM1 rolling-forever-macos-arm64.zip
+          copy_native_package macX64 rolling-forever-macos-x64.zip
+          copy_native_package linuxX64 rolling-forever-linux-x64.zip
+
+          cd teavm/build/dist/webapp
+          zip -r "$GITHUB_WORKSPACE/release/rolling-forever-site.zip" .
+
+      - name: Format changelog
+        run: |
+          set -euo pipefail
+
+          echo "${{ inputs.changelog }}" \
+            | tr ',' '\n' \
+            | sed 's/^[[:space:]]*//' \
+            | sed 's/[[:space:]]*$//' \
+            | sed '/^$/d' \
+            | sed 's/^/- /' > changelog_body.md
+
+      - name: Check if release already exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "ERROR: Release $TAG_NAME already exists"
+            exit 1
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag }}
+          RELEASE_TITLE: ${{ inputs.release_title }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          prerelease_args=()
+          if [ "$PRERELEASE" = "true" ]; then
+            prerelease_args+=(--prerelease)
+          fi
+
+          gh release create "$TAG_NAME" \
+            --target "${{ github.sha }}" \
+            --title "$RELEASE_TITLE" \
+            --notes-file changelog_body.md \
+            "${prerelease_args[@]}" \
+            release/*
