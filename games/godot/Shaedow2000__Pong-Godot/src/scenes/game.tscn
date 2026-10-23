@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://djwewioeynbpj"]
+
+[ext_resource type="Script" uid="uid://c3ucw2bualwxn" path="res://scripts/game.gd" id="1_lbhrr"]
+[ext_resource type="PackedScene" uid="uid://dxou4yakkh3el" path="res://scenes/player_a.tscn" id="1_yqjtg"]
+[ext_resource type="PackedScene" uid="uid://brnm30fo4a0ld" path="res://scenes/player_b.tscn" id="2_lnu2h"]
+[ext_resource type="PackedScene" uid="uid://dwvh3t4wkvc2n" path="res://scenes/asteroid.tscn" id="3_lnu2h"]
+
+[node name="Game" type="Node" unique_id=1517308298 node_paths=PackedStringArray("asteroid", "player_a", "player_b")]
+script = ExtResource("1_lbhrr")
+asteroid = NodePath("Asteroid")
+player_a = NodePath("PlayerA")
+player_b = NodePath("PlayerB")
+
+[node name="PlayerA" parent="." unique_id=1337250693 instance=ExtResource("1_yqjtg")]
+
+[node name="PlayerB" parent="." unique_id=1908576384 instance=ExtResource("2_lnu2h")]
+
+[node name="Asteroid" parent="." unique_id=1380654977 instance=ExtResource("3_lnu2h")]

@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://gu3ae876dlfa"]
+
+[ext_resource type="Script" uid="uid://olkmgfqg1lkx" path="res://scripts/scores.gd" id="1_r5nmk"]
+
+[node name="Scores" type="CanvasLayer" unique_id=604818236]
+script = ExtResource("1_r5nmk")
+
+[node name="PlayerAScore" type="Label" parent="." unique_id=2094867023]
+offset_right = 120.0
+offset_bottom = 60.0
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 24
+text = "Score: 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerBScore" type="Label" parent="." unique_id=1733408053]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_bottom = 60.0
+grow_horizontal = 0
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 24
+text = "Score: 0"
+horizontal_alignment = 1
+vertical_alignment = 1
