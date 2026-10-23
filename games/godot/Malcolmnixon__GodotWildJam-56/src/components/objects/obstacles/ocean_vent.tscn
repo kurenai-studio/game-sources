@@ -1,0 +1,85 @@
+[gd_scene load_steps=12 format=3 uid="uid://mdrh1pea1kxp"]
+
+[ext_resource type="Script" path="res://components/objects/obstacles/ocean_vent.gd" id="1_bvw05"]
+[ext_resource type="PackedScene" uid="uid://bfhj0hf6k3150" path="res://assets/rocks/rock_vent.glb" id="2_wr55n"]
+[ext_resource type="Material" uid="uid://bxt8f03173mo" path="res://assets/ambientcg/rock028/mat_rock.tres" id="3_rhgeg"]
+[ext_resource type="Script" path="res://addons/godot-xr-tools/objects/wind_area.gd" id="4_duyk1"]
+[ext_resource type="Texture2D" uid="uid://7lp2suojankf" path="res://assets/images/bubble.png" id="5_7t5vd"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_glbw3"]
+size = Vector3(1, 6.78, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rm2ay"]
+transparency = 1
+albedo_color = Color(0.564706, 1, 1, 0.87451)
+albedo_texture = ExtResource("5_7t5vd")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Curve" id="Curve_ngutb"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.844961, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_7h4t5"]
+curve = SubResource("Curve_ngutb")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_lhgn7"]
+emission_shape = 1
+emission_sphere_radius = 0.2
+gravity = Vector3(0, 13.473, 0)
+angle_min = -680.7
+angle_max = 497.5
+scale_curve = SubResource("CurveTexture_7h4t5")
+
+[sub_resource type="QuadMesh" id="QuadMesh_lmstv"]
+size = Vector2(0.1, 0.1)
+
+[node name="ocean_vent" type="Node3D"]
+script = ExtResource("1_bvw05")
+
+[node name="rock_vent" parent="." instance=ExtResource("2_wr55n")]
+transform = Transform3D(0.3826, 0, 0, 0, 0.3826, 0, 0, 0, 0.3826, 0, 0, 0)
+
+[node name="Cube" parent="rock_vent" index="0"]
+material_override = ExtResource("3_rhgeg")
+
+[node name="Cube001" parent="rock_vent" index="1"]
+material_override = ExtResource("3_rhgeg")
+
+[node name="Cube002" parent="rock_vent" index="2"]
+material_override = ExtResource("3_rhgeg")
+
+[node name="XRToolsWindArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.550411, 0)
+collision_mask = 524289
+script = ExtResource("4_duyk1")
+wind_vector = Vector3(0, 99.721, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="XRToolsWindArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.22142, 0)
+shape = SubResource("BoxShape3D_glbw3")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35032, 0.000297189)
+material_override = SubResource("StandardMaterial3D_rm2ay")
+process_material = SubResource("ParticleProcessMaterial_lhgn7")
+draw_pass_1 = SubResource("QuadMesh_lmstv")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0147478, 1.55938, -0.222572)
+material_override = SubResource("StandardMaterial3D_rm2ay")
+process_material = SubResource("ParticleProcessMaterial_lhgn7")
+draw_pass_1 = SubResource("QuadMesh_lmstv")
+
+[node name="GPUParticles3D3" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.250731, 1.01898, -0.0593993)
+material_override = SubResource("StandardMaterial3D_rm2ay")
+process_material = SubResource("ParticleProcessMaterial_lhgn7")
+draw_pass_1 = SubResource("QuadMesh_lmstv")
+
+[connection signal="body_entered" from="XRToolsWindArea" to="." method="_on_xr_tools_wind_area_body_entered"]
+[connection signal="body_exited" from="XRToolsWindArea" to="." method="_on_xr_tools_wind_area_body_exited"]
+
+[editable path="rock_vent"]

@@ -1,0 +1,149 @@
+[gd_scene load_steps=3 format=3 uid="uid://cuyu678jb7f62"]
+
+[ext_resource type="Texture2D" uid="uid://b2fle67ypyx2g" path="res://components/hud/scorpio.png" id="1_m24ej"]
+[ext_resource type="Script" path="res://components/ui/ui_shop.gd" id="1_oun36"]
+
+[node name="ShopDisplay" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 512.0
+offset_bottom = 512.0
+script = ExtResource("1_oun36")
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+offset_right = 512.0
+offset_bottom = 512.0
+text = "asdfasdfasdf"
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 2
+offset_right = 512.0
+offset_bottom = 512.0
+color = Color(0, 0, 0, 1)
+
+[node name="ColorRect" type="ColorRect" parent="ColorRect"]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 113.0
+offset_right = 511.0
+offset_bottom = 114.0
+color = Color(0.219608, 0.219608, 0.219608, 1)
+
+[node name="Control" type="Control" parent="ColorRect"]
+layout_mode = 2
+anchors_preset = 0
+offset_right = 512.0
+offset_bottom = 512.0
+
+[node name="TextureRect" type="TextureRect" parent="ColorRect/Control"]
+layout_mode = 0
+offset_left = 109.0
+offset_right = 203.0
+offset_bottom = 113.0
+texture = ExtResource("1_m24ej")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="ColorRect/Control"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_top = 15.0
+offset_right = 512.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 24
+text = "SCORPIO INC.
+"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="ColorRect/Control"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_top = 52.0
+offset_right = 512.0
+offset_bottom = 89.0
+text = "MEMBER SHOP"
+horizontal_alignment = 1
+
+[node name="CreditsLabel" type="Label" parent="ColorRect/Control"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 0
+offset_left = 347.0
+offset_top = 87.0
+offset_right = 508.0
+offset_bottom = 113.0
+text = "CREDITS:"
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ColorRect"]
+layout_mode = 0
+anchor_left = 0.015625
+anchor_top = 0.234375
+anchor_right = 0.984375
+anchor_bottom = 0.4375
+offset_bottom = -64.0
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="HarpoonContainer" type="HBoxContainer" parent="ColorRect/VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="HarpoonButton" type="Button" parent="ColorRect/VBoxContainer/HarpoonContainer"]
+custom_minimum_size = Vector2(60, 50)
+layout_mode = 2
+text = "BUY"
+
+[node name="Label" type="Label" parent="ColorRect/VBoxContainer/HarpoonContainer"]
+layout_mode = 2
+text = "Harpoon
+"
+
+[node name="CreditsLabel" type="Label" parent="ColorRect/VBoxContainer/HarpoonContainer"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 2
+text = "5 credits"
+vertical_alignment = 1
+
+[node name="HeadlampContainer" type="HBoxContainer" parent="ColorRect/VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="HeadlampButton" type="Button" parent="ColorRect/VBoxContainer/HeadlampContainer"]
+custom_minimum_size = Vector2(60, 50)
+layout_mode = 2
+text = "BUY"
+
+[node name="Label" type="Label" parent="ColorRect/VBoxContainer/HeadlampContainer"]
+layout_mode = 2
+text = "Headlamp"
+
+[node name="CreditsLabel" type="Label" parent="ColorRect/VBoxContainer/HeadlampContainer"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 2
+text = "3 credits"
+vertical_alignment = 1
+
+[node name="KnifeContainer" type="HBoxContainer" parent="ColorRect/VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="KnifeButton" type="Button" parent="ColorRect/VBoxContainer/KnifeContainer"]
+custom_minimum_size = Vector2(60, 50)
+layout_mode = 2
+text = "BUY"
+
+[node name="Label" type="Label" parent="ColorRect/VBoxContainer/KnifeContainer"]
+layout_mode = 2
+text = "Knife
+"
+
+[node name="CreditsLabel" type="Label" parent="ColorRect/VBoxContainer/KnifeContainer"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 2
+text = "2 credits"
+vertical_alignment = 1
+
+[connection signal="pressed" from="ColorRect/VBoxContainer/HarpoonContainer/HarpoonButton" to="." method="_on_harpoon_button_pressed"]
+[connection signal="pressed" from="ColorRect/VBoxContainer/HeadlampContainer/HeadlampButton" to="." method="_on_headlamp_button_pressed"]
+[connection signal="button_down" from="ColorRect/VBoxContainer/KnifeContainer/KnifeButton" to="." method="_on_knifelamp_button_button_down"]
+[connection signal="pressed" from="ColorRect/VBoxContainer/KnifeContainer/KnifeButton" to="." method="_on_harpoon_button_pressed"]
