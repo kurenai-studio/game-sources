@@ -1,0 +1,91 @@
+# Godot 4
+.godot/
+/android/
+
+# Every dot-* addon is a separate repository. For local development, symlink them:
+#   ln -s ../../dot-core/addons/dot_core addons/dot_core
+# A shipped build copies them in instead.
+/addons/dot_core
+/addons/dot_entity
+/addons/dot_map
+/addons/dot_props
+/addons/dot_leaderboard
+/addons/dot_ui
+/addons/dot_server
+/addons/dot_net
+/addons/dot_npc
+/addons/dot_vehicle
+/addons/dot_achievements
+/addons/dot_combat
+/addons/dot_loadout
+/addons/dot_match
+/addons/dot_npc_ai
+/addons/dot_npc_ai_director
+/addons/dot_stats
+/addons/dot_vote
+/addons/dot_auth
+/addons/dot_browser
+/addons/dot_chat
+/addons/dot_cloud
+/addons/dot_moderation
+/addons/dot_platform
+/addons/dot_user
+/addons/dot_user_avatar
+/addons/dot_voice
+
+# Records and zone files written at runtime
+/user_data/
+
+# Exports
+build/
+export_presets.cfg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+
+# Screenshots are evidence for a review, not assets
+/screenshots/
+/addons/dot_economy
+/addons/dot_effects
+/addons/dot_spectate
+/addons/dot_settings
+/addons/dot_menu
+/addons/dot_audio
+/addons/dot_fx
+/addons/dot_console
+/addons/dot_peer_to_peer
+/addons/dot_procedural_generation
+/addons/dot_inventory
+/addons/dot_physics
+/addons/dot_lighting
+/addons/dot_spawn
+/addons/dot_player
+/addons/dot_player_controller
+/addons/dot_player_char
+/addons/dot_player_class
+/addons/dot_team
+/addons/dot_server_query
+/addons/dot_game
+/addons/dot_weapon
+/addons/zee_weapons
+/addons/dot_workbench
+# Optional: natural-disasters, shown in the Addons tab by addons/pg_natural_disasters.
+/addons/natural_disasters
+
+# The custom sandbox maps are game-playground-maps, a repository and a pack of their own.
+# "ci" asks dot-ci (v1.3.0+) to link them on the runner too: the suites load all of them.
+# bootstrap-link: game-playground-maps/maps ci
+/maps/custom
+# Optional packs (zz-modern-weapons, zz-medieval-weapons, zz-historical-monsters): dot-bootstrap links
+# them by default and skips them under --min; the game runs without.
+# bootstrap-optional
+/addons/zz_modern_weapons
+# bootstrap-optional
+/addons/zz_medieval_weapons
+# bootstrap-optional
+/addons/zz_historical_monsters
+/cfg/addons
