@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://bh71vxorol5ad"]
+
+[ext_resource type="Script" uid="uid://bc30y6qoomymu" path="res://scripts/enemy.gd" id="1_7k104"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_e"]
+radius = 20.0
+
+[sub_resource type="StandardMaterial3D" id="StdMat_ex"]
+shading_mode = 0
+albedo_color = Color(1, 1, 1, 1)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_ex"]
+material = SubResource("StdMat_ex")
+radius = 2.6
+height = 5.2
+
+[sub_resource type="StandardMaterial3D" id="StdMat_sp"]
+shading_mode = 0
+albedo_color = Color(1, 0.92, 0.75, 1)
+emission_enabled = true
+emission = Color(1, 0.92, 0.75, 1)
+emission_energy_multiplier = 2.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_sp"]
+material = SubResource("StdMat_sp")
+size = Vector3(1.8, 1.8, 1.8)
+
+[node name="Enemy" type="CharacterBody3D" unique_id=405132097 groups=["mobs"]]
+motion_mode = 1
+script = ExtResource("1_7k104")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_e")
+
+[node name="ExplosionParticles" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 24
+lifetime = 0.55
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 130.0
+initial_velocity_max = 320.0
+scale_amount_min = 1.2
+scale_amount_max = 3.0
+mesh = SubResource("SphereMesh_ex")
+
+[node name="Sparks" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 12
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 200.0
+initial_velocity_max = 380.0
+scale_amount_min = 0.8
+scale_amount_max = 1.6
+mesh = SubResource("BoxMesh_sp")

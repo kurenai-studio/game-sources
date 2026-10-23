@@ -1,0 +1,738 @@
+[gd_scene format=3 uid="uid://ccx7tcudnlaiy"]
+
+[ext_resource type="PackedScene" uid="uid://bjorh24wlg2gc" path="res://scenes/player.tscn" id="1_fj7yv"]
+[ext_resource type="Script" uid="uid://bfg1yeodd41of" path="res://scripts/world.gd" id="1_tlwt5"]
+[ext_resource type="Script" path="res://scripts/camera.gd" id="8_cam"]
+[ext_resource type="Script" path="res://scripts/touch_ui.gd" id="10_tui"]
+[ext_resource type="Script" path="res://scripts/panel_fx.gd" id="9_pfx"]
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="13_pm"]
+[ext_resource type="Texture2D" path="res://assets/nebula.png" id="4_neb"]
+[ext_resource type="Texture2D" path="res://assets/stars_far.png" id="5_far"]
+[ext_resource type="Texture2D" path="res://assets/stars_mid.png" id="6_mid"]
+[ext_resource type="Texture2D" path="res://assets/stars_near.png" id="7_near"]
+[ext_resource type="Texture2D" path="res://assets/joystick_base.png" id="11_jb"]
+[ext_resource type="Texture2D" path="res://assets/joystick_thumb.png" id="12_jt"]
+
+[sub_resource type="Environment" id="Env_main"]
+background_mode = 1
+background_color = Color(0.008, 0.012, 0.035, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.6, 0.85, 1)
+ambient_light_energy = 0.8
+glow_enabled = true
+glow_intensity = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_neb"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("4_neb")
+albedo_color = Color(1, 1, 1, 0.85)
+texture_repeat = 2
+uv1_scale = Vector3(1.4, 0.8, 1)
+
+[sub_resource type="QuadMesh" id="Quad_neb"]
+size = Vector2(3700, 2100)
+
+[sub_resource type="StandardMaterial3D" id="Mat_far"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("5_far")
+albedo_color = Color(1, 1, 1, 0.8)
+texture_repeat = 2
+uv1_scale = Vector3(6, 3.5, 1)
+
+[sub_resource type="QuadMesh" id="Quad_far"]
+size = Vector2(3200, 1850)
+
+[sub_resource type="StandardMaterial3D" id="Mat_mid"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("6_mid")
+albedo_color = Color(1, 1, 1, 0.9)
+texture_repeat = 2
+uv1_scale = Vector3(5.5, 3, 1)
+
+[sub_resource type="QuadMesh" id="Quad_mid"]
+size = Vector2(2900, 1650)
+
+[sub_resource type="StandardMaterial3D" id="Mat_near"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("7_near")
+texture_repeat = 2
+uv1_scale = Vector3(5, 2.8, 1)
+
+[sub_resource type="QuadMesh" id="Quad_near"]
+size = Vector2(2600, 1500)
+
+[sub_resource type="StyleBoxFlat" id="sb_bar_bg"]
+bg_color = Color(0.07, 0.09, 0.18, 0.85)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_hp_fill"]
+bg_color = Color(0.92, 0.28, 0.33, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_xp_fill"]
+bg_color = Color(0.3, 0.8, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_boss_fill"]
+bg_color = Color(0.85, 0.3, 0.95, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_n"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.95, 0.97, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.16, 0.22, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_h"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 0.88, 0.52, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.45, 0.3, 0.05, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_p"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.78, 0.84, 0.95, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.16, 0.22, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="Theme" id="Theme_ui"]
+Button/colors/font_color = Color(0.1, 0.12, 0.24, 1)
+Button/colors/font_focus_color = Color(0.1, 0.12, 0.24, 1)
+Button/colors/font_hover_color = Color(0.24, 0.15, 0.02, 1)
+Button/colors/font_pressed_color = Color(0.1, 0.12, 0.24, 1)
+Button/font_sizes/font_size = 20
+Button/styles/hover = SubResource("sb_btn_h")
+Button/styles/normal = SubResource("sb_btn_n")
+Button/styles/pressed = SubResource("sb_btn_p")
+
+[node name="World" type="Node3D"]
+script = ExtResource("1_tlwt5")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -25, 0)
+light_energy = 1.25
+
+[node name="Background" type="Node3D" parent="."]
+
+[node name="Nebula" type="MeshInstance3D" parent="Background"]
+position = Vector3(0, 0, -1500)
+mesh = SubResource("Quad_neb")
+material_override = SubResource("Mat_neb")
+
+[node name="Far" type="MeshInstance3D" parent="Background"]
+position = Vector3(0, 0, -1200)
+mesh = SubResource("Quad_far")
+material_override = SubResource("Mat_far")
+
+[node name="Mid" type="MeshInstance3D" parent="Background"]
+position = Vector3(0, 0, -1000)
+mesh = SubResource("Quad_mid")
+material_override = SubResource("Mat_mid")
+
+[node name="Near" type="MeshInstance3D" parent="Background"]
+position = Vector3(0, 0, -800)
+mesh = SubResource("Quad_near")
+material_override = SubResource("Mat_near")
+
+[node name="Camera" type="Camera3D" parent="."]
+process_mode = 3
+position = Vector3(0, 0, 695)
+fov = 50.0
+script = ExtResource("8_cam")
+
+[node name="Player" parent="." instance=ExtResource("1_fj7yv")]
+position = Vector3(0, -276, 0)
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.9
+autostart = true
+
+[node name="TouchUI" type="CanvasLayer" parent="."]
+visible = false
+script = ExtResource("10_tui")
+
+[node name="JoystickBase" type="Sprite2D" parent="TouchUI"]
+visible = false
+position = Vector2(200, 480)
+texture = ExtResource("11_jb")
+
+[node name="JoystickThumb" type="Sprite2D" parent="TouchUI"]
+visible = false
+position = Vector2(200, 480)
+texture = ExtResource("12_jt")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 18.0
+offset_top = 12.0
+offset_right = 300.0
+offset_bottom = 48.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 26
+text = "积分: 0"
+
+[node name="LevelLabel" type="Label" parent="UI"]
+offset_left = 18.0
+offset_top = 46.0
+offset_right = 300.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(1, 0.84, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+text = "等级 1"
+
+[node name="XpBar" type="ProgressBar" parent="UI"]
+offset_left = 350.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 34.0
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_xp_fill")
+max_value = 5.0
+show_percentage = false
+
+[node name="HealthBar" type="ProgressBar" parent="UI"]
+offset_left = 1000.0
+offset_top = 16.0
+offset_right = 1134.0
+offset_bottom = 40.0
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_hp_fill")
+max_value = 10.0
+value = 10.0
+show_percentage = false
+
+[node name="BossName" type="Label" parent="UI"]
+visible = false
+offset_left = 350.0
+offset_top = 40.0
+offset_right = 800.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(1, 0.5, 0.95, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 16
+text = "【 BOSS 】"
+horizontal_alignment = 1
+
+[node name="BossBar" type="ProgressBar" parent="UI"]
+visible = false
+offset_left = 350.0
+offset_top = 64.0
+offset_right = 800.0
+offset_bottom = 78.0
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_boss_fill")
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="AbilityLabel" type="Label" parent="UI"]
+visible = false
+offset_left = 276.0
+offset_top = 104.0
+offset_right = 876.0
+offset_bottom = 142.0
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 24
+text = "✦ 形态能力 ✦"
+horizontal_alignment = 1
+
+[node name="AbilityChip" type="Label" parent="UI"]
+visible = false
+offset_left = 18.0
+offset_top = 76.0
+offset_right = 320.0
+offset_bottom = 100.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 17
+text = "✦ 形态能力"
+
+[node name="BuffBar" type="ProgressBar" parent="UI"]
+visible = false
+offset_left = 18.0
+offset_top = 102.0
+offset_right = 198.0
+offset_bottom = 110.0
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_xp_fill")
+max_value = 6.0
+value = 6.0
+show_percentage = false
+
+[node name="HomingButton" type="Button" parent="UI"]
+visible = false
+offset_left = 952.0
+offset_top = 562.0
+offset_right = 1128.0
+offset_bottom = 612.0
+theme = SubResource("Theme_ui")
+text = "追踪导弹 ×1"
+
+[node name="WarningLabel" type="Label" parent="UI"]
+visible = false
+offset_left = 0.0
+offset_top = 220.0
+offset_right = 1151.0
+offset_bottom = 290.0
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 46
+text = "—— BOSS 来袭 ——"
+horizontal_alignment = 1
+
+[node name="LevelUpFlash" type="ColorRect" parent="UI"]
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(1, 0.85, 0.4, 0)
+mouse_filter = 2
+
+[node name="GameOverPanel" type="ColorRect" parent="UI"]
+process_mode = 3
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(0.05, 0.05, 0.09, 0.85)
+script = ExtResource("9_pfx")
+
+[node name="Label" type="Label" parent="UI/GameOverPanel"]
+modulate = Color(1, 0.25, 0.25, 1)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -140.0
+offset_right = 150.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 48
+text = "游戏结束"
+horizontal_alignment = 1
+
+[node name="FinalScoreLabel" type="Label" parent="UI/GameOverPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -50.0
+offset_right = 200.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 26
+text = "最终积分: 0"
+horizontal_alignment = 1
+
+[node name="RecordLabel" type="Label" parent="UI/GameOverPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = 2.0
+offset_right = 260.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "最高纪录: 0"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="UI/GameOverPanel"]
+custom_minimum_size = Vector2(130, 48)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = 40.0
+offset_right = -10.0
+offset_bottom = 88.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ui")
+text = "重新开始"
+
+[node name="QuitButton" type="Button" parent="UI/GameOverPanel"]
+custom_minimum_size = Vector2(130, 48)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = 40.0
+offset_right = 140.0
+offset_bottom = 88.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ui")
+text = "退出游戏"
+
+[node name="VictoryPanel" type="ColorRect" parent="UI"]
+process_mode = 3
+visible = false
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(0.04, 0.06, 0.12, 0.88)
+script = ExtResource("9_pfx")
+
+[node name="Title" type="Label" parent="UI/VictoryPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -170.0
+offset_right = 300.0
+offset_bottom = -104.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.12, 0, 0.8)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 48
+text = "✦ 胜 利 ✦"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="UI/VictoryPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -96.0
+offset_right = 300.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.65, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+text = "灭世母舰已被击破"
+horizontal_alignment = 1
+
+[node name="Box" type="VBoxContainer" parent="UI/VictoryPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -44.0
+offset_right = 260.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="StatsLabel" type="Label" parent="UI/VictoryPanel/Box"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "最终积分: 0"
+horizontal_alignment = 1
+
+[node name="EndlessButton" type="Button" parent="UI/VictoryPanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "继续无尽模式"
+
+[node name="RestartButton" type="Button" parent="UI/VictoryPanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "重新开始"
+
+[node name="QuitButton" type="Button" parent="UI/VictoryPanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "退出游戏"
+
+[node name="LevelUpPanel" type="ColorRect" parent="UI"]
+process_mode = 3
+visible = false
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(0.03, 0.03, 0.08, 0.82)
+script = ExtResource("9_pfx")
+
+[node name="Box" type="VBoxContainer" parent="UI/LevelUpPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -110.0
+offset_right = 400.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 26
+alignment = 1
+
+[node name="Title" type="Label" parent="UI/LevelUpPanel/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.12, 0, 0.8)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "～ 进化！选择一项强化 ～"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="UI/LevelUpPanel/Box"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Btn0" type="Button" parent="UI/LevelUpPanel/Box/Buttons"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+
+[node name="Btn1" type="Button" parent="UI/LevelUpPanel/Box/Buttons"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+
+[node name="Btn2" type="Button" parent="UI/LevelUpPanel/Box/Buttons"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+
+[node name="StartPanel" type="ColorRect" parent="UI"]
+process_mode = 3
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(0.03, 0.03, 0.08, 0.92)
+
+[node name="Title" type="Label" parent="UI/StartPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -150.0
+offset_right = 300.0
+offset_bottom = -90.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.12, 0, 0.8)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 46
+text = "准备战斗"
+horizontal_alignment = 1
+
+[node name="HighScoreLabel" type="Label" parent="UI/StartPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -86.0
+offset_right = 300.0
+offset_bottom = -58.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.65, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.65)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+text = "最高纪录: 0"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="UI/StartPanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -60.0
+offset_right = 350.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 20
+text = "电脑：移动鼠标驾驶战机（火力全自动）
+手机：左半屏摇杆移动
+建议横屏游玩"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="UI/StartPanel"]
+custom_minimum_size = Vector2(260, 70)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -130.0
+offset_top = 60.0
+offset_right = 130.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ui")
+text = "开始战斗"
+
+[node name="PauseButton" type="Button" parent="UI"]
+visible = false
+offset_left = 1046.0
+offset_top = 48.0
+offset_right = 1128.0
+offset_bottom = 94.0
+theme = SubResource("Theme_ui")
+text = "暂停"
+
+[node name="PausePanel" type="ColorRect" parent="UI"]
+process_mode = 3
+visible = false
+offset_right = 1151.0
+offset_bottom = 642.0
+color = Color(0.03, 0.03, 0.08, 0.86)
+script = ExtResource("13_pm")
+
+[node name="Title" type="Label" parent="UI/PausePanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -170.0
+offset_right = 200.0
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.35, 1)
+theme_override_colors/font_outline_color = Color(0.25, 0.12, 0, 0.8)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+text = "已暂停"
+horizontal_alignment = 1
+
+[node name="Box" type="VBoxContainer" parent="UI/PausePanel"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -80.0
+offset_right = 150.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PausePanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "继续游戏"
+
+[node name="RestartButton" type="Button" parent="UI/PausePanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "重新开始"
+
+[node name="SoundButton" type="Button" parent="UI/PausePanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "声音：开"
+
+[node name="FxButton" type="Button" parent="UI/PausePanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "减少闪光：开"
+
+[node name="QuitButton" type="Button" parent="UI/PausePanel/Box"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+theme = SubResource("Theme_ui")
+text = "退出游戏"
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
+[connection signal="pressed" from="UI/GameOverPanel/RestartButton" to="." method="_on_restart_button_pressed"]
+[connection signal="pressed" from="UI/GameOverPanel/QuitButton" to="." method="_on_quit_button_pressed"]
+[connection signal="pressed" from="UI/StartPanel/StartButton" to="." method="_on_start_pressed"]

@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://dajhw2ehj0m2i"]
+
+[ext_resource type="Script" uid="uid://dl3ne28ouuuuv" path="res://scripts/bullet.gd" id="1_v7oki"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_b"]
+radius = 3.5
+height = 16.0
+
+[sub_resource type="StandardMaterial3D" id="StdMat_b"]
+shading_mode = 0
+albedo_color = Color(1, 1, 1, 1)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 2.6
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_b"]
+radius = 7.0
+
+[node name="Bullet" type="Area3D" unique_id=1356192906]
+script = ExtResource("1_v7oki")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_b")
+material_override = SubResource("StdMat_b")
+
+[node name="Trail" type="CPUParticles3D" parent="."]
+position = Vector3(0, -5, 0)
+emitting = false
+amount = 8
+lifetime = 0.3
+spread = 7.0
+direction = Vector3(0, -1, 0)
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 110.0
+scale_amount_min = 0.5
+scale_amount_max = 1.0
+
+[node name="Splash" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 16
+lifetime = 0.6
+spread = 55.0
+direction = Vector3(0, -1, 0)
+gravity = Vector3(0, -300, 0)
+initial_velocity_min = 100.0
+initial_velocity_max = 220.0
+scale_amount_min = 0.5
+scale_amount_max = 1.0
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_b")
