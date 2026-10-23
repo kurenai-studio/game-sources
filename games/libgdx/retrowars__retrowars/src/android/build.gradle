@@ -1,0 +1,118 @@
+android {
+    compileSdk 34
+    namespace = "com.serwylo.retrowars"
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['libs']
+        }
+
+    }
+    packagingOptions {
+        exclude 'META-INF/robovm/ios/robovm.xml'
+
+        // https://github.com/Tinder/Scarlet/issues/105#issuecomment-533987965
+        pickFirst "META-INF/INDEX.LIST"
+        pickFirst "META-INF/io.netty.versions.properties"
+    }
+    defaultConfig {
+        applicationId "com.serwylo.retrowars"
+        minSdkVersion 14
+        targetSdkVersion 34
+
+        // Pull these from the parent project build.gradle.
+        versionCode = appVersionCode
+        versionName = appVersionName
+
+        // After adding ktor dependencies and others, end up with:
+        // "Cannot fit requested classes in a single dex file (# methods: 98691 > 65536)"
+        // https://stackoverflow.com/a/62094000/2391921
+        multiDexEnabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        renderScript true
+        aidl true
+    }
+}
+
+
+// called every time gradle gets executed, takes the native dependencies of
+// the natives configuration, and extracts them to the proper libs/ folders
+// so they get packed with the APK.
+task copyAndroidNatives {
+    doFirst {
+        file("libs/armeabi/").mkdirs()
+        file("libs/armeabi-v7a/").mkdirs()
+        file("libs/arm64-v8a/").mkdirs()
+        file("libs/x86_64/").mkdirs()
+        file("libs/x86/").mkdirs()
+
+        configurations.natives.copy().files.each { jar ->
+            def outputDir = null
+            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
+            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
+            if(jar.name.endsWith("natives-armeabi.jar")) outputDir = file("libs/armeabi")
+            if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
+            if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
+            if(outputDir != null) {
+                copy {
+                    from zipTree(jar)
+                    into outputDir
+                    include "*.so"
+                }
+            }
+        }
+    }
+}
+
+tasks.whenTaskAdded { packageTask ->
+    // Different from the default libgdx config due to changes in Gradle 6.7.1.
+    // See:
+    //  * https://github.com/yairm210/Unciv/issues/3946 for the problem, and
+    //  * https://github.com/yairm210/Unciv/pull/4090/files for the solution
+    if (packageTask.name.contains("package") || packageTask.name.contains("assemble")) {
+        packageTask.dependsOn 'copyAndroidNatives'
+    }
+}
+
+task run(type: Exec) {
+    def path
+    def localProperties = project.file("../local.properties")
+    if (localProperties.exists()) {
+        Properties properties = new Properties()
+        localProperties.withInputStream { instr ->
+            properties.load(instr)
+        }
+        def sdkDir = properties.getProperty('sdk.dir')
+        if (sdkDir) {
+            path = sdkDir
+        } else {
+            path = "$System.env.ANDROID_HOME"
+        }
+    } else {
+        path = "$System.env.ANDROID_HOME"
+    }
+
+    def adb = path + "/platform-tools/adb"
+    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.serwylo.retrowars/com.serwylo.retrowars.AndroidLauncher'
+}
+
+eclipse.project.name = appName + "-android"
