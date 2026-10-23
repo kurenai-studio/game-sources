@@ -1,0 +1,10 @@
+build:
+	gcc -c *.c -lSDL2 -D__SDL2__=1 -lm
+	g++ *.cpp *.o -lSDL2 -D__SDL2__=1 -lm -o spacenx
+
+run:
+	./spacenx
+
+clean:
+	make -f Makefile.switch clean
+	rm *.o
