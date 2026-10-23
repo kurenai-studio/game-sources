@@ -10,3 +10,5 @@
 | games/unity/superzhan__UnityBubbleGame | https://github.com/superzhan/UnityBubbleGame | MIT | unity | e | 2026-10-22 |
 | games/pygame/StanislavPetrovV__DOOM-style-Game | https://github.com/StanislavPetrovV/DOOM-style-Game | MIT | pygame | b | 2026-10-22 |
 | games/godot/HarmonyHoney__CandyWrapper | https://github.com/HarmonyHoney/CandyWrapper | MIT | godot | a | 2026-10-22 |
+| games/libgdx/mingli1__Unlucky | https://github.com/mingli1/Unlucky | MIT | libgdx | d | 2026-10-22 |
+| games/threejs/mshumer__Claude-of-Duty | https://github.com/mshumer/Claude-of-Duty | MIT | threejs | c | 2026-10-22 |
