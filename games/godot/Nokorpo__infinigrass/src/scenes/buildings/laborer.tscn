@@ -1,0 +1,262 @@
+[gd_scene load_steps=34 format=3 uid="uid://5l2jx4qbccm0"]
+
+[ext_resource type="Script" path="res://scenes/buildings/labor_state_machine.gd" id="1_723ww"]
+[ext_resource type="Texture2D" uid="uid://cfhjdxcp10pje" path="res://assets/sprites/ingame/laborer_idle.png" id="2_c3lsr"]
+[ext_resource type="Texture2D" uid="uid://bjwpy82a1w767" path="res://assets/sprites/shadow.png" id="5_2pryl"]
+[ext_resource type="Texture2D" uid="uid://cbvjyj6o88tkf" path="res://assets/sprites/ingame/laborer animation/done/laborer_done2.png" id="6_0xske"]
+[ext_resource type="Texture2D" uid="uid://dmnjlk7jtynb3" path="res://assets/sprites/ingame/laborer animation/done/laborer_done3.png" id="7_vvtsy"]
+[ext_resource type="Texture2D" uid="uid://b7d1qmhnmj15t" path="res://assets/sprites/ingame/laborer animation/idle/laborer_idle1.png" id="9_vv0p6"]
+[ext_resource type="Texture2D" uid="uid://cp1rcdiw0qv2k" path="res://assets/sprites/ingame/laborer animation/idle/laborer_idle2.png" id="10_ja7ga"]
+[ext_resource type="Texture2D" uid="uid://bw07jhbohucjt" path="res://assets/sprites/ingame/laborer animation/idle/laborer_idle3.png" id="11_bu31e"]
+[ext_resource type="Texture2D" uid="uid://dc25t2rwxlm5s" path="res://assets/sprites/ingame/laborer animation/working/laborer_frame1.png" id="12_l7ddd"]
+[ext_resource type="Texture2D" uid="uid://baebch207onjn" path="res://assets/sprites/ingame/laborer animation/working/laborer_frame2.png" id="13_b7xvf"]
+[ext_resource type="AudioStream" uid="uid://ddug8kjwgb63h" path="res://assets/sound/laborer/laborer_spawn1.ogg" id="14_1cko1"]
+[ext_resource type="Texture2D" uid="uid://co2lolul5dkch" path="res://assets/sprites/ingame/laborer animation/working/laborer_frame3.png" id="14_c6pb7"]
+[ext_resource type="AudioStream" uid="uid://d2iumt5w2fchg" path="res://assets/sound/laborer/laborer_spawn2.ogg" id="15_t1apb"]
+[ext_resource type="Texture2D" uid="uid://cbgjul6kc0be0" path="res://assets/sprites/ui/beer.png" id="15_xnu5n"]
+[ext_resource type="AudioStream" uid="uid://cydeffhy8lgub" path="res://assets/sound/laborer/laborer_start1.ogg" id="16_2mq4y"]
+[ext_resource type="Texture2D" uid="uid://cyhuc4iejm1pq" path="res://assets/sprites/ui/barley-icon.png" id="16_4q2yd"]
+[ext_resource type="AudioStream" uid="uid://2liqxl6e1t33" path="res://assets/sound/laborer/laborer_start2.ogg" id="17_46i0m"]
+[ext_resource type="AudioStream" uid="uid://darvcw250a5pi" path="res://assets/sound/laborer/laborer_ready1.ogg" id="18_82vqq"]
+[ext_resource type="AudioStream" uid="uid://b6t04apercsix" path="res://assets/sound/laborer/laborer_ready2.ogg" id="19_uxc5h"]
+[ext_resource type="AudioStream" uid="uid://5njdebjdxca2" path="res://assets/sound/laborer/laborer_ready3.ogg" id="20_n4xcs"]
+[ext_resource type="AudioStream" uid="uid://4cifbxdt1rjy" path="res://assets/sound/accept.ogg" id="21_3av7t"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_twad6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_0xske")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_vvtsy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_vvtsy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_0xske")
+}],
+"loop": true,
+"name": &"done",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_l7ddd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_b7xvf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_c6pb7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_b7xvf")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_vv0p6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_ja7ga")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_bu31e")
+}],
+"loop": true,
+"name": &"working",
+"speed": 5.0
+}]
+
+[sub_resource type="Animation" id="Animation_j3xyd"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/width")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_qvpga"]
+resource_name = "outline_focus"
+length = 1.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/width")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.8, 1.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [4.0, 8.0, 4.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_mii5d"]
+_data = {
+"RESET": SubResource("Animation_j3xyd"),
+"outline_focus": SubResource("Animation_qvpga")
+}
+
+[sub_resource type="Curve" id="Curve_y7p4r"]
+_data = [Vector2(0, 0), 0.0, 23.9341, 0, 0, Vector2(0.11157, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Animation" id="Animation_qgyx4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_0q1gm"]
+resource_name = "idle"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.2, 1.2)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hg0r5"]
+_data = {
+"RESET": SubResource("Animation_qgyx4"),
+"idle": SubResource("Animation_0q1gm")
+}
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_fluuv"]
+random_pitch = 1.1
+streams_count = 2
+stream_0/stream = ExtResource("14_1cko1")
+stream_0/weight = 1.0
+stream_1/stream = ExtResource("15_t1apb")
+stream_1/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_6d5v5"]
+streams_count = 2
+stream_0/stream = ExtResource("16_2mq4y")
+stream_0/weight = 1.0
+stream_1/stream = ExtResource("17_46i0m")
+stream_1/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_pqndw"]
+random_pitch = 1.1
+streams_count = 3
+stream_0/stream = ExtResource("18_82vqq")
+stream_0/weight = 1.0
+stream_1/stream = ExtResource("19_uxc5h")
+stream_1/weight = 1.0
+stream_2/stream = ExtResource("20_n4xcs")
+stream_2/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_es8wv"]
+random_pitch = 1.4
+streams_count = 1
+stream_0/stream = ExtResource("21_3av7t")
+stream_0/weight = 1.0
+
+[node name="Laborer" type="Node2D"]
+script = ExtResource("1_723ww")
+sprite_on_idle = ExtResource("12_l7ddd")
+sprite_on_working = ExtResource("9_vv0p6")
+sprite_on_done = ExtResource("7_vvtsy")
+resource = 1
+amount = 50
+time_until_done = 15.0
+recharge_resource = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("2_c3lsr")
+offset = Vector2(-5, -65)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.6, 0.6)
+sprite_frames = SubResource("SpriteFrames_twad6")
+animation = &"idle"
+autoplay = "idle"
+frame_progress = 0.94384
+offset = Vector2(-5, -75)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="AnimatedSprite2D"]
+libraries = {
+"": SubResource("AnimationLibrary_mii5d")
+}
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Shadow" type="Sprite2D" parent="."]
+z_index = -1
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("5_2pryl")
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+position = Vector2(-4, -90)
+emitting = false
+amount = 1
+one_shot = true
+texture = ExtResource("16_4q2yd")
+gravity = Vector2(0, -100)
+scale_amount_curve = SubResource("Curve_y7p4r")
+
+[node name="Need" type="Node2D" parent="."]
+position = Vector2(0, -27)
+
+[node name="Need" type="Sprite2D" parent="Need"]
+texture = ExtResource("15_xnu5n")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Need/Need"]
+libraries = {
+"": SubResource("AnimationLibrary_hg0r5")
+}
+autoplay = "idle"
+
+[node name="SpawnSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_fluuv")
+volume_db = -12.0
+
+[node name="StartProcessingSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_6d5v5")
+volume_db = -12.0
+pitch_scale = 1.1
+
+[node name="FinishedSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_pqndw")
+volume_db = -12.0
+
+[node name="CollectResourceSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_es8wv")
+volume_db = -12.0
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

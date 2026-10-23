@@ -1,0 +1,250 @@
+[gd_scene load_steps=31 format=3 uid="uid://cyajc7s0odvi5"]
+
+[ext_resource type="Script" path="res://scenes/buildings/labor_state_machine.gd" id="1_c754x"]
+[ext_resource type="Texture2D" uid="uid://fast244fi7ax" path="res://assets/sprites/ingame/fermenter_idle.png" id="2_pmjck"]
+[ext_resource type="Texture2D" uid="uid://cfyx7tlgw83fj" path="res://assets/sprites/ingame/fermenter_working.png" id="3_glb40"]
+[ext_resource type="Texture2D" uid="uid://cusvgwctd8pyt" path="res://assets/sprites/ingame/fermenter_done.png" id="4_8u0bc"]
+[ext_resource type="Texture2D" uid="uid://bjwpy82a1w767" path="res://assets/sprites/shadow.png" id="5_dhxjl"]
+[ext_resource type="Shader" path="res://scenes/buildings/outline2d.gdshader" id="5_m1xck"]
+[ext_resource type="Texture2D" uid="uid://bi6kpbtm16mef" path="res://assets/sprites/ingame/fermenter animation/fermenter_frame1.png" id="5_wkc04"]
+[ext_resource type="Texture2D" uid="uid://cecoo5iopur27" path="res://assets/sprites/ingame/fermenter animation/fermenter_frame2.png" id="6_gxuoh"]
+[ext_resource type="Texture2D" uid="uid://cyu5dvyyjioab" path="res://assets/sprites/ingame/fermenter animation/fermenter_frame3.png" id="7_n0wlq"]
+[ext_resource type="Texture2D" uid="uid://cwxgl617thgil" path="res://assets/sprites/ingame/fermenter animation/fermenter_frame4.png" id="8_tdsy1"]
+[ext_resource type="Texture2D" uid="uid://bjdkbbikix7kh" path="res://assets/sprites/ingame/fermenter animation/fermenter_frame5.png" id="9_uceaq"]
+[ext_resource type="Texture2D" uid="uid://cbgjul6kc0be0" path="res://assets/sprites/ui/beer.png" id="11_0inns"]
+[ext_resource type="Texture2D" uid="uid://cyhuc4iejm1pq" path="res://assets/sprites/ui/barley-icon.png" id="12_l46y1"]
+[ext_resource type="AudioStream" uid="uid://4cifbxdt1rjy" path="res://assets/sound/accept.ogg" id="13_dmmj4"]
+[ext_resource type="AudioStream" uid="uid://buy5kuic0cals" path="res://assets/sound/fermenter/fermenter_done.ogg" id="13_xvu5a"]
+[ext_resource type="AudioStream" uid="uid://dcmckpjvu7mca" path="res://assets/sound/fermenter/fermenter_spawn.ogg" id="14_f0ccr"]
+[ext_resource type="AudioStream" uid="uid://dutduev67dsbi" path="res://assets/sound/fermenter/fermenter_charged.ogg" id="15_oy7su"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fgw2o"]
+resource_local_to_scene = true
+shader = ExtResource("5_m1xck")
+shader_parameter/color = Color(1, 1, 1, 1)
+shader_parameter/width = 0.0
+shader_parameter/pattern = 0
+shader_parameter/inside = false
+shader_parameter/add_margins = true
+shader_parameter/enabled = false
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_sj5cc"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_wkc04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_gxuoh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_n0wlq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_tdsy1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_uceaq")
+}],
+"loop": true,
+"name": &"done",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_pmjck")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_glb40")
+}],
+"loop": true,
+"name": &"working",
+"speed": 5.0
+}]
+
+[sub_resource type="Animation" id="Animation_j3xyd"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/width")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_qvpga"]
+resource_name = "outline_focus"
+length = 1.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:material:shader_parameter/width")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.8, 1.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [4.0, 8.0, 4.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_mii5d"]
+_data = {
+"RESET": SubResource("Animation_j3xyd"),
+"outline_focus": SubResource("Animation_qvpga")
+}
+
+[sub_resource type="Curve" id="Curve_fpccl"]
+_data = [Vector2(0, 0), 0.0, 23.9341, 0, 0, Vector2(0.11157, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Animation" id="Animation_qgyx4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_0q1gm"]
+resource_name = "idle"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(-2, -2),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.2, 1.2)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hg0r5"]
+_data = {
+"RESET": SubResource("Animation_qgyx4"),
+"idle": SubResource("Animation_0q1gm")
+}
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_224o3"]
+random_pitch = 1.1
+streams_count = 1
+stream_0/stream = ExtResource("14_f0ccr")
+stream_0/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_6h1bq"]
+random_pitch = 1.5
+streams_count = 1
+stream_0/stream = ExtResource("15_oy7su")
+stream_0/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_vq82c"]
+random_pitch = 1.25
+streams_count = 1
+stream_0/stream = ExtResource("13_xvu5a")
+stream_0/weight = 1.0
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_lkdq7"]
+random_pitch = 1.4
+streams_count = 1
+stream_0/stream = ExtResource("13_dmmj4")
+stream_0/weight = 1.0
+
+[node name="Fermenter" type="Node2D"]
+script = ExtResource("1_c754x")
+sprite_on_idle = ExtResource("2_pmjck")
+sprite_on_working = ExtResource("3_glb40")
+sprite_on_done = ExtResource("4_8u0bc")
+resource = 2
+amount = 5
+time_until_done = 10.0
+recharge_resource = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("2_pmjck")
+offset = Vector2(0, -50)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+material = SubResource("ShaderMaterial_fgw2o")
+scale = Vector2(0.7, 0.7)
+sprite_frames = SubResource("SpriteFrames_sj5cc")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -50)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="AnimatedSprite2D"]
+libraries = {
+"": SubResource("AnimationLibrary_mii5d")
+}
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Shadow" type="Sprite2D" parent="."]
+z_index = -1
+position = Vector2(0, 4)
+texture = ExtResource("5_dhxjl")
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+position = Vector2(-1, -69)
+emitting = false
+amount = 1
+one_shot = true
+texture = ExtResource("11_0inns")
+gravity = Vector2(0, -100)
+scale_amount_curve = SubResource("Curve_fpccl")
+
+[node name="Need" type="Node2D" parent="."]
+position = Vector2(0, -27)
+
+[node name="Need" type="Sprite2D" parent="Need"]
+texture = ExtResource("12_l46y1")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Need/Need"]
+libraries = {
+"": SubResource("AnimationLibrary_hg0r5")
+}
+autoplay = "idle"
+
+[node name="SpawnSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_224o3")
+volume_db = -12.0
+
+[node name="StartProcessingSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_6h1bq")
+volume_db = -12.0
+pitch_scale = 0.8
+
+[node name="FinishedSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_vq82c")
+volume_db = -12.0
+pitch_scale = 0.9
+
+[node name="CollectResourceSound" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_lkdq7")
+volume_db = -12.0
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

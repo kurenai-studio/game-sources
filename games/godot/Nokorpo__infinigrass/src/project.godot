@@ -1,0 +1,45 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Infinigrass"
+run/main_scene="res://scenes/game_start.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+ResourcesManager="*res://scenes/resources_manager.gd"
+CustomCursor="*res://assets/sprites/cursor/custom_cursor.gd"
+
+[display]
+
+window/size/viewport_width=800
+window/size/viewport_height=800
+window/stretch/mode="viewport"
+
+[input]
+
+click={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":1,"position":Vector2(209, 7),"global_position":Vector2(213, 48),"factor":1.0,"button_index":1,"canceled":false,"pressed":true,"double_click":false,"script":null)
+]
+}
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://localization/localization.es.translation", "res://localization/localization.en.translation", "res://localization/localization.fr.translation", "res://localization/localization.cat.translation")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.631373, 0.803922, 0.415686, 1)
