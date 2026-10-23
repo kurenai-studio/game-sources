@@ -1,0 +1,121 @@
+## Config Cache - Remote config cache with typed getters
+##
+## Remote Config key format: flat scalar keys, one value per key. For example:
+##   enemy_crab_hp = 30, enemy_crab_speed = 62, weapon_feather_damage = 20
+## Structured helpers assemble these flat keys:
+##   get_enemy_stats() reads enemy_{type}_{hp|speed|damage|xp}
+##   get_weapon_stats() reads weapon_{type}_{damage|cooldown|projectiles|radius|range|knockback}
+## get_json(key) is only for the JSON-array/pool keys:
+##   upgrade_{type}_costs, upgrade_{type}_values, levelup_pool
+extends Node
+
+var _configs: Dictionary = {}
+var _loaded: bool = false
+var _generation: int = 0
+
+
+func load_all() -> void:
+	if _loaded:
+		return
+	if GameManager.practice_mode or not Horizon.isConnected() or not Horizon.isSignedIn():
+		return
+	var generation := _generation
+	var owner := GameManager.state_owner()
+	var scene_generation := GameManager.state_generation()
+	var configs: Dictionary = await Horizon.remoteConfig.getAllConfigs()
+	if generation != _generation or owner != GameManager.state_owner() or scene_generation != GameManager.state_generation():
+		return
+	_configs = configs
+	_loaded = true
+
+
+func is_loaded() -> bool:
+	return _loaded
+
+
+func get_string(key: String, default: String = "") -> String:
+	return str(_configs.get(key, default))
+
+
+func get_int(key: String, default: int = 0) -> int:
+	var val = _configs.get(key, "")
+	if val is String and val.is_valid_int():
+		return val.to_int()
+	if val is float or val is int:
+		return int(val)
+	return default
+
+
+func get_float(key: String, default: float = 0.0) -> float:
+	var val = _configs.get(key, "")
+	if val is String and val.is_valid_float():
+		return val.to_float()
+	if val is float or val is int:
+		return float(val)
+	return default
+
+
+func get_bool(key: String, default: bool = false) -> bool:
+	var val = str(_configs.get(key, ""))
+	if val.is_empty():
+		return default
+	return val.to_lower() in ["true", "1", "yes"]
+
+
+func get_json(key: String) -> Variant:
+	var val = str(_configs.get(key, ""))
+	if val.is_empty():
+		return null
+	return JSON.parse_string(val)
+
+
+## Helper: get enemy stats from flat config keys (enemy_{type}_hp, enemy_{type}_speed, etc.)
+func get_enemy_stats(enemy_type: String) -> Dictionary:
+	return {
+		"hp": get_int("enemy_%s_hp" % enemy_type, 30),
+		"speed": get_float("enemy_%s_speed" % enemy_type, {"crab": 62.0, "jellyfish": 52.0, "pirate": 91.0, "boss": 68.0}.get(enemy_type, 62.0)),
+		"damage": get_int("enemy_%s_damage" % enemy_type, 10),
+		"xp": get_int("enemy_%s_xp" % enemy_type, 10),
+	}
+
+
+## Helper: get weapon stats from flat config keys (weapon_{type}_damage, weapon_{type}_cooldown, etc.)
+func get_weapon_stats(weapon_type: String) -> Dictionary:
+	return {
+		"damage": get_float("weapon_%s_damage" % weapon_type, {"feather": 20.0, "screech": 18.0, "dive": 50.0, "gust": 10.0}.get(weapon_type, 20.0)),
+		"cooldown": get_float("weapon_%s_cooldown" % weapon_type, {"feather": 0.8, "screech": 2.2, "dive": 3.0, "gust": 2.5}.get(weapon_type, 1.0)),
+		"projectiles": get_int("weapon_%s_projectiles" % weapon_type, 1),
+		"radius": get_float("weapon_%s_radius" % weapon_type, 80.0),
+		"range": get_float("weapon_%s_range" % weapon_type, 120.0),
+		"knockback": get_float("weapon_%s_knockback" % weapon_type, 60.0),
+	}
+
+
+## Helper: get upgrade costs array
+func get_upgrade_costs(upgrade_type: String) -> Array:
+	var costs = get_json("upgrade_%s_costs" % upgrade_type)
+	if costs is Array:
+		return costs
+	return []
+
+
+## Helper: get upgrade values array
+func get_upgrade_values(upgrade_type: String) -> Array:
+	var values = get_json("upgrade_%s_values" % upgrade_type)
+	if values is Array:
+		return values
+	return []
+
+
+## Helper: get levelup pool array of dicts
+func get_levelup_pool() -> Array:
+	var pool = get_json("levelup_pool")
+	if pool is Array:
+		return pool
+	return []
+
+
+func reset() -> void:
+	_generation += 1
+	_configs.clear()
+	_loaded = false

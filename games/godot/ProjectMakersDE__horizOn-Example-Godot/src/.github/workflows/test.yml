@@ -1,0 +1,71 @@
+name: Game and SDK Tests
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  game-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read pinned official SDK revision
+        id: sdk
+        run: python3 -c 'import json,os; open(os.environ["GITHUB_OUTPUT"],"a").write("commit="+json.load(open("SDK-SOURCE.json"))["commit"]+"\n")'
+      - name: Checkout exact official SDK for byte comparison
+        uses: actions/checkout@v4
+        with:
+          repository: ProjectMakersDE/horizOn-SDK-Godot
+          ref: ${{ steps.sdk.outputs.commit }}
+          path: official-sdk
+      - name: Compare all addon files with the official revision
+        run: python3 tests/verify_sdk_source.py --sdk-source official-sdk
+      - name: Remove comparison checkout before native fixtures copy the project
+        run: rm -rf official-sdk
+      - name: Set up Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.0
+          use-dotnet: false
+          include-templates: false
+      - name: Verify the complete pinned official SDK source
+        run: python3 tests/verify_sdk_source.py
+      - name: Run isolated gameplay and loopback transport tests
+        env:
+          GODOT_BIN: godot
+        run: python3 tests/run_checks.py
+
+      - name: Run current Hello, public guide and offline Develop gates
+        env:
+          GODOT_BIN: godot
+        run: python3 tests/run_feature_lab_checks.py
+
+  macos-export-smoke:
+    needs: game-tests
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Godot with export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.0
+          use-dotnet: false
+          include-templates: true
+      - name: Export and smoke-test the unsigned macOS player
+        env:
+          GODOT_BIN: godot
+        run: python3 tests/verify_macos_export.py
+      - name: Retain export and native smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-macos-export-smoke
+          path: |
+            tmp/verification-artifacts/
+            tmp/release-*.log
+            tmp/check-*.log
+          if-no-files-found: warn
+          retention-days: 7
