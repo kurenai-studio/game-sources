@@ -2,6 +2,7 @@
 
 | Path | Upstream | License | Engine | Collected by | Date |
 |------|----------|---------|--------|--------------|------|
+| games/browser/gabrielecirulli__2048 | https://github.com/gabrielecirulli/2048 | MIT | browser | c | 2026-10-22 |
 | games/godot/HarmonyHoney__CandyWrapper | https://github.com/HarmonyHoney/CandyWrapper | MIT | godot | a | 2026-10-22 |
 | games/godot/gdquest-demos__godot-2d-builder | https://github.com/gdquest-demos/godot-2d-builder | MIT | godot | a | 2026-10-22 |
 | games/godot/gdquest-demos__godot-platformer-2d | https://github.com/gdquest-demos/godot-platformer-2d | MIT | godot | a | 2026-10-22 |
@@ -13,6 +14,7 @@
 | games/phaser/ganlvtech__phaser-catch-the-cat | https://github.com/ganlvtech/phaser-catch-the-cat | MIT | phaser | c | 2026-10-22 |
 | games/pygame/StanislavPetrovV__DOOM-style-Game | https://github.com/StanislavPetrovV/DOOM-style-Game | MIT | pygame | b | 2026-10-22 |
 | games/pygame/plbrault__youre-the-os | https://github.com/plbrault/youre-the-os | GPL-3.0 | pygame | b | 2026-10-22 |
+| games/pygame/sourabhv__FlapPyBird | https://github.com/sourabhv/FlapPyBird | MIT | pygame | b | 2026-10-22 |
 | games/threejs/mshumer__Claude-of-Duty | https://github.com/mshumer/Claude-of-Duty | MIT | threejs | c | 2026-10-22 |
 | games/unity/oussamabonnor1__ChasingPlanes_Unity3D | https://github.com/oussamabonnor1/ChasingPlanes_Unity3D | MIT | unity | e | 2026-10-22 |
 | games/unity/superzhan__UnityBubbleGame | https://github.com/superzhan/UnityBubbleGame | MIT | unity | e | 2026-10-22 |
