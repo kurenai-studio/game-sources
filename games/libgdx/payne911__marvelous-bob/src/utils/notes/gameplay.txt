@@ -1,0 +1,172 @@
+Marvelous Bob : game play (actions, events, etc.)
+(*) nice to have
+(-) todo
+(✓) done
+
+
+======================== CONDITIONS =============================
+Defeat:
+* All players dead at the same time
+- Base is dead
+
+
+Victory
+- All Spawn points are dead
+* Time? End of wave?
+
+
+======================== PLAYER TYPES ===========================
+- Circle (Shooter)
+  ✓ left click: move
+  - right click: shoots at mouse
+  * space: lock target (on/off)
+
+
+- Square (Melee)
+  ✓ left click: move
+  - right click: attack on
+  * space: dash + invulnerability (cooldown?)
+
+
+======================== ENEMY TYPES ============================
+- Triangle (Base Attacker)
+  - moves toward Base
+  - suicide attack (dies when it deals damage)
+  - Damages when touches Base
+  - Is faster
+
+
+- Spiked Circle (All Attackers)
+  - Like "Base Attacker" but can also damage Player
+  - Slightly slower
+
+
+* Trap Bomb (Targets one position)
+  - Draw target on ground
+  - Launches bomb after X time
+  - Immobilizes (or slows down) things caught within range
+
+
+* Laser (Line damage)
+  - Red line from Spawn to Player
+  - Follows that Player for X time
+  - Settles in position after Y time
+  - Damages everything it touches
+
+
+- Missile (Only attacks one Player)
+  - Flies over walls
+  - Follows a single Player
+  - Damages and dies on contact
+  - Doesn't damage the Base
+  - Invincible
+  - Self destruct after X
+  * (Draw red line between Missile and Player)
+
+
+* "+" (Ranged Attacker)
+  - Remains on its path
+  - Periodically shoots bullets which can traverse players, but not walls
+
+
+======================== ACTIONS/EVENTS =========================
+Players:
+✓ Attack (at mouse angle)
+✓ Move (To target destination)
+- Lose health (Collision with enemy, Spawn collision)
+- Die (health <= 0)
+- resurrect after cooldown XX seconds
+
+
+Enemies:
+- Move (from spawn to base: path finding) (possibility of hard coded if level is not random)
+- Attack and die (collision with Player and Base)
+- Die (collision with player attack)
+
+
+Spawns:
+- Create (includes Move)
+- Lose health (Collision with player attack)
+- Die => if all, creates new level (victory!)
+
+
+Bases:
+* Pulse (auto, short range, high cooldown, kill on attack)
+- Lose Health (Enemy collision)
+* create power up
+  - give power up at player at wave end
+  - spawn randomly power up during play
+- Die => creates a new level (defeat!)
+
+
+======================== NETWORK AUTHORITY ======================
+- Authoritative client:
+  ✓ bullet id
+  ✓ self pos (where move action ends)
+  ✓ damaging / killing Enemies or Spawn
+  - self health / death
+
+- Authoritative Server
+  ✓ Random generation
+  ✓ Uuid
+  ✓ Enemy path
+  ✓ Enemy collision with Base
+  ✓ Bases health / damage / death
+  - other Players health / death
+
+- Client events - Actions
+  ✓ Move action
+  ✓ Pointing at
+  ✓ Damage dealt to enemy
+    ✓ incl opt bullet uuid
+  - Damage received
+  ✓ update self player attack (pointing at)
+    - on each attack, contains infos of all previous attack
+
+- Sent by server
+  - GameState: loop 100ms
+  | * requires an index
+  | - Enemy collision (listener done server side)
+  |   - uuid of involved: Enemy and Player
+  | ✓ Player list
+  |   * requires an index
+  |   ✓ health, pointing at
+  | ✓ Bases and SpawnPoints health
+  |   * requires an index
+  | ✓ new Enemy list
+      ✓ Spawn point
+      ✓ path
+      ✓ health
+      ✓ speed
+  - Broadcast on receive
+  * Players must ignore their own action
+  * Broadcasts to a player that hasn't initialized stuff yet would crash
+  | ✓ Player attacks
+  |   ✓ new bullet
+  | ✓ Player Bullets collision
+  |   ✓ pos
+  |   ✓ bullet (id and player uuid) to remove
+  |   ✓ opt dead enemies/spawn uuid
+  |   - damage dealt
+  | ✓ Player move actions
+      ✓ must be ordered
+      ✓ move to pos
+
+
+======================== BRAINSTORM =============================
+Power ups:
+- firerate
+- damage
+- multiple bullets / attack
+- move speedboost
+- shield
+- invincibility
+- Instant respawn
+
+Cleric player:
+- Heal?
+- Boost?
+- respawn?
+- Debuff enemies?
+
+
