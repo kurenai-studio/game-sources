@@ -1,0 +1,502 @@
+[gd_scene load_steps=28 format=2]
+
+[ext_resource path="res://ui/theme/font.ttf" type="DynamicFontData" id=1]
+[ext_resource path="res://ui/hud/hearts.png" type="Texture" id=2]
+[ext_resource path="res://ui/hud/hud.gd" type="Script" id=3]
+[ext_resource path="res://ui/hud/upperhud.png" type="Texture" id=4]
+[ext_resource path="res://ui/hud/button_ui.png" type="Texture" id=5]
+[ext_resource path="res://ui/theme/theme.tres" type="Theme" id=6]
+[ext_resource path="res://ui/hud/tetran_count.png" type="Texture" id=7]
+[ext_resource path="res://ui/hud/key_count.png" type="Texture" id=8]
+[ext_resource path="res://ui/hud/action.png" type="Texture" id=9]
+[ext_resource path="res://ui/player_select/player_select.tscn" type="PackedScene" id=10]
+[ext_resource path="res://ui/hud/OnscreenSavingAnimation.gd" type="Script" id=11]
+[ext_resource path="res://ui/theme/boss_overlay.tres" type="Theme" id=12]
+[ext_resource path="res://ui/theme/dogicapixelbold.ttf" type="DynamicFontData" id=13]
+[ext_resource path="res://ui/hud/boss_overlay.gd" type="Script" id=14]
+
+[sub_resource type="DynamicFont" id=1]
+font_data = ExtResource( 1 )
+
+[sub_resource type="StyleBoxEmpty" id=2]
+
+[sub_resource type="StyleBoxEmpty" id=3]
+
+[sub_resource type="StyleBoxEmpty" id=4]
+
+[sub_resource type="StyleBoxEmpty" id=5]
+
+[sub_resource type="DynamicFont" id=6]
+outline_size = 1
+outline_color = Color( 0, 0, 0, 1 )
+font_data = ExtResource( 1 )
+
+[sub_resource type="DynamicFont" id=9]
+size = 8
+font_data = ExtResource( 13 )
+
+[sub_resource type="Animation" id=11]
+resource_name = "hide_bossbar"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Bossbar:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 1 ),
+"transitions": PoolRealArray( 1 ),
+"update": 1,
+"values": [ false ]
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("Bossbar:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 1 )
+}
+
+[sub_resource type="Animation" id=10]
+resource_name = "show_bossbar"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Bossbar:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 1,
+"values": [ true ]
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("Bossbar:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"points": PoolRealArray( 0, -0.25, 0, 0.25, 0, 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 1 )
+}
+
+[sub_resource type="Animation" id=12]
+resource_name = "hide_bossbar"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Bossbar:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 1 ),
+"transitions": PoolRealArray( 1 ),
+"update": 1,
+"values": [ false ]
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("Bossbar:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 1 )
+}
+
+[sub_resource type="Animation" id=13]
+resource_name = "show_bossbar"
+tracks/0/type = "value"
+tracks/0/path = NodePath("Bossbar:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 1,
+"values": [ true ]
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("Bossbar:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"points": PoolRealArray( 0, -0.25, 0, 0.25, 0, 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 1 )
+}
+
+[sub_resource type="Animation" id=7]
+resource_name = "default"
+length = 0.1
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("OnscreenSave/Label:modulate:r")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0 )
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("OnscreenSave/Label:modulate:g")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0 )
+}
+tracks/2/type = "bezier"
+tracks/2/path = NodePath("OnscreenSave/Label:modulate:b")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0 )
+}
+tracks/3/type = "bezier"
+tracks/3/path = NodePath("OnscreenSave/Label:modulate:a")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"points": PoolRealArray( 0, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0 )
+}
+
+[sub_resource type="Animation" id=8]
+length = 1.5
+tracks/0/type = "bezier"
+tracks/0/path = NodePath("OnscreenSave/Label:modulate:r")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = false
+tracks/0/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 0.9 )
+}
+tracks/1/type = "bezier"
+tracks/1/path = NodePath("OnscreenSave/Label:modulate:g")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = false
+tracks/1/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 0.9 )
+}
+tracks/2/type = "bezier"
+tracks/2/path = NodePath("OnscreenSave/Label:modulate:b")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = false
+tracks/2/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 1, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 0.9 )
+}
+tracks/3/type = "bezier"
+tracks/3/path = NodePath("OnscreenSave/Label:modulate:a")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"points": PoolRealArray( 1, -0.25, 0, 0.25, 0, 0, -0.25, 0, 0.25, 0 ),
+"times": PoolRealArray( 0, 1.4 )
+}
+
+[node name="hud" type="CanvasLayer"]
+script = ExtResource( 3 )
+
+[node name="hud2d" type="MarginContainer" parent="."]
+margin_right = 256.0
+margin_bottom = 144.0
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="hearts" type="Sprite" parent="hud2d"]
+modulate = Color( 1, 1, 1, 0.921569 )
+position = Vector2( 6, 6 )
+texture = ExtResource( 2 )
+hframes = 5
+
+[node name="upperhud" type="Sprite" parent="hud2d"]
+visible = false
+modulate = Color( 1, 1, 1, 0.882353 )
+position = Vector2( 236, 10 )
+texture = ExtResource( 4 )
+
+[node name="Z" type="Sprite" parent="hud2d"]
+position = Vector2( 182.5, 10 )
+texture = ExtResource( 9 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="buttons" type="Control" parent="hud2d"]
+margin_left = 256.0
+margin_right = 256.0
+margin_bottom = 144.0
+size_flags_horizontal = 8
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="B" type="Sprite" parent="hud2d/buttons"]
+modulate = Color( 1, 1, 1, 0.882353 )
+self_modulate = Color( 1, 1, 1, 0.882353 )
+position = Vector2( -46.5, 15 )
+scale = Vector2( 0.5, 0.5 )
+texture = ExtResource( 5 )
+hframes = 3
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="icon" type="Sprite" parent="hud2d/buttons/B"]
+position = Vector2( -5, -9 )
+scale = Vector2( 2, 2 )
+z_index = -1
+
+[node name="count" type="Label" parent="hud2d/buttons/B"]
+anchor_right = 1.0
+margin_left = -22.0
+margin_top = 6.0
+margin_right = -22.0
+margin_bottom = 20.0
+rect_scale = Vector2( 1.5, 1.5 )
+custom_fonts/font = SubResource( 1 )
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="X" type="Sprite" parent="hud2d/buttons"]
+modulate = Color( 1, 1, 1, 0.882353 )
+self_modulate = Color( 1, 1, 1, 0.882353 )
+position = Vector2( -25, 15 )
+scale = Vector2( 0.5, 0.5 )
+texture = ExtResource( 5 )
+hframes = 3
+frame = 1
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="icon" type="Sprite" parent="hud2d/buttons/X"]
+position = Vector2( -5, -9 )
+scale = Vector2( 2, 2 )
+z_index = -1
+
+[node name="count" type="Label" parent="hud2d/buttons/X"]
+margin_left = -22.0
+margin_top = 6.0
+margin_right = -3.0
+margin_bottom = 20.0
+rect_scale = Vector2( 1.5, 1.5 )
+custom_fonts/font = SubResource( 1 )
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Y" type="Sprite" parent="hud2d/buttons"]
+modulate = Color( 1, 1, 1, 0.882353 )
+self_modulate = Color( 1, 1, 1, 0.882353 )
+position = Vector2( -4, 15 )
+scale = Vector2( 0.5, 0.5 )
+texture = ExtResource( 5 )
+hframes = 3
+frame = 2
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="icon" type="Sprite" parent="hud2d/buttons/Y"]
+position = Vector2( -5, -9 )
+scale = Vector2( 2, 2 )
+z_index = -1
+
+[node name="count" type="Label" parent="hud2d/buttons/Y"]
+margin_left = -22.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+rect_scale = Vector2( 1.5, 1.5 )
+custom_fonts/font = SubResource( 1 )
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="tetrans" type="Node2D" parent="."]
+position = Vector2( 9, 18 )
+
+[node name="tetran_icon" type="Sprite" parent="tetrans"]
+texture = ExtResource( 7 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="tetrans" type="Label" parent="tetrans"]
+margin_left = 8.0181
+margin_top = -9.13171
+margin_right = 26.0181
+margin_bottom = 3.86829
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme = ExtResource( 6 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+text = "000"
+__meta__ = {
+"_edit_lock_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="keys" type="Node2D" parent="."]
+position = Vector2( 8, 30 )
+
+[node name="key_icon" type="Sprite" parent="keys"]
+texture = ExtResource( 8 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="keys" type="Label" parent="keys"]
+margin_left = 9.0
+margin_top = -7.0
+margin_right = 27.0
+margin_bottom = 6.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme = ExtResource( 6 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+text = "0"
+__meta__ = {
+"_edit_lock_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="debug" type="Control" parent="."]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+theme = ExtResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="states" type="TextEdit" parent="debug"]
+margin_left = 3.0
+margin_top = 33.0
+margin_right = 623.0
+margin_bottom = 257.0
+rect_scale = Vector2( 0.4, 0.4 )
+custom_styles/read_only = SubResource( 2 )
+custom_styles/focus = SubResource( 3 )
+custom_styles/normal = SubResource( 4 )
+custom_styles/completion = SubResource( 5 )
+custom_fonts/font = SubResource( 6 )
+custom_colors/font_color_readonly = Color( 1, 1, 1, 1 )
+custom_constants/line_spacing = -2
+custom_constants/completion_lines = 0
+readonly = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="saves" parent="." instance=ExtResource( 10 )]
+visible = false
+rect_scale = Vector2( 0.5, 0.5 )
+mode = 1
+show_return_button = true
+
+[node name="boss_overlay" type="Control" parent="."]
+margin_right = 256.0
+margin_bottom = 144.0
+theme = ExtResource( 12 )
+script = ExtResource( 14 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Bossbar" type="ProgressBar" parent="boss_overlay"]
+visible = false
+self_modulate = Color( 1, 1, 1, 0.784314 )
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -58.0
+margin_top = -21.0
+margin_right = 58.0
+margin_bottom = -9.0
+value = 75.0
+percent_visible = false
+__meta__ = {
+"_edit_group_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="boss_overlay/Bossbar"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_right = 39.0
+margin_bottom = 4.0
+rect_scale = Vector2( 0.75, 0.75 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/font = SubResource( 9 )
+custom_colors/font_color = Color( 0.968627, 0.709804, 0.545098, 1 )
+text = "Dead Captain"
+align = 1
+valign = 1
+uppercase = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="boss_overlay"]
+anims/hide_bossbar = SubResource( 11 )
+anims/show_bossbar = SubResource( 10 )
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="boss_overlay/AnimationPlayer"]
+anims/hide_bossbar = SubResource( 12 )
+anims/show_bossbar = SubResource( 13 )
+
+[node name="OnscreenSave" type="AnimationPlayer" parent="."]
+anims/default = SubResource( 7 )
+anims/fade_out = SubResource( 8 )
+script = ExtResource( 11 )
+
+[node name="Label" type="Label" parent="OnscreenSave"]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -54.0
+margin_top = -14.0
+theme = ExtResource( 6 )
+text = "Saving..."
+__meta__ = {
+"_edit_use_anchors_": false
+}
