@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3 uid="uid://j0r2b7qjga1"]
+
+[ext_resource type="Script" path="res://Scripts/Buttons/return_to_menu.gd" id="1_flg3p"]
+[ext_resource type="Script" path="res://Scripts/Buttons/fullscreen_button.gd" id="1_vx8vf"]
+
+[node name="Settings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_right = 139.0
+offset_bottom = 34.0
+text = "Return To Menu"
+script = ExtResource("1_flg3p")
+
+[node name="CheckButton" type="CheckButton" parent="."]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 303.0
+offset_right = 139.0
+offset_bottom = 334.0
+text = "Fullscreen"
+script = ExtResource("1_vx8vf")
+
+[connection signal="button_down" from="Button" to="Button" method="_on_button_down"]
+[connection signal="toggled" from="CheckButton" to="CheckButton" method="_on_toggled"]

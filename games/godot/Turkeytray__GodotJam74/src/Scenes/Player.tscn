@@ -1,0 +1,114 @@
+[gd_scene load_steps=14 format=3 uid="uid://bfd3j5n1x1owq"]
+
+[ext_resource type="Script" path="res://Scripts/player.gd" id="1_asiiv"]
+[ext_resource type="Shader" path="res://Shaders/Screen.gdshader" id="2_gxxm8"]
+[ext_resource type="Texture2D" uid="uid://ctyah4kdmtfvo" path="res://Textures/human_walk.png" id="3_0khhb"]
+[ext_resource type="AudioStream" uid="uid://g30tyb0ohe6a" path="res://Resources/Audio/Walk Sounds/walk.ogg" id="4_gyu8o"]
+[ext_resource type="AudioStream" uid="uid://dcwsu2pqyqnot" path="res://Resources/Audio/heartbeat.ogg" id="5_121dj"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c3ai8"]
+size = Vector2(46, 61)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_r6vhq"]
+shader = ExtResource("2_gxxm8")
+shader_parameter/grain_amount = 0.05
+shader_parameter/grain_size = 0.4
+shader_parameter/animate = true
+shader_parameter/on = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dpsit"]
+atlas = ExtResource("3_0khhb")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cmnxw"]
+atlas = ExtResource("3_0khhb")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rq18r"]
+atlas = ExtResource("3_0khhb")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_akyii"]
+atlas = ExtResource("3_0khhb")
+region = Rect2(160, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3tf4m"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dpsit")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cmnxw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rq18r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_akyii")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ovdrc"]
+size = Vector2(45, 61.5)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_asiiv")
+
+[node name="CollisionBox" type="CollisionShape2D" parent="."]
+position = Vector2(0, 1.5)
+shape = SubResource("RectangleShape2D_c3ai8")
+
+[node name="Camera" type="Camera2D" parent="."]
+zoom = Vector2(0.85, 0.85)
+position_smoothing_enabled = true
+position_smoothing_speed = 3.0
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
+drag_left_margin = 0.1
+drag_right_margin = 0.1
+
+[node name="CanvasLayer" type="CanvasLayer" parent="Camera"]
+
+[node name="ColorRect" type="ColorRect" parent="Camera/CanvasLayer"]
+material = SubResource("ShaderMaterial_r6vhq")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FadeToBlack" type="ColorRect" parent="Camera/CanvasLayer"]
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0)
+
+[node name="Timer" type="Timer" parent="Camera/CanvasLayer/FadeToBlack"]
+
+[node name="PlayerSprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_3tf4m")
+animation = &"walk"
+
+[node name="EnemyDeath" type="Area2D" parent="."]
+
+[node name="EnemyDeathHitbox" type="CollisionShape2D" parent="EnemyDeath"]
+position = Vector2(0.5, 1.75)
+shape = SubResource("RectangleShape2D_ovdrc")
+
+[node name="Walk" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_gyu8o")
+volume_db = -25.0
+
+[node name="Heartbeat" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_121dj")
+volume_db = -25.0
+pitch_scale = 0.75
+parameters/looping = true
+
+[connection signal="timeout" from="Camera/CanvasLayer/FadeToBlack/Timer" to="." method="_on_timer_timeout"]
+[connection signal="body_entered" from="EnemyDeath" to="." method="_on_enemy_touched"]
