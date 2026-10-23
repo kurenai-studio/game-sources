@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>UltimateTicTacToe</AssemblyName>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <MonoGamePlatform>Windows</MonoGamePlatform>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.5" />
+    <PackageReference Include="Apos.Input" Version="3.0.0" />
+    <PackageReference Include="Apos.Shapes" Version="0.8.1" />
+    <PackageReference Include="Apos.Tweens" Version="0.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Game/**/*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Nothing here needs building: Apos.Shapes reads the font's outlines itself, so the file
+       is copied as-is and the content pipeline stays out of it. -->
+  <ItemGroup>
+    <Content Include="../../Content/**/*.ttf" Exclude="../../Content/bin/**;../../Content/obj/**" CopyToOutputDirectory="PreserveNewest">
+      <Link>Content/%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
+</Project>
