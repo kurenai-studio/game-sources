@@ -1,0 +1,549 @@
+import os
+import sys
+import unittest
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../src")
+
+from config import station_color, station_size
+from entity.metro import Metro
+from entity.passenger import Passenger
+from entity.path import Path
+from entity.station import Station
+from env import MiniMetroEnv
+from geometry.circle import Circle
+from geometry.point import Point
+from geometry.rect import Rect
+from travel_plan import TravelPlan
+from utils import get_random_color
+
+
+class TestEnv(unittest.TestCase):
+    def test_reset_is_deterministic_with_seed(self):
+        env = MiniMetroEnv()
+        obs_a = env.reset(seed=123)
+        positions_a = [
+            station["position"] for station in obs_a["structured"]["stations"]
+        ]
+
+        obs_b = env.reset(seed=123)
+        positions_b = [
+            station["position"] for station in obs_b["structured"]["stations"]
+        ]
+
+        self.assertEqual(positions_a, positions_b)
+
+    def test_step_create_path(self):
+        env = MiniMetroEnv()
+        env.reset(seed=1)
+        obs, reward, done, info = env.step(
+            {"type": "create_path", "stations": [0, 1], "loop": False}
+        )
+
+        self.assertTrue(info["action_ok"])
+        self.assertFalse(done)
+        self.assertIsInstance(reward, int)
+        self.assertEqual(len(env.mediator.paths), 1)
+        self.assertEqual(len(env.mediator.metros), 0)
+        self.assertIn("arrays", obs)
+        self.assertIn("structured", obs)
+
+    def test_remove_path_by_index(self):
+        env = MiniMetroEnv()
+        env.reset(seed=2)
+        env.step({"type": "create_path", "stations": [0, 1, 2], "loop": False})
+
+        self.assertEqual(len(env.mediator.paths), 1)
+        obs, reward, done, info = env.step({"type": "remove_path", "path_index": 0})
+
+        self.assertTrue(info["action_ok"])
+        self.assertFalse(done)
+        self.assertEqual(len(env.mediator.paths), 0)
+        self.assertIn("structured", obs)
+
+    def test_remove_path_by_id(self):
+        env = MiniMetroEnv()
+        env.reset(seed=3)
+        env.step({"type": "create_path", "stations": [0, 1], "loop": False})
+
+        path_id = env.mediator.paths[0].id
+        obs, reward, done, info = env.step({"type": "remove_path", "path_id": path_id})
+
+        self.assertTrue(info["action_ok"])
+        self.assertFalse(done)
+        self.assertEqual(len(env.mediator.paths), 0)
+        self.assertIn("arrays", obs)
+
+    def test_pause_and_resume(self):
+        env = MiniMetroEnv(dt_ms=10)
+        env.reset(seed=4)
+        time_before = env.mediator.time_ms
+        steps_before = env.mediator.steps
+
+        env.step({"type": "pause"})
+        self.assertTrue(env.mediator.is_paused)
+        self.assertEqual(env.mediator.time_ms, time_before)
+        self.assertEqual(env.mediator.steps, steps_before)
+
+        env.step({"type": "resume"})
+        self.assertFalse(env.mediator.is_paused)
+        self.assertGreater(env.mediator.time_ms, time_before)
+        self.assertGreater(env.mediator.steps, steps_before)
+
+    def test_step_advances_time(self):
+        env = MiniMetroEnv()
+        env.reset(seed=5)
+        time_before = env.mediator.time_ms
+        steps_before = env.mediator.steps
+
+        env.step({"type": "noop"}, dt_ms=7)
+
+        self.assertEqual(env.mediator.time_ms, time_before + 7)
+        self.assertEqual(env.mediator.steps, steps_before + 1)
+
+    def test_invalid_action_returns_false(self):
+        env = MiniMetroEnv()
+        env.reset(seed=6)
+        _, _, _, info = env.step({"type": "remove_path", "path_index": 99})
+
+        self.assertFalse(info["action_ok"])
+
+    def test_malformed_actions_return_false_without_mutating(self):
+        malformed_actions = [
+            {},
+            "not-a-dict",
+            {"type": "create_path", "stations": "01", "loop": False},
+            {"type": "create_path", "stations": [0, "1"], "loop": False},
+            {"type": "create_path", "stations": [False, 1], "loop": False},
+            {"type": "create_path", "stations": [0, 1, 2], "loop": "false"},
+            {"type": None},
+            {"type": "remove_path", "path_index": False},
+        ]
+
+        for action in malformed_actions:
+            with self.subTest(action=action):
+                env = MiniMetroEnv()
+                env.reset(seed=20)
+                _, _, _, info = env.step(
+                    {"type": "create_path", "stations": [0, 1], "loop": False}
+                )
+                self.assertTrue(info["action_ok"])
+                env.mediator.purchased_num_paths = 2
+                env.mediator.update_unlocked_num_paths()
+                initial_path_ids = [path.id for path in env.mediator.paths]
+                initial_time_ms = env.mediator.time_ms
+
+                _, _, _, info = env.step(action, dt_ms=10)  # type: ignore[arg-type]
+
+                self.assertFalse(info["action_ok"])
+                self.assertEqual(
+                    [path.id for path in env.mediator.paths], initial_path_ids
+                )
+                self.assertEqual(env.mediator.time_ms, initial_time_ms)
+
+    def test_aborted_create_path_does_not_report_existing_path_success(self):
+        env = MiniMetroEnv()
+        env.reset(seed=21)
+        _, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 1], "loop": False}
+        )
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), 1)
+
+        env.mediator.purchased_num_paths = 2
+        env.mediator.update_unlocked_num_paths()
+        _, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 0], "loop": False}
+        )
+
+        self.assertFalse(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), 1)
+
+    def test_step_after_game_over_is_stable_noop(self):
+        env = MiniMetroEnv(dt_ms=10)
+        env.reset(seed=22)
+        env.mediator.is_game_over = True
+        time_before = env.mediator.time_ms
+        steps_before = env.mediator.steps
+        paths_before = len(env.mediator.paths)
+
+        _, reward, done, info = env.step(
+            {"type": "create_path", "stations": [0, 1], "loop": False}
+        )
+
+        self.assertFalse(info["action_ok"])
+        self.assertEqual(reward, 0)
+        self.assertTrue(done)
+        self.assertEqual(env.mediator.time_ms, time_before)
+        self.assertEqual(env.mediator.steps, steps_before)
+        self.assertEqual(len(env.mediator.paths), paths_before)
+
+    def test_observation_arrays_shapes(self):
+        env = MiniMetroEnv()
+        obs = env.reset(seed=7)
+        arrays = obs["arrays"]
+        structured = obs["structured"]
+
+        self.assertEqual(
+            arrays["station_positions"].shape[0],
+            len(structured["stations"]),
+        )
+        self.assertEqual(
+            arrays["station_shape_types"].shape[0],
+            len(structured["stations"]),
+        )
+        self.assertEqual(
+            arrays["station_passenger_counts"].shape[0],
+            len(structured["stations"]),
+        )
+
+        env.step({"type": "create_path", "stations": [0, 1], "loop": False})
+        obs = env.observe()
+        arrays = obs["arrays"]
+        structured = obs["structured"]
+        self.assertEqual(
+            len(arrays["path_station_indices"]),
+            len(structured["paths"]),
+        )
+
+    def test_observation_names_deliveries_and_line_credits_explicitly(self):
+        env = MiniMetroEnv()
+        env.reset(seed=24)
+        env.mediator.deliveries = 9
+        env.mediator.line_credits = 4
+
+        structured = env.observe()["structured"]
+
+        self.assertEqual(structured["deliveries"], 9)
+        self.assertEqual(structured["line_credits"], 4)
+        self.assertEqual(structured["score"], 4)
+
+    def test_observation_path_topology_views_preserve_the_same_station_order(self):
+        env = MiniMetroEnv()
+        env.reset(seed=23)
+
+        observation, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 1, 2], "loop": False}
+        )
+
+        self.assertTrue(info["action_ok"])
+        structured = observation["structured"]
+        station_indices = structured["index"]["station_id_to_index"]
+        structured_path = [
+            station_indices[station_id]
+            for station_id in structured["paths"][0]["station_ids"]
+        ]
+        array_path = observation["arrays"]["path_station_indices"][0].tolist()
+        self.assertEqual(structured_path, [0, 1, 2])
+        self.assertEqual(structured_path, array_path)
+
+    def test_passengers_spawn_and_get_travel_plans(self):
+        env = MiniMetroEnv()
+        env.reset(seed=8)
+        env.mediator.stations = [
+            Station(
+                Rect(
+                    color=station_color,
+                    width=2 * station_size,
+                    height=2 * station_size,
+                ),
+                Point(0, 0),
+            ),
+            Station(
+                Circle(
+                    color=station_color,
+                    radius=station_size,
+                ),
+                Point(100, 0),
+            ),
+        ]
+
+        env.step({"type": "create_path", "stations": [0, 1], "loop": False})
+        env.step({"type": "noop"}, dt_ms=1)
+
+        self.assertEqual(len(env.mediator.passengers), 2)
+        self.assertEqual(len(env.mediator.travel_plans), 2)
+        for plan in env.mediator.travel_plans.values():
+            self.assertIsNotNone(plan.next_path)
+
+    def test_metro_moves_along_path(self):
+        env = MiniMetroEnv()
+        env.reset(seed=9)
+        env.mediator.stations = [
+            Station(
+                Rect(
+                    color=station_color,
+                    width=2 * station_size,
+                    height=2 * station_size,
+                ),
+                Point(0, 0),
+            ),
+            Station(
+                Circle(
+                    color=station_color,
+                    radius=station_size,
+                ),
+                Point(200, 0),
+            ),
+        ]
+
+        env.step({"type": "create_path", "stations": [0, 1], "loop": False})
+        env.step({"type": "assign_locomotive", "path_index": 0}, dt_ms=0)
+        env.step({"type": "noop"}, dt_ms=2000)
+
+        metro = env.mediator.metros[0]
+        self.assertIsNotNone(metro.current_station)
+        self.assertIn(
+            metro.current_station.id,
+            [station.id for station in env.mediator.stations],
+        )
+
+    def test_create_looped_path(self):
+        env = MiniMetroEnv()
+        env.reset(seed=10)
+        obs, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 1, 2], "loop": True}
+        )
+
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), 1)
+        self.assertTrue(env.mediator.paths[0].is_looped)
+        self.assertEqual(
+            env.mediator.paths[0].stations,
+            [
+                env.mediator.stations[0],
+                env.mediator.stations[1],
+                env.mediator.stations[2],
+            ],
+        )
+        self.assertIn("structured", obs)
+
+    def test_invalid_create_path_inputs(self):
+        env = MiniMetroEnv()
+        env.reset(seed=11)
+        _, _, _, info = env.step(
+            {"type": "create_path", "stations": [0], "loop": False}
+        )
+        self.assertFalse(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), 0)
+
+        _, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 999], "loop": False}
+        )
+        self.assertFalse(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), 0)
+
+    def test_path_creation_limit(self):
+        env = MiniMetroEnv()
+        env.reset(seed=12)
+        env.mediator.purchased_num_paths = env.mediator.num_paths
+        env.mediator.total_travels_handled = 10000
+        env.mediator.update_unlocked_num_paths()
+        env.mediator.update_unlocked_num_stations()
+        for idx in range(env.mediator.num_paths):
+            _, _, _, info = env.step(
+                {"type": "create_path", "stations": [idx, idx + 1], "loop": False}
+            )
+            self.assertTrue(info["action_ok"])
+
+        _, _, _, info = env.step(
+            {"type": "create_path", "stations": [0, 2], "loop": False}
+        )
+        self.assertFalse(info["action_ok"])
+        self.assertEqual(len(env.mediator.paths), env.mediator.num_paths)
+
+    def test_path_unlock_progression_uses_score_purchases(self):
+        env = MiniMetroEnv()
+        env.reset(seed=16)
+
+        self.assertEqual(env.mediator.unlocked_num_paths, 1)
+        second_button = env.mediator.path_buttons[1]
+
+        env.mediator.total_travels_handled = 10000
+        env.mediator.update_unlocked_num_paths()
+        self.assertEqual(env.mediator.unlocked_num_paths, 1)
+
+        env.mediator.score = env.mediator.path_purchase_prices[0] - 1
+        self.assertFalse(env.mediator.try_purchase_path_button(second_button))
+        self.assertEqual(env.mediator.unlocked_num_paths, 1)
+
+        env.mediator.score += 1
+        self.assertTrue(env.mediator.try_purchase_path_button(second_button))
+        self.assertEqual(env.mediator.unlocked_num_paths, 2)
+
+    def test_step_buy_line_purchases_next_locked_line(self):
+        env = MiniMetroEnv()
+        env.reset(seed=17)
+        env.mediator.line_credits = env.mediator.path_purchase_prices[0]
+
+        observation, reward, _, info = env.step({"type": "buy_line"})
+
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(env.mediator.unlocked_num_paths, 2)
+        self.assertFalse(env.mediator.path_buttons[1].is_locked)
+        self.assertEqual(reward, 0)
+        self.assertEqual(observation["structured"]["deliveries"], 0)
+        self.assertEqual(observation["structured"]["line_credits"], 0)
+        self.assertEqual(observation["structured"]["score"], 0)
+
+    def test_legacy_line_credit_delta_reward_reconstructs_purchase_penalty(self):
+        env = MiniMetroEnv(reward_mode="line_credits_delta")
+        env.reset(seed=17)
+        price = env.mediator.path_purchase_prices[0]
+        env.mediator.line_credits = price
+        env.last_score = price
+
+        _, reward, _, info = env.step({"type": "buy_line"})
+
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(reward, -price)
+        self.assertEqual(env.last_score, 0)
+
+    def test_reward_mode_rejects_unknown_values(self):
+        with self.assertRaisesRegex(ValueError, "reward_mode"):
+            MiniMetroEnv(reward_mode="score")
+
+        env = MiniMetroEnv()
+        with self.assertRaisesRegex(ValueError, "reward_mode"):
+            env.reward_mode = "score"
+
+    def test_reward_baselines_keep_writable_legacy_score_alias(self):
+        env = MiniMetroEnv()
+        env.reset(seed=25)
+
+        env.last_deliveries = 3
+        env.last_line_credits = 4
+        self.assertEqual(env.last_score, 4)
+        env.last_score = 5
+
+        self.assertEqual(env.last_deliveries, 3)
+        self.assertEqual(env.last_line_credits, 5)
+
+    def test_step_buy_line_supports_path_index(self):
+        env = MiniMetroEnv()
+        env.reset(seed=18)
+        env.mediator.score = env.mediator.path_purchase_prices[0]
+
+        _, _, _, info = env.step({"type": "buy_line", "path_index": 1})
+
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(env.mediator.unlocked_num_paths, 2)
+
+    def test_step_buy_line_invalid_index_returns_false(self):
+        env = MiniMetroEnv()
+        env.reset(seed=19)
+        env.mediator.score = 10_000
+
+        _, _, _, info = env.step({"type": "buy_line", "path_index": "1"})
+        self.assertFalse(info["action_ok"])
+
+        _, _, _, info = env.step({"type": "buy_line", "path_index": 99})
+        self.assertFalse(info["action_ok"])
+
+    def test_reward_increments_on_passenger_delivery(self):
+        env = MiniMetroEnv()
+        env.reset(seed=13)
+        station_a = Station(
+            Rect(
+                color=station_color,
+                width=2 * station_size,
+                height=2 * station_size,
+            ),
+            Point(0, 0),
+        )
+        station_b = Station(
+            Circle(
+                color=station_color,
+                radius=station_size,
+            ),
+            Point(0, 0),
+        )
+        env.mediator.stations = [station_a, station_b]
+
+        metro = Metro()
+        metro.current_station = station_b
+        metro.position = station_b.position
+        env.mediator.paths = []
+        env.mediator.metros = [metro]
+
+        passenger = Passenger(destination_shape=station_b.shape)
+        metro.add_passenger(passenger)
+        env.mediator.passengers = [passenger]
+        env.mediator.travel_plans = {passenger: TravelPlan([])}
+
+        env.mediator.passenger_spawning_step = 999999
+        env.mediator.passenger_spawning_interval_step = 999999
+        for station in env.mediator.stations:
+            env.mediator.station_steps_since_last_spawn[station] = 0
+            env.mediator.station_spawn_interval_steps[station] = 999999
+
+        _, reward, _, info = env.step({"type": "noop"}, dt_ms=500)
+
+        self.assertTrue(info["action_ok"])
+        self.assertEqual(reward, 1)
+        self.assertEqual(env.mediator.deliveries, 1)
+        self.assertEqual(env.mediator.line_credits, 1)
+        self.assertEqual(env.mediator.score, 1)
+        self.assertEqual(env.mediator.total_travels_handled, 1)
+        self.assertEqual(env.observe()["structured"]["deliveries"], 1)
+        self.assertEqual(len(env.mediator.passengers), 0)
+
+    def test_observation_passenger_locations(self):
+        env = MiniMetroEnv()
+        env.reset(seed=14)
+        station_a = Station(
+            Rect(
+                color=station_color,
+                width=2 * station_size,
+                height=2 * station_size,
+            ),
+            Point(0, 0),
+        )
+        station_b = Station(
+            Circle(
+                color=station_color,
+                radius=station_size,
+            ),
+            Point(200, 0),
+        )
+        env.mediator.stations = [station_a, station_b]
+
+        path = Path(get_random_color())
+        path.add_station(station_a)
+        path.add_station(station_b)
+        metro = Metro()
+        path.add_metro(metro)
+        metro.current_station = station_a
+        env.mediator.paths = [path]
+        env.mediator.metros = [metro]
+
+        passenger_station = Passenger(destination_shape=station_b.shape)
+        station_a.add_passenger(passenger_station)
+        passenger_metro = Passenger(destination_shape=station_a.shape)
+        metro.add_passenger(passenger_metro)
+
+        env.mediator.passengers = [passenger_station, passenger_metro]
+        env.mediator.travel_plans = {
+            passenger_station: TravelPlan([station_b]),
+            passenger_metro: TravelPlan([]),
+        }
+
+        obs = env.observe()["structured"]
+        locations = {p["id"]: p["location"] for p in obs["passengers"]}
+
+        self.assertEqual(locations[passenger_station.id], ("station", station_a.id))
+        self.assertEqual(locations[passenger_metro.id], ("metro", metro.id))
+
+    def test_game_over_when_waiting_too_long(self):
+        env = MiniMetroEnv()
+        env.reset(seed=15)
+        env.mediator.passenger_max_wait_time_ms = 0
+        env.mediator.max_waiting_passengers = 1
+
+        _, _, done, _ = env.step({"type": "noop"}, dt_ms=1)
+
+        self.assertTrue(done)
+        self.assertTrue(env.mediator.is_game_over)
+
+
+if __name__ == "__main__":
+    unittest.main()
