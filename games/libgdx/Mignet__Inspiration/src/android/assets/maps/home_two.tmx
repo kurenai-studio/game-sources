@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="15" tilewidth="32" tileheight="32" nextobjectid="6">
+ <properties>
+  <property name="mapName" value="Home2"/>
+ </properties>
+ <tileset firstgid="1" name="floor2" tilewidth="32" tileheight="32" tilecount="300" columns="20">
+  <image source="tiles/floor2.png" width="640" height="480"/>
+ </tileset>
+ <tileset firstgid="301" name="TOOLS" tilewidth="32" tileheight="32" tilecount="9" columns="9">
+  <image source="tiles/TOOLS.png" width="288" height="32"/>
+ </tileset>
+ <tileset firstgid="310" name="tile06" tilewidth="32" tileheight="32" tilecount="400" columns="20">
+  <image source="tiles/tile06.png" width="640" height="640"/>
+ </tileset>
+ <layer name="ground" width="20" height="15">
+  <data encoding="base64" compression="zlib">
+   eJytzDVsFWAUgNHXInXB3dsJCK4LLgXaBSsuC+6y4C4L2gZfcIIvuMuCuyy4y4I7Z3gbf5ia3JOb3OR+mZFIJJNCFKYIRYkjngQSSSKZFFJJIz36G1KGspSjPBWoSCUqU4WqVKM6Ncj4T68mtagdVYe61KM+DWhIIxrThKY0o3mg14KWtKI1bWhLO9rTgY5k0YnOdCGbnECvK93oTg96kksvetOHvvSjPwMYyCAGB3pDGMowhjOCkYxiNGMYyzjGM4GJTGJyoDeFqUxjOjOYySxmM4e5zGM+C1jIIhYHektYyjKWs4KV5JEf3atYzRrWso71bAj0NrKJzWxhK9vYzo5obye72M0e9rKP/YHeAQ5yiMMc4SjHOM4JTnKK05zhLOc4H+hd4CKXuMwVrnKN69zgJre4zR3uco/7gd4DHvKIxzzhKc94zgte8orXvOEt73gf6H3gI5/4zBe+8o3v/OAnv/jNHyIxhtiYf3txbvEkkEgSyaSQShrpFKM4JShJKUoHegXlL8orcw0=
+  </data>
+ </layer>
+ <layer name="block" width="20" height="15">
+  <data encoding="base64" compression="zlib">
+   eJxjYEAAPUYIpgaAmUOKmfjUocsRYyap5hGDybGLXD347CfXjfjUYpPDZya6GmzqcLkdlzps5lNLjFhAqT/w6SHHPFLDmZQ0Qw6gVD8lAABWfRDl
+  </data>
+ </layer>
+ <objectgroup name="npc">
+  <object id="2" name="moon" x="128" y="288" width="32" height="32">
+   <properties>
+    <property name="Dir" value="RIGHT"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup name="event">
+  <object id="4" name="door201" gid="308" x="96" y="96" width="32" height="32">
+   <properties>
+    <property name="CMD" value="MapTo,home_one,1,12,RIGHT"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer name="ceiling" width="20" height="15" opacity="0.8">
+  <data encoding="base64" compression="zlib">
+   eJxjYBg6oJ0RE8OAMRCbALEpEJsBsTkR5jkAsSMQOwGxMxC7IMm5A7EHEHsCsRcQexNhXggQhwJxGBCHA3EEklw0EMcAcSwQxwFxPBHmoYMcJHY+EBcAcSEQFwFxMRnmjTSwB4vYQQrMu4BF7CoF5j3BIvaSAvOGIwAAnHkReA==
+  </data>
+ </layer>
+</map>
