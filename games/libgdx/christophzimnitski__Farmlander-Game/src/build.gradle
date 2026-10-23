@@ -1,0 +1,60 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    gdxVersion = '1.13.1'
+}
+
+dependencies {
+    // Compile-time only: @NotNull etc. have CLASS retention, not needed at runtime.
+    compileOnly 'org.jetbrains:annotations:24.0.0'
+
+    // libGDX: core API + desktop (LWJGL3) backend + desktop native libs.
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    runtimeOnly "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+// Tests: JUnit 5, run headless (no GL) against the pure-logic classes.
+// Declared via the JVM Test Suite (Gradle's recommended idiom): naming the
+// framework on the suite makes Gradle manage the JUnit Platform launcher itself,
+// instead of the auto-loading that 8.x deprecated and 9.0 removed. This replaces
+// the old testImplementation/testRuntimeOnly JUnit deps + `test { useJUnitPlatform() }`.
+testing {
+    suites {
+        test {
+            useJUnitJupiter('5.10.2')
+        }
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    // libGDX is the game now (Swing version removed in the cutover).
+    mainClass = 'core.DesktopLauncher'
+    // GLFW on macOS must run on the first thread; harmless on other platforms.
+    if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+        applicationDefaultJvmArgs = ['-XstartOnFirstThread']
+    }
+}
+
+// Back-compat alias: `./gradlew runGdx` still works (identical to `./gradlew run`).
+tasks.register('runGdx', JavaExec) {
+    group = 'application'
+    description = 'Run the game (alias of run).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'core.DesktopLauncher'
+    if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+        jvmArgs = ['-XstartOnFirstThread']
+    }
+}
