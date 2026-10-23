@@ -1,0 +1,109 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://scripts/scenes/main_menu.gd" type="Script" id=1]
+[ext_resource path="res://sprites/white.png" type="Texture" id=2]
+[ext_resource path="res://fonts/PetitaMedium.ttf" type="DynamicFontData" id=3]
+[ext_resource path="res://characters/cat/grey.tscn" type="PackedScene" id=4]
+[ext_resource path="res://sounds/bgm/world_map0.ogg" type="AudioStream" id=5]
+
+[sub_resource type="DynamicFont" id=1]
+
+size = 76
+use_filter = true
+font_data = ExtResource( 3 )
+
+[sub_resource type="DynamicFont" id=2]
+
+size = 24
+font_data = ExtResource( 3 )
+
+[node name="main_menu" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="bg" type="TextureRect" parent="."]
+modulate = Color( 0.227451, 0.278431, 0.317647, 1 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource( 2 )
+expand = true
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="title" type="Label" parent="."]
+margin_left = 240.0
+margin_top = 220.0
+margin_right = 1200.0
+margin_bottom = 320.0
+custom_fonts/font = SubResource( 1 )
+text = "CATS! ATTACK"
+align = 2
+valign = 1
+
+[node name="character" parent="." instance=ExtResource( 4 )]
+editor/display_folded = true
+position = Vector2( 720, 580 )
+scale = Vector2( 0.411066, 0.411066 )
+
+[node name="shadow" parent="character/sprite" index="0"]
+visible = false
+
+[node name="tail" parent="character/sprite" index="1"]
+position = Vector2( -74.8714, 54.9309 )
+rotation = -0.031307
+
+[node name="hand_l" parent="character/sprite" index="4"]
+position = Vector2( 59.8483, -47.5919 )
+
+[node name="body" parent="character/sprite" index="5"]
+position = Vector2( 0, 4.19313 )
+
+[node name="hand_r" parent="character/sprite" index="6"]
+position = Vector2( -101.535, -28.5467 )
+rotation = 0.202864
+
+[node name="gun" parent="character/sprite/hand_r/attachment" index="0"]
+visible = false
+
+[node name="head" parent="character/sprite" index="7"]
+position = Vector2( 27.7003, -67.923 )
+
+[node name="AnimationPlayer" parent="character" index="1"]
+autoplay = "idle-alt"
+
+[node name="button_continue" type="Button" parent="."]
+margin_left = 900.0
+margin_top = 380.0
+margin_right = 1200.0
+margin_bottom = 452.0
+custom_fonts/font = SubResource( 2 )
+disabled = true
+text = "CONTINUE"
+
+[node name="button_newgame" type="Button" parent="."]
+margin_left = 900.0
+margin_top = 480.0
+margin_right = 1200.0
+margin_bottom = 552.0
+custom_fonts/font = SubResource( 2 )
+text = "NEW GAME"
+
+[node name="button_quit" type="Button" parent="."]
+margin_left = 900.0
+margin_top = 570.942
+margin_right = 1200.0
+margin_bottom = 642.942
+custom_fonts/font = SubResource( 2 )
+text = "QUIT"
+
+[node name="music" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 5 )
+autoplay = true
+
+
+[editable path="character"]
