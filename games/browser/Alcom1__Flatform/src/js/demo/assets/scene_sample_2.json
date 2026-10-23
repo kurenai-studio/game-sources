@@ -1,0 +1,49 @@
+{
+    "gameObjects" : [
+        {
+            "name" : "SceneSwitcher",
+            "params" : 
+            {
+                "prevScene" : "js/demo/assets/scene_sample_1.json"
+            }
+        },
+        {    
+            "name" : "TextDrawer",
+            "params" : 
+            {
+                "zIndex" : 100,
+                "position" : {"x" : 2, "y" : 476},
+                "text" : "Use up & down arrow keys to cycle scenes.",
+                "font" : "16pt Consolas",
+                "color" : "white",
+                "centered" : false
+            }
+        },
+        {
+            "name" : "AnimatedRect",
+            "params" : {
+                "size" : {"x" : 15, "y" : 20},
+                "color" : "#0FF",
+                "anim" : "js/demo/assets/animation_sample_1.json"
+            }
+        },
+        {
+            "name" : "BasicPoint",
+            "params" : {
+                "position" : {"x" : 420, "y" : 280}
+            }
+        },
+        {
+            "name" : "BasicPoint",
+            "params" : {
+                "position" : {"x" : 260, "y" : 220}
+            }
+        },
+        {
+            "name" : "BasicPoint",
+            "params" : {
+                "position" : {"x" : 360, "y" : 320}
+            }
+        }
+    ]
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Flatform</title>
+		<style>
+            body
+            {
+                background-color: #000;
+            }
+			canvas
+			{
+				cursor: none; 
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: 20px;
+				margin-bottom: 20px;
+				background: #000;
+                border: 1px solid #FFF;
+			}
+			#images, #audio
+			{
+                display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Canvas -->
+		<canvas></canvas>
+
+		<!-- Audio --> 
+		<div id="audio"></div> 
+
+		<!-- flatform -->
+		<script src='js/flatform/colliders/collider.js'></script>
+		<script src='js/flatform/colliders/collidercircle.js'></script>
+		<script src='js/flatform/colliders/colliderpoint.js'></script>
+		<script src='js/flatform/colliders/colliderrect.js'></script>
+		
+		<script src='js/flatform/gameobjects/gameobject.js'></script>
+		
+		<script src='js/flatform/scenes/scene.js'></script>
+
+		<script src='js/flatform/utilities/math/collision.js'></script>
+		<script src='js/flatform/utilities/math/mat2.js'></script>
+		<script src='js/flatform/utilities/math/math.js'></script>
+		<script src='js/flatform/utilities/math/transform.js'></script>
+		<script src='js/flatform/utilities/math/vect.js'></script>
+		
+		<script src='js/flatform/utilities/animation.js'></script>
+		<script src='js/flatform/utilities/keys.js'></script>
+		<script src='js/flatform/utilities/prototypes.js'></script>
+		<script src='js/flatform/utilities/utilities.js'></script>
+		
+		<script src='js/flatform/modules/collision.js'></script>
+		<script src='js/flatform/modules/main.js'></script>
+		<script src='js/flatform/modules/mouse.js'></script>
+		<script src='js/flatform/modules/sound.js'></script>
+
+		<!-- demo -->
+		<script src='js/demo/gameobjects/animatedrect.js'></script>
+		<script src='js/demo/gameobjects/basiccircle.js'></script>
+		<script src='js/demo/gameobjects/basicpoint.js'></script>
+		<script src='js/demo/gameobjects/basicrect.js'></script>
+		<script src='js/demo/gameobjects/mousecircle.js'></script>
+		<script src='js/demo/gameobjects/stretchrect.js'></script>
+		<script src='js/demo/gameobjects/sceneswitcher.js'></script>
+		<script src='js/demo/gameobjects/textdrawer.js'></script>
+		
+		<script src='js/demo/load.js'></script>
+	</body>
+</html>
