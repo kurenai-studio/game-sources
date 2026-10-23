@@ -1,0 +1,44 @@
+name: Build LOVE Package
+description: Archives game folder into a .love file
+inputs:
+  output_folder:
+    description: The folder in which the generated .love file will be placed
+    required: true
+  product_file:
+    description: The basename of the file to be generated
+    required: true
+  product_name:
+    description: The name of the game
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Install tools
+      uses: ./.github/actions/install-tools
+    - name: Build LOVE package
+      shell: bash
+      run: |
+        # Create a temporary copy of the game directory for build
+        mkdir -p "./builds/temp"
+        cp -r ./game/* "./builds/temp/"
+
+        # Remove debug-related code from main.lua
+        python3 -c "import re, sys; f=sys.argv[1]; lines=open(f).readlines(); out=[]; skip=False; depth=0
+        for l in lines:
+            if not skip:
+                if 'Settings.IS_DEBUG_ENABLED' in l: skip=True; depth=1
+                else: out.append(l)
+            else:
+                depth += len(re.findall(r'\bif\b', l)) - len(re.findall(r'\bend\b', l))
+                if depth <= 0: skip=False
+        open(f, 'w').writelines(out)" "./builds/temp/main.lua"
+
+        # Remove overlayStats.lua file
+        rm -f "./builds/temp/lib/overlayStats.lua"
+
+        7z a -tzip -mx=9 -mpass=15 -mtc=off \
+        "${{ inputs.output_folder }}/${{ inputs.product_file }}.love" \
+        ./builds/temp/* -xr!.gitkeep
+
+        # Clean up temporary directory
+        rm -rf "./builds/temp"
