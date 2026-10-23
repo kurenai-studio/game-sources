@@ -1,0 +1,416 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: var(--background-color);
+    color: var(--text-color);
+    transition: background 0.2s, color 0.2s;
+}
+
+:root {
+    /* Light mode colors */
+    --background-color: #faf8ef;
+    --text-color: #333;
+    --side-menu-bg: #bbada0;
+    --side-menu-title: #776e65;
+    --current-theme-bg: #ececec;
+    --current-theme-color: #776e65;
+    --theme-btn-bg: #f3f3f3;
+    --theme-btn-hover-bg: #ffe082;
+    --theme-btn-color: #776e65;
+    --theme-btn-hover-color: #333;
+    --game-board-bg: #bbada0;
+    --tile-bg: #eee4da;
+    --tile-text: #776e65;
+    --button-bg: #8f7a66;
+    --button-hover-bg: #a39489;
+    --button-color: #fff;
+    --message-color: #d35400;
+}
+
+body.dark-mode {
+    --background-color: #181818;
+    --text-color: #f3f3f3;
+    --side-menu-bg: #232323;
+    --side-menu-title: #ffe082;
+    --current-theme-bg: #2a2a2a;
+    --current-theme-color: #ffe082;
+    --theme-btn-bg: #323232;
+    --theme-btn-hover-bg: #444;
+    --theme-btn-color: #fff;
+    --theme-btn-hover-color: #ffe082;
+    --game-board-bg: #222;
+    --tile-bg: #232323;
+    --tile-text: #ffe082;
+    --button-bg: #444;
+    --button-hover-bg: #555;
+    --button-color: #ffe082;
+    --message-color: #ff9800;
+}
+
+
+
+
+.current-theme-container {
+    background: var(--current-theme-bg);
+    color: var(--current-theme-color);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 0.9em;
+}
+
+#current-theme {
+    color: var(--current-theme-color);
+    font-weight: bold;
+}
+
+#theme-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--theme-btn-bg);
+    color: var(--theme-btn-color);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.15s, color 0.15s;
+    outline: none;
+    width: 100%;
+}
+.theme-btn.selected, .theme-btn:hover {
+    background: var(--theme-btn-hover-bg);
+    color: var(--theme-btn-hover-color);
+}
+.theme-btn.selected, .theme-btn:hover {
+    background: #444;
+    color: #ffe082;
+}
+.theme-swatches {
+    display: flex;
+    gap: 2px;
+    margin-top: 4px;
+    width: 100%;
+    justify-content: center;
+}
+.theme-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #222;
+    box-shadow: 0 0 2px #0002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.theme-swatch-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-theme-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tile-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 5px;
+}
+
+section {
+    flex: 1;
+    min-width: 350px;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    grid-template-rows: repeat(4, 60px);
+    gap: 5px;
+    justify-content: center;
+    margin: 20px auto;
+    background: #bbada0;
+    padding: 10px;
+    border-radius: 10px;
+    width: max-content;
+}
+
+h1 {
+    color: var(--side-menu-title);
+    margin-top: 32px;
+    margin-bottom: 0px;
+    text-align: center;
+    letter-spacing: 2px;
+    font-size: 2.2em;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 16px 0 24px 0;
+    width: 90%;
+}
+
+.main-container {
+    display: flex;
+    flex-direction: row-reverse; /* Sidebar on right */
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    margin: 0 auto 32px auto;
+    max-width: 1000px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 8px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background: var(--button-bg);
+    color: var(--button-color);
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.15s;
+}
+
+#message {
+    color: var(--message-color);
+    font-size: 18px;
+    height: 24px;
+}
+
+
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    margin: 0 auto;
+    max-width: calc(100vw - 100px);
+}
+
+#side-menu {
+    background: var(--side-menu-bg);
+    padding: 16px 12px;
+    border-radius: 10px;
+    min-width: 170px;
+    box-shadow: 0 0 8px #ddd;
+    margin-top: 10px;
+    text-align: left;
+}
+
+#side-menu h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+    color: var(--side-menu-title);
+}
+
+
+
+section {
+    flex: 1;
+    min-width: 350px;
+}
+
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    grid-template-rows: repeat(4, 60px);
+    gap: 5px;
+    justify-content: center;
+    margin: 20px auto;
+    background: #bbada0;
+    padding: 10px;
+    border-radius: 10px;
+    width: max-content;
+}
+
+
+
+.tile {
+    width: var(--tile-size, 60px);
+    height: var(--tile-size, 60px);
+    font-size: 24px;
+    background: var(--tile-bg);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tile-text);
+    font-weight: bold;
+    transition: background 0.2s, color 0.2s;
+}
+.x2, .x4, .x8, .x16, .x32, .x64, .x128, .x256, .x512, .x1024, .x2048, .x4096, .x8192 {
+    color: #727371 !important;
+}
+
+h1 {
+    color: #776e65;
+}
+
+button {
+    margin-top: 10px;
+    padding: 8px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background: #8f7a66;
+    color: #fff;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #a39489;
+}
+
+#message {
+    color: #d35400;
+    font-size: 18px;
+    height: 24px;
+}
+
+
+.x2 {
+    background-color: #eee4da;
+    color: #727371;
+}
+body.dark-mode .x2 {
+    background-color: #232323;
+    color: #ffe082;
+}
+
+.x4 {
+    background-color: #ece0ca;
+    color: #727371;
+}
+body.dark-mode .x4 {
+    background-color: #353535;
+    color: #ffe082;
+}
+
+.x8 {
+    background-color: #f4b17a;
+    color: white;
+}
+body.dark-mode .x8 {
+    background-color: #b26b2a;
+    color: #fff;
+}
+
+.x16{
+    background-color: #f59575;
+    color: white;
+}
+body.dark-mode .x16 {
+    background-color: #a34a2b;
+    color: #fff;
+}
+
+.x32{
+    background-color: #f57c5f;
+    color: white;
+}
+body.dark-mode .x32 {
+    background-color: #a33c2b;
+    color: #fff;
+}
+
+.x64{
+    background-color: #f65d3b;
+    color: white;
+}
+body.dark-mode .x64 {
+    background-color: #8c2c1a;
+    color: #fff;
+}
+
+.x128{
+    background-color: #edce71;
+    color: white;
+}
+body.dark-mode .x128 {
+    background-color: #8d7b2c;
+    color: #fff;
+}
+
+.x256{
+    background-color: #edcc63;
+    color: white;
+}
+body.dark-mode .x256 {
+    background-color: #7e6c1c;
+    color: #fff;
+}
+
+.x512{
+    background-color: #edc651;
+    color: white;
+}
+body.dark-mode .x512 {
+    background-color: #7e6c1c;
+    color: #fff;
+}
+
+.x1024{
+    background-color: #eec744;
+    color: white;
+}
+body.dark-mode .x1024 {
+    background-color: #7e6c1c;
+    color: #fff;
+}
+
+.x2048{
+    background-color: #ecc230;
+    color: white;
+}
+body.dark-mode .x2048 {
+    background-color: #7e6c1c;
+    color: #fff;
+}
+
+.x4096 {
+    background-color: #fe3d3d;
+    color: white;
+}
+body.dark-mode .x4096 {
+    background-color: #b22222;
+    color: #fff;
+}
+
+.x8192 {
+    background-color: #ff2020;
+    color: white;
+}
+body.dark-mode .x8192 {
+    background-color: #8b0000;
+    color: #fff;
+}
+
+/* Keep the project explanation separate from the game board layout. */
+.game-info {
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 0 24px;
+    line-height: 1.6;
+}
+.game-info a { color: inherit; }
