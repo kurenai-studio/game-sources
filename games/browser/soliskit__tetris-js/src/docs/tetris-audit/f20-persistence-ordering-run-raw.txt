@@ -1,0 +1,519 @@
+Scratch-run raw capture: F20 persistence-ordering reproduction classes
+Evidence for the blueprint's F20 entry (appendix at
+docs/tetris-audit/audit-blueprint.txt:1408). One indicative local run, not
+a status. Scratch copy only: the repository tests and requirements are
+unchanged; the test files do not live in the repository.
+
+Run date: October 23, 2026
+Code under test: scratch checkout of soliskit/tetris-js, commit
+  fa2f06117c3f3aa82a3ddfdc2a20dce502d9a2d2
+Runner: node --test, Node.js v22.23.3 (measured: `node --version` output
+  "v22.23.3"), local shell
+Test files (scratch; each imports the production modules unmodified; full
+  sources embedded below):
+  /tmp/f20-pause-ordering-assertions.test.js (pause save class)
+  /tmp/f20-lineclear-gameover-assertions.test.js (line-clear save and
+  game-over forgetting classes)
+  /tmp/f20-newgame-forget-assertions.test.js (New Game forgetting class)
+  /tmp/f20-other-writes-assertions.test.js (other persistence effects:
+  the refused-save withdrawal path and the no-clear no-high-score case)
+
+Setup
+- Each file drives a real GameManager from the scratch checkout and
+  records the order of storage writes relative to the step boundaries it
+  names, using wrapped storage and spied callbacks. Assertions are
+  literal measurements (write order logs, spy counts, snapshot
+  comparisons), not style-based overclaims.
+- Assertion scope: the tests assert the gameOver state and failSafe and
+  onFault spy counts. The full SAF-3 criteria - no timers running and a
+  player-visible fault notice (D22, DECISIONS.md:95) - are not measured;
+  "reported" in this capture means the onFault callback was invoked, not
+  that a player saw a notice. The internal game.faults list is not
+  inspected by these tests.
+- Baseline payloads: every "previous save" in these tests is
+  production-written by a real pause. Its completeness is not
+  independently established: reset count and lowest-row history are not
+  saved (the F29/D72f limit carried with F20; DECISIONS.md:48 and :177,
+  line numbers at commit fa2f061).
+  Byte-for-byte preservation and score/board equality are measured; the
+  payload's complete meaning and any "last good save" qualification are
+  not.
+- The game-over path needed for the refused-save withdrawal test is
+  reached through failSafe via a pause-branch clearTimeout injection,
+  because an ordinary game over withdraws the save flag at
+  gameManager.js:241 and a queue-shortening injection makes the post-op
+  invariant check fire a second fault. "Clear and game over in the same
+  step" is recorded as an open construction question in the record.
+
+---------------------------------------------------------------
+Full source: /tmp/f20-pause-ordering-assertions.test.js
+---------------------------------------------------------------
+// Scratch test, not part of the repository suite. Blueprint section 4.7,
+// item 1 (F20), pause-save class: ordering trace + failure injection at
+// each reachable boundary. One indicative local run, not a status.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler } from '/tmp/tj-mut/test/helpers.js';
+
+const SAVED_SESSION_KEY = 'tetris.savedGameSession';
+const IS_SESSION_SAVED_KEY = 'tetris.isSessionSaved';
+
+// Instrument a game: call-order log over saveGameSession,
+// findInvariantViolation and failSafe; storage write log; fault spies.
+function instrument(game, storage) {
+  const order = [], writes = [];
+  const origSet = storage.setItem.bind(storage);
+  storage.setItem = (k, v) => { writes.push([k, String(v)]); origSet(k, v); };
+  const origSave = game.saveGameSession.bind(game);
+  game.saveGameSession = () => { order.push('saveGameSession'); origSave(); };
+  const origCheck = game.findInvariantViolation.bind(game);
+  game.findInvariantViolation = () => { order.push('findInvariantViolation'); return origCheck(); };
+  const origFailSafe = game.failSafe.bind(game);
+  let failSafeCalls = 0;
+  game.failSafe = (...a) => { failSafeCalls++; order.push('failSafe'); return origFailSafe(...a); };
+  let onFaultCalls = 0;
+  game.onFault = () => { onFaultCalls++; };
+  return { order, writes, counts: () => ({ failSafeCalls, onFaultCalls }) };
+}
+
+function newPlayingGame(storage) {
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage });
+  game.handleAction(PlayerAction.newGame);
+  return { game, scheduler };
+}
+
+test('scratch F20 pause: ordering trace - the save runs inside the operation, before the invariant check', () => {
+  const storage = createMemoryStorage();
+  const { game } = newPlayingGame(storage);
+  const probe = instrument(game, storage);
+  game.handleAction(PlayerAction.pause);
+  assert.equal(game.state, GameState.paused);
+  const saveIdx = probe.order.indexOf('saveGameSession');
+  const checkIdx = probe.order.indexOf('findInvariantViolation');
+  assert.ok(saveIdx !== -1 && checkIdx !== -1, 'both ran');
+  assert.ok(saveIdx < checkIdx, 'the persistence write precedes the post-transition invariant check');
+  assert.equal(probe.counts().failSafeCalls, 0);
+  // The persisted representation's score and board match the in-memory
+  // values (score and board only; completeness not independently established):
+  const text = storage.getItem(SAVED_SESSION_KEY);
+  const parsed = JSON.parse(text);
+  assert.equal(parsed.score, game.score, 'persisted score matches the in-memory state');
+  assert.deepEqual(parsed.gameBoard, JSON.parse(JSON.stringify(game.gameBoard)), 'persisted board matches');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true');
+});
+
+test('scratch F20 pause: injection before the save (timer cancellation throws) - previous representation survives', () => {
+  const storage = createMemoryStorage();
+  // Establish a production-written baseline save from an earlier pause.
+  // Its completeness is not independently established (the F29/D72f limit);
+  // this test measures byte preservation only.
+  const seed = newPlayingGame(storage);
+  seed.game.handleAction(PlayerAction.pause);
+  const previousText = storage.getItem(SAVED_SESSION_KEY);
+  seed.game.handleAction(PlayerAction.resume);
+
+  const game = seed.game;
+  const probe = instrument(game, storage);
+  // Arm: the next clearTimeout (lock-delay cancellation inside the pause
+  // branch) throws once.
+  const scheduler = game.scheduler;
+  const origClear = scheduler.clearTimeout.bind(scheduler);
+  let armed = true;
+  scheduler.clearTimeout = (h) => { if (armed) { armed = false; throw new Error('injected cancel failure'); } return origClear(h); };
+
+  game.handleAction(PlayerAction.pause);
+  assert.equal(game.state, GameState.gameOver, 'the game stops in the gameOver state');
+  assert.equal(probe.counts().failSafeCalls >= 1, true, 'failSafe ran');
+  assert.equal(probe.counts().onFaultCalls, 1, 'the onFault callback ran once');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), previousText, 'the previous save text survives byte-for-byte');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'the flag is unchanged: no save, no withdrawal');
+  assert.equal(probe.order.includes('saveGameSession'), false, 'the save never ran');
+});
+
+test('scratch F20 pause: injection after the save (invariant violation at the check) - the new save persists', () => {
+  const storage = createMemoryStorage();
+  const { game } = newPlayingGame(storage);
+  const probe = instrument(game, storage);
+  let armed = true;
+  const origCheck = game.findInvariantViolation.bind(game);
+  game.findInvariantViolation = () => { probe.order.push('findInvariantViolation'); if (armed) { armed = false; return 'injected invariant violation'; } return origCheck(); };
+
+  game.handleAction(PlayerAction.pause);
+  assert.equal(game.state, GameState.gameOver, 'failSafe ends the game');
+  assert.equal(probe.counts().failSafeCalls, 1);
+  assert.equal(probe.counts().onFaultCalls, 1, 'the onFault callback ran once');
+  const text = storage.getItem(SAVED_SESSION_KEY);
+  assert.equal(typeof text, 'string', 'the pause save was written before the check ran');
+  assert.equal(JSON.parse(text).score, game.score, 'the persisted save score matches the in-memory score');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'the flag was written by the save');
+});
+---------------------------------------------------------------
+Run output: node --test /tmp/f20-pause-ordering-assertions.test.js
+---------------------------------------------------------------
+TAP version 13
+# Subtest: scratch F20 pause: ordering trace - the save runs inside the operation, before the invariant check
+ok 1 - scratch F20 pause: ordering trace - the save runs inside the operation, before the invariant check
+  ---
+  duration_ms: 7.313027
+  type: 'test'
+  ...
+# Subtest: scratch F20 pause: injection before the save (timer cancellation throws) - previous representation survives
+ok 2 - scratch F20 pause: injection before the save (timer cancellation throws) - previous representation survives
+  ---
+  duration_ms: 2.435305
+  type: 'test'
+  ...
+# Subtest: scratch F20 pause: injection after the save (invariant violation at the check) - the new save persists
+ok 3 - scratch F20 pause: injection after the save (invariant violation at the check) - the new save persists
+  ---
+  duration_ms: 0.699381
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 91.366793
+
+---------------------------------------------------------------
+Full source: /tmp/f20-lineclear-gameover-assertions.test.js
+---------------------------------------------------------------
+// Scratch test, not part of the repository suite. Blueprint section 4.7,
+// item 1 (F20): line-clear save and game-over forget classes. One
+// indicative local run, not a status.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { PieceColors } from '/tmp/tj-mut/public/game/tetrominoFactory.js';
+import { createFakeScheduler, fillRows, fixedFactory, dropVerticalIIntoColumn9 } from '/tmp/tj-mut/test/helpers.js';
+
+const SAVED_SESSION_KEY = 'tetris.savedGameSession';
+const IS_SESSION_SAVED_KEY = 'tetris.isSessionSaved';
+const HIGH_SCORE_KEY = 'tetris.highScore';
+
+function instrument(game, storage) {
+  const order = [], writes = [];
+  const origSet = storage.setItem.bind(storage);
+  storage.setItem = (k, v) => { writes.push([k, String(v)]); origSet(k, v); };
+  const origSave = game.saveGameSession.bind(game);
+  game.saveGameSession = () => { order.push('saveGameSession'); origSave(); };
+  const origCheck = game.findInvariantViolation.bind(game);
+  game.findInvariantViolation = () => { order.push('findInvariantViolation'); return origCheck(); };
+  const origFailSafe = game.failSafe.bind(game);
+  let failSafeCalls = 0;
+  game.failSafe = (...a) => { failSafeCalls++; order.push('failSafe'); return origFailSafe(...a); };
+  let onFaultCalls = 0;
+  game.onFault = () => { onFaultCalls++; };
+  return { order, writes, counts: () => ({ failSafeCalls, onFaultCalls }) };
+}
+
+test('scratch F20 line-clear: ordering - high-score write, then save, then invariant check; persisted save holds the post-clear score', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage, factory: fixedFactory(PieceColors.cyan) });
+  game.handleAction(PlayerAction.newGame);
+  const probe = instrument(game, storage);
+  fillRows(game, [19], [9]);
+  dropVerticalIIntoColumn9(game); // hard drop: locks, clears row 19, saves
+  assert.equal(game.state, GameState.playing);
+  assert.equal(game.score, 100, 'one line cleared');
+  const saveIdx = probe.order.indexOf('saveGameSession');
+  const checkIdx = probe.order.lastIndexOf('findInvariantViolation');
+  assert.ok(saveIdx !== -1 && saveIdx < checkIdx, 'the line-clear save precedes the post-transition invariant check');
+  const highIdx = probe.writes.findIndex(([k]) => k === HIGH_SCORE_KEY);
+  const saveWriteIdx = probe.writes.findIndex(([k]) => k === SAVED_SESSION_KEY);
+  assert.ok(highIdx !== -1 && saveWriteIdx !== -1 && highIdx < saveWriteIdx, 'the high-score write lands before the save write');
+  assert.equal(JSON.parse(storage.getItem(SAVED_SESSION_KEY)).score, 100, 'the persisted save holds the post-clear score');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true');
+  assert.equal(probe.counts().failSafeCalls, 0);
+});
+
+test('scratch F20 line-clear: injection mid-step (next-piece generation throws after the clear) - high-score write persists, save never ran, previous save survives discoverable', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const factory = fixedFactory(PieceColors.cyan);
+  const game = new GameManager({ scheduler, storage, factory });
+  game.handleAction(PlayerAction.newGame);
+  // Production-written baseline save via a real pause; then resume. Its
+  // completeness is not independently established (the F29/D72f limit);
+  // byte preservation is what this test measures.
+  game.handleAction(PlayerAction.pause);
+  const previousText = storage.getItem(SAVED_SESSION_KEY);
+  game.handleAction(PlayerAction.resume);
+  const probe = instrument(game, storage);
+  // Arm: the generate() call inside generateNextTetromino throws once,
+  // after clearFullRows has run.
+  const origGenerate = factory.generate;
+  let armed = true;
+  game.factory.generate = () => { if (armed) { armed = false; throw new Error('injected spawn failure'); } return origGenerate(); };
+
+  fillRows(game, [19], [9]);
+  dropVerticalIIntoColumn9(game);
+  assert.equal(game.state, GameState.gameOver, 'the game stops in the gameOver state');
+  assert.equal(probe.counts().failSafeCalls, 1, 'failSafe ran once');
+  assert.equal(probe.counts().onFaultCalls, 1, 'the onFault callback ran once');
+  assert.equal(probe.order.includes('saveGameSession'), false, 'the line-clear save never ran');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), previousText, 'the previous save text survives byte-for-byte');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'the previous save stays discoverable (failSafe does not withdraw)');
+  assert.equal(storage.getItem(HIGH_SCORE_KEY), '100', 'the high-score write from the faulting step persisted');
+});
+
+test('scratch F20 game-over forget: ordinary no-room game over withdraws the previous save; the stored text remains; no failSafe or onFault call', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage, factory: fixedFactory(PieceColors.cyan) });
+  game.handleAction(PlayerAction.newGame);
+  // Production-written baseline save via a real pause; then resume. Its
+  // completeness is not independently established (the F29/D72f limit);
+  // byte preservation is what this test measures.
+  game.handleAction(PlayerAction.pause);
+  const previousText = storage.getItem(SAVED_SESSION_KEY);
+  game.handleAction(PlayerAction.resume);
+  const probe = instrument(game, storage);
+  // Stack vertical I pieces in one column until the next spawn has no room.
+  let guard = 0;
+  while (game.state === GameState.playing && guard++ < 20) {
+    game.handleAction(PlayerAction.rotate); // vertical at column 5
+    game.handleAction(PlayerAction.drop);
+  }
+  assert.equal(game.state, GameState.gameOver, 'the game ends when the new piece has no room');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'false', 'the saved game is withdrawn from Continue');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), previousText, 'the stored save text remains byte-for-byte (withdrawal, not deletion)');
+  assert.equal(probe.counts().failSafeCalls, 0, 'no failSafe call: ordinary game over does not stop through the fault path');
+  assert.equal(probe.counts().onFaultCalls, 0);
+});
+---------------------------------------------------------------
+Run output: node --test /tmp/f20-lineclear-gameover-assertions.test.js
+---------------------------------------------------------------
+TAP version 13
+# Subtest: scratch F20 line-clear: ordering - high-score write, then save, then invariant check; persisted save holds the post-clear score
+ok 1 - scratch F20 line-clear: ordering - high-score write, then save, then invariant check; persisted save holds the post-clear score
+  ---
+  duration_ms: 5.271941
+  type: 'test'
+  ...
+# Subtest: scratch F20 line-clear: injection mid-step (next-piece generation throws after the clear) - high-score write persists, save never ran, previous save survives discoverable
+ok 2 - scratch F20 line-clear: injection mid-step (next-piece generation throws after the clear) - high-score write persists, save never ran, previous save survives discoverable
+  ---
+  duration_ms: 4.02283
+  type: 'test'
+  ...
+# Subtest: scratch F20 game-over forget: ordinary no-room game over withdraws the previous save; the stored text remains; no failSafe or onFault call
+ok 3 - scratch F20 game-over forget: ordinary no-room game over withdraws the previous save; the stored text remains; no failSafe or onFault call
+  ---
+  duration_ms: 3.557176
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 95.381088
+
+---------------------------------------------------------------
+Full source: /tmp/f20-newgame-forget-assertions.test.js
+---------------------------------------------------------------
+// Scratch test, not part of the repository suite. Blueprint section 4.7,
+// item 1 (F20): New Game forgetting, with the blueprint's special item
+// (deletion vs invalidation vs other effect; any replacement persistent
+// state). One indicative local run, not a status.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler, fixedFactory } from '/tmp/tj-mut/test/helpers.js';
+import { PieceColors } from '/tmp/tj-mut/public/game/tetrominoFactory.js';
+
+const SAVED_SESSION_KEY = 'tetris.savedGameSession';
+const IS_SESSION_SAVED_KEY = 'tetris.isSessionSaved';
+
+function instrument(game, storage) {
+  const order = [], writes = [];
+  const origSet = storage.setItem.bind(storage);
+  storage.setItem = (k, v) => { writes.push([k, String(v)]); origSet(k, v); };
+  const origCheck = game.findInvariantViolation.bind(game);
+  game.findInvariantViolation = () => { order.push('findInvariantViolation'); return origCheck(); };
+  const origFailSafe = game.failSafe.bind(game);
+  let failSafeCalls = 0;
+  game.failSafe = (...a) => { failSafeCalls++; order.push('failSafe'); return origFailSafe(...a); };
+  let onFaultCalls = 0;
+  game.onFault = () => { onFaultCalls++; };
+  return { order, writes, counts: () => ({ failSafeCalls, onFaultCalls }) };
+}
+
+function gameWithSave(storage) {
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage, factory: fixedFactory(PieceColors.cyan) });
+  game.handleAction(PlayerAction.newGame);
+  game.handleAction(PlayerAction.pause); // production-written baseline save
+  // (completeness not independently established; the F29/D72f limit)
+  return { game, scheduler };
+}
+
+test('scratch F20 New Game forget: confirmation withdraws by invalidation (flag write), keeps the stored text, writes no replacement persistent state', () => {
+  const storage = createMemoryStorage();
+  const { game } = gameWithSave(storage);
+  const previousText = storage.getItem(SAVED_SESSION_KEY);
+  const probe = instrument(game, storage);
+
+  game.handleAction(PlayerAction.newGame); // asks first
+  assert.equal(game.state, GameState.paused, 'the ask changes nothing');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'the ask does not withdraw');
+
+  game.handleAction(PlayerAction.newGame); // confirmed
+  assert.equal(game.state, GameState.playing, 'the new game starts');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'false', 'forget = the flag written false (invalidation), not deletion');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), previousText, 'the stored save text remains byte-for-byte');
+  const writesDuring = probe.writes.filter(([k]) => k === SAVED_SESSION_KEY);
+  assert.equal(writesDuring.length, 0, 'no replacement persistent state is written by the transition');
+  assert.equal(probe.counts().failSafeCalls, 0, 'no failSafe call: ordinary New Game does not stop through the fault path');
+  assert.equal(probe.counts().onFaultCalls, 0);
+});
+
+test('scratch F20 New Game forget: injection mid-reset (piece generation throws before the flag write) - the forget never happens; the previous save stays discoverable', () => {
+  const storage = createMemoryStorage();
+  const { game } = gameWithSave(storage);
+  const previousText = storage.getItem(SAVED_SESSION_KEY);
+  const probe = instrument(game, storage);
+  // Arm: the generate() call inside resetGameSession throws once; the
+  // flag write is the reset's LAST statement, so it never runs.
+  const origGenerate = game.factory.generate;
+  let armed = true;
+  game.factory.generate = () => { if (armed) { armed = false; throw new Error('injected reset failure'); } return origGenerate(); };
+
+  game.handleAction(PlayerAction.newGame); // asks
+  game.handleAction(PlayerAction.newGame); // confirmed -> reset throws
+  assert.equal(game.state, GameState.gameOver, 'the game stops in the gameOver state');
+  assert.equal(probe.counts().failSafeCalls, 1, 'failSafe ran once');
+  assert.equal(probe.counts().onFaultCalls, 1, 'the onFault callback ran once');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'the flag was never written: no forget without a completed reset');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), previousText, 'the previous save text survives byte-for-byte and stays discoverable');
+});
+---------------------------------------------------------------
+Run output: node --test /tmp/f20-newgame-forget-assertions.test.js
+---------------------------------------------------------------
+TAP version 13
+# Subtest: scratch F20 New Game forget: confirmation withdraws by invalidation (flag write), keeps the stored text, writes no replacement persistent state
+ok 1 - scratch F20 New Game forget: confirmation withdraws by invalidation (flag write), keeps the stored text, writes no replacement persistent state
+  ---
+  duration_ms: 4.785623
+  type: 'test'
+  ...
+# Subtest: scratch F20 New Game forget: injection mid-reset (piece generation throws before the flag write) - the forget never happens; the previous save stays discoverable
+ok 2 - scratch F20 New Game forget: injection mid-reset (piece generation throws before the flag write) - the forget never happens; the previous save stays discoverable
+  ---
+  duration_ms: 1.207418
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 84.570318
+
+---------------------------------------------------------------
+Full source: /tmp/f20-other-writes-assertions.test.js
+---------------------------------------------------------------
+// Scratch test, not part of the repository suite. Blueprint section 4.7,
+// item 1 (F20): other authoritative persistence writes - the refused-save
+// withdrawal and the high-score write's reachability. One indicative local
+// run, not a status.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler, fixedFactory } from '/tmp/tj-mut/test/helpers.js';
+import { PieceColors } from '/tmp/tj-mut/public/game/tetrominoFactory.js';
+
+const SAVED_SESSION_KEY = 'tetris.savedGameSession';
+const IS_SESSION_SAVED_KEY = 'tetris.isSessionSaved';
+const HIGH_SCORE_KEY = 'tetris.highScore';
+
+test('scratch F20 other writes: a refused (unparseable) save is withdrawn by flag write; the stored text remains; no fault', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage, factory: fixedFactory(PieceColors.cyan) });
+  game.handleAction(PlayerAction.newGame);
+  game.handleAction(PlayerAction.pause); // production-written baseline save, flag 'true'
+  // (completeness not independently established; the F29/D72f limit)
+  const corruptText = '{"not":"a session"}';
+  storage.setItem(SAVED_SESSION_KEY, corruptText); // external corruption; the flag stays 'true'
+  game.handleAction(PlayerAction.resume);
+  let onFaultCalls = 0;
+  game.onFault = () => { onFaultCalls++; };
+  // Reach game over via failSafe without touching the queue or the flag: the
+  // first timer cancellation in the pause branch throws once (same injection
+  // point as the pause class), so the game stops with the save unreplaced.
+  const origClear = scheduler.clearTimeout.bind(scheduler);
+  let armed = true;
+  scheduler.clearTimeout = (h) => { if (armed) { armed = false; throw new Error('injected cancel failure'); } return origClear(h); };
+  game.handleAction(PlayerAction.pause);
+  assert.equal(game.state, GameState.gameOver, 'fault stop reached');
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'true', 'failSafe did not withdraw');
+  assert.equal(onFaultCalls, 1, 'the stop invokes the onFault callback once');
+  onFaultCalls = 0;
+
+  game.handleAction(PlayerAction.continueGame);
+  assert.equal(storage.getItem(IS_SESSION_SAVED_KEY), 'false', 'the refused save is withdrawn by flag write');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), corruptText, 'the refused save text stays stored byte-for-byte');
+  assert.equal(onFaultCalls, 0, 'no onFault call: a refused save reports nothing through the callback');
+  assert.equal(game.state, GameState.gameOver, 'state unchanged by the refused Continue');
+});
+
+test('scratch F20 other writes: a game over without a line clear writes no high score; the write exists only on the clear path', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage, factory: fixedFactory(PieceColors.cyan) });
+  game.handleAction(PlayerAction.newGame);
+  const writes = [];
+  const origSet = storage.setItem.bind(storage);
+  storage.setItem = (k, v) => { writes.push([k, String(v)]); origSet(k, v); };
+  let guard = 0;
+  while (game.state === GameState.playing && guard++ < 30) {
+    game.handleAction(PlayerAction.rotate);
+    game.handleAction(PlayerAction.drop);
+  }
+  assert.equal(game.state, GameState.gameOver);
+  assert.equal(writes.filter(([k]) => k === HIGH_SCORE_KEY).length, 0, 'no high-score write without a clear');
+});
+---------------------------------------------------------------
+Run output: node --test /tmp/f20-other-writes-assertions.test.js
+---------------------------------------------------------------
+TAP version 13
+# Subtest: scratch F20 other writes: a refused (unparseable) save is withdrawn by flag write; the stored text remains; no fault
+ok 1 - scratch F20 other writes: a refused (unparseable) save is withdrawn by flag write; the stored text remains; no fault
+  ---
+  duration_ms: 3.61999
+  type: 'test'
+  ...
+# Subtest: scratch F20 other writes: a game over without a line clear writes no high score; the write exists only on the clear path
+ok 2 - scratch F20 other writes: a game over without a line clear writes no high score; the write exists only on the clear path
+  ---
+  duration_ms: 6.747457
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83.087817

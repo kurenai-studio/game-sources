@@ -1,0 +1,987 @@
+Modern Gameplay
+
+The approved order, requirements, and evidence for each gameplay change.
+
+Charter | Approved October 5, 2026
+Project: soliskit/tetris-js
+
+Status
+
+This is the owner-approved wording of the charter, approved on October 5, 2026. The owner's separate modern-feel decision continues to govern alongside it. Nothing here starts implementation or changes a requirement, model, certification record, save format, test or repository setting.
+
+Planning is complete. Feature implementation waits for Phase 10 and CI Pipeline
+Optimization to close. A written go-ahead remains required wherever the charter
+requires one. Merge, release and deployment remain separate owner approvals.
+
+Introduction
+
+Modern Gameplay adds the seven agreed features in order while keeping the game's
+certification current. The intended direction is a modern Guideline-style feel:
+a faster speed ramp, drop points, T-spins, combos and short delays. The owner settled
+that direction on October 5, 2026. It is not an unresolved planning question.
+
+The program changes gameplay deliberately, not by copying behavior from the
+implementation. Each stage starts with exact requirements, an independent
+review, a clean reference-model input pack and an evidence plan. Certify the
+exact release candidate before merge and release. A green test run or a model
+match alone is not certification.
+
+The seven stages are rotation direction, gravity, scoring, level progression,
+T-spins and combos, delays, then hidden rows. Back-to-back, perfect clears,
+start-level selection and game completion are outside this program.
+
+This is a separate post-certification charter. It does not rewrite the completed
+audit blueprint. It is independent of CI mechanisms; its only CI dependency is
+that CI Pipeline Optimization closes before feature implementation begins.
+The order is the owner's G4 sequence, not an added meaning of D12.
+
+Policy decisions already settled
+
+G1. Use a separate post-certification execution charter, not a rewritten audit
+blueprint.
+G2. Approve the plan before Phase 10 if desired, but activate only after entry
+conditions are satisfied.
+G3. Certify the exact release candidate before merge and release. Do not create
+an uncertified interval by merging first.
+G4. Complete Phase 10, then CI Pipeline Optimization, then implement features.
+G5. Give every newly introduced post-Phase-10 save format an explicit validated
+version value.
+G6. Permit owner-approved adjacent Release Groups. S3 + S4 is the expected first
+candidate, not an already-approved group.
+G7. Meet STA-6 with a pre-merge candidate fixture and post-deployment identity
+confirmation under the policy in Section 8.
+G8. Use a new game-owned storage name when a new format is actually incompatible
+with an older still-running version. Define precedence, withdrawal and Continue
+semantics. Do not assume incompatibility before evidence exists.
+G9. Prefer a fresh reference-model author. Same-author reuse requires the O8
+exception and a written owner-approved independence argument.
+G10. Use Current and Superseded as certification lifecycle states. Keep those
+states separate from property and finding status. Use existing property status,
+such as Not Assessed, for unreleased replacements.
+G11. Identify the exact covered tree and reference a checksummed complete
+code-to-claim inventory. Do not require every unit inline in every record.
+G12. Delegate within-charter normative, gameplay and engineering decisions to
+Instinct, with independent exact-stage-text review before delegated approval
+and implementation. the owner retains the direct decisions in Sections 2 and 2A.
+
+Decision provenance: alternatives considered
+
+These are the alternatives considered before approval, not open choices.
+Changing a settled policy follows the retained owner and change-control rules.
+
+G1. Alternative considered: amend the completed audit blueprint. Consequence:
+rewrite Section 3 and the authority and precedence references.
+G2. Alternative considered: approve only after Phase 10 closes. Consequence:
+remove future-effective approval language; keep activation rebase.
+G3. Alternative considered: merge first, then certify with an explicit uncertified
+interval. Consequence: change stage-cycle certification/release ordering and
+release-tree identity rules.
+G4. Alternative considered: start features after Phase 10 without waiting for CI
+closure. Consequence: remove only the CI-closure prerequisite from Status,
+Sections 3 and 21. D12 still keeps CI optimization itself after Phase 10.
+G5. Alternative considered: decide version-field policy per format. Consequence:
+rewrite Section 7 before designing a new format.
+G6. Alternative considered: certify and release every stage separately.
+Consequence: rewrite Sections 1 and 10 and remove Release Group references from
+the stage cycle.
+G7. Alternative considered: release with the fixture limitation open, capture the
+released fixture afterward, then complete that certification record.
+Consequence: rewrite Section 8 and the save-fixture step in Section 11.
+G8. Alternative considered: keep a shared storage name and explicitly certify and
+accept the cross-version loss or withdrawal limitation. Consequence: rewrite
+Section 9. Neither choice presumes S3/S4 incompatibility.
+G9. Alternative considered: make same-author reuse with an independence argument
+the normal path. Consequence: rewrite Section 6 without weakening O8.
+G10. Alternative considered: add a branch-only Under review lifecycle state.
+Consequence: rewrite Section 4 while keeping lifecycle separate from property
+status in blueprint Section 5.2 and from finding status.
+G11. Alternative considered: list all covered code units inline in each
+certification record. Consequence: rewrite Section 5 and the stage-cycle
+inventory requirements.
+G12. Alternative considered: have the owner approve every stage's exact normative
+text and delegated application decisions. Consequence: rewrite Sections 2, 2A
+and 22 consistently before adopting a changed policy.
+
+How to read the stage defaults
+
+Sections 13-19 record the approved planning basis, not independently verified
+external facts or already-approved exact stage requirements. Formulas, scores,
+tables, counts and durations remain reviewable proposed defaults for each stage.
+The exact stage text is still written, checksummed, independently fidelity-
+reviewed and approved under Sections 2A and 11 before implementation.
+
+Keep the existing stored high score unless evidence exposes a material product-
+direction conflict. After a delay, a held repeating control needs release and a
+new press, matching resume. Exact engineering details remain delegated inside
+the charter's safeguards. A correction returns to the owner only when it crosses a
+retained owner trigger, not merely because it changes a technical default.
+
+The program does not claim full Guideline compliance. Its deliberate departures
+include a 1/60-second (about 16.7 ms) one-row gravity floor instead of 20G,
+two hidden rows
+instead of the commonly described 20-row buffer, stricter hidden-row lock-out,
+and unsourced starting delay lengths.
+
+1. Program direction
+
+Goal: Add the seven features in order while updating certification as needed.
+
+Fixed program order:
+S1. remove opposite-direction rotation fallback;
+S2. adopt the desired gravity curve;
+S3. decide the new scoring model;
+S4. change level progression;
+S5. add T-spins and combos;
+S6. add entry and line-clear delays;
+S7. add hidden rows.
+
+Outside this program unless the owner later adds them:
+- back-to-back;
+- perfect clears;
+- start-level selection;
+- game completion.
+
+The normal unit of delivery is one separately certified stage.
+
+Owner-approved adjacent Release Groups are allowed when an intermediate released state
+would be undesirable.
+
+Expected first candidate:
+S3 + S4.
+
+Intentional feature changes are certified against the exact release-candidate tree
+before merge/release.
+
+2. Authority and boundaries
+
+The Audit Advancement Gate continues to govern authorization.
+
+This feature charter adds a post-certification lifecycle; it does not replace:
+- REQUIREMENTS.md rules 1-3;
+- O1-O8;
+- QA-1 through QA-6;
+- blueprint 10.2;
+- adopted trust boundaries;
+- finding/property-status distinctions.
+
+the owner remains final authority and may override this charter. The existing approved
+policy delegates within-charter normative, gameplay and engineering decisions to
+the delegated implementer, subject to Section 2A's independent stage-text review.
+This approved wording does not expand that authority.
+
+The approved charter itself settles G1 through G12 and the Sections 13 through 19
+default policy basis. Within that policy:
+- exact stage requirement/normative text and its application are delegated to Instinct
+  after independent fidelity review;
+- stage-specific save/version/compatibility findings and the application of G5, G7 and
+  G8 are delegated, but changing those charter-level policies is not;
+- certification mechanics inside the approved charter are delegated, but changing
+  certification policy outside the charter is not;
+- an adjacent Release Group remains a direct owner decision under G6 and Section 10.
+
+the owner retains direct decisions over:
+- program goals, priorities and scope outside the approved charter;
+- a material product-direction/player-experience conflict that the approved direction
+  does not resolve;
+- an interpretation or requirement change that would alter the approved program
+  goal/scope or conflict with an owner-approved governing requirement;
+- any weakening or narrowing of a protection, QA obligation or trusted boundary;
+- spending or cost changes;
+- changes to repository settings or required checks;
+- any change to the charter-level save/version/cross-version compatibility policies
+  G5, G7 or G8;
+- approval of an adjacent Release Group under G6/Section 10;
+- any certification-policy change outside the approved charter;
+- merge, release and deploy approval, unless he later grants scoped standing
+  permission in his own words.
+
+Historical D12-D34 decisions are not edited.
+
+Later decisions explicitly identify the earlier section they supersede for the new
+release.
+
+2A. Owner decisions and stage approval
+
+Questions to the owner are limited to:
+- CEO-level goals and priorities;
+- material product-direction/player-experience conflicts not resolved by the approved
+  charter or the settled modern-feel direction;
+- spending or cost changes;
+- any weakening/narrowing of a safeguard, QA obligation or trusted boundary;
+- repository-setting/required-check changes;
+- any change to the charter-level save/version/cross-version compatibility policies
+  G5, G7 or G8;
+- approval of an adjacent Release Group under G6/Section 10;
+- any interpretation or requirement change that would alter the approved program
+  goal/scope or conflict with an owner-approved governing requirement;
+- anything outside the charter's delegated authority.
+the owner is not asked to choose formulas, kick tables, timer mechanics, persistence/data
+layouts, model mechanics or test structure when those choices stay inside the approved
+charter.
+
+Instinct carries the reviewable stage defaults in Sections 13-19: rotation oracle and
+its check, gravity meaning and curve, scoring and level mechanics, T-spin and combo
+mechanics and persistence, delay mechanics and save timing, hidden-row mechanics,
+application of the approved save/version/compatibility policies, storage names, and
+model-author choice. Each appears in the stage's exact requirement text. If a default
+is found to be wrong or conflicts with a governing requirement, Instinct corrects it
+through the charter's review/change process. It returns to the owner only if the
+correction crosses a retained owner trigger above.
+
+Stage review and approval:
+- Requirement and normative decision text: Instinct prepares the exact within-charter
+  text under the delegated authority above, with a plain-language stage summary and
+  exact checksum recorded for the owner's visibility. Before delegated approval and before
+  implementation, that exact checksum receives a recorded independent fidelity review
+  by a reviewer who is not acting as the delegated approver for that stage. The review
+  record identifies the same exact text/checksum, and delegated approval follows only
+  after that review. Instinct may then approve the reviewed within-charter text under
+  the delegation. A separate owner approval is required only if the text crosses a
+  retained owner trigger above. The exact reviewed-and-approved stage text remains a
+  precondition for implementation.
+- O8 input pack and certification: evidence is reported to the owner in summary. Under the
+  charter, certification completes before merge. A separate owner certification
+  approval is required only where Sections 2 and 2A retain that decision; the charter
+  does not add a routine owner micro-approval for within-charter certification.
+- Merge and deploy: remain the owner's. Instinct does not merge or deploy under this
+  charter. the owner may grant a scoped, standing permission in his own words, for example
+  per stage, with stated conditions. Nothing here assumes he has.
+- The following decisions need explicit scoped owner approval: weakening any
+  protection or QA-1 to QA-6 scope; trusted-boundary changes; changing the
+  charter-level save/version/cross-version compatibility policies G5, G7 or G8;
+  approving an adjacent Release Group under G6/Section 10; changes to repository
+  settings or required checks; or an interpretation/requirement change that would
+  alter the approved program goal/scope or conflict with an owner-approved governing
+  requirement.
+- Code changes continue to land as pull requests by default.
+The approved charter supplies this delegation. This wording supplies no new authority.
+
+3. Post-certification policy form
+
+This is a separate post-certification execution charter. It does not rewrite the
+completed audit blueprint.
+
+This charter was approved before Phase 10 as a future-effective plan.
+Execution remains dormant until the activation conditions below.
+
+Its feature execution provisions activate only after:
+- Phase 10 closes;
+- the CI Pipeline Optimization program closes.
+
+At activation, rebase factual references against the actual then-current tree.
+
+If Phase 10 or CI changes a fact without changing feature semantics/governance, update
+only the factual reference.
+
+If a governance or protection assumption changes materially, review only the affected
+delta.
+
+4. Certification register lifecycle
+
+Keep lifecycle separate from blueprint §5.2 property-certification status and from
+finding status.
+
+Lifecycle states:
+- Current;
+- Superseded.
+
+No new lifecycle word is inserted into §5.2.
+
+An unreleased replacement certification record begins with the appropriate existing
+property status, normally:
+- Not Assessed.
+
+The deployed/current record remains Current until successful replacement release closure.
+
+At release closure:
+- replacement becomes Current;
+- prior record becomes Superseded historically.
+
+Exact blueprint §5.2 property statuses remain:
+- Not Assessed;
+- Not Established;
+- Tested Within Stated Bounds;
+- Proven by Reviewed Argument;
+- Proven by Exhaustive Enumeration;
+- Formally Verified;
+- Partially Established;
+- Out of Scope.
+
+5. Code-to-claim traceability
+
+Every replacement certification identifies:
+- exact covered production tree;
+- exact requirement/property text or checksum;
+- relied-upon decisions;
+- evidence method;
+- assumptions;
+- model checksum where applicable;
+- limitations;
+- referenced checksummed code-to-claim inventory.
+
+The code-to-claim inventory names files, functions, methods, constants or declared
+values, and routes as needed.
+
+An exact tree and checksummed complete inventory provide traceability. Certification
+records do not need to repeat every covered unit inline.
+
+6. O8 independence
+
+O8 remains controlling.
+
+Default:
+use a fresh reference-model author for a stage or Release Group where practical.
+
+The author receives only the clean owner-approved model input pack.
+
+Pre-freeze input may contain:
+- approved requirements;
+- approved sanitized normative decisions;
+- owner-adopted fixed external specification material with exact checksums.
+
+Pre-freeze model authorship does not receive:
+- production code;
+- production tests;
+- implementation-derived fixtures;
+- implementation outputs;
+- runtime traces;
+- prior correspondence results;
+- implementation findings.
+
+Model and pack are frozen/checksummed before first comparison with implementation.
+
+Exception:
+reuse of an earlier model author is possible only under the existing O8 post-freeze
+rules plus a written owner-approved independence argument identifying prior
+implementation exposure.
+
+Implementation agreement/disagreement alone never justifies changing normative model
+semantics.
+
+7. Save-format policy
+
+Every newly introduced post-Phase-10 save format has an explicit validated version value.
+
+Historical unversioned formats remain historical and supported as required.
+
+Every newly persisted semantic item has:
+- deterministic migration/default semantics;
+- validation under SAF-1;
+- exact Continue restoration semantics.
+
+A default is described as a default, not recovered history.
+
+Do not create a new format solely for implementation convenience.
+
+Do not claim a format unchanged if exact restoration of approved semantics requires
+new persisted information.
+
+8. STA-6 released-fixture policy
+
+Use candidate fixture + post-deployment identity confirmation.
+
+Before merge:
+- create the candidate fixture from the frozen release-candidate serializer;
+- run all required migration/compatibility evidence.
+
+After deployment:
+- verify that the released relevant serializer/files are the certified bytes/semantics;
+- record the released-format identity confirmation.
+
+Under G7, this two-step evidence is the intended satisfaction of the STA-6 "released
+version" fixture requirement.
+
+Pre-release candidate bytes alone are not represented as a released-version fixture.
+
+9. Cross-version storage policy
+
+For a new format that is incompatible with an older still-running application version,
+use a new game-owned storage namespace/name rather than intentionally sharing one
+incompatible saved-game value.
+
+For every such format define:
+- storage name;
+- format/version;
+- which names the new version reads;
+- precedence among eligible saves;
+- withdrawal behavior across names;
+- STA-1/STA-3 consequences;
+- D20 Continue-availability semantics;
+- D21 S1/S9 item-16 effects;
+- D30 presentation reading;
+- STA-6 compatibility behavior;
+- APP-6 ownership.
+
+This policy does not assert today that a future S3/S4 save will be incompatible.
+
+Compatibility is established only after the future score/state/save domain is
+specified and tested.
+
+If the future format is compatible, no unnecessary namespace split is required merely
+because this policy exists.
+
+10. Release groups
+
+Complete one stage before implementing the next, unless the owner approves an adjacent
+Release Group.
+
+the owner must approve any adjacent Release Group before implementation.
+
+Within an approved group:
+- feature implementation order remains the fixed S1-S7 order;
+- no intermediate stage is merged/deployed;
+- impact/evidence covers the combined candidate;
+- certification and release occur atomically.
+
+S3 + S4 is the expected first candidate. the owner has not approved that group here.
+
+11. Post-certification stage cycle
+
+0. Activation/rebase
+- identify actual current requirements, decisions, certification register, state
+  model, operation assignments, trust ledger, tests, QA configuration and O8 assets.
+
+1. Impact analysis
+Record expected:
+- requirement changes;
+- decisions to add/supersede;
+- affected certification records;
+- transition/routes likely affected;
+- protection changes/replacements;
+- authoritative/derived/runtime/presentation-state effects;
+- persistence effects;
+- cross-version effects;
+- D31/D32 operation-assignment changes;
+- clock/timing effects;
+- O1-O8 effects;
+- falsification effects;
+- Release Group status.
+
+Support every "unaffected" conclusion with an argument.
+
+2. Exact requirement text
+- derive from the owner's intent, the approved charter and adopted specification material;
+- do not derive normative behavior from observed implementation;
+- freeze/checksum the exact text;
+- obtain the independent fidelity review required by Section 2A on that same checksum;
+- delegated approval follows only after that review and before implementation.
+
+3. Normative decisions
+- define state, validity, transition, timing, persistence, compatibility and trust
+  semantics needed by the requirement within the approved charter;
+- include them in the same exact-text review/approval discipline required by Section 2A;
+- future decision text remains normative and separate from implementation evidence.
+
+This preserves the blueprint and Phase-1 separation of normative text from evidence.
+It does not establish a completed or approved future D35 record.
+
+4. O8 pack/model
+- prepare the clean pack;
+- approve manifest/checksum;
+- freeze model before comparison.
+
+5. Evidence plan
+Define:
+- proof obligations;
+- transition classes;
+- falsification domains/bounds;
+- rule-2 replacement protections;
+- migration evidence;
+- timing/clock evidence;
+- QA evidence;
+- release-tree identity evidence.
+
+6. Implementation
+- implement only approved requirements/decisions;
+- preserve unaffected protections.
+
+7. Actual inventory
+After implementation exists, finalize:
+- actual transition routes;
+- outer-layer routes;
+- persistence routes;
+- timer/failure routes;
+- bypass analysis;
+- D31/D32 assignments;
+- code-to-claim inventory.
+
+Expected routes from planning are not the final inventory.
+
+8. Evidence
+Run:
+- applicable proof/reviewed-proof/test evidence;
+- frozen-model correspondence;
+- falsification;
+- boundary attacks;
+- malformed-state attacks;
+- persistence/O4 evidence;
+- timing/clock evidence;
+- trust-boundary evidence;
+- QA-1 through QA-6.
+
+Green tests alone do not establish certification. A model match establishes
+correspondence, not that both sides are correct.
+
+9. Save fixture
+If the format changes, perform section 8.
+
+10. Replacement certification
+- create exact replacement records;
+- complete the required certification before release;
+- separate owner approval is required only where Sections 2 and 2A retain that decision.
+
+11. Freeze exact release candidate
+Freeze:
+- production tree;
+- requirements;
+- decisions;
+- register;
+- O8 pack/model;
+- code-to-claim inventory;
+- relevant permanent protections.
+
+12. Merge/deploy/close
+- merge only if resulting contents are the certified candidate;
+- required main gate succeeds before deployment;
+- deployment identity is verified;
+- post-deploy STA-6 confirmation is completed where applicable;
+- lifecycle records transition Current/Superseded.
+
+If merge/conflict resolution changes certified contents:
+refresh affected certification before treating the release as certified.
+
+12. Return-to-step rule
+
+If approved requirement or normative decision text changes:
+- dependent work stops;
+- impact analysis is updated;
+- changed text is reapproved;
+- a new clean O8 pack/model is frozen before further comparison where model semantics
+  are affected.
+
+Implementation disagreement is not a reason by itself to rewrite normative text.
+
+13. S1 - Rotation direction
+
+Expected requirement change:
+PCE-4.
+
+Proposed rule (R-S1):
+- a requested clockwise rotation tries only clockwise SRS tests;
+- a requested counterclockwise rotation tries only counterclockwise SRS tests, in order;
+- if all requested-direction tests fail, the piece is unchanged;
+- the opposite direction is never tried;
+- O remains non-rotating.
+
+Proposed fixed oracle: adopt the standard SRS wall-kick tables as an owner-adopted
+fixed artifact: one table shared by J, L, S, T and Z, a separate table for I, none for
+O. Record the exact source text, its SHA-256 and its scope before O8 construction.
+Reason: PCE-2 already specifies "the standard Super Rotation System", so this adds no
+new behavior and gives O8 a source independent of production data. Source:
+https://tetris.wiki/Super_Rotation_System (third party; a pinned, checksummed copy is
+required before any certification use).
+Context fact, implementation not model input: the game stores one clockwise table and
+derives counterclockwise kicks by negating the target state's clockwise data. This was
+not verified against the published table. S1 must check it against the adopted
+artifact; any difference is reported as a finding, never silently changed.
+Alternative (not recommended): a custom kick table.
+
+Reassess:
+- PCE-4;
+- PCE-6;
+- PLY-6;
+- SAF-6;
+- O2;
+- O7;
+- rotation boundaries.
+
+D18 B2 remains geometry only and does not supply kick data.
+If Phase 1 has adopted fixed kick material by activation, reuse it.
+Rule 2: old fallback protections are replaced, not merely removed; a test must prove
+the opposite direction is NOT tried.
+D31/D32: same categories of authoritative state; only the success/failure transition
+set changes.
+S1 is not expected to change the save format.
+
+14. S2 - Gravity
+
+Expected requirement change:
+PLY-2.
+
+Expected decision supersession/restatement:
+- D18 B14 gravity interval;
+- D21 S10 timing claim;
+- D32 gravity operation only if one gravity operation stops meaning exactly one row
+  (not the case under the proposed stage default).
+
+Facts: today PLY-2 is max(0.25, 0.7 - 0.02 x (level - 1)) seconds per row (250 ms
+floor from level 24). The Guideline-style curve is (0.8 - 0.007 x (level - 1))^(level
+- 1) seconds per row. Computed: L1 1000 ms, L2 793 ms, L3 618 ms, L5 355 ms, L8 135
+ms, L10 64 ms, L12 28 ms, L13 18 ms, L15 7.1 ms, L20 0.5 ms. Source:
+https://tetris.wiki/Marathon (third party).
+
+Proposed default (R-S2):
+- PLY-2 means the requested delay between one-row falls, which is what D21 S10 already
+  judges (requested scheduler delay). It does not promise an observed fall rate.
+- Interval = max(the Guideline-style formula, 1/60 s), with the formula governing
+  levels 1 through 13 and the 1/60 s floor applying from level 14 upward; no level
+  cap. The 1/60 s value is a deliberate project gameplay/engineering cap that keeps
+  the one-row gravity model at no more than about 60 requested gravity steps per
+  second. It is not asserted to be a browser timer minimum.
+- Soft drop is unchanged: one row per press, then every 50 ms (INP-2); each successful
+  soft-drop step still restarts the gravity timer under PLY-3. Natural gravity
+  continues at the current interval between repeats. Once natural gravity is faster
+  than the repeat cadence, holding soft drop is not guaranteed to produce a strictly
+  faster observed fall rate; no stronger rate claim is made.
+- No multi-row fall, so no collision-skipping, intermediate lock states or
+  elapsed-time clock reading; D29 clock-jump falsification is not newly triggered by
+  S2.
+Alternatives: true 20G at high levels (a gravity operation may move many rows; new
+collision, lock and D31/D32 rules needed); or keep today's 250 ms floor.
+The Marathon-style formula is the recorded proposed stage default. Q1 settles the
+direction, not the exact stage requirement; Section 2A review and approval still
+precede implementation.
+
+Evidence:
+PLY-2, PLY-3, INP-2, PLY-6, STA-2, SAF-4, SAF-6 and timer evidence.
+S2 alone is not expected to change the save format.
+
+15. S3 - Scoring
+
+Expected requirement change:
+SCO-1 and possibly SCO-3.
+
+Proposed defaults (R-S3), Guideline-style scoring. Source: https://tetris.wiki/Scoring
+(third party):
+- line clears 100, 300, 500, 800 for 1, 2, 3, 4 lines, times the level in effect
+  BEFORE the clear (today SCO-1 has no multiplier);
+- soft drop 1 point per cell and hard drop 2 points per cell (alternative: no drop
+  points);
+- high score unchanged: stored on device, replaced only by a higher score (SCO-3).
+  Delegated default: keep it. Alternative considered: a new storage name resets it.
+  Return to the owner only if evidence exposes a material product-direction conflict;
+- numeric domain: a valid score is a non-negative safe integer; every award saturates
+  at the largest safe integer; the load check and the runtime invariant use the same
+  bound. This ties arithmetic safety to the certified semantic domain, the accepted
+  untrusted-save domain and the guaranteed representation, not to "normal play cannot
+  reach it".
+T-spin and combo scoring remains S5.
+
+Because SCO-2 derives level from score, S3 alone creates score -> level -> later-score
+feedback. S3 and S4 are proposed as one Release Group; neither is released alone
+(Section 10). If separated, the S3-only feedback rule must be explicitly approved and
+certified.
+
+Reverify at S3 kickoff: the existing multiple-of-100 score checks. With drop points
+the score is no longer a multiple of 100; every affected protection moves consistently
+under rule 2 with replacement protection.
+Cross-version: an older still-running version may reject a newer valid score or save
+and withdraw it under current storage semantics. This is unverified until the S3/S4
+save domain is specified; if true, G8 applies.
+If drop actions score points: D31/D32 assignments for those operations gain score.
+Relevant decisions: D18 B11, B14, B16.
+
+16. S4 - Level progression
+
+Expected requirement change:
+SCO-2.
+
+Potentially also:
+STA-1, STA-4, STA-6.
+
+Proposed default (R-S4):
+- level increases every 10 lines cleared, starting at level 1 (Guideline fixed-goal
+  progression, https://tetris.wiki/Marathon);
+- one new authoritative value, total lines cleared, because level can no longer come
+  from score without the feedback loop; same safe-integer bound as score;
+- no level cap (gravity floors by S2);
+- legacy saves (STA-6): level is derived from the saved score under the old rule, then
+  lines cleared is set to (old level - 1) x 10. This is a default, described as a
+  default and not recovered history; the stored legacy level stays ignored unless
+  STA-6 is intentionally changed;
+- if the new rule cannot represent an old level, the fallback returns to the owner with
+  evidence.
+Alternative: keep level = score / 1000 + 1 (no new state; S3 feedback loop remains).
+
+Update:
+- D16 state categories;
+- applicable R1 validity;
+- D18 B14;
+- D18 B16;
+- D31/D32 operation assignments.
+Evidence: SCO-2, PLY-2, STA-1, STA-4, STA-6, SAF-1, SAF-6, display evidence.
+Save: likely a new format (explicit version value per G5); whether it is readable by
+older versions is decided after this rule is approved.
+
+17. S5 - T-spins and combos
+
+Expected:
+- explicit T-spin recognition requirement;
+- combo requirement;
+- scoring extension.
+
+Excluded:
+- back-to-back;
+- perfect clears.
+
+Proposed defaults (R-S5). Sources: https://tetris.wiki/T-Spin and
+https://tetris.wiki/Scoring (third party):
+- recognition, Guideline 3-corner rule: on lock, a T-spin is awarded if the last
+  successful maneuver of the T was a rotation and at least 3 of the 4 diagonal corners
+  around the T's center are occupied (board edge and floor count as occupied). Mini:
+  only one of the two front corners is occupied, unless the last rotation used the
+  1-by-2 kick offset, in which case it is a full T-spin. Alternatives: no Mini; a
+  different recognition rule;
+- scores, times the level before the clear: Mini no lines 100, T-spin no lines 400,
+  Mini single 200, T-spin single 800, Mini double 400, T-spin double 1200, T-spin
+  triple 1600;
+- combo: each consecutive lock that clears at least one line adds 50 x combo count x
+  level, where the first clear in a chain has count 0; a lock with no clear resets the
+  chain; a T-spin with no lines clear does not continue a combo;
+- state: "last maneuver was a rotation" (and whether the last rotation used the 1-by-2
+  kick) and the combo count. Persist the state required for exact STA-4 restoration.
+  Current-piece T-spin rotation/kick metadata resets on a new piece or Hold. The combo
+  count carries across pieces and Hold; it resets only when a lock clears no line, as
+  defined by the combo rule above. Persist the combo count so Continue preserves the
+  chain. Alternative considered: do not persist the needed history, which would
+  require an explicit approved limitation because Continue could lose a pending T-spin
+  or combo state.
+Rule-first: this recognition rule is the stage's requirement text; state follows from
+the rule, not the reverse.
+
+Expected decision impact:
+- D16;
+- R1 predicates;
+- D31/D32 assignments;
+- D18 B16 if persisted.
+Evidence: new recognition and scoring rows; PLY-6 where relevant; STA-4 if persisted;
+SAF-1; SAF-6; dedicated falsification domains.
+PCE-5 is not automatically affected merely because recognition occurs at lock.
+Save: likely, if state is persisted.
+
+18. S6 - Entry and line-clear delays
+
+This stage changes valid-state, timer and operation semantics materially.
+
+Expected conflicts/reassessment include:
+- D18 B6;
+- D18 B13;
+- SAF-4;
+- D23 U4;
+- D22 T3;
+- D32 lock operation;
+- D33 C1;
+- D33 C3;
+- D34 E1/E2/E3.
+
+Proposed defaults (R-S6):
+- durations: line-clear delay 0.4 s and entry delay 0.1 s, fixed (not
+  level-dependent). These are UNSOURCED starting values: the Guideline defines lock
+  delay but leaves entry delay to individual games (https://tetris.wiki/ARE,
+  https://tetris.wiki/Guideline, third party). They are proposed requirement values.
+  Playtesting may generate a recommendation to change them, but once adopted they are
+  observable gameplay behavior; changing them follows the normal requirement/change
+  process and is not an implementation-only tuning knob;
+- D33 C1 is preserved (option C1-A): the line-clear save is written only when the
+  delayed transition reaches the completed-turn state with the next piece in place; if
+  that turn ends the game, no save is written;
+- pause during a delay completes the pending transition and then pauses (option P1):
+  no new persisted phase and no new save format from S6. Alternative P2 (preserve the
+  pending phase) needs a persisted phase and a new format;
+- inputs during either delay: movement, rotation, Hold and drops are ignored (there is
+  no current piece to act on); Pause and New Game still work. Alternative: buffer one
+  input for the next piece;
+- held controls when a delay ends: delegated default is the same rule as resume (D33
+  C3, D34 E2): a held repeating control does not repeat until released and pressed
+  again. Alternative considered: a held control continues across a delay;
+- D34 E1 touch semantics remain unchanged; D34 E3 token representation stays
+  non-normative.
+
+Authoritative phase: engine must distinguish falling, line-clear delay and entry
+delay. Representation is not predetermined; runtime handles do not define semantic
+authority.
+SAF-4 replacement preserves:
+- invariant check after every action;
+- invariant check after every covered timer;
+- broken invariant handled like SAF-3;
+- "Legal play never breaks one";
+- every unaffected state invariant.
+Phase/resource exclusivity is explicit: while falling, gravity runs and lock delay
+runs exactly while resting, and delay timers do not run; during a delay only that
+delay timer runs; paused or game over runs no covered gameplay timer, subject to SAF-3
+cancellation-failure semantics.
+D23 U4 is superseded to include delay timers; D22 T3 then applies to their
+registration and cancellation. D18 B13 must include the semantic running states.
+Each delay needs a timing claim; D29 applies only if elapsed time decides state.
+Inputs during delays are decided for INP-1 to INP-6, PLY-7 Hold, touch, repeats and
+gamepad.
+
+D31/D32: lock no longer necessarily performs lock, line clear, scoring and next-piece
+spawn as one operation; delay-completion operations are added. Assignments cover
+board, falling piece, queue, bag, score, hold-used, reset count, lowest row,
+progression, T-spin and combo history and save boundary.
+Evidence: SAF-3, SAF-4, STA-2 to STA-6 as applicable, PLY-5 to PLY-8, INP-1 to INP-6,
+DSP-8, SAF-6, timer evidence, malformed-state attacks.
+DSP-3 is reassessed if the delay implementation changes idle redraw, storage or
+frame-wakeup behavior.
+
+19. S7 - Hidden rows
+
+Define semantics before choosing a representation.
+
+Proposed defaults (R-S7). Reference: the Guideline playfield has a hidden buffer above
+the visible matrix (https://tetris.wiki/Guideline, third party); the project today has
+PCE-1 (10 by 20) and PCE-3 (spawn in the top two rows).
+
+The modern Guideline reference commonly describes a 20-row buffer above the visible 20
+rows. The proposed 2-row hidden area is therefore a deliberate project departure, just
+as the proposed any-hidden-cell lock-out is stricter than the common Guideline
+lock-out rule. The reference is an input to the design, not a claim of Guideline
+compliance.
+
+- 2 hidden rows above the visible board; pieces spawn in them and fall into view;
+- locked cells are never allowed in hidden rows: a piece that locks with any cell in a
+  hidden row ends the game (lock-out), with no save, like STA-3. This is stricter than
+  the Guideline, which requires the whole piece above the visible area, but it keeps
+  the locked board 10 by 20;
+- block-out: a new or held piece that cannot spawn in the hidden rows ends the game
+  (STA-3 reading);
+- kicks may move a falling piece into hidden rows; hidden rows are not drawn;
+- persistence: under the proposed stage default, the saved locked board stays 10 by 20
+  (no padding, no taller board). A pause save may hold the falling piece in a hidden
+  row, so the valid persisted domain for current-piece position widens upward by 2. At
+  S7 impact analysis, determine whether that semantic-domain change constitutes a new
+  save-format/version boundary under G5 and whether any demonstrated older-version
+  incompatibility triggers G8; do not preclassify it as merely a validation change.
+Alternatives: more hidden rows; locked cells allowed in hidden rows (then the
+persisted board is taller and the save format changes).
+
+Expected requirements:
+- PCE-1;
+- PCE-3;
+- PCE-6 as required;
+- SAF-4;
+- possibly STA-3.
+Expected decisions:
+- D18 B2;
+- D18 B5 only if hidden rows become locked-board rows (not under the proposed stage
+  default);
+- D18 B6;
+- D18 B9;
+- D18 B14;
+- D18 B16 if persistence changes;
+- D17 item 15;
+- D31/D32 domains and assignments.
+If valid pieces can occupy rows above current row 0, lowest-row semantics and range
+are restated. Reassess PLY-5, PLY-6, INP-5, DSP-1, DSP-8. DSP-2 and DSP-3 only if
+canvas resolution or idle redraw behavior changes.
+Do not assume a taller persisted board, padded old saves, a mandatory new format or
+older-version incompatibility; those follow only from the adopted semantics.
+
+20. QA and silent weakening
+
+Every stage retains QA-1 through QA-6 at required scope.
+
+Feature complexity/certification cost is never sufficient reason to:
+- lower coverage;
+- narrow mutation without authorization;
+- reduce required browsers;
+- add masking retries;
+- bypass gates;
+- delete permanent tests outside rule 2/blueprint 10.2;
+- expand the trusted core;
+- shrink falsification domains.
+
+Per-stage mutation evidence reports:
+- mutant universe;
+- survivors;
+- errors;
+- timeout-only outcomes;
+- new exclusions/equivalence marks and reasons.
+
+A nominal 100% score alone is not proof that evidence quality is unchanged.
+
+21. Stage activation and delta rebase
+
+When the CI program closes and S1 is ready to begin:
+- reverify all factual references against the final tree;
+- identify decisions added after the approved planning source was frozen;
+- update only affected factual/decision references.
+
+If the final Phase-10/CI state creates a material conflict:
+- prepare the affected delta;
+- identify and document its cascading impacts across all planned stages;
+- send the affected delta together with those cascading impacts through Gemini ->
+  ChatGPT reconciliation -> Instinct final fidelity review;
+- do not reopen unrelated settled program policy that the impact analysis shows is
+  unaffected.
+
+22. Final review and change control
+
+Gemini is the adversarial sounding board.
+
+ChatGPT is the main planner/reconciler.
+
+Instinct is the final fidelity/readiness reviewer.
+
+Those charter-level review roles do not limit the delegated execution authority in
+Sections 2 and 2A. At stage execution, however, Instinct's delegated approval of exact
+normative text does not count as that text's independent fidelity review: the reviewer
+and delegated approver are distinct roles for the same exact checksum, and the review
+is recorded before delegated approval and implementation.
+
+the owner approves normative, scope, certification and release decisions only where
+retained by Sections 2 and 2A; within-charter delegated decisions are handled there as
+specified.
+
+Following the October 5, 2026 approval of this wording:
+- do not reopen it for stylistic preference;
+- reopen only for a material defect, factual drift affecting the plan, or an explicit
+  owner scope change.
+
+23. Sources and limitations
+
+External reference pages used for the proposed stage defaults (third party, not
+project authority, not independently owner-adopted fixed source artifacts unless the
+charter and later stage artifacts adopt them; page content may change; pin a
+checksummed copy before any certification or O8 use):
+- https://tetris.wiki/Super_Rotation_System (SRS wall-kick tables)
+- https://tetris.wiki/Scoring (line-clear, drop, T-spin and combo scores)
+- https://tetris.wiki/T-Spin (3-corner rule and Mini)
+- https://tetris.wiki/Marathon (gravity curve, level goals)
+- https://tetris.wiki/Guideline (playfield, hidden buffer, lock-down)
+- https://tetris.wiki/ARE (entry delay)
+Project sources: REQUIREMENTS.md and DECISIONS.md (D12 to D34) on main; implementation
+facts from public/game (read only, context, never model-input material).
+Unverified until their stage evidence is gathered:
+- whether the game's derived counterclockwise kicks equal the adopted SRS data;
+- whether S3 to S7 saves are readable by older cached versions;
+- implementation-specific compatibility consequences not fixed by this charter.
+
+All durations, counts and score values in Sections 13 to 19 remain recorded proposed
+stage defaults subject to exact stage-text review and approval.
+Delay lengths are explicitly unsourced starting values. The approved charter settles
+program policy; approval does not independently verify historical source claims.
+
+Review history and source identity
+
+Approved feature source, delivered-byte SHA-256:
+5101e2f68a866d16b3e3928f597c1df25e0a90fd2d2dde9d1a873bf56decf5f2
+This identifies the source, not this rewrite. The approved modern-feel direction
+settles product direction only, not activation or exact stage mechanics.
+
+Review records identify the exact artifact reviewed. Review alone does not
+authorize a replacement. Changing prose does not approve new normative behavior. The
+approved charter and separate owner direction remain controlling.
+
+Writing approach
+
+The prose takes inspiration from Swift Evolution vision documents: direct
+introductions, explicit goals and constraints, and a clear separation between
+direction, detailed decisions and later approval. This is not an Apple template,
+Apple-authored document or Swift governance policy.
+https://github.com/swiftlang/swift-evolution/blob/main/visions/approachable-concurrency.md
+https://github.com/swiftlang/swift-evolution/blob/main/visions/memory-safety.md
+https://forums.swift.org/t/the-role-of-vision-documents-in-swift-evolution/62101
+
+END OF MODERN GAMEPLAY CHARTER

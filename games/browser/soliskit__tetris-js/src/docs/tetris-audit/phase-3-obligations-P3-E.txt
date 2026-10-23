@@ -1,0 +1,621 @@
+App, Display, and Process Evidence
+
+Candidate evidence records for twenty requirements.
+
+Repository: https://github.com/soliskit/tetris-js
+Base:
+Prepared October5,2026. Owns exactly20 IDs: APP1-6,DSP1-8,QA1-6 (hyphenated IDs below).
+No repo changes/certification/O8 pack reading/model authorship. Implementation-exposed evidence, not suitable for clean O8 author. All certification statuses Not Assessed; Candidate labels below are observations/mappings only, not substitute certification categories. References mean inspected/proposed coverage, not proved fulfillment.
+
+Grounding: live GitHub repository link above and pinned REQUIREMENTS read matched git bytes. Requirements SHA256 fa2580d6bf0a67dd80d5e569da363776a029a79caef457604c7efe74ea72f7bc; blueprint SHA256 ; P2 integrated SHA256 . All21 governing artifact hashes from Phase1 index matched. Read index/AUDIT,D16-D18,D20-D25,D27-D35,closure D36,D37 status note,P2 integrated/P2-D/P2-E. The ledger governs D16 despite preserved candidate header. P2 base to this base changes only audit/docs, no production/test bytes. Repository authority annotations not used as owner permission.
+
+D16 conceptual commit/D31 frame principle and D32-D34 operation effects govern model mapping, not guard names. D18B17 presentation remains non-authoritative but in scope. APP2/6 outside engine model remains fully in scope. D20/D21/D25/D30 Continue exception. D27/D28 successful browser semantics trust never proves own arguments/order/retry. D29/D35 clock untrusted. O5 code-to-claim distinct from O8 model independence/correspondence. PCE/PLY/SCO/STA/SAF/INP referenced only, no duplicate records.
+
+Actual evidence: local Node22.23.3/npm10.9.9, not target Node26/npm12.2.0. node --test test/staticFiles.test.js test/traceability.test.js:19 passed/0failed. Earlier included server.test.js:19passed/2failed; missing express confirmed directly ERR_MODULE_NOT_FOUND, environmental not APP3 defect. No dependency installation/full suite/compiler/browser/coverage/mutation/device observation. No pixels inspected, so visual/device claims remain unverified. Existing test passages read are leads, not independently authored oracles or passing runs. No model code available/correspondence assessed.
+
+Phase criteria from assigned committed blueprint:3.3 exact13 fields below; Phase3 requires every in-scope requirement AND adopted property method/complete appropriate mapping/evidence. No artificial model relationships. This20-ID subset does not close Phase3 or correspondence. Phase4 requires exhausted declared domains, Proven coverage or documented/justified/approved limits, and every candidate disposition. Phase5 no Candidate finding/no Not Assessed property. D15 eight external evidence gaps stay in scope:APP1,APP4,DSP1,DSP2,DSP4,DSP6,DSP7,QA4.
+
+============================================================
+APP-1
+requirement/property:
+  APP-1: The game can be installed to the home screen and opens full screen with its own icon.
+the applicable state property it implies:
+  App installation/display/icon state; presentation, not engine validity (D16,D18 B17).
+the transition classes that can affect it, where applicable:
+  Visit, install, installed launch, update launch.
+the production routes or trusted components for those transition classes:
+  P2-D D01/D25; P2-E static dependencies. D27/D28 success-only browser trust; D24 hosting.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Engine model not applicable; independent declaration/image checks and actual device install/launch screenshots.
+claim:
+  Installable with own icon and fullscreen launch; metadata is only a subclaim.
+Proof Method:
+  Inspect metadata and icon pixels/dimensions; Chromium installability plus supported-device installation/launch.
+assumptions:
+  D24 hosting and D27/D28 successful feature semantics do not guarantee availability or successful install.
+covered production code:
+  index.html:5-14,75; manifest:1-17; icons/*; script.js:589-591; sw.js:23-40.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local staticFiles:71-103 passed metadata/PNG size assertions. app.spec:103-113 CDP check explicitly skips Safari; read, not run.
+limitations:
+  D15 device gap: no icon pixels or installed UI inspected; need iPhone14ProMax iOS27/Safari27 install/icon/fullscreen evidence.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+APP-2
+requirement/property:
+  APP-2: After the first visit the game opens from its cached copy straight away, online or offline. A new version is downloaded in the background and used from the next launch, and only once every file of it has downloaded. A page loads every file from the version it opened with, even if a newer one finishes downloading while it loads, so the game never runs a mix of two versions.
+the applicable state property it implies:
+  Cache/version/pin outer state remains in scope outside engine model (D16 section3); per-page version consistency.
+the transition classes that can affect it, where applicable:
+  Install/activate/navigation/subresource GET; complete/failed/concurrent downloads; cleanup, pin expiry, takeover, offline launch.
+the production routes or trusted components for those transition classes:
+  P2-E E1-E3 and internal download/openPage/versionFor/answer/removeOldVersions; P2-D D25. D24/D28 trust successful Cache/fetch calls, not own sequencing. D29/D35 do not trust clock.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No artificial engine-model relation. Independent version-labelled resource traces under controlled cache/network/clock schedules; expected completeness from APP2, not completeVersions().
+claim:
+  Cached opening uses complete opening version; background update becomes usable only when all files downloaded, from next launch; no mixed page.
+Proof Method:
+  Async ordering argument and bounded browser traces for offline, interrupted/parallel downloads, delayed resources and cleanup.
+assumptions:
+  Cache/fetch success documented semantics; hosting serves deployed bytes. No steady-clock or namespace-monopoly assumption.
+covered production code:
+  sw.js:14-40,46-175; script.js:589-591; HTML references/import graph.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local staticFiles:105-122 passed cache-list/registration checks. app.spec:115-301 covers offline/update/failure/delayed scripts, read not run. Clock-based deletion at124 and newest fallback at90 inspected.
+limitations:
+  No cache runtime/clock-jump evidence or all-interleavings proof. Missing4.8 attacks, malformed pins, foreign partial/non-numeric caches and slow page cleanup need evidence. Engine evidence does not cover this.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+APP-3
+requirement/property:
+  APP-3: Every file the page uses exists and is referenced by a relative path, so the game works from any folder (GitHub Pages serves it from /tetris-js/). The local server serves each file with the right type.
+the applicable state property it implies:
+  Relative resource graph/existence and correct local MIME types; app state, non-authoritative.
+the transition classes that can affect it, where applicable:
+  Bootstrap/import/preload/manifest/icon/CSS; SW registration/cache request; root and nested-folder serving.
+the production routes or trusted components for those transition classes:
+  P2-D D01/D25; P2-E shell/import graph; index.js express.static. D24 hosting trust not graph proof.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No engine model. Independent full graph scan plus fetch matrix at arbitrary folder mounts checking bytes/status/MIME.
+claim:
+  Every resource exists/uses relative path and local server serves correct type; root tests alone do not establish any-folder claim.
+Proof Method:
+  Enumerate all edges including CSS/imports/manifest; fetch graph under nested prefixes and inspect types.
+assumptions:
+  D28 successful request semantics; express dependency separately recorded.
+covered production code:
+  index.js:1-14; index.html:12-23,75; manifest; sw.js:23-40,97-100,142,164-175; script/game imports; style.css.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local staticFiles:26-62,105-122 passed; CSS inspected, no url/@import found. server.test:35,56 attempted and failed due absent express, confirmed ERR_MODULE_NOT_FOUND.
+limitations:
+  Environment failure is not app defect. Need dependencies/target toolchain, nested mount runtime checks and every-file MIME coverage; regex scan is not full grammar proof.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+APP-4
+requirement/property:
+  APP-4: The game supports iOS 27 (Safari 27) and later, on the iPhone 14 Pro Max and newer, in portrait.
+the applicable state property it implies:
+  Portrait platform compatibility on iOS27/Safari27 iPhone14ProMax and newer; not an engine validity predicate.
+the transition classes that can affect it, where applicable:
+  Visit/install/launch/play/pause/Continue/over; viewport/browser chrome/safe-area changes and feature failures.
+the production routes or trusted components for those transition classes:
+  All P2-D page and P2-E app routes; engine entry anchors via page. D27/D28 never establish platform compatibility.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No platform model relation. Independent dated device/OS/browser matrix and real-device smoke/regression/pixel evidence; cross-ref INP/STA/SAF.
+claim:
+  Named minimum and newer supported platforms operate in portrait; matching WebKit viewport is partial evidence only.
+Proof Method:
+  Per-feature device matrix plus actual Safari/installed app observations and configured browser regression runs.
+assumptions:
+  Success-only browser trust; availability not assumed; bound later-platform evidence rather than extrapolating indefinitely.
+covered production code:
+  All public browser-loaded code/assets; playwright.config.js projects; pages.yml test job.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local staticFiles:64-80 passed declarations. game.spec:446-459 layout source read. Config WebKit430x932 and Chromium phone/desktop; no browser run.
+limitations:
+  D15 evidence gap retained: no real iOS27/Safari27, newer device matrix or future-version correctness evidence.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+APP-5
+requirement/property:
+  APP-5: The page asks for all of its scripts at once rather than one import level at a time, so it starts faster.
+the applicable state property it implies:
+  Module fetch discovery/scheduling at launch; seven static modules preloaded rather than sequential import-level discovery.
+the transition classes that can affect it, where applicable:
+  HTML parse/modulepreload discovery, cold and cache-first module loading.
+the production routes or trusted components for those transition classes:
+  P2-D D01; HTML preloads/script and full import graph; loader/fetch success D27/D28.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No engine model. Independent graph enumeration and cold-cache network request start trace.
+claim:
+  All transitive game modules declared for early preload; no numerical latency target added.
+Proof Method:
+  Graph/preload set equality and supported-browser network timing/order with controlled SW/cache state.
+assumptions:
+  Browser preload semantics on success; no assumed concurrency/performance from declaration alone.
+covered production code:
+  index.html:17-23,75; script.js:4-6; all game static imports.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local staticFiles:35-50 passed exact7-module preload equality; direct graph checked. No timeline measured.
+limitations:
+  Need request-order evidence; static set equality does not measure simultaneous dispatch or faster load.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+APP-6
+requirement/property:
+  APP-6: GitHub Pages serves every project of an account from one origin, which they all share storage and caches with, so the game touches only its own: it stores the high score and saved game under names of its own, and deletes only caches it made.
+the applicable state property it implies:
+  Own storage keys and cache ownership in shared origin; outer cache state outside model, O6 accounting retained.
+the transition classes that can affect it, where applicable:
+  Score/eligibility/payload reads/writes; install/activate/download/failure/cleanup; sibling interference.
+the production routes or trusted components for those transition classes:
+  P2-B3 keys; P2-E cache creation/deletion/selection/pins; P2-D storage/register. D24 explicitly retains same-origin interference.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No forced cache engine model. Independent foreign sentinels with creator provenance before/after each side-effect route.
+claim:
+  App touches only its own storage/caches, deletes only its own caches; prefix is strategy, not authorship proof.
+Proof Method:
+  Static side-effect inventory and independently seeded foreign fixed/prefixed caches; compare full foreign contents and each APP clause.
+assumptions:
+  D23/D24 successful storage/cache semantics; no origin isolation or reserved-name monopoly.
+covered production code:
+  manager.js:34-36,133-176,199-225; sw.js:14-22,46-90,114-161.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Keys tetris.highScore,tetris.isSessionSaved,tetris.savedGameSession. Cache names tetris-pins/tetris-version-*. manager:352-362/session:188/app:195-211 tests read only. activate fixed-name deletes inspected.
+limitations:
+  Need foreign tetris/tetris-2/prefix tests, not only other-project survival. Foreign serving alone is not automatically delete-only violation; assess full APP6/APP2 separately.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-1
+requirement/property:
+  DSP-1: In portrait on a phone the whole game fits the screen with no scrolling, and the board keeps a 1:2 shape. The board keeps one size whether the game is starting, playing, paused or over.
+the applicable state property it implies:
+  No-scroll portrait fit,1:2 board, same size opening/playing/paused/over; presentation (D18 B17).
+the transition classes that can affect it, where applicable:
+  Layout/bootstrap; mode changes; safe-area/portrait viewport/browser chrome changes.
+the production routes or trusted components for those transition classes:
+  P2-D D01/D07/D09/D10, HTML and CSS layout; D27 observer/viewport success.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No layout engine model; independent geometry and screenshots for semantic modes, STA cross-ref only.
+claim:
+  Whole game fits portrait phone with stable1:2 board across modes.
+Proof Method:
+  CSS reasoning plus pixels/bounds/scroll checks at declared device sizes and modes.
+assumptions:
+  D27 browser success; actual display dimensions/chrome measured.
+covered production code:
+  style.css:23-46,99-158; HTML:26-60; script.js:205-234,365-383.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  CSS dynamic viewport/safe areas/container/aspect-ratio and space-retaining menu inspected; game.spec:446-478 four-size/mode tests read only.
+limitations:
+  D15 device gap; no pixels/layout measurements produced; real Safari toolbar/safe areas/installed fullscreen needed.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-2
+requirement/property:
+  DSP-2: Canvases draw at the screen's full pixel resolution and redraw correctly after the window changes size.
+the applicable state property it implies:
+  Backing dimensions/transform/redraw follow CSS extent and DPR; presentation state.
+the transition classes that can affect it, where applicable:
+  Initialization, ResizeObserver, DPR media change, redraw, fractional ratios.
+the production routes or trusted components for those transition classes:
+  P2-D D02/D09/D10/D11; sizeCanvas/redrawAll; D27 own args/retries remain audited.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No engine model; expected backing dimensions from independently measured CSS/DPR and pixel/event traces.
+claim:
+  All canvases full pixel resolution and correct redraw after resizing.
+Proof Method:
+  All5 canvases dimensions/transform/content before/after resize/DPR matrix; SAF5 failure cross-ref.
+assumptions:
+  Canvas/observer/ratio success D27; event delivery observed.
+covered production code:
+  script.js:39-71,140-198,297-330,365-383; CSS board/previews.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  app.spec:47-89 resize/injected DPR2 and game:480-488 backing width read only. Code rounds width/height and resets transform.
+limitations:
+  D15 gap; no pixels. Stand-in DPR not actual device; tests mostly board width, not all5 heights/transforms. sizeCanvas/bootstrap errors outside drawSafely need SAF5 assessment.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-3
+requirement/property:
+  DSP-3: While nothing changes, nothing is redrawn (the engine counts changes to the locked blocks, so the page knows when they need drawing), storage is not read again, and the page does not wake up every frame, to save battery.
+the applicable state property it implies:
+  Quiescent redraw/storage/RAF; boardVersion presentation evidence, not artificial authoritative model field.
+the transition classes that can affect it, where applicable:
+  Board reset/load/lock/clear; piece/preview/mode changes; storage/resize/retry; idle with and without pad.
+the production routes or trusted components for those transition classes:
+  P2-D D04-D11/D22/D23; P2-A board; P2-B eligibility cache; P2-C polling. D23 U4 excludes loops from gameplay timers, not DSP3.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Applicable semantic board/move/rotate/hold/start/Continue/pause/over transitions: model correspondence pending. Independent canvas/storage/RAF counters for quiescence, no manufactured model repaint API.
+claim:
+  Unchanged display/storage not redrawn/reread, idle page not woken every frame; locked changes counted.
+Proof Method:
+  Full invalidation/notification mapping plus bounded idle counters by mode/controller state; independent board-change trace.
+assumptions:
+  D27 RAF/canvas and D23 storage success; counters trusted test controls.
+covered production code:
+  script.js:276-383,552-558; manager:158-176,185,209,331,347,389-407; inputController:99-113.
+covered model code, if applicable:
+  Pending model code/semantic transition/projection correspondence; no model code inspected.
+evidence:
+  app.spec:10-45 paused fill/RAF1s; manager:192/364/377 and input:537 counter/caching/poll-stop tests read only.
+limitations:
+  Correspondence/all-invalidation mapping open. Connected idle gamepad keeps RAF polling: Candidate interaction with INP4/DSP3, not silent exclusion. Bounded counters not battery proof.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-4
+requirement/property:
+  DSP-4: The page cannot be zoomed, scrolled by touch, or have its text selected. Quick taps never zoom it in Safari, and the second of two quick taps still works. If Safari zooms in anyway, or opens the page still zoomed after a reload, its pinch and double tap work again, so the player can zoom back out.
+the applicable state property it implies:
+  Zoom/scroll/select prevention and recovery at viewport scale>1; presentation/browser state, INP5 tap effects cross-ref.
+the transition classes that can affect it, where applicable:
+  Pinch/double tap/rapid taps; gesturestart/change; viewport resize; initial/reloaded zoom; selection/scroll.
+the production routes or trusted components for those transition classes:
+  P2-D D24, pointer/click plumbing; html/zoomed/tetris CSS; viewport tag; D27 success trust not Safari outcome.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No artificial zoom model; actual Safari gestures/scale/pixels independently observed, synthetic branches separately.
+claim:
+  Normal page prevents zoom/scroll/selection without losing second tap; zoomed state allows recovery gestures.
+Proof Method:
+  Real Safari gesture/reload matrix, input counts and zoom/scroll/selection observation.
+assumptions:
+  Actual gesture outcomes not established by CSS/fake event dispatch.
+covered production code:
+  index.html:5; style.css:9-21,135-143; script.js:567-586; INP pointer anchors.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local viewport static check passed. app:91-101 computed CSS/synthetic gesture; touch:140-225 Chromium-only taps and mocked scale/recovery, read only.
+limitations:
+  D15 Safari gap; test comments admit no real zoom. Need Safari27 pinch/double-tap/quick-tap and zoomed reload/recovery pixels.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-5
+requirement/property:
+  DSP-5: The score, high score, buttons and hints always match the game state, including changes made in another tab.
+the applicable state property it implies:
+  DOM projection of mode/score/highscore/confirmation/Continue. D20/D21/D25/D30 narrow exception: item16 suppresses Continue in withdrawing session despite external save; valid payload+exact true flag+false item16 required.
+the transition classes that can affect it, where applicable:
+  Game score/mode/confirmation operations; storage/failure/event; withdraw/save/reload/external save/highscore; fault.
+the production routes or trusted components for those transition classes:
+  P2-D D04-D08/D22; P2-B persistence; P2-A onChange. D27 DOM/dialog, D23 successful storage trust only.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Applicable NewGame/confirmation/Pause/Resume/Continue/scoring/over/fault/withdraw/save transitions; model code/correspondence pending. Independent DOM trace against semantic projection and D30 exception.
+claim:
+  Labels/buttons/hints match semantic state and permitted external changes, with Continue exception; getters do not define expected semantics.
+Proof Method:
+  Projection table by mode/pending/eligibility and independent storage-input matrix; post-freeze model-state-to-DOM comparison.
+assumptions:
+  D23/D27 successes; no trust in cached eligibility/current-session withdrawal implementation.
+covered production code:
+  script.js:202-234,319-323,552-556; manager:133-176,199-225,389-407; HTML controls/dialog.
+covered model code, if applicable:
+  Pending model code/semantic transition/projection correspondence; no model code inspected.
+evidence:
+  game.spec:26-55,92-140,352-411 normal labels/confirmation/cross-tab source read. Getter tests only eligibility flag before showing Continue; item16 mapping not identified at anchors.
+limitations:
+  Candidate invalid payload offered/withdrawn session external save visibility; failed writes/read matrix needed. Highscore omitted from snapshot relies on storage event invalidation. Correspondence pending; STA/SAF/SCO not duplicated.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-6
+requirement/property:
+  DSP-6: Pieces are drawn in the Display P3 color space using their usual color values, so they look more vivid on iPhone screens. Each canvas gets its drawing context as the page starts, so nothing else can change its color space first, and draws vivid colors only if it really is Display P3. Saved games keep the usual colors.
+the applicable state property it implies:
+  Context selection/conversion presentation; saved piece colors retain usual values, not display colors (D18 B17).
+the transition classes that can affect it, where applicable:
+  Bootstrap context/probe; board/ghost/preview paint; fallback; resize; saved color serialization/restoration.
+the production routes or trusted components for those transition classes:
+  P2-D D02/D05/D06/D09/D10; contexts/p3Contexts/vivid. STA/SAF persistence anchors; D27 color-space success only.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No render model transition; independent mathematical component conversion/context/pixel checks, real P3 display observation; PCE/STA identity correspondence elsewhere.
+claim:
+  Startup contexts, P3 values only on actually P3 canvases; saved usual colors.
+Proof Method:
+  Acquisition order/attributes/pixels for5 canvases, P3 and fallback, saved-color inspection, real-device visual check.
+assumptions:
+  D27 canvas success; canonical project colors grounded but production expected outputs not independent oracle.
+covered production code:
+  script.js:34-45,73-92,113-133,140-198; session.js:30-39,parse piece reconstruction; factory colors.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  app:324-367 five spaces/board pixel/DOMContentLoaded early context/forced sRGB read only; static hex channels divided255 inspected.
+limitations:
+  D15 gap/no pixels. DOMContentLoaded contender test does not cover arbitrary pre-module context acquisition; no vividness/all-preview/ghost evidence. Owning model kind/color correspondence pending.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-7
+requirement/property:
+  DSP-7: The screen stays on while playing. Pausing or game over lets it sleep again. If the system takes the wake lock back during play, the game asks for it again. If the wake lock is unsupported or refused, the game plays normally.
+the applicable state property it implies:
+  Wake lock runtime resource, not R1 validity (B13); best effort independent of gameplay.
+the transition classes that can affect it, where applicable:
+  Start/resume/pause/over; delayed/stale/duplicate grants; revoke; refused/missing/throw/release failures.
+the production routes or trusted components for those transition classes:
+  P2-D D07/D12; syncControls->setWakeLock->requestWakeLock->grant/release; D27 own policy/retries/errors audited.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No required model wake resource; independent sentinel trace and real sleep/revoke device observation, mode transitions as stimuli.
+claim:
+  Request/hold while playing if available, release otherwise, retry revocation; refused/missing does not stop game.
+Proof Method:
+  Bounded asynchronous order/error matrix plus real device sleep/low-power/revocation and gameplay trace.
+assumptions:
+  D27 successful semantics; no feature availability guarantee; fake sentinel trusted test control.
+covered production code:
+  script.js:233,240-274,544-548; mode/button stimuli.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  app:369-434 fake grant/hold/refuse/missing/revoke source read; clears pointer before release and handles stale/duplicate grants statically.
+limitations:
+  D15 gap. Synchronous request throw, release reject/throw, addListener failure/repeated refusal require evidence; no actual screen-sleep. Cross-ref SAF5 where rendering affected, no certification from stand-ins.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+DSP-8
+requirement/property:
+  DSP-8: At game over the board shows only the locked blocks, with no falling piece, ghost, held or upcoming pieces, since a new game deals its own. So the page opens to an empty board. Once a game ends, Game Over shows over the board until a new game starts or a saved one is continued, and screen readers announce it.
+the applicable state property it implies:
+  Over pixels only locked board; no semantic current/ghost/held/bag (B6/B8/B10/B14); queue valid but hidden. Opening empty/no ended overlay; ended overlay/status persists until NewGame/Continue.
+the transition classes that can affect it, where applicable:
+  Opening; lock/hold top-out; fault; resize/redraw over; NewGame/Continue; rapid sampled states.
+the production routes or trusted components for those transition classes:
+  P2-D D05-D07/D09-D11; P2-A board/mode; retained concrete pieces can remain if hidden per semantics.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  Applicable opening/start/Continue/over/fault semantic projection; model correspondence pending. Independent pixels/DOM/screen-reader behavior.
+claim:
+  Over hides current/ghost/previews, displays locked blocks; GameOver/status persistence and empty opening correct.
+Proof Method:
+  Projection argument and pixel/DOM snapshots across traces; real screen-reader announcement; expected board from independent semantic trace.
+assumptions:
+  D27 canvas/DOM success; fault contents per D16 F2 rather than assumed valid/rolled back.
+covered production code:
+  script.js:136-175,181-198,202-217,288-318; HTML:41-49; manager bootstrap/topout/failSafe anchors.
+covered model code, if applicable:
+  Pending model code/semantic transition/projection correspondence; no model code inspected.
+evidence:
+  game:26-39,68-90 opening/top-out counts/empty previews/status/NewGame source read; showsPieces and gameEnded sampled-state rules inspected.
+limitations:
+  Correspondence pending. Need hold topout/Continue clearing/fault malformed retained board/retry/screen-reader. One-frame over/start may evade state-change tracking: Candidate. role=status text not observed speech.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-1
+requirement/property:
+  QA-1: Every requirement is verified by at least one test, every test names the requirements it verifies, and those requirements exist.
+the applicable state property it implies:
+  Process traceability/meaningful assertion mapping; O5 code-to-claim distinct from O8 independence.
+the transition classes that can affect it, where applicable:
+  Requirement/test changes, generated/nested/parameterized tests, registry execution; no game transition.
+the production routes or trusted components for those transition classes:
+  Node discovery and traceability regex scanner; CI npm test; D24V2 accurate run report not assertion sufficiency.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No model tag-registry relation; independent AST/runtime test enumeration and assertion-to-subclause review.
+claim:
+  All actual tests tag known IDs; every requirement has meaningful test verification, not just mention.
+Proof Method:
+  Cross-check actual discovered tests with tags and independent assertion coverage by subclause.
+assumptions:
+  Regex valid only for demonstrated syntax; runner/parser/fs evidence tools.
+covered production code:
+  REQUIREMENTS.md; traceability.test.js:1-41; test/*.js/e2e/*.js; package/pages.yml.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local tag checks passed. Scanner immediate .js files/lines beginning test(; unique IDs and tag presence established only syntactically.
+limitations:
+  No full55 semantic review. Multiline/aliases/skip/subtests/future syntax completeness not established. Tags not proof and not O8 independence.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-2
+requirement/property:
+  QA-2: The unit tests exercise every line, branch and function of the game logic (`public/game/`). `npm test` fails below 100%. Code that cannot be reached is removed rather than left untested.
+the applicable state property it implies:
+  100% instrumented game lines/branches/functions and removed unreachable code; O5 linkage, not correctness proof.
+the transition classes that can affect it, where applicable:
+  Unit run/aggregation/source additions/deletions; no game-model transition.
+the production routes or trusted components for those transition classes:
+  package npm test Node coverage flags; test files/CI test; D24V2 dated reporting.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No coverage model relation; independent source inventory/coverage attribution/tool semantics and reachability review.
+claim:
+  npm test fails below100% for all game code; dead code removed, not silently omitted.
+Proof Method:
+  Fresh Node26/npm12.2 suite/report, source reconciliation, scratch threshold-failure demonstration and reachability review.
+assumptions:
+  Instrumentation limits explicit; matched source/toolchain; D24 only report trust.
+covered production code:
+  package scripts.test; public/game/*.js; traceability:43-48; pages.yml.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local flag/config assertions passed include game glob/all100%; no full npm test/report.
+limitations:
+  Local Node22/npm10 not target26/12.2. No current100% or reachability evidence. Coverage does not show assertion correctness/all transition-fault space.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-3
+requirement/property:
+  QA-3: The browser tests exercise every line, branch and function of the page script (`public/script.js`), measured in Chromium. `npm run test:e2e` fails below 100%.
+the applicable state property it implies:
+  Chromium script.js100% metrics with source attribution; O5, not state correctness.
+the transition classes that can affect it, where applicable:
+  Reset/per-test recording/navigation/merge/conversion/empty/report failure.
+the production routes or trusted components for those transition classes:
+  fixtures Chromium auto recorder; global-setup clears; browser-coverage merge; package test:e2e.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No model relation; independent byte/URL/source attribution and fresh report/threshold-failure experiment.
+claim:
+  test:e2e fails below100% pinned page lines/branches/functions; stale/variant coverage cannot substitute.
+Proof Method:
+  Inspect pipeline, run suite, reconcile raw entries/local bytes/offsets, verify aggregate/failure.
+assumptions:
+  V8/Playwright/Istanbul metrics limitations; D24 accurately reported checks.
+covered production code:
+  package;e2e/fixtures.js:1-25;global-setup;scripts/browser-coverage.js:1-47;script.js:1-591;traceability:50-56.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Config assertion passed; THRESHOLD100/all3/fail empty and old coverage clearing inspected; no report produced.
+limitations:
+  URL pathname-only script filter converted against one local source without byte comparison; temp-server tests exist. Need source attribution/fresh report. Aggregate metric not semantic exhaustiveness; WebKit coverage not claimed.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-4
+requirement/property:
+  QA-4: The browser tests pass in WebKit (Safari's engine) at iPhone size, as well as in Chromium at iPhone and desktop sizes.
+the applicable state property it implies:
+  Fresh WebKit phone/Chromium phone+desktop test pass; D15 browser evidence remains in scope.
+the transition classes that can affect it, where applicable:
+  All projects discovery/install/run/pass/skip; no game transition.
+the production routes or trusted components for those transition classes:
+  Playwright3 projects; pages installs chromium/webkit and test:e2e; fixture coverage Chromium only.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No model relation; independent per-project executed/skipped counts and versions; APP4 hardware cross-ref.
+claim:
+  Configured browser tests pass; expected skips recorded, not claimed Safari execution.
+Proof Method:
+  Pinned suite run/report review each project against full discovery.
+assumptions:
+  Lockfile/toolchain browser versions; D24 dated reporting trust.
+covered production code:
+  playwright.config.js projects/webServer; pages.yml;e2e specs/fixture;traceability:58-64.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local configuration check passed WebKit430x932/install engines; Chromium430x932 DPR3/1440x900 DPR1/retries0. No browser run.
+limitations:
+  Fresh results absent; WebKit viewport not real Safari27/iOS27. Installability/rapid touch skip WebKit; no claim those ran on Safari.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-5
+requirement/property:
+  QA-5: Everything the browser loads (`public/`) passes TypeScript's strictest type checks, with types written as comments in the JavaScript. `npm run typecheck` runs before the tests in CI.
+the applicable state property it implies:
+  Loaded JS strict TypeScript/JSDoc and CI typecheck before tests; not runtime invariant proof.
+the transition classes that can affect it, where applicable:
+  Source/config changes/typecheck/CI ordering; no game transition.
+the production routes or trusted components for those transition classes:
+  tsconfig+SW override/package2 tsc invocations/pages ordered steps and source inventory.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No model relation; independently compare effective compiler include/options to full browser graph and compiler output.
+claim:
+  All loaded JS passes stated strict checks and CI checks before tests.
+Proof Method:
+  Pinned compiler run/file list plus independent graph/config/order inspection.
+assumptions:
+  Compiler tool/version; casts/erased types not runtime guards; D24 report trust.
+covered production code:
+  tsconfig.json,tsconfig.sw.json;package/pages;game/**/*.js,script.js,sw.js;traceability:66-76.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local config assertion passed;strict/checkJs/noUnusedLocals/Parameters/noImplicitReturns/noFallthrough/exactOptional set, SW WebWorker; two tsc commands before tests.
+limitations:
+  No compiler run/effective file list/dependencies. Strictest wording not proof every possible flag appropriate; casts can mask DOM/context issues. No runtime safety inferred.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+============================================================
+QA-6
+requirement/property:
+  QA-6: Mutation testing (Stryker) of the game logic leaves no mutant alive: every small wrong change to `public/game/` is caught by a failing test, or makes the tests run past the time limit (for example a piece with no blocks, whose ghost falls forever). Loops in tests are bounded, so a broken game fails a test rather than hanging it. A mutant that cannot change behavior is marked in the code with the reason. `npm run test:mutation` fails if any survive. It runs weekly in CI, and on every pull request that changes the game logic or its tests: a change to the game logic alone mutates just the changed files, and a change to the tests runs the full suite.
+the applicable state property it implies:
+  No surviving behavior-changing Stryker mutant; bounded tests/equivalent reasons; weekly/PR campaign shape. O5, not O8 oracle.
+the transition classes that can affect it, where applicable:
+  Weekly/manual/full; PR engine-only changed files; test/workflow changes full; deletion/rename/config filters/timeouts/exclusions.
+the production routes or trusted components for those transition classes:
+  Stryker command/mutate/threshold/timeout; mutation.yml;mutation-pr diff/paths; tests bounds/factory exclusion.
+the model transitions that correspond to them, where the model is applicable (otherwise actual independent evidence method):
+  No model relation; independent report/operator/source/reason audit and scratch workflow diff cases.
+claim:
+  No survivor in declared operator campaign; tests bounded; equivalent excluded reason; weekly/PR policies satisfied.
+Proof Method:
+  Fresh run breakdown killed/timeout/survived/excluded/invalid, bounds/exclusion review, trigger/change matrix.
+assumptions:
+  Operator/timeout limitations and D24 reporting; not every possible wrong edit necessarily generated.
+covered production code:
+  stryker.config.json;mutation*.yml;package;factory.js:81;8 runner test files;traceability:78-107.
+covered model code, if applicable:
+  Not Applicable to this outer-layer/rendering/process claim; actual independent evidence method above; no artificial model code reference.
+evidence:
+  Local config assertion passed break100/game glob/runner/weekly+PR syntax; self-swap exclusion EqualityOperator reason inspected. No report. No while text in test files is only a search result.
+limitations:
+  Need score/active operators/complete bounded-loop review. --diff-filter=d and paths omit config/package/e2e changes: determine relevance without presuming defect. Timeout counts caught per requirement, not proof correct result.
+certification status:
+  Not Assessed. Candidate mapping only; no certification assigned.
+
+Evidence gaps and Phase4 Candidate observations, not confirmed defects
+G1 Eight D15 device/browser gaps remain in scope. Need actual installation/icon/fullscreen; Safari27/iOS27 minimum/newer portrait compatibility, actual layout/DPR, Safari touch/zoom/reloaded zoom, P3 pixels/display, device sleep/wake-lock/revoke/refusal, fresh WebKit pass. Feature trust never fills these gaps.
+G2 Target-toolchain full unit/browser coverage/typecheck/mutation/CI artifacts absent. APP3 server attempted but absent express. Preserve environment/toolchain/source identity when new evidence arrives.
+G3 Model projection/correspondence pending DSP3/5/8 and cross-owned dependencies. Later map exact frozen model file/transition and production observable correspondence. Production validator/test fixtures cannot provide independent oracle. Adopted O5/O6/O8 property records belong integrated artifact, not these20 requirement records.
+G4 Assertion-to-each-subclause semantic mapping remains open; tags/config do not certify claims.
+
+C1 APP2/6 full blueprint4.8 set: foreign deletable tetris/tetris-2/prefix; foreign nonempty prefix served as complete game; no-number prefix; malformed/unreadable pin; simultaneous downloads; cut-off download; page opening at download completion. Existing other-project/partial/mixed-page tests cover only some classes. Fixed deletions/prefix recognition not creator proof. Record exact requirement touched/disposition, not assume foreign serving is delete-only violation.
+C2 APP2 D29 forward/backward clock jumps at pin expiry/cleanup plus slow resource load: Date.now()-at>10min, fallback to newest when pin/cache missing. Predeclare versions, delay positions, jump magnitudes/points, download orders; label every resource byte independently. No10min page-load limit added to APP2.
+C3 APP2 unnumbered prefix feeds parseInt/sort/increment; any nonempty prefix cache treated complete. Check selection/new naming/serving/deletion for malformed/foreign partial caches, separately from trusted atomic addAll success for own writes.
+C4 DSP5 eligible malformed save, same-session withdrawal then external save, failed write/read/reload. Compare D20/D21/D30 expected validity+item16+eligibility vs DOM, not current getter. Persistence findings cross-ref STA/SAF owners.
+C5 DSP3 connected but idle controller RAF polling; declare mode/pad/input partitions/count canvas/storage/RAF. Determine exact DSP3/INP4 relationship; drawing/polling not SAF4 gameplay timers.
+C6 DSP7 synchronous request throw, release throw/reject, stale grants/listener failures/repeated refusal/revoke. Observe gameplay/policy/unhandled errors; best effort not guaranteed held lock.
+C7 DSP8 rapid over/start within frame, hold top-out, Continue clearing, fault-retained malformed board/retry; inspect pixels and real screen-reader announcement. gameEnded sampled mode may miss rapid intermediate states; not reproduced here.
+C8 QA1 regex registry vs independent actual test declaration enumeration; semantic assertions per subclause. New permanent tests require their own change approval.
+C9 QA3 URL-only script entry attribution to one local source, including temp servers. Fresh raw coverage byte/offset reconciliation needed before results.
+C10 QA2/6 source/metric/operator/exclusion/reachability/bounded loops and PR deletion/rename/config selection. Current flags not report of100%; absence of while text not boundedness proof. Config/package/e2e path omissions examined against exact QA6 scope, no defect presumed.
+
+For each Phase4 target predeclare cases or partitions, trace/action/timer bounds,seeds,dependencies/failure points. Record attempted/not attempted, exact bounds,why,remaining proof. Stopping rule remains declared-domain completion,counterexample,or documented/justified/approved environmental limitation. No new requirement or weakened criterion.
+
+Integration handoff:20 records exactly,all Not Assessed; pending model correspondence/real-device/fresh-run gaps. No adopted-property certification duplicated. Repository URL above observed; pinned file:line provenance, no guessed content URLs. Coordinator owns integration/writing. No repo edit/model authorship/O8 pack access.
+
+Status-label publication identities
+
+The REQUIREMENTS.md source hash cited here identifies the historical source used by this record. It is not the hash of the later restyled publication copy. Normative requirement-ID rows are unchanged; the migration receipt records current publication identities separately. Other source hashes and byte counts in this record retain their original historical meanings.

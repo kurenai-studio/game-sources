@@ -1,0 +1,658 @@
+State Writers and Safety Boundaries
+
+The mapped state changes, allowed effects, and required checkpoints.
+
+Repository:https://github.com/soliskit/tetris-js
+Pinnedbase;public/test/config bytes equal.
+PreparedOctober5,2026. PR77 pending documentation not treated as governing merged text. Coordinator owns integration/singlewriting. No repository/permanent-test/model-author/contact work,execution,findings promotion or phase closure.
+
+Sources:exact D16/D17/D18/D20/D21/D22/D23/D31-D34 normative statements,index/ledger status,Phase2 integrated/P2A/B/C/D inventory,current production GM/IC/SC/Tetromino/factory/gameState/position/session references. All references pinned. Existing tests searched as leads only;none executed for thismatrix. No model relation authored here. Independent expectedsemantics derived from requirements/adopted decisions,not production monitor.
+
+Legend:A1lockedboard;A2fallingpiece;A3held;A4holdused;A5next3;A6bag;A7score;A8mode;A9resetcount;A10confirmationpending;A11selectedchoice;A12physicalheldtokens/newestorder;A13repeatposition;A14touchdrag;A15greatestoccupiedrowever;A16sessionwithdrawnindicator. GM=public/game/gameManager.js,IC=inputController.js,SC=public/script.js. Ordinaryover semanticabsence A2/A3/A4/A6/A9/A14/A15,not mandatoryclearing. A5validqueue remains. A11absentunlesspending. Runtimehandles/resources notidentical toA13phase. storageeligibility/score/payload persisted,not A16/A7authority byname. No implicitexception.
+
+Normative checkpoint/frame baseline
+D16conceptualcommit independent ofguardnames,V1commit-onlyvalidity,F2ordinarycontentsretainedafterfault plusmandatedsafeeffects. D31Z1 everyoperation changesonlyassigneditems;D32operationtable/ D33C1-C4/D34E1-E3 governs assignments. SAF4literal everyaction/everytimer;D23U4gravity/lock/repeatincluded,draw/poll excluded butdownstream authoritynotexcluded. Successfulcancelnofire D22T3;failedcancel mayfirebutmustnotmutatestoppedgame D23U3. D18B13 running=outstandingfiring,notnonnullhandle. Constructor opening separatelyR1valid B1,not ordinaryruntimeaction. Presentation focuscanrepresentA11;nativebrowsersemantics trustdoesnotproveprojectmapping. A16lifetime D20/D21S9 istruefromwithdraw/attempt,clearsonsessionstart/thissessionsuccesssave;externalwritesneverclearit.
+
+Evidence confidence
+This static route-family and writer ledger covers the scoped production base. Completeness is not machine-checked, including aliases and in-place writes. It is not a proved frame matrix for all reachable states. Each row separates specified legal writes, actual writes, the observed checkpoint, and the remaining gap. Helpers may execute within larger legal operations. Field assignments are not necessarily separate commits. Outer authoritative writes are not covered merely because an inner GM action is guarded. There is no runtime or AST exhaustiveness, alias proof, or checkpoint fault trace. All row judgments are Candidate/Not Assessed.
+
+================================================================
+W01
+Production route and exact writer anchors:
+  GM constructor77-116;SC12;factory91-110;Tetromino33-39/59-64
+Specified legal operation/allowed state and source rule:
+  Opening,not an ordinary D32action. B1 opening valid;B7queue3 in allmodes;D20A16false atsessionstart.
+Actual concrete writes and semantic projection:
+  A1board115,A2concretepiece113,A3null105,A4true103,A5queue114,A6factorybag generated,A7zero112,A8over107,A9zero99,A10false109,A15zero100. A2/A3/A4/A6/A9/A15 semantically absent atover. No explicitA16. Runtime handlesnull96/98.
+Observed checkpoint/failure placement:
+  No guard/runChecked/monitor atconstruction;factory generate/spawn maythrow before opening completed.
+Frame/commit claim to establish:
+  Opening needs separate semantic initialization map,not a fictitiouslegaloperation or mandatory clearing of absent fields. Controller/drag/focus constructed later.
+Unresolved evidence/source gap:
+  No independent openingR1check/faultconstruction relation;bag/current generated despite semanticabsence not itself defect. A16 mapping missing;startupAPIthrows need separate boundary/availabilityanalysis.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W02
+Production route and exact writer anchors:
+  IC constructor67-94;SC394-405
+Specified legal operation/allowed state and source rule:
+  Opening controls must denote valid B12 values; A13idle whileover,A14semanticallyabsent atover,A11absent unlesspending. Initial physical-held-token contents are not fixed here merely from the constructor empty sets.
+Actual concrete writes and semantic projection:
+  movementnull71/handlesundefined73/75;heldKeys/Buttons sets77/79;padDirectionnull81/padDownfalse83;drag inactivefields394-405;DOMfocusinitialnot boundtoA11.
+Observed checkpoint/failure placement:
+  No engine checkpoint;initial polling scheduled94->99-112.
+Frame/commit claim to establish:
+  Initial held-controls/repeat semantic projection required;polling runtime marker notA13.
+Unresolved evidence/source gap:
+  No A12physical-token/A13phase/A14inactive abstraction proved;constructorRAF errorsoutsidecatch.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W03
+Production route and exact writer anchors:
+  GM handleAction459-460->performAction464-520->guard389-407
+Specified legal operation/allowed state and source rule:
+  Dispatch must map to D32specified operation;confirmation answerother operation3 clearsA10/A11 whilepaused.
+Actual concrete writes and semantic projection:
+  A10false468 before every switch/modecheck;newGame pending475 orgameplay destination.
+Observed checkpoint/failure placement:
+  runChecked executeswholeperformAction,thenmonitor402;throws ->failSafe404;violation407. onChange391 outsidecatch.
+Frame/commit claim to establish:
+  ClearingA10 maybe authorized compositeconfirmationanswer;notautomatically partof every rejected/no-op gameplayop. Unassignedstatepreserved Z1.
+Unresolved evidence/source gap:
+  Need op/mode/pending table includingunknownaction/noop,otheraction+own effect andA11deferredclose. Guard presence notcompleteboundaryproof;monitorpartial;onChangethrows aftercommit.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W04
+Production route and exact writer anchors:
+  GM softDrop527-530
+Specified legal operation/allowed state and source rule:
+  SoftDrop +pendingconfirmationother-answer ifapplicable;D32gravity/softdrop A2/A9/A15,possiblynestedlock.
+Actual concrete writes and semantic projection:
+  A10false528 beforeguard;drop guarded529.
+Observed checkpoint/failure placement:
+  A10write occurs beforetry/check. Subsequentdrop monitor runs even ifpausedreturn.
+Frame/commit claim to establish:
+  Pre-guardwrite independentlyneeds operation/frame/failure/commit mapping;trivial assignment notexception grant.
+Unresolved evidence/source gap:
+  Exact checkpoint relation of A10/A11 clearing andpausedno-input remainscandidate;no execution of preguardfault/bypass. No silent privilegedexception.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W05
+Production route and exact writer anchors:
+  GM cancelNewGame533-537;SC520/533-539;IC140/204
+Specified legal operation/allowed state and source rule:
+  ConfirmationanswerCancel/Escape/outside operation3 A10/A11cleared,pausedotherwisepreserved.
+Actual concrete writes and semantic projection:
+  A10false535 withinguard. A11concretefocuschanges onlywhenDOMdialogcloseslater.
+Observed checkpoint/failure placement:
+  Monitorafter535;onChangeoutside;renderclose SC228later.
+Frame/commit claim to establish:
+  GM preservesboard/score/mode etc;semantic A11absence whenpendingfalse may project staleDOMfocus asabsent,not mandatoryblur.
+Unresolved evidence/source gap:
+  Need immediatependingfalse/A11semanticabsence versusactualnativefocus andsubsequentanswer relation;no complete UI/engine compositeproof.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W06
+Production route and exact writer anchors:
+  GM performAction470-481->reset182-195
+Specified legal operation/allowed state and source rule:
+  ConfirmedNewGame (op3) orNewGameover resetsA1/A2/A3/A4/A5/A6/A7/A8/A9/A15,A10/A11cleared,A16withdraw;controlreset policies onlysourced whereexplicit.
+Actual concrete writes and semantic projection:
+  statepaused183,board184,score186,bag188,current189,queue190,held191/hold192,reset193,flagfalse194;thenplaying479/schedule480. A10cleared468. NoA12/A13/A14explicitreset.
+Observed checkpoint/failure placement:
+  OneGMmonitor afterall;intermediatepaused/playingresource states insideoperation permittedV1;storage effectprecheck.
+Frame/commit claim to establish:
+  Authoritative modelassignment must cover nestedreset/spawn/withdraw. A12/A13/A14 effects not automatically authorized wholesale byNewGame:useactual D32/B12/partialchoices.
+Unresolved evidence/source gap:
+  No item16writeidentified;selectedchoicecloseasync;startwhilepadheld/repeat/touchstate andframepreservation need relation;R1check notallfields;failcutpoints/persistence separate.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W07
+Production route and exact writer anchors:
+  GM load199-217,calledContinue483-485
+Specified legal operation/allowed state and source rule:
+  Continue A1-A9/A15restore exactly;A8paused;missingbagfresh perB16;A16unchanged C4.
+Actual concrete writes and semantic projection:
+  Onaccepted:mode207,board208,score210,current211,queue212,held213,hold214,bag215;reset216 setsA9zero308/A15boxrow309. Onreject flagfalse204.
+Observed checkpoint/failure placement:
+  OneGMmonitor afterreturn when viahandleAction;directcallnone.
+Frame/commit claim to establish:
+  Restoration versusnewpiece reset differs normativeContinue;reject wholewithdraw S7/S11 semantics separate. A10cleareddispatcher,not listedContinuerestore.
+Unresolved evidence/source gap:
+  Reset/lowest exactrestore candidate;legacydefaults andfailureclasses notproved;no item16representation;accepteddata adapter/R1validity/highscore separate. ContinueA12/A13/A14 frame relation notfullymapped.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W08
+Production route and exact writer anchors:
+  GM pause486-495;pagehiddenSC544-548;toggle523-525
+Specified legal operation/allowed state and source rule:
+  Pause/pagehidden A8paused,A9resetincrease duringdelay,A13idle;gravity/lock/repeatstop;save.
+Actual concrete writes and semantic projection:
+  mode488,gravitycancel489,A9++491 ifhandle notnull,lockcancel493,save494. IC repeatsnot synchronouslystopped. pagehidden resetsdragSC546beforepause.
+Observed checkpoint/failure placement:
+  GMmonitor afterpausechecksGMhandlesonly;noICrepeatcheckpoint;pagehiddenA14reset outside.
+Frame/commit claim to establish:
+  PagehiddenA14clear must map to composite touchcancel op9 or approvedassignment,not automatically pauseframe. A12retention andA13idle/resumerule distinct.
+Unresolved evidence/source gap:
+  Outstanding IC timers untilnexttick mayexistpaused;no full resourceprojection. Need failingcancel/mode/count14/15 traces andhiddenpauseddrag reset mapping. PendingUIA11close async.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W09
+Production route and exact writer anchors:
+  GM resume496-501
+Specified legal operation/allowed state and source rule:
+  Resume A8playing;restingcount16lockatonce,count15delaystarts;C3/E2/E3 suppress heldrepeats untilrelease/newpress.
+Actual concrete writes and semantic projection:
+  mode498,land499 canlockwhenGMcount>=15->pieceLanded280;gravity500. NoICsuppressionwrite/callback.
+Observed checkpoint/failure placement:
+  GMmonitor afteroperation,notICstate.
+Frame/commit claim to establish:
+  Nestedlock effects authorized onlyunderB9.2specificcase;A12 retained/resume suppressionrepresentation leftopen,not fixed byhandle naming.
+Unresolved evidence/source gap:
+  Count15versus16behaviorcandidate;heldcontrolsuppression missingmap;R1resourcechecks/ICtimers unobserved.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W10
+Production route and exact writer anchors:
+  GM move550-557 viaactions502-507;SCtryMove425-429;Tetromino.position
+Specified legal operation/allowed state and source rule:
+  Move A2legal;A9/A15perB9.2;onlynestedlockifauthorizedlandingrule.
+Actual concrete writes and semantic projection:
+  position554 onfit,resetLockDelay555->noteLowest300-304,maybeincrement293/295,lockcancel/start/lockonarrival.
+Observed checkpoint/failure placement:
+  Guardwhenviaaction;directpubliccallno monitor/onChange.
+Frame/commit claim to establish:
+  No change ifnothingfits;lowestsemantic greatestoccupiedrow notboxrow. Newlowestreset mustnotthenincrement.
+Unresolved evidence/source gap:
+  Need boxrow-to-maxoccupiedrow relation,resetevent/ledge/newlowest cases;mutablepiece/boardaliases anddirectmethods notencapsulated proof.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W11
+Production route and exact writer anchors:
+  GM rotate583-590->Tetromino.rotate131-151
+Specified legal operation/allowed state and source rule:
+  Rotate A2legalorientation/position;A9/A15perB9.2;O no rotation.
+Actual concrete writes and semantic projection:
+  Tetromino rotationState145 andposition146 afterfit;managerresetifstatechanged587.
+Observed checkpoint/failure placement:
+  Guardviaaction;twoinplacewritesbeforeoperationcheck. directTetromino/GMmethodnone.
+Frame/commit claim to establish:
+  A2valid atconceptualcommit,V1allows internalsteps;unchangedrotation butpositionchange needsclassification ifkicks allow sameorientation.
+Unresolved evidence/source gap:
+  Independentkickoracle gap;allaliaswriters/frame preservation notproved;no errorbetween writes tests. sharedrotations/wallkick arrays notsemantic mutations byshippedcode.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W12
+Production route and exact writer anchors:
+  GM gravitytimer359-383->drop245-257
+Specified legal operation/allowed state and source rule:
+  Gravitytick A2down,A9/A15lowest/reset thenpossiblelock;S10requestedinterval;allU4timerfiringschecked.
+Actual concrete writes and semantic projection:
+  callbacknullsgravityhandle364 then drop;position250,note251,land253,gravityreissue255.
+Observed checkpoint/failure placement:
+  schedule383 wraps callbackguard,monitorafterfullcallback. Lategravitywhileoverdropreturns butmonitorstillruns.
+Frame/commit claim to establish:
+  Timerhandle bookkeepingruntime,notAstate;successfulcancel assumednofire,failedcancelnonmutation required.
+Unresolved evidence/source gap:
+  No timerphase correspondence;latefaultcallback/readmalformedstate mayfault again. Scheduler throws insideoperation mostlycaught,butfailSafe cancellation canthrow.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W13
+Production route and exact writer anchors:
+  GM softdropto drop245-257;IC161/296;SC480
+Specified legal operation/allowed state and source rule:
+  SoftDrop sameA2/A9/A15 plusgravityrestart;pendingconfirmation handledW04.
+Actual concrete writes and semantic projection:
+  Positiononlyifnotresting;land/lock/reissueevenblockedifplaying.
+Observed checkpoint/failure placement:
+  InnerGMguard;ICinterval/SCgestureouter writes notcoveredbyinnercheck.
+Frame/commit claim to establish:
+  Oneinputeventmaycomprisecontrolprogression+softdrop+touchcounter;need eachlegalcommit map.
+Unresolved evidence/source gap:
+  Blockedsoftdrop/reissue/sourcepartiality retained;ICcallback/checkpoint after ownstate missing;SCrowOffsetincrements evenifdropno movement.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W14
+Production route and exact writer anchors:
+  GM hardDrop539-547
+Specified legal operation/allowed state and source rule:
+  HardDrop A2toindependentlanding thenlock A1/A2/A4/A5/A6/A7/A9/A15 andmaybeA8/A16over.
+Actual concrete writes and semantic projection:
+  position542 fromghostcopy,lock543,gravity545.
+Observed checkpoint/failure placement:
+  Guardviaactiononly;directhardDropnone.
+Frame/commit claim to establish:
+  Ghostgetter353-356 mutatescopyonly,notA2writer until542. IntermediatepositionsnotseparatecommitsV1.
+Unresolved evidence/source gap:
+  Independentlanding/lockpoststate &persistenceframe needevidence;invalidpiece dropDistance canhang;directmethodaccess/noonChange notshippedcallerdefectbyitself.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W15
+Production route and exact writer anchors:
+  GM startLockDelay263-270->schedule383;lockAndSpawn317-324
+Specified legal operation/allowed state and source rule:
+  Lockexpiry legalwhileplaying/resting;lockeffectsD32,completedturnsaveD33C1 unlessover.
+Actual concrete writes and semantic projection:
+  callback267unconditionallylocks;spawn/clear/save;reissue268ifplaying. Lockhandle notnullbeforefiring;resetnewpiece cancels later.
+Observed checkpoint/failure placement:
+  GMmonitor aftertimerbody;failedcancel latecallback lacksentrymodecheck beforeboardwrites.
+Frame/commit claim to establish:
+  U3latecancel-firedcallback mustnotchange stoppedstate. Existingguard checksafterwrites cannotaloneprove nonmutation.
+Unresolved evidence/source gap:
+  Candidate late-lockfault/paused/over mutation;needactualcanceloutcome boundary,instructioncutpoints,not successfulcancel adversarial premise.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W16
+Production route and exact writer anchors:
+  GM lock317-350/generate228-243;factorygenerate
+Specified legal operation/allowed state and source rule:
+  Lock A1add/remove/shift,A7scores,A2fromA5,A5refillA6,A4available,A9zero/A15newmax,A14oldcontrolends;overifspawnfails.
+Actual concrete writes and semantic projection:
+  Boardcell329,splice343/unshift346,score348,highscore349;queue.shift230,current231,queue.push232,hold233,reset234;A8over237/flagfalse238.
+Observed checkpoint/failure placement:
+  Wholeouteraction/timeronly;helperdirectnone. highscore/savewrittenbeforeoutermonitor.
+Frame/commit claim to establish:
+  A3preserved atordinarylock;A12/A13preservation/overstopping needcrosslayer. A14canretainoldpiece pointer butcontrolsfalse viaidentity,projectionnotautomatic.
+Unresolved evidence/source gap:
+  SemanticA15boxrowdifferent;ICrepeat idle onovernot immediate;A16absent;score/highscore/turnsave timing requiresO4 evidence.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W17
+Production route and exact writer anchors:
+  GM hold559-580
+Specified legal operation/allowed state and source rule:
+  Hold A2/A3swaporqueue/bag,A4consume,A9zero/A15newinitial;no-roomordinaryover A8/A16,semanticpiece/held/holdused/bag/reset/touch absent.
+Actual concrete writes and semantic projection:
+  StopsGMtimers561/562;incoming571/reset572/land573 orgenerate575;held577/holdfalse578. No-roomheld branchmode567/flag568returnsbeforeheldassign.
+Observed checkpoint/failure placement:
+  GuardviahandleAction;directholdnone.
+Frame/commit claim to establish:
+  Concrete retainedheld/holdusedatover notaloneinvalid becauseabsent;newqueue-basedhold mayupdate concreteheld afterover,stillprojectionrequired.
+Unresolved evidence/source gap:
+  Need fullhold lockcycle/frame/noop andover crosslayerresources;A16missingmap;A14 identitydropcontrol relation,savewithdrawfailure outcome.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W18
+Production route and exact writer anchors:
+  GM noteLowest300-304/resetLockDelay287-298/resetNew306-310
+Specified legal operation/allowed state and source rule:
+  OnlyassignedA9/A15 perlegalpiece move/rotate/fall/spawn/hold/Continue restoration distinctions.
+Actual concrete writes and semantic projection:
+  lowest302usesposition.row;count303zero;count++293/295;resetNew308zero/309boxrow.
+Observed checkpoint/failure placement:
+  Coveredouterguardonly;helpersdirectnone.
+Frame/commit claim to establish:
+  These helpersnot independentauthorizedoperationjustbecausemutators. No authoritytonewlowest fromconstructorabsentvalue.
+Unresolved evidence/source gap:
+  Formalmax-cellrow andcount16 meanings notmatchedbyname;Continue resetnotrestoration;newlowest increment order sourcecandidate.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W19
+Production route and exact writer anchors:
+  GM failSafe436-454 via runChecked404/407
+Specified legal operation/allowed state and source rule:
+  DefinedfaulttransitionD16F2,D22/D23:modeover,timerstop,reportvisible+signal,lastgoodsavekept;retainordinarycontents exceptmandatorysafeeffects.
+Actual concrete writes and semantic projection:
+  mode437,gravitycancel438,lockcancel439,faultarray444/445,onFault450. NoICrepeatstop/A16withdraw/persistwrites.
+Observed checkpoint/failure placement:
+  Calledoutsideoperationtryaftercaughtthrow;stopGameLoop/cancelLockDelay throwsnotcaughtbyfailSafe. reporting catchesonlypush/onFault.
+Frame/commit claim to establish:
+  Fault not ordinaryR1state;cannotdemand malformedboardvalidity/rollback. Requiredsafechangesdistinct fromordinarygameover.
+Unresolved evidence/source gap:
+  No visiblefault UI wiredSC12;signaldependscallback;repeat resourcesuncanceled;failedcancel canabortsafeconversion/report. Allpendingrequirementlinked evidence,not promotedfinding.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W20
+Production route and exact writer anchors:
+  GM save219-225/seteligibility164-170/highscore148-153/read cache158-176
+Specified legal operation/allowed state and source rule:
+  Authorizedpersistedeffects perD21;A16clear onlythissessionsuccessfulsave,setonwithdraw/attempt,neverother-session event. HighscorepersistednotA7.
+Actual concrete writes and semantic projection:
+  payloadset221,flagtrue222 orfalse224;setterinvalidatescache165 beforecaughtflagwrite167;cachedflag159/readreset175. No distinctA16fieldwriter.
+Observed checkpoint/failure placement:
+  No checkpoint forsetter/read cache;save insideGMactionchecks later,directsave none.
+Frame/commit claim to establish:
+  storedIsSessionSaved is externalflagcache,not automaticallyA16:storageChangedclears,it re-readsexternaltrue. Persistence ops maychangeoutsideauthoritativestate withoutacceptingpayload.
+Unresolved evidence/source gap:
+  MissingA16representation or equivalent proof;failedflagwrite success semantics;payloadwritebeforepostcheck;everysetfalsecallsite separateS9withdraw lifetime.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W21
+Production route and exact writer anchors:
+  GM rejectedContinue204;reset194;spawnover238;savefailure224;holdover568;storage eventSC552-556
+Specified legal operation/allowed state and source rule:
+  A16set atwithdraw/attempt,clearedsessionstart/successsaveS9;ContinueC4unchangedexceptrejectwithdraw;externalsave cannotclear currentA16.
+Actual concrete writes and semantic projection:
+  AllflagfalsewritesviaW20;externalstorageeventstorageChanged553 invalidatescache,lastSnapshot554/requestDraw555.
+Observed checkpoint/failure placement:
+  GMoutercheckonsomefalsecalls;storage eventnone becauseonlycache/presentation.
+Frame/commit claim to establish:
+  Externalflagwrite event notlegalauthoritativeA16change. NoidentifiableA16directassignmentfoundinshippedsource.
+Unresolved evidence/source gap:
+  Need semanticcounterpart/equivalenceorboundedcounterexample. No inferred authorityfromsame names;DOMContinue checksflagonlySC221,notpayload/A16map.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W22
+Production route and exact writer anchors:
+  SC syncControls226-229,HTMLdialog64-73/autofocus69
+Specified legal operation/allowed state and source rule:
+  Confirmopen op1 A10pending/A11Cancel;answer op3A10/A11absent;B12choiceonlypending.
+Actual concrete writes and semantic projection:
+  GMpendingearlier;showModal227 yieldsnativefocusCancel;close228mayrestorefocus. No separateA11field.
+Observed checkpoint/failure placement:
+  drawSafely337 catches syncControlserror,notR1/frame/enginefaultcheck;initialcontext/RAF separate.
+Frame/commit claim to establish:
+  Dialogpresentationhasauthoritativeselectionsemanticdependency,notwholesaleexclude. Pendingtrue beforeRAF/nativefocus may temporarilylackchoiceoutsideunfinishedGMoperation.
+Unresolved evidence/source gap:
+  Need pendingGMcommit-to-DOMfocus conceptualcommit definition/allowedlatency/evidence;not invent async grace or requirementchange. showModalthrow/retry andactiveElementoutsidebuttons relation open.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W23
+Production route and exact writer anchors:
+  SC questionmove527-530/press531;IC143/203/205
+Specified legal operation/allowed state and source rule:
+  Selection op2 changesonlyA11;press op3answer readsselectedchoice. Cancelinitial,arrowsclamped;STA1highlightalways.
+Actual concrete writes and semantic projection:
+  activeElementquery528;button.focus529;selectedbutton.click531->GManswer.
+Observed checkpoint/failure placement:
+  No enginecheckafterfocus;nativefocus andrendercatchonly;buttonclickGMguardchecksA10/gameeffects,notfocusdomain.
+Frame/commit claim to establish:
+  A11definedbysemanticprojectionofDOMfocuswhilepending. NativeTab/pointer/assistivetech/browserfocusalso writers outsideexplicitfocus callback.
+Unresolved evidence/source gap:
+  Need completefocusentry/focusloss projection &frametable;focusunlistedAPI successnotautomaticallypermission/semanticcorrectness;selectionnotpurepresentation. No screenshot/highlight evidence.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W24
+Production route and exact writer anchors:
+  Native DOMfocus:HTMLbuttons69/70/dialog;SC529;Tab/click/focusrestore
+Specified legal operation/allowed state and source rule:
+  Anyvalidconfirmationselectedchoicechange op2,onlypending;outsidependingA11absent.
+Actual concrete writes and semantic projection:
+  Focusmaychangewithoutpagefocusin/outlistener;selectedbutton derivesdocument.activeElement.
+Observed checkpoint/failure placement:
+  No registered engineinvariant check/nativefocus admission;doesnotgo throughGMoperation.
+Frame/commit claim to establish:
+  BrowseractiveElementtrustedsemanticsD27notprojectmapping;outsidependingfocus notA11writer bysemanticabsence.
+Unresolved evidence/source gap:
+  Allreachablefocusstates:neitherbutton,both?singleactiveElement,dialog/container/tabcycling/highlight/pressnone andclose/reopen. Cannotconclude eachnativeeventlegalwithoutgrounding.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W25
+Production route and exact writer anchors:
+  IC handleKey119-168;KEY_ALIASES:IC31-37;aliasuse119-120
+Specified legal operation/allowed state and source rule:
+  Press/release op4/5:onephysicalcontroltoken,orderednewesthorizontal;modifiedpressneverheld;B12tokenuniqueness. PressgameeffectnestedD32operation.
+Actual concrete writes and semantic projection:
+  Aliaskey120;heldKeys.add126/delete127 beforehandled/mode/repeatchecks;setcontainsnon-gamekeys too. Thenmoving/drop/pause/actions.
+Observed checkpoint/failure placement:
+  No checkafterheldsetwrite;innerGMcheckonlyifgameactionexecuted;dialog/unhandled/release pathsmaynevercheck.
+Frame/commit claim to establish:
+  A12physicalcontroldomain cannotidentity-map aliasedset;setorderavailablebutresume usesfixedA/Dpriority,notorder. Non-gamekeys mayberuntime ignoreddata,notauthoritativetokens.
+Unresolved evidence/source gap:
+  Need perphysicalcode-to-token representationincludingA+Leftsamealias,modifierkeyup/repeat/dialogpress/release;exactlegalcombinedpress/gameplayframe andfaultpoints evidence.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W26
+Production route and exact writer anchors:
+  IC processInput190-241,poll171-183
+Specified legal operation/allowed state and source rule:
+  Padcontrolpress/release op4/5 physicaltokens/order;inputmappingINP4;dialogpress/select op3/2;menu/gameplaynested.
+Actual concrete writes and semantic projection:
+  heldButtons=pressed192;directioncollapsesstick/dpad193-195;dialogpadDirection206 orpadDown229/padDirection235;newPresses drivesactions.
+Observed checkpoint/failure placement:
+  OuterRAFpolltry catchesconsole only;no authoritativepostcheckof ownwrites. GMnestedactionscheckgamebeforelaterpadwrites.
+Frame/commit claim to establish:
+  Multiplephysicalsources same direction/prioritymustmapB12separatetokens/order;heldButtonsalsoactionedge runtimecache,notnecessarilyallA12.
+Unresolved evidence/source gap:
+  Tokenphysicalidentity/newestorderlostpossible;simultaneousbuttons/modechanges/readthrows andwrite-afterGMcheck needcompletecompositeframe relation. Raw axesstandin/no realpad.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W27
+Production route and exact writer anchors:
+  IC resumeHeldMovement245-253/startMoving257-271
+Specified legal operation/allowed state and source rule:
+  Press/release/repeat op4/5/6 A12/A13,neweststillheldrule;INP2timing167/33;pausedrepeatidle.
+Actual concrete writes and semantic projection:
+  Resume choosesAleftthenDrightthenpad246-248;movement=action259,clear260,GMaction261,settimer270. Repeatedcallbackmodecheck263 thenGM267/reschedule268.
+Observed checkpoint/failure placement:
+  A13movementwrite/preclearscheduler outsideGMguard;innercheckbeforetimerassignment/reissue. Stopbranch264returnswithoutGMcheck.
+Frame/commit claim to establish:
+  Semanticphase waiting/repeating notexplicitfield;derivefromtimerhistory,notmovementnonnull orhandlealone. Equalactionearlyreturn258 preservesoldphase.
+Unresolved evidence/source gap:
+  No fullA13phase/resourceadapter;pausedstart timer allowedbycode;timerregistration/cancel throw outsidefaultguard;everyU4repeatfiringstopbranchcheck missingmap.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W28
+Production route and exact writer anchors:
+  IC stopMoving273-277/blur305-312/disconnect88
+Specified legal operation/allowed state and source rule:
+  Release op5/removetokens;repeatstop op6/blurINP2;B12idlepaused/over.
+Actual concrete writes and semantic projection:
+  clearTimeout274;timerundefined275/movementnull276;releaseAllstop306/307,heldButtonsnew308,padnull309/downfalse310,heldKeys.clear311.
+Observed checkpoint/failure placement:
+  No GMcheck;clearfailure canpreventlaterclears;blur/disconnectcallbacknolocalcatch.
+Frame/commit claim to establish:
+  Blur-tokenfatepartialversusD32releaseop;disconnectreleasesall specifiedINP4;authoritativeA12/A13runtime effectsneedseparatemap.
+Unresolved evidence/source gap:
+  Failedcancel chain/report/safe-state andfullframemapping notproved;releaseAllcanpartiallyclear then throw. Browserblurtrustednotownhandling.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W29
+Production route and exact writer anchors:
+  IC updateSoftDrop281-303
+Specified legal operation/allowed state and source rule:
+  Softpress/release op4/5;repeatop6 A13dropping/idle;INP2immediate then50ms,modepause/overstop.
+Actual concrete writes and semantic projection:
+  hasKeyS orpadDown282;setInterval291 ifnone;callbackstop293 ifnotplaying elseGMsoftDrop296;clear301/undefined302.
+Observed checkpoint/failure placement:
+  No enginecheckonstart/stop/aftercallbackreturn;onlyinnerGMsoftDropchecks gameplay afterpreclear.
+Frame/commit claim to establish:
+  Softtoken setprojection needsphysicalS/Down/stick/dpad;timersemanticrunning distinctundefined/null.
+Unresolved evidence/source gap:
+  Modechange doesnot synchronouslyclear untilcallback;pausedresourceoutstanding;failedsetInterval/clearInterval outsideguard;stopfiringno explicitinvariantcheck. D23U4 includesrepeat.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W30
+Production route and exact writer anchors:
+  SC resetDrag407-414/pointerdown431-438
+Specified legal operation/allowed state and source rule:
+  Touchbegin op7 A14semanticdragonlycontrollingcurrentfallingpiece whereexists;R1oversemanticabsence,pausednoinput STA2.
+Actual concrete writes and semantic projection:
+  Resetpointer/piece/moved/offsets/blocked;newpointer/piece/startX/Y433-436;setCapture437afterwrites. Nomodecheck.
+Observed checkpoint/failure placement:
+  No engineguard/check/catch;setCapturethrowafterA14writes.
+Frame/commit claim to establish:
+  startanchorsretainwheninactive projectionallowed;currentTetrominoconcreteatover notsemanticcurrent. PointerresourceidnotnecessarilyallA14authority.
+Unresolved evidence/source gap:
+  Need inactive/paused/over B12projection/legalbegin+capturefailure;no automaticclearoverfieldrequirement. CapturefacilitiesnotblanketW4trust.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W31
+Production route and exact writer anchors:
+  SC pointermove440-483;tryMove425-429
+Specified legal operation/allowed state and source rule:
+  Touchupdate op8 A14 currentpoint/columns/rows/control;nestedmove/softdrop authorized;gesturecontrolsoriginalpieceonly.
+Actual concrete writes and semantic projection:
+  moved449,cellOffset458/474,blocked459/470/475,startX461/471,rowOffset481;noexplicitcurrentpointstoredexceptevent/anchors. Engineactions427/480 inside loops.
+Observed checkpoint/failure placement:
+  EachGMmove/dropguard checks beforefollowingA14writes;outerhandlermode/frame/B12no check. Earlyidentityreturn444 leavesfields.
+Frame/commit claim to establish:
+  Compositegesture maymultiplesemanticmoves;authoritativetouchprogressupdates notcoveredby GMboardcheck. Anchor mutation vsfixedoriginalstart/excursion sourceB12/E1 distinct.
+Unresolved evidence/source gap:
+  Potentialout-of-frame/invalidstaledrag/inputpaused cases needeventtrace;10px>=comparison andanchorupdates must independentE1oracle;blockedmove offsetbanking relation notproved.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W32
+Production route and exact writer anchors:
+  SC endDrag486-491:pointerup/cancel493/494
+Specified legal operation/allowed state and source rule:
+  Touchend op9 rotateonlyneverexceeded10px &endswithin;cancelnorotate;A14none E1/C2.
+Actual concrete writes and semantic projection:
+  isTap488=!moved,pointerup,identity;rotate489 viaGM;reset490 afterward. Noexplicitend-distance measurement.
+Observed checkpoint/failure placement:
+  InnerGMrotationcheckbeforeA14reset;non-tapend/cancel noGMcheck. Throwsafterrotatebeforecleanup possibleviaonChange.
+Frame/commit claim to establish:
+  Cleanup authorizedop9,no undo committedmoves/drops E1. Invalidintermediatetouchafterrotate mayneedcombinedcommit explanation.
+Unresolved evidence/source gap:
+  Needendcoordinates/excursionproof,currentpiecechange/cancel/lostcapture/nativeevent sequences. Cleanupoutsideguard andmissinglostpointercapture handler arecandidates,notpromotedfindings.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W33
+Production route and exact writer anchors:
+  SC visibility544-548;NewGame/Continue/modechange +identity read
+Specified legal operation/allowed state and source rule:
+  Hidden mapsPause/pagehidden pluspossibleTouchcancel;lock/holdspawnbreaksoldgesturecontrol byB12.
+Actual concrete writes and semantic projection:
+  hiddenreset546 regardlessmode thenGMpause547ifplaying. Noexplicitdragresetfornew/hold/lock exceptidentity checks444/488.
+Observed checkpoint/failure placement:
+  A14resetbeforeGMguard;hiddenwhilepaused/over nocommitcheck.
+Frame/commit claim to establish:
+  Semanticcontrolsfalse mayderivedpointeridentity,oldgestureanchors retained;A14absentatover. Needcoordinatepropertynotassumed.
+Unresolved evidence/source gap:
+  No approvedblanket visibilityA14frameassignment beyondD32pagehiddenpause;composeop9withpause onlyifsourcejustified. Currentidentity equalitycannotcertify all semanticdragstate.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W34
+Production route and exact writer anchors:
+  Direct publiclyreachableGM/Tetromino/factorymethods;objectrefs returned
+Specified legal operation/allowed state and source rule:
+  Onlyspecificauthorizedlegaloperation maycommit A1-A16;no approvedprivilegedexception D16.
+Actual concrete writes and semantic projection:
+  AllGMhelperspublic,Tetromino.rotate/position fields mutable,factorybagarrayresetbyreference. ShippedSC/IC callonlyhandleAction/softDrop/togglePause/cancel/storageChanged+getters P2integration.
+Observed checkpoint/failure placement:
+  Directhelper/fieldwrites nocheck/noonChange. Mutablegettersnotdefensive.
+Frame/commit claim to establish:
+  Availabilitytocaller isnotproofrealshippedentry exploits;attackercontrolsownbrowserexcludedanti-cheatinglimit. Needformal/APIrouteboundarynotinventservertrust.
+Unresolved evidence/source gap:
+  Prove/restrictactualin-scopeentry reachability;classify deliberatebypass test withrequirements notpublicityalone. Noencapsulationprovedfromnocurrentcaller. No fixapproved.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+================================================================
+W35
+Production route and exact writer anchors:
+  Non-authoritative writes:ghostcopy353-356;boardVersion;render/sizes/lastSnapshot;wake;cache;sessiontemporaryreconstruction
+Specified legal operation/allowed state and source rule:
+  Derived/presentation/runtime/persisted categories,noAcommit unlessacceptedtransition/focussemanticdependency.
+Actual concrete writes and semantic projection:
+  Ghostmutatescopy,notcurrentpiece;boardVersion presentationmarker;rendercaches/DOMmostlypresentation;wake/cacheoutsideengine;parse temporarycells/pieces becomeauthorityonlyContinue.
+Observed checkpoint/failure placement:
+  Ownappropriateevidencemethod,noforcedR1check;focusandpoll/controldownstreamexceptions retained.
+Frame/commit claim to establish:
+  Donotcounteveryassignmentauthoritative or excludewholeouterhandler;categorizeobjectidentity andsemanticmeaning.
+Unresolved evidence/source gap:
+  Aliasproofcopyposition/rotations plusacceptedpayload ownership;categoryinventory nottests. CacheAPP2/6outsidemodel remainsin-scope. No blanketengineproof fromvisual/staticrouteexclusion.
+Status:
+  Candidate mapping;Not Assessed implementation/frame/checkpoint claim.
+
+Item-centric coverage index (writers covered above)
+A1:W01,W06,W07,W14-W16;A2:W01,W06,W07,W10-W17,Tetromino W11;A3/A4:W01,W06,W07,W16,W17;A5/A6:W01,W06,W07,W16,W17,factorygenerate/reset inanchors;A7:W01,W06,W07,W16;A8:W01,W06-W09,W16-W19;A9/A15:W01,W06-W18;A10:W01,W03-W06 plusW04pre-guard;A11:W22-W24 pending/open/close/selection/nativefocus plusanswersemanticabsence;A12:W02,W25-W28;A13:W02,W08-W09,W27-W29,W19faultstopcrosslayer;A14:W02,W30-W33,lock/hold/new/ContinueidentityprojectionsW06-W07,W16-W17;A16:W01/W20-W21 semanticlifetime target,noidentifieddirectcounterpart. Non-authoritative/temporarywritersW35.
+
+Checkpoint coverage summary
+C-GMaction:guard->runChecked wholeclosure->findInvariantViolation;catch/violation->failSafe. monitor readsboardshape,queuecount,scoreinteger/multiple100,playingpiecefit,GMgravity/lockhandles/resting,notwholeR1/control/repeat. onChangeoutsidecatch. C-GMtimer:schedulewrapswholecallbackguard, includinggravity handlenull anddrop orlock/spawn;latefailedcancel callbackstillenters. C-directhelper:none. C-ICcontrol/repeat:noneforownauthoritativewrites;some innergameplayGMchecks;repeatstopbranchesno GMcheck;set/clear outsideGMfaultcatch. C-SCtouch/focus:noneforownauthority;someinnerGMchecks;rendercatchisrecovery,notsemanticinvariant/faultterminalcheckpoint. C-constructor:none. C-persistence:noneownpostconditioncheck;someeffects withinouterGMclosure beforepostcheck. Nonehere independentlyprovesframeor faultresource/report criterion.
+
+Unresolved source/evidence gaps (batched)
+G1 Definition-to-object projection for A11 nativefocus,A12 physicalaliases/stick/dpadtokens/order,A13 waiting/repeating/idle/A14 originalpoint/currentpoint/excursion/A15 maxoccupiedrow/A16sessionlifetime missing completeadapter/relations. Do notidentitymap fields bynames.
+G2 Compositeoperation boundaries needsource-grounded relation for controlpress+gameaction,gestureupdate withseveral moves/softdrops,dialogrenderfocusafterGMpendingcommit,visibilitytouchcancel+pause,otheractionconfirmationcancel. No introducedasyncgrace orguard-onlyboundary.
+G3 Each D32/Z1operation needs all-state frameassertions,not only modifiedfields. R1ordinary/fault distinction/gameoversemanticabsence retained;concretequeue remainsvalid. Some helperwrites permissibleonlyasnested authorizedtransition,notindependentAPIoperation.
+G4 Repeat timers physicallyoutstanding betweenpause/over andnextpoll/tick;immediateU4stop/R1B13relation unproved. Failedcancel/write/registration/onChange/nativefocus/captureexceptions need realcutpointscope and independentlyobserved effects. Successfulcancel assumptionnotreplacedbyarbitraryinvalidscheduler.
+G5 Missing explicitA16 writer:flagcache invalidation/reread externallytrue cannot serveS9lifetimewithout equivalenceproof. Allwithdraw/attempt/successsave pathslistedW20/21;no new persistentformat ormechanism selected.
+G6 Ordinary monitor notR1oracle,only partialchecks. LiteralSAF4checkpointscope throughinput-ownedwrites/timerstopbranches needs analysis beforedeclaringfailorwaivingchecks. No automaticrequirement-expansion toeveryDOMevent;legal-operation/value relation mustgroundwhichaction occurred.
+G7 Constructor/opening validity/sourceexceptions separate evidence. No assertion absenceofguardautomaticallyviolatesSAF4onopening;B1openingvalid needsproofindependentofruntimeactionmonitor. No automaticclearsemanticallyabsentfields.
+G8 Direct publichelpers/mutableobjectrefs reachablebycode butno shippedSC/ICcaller usesmostunguarded methods percrossfilepass. Need in-scopeboundary/reachability/hostile-input test domains,notclaimunhackabilityin usercontrolledbrowser orfictionalencapsulation.
+G9 D32 hadpartialpoints settledD33/D34;otherpartialmodelchoices notdeterminedbyproduction. Blur/new-game heldtokenrepresentation andinputmodecomposites needcarefulsource relation,not borrowedresume suppression ornewownerdecision bydefault. PotentialINP3modifiedkey interpretation remainsD40gap,notresolvedhere.
+G10 Independentlydesigned frame/checkpoint/fault differentialtests pendingcoordinator:predeclaresemanticpartitions/modes/pending flags/physicaltokens/touchpoints/14-15-16count/legacyvalidity/withdrawfailures/exceptioncutpoints. No permanenttests added. No modelauthor feedbackfromthisexposedmatrix. Candidateobservations need governingrequirement-linkedreproduction/disposition;no statuses promoted.
+
+Proposed bounded validation relation for integration (not implementationfinding)
+For eachrow selectspecifiedlegaloperation,independentprestate,allowedwrite-set,nestedoperations,ordinary/faultcommit andrequiredcheckpoints. Record concretebefore/after snapshot by category and objectidentity,storageevents,outstandingtimerfirings,focus/control/touchvalues andreports. VerifyallunassignedAitems preserved underZ1 andassignedvalues perD32/D33/D34,notproductionexpectedoutputs. TreatUndefined/suppliedpartialchoices undercurrentO8preflight/trace-rejectionlimits. Failedcases classify requirement/model/representation/mappingerror separately. Evidence count ormethodmatrix alone cannotclosePhase3/4. O1/O7 remain Not Assessed.
+
+Canonical legal-operation frame matrix, source side only
+Use F=setA1..A16 minus assigned set;F preserved byZ1,except semanticabsence/default effects explicitly sourced. These are D32 literal assignments with D33/D34 completions,not an implementation-derived whitelist. Nestedoperations add onlytheirsource-assigned effects. Snapshotpredicate validity notitself operationpermission.
+L01 confirmationopen: assignedA10pending/A11Cancel,onlypaused. F allothers. W03,W22. Checkpoint relation pendingGMversusdeferredfocus unresolved. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L02 selectionchange: assignedA11only whilepending. F allothers. W23,W24. Nativefocus/checkpoint mappingopen. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L03 confirmationanswerNewGame (D32 Part A operation3/confirmation-answer row, NewGame row;STA1/STA3;D18B8/B9.2;D21S1/S2/S9): D32 statesgiveup/resetboard,score,held,queue,bag,holdavailable,withdrawA16,A10/A11cleared;newcurrent/reset/lowest/mode consequences requireB8/B9.2/STA1 cited composite,not freepermission allcontrols. Cancel/Escape/outside/other:A10/A11cleared,gamepaused;otherAitems preserved unless separatelyspecifiednestedoperation. W05,W06.
+L04 direction/controlpress: A12token ordered (modifiedCmd/Ctrl/Alt neverheld);gameeffect separatelegaloperation. A13progressiononlywhenrepeatstarts underL06. W25-W27. F remaining,composition recordrequired. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L05 direction/controlrelease: A12tokenremoved/newestremainingwins;disconnectreleasesallINP4;repeat consequenceL06. W25-W28. Release-repeat timingpartial notguessed. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L06 repeatprogression: A13phaseadvances,idlewhenpaused/over/blur;eachrepeat move/softdrop nested. Resources stopwithmode. W27-W29,W08,W19. A12doesnotbecomearbitrarydiscardablefromphase rule. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L07 touchbegin: A14perB12/INP5;controlsactualfallingpiece. F rest. W30. No sourceautomaticpauseinputexception. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L08 touchupdate: A14plusnestedmove/softdrop allowedsets;onlyoriginalpiececontrolled. F rest. W31. E1committedmoves retained,no rollback inferred. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L09 touchend/cancel: A14none;rotationnestedonlyneverbeyond10px andendswithin10px,notcancel. F restexceptlegalrotation. W32/W33compositehidden relationopen. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L10 move/rotate: A2legal iffits plusA9/A15exactB9.2events. F rest except explicitlynestedlock ifrule triggers. W10,W11,W18. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L11 gravity/softdrop: A2down,A15/A9fallrule;rest/lock consequences separatelynested;softdropgravityrestart runtimeeffect. F others. W12,W13. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L12 harddrop: A2landing thenL13lock. W14. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L13 lock: A1blocks/rowshift,A7score,A2fromA5,A5refillA6,A6refillwhenempty,A4available,A9zero,A15maxnewpiece;A14no longercontrolsoldpiece;ifnoplaceL18over;completedturnsaveC1 includesnextpiece,nooverturnsave. W15,W16. A3 preserved (exceptlateroversemanticabsence). Source-citation check pending for this row; do not treat its assignments as independently verified.
+L14 hold: A2/A3swap orincomingfromA5/A6,A4consume,A9zero/A15newinitial;no-roomL18. W17. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L15 pause/pagehidden: A8paused,A9pausecountwhilelockdelay,A13idle;gravity/lock/repeatstopped,save. D32doesnotexplicitlyassignA14forpagehidden,sohiddenreset needsseparatetouchcancelcomposition,not silentlyaddedmask. W08,W33. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L16 resume:A8playing;count16restinglocks immediately,count15restingdelaystarts;heldrepeat suppressionC3/E2/E3,representationopen. A12tokensnotarbitrary newdiscardpermission;A13idleheld-suppressed untilrelease/newpress. W09,W27-W29. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L17 Continue:A1-A9/A15restoredexactly,A8paused;freshbagonlymissingsavebag,A16unchangedC4;controls/cancelprojection requireseparatesources. W07,W21. Do nottreatload-as-spawn resetpermission. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L18 ordinaryover:A8over,A16withdraw;allU4timersstop;A2/A3/A4/A6/A9/A14/A15lose semanticvalue,clearingnotrequired;A5stillvalid3,A1/A7retainedunlessauthorized precedinglock effects. W16,W17,W21. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L19 faultstop (D16 sections7 F2/8;D32 Part A engine-fault-stop row;D21S3/S6;D22T1;D23U3/U4): separateSAFEstate,modeover,U4resourcesstop/failedcancelmayfirebutnotmutate,lastgoodsavekept,visiblemessage+observablesignal;ordinarycontentsretainedF2 exceptrequiredsafechanges. Faultalone notA16withdraw. W19. Do notapplyordinaryR1orL18semanticabsence blindlytofaultcontents.
+L20 opening: initialstateB1/B7;A16false;A13idle/A14semanticallyabsent/A11absent perstate domains; initialheldtoken contents need source/physicalinput relation,not inferredemptyrequirement. NotordinaryD32legalactionframe. W01,W02. Source-citation check pending for this row; do not treat its assignments as independently verified.
+L21 persistence-only/read/event: maychange external/cache/presentationstate withoutcommittingauthority;A16changesONLYS9lifetime effects andacceptedContinue maycommitsavedAitems underL17. W20,W21,W35. Source-citation check pending for this row; do not treat its assignments as independently verified.
+Each F row requires independent assertion of every unassigned semantic item,not a passed monitor that checks onlysomefields. Rows are specification-side mapping,not runtime verification or independent clean-author inputs.

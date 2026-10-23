@@ -1,0 +1,94 @@
+Entry-wrapper cases: softDrop outside-guard mutation and the onChange callback boundary, raw run capture
+Capture time (UTC): 2026-10-23 09:26. Single indicative local run, not a status.
+Source: soliskit/tetris-js main 9db0855fee0c5cd626317eb847f751531df5a027 (scratch copy /tmp/tj-mut; repo unchanged)
+Node: v22.23.3 (local; indicative only - repo asks Node 26+, CI is authoritative)
+Command: node --test --experimental-test-isolation=none /tmp/softdrop-wrapper-scratch.test.js
+The test file is a scratch file outside the repository; it is not discovered by the repository suite and changes no repository file.
+
+=== SCRATCH TEST SOURCE (verbatim) ===
+// Scratch, outside the repo. Blueprint section 15, entry-wrapper cases:
+// softDrop's one statement outside the guarded operation
+// (isConfirmingNewGame = false), and the shared post-operation onChange
+// callback boundary. One indicative run, not a status.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler } from '/tmp/tj-mut/test/helpers.js';
+
+test('scratch: softDrop clears the confirm flag outside the guard', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage });
+
+  // Paused with the New Game question open: the only state where the flag is true.
+  game.handleAction(PlayerAction.newGame);
+  game.handleAction(PlayerAction.pause);
+  game.handleAction(PlayerAction.newGame); // asks the question
+  assert.equal(game.state, GameState.paused);
+  assert.equal(game.isConfirmingNewGame, true, 'the question is open');
+
+  const boardBefore = JSON.stringify(game.gameBoard);
+  const pendingBefore = scheduler.pending;
+  game.softDrop();
+  assert.equal(game.isConfirmingNewGame, false, 'the flag is cleared');
+  assert.equal(game.state, GameState.paused, 'the game stays paused (the drop no-ops while paused)');
+  assert.equal(JSON.stringify(game.gameBoard), boardBefore, 'the board is unchanged');
+  assert.equal(scheduler.pending, pendingBefore, 'the pending timer count is unchanged');
+  assert.equal(game.faults.length, 0, 'no fault');
+
+  // While playing, the flag is already false: the outside-guard clear is a no-op.
+  game.handleAction(PlayerAction.newGame); // re-ask? state paused: asks again
+  assert.equal(game.isConfirmingNewGame, true);
+  game.handleAction(PlayerAction.newGame); // confirms -> playing
+  assert.equal(game.state, GameState.playing);
+  assert.equal(game.isConfirmingNewGame, false);
+  const pieceBefore = JSON.stringify(game.currentTetromino);
+  game.softDrop(); // real drop
+  assert.notEqual(JSON.stringify(game.currentTetromino), pieceBefore, 'the falling piece moved: a real drop ran');
+  assert.equal(game.isConfirmingNewGame, false, 'still false: no observable effect from the clear while playing');
+  assert.equal(game.state, GameState.playing);
+  assert.equal(game.faults.length, 0);
+});
+
+test('scratch: a throwing page onChange escapes after the operation lands', () => {
+  const storage = createMemoryStorage();
+  const scheduler = createFakeScheduler();
+  // guard() calls runChecked(operation) and then this.onChange() with no catch
+  // (gameManager.js:392-394). onChange is the page-supplied callback.
+  const game = new GameManager({
+    scheduler,
+    storage,
+    onChange: () => { throw new Error('page callback fault'); }
+  });
+
+  assert.equal(game.state, GameState.gameOver);
+  assert.throws(() => game.handleAction(PlayerAction.newGame), /page callback fault/, 'the page callback throw escapes the wrapper to the caller');
+  assert.equal(game.state, GameState.playing, 'the operation changed the state before the callback threw');
+  assert.equal(game.faults.length, 0, 'no fault is recorded: the throw came from the page callback after the guarded operation');
+  assert.equal(scheduler.pending, 1, 'the gravity timer is pending');
+});
+
+=== RUN OUTPUT (TAP, verbatim) ===
+TAP version 13
+# Subtest: scratch: softDrop clears the confirm flag outside the guard
+ok 1 - scratch: softDrop clears the confirm flag outside the guard
+  ---
+  duration_ms: 4.168066
+  type: 'test'
+  ...
+# Subtest: scratch: a throwing page onChange escapes after the operation lands
+ok 2 - scratch: a throwing page onChange escapes after the operation lands
+  ---
+  duration_ms: 0.664973
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28.173701

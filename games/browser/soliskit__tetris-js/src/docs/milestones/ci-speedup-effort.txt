@@ -1,0 +1,830 @@
+Faster CI
+
+A measured plan for pull-request feedback and deployment speed.
+
+Charter | Approved October 5, 2026
+Project: soliskit/tetris-js
+
+Status
+
+This is the owner-approved wording of the charter, approved on October 5, 2026. It incorporates the CI review clarifications and restates the same program in clearer language.
+
+Planning is complete. Activation is separate. No benchmark or CI implementation
+starts before Phase 10 closes and the owner gives a written go-ahead. Merge, release
+and deployment remain separate owner approvals. This document changes no code,
+workflow, test, requirement, repository setting or certification record.
+
+Introduction
+
+Faster CI should mean less time waiting for reliable evidence, not less evidence.
+This program finds the fastest safe configuration for pull-request feedback and
+main-to-deployment latency. Both outcomes are measured and reported separately.
+There is no arbitrary hard latency target.
+
+Measure the final post-Phase-10 tree first. Keep every remaining protection.
+Change only the CI mechanism under test. Retain an optimization only when the
+complete configuration shows a material gain without worse reliability.
+
+The program has one cross-program dependency: it closes before Modern Gameplay
+implementation begins. The order is Phase 10, CI Pipeline Optimization, then
+Modern Gameplay. This is the owner's G4 sequence. D12 itself requires CI
+optimization after Phase 10 and comparison with Phase 0; it does not establish
+that CI must precede features.
+
+Sequence and approval provenance
+
+The order is the owner's sequence: complete Phase 10, implement the CI speedup, then add features. Planning is complete. CI work can begin after Phase 10 with a written go-ahead, and features can begin after Phase 10 and CI close.
+
+How to read this charter
+
+Sections 1 and 1A set authority. Sections 2-9 define entry, measurement and the
+keep rule. Sections 10-20 define gate, browser, mutation and cache protections.
+Sections 21-25 cover execution choices, provenance and change control.
+[E] means empirical evidence. [J] means a judgment rule, not a measured fact.
+The exact technical limits remain explicit even where the surrounding prose is
+shorter. Approval of direction does not approve a measured outcome or deployment.
+
+1. Authority and protections
+
+The QA-1 through QA-6 requirements remain unchanged.
+
+This charter does not claim that the repository location of QA-1 enforcement has
+already been independently verified. QA-1 and QA-2 are preserved only if the unit step
+(`npm test`) runs unchanged in a required job and, once located, the QA-1 enforcement
+still runs in the new topology. Before any topology change, locate and record where
+QA-1 is enforced and confirm that enforcement still runs in the new required topology.
+
+The existing owner approval is the owner approval D12 requires for the bounded
+program and its decision rules, including parallelization, sharding, caching and
+job restructuring. It does not start
+work, settle measured outcomes, or approve a merge, release or deployment.
+This wording was approved on October 5, 2026.
+
+This program does not authorize:
+- test removal;
+- lower unit/engine coverage;
+- lower browser page-script coverage;
+- lower mutation threshold or narrower required mutation scope;
+- fewer required browser/device projects;
+- retries used to turn failures into acceptance;
+- weaker required-check semantics;
+- bypass of REQUIREMENTS.md rule 2;
+- bypass of blueprint 10.2;
+- expansion of the trusted core merely to reduce CI cost.
+
+Any requirement change, protection weakening, scope reduction, certification-policy
+change, or release decision remains the owner's decision.
+
+1A. Delegated decisions and owner decisions
+
+Decided by Instinct inside this charter, from measurements, with every result and
+every rejected candidate reported:
+- the improvement-margin rule as applied (Section 8);
+- sample extensions under Section 6;
+- whether to build the browser split (Section 13);
+- the simultaneous hosted-job count (Section 22, M1);
+- whether the browser-binary cache is kept (Section 20, M2);
+- mutation shard count and partition (Section 16, M3);
+- runner pinning mechanics and drift checks (Section 9);
+- routine workflow structure and non-normative implementation choices.
+
+Still requiring the owner, because they are outside this charter's authority:
+- any weakening or narrowing of a protection or scope listed in Section 1;
+- any change to required-check names, branch protection or other repository settings;
+- any spending or change in cost, or any change to the approved hosted-job/concurrency
+  envelope;
+- any requirement change or certification-policy change;
+- merging, releasing or deploying: code changes go by pull request only; merge and
+  deploy are the owner's approvals unless the owner grants a scoped standing permission in his
+  own words. Nothing in this charter grants one;
+- a goal or priority conflict (for example PR-feedback latency and main-to-deployment
+  latency pulling in opposite directions);
+- a finding that no safe configuration clears the Section 8 rule.
+
+After the work, the owner receives a short result summary: what became faster and by how
+much, evidence that protections are unchanged, any cost change, any rejected
+candidate. He is asked to decide only if one of the items above arises or if the
+result changes a goal, a safeguard or cost.
+
+The owner may change any of this; nothing here assumes the owner has.
+
+2. Entry and completion
+
+Entry:
+- Phase 10 has closed.
+- The exact post-Phase-10 target tree to benchmark is frozen.
+- The benchmark harness itself is separately identified.
+- Phase-0 baseline evidence remains available.
+- the repository location/mechanism that enforces QA-1 has been located and recorded,
+  and `npm test` remains unchanged in a required job;
+- the owner has given a written go-ahead to begin (Section 24).
+
+Exit:
+- the selected configuration has been compared against Phase 0 and the fresh
+  fixed-tree A/B control;
+- required negative controls demonstrate that split/sharded topology cannot falsely pass;
+- QA-1 through QA-6 remain satisfied at their required scope;
+- test/browser/mutation universes are shown not to have silently shrunk;
+- the selected configuration's reliability evidence is recorded;
+- measurement-dependent choices listed in section 22 are resolved from evidence;
+- the result summary described in Section 1A has been delivered to the owner, and the
+  final configuration is merged only on the owner's approval (pull request only);
+- the resulting CI becomes the execution environment for the feature program.
+
+3. Historical baseline
+
+Use docs/tetris-audit/phase-0-baseline.md as the D12 historical baseline.
+
+The approved source records these approximate Phase-0 figures:
+- test job: 2 min 30 s;
+- browser install: 49 s combined for Chromium + WebKit;
+- browser tests + coverage: 79 s on 2 workers;
+- typecheck: about 1 s;
+- unit tests: about 2 s;
+- setup/install: about 14 s per ordinary job;
+- full mutation job: about 32 min 39 s;
+- Stryker step: about 32 min 17 s;
+- 1,152 mutants;
+- identical-code timeout totals observed: 24, 31 and 32.
+
+Phase 0 is a historical comparison, not the mechanism-isolation baseline.
+
+4. Fixed-tree A/B control
+
+After Phase 10, freeze one exact application/test/dependency tree.
+
+All A/B comparisons:
+- use the same target commit/tree;
+- use the same lockfile;
+- use the same test bytes;
+- use the same mutation targets;
+- use the same production code;
+- differ only in the CI mechanism deliberately under test.
+
+If an experiment genuinely needs tracked target-file changes, identify it as:
+"target + explicit patch"
+
+and record:
+- target SHA;
+- exact patch checksum;
+- reason the patch is required;
+- proof that the same patch is applied to both compared mechanisms where applicable.
+
+Do not call two runs identical-code A/B if their target bytes differ.
+
+5. Keep the harness separate
+
+Keep the benchmark harness separate from the target checkout.
+
+Each benchmark run:
+- checks out the fixed target SHA into its own target path;
+- checks out or materializes the benchmark harness into a different path;
+- records target SHA and harness SHA/checksum before execution;
+- records them again at the end;
+- verifies the harness did not modify tracked target files.
+
+The harness may collect timings, environment metadata, artifacts and reports.
+
+It does not rewrite tracked application/test/configuration files unless the experiment
+is explicitly declared "target + explicit patch" under section 4.
+
+This protects measurement integrity. It does not define product behavior.
+
+6. Fixed samples
+
+The initial benchmark sample is fixed:
+
+Ordinary required-gate baseline:
+- 7 ordinary runs.
+
+Cold-cache diagnostic:
+- 3 deliberately cold-cache ordinary runs.
+
+Full mutation baseline:
+- 3 runs.
+
+Use the same fixed count for directly compared candidates where practical.
+
+Do not use sequential "stop when CV looks good" sampling.
+
+Report for each metric:
+- all observations;
+- median;
+- p25;
+- p75;
+- minimum;
+- maximum;
+- mean;
+- standard deviation;
+- coefficient of variation.
+
+CV is descriptive only. No 5% CV threshold is adopted.
+
+After the fixed initial sample, a candidate is eligible for exactly one extension only if:
+- every protection and negative-control requirement already passes;
+- its observed median critical-path gain over the current control is positive; and
+- it fails either Section 8(a) or Section 8(b).
+
+Then:
+- mark the comparison inconclusive;
+- retain all collected observations;
+- before any extra run starts, predeclare one paired/interleaved extension in which
+  both the current control and the candidate each receive an additional sample equal
+  to their original directly compared sample size;
+- recompute the comparison from the combined fixed samples;
+- allow no second extension; if the candidate still fails Section 8, keep the control.
+
+A candidate with a non-positive median gain is rejected without an extension.
+
+The 10 percent figure remains a judgment value (recommended program policy), not an
+empirical one.
+
+7. Define the timing metrics
+
+Record separately:
+- queue/provisioning delay;
+- queue-excluded execution critical-path time through the required aggregate gate;
+- elapsed time through the required aggregate-gate conclusion;
+- total workflow wall clock;
+- total runner time;
+- per-step durations.
+
+Execution critical-path time excludes queue/provisioning delays before and
+between required jobs. Determine it from the required job dependency graph and
+recorded execution durations. Identify the graph and endpoints separately for
+the ordinary required gate and the full mutation run. Count all work that
+actually executes on the path, including setup, checkout, install, cache
+restore/save, artifact upload/download and the required aggregate gate.
+
+Elapsed time through aggregate conclusion is a separate metric. Timing only the
+aggregate job does not measure the complete graph. Write down the precise
+metric definition and obtain independent fidelity review before any candidate
+timing is collected or viewed, and before any benchmark comparison counts.
+
+Validate the definition with the same execution durations and different
+intermediate queue delays: the queue-excluded metric must remain unchanged.
+Confirm that setup/cache/artifact work cannot disappear from the accounting.
+The precise harness definition must also settle whether a job's execution
+duration is its own start-to-finish interval or the sum of its steps, and where
+runner startup inside a job is counted. This charter does not choose those
+mechanics from candidate results. Record and independently review them before
+candidate timings are collected or viewed.
+Queue luck must not appear as a mechanism gain.
+
+PR feedback and main-to-deployment end-to-end latency are also reported because they
+matter operationally.
+
+Cold-cache runs remain a separate diagnostic series.
+
+8. When to keep a change
+
+Evidence labels: [E] empirical, from Phase 0 data or measured on the fixed control;
+[J] judgment, a reasoned default not derived from data.
+
+Net saving is counted once. The comparison metric is the queue-excluded execution
+critical path defined in Section 7, measured on the fixed control tree [E]. Extra-job
+setup runs inside that path, so it is already in the measured number and is not
+subtracted a second time. Only the pre-build projection in Section 13 subtracts setup,
+once.
+
+A mechanism is kept only if all of these hold:
+a. its median critical-path gain over the current control exceeds the control's
+  interquartile range (p75 minus p25) for that metric [E: the IQR is measured from the
+  control] [J: using that observed spread as the keep threshold is a conservative
+  heuristic, not a statistical proof of "noise"];
+b. the gain is at least 10 percent of the control median [J: below that, added moving
+  parts are not worth carrying];
+c. every protection in Section 1 is unchanged and the Section 11 negative controls
+  pass before any timing counts;
+d. reliability does not get worse: zero unexplained workflow/test failures, crashes,
+  harness timeouts or abnormal exits in its sample, and every such event is explained
+  before acceptance [J]. Stryker mutant classifications of Timed Out are governed
+  separately by Sections 17 and 18 and are not treated as workflow/test timeouts here;
+e. each mechanism or topology increment as a whole (for example, the browser split, a
+  worker-count change, or moving from 2 to 3 mutation shards) clears (a) and (b)
+  against the currently accepted control that already contains the earlier accepted
+  steps (Section 12). Individual job/shard duration is diagnostic evidence; an
+  individual component does not separately have to clear the 10 percent/IQR
+  thresholds.
+
+An explanation is not a reliability waiver. Keep all observations. Reject or
+correct a configuration that worsens reliability; send any proposed weakening
+back to the owner under Section 1A. Do not discard failures or use retries as
+acceptance evidence. An intentionally memory-exhausting worker configuration
+cannot pass merely because the cause is known.
+
+The rule applies separately to the ordinary required gate and to the full mutation run.
+
+The rule is written down, with the baseline data it rests on, before any
+candidate-topology timing result is collected or viewed. Instinct records it and
+applies it. If the measured baseline makes the rule unsuitable (for example the
+control's spread is larger than a 10 percent gain can ever clear), Instinct reports
+that and the Section 1A "no safe configuration" item applies.
+
+A candidate that does not clear the rule is not retained merely because its median is
+numerically smaller.
+
+9. Runner identity and drift
+
+Every benchmark run records:
+- runner label;
+- runner image/version when exposed;
+- architecture;
+- CPU count;
+- Node availableParallelism();
+- memory;
+- disk;
+- Node version;
+- npm version;
+- Playwright version;
+- Chromium revision;
+- WebKit revision;
+- Stryker version;
+- cgroup CPU/memory limits when present.
+
+Suggested diagnostics include:
+- nproc;
+- getconf _NPROCESSORS_ONLN;
+- lscpu;
+- free -h;
+- df -h;
+- uname -a;
+- /etc/os-release;
+- /sys/fs/cgroup/cpu.max when present;
+- /sys/fs/cgroup/memory.max when present.
+
+Benchmark runner policy:
+- pin a concrete supported runner image/label for each benchmark campaign where the
+  platform supports meaningful pinning;
+- if that level of pinning is not available, retain `ubuntu-latest` and apply the
+  drift controls below.
+
+This policy governs benchmark campaigns only. The production workflow's runner label
+stays as it is today unless the owner decides otherwise.
+
+A and B runs are interleaved or paired in time. Before any comparison is accepted,
+compare the recorded runner image/version across every A and B run. If the
+image/version is not exposed, state that runner-image drift cannot be ruled out by
+metadata; rely on interleaving/paired timing to reduce the risk and label the
+comparison with that limitation.
+
+Do not change runner label during one A/B campaign unless runner choice itself is the
+mechanism under test.
+
+If the underlying runner image materially changes during a campaign:
+- do not silently discard inconvenient data;
+- invalidate the mixed-environment comparison;
+- either restore the prior environment or establish a new baseline.
+
+10. Establish gate behavior before measuring speed
+
+Before any topology change, record the current required status/check names and the
+applicable branch-protection settings. After the topology change, verify those names
+and settings again. They stay as they are today unless the owner decides otherwise.
+Changing a required status/check name or branch-protection setting is a
+repository/settings change and remains the owner's decision.
+
+Before execution, record an expected-evidence manifest for each trigger class:
+ordinary runs, engine-only PR mutation, test-changing PR mutation and scheduled
+full mutation. Identify expected jobs, test/browser sets, mutation scope, shard
+reports and aggregate evidence. Every applicable obligation must be fulfilled.
+Distinguish expected non-applicability from an unexpected skip. An empty
+selected dependency list cannot erase an obligation. At activation, define the
+PR trigger classes and their exact scopes from the then-current QA-6 requirement
+and workflow. These labels do not introduce a new trigger or scope rule.
+
+For a test-changing PR, omission of required full mutation must fail. For an
+engine-only PR, compare the selected scope with the corresponding unsharded
+scope; do not require full mutation where QA-6 permits changed-file mutation.
+
+Whenever job topology, sharding, artifact aggregation, or required-check composition
+changes:
+
+1. construct the new topology;
+2. run negative controls;
+3. prove aggregate gate semantics;
+4. only then count timing results.
+
+A required aggregate "test" result must not represent complete success merely because
+a component:
+- failed;
+- skipped unexpectedly;
+- was cancelled;
+- omitted required evidence.
+
+The aggregate gate itself must run whenever the platform permits and fail internally
+unless every required dependency result is exactly successful.
+
+Do not place the dependency-success condition only on the aggregate job in a way that
+converts dependency failure into an apparently acceptable skipped required check.
+
+Deployment remains dependent on the successful required aggregate gate.
+
+For global workflow cancellation, the required property is:
+- no successful complete-test result;
+- no deployment.
+
+This charter does not require a platform-impossible red aggregate status if
+cancellation prevents that job from executing.
+
+11. Required negative controls
+
+At minimum test:
+- typecheck failure;
+- unit-test failure;
+- Chromium failure;
+- WebKit failure;
+- forced Playwright timeout;
+- page-script coverage below 100%;
+- syntax error in public/script.js;
+- skipped required component;
+- cancelled required component;
+- missing required shard artifact/report;
+- incomplete mutation universe;
+- duplicate mutation identity;
+- stale shard artifact identity, including a prior-run report from the same target and
+  partition with the same mutant keys.
+
+Do not compare timings for a new topology until these controls behave safely.
+
+12. Experiment order
+
+First establish the fixed baseline and identify the long pole.
+
+Because both PR and main-to-deploy latency matter, choose the first major experiment
+from measured critical paths:
+
+- if mutation PR latency dominates the relevant developer path, mutation sharding may
+  be evaluated first;
+- if the ordinary test/deploy path dominates, browser split may be evaluated first.
+
+Then evaluate the other major path if it still matters.
+
+After the large mechanisms:
+- Playwright worker tuning;
+- optional browser sharding;
+- setup/cache experiments only if they remain worth pursuing.
+
+Every accepted step becomes the control for the next step.
+
+Implementation is not a reason to retain an optimization.
+
+13. Check the browser split before building it
+
+A long combined browser time is not enough reason to build a split.
+
+Before implementation, measure on the fixed control tree:
+- Chromium-only install time;
+- WebKit-only install time;
+- Chromium-project runtime;
+- WebKit-project runtime;
+- additional setup/startup cost of the second job.
+
+Compute the best-case critical-path saving:
+work moved off the long pole
+minus
+additional job/setup overhead.
+
+Setup is subtracted here once; after the split is built, only the measured critical
+path counts (Section 8).
+
+Build the split only if the projected saving is at least 10 percent of the control
+median [J threshold, E inputs]. If it is not, drop the split without asking the owner and
+report why.
+
+The combined Phase-0 numbers alone do not establish the split's saving.
+
+This precheck uses control-tree measurements only. Do not collect or view
+candidate-topology timing results before the Section 8 margin/acceptance rule has been
+recorded.
+
+14. Browser split candidate
+
+If the precheck supports it, candidate topology is:
+
+Chromium:
+- setup;
+- typecheck;
+- unit tests;
+- Chromium install;
+- Chromium iPhone;
+- Chromium desktop;
+- existing page-script coverage judgment.
+
+WebKit:
+- setup;
+- typecheck;
+- WebKit install;
+- WebKit iPhone.
+
+Acceptance:
+- QA-5 remains true in every test-running job;
+- same intended project/test discovery;
+- same pass/skip semantics;
+- zero retries;
+- same browser revisions for A/B;
+- 100% required page-script coverage;
+- aggregate gate passes only when all required components succeed.
+
+15. Workers and optional browser shards
+
+Worker tuning may compare:
+- 1;
+- default;
+- 2;
+- 3;
+- 4.
+
+The finalist receives an extended reliability screen.
+
+A series of clean runs does not prove the absence of flakiness.
+
+If an extended screen is needed, its fixed run count is selected before that screen
+begins and its limited statistical power is stated.
+
+Record:
+- exact discovered test set;
+- pass/skip counts;
+- assertions;
+- timeouts;
+- crashes;
+- abnormal exits.
+
+If browser sharding is later justified:
+- WebKit may shard independently;
+- Chromium raw coverage from every shard is aggregated once before the final coverage
+  judgment;
+- expected artifact and coverage-file counts are exact;
+- artifact identities are deterministic;
+- missing shard evidence fails the aggregate;
+- an unsharded control establishes equivalence.
+
+16. Mutation capability and partition
+
+Sections 16 through 19 do not change the QA-6 trigger or path scope: the weekly
+mutation run, plus pull requests that change game logic or its tests, remain in scope
+as today unless the owner decides otherwise.
+
+Before implementation, verify the installed Stryker version's actual supported
+sharding/capability from the installed CLI/package documentation.
+
+Do not assume native deterministic sharding is absent merely from an old planning note.
+
+If external file sharding is still needed:
+- each source file belongs to exactly one shard;
+- shard definitions are deterministic;
+- the union of shard mutant universes equals the unsharded universe;
+- no duplicate stable mutant identity exists.
+
+Do not choose a final partition from mutant count alone.
+
+Measure on the frozen baseline:
+- runtime by file or candidate file-group;
+- Stryker dry-run/setup cost per invocation;
+- mutant count;
+- Killed/Timed Out distribution.
+
+Partition primarily using measured runtime while preserving deterministic, exhaustive
+file ownership.
+
+Mutant count is secondary evidence.
+
+Instinct chooses the shard count and partition from measurements:
+- evaluate runtime-driven 2-shard and 3-shard candidate partitions first [J: this is a
+  bounded first search, not a claim that 3 is a minimum useful count];
+- choose the smallest count whose complete candidate topology clears the Section 8 rule;
+- evaluate a higher shard count only if measured per-file runtime shows that the
+  current critical-path shard can still be shortened materially; because external file
+  sharding treats a source file as indivisible, an indivisible dominant file sets a
+  floor that adding shards cannot remove;
+- a candidate count that would exceed the Section 22 M1 default hosted-job cap is not
+  evaluated automatically: activation first verifies platform limits, and any
+  resulting cost change or change to the approved concurrency envelope is handled
+  under Section 1A before proceeding;
+- stop adding shards when the next complete topology fails the Section 8 rule;
+- fix each candidate partition before its comparison.
+
+17. Mutation acceptance
+
+Required mutation acceptance policy:
+
+- stable-key mutant universe matches the accepted unsharded universe;
+- zero survivors;
+- zero errors;
+- no new no-coverage outcome;
+- every mutant otherwise ends Killed or Timed Out;
+- threshold remains 100;
+- every Killed -> Timed Out movement is reported individually;
+- every Timed Out -> Killed movement is reported individually.
+
+Exact Killed/Timed Out classification equality is not required because identical-code
+baseline runs already demonstrate classification variation.
+
+However:
+- Killed -> Timed Out is weaker evidence;
+- it must be investigated before acceptance.
+
+A survivor, mutation error, unexplained no-coverage result, or unexplained
+mutant-universe change is a protection failure, not merely a reporting difference.
+
+18. Diagnose mutation timeout movement
+
+Each independent Stryker invocation has its own dry run/setup and may derive a
+different effective timeout budget.
+
+Therefore per-shard dry-run timing is a plausible cause of Killed/Timed Out movement.
+
+Treat this as a hypothesis until it is measured.
+
+For each movement, record where available:
+- baseline classification;
+- shard classification;
+- baseline dry-run timing;
+- shard dry-run timing;
+- derived/effective timeout;
+- isolated-mutant result;
+- representative shard/full-load result;
+- known killing test/evidence.
+
+Determine whether the movement is consistent with:
+- dry-run-derived timeout change;
+- CPU/resource contention;
+- ordinary runner variance;
+- actual loss of deterministic killing evidence;
+- another cause.
+
+Do not infer the cause from classification alone. Ordinary classification
+variation is not automatic proof of weaker protection. Use these diagnostics
+to distinguish variation from established mechanism-induced weakening. An
+explained Killed/Timed Out shift is not automatically rejected for failing exact
+classification equality; an established weakening is not authorized by its
+explanation and invokes Section 1A.
+
+19. Aggregate mutation evidence
+
+Every shard report has deterministic identity tied to:
+- normalized ordered source-file set;
+- shard-definition checksum.
+
+Bind each report to the frozen target, effective relevant configuration and
+toolchain, harness identity, producing workflow run/attempt and job, and report
+checksum. A shard-definition checksum alone does not identify its execution.
+Reject evidence from a different execution even when the partition and mutant
+universe match. Test this with a prior run of the same target and partition;
+a different-partition test alone does not establish freshness.
+
+The collector verifies:
+- exact expected shard identities;
+- no missing shard;
+- no duplicate shard;
+- no stale artifact;
+- exact mutant-universe union;
+- no duplicate stable mutant keys;
+- every shard job successful.
+
+Negative controls include:
+- deliberate survivor;
+- failed shard;
+- cancelled shard;
+- skipped shard;
+- missing report;
+- incomplete universe;
+- duplicate stable key;
+- stale mismatched shard artifact.
+
+Stryker incremental mode remains out of scope unless separately approved.
+
+20. Setup and cache experiments
+
+Current baseline already uses npm caching through setup-node.
+
+Do not introduce node_modules caching as an assumed optimization.
+
+Browser binary caching is an experiment only.
+
+Retain it only if:
+- faster on measured baseline;
+- exact browser revision is preserved;
+- restore/save overhead is included;
+- correctness evidence does not depend on the cache.
+
+Default: no browser-binary cache. Playwright's CI guidance advises against caching
+browser binaries, so the burden of proof is on the cache [J]. Instinct keeps it only
+if it clears Section 8 with restore and save time included.
+
+21. Benchmark workflow location
+
+Default method:
+B2, benchmark workflow on a benchmark branch using push triggers.
+
+Reason:
+it avoids depending on workflow_dispatch for a workflow absent from the default branch
+and avoids temporary benchmark-only workflow churn on main.
+
+Fallback:
+B1, temporary benchmark workflow on main, only if B2 cannot exercise a required
+mechanism faithfully.
+
+Either method preserves the separate target/harness rule.
+
+22. Choices bounded by measurement
+
+Instinct makes these choices from measurements under the rules above and reports the
+results. the owner decides only when Section 1A retains the decision.
+
+M1. Maximum useful simultaneous hosted-job count.
+Rule: the default cap is 6 hosted jobs per workflow run (1 gate, 2 browser, 3
+mutation) [J]; verify the repository plan's platform/concurrency limits at activation.
+A mutation topology requiring more than this default is considered only under the
+Section 16 exception: platform limits must be checked first, and any cost change or
+change to the approved concurrency envelope is handled under Section 1A before the
+experiment proceeds. Accept/reject the mechanism by the Section 8 queue-excluded
+execution critical-path rule. Queue/provisioning delay is not inside that metric and
+is reported separately under Section 7; if queueing creates a material conflict
+between the PR-feedback and main-to-deployment goals, Section 1A returns that
+goal/priority conflict to the owner.
+
+M2. Whether browser-binary caching is retained.
+Rule: Section 20 (default off).
+
+M3. Mutation shard count and exact partition.
+Rule: Section 16.
+
+M4. Improvement margin.
+Rule: Section 8, written down before candidate timing is collected or viewed.
+
+These are bounded execution choices, not unresolved planning decisions.
+
+23. Artifact identity
+
+Use artifact hashes, not filenames alone, as identity.
+
+The earlier SHA-256:
+ba41c26d19da0f779f97c388d5afc15eb0e9aca9f598a72ae02169f7cd4cdf09
+
+is retained only with the descriptive label:
+"historical CI proposal"
+
+It must not be assumed to identify every later file named tetris-ci-speedup-proposal.txt.
+
+Any later same-named artifact is identified by its own exact checksum.
+
+24. Activation and change control
+
+This charter may be approved before Phase 10 as a future-effective plan.
+
+No benchmark or CI implementation begins before Phase 10 closes and the owner gives a
+written go-ahead. Approval of this charter is not that go-ahead.
+
+At activation:
+- reverify tool/workflow facts against the then-current tree;
+- freeze the target;
+- record any factual drift.
+
+If drift changes only implementation facts, update the evidence plan.
+
+If drift materially changes a protection, requirement, QA obligation or benchmark
+methodology, reopen only the affected proposal section and review that delta.
+
+Do not redesign unaffected sections.
+
+25. REVIEW HISTORY AND REPLACEMENT APPROVAL
+
+This wording, including the C1-C4 execution clarifications, was approved on
+October 5, 2026. Approval does not activate work or reopen settled program policy.
+
+The approved charter incorporates a queue-excluded timing definition and
+freshness, reliability and trigger-scope checks. Review records identify the exact
+artifact reviewed; review alone does not authorize a replacement.
+
+The Section 3 figures are approximate Phase-0 historical figures, not a future
+control or mutant universe. The 32m39s whole mutation job and 32m17s Stryker-step
+figures name different measures, not conflicting baseline claims. They remain
+historical figures. Reverify factual references and QA-1 enforcement at activation.
+The review names test/traceability.test.js in its pinned snapshot as QA-1's
+location. This is a lead, not activation-time verification. Its topology-sensitive
+checks must receive meaningful rule-2 replacement protection where needed, not
+be deleted or preserved as obsolete strings in comments. Tracked target changes
+follow Section 4's explicit-patch discipline.
+
+Under the approved charter, bounded choices remain delegated under
+Section 1A. Scope, protection, certification, spending, settings and release
+triggers remain the owner's. Do not reopen unaffected sections for style alone.
+
+Source identity and writing approach
+
+Approved CI source, delivered-byte SHA-256:
+ba6c57931941c9f06c09c7781bbd0f291e1729d1cd5f3d7ef403d84f88c40695
+Headerless source SHA-256:
+ff288de7e0396b2fc4fd2d7336845369e8d953eceed5cb66f027f615392d2c06
+These identify the source, not this rewrite.
+
+The prose takes inspiration from Swift Evolution vision documents: direct
+introductions, explicit goals and constraints, and a clear separation between
+direction, detailed decisions and later approval. This is not an Apple template,
+Apple-authored document or Swift governance policy.
+https://github.com/swiftlang/swift-evolution/blob/main/visions/approachable-concurrency.md
+https://github.com/swiftlang/swift-evolution/blob/main/visions/memory-safety.md
+https://forums.swift.org/t/the-role-of-vision-documents-in-swift-evolution/62101
+
+END OF CI PIPELINE OPTIMIZATION CHARTER

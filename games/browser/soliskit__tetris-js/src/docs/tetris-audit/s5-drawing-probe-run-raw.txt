@@ -1,0 +1,271 @@
+S5 drawing-failure live-page probe - raw capture
+Date: October 23, 2026 (local)
+Target: https://soliskit.github.io/tetris-js/ (deployed page)
+Deployment check: script.js fetched from the live site at probe time is
+byte-identical to public/script.js on main
+0f1e3abd69686914802872c49816fe3026b1a7ff (SHA-256
+98ca9b94e58db8759783f05165589159d56ede63e2e33a77d588f4c4c3667ab9 both
+sides). Other deployed files were not re-verified in this run.
+Browser: hosted Chrome, user agent Mozilla/5.0 (X11; Linux x86_64)
+AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36.
+No keys, clicks or other input were sent during the trial windows below;
+the game ran on its gravity timer only.
+
+Instrumentation source (run 2, as executed; client-side only; removed by
+page reload afterward):
+
+  const P = window.__probe2 = {events: [], storageWrites: [], resizes: [],
+    errors: [], armed: null, t0: performance.now()};
+  const now = () => Math.round(performance.now() - P.t0);
+  const origFill = CanvasRenderingContext2D.prototype.fill;
+  CanvasRenderingContext2D.prototype.fill = function(...a) {
+    const c = this.canvas.id || '?';
+    if (P.armed) {
+      const e = P.armed; P.armed = null;
+      P.events.push({t: now(), c, threw: String(e)});
+      throw e;
+    }
+    P.events.push({t: now(), c});
+    return origFill.apply(this, a);
+  };
+  const origErr = console.error;
+  console.error = function(...a) {
+    if (String(a[0]).includes('Tetris drawing error'))
+      P.errors.push({t: now(), msg: String(a[0]), arg: String(a[1])});
+    return origErr.apply(this, a);
+  };
+  const origSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(k, v) {
+    P.storageWrites.push({t: now(), k: String(k), len: String(v).length});
+    return origSet.apply(this, arguments); };
+  const origRemove = Storage.prototype.removeItem;
+  Storage.prototype.removeItem = function(k) {
+    P.storageWrites.push({t: now(), k: String(k), removed: true});
+    return origRemove.apply(this, arguments); };
+  window.addEventListener('resize',
+    () => P.resizes.push({t: now(), w: innerWidth, h: innerHeight}));
+  const mo = new MutationObserver(muts => { for (const m of muts)
+    P.resizes.push({t: now(), attr: m.attributeName, target: m.target.id}); });
+  document.querySelectorAll('canvas').forEach(c =>
+    mo.observe(c, {attributes: true, attributeFilter: ['width', 'height']}));
+
+Semantics: EVERY attempted fill call is recorded BEFORE forwarding, as
+{t, c}; the armed call is recorded as {t, c, threw} and is NOT forwarded
+(it paints nothing). Counts are therefore attempted calls, not verified
+paints. Storage writes are recorded by key (no values kept). t is
+milliseconds from instrumentation install.
+
+Terminology: a "frame group" below is a group of attempted fill calls
+sharing a timestamp (or timestamps 1 ms apart). The recorded throw and
+the later calls are distinct timestamped records. Actual
+animation-frame boundaries are unmeasured: these groups are labeled by
+their timestamps, not established as single requestAnimationFrame
+callbacks.
+
+Recorded event objects, as returned by the instrumentation, one event per
+line.
+
+Baseline window (4000 ms; no injection; the initial post-New-Game frame
+that drew the previews happened before this window opened):
+{"c":"tetris","t":5621}
+{"c":"tetris","t":5621}
+{"c":"tetris","t":5621}
+{"c":"tetris","t":5621}
+{"c":"tetris","t":6613}
+{"c":"tetris","t":6613}
+{"c":"tetris","t":6613}
+{"c":"tetris","t":6613}
+{"c":"tetris","t":7614}
+{"c":"tetris","t":7614}
+{"c":"tetris","t":7614}
+{"c":"tetris","t":7614}
+{"c":"tetris","t":8612}
+{"c":"tetris","t":8612}
+{"c":"tetris","t":8612}
+{"c":"tetris","t":8612}
+{"c":"tetris","t":8972}
+{"c":"tetris","t":8972}
+{"c":"tetris","t":8972}
+{"c":"tetris","t":8972}
+storageWrites: []  resizes: []  errors: []
+
+Trial A window (armed Error('probe-injected drawing error') ~1.2 s in):
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17613}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17875}
+{"c":"tetris","t":17876}
+{"c":"tetris","t":18613,"threw":"Error: probe-injected drawing error"}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"tetris","t":18624}
+{"c":"next0","t":18624}
+{"c":"next0","t":18624}
+{"c":"next0","t":18624}
+{"c":"next0","t":18624}
+{"c":"next1","t":18624}
+{"c":"next1","t":18624}
+{"c":"next1","t":18624}
+{"c":"next1","t":18624}
+{"c":"next2","t":18624}
+{"c":"next2","t":18624}
+{"c":"next2","t":18624}
+{"c":"next2","t":18624}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+{"c":"tetris","t":19613}
+errors: [{t:18613, msg:"Tetris drawing error, retrying next frame:",
+  arg:"Error: probe-injected drawing error"}]
+storageWrites: []  resizes: []
+
+Trial B window (armed TypeError('probe-injected distinct second
+failure') ~1.2 s in):
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":29613}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":30614}
+{"c":"tetris","t":31613,"threw":"TypeError: probe-injected distinct second failure"}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"tetris","t":31617}
+{"c":"next0","t":31617}
+{"c":"next0","t":31617}
+{"c":"next0","t":31617}
+{"c":"next0","t":31617}
+{"c":"next1","t":31617}
+{"c":"next1","t":31617}
+{"c":"next1","t":31617}
+{"c":"next1","t":31617}
+{"c":"next2","t":31617}
+{"c":"next2","t":31617}
+{"c":"next2","t":31617}
+{"c":"next2","t":31617}
+errors after trial B: still only the t=18613 entry; the TypeError was
+not reported.
+storageWrites: []  resizes: []
+
+Native console cross-check (browser's own console log, read after
+trial B; the log also retains the run-1 entry from before the reload):
+  [1792749731190] error 'Tetris drawing error, retrying next frame:
+    Error: probe-injected drawing error'   (run 1 trial 1)
+  [1792750016188] error 'Tetris drawing error, retrying next frame:
+    Error: probe-injected drawing error'   (run 2 trial A)
+  No entry for the trial B TypeError.
+
+What the trace does and does not establish:
+- Observed: in both trials, the recovery frame group contains
+  attempted fill calls to all three next previews (next0/next1/next2,
+  4 calls each) alongside the board calls.
+- Not measured: queue identity, engine state, and frame boundaries.
+  Module state is unreachable from the page console; the frame groups
+  above are timestamped groups of attempted calls, not instrumented
+  requestAnimationFrame callbacks; and the fill wrapper records each
+  call BEFORE forwarding it to the native method, so counts are
+  attempted calls, not verified paints.
+- Unexplained: trial A's first in-window frame drew 9 board fills. Under
+  the source painting model (drawBoard script.js:167-202 fills once per
+  occupied locked cell and once per active-piece cell through drawBlock
+  :140-143; the ghost piece is stroked only, :153-163) a board-drawing
+  frame's fill count is locked-cells + 4, which cannot yield 9 in this
+  trial's first in-window frame.
+  Because the trace itself contains a count the model cannot explain,
+  no count-based exclusion is made: whether a lock occurred on either
+  errored tick is not established here, and a lock would shift the
+  next queue and paint the previews for the ordinary reason.
+- Established independently of the counts: no resize event and no
+  canvas width/height attribute mutation was recorded in either trial
+  window, so the two resize-path cache-clearing routes (ResizeObserver
+  script.js:400-406; pixel-density :411-414, both through sizeCanvas)
+  did not fire; and no input was sent during the windows, so no hold
+  action occurred.
+
+Run 1 (earlier same-day run, clustered frame summaries, NOT verbatim
+events; same page, same browser, same injection class; superseded by
+run 2 except where noted):
+  - First frame group after New Game (t=4914): tetris x4, next0 x4,
+    next1 x4, next2 x4 (heldPreview cleared only, no calls: no held
+    piece).
+  - Ordinary tick frame groups: tetris only.
+  - Trial 1: report t=39916; recovery frame group t=39921 (5 ms):
+    tetris x12, next0/next1/next2 x4 each. Next tick t=40921: tetris x12.
+  - Later frame group (t=41392): tetris x16 plus next0, next1, next2
+    x4 each, following frame groups of tetris x12 - read as a lock
+    shifting the next queue under the same painting model, carrying the
+    same model limits named above.
+  - Trial 2 (same error text as its trial 1): recovery frame group
+    t=52924 with preview calls; no second console report. Superseded
+    by run 2 trial B, which uses a genuinely different error.
+
+Pixel captures (run 1 only; run 2 took none):
+  cloud-browser-20261023-100203.png (run 1, before its first injection)
+  cloud-browser-20261023-100241.png (run 1, after its second injection,
+    game still running and drawing normally)
+  They show normal play at two moments: continuation evidence only, not
+  per-frame or cache proof.
+
+Cleanup: the page was reloaded after each run. Post-reload checks: the
+fill and storage prototype methods are native again and the
+instrumentation objects are gone. No site, code, or audit state was
+changed; ordinary gameplay writes to the browser's own storage are the
+game's normal behavior.
+
+Limits
+- One deployment (other deployed files not re-verified), one browser
+  engine (Chrome 155; the prior runs recorded in D68 used Chrome 154),
+  two injected errors in run 2.
+- The injected throw fires on the error frame's first fill call; a throw
+  partway through a board draw was not separately injected.
+- The probes inject from the canvas fill method - the same injection
+  class as the committed spec (e2e/safety.spec.js:39) and as D68's
+  injected state.

@@ -1,0 +1,259 @@
+Scratch-run raw capture: storage-read failure during save discovery and Continue
+Evidence for the blueprint's section 4.7, item 4, F24 (appendix F24 at
+docs/tetris-audit/audit-blueprint.txt:1488). One indicative local run, not
+a status. Scratch copy only: the repository tests and requirements are
+unchanged; the test file does not live in the repository.
+
+Run date: October 23, 2026
+Code under test: scratch checkout of soliskit/tetris-js, commit
+  0f1e3abd69686914802872c49816fe3026b1a7ff
+Runner: node --test, Node.js v22.23.3 (measured: `node --version` output
+  "v22.23.3"), local shell
+Test file: /tmp/f24-storage-read-assertions.test.js (scratch; imports the
+  production modules unmodified; full source embedded below)
+
+Setup
+- Storage: an in-memory storage (createMemoryStorage) wrapped so getItem
+  throws an Error("injected storage-read failure") for whichever keys are
+  armed, with a read list and a write list recording every call. Key
+  strings match public/game/gameManager.js:36-37.
+- Seeding: a real GameManager plays a new game and pauses, which writes
+  the real saved session and the flag (the same module instances under
+  test). The seed's write count is recorded; later writes are measured
+  against it.
+- Fault observation: three literal checks per case - the onFault report
+  callback wrapped by a counting spy, the failSafe method wrapped by a
+  counting spy (game.failSafe is an instance method, gameManager.js:441),
+  and the game.faults list length asserted. These measure the fault-
+  reporting path only; timer behavior, invariant checks, and engine-step
+  correctness are not measured in this run.
+- Source basis for the expected behavior:
+  - readItem (gameManager.js:134-141) catches a storage-read exception
+    and returns null ("Unreadable storage counts as empty").
+  - get isSessionSaved (gameManager.js:159-162) reads the flag key
+    through readItem, compares it to the string 'true', and caches the
+    boolean until storageChanged() (gameManager.js:175) or a write
+    through the setter (gameManager.js:165-172).
+  - loadGameSession (gameManager.js:200) returns at :201 when the
+    cached flag is false, and at :204 when the save text read returns
+    null; the comment at :203 says a failed read or a missing save
+    does not change storage.
+
+Boundary: the tests call loadGameSession() directly on the manager.
+The public Continue action - the button or key running
+handleAction(PlayerAction.continueGame) (script.js:575, gameManager.js:464-465),
+which routes through guard and performAction (gameManager.js:469, :487) to
+loadGameSession, with the guard's invariant checks and the page's onChange
+callback - is not exercised. Whether the public action composes the same
+behavior is unmeasured, and nothing in this capture tests, confirms or
+revisits the recorded public-Continue failed-read withdrawal disposition.
+
+Case A: the flag-key read throws during discovery
+Steps and literal assertions (all passed; source and output below):
+1. Seed; arm the flag key; construct a fresh GameManager on the same
+   storage.
+2. game.isSessionSaved returns false. (Discovery reads the save as
+   unavailable while the read fails.)
+3. loadGameSession() leaves game.state unchanged (not-playing). (The
+   direct call is a no-op.)
+4. Checkpoint: the read log records exactly one read so far (the failed
+   flag read); the write log holds no writes after seeding; the stored
+   save text compares byte-identical to the seeded text.
+5. Fault reporting: the onFault report callback is not called (spy count
+   0), failSafe is not called (spy count 0), and the faults list is
+   empty (length asserted 0).
+6. Disarm the flag key (storage "recovers"). game.isSessionSaved STILL
+   returns false, and the read log records no new read across that
+   access: the getter serves the cached answer while the cache holds
+   (measured by the read log, not inferred).
+7. game.storageChanged() (the page's handler for another tab's storage
+   event); the read log records exactly one new read and
+   game.isSessionSaved now returns true. (Rediscovery requires the
+   cache invalidation; it is not automatic on recovery.)
+8. loadGameSession() restores the game to paused.
+9. Final checkpoint, read from the underlying map: the stored save text
+   compares byte-identical to the seeded text; the stored flag reads
+   'true'; the write log still holds no writes after seeding; the three
+   fault checks still pass.
+
+Case B: the save-text read throws during a direct loadGameSession() call
+(flag read succeeds)
+Steps and literal assertions (all passed; source and output below):
+1. Seed; fresh GameManager; game.isSessionSaved returns true (discovery
+   works; the flag read succeeds).
+2. Arm the save-text key; game.state before the direct call recorded.
+3. loadGameSession() leaves game.state unchanged; game.isSessionSaved
+   still returns true (the save remains discoverable); no write occurs
+   after seeding; fault reporting as in case A step 5 (all three checks
+   pass at this checkpoint).
+4. Disarm; loadGameSession() restores the game to paused.
+5. Final checkpoint, read from the underlying map: the stored save text
+   compares byte-identical to the seeded text; the write log still
+   holds no writes after seeding; the three fault checks still pass.
+
+Test source (verbatim, scratch file; absolute /tmp import paths as run)
+----------------------------------------------------------------------
+// Scratch test, not part of the repository suite. Blueprint section 4.7,
+// item 4, F24: "Inject a storage-read exception during Continue/save
+// discovery." One indicative local run, not a status. Key strings must
+// match gameManager.js:36-37.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { GameManager, createMemoryStorage } from '/tmp/tj-mut/public/game/gameManager.js';
+import { PlayerAction, GameState } from '/tmp/tj-mut/public/game/gameState.js';
+import { createFakeScheduler } from '/tmp/tj-mut/test/helpers.js';
+
+const SAVED_SESSION_KEY = 'tetris.savedGameSession';
+const IS_SESSION_SAVED_KEY = 'tetris.isSessionSaved';
+
+// A storage whose getItem throws for the armed keys, with call logs.
+function setupSeeded() {
+  const base = createMemoryStorage();
+  const reads = [], writes = [];
+  const throwing = new Set();
+  const storage = {
+    getItem: k => { reads.push(k); if (throwing.has(k)) throw new Error('injected storage-read failure'); return base.getItem(k); },
+    setItem: (k, v) => { writes.push([k, String(v)]); base.setItem(k, v); },
+    removeItem: k => { writes.push([k, null]); base.removeItem(k); },
+  };
+  // Seed: a real game writes a real save via a pause.
+  const seed = new GameManager({ scheduler: createFakeScheduler(), storage });
+  seed.handleAction(PlayerAction.newGame);
+  seed.handleAction(PlayerAction.pause);
+  const savedText = base.getItem(SAVED_SESSION_KEY);
+  assert.equal(typeof savedText, 'string', 'seed wrote a save');
+  const flagBefore = base.getItem(IS_SESSION_SAVED_KEY);
+  const writesAfterSeed = writes.length;
+  return { storage, base, reads, writes, throwing, savedText, flagBefore, writesAfterSeed };
+}
+
+test('scratch F24 case A: a flag-read failure marks the save undiscoverable but changes nothing stored', () => {
+  const { storage, base, reads, writes, throwing, savedText, writesAfterSeed } = setupSeeded();
+  throwing.add(IS_SESSION_SAVED_KEY);
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage });
+  let faults = 0;
+  game.onFault = () => { faults++; };
+  const origFailSafe = game.failSafe.bind(game);
+  let failSafeCalls = 0;
+  game.failSafe = (...a) => { failSafeCalls++; return origFailSafe(...a); };
+
+  assert.equal(game.isSessionSaved, false, 'discovery reads the flag as unavailable while the read fails');
+  const stateBefore = game.state;
+  game.loadGameSession();
+  assert.equal(game.state, stateBefore, 'direct loadGameSession() is a no-op while undiscoverable');
+  assert.equal(reads.length, 1, 'the failed discovery is the only storage read so far');
+  assert.equal(writes.length, writesAfterSeed, 'no write occurs during the failed discovery');
+  assert.equal(storage.getItem(SAVED_SESSION_KEY), savedText, 'the stored save text is byte-identical after the failed discovery');
+  assert.equal(faults, 0, 'the onFault report callback is not called');
+  assert.equal(failSafeCalls, 0, 'failSafe is not called (spied)');
+  assert.equal(game.faults.length, 0, 'the faults list stays empty');
+
+  // The stored bytes survive. While the cache holds, no new read happens:
+  throwing.delete(IS_SESSION_SAVED_KEY);
+  const readsBeforeCachedAccess = reads.length;
+  assert.equal(game.isSessionSaved, false, 'the cached false answer persists without cache invalidation');
+  assert.equal(reads.length, readsBeforeCachedAccess, 'no new storage read while the cache holds (measured by the read log)');
+  game.storageChanged(); // the page calls this when another tab changes storage
+  assert.equal(game.isSessionSaved, true, 'a later successful read rediscovers the save');
+  assert.equal(reads.length, readsBeforeCachedAccess + 1, 'the rediscovery read is measured in the read log');
+  game.loadGameSession();
+  assert.equal(game.state, GameState.paused, 'direct loadGameSession() restores the saved game');
+  assert.equal(base.getItem(SAVED_SESSION_KEY), savedText, 'the stored save text is byte-identical at the final checkpoint');
+  assert.equal(base.getItem(IS_SESSION_SAVED_KEY), 'true', 'the stored flag reads true at the final checkpoint');
+  assert.equal(writes.length, writesAfterSeed, 'no write occurs through the recovery loadGameSession() (final checkpoint)');
+  assert.equal(faults, 0, 'the onFault report callback stays silent through recovery');
+  assert.equal(failSafeCalls, 0, 'failSafe stays uncalled through recovery');
+  assert.equal(game.faults.length, 0, 'the faults list stays empty through recovery');
+});
+
+test('scratch F24 case B: a session-text read failure during a direct loadGameSession() call no-ops and the save stays discoverable', () => {
+  const { storage, base, writes, throwing, savedText, writesAfterSeed } = setupSeeded();
+  const scheduler = createFakeScheduler();
+  const game = new GameManager({ scheduler, storage });
+  let faults = 0;
+  game.onFault = () => { faults++; };
+  const origFailSafe = game.failSafe.bind(game);
+  let failSafeCalls = 0;
+  game.failSafe = (...a) => { failSafeCalls++; return origFailSafe(...a); };
+  assert.equal(game.isSessionSaved, true, 'discovery works (flag read succeeds)');
+
+  throwing.add(SAVED_SESSION_KEY);
+  const stateBefore = game.state;
+  game.loadGameSession();
+  assert.equal(game.state, stateBefore, 'loadGameSession() no-ops when the save text cannot be read');
+  assert.equal(game.isSessionSaved, true, 'the save remains discoverable (flag read unaffected)');
+  assert.equal(writes.length, writesAfterSeed, 'no write occurs during the failed loadGameSession()');
+  assert.equal(faults, 0, 'the onFault report callback is not called');
+  assert.equal(failSafeCalls, 0, 'failSafe is not called (spied)');
+  assert.equal(game.faults.length, 0, 'the faults list stays empty');
+
+  throwing.delete(SAVED_SESSION_KEY);
+  game.loadGameSession();
+  assert.equal(game.state, GameState.paused, 'a later successful loadGameSession() restores the save');
+  assert.equal(base.getItem(SAVED_SESSION_KEY), savedText, 'the stored save text is byte-identical at the final checkpoint');
+  assert.equal(writes.length, writesAfterSeed, 'no write occurs through the recovery loadGameSession() (final checkpoint)');
+  assert.equal(faults, 0, 'the onFault report callback stays silent through recovery');
+  assert.equal(failSafeCalls, 0, 'failSafe stays uncalled through recovery');
+  assert.equal(game.faults.length, 0, 'the faults list stays empty through recovery');
+});
+----------------------------------------------------------------------
+$ node --version
+v22.23.3
+
+$ node --test /tmp/f24-storage-read-assertions.test.js
+TAP version 13
+# Subtest: scratch F24 case A: a flag-read failure marks the save undiscoverable but changes nothing stored
+ok 1 - scratch F24 case A: a flag-read failure marks the save undiscoverable but changes nothing stored
+  ---
+  duration_ms: 4.972641
+  type: 'test'
+  ...
+# Subtest: scratch F24 case B: a session-text read failure during a direct loadGameSession() call no-ops and the save stays discoverable
+ok 2 - scratch F24 case B: a session-text read failure during a direct loadGameSession() call no-ops and the save stays discoverable
+  ---
+  duration_ms: 1.400607
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 88.201234
+----------------------------------------------------------------------
+
+Limits
+- Storage is a JavaScript stub over an in-memory map, not a browser
+  Storage object; browser-specific failure modes (quota, corruption,
+  private-mode behaviors) are out of scope.
+- The storage event that triggers storageChanged in a real browser is
+  invoked directly here; real event timing is not exercised.
+- The run does not measure what the player sees (no DOM) and does not
+  exercise the public Continue action: availability and restore are
+  measured through direct loadGameSession() calls on the manager, not
+  the rendered button and not the handleAction -> performAction path
+  with its guard, invariant checks and onChange callback. Whether the
+  public action composes the same behavior is unmeasured; this capture
+  neither confirms nor revisits the recorded public-Continue
+  failed-read withdrawal disposition.
+- "Safe continuation" is measured only as: game.state unchanged and the
+  three fault-reporting checks above. Timer behavior, invariant checks,
+  and engine-step correctness are not measured; broader safety is not
+  established here.
+- Node.js v22.23.3 is below the repository's required Node >=26
+  (package.json engines); behavior under the required major version is
+  not measured. One indicative run on one commit.
+- R4 is decided (October 4, 2026). As recorded in DECISIONS.md D21
+  and docs/tetris-audit/phase-1-r2-r5-decision.md: a failed read may
+  make the saved game unavailable, but does not by itself withdraw it
+  or change stored values, and nothing is promised about when
+  availability returns. That is the decision record's formulation; the
+  owner's approved choice in the original exchange was that a failed
+  read makes the save unavailable while it cannot be read but does not
+  mark it forgotten. Classification of these observations against the
+  decided rule is the audit's later-phase work; this capture adopts
+  none.

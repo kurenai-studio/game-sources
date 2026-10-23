@@ -1,0 +1,247 @@
+* {
+  box-sizing: border-box;
+}
+
+/* The layout always fits the screen, so the page never needs to zoom or
+   scroll. Blocking both stops iOS from double tap or pinch zooming, which
+   used to leave the board filling the screen and swallowing the gestures
+   needed to zoom back out. Also stops rapid taps from selecting text. */
+html {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Safari zoomed in anyway: its gestures are let through, so the player can
+   zoom back out. */
+html.zoomed,
+html.zoomed #tetris {
+  touch-action: auto;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  /* Keep content clear of notches and home bars when installed. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  background: linear-gradient(135deg, #4b0082 0%, #5856d6 30%, #32ade6 55%, #007aff 80%, #30b0c7 100%);
+  background-attachment: fixed;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px;
+  width: min(100%, 480px);
+  /* Fill the screen height exactly so nothing needs scrolling. */
+  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(16px);
+}
+
+.scores {
+  align-self: center;
+  text-align: center;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.score {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.high-score {
+  font-size: 0.8rem;
+}
+
+.previews {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.next {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+}
+
+.preview.small {
+  width: 44px;
+  height: 44px;
+  opacity: 0.6;
+}
+
+#heldPreview {
+  cursor: pointer;
+}
+
+/* Takes the space left over by the other rows; the board is sized to fit it. */
+.board-area {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.board {
+  position: relative;
+  padding: 8px;
+  border-radius: 20px;
+}
+
+/* Over the whole board, letting taps through to it. */
+.board-message {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 2rem;
+  font-weight: 800;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.board-message.engine-fault {
+  padding: 16px;
+  text-align: center;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+.board-message[hidden] {
+  display: none;
+}
+
+#tetris {
+  display: block;
+  /* Largest 1:2 board that fits, less the 16px of board padding. */
+  width: min(100cqw - 16px, (100cqh - 16px) / 2);
+  aspect-ratio: 1 / 2;
+  touch-action: none;
+  /* It listens for clicks, so Safari would flash it gray on every tap. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The menu stays centered while the round pause button sits at the right. */
+.controls {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  min-height: 56px;
+}
+
+/* Hidden without giving up its space, so the board keeps one size whether
+   playing, paused or at game over. */
+#menuControls[hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+button {
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+button:active {
+  opacity: 0.7;
+}
+
+button.round {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.hint {
+  margin: 8px 0 0;
+  /* Keeps the gap between the key hints. */
+  white-space: pre;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Asks before New Game gives up a paused game. Its content fills it, so a
+   click on the dialog itself is on the dimmed page around it. */
+#newGameDialog {
+  padding: 0;
+  border-radius: 24px;
+  color: inherit;
+  text-align: center;
+}
+
+#newGameDialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dialog-content {
+  padding: 20px 24px;
+}
+
+.dialog-content p {
+  margin: 0 0 16px;
+}
+
+/* The selected button always stands out, since a controller or the arrow
+   keys move the selection, not only the Tab key. */
+#newGameDialog button:focus {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.dialog-content .dialog-title {
+  margin-bottom: 4px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Read by screen readers, but not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

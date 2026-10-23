@@ -1,0 +1,323 @@
+State, Safety, and Input Evidence
+
+Candidate evidence records for eighteen requirements.
+
+Repository: soliskit/tetris-js   Base:
+Read-only. No repo change, no certification, no finding status. Every record is Candidate (claim and mapping) / Not Assessed (certification). Model correspondence is PENDING the independent model (blueprint 3.1, O8). No model transition is named and none is invented.
+
+0. PREPARATION AND PROVENANCE
+Read at the base SHA: REQUIREMENTS.md; docs/audit-blueprint.txt (3.1-3.4, Phase 3 exit, Phase 1 exit list); docs/phase-1-record-index.md (deleted, kept in git history); governing Phase 1 texts D16 (phase-1-state-decision.md), D17, D18 (R1), D20, D21 (R2-R5), D22, D23, D24, D25 (property mapping), D27, D28, D29, D30, D31, D32, D33, D34, D35; docs/phase-2-inventory-record.md (D38) and P2-A..E; production public/game/{gameManager,session,inputController,gameState}.js, public/script.js, public/index.html.
+Not read: the O8 model input pack, any clean-model material, DECISIONS.md (the ledger). Approval status of D16..D36 is taken from the record index and D35 section 4, which cite ledger rows; I did not re-verify owner approval. D16's own file still says "CANDIDATE" (D38 section 6: the ledger governs). The approval statements in repo documents are repo text, not owner-channel evidence; treat approval as ledger-derived, not verified by this partition.
+Code identity: gameManager.js, inputController.js, script.js, session.js, gameState.js, tetrominoFactory.js, tetromino.js, position.js, sw.js, index.html are byte-identical between b3c177eb (Phase 2 inventory base) and 0f4e5104 (this base). All file:line refs in P2-A..E and here hold at this base.
+Abbreviations: GM=public/game/gameManager.js, SES=public/game/session.js, IC=public/game/inputController.js, SC=public/script.js, HT=public/index.html. Tags: B1-B17 (D18), S1-S11 (D21), T1-T4 (D22), U1-U4 (D23), V1-V3 (D24), W1-W4 (D27/D35), X (D28), K (D29), P1 (D30), Z1 (D31), C1-C4 (D33), E1-E3 (D34).
+"Existing tests" = tests whose title carries the ID (test/traceability.test.js). They are implementation-side evidence authored with the code; not independent and not claimed to prove anything. test/model.test.js:38 is cited by tag only; I did not read it.
+Common model: authoritative items 1-16 (D16 1.1, D17 item 15, D20 item 16); derived (D16 1.2, D20 item 5); persisted (D16 1.4, D20 item 3). Transition classes: CTL1 confirm open, CTL2 selection change, CTL3 confirm answer, CTL4 press, CTL5 release, CTL6 repeat progression, CTL7-9 touch begin/update/end; GP-move, GP-rotate, GP-soft (incl. gravity), GP-hard, GP-lock, GP-hold, GP-pause (incl. hidden), GP-resume, GP-continue, GP-newgame, GP-gameover, SAFE; PERS-R, PERS-W.
+Engine entry boundary: handleAction GM:459, softDrop GM:527, togglePause GM:523, cancelNewGame GM:533, timers via schedule GM:382; all through guard GM:389 -> runChecked GM:395 -> findInvariantViolation GM:412 / failSafe GM:436. Public methods hardDrop, moveTetromino, holdTetromino, rotateTetromino, dropTetromino, saveGameSession, loadGameSession, resetGameSession, failSafe, generateNextTetromino are callable unguarded (D38 s3).
+Input-side authoritative state outside the engine commit point: IC fields (heldKeys, heldButtons, padDirection, padDown, movement, movementTimer, softDropTimer: IC:67-83), SC drag SC:394-405, DOM focus for item 11 (SC:526-532, HT:69).
+
+=================================================================
+A. STATE REQUIREMENTS
+=================================================================
+
+---- STA-1 ----
+requirement/property: STA-1 (opening at game over; New Game from game over or confirmed from paused, never playing; resets board, score, level, held, queue, bag; forgets the save; paused New Game asks via dialog; Cancel/Escape/outside click/any other action keeps paused; click inside dialog does nothing; Cancel selected on open; keys go to dialog buttons, arrows move between them, key repeat presses nothing). Properties O1, O2, O3, O4 (D25 s2).
+state property: opening state is R1-valid game over (B4-B7, B11, B12; B6/B8/B10 no semantic current piece/held/bag at game over). New Game commits items 1,3,4,5,6,7,8, resets 9 and 15 via new current piece (B9.2), clears 10/11 (B12), sets item 16 (D20, S9), withdraws the save (S1,S2). Pending only while paused; selected choice Cancel on open. Z1: no other item changes.
+transition classes: CTL1, CTL2, CTL3, GP-newgame (from game over, from confirmed paused), any other action while pending (clears pending).
+production routes/trust: constructor GM:77-116 (gameOver GM:107). performAction newGame GM:470-481 -> resetGameSession GM:182-195 (board, boardVersion, score, bag resetBag GM:188, current piece GM:189, queue GM:190, held null GM:191, canHold GM:192, resetLockDelayForNewPiece GM:193, isSessionSaved=false GM:194), state=playing GM:479, startGameLoop GM:480. Pending set GM:475; cleared GM:468, GM:528 (softDrop), GM:535 (cancelNewGame). Entries: Enter IC:45,166; Escape with pending IC:138-140; arrows IC:141-143 -> SC:527-530 (DOM focus); pad IC:202-208; Menu IC:214-219; View IC:220-221; buttons SC:509,519,520; backdrop SC:533-535; dialog cancel SC:536-538; dialog sync SC:226-228. Keys pressed during the dialog still enter heldKeys IC:126-127. Cancel initial focus: HT:69 autofocus. Trust: W4 (dialog element, active element), W1, U1.
+model transition or evidence method: CTL1-3 and GP-newgame: PENDING independent model. Dialog rendering, highlight, click-inside no-op, key repeat have no model counterpart; independent method = browser tests (Chromium and WebKit, QA-4) plus an approved written mapping of item 11 to the focused dialog button.
+claim: (a) from game over, and from paused after confirm, New Game commits exactly the item changes above (Z1) and never from playing; (b) pending exists only while paused and every other action clears it; (c) the shipped dialog shows the UI behavior stated.
+Proof Method: (a) differential execution vs model over legal sequences plus bounded exhaustive {mode} x {pending} x {action}; Z1 16-item before/after comparison. (b) enumeration. (c) scripted browser tests (corroboration, no proof claimed).
+assumptions: W1/W4; U1; B12 item 11 reading; the model is built from decision text only.
+covered production/model refs: GM:77-116, 182-195, 459-537; IC:126-146, 202-221; SC:226-228, 509-539; HT:64-72. Model PENDING.
+evidence: existing tests (19): e2e/game.spec.js:26,41,92,152,269; test/game.test.js:43; test/gameManager.test.js:51,79,101,108,124,146,184,681,857; test/inputController.test.js:131,316,340; test/model.test.js:38.
+limitations: no independent evidence yet; item 11 sits in the DOM outside the engine commit point and invariants (D38 cand. 1, 10); "Cancel selected on open" depends on autofocus per showModal (browser); softDrop clears pending before the engine guard (D38 cand. 8).
+status: Candidate; certification Not Assessed.
+
+---- STA-2 ----
+requirement/property: STA-2 (pause only while playing, resume only while paused; paused: no gravity, no lock delay, no input; pause in lock delay cancels it and counts one reset; resume restarts it). O1, O2.
+state property: B4; B13 paused => no resource running; B9.2 pause rule (count+1 if <=14; 15 becomes 16, valid only paused and resting); resume of a paused resting piece with count 15 starts the delay, with 16 locks at once; B12 repeat idle when paused; C3/E2/E3: a control held at resume does not repeat until released and pressed again.
+transition classes: GP-pause (incl. hidden), GP-resume, CTL6 stop, gravity and lock-delay firings (no-ops while paused), every input op while paused.
+production routes/trust: pause GM:486-495; resume GM:496-501 (landIfResting GM:499 -> pieceLanded GM:278-285); mode guards GM:246,540,551,560,584; entries IC:163-164, IC:218, SC:541, SC:544-548; input timers IC:262-269, IC:291-297 self-stop only when they fire with state!==playing. Trust T3, U3, U4 (timers: gravity, lock delay, held-key repeat).
+model transition or evidence method: GP-pause, GP-resume, repeat-resource rules: PENDING independent model. Timer-state evidence: injected scheduler (blueprint F-cases); browser firing not claimed. Input timers are not injectable (limit).
+claim: pause/resume mode-guarded; while paused no authoritative item changes except those assigned (Z1: 8, 9, persistence); resources stop; reset count obeys B9.2; held controls do not repeat across resume without re-press.
+Proof Method: differential vs model with resource set; bounded exhaustive over count 0..16 x resting x delay running x interleavings; input-timer interleavings separately.
+assumptions: T3, U4, C3/E2; engine timers injected, input timers not.
+covered refs: GM:278-285, 486-501; IC:245-303; SC:544-548. Model PENDING.
+evidence: existing tests (10): e2e/game.spec.js:287; test/gameManager.test.js:89,603,615,631,642,654,937; test/safety.test.js:262,276.
+limitations / candidates: (1) resume at count 15: GM:499 -> GM:279-281 locks at once when count>=15 while B9.2 starts the delay at 15 and locks at once only at 16 (O-1). (2) pause and resume faster than a repeat tick keeps input timers alive (O-2). 
+status: Candidate; certification Not Assessed.
+
+---- STA-3 ----
+requirement/property: STA-3 (game ends when a new or held piece has no room; timers stop; saved game forgotten). O1, O2, O4.
+state property: ordinary game over: items 2,3,4,6,9,14,15 no semantic value (B6,B8,B10,B12); no resource running (B13); save withdrawn (S1,S2) and item 16 set (S9); other items preserved (Z1); later error does not undo withdrawal (S2); SAF-3 is a different trigger (S3).
+transition classes: GP-lock/hard/soft/gravity/lock-delay expiry/resume-lock with no-room new piece; GP-hold with no room (new or held piece).
+production routes/trust: generateNextTetromino GM:228-243 (state=gameOver GM:237, flag false GM:238, stopGameLoop GM:239; delay cancelled GM:234); holdTetromino GM:559-580 (held-piece no room GM:566-569 returns without touching held/canHold; gravity stopped GM:561, delay cancelled GM:562); lockAndSpawnNext GM:317-324 (C1: no save when over). Effect = flag false only; bytes untouched. Trust U1, S4.
+model transition or evidence method: GP-gameover, GP-lock, GP-hold PENDING independent model. Storage-failure branches (S4): injected storage (F20/N1/F24), independent of the model.
+claim: exactly the stated conditions end the game; afterwards no resource runs and Continue is withdrawn; a withdrawal write failure does not stop the game and leaves Continue unavailable in this session (S4).
+Proof Method: differential vs model; bounded exhaustive blocking-cell placements for spawn areas; injected failure at the withdrawal write; scheduler inspection.
+assumptions: S1, S4, S9, T3, U1.
+covered refs: GM:228-243, 317-324, 559-580. Model PENDING.
+evidence: existing tests (11): e2e/app.spec.js:435; e2e/game.spec.js:55,68; test/game.test.js:139; test/gameManager.test.js:590,642,756,904,986,1023,1034.
+limitations / candidates: item 16 has no production counterpart (P2-B C1): Continue availability is the stored flag via a cache cleared at GM:165,174-176 (read at SC:221); on a failed withdrawal write the next read returns the old "true" (O-5).
+status: Candidate; certification Not Assessed.
+
+---- STA-4 ----
+requirement/property: STA-4 (pause saves; line clear saves; Continue from game over only restores exactly what was saved, paused, with the bag; pre-bag save gets a fresh bag). O3, O4, O1.
+state property: a written save is a valid saved game (B16) preserving lowest row and reset count exactly incl. 16; line-clear save captures the completed turn after the next piece appears, none if that turn ends the game (C1); Continue restores items 1-9 and 15 exactly, mode paused (D32), bag or fresh bag if absent, does not change item 16 (C4, S9); failed save withdraws the previous save (S5); a written save is last good (S6).
+transition classes: GP-pause/hidden, GP-lock with cleared lines, GP-continue, PERS-W, PERS-R.
+production routes/trust: saveGameSession GM:219-226 (bytes GM:221, then flag true GM:222; catch false GM:224); callers GM:494, GM:321-323; serializeSession SES:29-40 (board, score, current, queue, held, canHold, bag colors; no reset count, no lowest row); loadGameSession GM:199-217; parseSession SES:146-189; resetLockDelayForNewPiece GM:216, 306-310; entries GM:482-485, IC:46, IC:53, SC:540. Trust U1, S11, V3.
+model transition or evidence method: GP-pause save and GP-continue restore PENDING independent model. Persisted representation judged against B16 by the model-side serializer when it exists, not by SES. Write ordering/failure: injected storage (F20, F23, N1, F24).
+claim: a save written on pause or line clear and read by Continue restores the same semantic authoritative state (B16, D32), bag preserved; a legacy no-bag save gives a fresh bag.
+Proof Method: round-trip property over bounded valid states (state -> save -> continue -> compare); failure injection at each boundary between bytes and flag writes.
+assumptions: S6, S7, S9, U1, V3.
+covered refs: GM:199-226, 317-324, 482-495; SES:29-40, 146-189. Model PENDING.
+evidence: existing tests (22): e2e/game.spec.js:366,383; test/game.test.js:66,119; test/gameManager.test.js:394,408,660,697,714,729,736,746,836,871,887,986,998; test/session.test.js:24,35,44,50.
+limitations / candidates: (1) reset count and lowest row not serialized or restored; recomputed at GM:216,306-310 (O-3). (2) lowest row uses position.row, B9 says greatest occupied block row (O-4). (3) bytes-then-flag order; a flag-write throw is swallowed GM:166-170 so bytes new / flag old is reachable. (4) failed read of the saved bytes writes flag false GM:204 (S7) (O-5). (5) L2 legacy count-15 handling unassessable until counts are restored.
+status: Candidate; certification Not Assessed.
+
+---- STA-5 ----
+requirement/property: STA-5 (pause when the page is hidden). O1, O2.
+state property: hidden while playing => result equals the pause transition (STA-2, STA-4); touch-drag state to none.
+transition classes: GP-pause (hidden trigger).
+production routes/trust: SC:544-548 (resetDragState SC:546; handleAction(pause) SC:547); no releaseAllInput on hidden (IC:87-88 only blur and disconnect). Trust W4 (page visibility and event), W1.
+model transition or evidence method: pause effect PENDING model; the hidden event is browser behavior with no model counterpart: browser test (Chromium and WebKit) dispatching visibility change, compared with the pause result.
+claim: every visibilitychange to hidden while playing leaves the game paused with the pause effects.
+Proof Method: scripted browser test; structural argument that SC:544 is the only hidden route (D38 s3).
+assumptions: W4; no claim for freezes without an event.
+covered refs: SC:544-548. Model PENDING.
+evidence: existing tests (1): e2e/game.spec.js:409.
+limitations: trust-bounded by W4; held-key state not released on hidden (O-2); one test only.
+status: Candidate; certification Not Assessed.
+
+---- STA-6 ----
+requirement/property: STA-6 (every supported saved format keeps loading; level of the earlier format ignored; a fixture per format; names without the "tetris." prefix not read). O3, O6.
+state property: B16: legacy formats accepted, level ignored, missing bag fresh, L1 missing lowest row = greatest occupied row of the current piece, L2 legacy paused resting count-15 default; keys exactly tetris.highScore, tetris.isSessionSaved, tetris.savedGameSession.
+transition classes: PERS-R, GP-continue.
+production routes/trust: GM:34-36; readItem GM:133-140; loadGameSession GM:199-217; parseSession SES:146-189 (no level, count or lowest row read); fixtures test/fixtures/saved-game-current.json, saved-game-with-level.json. Trust: fixtures are authentic released saves (repo-history fact, not verified); U1.
+model transition or evidence method: legacy acceptance is judged against the fixture bytes, independent of SES: load each fixture and compare with the expected semantic state written from B16/D35 text. Post-load state correspondence PENDING model.
+claim: each fixture loads and yields its B16 semantic state; unprefixed keys are never read.
+Proof Method: exhaustive over the two formats; negative load for unprefixed keys; static check that all storage access is in GM.
+assumptions: fixture authenticity (git history evidence needed); U1.
+covered refs: GM:34-36, 199-217; SES:146-189; test/fixtures. Model PENDING.
+evidence: existing tests (2): test/session.test.js:165,188.
+limitations / candidates: L1/L2 not implemented as separate defaults; score multiple-of-100 rule SES:160 stricter than B11 (O-7).
+status: Candidate; certification Not Assessed.
+
+=================================================================
+B. SAFETY REQUIREMENTS
+=================================================================
+
+---- SAF-1 ----
+requirement/property: SAF-1 (saved game is untrusted; every field checked; pieces rebuilt from built-in definitions; invalid save rejected whole and forgotten). O3, O1 (external data becomes authoritative only through an authorized transition, D16 s4).
+state property: B3, B16: accepted whole iff its gameplay contents restore an R1-valid paused state; invalid => rejected whole and withdrawn (S11 for hand edits); no partial assignment of authoritative items on rejection.
+transition classes: PERS-R, GP-continue (the only route by which external data enters authoritative state, P2-B s6).
+production routes/trust: parseSession SES:146-189: parseBoard SES:76-97 (20x10, cell shape, colors, rejects any full row SES:93), parseActivePiece SES:106-115, parseWaitingPiece SES:123-126, parseBag SES:133-137, score SES:159-160 (safe integer, >=0, multiple of 100), queue length SES:163, held SES:170-174, canHold SES:175; loadGameSession assigns only after full parse GM:203-216; on failure only the flag write GM:204. Trust U1, S11; shared primitives allPieces() and piece rotations (blueprint 3.2: need independent justification).
+model transition or evidence method: acceptance predicate is a model-side or specification-side validator authored from B16 only; production validator is never the oracle (3.1, 3.2). Correspondence PENDING. Until then: hostile-input differential between parseSession and an independently written B16 predicate.
+claim: for every stored text, production acceptance equals B16 acceptance; rejection leaves authoritative state unchanged except the withdrawal effect.
+Proof Method: bounded enumeration of each field domain (shapes, cells, colors, kinds, rotation 0..n-1, positions, queue/bag sizes, duplicates, types, JSON edge cases) with differential comparison (Phase 4 hostile-input falsification).
+assumptions: S11, U1, geometry reference bytes (D18 B2).
+covered refs: SES:44-189, GM:199-217. Model PENDING.
+evidence: existing tests (11): e2e/safety.spec.js:19; test/gameManager.test.js:736; test/session.test.js:24,35,44,50,56,62,71,81,147.
+limitations / candidates: acceptance is stricter than B16/R1: full rows rejected SES:92-93 (B15 says no snapshot condition requires none) (O-6); score must be a multiple of 100 SES:160 (B11 says none) (O-7). Reset count and lowest row are not parsed or validated.
+status: Candidate; certification Not Assessed.
+
+---- SAF-2 ----
+requirement/property: SAF-2 (missing, blocked, full or throwing storage never stops the game; invalid stored values ignored). O4, O6.
+state property: U1 (successful operation trusted, contents validated); S4 failed withdrawal: game continues, previous save not offered in this session; S5 failed save withdraws previous save; S7 failed read may make the save unavailable, does not by itself withdraw, changes no stored value; S8 high score good iff whole number >=0 else zero; D16 s7/F2 no rollback.
+transition classes: PERS-R, PERS-W and all routes with persistence effects.
+production routes/trust: defaultStorage GM:51-62; readItem GM:133-140; highScore GM:142-154; isSessionSaved GM:158-171; saveGameSession GM:219-226; loadGameSession GM:199-217; storage listener SC:552-556 (cache invalidation only). No removeItem call in the shipped path.
+model transition or evidence method: injected-failure method (F20, F23, N1, F24) independent of the model; semantic outcome of S4/S5/S7 correspondence PENDING model.
+claim: no storage failure stops the game or raises a fault; Continue availability after each failure follows S4/S5/S7; invalid values are ignored (S8).
+Proof Method: exhaustive over the finite storage-call failure points per route crossed with earlier-call outcomes; static check that every storage call is behind a swallowing wrapper.
+assumptions: U1, S9; storage object exposes getItem/setItem only.
+covered refs: GM:34-62, 133-171, 199-226. Model PENDING.
+evidence: existing tests (12): e2e/safety.spec.js:62; test/gameManager.test.js:66,345,768,775,789,887; test/safety.test.js:292,307,313,321,330.
+limitations / candidates: S4/S9 item 16 not represented (O-5); failed read of saved bytes triggers a withdrawal write GM:203-205 (O-5); Number(readItem()) GM:143 accepts non-decimal numeral strings (O-8); failed high-score write is silent.
+status: Candidate; certification Not Assessed.
+
+---- SAF-3 ----
+requirement/property: SAF-3 (any engine throw => safe state: game over, no timers running, fault reported, last good save kept). O1, O4, O7, O6.
+state property: D16 s8 skeleton; T1 reported = (a) plain player-visible message that the game stopped because of an internal error AND (b) a separate test-observable signal; T2 no stored record; T3 timer registration or cancellation throwing is inside SAF-3; U3 a failed cancel during the fault stop may still fire but must not change the stopped game; S3/S6 a fault alone does not withdraw the save; F2 retained contents, no rollback; V1 (validity at commit).
+transition classes: SAFE (from any guarded throw or SAF-4 violation).
+production routes/trust: guard GM:389-392; runChecked GM:395-408; failSafe GM:436-454 (state gameOver GM:437, stopGameLoop GM:438, cancelLockDelay GM:439, record GM:443-448, onFault GM:449-453); schedule GM:382-384; defaults GM:65-73, 81 (onFault = console.error); page wiring SC:12 passes only onChange. Unguarded: direct public methods; IC input timers and SC handlers (only their engine calls are guarded).
+model transition or evidence method: SAFE transition PENDING model. T1 criterion evidence is independent of the callback: DOM inspection after an injected throw plus an engine-level observable signal.
+claim: for every injectable throw point reachable from a guarded entry the post-state is game over, no engine timer outstanding (or U3), both T1 conditions hold, saved bytes and flag unchanged by the stop.
+Proof Method: fault injection at every reachable throw point (blueprint Q1-Q3, S5, scheduler fault cases, entry-wrapper cases); structural argument over runChecked.
+assumptions: T3, U3, U4, S3, S6, F2.
+covered refs: GM:65-73, 382-454, 459-537; SC:12. Model PENDING.
+evidence: existing tests (13): test/safety.test.js:38,47,58,67,81,92,112,126,204,213,224,241,249.
+limitations / candidates: (1) no player-visible internal-error message found in SC or HT (T1a) (O-11); (2) page reporter is console.error, a test-observable signal is available only through the injectable onFault (T1b); (3) a throw from scheduler.clearTimeout at GM:438 or 439 escapes failSafe before record and report GM:443-453 and bypasses onChange (O-9); (4) held-control, confirmation and drag state are not reset by the stop (F2 allows retained contents); input timers stop only when they fire. Last good save: failSafe has no storage call (static reading).
+status: Candidate; certification Not Assessed.
+
+---- SAF-4 ----
+requirement/property: SAF-4 (after every action and timer the engine checks invariants: board 20x10, three pieces queued, valid score, and while playing the piece fits, gravity running, lock delay runs exactly while resting; otherwise no timers; broken invariant handled like SAF-3; legal play never breaks one). O1, O2, O7.
+state property: B5; B7 (count; element validity is a later owner interpretation); B11 score whole number >=0; B13 resource states (gravity, lock delay, horizontal repeat, soft-drop repeat); U4 timer universe = gravity, lock delay, held-key repeat; checks after each firing and the actions they cause; drawing and polling loops excluded.
+transition classes: every guarded action and timer firing; input repeat timer firings (U4).
+production routes/trust: findInvariantViolation GM:412-428 (board GM:414; queue length GM:417; score GM:418 safe integer, >=0, multiple of 100; playing: fits GM:420, gravity handle GM:421, delay iff resting GM:422-423; not playing: both handles null GM:424-425); invoked inside runChecked GM:402. Not checked: queue element validity, held, canHold, bag, reset count range, lowest row, repeat resources, item 16, touch/held-direction state (P2-A O-1; P2-C 7.7).
+model transition or evidence method: "legal play never breaks one" is a reachability property of the model's legal transition system (PENDING model). "The check detects violations" is injected corruption (blueprint Q1, Q2, Q3, L1, P7, score mutation), independent of the model.
+claim: (a) every state reachable by legal operations satisfies the implemented invariant; (b) each named condition violation is detected after the producing entry; (c) the implemented checks cover exactly B5, B7 count, B11 (as implemented), B13 gravity and lock delay; the unchecked predicates are listed and not claimed.
+Proof Method: (a) bounded exhaustive/random differential with model oracle (SAF-6); (b) mutate each field, expect detection; (c) coverage table invariant vs B-predicate (this record).
+assumptions: U4, T3, U3; B7 count-only until decided.
+covered refs: GM:395-428, 263-270, 359-372. Model PENDING.
+evidence: existing tests (9): test/gameManager.test.js:642,800,904; test/safety.test.js:165,173,181,189,213,346.
+limitations / candidates: score modulus GM:418 vs B11 (O-7); no check code for repeat timers, whose bodies run outside guard (IC:262-269, 291-297) (O-10); reset count, lowest row, hold coherence unchecked (D38 cand. 5).
+status: Candidate; certification Not Assessed.
+
+---- SAF-5 ----
+requirement/property: SAF-5 (an error while drawing or reading a gamepad is reported; drawing and polling loops keep running). O6; D16 s4 item 6 (outer-layer routes do not commit state).
+state property: U2 reported = (a) small non-interrupting player notice (not a popup) that drawing or controller input had a problem AND (b) a separate test-observable signal; no stored record; loops keep running; the failing step changes no authoritative state.
+transition classes: outer-layer drawing callback failure; gamepad polling failure (no engine transition).
+production routes/trust: drawSafely SC:336-348 (console.error once SC:344-345; requestDraw SC:346); requestDraw SC:355-362; redrawAll SC:326-330; poll IC:102-113 (console.error each failure IC:107; loop continues IC:109). Trust W4 (2D canvas, rAF, Gamepad), W2.
+model transition or evidence method: none applicable: no model transition exists for outer-layer failures (no artificial relationship created). Independent method: browser fault injection (throw from a draw call or getGamepads) asserting loop continuation, engine state unchanged, the U2 notice and signal; P2-D route table for containment.
+claim: after an injected drawing or gamepad error the next frame/poll still runs, engine state is unchanged, U2 (a) and (b) occur.
+Proof Method: injected-failure tests over the finite set of drawing sub-callbacks and the poll body; static containment argument per rAF/observer/event callback.
+assumptions: W1, W4, U2.
+covered refs: SC:326-362; IC:97-113. No model.
+evidence: existing tests (2): e2e/safety.spec.js:39; test/inputController.test.js:555.
+limitations / candidates: no U2(a) notice found, only console.error (O-11); draw error reported once per load, gamepad error each frame (U2 states no count); errors outside drawSafely (observer callbacks, initial draw, module setup) not covered (D38 cand. 10).
+status: Candidate; certification Not Assessed.
+
+---- SAF-6 ----
+requirement/property: SAF-6 (rules hold throughout long random play: no overlaps, valid scores and levels, no faults). O2, O7.
+state property: every state along random legal sequences is R1-valid; no fault; level = floor(score/1000)+1 (B14).
+transition classes: all legal gameplay operations; random source V3 as input.
+production routes/trust: all engine entries; V3 random source trusted to return valid values.
+model transition or evidence method: random long play is bounded statistical corroboration only. Independent method: model-versus-production lockstep random walk (3.4) with declared seeds, lengths, stopping bound. PENDING model. Universal claims must come from the O1/O2 records.
+claim: for the declared seeds and bound, no divergence, overlap, invalid score/level, or fault.
+Proof Method: seeded differential walk plus bounded exhaustive sub-domains; declared stopping rule (Phase 4).
+assumptions: V3; injected scheduler and storage.
+covered refs: all engine files. Model PENDING.
+evidence: existing tests (3): e2e/app.spec.js:435; test/gameManager.test.js:800; test/safety.test.js:189.
+limitations: bounded; rare transitions (reset count 15/16, hold at game over) may be unreached; no model yet.
+status: Candidate; certification Not Assessed.
+
+=================================================================
+C. INPUT REQUIREMENTS
+=================================================================
+Common: items 12, 13, 14 and the selection part of 11 are held outside the engine commit point. Input reaches engine state only through handleAction, softDrop, togglePause, cancelNewGame (call-chain verified, P2-C s3, s6). Properties O1, O2.
+
+---- INP-1 ----
+requirement/property: INP-1 (key map: A/Left left, D/Right right, W/Up rotate cw, Z rotate ccw, S/Down soft drop, Space hard drop, H hold, P/Escape pause/resume, Enter new game, C continue).
+state property: each key press maps to its operation (D32 ops 4 and gameplay op); effects only as assigned (Z1); held tokens per B12 (one token per physical control).
+transition classes: CTL4, CTL5 and the mapped gameplay operations; CTL1/CTL3 for Enter.
+production routes/trust: KEY_ALIASES IC:31-37; KEY_ACTIONS IC:40-47; handleKey IC:119-168 (P/Escape IC:163-164; S IC:159-162). Trust W4 (keyboard events, event.code).
+model transition or evidence method: specification table from INP-1 text tested through real keyboard events in Chromium/WebKit; engine operation correspondence PENDING model.
+claim: each listed key yields exactly the listed operation; no other code is handled.
+Proof Method: finite table check over listed keys; browser test.
+assumptions: W4; event.code (physical position) reading of "A", "D", "W", "Z", "S", "H", "P" (non-QWERTY layouts: reading not recorded in Phase 1).
+covered refs: IC:31-47, 119-168. Model PENDING.
+evidence: existing tests (10): e2e/game.spec.js:92,287,303,341; test/gameManager.test.js:456; test/inputController.test.js:65,84,161,216; test/model.test.js:38.
+limitations / candidates: aliasing collapses A with Left and D with Right into one held token, B12 says one token per physical control (O-12).
+status: Candidate; certification Not Assessed.
+
+---- INP-2 ----
+requirement/property: INP-2 (move once, again after 167 ms, then every 33 ms; newest direction wins; release returns to one still held, on keyboard, stick, pad; S/Down soft drop at once then every 50 ms; resting stick does not cancel; repeating stops when the game stops playing or the window loses focus).
+state property: B12 ordered held tokens (last remaining wins), repeat position {idle, waiting for first repeat, repeating} and {not dropping, dropping}; non-idle only while playing with a matching held token; paused/over idle; B13 repeat resources running exactly per B12; C3, E2, E3 resume rule.
+transition classes: CTL4, CTL5, CTL6, GP-move, GP-soft, GP-pause/resume, game over, blur/disconnect release.
+production routes/trust: startMoving IC:257-271 (immediate action, timeout 167 IC:270, 33 IC:268); stopMoving IC:273-277; resumeHeldMovement IC:245-254 (fixed priority KeyA > KeyD > padDirection); updateSoftDrop IC:281-287; startSoftDrop IC:289-298 (interval 50; first row from key press IC:161; pad path IC:229-230 starts the interval only); releaseAllInput IC:305-312 on blur IC:87 and disconnect IC:88; self-stop IC:263-266, 292-295. Global setTimeout/setInterval, not the engine scheduler (P2-C 7.7). Trust W4, T3; clock not trusted (K1); lateness/firing not claimed.
+model transition or evidence method: CTL6 and token ordering PENDING model of B12. Delay constants judged on the requested delay with a time-controlled test double (input timers are not injectable: evidence limit).
+claim: requested delays equal 167/33/50 ms; ordering and fallback follow B12 for every press/release sequence over tokens {A, Left, D, Right, stick L/R, pad L/R}; repeat stops on pause, game over, blur, disconnect.
+Proof Method: bounded exhaustive press/release sequences with differential comparison to the model's ordered-token function; constants by inspection; resume interleavings.
+assumptions: W4, T3, K1, C3/E2.
+covered refs: IC:67-83, 245-312. Model PENDING.
+evidence: existing tests (15): test/inputController.test.js:161,182,191,199,223,238,246,418,481,570,578,639,651,663,674.
+limitations / candidates: fixed priority and key aliasing vs ordered tokens (O-12); pad soft drop has no immediate first row (O-13); pause/resume faster than a tick keeps timers alive (O-2); timers run once more before self-stop.
+status: Candidate; certification Not Assessed.
+
+---- INP-3 ----
+requirement/property: INP-3 (keys with Cmd/Ctrl/Alt and the keyboard's own repeat are ignored; a modified press never counts as held; game keys do not trigger the browser's default action).
+state property: D32 op 4: modified press leaves item 12 unchanged; repeat events leave item 13 unchanged; default prevention is browser-facing, no authoritative item.
+transition classes: CTL4 (modified, repeat), CTL5 (release of a key that never counted).
+production routes/trust: handleKey IC:119-168: modifier press returns before heldKeys add IC:121-125; repeat press ignored IC:151 (after preventDefault IC:150; pending branch IC:136-137). Release of handled keys always runs IC:153-162. Trust W4.
+model transition or evidence method: modifier/repeat as CTL4 no-op: PENDING model; default prevention has no model counterpart: browser test of defaultPrevented.
+claim: modified and repeat presses are no-ops for authoritative state; no held token from a modified press; handled keys call preventDefault, unhandled do not.
+Proof Method: finite table {modifier combos} x {press, repeat, release} x {key classes}; browser test.
+assumptions: W4.
+covered refs: IC:119-168. Model PENDING.
+evidence: existing tests (8): e2e/game.spec.js:240,251,341; test/inputController.test.js:91,103,113,123,131.
+limitations / candidates: a modified press is left to the browser (no preventDefault) while the third sentence says game keys do not trigger the default action; no Phase 1 reading is recorded (D25 conflict register has no row) (O-15); a release of a never-held key can call resumeHeldMovement/updateSoftDrop and restart repeating for another held control.
+status: Candidate; certification Not Assessed.
+
+---- INP-4 ----
+requirement/property: INP-4 (gamepad: A hard drop, B rotate, X hold, Y continue, Menu pause or New Game at game over, View New Game; dialog navigation once per push, A presses selected, B cancels, nothing else acts; RB rotate, LB rotate ccw; once per press; same-action buttons together act once; Menu and View act alone, Menu wins; stick/pad move and soft drop as held; same repeat timing as keys; pad up hard drops; resting stick/pad does not cancel keyboard moves; letting go returns to a held key; disconnect releases all).
+state property: as INP-2 plus D32 ops 1-3; Menu/View exclusivity and edge-trigger are operation-level rules.
+transition classes: CTL1-CTL6 (pad), mapped gameplay ops, release-all.
+production routes/trust: pollGamepads IC:171-183 (first connected pad IC:173; axes y flipped IC:181); processInput IC:190-241 (edges IC:191-192; thresholds 0.5 IC:193-195; dialog IC:202-208; Menu IC:214-219; View IC:220-221; dedupe IC:223-226; padDown IC:229-230; direction change IC:234-240); disconnect IC:88; startPolling IC:99-113. Trust W4 (Gamepad interface and events, rAF).
+model transition or evidence method: edge logic has no engine-model counterpart: deterministic simulation of frame vectors against an independently written reading of INP-4; engine operations PENDING model.
+claim: for every per-frame input vector the produced operations equal the INP-4 specification; exclusivity and dedupe hold; dialog navigation acts once per push.
+Proof Method: bounded exhaustive frame vectors (2^10 button sets x 3 x-states x 3 y-states) over short sequences, differential vs the specification table.
+assumptions: W4; standard mapping indices; first-connected-pad policy is project logic not stated in INP-4.
+covered refs: IC:50-60, 97-113, 171-241. Model PENDING.
+evidence: existing tests (31): e2e/game.spec.js:152; test/inputController.test.js:259,287,294,316,327,340,384,401,418,428,443,461,472,481,499,510,519,528,537,578,586,594,603,612,619,629,639,651,663,674.
+limitations / candidates: pad soft drop first row (O-13); second connected pad ignored (unstated in INP-4); pad direction tracked during dialog but repeat state not representable.
+status: Candidate; certification Not Assessed.
+
+---- INP-5 ----
+requirement/property: INP-5 (tap rotates with 10 px wobble; sideways drag one column per cell after half a cell; down drag soft drops one row per cell; piece stays on grid and in step with the finger after pushing into a wall; drag controls only the piece falling at its start; tapping the hold box holds).
+state property: B12 touch drag; C2/E1 rotation only when the touch never moved beyond 10 px and ends within 10 px; cancel commits no rotation; committed moves stay; item 14 none at end/cancel.
+transition classes: CTL7, CTL8, CTL9 and caused GP-move/soft/rotate; hold box GP-hold.
+production routes/trust: drag SC:394-405; pointerdown SC:431-438 (no mode check); pointermove SC:440-483 (slop SC:448-449, half-cell rounding SC:466, blocked push SC:453-463, rows SC:478-482, piece identity SC:444,479); endDrag SC:486-491; hold click SC:496; tryMove SC:425-429 (read only). Trust W4 (pointer events, capture, ResizeObserver sizes).
+model transition or evidence method: item 14 state machine PENDING model authored from B12, C2, E1 (not from SC). Pixel-to-cell geometry has no model counterpart: synthetic pointer sequences in Chromium/WebKit against a stated geometry (cell width = canvas width / 10).
+claim: for every bounded pointer path the committed engine operations equal those INP-5 defines with C2/E1; a gesture never controls another piece.
+Proof Method: bounded path enumeration (start/end grid, excursions >10 px, wall contact, mid-gesture lock or hold), differential vs gesture model; browser tests as corroboration.
+assumptions: W4; sizes as set by the ResizeObserver.
+covered refs: SC:392-496; HT:33. Model PENDING.
+evidence: existing tests (10): e2e/touch.spec.js:19,34,40,51,60,85,100,117,156,170.
+limitations / candidates: item 14 outside the engine commit point and invariants; no lostpointercapture handler; touch begun while paused/over creates drag.piece (engine no-ops); hidden resets drag but not input, blur the reverse (O-14).
+status: Candidate; certification Not Assessed.
+
+---- INP-6 ----
+requirement/property: INP-6 (hold box is a button to keyboards and screen readers: Tab reaches it, named Hold with H shortcut; with keyboard focus Enter/Space hold while playing; clicking does not take focus).
+state property: no new authoritative state; hold effect per PLY-7/B8 (PLY partition); focus is presentation (D16 1.5).
+transition classes: GP-hold via the hold box.
+production routes/trust: HT:33 (role=button tabindex=0 aria-label="Hold" aria-keyshortcuts="H"); SC:496 click; SC:502 mousedown preventDefault; SC:503-508 keydown Enter/Space while playing, stopPropagation. Trust W4 (focus, accessibility attributes).
+model transition or evidence method: hold effect PENDING model; role/name/shortcut/focus have no model counterpart: DOM attribute inspection plus keyboard/mouse browser tests. Assistive-technology announcement is not claimable.
+claim: reachable by Tab with the stated name and shortcut; Enter/Space hold only while playing and otherwise keep game actions; a mouse click leaves focus unchanged.
+Proof Method: static DOM check; scripted tests in Chromium and WebKit.
+assumptions: W4.
+covered refs: HT:33; SC:496-508. Model PENDING (effect).
+evidence: existing tests (3): e2e/game.spec.js:211,240,251.
+limitations: screen-reader exposure of a canvas role=button unverifiable without assistive tech.
+status: Candidate; certification Not Assessed.
+
+=================================================================
+D. CROSS-CUTTING
+=================================================================
+
+D1. UNMAPPED GAPS
+G-1 No independent model yet: every model-transition cell is PENDING.
+G-2 Item 11 (selected choice) has no engine field; production counterpart is DOM focus (SC:526-532, HT:69). A mapping statement is needed before STA-1/INP-4 dialog claims can close.
+G-3 Item 16 has no production counterpart (P2-B C1); mapping rows for STA-3/STA-4/SAF-2 would be artificial until correspondence is decided.
+G-4 Reset count (9) and lowest row (15) are not persisted or invariant-checked; STA-4 "exactly as saved" has no production route for them.
+G-5 SAF-3 T1(a) and SAF-5 U2(a) player-visible message/notice: no production route found.
+G-6 STA-6 fixtures: authenticity as released saves not verified (needs git history).
+G-7 INP-3 modified-press default-action reading is not recorded in Phase 1.
+G-8 Browser-behavior parts (dialog autofocus, focus on click, pointer capture, visibility, Gamepad API) are W1/W4-bounded; only browser tests can address them.
+G-9 Input timers are not injectable (IC:260-297), limiting requested-delay evidence for INP-2/INP-4.
+G-10 Cross-refs, not owned: PCE/PLY/SCO (B9 reset count, lowest row, B8 hold, PCE-5 resetBag([]) at P2-B C9, S10 gravity interval) and APP/DSP/QA (DSP-5 Continue display P1, APP-2 K2, QA-1..6 O5).
+
+D2. PHASE 4 CANDIDATE OBSERVATIONS (no status; none is a finding)
+O-1 Resume at reset count 15 after a pause that cancelled the delay locks at once (GM:499 -> GM:278-285) while B9.2 starts the delay at 15 and locks at once only at 16. [STA-2, PLY-6]
+O-2 Held controls across pause/resume: input timers self-stop only when they fire (IC:262-269, 291-297); a short pause keeps repeating; hidden does not release input (SC:544-548 vs blur IC:87). C3/E2/E3. [STA-2, STA-5, INP-2]
+O-3 Reset count and lowest row are not serialized or restored (SES:29-40; GM:216, 306-310); B16/D32 require exact restore incl. 16; L1/L2 defaults absent. [STA-4, STA-6]
+O-4 Lowest row uses piece position.row (GM:301-303, 309), B9 says greatest occupied block row; rotation changes extent without changing position.row. [STA-2, STA-4, PLY-6]
+O-5 Item 16 absent: (a) failed withdrawal write: cache cleared first GM:165, next read returns stored "true" (S4, S9, P1); (b) failed read of saved bytes triggers the withdrawal write GM:204 (S7); (c) Continue-as-withdrawal wording differs between records (P2-B C2). [STA-3, STA-4, SAF-2]
+O-6 parseBoard rejects any save with a full row (SES:92-93); B15. [SAF-1, STA-6]
+O-7 Score multiple of 100 required in parseSession SES:160 and in the invariant GM:418; B11 says no divisibility. [SAF-1, SAF-4, STA-6]
+O-8 highScore getter uses Number(readItem()) GM:143 and accepts non-decimal numeral strings; S8 says whole number >=0 else zero. [SAF-2, SCO-3]
+O-9 failSafe: a throwing scheduler.clearTimeout at GM:438-439 escapes before the fault record and report GM:443-453 and before onChange. [SAF-3]
+O-10 Invariant check omits repeat timers (U4), reset count range, lowest row, held/hold-used, bag, queue element validity; input timer bodies are outside guard. [SAF-4]
+O-11 No player-visible fault message (T1a) or draw/controller notice (U2a); reports are console.error (GM:72, SC:344, IC:107); draw error reported once per load. [SAF-3, SAF-5]
+O-12 Key aliasing collapses A/Left, D/Right, W/Up, S/Down into one held token; resume priority is fixed KeyA > KeyD > pad. B12 wants one token per physical control, ordered. [INP-1, INP-2]
+O-13 Pad/stick soft drop has no immediate first row (IC:229-230, 289-298), keyboard S does (IC:161). [INP-2, INP-4]
+O-14 Touch: pointerdown has no mode check; no lostpointercapture; drag reset on hidden not blur; items 11-14 written outside the engine commit point. [INP-5, STA-5]
+O-15 Modified press not default-prevented vs INP-3 third sentence; release of a never-held key can restart repeating of another held control. [INP-3]
+O-16 softDrop clears pending before the guard GM:528; every handleAction clears it GM:468; dialog-time keys enter heldKeys IC:126-127; Cancel focus depends on autofocus per showModal HT:69, SC:227. [STA-1]
+O-17 Public engine methods callable without the guard (D38 s3). [O1/O7, STA-*, SAF-3]
+O-18 Thin test evidence: STA-5 (1 test), STA-6 (2), SAF-5 (2), INP-6 (3).
+
+D3. COVERAGE
+All 18 owned IDs have a record: STA-1..6, SAF-1..6, INP-1..6. Adopted properties O1..O8 are not owned here; records name the properties they rest on (O1, O2, O3, O4, O6, O7). O5 and O8 are separate obligations (blueprint 3.3) and no record here discharges them.
+
+D4. LIMITS
+Static reading at one commit; nothing run. Existing tests cited by title tag only. No O8 pack read, no clean-model authorship, no DECISIONS.md read. Only Candidate / Not Assessed assigned. No repository change.
