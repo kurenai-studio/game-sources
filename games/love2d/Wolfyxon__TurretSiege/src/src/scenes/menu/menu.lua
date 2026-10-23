@@ -1,0 +1,101 @@
+local Color = require("lib.Color")
+local Button = require("lib.2d.gui.Button")
+local Label = require("lib.2d.gui.Label")
+local Sprite = require("lib.2d.Sprite")
+local Audio = require("lib.Audio")
+local ListContainer = require("lib.2d.gui.container.ListContainer")
+local Scene = require("lib.2d.Scene")
+local gameData = require("gameData")
+
+---@class MenuScene: Scene
+local MenuScene = class("MenuScene", Scene)
+MenuScene.music = nil ---@type Audio
+
+function MenuScene:load()
+    main.musicPos = 0
+    
+    self.music = Audio:new():loadFromFile("scenes/menu/music.ogg"):setLoop(true):play()
+    self:addChild(self.music)
+    
+    local targetRot = 20
+
+    self:createTimer()
+        :setLoop(true)
+        :setWait((60 / 167) * 2)
+        :onEnd(function()
+            targetRot = targetRot + 20
+        end)
+        :start()
+    
+    for i, gear in ipairs(main.addGears(self)) do
+        local dir = (-1) ^ i
+        
+        function gear:update(delta)
+            gear.rotation = math.lerpAngle(gear.rotation, targetRot * dir, delta * 3)
+        end
+    end
+    
+    --== Title ==--
+
+    local titleContainer = ListContainer:new()
+    titleContainer.x = 0.5
+    titleContainer.y = 0.3
+
+    local title = Label:new()
+    title:setText("Turret Siege")
+    title:setFontSize(64)
+    titleContainer:addChild(title)
+
+    local version = Label:new()
+    version.textAlign = "right"
+    version:setText("v. " .. gameData.version)
+    version:setFontSize(14)
+    titleContainer:addChild(version)
+
+    local author = Label:new()
+    author:setText("by Wolfyxon")
+    titleContainer:addChild(author)
+    
+    titleContainer:arrangeChildren()
+
+    --== Buttons ==--
+
+    local w = 0.5
+    local h = 0.05
+    local fontSize = 24
+
+    local buttonContainer = ListContainer:new()
+    buttonContainer.spacing = 0.01
+    buttonContainer.x = 0.5
+    buttonContainer.y = 0.5
+
+    local btnPlay = Button:new()
+    btnPlay.width = w
+    btnPlay.height = h
+    btnPlay:setFontSize(fontSize)
+    btnPlay:setText("Play") -- this exact line causes a crash on on web with an error message saying just the text.
+    buttonContainer:addChild(btnPlay)
+
+    btnPlay:onEvent("pressed", function ()
+        main.loadSceneByName("game")
+    end)
+
+
+    local btnQuit = Button:new()
+    btnQuit.width = w
+    btnQuit.height = h
+    btnQuit:setFontSize(fontSize)
+    btnQuit:setText("Quit")
+
+    btnQuit:onEvent("pressed", function ()
+        love.event.quit()
+    end)
+
+    buttonContainer:addChild(btnQuit)
+    buttonContainer:arrangeChildren()
+
+    self:addChild(titleContainer)
+    self:addChild(buttonContainer)
+end
+
+return MenuScene

@@ -1,0 +1,21 @@
+name: Suggestion
+description: Suggest a new feature or change
+title: "[SUGGESTION]: "
+labels: ["enhancement"]
+
+body:
+- type: textarea
+  attributes:
+    label: Description
+    description: |
+      Describe your suggestion.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Why
+    description: |
+      Why do you think this should happen?
+  validations:
+    required: true
