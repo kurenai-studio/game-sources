@@ -1,0 +1,1407 @@
+extends Node
+
+const HungryClient := preload("../game/client/hungry_client.gd")
+const HungryContent := preload("../game/hungry_content.gd")
+const HungryLayout := preload("../game/hungry_layout.gd")
+const HungryModule := preload("../game/hungry_module.gd")
+const HungryNetLink := preload("../game/net/hungry_net_link.gd")
+const HungryServices := preload("../game/hungry_services.gd")
+const HungrySoundSink := preload("../game/client/hungry_sound_sink.gd")
+
+## A real server and a real client, one process, over a real socket, playing the game.
+##
+## [codeblock]
+## godot --headless --path . res://examples/sandbox.tscn
+## [/codeblock]
+##
+## Exits non-zero on any failure.
+##
+## [b]What this proves that the other two cannot.[/b] `headless_round` plays the game with
+## no network at all and `headless_net` plays it over a loopback that stands in for one.
+## This one opens a socket, runs dot-server's whole signon — transport, challenge,
+## credentials, authentication, content, load, spawn — with dot-platform resolving a
+## profile and an avatar along the way, then plays over Godot's actual RPCs, sends a chat
+## line through dot-server's chat manager, and changes the game underneath a connected
+## player.
+##
+## [b]Two MultiplayerAPI instances in one process.[/b] A server and a client both want
+## [member SceneTree.multiplayer] and there is one of those.
+## [method SceneTree.set_multiplayer] scopes an API to a subtree, so each half gets its
+## own and [code]multiplayer[/code] inside each resolves to the right one. dot-platform's
+## sandbox is where that was worked out; this is the second place it is used, and the
+## first place a game's own RPCs ride it.
+
+const PORT := 27083
+const PROFILE_DIR := "user://hungry_sandbox_profiles"
+const AVATAR_DIR := "user://hungry_sandbox_avatars"
+const SCOPE_KEY := "user://hungry_sandbox_scope.key"
+const SERVER_DIR := "user://hungry_sandbox_server"
+
+## Every check this suite runs. See the guard at the end of [method _run].
+const CHECKS := 115
+
+var _passed := 0
+var _failed := 0
+var _failures := PackedStringArray()
+
+var _server: DotServer = null
+var _link: DotClientLink = null
+var _hub: DotPlatformHub = null
+var _users: DotUserManager = null
+var _avatars: DotAvatarManager = null
+var _client: HungryClient = null
+var _client_side: Node = null
+
+## What the client's sampler hands the game each tick. The test drives it.
+var _command := Dot2DCommand.new()
+
+## Chat lines the client received.
+var _heard: Array[DotChatMessage] = []
+
+## Anything that came back through dot-server's own chat signal.
+##
+## [b]Expected to stay empty, and that is the check.[/b] This game moved its chat rules
+## onto [DotChatRouter] and cancels dot-server's broadcast; a line arriving here as well
+## would be two paths delivering one message, which is the failure the cancel exists to
+## prevent and the one nobody would notice because the message still arrives.
+var _legacy_heard: Array[Dictionary] = []
+
+## The one thing dot-server's chat signal legitimately carries here.
+##
+## [b]Not a line, which is why it is kept apart from [member _legacy_heard].[/b]
+## [code]DotChatManager.greet[/code] sends `{kind: "state", relay: bool}` to a joining
+## client to say whether anything else is carrying the conversation. It has no text and
+## draws nothing; counting it as a delivered message would have made the check above read
+## as two paths for one line, which is the failure that check exists for.
+var _chat_state: Array[Dictionary] = []
+
+## The second player. Built later, in its own subtree with its own MultiplayerAPI.
+var _other_side: Node = null
+var _other_link: DotClientLink = null
+var _other: HungryClient = null
+var _other_command := Dot2DCommand.new()
+var _other_heard: Array[DotChatMessage] = []
+
+
+func _ready() -> void:
+	# Quiet by default so the checks are readable; `-- --verbose` when one of them
+	# fails and the reason is in a log line rather than in the assertion.
+	DotLog.set_level(
+		DotLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args()
+		else DotLog.Level.ERROR
+	)
+	_run.call_deferred()
+
+
+func _run() -> void:
+	print("game-hungario sandbox: a real socket")
+	print("")
+
+	_cleanup()
+
+	var built := await _build()
+
+	if built:
+		await _test_a_module_reload()
+		var joined := await _test_join()
+
+		if joined:
+			await _test_client_scene()
+			await _test_playing()
+			await _test_admin_over_the_socket()
+			await _test_chat()
+			await _test_voice_mute()
+			await _test_two_players()
+			await _test_game_change()
+			await _test_leaving()
+
+	_teardown()
+	_cleanup()
+
+	print("")
+	_check(
+		_completed == _entered,
+		"every section ran to its last line (%d of %d)" % [_completed, _entered],
+		"a section that aborted stops adding checks and the total cannot show it"
+	)
+
+	print("")
+	print("%d passed, %d failed" % [_passed, _failed])
+
+	for line in _failures:
+		print("  FAIL  %s" % line)
+
+	# The total the section counter cannot be. A runtime error inside a section aborts
+	# that function, and the counter is satisfied because the section had already
+	# announced itself. See docs/testing.md.
+	if _passed + _failed != CHECKS:
+		print("ERROR: %d checks ran, %d expected. A section aborted part-way." % [
+			_passed + _failed, CHECKS
+		])
+		get_tree().quit(1)
+		return
+
+	get_tree().quit(1 if _failed > 0 else 0)
+
+
+## Sections entered, and sections that ran to their last line.
+##
+## [b]A check count is not coverage.[/b] A runtime error inside a section aborts that
+## function and nothing says so: the checks that already ran still print ok, the ones
+## after it never happen, and the total at the bottom cannot reveal a check that never
+## ran. dot-net's demo carries the same pair, reached from the other direction — there it
+## was a suspending section called without `await`.
+var _entered := 0
+var _completed := 0
+
+
+## Opens a section. Pair with [method _done] on every path out of it.
+func _section(title: String) -> void:
+	_entered += 1
+	print("")
+	print(title)
+
+
+func _done() -> void:
+	_completed += 1
+
+
+func _check(condition: bool, what: String, detail: String = "") -> bool:
+	if condition:
+		_passed += 1
+		print("  ok    %s" % what)
+	else:
+		_failed += 1
+		_failures.append(what if detail == "" else "%s - %s" % [what, detail])
+		print("  FAIL  %s%s" % [what, "" if detail == "" else "  (%s)" % detail])
+	return condition
+
+
+func _cleanup() -> void:
+	DotPaths.remove_tree(PROFILE_DIR)
+	DotPaths.remove_tree(AVATAR_DIR)
+	DotPaths.remove_tree(SERVER_DIR)
+
+	if FileAccess.file_exists(SCOPE_KEY):
+		DirAccess.open("user://").remove(SCOPE_KEY.get_file())
+
+
+func _frames(count: int) -> void:
+	for _i in range(count):
+		await get_tree().physics_frame
+
+
+## Waits for a condition, or gives up. Returns whether it happened.
+##
+## A deadline rather than a fixed number of frames: the point is to fail with a message
+## rather than to hang, and a signon over loopback is several round trips plus a profile
+## and an avatar read.
+func _until(condition: Callable, seconds: float = 10.0) -> bool:
+	var deadline := Time.get_ticks_msec() + int(seconds * 1000.0)
+
+	while Time.get_ticks_msec() < deadline:
+		if bool(condition.call()):
+			return true
+
+		await get_tree().physics_frame
+
+	return false
+
+
+# --- Building both halves --------------------------------------------------
+
+func _build() -> bool:
+	print("bringing the sandbox up")
+
+	var server_side := Node.new()
+	server_side.name = "ServerSide"
+	add_child(server_side)
+
+	_client_side = Node.new()
+	_client_side.name = "ClientSide"
+	add_child(_client_side)
+
+	get_tree().set_multiplayer(
+		MultiplayerAPI.create_default_interface(), server_side.get_path()
+	)
+	get_tree().set_multiplayer(
+		MultiplayerAPI.create_default_interface(), _client_side.get_path()
+	)
+
+	_check(
+		get_tree().get_multiplayer(server_side.get_path())
+			!= get_tree().get_multiplayer(_client_side.get_path()),
+		"the two halves have separate MultiplayerAPI instances"
+	)
+
+	if not await _build_platform():
+		return false
+
+	if not await _build_server(server_side):
+		return false
+
+	# Named "Server", which looks wrong and is not. Godot addresses an RPC by the
+	# receiver's node path relative to its MultiplayerAPI root, so a call from the
+	# server's node at ServerSide/Server arrives addressed to "Server" and is looked up
+	# under the client's root. Give the client's node any other name and every RPC fails
+	# with "Node not found: Server".
+	_link = DotClientLink.new()
+	_link.name = "Server"
+	_link.player_name = "Sandbox Visitor"
+	_client_side.add_child(_link)
+
+	return true
+
+
+func _build_platform() -> bool:
+	_users = DotUserManager.new()
+	_users.register_service = true
+	_users.load_layered_config = false
+	_users.config_file = ""
+	_users.server_id = "hungry-sandbox"
+
+	var user_config := DotUserConfig.new()
+	user_config.backend = "local"
+	user_config.directory = PROFILE_DIR
+	user_config.scope = "server:hungry-sandbox"
+	user_config.scope_key_file = SCOPE_KEY
+	user_config.allow_guest_profiles = true
+	_users.config = user_config
+	add_child(_users)
+
+	var users_ready: DotResult = await _users.setup()
+
+	if not _check(users_ready.ok, "profiles are up", str(users_ready.error)):
+		return false
+
+	_avatars = DotAvatarManager.new()
+	# The same schema the game validates riders against. A server holding no art still
+	# decides whether an avatar is legal, which is dot-user-avatar's one idea.
+	_avatars.schema = HungryContent.avatar_schema()
+	_avatars.register_service = true
+	_avatars.load_layered_config = false
+	_avatars.config_file = ""
+
+	var avatar_config := DotAvatarConfig.new()
+	avatar_config.backend = "local"
+	avatar_config.directory = AVATAR_DIR
+	_avatars.config = avatar_config
+	add_child(_avatars)
+
+	var avatars_ready: DotResult = await _avatars.setup()
+
+	if not _check(avatars_ready.ok, "avatars are up", str(avatars_ready.error)):
+		return false
+
+	_hub = DotPlatformHub.new()
+	_hub.register_service = true
+	_hub.load_layered_config = false
+	_hub.config_file = ""
+	_hub.config = DotPlatformConfig.new()
+	add_child(_hub)
+
+	var hub_ready: DotResult = await _hub.setup()
+	return _check(hub_ready.ok, "the platform is up", str(hub_ready.error))
+
+
+func _build_server(server_side: Node) -> bool:
+	# Guests, so no backbone is involved and this runs offline.
+	var auth_config := DotAuthConfig.new()
+	auth_config.strategy = DotAuthConfig.Strategy.ANONYMOUS
+	auth_config.allow_guests = true
+
+	var auth := DotAuthServer.new()
+	auth.name = "Auth"
+	auth.config = auth_config
+	auth.config_file = ""
+	auth.register_service = true
+	server_side.add_child(auth)
+
+	var config := DotServerConfig.new()
+	config.hostname = "hungry sandbox"
+	config.port = PORT
+	config.bind_address = "127.0.0.1"
+	config.rcon_password = ""
+	config.admins_path = "%s/admins.json" % SERVER_DIR
+	config.bans_path = "%s/bans.json" % SERVER_DIR
+	config.audit_log_path = "%s/audit.jsonl" % SERVER_DIR
+	config.hibernate_when_empty = false
+	config.startup_config = ""
+	config.autoexec_config = ""
+
+	_server = DotServer.new()
+	_server.name = "Server"
+	_server.config = config
+	_server.config_file = ""
+	_server.auto_boot = false
+	server_side.add_child(_server)
+
+	var booted: DotResult = await _server.boot()
+
+	if not _check(booted.ok, "the server boots and listens", str(booted.error)):
+		return false
+
+	for descriptor in HungryModule.game_descriptors():
+		_server.games.add_game(descriptor)
+
+	var loaded: DotResult = await _server.games.change_game(
+		HungryModule.GAME_CLASSIC, "boot"
+	)
+
+	if not _check(loaded.ok, "the classic mode loads", str(loaded.error)):
+		return false
+
+	var platform: DotResult = await _server.modules.load_module(
+		"res://addons/dot_platform/dot_platform_module.gd"
+	)
+
+	if not _check(platform.ok, "the platform module loads", str(platform.error)):
+		return false
+
+	# Into this run's own directory, which [method _cleanup] deletes on the way in and out.
+	# Before this line every run wrote the moderator's warnings into the real store.
+	HungryModule.punishments_path = "%s/punishments.json" % SERVER_DIR
+
+	var hungry: DotResult = await _server.modules.load_module(
+		"res://game/hungry_module.gd"
+	)
+
+	if not _check(hungry.ok, "and so does the game", str(hungry.error)):
+		return false
+
+	# No bots. This suite is one person and their own client, and it asserts things a
+	# server full of bots would disturb: a monster driven straight through a rock (and eaten
+	# on the way), and a world that is empty once that person leaves. The shared default
+	# (DotBotQuota, six in fill mode) is the dedicated suite's to check.
+	var _no_bots := _server.console.execute("bot_quota 0")
+
+	var services := _module().services
+	_check(services.punishments_path.begins_with(SERVER_DIR),
+		"punishments go to this run's own store", services.punishments_path)
+	return _check(services.moderation.count() == 0,
+		"and it starts empty", "%d records" % services.moderation.count())
+
+
+func _teardown() -> void:
+	if _other_link != null and is_instance_valid(_other_link):
+		_other_link.disconnect_from_server("shutdown")
+
+	if _link != null and is_instance_valid(_link):
+		_link.disconnect_from_server("shutdown")
+
+	if _server != null and is_instance_valid(_server):
+		_server.shutdown("sandbox finished")
+
+
+## Saves the window to `$SANDBOX_SHOTS/<name>.png` when that variable names a directory: run
+## the suite under `xvfb-run` (not `--headless`, whose renderer draws nothing) to look at the
+## cover, the first frame after it lifts and the cover over an online mode change. Unset it
+## does nothing, so the suite is unchanged.
+func _shot(shot_name: String) -> void:
+	var dir := OS.get_environment("SANDBOX_SHOTS")
+	if dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(dir)
+	var err := get_viewport().get_texture().get_image().save_png(dir.path_join(shot_name + ".png"))
+	print("shot %s: %s" % [shot_name, error_string(err)])
+
+
+func _module() -> HungryModule:
+	return _server.modules.get_module("hungry") as HungryModule
+
+
+# --- Joining ---------------------------------------------------------------
+
+## How many of the game's link nodes sit under the server.
+func _links() -> int:
+	var count := 0
+	for child in _server.get_children():
+		if child is HungryNetLink:
+			count += 1
+	return count
+
+
+## A module reload must leave ONE link under the server, still named for the client's route.
+## Two used to be left, the live one renamed `@Node@n`, and every RPC to a real client was
+## lost without an error. The client joining next (signon is server RPCs over the socket)
+## is the proof the route works; it is done before any client, because a reload mid-session
+## leaves the new bridge not knowing who is seated, which is a different matter.
+func _test_a_module_reload() -> void:
+	_section("a module reload leaves one live link")
+
+	for _i in range(2):
+		_check(_server.modules.unload_module("hungry").ok, "the module unloads")
+		_check(
+			(await _server.modules.load_module("res://game/hungry_module.gd")).ok,
+			"and loads again"
+		)
+
+	# The reload put the default bot quota back; this suite is one person (see _build_server).
+	var _no_bots := _server.console.execute("bot_quota 0")
+	await _frames(5)
+	_check(
+		_links() == 1 and _server.has_node(NodePath(String(HungryNetLink.NODE_NAME))),
+		"exactly one link, under the name the client routes to (%d)" % _links()
+	)
+	_done()
+
+
+func _test_join() -> bool:
+	_section("a client connects")
+
+	var spawned := [false]
+	var refused := [""]
+
+	_link.spawned.connect(func() -> void: spawned[0] = true)
+	_link.disconnected.connect(func(reason: String) -> void: refused[0] = reason)
+	# [b]dot-server's own `chat_received` is deliberately NOT what this listens on.[/b] The
+	# module cancels that path and routes every line through [DotChatRouter] onto this
+	# game's own wire; a test that still listened there would pass on a server running the
+	# old path and fail on the one that ships.
+	_link.chat_received.connect(func(payload: Dictionary) -> void:
+		if str(payload.get("kind", "")) == "state":
+			_chat_state.append(payload)
+			return
+
+		_legacy_heard.append(payload)
+	)
+
+	var connecting: DotResult = await _link.connect_to_server("127.0.0.1:%d" % PORT)
+
+	if not _check(connecting.ok, "the client starts connecting", str(connecting.error)):
+		_done()
+		return false
+
+	var admitted := await _until(func() -> bool:
+		return spawned[0] or refused[0] != ""
+	, 15.0)
+
+	if not _check(
+		admitted and spawned[0],
+		"it completes signon and spawns",
+		refused[0] if refused[0] != "" else "timed out at phase %s" % _link.phase
+	):
+		_done()
+		return false
+
+	_check(_server.sessions().size() == 1, "the server has one session")
+	_check(_links() == 1, "and still one link, which the client reached (%d)" % _links())
+
+	var on_platform := await _until(func() -> bool: return _hub.count() == 1, 8.0)
+	_check(on_platform, "the platform admitted them")
+
+	if on_platform:
+		var player: DotPlatformPlayer = _hub.players()[0]
+		_check(player.is_ready(), "and they reached READY", player.stage_name())
+		_check(player.is_guest(), "as a guest, since this server has no accounts")
+		_check(player.avatar != null, "with an avatar resolved for them")
+		_check(
+			player.avatar != null and player.avatar.has_slot(&"body"),
+			"whose required slot is filled, so they can be seen"
+		)
+
+	# The game module puts them in the world off the same spawn event.
+	var in_world := await _until(func() -> bool:
+		var module := _module()
+		return module != null and module.world != null \
+			and module.world.monsters().size() > 0
+	, 8.0)
+
+	_check(in_world, "and the game put a monster in the world for them")
+
+	# No client scene exists yet, so no cover has lifted: the seat is loading, and nothing
+	# may hurt it. Deterministic, not a race.
+	var module := _module()
+	var seat: DotClientSession = _server.sessions()[0] if not _server.sessions().is_empty() else null
+	_check(
+		seat != null and module.is_peer_loading(seat.peer_id)
+			and not module.can_peer_be_harmed(seat.peer_id)
+			and not module.world.can_be_harmed(seat.userid),
+		"the seat is loading until its client's cover lifts, and cannot be harmed"
+	)
+	_done()
+	return in_world
+
+
+func _test_client_scene() -> void:
+	_section("the client scene")
+
+	# The server does not name this. [DotClientLink] refuses an absolute scene path
+	# outside dot-cloud's mount, because a server that could name one could ask a client
+	# to load any scene in their build. A game shipped inside the build owns its own
+	# client scene, and the signon takes the no-scene path.
+	var packed: Variant = load("res://game/client/hungry_client.tscn")
+
+	if not _check(packed is PackedScene, "the client scene loads"):
+		_done()
+		return
+
+	_client = (packed as PackedScene).instantiate() as HungryClient
+	_client_side.add_child(_client)
+	_client.platform.gate.opened.connect(func() -> void: _shot("2_lifted"))
+
+	await _frames(2)
+	_shot("1_cover")
+	await _frames(2)
+
+	_check(_client != null, "and instantiates")
+	_check(_client.world != null and not _client.world.is_authority, "with a world")
+	_check(_client.net != null and _client.net.is_running(), "and a running manager")
+	_check(_client.bridge != null and _client.bridge.link != null, "and a link")
+	_check(
+		_link.get_node_or_null(NodePath(String(HungryNetLink.NODE_NAME))) != null,
+		"parented to the client link, where the server's RPCs will find it"
+	)
+	_check(_client.hud != null, "and a HUD")
+
+	# The cover lifts under the client's own gate and the client says so on `game.cover`
+	# over the real socket; that message is the only thing that ends the seat's loading
+	# before its 5 s grace and 30 s timeout.
+	var loaded_at := Time.get_ticks_msec()
+	var lifted := await _until(func() -> bool:
+		return _client.platform.is_shown() and not _module().is_peer_loading(
+			_server.sessions()[0].peer_id)
+	, 10.0)
+	_check(
+		lifted and Time.get_ticks_msec() - loaded_at < 5000,
+		"the client's cover lifts and the server hears it (the seat is harmable)"
+	)
+	_check(_module().loading.load_timeouts == 0, "by the client's word, not the timeout")
+	_check(
+		_client.screens != null and _client.platform.board != null
+			and _client.menu != null and _client.menu.page(&"loadout") != null,
+		"and its Tab board and dot-menu's Escape menu, Loadout first"
+	)
+
+	# The pointer is what drives this game, and a headless run has none. The sampler's
+	# command source is the documented seam for exactly that - the same one a bot in a
+	# client's seat or a demo playback would use.
+	_client.sampler.command_source = func() -> Dot2DCommand:
+		return _command
+
+	_done()
+
+
+func _test_playing() -> void:
+	_section("playing")
+
+	var told := await _until(func() -> bool:
+		return _client.bridge.local_player_id != 0
+	, 8.0)
+
+	if not _check(told, "the client is told who it is"):
+		_done()
+		return
+
+	var mine := _client.bridge.local_player_id
+	var module := _module()
+
+	_check(
+		module.world.monster_for(mine) != null,
+		"and the server agrees that is a player (%d)" % mine
+	)
+
+	var has_field := await _until(func() -> bool:
+		return _client.world.field.alive_count() > 100
+	, 8.0)
+
+	_check(
+		has_field,
+		"the field arrived (%d slots)" % _client.world.field.alive_count()
+	)
+	# Waited for rather than asserted: a round going live reseeds the whole field and
+	# resends it, so a client admitted a moment before that legitimately holds the
+	# previous seed for a few frames. What must not happen is that it keeps it.
+	var seeded := await _until(func() -> bool:
+		return _client.world.field.seed_value() == module.world.field.seed_value()
+	, 8.0)
+
+	_check(
+		seeded,
+		"from the same seed (%d vs %d)" % [
+			_client.world.field.seed_value(), module.world.field.seed_value()
+		]
+	)
+	_check(
+		_client.world.arena.bounds.size.is_equal_approx(module.world.arena.bounds.size),
+		"into the same arena (%s vs %s)" % [
+			_client.world.arena.bounds.size, module.world.arena.bounds.size
+		]
+	)
+
+	var mirrored := await _until(func() -> bool:
+		return _client.bridge.piece_count() > 0
+	, 8.0)
+
+	_check(mirrored, "and the monster is mirrored")
+
+	# Now actually play. Everything from here is over the socket: the command goes out as
+	# an RPC, the server simulates it, and the state comes back in a snapshot.
+	var before := module.world.monster_for(mine).centre()
+
+	_command = Dot2DCommand.new()
+	_command.aim = Vector2.RIGHT
+	_command.reach = 900.0
+
+	var moved := await _until(func() -> bool:
+		var monster := module.world.monster_for(mine)
+		return monster != null and monster.centre().distance_to(before) > 150.0
+	, 10.0)
+
+	_check(
+		moved,
+		"the server moves the monster from the client's input (%.0f units)"
+			% module.world.monster_for(mine).centre().distance_to(before)
+	)
+
+	var client_monster := _client.world.monster_for(mine)
+	var apart := client_monster.centre().distance_to(
+		module.world.monster_for(mine).centre()
+	)
+
+	_check(
+		apart < 60.0,
+		"and the client agrees where it is (%.1f units apart)" % apart
+	)
+
+	_check(
+		_client.net.clock.is_synced(),
+		"the clock is synced (rtt %d ms)" % int(_client.net.clock.rtt_ms())
+	)
+	_check(
+		_client.net.stats.snapshots_received > 0,
+		"snapshots are arriving (%d)" % _client.net.stats.snapshots_received
+	)
+	_check(
+		_client.net.stats.decode_failures == 0,
+		"with no decode failures"
+	)
+	_check(
+		module.bridge.link.inputs_received > 0,
+		"and inputs are reaching the server (%d)" % module.bridge.link.inputs_received
+	)
+
+	# The avatar the client published is the one the server holds. This is the whole
+	# dot-user-avatar path over a real connection: a document of ids, validated against a
+	# schema by a server that loaded no art.
+	var server_monster := module.world.monster_for(mine)
+	_check(
+		server_monster != null and server_monster.avatar != null,
+		"the server holds an avatar for them"
+	)
+	_check(
+		server_monster != null and server_monster.avatar != null
+			and server_monster.avatar.schema_id == HungryContent.avatar_schema().id,
+		"under the rider schema"
+	)
+
+	await _test_mass_actions_are_heard(module, mine)
+
+	_command = Dot2DCommand.new()
+	_done()
+
+
+## An admin's noclip and freeze, over a real socket, on the player's own predicted monster.
+##
+## `headless_net` is where this is PROVED — tick by tick, with a naive control that has to
+## diverge, over a loopback that behaves the same way twice. What only a socket reaches is
+## the rest of the path: the console's tools on a live module, the bit riding a real
+## snapshot to a real client, and a prediction that holds while RPC timing does whatever it
+## does. The tolerance is the one "playing" already uses for agreement; a server-only
+## noclip through this rock measures about 80 on the loopback.
+func _test_admin_over_the_socket() -> void:
+	_section("an admin's noclip and freeze, over the socket")
+
+	var module := _module()
+	var mine := _client.bridge.local_player_id
+	var id := StringName(str(mine))
+	var server_monster := module.world.monster_for(mine)
+	var client_monster := _client.world.monster_for(mine)
+
+	if server_monster == null or client_monster == null or server_monster.piece_count() == 0:
+		for what in ["noclip", "learned", "through", "agreed", "freeze", "held", "held client"]:
+			_check(false, what, "no monster to act on")
+		_done()
+		return
+
+	# A rock across the path, in both worlds: the client predicts around rocks, which is
+	# what a noclip it did not know about would disagree with.
+	var from := server_monster.centre()
+	var heading := (module.world.arena.bounds.get_center() - from)
+	heading = heading.normalized() if heading.length() > 400.0 else Vector2.RIGHT
+	var rock := from + heading * 160.0
+	var layout := HungryLayout.none()
+	layout.blocks = PackedVector3Array([Vector3(rock.x, rock.y, 40.0)])
+	var kept_server := module.world.layout
+	var kept_client := _client.world.layout
+	module.world.layout = layout
+	_client.world.layout = layout
+
+	var on: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_NOCLIP, true, 100)
+	_check(on.ok, "the server's tools noclip the player", str(on.error))
+
+	var learned := await _until(func() -> bool:
+		var piece := client_monster.rider_piece()
+		return piece != null and Dot2DAdminModifiers.is_noclipped(piece.state)
+	, 5.0)
+	_check(learned, "and the client learns it from a snapshot")
+
+	_command = Dot2DCommand.new()
+	_command.aim = heading
+	_command.reach = 900.0
+
+	var worst := [0.0]
+	var through := await _until(func() -> bool:
+		worst[0] = maxf(worst[0], client_monster.centre().distance_to(server_monster.centre()))
+		return (server_monster.centre() - rock).dot(heading) > 40.0
+	, 10.0)
+	_check(through, "the server's monster goes through the rock",
+		"%.1f past its centre" % (server_monster.centre() - rock).dot(heading))
+	_check(worst[0] < 60.0, "and the client stays with it the whole way (worst %.1f units apart)" % worst[0])
+
+	var _off: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_NOCLIP, false, 100)
+	module.world.layout = kept_server
+	_client.world.layout = kept_client
+
+	# Freeze with the pointer still held at full reach.
+	var frozen: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_FREEZE, true, 100)
+	_check(frozen.ok, "the server's tools freeze the player", str(frozen.error))
+	var _told := await _until(func() -> bool:
+		var piece := client_monster.rider_piece()
+		return piece != null and Dot2DAdminModifiers.is_frozen(piece.state)
+	, 5.0)
+	var server_at := server_monster.centre()
+	var client_at := client_monster.centre()
+	await _frames(60)
+	_check(server_monster.centre().distance_to(server_at) < 1.0,
+		"the server holds the monster still under a held pointer (%.2f units)" % server_monster.centre().distance_to(server_at))
+	_check(client_monster.centre().distance_to(client_at) < 1.0,
+		"and the client predicts it held too (%.2f units)" % client_monster.centre().distance_to(client_at))
+
+	var _thaw: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_FREEZE, false, 100)
+	_command = Dot2DCommand.new()
+	_done()
+
+
+## Split and eject make a noise, over the network, and only when they happened.
+##
+## Both voices were baked and catalogued from the first commit and nothing ever played
+## either. Heard by watching the mirrored monster, so this has to be a netted client: the
+## pieces a split makes arrive as entity spawns, and the halved mass as a snapshot.
+func _test_mass_actions_are_heard(module: HungryModule, mine: int) -> void:
+	var sink := _client.presentation.audio.sink as HungrySoundSink
+
+	if not _check(sink != null, "the client's sound goes through this game's sink"):
+		return
+
+	# Big enough to split, and each half big enough to eject from.
+	module.world.feed_player(mine, 400.0)
+	var grown := await _until(func() -> bool:
+		var monster := _client.world.monster_for(mine)
+		return monster != null and monster.mass() > 300.0
+	, 6.0)
+	_check(grown, "the client sees its monster grow")
+
+	# Nothing pressed, nothing heard: growing is eating, not splitting.
+	_check(sink.count_of(&"split") == 0, "growing is not heard as a split")
+
+	# Eject first, while there is one piece, pointing just past its own centre: near is
+	# slow, so the monster does not walk onto the blob it spat out and eat it back inside
+	# the same snapshot — which nets to nothing and is correctly not heard.
+	_command = Dot2DCommand.new()
+	_command.aim = Vector2.UP
+	_command.reach = 4.0
+	_command.set_button(Dot2DCommand.BUTTON_EJECT, true)
+
+	var ejected := await _until(func() -> bool: return sink.count_of(&"eject") > 0, 4.0)
+	_check(ejected, "an eject is heard (%s)" % ", ".join(sink.played_ids()))
+
+	_command = Dot2DCommand.new()
+	await _frames(3)
+	_command.aim = Vector2.LEFT
+	_command.reach = 400.0
+	_command.set_button(Dot2DCommand.BUTTON_SPLIT, true)
+
+	var split := await _until(func() -> bool:
+		var monster := _client.world.monster_for(mine)
+		return monster != null and monster.piece_count() > 1
+	, 6.0)
+	await _frames(3)
+	_check(split, "a split reaches the client")
+	_check(
+		sink.count_of(&"split") > 0,
+		"and so is a split (%s)" % ", ".join(sink.played_ids())
+	)
+
+
+func _test_chat() -> void:
+	_section("chat")
+
+	# Attached here rather than at build time: `_client` is instantiated from a scene and
+	# its chat client exists once it is in the tree.
+	if not _client.chat.message_received.is_connected(_note_heard):
+		_client.chat.message_received.connect(_note_heard)
+
+	var before := _heard.size()
+	_client.bridge.say(HungryServices.CHANNEL_ALL, "hello from the sandbox")
+
+	var heard := await _until(func() -> bool: return _heard.size() > before, 6.0)
+
+	if not _check(heard, "a line the client sends comes back to it"):
+		_done()
+		return
+
+	var last := _heard[_heard.size() - 1]
+	_check(
+		last.text.contains("hello from the sandbox"),
+		"with the text intact",
+		last.text
+	)
+	_check(
+		last.channel == HungryServices.CHANNEL_ALL,
+		"on the channel it was sent to (%s)" % String(last.channel)
+	)
+
+	# The HUD is what a player actually sees, and it takes the same message the log does.
+	var lines := _client.hud.feed.line_count()
+	_client.hud.chat({"name": last.sender_name, "text": last.text})
+	_check(
+		_client.hud.feed.line_count() > lines,
+		"and the HUD shows it"
+	)
+
+	# Sanitising is [DotChatFilter]'s and happens before anything else sees the text. A
+	# zero-width space is what somebody uses to slip a name past a filter or to break a
+	# HUD's layout, and a client should never be handed one.
+	var zero_width := String.chr(0x200B)
+	var dirty := await _say_and_wait("bad%sline" % zero_width)
+	_check(
+		dirty != "" and not dirty.contains(zero_width),
+		"and a zero-width space never reaches a client",
+		dirty
+	)
+
+	# [b]The proximity channel, which is the one a lobby's argument does not cover.[/b] An
+	# arena is bigger than a screen, so "near" is a real audience — and the check that it
+	# works is that a line on it reaches the person who sent it, who is by definition
+	# within their own radius.
+	var near_before := _heard.size()
+	_client.bridge.say(HungryServices.CHANNEL_NEAR, "anybody close?")
+
+	var nearby := await _until(func() -> bool: return _heard.size() > near_before, 6.0)
+	_check(nearby, "a line on the proximity channel reaches somebody standing there")
+
+	# [b]And the one payload that legitimately comes down dot-server's chat signal.[/b]
+	# A joining client is told what is carrying the conversation before it has any line to
+	# draw, so it can decide whether to draw a chat box at all rather than drawing one and
+	# taking it away a moment later. This is the only place in the family where that is
+	# checked over a real socket with a real server at the other end.
+	_check(
+		_chat_state.size() >= 1,
+		"the server told the client what is carrying chat, on joining (%d)" % _chat_state.size()
+	)
+	_check(
+		_chat_state.is_empty() or not bool(_chat_state[0].get("relay", true)),
+		"and this one is carrying it nowhere else, which is the honest answer with no relay"
+	)
+
+	_check(
+		_legacy_heard.is_empty(),
+		"and dot-server's own chat delivered nothing beside it (%d)"
+			% _legacy_heard.size(),
+		"two paths for one message is two sets of rules, and the one that skipped the "
+		+ "filter would be the one that leaked admin chat"
+	)
+
+	# The legacy path still works and is still the router's: a browser shell's own chat
+	# box goes through dot-server and has no way to name a channel, and the module
+	# forwards it rather than dropping it.
+	var forwarded_before := _heard.size()
+	_link.send_chat("said the old way", false)
+
+	var forwarded := await _until(
+		func() -> bool: return _heard.size() > forwarded_before, 6.0
+	)
+	_check(
+		forwarded,
+		"a line sent through dot-server's own chat is forwarded onto this game's wire"
+	)
+	_done()
+
+
+func _note_heard(message: DotChatMessage, _channel: StringName) -> void:
+	_heard.append(message)
+
+
+func _say_and_wait(text: String) -> String:
+	var before := _heard.size()
+	_client.bridge.say(HungryServices.CHANNEL_ALL, text)
+
+	var heard := await _until(func() -> bool: return _heard.size() > before, 6.0)
+
+	if not heard:
+		return ""
+
+	return _heard[_heard.size() - 1].text
+
+
+## A second player, over a second socket, in a second MultiplayerAPI.
+##
+## [b]The thing a multiplayer game must do, and the thing nothing in this family had ever
+## checked.[/b] Everything before this is one client: it proves the signon, the RPC paths
+## and the netcode, and proves nothing at all about whether two people can see each other.
+## Interest management, the roster, the join broadcast and the piece mirroring are all
+## per-observer, and every one of them is trivially correct with one observer.
+##
+## A third MultiplayerAPI, rooted at its own subtree, for the reason the first two need
+## one: there is a single `SceneTree.multiplayer` and three peers in this process want it.
+func _test_two_players() -> void:
+	_section("a second player")
+
+	_other_side = Node.new()
+	_other_side.name = "OtherSide"
+	add_child(_other_side)
+
+	get_tree().set_multiplayer(
+		MultiplayerAPI.create_default_interface(), _other_side.get_path()
+	)
+
+	_other_link = DotClientLink.new()
+	# "Server", the same as the first one and the same as DotServer. The name is the
+	# routing, not a description.
+	_other_link.name = "Server"
+	_other_link.player_name = "Second Visitor"
+	_other_side.add_child(_other_link)
+
+	var spawned := [false]
+	_other_link.spawned.connect(func() -> void: spawned[0] = true)
+	_other_link.chat_received.connect(func(payload: Dictionary) -> void:
+		_legacy_heard.append(payload)
+	)
+
+	var connecting: DotResult = await _other_link.connect_to_server(
+		"127.0.0.1:%d" % PORT
+	)
+
+	if not _check(connecting.ok, "it connects", str(connecting.error)):
+		_done()
+		return
+
+	var joined := await _until(func() -> bool: return spawned[0], 15.0)
+
+	if not _check(joined, "and completes signon"):
+		_done()
+		return
+
+	_check(_server.sessions().size() == 2, "the server has two sessions")
+
+	var packed: Variant = load("res://game/client/hungry_client.tscn")
+	_other = (packed as PackedScene).instantiate() as HungryClient
+	_other_side.add_child(_other)
+	_other.sampler.command_source = func() -> Dot2DCommand:
+		return _other_command
+
+	var told := await _until(func() -> bool:
+		return _other.bridge.local_player_id != 0
+	, 10.0)
+
+	if not _check(told, "and is told who it is"):
+		_done()
+		return
+
+	var mine := _client.bridge.local_player_id
+	var theirs := _other.bridge.local_player_id
+
+	_check(mine != theirs, "the two have different ids (%d and %d)" % [mine, theirs])
+
+	# Each has to know the other exists, which is the join broadcast, and to have a piece
+	# for them, which is interest plus the spawn events.
+	var sees_them := await _until(func() -> bool:
+		var monster := _client.world.monster_for(theirs)
+		return monster != null and monster.piece_count() > 0
+	, 10.0)
+
+	var sees_us := await _until(func() -> bool:
+		var monster := _other.world.monster_for(mine)
+		return monster != null and monster.piece_count() > 0
+	, 10.0)
+
+	_check(sees_them, "the first client sees the second")
+	_check(sees_us, "and the second sees the first")
+
+	# What a join owes: an announcement to everybody already here, and the backlog to the
+	# one who just arrived. Both used to be sent from `client_spawn`, which is before the
+	# client has built anything to receive them on — so neither ever went, and with
+	# dot-server's own join line turned off in favour of dot-chat's there was no join line
+	# at all. Every check above passed throughout.
+	var announced := await _until(func() -> bool:
+		for message: DotChatMessage in _heard:
+			if message.kind == DotChatMessage.Kind.JOIN:
+				return true
+		return false
+	, 6.0)
+	_check(announced, "the first client is told somebody joined")
+
+	var caught_up := await _until(func() -> bool:
+		for message: DotChatMessage in _other.chat.history.recent_all(50):
+			if message.text.contains("hello from the sandbox"):
+				return true
+		return false
+	, 6.0)
+	_check(caught_up, "and the second is handed what was said before it arrived")
+
+	var module := _module()
+
+	# And the positions agree. This is the whole of "two people are in the same world":
+	# the server's idea of where somebody is, and every other client's, being the same
+	# place.
+	var server_at := module.world.monster_for(theirs).centre()
+	var seen_at := _client.world.monster_for(theirs).centre()
+
+	_check(
+		seen_at.distance_to(server_at) < 80.0,
+		"in the place the server says (%.1f units off)" % seen_at.distance_to(server_at)
+	)
+
+	# Move the second one and the first has to watch it move.
+	var before := _client.world.monster_for(theirs).centre()
+	_other_command = Dot2DCommand.new()
+	_other_command.aim = Vector2.UP
+	_other_command.reach = 900.0
+
+	var moved := await _until(func() -> bool:
+		var monster := _client.world.monster_for(theirs)
+		return monster != null and monster.centre().distance_to(before) > 120.0
+	, 10.0)
+
+	_check(
+		moved,
+		"and watches it move (%.0f units)"
+			% _client.world.monster_for(theirs).centre().distance_to(before)
+	)
+
+	_other_command = Dot2DCommand.new()
+
+	# And still agrees about where it ended up. Moving is the easy half; a client whose
+	# view of somebody else drifts while they move is a client that will be eaten by
+	# something it was drawing somewhere else.
+	var settled := await _until(func() -> bool:
+		var here := _client.world.monster_for(theirs)
+		var there := module.world.monster_for(theirs)
+		return here != null and there != null \
+			and here.centre().distance_to(there.centre()) < 40.0
+	, 8.0)
+
+	_check(
+		settled,
+		"and agrees where it stopped (%.1f units off)"
+			% _client.world.monster_for(theirs).centre().distance_to(
+				module.world.monster_for(theirs).centre()
+			)
+	)
+
+	# Chat goes to everybody, not back to the sender only. Over this game's own wire, and
+	# from the SECOND client — the one that did not ask — which is the half a single
+	# client cannot prove.
+	var heard_before := _heard.size()
+	_other.bridge.say(HungryServices.CHANNEL_ALL, "second player here")
+
+	var relayed := await _until(func() -> bool: return _heard.size() > heard_before, 6.0)
+	_check(relayed, "a line from one reaches the other")
+
+	# A loadout published by one is broadcast to all, because the trait changes how fast
+	# that monster moves and every client predicts nothing about it but draws all of it.
+	var schema := _other.bridge.loadout_schema
+	var chosen := DotLoadout.empty(schema.id)
+	chosen.set_item(HungryContent.SLOT_STARTER, HungryContent.ITEM_FROST)
+	chosen.set_item(HungryContent.SLOT_TRAIT, HungryContent.TRAIT_STURDY)
+	_other.bridge.publish_loadout(chosen)
+
+	var shared := await _until(func() -> bool:
+		var monster := _client.world.monster_for(theirs)
+		return monster != null and monster.trait_id == HungryContent.TRAIT_STURDY
+	, 8.0)
+
+	_check(shared, "and so does a loadout they chose")
+
+	await _test_blind_and_beacon_audience(module, theirs)
+
+	# Leaving has to be visible too: a monster left behind by a player who is gone is one
+	# everybody else can still be eaten by.
+	var their_peer := module.bridge.peer_for_player(theirs)
+	_other_link.disconnect_from_server("done")
+
+	var forgotten := await _until(func() -> bool:
+		return _client.world.monster_for(theirs) == null
+	, 10.0)
+
+	_check(forgotten, "and when they leave, the other stops seeing them")
+	_check(
+		module.world.monster_for(theirs) == null,
+		"and the server drops them too"
+	)
+	# And so does its netcode. A disconnect takes the peer off the ready set before it
+	# removes it, and the removal used to be gated on the ready set — so the manager kept
+	# the peer and sent it a snapshot every interval, each one an "unknown peer ID" error
+	# in the server's log, while every check above passed.
+	_check(
+		their_peer > 0 and not module.bridge.net.peers().has(their_peer),
+		"and so does its netcode (peers %s)" % str(module.bridge.net.peers())
+	)
+
+	_other = null
+	_other_link = null
+	_done()
+
+
+## An administrator's blind and beacon, with two real clients on real sockets: the one
+## thing about both that one client cannot show is who ELSE is told.
+##
+## The second player is blinded and beaconed. Their own client has to black its screen out
+## and the first client must never learn it — an opponent who could read the blind would
+## know the moment somebody could not see them coming — while both clients draw the
+## beacon. Asserted on each client's own copy of the monster and on what its HUD and its
+## renderer actually did with it, which is what a player sees. `headless_net` proves the
+## same audience over a loopback; this is the path through the console's tools, a live
+## module and two `MultiplayerAPI`s.
+func _test_blind_and_beacon_audience(module: HungryModule, theirs: int) -> void:
+	var id := StringName(str(theirs))
+	var blinded: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_BLIND, true, 100)
+	var lit: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_BEACON, true, 100)
+
+	var dark := await _until(func() -> bool:
+		var monster := _other.world.monster_for(theirs)
+		return monster != null and monster.blinded and _other.hud.blind_overlay.visible
+	, 6.0)
+	_check(blinded.ok and dark, "a blind reaches the blinded player's own client, and its screen goes dark",
+		str(blinded.error))
+
+	var seen := await _until(func() -> bool:
+		var monster := _client.world.monster_for(theirs)
+		return monster != null and monster.beacon and _client.renderer.beacon_count() == 1 \
+			and _other.renderer.beacon_count() == 1
+	, 6.0)
+	_check(lit.ok and seen, "a beacon reaches both clients, and both draw it", str(lit.error))
+
+	# Given the same snapshots the beacon rode in on, and a few more.
+	await _frames(20)
+	_check(
+		not _client.world.monster_for(theirs).blinded and not _client.hud.blind_overlay.visible
+			and not _client.world.monster_for(_client.bridge.local_player_id).blinded,
+		"and the other client is never told about the blind, and its screen stays lit"
+	)
+
+	var _unblind: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_BLIND, false, 100)
+	var _unlit: DotResult = await module.mod_tools.toggle(&"console", id, DotModTools.ACTION_BEACON, false, 100)
+	var cleared := await _until(func() -> bool:
+		return not _other.world.monster_for(theirs).blinded \
+			and not _client.world.monster_for(theirs).beacon \
+			and _client.renderer.beacon_count() == 0 and _other.renderer.beacon_count() == 0
+	, 6.0)
+	_check(cleared, "and turning both off reaches both clients")
+
+
+## [b]The player's block list (`sm`) reaches this game's voice.[/b] dot-chat's DotChatSelfMute
+## binds whatever is published as `dot_voice_client`; until that was checked here, `sm` was
+## only ever shown muting voice in arena. Frames are handed to the real client's manager as
+## the bridge hands them, from a speaker the list maps to a key; the buffered sink (no audio
+## device here) says whether anything played. Armed: drop `HungryVoice`'s publish and the
+## first check fails; drop the list's binding and the second does.
+func _test_voice_mute() -> void:
+	_section("sm mutes a player's voice")
+
+	# The one client in this process so far, as in a real one (a second client publishes its
+	# own, and the registry holds the last).
+	var voice: Variant = _client.voice if _client != null else null
+	var manager: DotVoiceManager = voice.manager if voice != null else null
+	if not _check(manager != null and DotRegistry.get_service(&"dot_voice_client") == manager,
+			"the client's voice is published as dot_voice_client"):
+		_done()
+		return
+
+	var self_mute := DotChatSelfMute.new()
+	self_mute.path = "user://hungry_sandbox_self_mute.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(self_mute.path))
+	const TALKER := 1_900_000_001
+	self_mute.set_roster([{"id": 9, "name": "Loud", "key": "loud-key", "peer": TALKER}], 2)
+	self_mute.attach_voice(DotRegistry.get_service(&"dot_voice_client"))
+
+	var talk := func() -> void:
+		var codec := DotVoiceCodec.instance_for(manager.config.codec_id)
+		for i in range(10):
+			var packet := DotVoicePacket.new()
+			packet.speaker = TALKER
+			packet.sequence = i
+			packet.starts_talk_spurt = i == 0
+			packet.sample_count = manager.config.frame_samples()
+			packet.codec_id = manager.config.codec_id
+			packet.payload = codec.encode(DotVoiceSourceBuffer.tone(
+				300.0, manager.config.frame_ms / 1000.0, manager.config.sample_rate, 0.4))
+			voice.receive(packet.to_bytes())
+
+	self_mute.set_muted({"key": "loud-key", "name": "Loud"}, true)
+	talk.call()
+	for _i in range(15):
+		await get_tree().process_frame
+	_check(manager.is_locally_muted(TALKER) and voice.heard_rms(TALKER) == 0.0,
+		"sm on a player: their voice frames arrive and are not played (rms %.3f)" % voice.heard_rms(TALKER))
+
+	self_mute.set_muted({"key": "loud-key", "name": "Loud"}, false)
+	talk.call()
+	var heard := await _until(func() -> bool: return voice.heard_rms(TALKER) > 0.0, 2.0)
+	_check(heard and not manager.is_locally_muted(TALKER),
+		"and unmuted, the same frames play (rms %.3f)" % voice.heard_rms(TALKER))
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(self_mute.path))
+	_done()
+
+
+func _test_game_change() -> void:
+	_section("changing the game with somebody in it")
+
+	var module := _module()
+	var mine := _client.bridge.local_player_id
+	var before_world := module.world
+
+	# Moved once by a moderator, so `return` has somewhere to put this player — a position in
+	# THIS arena, which the change is about to free.
+	var who := StringName(str(mine))
+	var here: Variant = module.mod_tools.position_fn.call(who)
+	var _moved: DotResult = await module.mod_tools.teleport(&"", who,
+		(here as Vector2) + Vector2(40.0, 0.0) if here is Vector2 else Vector2.ZERO)
+	_check(module.mod_tools.can_return(who), "a moderator moves the player, so `return` has somewhere to put them")
+
+	# [b]To the reef, not to frenzy, since the lagoon.[/b] Frenzy is an empty square, so
+	# this change had only ever proved that a connected client follows a new SIZE and a
+	# new SEED; a mode with rocks in it adds the one thing a client derives rather than
+	# receives — the discs it predicts itself against — and nothing had carried that
+	# across a live change until now. The reef is the level with the most of them.
+	# What the server saw of the seat across the change, and what the client's gate did.
+	# [b]Recorded as it happens[/b]: the cover can lift again before a poll could look.
+	var seen := {"loading": 0, "loaded": 0, "harmable_while_loading": true, "t0": 0, "ms": -1}
+	module.loading.loading_changed.connect(func(userid: int, is_loading: bool) -> void:
+		if userid != mine:
+			return
+		if is_loading:
+			seen["loading"] += 1
+			seen["t0"] = Time.get_ticks_msec()
+			if module.world.can_be_harmed(mine) or module.can_be_harmed(mine):
+				seen["harmable_while_loading"] = true
+			else:
+				seen["harmable_while_loading"] = false
+		else:
+			seen["loaded"] += 1
+			seen["ms"] = Time.get_ticks_msec() - int(seen["t0"])
+	)
+	var closes := [0]
+	_client.platform.gate.closed.connect(func() -> void:
+		closes[0] += 1
+		_shot("3_map_change")
+	)
+
+	var changed: DotResult = await _server.games.change_game(
+		HungryModule.GAME_REEF, "sandbox"
+	)
+
+	if not _check(changed.ok, "the server changes to the reef", str(changed.error)):
+		_done()
+		return
+
+	await _frames(10)
+
+	_check(module.world != before_world, "onto a new world")
+	_check(String(module.world.preset.id) == "reef", "under the new preset")
+	_check(_link.is_connected_to_server(), "and the client is still connected")
+
+	var followed := await _until(func() -> bool:
+		return _client.world.arena.bounds.size.is_equal_approx(
+			module.world.arena.bounds.size
+		)
+	, 10.0)
+
+	_check(
+		followed,
+		"the client took the new arena (%s vs %s)" % [
+			_client.world.arena.bounds.size, module.world.arena.bounds.size
+		]
+	)
+	_check(
+		_client.world.field.seed_value() == module.world.field.seed_value(),
+		"and the new field seed"
+	)
+
+	# The same eighteen rocks, both barriers, the atoll and the spits, built on the client
+	# from the name in the hello. Compared disc by disc rather than by count: a client that
+	# built the reef against the OLD arena's rectangle has eighteen rocks at the wrong
+	# scale, and eighteen is eighteen.
+	var same_rocks := _client.world.layout.count() == module.world.layout.count() \
+		and _client.world.layout.chains.size() == module.world.layout.chains.size()
+
+	for index in range(mini(_client.world.layout.count(), module.world.layout.count())):
+		if not _client.world.layout.blocks[index].is_equal_approx(
+			module.world.layout.blocks[index]
+		):
+			same_rocks = false
+
+	_check(
+		same_rocks,
+		"and builds the reef and its lagoon disc for disc (%d rocks, %d barriers)"
+			% [_client.world.layout.count(), _client.world.layout.chains.size()]
+	)
+
+	var back_in := await _until(func() -> bool:
+		var monster := module.world.monster_for(mine)
+		return monster != null and monster.alive and _client.bridge.piece_count() > 0
+	, 10.0)
+
+	_check(back_in, "and is playing again without reconnecting")
+
+	# The map change covers the client again (it holds the gate until the new world's hello)
+	# and the server counts the seat as loading until the client says it lifted: well inside
+	# the 5 s a client that did not re-cover would wait.
+	_check(closes[0] >= 1, "the client covered again for the change (gate closed %d)" % closes[0])
+	var reloaded := await _until(func() -> bool: return int(seen["loaded"]) >= 1, 8.0)
+	_check(
+		int(seen["loading"]) >= 1 and reloaded and int(seen["ms"]) < 4000,
+		"the seat was loading again and the client's lift released it (%d ms)" % int(seen["ms"])
+	)
+	_check(not bool(seen["harmable_while_loading"]), "and it was not harmable meanwhile")
+	_check(
+		module.can_peer_be_harmed(_server.sessions()[0].peer_id) and _client.platform.is_shown(),
+		"and is harmable once its cover lifts"
+	)
+
+	var returned: DotResult = await module.mod_tools.return_player(&"", who)
+	_check(
+		not module.mod_tools.can_return(who) and not returned.ok,
+		"and `return` has nowhere to put them, rather than a spot in the arena that is gone",
+		"it put them at %s, a position from the previous mode" % str(returned.value) if returned.ok else ""
+	)
+	_done()
+
+
+func _test_leaving() -> void:
+	_section("leaving")
+
+	var module := _module()
+	_link.disconnect_from_server("done")
+
+	var gone := await _until(func() -> bool:
+		return _server.sessions().is_empty()
+	, 8.0)
+
+	_check(gone, "the session closes")
+
+	var released := await _until(func() -> bool: return _hub.count() == 0, 8.0)
+	_check(released, "the platform released them")
+
+	var world_clear := await _until(func() -> bool:
+		return module.world == null or module.world.monsters().is_empty()
+	, 8.0)
+
+	_check(
+		world_clear,
+		"and the world is not left holding a monster whose session is gone"
+	)
+	_done()
