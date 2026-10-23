@@ -1,0 +1,74 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="4_player"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_main"]
+sky_top_color = Color(0.03, 0.04, 0.13, 1)
+sky_horizon_color = Color(0.98, 0.62, 0.42, 1)
+sky_curve = 0.3
+sky_energy_multiplier = 1.0
+ground_bottom_color = Color(0.025, 0.03, 0.07, 1)
+ground_horizon_color = Color(0.32, 0.17, 0.3, 1)
+sun_angle_max = 7.0
+sun_curve = 0.12
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_main")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 3
+ambient_light_color = Color(0.72, 0.66, 0.67, 1)
+ambient_light_sky_contribution = 0.45
+ambient_light_energy = 0.68
+tonemap_mode = 3
+tonemap_exposure = 0.95
+tonemap_white = 5.0
+ssao_enabled = true
+ssao_radius = 1.1
+ssao_intensity = 1.25
+ssao_power = 1.4
+glow_enabled = true
+glow_intensity = 0.55
+glow_strength = 1.0
+glow_bloom = 0.08
+glow_blend_mode = 1
+glow_hdr_threshold = 0.95
+fog_enabled = true
+fog_light_color = Color(0.24, 0.17, 0.29, 1)
+fog_light_energy = 0.55
+fog_sun_scatter = 0.12
+fog_density = 0.013
+fog_sky_affect = 0.5
+adjustment_enabled = true
+adjustment_contrast = 1.04
+adjustment_saturation = 1.18
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.825336, 0.459289, -0.328443, 0, 0.581683, 0.813416, 0.564642, -0.671341, 0.480084, 0, 34, 6)
+light_color = Color(1, 0.89, 0.72, 1)
+light_energy = 1.2
+light_angular_distance = 1.2
+shadow_enabled = true
+shadow_bias = 0.04
+shadow_blur = 1.2
+directional_shadow_max_distance = 120.0
+
+[node name="Level" type="Node3D" parent="."]
+script = ExtResource("2_level")
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 2.2)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("3_hud")
