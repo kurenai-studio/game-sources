@@ -1,0 +1,24 @@
+language: generic
+os: linux
+
+install:
+    - sudo apt-get update
+    - sudo apt-get install lua5.3 liblua5.3-dev -y
+    - wget https://luarocks.org/releases/luarocks-3.3.0.tar.gz
+    - tar zxpf luarocks-3.3.0.tar.gz
+    - cd luarocks-3.3.0
+    - ./configure && make && sudo make install
+    - cd ..
+    - rm -rf luarocks-3.3.0
+    - sudo luarocks install luacheck
+script:
+    # - luacheck *.lua
+    - zip -qq -9 -r bornholm.love .
+
+deploy:
+    provider: releases
+    api_key: "GITHUB OAUTH TOKEN"
+    file: "bornholm*.love"
+    skip_cleanup: true
+    on:
+        tags: true
