@@ -1,0 +1,272 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url 'https://maven.google.com' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.1'
+    }
+}
+
+// Read build properties
+ext {
+    buildProperties = new Properties()
+    file("assets/version").withReader { reader ->
+        buildProperties.load(reader)
+        buildProperties.version = buildProperties.major + "." + buildProperties.minor + "." + buildProperties.point
+        println "VERSION: " + buildProperties.version
+    }
+
+    build = ""
+    hash = ""
+    if (hasGit()) {
+        build = shell("git rev-list HEAD --count").text.trim()
+        hash = shell("git rev-parse HEAD").text.trim()
+        println "BUILD:   " + build
+        println "HASH:    " + hash
+    } else {
+        println "Git was not found in path!"
+        file("assets/build").delete()
+    }
+
+    localProperties = new Properties()
+    if (file("build.properties").exists()) {
+        file("build.properties").withReader { reader ->
+            localProperties.load(reader)
+        }
+    }
+
+    def defaultProperties = [
+        ANDROID_KEYSTORE_FILE: "keystore",
+        ANDROID_KEYSTORE_PASSWORD: "password",
+        ANDROID_KEYSTORE_KEY_ALIAS: "android",
+        ANDROID_KEYSTORE_KEY_PASSWORD: "password",
+        MAVEN_REPO_PATH: "https://ethanjones.me/maven/",
+        MAVEN_REPO_USERNAME: "",
+        MAVEN_REPO_PASSWORD: ""
+    ]
+
+    defaultProperties.each {key, defaultValue ->
+        def env = System.getenv(key)
+        if (env) {
+            localProperties.setProperty(key, env)
+        } else if (!localProperties.getProperty(key)) {
+            localProperties.setProperty(key, defaultValue)
+        }
+    }
+
+    println "REPO:    " + localProperties.MAVEN_REPO_PATH
+}
+
+// Write build file
+afterEvaluate {
+    if (hash != "") {
+        file("assets/build").write("build=" + ext.build + "\nhash=" + ext.hash + "\nisRelease=" + isRelease + "\nbuildDate=" + getDateString() + "\n", 'UTF-8')
+    }
+}
+// Delete build file
+project.getGradle().buildFinished {
+    file("assets/build").delete()
+}
+
+// Set general properties
+allprojects {
+    version = System.getenv("BUILD_NUMBER")
+
+    ext {
+        appName = 'Cubes'
+        gdxVersion = '1.9.10'
+        androidBuildToolsVersion = '29.0.2'
+        androidSdkVersion = 29
+        dataVersion = '2.2'
+        byteBuddyVersion = '1.6.13'
+        buildProperties = getRootProject().buildProperties
+        build = getRootProject().build
+        localProperties = getRootProject().localProperties
+        isRelease = false
+    }
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        google()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://ethanjones.me/maven/snapshots/" }
+        maven { url "https://ethanjones.me/maven/releases/" }
+    }
+}
+
+// Individual subprojects plugins & dependencies
+project(":core") {
+    apply plugin: "java"
+    apply plugin: "maven-publish"
+    
+    sourceCompatibility = 1.7
+
+    dependencies {
+        compile 'com.eclipsesource.minimal-json:minimal-json:0.9.4'
+        compile 'org.luaj:luaj-jse:3.0.1'
+        compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        compile "ethanjones:data:$dataVersion"
+        compile "net.bytebuddy:byte-buddy:$byteBuddyVersion"
+    }
+}
+
+project(":desktop") {
+    apply plugin: "java"
+
+    sourceCompatibility = 1.8
+
+    dependencies {
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+    }
+}
+
+project(":client") {
+    apply plugin: "java"
+    apply plugin: "maven-publish"
+    
+    sourceCompatibility = 1.8
+
+    dependencies {
+        compile project(":desktop")
+        compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+
+    }
+}
+
+project(":server") {
+    apply plugin: "java"
+    apply plugin: "maven-publish"
+
+    sourceCompatibility = 1.8
+
+    dependencies {
+        compile project(":desktop")
+        compile "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+    }
+}
+
+project(":android") {
+    apply plugin: "android"
+    apply plugin: "maven-publish"
+
+    configurations { natives }
+
+    dependencies {
+        implementation project(":core")
+        implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+        natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+
+        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi"
+        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
+        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
+        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
+        natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
+
+        implementation("net.bytebuddy:byte-buddy-android:$byteBuddyVersion") {
+            exclude group:"com.jakewharton.android.repackaged"
+        }
+        implementation "ethanjones.repackaged.android:dx:7.1.2_r33"
+    }
+}
+
+// Setup java subprojects
+subprojects {
+    if (project.plugins.hasPlugin('org.gradle.java')) {
+        apply plugin: "idea"
+
+        [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+        sourceSets.main.java.srcDirs = ["src/"]
+
+        compileJava {
+            options.fork = true
+            options.incremental = true
+        }
+
+        idea {
+            module {
+                scopes.PROVIDED.minus += [configurations.compile]
+                scopes.COMPILE.plus += [configurations.compile]
+            }
+        }
+    }
+}
+
+// Aliases
+task buildAll(dependsOn: ['core:jar', 'core:sourcesJar', 'client:dist', 'client:createExe', 'server:dist', 'android:assembleDebug'], description: "Build everything", group: "Alias") {
+
+}
+
+task ci(dependsOn: ['core:jar', 'client:dist', 'client:createExe', 'server:dist', 'android:assembleDebug']) {
+
+}
+
+task ciPublish(dependsOn: ['core:publish', 'client:publish', 'server:publish', 'android:publish']) {
+
+}
+
+// Deletes intellij & eclipse project files
+//task deleteProject(type: Delete, description: "Delete intellij & eclipse project files", group: "IDE") {
+//    delete fileTree(dir: project.rootDir, include: '**/*.iml')
+//    delete fileTree(dir: project.rootDir, include: '**/*.ipr')
+//    delete fileTree(dir: project.rootDir, include: '**/*.iws')
+//    delete fileTree(dir: project.rootDir, include: '**/*.project')
+//    delete fileTree(dir: project.rootDir, include: '**/*.classpath')
+//
+//    allprojects.each { p ->
+//        new File(p.projectDir, '.idea/').deleteDir()
+//        new File(p.projectDir, '.settings/').deleteDir()
+//    }
+//}
+
+// Helper functions
+String getMavenVersionString() {
+    def str = buildProperties.version
+    if (!isRelease) {
+        str = str + "-SNAPSHOT"
+    }
+    return str
+}
+
+String getMavenRepo() {
+    def str = localProperties.MAVEN_REPO_PATH
+    if (isRelease) {
+        str = str + "releases"
+    } else {
+        str = str + "snapshots"
+    }
+    return str
+}
+
+String getDateString() {
+    TimeZone tz = TimeZone.getTimeZone("UTC");
+    java.text.DateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    df.setTimeZone(tz);
+    return df.format(new Date());
+}
+
+boolean hasGit() {
+    try {
+        def proc = "git rev-parse --short HEAD".execute()
+        proc.waitFor()
+        return proc.exitValue() == 0
+    } catch (Throwable t) {
+        return false
+    }
+}
+
+Process shell(String str) {
+    def proc = str.execute()
+    proc.waitFor()
+    return proc
+}

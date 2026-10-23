@@ -1,0 +1,122 @@
+android {
+    buildToolsVersion androidBuildToolsVersion
+    compileSdkVersion androidSdkVersion
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['../assets']
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+    signingConfigs {
+        release {
+            storeFile file(localProperties.ANDROID_KEYSTORE_FILE)
+            storePassword localProperties.ANDROID_KEYSTORE_PASSWORD
+            keyAlias localProperties.ANDROID_KEYSTORE_KEY_ALIAS
+            keyPassword localProperties.ANDROID_KEYSTORE_KEY_PASSWORD
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+    defaultConfig {
+        versionName buildProperties.version
+        versionCode build != null && !build.isEmpty() ? build.toInteger() : 1
+        minSdkVersion 19
+        targetSdkVersion androidSdkVersion
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    lintOptions {
+        disable "InvalidPackage"
+    }
+}
+
+// called every time gradle gets executed, takes the native dependencies of
+// the natives configuration, and extracts them to the proper libs/ folders
+// so they get packed with the APK.
+task copyAndroidNatives {
+    doFirst {
+        file("libs/armeabi/").mkdirs()
+        file("libs/armeabi-v7a/").mkdirs()
+        file("libs/arm64-v8a/").mkdirs()
+        file("libs/x86_64/").mkdirs()
+        file("libs/x86/").mkdirs()
+
+        configurations.natives.files.each { jar ->
+            def outputDir = null
+            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
+            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
+            if (jar.name.endsWith("natives-armeabi.jar")) outputDir = file("libs/armeabi")
+            if (jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
+            if (jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
+            if (outputDir != null) {
+                copy {
+                    from zipTree(jar)
+                    into outputDir
+                    include "*.so"
+                }
+            }
+        }
+    }
+}
+
+tasks.whenTaskAdded { t ->
+    if (t.name.contains("package")) {
+        t.dependsOn 'copyAndroidNatives'
+    } else if (t.name.contains("publish")) {
+        t.dependsOn(['assembleDebug'])
+        t.mustRunAfter(['assembleDebug'])
+    }
+}
+
+task run(type: Exec) {
+    def path
+    def localProperties = project.file("../local.properties")
+    if (localProperties.exists()) {
+        Properties properties = new Properties()
+        localProperties.withInputStream { instr ->
+            properties.load(instr)
+        }
+        def sdkDir = properties.getProperty('sdk.dir')
+        if (sdkDir) {
+            path = sdkDir
+        } else {
+            path = "$System.env.ANDROID_HOME"
+        }
+    } else {
+        path = "$System.env.ANDROID_HOME"
+    }
+
+    def adb = path + "/platform-tools/adb"
+    commandLine "$adb", 'shell', 'am', 'start', '-n', 'ethanjones.cubes.core.platform.android/ethanjones.cubes.core.platform.android.AndroidLauncher'
+}
+
+
+publishing {
+    publications {
+        android(MavenPublication) {
+            groupId 'ethanjones.cubes'
+            artifactId 'android'
+            version getMavenVersionString()
+            artifact(new File(project.getBuildDir(), '/outputs/apk/debug/android-debug.apk'))
+        }
+    }
+    repositories {
+        maven {
+            url getMavenRepo()
+            credentials {
+                username localProperties.MAVEN_REPO_USERNAME
+                password localProperties.MAVEN_REPO_PASSWORD
+            }
+        }
+    }
+}

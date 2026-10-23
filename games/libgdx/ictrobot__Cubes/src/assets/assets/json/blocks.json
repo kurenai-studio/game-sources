@@ -1,0 +1,72 @@
+[
+  {
+    "id": "core:bedrock",
+    "mining": {
+      "speed": 1000000,
+      "tool": "none",
+      "other": false
+    },
+    "displayMeta": []
+  },
+  {
+    "id": "core:stone",
+    "mining": {
+      "speed": 1.5,
+      "tool": "pickaxe",
+      "other": false
+    }
+  },
+  {
+    "id": "core:log",
+    "meta": 3,
+    "displayMeta": [
+      0
+    ],
+    "texture": {
+      "0": {
+        "posY": "core:log_top",
+        "negY": "core:log_top",
+        "other": "core:log"
+      },
+      "1": {
+        "posX": "core:log_top",
+        "negX": "core:log_top",
+        "other": "core:log"
+      },
+      "2": {
+        "posZ": "core:log_top",
+        "negZ": "core:log_top",
+        "other": "core:log"
+      }
+    },
+    "mining": {
+      "speed": 2,
+      "tool": "axe",
+      "other": true
+    },
+    "drops": {
+      "default": {
+        "id": "core:log",
+        "count": 1,
+        "meta": 0
+      }
+    }
+  },
+  {
+    "id": "core:planks",
+    "mining": {
+      "speed": 3,
+      "tool": "axe",
+      "other": true
+    }
+  },
+  {
+    "id": "core:glow",
+    "lightLevel": 15,
+    "mining": {
+      "speed": 0.25,
+      "tool": "none",
+      "other": true
+    }
+  }
+]
