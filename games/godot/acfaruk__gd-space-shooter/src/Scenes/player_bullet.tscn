@@ -1,0 +1,45 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Scripts/Bullet.gd" type="Script" id=1]
+[ext_resource path="res://Sprites/laserRed01.png" type="Texture2D" id=2]
+[ext_resource path="res://Audio/laser7.ogg" type="AudioStream" id=3]
+
+[sub_resource type="PhysicsMaterial" id=1]
+friction = 0.0
+
+[sub_resource type="RectangleShape2D" id=2]
+extents = Vector2( 4.43027, 27.0075 )
+
+[node name="player_bullet" type="RigidBody2D"]
+z_index = -1
+input_pickable = true
+mode = 3
+physics_material_override = SubResource( 1 )
+script = ExtResource( 1 )
+
+[node name="sprite" type="Sprite2D" parent="."]
+scale = Vector2( 0.4, 0.4 )
+texture = ExtResource( 2 )
+
+[node name="light" type="PointLight2D" parent="."]
+scale = Vector2( 0.4, 0.4 )
+texture = ExtResource( 2 )
+color = Color( 1, 0.03125, 0.03125, 1 )
+energy = 3.0
+
+[node name="timer" type="Timer" parent="."]
+wait_time = 10.0
+one_shot = true
+autostart = true
+
+[node name="laser_sound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 3 )
+volume_db = 1.0
+autoplay = true
+bus = "sfx"
+
+[node name="collision_shape" type="CollisionShape2D" parent="."]
+scale = Vector2( 0.4, 0.4 )
+shape = SubResource( 2 )
+[connection signal="body_shape_entered" from="." to="." method="_on_player_bullet_body_shape_entered"]
+[connection signal="timeout" from="timer" to="." method="_on_timer_timeout"]
