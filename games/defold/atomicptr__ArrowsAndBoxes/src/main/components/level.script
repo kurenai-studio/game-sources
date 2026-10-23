@@ -1,0 +1,903 @@
+local direction = require "main.data.direction"
+local grid = require "main.grid"
+local msg_main_gui = require "messages.main_gui"
+local msg_arrow = require "messages.arrow"
+
+local msg_burning = require "messages.burning"
+local msg_game_manager = require "messages.game_manager"
+local msg_level = require "messages.level"
+local msg_level_manager = require "messages.level_manager"
+local msg_player = require "messages.player"
+
+local tile_size = 32
+local move_anim_duration = 0.1
+local layer_offset_main = 0.1
+
+local tile_layer_background = "background"
+local tile_layer_main = "main"
+
+local tile_empty = 0
+local tile_spawn_player = 1
+local tile_spawn_box = 2
+local tile_spawn_goal = 3
+local tile_spawn_firebox_on = 4
+local tile_spawn_firebox_off = 5
+local tile_spawn_fireplace_on = 6
+local tile_spawn_fireplace_off = 7
+local tile_spawn_stone = 8
+local tile_ground = 21
+local tile_ground_ash = 37
+
+local walkable_tiles = { tile_ground, tile_ground_ash }
+
+---@enum level.EntityTag
+local entity_tag = {
+    Player = hash "EntityTag::Player",
+    Box = hash "EntityTag::Box",
+    Goal = hash "EntityTag::Goal",
+    FireboxOn = hash "EntityTag::FireboxOn",
+    FireboxOff = hash "EntityTag::FireboxOff",
+    FireplaceOn = hash "EntityTag::FireplaceOn",
+    FireplaceOff = hash "EntityTag::FireplaceOff",
+    Stone = hash "EntityTag::Stone",
+}
+
+local moveable_entities = {
+    entity_tag.Box,
+    entity_tag.FireboxOn,
+    entity_tag.FireboxOff,
+    entity_tag.Stone,
+}
+
+local burnable_entities = {
+    entity_tag.Box,
+    entity_tag.FireboxOn,
+    entity_tag.FireboxOff,
+    entity_tag.FireplaceOn,
+    entity_tag.FireplaceOff,
+}
+
+local destroys_arrow_entities = {
+    entity_tag.Box,
+    entity_tag.Stone,
+}
+
+---@class level.Entity
+---@field tag      level.EntityTag
+---@field id?      url
+---@field on_fire? boolean
+
+---@class level.Arrow
+---@field id        url
+---@field on_fire?  boolean
+---@field direction Direction
+---@field events    level.ArrowEvent[]
+---@field log_id    integer
+
+---@class level.ArrowEvent
+---@field pos_x  float
+---@field grid_x integer
+---@field grid_y integer
+---@field done?  boolean
+
+---@alias level.LogEntry
+---| level.MoveLogEntry
+---| level.OnFireLogEntry
+---| level.DeletedLogEntry
+---| level.FiredArrowLogEntry
+---| level.BurntGroundLogEntry
+
+---@alias level.LogEntryAction
+---| "move"
+---| "on_fire"
+---| "deleted"
+---| "fired_arrow"
+---| "burnt_ground"
+
+---@class level.MoveLogEntry
+---@field id?        integer
+---@field go_id      url
+---@field action     "move"
+---@field entity_tag level.EntityTag
+---@field from_x     integer
+---@field from_y     integer
+---@field to_x       integer
+---@field to_y       integer
+
+---@class level.OnFireLogEntry
+---@field id?        integer
+---@field go_id      url
+---@field action     "on_fire"
+---@field entity_tag level.EntityTag
+---@field x          integer
+---@field y          integer
+
+---@class level.DeletedLogEntry
+---@field id?        integer
+---@field go_id      url
+---@field action     "deleted"
+---@field entity_tag level.EntityTag
+---@field x          integer
+---@field y          integer
+
+---@class level.FiredArrowLogEntry
+---@field id?        integer
+---@field action     "fired_arrow"
+
+---@class Level
+---@field grid             Grid<level.Entity>
+---@field player_direction Direction
+---@field num_arrows       integer
+---@field wait_for_burns   integer
+---@field fire_counter     integer
+---@field arrow?           level.Arrow
+---@field log              level.LogEntry[]
+---@field log_next_id      integer
+
+---@class level.BurntGroundLogEntry
+---@field id?    integer
+---@field action "burnt_ground"
+---@field x      integer
+---@field y      integer
+
+go.property("player_direction", hash "right")
+go.property("num_arrows", 0)
+
+---@param self Level
+function init(self)
+    assert(
+        self.player_direction == direction.left or self.player_direction == direction.right,
+        "invalid player direction"
+    )
+
+    local _, _, w, h = tilemap.get_bounds "#tilemap"
+
+    self.grid = grid.new(w, h)
+
+    local units = tilemap.get_tiles("#tilemap", tile_layer_main)
+
+    for y, rows in ipairs(units) do
+        for x, tile in ipairs(rows) do
+            if tile ~= tile_empty then
+                local etag = nil
+
+                if tile == tile_spawn_player then
+                    etag = entity_tag.Player
+                elseif tile == tile_spawn_box then
+                    etag = entity_tag.Box
+                elseif tile == tile_spawn_goal then
+                    etag = entity_tag.Goal
+                elseif tile == tile_spawn_firebox_on then
+                    etag = entity_tag.FireboxOn
+                elseif tile == tile_spawn_firebox_off then
+                    etag = entity_tag.FireboxOff
+                elseif tile == tile_spawn_fireplace_on then
+                    etag = entity_tag.FireplaceOn
+                elseif tile == tile_spawn_fireplace_off then
+                    etag = entity_tag.FireplaceOff
+                elseif tile == tile_spawn_stone then
+                    etag = entity_tag.Stone
+                end
+
+                if etag ~= nil then
+                    self.grid:set(x, y, {
+                        tag = etag,
+                        id = nil,
+                    })
+                else
+                    error(string.format("unknown tile found on main layer: %q", tile))
+                end
+            end
+        end
+    end
+
+    tilemap.set_visible("#tilemap", tile_layer_main, false)
+
+    self.wait_for_burns = 0
+    self.fire_counter = 0
+    self.arrow = nil
+
+    msg.post("main:/gui", msg_main_gui.update_arrows_hud, { value = self.num_arrows })
+
+    self.log = {}
+    self.log_next_id = 1
+end
+
+---@param x integer
+---@param y integer
+---@param vector3
+local function grid2worldpos(x, y)
+    local level_pos = go.get_position()
+
+    return vmath.vector3(level_pos.x + (x * tile_size), level_pos.y + (y * tile_size), level_pos.z + layer_offset_main)
+end
+
+---comment
+---@param dir Direction
+---@param x   integer
+---@param y   integer
+---@return integer
+---@return integer
+local function apply_direction_to_pos(dir, x, y)
+    if dir == direction.up then
+        y = y + 1
+    elseif dir == direction.down then
+        y = y - 1
+    elseif dir == direction.left then
+        x = x - 1
+    elseif dir == direction.right then
+        x = x + 1
+    end
+
+    return x, y
+end
+
+---@param self Level
+---@param x    integer
+---@param y    integer
+---@return boolean
+local function is_walkable(self, x, y)
+    if x <= 0 or y <= 0 or x > self.grid.width or y > self.grid.height then
+        return false
+    end
+
+    local tile = tilemap.get_tile("#tilemap", tile_layer_background, x, y)
+
+    for _, walkable in ipairs(walkable_tiles) do
+        if walkable == tile then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param tag_id level.EntityTag
+local function is_movable(tag_id)
+    for _, movable in ipairs(moveable_entities) do
+        if tag_id == movable then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param entity level.Entity
+local function is_burnable(entity)
+    for _, burnable in ipairs(burnable_entities) do
+        if entity.tag == burnable then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param entity level.Entity
+---@return boolean
+local function destroys_arrow(entity)
+    for _, etag in ipairs(destroys_arrow_entities) do
+        if entity.tag == etag then
+            return true
+        end
+    end
+
+    return false
+end
+
+---@param factory_name string
+---@param x            integer
+---@param y            integer
+---@param properties?  table
+---@return url
+local function spawn_unit(factory_name, x, y, properties)
+    local pos = go.get_position()
+
+    local factory_url = msg.url(nil, "/level_factory", factory_name)
+
+    local url = factory.create(
+        factory_url,
+        vmath.vector3(pos.x + x * tile_size, pos.y + y * tile_size, pos.z + layer_offset_main),
+        nil,
+        properties
+    )
+
+    ---@type url
+    return url
+end
+
+local function player_move_success()
+    msg.post("main:/game", msg_game_manager.on_move_player_done, {
+        moved = true,
+    })
+end
+
+---@param player_id?  url
+---@param target_pos? vector3
+local function player_move_failed(player_id, target_pos)
+    if not player_id or not target_pos then
+        msg.post("main:/game", msg_game_manager.on_move_player_done, {
+            moved = false,
+        })
+
+        return
+    end
+
+    local player_pos = go.get_position(player_id)
+
+    msg.post("main:/game", msg_game_manager.sfx_move_player_failed)
+
+    go.animate(
+        player_id,
+        "position",
+        go.PLAYBACK_ONCE_PINGPONG,
+        player_pos + (target_pos - player_pos) * 0.1,
+        go.EASING_LINEAR,
+        move_anim_duration,
+        0.0,
+        function()
+            msg.post("main:/game", msg_game_manager.on_move_player_done, {
+                moved = false,
+            })
+        end
+    )
+end
+
+---@param self Level
+---@return integer
+local function log_next_id(self)
+    local curr = self.log_next_id
+    self.log_next_id = self.log_next_id + 1
+    return curr
+end
+
+---@param self Level
+---@param data level.LogEntry
+local function log_add(self, data)
+    data.id = data.id or log_next_id(self)
+    table.insert(self.log, data)
+end
+
+---@param self   Level
+---@param entity level.Entity
+---@param x      integer
+---@param y      integer
+---@return { entity: level.Entity, x: integer, y: integer }[]
+---@return boolean
+local function evaluate_burn_state_neighbors(self, entity, x, y)
+    local new_on_fire = {}
+    local state_changed = false
+
+    if not entity.on_fire and not is_burnable(entity) then
+        return new_on_fire, false
+    end
+
+    local adjacent_entries = self.grid:adjacent(x, y)
+
+    for _, entry in ipairs(adjacent_entries) do
+        local adjacent_item = entry.item
+
+        if entity.on_fire and not adjacent_item.on_fire and is_burnable(adjacent_item) then
+            adjacent_item.on_fire = true
+
+            table.insert(new_on_fire, { entity = adjacent_item, x = entry.x, y = entry.y })
+
+            state_changed = true
+        end
+
+        if not entity.on_fire and adjacent_item.on_fire then
+            entity.on_fire = true
+
+            table.insert(new_on_fire, { entity = entity, x = x, y = y })
+
+            state_changed = true
+        end
+    end
+
+    return new_on_fire, state_changed
+end
+
+---@param self    Level
+---@param entries { entity: level.Entity, x: integer, y: integer }[]
+---@param log_id  integer
+local function enqueue_for_burning(self, entries, log_id)
+    self.wait_for_burns = self.wait_for_burns + #entries
+
+    self.fire_counter = self.fire_counter + 1
+
+    for _, item in ipairs(entries) do
+        log_add(self, {
+            id = log_id,
+            go_id = item.entity.id,
+            action = "on_fire",
+            entity_tag = item.entity.tag,
+            x = item.x,
+            y = item.y,
+        })
+
+        -- put ashes on the ground
+        tilemap.set_tile("#tilemap", tile_layer_background, item.x, item.y, tile_ground_ash)
+
+        log_add(self, {
+            id = log_id,
+            action = "burnt_ground",
+            x = item.x,
+            y = item.y,
+        })
+
+        msg.post(item.entity.id, msg_burning.set_on_fire, {
+            log_id = log_id,
+            pos = { x = item.x, y = item.y },
+            fire_counter = self.fire_counter,
+        })
+    end
+
+    msg.post("main:/game", msg_game_manager.sfx_burn)
+end
+
+---@param self   Level
+---@param log_id integer
+local function on_moving_done(self, log_id)
+    ---@type level.Entity|nil
+    local moved_item = nil
+    local x = nil
+    local y = nil
+
+    for i = #self.log, 1, -1 do
+        local log = self.log[i]
+
+        if log.id ~= log_id then
+            break
+        end
+
+        if log.entity_tag ~= entity_tag.Player and log.action == "move" then
+            moved_item = self.grid:get(log.to_x, log.to_y)
+            x = log.to_x
+            y = log.to_y
+            break
+        end
+    end
+
+    if moved_item == nil or x == nil or y == nil then
+        player_move_success()
+        return
+    end
+
+    local now_on_fire, state_changed = evaluate_burn_state_neighbors(self, moved_item, x, y)
+    if not state_changed then
+        player_move_success()
+        return
+    end
+
+    enqueue_for_burning(self, now_on_fire, log_id)
+end
+
+---@param self       Level
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_level.setup then
+        local player_found = false
+        local goal_found = false
+
+        self.grid:for_each(function(item, x, y)
+            if item.tag == entity_tag.Player then
+                assert(not player_found, "a level can only have one player")
+                item.id = spawn_unit("factory_player", x, y, { direction = self.player_direction })
+                player_found = true
+            elseif item.tag == entity_tag.Box then
+                item.id = spawn_unit("factory_box", x, y)
+            elseif item.tag == entity_tag.Goal then
+                assert(not goal_found, "a level can only have one goal")
+                item.id = spawn_unit("factory_goal", x, y)
+                goal_found = true
+            elseif item.tag == entity_tag.FireboxOn then
+                item.id = spawn_unit("factory_firebox", x, y, { burning = true })
+                item.on_fire = true
+            elseif item.tag == entity_tag.FireboxOff then
+                item.id = spawn_unit("factory_firebox", x, y, { burning = false })
+                item.on_fire = false
+            elseif item.tag == entity_tag.FireplaceOn then
+                item.id = spawn_unit("factory_fireplace", x, y, { burning = true })
+                item.on_fire = true
+            elseif item.tag == entity_tag.FireplaceOff then
+                item.id = spawn_unit("factory_fireplace", x, y, { burning = false })
+                item.on_fire = false
+            elseif item.tag == entity_tag.Stone then
+                item.id = spawn_unit("factory_stone", x, y)
+            else
+                error "Unhandled Entity Type"
+            end
+        end)
+
+        assert(player_found, "could not find player on map")
+        assert(goal_found, "could not find goal on map")
+
+        msg.post(sender, msg_level_manager.on_level_setup_done, {
+            width = self.grid.width * tile_size,
+            height = self.grid.height * tile_size,
+        })
+    elseif message_id == msg_level.move_player then
+        local player, player_x, player_y = self.grid:find(function(entity)
+            return entity.tag == entity_tag.Player
+        end)
+
+        -- player not found?
+        if not player or not player.id or not player_x or not player_y then
+            player_move_failed()
+            return
+        end
+
+        if message.direction == direction.left or message.direction == direction.right then
+            self.player_direction = message.direction
+        end
+
+        msg.post(player.id, msg_player.set_direction, {
+            direction = self.player_direction,
+        })
+
+        local target_pos_x, target_pos_y = apply_direction_to_pos(message.direction, player_x, player_y)
+        local target_pos = grid2worldpos(target_pos_x, target_pos_y)
+
+        if not is_walkable(self, target_pos_x, target_pos_y) then
+            player_move_failed(player.id, target_pos)
+            return
+        end
+
+        local log_id = nil
+
+        if self.grid:has(target_pos_x, target_pos_y) then
+            local abort_move = true
+            local target_entity = self.grid:get(target_pos_x, target_pos_y)
+
+            if target_entity and target_entity.id then
+                if is_movable(target_entity.tag) then
+                    local box_target_x, box_target_y =
+                        apply_direction_to_pos(message.direction, target_pos_x, target_pos_y)
+
+                    if
+                        is_walkable(self, box_target_x, box_target_y) and not self.grid:has(box_target_x, box_target_y)
+                    then
+                        abort_move = false
+
+                        self.grid:move(target_pos_x, target_pos_y, box_target_x, box_target_y)
+
+                        log_id = log_id or log_next_id(self)
+
+                        log_add(self, {
+                            id = log_id,
+                            go_id = target_entity.id,
+                            action = "move",
+                            entity_tag = target_entity.tag,
+                            from_x = target_pos_x,
+                            from_y = target_pos_y,
+                            to_x = box_target_x,
+                            to_y = box_target_y,
+                        })
+
+                        local box_target_pos = grid2worldpos(box_target_x, box_target_y)
+
+                        msg.post("main:/game", msg_game_manager.sfx_move_box)
+
+                        go.animate(
+                            target_entity.id,
+                            "position",
+                            go.PLAYBACK_ONCE_FORWARD,
+                            box_target_pos,
+                            go.EASING_LINEAR,
+                            move_anim_duration
+                        )
+                    end
+                elseif target_entity.tag == entity_tag.Goal then
+                    abort_move = false
+
+                    msg.post("main:/game", msg_game_manager.sfx_goal_reached)
+                    -- TODO: start fade out
+
+                    go.animate(
+                        player.id,
+                        "position",
+                        go.PLAYBACK_ONCE_FORWARD,
+                        target_pos,
+                        go.EASING_LINEAR,
+                        move_anim_duration,
+                        0.0,
+                        function()
+                            msg.post("main:/game", msg_game_manager.on_goal_reached)
+                        end
+                    )
+
+                    return
+                end
+            end
+
+            if abort_move then
+                player_move_failed(player.id, target_pos)
+                return
+            end
+        end
+
+        self.grid:move(player_x, player_y, target_pos_x, target_pos_y)
+
+        log_id = log_id or log_next_id(self)
+
+        log_add(self, {
+            id = log_id,
+            go_id = player.id,
+            action = "move",
+            entity_tag = player.tag,
+            from_x = player_x,
+            from_y = player_y,
+            to_x = target_pos_x,
+            to_y = target_pos_y,
+        })
+
+        msg.post("main:/game", msg_game_manager.sfx_move_player)
+
+        go.animate(
+            player.id,
+            "position",
+            go.PLAYBACK_ONCE_FORWARD,
+            target_pos,
+            go.EASING_LINEAR,
+            move_anim_duration,
+            0.0,
+            function()
+                on_moving_done(self, log_id)
+            end
+        )
+    elseif message_id == msg_level.item_set_on_fire then
+        ---@type number
+        local log_id = message.log_id
+
+        ---@type { x: integer, y: integer }
+        local pos = message.pos
+
+        local item = self.grid:get(pos.x, pos.y)
+        if not item then
+            return
+        end
+
+        assert(self.wait_for_burns > 0)
+        self.wait_for_burns = self.wait_for_burns - 1
+
+        local new_on_fire, state_changed = evaluate_burn_state_neighbors(self, item, pos.x, pos.y)
+        if state_changed then
+            enqueue_for_burning(self, new_on_fire, log_id)
+        end
+
+        -- TODO: add deleted by fire item group
+        if item.tag == entity_tag.Box then
+            log_add(self, {
+                id = log_id,
+                go_id = item.id,
+                action = "deleted",
+                entity_tag = item.tag,
+                x = pos.x,
+                y = pos.y,
+            })
+
+            self.grid:set(pos.x, pos.y, nil)
+
+            go.delete(sender, true)
+        end
+
+        if self.wait_for_burns == 0 then
+            self.fire_counter = 0
+            player_move_success()
+        end
+    elseif message_id == msg_level.rewind then
+        if #self.log == 0 then
+            msg.post("main:/game", msg_game_manager.on_rewind_done, {
+                rewinded = false,
+            })
+            return
+        end
+
+        local last_log_id = nil
+        local to_remove_count = 0
+
+        for i = #self.log, 1, -1 do
+            local log = self.log[i]
+
+            -- first one? just remember
+            if last_log_id == nil then
+                last_log_id = log.id
+            end
+
+            -- if we've moved past the last log, abort
+            if last_log_id ~= log.id then
+                break
+            end
+
+            if log.action == "move" then
+                local target_pos = grid2worldpos(log.from_x, log.from_y)
+                go.set_position(target_pos, log.go_id)
+                self.grid:move(log.to_x, log.to_y, log.from_x, log.from_y)
+            elseif log.action == "on_fire" then
+                local item = self.grid:get(log.x, log.y)
+                assert(item ~= nil)
+
+                item.on_fire = false
+                msg.post(item.id, msg_burning.set_on_fire, { remove_fire = true })
+            elseif log.action == "burnt_ground" then
+                tilemap.set_tile("#tilemap", tile_layer_background, log.x, log.y, tile_ground)
+            elseif log.action == "deleted" then
+                -- when the item was deleted, we need to respawn one and replace all old log entries with the new id
+                local old_go_id = log.go_id
+                local new_id = nil
+
+                if log.entity_tag == entity_tag.Box then
+                    new_id = spawn_unit("factory_box", log.x, log.y)
+                else
+                    error "Not yet implemented respawning this entity type"
+                end
+
+                for j = i, 1, -1 do
+                    local l = self.log[j]
+
+                    if l.go_id == old_go_id then
+                        l.go_id = new_id
+                    end
+                end
+
+                ---@type level.Entity
+                local new_entity = {
+                    id = new_id,
+                    tag = log.entity_tag,
+                }
+
+                self.grid:set(log.x, log.y, new_entity)
+            elseif log.action == "fired_arrow" then
+                self.num_arrows = self.num_arrows + 1
+                msg.post("main:/gui", msg_main_gui.update_arrows_hud, { value = self.num_arrows })
+            end
+
+            to_remove_count = to_remove_count + 1
+        end
+
+        for _ = 1, to_remove_count do
+            table.remove(self.log)
+        end
+
+        msg.post("main:/game", msg_game_manager.on_rewind_done, {
+            rewinded = true,
+        })
+    elseif message_id == msg_level.fire_arrow then
+        -- no arrows left or arrow still moving
+        if self.num_arrows <= 0 or self.arrow ~= nil then
+            -- TODO: play animation or something when this cant be done
+
+            msg.post("main:/game", msg_game_manager.on_arrow_fired, {
+                fired = false,
+            })
+
+            return
+        end
+
+        local player = self.grid:find(function(entity)
+            return entity.tag == entity_tag.Player
+        end)
+        assert(player ~= nil)
+
+        msg.post(player.id, msg_player.fire_arrow, {
+            num_arrows = self.num_arrows,
+        })
+    elseif message_id == msg_level.fire_arrow_for_real then
+        self.num_arrows = self.num_arrows - 1
+        msg.post("main:/gui", msg_main_gui.update_arrows_hud, { value = self.num_arrows })
+
+        local _, player_x, player_y = self.grid:find(function(entity)
+            return entity.tag == entity_tag.Player
+        end)
+
+        assert(player_x ~= nil and player_y ~= nil)
+
+        local arrow_x, arrow_y = apply_direction_to_pos(self.player_direction, player_x, player_y)
+
+        local arrow_events = {}
+
+        local arrow_goes_right = self.player_direction == direction.right
+
+        for step_x = arrow_x, arrow_goes_right and self.grid.width or 1, arrow_goes_right and 1 or -1 do
+            local item = self.grid:get(step_x, arrow_y)
+
+            if item ~= nil then
+                local pos = grid2worldpos(step_x, arrow_y)
+
+                table.insert(arrow_events, {
+                    pos_x = pos.x,
+                    grid_x = step_x,
+                    grid_y = arrow_y,
+                })
+            end
+        end
+
+        local arrow_id = spawn_unit("factory_arrow", arrow_x, arrow_y, { direction = self.player_direction })
+
+        local log_id = log_next_id(self)
+
+        log_add(self, {
+            id = log_id,
+            action = "fired_arrow",
+        })
+
+        self.arrow = {
+            id = arrow_id,
+            events = arrow_events,
+            log_id = log_id,
+            direction = self.player_direction,
+        }
+
+        msg.post("main:/game", msg_game_manager.on_arrow_fired, {
+            fired = true,
+        })
+    elseif message_id == msg_level.on_arrow_died then
+        self.arrow = nil
+    end
+end
+
+---@param self Level
+---@param dt   number
+function update(self, dt)
+    if not self.arrow then
+        return
+    end
+
+    local pos = go.get_position(self.arrow.id)
+
+    for _, ev in ipairs(self.arrow.events) do
+        local item = self.grid:get(ev.grid_x, ev.grid_y)
+
+        local can_trigger = false
+
+        if self.arrow.direction == direction.right then
+            can_trigger = pos.x >= ev.pos_x
+        else
+            can_trigger = pos.x <= ev.pos_x
+        end
+
+        -- event is not processed yet and we've reached the threshold
+        if not ev.done and item and can_trigger then
+            if self.arrow.on_fire and not item.on_fire and is_burnable(item) then
+                item.on_fire = true
+
+                enqueue_for_burning(self, { { entity = item, x = ev.grid_x, y = ev.grid_y } }, self.arrow.log_id)
+
+                to_burn, state_changed = evaluate_burn_state_neighbors(self, item, ev.grid_x, ev.grid_y)
+
+                if state_changed then
+                    enqueue_for_burning(self, to_burn, self.arrow.log_id)
+                end
+
+                ev.done = true
+            end
+
+            if not self.arrow.on_fire and item.on_fire then
+                self.arrow.on_fire = true
+
+                msg.post(self.arrow.id, msg_arrow.set_on_fire)
+                msg.post("main:/game", msg_game_manager.sfx_burn)
+
+                ev.done = true
+            end
+
+            if destroys_arrow(item) then
+                ev.done = true
+
+                msg.post(self.arrow.id, msg_arrow.die, {
+                    was_on_fire = self.arrow.on_fire,
+                })
+                return
+            end
+        end
+    end
+
+    if pos.x <= tile_size or pos.x >= (tile_size * self.grid.width) then
+        msg.post("main:/game", msg_game_manager.sfx_impact_plank)
+        go.delete(self.arrow.id, true)
+        self.arrow = nil
+    end
+end

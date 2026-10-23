@@ -1,0 +1,190 @@
+local M = {}
+
+local levels_root_dir = "/main/levels"
+local main_collection = "/main/main.collection"
+local levels_go_id = "levels"
+local template_level_name = "level_empty"
+
+---@param path string
+---@return boolean
+local function node_exists(path)
+    local ok, _ = pcall(function()
+        editor.get(path, "path")
+    end)
+
+    return ok
+end
+
+---@param path string
+---@return string
+local function node_get_text(path)
+    return editor.get(path, "text")
+end
+
+---@param text     string
+---@param level_id string
+---@return string
+local function retarget(text, level_id)
+    text = text:gsub(template_level_name .. "%.tilemap", level_id .. ".tilemap")
+    text = text:gsub(template_level_name .. "%.collection", level_id .. ".collection")
+    text = text:gsub('name:%s*"' .. template_level_name .. '"', 'name: "' .. level_id .. '"')
+    return text
+end
+
+---@param node string
+---@param id   string
+---@return string?
+local function find_by_id(node, id)
+    if editor.can_get(node, "id") and editor.get(node, "id") == id then
+        return node
+    end
+
+    if editor.can_get(node, "children") then
+        local children = editor.get(node, "children")
+        for i = 1, #children do
+            local found = find_by_id(children[i], id)
+            if found then
+                return found
+            end
+        end
+    end
+
+    return nil
+end
+
+---@param title   string
+---@param message string
+local function notify(title, message)
+    editor.ui.show_dialog(editor.ui.dialog {
+        title = title,
+        content = editor.ui.label {
+            text = message,
+        },
+        buttons = {
+            editor.ui.dialog_button {
+                text = "OK",
+                default = true,
+                result = true,
+            },
+        },
+    })
+end
+
+---@param level_ident string
+local function create_new_level(level_ident)
+    if not level_ident:match "^%d+$" then
+        notify("Create new level", "Level ident must be a number, e.g. 42")
+        return
+    end
+
+    level_ident = string.format("%03d", tonumber(level_ident))
+
+    local level_id = string.format("level_%s", level_ident)
+    local collection_path = string.format("%s/%s.collection", levels_root_dir, level_id)
+    local tilemap_path = string.format("%s/%s.tilemap", levels_root_dir, level_id)
+    local src_collection = string.format("%s/%s.collection", levels_root_dir, template_level_name)
+    local src_tilemap = string.format("%s/%s.tilemap", levels_root_dir, template_level_name)
+
+    if not node_exists(src_collection) or not node_exists(src_tilemap) then
+        notify("Create new level", string.format("Missing %s or %s ", src_collection, src_tilemap))
+        return
+    end
+
+    if node_exists(collection_path) or node_exists(tilemap_path) then
+        notify("Create new level", string.format("%s already exists.", level_id))
+        return
+    end
+
+    if not node_exists(main_collection) then
+        notify("Create new level", string.format("Missing %s", main_collection))
+        return
+    end
+
+    local collection_text = retarget(node_get_text(src_collection), level_id)
+    local tilemap_text = retarget(node_get_text(src_tilemap), level_id)
+
+    editor.create_resources {
+        { tilemap_path, tilemap_text },
+        { collection_path, collection_text },
+    }
+
+    local levels_go = find_by_id(main_collection, levels_go_id)
+    if not levels_go then
+        notify(
+            "Create new level",
+            string.format("Created files, but no game object id '%s' in %s", levels_go_id, main_collection)
+        )
+        return
+    end
+
+    local transactions = {
+        editor.tx.add(levels_go, "components", {
+            type = "collectionproxy",
+            id = level_id,
+            collection = collection_path,
+            exclude = false,
+        }),
+    }
+
+    if editor.can_set(collection_path, "name") then
+        table.insert(transactions, editor.tx.set(collection_path, "name", level_id))
+    end
+
+    editor.transact(transactions)
+
+    notify(
+        "Create new level",
+        string.format("Created %s and proxy #%s on /%s", collection_path, level_id, levels_go_id)
+    )
+end
+
+local function command_create_new_level()
+    local number = nil
+
+    local ok = editor.ui.show_dialog(editor.ui.dialog {
+        title = "Create new level",
+        content = editor.ui.horizontal {
+            spacing = editor.ui.SPACING.MEDIUM,
+            children = {
+                editor.ui.label {
+                    text = "Level Number",
+                },
+                editor.ui.string_field {
+                    text = number,
+                    grow = true,
+                    on_value_changed = function(value)
+                        number = value
+                    end,
+                },
+            },
+        },
+        buttons = {
+            editor.ui.dialog_button {
+                text = "Cancel",
+                cancel = true,
+                result = false,
+            },
+            editor.ui.dialog_button {
+                text = "Create",
+                default = true,
+                result = true,
+            },
+        },
+    })
+
+    if number ~= nil and ok then
+        create_new_level(number)
+    end
+end
+
+function M.get_commands()
+    return {
+        {
+            label = "Create new level",
+            locations = { "Edit" },
+            run = command_create_new_level,
+        },
+    }
+end
+
+return M

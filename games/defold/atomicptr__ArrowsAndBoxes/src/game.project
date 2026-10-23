@@ -1,0 +1,39 @@
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /orthographic/render/orthographic.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 640
+height = 360
+high_dpi = 1
+
+[android]
+input_method = HiddenInputField
+
+[physics]
+gravity_y = -1000.0
+scale = 0.01
+
+[html5]
+scale_mode = stretch
+show_fullscreen_button = 0
+cssfile = /builtins/manifests/web/dark_theme.css
+show_console_banner = 0
+show_made_with_defold = 0
+transparent_graphics_context = 1
+
+[project]
+title = ArrowsAndBoxes
+dependencies#0 = https://github.com/britzl/defold-orthographic/archive/master.zip
+dependencies#1 = https://github.com/atomicptr/defold-moonbug/archive/refs/heads/master.zip
+
+[graphics]
+default_texture_min_filter = nearest
+default_texture_mag_filter = nearest
+
+[collection_proxy]
+max_count = 16
+

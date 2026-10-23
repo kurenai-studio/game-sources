@@ -1,0 +1,118 @@
+local direction = require "main.data.direction"
+
+local msg_arrow = require "messages.arrow"
+local msg_level = require "messages.level"
+local msg_game_manager = require "messages.game_manager"
+
+local speed = 300
+
+---@class Arrow
+---@field direction Direction
+---@field on_fire   boolean
+---@field is_dead   boolean
+
+go.property("direction", hash "left")
+go.property("on_fire", false)
+
+---@param self Arrow
+local function update_sprite(self)
+    if self.on_fire then
+        if self.direction == direction.left then
+            sprite.play_flipbook("#sprite", "arrow_left_fire")
+        else
+            sprite.play_flipbook("#sprite", "arrow_right_fire")
+        end
+
+        return
+    end
+
+    if self.direction == direction.left then
+        sprite.play_flipbook("#sprite", "arrow_left_normal")
+    else
+        sprite.play_flipbook("#sprite", "arrow_left_normal")
+    end
+end
+
+---@param self Arrow
+function init(self)
+    assert(self.direction == direction.left or self.direction == direction.right)
+
+    update_sprite(self)
+end
+
+---@param dir Direction
+local function direction_vector(dir)
+    if dir == direction.left then
+        return vmath.vector3(-1, 0, 0)
+    end
+
+    return vmath.vector3(1, 0, 0)
+end
+
+---@param self Arrow
+---@param dt   number
+function update(self, dt)
+    if self.is_dead then
+        return
+    end
+
+    local pos = go.get_position()
+
+    local new_pos = pos + direction_vector(self.direction) * speed * dt
+
+    go.set_position(new_pos)
+end
+
+---@param self       Arrow
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_arrow.set_on_fire then
+        self.on_fire = true
+        update_sprite(self)
+    elseif message_id == msg_arrow.die then
+        self.is_dead = true
+
+        local pos = go.get_position()
+
+        msg.post(sender, msg_level.on_arrow_died)
+
+        local id = go.get_id()
+
+        if message.was_on_fire then
+            go.delete(id, true) -- TODO: add on fire death animation
+            return
+        end
+
+        local target_rotation = vmath.quat_rotation_z(math.rad(-90))
+
+        local base_duration = 0.2
+
+        msg.post("main:/game", msg_game_manager.sfx_impact_plank)
+
+        go.animate(
+            id,
+            "rotation",
+            go.PLAYBACK_ONCE_FORWARD,
+            target_rotation,
+            go.EASING_INOUTQUAD,
+            base_duration,
+            0,
+            function()
+                go.animate(
+                    id,
+                    "position.y",
+                    go.PLAYBACK_ONCE_FORWARD,
+                    pos.y - 500,
+                    go.EASING_LINEAR,
+                    0.4,
+                    0.1,
+                    function()
+                        go.delete(id, true)
+                    end
+                )
+            end
+        )
+    end
+end

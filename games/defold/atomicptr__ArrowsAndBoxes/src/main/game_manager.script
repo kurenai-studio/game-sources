@@ -1,0 +1,277 @@
+local direction = require "main.data.direction"
+local input = require "input.input"
+
+local msg_defold = require "messages.defold"
+local msg_game_manager = require "messages.game_manager"
+local msg_level_manager = require "messages.level_manager"
+local msg_gameover = require "messages.gameover"
+
+local hold_timer = 0.2
+
+local sys_info = sys.get_sys_info()
+local engine_info = sys.get_engine_info()
+
+local is_dev_mode = engine_info.is_debug
+local is_web = sys_info.system_name == "HTML5"
+
+---@class GameManager
+---@field dev_load_level   string
+---@field state            GameState
+---@field waiting          boolean
+---@field buffered_action? Direction|"rewind"
+---@field held_action?     Direction|"rewind"
+---@field hold_timer       float
+---@field gamepad_mode     boolean
+
+---@enum GameState
+local GameState = {
+    Menu = hash "GameState::Menu",
+    Playing = hash "GameState::Playing",
+    GameOver = hash "GameState::GameOver",
+}
+
+go.property("dev_load_level", "001")
+
+---@param self GameManager
+function init(self)
+    math.randomseed(os.time())
+
+    self.state = GameState.Menu
+    self.waiting = false
+
+    self.buffered_action = nil
+    self.held_action = nil
+    self.hold_timer = 0.0
+
+    self.gamepad_mode = false
+
+    msg.post(".", msg_defold.go.acquire_input_focus)
+
+    if is_dev_mode and not is_web then
+        factory.create "#factory_debugger"
+    end
+end
+
+---@param self GameManager
+---@param level_name string
+local function load_level(self, level_name)
+    msg.post("main:/levels#manager", msg_level_manager.load_level, {
+        level = level_name,
+    })
+
+    self.waiting = true
+end
+
+---@param self GameManager
+local function load_next_level(self)
+    msg.post("main:/levels#manager", msg_level_manager.load_next_level)
+
+    self.waiting = true
+end
+
+---@param self   GameManager
+---@param action Direction|"rewind"
+local function try_execute_action(self, action)
+    if self.waiting then
+        self.buffered_action = action
+        return
+    end
+
+    self.buffered_action = nil
+    self.waiting = true
+    self.hold_timer = hold_timer
+
+    if action == "rewind" then
+        msg.post("main:/levels", msg_level_manager.rewind_turn)
+        return
+    end
+
+    msg.post("main:/levels", msg_level_manager.move_player, { direction = action })
+end
+
+---@param self GameManager
+---@param dt   number
+function update(self, dt)
+    if is_dev_mode then
+        msg.post(
+            "@render:",
+            "draw_debug_text",
+            { text = "DEV MODE", position = vmath.vector3(20, 30, 0), color = vmath.vector4(0, 1, 0, 1) }
+        )
+    end
+
+    if self.waiting then
+        return
+    end
+
+    if self.state == GameState.Menu then
+        -- TODO: Start -> load level 1
+
+        -- in dev mode load the level specified in the editor
+        if is_dev_mode then
+            load_level(self, self.dev_load_level)
+            return
+        end
+
+        load_level(self, "001")
+    elseif self.state == GameState.Playing then
+        if self.hold_timer > 0 then
+            self.hold_timer = self.hold_timer - dt
+        end
+
+        if not self.waiting and self.held_action and self.hold_timer <= 0 then
+            try_execute_action(self, self.held_action)
+        end
+    elseif self.state == GameState.GameOver then
+        msg.post("gameover:/main", msg_gameover.set_gamepad_mode, {
+            gamepad_mode = self.gamepad_mode,
+        })
+    end
+end
+
+---@param self       GameManager
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_game_manager.on_level_loaded then
+        -- set camera to map center position
+        go.set_position(message.map_center_pos, "/camera")
+
+        self.state = GameState.Playing
+        self.waiting = false
+    elseif message_id == msg_game_manager.on_move_player_done or message_id == msg_game_manager.on_rewind_done then
+        self.waiting = false
+
+        if self.buffered_action then
+            ---@type Direction|"rewind"
+            local next_action = self.buffered_action
+            self.buffered_action = nil
+            try_execute_action(self, next_action)
+        end
+    elseif message_id == msg_game_manager.on_goal_reached then
+        load_next_level(self)
+    elseif message_id == msg_game_manager.on_arrow_fired then
+        self.waiting = false
+    elseif message_id == msg_game_manager.on_game_over then
+        self.state = GameState.GameOver
+        self.waiting = true
+        self.buffered_action = nil
+        self.held_action = nil
+
+        msg.post("#gameover", msg_defold.collectionproxy.load)
+    elseif message_id == msg_defold.collectionproxy.proxy_loaded then
+        msg.post(sender, msg_defold.collectionproxy.init)
+        msg.post(sender, msg_defold.collectionproxy.enable)
+
+        self.waiting = false
+    elseif message_id == msg_game_manager.restart_game then
+        msg.post("#gameover", msg_defold.collectionproxy.disable)
+        msg.post("#gameover", msg_defold.collectionproxy.final)
+        msg.post("#gameover", msg_defold.collectionproxy.unload)
+
+        load_level(self, "001")
+    elseif message_id == msg_game_manager.sfx_move_player then
+        msg.post("#sfx_footsteps", msg_defold.sound.play_sound, {
+            gain = math.random(30, 50) / 100.0,
+            speed = math.random(70, 80) / 100.0,
+        })
+    elseif message_id == msg_game_manager.sfx_move_player_failed then
+        msg.post("#sfx_footsteps", msg_defold.sound.play_sound, {
+            gain = math.random(60, 80) / 100.0,
+            speed = math.random(90, 100) / 100.0,
+        })
+    elseif message_id == msg_game_manager.sfx_move_box then
+        -- TODO: find box moving sound
+    elseif message_id == msg_game_manager.sfx_impact_plank then
+        msg.post("#sfx_impact_plank", msg_defold.sound.play_sound, {
+            gain = math.random(50, 70) / 100.0,
+        })
+    elseif message_id == msg_game_manager.sfx_burn then
+        msg.post("#sfx_burn", msg_defold.sound.play_sound, {
+            gain = math.random(30, 50) / 100.0,
+            speed = math.random(80, 100) / 100.0,
+        })
+    elseif message_id == msg_game_manager.sfx_goal_reached then
+        msg.post("#sfx_footsteps", msg_defold.sound.play_sound, {
+            gain = math.random(30, 50) / 100.0,
+            speed = 0.5,
+        })
+
+        msg.post("#sfx_footsteps", msg_defold.sound.play_sound, {
+            gain = math.random(30, 50) / 100.0,
+            speed = 0.5,
+            delay = 0.3,
+        })
+
+        msg.post("#sfx_footsteps", msg_defold.sound.play_sound, {
+            gain = math.random(50, 70) / 100.0,
+            speed = 0.6,
+            delay = 0.6,
+        })
+    end
+end
+
+local bufferable_action_command = {
+    [input.move_up] = direction.up,
+    [input.move_down] = direction.down,
+    [input.move_left] = direction.left,
+    [input.move_right] = direction.right,
+    [input.rewind] = "rewind",
+}
+
+---@param self      GameManager
+---@param action_id hash
+---@param action    on_input.action
+function on_input(self, action_id, action)
+    if action.gamepad then
+        self.gamepad_mode = true
+    else
+        self.gamepad_mode = false
+    end
+
+    if self.state ~= GameState.Playing then
+        return
+    end
+
+    local bufferable_action = bufferable_action_command[action_id]
+
+    if bufferable_action then
+        if action.pressed then
+            self.held_action = bufferable_action
+            try_execute_action(self, bufferable_action)
+        elseif action.released then
+            if self.held_action == bufferable_action then
+                self.held_action = nil
+            end
+
+            if self.buffered_action == bufferable_action then
+                self.buffered_action = nil
+            end
+        end
+
+        return
+    end
+
+    if self.waiting then
+        return
+    end
+
+    if action.pressed and action_id == input.reset then
+        msg.post("main:/levels", msg_level_manager.level_reset)
+        self.waiting = true
+    elseif action.pressed and action_id == input.interact then
+        msg.post("main:/levels", msg_level_manager.fire_arrow)
+        self.waiting = true
+    end
+
+    if is_dev_mode then
+        if action.pressed and action_id == input.level_next then
+            msg.post("main:/levels", msg_level_manager.load_next_level)
+            self.waiting = true
+        elseif action.pressed and action_id == input.level_select then
+            -- TODO: open level selector
+            load_level(self, "demo")
+        end
+    end
+end

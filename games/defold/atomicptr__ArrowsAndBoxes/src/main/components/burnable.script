@@ -1,0 +1,50 @@
+local msg_defold = require "messages.defold"
+local msg_burning = require "messages.burning"
+local msg_level = require "messages.level"
+
+local base_fire_delay = 0.2
+
+---@class Burnable
+---@field burning boolean
+
+---@param self Burnable
+local function update_burning_state(self)
+    if not self.burning then
+        msg.post("#fire", msg_defold.go.disable)
+        return
+    end
+
+    msg.post("#fire", msg_defold.go.enable)
+end
+
+go.property("burning", false)
+
+---@param self Burnable
+function init(self)
+    update_burning_state(self)
+end
+
+---@param fire_counter number
+---@return number
+local function fire_counter_multiplier(fire_counter)
+    return math.max(0.1, 1.0 - (fire_counter - 1) * 0.15)
+end
+
+---@param self       Burnable
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_burning.set_on_fire then
+        self.burning = message.remove_fire ~= true
+        update_burning_state(self)
+
+        if message.remove_fire then
+            return
+        end
+
+        timer.delay(base_fire_delay * fire_counter_multiplier(message.fire_counter or 1), false, function()
+            msg.post(sender, msg_level.item_set_on_fire, message)
+        end)
+    end
+end

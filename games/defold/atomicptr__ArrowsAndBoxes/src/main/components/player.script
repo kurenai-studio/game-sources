@@ -1,0 +1,75 @@
+local direction = require "main.data.direction"
+
+local msg_player = require "messages.player"
+local msg_defold = require "messages.defold"
+local msg_level = require "messages.level"
+
+local anim_idle_left = "idle_left"
+local anim_idle_right = "idle_right"
+local anim_shoot_left = "shoot_left"
+local anim_shoot_right = "shoot_right"
+
+go.property("direction", hash "right")
+
+---@class Player
+---@field direction    Direction
+
+---@param callback? function
+---@return function|nil
+local function on_animation_finished(callback)
+    if not callback then
+        return nil
+    end
+
+    return function(self, message_id, message, sender)
+        if message_id == msg_defold.sprite.animation_done then
+            callback()
+        end
+    end
+end
+
+---@param self         Player
+---@param animation?   "idle"|"run"|"shoot"
+---@param on_finished? fun()
+local function play_animation(self, animation, on_finished)
+    animation = animation or "idle"
+
+    if animation == "idle" then
+        if self.direction == direction.left then
+            sprite.play_flipbook("#sprite", anim_idle_left, on_animation_finished(on_finished))
+        elseif self.direction == direction.right then
+            sprite.play_flipbook("#sprite", anim_idle_right, on_animation_finished(on_finished))
+        end
+    elseif animation == "shoot" then
+        if self.direction == direction.left then
+            sprite.play_flipbook("#sprite", anim_shoot_left, on_animation_finished(on_finished))
+        elseif self.direction == direction.right then
+            sprite.play_flipbook("#sprite", anim_shoot_right, on_animation_finished(on_finished))
+        end
+    end
+end
+
+---@param self Player
+function init(self)
+    assert(self.direction == direction.left or self.direction == direction.right, "invalid player direction")
+    play_animation(self, "idle")
+end
+
+---@param self       Player
+---@param message_id hash
+---@param message    table
+---@param sender     url
+function on_message(self, message_id, message, sender)
+    if message_id == msg_player.set_direction then
+        self.direction = message.direction or direction.right
+        play_animation(self, "idle")
+    elseif message_id == msg_player.fire_arrow then
+        play_animation(self, "shoot", function()
+            if (message.num_arrows or 0) > 0 then
+                msg.post(sender, msg_level.fire_arrow_for_real)
+            end
+
+            play_animation(self, "idle")
+        end)
+    end
+end
