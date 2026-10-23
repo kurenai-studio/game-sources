@@ -1,0 +1,221 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Global/Pause.gd" type="Script" id=1]
+[ext_resource path="res://Assets/Blackout.png" type="Texture" id=2]
+[ext_resource path="res://Assets/UI/Pause.png" type="Texture" id=3]
+[ext_resource path="res://LevelComponents/SpiritParticles.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Assets/Fonts/SmallText.tres" type="DynamicFont" id=5]
+
+[node name="Pause" type="Node2D"]
+pause_mode = 2
+visible = false
+position = Vector2( -5630.14, -4427.58 )
+z_index = 4
+script = ExtResource( 1 )
+_sections_unfolded = [ "Pause", "Transform", "Visibility", "Z Index" ]
+
+[node name="BackGround" type="Sprite" parent="."]
+modulate = Color( 0.0784314, 0.0784314, 0.0784314, 1 )
+position = Vector2( 483.282, 334.93 )
+scale = Vector2( 11.2003, 7.73328 )
+z_index = 400
+texture = ExtResource( 2 )
+_sections_unfolded = [ "Visibility", "Z Index" ]
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="N" type="Node2D" parent="."]
+z_index = 900
+_sections_unfolded = [ "Z Index" ]
+
+[node name="Panel" type="Panel" parent="N"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = -132.0
+margin_top = -150.0
+margin_right = 128.0
+margin_bottom = 190.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+_sections_unfolded = [ "Mouse", "Rect" ]
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="Sprite" type="Sprite" parent="N/Panel"]
+position = Vector2( 129.057, 169.67 )
+texture = ExtResource( 3 )
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="Ghost" parent="N/Panel" instance=ExtResource( 4 )]
+editor/display_folded = true
+position = Vector2( 130, 80 )
+scale = Vector2( 3, 3 )
+z_index = 0
+amount = 50
+_sections_unfolded = [ "Drawing", "Process Material", "Textures", "Time", "Transform", "Z Index", "process_material" ]
+
+[node name="OneOne" parent="N/Panel/Ghost" instance=ExtResource( 4 )]
+position = Vector2( -0.00012207, 11.2166 )
+rotation = 0.0
+z_index = 0
+emitting = false
+amount = 50
+_sections_unfolded = [ "Drawing", "Process Material", "Textures", "Time", "Transform", "Z Index", "process_material" ]
+
+[node name="OneTwo" parent="N/Panel/Ghost" instance=ExtResource( 4 )]
+position = Vector2( 0, -6.177 )
+rotation = 0.0
+z_index = 0
+emitting = false
+amount = 50
+_sections_unfolded = [ "Drawing", "Process Material", "Textures", "Time", "Transform", "Z Index", "process_material" ]
+
+[node name="TwoOne" parent="N/Panel/Ghost" instance=ExtResource( 4 )]
+position = Vector2( -0.00012207, 20.1575 )
+rotation = 0.0
+z_index = 0
+emitting = false
+amount = 50
+_sections_unfolded = [ "Drawing", "Process Material", "Textures", "Time", "Transform", "Z Index", "process_material" ]
+
+[node name="TwoTwo" parent="N/Panel/Ghost" instance=ExtResource( 4 )]
+position = Vector2( 0, -20.6449 )
+rotation = 0.0
+z_index = 0
+emitting = false
+amount = 50
+_sections_unfolded = [ "Drawing", "Process Material", "Textures", "Time", "Transform", "Z Index", "process_material" ]
+
+[node name="Quit" type="Button" parent="N/Panel"]
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 47.0
+margin_top = 229.0
+margin_right = 219.0
+margin_bottom = 283.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_fonts/font = ExtResource( 5 )
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "QUIT"
+flat = false
+align = 1
+_sections_unfolded = [ "Visibility", "custom_fonts" ]
+__meta__ = {
+"_edit_group_": true
+}
+
+[node name="Point" type="Node2D" parent="N/Panel/Quit"]
+position = Vector2( 85, 42 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Restart" type="Button" parent="N/Panel"]
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 47.0
+margin_top = 137.0
+margin_right = 219.0
+margin_bottom = 191.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_fonts/font = ExtResource( 5 )
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "RESTART"
+flat = false
+align = 1
+_sections_unfolded = [ "Visibility", "custom_fonts" ]
+
+[node name="Point" type="Node2D" parent="N/Panel/Restart"]
+position = Vector2( 85, 42 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Continue" type="Button" parent="N/Panel"]
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 47.0
+margin_top = 48.0
+margin_right = 219.0
+margin_bottom = 102.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_fonts/font = ExtResource( 5 )
+custom_constants/hseparation = 0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "CONTINUE"
+flat = false
+align = 1
+_sections_unfolded = [ "Visibility", "custom_colors", "custom_fonts" ]
+
+[node name="Point" type="Node2D" parent="N/Panel/Continue"]
+position = Vector2( 85, 42 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2( 0, 28.5601 )
+anchor_mode = 1
+rotating = false
+current = false
+zoom = Vector2( 1, 1 )
+limit_left = -10000000
+limit_top = -10000000
+limit_right = 10000000
+limit_bottom = 10000000
+limit_smoothed = false
+drag_margin_h_enabled = false
+drag_margin_v_enabled = false
+smoothing_enabled = false
+smoothing_speed = 5.0
+offset_v = 0.0
+offset_h = 0.0
+drag_margin_left = 0.2
+drag_margin_top = 0.2
+drag_margin_right = 0.2
+drag_margin_bottom = 0.2
+editor_draw_screen = true
+editor_draw_limits = false
+editor_draw_drag_margin = false
+_sections_unfolded = [ "Editor" ]
+

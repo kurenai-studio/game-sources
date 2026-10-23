@@ -1,0 +1,386 @@
+[gd_scene load_steps=12 format=2]
+
+[ext_resource path="res://UI/MainMenu.gd" type="Script" id=1]
+[ext_resource path="res://UI/Background.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Assets/vignette.png" type="Texture" id=3]
+[ext_resource path="res://Assets/logo.png" type="Texture" id=4]
+[ext_resource path="res://Assets/UI/Pause.png" type="Texture" id=5]
+[ext_resource path="res://LevelComponents/SpiritParticles.tscn" type="PackedScene" id=6]
+[ext_resource path="res://Assets/Fonts/SmallText.tres" type="DynamicFont" id=7]
+[ext_resource path="res://Assets/Blackout.png" type="Texture" id=8]
+[ext_resource path="res://Assets/Sounds/BodySwap.ogg" type="AudioStream" id=9]
+
+[sub_resource type="CanvasItemMaterial" id=1]
+
+render_priority = 0
+blend_mode = 2
+light_mode = 0
+
+[sub_resource type="StyleBoxTexture" id=2]
+
+content_margin_left = -1.0
+content_margin_right = -1.0
+content_margin_top = -1.0
+content_margin_bottom = -1.0
+texture = ExtResource( 5 )
+region_rect = Rect2( 0, 0, 260, 340 )
+margin_left = 0.0
+margin_right = 0.0
+margin_top = 0.0
+margin_bottom = 0.0
+expand_margin_left = 16.0
+expand_margin_right = 16.0
+expand_margin_top = 16.0
+expand_margin_bottom = 16.0
+modulate_color = Color( 1, 1, 1, 1 )
+draw_center = true
+_sections_unfolded = [ "Content Margin", "Expand Margin" ]
+
+[node name="MainMenu" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="Background" parent="." instance=ExtResource( 2 )]
+_sections_unfolded = [ "Script", "Z Index" ]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 1
+offset = Vector2( 0, 0 )
+rotation = 0.0
+scale = Vector2( 1, 1 )
+transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+
+[node name="Vignette" type="TextureRect" parent="CanvasLayer"]
+modulate = Color( 0.254902, 0.254902, 0.254902, 1 )
+material = SubResource( 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+texture = ExtResource( 3 )
+expand = true
+stretch_mode = 0
+_sections_unfolded = [ "Material", "Visibility", "material" ]
+
+[node name="Center" type="CenterContainer" parent="CanvasLayer"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+use_top_left = false
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/Center"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 224.0
+margin_top = 58.0
+margin_right = 800.0
+margin_bottom = 541.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_constants/separation = 20
+alignment = 1
+_sections_unfolded = [ "custom_constants" ]
+
+[node name="Logo" type="TextureRect" parent="CanvasLayer/Center/VBox"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 576.0
+margin_bottom = 192.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+texture = ExtResource( 4 )
+stretch_mode = 3
+_sections_unfolded = [ "Rect", "Theme" ]
+
+[node name="Center" type="CenterContainer" parent="CanvasLayer/Center/VBox"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 212.0
+margin_right = 576.0
+margin_bottom = 276.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+use_top_left = false
+_sections_unfolded = [ "Rect" ]
+
+[node name="Panel" type="Panel" parent="CanvasLayer/Center/VBox/Center"]
+show_behind_parent = true
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 224.0
+margin_right = 352.0
+margin_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+rect_min_size = Vector2( 128, 64 )
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_styles/panel = SubResource( 2 )
+_sections_unfolded = [ "Anchor", "Axis Stretch", "Grow Direction", "Margin", "Material", "Patch Margin", "Rect", "Theme", "Visibility", "custom_styles", "custom_styles/panel", "custom_styles/panelf" ]
+
+[node name="Ghost" parent="CanvasLayer/Center/VBox/Center" instance=ExtResource( 6 )]
+position = Vector2( -185.219, -350.731 )
+z_index = 0
+_sections_unfolded = [ "Transform", "Visibility", "Z Index", "process_material" ]
+
+[node name="OneOne" parent="CanvasLayer/Center/VBox/Center/Ghost" instance=ExtResource( 6 )]
+position = Vector2( -4.57764e-005, 12.5436 )
+rotation = 0.0
+z_index = 0
+emitting = false
+_sections_unfolded = [ "Transform", "Visibility", "Z Index", "process_material" ]
+
+[node name="OneTwo" parent="CanvasLayer/Center/VBox/Center/Ghost" instance=ExtResource( 6 )]
+position = Vector2( 4.57764e-005, -12.5436 )
+rotation = 0.0
+z_index = 0
+emitting = false
+_sections_unfolded = [ "Transform", "Visibility", "Z Index", "process_material" ]
+
+[node name="TwoOne" parent="CanvasLayer/Center/VBox/Center/Ghost" instance=ExtResource( 6 )]
+position = Vector2( -9.91821e-005, 26.7597 )
+rotation = 0.0
+z_index = 0
+emitting = false
+_sections_unfolded = [ "Transform", "Visibility", "Z Index", "process_material" ]
+
+[node name="TwoTwo" parent="CanvasLayer/Center/VBox/Center/Ghost" instance=ExtResource( 6 )]
+position = Vector2( 9.15527e-005, -26.3416 )
+rotation = 0.0
+z_index = 0
+emitting = false
+_sections_unfolded = [ "Transform", "Visibility", "Z Index", "process_material" ]
+
+[node name="VBox_Menu" type="VBoxContainer" parent="CanvasLayer/Center/VBox/Center"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 238.0
+margin_right = 338.0
+margin_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+rect_min_size = Vector2( 100, 0 )
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_constants/separation = 20
+alignment = 1
+_sections_unfolded = [ "Grow Direction", "Hint", "Margin", "Rect", "custom_constants" ]
+
+[node name="Play" type="Button" parent="CanvasLayer/Center/VBox/Center/VBox_Menu"]
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 100.0
+margin_bottom = 22.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_neighbour_bottom = NodePath("../Quit")
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_fonts/font = ExtResource( 7 )
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "PLAY"
+flat = false
+align = 1
+_sections_unfolded = [ "Focus", "Visibility", "custom_fonts" ]
+
+[node name="Spot" type="Node2D" parent="CanvasLayer/Center/VBox/Center/VBox_Menu/Play"]
+position = Vector2( 48, 10 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Return" type="Button" parent="CanvasLayer/Center/VBox/Center/VBox_Menu"]
+visible = false
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 42.0
+margin_right = 100.0
+margin_bottom = 62.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_neighbour_bottom = NodePath("../TrueQuit")
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "RETURN"
+flat = false
+align = 1
+_sections_unfolded = [ "Focus", "Visibility" ]
+
+[node name="Spot" type="Node2D" parent="CanvasLayer/Center/VBox/Center/VBox_Menu/Return"]
+visible = false
+position = Vector2( 90, 10 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="TrueQuit" type="Button" parent="CanvasLayer/Center/VBox/Center/VBox_Menu"]
+visible = false
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 60.0
+margin_right = 180.0
+margin_bottom = 80.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_neighbour_top = NodePath("../Return")
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "QUIT GAME"
+flat = false
+align = 1
+_sections_unfolded = [ "Focus", "Visibility" ]
+
+[node name="Spot" type="Node2D" parent="CanvasLayer/Center/VBox/Center/VBox_Menu/TrueQuit"]
+position = Vector2( 90, 10 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Quit" type="Button" parent="CanvasLayer/Center/VBox/Center/VBox_Menu"]
+modulate = Color( 1, 0.623529, 0.294118, 1 )
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 42.0
+margin_right = 100.0
+margin_bottom = 64.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_neighbour_top = NodePath("../Play")
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+custom_fonts/font = ExtResource( 7 )
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "QUIT"
+flat = false
+align = 1
+_sections_unfolded = [ "Focus", "Visibility", "custom_fonts" ]
+
+[node name="Spot" type="Node2D" parent="CanvasLayer/Center/VBox/Center/VBox_Menu/Quit"]
+position = Vector2( 48, 10 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Label_ByLine" type="Label" parent="CanvasLayer/Center/VBox"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 296.0
+margin_right = 576.0
+margin_bottom = 483.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+custom_fonts/font = ExtResource( 7 )
+custom_colors/font_color = Color( 1, 0.623529, 0.294118, 1 )
+custom_colors/font_color_shadow = Color( 0.294118, 0.184314, 0.0901961, 1 )
+custom_constants/shadow_offset_x = 1
+custom_constants/shadow_offset_y = 1
+text = "Code by Dustin Woods & Zach777
+UI by Zach777 & JohnGabrielUK
+Graphics by Mago
+Music & sound by JohnGabrielUK
+
+\"Alkhemikal\" by jeti; licensed under CC BY 4.0
+Made for the Godot Wild Jam #2
+
+Source code available at:
+https://github.com/DustinWoods/godot-wild-jam-2/"
+align = 1
+valign = 1
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+_sections_unfolded = [ "custom_colors", "custom_constants", "custom_fonts", "custom_fonts/font" ]
+
+[node name="Reveal" type="Sprite" parent="CanvasLayer"]
+modulate = Color( 0, 0, 0, 1 )
+position = Vector2( 565, 308.5 )
+scale = Vector2( 9.82812, 5.82031 )
+texture = ExtResource( 8 )
+_sections_unfolded = [ "Visibility", "Z Index" ]
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 9 )
+volume_db = -1.0
+pitch_scale = 1.0
+autoplay = false
+stream_paused = false
+mix_target = 0
+bus = "Master"
+
