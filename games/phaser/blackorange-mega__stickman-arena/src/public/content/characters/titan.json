@@ -1,0 +1,19 @@
+{
+  "id": "titan",
+  "name": "Iron Titan",
+  "description": "The final boss. A massive, hard-hitting tank with huge health.",
+  "sprite": "content/sprites/stickman.svg",
+  "tint": "#ef5350",
+  "stats": {
+    "maxHp": 200,
+    "maxStamina": 120,
+    "staminaRegen": 14,
+    "moveSpeed": 170,
+    "jumpVelocity": 460
+  },
+  "attacks": {
+    "light": { "name": "Smash", "damage": 14, "staminaCost": 12, "range": 92, "cooldown": 650 },
+    "heavy": { "name": "Earthbreaker", "damage": 28, "staminaCost": 30, "range": 100, "cooldown": 1200 }
+  },
+  "special": { "name": "Seismic Slam", "damage": 45, "staminaCost": 55, "range": 150, "cooldown": 4500 }
+}
