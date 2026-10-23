@@ -1,0 +1,1355 @@
+/* The home page's title, tagline and Start button fonts: Fredoka and Nunito,
+   both under the SIL Open Font License (public/fonts/*-OFL.txt). They're kept
+   here rather than loaded from Google Fonts, so the page doesn't wait on, or
+   tell, another site. Until they load, the page uses its usual font. */
+@font-face {
+  font-family: Fredoka;
+  font-weight: 600;
+  font-display: swap;
+  src: url(./fonts/fredoka-600.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: Fredoka;
+  font-weight: 700;
+  font-display: swap;
+  src: url(./fonts/fredoka-700.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: Nunito;
+  font-weight: 700;
+  font-display: swap;
+  src: url(./fonts/nunito-700.woff2) format('woff2');
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* The page: a soft purple, so FunGals doesn't look like PetriPals' mint. */
+body {
+  margin: 0;
+  background: #e6dcf8;
+  color: #134e4a;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+  padding-top: 3rem;
+}
+
+.friends {
+  display: flex;
+  flex-wrap: wrap; /* on narrow screens, gals wrap onto a second row */
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.gal {
+  width: 120px;
+}
+
+/* Wider than a phone, keep every gal on one row: they shrink a little to
+   fit instead of leaving one alone on a second row. */
+@media (min-width: 521px) {
+  .friends {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .friends .gal {
+    flex: 0 1 120px;
+    min-width: 0;
+  }
+}
+
+/* On a phone the gals sit two to a row, so show just the first six (three
+   even rows) instead of leaving the last one alone on a row of her own. */
+@media (max-width: 520px) {
+  .friends .gal:nth-child(n + 7) {
+    display: none;
+  }
+}
+
+.gal .cell {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bob {
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+.squish {
+  animation: squish 2s ease-in-out infinite 0.5s;
+  transform-origin: bottom center;
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes squish {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+
+  50% {
+    transform: scale(1.08, 0.92);
+  }
+}
+
+/* The game's name on the home page, big and round like a game logo. */
+.logo {
+  margin: 1.6rem 0 0.4rem;
+  font-family: Fredoka, system-ui, sans-serif;
+  font-size: clamp(3.2rem, 15vw, 5.2rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* What the game is, in a few words, under its name. */
+.tagline {
+  margin: 0 0 1.4rem;
+  padding: 0 1rem;
+  font-family: Nunito, system-ui, sans-serif;
+  font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #0f766e;
+}
+
+/* A sentence or two under the Start button saying what the game is, for
+   new players (and search engines). */
+.about {
+  max-width: 34rem;
+  margin: 2rem auto 0;
+  padding: 0 1.25rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+/* The link to the sister game, PetriPals, in the game's own teal. */
+.about a {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.start-btn {
+  margin-top: 1rem;
+  padding: 0.8rem 2rem;
+  font-family: Fredoka, system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: white;
+  background: #0f766e;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 #134e4a;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.start-btn:hover {
+  background: #14b8a6;
+}
+
+.start-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #134e4a;
+}
+
+.start-btn:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+/* The home page's second button, under Start: Who’s That Gal?
+   (whos-that-gal.html). Outlined, so Start stays the main thing to press. */
+.guess-link {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.6rem 1.6rem;
+  font-family: Fredoka, system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 2px solid #0f766e;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.guess-link:hover {
+  background: #ccfbf1;
+}
+
+.picker-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  /* Keep the card and the signature under it together in the middle, even
+     on a page whose card is short. */
+  align-content: center;
+  padding: 2rem 1rem;
+}
+
+.picker-shell {
+  width: min(760px, 100%);
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px solid rgba(19, 78, 74, 0.15);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(19, 78, 74, 0.08);
+}
+
+
+/* The gal picker is wider than the other cards, to fit four gals across. */
+.picker-wide {
+  width: min(1000px, 100%);
+}
+
+/* A heading at the very top of the card sits on the card's own padding,
+   without the browser's extra margin on top. */
+.picker-shell > h1:first-child {
+  margin-top: 0;
+}
+
+/* Four across on a computer (two rows of four), two on a tablet or phone. */
+/* Four cards across (two on a tablet or phone), each the same
+   width. Flex instead of grid so a page with fewer gals than a full row
+   (like the second page, while it fills up) keeps them in the middle. */
+.picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.picker-grid[hidden] {
+  display: none;
+}
+
+.picker-grid > .gal-card {
+  flex: 0 0 calc((100% - 2.25rem) / 4);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .picker-grid > .gal-card {
+    flex-basis: calc((100% - 0.75rem) / 2);
+  }
+}
+
+/* On a phone, still two across, so you can see more gals at once: a
+   little less room around the page and between cards, and smaller
+   pictures and names. */
+@media (max-width: 520px) {
+  .picker-page:has(.picker-wide) {
+    padding-inline: 0.5rem;
+  }
+
+  .picker-wide {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .picker-grid {
+    gap: 0.5rem;
+  }
+
+  .picker-grid > .gal-card {
+    flex-basis: calc((100% - 0.5rem) / 2);
+    padding: 1rem 0.4rem 0.7rem;
+  }
+
+  .picker-grid .gal-icon {
+    width: 76px;
+    height: 76px;
+    border-radius: 16px;
+  }
+
+  .picker-grid .gal-icon svg {
+    width: 62px;
+    height: 62px;
+  }
+
+  .picker-grid .gal-card h2 {
+    font-size: 1.1rem;
+  }
+
+  .picker-grid .species {
+    font-size: 0.8rem;
+  }
+}
+
+/* Back and More gals, under the cards. */
+.picker-pager {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.picker-pager[hidden],
+.pager-btn[hidden] {
+  display: none;
+}
+
+.pager-btn {
+  min-height: 44px;
+  padding: 0.6rem 1.3rem;
+  border: 2px solid #0f766e;
+  border-radius: 999px;
+  background: #f0fdfa;
+  color: #0f766e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pager-btn:hover {
+  background: #ccfbf1;
+}
+
+.gal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(15, 118, 110, 0.2);
+  border-radius: 16px;
+  padding: 1.25rem 0.75rem 0.85rem;
+}
+
+/* In the picker the whole card is the button that picks her. */
+a.gal-card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+a.gal-card:hover,
+a.gal-card:focus-visible {
+  border-color: #0f766e;
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-3px);
+}
+
+a.gal-card:focus-visible {
+  outline: 3px solid #14b8a6;
+  outline-offset: 2px;
+}
+
+a.gal-card:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.gal-card,
+  a.gal-card:hover,
+  a.gal-card:focus-visible {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Each gal's name, with her species right under it. */
+.picker-grid .gal-card h2 {
+  margin: 0.2rem 0 0.1rem;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+/* Her species, right under her name. Every card keeps room for two lines,
+   so a long one that wraps (Saccharomyces cerevisiae) doesn't make her card
+   look different from the rest. */
+.picker-grid .species {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  min-height: 2.6em;
+}
+
+.gal-icon {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 0.4rem;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(19, 78, 74, 0.06);
+}
+
+.gal-icon svg {
+  width: 76px;
+  height: 76px;
+  display: block;
+}
+
+.sasha {
+  background: rgba(232, 200, 150, 0.45);
+}
+
+.candi {
+  background: rgba(191, 219, 254, 0.55);
+}
+
+.olive {
+  background: rgba(226, 234, 194, 0.7);
+}
+
+.fumi {
+  background: rgba(209, 231, 223, 0.7);
+}
+
+.penelope {
+  background: rgba(214, 226, 238, 0.75);
+}
+
+.miri {
+  background: rgba(247, 230, 160, 0.6);
+}
+
+.yara {
+  background: rgba(251, 214, 192, 0.6);
+}
+
+.peachy {
+  background: rgba(252, 213, 227, 0.6);
+}
+
+.maizey {
+  background: rgba(214, 196, 236, 0.75);
+}
+
+.ruby {
+  background: rgba(250, 222, 222, 0.75);
+}
+
+.rosie {
+  background: rgba(226, 222, 217, 0.85);
+}
+
+.neve {
+  background: rgba(207, 238, 242, 0.75);
+}
+
+.pick-btn {
+  margin-top: 0.75rem;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: #0f766e;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.pick-btn:hover {
+  background: #14b8a6;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.dish-shell {
+  width: min(760px, 100%);
+  /* Nothing on the game page needs selecting, and on an iPhone a finger
+     that slips off the dish onto the words around it would otherwise bring
+     up the text magnifier mid-game. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* The agar keeps itself square (below) and the glass rim wraps around it.
+   Don't size the agar from the dish's height instead: Safari (so every
+   browser on an iPhone) can ignore a percentage height when the parent's
+   height only comes from aspect-ratio, which squashes the agar into an oval. */
+.petri-dish {
+  position: relative;
+  width: min(600px, 100%);
+  margin: 0 auto;
+  padding: 18px;
+  border-radius: 50%;
+  /* A finger drags the gal from anywhere on the dish, rim included
+     (game/touch.js): don't scroll or zoom the page, select text, or pop up
+     the magnifier or long-press menu instead. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* glass rim */
+  background: rgba(255, 255, 255, 0.55);
+  border: 3px solid rgba(15, 118, 110, 0.35);
+  box-shadow:
+    0 18px 36px rgba(19, 78, 74, 0.15),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.agar {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  /* agar gel with a soft glass highlight */
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.75), transparent 32%),
+    radial-gradient(circle at 50% 50%, #fef9c3, #e7eeab);
+  border: 2px solid rgba(180, 83, 9, 0.2);
+  /* Touch and hold on the agar to steer (game/touch.js): don't scroll or zoom
+     the page, select text, or pop up the long-press menu instead. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Who’s That Gal?'s gal buttons: up to six across (three on a phone), each
+   the same width, with a short last row kept in the middle. */
+.gal-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.gal-grid > .gal-btn {
+  flex: 0 0 calc((100% - 3.75rem) / 6);
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .gal-grid {
+    gap: 0.6rem;
+  }
+
+  .gal-grid > .gal-btn {
+    flex-basis: calc((100% - 1.2rem) / 3);
+  }
+
+  .gal-btn .gal-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .gal-btn .gal-icon svg {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+.gal-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem 0.7rem;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(15, 118, 110, 0.2);
+  border-radius: 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gal-btn .gal-icon {
+  width: 76px;
+  height: 76px;
+  margin: 0;
+  border-radius: 16px;
+}
+
+.gal-btn .gal-icon svg {
+  width: 62px;
+  height: 62px;
+}
+
+.gal-btn:hover:not(:disabled):not([aria-pressed='true']) {
+  border-color: #14b8a6;
+}
+
+.gal-btn:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 2px;
+}
+
+/* Picked: a thick teal border and a check in the corner. */
+.gal-btn[aria-pressed='true'] {
+  background: #f0fdfa;
+  border: 3px solid #0f766e;
+  padding: calc(0.6rem - 1px) calc(0.4rem - 1px) calc(0.7rem - 1px);
+}
+
+.gal-btn[aria-pressed='true']::after {
+  content: '\2713';
+  position: absolute;
+  top: -0.55rem;
+  right: -0.55rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #0f766e;
+  color: white;
+  font-size: 0.9rem;
+  line-height: 1.6rem;
+}
+
+.gal-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.guess-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.guess-actions .pick-btn {
+  margin-top: 0;
+  min-height: 44px;
+  padding: 0.6rem 1.4rem;
+  font: inherit;
+  font-weight: 700;
+}
+
+.guess-actions .pick-btn:disabled {
+  background: #94a3b8;
+  cursor: default;
+}
+
+.guess-actions .pager-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* Who’s That Gal? (game/whos-that-gal.js): a fact with "this gal" in place of
+   her name, over a button for every gal. */
+.guess-shell {
+  width: min(860px, 100%);
+}
+
+.guess-counter {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f766e;
+  opacity: 0.75;
+}
+
+.guess-fact {
+  max-width: 38rem;
+  margin: 0.75rem auto 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(15, 118, 110, 0.2);
+  border-radius: 18px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+/* Where her name goes: "this gal" in plain text, then her name, in her
+   color, once she's found. */
+.fact-blank.filled {
+  font-weight: 700;
+}
+
+.guess-status {
+  margin: 1rem 0 0;
+  min-height: 1.5em;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+/* Her species under her name on each tile, shortened: P. aeruginosa. It
+   shrinks a little with the tile on a phone, and a long one
+   (L. monocytogenes) wraps onto two lines if it still won't fit. */
+.guess-btn {
+  container-type: inline-size;
+}
+
+.guess-species {
+  margin-top: -0.25rem;
+  font-size: clamp(0.68rem, 11.5cqi, 0.8rem);
+  font-weight: 400;
+  color: #134e4a;
+  line-height: 1.2;
+}
+
+/* The right gal: a thick teal border and a check in the corner. */
+.guess-btn.right {
+  background: #f0fdfa;
+  border: 3px solid #0f766e;
+  padding: calc(0.6rem - 1px) calc(0.4rem - 1px) calc(0.7rem - 1px);
+}
+
+.guess-btn.right::after {
+  content: '\2713';
+  position: absolute;
+  top: -0.55rem;
+  right: -0.55rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #0f766e;
+  color: white;
+  font-size: 0.9rem;
+  line-height: 1.6rem;
+}
+
+/* Keep room for Next fact, so the page doesn't jump when it shows up. */
+.guess-shell .guess-actions {
+  min-height: 44px;
+}
+
+.next-fact[hidden] {
+  display: none;
+}
+
+/* Positioned by petri-dish.js; the gal's own idle animation stays on the SVG. */
+.gal-mover {
+  grid-area: 1 / 1; /* stack in the dish center, even after dividing into two */
+  width: 18%;
+  position: relative;
+  z-index: 1; /* swim over the nutrients */
+  will-change: transform;
+}
+
+/* Nutrient flecks scattered on the agar; placed by petri-dish.js. */
+.nutrient {
+  position: absolute;
+  width: 2.2%;
+  aspect-ratio: 1;
+  border-radius: 45% 55% 50% 40%;
+  /* Each fleck gets a random --hue (set in game/nutrients.js), so the agar is
+     sprinkled with every color of the rainbow. The faint dark ring keeps the
+     yellow ones visible against the yellow agar. */
+  background: hsl(var(--hue, 20) 85% 52%);
+  box-shadow: 0 0 0 1px rgba(19, 78, 74, 0.25);
+  opacity: 0.9;
+  transform: translate(-50%, -50%);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.nutrient.small {
+  width: 1.5%;
+}
+
+.nutrient.eaten {
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.dish-gal {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.dish-gal[hidden] {
+  display: none;
+}
+
+.wobble {
+  animation: wobble 3s ease-in-out infinite;
+}
+
+.species {
+  font-size: 0.95rem;
+}
+
+/* The gal's name and species above the dish. */
+.dish-title {
+  margin-bottom: 1.25rem;
+}
+
+.dish-title .gal-name {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.dish-title .species {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+}
+
+.win-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  width: min(320px, 85%);
+  padding: 1.25rem 1.5rem 1.5rem;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid rgba(15, 118, 110, 0.25);
+  border-radius: 20px;
+  box-shadow: 0 16px 36px rgba(19, 78, 74, 0.2);
+  animation: pop-in 0.35s ease-out;
+}
+
+.win-banner[hidden] {
+  display: none;
+}
+
+.win-banner h2 {
+  margin: 0 0 0.5rem;
+}
+
+.win-banner p {
+  margin: 0;
+}
+
+/* The "Did you know?" fact about your gal when you win. */
+.win-banner .fun-fact {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(15, 118, 110, 0.08);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.win-banner .fun-fact[hidden] {
+  display: none;
+}
+
+.win-banner .fun-fact strong {
+  color: #0f766e;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.banner-buttons {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.banner-buttons .pick-btn {
+  margin-top: 0;
+  font: inherit;
+  font-weight: 700;
+}
+
+.banner-buttons .pick-btn[hidden] {
+  display: none;
+}
+
+/* The second choice in the pop-up: outlined instead of filled. */
+.start-over {
+  background: white;
+  color: #0f766e;
+  box-shadow: inset 0 0 0 2px #0f766e;
+}
+
+.start-over:hover {
+  background: #ccfbf1;
+}
+
+/* The group the player steers stays on top, in full color with a soft halo;
+   the offspring left behind are paler and a little washed out. */
+.gal-mover.player {
+  z-index: 2;
+  filter:
+    drop-shadow(0 0 2px #fff)
+    drop-shadow(0 0 3px #fff)
+    drop-shadow(0 0 7px rgba(15, 118, 110, 0.45));
+}
+
+.gal-mover.offspring {
+  opacity: 0.75;
+  filter: saturate(0.45) brightness(1.08);
+}
+
+/* Only the player's gal has a face. */
+.gal-mover.offspring .face {
+  display: none;
+}
+
+/* Offspring sit still on the agar, without the idle wiggle. That also keeps
+   a dish full of 64 cells smooth. */
+.gal-mover.offspring .dish-gal {
+  animation: none;
+}
+
+.cell-count {
+  margin: 1rem 0 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.how-to-play {
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* Arrow-key directions on a computer, touch directions on a phone or tablet.
+   The media query picks from the device before any script runs (a finger is a
+   "coarse" pointer); then game/touch.js switches them to match whatever the
+   player actually uses, for devices with both. */
+.for-touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .for-keys {
+    display: none;
+  }
+
+  .for-touch {
+    display: inline;
+  }
+}
+
+html.input-touch .for-keys,
+html.input-keys .for-touch {
+  display: none;
+}
+
+html.input-touch .for-touch,
+html.input-keys .for-keys {
+  display: inline;
+}
+
+/* The antifungal disk: a small white paper disk with the drug's code on it,
+   like the disks used in the lab. Placed by game/antifungal.js. */
+.antifungal {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #f1f5f9);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 2px 4px rgba(19, 78, 74, 0.2);
+  color: #475569;
+  font-size: clamp(8px, 1.3vw, 14px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* The zone of inhibition around each disk: clear agar where the drug has
+   soaked in and nothing can grow. Sized by game/antifungal.js. */
+.zone {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  /* Real zones are clear, slightly glassy agar with a soft, hazy edge where
+     the growth thins out, not a crisp ring. Each zone also gets a slightly
+     uneven shape (set in game/antifungal.js). */
+  border-radius: 50%;
+  /* The disk covers the inner ~65%, so the visible ring is the outer third:
+     clear agar, then a thin hazy rim right at the outside. The rim has to
+     sit at the very edge, because that's where touching it ends the game
+     (see touchesDisk in game/antifungal.js); a rim that faded out early
+     made the game end with a gap still showing. */
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 252, 0.85) 0%,
+    rgba(255, 255, 252, 0.8) 88%,
+    rgba(255, 255, 248, 0.65) 93%,
+    rgba(206, 192, 110, 0.4) 97%,
+    rgba(206, 192, 110, 0.3) 99%,
+    rgba(206, 192, 110, 0) 100%
+  );
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+/* Hover over a disk to see which antifungal it is. */
+.antifungal::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(3px);
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  background: #134e4a;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.antifungal:hover {
+  z-index: 4; /* above the gals, so the label isn't hidden behind them */
+}
+
+.antifungal:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* The player's gal after touching the antifungal. */
+.gal-mover.killed {
+  filter: grayscale(1);
+  opacity: 0.45;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+/* Freeze her mid-wiggle rather than turning the animation off: switching it
+   off snaps her back to her resting pose (up to 10px away for a bob), so she
+   would look like she never touched the zone. */
+.gal-mover.killed .dish-gal {
+  animation-play-state: paused;
+}
+
+/* Jess's signature at the foot of every page. */
+.signature {
+  margin: 2rem 0 1.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.picker-page .signature {
+  margin: 1rem 0 0;
+}
+
+/* On the home page, push it down to the bottom of the screen instead of
+   right under the start button. */
+body:not(.picker-page) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+body:not(.picker-page) .signature {
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+/* On a phone, give the dish as much of the screen as we can: less padding
+   around the card and a thinner glass rim. */
+@media (max-width: 600px) {
+  .picker-page:has(.dish-shell) {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .dish-shell {
+    padding: 1rem 0.5rem;
+  }
+
+  .dish-shell .petri-dish {
+    padding: 8px;
+  }
+}
+
+/* A mold's spore (game/mold.js) is a single, tiny cell. */
+.gal-mover.spore {
+  width: 4.5%;
+}
+
+/* Mold colonies (game/mold.js), on a layer of their own under everything
+   else, clipped to the round dish so a colony by the rim stops at the wall,
+   like on a real plate. */
+.colonies {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* A colony: white and fluffy, with a soft greenish middle (--spores, the
+   gal's color) where it's started making spores; --ripe is how far out that
+   reaches. Over the white, fine streaks fanning out from the middle (the
+   threads, hyphae, growing outward) and faint growth rings give it a fuzzy,
+   velvety texture. Positioned and sized by game/mold.js. */
+.colony {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--spores, #5b8c80) 70%, white) 0 calc(var(--ripe, 0%) * 0.45),
+      color-mix(in srgb, var(--spores, #5b8c80) 25%, white) calc(var(--ripe, 0%) * 0.8), transparent var(--ripe, 0%)),
+    repeating-conic-gradient(rgba(148, 170, 160, 0.16) 0 1.5deg, transparent 1.5deg 4deg),
+    repeating-radial-gradient(circle, transparent 0 11%, rgba(160, 180, 170, 0.14) 12.5% 13.5%, transparent 15%),
+    radial-gradient(circle, #f4f7f3 0 70%, #fdfefd 90%, rgba(255, 255, 255, 0.8) 100%);
+  box-shadow:
+    0 0 0 1px rgba(148, 170, 160, 0.25),
+    0 0 5px 2px rgba(255, 255, 255, 0.95);
+  animation: sprout 0.4s ease-out;
+}
+
+/* Ruby's red drops, beading up on a colony one at a time as it ripens
+   (mold.js). Her colonies look a little like her caps from above: warm white and velvety,
+   domed (a soft shine, a slightly darker rim), with faint rings, and
+   browning in the middle as they age. */
+.colony:has(.drop) {
+  background:
+    radial-gradient(circle at 36% 32%, rgba(255, 255, 255, 0.85) 0 9%, transparent 26%),
+    radial-gradient(circle, color-mix(in srgb, var(--spores) 55%, white) 0 calc(var(--ripe, 0%) * 0.4),
+      color-mix(in srgb, var(--spores) 20%, white) calc(var(--ripe, 0%) * 0.8), transparent var(--ripe, 0%)),
+    repeating-conic-gradient(rgba(176, 130, 118, 0.1) 0 1.5deg, transparent 1.5deg 4deg),
+    repeating-radial-gradient(circle, transparent 0 14%, rgba(168, 112, 96, 0.12) 15.5% 17%, transparent 18.5%),
+    radial-gradient(circle, #fdf8f5 0 60%, #f5e8e1 84%, #ead6cd 100%);
+  box-shadow:
+    0 0 0 1px rgba(176, 130, 118, 0.35),
+    0 1px 3px rgba(110, 50, 40, 0.2);
+}
+
+.colony .drop {
+  position: absolute;
+  width: 13%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset -1px -1px 0 rgba(0, 0, 0, 0.18), inset 1px 1px 1px rgba(255, 255, 255, 0.7);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.4s ease-out;
+}
+
+.colony .drop.shown {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Rosie's colonies: cream at first, then darkening to a dark brown-black
+   from the middle out (her --spores color) with wrinkly folds, the way
+   Sporothrix colonies age on a real plate. */
+.colony.wrinkled {
+  background:
+    repeating-conic-gradient(rgba(255, 250, 244, 0.13) 0 2deg, transparent 2deg 19deg),
+    radial-gradient(circle, color-mix(in srgb, var(--spores) 90%, white) 0 calc(var(--ripe, 0%) * 0.6),
+      color-mix(in srgb, var(--spores) 50%, white) calc(var(--ripe, 0%) * 1.2), transparent calc(var(--ripe, 0%) * 1.6)),
+    repeating-conic-gradient(rgba(45, 34, 28, 0.16) 0 3deg, transparent 3deg 17deg),
+    repeating-radial-gradient(circle, transparent 0 12%, rgba(90, 72, 60, 0.12) 13.5% 15%, transparent 16.5%),
+    radial-gradient(circle, #f6f0e6 0 70%, #fbf8f2 90%, rgba(255, 255, 255, 0.8) 100%);
+  box-shadow:
+    0 0 0 1px rgba(110, 90, 76, 0.3),
+    0 0 4px 1px rgba(255, 255, 255, 0.9);
+}
+
+/* Killed by an antifungal: the whole colony pops, swelling and vanishing. */
+.colony.dying {
+  animation: colony-pop 0.35s ease-out forwards;
+}
+
+@keyframes sprout {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes colony-pop {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+}
+
+/* An offspring cell popping in an antifungal zone (game/colony.js): a ring
+   in the gal's color that bursts outward and fades. */
+.pop {
+  position: absolute;
+  aspect-ratio: 1;
+  border: 3px solid;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: pop 0.35s ease-out forwards;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+    border-width: 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .colony,
+  .colony.dying {
+    animation-duration: 0.01s;
+  }
+}
+
+/* "Growing the colony…": the small card that shows while the next screen
+   loads (game/loading.js). It waits a moment before fading in, so a quick
+   page change never flashes it. The see-through cover behind it keeps a
+   second tap from starting a second trip. */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(230, 220, 248, 0.55);
+  animation: loading-in 0.2s ease-out 0.15s both;
+}
+
+.loading-overlay[hidden] {
+  display: none;
+}
+
+/* On a page that's still being filled in, the cover is solid, so the half
+   built page doesn't show through. If its script never gets to say it's
+   done (an error, say), give up after a while rather than block the page
+   forever. */
+.loading-overlay.arriving {
+  background: #e6dcf8;
+  animation: loading-give-up 0s linear 8s forwards;
+}
+
+.loading-overlay.arriving .loading-card {
+  animation: loading-in 0.2s ease-out 0.15s both;
+}
+
+.loading-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1.25rem;
+  background: white;
+  border: 2px solid rgba(15, 118, 110, 0.25);
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(19, 78, 74, 0.18);
+  color: #134e4a;
+  font-family: Fredoka, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* A little cell pinching into two daughter cells, over and over. */
+.loading-cells {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+}
+
+.loading-cells span {
+  position: absolute;
+  top: 2px;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #14b8a6;
+  animation: loading-split-left 0.9s ease-in-out infinite alternate;
+}
+
+.loading-cells span:last-child {
+  background: #0f766e;
+  animation-name: loading-split-right;
+}
+
+@keyframes loading-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loading-give-up {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes loading-split-left {
+  to {
+    transform: translateX(-6px);
+  }
+}
+
+@keyframes loading-split-right {
+  to {
+    transform: translateX(6px);
+  }
+}
+
+/* No moving cells for anyone who'd rather not have motion: just the two
+   daughters, side by side. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-cells span {
+    animation: none;
+    transform: translateX(-6px);
+  }
+
+  .loading-cells span:last-child {
+    transform: translateX(6px);
+  }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FunGals | Gal Picker</title>
+    <meta name="description" content="Pick your FunGal: real fungi, from baker’s yeast to Candida, drawn as cute cartoons." />
+    <link rel="canonical" href="https://jessicasogge.github.io/fungals/pal-picker.html" />
+    <!-- How the link looks when it's shared (iMessage, Slack, Discord, social media) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FunGals" />
+    <meta property="og:title" content="FunGals | Gal Picker" />
+    <meta property="og:description" content="Pick your FunGal: real fungi, from baker’s yeast to Candida, drawn as cute cartoons." />
+    <meta property="og:url" content="https://jessicasogge.github.io/fungals/pal-picker.html" />
+    <meta property="og:image" content="https://jessicasogge.github.io/fungals/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Penelope, Sasha, Miri, Candi, Fumi, Olive and Yara, seven cartoon yeasts and molds, above the words FunGals: Grow your colony. Dodge antifungals." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <!-- The icon (and name) for "Add to Home Screen" on an iPhone or iPad. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="FunGals" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="picker-page">
+    <!-- "Growing the colony…" covers the page until game/gal-picker.js has
+         filled it in (see game/loading.js). -->
+    <div class="loading-overlay arriving">
+      <div class="loading-card" role="status">
+        <span class="loading-cells" aria-hidden="true"><span></span><span></span></span>
+        <span class="loading-text">Growing the colony…</span>
+      </div>
+    </div>
+    <main class="picker-shell picker-wide">
+      <h1>Pick a Gal</h1>
+
+      <!-- A page of cards for each page of gals, made by game/gal-picker.js
+           from game/gals.js. One page shows at a time. -->
+      <div class="picker-pages"></div>
+
+      <!-- Paging between the pages of gals (hidden by game/gal-picker.js when
+           there's nowhere to go that way). -->
+      <nav class="picker-pager" aria-label="More gals">
+        <button class="pager-btn pager-back" type="button">← Back</button>
+        <button class="pager-btn pager-more" type="button">More gals →</button>
+      </nav>
+
+      <a class="back-link" href="./index.html">Back to home</a>
+    </main>
+    <footer class="signature">jsogge 2026</footer>
+    <script type="module" src="./game/gal-picker.js"></script>
+    <script data-goatcounter="https://petripals.goatcounter.com/count"
+            async src="https://gc.zgo.at/count.js"></script>
+  </body>
+</html>

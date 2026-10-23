@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FunGals | Petri Dish</title>
+    <meta name="description" content="Grow your fungal colony in a petri dish: eat nutrients to bud and steer clear of the antifungals." />
+    <link rel="canonical" href="https://jessicasogge.github.io/fungals/petri-dish.html" />
+    <!-- How the link looks when it's shared (iMessage, Slack, Discord, social media) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="FunGals" />
+    <meta property="og:title" content="FunGals | Petri Dish" />
+    <meta property="og:description" content="Grow your fungal colony in a petri dish: eat nutrients to bud and steer clear of the antifungals." />
+    <meta property="og:url" content="https://jessicasogge.github.io/fungals/petri-dish.html" />
+    <meta property="og:image" content="https://jessicasogge.github.io/fungals/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Penelope, Sasha, Miri, Candi, Fumi, Olive and Yara, seven cartoon yeasts and molds, above the words FunGals: Grow your colony. Dodge antifungals." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <!-- The icon (and name) for "Add to Home Screen" on an iPhone or iPad. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="FunGals" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="picker-page">
+    <!-- "Growing the colony…" covers the page until game/main.js has
+         filled it in (see game/loading.js). -->
+    <div class="loading-overlay arriving">
+      <div class="loading-card" role="status">
+        <span class="loading-cells" aria-hidden="true"><span></span><span></span></span>
+        <span class="loading-text">Growing the colony…</span>
+      </div>
+    </div>
+    <main class="picker-shell dish-shell">
+      <header class="dish-title">
+        <h1 class="gal-name"></h1>
+        <p class="species"><span class="species-name"></span></p>
+      </header>
+      <div class="petri-dish">
+        <div class="agar">
+          <!-- Every gal's drawing goes in here, hidden; main.js shows the one picked -->
+          <div class="gal-mover"></div>
+        </div>
+        <div class="win-banner" role="status" hidden>
+          <h2>You won!</h2>
+          <p class="win-message"></p>
+          <p class="fun-fact" hidden><strong>Did you know?</strong> <span class="fun-fact-text"></span></p>
+          <div class="banner-buttons">
+            <button class="pick-btn play-again" type="button">Play again</button>
+            <button class="pick-btn start-over" type="button" hidden>Start over</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="cell-count" aria-live="polite">Level 1 · 1 / 4 cells</p>
+
+      <p class="how-to-play">
+        <span class="for-keys">Use the arrow keys to swim.</span>
+        <span class="for-touch">Touch the dish and slide your finger to swim.</span>
+        Eat nutrients and grow to <span class="target-cells">4</span> cells.<br />
+        Any cell that eats a nutrient buds. Don't touch the antifungal disks or the clear zones around them, and watch out: the zones spread as the drug soaks into the agar!
+      </p>
+
+      <!-- For a mold (main.js shows whichever fits) -->
+      <p class="how-to-play for-mold" hidden>
+        <span class="for-keys">Use the arrow keys to float.</span>
+        <span class="for-touch">Touch the dish and slide your finger to float.</span>
+        You're a spore! Land on a nutrient to start a colony there, and grow <span class="target-colonies">6</span> colonies.<br />
+        Don't touch the antifungal disks or the clear zones around them, and watch out: the zones spread as the drug soaks into the agar!
+      </p>
+
+      <a class="back-link" href="./pal-picker.html">Pick a different gal</a>
+    </main>
+    <footer class="signature">jsogge 2026</footer>
+    <script type="module" src="./game/main.js"></script>
+    <script data-goatcounter="https://petripals.goatcounter.com/count"
+            async src="https://gc.zgo.at/count.js"></script>
+  </body>
+</html>
