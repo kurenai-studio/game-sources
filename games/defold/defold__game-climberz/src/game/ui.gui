@@ -1,0 +1,79 @@
+script: "/game/ui.gui_script"
+fonts {
+  name: "game"
+  font: "/assets/fonts/game.font"
+}
+textures {
+  name: "game"
+  texture: "/assets/game.atlas"
+}
+nodes {
+  position {
+    x: 6.0
+    y: 1129.0
+  }
+  type: TYPE_BOX
+  texture: "game/left"
+  id: "back"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  pivot: PIVOT_NW
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 10.0
+    y: 10.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "SCORE: 1234"
+  font: "game"
+  id: "score"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_SW
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 630.0
+    y: 10.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "BEST SCORE: 1234"
+  font: "game"
+  id: "best_score"
+  xanchor: XANCHOR_RIGHT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_SE
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

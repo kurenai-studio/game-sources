@@ -1,0 +1,206 @@
+script: "/main/main.gui_script"
+fonts {
+  name: "game"
+  font: "/assets/fonts/game.font"
+}
+textures {
+  name: "game"
+  texture: "/assets/game.atlas"
+}
+nodes {
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 320.0
+    y: 10.0
+  }
+  type: TYPE_BOX
+  texture: "game/wm-icon"
+  id: "monetization"
+  pivot: PIVOT_S
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 630.0
+    y: 10.0
+  }
+  type: TYPE_BOX
+  texture: "game/logo-ver-classic-white-64"
+  id: "defold"
+  xanchor: XANCHOR_RIGHT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_SE
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 320.0
+    y: 1080.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+    z: 2.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "LITTLE\n"
+  "CLIMBERZ"
+  font: "game"
+  id: "title"
+  pivot: PIVOT_N
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 10.0
+    y: 10.0
+  }
+  type: TYPE_BOX
+  texture: "game/kenney"
+  id: "kenney"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_BOTTOM
+  pivot: PIVOT_SW
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 320.0
+    y: 523.0
+  }
+  type: TYPE_BOX
+  id: "menu"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 188.0
+  }
+  type: TYPE_BOX
+  id: "characters"
+  parent: "menu"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -150.0
+    y: -9.0
+  }
+  type: TYPE_BOX
+  texture: "game/green_player_idle"
+  id: "green_player"
+  yanchor: YANCHOR_TOP
+  parent: "characters"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -50.0
+    y: -9.0
+  }
+  type: TYPE_BOX
+  texture: "game/blue_player_idle"
+  id: "blue_player"
+  yanchor: YANCHOR_TOP
+  parent: "characters"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 50.0
+    y: -9.0
+  }
+  type: TYPE_BOX
+  texture: "game/locked"
+  id: "grey_player"
+  yanchor: YANCHOR_TOP
+  parent: "characters"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 150.0
+    y: -9.0
+  }
+  type: TYPE_BOX
+  texture: "game/locked"
+  id: "red_player"
+  yanchor: YANCHOR_TOP
+  parent: "characters"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 71.0
+  }
+  scale {
+    x: 0.75
+    y: 0.75
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "SELECT CHARACTER"
+  font: "game"
+  id: "select"
+  yanchor: YANCHOR_TOP
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  parent: "characters"
+  inherit_alpha: true
+  text_tracking: 0.1
+}
+nodes {
+  position {
+    y: 28.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "LET\'S GO!"
+  font: "game"
+  id: "start"
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  parent: "menu"
+  inherit_alpha: true
+  text_tracking: 0.1
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
