@@ -1,0 +1,52 @@
+local game_mode = hash("unselected")
+
+local function load_menu(self)
+	msg.post("go#mainmenu", "load")
+end
+
+local function unload_menu(self)
+	msg.post("go#mainmenu","unload")
+end
+
+local function load_main(self)
+	msg.post("go#main", "load")
+end
+
+local function unload_main(self)
+	msg.post("go#main", "unload")
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	load_menu(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_casual") then
+		unload_menu(self)
+		load_main(self)
+		game_mode = hash("casual")
+	elseif message_id == hash("start_timed") then
+		unload_menu(self)
+		load_main(self)
+		game_mode = hash("timed")
+	elseif message_id == hash("start_challenge") then
+		unload_menu(self)
+		load_main(self)
+		game_mode = hash("challenge")
+	elseif message_id == hash("proxy_loaded") then
+		-- Enable only after the proxy reports its collection has finished
+		-- loading. Posting "enable" right after "load" races on HTML5
+		-- (assets stream in async) and silently leaves the collection
+		-- inactive, producing a blank clear-color screen.
+		msg.post(sender, "enable")
+		if sender.fragment == hash("main") and game_mode ~= hash("unselected") then
+			msg.post("main:/factories#startgame", game_mode)
+			msg.post("main:/score_gui#main", game_mode)
+		end
+	elseif message_id == hash("goto_menu") then
+		unload_main(self)
+		load_menu(self)
+		game_mode = hash("unselected")
+	end
+end

@@ -1,0 +1,54 @@
+[bootstrap]
+main_collection = /loader/loader.collectionc
+render = /orthographic/render/orthographic.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 1920
+height = 1080
+dynamic_orientation = 1
+display_profiles = /builtins/render/default.display_profilesc
+high_dpi = 1
+
+[android]
+input_method = HiddenInputField
+
+[native_extension]
+app_manifest = /box2d_v3.appmanifest
+
+[project]
+title = Kabocha_Game
+dependencies#0 = https://github.com/britzl/defold-orthographic/archive/refs/tags/3.2.1.zip
+dependencies#1 = https://github.com/Insality/druid/archive/refs/tags/0.11.0.zip
+
+[physics]
+gravity_y = -980.0
+use_fixed_timestep = 1
+max_collisions = 4096
+max_contacts = 0
+max_collision_object_count = 384
+scale = 0.3
+world_count = 3
+trigger_overlap_capacity = 8
+
+[box2d]
+sub_step_count = 8
+
+[engine]
+fixed_update_frequency = 240
+
+[render]
+clear_color_red = 0.439
+clear_color_green = 0.5725
+clear_color_blue = 0.75
+clear_color_alpha = 1.0
+
+[sound]
+max_component_count = 32
+
+[particle_fx]
+max_count = 256
+max_emitter_count = 256
+
