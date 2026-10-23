@@ -1,0 +1,782 @@
+## ============================================================
+## horizOn SDK - Authentication Manager
+## ============================================================
+## Handles user authentication: signup, signin, email verification,
+## password reset, name change, and session management.
+## ============================================================
+class_name HorizonAuth
+extends RefCounted
+
+## Signals
+signal signup_completed(user: HorizonUserData)
+signal signup_failed(error: String)
+signal signin_completed(user: HorizonUserData)
+signal signin_failed(error: String)
+signal signout_completed()
+signal auth_check_completed(is_valid: bool)
+signal email_verified()
+signal password_reset_requested()
+signal password_reset_completed()
+signal name_changed(new_name: String)
+
+## Authentication types
+enum AuthType {
+	ANONYMOUS,
+	EMAIL,
+	GOOGLE,
+	APPLE
+}
+
+## Apple-specific error codes (passed through verbatim from the server)
+const ERROR_INVALID_APPLE_TOKEN := "INVALID_APPLE_TOKEN"
+const ERROR_APPLE_NOT_CONFIGURED := "APPLE_NOT_CONFIGURED"
+const ERROR_APPLE_EMAIL_CONFLICT := "APPLE_EMAIL_CONFLICT"
+const ERROR_USER_ALREADY_EXISTS := "USER_ALREADY_EXISTS"
+const ERROR_USER_NOT_FOUND := "USER_NOT_FOUND"
+const ERROR_NETWORK_ERROR := "NETWORK_ERROR"
+
+## Name of the optional iOS singleton exposed by the classic .gdip plugin
+const APPLE_SIGN_IN_SINGLETON := "HorizonAppleSignIn"
+
+## Endpoints
+const ENDPOINT_SIGNUP := "/api/v1/app/user-management/signup"
+const ENDPOINT_SIGNIN := "/api/v1/app/user-management/signin"
+
+## Cache keys for persistent storage
+const CACHE_KEY_USER_SESSION := "horizOn_UserSession"
+const CACHE_KEY_ANONYMOUS_TOKEN := "horizOn_AnonymousToken"
+
+## Dependencies
+var _http: HorizonHttpClient
+var _logger: HorizonLogger
+var _currentUser: HorizonUserData
+
+
+## Initialize the auth manager.
+## @param http HTTP client instance
+## @param logger Logger instance
+func initialize(http: HorizonHttpClient, logger: HorizonLogger) -> void:
+	_http = http
+	_logger = logger
+	_currentUser = HorizonUserData.new()
+
+	# Try to load cached session
+	_loadCachedSession()
+	_logger.info("Auth manager initialized")
+
+
+## Get the current authenticated user.
+## @return Current user data (may be empty if not signed in)
+func getCurrentUser() -> HorizonUserData:
+	return _currentUser
+
+
+## Check if a user is currently signed in.
+## @return True if user is signed in with valid session
+func isSignedIn() -> bool:
+	return _currentUser != null and _currentUser.isValid()
+
+
+# ===== SIGN UP =====
+
+## Sign up with anonymous authentication.
+## The server issues the anonymous token: the request carries no token, the
+## SDK stores the token from the response (for restoreAnonymousSession()) and
+## signs in with it when the signup response carries no access token.
+## @param display_name Optional display name
+## @param anonymous_token Deprecated and ignored (servers since v1.64.7 reject a
+##        client token with 400). Use signInAnonymous() for an existing token.
+## @return True once the new anonymous user has a session
+func signUpAnonymous(display_name: String = "", anonymous_token: String = "") -> bool:
+	if isSignedIn():
+		_logger.warning("User is already signed in. Sign out first.")
+		return false
+
+	if not anonymous_token.is_empty():
+		_logger.warning("signUpAnonymous: anonymous_token is deprecated and ignored, the server issues the token. Use signInAnonymous() for an existing token.")
+
+	var request := {"type": "ANONYMOUS"}
+	if not display_name.is_empty():
+		request["username"] = display_name
+
+	var response := await _http.postAsync(ENDPOINT_SIGNUP, request)
+	if not _isSignUpSuccess(response):
+		return _signUpFailed(response)
+
+	var data: Dictionary = response.data
+	var issuedToken := _stringOf(data.get("anonymousToken"))
+	if issuedToken.is_empty():
+		_logger.error("Anonymous signup did not return a token")
+		signup_failed.emit("Anonymous signup did not return a token")
+		return false
+
+	# Store the token first: after a failed sign in below the account still
+	# exists and restoreAnonymousSession() can open a session for it.
+	_saveAnonymousToken(issuedToken)
+
+	if not _stringOf(data.get("accessToken")).is_empty():
+		var user := data.duplicate()
+		user["isAnonymous"] = true
+		_updateCurrentUser(user)
+		_cacheSession()
+		_logger.info("User signed up successfully: %s" % data.get("userId"))
+		signup_completed.emit(_currentUser)
+		return true
+
+	_logger.info("Anonymous user created: %s, signing in" % data.get("userId"))
+	if not await _signIn({"type": "ANONYMOUS", "anonymousToken": issuedToken}):
+		signup_failed.emit("Anonymous sign in after signup failed")
+		return false
+
+	signup_completed.emit(_currentUser)
+	return true
+
+
+## Sign up with email and password.
+## @param email User's email address
+## @param password User's password (4-32 characters)
+## @param username Optional display name
+## @return True if signup succeeded
+func signUpEmail(email: String, password: String, username: String = "") -> bool:
+	if email.is_empty() or password.is_empty():
+		_logger.error("Email and password are required")
+		signup_failed.emit("Email and password are required")
+		return false
+
+	var request := {
+		"type": "EMAIL",
+		"email": email,
+		"password": password
+	}
+
+	if not username.is_empty():
+		request["username"] = username
+
+	return await _signUp(request)
+
+
+## Sign up with Google authentication.
+## @param google_authorization_code Google OAuth authorization code
+## @param google_redirect_uri The redirect URI used for OAuth (must match the one used to obtain the code)
+## @param username Optional display name
+## @return True if signup succeeded
+func signUpGoogle(google_authorization_code: String, google_redirect_uri: String, username: String = "") -> bool:
+	if google_authorization_code.is_empty():
+		_logger.error("Google authorization code is required")
+		signup_failed.emit("Google authorization code is required")
+		return false
+
+	if google_redirect_uri.is_empty():
+		_logger.error("Google redirect URI is required")
+		signup_failed.emit("Google redirect URI is required")
+		return false
+
+	var request := {
+		"type": "GOOGLE",
+		"googleAuthorizationCode": google_authorization_code,
+		"googleRedirectUri": google_redirect_uri
+	}
+
+	if not username.is_empty():
+		request["username"] = username
+
+	return await _signUp(request)
+
+
+## Sign up with Apple Sign-In using a pre-obtained identity token.
+## Use this overload if the game already integrates its own Apple Sign-In plugin.
+## @param identity_token JWT returned by Apple after user consent
+## @param first_name Optional - Apple sends profile data only on the very first login
+## @param last_name Optional - Apple sends profile data only on the very first login
+## @param username Optional SDK-side username override
+## @return True if signup succeeded
+func signUpApple(identity_token: String, first_name: String = "", last_name: String = "", username: String = "") -> bool:
+	if identity_token.is_empty():
+		_logger.error("Apple identity token is required")
+		signup_failed.emit(ERROR_INVALID_APPLE_TOKEN)
+		return false
+
+	var request := {
+		"type": "APPLE",
+		"appleIdentityToken": identity_token
+	}
+
+	if not first_name.is_empty():
+		request["appleFirstName"] = first_name
+	if not last_name.is_empty():
+		request["appleLastName"] = last_name
+	if not username.is_empty():
+		request["username"] = username
+
+	return await _signUp(request)
+
+
+## Internal signup implementation.
+func _signUp(request: Dictionary) -> bool:
+	var response := await _http.postAsync(ENDPOINT_SIGNUP, request)
+
+	if _isSignUpSuccess(response):
+		var data: Dictionary = response.data
+		_updateCurrentUser(data)
+		_cacheSession()
+		_logger.info("User signed up successfully: %s" % data.get("userId"))
+		signup_completed.emit(_currentUser)
+		return true
+
+	return _signUpFailed(response)
+
+
+## Check whether a signup response carries a created user.
+func _isSignUpSuccess(response: HorizonNetworkResponse) -> bool:
+	return response.isSuccess and response.data is Dictionary \
+		and not _stringOf(response.data.get("userId")).is_empty()
+
+
+## Log and emit a failed signup.
+## @return Always false
+func _signUpFailed(response: HorizonNetworkResponse) -> bool:
+	var errorMsg := response.error
+	if errorMsg.is_empty() and response.data is Dictionary:
+		errorMsg = response.data.get("message", "Signup failed")
+
+	if response.statusCode == 409:
+		errorMsg = "User already exists. Try signing in instead."
+
+	_logger.error("Signup failed: %s" % errorMsg)
+	signup_failed.emit(errorMsg)
+	return false
+
+
+# ===== SIGN IN =====
+
+## Sign in with email and password.
+## @param email User's email address
+## @param password User's password
+## @return True if signin succeeded
+func signInEmail(email: String, password: String) -> bool:
+	if email.is_empty() or password.is_empty():
+		_logger.error("Email and password are required")
+		signin_failed.emit("Email and password are required")
+		return false
+
+	var request := {
+		"type": "EMAIL",
+		"email": email,
+		"password": password
+	}
+
+	return await _signIn(request)
+
+
+## Sign in with anonymous token.
+## @param anonymous_token The anonymous token from previous session
+## @return True if signin succeeded
+func signInAnonymous(anonymous_token: String) -> bool:
+	if anonymous_token.is_empty():
+		_logger.error("Anonymous token is required for sign in")
+		signin_failed.emit("Anonymous token is required")
+		return false
+
+	var request := {
+		"type": "ANONYMOUS",
+		"anonymousToken": anonymous_token
+	}
+
+	return await _signIn(request)
+
+
+## Sign in with Google authentication.
+## @param google_authorization_code Google OAuth authorization code
+## @param google_redirect_uri The redirect URI used for OAuth (must match the one used to obtain the code)
+## @return True if signin succeeded
+func signInGoogle(google_authorization_code: String, google_redirect_uri: String) -> bool:
+	if google_authorization_code.is_empty():
+		_logger.error("Google authorization code is required")
+		signin_failed.emit("Google authorization code is required")
+		return false
+
+	if google_redirect_uri.is_empty():
+		_logger.error("Google redirect URI is required")
+		signin_failed.emit("Google redirect URI is required")
+		return false
+
+	var request := {
+		"type": "GOOGLE",
+		"googleAuthorizationCode": google_authorization_code,
+		"googleRedirectUri": google_redirect_uri
+	}
+
+	return await _signIn(request)
+
+
+## Sign in an existing Apple-registered user with a pre-obtained identity token.
+## @param identity_token JWT returned by Apple after user consent
+## @return True if signin succeeded
+func signInApple(identity_token: String) -> bool:
+	if identity_token.is_empty():
+		_logger.error("Apple identity token is required")
+		signin_failed.emit(ERROR_INVALID_APPLE_TOKEN)
+		return false
+
+	var request := {
+		"type": "APPLE",
+		"appleIdentityToken": identity_token
+	}
+
+	return await _signIn(request)
+
+
+## Try to restore anonymous session from cached token.
+## @return True if session was restored
+func restoreAnonymousSession() -> bool:
+	var cachedToken := getCachedAnonymousToken()
+
+	if cachedToken.is_empty():
+		_logger.warning("No cached anonymous token found")
+		return false
+	if cachedToken.length() > 32:
+		_logger.warning("Stored anonymous identity needs reconciliation; original token retained")
+		signin_failed.emit("Stored anonymous identity needs reconciliation")
+		return false
+
+	_logger.info("Attempting to restore anonymous session...")
+	return await signInAnonymous(cachedToken)
+
+
+## Internal signin implementation.
+func _signIn(request: Dictionary) -> bool:
+	var response := await _http.postAsync(ENDPOINT_SIGNIN, request)
+
+	if response.isSuccess and response.data is Dictionary:
+		var data: Dictionary = response.data
+		var authStatus := data.get("authStatus", "")
+
+		if authStatus == HorizonErrorCodes.AUTH_STATUS_AUTHENTICATED:
+			if request.get("type", "") == "ANONYMOUS":
+				# The signin response carries neither isAnonymous nor the token:
+				# keep the token that was sent, so it stays stored for later sign ins.
+				data = data.duplicate()
+				data["isAnonymous"] = true
+				if _stringOf(data.get("anonymousToken")).is_empty():
+					data["anonymousToken"] = request.get("anonymousToken", "")
+			_updateCurrentUser(data)
+			_cacheSession()
+			_logger.info("User signed in successfully: %s" % data.get("userId"))
+			signin_completed.emit(_currentUser)
+			return true
+
+	var errorMsg := response.error
+	if errorMsg.is_empty() and response.data is Dictionary:
+		errorMsg = response.data.get("message", "Signin failed")
+
+	_logger.error("Signin failed: %s" % errorMsg)
+	signin_failed.emit(errorMsg)
+	return false
+
+
+# ===== CHECK AUTH =====
+
+## Check if the current session token is still valid.
+## @return True if session is valid
+func checkAuth() -> bool:
+	if not isSignedIn():
+		_logger.warning("No user signed in")
+		auth_check_completed.emit(false)
+		return false
+
+	var request := {
+		"userId": _currentUser.userId,
+		"sessionToken": _currentUser.accessToken
+	}
+
+	var response := await _http.postAsync("/api/v1/app/user-management/check-auth", request)
+
+	if response.isSuccess and response.data is Dictionary:
+		var isAuthenticated: bool = response.data.get("isAuthenticated", false)
+		if isAuthenticated:
+			_logger.info("Session token is valid")
+			auth_check_completed.emit(true)
+			return true
+
+	_logger.warning("Session token is invalid or expired")
+	signOut() # Clear invalid session
+	auth_check_completed.emit(false)
+	return false
+
+
+# ===== EMAIL VERIFICATION =====
+
+## Verify email with verification token.
+## @param token Verification token from email
+## @return True if verification succeeded
+func verifyEmail(token: String) -> bool:
+	if token.is_empty():
+		_logger.error("Verification token is required")
+		return false
+
+	var request := {"token": token}
+	var response := await _http.postAsync("/api/v1/app/user-management/verify-email", request)
+
+	if response.isSuccess:
+		if _currentUser != null:
+			_currentUser.isEmailVerified = true
+			_cacheSession()
+		_logger.info("Email verified successfully")
+		email_verified.emit()
+		return true
+
+	_logger.error("Email verification failed: %s" % response.error)
+	return false
+
+
+# ===== PASSWORD RESET =====
+
+## Request a password reset email.
+## @param email User's email address
+## @return True if request succeeded (always returns true to prevent email enumeration)
+func forgotPassword(email: String) -> bool:
+	if email.is_empty():
+		_logger.error("Email is required")
+		return false
+
+	var request := {"email": email}
+	var response := await _http.postAsync("/api/v1/app/user-management/forgot-password", request)
+
+	if response.isSuccess:
+		_logger.info("Password reset email sent")
+		password_reset_requested.emit()
+		return true
+
+	_logger.error("Password reset request failed: %s" % response.error)
+	return false
+
+
+## Reset password with reset token.
+## @param token Reset token from email
+## @param new_password New password (4-128 characters)
+## @return True if reset succeeded
+func resetPassword(token: String, new_password: String) -> bool:
+	if token.is_empty() or new_password.is_empty():
+		_logger.error("Token and new password are required")
+		return false
+
+	var request := {
+		"token": token,
+		"newPassword": new_password
+	}
+
+	var response := await _http.postAsync("/api/v1/app/user-management/reset-password", request)
+
+	if response.isSuccess:
+		_logger.info("Password reset successful")
+		password_reset_completed.emit()
+		return true
+
+	_logger.error("Password reset failed: %s" % response.error)
+	return false
+
+
+# ===== CHANGE NAME =====
+
+## Change the display name of the current user.
+## @param new_name New display name (1-50 characters)
+## @return True if name change succeeded
+func changeName(new_name: String) -> bool:
+	if not isSignedIn():
+		_logger.error("User must be signed in to change name")
+		return false
+
+	if new_name.is_empty():
+		_logger.error("New name is required")
+		return false
+
+	var request := {
+		"userId": _currentUser.userId,
+		"sessionToken": _currentUser.accessToken,
+		"newName": new_name
+	}
+
+	var response := await _http.postAsync("/api/v1/app/user-management/change-name", request)
+
+	if response.isSuccess and response.data is Dictionary:
+		var isAuthenticated: bool = response.data.get("isAuthenticated", false)
+		if isAuthenticated:
+			_currentUser.displayName = new_name
+			_cacheSession()
+			_logger.info("Display name changed to: %s" % new_name)
+			name_changed.emit(new_name)
+			return true
+
+	_logger.error("Name change failed: %s" % response.error)
+	return false
+
+
+# ===== SIGN OUT =====
+
+## Sign out the current user.
+## @param keep_anonymous_token If true, preserves anonymous token for future sign-in
+func signOut(keep_anonymous_token: bool = true) -> void:
+	# Save anonymous token before clearing if needed
+	var anonymousTokenToKeep := ""
+	if keep_anonymous_token and _currentUser != null and _currentUser.isAnonymous:
+		if not _currentUser.anonymousToken.is_empty():
+			anonymousTokenToKeep = _currentUser.anonymousToken
+			_logger.info("Preserving anonymous token for future sign-in")
+
+	_currentUser.clear()
+	_clearCachedSession()
+
+	_http.clearSessionToken()
+
+	# Restore anonymous token to cache if keeping it
+	if not anonymousTokenToKeep.is_empty():
+		_saveAnonymousToken(anonymousTokenToKeep)
+
+	_logger.info("User signed out")
+	signout_completed.emit()
+
+
+# ===== HELPER METHODS =====
+
+## Update current user data from auth response.
+func _updateCurrentUser(response: Dictionary) -> void:
+	_currentUser.updateFromAuthResponse(response)
+
+	# Set session token in HTTP client
+	if not _currentUser.accessToken.is_empty():
+		_http.setSessionToken(_currentUser.accessToken)
+
+	# Save anonymous token for future sign-in
+	if _currentUser.isAnonymous and not _currentUser.anonymousToken.is_empty():
+		_saveAnonymousToken(_currentUser.anonymousToken)
+
+
+## A JSON string value, "" for null or other types.
+func _stringOf(value: Variant) -> String:
+	return value if value is String else ""
+
+
+## Cache the current session to persistent storage.
+func _cacheSession() -> void:
+	if _currentUser != null and _currentUser.isValid():
+		var json := JSON.stringify(_currentUser.toDict())
+		_saveToStorage(CACHE_KEY_USER_SESSION, json)
+
+
+## Load cached session from persistent storage.
+func _loadCachedSession() -> void:
+	var json := _loadFromStorage(CACHE_KEY_USER_SESSION)
+	if not json.is_empty():
+		var parsed := JSON.parse_string(json)
+		if parsed is Dictionary:
+			_currentUser = HorizonUserData.fromDict(parsed)
+			if _currentUser.isValid():
+				_http.setSessionToken(_currentUser.accessToken)
+				_logger.info("Cached session loaded")
+				# Fire and forget auth check
+				checkAuth()
+			else:
+				_logger.warning("Cached session is invalid")
+
+
+## Clear cached session from persistent storage.
+func _clearCachedSession() -> void:
+	_deleteFromStorage(CACHE_KEY_USER_SESSION)
+
+
+## Save anonymous token for future sign-in.
+func _saveAnonymousToken(token: String) -> void:
+	if not token.is_empty():
+		_saveToStorage(CACHE_KEY_ANONYMOUS_TOKEN, token)
+		_logger.debug("Anonymous token saved")
+
+
+## Get cached anonymous token.
+## @return The cached token, or empty string if not found
+func getCachedAnonymousToken() -> String:
+	var token := _loadFromStorage(CACHE_KEY_ANONYMOUS_TOKEN)
+	# Presence is identity evidence, even when an older token cannot be restored.
+	# Reading it must never erase the only link to existing player progress.
+	return token
+
+
+## Clear cached anonymous token.
+func clearAnonymousToken() -> void:
+	_deleteFromStorage(CACHE_KEY_ANONYMOUS_TOKEN)
+	_logger.info("Anonymous token cleared from cache")
+
+
+## Check if there is a cached anonymous token.
+## @return True if anonymous token is cached
+func hasCachedAnonymousToken() -> bool:
+	return not getCachedAnonymousToken().is_empty()
+
+
+# ===== STORAGE HELPERS =====
+
+## Save data to persistent storage using a config file.
+func _saveToStorage(key: String, value: String) -> void:
+	var config := ConfigFile.new()
+	var path := "user://horizon_cache.cfg"
+	config.load(path) # Load existing data if any
+	config.set_value("cache", key, value)
+	config.save(path)
+
+
+## Load data from persistent storage.
+func _loadFromStorage(key: String) -> String:
+	var config := ConfigFile.new()
+	var path := "user://horizon_cache.cfg"
+	if config.load(path) == OK:
+		return config.get_value("cache", key, "")
+	return ""
+
+
+## Delete data from persistent storage.
+func _deleteFromStorage(key: String) -> void:
+	var config := ConfigFile.new()
+	var path := "user://horizon_cache.cfg"
+	if config.load(path) == OK:
+		if config.has_section_key("cache", key):
+			config.erase_section_key("cache", key)
+			config.save(path)
+
+
+# ===== APPLE SIGN-IN CONVENIENCE FLOW =====
+
+## End-to-end convenience flow: opens the native Apple Sign-In sheet on iOS, or a
+## system-browser OAuth redirect on every other platform, harvests the Apple
+## `identityToken`, then attempts `signInApple`. Falls through to `signUpApple`
+## with the Apple first-login profile fields when the server responds
+## `USER_NOT_FOUND`. Reuses the existing `signin_*`/`signup_*` signal pairs.
+##
+## @param services_id Optional Apple Services ID for the OAuth fallback. If empty
+##     the SDK reads `Horizon.getConfig().apple_service_id` if available.
+## @param redirect_uri Optional redirect URI for the OAuth fallback. If empty, the
+##     SDK uses the platform default configured on the API key (set in the dashboard).
+## @return True if the user is authenticated when the flow finishes.
+func sign_in_with_apple(services_id: String = "", redirect_uri: String = "") -> bool:
+	var token_payload := await _harvestAppleIdentityToken(services_id, redirect_uri)
+	if token_payload.is_empty() or not token_payload.get("ok", false):
+		var code: String = token_payload.get("error_code", ERROR_INVALID_APPLE_TOKEN) if not token_payload.is_empty() else ERROR_INVALID_APPLE_TOKEN
+		_logger.error("Apple Sign-In flow aborted: %s" % code)
+		signin_failed.emit(code)
+		return false
+
+	var identity_token: String = token_payload.get("identity_token", "")
+	var first_name: String = token_payload.get("first_name", "")
+	var last_name: String = token_payload.get("last_name", "")
+
+	# Try sign-in first; fall through to sign-up on USER_NOT_FOUND.
+	var signed_in := await signInApple(identity_token)
+	if signed_in:
+		return true
+
+	# Inspect last response on the auth manager - server returns USER_NOT_FOUND
+	# inside the failure signal payload, which the caller may have already consumed.
+	# We replay sign-up unconditionally because Apple JWTs are single-use; if the
+	# server now rejects it we surface the real error.
+	return await signUpApple(identity_token, first_name, last_name)
+
+
+## Detect the Apple Sign-In platform path and return the harvested token payload.
+## Result dictionary shape (as Variant via await):
+##   { "ok": true,  "identity_token": String, "first_name": String, "last_name": String }
+##   { "ok": false, "error_code": String }
+func _harvestAppleIdentityToken(services_id: String, redirect_uri: String) -> Dictionary:
+	var os_name := OS.get_name()
+
+	if os_name == "iOS" and Engine.has_singleton(APPLE_SIGN_IN_SINGLETON):
+		return await _harvestAppleIdentityTokenIOS()
+
+	# Non-iOS - run the system-browser OAuth fallback.
+	return _harvestAppleIdentityTokenWeb(os_name, services_id, redirect_uri)
+
+
+## iOS native path - delegates to the .gdip plugin. Wraps the plugin signal in a
+## dictionary so the caller doesn't need to know about Engine.get_singleton().
+func _harvestAppleIdentityTokenIOS() -> Dictionary:
+	var plugin: Object = Engine.get_singleton(APPLE_SIGN_IN_SINGLETON)
+	if plugin == null:
+		return {"ok": false, "error_code": ERROR_APPLE_NOT_CONFIGURED}
+
+	# Generate a cryptographically reasonable nonce. The plugin SHA-256s this and
+	# passes the hash to Apple; Apple echoes the hash back in the JWT `nonce` claim
+	# and the backend verifier checks it (see AppleIdTokenVerifier.kt).
+	var nonce_bytes := PackedByteArray()
+	for i in 32:
+		nonce_bytes.append(randi() % 256)
+	var nonce := nonce_bytes.hex_encode()
+
+	# Plugin contract: emits `apple_sign_in_completed(identity_token, first_name, last_name, error)`.
+	if not plugin.has_signal("apple_sign_in_completed"):
+		_logger.error("HorizonAppleSignIn plugin is missing the expected signal")
+		return {"ok": false, "error_code": ERROR_APPLE_NOT_CONFIGURED}
+
+	# Bridge the multi-arg native signal into a single-arg internal signal so we
+	# can await it cleanly. The native plugin emits four args; we re-emit them as
+	# a Dictionary on the temporary `_apple_relay` signal.
+	var relay := _AppleSignInRelay.new()
+	plugin.connect("apple_sign_in_completed", Callable(relay, "_on_apple_completed"))
+	plugin.call("start_sign_in", nonce)
+	var result: Dictionary = await relay.completed
+	plugin.disconnect("apple_sign_in_completed", Callable(relay, "_on_apple_completed"))
+
+	if not result.get("error", "").is_empty():
+		return {"ok": false, "error_code": result.get("error", ERROR_INVALID_APPLE_TOKEN)}
+
+	return {
+		"ok": true,
+		"identity_token": result.get("identity_token", ""),
+		"first_name": result.get("first_name", ""),
+		"last_name": result.get("last_name", "")
+	}
+
+
+## Cross-platform fallback: launches the customer's Apple Services-ID OAuth flow
+## via the system browser. The customer's app is responsible for catching the
+## redirect (deep link on Android, custom URL handler on Desktop, JS bridge on
+## Web) and feeding the resulting identity token back via `signInApple`.
+##
+## We do NOT spawn a localhost listener inside the SDK because that requires
+## per-platform plumbing the SDK can't safely own. The convenience flow simply
+## opens the URL and reports failure - callers wanting a fully-automated desktop
+## flow should call `signInApple(token)` once they have harvested the token.
+func _harvestAppleIdentityTokenWeb(os_name: String, services_id: String, redirect_uri: String) -> Dictionary:
+	if services_id.is_empty():
+		_logger.warning("sign_in_with_apple() called on %s without a Services ID; cannot drive OAuth fallback" % os_name)
+		return {"ok": false, "error_code": ERROR_APPLE_NOT_CONFIGURED}
+
+	var url := "https://appleid.apple.com/auth/authorize"
+	url += "?response_type=code%20id_token"
+	url += "&response_mode=form_post"
+	url += "&scope=name%20email"
+	url += "&client_id=" + services_id.uri_encode()
+	if not redirect_uri.is_empty():
+		url += "&redirect_uri=" + redirect_uri.uri_encode()
+
+	var err := OS.shell_open(url)
+	if err != OK:
+		_logger.error("Failed to open Apple OAuth URL (error %d)" % err)
+		return {"ok": false, "error_code": ERROR_NETWORK_ERROR}
+
+	_logger.info("Opened Apple OAuth URL - waiting for caller to provide identityToken via signInApple()")
+	# The SDK has no way to know when the user finishes the redirect. The caller
+	# must complete the flow by calling `signInApple(token)` once it has the JWT.
+	# We surface a clear error code instead of blocking forever.
+	return {"ok": false, "error_code": ERROR_APPLE_NOT_CONFIGURED}
+
+
+## Internal helper: relays the multi-arg native `apple_sign_in_completed` signal
+## into a single-arg `completed(result: Dictionary)` signal so it can be awaited.
+class _AppleSignInRelay extends RefCounted:
+	signal completed(result: Dictionary)
+
+	func _on_apple_completed(identity_token: String, first_name: String,
+			last_name: String, error: String) -> void:
+		completed.emit({
+			"identity_token": identity_token,
+			"first_name": first_name,
+			"last_name": last_name,
+			"error": error
+		})
