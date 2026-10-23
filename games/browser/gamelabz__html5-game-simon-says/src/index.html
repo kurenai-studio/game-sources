@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simon Says</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>🎵 Simon Says</h1>
+      <p class="tagline">Repeat the glowing sequence — each round adds one.</p>
+    </header>
+
+    <section class="hud" aria-label="Game statistics">
+      <div class="stat"><span class="stat-label">Round</span><span class="stat-value" id="round">0</span></div>
+      <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best">0</span></div>
+    </section>
+
+    <div class="stage">
+      <canvas id="game" width="360" height="360"></canvas>
+      <p class="message" id="message">Press Start and watch the sequence.</p>
+    </div>
+
+    <footer class="controls">
+      <button class="btn" id="start">Start</button>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
