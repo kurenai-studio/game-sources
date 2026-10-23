@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--C Sharp-->
+        <OutputType>Library</OutputType>
+        <TargetFrameworks>net6.0;netcoreapp3.1</TargetFrameworks>
+
+
+        <!--Nuget Config-->
+        <Version>1.0.0</Version>
+        <RootNamespace>LDtk</RootNamespace>
+
+        <!--Documentation-->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.0.1641" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+
+</Project>
