@@ -1,0 +1,111 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Item",
+"class": "BoatItem",
+"language": "GDScript",
+"path": "res://src/classes/items/boat_item.gd"
+}, {
+"base": "Item",
+"class": "HookItem",
+"language": "GDScript",
+"path": "res://src/classes/items/hook_item.gd"
+}, {
+"base": "Reference",
+"class": "Item",
+"language": "GDScript",
+"path": "res://src/classes/item.gd"
+}, {
+"base": "Area2D",
+"class": "LevelObject",
+"language": "GDScript",
+"path": "res://src/scenes/level/objects/level_object.gd"
+}, {
+"base": "Item",
+"class": "LineItem",
+"language": "GDScript",
+"path": "res://src/classes/items/line_item.gd"
+}, {
+"base": "Reference",
+"class": "Stage",
+"language": "GDScript",
+"path": "res://src/scenes/level/stages/stage.gd"
+}, {
+"base": "Item",
+"class": "UpgradeItem",
+"language": "GDScript",
+"path": "res://src/classes/items/upgrade_item.gd"
+} ]
+_global_script_class_icons={
+"BoatItem": "",
+"HookItem": "",
+"Item": "",
+"LevelObject": "",
+"LineItem": "",
+"Stage": "",
+"UpgradeItem": ""
+}
+
+[application]
+
+config/name="Wild-Fishing"
+run/main_scene="res://src/scenes/main_menu/main_menu.tscn"
+boot_splash/image="res://icon.splash.png"
+boot_splash/use_filter=false
+config/icon="res://icon.png"
+
+[autoload]
+
+Session="*res://src/session.gd"
+Theater="*res://src/scenes/theater/theater.tscn"
+Settings="*res://src/scenes/settings/settings.tscn"
+
+[display]
+
+window/stretch/mode="2d"
+window/stretch/aspect="keep"
+
+[gui]
+
+theme/custom="res://assets/themes/main.tres"
+theme/custom_font="res://assets/fonts/cave_story.tres"
+
+[input]
+
+game_start={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":32,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777221,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+ ]
+}
+game_move_left={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":65,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777231,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+ ]
+}
+game_move_right={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":68,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777233,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
+ ]
+}
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+quality/driver/driver_name="GLES2"
+vram_compression/import_etc=true
+vram_compression/import_etc2=false
+environment/default_environment="res://default_env.tres"
