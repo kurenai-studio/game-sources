@@ -1,0 +1,200 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://Scenes/Ground.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Scenes/Straight-track.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Scenes/Curved-track.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Assets/Models/Cars/RaceFuture/RaceFuture.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Scenes/UI.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Scripts/finish_lap_area.gd" type="Script" id=6]
+[ext_resource path="res://Scripts/race_future.gd" type="Script" id=7]
+[ext_resource path="res://Scripts/first_level.gd" type="Script" id=8]
+
+[sub_resource type="BoxShape" id=1]
+extents = Vector3( 3.1615, 1.28641, 1 )
+
+[node name="First-Level" type="Spatial"]
+script = ExtResource( 8 )
+
+[node name="Ground" parent="." instance=ExtResource( 1 )]
+
+[node name="Sun" type="DirectionalLight" parent="."]
+transform = Transform( 1, 0, 0, 0, -0.843401, 0.537285, 0, -0.537285, -0.843401, 0, 7.81737, 0 )
+shadow_enabled = true
+
+[node name="Car" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
+
+[node name="RaceFuture" parent="Car" groups=[
+"player",
+] instance=ExtResource( 4 )]
+script = ExtResource( 7 )
+
+[node name="Circuit" type="Spatial" parent="."]
+
+[node name="Curved-track" type="Spatial" parent="Circuit"]
+
+[node name="Curved-track" parent="Circuit/Curved-track" instance=ExtResource( 3 )]
+transform = Transform( -4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 6, 2, 50 )
+
+[node name="Curved-track2" parent="Circuit/Curved-track" instance=ExtResource( 3 )]
+transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 15, 2, 43 )
+
+[node name="Curved-track3" parent="Circuit/Curved-track" instance=ExtResource( 3 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2, -1 )
+
+[node name="Curved-track6" parent="Circuit/Curved-track" instance=ExtResource( 3 )]
+transform = Transform( -1.62921e-07, 0, -1, 0, 1, 0, 1, 0, -1.62921e-07, 8, 2, -8 )
+
+[node name="Straight-track" type="Spatial" parent="Circuit"]
+
+[node name="Straight-track " parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00236893, 0, 0.0153046 )
+
+[node name="Straight-track 2" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6 )
+
+[node name="Straight-track 4" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12 )
+
+[node name="Straight-track 3" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 18 )
+
+[node name="Straight-track 8" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 24 )
+
+[node name="Straight-track 7" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 30 )
+
+[node name="Straight-track 6" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 36 )
+
+[node name="Straight-track 5" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 42 )
+
+[node name="Straight-track 17" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0 )
+
+[node name="Straight-track 16" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6 )
+
+[node name="Straight-track 15" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 12 )
+
+[node name="Straight-track 14" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 18 )
+
+[node name="Straight-track 13" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 24 )
+
+[node name="Straight-track 12" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 30 )
+
+[node name="Straight-track 11" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 36 )
+
+[node name="Straight-track 10" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 42 )
+
+[node name="Straight-track 9" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 7, 0, 49 )
+
+[node name="Straight-track 18" parent="Circuit/Straight-track" instance=ExtResource( 2 )]
+transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 7, 0, -7 )
+
+[node name="FinishLapArea" type="Area" parent="."]
+script = ExtResource( 6 )
+
+[node name="CollisionShape" type="CollisionShape" parent="FinishLapArea"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.24266 )
+shape = SubResource( 1 )
+
+[node name="UI" parent="." instance=ExtResource( 5 )]
+
+[node name="GUI" type="CanvasLayer" parent="."]
+
+[node name="TimeCounter" type="Label" parent="GUI" groups=[
+"time",
+]]
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_left = 40.0
+margin_top = -32.0
+margin_right = 68.0
+margin_bottom = -18.0
+rect_scale = Vector2( 2, 2 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_colors/font_outline_modulate = Color( 0, 0, 0, 1 )
+text = "00:00"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LapCounter" type="Label" parent="GUI" groups=[
+"laps",
+]]
+margin_left = 1152.0
+margin_top = 592.0
+margin_right = 1211.0
+margin_bottom = 606.0
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "Lap 0/3"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SpeedMeter" type="Label" parent="GUI" groups=[
+"velocity",
+]]
+margin_left = 1160.0
+margin_top = 624.0
+margin_right = 1205.0
+margin_bottom = 638.0
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "0 km/h"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="FinishWindow" type="Panel" parent="GUI" groups=[
+"panel",
+]]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -171.0
+margin_top = -256.0
+margin_right = 149.0
+margin_bottom = 20.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Content" type="Label" parent="GUI/FinishWindow"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -216.0
+margin_top = -66.0
+margin_right = 3.0
+margin_bottom = -1.0
+rect_scale = Vector2( 2, 2 )
+text = "You completed
+the first circuit.
+Press the restart
+button to continue."
+align = 1
+valign = 1
+
+[node name="Timer" type="Timer" parent="."]
+autostart = true
+[connection signal="body_entered" from="FinishLapArea" to="FinishLapArea" method="_on_Area_body_entered"]
+[connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]
