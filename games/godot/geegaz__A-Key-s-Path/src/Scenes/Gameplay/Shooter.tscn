@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Assets/Sprites/shooter_Sheet.png" type="Texture" id=1]
+[ext_resource path="res://Scripts/Gameplay/Shooter.gd" type="Script" id=2]
+[ext_resource path="res://Scripts/Utility/SpriteEffect.gd" type="Script" id=3]
+
+[node name="Shooter" type="Node2D" groups=[
+"Shooters",
+]]
+script = ExtResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="."]
+rotation = 1.57079
+texture = ExtResource( 1 )
+hframes = 8
+script = ExtResource( 3 )
+frames = 8
+looping = true
+
+[node name="VisibilityEnabler2D" type="VisibilityEnabler2D" parent="."]
+rect = Rect2( -8, -16, 256, 32 )
+
+[node name="Audio" type="AudioStreamPlayer2D" parent="."]
+max_distance = 200.0
+bus = "SFX"
