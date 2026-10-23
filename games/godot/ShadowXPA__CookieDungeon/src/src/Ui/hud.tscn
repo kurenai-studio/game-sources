@@ -1,0 +1,114 @@
+[gd_scene load_steps=5 format=3 uid="uid://b73al7f0jbd3a"]
+
+[ext_resource type="Script" uid="uid://c5d3pqmdm6iva" path="res://Scripts/Ui/Hud.cs" id="1_ba8qc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xn3su"]
+bg_color = Color(0.627451, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ba8qc"]
+bg_color = Color(0, 0, 0.627451, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2eodl"]
+bg_color = Color(0, 0.627451, 0, 1)
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_ba8qc")
+
+[node name="MainStats" type="MarginContainer" parent="."]
+layout_mode = 1
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainStats"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainStats/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Label" type="Label" parent="MainStats/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "HP:"
+
+[node name="CenterContainer" type="CenterContainer" parent="MainStats/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="HPBar" type="ProgressBar" parent="MainStats/VBoxContainer/HBoxContainer/CenterContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 10)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_xn3su")
+show_percentage = false
+
+[node name="Health" type="Label" parent="MainStats/VBoxContainer/HBoxContainer/CenterContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainStats/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Label" type="Label" parent="MainStats/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "MP:"
+
+[node name="CenterContainer" type="CenterContainer" parent="MainStats/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+
+[node name="MPBar" type="ProgressBar" parent="MainStats/VBoxContainer/HBoxContainer2/CenterContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 10)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_ba8qc")
+show_percentage = false
+
+[node name="Mana" type="Label" parent="MainStats/VBoxContainer/HBoxContainer2/CenterContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+
+[node name="Level" type="Label" parent="MainStats/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lv.: 0"
+
+[node name="Skills" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_right = 20.0
+grow_vertical = 0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Skills"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Skills/HBoxContainer"]
+layout_mode = 2
+
+[node name="Dash" type="Label" parent="Skills/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Dash"
+
+[node name="DashCooldown" type="ProgressBar" parent="Skills/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 10)
+layout_mode = 2
+theme_override_styles/fill = SubResource("StyleBoxFlat_2eodl")
+show_percentage = false
