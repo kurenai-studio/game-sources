@@ -1,0 +1,297 @@
+html, body {
+    scroll-behavior: smooth;
+    min-height: 100vh;
+}
+canvas { position: absolute; }
+#top {
+    position: static;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+#game {
+    display: block;
+    position: relative;
+    width: 100%;
+    flex-grow: 1;
+}
+
+/*
+ *  LOADING SCREEN
+ */
+#loading-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 1.5vh;
+    background-color: white;
+}
+#loading-text {
+    position: fixed;
+    bottom: 65%;
+    width: 100%;
+    color: white;
+    font: 6vh Serif;
+    text-align: center;
+    vertical-align: baseline;
+}
+#loading-wheel {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    height: 30vh;
+    width: 30vh;
+    transform: translate(-50%, 0);
+}
+#loading-wheel polyline {
+    stroke-width: 10;
+    fill: none;
+}
+.stroke-still { stroke: rgb(15, 18, 20); }
+.stroke-animation {
+    animation: stroke-spacing 1.2s ease-in, stroke-color 4.8s linear;
+    animation-iteration-count: infinite;
+    animation-delay: 0;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+    animation-mode-state: running;
+    transform-origin: center center;
+}
+@keyframes stroke-spacing {
+    0% { stroke-dasharray: 0 200; }
+    45% {
+        stroke-dashoffset: 0;
+        stroke-dasharray: 200 200;
+    }
+    90% {
+        stroke-dashoffset: -200;
+        stroke-dasharray: 200 200;
+    }
+    100% {
+        stroke-dashoffset: -200;
+        stroke-dasharray: 200 200;
+    }
+}
+@keyframes stroke-color {
+    0%  { stroke: #3498DB; }
+    24% { stroke: #643232; }
+    25% { stroke: #327864; }
+    49% { stroke: #327864; }
+    50% { stroke: #32326e; }
+    74% { stroke: #32326e; }
+    75% { stroke: #78325a; }
+    99% { stroke: #78325a; }
+}
+
+
+
+/*
+ *  GAME ELEMENTS
+ */
+#board { z-index: 1; }
+#tiles { z-index: 3; touch-action: none; }
+.score { z-index: 1; }
+#dice { z-index: 4; }
+
+
+
+/*
+ * STATUS
+ */
+#network-status {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 5;
+
+    padding: 0;
+    padding-left: 0.8em;
+
+    font-family: Nunito, sans-serif;
+    font-weight: 600;
+    font-size: 2em;
+    text-shadow: 0 0 10px rgb(0, 0, 0);
+    color: white;
+}
+#message-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15;
+
+    background-color: rgba(0, 0, 0, 0.25);
+}
+#message-container.below-controls {
+    z-index: 13;
+}
+#message {
+    display: block;
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translate(0, -100%);
+}
+#message-title, #message-subtitle {
+    font-family: Nunito, sans-serif;
+    font-weight: 600;
+    text-shadow: 0 0 20px rgb(0, 0, 0);
+    color: white;
+    text-align: center;
+}
+#message-title {
+    font-size: 9vh;
+}
+#message-subtitle {
+    font-size: 5vh;
+}
+#join-discord, #star-github {
+    display: block;
+    position: absolute;
+    width: 50vh;
+    top: 52.5%;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+#join-discord, #star-github {
+    filter: drop-shadow(3px 3px 10px rgba(0, 0, 0, 0.8));
+}
+#join-discord img, #star-github img {
+    width: 100%;
+}
+
+
+/*
+ *  WAITING FOR A FRIEND
+ */
+#waiting-for-friend {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+#waiting-for-friend * {
+    display: inline-block;
+    height: 8vmin;
+
+    color: black;
+    font-family: Nunito, sans-serif;
+    font-size: 7vmin;
+    line-height: 7vmin;
+    text-align: center;
+    vertical-align: middle;
+}
+#waiting-for-friend label {
+    display: block;
+    margin-bottom: 8vmin;
+
+    font-size: 8vmin;
+    color: white;
+}
+#waiting-for-friend button {
+    width: 20vmin;
+    cursor: pointer;
+    margin: 1em;
+    font-size: 5vmin;
+    line-height: 5vmin;
+}
+#waiting-for-friend .flex-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
+
+
+
+/*
+ *  OVERLAY
+ */
+#overlay {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9;
+
+    pointer-events: none;
+}
+
+
+
+/*
+ * CONTROLS
+ */
+#controls {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0.8vh;
+    margin-right: 1.2vh;
+    z-index: 14;
+
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+}
+#controls:hover {
+    opacity: 1;
+}
+#controls .control {
+    display: inline-block;
+    float: right;
+    cursor: pointer;
+}
+
+#controls img {
+    height: 6vh;
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out;
+}
+#controls img:hover {
+    opacity: 1;
+}
+
+/*
+ * WIN SCREEN
+ */
+#win {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.4);
+}
+#winner-message {
+    display: block;
+    width: 100%;
+    font-family: Nunito, sans-serif;
+    font-weight: 600;
+    text-shadow: 0 0 20px rgb(0, 0, 0);
+    color: white;
+    text-align: center;
+    font-size: 12vh;
+    margin-bottom: 5vh;
+}

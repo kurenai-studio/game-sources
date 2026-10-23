@@ -1,0 +1,168 @@
+@font-face {
+    font-family: 'Nunito';
+    src: url("/res/font_nunito.[ver].woff2") format('woff2'),
+         url("/res/font_nunito.[ver].woff") format('woff'),
+         url("/res/font_nunito.[ver].ttf") format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DuranGo';
+    src: url("/res/font_durango.[ver].woff2") format('woff2'),
+         url("/res/font_durango.[ver].woff") format('woff'),
+         url("/res/font_durango.[ver].ttf") format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+
+* {
+    padding: 0;
+    margin: 0;
+    font-family: DuranGo, serif;
+}
+
+body, html {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/** We change the base font-size depending on the user's screen size. **/
+html {
+    font-size:13px
+}
+@media (min-width: 320px) {
+    html {
+        font-size:calc( 13px + 3 * ((100vw - 320px) / 880));
+    }
+}
+@media (min-width: 1200px) {
+    html {
+        font-size:16px
+    }
+}
+
+body {
+    font-size: 0.8rem;
+}
+
+body,
+body.webp.gradient-background,
+body.webp .gradient-background,
+body.no-webp.gradient-background,
+body.no-webp .gradient-background {
+    background-color: rgb(32, 41, 48);
+    background-image: linear-gradient(to bottom right, rgb(28, 34, 40), rgb(41, 54, 64));
+}
+body.webp.wood-background,
+body.webp .wood-background {
+    background: rgb(32, 41, 48) url("/res/wood_background.[ver].webp") repeat;
+    background-size: 35vmin;
+}
+body.no-webp.wood-background,
+body.no-webp .wood-background {
+    background: rgb(32, 41, 48) url("/res/wood_background.[ver].png") repeat;
+    background-size: 35vmin;
+}
+body.webp.plain-wood-background,
+body.webp .plain-wood-background {
+    background: rgb(32, 41, 48) url("/res/plain_wood_background.[ver].webp") repeat;
+    background-size: 35vmin;
+}
+body.no-webp.plain-wood-background,
+body.no-webp .plain-wood-background {
+    background: rgb(32, 41, 48) url("/res/plain_wood_background.[ver].png") repeat;
+    background-size: 35vmin;
+}
+body.webp.simple-background,
+body.webp .simple-background {
+    background: rgb(32, 41, 48) url("/res/home_background.[ver].webp") repeat;
+    background-size: 35vmin;
+}
+body.no-webp.simple-background,
+body.no-webp .simple-background {
+    background: rgb(32, 41, 48) url("/res/home_background.[ver].png") repeat;
+    background-size: 35vmin;
+}
+img,
+#content img {
+    height: auto;
+    /* Stops showing the alt text if the image doesn't load */
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.highlight-shadow, .shadow {
+    filter: drop-shadow(6px 6px 12px rgba(0, 0, 0, 0.4));
+}
+.highlight-shadow:hover {
+    filter: drop-shadow(6px 6px 12px rgba(255, 255, 255, 0.1));
+}
+.text-shadow {
+    text-shadow: 6px 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.text-button {
+    display: inline;
+    border: 3px solid white;
+    border-radius: 1vh;
+    padding: 0.5vh 2vh;
+    margin-bottom: 3vh;
+
+    font-family: Nunito,sans-serif;
+    font-size: 5vh;
+    color: white;
+    cursor: pointer;
+
+    background-color: rgba(0, 0, 0, 0.8);
+    transition: background-color 0.1s ease-in-out;
+}
+.text-button:hover {
+    background-color: rgba(0, 0, 0, 1);
+    transition: background-color 0.1s ease-in-out;
+}
+.centre-text {
+    display: block;
+    text-align: center;
+}
+
+/**
+ * Standard elements.
+ */
+p {
+    margin-bottom: 33px;
+}
+a {
+    color: #3692e7;
+}
+a:hover {
+    color: #57aeff;
+}
+
+figure {
+    text-align: center;
+}
+figure img {
+    width: auto;
+    height: auto;
+    max-width: 40em;
+    max-height: 20em;
+}
+figure figcaption {
+    font-style: italic;
+    font-size: 0.9em;
+    margin-bottom: 2em;
+}
+
+/**
+ * Common text styling elements.
+ */
+.italics {
+    font-style: italic;
+    font-family: inherit;
+}

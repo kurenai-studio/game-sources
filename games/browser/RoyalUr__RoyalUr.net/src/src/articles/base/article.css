@@ -1,0 +1,178 @@
+iframe { /** IFrames are used for embedded YouTube videos. **/
+    max-width: 100%;
+    border: 0;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+#content,
+#call-to-action,
+#header,
+#footer {
+    display: block;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 900px;
+}
+#footer {
+    margin-top: auto;
+}
+#content,
+#call-to-action {
+    padding: 0.5em;
+    padding-left: 1.5em;
+    padding-right: 1.5em;
+    margin: 1em;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+
+    font-family: Nunito, sans-serif;
+    font-size: 1.4em;
+    background-color: rgb(32, 41, 48);
+    box-shadow: 0 0 10px 5px rgba(0,0,0,1);
+    color: white;
+}
+#content * {
+    font-family: Nunito, sans-serif;
+    font-size: 1em;
+    line-height: 1.6em;
+    text-decoration: none;
+}
+#content .article-links {
+    font-size: 0.9em;
+}
+#content .article-links .article-back-link {
+    display: inline-block;
+    float: left;
+    margin-bottom: 0.3em;
+}
+#content .article-links .twitter-share {
+    display: inline-block;
+    float: right;
+    margin-top: 0.2em;
+    margin-bottom: 0.3em;
+    font-size: 0.85em;
+}
+#content h1,
+#content h2,
+#content h3,
+#content hr {
+    clear: both;
+}
+#content h1 {
+    margin-top: 0.2em;
+    margin-bottom: 0.15em;
+    font-size: 1.5em;
+}
+#content h2 {
+    margin-top: 1em;
+    margin-bottom: 0.1em;
+    font-size: 1.5em;
+}
+#content h3 {
+    text-decoration: underline;
+    font-size: 1.2em;
+}
+#content h1,
+#content h1 a,
+#content h2,
+#content h2 a,
+#content h3,
+#content h3 a {
+    color: white;
+}
+#content h2,
+#content h2 a {
+    font-family: DuranGo, serif;
+}
+#content hr {
+    margin-bottom: 0.6em;
+}
+#content p {
+    font-size: 1em;
+    margin-bottom: 0.8em;
+}
+#content ul,
+#content ol {
+    list-style-position: outside;
+    margin-left: 1em;
+    margin-bottom: 0.8em;
+    font-size: 0.9em;
+}
+#content ul ul {
+    font-size: 1em;
+    margin-top: 0.2em;
+    margin-left: 2em;
+}
+#content ul li,
+#content ol li {
+    margin-bottom: 0.2em;
+}
+#content ul ul li {
+    margin-bottom: 0;
+}
+#content p.list-title {
+    margin-bottom: 0.3em;
+}
+#content strong {
+    text-decoration: underline;
+    margin-right: 0.75vh;
+}
+#content .list-of-links :not(h2) a {
+    display: block;
+    width: max-content;
+    font-size: 1.2em;
+    vertical-align: middle;
+}
+#content .list-of-links :not(h2) a img.icon {
+    display: inline;
+    width: 0.9em;
+    height: auto;
+}
+#content .list-of-links :not(h2) a span {
+    text-decoration: underline;
+}
+
+#content table {
+    margin-bottom: 1em;
+}
+#content table,
+#content th,
+#content td {
+    border: 1px solid white;
+    border-collapse: collapse;
+}
+#content th,
+#content td {
+    padding: 0.5em;
+}
+
+
+#call-to-action {
+    background: #202930;
+    text-align: center;
+    padding: 1em;
+    padding-top: 1.2em;
+    color: white;
+}
+#call-to-action h2 {
+    margin-bottom: 0.3em;
+}
+#call-to-action p {
+    font-family: Nunito, sans-serif;
+    margin-bottom: 0.8em;
+}
+#call-to-action .play canvas {
+    width: 40%;
+    min-width: 200px;
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.6));
+}
+#call-to-action .play:hover canvas {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+}

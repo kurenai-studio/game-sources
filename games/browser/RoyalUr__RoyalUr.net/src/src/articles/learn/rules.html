@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Rules | RoyalUr.net</title>
+
+    <meta name="og:title" content="Rules of The Royal Game of Ur" />
+    <meta name="twitter:title" content="Rules of The Royal Game of Ur" />
+    <meta property="twitter:url" content="https://royalur.net/rules/" />
+    <meta name="description" content="Learn how to play The Royal Game of Ur." />
+    <meta name="og:description" content="Learn how to play The Royal Game of Ur." />
+    <meta name="twitter:description" content="Learn how to play The Royal Game of Ur.">
+
+    <include src="src/common/head/head_boilerplate.html" />
+    <include src="src/common/head/matomo.html" />
+    <link rel="stylesheet" href="/rules/index.[ver].css" />
+</head>
+<body class="wood-background">
+    <include src="src/common/header/header.html" />
+    <article id="content">
+        <section class="article-links">
+            <p class="article-back-link"><a href="/learn">← Back to Learn</a></p>
+
+            <a class="twitter-share"
+               href="https://twitter.com/intent/tweet?url=https%3A%2F%2Froyalur.net%2Frules&via=royalur_net&text=Check%20out%20the%20rules%20of%20the%20oldest%20board%20game%20in%20the%20world%2C&hashtags=royalgameofur%2Cboardgames%2Chistory">
+                <include src="src/common/social/twitter_share.html" />
+            </a>
+        </section>
+
+        <section>
+            <h1>Rules of The Royal Game of Ur</h1>
+            <hr/>
+        </section>
+
+        <section>
+            <h2 id="goal"><a href="#goal">Goal</a></h2>
+            <p>Get all of your seven pieces around and off the board!</p>
+        </section>
+
+        <section>
+            <h2 id="rules"><a href="#rules">Rules</a></h2>
+            <p>
+                RoyalUr.net uses the path and rules popularised by
+                <a href="https://en.wikipedia.org/wiki/Irving_Finkel">Dr Irving Finkel</a>
+                and his analysis of the game. Dr Irving Finkel is the historian
+                who originally discovered the rules of The Royal Game of Ur in
+                2007 through his deciphering of an ancient cuneiform tablet.
+            </p>
+            <img class="shadow" data-src="/res/board_paths.[ver]" alt="Piece paths" />
+        </section>
+
+        <section>
+            <h2 id="how-to-play"><a href="#how-to-play">How to Play</a></h2>
+            <h3 id="roll-the-dice"><a href="#roll-the-dice">1. Roll the Dice.</a></h3>
+            <p>
+                Click on your dice to roll them. The value shown is how far you can
+                move one of your pieces!
+            </p>
+            <p>
+                You can find the value of the dice yourself by counting all dice
+                that have their marked corner up after rolling. Each die has 2
+                marked corners, and 2 unmarked corners, giving each dice a 50/50
+                chance of having their marked corner up.
+            </p>
+            <p>
+                You can learn more about the types of dice that have been used
+                for the game, the probabilities of rolls, and some strategy on
+                <a href="/dice">our dice page</a>.
+            </p>
+            <img class="shadow" data-src="/res/example_dice.[ver]" alt="Example Dice" />
+
+            <h3 id="move-a-piece"><a href="#move-a-piece">2. Move a Piece.</a></h3>
+            <p>
+                Moving your pieces is the core mechanic of Ur! You can move your pieces
+                by the value of the dice that you have rolled, and they follow the path
+                shown under <a href="rules">Rules</a> above.
+            </p>
+            <p>
+                If you can't move a piece, your turn will be skipped. If you can move
+                a piece, you must move it! You cannot choose to not move a piece.
+            </p>
+            <p>
+                On desktop, you can click a piece to move it. On mobile, you can drag
+                or double tap the piece you wish to move.
+            </p>
+            <img class="shadow" data-src="/res/example_move.[ver]" alt="Example Move" />
+
+            <h3 id="capture-pieces"><a href="#capture-pieces">3. Capture your opponent's pieces.</a></h3>
+            <p>
+                You can capture your opponent's pieces by moving your pieces
+                over their pieces in the middle row! Capturing your opponent's
+                pieces is a great way to stop them getting all of their pieces
+                off the board before you!
+            </p>
+            <p>
+                Beware though, the middle rosette is a safe tile!
+                You cannot take pieces on rosette tiles.
+            </p>
+        </section>
+
+        <section>
+            <h2 id="rosettes"><a href="#rosettes">Rosette Tiles</a></h2>
+            <p>
+                <strong>Extra Moves:</strong>
+                Moving your tiles onto rosette tiles gives you another move!
+            </p>
+            <p>
+                <strong>Safe:</strong>
+                Pieces on rosette tiles cannot be taken!
+            </p>
+            <img class="rosettes shadow" data-src="/res/board_rosettes.[ver]" alt="Rosette tiles" />
+        </section>
+
+        <section>
+            <h2 id="read-more"><a href="#read-more">Read More</a></h2>
+            <p>
+                You can read more about the different types of dice that have
+                been used for the Royal Game of Ur, the probability of rolls,
+                and some strategy on <a href="/dice">our dice page</a>.
+            </p>
+        </section>
+    </article>
+
+    <div id="call-to-action">
+        <h2>Play The Royal Game of Ur</h2>
+        <p>Now that you've got the rules sorted, give the game a go!</p>
+        <a class="play" href="/game">
+            <canvas class="highlight-shadow" data-src-inactive="/res/button_play.[ver]"
+                    data-src-active="/res/button_play_active.[ver]"></canvas>
+        </a>
+    </div>
+    <include src="src/common/footer/footer.html" />
+
+    <!-- JAVASCRIPT TO LOAD IMAGES -->
+    <script src="/article_resources.[ver].js"></script>
+</body>
+</html>

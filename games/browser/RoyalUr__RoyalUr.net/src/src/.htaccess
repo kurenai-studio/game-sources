@@ -1,0 +1,25 @@
+Options -Indexes
+RewriteEngine On
+ErrorDocument 404 /lost.html
+
+# Add Expires header to allow caching.
+<FilesMatch "\.(gif|png|jpg|webp|svg|mp4|ttf|woff2|json|js|css)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 10 years"
+</FilesMatch>
+<FilesMatch "\.ico$">
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+</FilesMatch>
+RewriteRule ^(.+)\.(v[^.]+)(\..+)?\.(gif|png|jpg|webp|svg|mp4|ttf|woff2|json|js|css)$ $1$3.$4 [L]
+
+# Compress text, html, javascript, css, xml.
+AddOutputFilterByType DEFLATE text/plain
+AddOutputFilterByType DEFLATE text/html
+AddOutputFilterByType DEFLATE text/xml
+AddOutputFilterByType DEFLATE text/css
+AddOutputFilterByType DEFLATE application/xml
+AddOutputFilterByType DEFLATE application/xhtml+xml
+AddOutputFilterByType DEFLATE application/rss+xml
+AddOutputFilterByType DEFLATE application/javascript
+AddOutputFilterByType DEFLATE application/x-javascript

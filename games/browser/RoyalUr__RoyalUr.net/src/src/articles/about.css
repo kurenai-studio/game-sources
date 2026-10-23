@@ -1,0 +1,31 @@
+
+#content a.contributor {
+    display: inline-block;
+    margin-top: 10px;
+    margin-right: 10px;
+    font-size: 1.2em;
+    color: white;
+    text-decoration: underline;
+    text-align: center;
+}
+#content a.contributor img {
+    display: block;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid white;
+}
+
+#logo {
+    width: 10em;
+    height: auto;
+    margin-right: 1em;
+    margin-bottom: 2em;
+    float: left;
+}
+/** Display the text below the logo on small screens. **/
+@media (max-width: 400px) {
+    #logo {
+        display: block;
+    }
+}

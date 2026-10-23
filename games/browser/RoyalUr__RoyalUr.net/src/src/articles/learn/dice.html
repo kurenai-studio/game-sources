@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Dice | RoyalUr.net</title>
+
+    <meta name="og:title" content="Dice in The Royal Game of Ur" />
+    <meta name="twitter:title" content="Dice in The Royal Game of Ur" />
+    <meta property="twitter:url" content="https://royalur.net/dice" />
+    <meta name="description" content="Learn about the dice used in The Royal Game of Ur." />
+    <meta name="og:description" content="Learn about the dice used in The Royal Game of Ur." />
+    <meta name="twitter:description" content="Learn about the dice used in The Royal Game of Ur.">
+
+    <include src="src/common/head/head_boilerplate.html" />
+    <include src="src/common/head/matomo.html" />
+    <link rel="stylesheet" href="/dice/index.[ver].css" />
+</head>
+<body class="wood-background">
+    <include src="src/common/header/header.html" />
+    <article id="content">
+        <section class="article-links">
+            <p class="article-back-link"><a href="/learn">← Back to Learn</a></p>
+
+            <a class="twitter-share"
+               href="https://twitter.com/intent/tweet?url=https%3A%2F%2Froyalur.net%2Fdice&via=royalur_net&text=The%20dice%20used%20in%20the%20oldest%20board%20game%20in%20the%20world%20are%20more%20interesting%20than%20you%20might%20think%21&hashtags=boardgames%2Chistory%2Croyalgameofur%2Cdice">
+                <include src="src/common/social/twitter_share.html" />
+            </a>
+        </section>
+
+        <!-- About the dice used in the game. -->
+        <section>
+            <h1>🎲 Dice used in The Royal Game of Ur</h1>
+            <hr/>
+
+            <p>
+                In The Royal Game of Ur, even if you are losing, a few lucky rolls
+                at the right time could win you the game! This page goes through
+                the different types of dice used in the game, and the probabilities
+                of your rolls. Any set of four D2 dice can be used to play The Royal
+                Game of Ur, although tetrahedral dice are the most commonly used.
+                Here, D2 refers to the fact that the dice used have two equally likely
+                outcomes.
+            </p>
+
+            <h2 id="tetrahedral-dice"><a href="#tetrahedral-dice">Tetrahedral Dice</a></h2>
+            <div id="dice-container">
+                <include src="src/game/ui/dice.html" />
+                <span id="dice-prompt" style="display: none">Click to roll!</span>
+            </div>
+            <p>
+                The most commonly used dice when playing The Royal Game of Ur
+                are the tetrahedral dice, which are dice that are shaped like
+                triangle-based pyramids. Each die has two corners marked
+                with white, and two unmarked corners. After rolling the dice,
+                you can count the number of die with a marked corner facing
+                upwards to get your roll.
+            </p>
+
+            <h2 id="throwing-stick-dice"><a href="#throwing-stick-dice">Throwing Stick Dice</a></h2>
+            <img id="stick-dice" class="shadow" data-src="/res/stick_dice.[ver]" alt="Example Throwing Stick Dice" />
+            <p>
+                Throwing sticks are another type of dice that are commonly used
+                to play The Royal Game of Ur. Throwing stick dice are flat sticks
+                with one side marked. You can then throw the sticks and count the
+                number of sticks with their marked side up. Throwing stick dice
+                are commonly used in another ancient game,
+                <a href="https://www.ancientgames.org/aseb-game-20-squares/">Aseb</a>,
+                which is another ancient game that is very similar to The Royal
+                Game of Ur. These two games are so common that they actually both
+                share another name, which is The Game of 20 Squares.
+            </p>
+        </section>
+
+        <!-- About the probability of the dice used in the game. -->
+        <section>
+            <h2 id="probability"><a href="#probability">Probability</a></h2>
+            <h3 id="probability-one-die"><a href="#probability-one-die">One die</a></h3>
+            <p>
+                When using a single die, there is a 50% chance that it will
+                land with its marked corner or side up. This means that for
+                each individual die, you have a 50/50 chance of getting a one.
+            </p>
+            <h3 id="probability-four-dice"><a href="#probability-four-dice">Four dice</a></h3>
+            <p>
+                When using four dice, you have to count the results of the
+                four individual die. This means that it is possible to get
+                a total of 0, 1, 2, 3, or 4. The chances of each of these
+                possibilities is respectively 1, 4, 6, 4, and 1 out of 16.
+            </p>
+            <p>
+                This means that you have a 6.25% chance of rolling a 0,
+                a 25% chance of rolling a 1, a 37.5% chance of rolling
+                a 2, a 25% chance of rolling a 3, and a 6.25% chance
+                of rolling a 4.
+            </p>
+            <p>
+                0: <span class="chance_6_25"></span> 6.25% <br/>
+                1: <span class="chance_25_0"></span> 25%   <br/>
+                2: <span class="chance_37_5"></span> 37.5% <br/>
+                3: <span class="chance_25_0"></span> 25%   <br/>
+                4: <span class="chance_6_25"></span> 6.25%
+            </p>
+            <p>
+                If you'd like to understand why these are the probabilities
+                of each roll, the user rodecss on slideshare made a great
+                presentation that goes into detail on calculating the
+                probability of each roll. Check it out
+                <a href="https://www.slideshare.net/rodecss/probability-in-and-ancient-game">here</a>.
+            </p>
+        </section>
+
+        <!-- About strategy that develops from these probabilities. -->
+        <section>
+            <h2 id="strategy"><a href="#strategy">Strategy</a></h2>
+            <p>
+                Now that you know the probability of each roll is not the
+                same, you can likely anticipate that this affects the best
+                strategies to use while playing the game, and it does!
+                Here are some tips for picking the best moves,
+            </p>
+
+            <h3 id="avoid-two-ahead"><a href="#avoid-two-ahead">
+                1. Avoid two spaces in front of your opponent's pieces
+            </a></h3>
+            <p>
+                Preferably, we'd avoid putting our own pieces in front of our
+                opponents all the time. Unfortunately though, sometimes you have to
+                make progress and move your pieces in front of your opponents.
+                If you have the option, it is safer to do this by placing your
+                pieces 1 or 3 tiles ahead of your opponent's piece, instead of
+                2. This will slightly reduce their chances of being able to take
+                your piece on their turn.
+            </p>
+            <p>
+                It is also valuable to note that if your piece is 4 tiles ahead of
+                your opponent's, it is very unlikely that they will be able to take
+                it! Therefore, instead of moving that piece maybe it would be better
+                to move a new piece onto the board, or develop your less advanced
+                pieces.
+            </p>
+
+            <h3 id="place-pieces-two-ahead"><a href="#place-pieces-two-ahead">
+                2. Place your pieces two spaces behind your opponent's
+            </a></h3>
+            <p>
+                For the opposite reasons to point 1, if you are looking to take
+                one of your opponent's pieces, it is best to get your pieces
+                two spaces behind theirs. This will give you the best chance of
+                being able to take their piece on your next turn.
+            </p>
+
+            <h2 id="more-strategy"><a href="#more-strategy">More Strategy</a></h2>
+            <p>
+                If you'd like to learn more about strategy in The Royal
+                Game of Ur, check out our
+                <a href="/analysis/">Royal Game of Ur Analysis Project</a>.
+                It contains detailed analysis of different strategies for
+                playing The Royal Game of Ur, which have all been determined
+                through the use of AI!
+            </p>
+        </section>
+    </article>
+
+    <div id="call-to-action">
+        <h2>Play The Royal Game of Ur</h2>
+        <p>Now that you know some probability about the game, give it a go!</p>
+        <a class="play" href="/game">
+            <canvas class="highlight-shadow" data-src-inactive="/res/button_play.[ver]"
+                    data-src-active="/res/button_play_active.[ver]"></canvas>
+        </a>
+    </div>
+    <include src="src/common/footer/footer.html" />
+
+    <!-- JavaScript to load images and let people roll the dice.  -->
+    <script src="/dice/index.[ver].js"></script>
+</body>
+</html>
