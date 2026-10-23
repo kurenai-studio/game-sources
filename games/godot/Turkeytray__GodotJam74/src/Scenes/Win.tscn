@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://df7yjjwsd32ve"]
+
+[ext_resource type="Script" path="res://Scripts/Buttons/quit.gd" id="1_itj2u"]
+
+[node name="Win" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 0
+offset_top = 114.0
+offset_right = 1276.0
+offset_bottom = 219.0
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+text = "[center]You Won!"
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 528.0
+offset_top = 378.0
+offset_right = 775.0
+offset_bottom = 464.0
+theme_override_font_sizes/font_size = 57
+text = "Quit"
+script = ExtResource("1_itj2u")
+
+[connection signal="button_down" from="Button" to="Button" method="_on_button_down"]

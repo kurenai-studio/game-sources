@@ -1,0 +1,102 @@
+[gd_scene load_steps=10 format=3 uid="uid://dny6vk3jcwhot"]
+
+[ext_resource type="Script" path="res://Scripts/enemy.gd" id="1_76ceq"]
+[ext_resource type="AudioStream" uid="uid://u8ipa5w20y2d" path="res://Resources/Audio/Walk Sounds/walk3.ogg" id="2_po32s"]
+[ext_resource type="Texture2D" uid="uid://cdgarooe7hv5e" path="res://Textures/zombie_walk.png" id="2_xxdj0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pyjbj"]
+size = Vector2(43, 57)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x712b"]
+atlas = ExtResource("2_xxdj0")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0bcmh"]
+atlas = ExtResource("2_xxdj0")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2iybr"]
+atlas = ExtResource("2_xxdj0")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1cm7o"]
+atlas = ExtResource("2_xxdj0")
+region = Rect2(192, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_qhjf3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x712b")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_0bcmh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2iybr")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_1cm7o")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Enemy" type="CharacterBody2D"]
+script = ExtResource("1_76ceq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-0.5, 3.5)
+shape = SubResource("RectangleShape2D_pyjbj")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_qhjf3")
+
+[node name="Ray1" type="RayCast2D" parent="."]
+position = Vector2(0, 25)
+target_position = Vector2(400, 100)
+
+[node name="Ray2" type="RayCast2D" parent="."]
+position = Vector2(0, 20)
+target_position = Vector2(400, 80)
+
+[node name="Ray3" type="RayCast2D" parent="."]
+position = Vector2(0, 15)
+target_position = Vector2(400, 60)
+
+[node name="Ray4" type="RayCast2D" parent="."]
+position = Vector2(0, 10)
+target_position = Vector2(400, 40)
+
+[node name="Ray5" type="RayCast2D" parent="."]
+position = Vector2(0, 5)
+target_position = Vector2(400, 20)
+
+[node name="Ray6" type="RayCast2D" parent="."]
+target_position = Vector2(400, 0)
+
+[node name="Ray7" type="RayCast2D" parent="."]
+position = Vector2(0, -5)
+target_position = Vector2(400, -20)
+
+[node name="Ray8" type="RayCast2D" parent="."]
+position = Vector2(0, -10)
+target_position = Vector2(400, -40)
+
+[node name="Ray9" type="RayCast2D" parent="."]
+position = Vector2(0, -15)
+target_position = Vector2(400, -60)
+
+[node name="Ray10" type="RayCast2D" parent="."]
+position = Vector2(0, -20)
+target_position = Vector2(400, -80)
+
+[node name="Ray11" type="RayCast2D" parent="."]
+position = Vector2(0, -25)
+target_position = Vector2(400, -100)
+
+[node name="Walk" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_po32s")
