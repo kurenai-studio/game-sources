@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.6.0" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="32">
+ <properties>
+  <property name="musicFilePath" value="audio/music/Try and Solve This.ogg"/>
+ </properties>
+ <tileset firstgid="1" source="tileset1.tsx"/>
+ <layer id="1" name="ground" width="20" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2BggRoQcyFhSgGyWXJIbB4qmIcN2zOQ5nZ0d4GwChb92MyD2YfPfYTsJVUfPvPQMcgfqhSaRy334bJDnkpmjQIGBgDs4ANt
+  </data>
+ </layer>
+ <layer id="4" name="background" width="20" height="20">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo4A0IA7EnkBsCaWpBfihNMhMEyqbDQMgM6WhNC3Mx2UfJfoJsUkFsPgbBaOAUgAA9osETQ==
+  </data>
+ </layer>
+ <layer id="9" name="foreground" width="20" height="20">
+  <properties>
+   <property name="z" type="int" value="1"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUDHegOcjNc6ayeaOAPgAALNcAlg==
+  </data>
+ </layer>
+ <layer id="2" name="foreground2" width="20" height="20">
+  <properties>
+   <property name="z" type="int" value="1"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFwx2IADEblAZhHQrNM0fjOwCxBwVmo5uHbjapbsdnHj617lC7PNDsQVcjgqROBAnD3KsDVWeLpM8BjS0C1Q9S44mELYBYHYhN0dQjmwUCmkhskD4vJDPIAZqElaAAWFiJoGFsficWgPxgDcTSDJAwAGEHBkQYUQOYQs0dBdQBAFvsDVM=
+  </data>
+ </layer>
+ <layer id="3" name="foreground3" width="20" height="20">
+  <properties>
+   <property name="z" type="int" value="1"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUUArcqWyeJpXNGwWjgBYAAEX/AHE=
+  </data>
+ </layer>
+ <objectgroup id="5" name="collision">
+  <properties>
+   <property name="collisionLayer" type="bool" value="true"/>
+  </properties>
+  <object id="31" x="16" y="128">
+   <polyline points="4.25,-0.5625 64,0 64,16 112,16 112,32 176,32 176,64 192,64 192,80 224,80 224,64 240,64 240,48 272,48 272,64 283.545,64 283.818,112 272,112 272,128 240,128 240,112 224,112 192,112 160,112 160,80 160,64 112,64 64,64 64,80 4.5,79.375 4.5,-0.625"/>
+  </object>
+ </objectgroup>
+ <objectgroup id="6" name="entities">
+  <object id="6" name="PLAYER" x="38.9167" y="172.917">
+   <point/>
+  </object>
+  <object id="7" name="EXIT" x="272" y="208" width="16.0678" height="16.0153"/>
+  <object id="8" name="CHEST_COMMON" x="193.19" y="207.383">
+   <point/>
+  </object>
+  <object id="26" name="SHOP" x="102.75" y="154.667">
+   <point/>
+  </object>
+ </objectgroup>
+ <objectgroup color="#ff0000" id="7" name="enemies">
+  <object id="20" name="GOBLIN" type="BOSS" x="182.625" y="192.25">
+   <point/>
+  </object>
+  <object id="30" name="GOBLIN" type="EASY" x="232" y="222">
+   <point/>
+  </object>
+ </objectgroup>
+</map>
