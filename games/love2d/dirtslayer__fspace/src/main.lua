@@ -1,0 +1,57 @@
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
+    require("lldebugger").start()
+end
+
+local Fspace = require("fspace")
+local fspace 
+
+local Menu = require("menu")
+local menu 
+
+local SceneryInit = require("scenery/scenery")
+local scenery = SceneryInit(
+ {
+    path = "menu";
+    key = "menu";
+    default = true;
+ },
+ {
+    path = "fspace";
+    key = "fspace";
+ }
+)
+
+
+
+function love.load()
+    love.window.setMode(1, 2)
+    love.window.setMode(800, 800, {resizable=true, vsync=1, minwidth=200, minheight=300})
+    love.window.setTitle("fspace")
+
+    scenery:load()
+    print("Welcome to fspace!")
+end
+
+function love.update(dt)
+    scenery:update(dt)
+end
+
+function love.draw()
+    scenery:draw()
+end
+
+function love.keypressed(key)
+    scenery:keypressed(key)
+if key == "tab" then
+      local state = not love.mouse.isGrabbed()   -- the opposite of whatever it currently is
+      love.mouse.setGrabbed(state)
+   end    
+end
+
+function love.mousemoved(x, y, dx, dy, istouch)
+    scenery:mousemoved(x, y, dx, dy, istouch)   
+end
+
+function love.mousepressed(x, y, dx, dy, istouch)
+    scenery:mousepressed(x, y, dx, dy, istouch)   
+end
