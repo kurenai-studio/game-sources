@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="LiteNetLib" Version="1.2.0" />
+        <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303"/>
+        <PackageReference Include="YamlDotNet" Version="15.1.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="blocks.schema.json"/>
+        <EmbeddedResource Include="Content\**\*.*"/>
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="content\blocks\Copper.yml" />
+      <None Remove="content\blocks\Gold.yml" />
+      <None Remove="content\blocks\Iron.yml" />
+      <None Remove="content\blocks\Silver.yml" />
+    </ItemGroup>
+</Project>
