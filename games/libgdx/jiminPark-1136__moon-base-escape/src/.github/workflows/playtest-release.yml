@@ -1,0 +1,79 @@
+# 플레이테스트 배포: v로 시작하는 태그를 올리면 검사 → 빌드 → GitHub Release(미리 보기)에 실행 파일을 올린다.
+#   git tag v0.5-playtest && git push origin v0.5-playtest
+# Actions 탭에서 수동 실행(workflow_dispatch)하면 Release 없이 빌드 결과만 Artifacts로 받을 수 있다.
+name: playtest-release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest   # 맥 앱 서명(codesign)이 맥에서만 된다
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 검증 코드 4개 실행
+        run: |
+          ./gradlew core:testClasses
+          GDX=$(find ~/.gradle/caches/modules-2 -name 'gdx-1.13.1.jar' | head -1)
+          CP="core/build/classes/java/main:core/build/classes/java/test:$GDX"
+          for c in RecoilHeightCheck EnemyCheck OxygenWindowCheck StageCheck; do
+            java -ea -cp "$CP" io.jbnu.game.$c
+          done
+
+      - name: 빌드 (jar + 자바 포함 실행 파일 윈도우·맥·리눅스)
+        run: ./gradlew lwjgl3:jar lwjgl3:packageWinX64 lwjgl3:packageMacM1 lwjgl3:packageMacX64 lwjgl3:packageLinuxX64
+
+      # construo zip은 실행 권한을 비표준으로 적어서 맥 기본 압축 해제(Safari·Finder)가 권한을 버린다 → "열 수 없습니다".
+      # 또 앱 전체가 서명되지 않아 인터넷에서 받은 M칩용은 "손상되었기 때문에 열 수 없습니다"가 뜬다.
+      # → 풀어서 맥 앱은 임시(ad-hoc) 서명하고, 맥은 ditto·나머지는 zip으로 다시 묶는다.
+      - name: zip 다시 묶기 (실행 권한 보존, 맥 앱 서명)
+        run: |
+          cd lwjgl3/build/construo/dist
+          for z in *.zip; do
+            rm -rf tmp && mkdir tmp && unzip -q "$z" -d tmp && rm "$z"
+            app=$(find tmp -maxdepth 2 -name '*.app' | head -1)
+            if [ -n "$app" ]; then
+              # construo는 자바 런타임·jar를 Contents/MacOS(코드 전용)에 넣어 서명이 안 된다 → Resources로 옮기고 링크
+              mkdir -p "$app/Contents/Resources"
+              (cd "$app/Contents/MacOS" && for x in runtime app *.jar; do mv "$x" ../Resources/ && ln -s "../Resources/$x" "$x"; done)
+              codesign --force -s - "$app"
+              codesign --verify --deep --strict "$app"
+              ditto -c -k --keepParent "$app" "$z"
+            else
+              (cd tmp && zip -qry "../$z" .)
+            fi
+            rm -rf tmp
+          done
+
+      - name: 결과물 목록
+        run: find lwjgl3/build -maxdepth 4 \( -name '*.zip' -o -name '*.jar' \) | sort
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: playtest-builds
+          path: |
+            lwjgl3/build/libs/MoonBaseEscape-*.jar
+            lwjgl3/build/construo/dist/*.zip
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          body_path: .github/PLAYTEST_RELEASE.md
+          fail_on_unmatched_files: true
+          files: |
+            lwjgl3/build/libs/MoonBaseEscape-*.jar
+            lwjgl3/build/construo/dist/*.zip
