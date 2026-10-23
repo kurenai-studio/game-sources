@@ -1,0 +1,40 @@
+/* Left */
+.item-enter-left {
+	z-index: 3;
+	transform: translateX(-200%);
+}
+
+.item-enter-left-active {
+	z-index: 3;
+	transform: translateX(0);
+	transition: transform 300ms ease-in;
+}
+
+.item-exit-left {
+	transform: translateX(0);
+}
+
+.item-exit-left-active {
+	transform: translateX(-200%);
+	transition: transform 300ms ease-in;
+}
+
+/* Right */
+.item-enter-right {
+	z-index: 3;
+	transform: translateX(300%);
+}
+
+.item-enter-right-active {
+	z-index: 3;
+	transform: translateX(0);
+	transition: transform 300ms ease-in;
+}
+
+.item-exit-right {
+	transform: translateX(0);
+}
+.item-exit-right-active {
+	transform: translateX(300%);
+	transition: transform 300ms ease-in;
+}
