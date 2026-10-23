@@ -1,0 +1,50 @@
+plugins {
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+sourceSets {
+    main {
+        java.srcDirs = ['src']
+        resources.srcDirs = ['../android/assets']
+    }
+}
+
+def assetsDir = file('../android/assets')
+def isMacOs = System.getProperty('os.name').toLowerCase().contains('mac')
+
+application {
+    mainClass = 'com.ricardorb.catchanimals.desktop.DesktopLauncher'
+    if (isMacOs) {
+        applicationDefaultJvmArgs = ['-XstartOnFirstThread']
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    runtimeOnly "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    runtimeOnly "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+}
+
+tasks.named('run', JavaExec) {
+    workingDir = assetsDir
+    standardInput = System.in
+    ignoreExitValue = true
+}
+
+tasks.withType(JavaExec).configureEach {
+    workingDir = assetsDir
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    if (isMacOs && !jvmArgs.contains('-XstartOnFirstThread')) {
+        jvmArgs('-XstartOnFirstThread')
+    }
+}

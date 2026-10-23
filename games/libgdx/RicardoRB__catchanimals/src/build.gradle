@@ -1,0 +1,14 @@
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}
+
+allprojects {
+    version = '1.0'
+}
+
+subprojects {
+    tasks.register('prepareKotlinBuildScriptModel') {
+        group = 'ide'
+        description = 'Stub task for IDE sync compatibility when Kotlin plugin is not applied.'
+    }
+}
