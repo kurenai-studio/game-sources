@@ -1,0 +1,185 @@
+[gd_scene format=3 uid="uid://c2gocuhw2o7py"]
+
+[ext_resource type="PackedScene" uid="uid://c2jxemjmao00b" path="res://addons/ggt-core/settings/settings_menu.tscn" id="3_e0arn"]
+[ext_resource type="FontFile" uid="uid://da2t6lyf41wty" path="res://assets/fonts/open-sans/open-sans-bold.ttf" id="4"]
+[ext_resource type="Script" uid="uid://cvc42inud8fxx" path="res://scenes/menu/menu.gd" id="5"]
+
+[node name="Menu" type="Control" unique_id=1641158152 node_paths=PackedStringArray("play_button", "settings_button", "exit_button", "settings_menu", "margin_container")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5")
+play_button = NodePath("MarginContainer/Control/VBoxContainer/PlayButton")
+settings_button = NodePath("MarginContainer/Control/VBoxContainer/SettingsButton")
+exit_button = NodePath("MarginContainer/Control/VBoxContainer/ExitButton")
+settings_menu = NodePath("SettingsMenu")
+margin_container = NodePath("MarginContainer")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1540281165]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.224, 0.2709333, 0.4, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=494167775]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Control" type="Control" parent="MarginContainer" unique_id=2015180303]
+layout_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/Control" unique_id=1435400836]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -8.0
+offset_right = -8.0
+offset_bottom = -339.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="MarginContainer/Control/CenterContainer" unique_id=1695717094]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4")
+theme_override_font_sizes/font_size = 60
+text = "Godot Game Template"
+uppercase = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Control" unique_id=737419068]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -104.0
+offset_top = -30.0
+offset_right = 96.0
+offset_bottom = 134.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="PlayButton" type="Button" parent="MarginContainer/Control/VBoxContainer" unique_id=282119598]
+custom_minimum_size = Vector2(200, 70)
+layout_mode = 2
+focus_neighbor_bottom = NodePath("../SettingsButton")
+focus_next = NodePath("../SettingsButton")
+text = "START"
+
+[node name="SettingsButton" type="Button" parent="MarginContainer/Control/VBoxContainer" unique_id=879990348]
+custom_minimum_size = Vector2(200, 70)
+layout_mode = 2
+focus_neighbor_top = NodePath("../PlayButton")
+focus_neighbor_bottom = NodePath("../ExitButton")
+focus_next = NodePath("../ExitButton")
+text = "SETTINGS"
+
+[node name="ExitButton" type="Button" parent="MarginContainer/Control/VBoxContainer" unique_id=1212985906]
+custom_minimum_size = Vector2(200, 70)
+layout_mode = 2
+focus_neighbor_top = NodePath("../SettingsButton")
+focus_previous = NodePath("../PlayButton")
+text = "EXIT"
+
+[node name="Credits" type="VBoxContainer" parent="MarginContainer/Control" unique_id=1729305012]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -86.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="MadeByLabel" type="Label" parent="MarginContainer/Control/Credits" unique_id=704108959]
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "made by: "
+
+[node name="Developer1" type="Label" parent="MarginContainer/Control/Credits" unique_id=2143049063]
+auto_translate_mode = 2
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+theme_override_colors/font_color = Color(0.92549, 0.92549, 0.92549, 1)
+text = "John Doe"
+
+[node name="Developer2" type="Label" parent="MarginContainer/Control/Credits" unique_id=1123998025]
+auto_translate_mode = 2
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+theme_override_colors/font_color = Color(0.886275, 0.87451, 0.87451, 1)
+text = "Mario Rossi"
+
+[node name="Developer3" type="Label" parent="MarginContainer/Control/Credits" unique_id=867376137]
+auto_translate_mode = 2
+visible = false
+layout_mode = 2
+theme_type_variation = &"LabelSmall"
+theme_override_colors/font_color = Color(0.886275, 0.87451, 0.87451, 1)
+text = "Developer 3"
+
+[node name="SettingsMenu" parent="." unique_id=1313122932 instance=ExtResource("3_e0arn")]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -294.0
+offset_top = -385.5
+offset_right = 294.0
+offset_bottom = 385.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Help" type="PanelContainer" parent="." unique_id=891782893]
+auto_translate_mode = 2
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 40.0
+offset_top = -186.0
+offset_right = 464.0
+offset_bottom = 276.0
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Help" unique_id=2052955873]
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Help/MarginContainer" unique_id=1170172205]
+layout_mode = 2
+bbcode_enabled = true
+text = "Welcome to the [b]Godot Game Template[/b], [color=#7af]GGT[/color] in short!
+
+Some debug shortcuts that you can use are:
+
+- [bgcolor=#333]F3[/bgcolor]: [color=gray]Cycle stats modes[/color]
+- [bgcolor=#333]F4[/bgcolor]: [color=gray]Increase stats size[/color]
+
+[color=#ffa]These are automatically removed in release builds.[/color]
+
+You can check the release type in the bottom left corner."
+
+[connection signal="pressed" from="MarginContainer/Control/VBoxContainer/PlayButton" to="." method="_on_PlayButton_pressed"]
+[connection signal="pressed" from="MarginContainer/Control/VBoxContainer/SettingsButton" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="MarginContainer/Control/VBoxContainer/ExitButton" to="." method="_on_ExitButton_pressed"]
+[connection signal="confirm_button_clicked" from="SettingsMenu" to="." method="_on_settings_menu_confirm_button_clicked"]
+[connection signal="visibility_changed" from="SettingsMenu" to="." method="_on_settings_menu_visibility_changed"]
