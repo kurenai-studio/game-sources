@@ -1,0 +1,138 @@
+[gd_scene format=3 uid="uid://baxuf5v76y51l"]
+
+[ext_resource type="Script" uid="uid://fcqmls4eg5v3" path="res://scripts/map.gd" id="1_paxxb"]
+[ext_resource type="Texture2D" uid="uid://gtooojic0pkn" path="res://maps/world_tileset.png" id="2_gldc4"]
+[ext_resource type="Texture2D" uid="uid://drlmc4vi0ri0h" path="res://maps/water.png" id="3_uwjdf"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ers5l"]
+texture = ExtResource("2_gldc4")
+texture_region_size = Vector2i(8, 8)
+0:0/0 = 0
+0:0/0/terrain_set = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+0:0/0/terrains_peering_bit/bottom_right_corner = 0
+0:1/0 = 0
+0:1/0/terrain_set = 0
+0:1/0/terrains_peering_bit/right_side = 0
+0:1/0/terrains_peering_bit/bottom_right_corner = 0
+0:1/0/terrains_peering_bit/top_right_corner = 0
+1:1/0 = 0
+1:1/0/terrain_set = 0
+1:1/0/terrain = 0
+1:1/0/terrains_peering_bit/right_side = 0
+1:1/0/terrains_peering_bit/bottom_right_corner = 0
+1:1/0/terrains_peering_bit/bottom_side = 0
+1:1/0/terrains_peering_bit/bottom_left_corner = 0
+1:1/0/terrains_peering_bit/left_side = 0
+1:1/0/terrains_peering_bit/top_left_corner = 0
+1:1/0/terrains_peering_bit/top_side = 0
+1:1/0/terrains_peering_bit/top_right_corner = 0
+1:0/0 = 0
+1:0/0/terrain_set = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+1:0/0/terrains_peering_bit/bottom_right_corner = 0
+1:0/0/terrains_peering_bit/bottom_side = 0
+1:0/0/terrains_peering_bit/bottom_left_corner = 0
+2:0/0 = 0
+2:0/0/terrain_set = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+2:0/0/terrains_peering_bit/bottom_left_corner = 0
+2:1/0 = 0
+2:1/0/terrain_set = 0
+2:1/0/terrains_peering_bit/bottom_left_corner = 0
+2:1/0/terrains_peering_bit/left_side = 0
+2:1/0/terrains_peering_bit/top_left_corner = 0
+3:1/0 = 0
+3:1/0/terrain_set = 0
+3:1/0/terrains_peering_bit/right_side = 1
+3:1/0/terrains_peering_bit/bottom_right_corner = 1
+3:1/0/terrains_peering_bit/top_right_corner = 1
+3:0/0 = 0
+3:0/0/terrain_set = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+3:0/0/terrains_peering_bit/bottom_right_corner = 1
+4:0/0 = 0
+4:0/0/terrain_set = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+4:0/0/terrains_peering_bit/bottom_right_corner = 1
+4:0/0/terrains_peering_bit/bottom_side = 1
+4:0/0/terrains_peering_bit/bottom_left_corner = 1
+4:1/0 = 0
+4:1/0/terrain_set = 0
+4:1/0/terrain = 1
+4:1/0/terrains_peering_bit/right_side = 1
+4:1/0/terrains_peering_bit/bottom_right_corner = 1
+4:1/0/terrains_peering_bit/bottom_side = 1
+4:1/0/terrains_peering_bit/bottom_left_corner = 1
+4:1/0/terrains_peering_bit/left_side = 1
+4:1/0/terrains_peering_bit/top_left_corner = 1
+4:1/0/terrains_peering_bit/top_side = 1
+4:1/0/terrains_peering_bit/top_right_corner = 1
+5:0/0 = 0
+5:0/0/terrain_set = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+5:0/0/terrains_peering_bit/bottom_left_corner = 1
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
+5:1/0 = 0
+6:1/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_2klcf"]
+tile_size = Vector2i(8, 8)
+physics_layer_0/collision_layer = 1
+terrain_set_0/mode = 0
+terrain_set_0/terrain_0/name = "Grass"
+terrain_set_0/terrain_0/color = Color(0.34901962, 0.7176471, 0, 1)
+terrain_set_0/terrain_1/name = "Ground"
+terrain_set_0/terrain_1/color = Color(0.5019608, 0.34509805, 0.07058824, 1)
+terrain_set_0/terrain_2/name = "Stone"
+terrain_set_0/terrain_2/color = Color(0.22352941, 0.5019608, 0.5764706, 1)
+sources/0 = SubResource("TileSetAtlasSource_ers5l")
+
+[node name="Map" type="Node2D" unique_id=1199139245 groups=["Map"]]
+script = ExtResource("1_paxxb")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1428590550]
+_spawnable_scenes = PackedStringArray("uid://ctdjq1dj1itqd")
+spawn_path = NodePath("..")
+
+[node name="Timer" type="Timer" parent="." unique_id=989865850]
+wait_time = 0.5
+one_shot = true
+autostart = true
+
+[node name="Image" type="Sprite2D" parent="." unique_id=2045054409]
+visible = false
+position = Vector2(0, 112)
+
+[node name="Map" type="TileMapLayer" parent="." unique_id=1448595652]
+tile_set = SubResource("TileSet_2klcf")
+
+[node name="Background2" type="ColorRect" parent="." unique_id=1182561794]
+z_index = -1
+offset_left = -1287.0
+offset_top = -334.0
+offset_right = 1251.0
+offset_bottom = 103.0
+color = Color(0.6007436, 0.75808835, 0.7835647, 0.5411765)
+
+[node name="Water" type="Polygon2D" parent="." unique_id=699509189]
+z_index = 1
+texture_repeat = 2
+color = Color(1, 1, 1, 0.60784316)
+texture = ExtResource("3_uwjdf")
+polygon = PackedVector2Array(-1277, -27, -1185, 10, -1098, -22, -983, 10, -859, -20, -730, 13, -618, -24, -528, 6, -393, -45, -274, 1, -127, -43, -23, 1, 105, -43, 206, -15, 312, -42, 440, -6, 541, -61, 661, -10, 739, -59, 851, -15, 955, -66, 1083, -12, 1175, -56, 1215, -16, 1254, 679, -1315, 693)
+
+[node name="Background" type="CanvasLayer" parent="." unique_id=234260886]
+layer = -100
+
+[node name="Background" type="ColorRect" parent="Background" unique_id=1647024070]
+offset_left = -19.0
+offset_top = -29.0
+offset_right = 1190.0
+offset_bottom = 686.0
+color = Color(0.6509804, 0.79607844, 0.81960785, 1)
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

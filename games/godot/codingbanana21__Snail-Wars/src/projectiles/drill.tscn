@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://dmylfcwm5pafg"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_d7knd"]
+[ext_resource type="Texture2D" uid="uid://x4hcewvk3glh" path="res://assets/images/drill.png" id="2_tpgjy"]
+
+[node name="Drill" unique_id=152536886 instance=ExtResource("1_d7knd")]
+damage = 10
+size = 3
+knockback = 30
+gravity = 300
+projectile_hp = 7
+hit_stun_time = 0.15
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_tpgjy")

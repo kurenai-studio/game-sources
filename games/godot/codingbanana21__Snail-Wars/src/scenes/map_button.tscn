@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://d13cid3q1ddw8"]
+
+[ext_resource type="FontFile" uid="uid://beb0vnnahy1kh" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="1_y71mn"]
+[ext_resource type="Script" uid="uid://vs5m76gne6j4" path="res://scripts/map_button.gd" id="2_68qgm"]
+
+[node name="MapButton" type="Button" unique_id=421375843]
+offset_right = 8.0
+offset_bottom = 8.0
+theme_override_fonts/font = ExtResource("1_y71mn")
+text = "Map"
+script = ExtResource("2_68qgm")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

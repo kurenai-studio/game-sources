@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://csi6ir1av406y"]
+
+[ext_resource type="PackedScene" uid="uid://cubfm8w8o5obj" path="res://projectiles/projectile.tscn" id="1_ipt5o"]
+[ext_resource type="Texture2D" uid="uid://d7rmm3hgmhlx" path="res://assets/images/cake_tnt.png" id="2_2v8i0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gjjih"]
+size = Vector2(12, 6)
+
+[node name="CakeTNT" unique_id=791496552 instance=ExtResource("1_ipt5o")]
+damage = 100
+size = 10
+knockback = 100
+speed = 0
+min_speed = 0
+timer = 1.0
+effect_by_wind = false
+
+[node name="Image" parent="." index="1" unique_id=2045045234]
+texture = ExtResource("2_2v8i0")
+
+[node name="CollisionShape2D" parent="." index="2" unique_id=679883136]
+position = Vector2(0, 3)
+shape = SubResource("RectangleShape2D_gjjih")
+
+[node name="CollisionShape2D" parent="DetectBox" parent_id_path=PackedInt32Array(289666369) index="0" unique_id=1905896826]
+shape = null
