@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sudoku</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>🔢 Sudoku</h1>
+      <p class="tagline">Fill the grid — every row, column and box.</p>
+    </header>
+
+    <section class="hud" aria-label="Game statistics">
+      <div class="stat"><span class="stat-label">Time</span><span class="stat-value" id="time">0:00</span></div>
+      <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best">—</span></div>
+      <div class="stat"><span class="stat-label">Level</span><span class="stat-value" id="level">Easy</span></div>
+    </section>
+
+    <div class="stage">
+      <canvas id="game" width="540" height="540"></canvas>
+      <p class="message" id="message">Pick a difficulty to start.</p>
+    </div>
+
+    <footer class="controls">
+      <button class="btn diff" data-d="easy">Easy</button>
+      <button class="btn diff" data-d="medium">Medium</button>
+      <button class="btn diff" data-d="hard">Hard</button>
+      <button class="btn" id="new">New</button>
+    </footer>
+    <footer class="controls" id="pad">
+      <button class="btn num" data-n="1">1</button>
+      <button class="btn num" data-n="2">2</button>
+      <button class="btn num" data-n="3">3</button>
+      <button class="btn num" data-n="4">4</button>
+      <button class="btn num" data-n="5">5</button>
+      <button class="btn num" data-n="6">6</button>
+      <button class="btn num" data-n="7">7</button>
+      <button class="btn num" data-n="8">8</button>
+      <button class="btn num" data-n="9">9</button>
+      <button class="btn" id="erase">Erase</button>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
