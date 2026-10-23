@@ -1,0 +1,191 @@
+* {
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  background-image: url('todor-andonov-ZnlTuVXn5h4-unsplash.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin: 0;
+}
+#game-section {
+  box-sizing: border-box;
+  width: 50%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  float: none;
+}
+
+#myCanvas {
+  background-color: #000000;
+  border-radius: 15px;
+  width: 100%;
+  height: 400px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+#startButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  background-color: #b85d19;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+#startButton:hover {
+  background-color: #e07a38;
+}
+a {
+  color: #b85d19;
+  text-decoration: none;
+  transition: color 0.5s;
+}
+
+a:visited {
+  color: #8c6a5d;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #e07a38;
+}
+
+#container {
+  margin-top: 50px;
+  margin-bottom: 50px;
+  width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#header {
+  text-align: left;
+  font-size: 250%;
+  background-color: rgba(253, 246, 238, 0.85);
+  color: #2c221e;
+  border-radius: 25px;
+  margin-bottom: 20px;
+}
+
+#header > span {
+  padding: 25px;
+  display: block;
+}
+
+#navbar {
+  text-align: center;
+  font-size: 150%;
+  padding: 15px;
+  background-color: rgba(240, 248, 255, 0.85);
+  border-top: 2px dashed rgba(0, 0, 0, 0.2);
+  border-bottom: 2px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 25px;
+  margin-bottom: 20px;
+}
+
+#navbar a {
+  margin: 0 30px;
+}
+
+#main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background-color: rgba(255, 253, 250, 0.75);
+  border-radius: 25px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+#content {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 940px;
+  background-color: rgba(255, 228, 196, 0.6);
+  font-size: 15px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 0;
+}
+
+#akapit1 {
+  width: 50%;
+  box-sizing: border-box;
+  line-height: 200%;
+  padding: 30px;
+  margin: 0;
+  float: none;
+}
+
+#akapit1 {
+  float: left;
+}
+
+#naglowek
+{
+  text-align: center;
+  font-size: 24px;
+}
+#naglowek2
+{
+  text-align: center;
+  font-size: 24px;
+}
+#sidemenu {
+  width: 200px;
+  padding: 20px;
+  background-color: rgba(255, 228, 196, 0.4);
+  border-radius: 15px;
+  float: none;
+}
+
+#sidemenu ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#sidemenu li {
+  margin-bottom: 10px;
+}
+#sidemenu .side-box {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(255, 228, 196, 0.4);
+  border-radius: 15px;
+  font-size: 13px;
+  line-height: 150%;
+  color: #2c221e;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+#sidemenu .side-box {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(255, 228, 196, 0.4);
+  border-radius: 15px;
+  font-size: 13px;
+  line-height: 150%;
+  color: #2c221e;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#footer {
+  border-top: 1px solid rgba(128, 128, 128, 0.4);
+  padding: 30px;
+  font-size: 18px;
+  height: auto;
+  text-align: center;
+  color: #555;
+  font-style: italic;
+  background-color: rgba(240, 248, 255, 0.85);
+  border-radius: 25px;
+}
