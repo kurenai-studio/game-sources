@@ -1,0 +1,52 @@
+# This game's descriptor: what a server runs when it installs this repository's pack.
+#
+# It travels INSIDE the pack (dot-ci's package.sh --pack keeps it at the root), so a
+# server started with `TMC_GAMES=<owner>/<repo>` needs nothing but the content origin:
+# `./server install-games` fetches the pack, verifies it, and writes this file to
+# content/<repo>/game.yml, where an operator can then edit cvars and player counts.
+#
+# content_id, version and kind are STAMPED by the installer from the pack it verified --
+# the site addresses a pack as <site username>/<repo> and a re-sync publishes 1.2.0+r2,
+# neither of which this file can know. What is written here for them is a placeholder.
+#
+# Paths are relative to the pack's mount point, which is also this repository's root.
+# Keep scene, client_scene and module in step with dot-server-deploy/content/arena/game.yml,
+# which describes the same game for a deployment that publishes it itself;
+# dot-server-deploy's examples/install_descriptor suite fails when the two disagree.
+
+content_id: gamemann/game-arena
+version: 0.0.0
+kind: pack
+
+name: Arena
+max_players: 16
+
+scene: scenes/arena_server.tscn
+client_scene: game/arena.tscn
+module: game/arena_module.gd
+
+cvars:
+  arena_scorelimit: "25"
+  arena_minplayers: "1"
+  # Loadouts on B: players choose by default. An owner restricts them in their cfg/content.yml
+  # (docs/modes.md "Loadouts and the owner's rules"), for example snipers only:
+  #   mp_loadout_allow: "primary=tag:scoped"
+  # or one kit for everybody, chosen by nobody:
+  #   mp_loadout_menu: "0"
+  #   mp_loadout_fixed: "primary=sniper secondary=pistol melee=knife thrown=frag"
+
+# What this game adds to a TMC server's /admin menu (dot-server-deploy reads it; any other
+# host ignores it). Each item is the console line an admin could type, shown only to an
+# admin holding that command's flag. A server owner can rename or remove these in their own
+# cfg/admin_menu.yml, which always wins.
+metadata:
+  admin_menu:
+    title: "Arena"
+    items:
+      arena_restart:
+        label: "Restart the match"
+        command: "arena_restart"
+        confirm: true
+      arena_vote:
+        label: "Start a map vote now"
+        command: "arena_vote"

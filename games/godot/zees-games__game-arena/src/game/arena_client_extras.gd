@@ -1,0 +1,415 @@
+extends Node
+
+const ArenaGame := preload("arena_game.gd")
+const ArenaMapSession := preload("arena_map_session.gd")
+const ArenaMaps := preload("arena_maps.gd")
+const ArenaNetBridge := preload("arena_net_bridge.gd")
+const ArenaServices := preload("arena_services.gd")
+
+## The client halves of chat, voice and map changes.
+##
+## [b]Three server-side layers already exist and every one of them is useless without a
+## client that answers.[/b] That is this family's single most repeated shape — a value
+## produced correctly and consumed by nobody — and it has the ends swapped here: a
+## voice router with nothing capturing, a map sync host with nothing downloading, and a
+## chat router with nothing to draw are all things that work perfectly and do nothing.
+##
+## Kept out of [ArenaClient] because that file is already about a camera, a sampler, a
+## renderer, a HUD and the keys, and none of these three is about any of that.
+## [ArenaClient] builds one of these and hands it the bridge.
+##
+## [codeblock]
+## var extras := ArenaClientExtras.new()
+## add_child(extras)
+## extras.attach(bridge, game)
+## [/codeblock]
+
+const CHANNEL := "arena.client.extras"
+
+## A chat line arrived, with the speaker and what they said kept apart.
+##
+## [b]Separate from [signal line_received], which flattens them.[/b] A chat box draws the
+## name in one colour and the text in another, and a signal that has already joined them
+## with a colon is a signal a window has to take back apart.
+signal said(speaker: String, text: String, kind: String)
+
+## What is carrying this conversation changed. See [DotChatManager.chat_state].
+signal chat_relay_changed(relayed: bool)
+
+## A chat line arrived and should be drawn.
+signal line_received(text: String)
+
+## The server is changing map. Carries what to, so a HUD can say so.
+signal map_changing(map: DotMapDef)
+
+## The world was replaced on this client.
+signal map_changed(map: DotMapDef)
+
+@export_group("Voice")
+
+## Whether to open the microphone at all.
+##
+## Off by default and it has to be: a game that opens a microphone because it started
+## is a game nobody should run. The key below is what turns it on, per press.
+@export var voice_enabled: bool = true
+
+## Push to talk rather than voice activation.
+@export var push_to_talk: bool = true
+
+var bridge: ArenaNetBridge = null
+var game: ArenaGame = null
+
+var chat: DotChatClient = null
+var voice: DotVoiceManager = null
+var maps: DotMapSyncClient = null
+
+var _talking: bool = false
+
+
+## Builds all three and points the bridge's callables at them.
+func attach(p_bridge: ArenaNetBridge, p_game: ArenaGame) -> DotResult:
+	if p_bridge == null:
+		return DotResult.fail(DotError.CODE_STATE, "No bridge to attach to.")
+
+	bridge = p_bridge
+	game = p_game
+
+	_build_chat()
+	_build_maps()
+
+	if voice_enabled:
+		_build_voice()
+
+	return DotResult.success(self)
+
+
+# --- Chat ------------------------------------------------------------------
+
+## The client's own view of chat: channels, history, unread counts.
+##
+## [b]It does not decide anything, and that is the whole point of there being two
+## halves.[/b] The server's router decides who hears a line; this one holds what
+## arrived, in order, per channel, so a window can draw it and a player can scroll
+## back — and it detects a gap in the sequence, which is how a client knows it missed
+## something rather than that nobody spoke.
+func _build_chat() -> void:
+	chat = DotChatClient.new()
+	chat.name = "Chat"
+	chat.rules = DotChatRules.new()
+	chat.history_limit = 300
+	chat.register_as = DotChatClient.SERVICE
+	add_child(chat)
+
+	var started := chat.start()
+
+	if not started.ok:
+		DotLog.warn(CHANNEL, "the chat client did not start", {
+			"why": started.error.message
+		})
+		return
+
+	for id in [
+		ArenaServices.CH_ALL, ArenaServices.CH_TEAM,
+		ArenaServices.CH_NEAR, ArenaServices.CH_WHISPER
+	]:
+		var channel := DotChatChannel.everyone()
+		channel.id = id
+		chat.add_channel(channel)
+
+	chat.message_received.connect(
+		func(message: DotChatMessage, _channel: StringName) -> void:
+			# A dot-chat line's kind is "say" on every channel; the channel is what makes
+			# it a team line, and "team" is what the chat box colours.
+			var kind := "team" if message.channel == ArenaServices.CH_TEAM else message.kind_name()
+			said.emit(speaker_of(message), text_of(message), kind)
+			line_received.emit(message.describe())
+	)
+
+	chat.gap_detected.connect(
+		func(expected: int, received: int) -> void:
+			# Worth a line. A gap means a reliable channel dropped something, which on
+			# a chat channel is a message somebody typed and nobody saw.
+			DotLog.info(CHANNEL, "a chat line was missed", {
+				"expected": expected, "received": received
+			})
+	)
+
+
+## Puts a line the server sent into the client's own history.
+##
+## [b]This is the entry point, and nothing called it.[/b] dot-chat's router decides who
+## hears a line and then hands it to dot-server's chat manager to put on the wire — so
+## on the client it arrives on `DotClientLink.chat_received`, not through anything
+## dot-chat owns. A `DotChatClient` that nothing feeds is a history that stays empty
+## and an unread count that stays zero, while chat works perfectly on screen.
+##
+## Found by the family's own detector: a public method whose name occurs once in its
+## repository is a method nothing calls.
+func receive_wire(payload: Dictionary) -> void:
+	# Not a line at all: the server saying what is carrying chat. It arrives before the
+	# first line does, so the client can decide whether to draw a box rather than drawing
+	# one and taking it away a moment later.
+	if str(payload.get("kind", "")) == "state":
+		chat_relay_changed.emit(bool(payload.get("relay", false)))
+		return
+
+	if chat != null:
+		var taken := chat.receive(payload)
+
+		if taken.ok:
+			# `message_received` fires from inside `receive`, so the line has already
+			# been emitted. Returning here is what stops it being drawn twice.
+			return
+
+	# Not a shape `DotChatClient` knows. dot-server's own chat manager sends a simpler
+	# payload than dot-chat's wire, and a server running WITHOUT dot-chat sends only
+	# that — so the fallback is not a failure path, it is the other deployment.
+	#
+	# [b]It used to be unreachable, and that is what made every line in this game blank.[/b]
+	# `DotChatMessage.from_dictionary` gave every key a default, so dot-server's payload
+	# parsed as a valid message with no text, no sender and no channel — `receive` returned
+	# ok and this fallback never ran. dot-chat refuses a dictionary with no `m` now; what
+	# is below is what actually draws chat on this client.
+	var speaker := str(payload.get("name", ""))
+	var text := str(payload.get("text", payload.get("message", "")))
+
+	said.emit(speaker, text, str(payload.get("kind", "all")))
+	line_received.emit(text if speaker == "" else "%s: %s" % [speaker, text])
+
+
+## Who a dot-chat line is drawn as said by: nobody, for a join or leave notice.
+##
+## [b]A join or leave notice is the server's line about a player, not the player's line.[/b]
+## It carries the player's name as its sender and no text at all (dot-chat's `_presence`),
+## so drawing it as `sender: text` put a bare "Guest 435:" in the chat box on every join,
+## which read as a chat command echoed with its text stripped. It is drawn as a plain line,
+## worded by [method DotChatMessage.describe]. Only those two kinds: an ADMIN line's sender
+## is the admin, and `describe()` would drop the name.
+static func speaker_of(message: DotChatMessage) -> String:
+	return "" if is_presence(message) else message.sender_name
+
+
+## The text a dot-chat line is drawn with. See [method speaker_of].
+static func text_of(message: DotChatMessage) -> String:
+	return message.describe() if is_presence(message) else message.text
+
+
+## A join or leave notice: a name and no text.
+static func is_presence(message: DotChatMessage) -> bool:
+	return message.kind in [DotChatMessage.Kind.JOIN, DotChatMessage.Kind.LEAVE]
+
+
+# --- Voice -----------------------------------------------------------------
+
+func _build_voice() -> void:
+	var config := DotVoiceConfig.new()
+	config.capture_enabled = false
+	config.push_to_talk = push_to_talk
+	config.jitter_ms = 60.0
+
+	voice = DotVoiceManager.new()
+	voice.name = "Voice"
+	voice.config = config
+	voice.config_file = ""
+	voice.register_service = true
+	# Positional, because the server routes by proximity. A voice that arrives from
+	# everywhere on a server that decided who hears it by distance throws away the
+	# only thing that made the distance worth computing.
+	voice.positional_playback = true
+	voice.playback_root_ref = DotNodeRef.of_self()
+	add_child(voice)
+
+	# One encoded frame out, per capture. This was `frame_sent.connect(pass)`: the manager
+	# captured, encoded and counted every frame and sent it nowhere, so no arena player was
+	# ever heard while received voice played.
+	voice.send_fn = func(bytes: PackedByteArray) -> void:
+		if bridge != null and bridge.link != null:
+			bridge.link.send_voice_frame(bytes)
+
+	# Placed where each speaker's player is; without this positional voice is flat.
+	voice.speaker_position_fn = func(speaker: int) -> Variant:
+		var player: Variant = game.player_for(speaker) if game != null else null
+		return player.controller.state.position if player != null else null
+
+	# The menu's voice settings and the player's block list (sm) find it by this name, and
+	# the server's sv_voice_enable reaches it, with or without a microphone.
+	voice.publish_as_client()
+	var _following := voice.follow_cvars(DotRegistry.get_service(&"dot_client_link"))
+
+	# Where a relayed frame arrives. Set on the bridge rather than the link, because
+	# the bridge is the only file that names both a link and a game.
+	bridge.voice_in_fn = func(payload: PackedByteArray) -> void:
+		if voice != null:
+			voice.receive(payload)
+
+
+## Holds or releases the talk key.
+##
+## [b]Capture is started on the first press and never at boot.[/b] A microphone opened
+## because a game launched is a microphone nobody agreed to, and on the web it is a
+## permission prompt in front of somebody who has not asked for one.
+func set_talking(pressed: bool) -> void:
+	if voice == null:
+		return
+
+	# The first press opens the microphone (dot-voice's update_talk), and only then.
+	var started := voice.update_talk(pressed)
+
+	if pressed and not started.ok:
+		# Headless, no device, or the browser refused; update_talk says so once a press.
+		# `AudioServer` reports a working sound card when there is none, and only
+		# `get_driver_name()` says "Dummy".
+		DotLog.info(CHANNEL, "voice capture is not available", {"why": started.error.message})
+		return
+
+	_talking = pressed and voice.server_enabled
+
+
+func is_talking() -> bool:
+	return _talking
+
+
+## Pushes each speaker's position, so proximity playback puts a voice where its player
+## is. Once per frame, from the client's own `_process`.
+func update_speakers() -> void:
+	if voice == null or game == null or not voice.positional_playback:
+		return
+
+	for speaker in voice.active_speakers():
+		var player := game.player_for(int(speaker))
+
+		if player != null:
+			voice.set_speaker_position(int(speaker), player.controller.state.position)
+
+
+## Sends one captured frame, if the manager produced one.
+##
+## Called from the client's physics tick rather than from a timer inside the manager,
+## for the reason every `advance` in this family takes a delta: a client that stalls
+## should not send a burst when it resumes.
+func pump_voice(_delta: float) -> void:
+	if voice == null or bridge == null or bridge.link == null:
+		return
+
+	# The manager hands out frames through its own signal; nothing to pump here beyond
+	# keeping the speaker positions current. Left as an explicit call because the
+	# alternative — the manager driving itself off the frame clock — is the thing this
+	# family's `advance` convention exists to prevent.
+	update_speakers()
+
+
+# --- Maps ------------------------------------------------------------------
+
+## Follows the server's map changes.
+##
+## [b]Without this a `changelevel` reaches nobody.[/b] The server announces, waits for
+## every peer to report the content, swaps, and tells everybody to load — and a client
+## with nothing listening carries on playing a world that no longer exists. dot-map's
+## own notes call that absence "the structural one".
+## Follows the server's map changes.
+##
+## [b]The session is not optional, and leaving it out looked exactly like a trust
+## refusal.[/b] `DotMapSyncClient` only accepts an announced map if it is either in the
+## client's OWN catalogue at the same version, or delivered content whose scene
+## resolves inside its own mount — and the second rule exists so a hostile host cannot
+## name an arbitrary `res://` path. Built with no session, this client had no
+## catalogue, so every map fell through to the delivered test and every one of arena's
+## was refused with "a host may not send a map that is not delivered content".
+##
+## Which is correct. The map really is a path in this build; what makes it safe is that
+## the client already knows it, and a client with no catalogue knows nothing.
+func _build_maps() -> void:
+	var session := ArenaMapSession.new()
+	session.name = "MapSession"
+	session.game = game
+	session.catalogue = ArenaMaps.catalogue()
+	# Nothing to draw into from here: the client's own renderer swaps the meshes off
+	# `map_changed`, because the level is a scene the client added and the session
+	# would otherwise be a second owner of it.
+	session.world_ref = null
+	add_child(session)
+
+	maps = DotMapSyncClient.new()
+	maps.name = "MapSync"
+	# On, and the catalogue above is what makes it safe: a map this client does not
+	# know is accepted only if it is delivered content, which none of the built-in
+	# ones are — so the ones it does know are accepted by name and version, and
+	# anything else has to arrive through dot-cloud.
+	maps.accept_unknown_maps = true
+	maps.remember_accepted_maps = true
+	maps.session = session
+	add_child(maps)
+
+	maps.fetching.connect(func(map: DotMapDef) -> void: map_changing.emit(map))
+	# One argument. `DotMapSyncClient.changed` carries the map and nothing else —
+	# unlike `DotMapSession.changed`, which carries the world as well. A two-argument
+	# handler bound to it is a runtime error on the first map change and on no other
+	# occasion.
+	maps.changed.connect(_on_map_loaded)
+	maps.change_aborted.connect(
+		func(map_id: StringName, reason: String) -> void:
+			DotLog.info(CHANNEL, "the map change was called off", {
+				"map": String(map_id), "why": reason
+			})
+	)
+
+	# The reports go back the way they came.
+	maps.send_fn = func(payload: Dictionary) -> void:
+		if bridge != null and bridge.link != null:
+			bridge.link.send_map_report(payload)
+
+	bridge.map_in_fn = func(payload: Dictionary) -> void:
+		if maps != null:
+			_prefer_delivered(payload)
+			maps.handle(payload)
+
+
+## A server announcing one of its delivered maps wins over a local import of the same id.
+##
+## [b]Because dot-map would refuse it otherwise[/b]: a client with arena-surf-dm-maps linked has
+## `surf_x` in its catalogue as a local def at `0.0.0-<hash>`, and `DotMapSyncClient` refuses
+## an announce for a known LOCAL map at another version ("this client has a different
+## version of that map"). The server named a pack, built from that pack's bytes, and is
+## waiting for this client to fetch the same one — so the local entry is dropped and the
+## announce is accepted as delivered content, checked against its mount like any other.
+## The link stays on the disk; `ArenaImportedMaps.add_mounted` makes the mount win for that
+## id once the pack is here.
+func _prefer_delivered(payload: Dictionary) -> void:
+	if not DotMapMessage.is_map_message(payload) \
+			or DotMapMessage.kind_of(payload) != DotMapMessage.KIND_ANNOUNCE:
+		return
+
+	var announced: Variant = payload.get("map", {})
+
+	if not (announced is Dictionary) or maps.session == null or maps.session.catalogue == null:
+		return
+
+	var def := DotMapDef.from_dictionary(announced as Dictionary)
+
+	if not ArenaMaps.is_delivered(def):
+		return
+
+	var known := maps.session.catalogue.get_map(def.id)
+
+	if known != null and known.is_local() and bool(known.meta.get("imported", false)):
+		maps.session.catalogue.remove(def.id)
+
+
+## The world was replaced on this client.
+##
+## [b]The client rebuilt it itself rather than being sent one[/b], through
+## [ArenaMapSession], which called [method ArenaGame.change_map]. That is what
+## `ArenaMap` being code rather than a scene buys: the server and the client both call
+## `ArenaMap.by_id`, so the geometry cannot differ — and for a predicting client that
+## is not a nicety, it is the condition under which prediction converges at all.
+func _on_map_loaded(map: DotMapDef) -> void:
+	map_changed.emit(map)
+
+
+func describe() -> Dictionary:
+	return {
+		"chat": chat.describe_lines().size() if chat != null else 0,
+		"voice": voice.describe() if voice != null else {},
+		"maps": maps.describe() if maps != null else {},
+		"talking": _talking,
+	}
