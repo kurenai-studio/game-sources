@@ -1,0 +1,17 @@
+dependencies {
+  api(libs.gdx.gdx)
+  api(libs.gdx.box2d.core)
+  api(libs.gdx.ashley)
+  api(libs.gdx.ai)
+  api(libs.gdx.controllers.core)
+  api(libs.coroutines)
+  api(libs.ktx.app)
+  api(libs.ktx.ashley)
+  api(libs.ktx.box2d)
+  api(libs.ktx.assets.async)
+  api(libs.ktx.collections)
+  api(libs.ktx.graphics)
+  api(libs.ktx.log)
+  api(libs.bundles.ktx.scene2d)
+  api(libs.ktx.tiled)
+}
