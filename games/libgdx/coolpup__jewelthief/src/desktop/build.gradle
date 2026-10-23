@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2016  Christian DeTamble
+ *
+ * This file is part of Jewel Thief.
+ *
+ * Jewel Thief is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Jewel Thief is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Jewel Thief.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+apply plugin: "java"
+
+sourceCompatibility = 1.6
+sourceSets.main.java.srcDirs = [ "src/" ]
+
+project.ext.mainClassName = "at.therefactory.jewelthief.desktop.DesktopLauncher"
+project.ext.assetsDir = new File("../android/assets");
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+}
+
+task dist(type: Jar) {
+    from files(sourceSets.main.output.classesDir)
+    from files(sourceSets.main.output.resourcesDir)
+    from {configurations.compile.collect {zipTree(it)}}
+    from files(project.assetsDir);
+ 
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+}
+
+dist.dependsOn classes
+
+eclipse {
+    project {
+        name = appName + "-desktop"
+        linkedResource name: 'assets', type: '2', location: 'PARENT-1-PROJECT_LOC/android/assets'
+    }
+}
+
+task afterEclipseImport(description: "Post processing after project generation", group: "IDE") {
+  doLast {
+    def classpath = new XmlParser().parse(file(".classpath"))
+    new Node(classpath, "classpathentry", [ kind: 'src', path: 'assets' ]);
+    def writer = new FileWriter(file(".classpath"))
+    def printer = new XmlNodePrinter(new PrintWriter(writer))
+    printer.setPreserveWhitespace(true)
+    printer.print(classpath)
+  }
+}
