@@ -1,0 +1,105 @@
+name: Waternet Build And Package
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+   branches: [ main ]
+  # pull_request:
+  #  branches: [ main ]
+
+  # Allows you to run this workflow manually ftarget the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - gbc
+          - gbc-batteryless-DMG_AM29LV160MB
+          - gbc-batteryless-DMG_Generic_WR_555_A9
+          - gg
+          - pocket
+          - sms
+          - megaduck
+        include:
+          - target: gbc
+            ext: gbc
+            cartridge: waternet.gb.png
+            name: Nintendo Game Boy (Color)
+          - target: gbc-batteryless-DMG_Generic_WR_555_A9
+            ext: batteryless-DMG_Generic_WR_555_A9.gbc
+            cartridge: waternet.gb.png
+            name: Nintendo Game Boy (Color) Batteryless Save Generic Flash Cartridge (WR-555-A9)
+          - target: gbc-batteryless-DMG_AM29LV160MB
+            ext: batteryless-DMG_AM29LV160MB.gbc
+            cartridge: waternet.gb.png
+            name: Nintendo Game Boy (Color) Batteryless Save Flash Cartridge (DMG_AM29LV160MB)
+          - target: gg
+            ext: gg
+            cartridge: waternet.gg.png
+            name: Sega Game Gear
+          - target: pocket
+            ext: pocket
+            cartridge: waternet.gb.png
+            name: Analogue Pocket
+          - target: sms
+            ext: sms
+            cartridge: waternet.sms.png
+            name: Sega Master System
+          - target: megaduck
+            ext: duck
+            cartridge: waternet.gb.png
+            name: Mega Duck
+    runs-on: ubuntu-latest
+        
+    steps:
+      # ==== dependencies ====
+      - name: Install Make
+        run: sudo apt-get install -y make
+        
+      # ==== Build Steps ====
+      - name: Check out Sources
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+      
+      - name: Grab GBDK
+        run: |
+          cd gdbk_build
+          tar -xvf "Linux-x64 build.tar.gz"
+          cd ..
+          
+      - name: Build
+        run: |
+          export GBDK_HOME="$PWD/gdbk_build/gbdk/"
+          echo $GBDK_HOME
+          cd source
+          make ${{ matrix.target }}-release
+          cd ..
+          
+      - name: Prepare artifacts
+        run: |
+          mkdir -p package
+          cp "source/build/${{ matrix.ext }}/waternet.${{ matrix.ext }}" package
+          cp LICENSE package
+          cp "images/cartridge_labels/${{ matrix.cartridge }}" package
+      
+      - name: Make Readme.pdf
+        uses: baileyjm02/markdown-to-pdf@v1.2.0
+        with:
+          input_path: ./
+          output_dir: package/
+          images_dir: ./images
+          # for example <img src="./images/file-name.png">
+          image_import: images
+          # Default is true, can set to false to only get PDF files
+          build_html: false
+               
+      - name: Store build
+        uses: actions/upload-artifact@v3
+        with:
+          name: Waternet ${{ matrix.name }}
+          path: package/
+          # retention-days: 30
