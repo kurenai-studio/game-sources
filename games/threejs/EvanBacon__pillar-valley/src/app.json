@@ -1,0 +1,145 @@
+{
+  "expo": {
+    "name": "Pillar Valley",
+    "description": "Immerse yourself in a suave world of zen",
+    "slug": "pillar-valley",
+    "version": "12.0.5",
+    "orientation": "portrait",
+    "primaryColor": "#F09458",
+    "backgroundColor": "#F09458",
+    "userInterfaceStyle": "automatic",
+    "scheme": "plrvly",
+    "locales": {
+      "en": {
+        "CFBundleName": "Pillar Valley"
+      },
+      "es": {
+        "CFBundleName": "Valle de los Pilares"
+      }
+    },
+    "icon": "./icons/pillars/default.png",
+    "githubUrl": "https://github.com/evanbacon/expo-pillar-valley",
+    "splash": {
+      "image": "./icons/splash.png",
+      "backgroundColor": "#F09458",
+      "resizeMode": "cover"
+    },
+    "extra": {
+      "firebaseConfig": {
+        "apiKey": "AIzaSyAkOa9Hyx6aKaSItFWBbrw_zou6RlQYdck",
+        "authDomain": "game-f26ee.firebaseapp.com",
+        "databaseURL": "https://game-f26ee.firebaseio.com",
+        "projectId": "game-f26ee",
+        "storageBucket": "game-f26ee.appspot.com",
+        "messagingSenderId": "997358977148",
+        "appId": "1:997358977148:web:a3a494984ed9dd976909f9",
+        "measurementId": "G-3PJBNEEFP4"
+      },
+      "eas": {
+        "projectId": "a1a81680-f84c-11e7-88a7-c74e9d068889"
+      }
+    },
+
+    "assetBundlePatterns": ["src/assets/**/*", "icons/splash.png"],
+    "ios": {
+      "appleTeamId": "QQ57RJ5UTD",
+      "appStoreUrl": "https://itunes.apple.com/us/app/pillar-valley/id1336398804",
+      "icon": {
+        "light": "./icons/pillars/default.png",
+        "dark": "./icons/pillars/default-dark.png"
+      },
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evanbacon.pillarvalley",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-2312569320461549~5287895909",
+        "googleMobileAdsAutoInit": true
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.bacon.data"]
+      },
+      "associatedDomains": [
+        "applinks:pillarvalley.expo.app",
+        "webcredentials:pillarvalley.expo.app",
+        "activitycontinuation:pillarvalley.expo.app"
+      ]
+    },
+    "android": {
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.evanbacon.pillarvalley",
+      "adaptiveIcon": {
+        "foregroundImage": "./icons/pillars/default.png",
+        "backgroundColor": "#F09458"
+      },
+      "package": "com.evanbacon.pillarvalley",
+      "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-2312569320461549~8488774315",
+        "googleMobileAdsAutoInit": true
+      },
+      "permissions": []
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./icons/pillars/default.png",
+      "config": {
+        "firebase": {
+          "apiKey": "AIzaSyAkOa9Hyx6aKaSItFWBbrw_zou6RlQYdck",
+          "authDomain": "game-f26ee.firebaseapp.com",
+          "databaseURL": "https://game-f26ee.firebaseio.com",
+          "projectId": "game-f26ee",
+          "storageBucket": "game-f26ee.appspot.com",
+          "messagingSenderId": "997358977148",
+          "appId": "1:997358977148:web:a3a494984ed9dd976909f9",
+          "measurementId": "G-3PJBNEEFP4"
+        }
+      }
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://pillarvalley.expo.app"
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_achievements": {
+              "foregroundImage": "./icons/shortcut/achievements.png",
+              "backgroundColor": "#F09458"
+            },
+            "shortcut_licenses": {
+              "foregroundImage": "./icons/shortcut/licenses.png",
+              "backgroundColor": "#F09458"
+            },
+            "shortcut_feedback": "./icons/shortcut/feedback.png"
+          }
+        }
+      ],
+      "@bacons/apple-targets",
+      "expo-sqlite",
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": false
+        }
+      ]
+    ],
+    "experiments": {
+      "reactCompiler": true,
+      "tsconfigPaths": true,
+      "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a1a81680-f84c-11e7-88a7-c74e9d068889"
+    }
+  }
+}
