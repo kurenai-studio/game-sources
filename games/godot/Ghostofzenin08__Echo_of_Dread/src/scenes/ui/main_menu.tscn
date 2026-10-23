@@ -1,0 +1,473 @@
+[gd_scene load_steps=17 format=3 uid="uid://c6vx1l4q1y5b8"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_menu.tscn" id="2_settings"]
+[ext_resource type="FontFile" path="res://main-menu/PostNoBillsColombo-Light.ttf" id="3_font"]
+[ext_resource type="Texture2D" path="res://main-menu/Rectangle 57.png" id="4_rect57"]
+[ext_resource type="Texture2D" path="res://main-menu/Group 40.png" id="5_group40"]
+[ext_resource type="Texture2D" path="res://main-menu/Group 28.png" id="6_group28"]
+[ext_resource type="Texture2D" path="res://main-menu/Rectangle 48.png" id="7_rect48"]
+[ext_resource type="Texture2D" path="res://main-menu/Rectangle 50.png" id="8_rect50"]
+[ext_resource type="PackedScene" path="res://scenes/ui/how_to_play.tscn" id="9_howtoplay"]
+[ext_resource type="Texture2D" path="res://mobile-view/Group 47.png" id="10_mob_play"]
+[ext_resource type="Texture2D" path="res://mobile-view/Group 55.png" id="11_mob_settings"]
+[ext_resource type="Texture2D" path="res://mobile-view/Group 54.png" id="12_mob_chamber"]
+[ext_resource type="Texture2D" path="res://mobile-view/Frame.png" id="13_mob_help"]
+[ext_resource type="Texture2D" path="res://main-menu/Group 65.png" id="14_group65"]
+[ext_resource type="Texture2D" path="res://main-menu/Group 66.png" id="15_group66"]
+
+[sub_resource type="Gradient" id="Gradient_bg"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0, 0, 0, 1, 0.00392157, 0.0627451, 0.141176, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bg"]
+gradient = SubResource("Gradient_bg")
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_normal"]
+texture = ExtResource("4_rect57")
+texture_margin_left = 16.0
+texture_margin_top = 12.0
+texture_margin_right = 16.0
+texture_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.00784314, 0.101961, 0.223529, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.78, 1, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0.7, 1, 0.25)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+bg_color = Color(0.00392157, 0.04, 0.105, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.9, 1, 0.95)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_btn_focus"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_bg")
+
+[node name="Decorations" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftConstellation" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 15.0
+offset_top = -155.0
+offset_right = 305.0
+offset_bottom = 335.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_group66")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RightConstellation" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -305.0
+offset_top = -180.0
+offset_right = -15.0
+offset_bottom = 310.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_group65")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTitleL" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -345.0
+offset_top = 50.0
+offset_right = -255.0
+offset_bottom = 140.0
+grow_horizontal = 2
+rotation = 0.92
+pivot_offset = Vector2(45, 45)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTitleR" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 255.0
+offset_top = 45.0
+offset_right = 345.0
+offset_bottom = 135.0
+grow_horizontal = 2
+rotation = -0.35
+pivot_offset = Vector2(45, 45)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTopL1" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -190.0
+offset_top = 10.0
+offset_right = -142.0
+offset_bottom = 58.0
+grow_horizontal = 2
+rotation = 0.35
+pivot_offset = Vector2(24, 24)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTopL2" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -175.0
+offset_top = -25.0
+offset_right = -145.0
+offset_bottom = 5.0
+grow_horizontal = 2
+rotation = 0.12
+pivot_offset = Vector2(15, 15)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTopR1" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 150.0
+offset_top = 15.0
+offset_right = 198.0
+offset_bottom = 63.0
+grow_horizontal = 2
+rotation = -0.25
+pivot_offset = Vector2(24, 24)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ShardTopR2" type="TextureRect" parent="Decorations"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 160.0
+offset_top = -25.0
+offset_right = 190.0
+offset_bottom = 5.0
+grow_horizontal = 2
+rotation = 0.15
+pivot_offset = Vector2(15, 15)
+mouse_filter = 2
+texture = ExtResource("6_group28")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 55.0
+offset_right = 400.0
+offset_bottom = 165.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.7, 1, 0.3)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 84
+text = "Echo of Dread"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(356, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -178.0
+offset_top = -105.0
+offset_right = 178.0
+offset_bottom = 275.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="StartButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(356, 56)
+layout_mode = 2
+pivot_offset = Vector2(178, 28)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+text = "Play"
+
+[node name="LevelSelectButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(356, 56)
+layout_mode = 2
+pivot_offset = Vector2(178, 28)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+text = "Select Chambers"
+
+[node name="SettingsButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(356, 56)
+layout_mode = 2
+pivot_offset = Vector2(178, 28)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+text = "Settings"
+
+[node name="HowToPlayButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(356, 56)
+layout_mode = 2
+pivot_offset = Vector2(178, 28)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+text = "How to play"
+
+[node name="QuitButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(356, 56)
+layout_mode = 2
+pivot_offset = Vector2(178, 28)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+text = "Quit"
+
+[node name="MobileLayout" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MobileHelpButton" type="Button" parent="MobileLayout"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -72.0
+offset_top = 28.0
+offset_right = -28.0
+offset_bottom = 72.0
+grow_horizontal = 0
+focus_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+
+[node name="Icon" type="TextureRect" parent="MobileLayout/MobileHelpButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_mob_help")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MobileCenter" type="VBoxContainer" parent="MobileLayout"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -20.0
+offset_right = 300.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="ButtonsRow" type="HBoxContainer" parent="MobileLayout/MobileCenter"]
+layout_mode = 2
+theme_override_constants/separation = 36
+alignment = 1
+
+[node name="MobileSettingsButton" type="Button" parent="MobileLayout/MobileCenter/ButtonsRow"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+
+[node name="Icon" type="TextureRect" parent="MobileLayout/MobileCenter/ButtonsRow/MobileSettingsButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_mob_settings")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MobilePlayButton" type="Button" parent="MobileLayout/MobileCenter/ButtonsRow"]
+custom_minimum_size = Vector2(116, 116)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+
+[node name="Icon" type="TextureRect" parent="MobileLayout/MobileCenter/ButtonsRow/MobilePlayButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_mob_play")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MobileChamberButton" type="Button" parent="MobileLayout/MobileCenter/ButtonsRow"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_btn_focus")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn_focus")
+
+[node name="Icon" type="TextureRect" parent="MobileLayout/MobileCenter/ButtonsRow/MobileChamberButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_mob_chamber")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GuideModal" parent="." instance=ExtResource("9_howtoplay")]
+visible = false
+
+[node name="SettingsMenu" parent="." instance=ExtResource("2_settings")]
+visible = false
