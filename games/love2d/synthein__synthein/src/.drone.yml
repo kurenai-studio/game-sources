@@ -1,0 +1,115 @@
+package-config-dev: &package-config-dev
+  when:
+    event: push
+  image: synthein/love-build:11.2
+  environment:
+    - LOVE_VERSION=11.2
+
+package-config-release: &package-config-release
+  when:
+    event: tag
+  image: synthein/love-build:11.2
+  environment:
+    - LOVE_VERSION=11.2
+
+pipeline:
+  test:
+    when:
+      event: push
+    image: synthein/love-build:11.2
+    pull: true
+    commands:
+      - make check
+      - make test
+
+  package-love-dev:
+    <<: *package-config-dev
+    commands:
+      - make love synthein_version=unstable
+
+  package-linux-appimage-dev:
+    <<: *package-config-dev
+    commands:
+      - make appimage synthein_version=unstable love_version=$${LOVE_VERSION}
+
+  package-macos-dev:
+    <<: *package-config-dev
+    commands:
+      - make macos synthein_version=unstable love_version=$${LOVE_VERSION}
+
+  package-windows-dev:
+    <<: *package-config-dev
+    commands:
+      - make windows synthein_version=unstable love_version=$${LOVE_VERSION}
+
+  upload-builds-dev:
+    when:
+      event: push
+      branch: master
+    image: plugins/s3
+    secrets: [ aws_access_key_id, aws_secret_access_key ]
+    bucket: synthein-unstable-builds
+    acl: public-read
+    region: us-west-2
+    source: build/synthein-unstable*
+    strip_prefix: build/
+    target: /
+
+  package-love-release:
+    <<: *package-config-release
+    commands:
+      - make love synthein_version=${DRONE_TAG}
+
+  package-linux-appimage-release:
+    <<: *package-config-release
+    commands:
+      - make appimage synthein_version=${DRONE_TAG} love_version=$${LOVE_VERSION}
+
+  package-macos-release:
+    <<: *package-config-release
+    commands:
+      - make macos synthein_version=${DRONE_TAG} love_version=$${LOVE_VERSION}
+
+  package-windows-release:
+    <<: *package-config-release
+    commands:
+      - make windows synthein_version=${DRONE_TAG} love_version=$${LOVE_VERSION}
+
+  upload-builds-release:
+    when:
+      event: tag
+    image: plugins/github-release
+    secrets: [ github_token ]
+    files: build/synthein-${DRONE_TAG}*
+
+  notify-push:
+    when:
+      event: push
+      branch: master
+      status: [failure, success, error]
+    image: appleboy/drone-telegram
+    pull: true
+    secrets: [ telegram_token ]
+    to: -1001143861626
+    format: html
+    message: |
+      <a href="{{ build.link }}">Build {{ build.status }}</a>
+
+      <a href="https://github.com/synthein/synthein">{{ repo.owner }}/{{ repo.name }}</a>
+      in branch <b>{{ commit.branch }}</b> by <b>{{ commit.author }}</b>.
+
+      {{ commit.message }}
+
+  notify-tag:
+    when:
+      event: tag
+      status: [failure, success, error]
+    image: appleboy/drone-telegram
+    pull: true
+    secrets: [ telegram_token ]
+    to: -1001143861626
+    format: html
+    message: |
+      <b>Synthein version <a href="https://github.com/synthein/synthein/releases/tag/{{build.tag}}">{{build.tag}}</a> release</b>
+
+      <a href="{{build.link}}">Build {{build.status}}</a>

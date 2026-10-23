@@ -1,0 +1,74 @@
+digraph {
+	rankdir="LR";
+	node [shape=box];
+	
+	subgraph Construction_Drones {
+		label = "ConstructionDrones"
+		cluster = true
+		
+		cd  [label = "Construction\nDrones"];
+		cd2 [label = "Annex Not\nTop Down"];
+		cd3 [label = "Conflicting Parts"]
+		cd4 [label = "Drone Construstion\nCabaility Tracking"];
+		cd5 [label = "Active Blueprint"];
+		cd6 [label = "Construction\nDrone Logic"];
+		cd7 [label = "Part Transfer"];
+		cd8 [label = "Annexee Move Into Position"];
+		
+		subgraph Clamp_Part {
+			label = "Clamp Part"
+			cluster = true
+			
+			cp  [label = "Clamp Part"];
+			cp1 [label = "Clamp Part Code File"];
+			cp2 [label = "Clamp Part Image"];
+			
+			cp1 -> cp;
+			cp2 -> cp;
+		}
+		
+		
+		cd2 -> cd;
+		cd6 -> cd;
+		cd1 -> cd2;
+		cd7 -> cd2;
+		cd8 -> cd2;
+		cp  -> cd4;
+		cd4 -> cd6;
+		cd5 -> cd6;
+		cd3 -> cd7;
+	}
+	
+	
+	
+	ui  [label = "Travel UI"];
+	ui1 [label = "Mini Map"];
+	ui2 [label = "Radar"];
+	ui3 [label = "Zoom Draw\nModes"];
+	ui4 [label = "CameraWidget"];
+	
+	{ui1 ui2} -> ui;
+	{ui3 ui4} -> ui1;
+	
+	
+	sh  [label = "Orgainic Sheilds"];
+	sh1 [label = "Shaders"];
+	sh2 [label = "Non-Circle OverSized\nFixture Prototype"];
+	
+	{sh1 sh2} -> sh;
+	
+	
+	fm  [label = "User Defineable\nFormations"];
+	fm1 [label = "Formation Save\nFiles"];
+	fm2 [label = "Default Formations"];
+	
+	{fm1 fm2} -> fm
+	
+	"Remove Enabled Functions"
+	"Remove Game State Parent Class"
+	"Add interface Test for Game State"
+	"Remove Stack Based Game State Transitions"
+	"Make Ship Editor A Widget"
+	"Make Formation Editor a Widget"
+	"Move Control Mapping to Main Rather than ingame"
+}

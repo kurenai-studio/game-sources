@@ -1,0 +1,10 @@
+[package]
+name = "syntheinrust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+mlua = { version = "*", features = ["luajit", "module", "macros"] }
