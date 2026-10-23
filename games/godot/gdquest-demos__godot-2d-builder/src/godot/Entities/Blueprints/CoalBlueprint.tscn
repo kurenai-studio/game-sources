@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://dnjt6emrl7oaj"]
+
+[ext_resource type="Texture2D" uid="uid://bunwc0u4elj4a" path="res://Shared/blueprints.svg" id="1"]
+[ext_resource type="Script" uid="uid://depvrlid144wo" path="res://Entities/Blueprints/BlueprintEntity.gd" id="2"]
+
+[node name="CoalBlueprint" type="Node2D" unique_id=1910714222]
+script = ExtResource("2")
+stack_size = 20
+placeable = false
+description = "Refined lumber. Burns more efficiently."
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2099963420]
+position = Vector2(0, -25)
+texture = ExtResource("1")
+region_enabled = true
+region_rect = Rect2(679, 239, 82, 75)

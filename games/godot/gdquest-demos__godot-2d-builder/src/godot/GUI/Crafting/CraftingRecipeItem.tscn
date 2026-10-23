@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://cb1kdrk3b01sc"]
+
+[ext_resource type="Texture2D" uid="uid://bunwc0u4elj4a" path="res://Shared/blueprints.svg" id="1"]
+[ext_resource type="StyleBox" path="res://Shared/Theme/Panel/inventory_panel_style.tres" id="2"]
+[ext_resource type="Script" uid="uid://bx37j62nnj2t6" path="res://GUI/Crafting/CraftingRecipeItem.gd" id="3"]
+[ext_resource type="StyleBox" path="res://Shared/Theme/Panel/inventory_panel_light_style.tres" id="4"]
+[ext_resource type="StyleBox" path="res://Shared/Theme/Panel/inventory_panel_bright_style.tres" id="5"]
+[ext_resource type="Theme" path="res://Shared/Theme/builder_theme.tres" id="6"]
+[ext_resource type="Script" uid="uid://4o0c3txx8bp8" path="res://GUI/Crafting/RecipeName.gd" id="7"]
+[ext_resource type="Script" uid="uid://bhifao5gnu1i1" path="res://GUI/GUISprite.gd" id="8"]
+
+[node name="CraftingRecipe" type="PanelContainer" unique_id=1513098832]
+offset_right = 120.0
+offset_bottom = 51.0
+theme = ExtResource("6")
+script = ExtResource("3")
+regular_style = ExtResource("2")
+highlight_style = ExtResource("4")
+bright_style = ExtResource("5")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=747283248]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=288201435]
+layout_mode = 2
+
+[node name="GUISprite" type="Control" parent="MarginContainer/HBoxContainer" unique_id=263813061]
+custom_minimum_size = Vector2(102, 82)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("8")
+texture = ExtResource("1")
+region_enabled = true
+region_rect = Rect2(339, 119, 102, 82)
+
+[node name="RecipeName" type="Label" parent="MarginContainer/HBoxContainer" unique_id=1719524055]
+layout_mode = 2
+text = "Battery"
+script = ExtResource("7")
+
+[connection signal="mouse_entered" from="." to="." method="_on_CraftingRecipe_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_CraftingRecipe_mouse_exited"]

@@ -1,0 +1,96 @@
+[gd_resource type="TileSet" format=3 uid="uid://cif0anr2wqcoy"]
+
+[ext_resource type="Texture2D" uid="uid://0ar6ec2vp2ha" path="res://Shared/tileset.svg" id="1"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_lvu1p"]
+texture = ExtResource("1")
+margins = Vector2i(10, 10)
+texture_region_size = Vector2i(100, 100)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_rli5b"]
+texture = ExtResource("1")
+margins = Vector2i(450, 230)
+texture_region_size = Vector2i(100, 100)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ubg8k"]
+texture = ExtResource("1")
+margins = Vector2i(560, 230)
+texture_region_size = Vector2i(100, 100)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(50.801003, -24.7609, 50.801003, 25.1389, 0.230999, 50.591003, -51.00842, 25.1389, -50.338623, -25.0958, 0.230999, -51.55267)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-50.801003, -24.7609, -50.801003, 25.1389, -0.230999, 50.591003, 51.00842, 25.1389, 50.338623, -25.0958, -0.230999, -51.55267)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(50.801003, 24.7609, 50.801003, -25.1389, 0.230999, -50.591003, -51.00842, -25.1389, -50.338623, 25.0958, 0.230999, 51.55267)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-50.801003, 24.7609, -50.801003, -25.1389, -0.230999, -50.591003, 51.00842, -25.1389, 50.338623, 25.0958, -0.230999, 51.55267)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(-24.7609, 50.801003, 25.1389, 50.801003, 50.591003, 0.230999, 25.1389, -51.00842, -25.0958, -50.338623, -51.55267, 0.230999)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(24.7609, 50.801003, -25.1389, 50.801003, -50.591003, 0.230999, -25.1389, -51.00842, 25.0958, -50.338623, 51.55267, 0.230999)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(-24.7609, -50.801003, 25.1389, -50.801003, 50.591003, -0.230999, 25.1389, 51.00842, -25.0958, 50.338623, -51.55267, -0.230999)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(24.7609, -50.801003, -25.1389, -50.801003, -50.591003, -0.230999, -25.1389, 51.00842, 25.0958, 50.338623, 51.55267, -0.230999)
+
+[resource]
+tile_size = Vector2i(100, 100)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_lvu1p")
+sources/1 = SubResource("TileSetAtlasSource_rli5b")
+sources/2 = SubResource("TileSetAtlasSource_ubg8k")
