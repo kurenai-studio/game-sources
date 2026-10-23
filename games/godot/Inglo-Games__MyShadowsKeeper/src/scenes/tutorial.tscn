@@ -1,0 +1,99 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://assets/theme.tres" type="Theme" id=1]
+[ext_resource path="res://assets/images/water_uv_offset.png" type="Texture" id=2]
+[ext_resource path="res://scenes/platform_floor_down.tscn" type="PackedScene" id=3]
+[ext_resource path="res://assets/images/water.shader" type="Shader" id=4]
+[ext_resource path="res://scenes/platform_long_down.tscn" type="PackedScene" id=5]
+[ext_resource path="res://scenes/level_prototype.tscn" type="PackedScene" id=6]
+[ext_resource path="res://scenes/platform_long.tscn" type="PackedScene" id=7]
+[ext_resource path="res://scenes/platform_floor.tscn" type="PackedScene" id=8]
+
+[sub_resource type="ShaderMaterial" id=1]
+resource_local_to_scene = true
+shader = ExtResource( 4 )
+shader_param/tile_factor = 1.0
+shader_param/uv_offset_size = Vector2( 0.3, 0.3 )
+shader_param/wave_size = Vector2( 0.03, 0.05 )
+shader_param/time_scale = Vector2( 0.02, 0.03 )
+shader_param/uv_offset_texture = ExtResource( 2 )
+
+[node name="level" index="0" instance=ExtResource( 6 )]
+text_top = "Where am I?"
+text_bottom = "How did I get here?"
+
+[node name="bg_shadow" parent="bg" index="1"]
+material = SubResource( 1 )
+
+[node name="character" parent="." index="4"]
+position = Vector2( 960, -100 )
+
+[node name="goal" parent="." index="5"]
+position = Vector2( 960, -380 )
+
+[node name="platform_floor" parent="." index="9" instance=ExtResource( 8 )]
+
+[node name="platform_floor_down" parent="." index="10" instance=ExtResource( 3 )]
+
+[node name="p01" parent="." index="11" instance=ExtResource( 7 )]
+position = Vector2( 1200, -160 )
+
+[node name="p01s" parent="." index="12" instance=ExtResource( 5 )]
+position = Vector2( 1200, 160 )
+
+[node name="p02" parent="." index="13" instance=ExtResource( 7 )]
+position = Vector2( 350, -160 )
+
+[node name="p02s" parent="." index="14" instance=ExtResource( 5 )]
+position = Vector2( 350, 160 )
+
+[node name="p03" parent="." index="15" instance=ExtResource( 7 )]
+position = Vector2( 750, -300 )
+
+[node name="p03s" parent="." index="16" instance=ExtResource( 5 )]
+position = Vector2( 750, 300 )
+
+[node name="label01" type="Label" parent="." index="18"]
+margin_left = 1240.0
+margin_top = -60.0
+margin_right = 1565.0
+margin_bottom = -7.0
+theme = ExtResource( 1 )
+text = "Press D to move right"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="label02" type="Label" parent="." index="19"]
+margin_left = 375.0
+margin_top = -60.0
+margin_right = 685.0
+margin_bottom = -7.0
+theme = ExtResource( 1 )
+text = "Press A to move left"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="label03" type="Label" parent="." index="20"]
+margin_left = 1100.0
+margin_top = -275.0
+margin_right = 1345.0
+margin_bottom = -222.0
+theme = ExtResource( 1 )
+text = "Press W to jump"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="label04" type="Label" parent="." index="21"]
+margin_left = 848.0
+margin_top = -475.0
+margin_right = 1077.0
+margin_bottom = -422.0
+theme = ExtResource( 1 )
+text = "Reach this light"
+align = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}

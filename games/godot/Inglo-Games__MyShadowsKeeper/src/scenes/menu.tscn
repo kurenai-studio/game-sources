@@ -1,0 +1,97 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://scripts/menu.gd" type="Script" id=1]
+[ext_resource path="res://assets/bergieseltzer48.res" type="DynamicFont" id=2]
+[ext_resource path="res://assets/bergieseltzer96.res" type="DynamicFont" id=3]
+[ext_resource path="res://assets/images/bg.svg" type="Texture" id=4]
+[ext_resource path="res://assets/images/water_reflection_material.tres" type="Material" id=5]
+[ext_resource path="res://scenes/platform_floor.tscn" type="PackedScene" id=6]
+[ext_resource path="res://scenes/platform_floor_down.tscn" type="PackedScene" id=7]
+
+[node name="menu" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="bg" type="Sprite" parent="."]
+texture = ExtResource( 4 )
+centered = false
+
+[node name="bg_shadow" type="Sprite" parent="."]
+modulate = Color( 0.580392, 0.580392, 0.580392, 1 )
+texture = ExtResource( 4 )
+centered = false
+offset = Vector2( 0, 540 )
+flip_v = true
+
+[node name="platform_floor" parent="." instance=ExtResource( 6 )]
+position = Vector2( 0, 540 )
+
+[node name="platform_floor_down" parent="." instance=ExtResource( 7 )]
+position = Vector2( 0, 540 )
+
+[node name="shader" type="ColorRect" parent="."]
+material = ExtResource( 5 )
+margin_right = 1920.0
+margin_bottom = 1080.0
+color = Color( 1, 1, 1, 0 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="label" type="Label" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 180.0
+margin_right = 1920.0
+margin_bottom = 168.0
+custom_fonts/font = ExtResource( 3 )
+text = "My Shadow's Keeper"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="vbox" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 750.0
+margin_top = 390.0
+margin_right = 1170.0
+margin_bottom = 818.0
+custom_constants/separation = 64
+alignment = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="start_btn" type="Button" parent="vbox"]
+margin_top = 12.0
+margin_right = 420.0
+margin_bottom = 65.0
+custom_fonts/font = ExtResource( 2 )
+text = "START"
+
+[node name="tut_btn" type="Button" parent="vbox"]
+margin_top = 129.0
+margin_right = 420.0
+margin_bottom = 182.0
+custom_fonts/font = ExtResource( 2 )
+text = "CONTROLS"
+
+[node name="attr_btn" type="Button" parent="vbox"]
+margin_top = 246.0
+margin_right = 420.0
+margin_bottom = 299.0
+custom_fonts/font = ExtResource( 2 )
+text = "Credits"
+
+[node name="quit_btn" type="Button" parent="vbox"]
+margin_top = 363.0
+margin_right = 420.0
+margin_bottom = 416.0
+custom_fonts/font = ExtResource( 2 )
+text = "QUIT"
+[connection signal="button_up" from="vbox/start_btn" to="." method="_on_start_pressed"]
+[connection signal="button_up" from="vbox/tut_btn" to="." method="_on_tut_pressed"]
+[connection signal="button_up" from="vbox/attr_btn" to="." method="_on_attr_pressed"]
+[connection signal="button_up" from="vbox/quit_btn" to="." method="_on_quit_pressed"]
