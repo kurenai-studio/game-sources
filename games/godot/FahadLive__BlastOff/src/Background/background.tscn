@@ -1,0 +1,88 @@
+[gd_scene load_steps=11 format=3 uid="uid://cihqkayqkp35l"]
+
+[ext_resource type="Script" path="res://Background/background.gd" id="1_c882g"]
+[ext_resource type="Texture2D" uid="uid://c632a05yetuwy" path="res://Background/bg_star.svg" id="2_44itj"]
+[ext_resource type="PackedScene" uid="uid://udhybfaq1xwa" path="res://Background/parallax_clouds.tscn" id="3_627mq"]
+[ext_resource type="Texture2D" uid="uid://d3y2gy53d64nc" path="res://Background/bg_star_white.svg" id="3_nxmsk"]
+[ext_resource type="Texture2D" uid="uid://c1h51q548aweb" path="res://Background/moon.svg" id="5_4h3xb"]
+
+[sub_resource type="Gradient" id="Gradient_5vfty"]
+colors = PackedColorArray(0.231373, 0.203922, 0.431373, 1, 0.117647, 0.0666667, 0.180392, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_u6w7p"]
+gradient = SubResource("Gradient_5vfty")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_fyh6c"]
+colors = PackedColorArray(0.705882, 0.854902, 0.996078, 1, 0.443137, 0.72549, 0.996078, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_778mg"]
+gradient = SubResource("Gradient_fyh6c")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="AnimatedTexture" id="AnimatedTexture_ce8ja"]
+frames = 2
+pause = true
+frame_0/texture = ExtResource("2_44itj")
+frame_1/texture = ExtResource("3_nxmsk")
+frame_1/duration = 1.0
+
+[node name="CanvasLayer" type="CanvasLayer"]
+layer = -101
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_c882g")
+
+[node name="NightSky" type="TextureRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_u6w7p")
+
+[node name="DaySky" type="TextureRect" parent="Control"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_778mg")
+
+[node name="LightEmitter" type="TextureRect" parent="Control"]
+self_modulate = Color(0.949158, 0.991849, 0.977159, 1)
+layout_mode = 0
+offset_right = 60.0
+offset_bottom = 60.0
+texture = ExtResource("5_4h3xb")
+expand_mode = 1
+stretch_mode = 2
+
+[node name="Line2D" type="Line2D" parent="Control"]
+visible = false
+
+[node name="MotherStar" type="TextureRect" parent="Control"]
+layout_mode = 0
+offset_left = -155.0
+offset_top = -93.0
+offset_right = -95.0
+offset_bottom = -33.0
+texture = SubResource("AnimatedTexture_ce8ja")
+expand_mode = 1
+
+[node name="StarClusters" type="Node2D" parent="Control"]
+
+[node name="Background" parent="." instance=ExtResource("3_627mq")]

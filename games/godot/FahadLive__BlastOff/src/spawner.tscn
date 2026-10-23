@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://v7o2t6i1gg47"]
+
+[ext_resource type="Script" path="res://spawner.gd" id="1_nmxbb"]
+
+[sub_resource type="Curve2D" id="Curve2D_06ekl"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 700, 0)
+}
+point_count = 2
+
+[node name="Spawner" type="Path2D"]
+curve = SubResource("Curve2D_06ekl")
+script = ExtResource("1_nmxbb")
+
+[node name="PathFollow2D2" type="PathFollow2D" parent="."]
+position = Vector2(20, 0)
+
+[node name="BirdTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true
+
+[node name="StarTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="SatelliteTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="PowerupTImer" type="Timer" parent="."]
+one_shot = true
