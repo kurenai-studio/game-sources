@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://LevelComponents/Patrol.gd" type="Script" id=1]
+
+[node name="Patrol" type="Node2D"]
+script = ExtResource( 1 )
+move_speed = 100
+start_offset = 0
+preview = false
+persistent = false
+ping_pong = true
+moving = true
+loop = true
+
+[node name="PathFollow2D" type="PathFollow2D" parent="."]
+position = Vector2( 281.343, 260.921 )
+offset = 16.8
+h_offset = 0.0
+v_offset = 0.0
+rotate = false
+cubic_interp = true
+loop = true
+lookahead = 4.0
+_sections_unfolded = [ "Transform" ]
+
+[node name="Position2D" type="Position2D" parent="PathFollow2D"]
+
