@@ -1,0 +1,56 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: '4.7.2'
+
+jobs:
+  debug-apk:
+    name: Tests und Debug-APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-godot-android
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+
+      - name: Projekt importieren
+        run: |
+          godot --headless --import || true
+          godot --headless --import || true
+
+      - name: Spiellogik testen (Wege, Bauregeln, Wellen, Ausbau)
+        run: |
+          godot --headless res://scenes/dev/logic_test.tscn 2>&1 | tee logic.log
+          test "${PIPESTATUS[0]}" -eq 0
+          if grep -E "SCRIPT ERROR|^ERROR" logic.log; then
+            echo "::error::Fehler im Logiktest"
+            exit 1
+          fi
+          grep -q "LOGIC-TEST OK" logic.log
+
+      - name: APK bauen
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: tools/build_android.sh debug
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: hold-the-keep-debug-apk
+          path: build/hold-the-keep-debug.apk
+          if-no-files-found: error
+          retention-days: 14
