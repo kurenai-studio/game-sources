@@ -1,0 +1,66 @@
+:root {
+  --bg1: #0f1020; --bg2: #1b1d3a;
+  --accent: #7c5cff; --accent2: #21d4fd;
+  --glass: rgba(255,255,255,0.08); --glass-brd: rgba(255,255,255,0.18);
+  --txt: #eef0ff; --muted: #aab0d6;
+  --good: #39e6a8; --bad: #ff5d7a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--txt);
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  background-attachment: fixed;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+body::before {
+  content: ""; position: fixed; inset: -20%;
+  background:
+    radial-gradient(40% 40% at 20% 20%, rgba(124,92,255,.35), transparent 60%),
+    radial-gradient(35% 35% at 80% 30%, rgba(33,212,253,.28), transparent 60%),
+    radial-gradient(40% 40% at 50% 90%, rgba(57,230,168,.22), transparent 60%);
+  filter: blur(20px);
+  animation: bgshift 18s ease-in-out infinite alternate; z-index: 0;
+}
+@keyframes bgshift {
+  0% { transform: translate(-3%,-2%) scale(1); }
+  100% { transform: translate(3%,2%) scale(1.08); }
+}
+.scene { position: relative; z-index: 1; width: min(94vw, 560px); padding: 18px; }
+.title {
+  text-align: center; font-size: clamp(26px, 5vw, 42px); font-weight: 800; letter-spacing: .5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  margin-bottom: 14px; filter: drop-shadow(0 2px 14px rgba(124,92,255,.45));
+}
+.hud { display: flex; gap: 10px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+.card {
+  background: var(--glass); border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px; padding: 10px 16px; text-align: center; min-width: 90px;
+}
+.card .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.card .v { font-size: 20px; font-weight: 700; }
+.stage { position: relative; display: flex; justify-content: center; }
+canvas {
+  display: block; width: 100%; max-width: 480px; height: auto;
+  background: rgba(10,12,30,.55); border: 1px solid var(--glass-brd);
+  border-radius: 18px; backdrop-filter: blur(8px); box-shadow: 0 18px 50px rgba(0,0,0,.45);
+}
+.overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px; text-align: center;
+  background: rgba(8,10,26,.55); backdrop-filter: blur(6px); border-radius: 18px;
+}
+.overlay.hide { display: none; }
+.btn {
+  cursor: pointer; border: none; border-radius: 12px; padding: 12px 22px; font-size: 16px;
+  font-weight: 700; color: #fff; background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 8px 24px rgba(124,92,255,.4); transition: transform .12s ease, filter .12s;
+}
+.btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.ov-title { font-size: 26px; font-weight: 800; }
+.ov-text { color: var(--muted); max-width: 380px; line-height: 1.5; }
+.hint { color: var(--muted); font-size: 13px; }
