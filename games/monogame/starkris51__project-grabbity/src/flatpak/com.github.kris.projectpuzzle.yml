@@ -1,0 +1,25 @@
+app-id: com.github.kris.projectpuzzle
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+command: project-puzzle
+finish-args:
+  - --socket=x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  - --share=ipc
+
+modules:
+  - name: project-puzzle
+    buildsystem: simple
+    build-commands:
+      - install -d /app/bin
+      - cp -r publish/linux/* /app/bin/
+      - chmod +x /app/bin/project-puzzle
+      - install -Dm644 flatpak/com.github.kris.projectpuzzle.desktop /app/share/applications/com.github.kris.projectpuzzle.desktop
+      - install -Dm644 flatpak/com.github.kris.projectpuzzle.metainfo.xml /app/share/metainfo/com.github.kris.projectpuzzle.metainfo.xml
+      - install -Dm644 flatpak/icon.png /app/share/icons/hicolor/128x128/apps/com.github.kris.projectpuzzle.png
+    sources:
+      - type: dir
+        path: ..
