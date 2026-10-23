@@ -1,0 +1,35 @@
+version: '{build}'
+os: unstable
+platform: x64
+# Invoke-WebRequest "http://beta.unity3d.com/download/d44b7ab76b45/Windows64EditorInstaller/UnitySetup64-5.5.0f1.exe" -OutFile .\UnitySetup64.exe
+# Invoke-WebRequest "https://bitbucket.org/Unity-Technologies/unitytesttools/get/5.5.zip"  -OutFile .\UnityTestTools.zip
+
+install:
+  - appveyor DownloadFile https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-desktop.ps1
+
+build_script:
+  - ps: .\Scripts\ci-windows-install.ps1
+
+test_script:
+  - ps: .\Scripts\ci-windows-test.ps1
+  - ps: >
+      $wc = New-Object 'System.Net.WebClient'
+
+      $wc.UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", "C:\projects\unity-platformer\unit-test-results.xml")
+
+deploy: off
+
+environment:
+  UNITY_USERNAME:
+    secure: ZhLFHmOtbEY+OR2B1RZTT/O4hoyCPZcyYbINwRg9WQY=
+  UNITY_PASSWORD:
+    secure: C+GziLnSW/7+WeChq9DTDw==
+#cache:
+#  - C:\Program Files\Unity\ -> appveyor.yml
+
+# try to debug!
+on_finish:
+  - appveyor PushArtifact C:\projects\unity-platformer\autohotkey.txt
+  - appveyor PushArtifact C:\projects\unity-platformer\log-unit-test.txt
+  #- appveyor PushArtifact C:\projects\unity-platformer\unit-test-results.xml
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
