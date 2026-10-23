@@ -1,0 +1,164 @@
+{
+ "id": "surf_kitsune",
+ "display_name": "surf: kitsune",
+ "tier": 2,
+ "author": "Arblarg",
+ "attribution": {"author": "Arblarg", "source": "https://gamebanana.com/mods/122382 (page only: Page: submitter Arblarg, 'Creator: Arblarg'. No local archive; the page's surf_kitsune.rar (4964921 bytes) contains a BSP SHA1-identical to ours (41ff082a...). Second source: https://ksf.surf/maps/surf_kitsune 'made by Arblarg'. In-map: nothing names an author (no worldspawn comment, no game_text; pakfile is grids/neons/one rainbow texture and a song).)", "archive": null, "recorded": "2026-09-27"},
+ "notes": "Nine sections named after colours, and not one label in the map: kitsune drives its progression with `OnTrigger !activator,AddOutput,targetname X` and a filter chain, which is a program rather than a description. What IS in the file is a teleport graph, and it is completely regular. Every trigger_teleport aims at one of the nine colour destinations. The ones the size of a room are the pit under that colour's section; the ones the size of a door are how you leave one section for the next -- and 512 units separates the two with nothing near the boundary. So the colour destinations are the stage starts, in the order the doors chain them, and the single teleport aimed back at `start` -- at the far end of the white section -- is the finish.",
+ "doorways": {
+  "max_horizontal": 512
+ },
+ "skybox": false,
+ "skybox_why": "The 3D skybox (261 faces, 709 triangles, nearly all tools/toolsblack, sky camera at -8192 -4096 0) drawn 16x about its camera is a black cage around the whole map with the sky showing through the gaps, and the reference frame of the map in its own engine (inspirations/g2gfast/extracted/kitsune_ingame_spawn.png) shows open pale sky behind the silhouettes. Rendered both ways on 2026-09-27; off until somebody has a reference that shows it.",
+ "conditional_teleports": {"filters": ["TealF"], "note": "the two Kitsecret windows either side of the way out of teal. Their filter passes only a player named X4: teal's start names you X42 and a trigger past the windows, in front of the door to blue, renames you X4 -- so on the way through the windows do nothing, and only somebody who reaches the door and turns back is taken to the secret room. This game does not run the map's outputs, so imported unconditionally they took every player who flew high off teal's last ramp, and the secret room's own teleport sends you to spawn: a restart mid-run (Christian's 2026-10-08 footage, twice). Dropped, so the secret room is not reachable here"},
+ "sky_walls": {"nearest": "grids/", "note": "130 world faces are tools/toolsskybox, and they are the end walls of every section: the wall behind each stage start and the wall around each exit door. Under the map's black sky they read as a black wall; not drawn, they were a window onto every other section (2026-10-08 footage). Each is drawn in the grid of the nearest grid face, which is its own section's colour"},
+ "zones": [
+  {
+   "kind": "START",
+   "track": 0,
+   "box": [
+    [
+     -104,
+     -2016,
+     190
+    ],
+    [
+     104,
+     -560,
+     520
+    ]
+   ],
+   "note": "the start room, from the pit door at its back to the door into red at its front"
+  },
+  {
+   "kind": "SPAWN",
+   "track": 0,
+   "destination": "spawn",
+   "note": "the back of the start room, facing the door; where the start room's own pit returns you"
+  },
+  {
+   "kind": "END",
+   "track": 0,
+   "teleport_to": "start",
+   "note": "the one DOOR aimed at the start, at the end of white; a pit in the section before it is aimed there too and is 6144 units across",
+   "max_horizontal": 512
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 1,
+   "around": {
+    "point": "red",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 2,
+   "around": {
+    "point": "orange",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 3,
+   "around": {
+    "point": "YELLOW",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 4,
+   "around": {
+    "point": "green",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 5,
+   "around": {
+    "point": "teal",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 6,
+   "around": {
+    "point": "blue",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 7,
+   "around": {
+    "point": "purple",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 8,
+   "around": {
+    "point": "pink",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  },
+  {
+   "kind": "STAGE",
+   "track": 0,
+   "number": 9,
+   "around": {
+    "point": "WHITE",
+    "extents": [
+     256,
+     256,
+     160
+    ]
+   }
+  }
+ ]
+}
