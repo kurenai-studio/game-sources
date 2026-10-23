@@ -1,0 +1,62 @@
+body {
+    background-color:steelblue;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    max-width: 1200px;
+    height: 100vh;
+    margin: auto;
+}
+
+#game {
+    width: 1006px;
+    height: 646px;
+    display: block;
+    margin: 0 auto;
+}
+
+#ClickWars {
+    border: 3px solid black;
+    background-color: white;
+    margin-top: 40px;
+}
+
+#gmCmds {
+    width: 480px;
+    display: block;
+    position: relative;
+    padding-top: 20px;
+    margin: 0 auto;
+}
+
+#gmCmds p {
+    display: inline-block;
+    margin-right: 20px;
+    vertical-align: middle;
+}
+
+#startBtn {
+    display: block;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+button.cmdBtn {
+    background-color: green;
+    border: 2px solid darkgreen;
+    border-radius: 4px;
+    height: 50px;
+    width: 140px;
+    font: bold 1.1em/1.1em Georgia, serif;
+    color: black;
+    margin-right: 5px;
+}
+
+button.cmdBtn.disabled {
+    background-color: red;
+    border-color: darkred;
+    opacity: 0.4;
+}
