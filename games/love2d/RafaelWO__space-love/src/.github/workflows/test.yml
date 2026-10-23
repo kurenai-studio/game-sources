@@ -1,0 +1,13 @@
+name: Luacheck
+on:
+  push:
+    branches:
+      - '**'
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Luacheck
+        uses: nebularg/actions-luacheck@v1
