@@ -1,0 +1,15 @@
+apply from: '../android.gradle'
+
+android {
+    sourceSets {
+        main {
+            assets.setSrcDirs(['../../assets', 'assets'])
+        }
+    }
+}
+
+dependencies {
+    implementation "de.golfgl.gdxgamesvcs:gdx-gamesvcs-android-gpgs:$gamesvcsVersion"
+}
+
+eclipse.project.name = appName + "-android-gpe"
