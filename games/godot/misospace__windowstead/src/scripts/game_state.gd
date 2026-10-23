@@ -1,0 +1,934 @@
+extends Node
+
+const LayoutMath := preload("res://scripts/layout_math.gd")
+const RotatingGoal := preload("res://scripts/rotating_goal.gd")
+const ColonyStance := preload("res://scripts/colony_stance.gd")
+const GoalReward := preload("res://scripts/goal_reward.gd")
+const ColonySim := preload("res://scripts/colony_sim.gd")
+
+const SAVE_KEY := "windowstead-save-v2"
+const BACKUP_STORAGE_KEY := "windowstead-save-v2-backups"
+const BACKUP_PREFIX := "windowstead-backup-"
+const SAVE_PATH := "user://windowstead.save"
+const SAVE_VERSION := 2
+const SETTINGS_KEY := "windowstead-settings-v1"
+const SETTINGS_PATH := "user://windowstead.settings"
+const MAX_BACKUPS := 5
+
+# Grid sizes are derived from LayoutMath's known anchor families; small legacy
+# sizes are kept only for historical save compatibility.
+const _LEGACY_GRID_SIZES: Array = [25, 36, 64, 100, 150]
+
+var use_local_storage := false
+
+# Function-pointer hook for the localStorage read path. Defaults to
+# _local_storage_read (which goes through JavaScriptBridge on the web build).
+# Tests inject a stub here so they can exercise the web load branch without
+# a browser (see tests/test_local_storage_load_validation.gd).
+var _local_storage_reader: Callable = Callable(self, "_local_storage_read")
+var _local_storage_writer: Callable = Callable(self, "_local_storage_write")
+var _local_storage_remover: Callable = Callable(self, "_local_storage_remove")
+
+# Function-pointer hook for the save path. Defaults to _save_game_impl (the
+# real write). Tests inject a stub here so they can force a failed write and
+# count invocations without touching the filesystem (issue #379).
+var _save_game_hook: Callable = Callable(self, "_save_game_impl")
+
+# Function-pointer hook for the timestamp source used to name backups.
+# Defaults to the system clock (see _system_timestamp). Tests inject a stub
+# to force same-second backup creation without relying on sleeps — this is
+# the only way to deterministically exercise the equal-timestamp counter
+# boundary that issue #411 cares about.
+var _timestamp_source: Callable = Callable(self, "_system_timestamp")
+
+# Function-pointer hook for JavaScriptBridge.create_callback used by the
+# web-only unload flush (issue #403). Defaults to
+# _js_create_callback_default (real JavaScriptBridge on web; no-op off-
+# web). Tests inject a stub so the registration branch can be exercised
+# without a browser.
+var _js_create_callback_hook: Callable = Callable(self, "_js_create_callback_default")
+
+# Function-pointer hook that installs a created callback reference on
+# window.onbeforeunload (issue #403). Defaults to
+# _js_set_onbeforeunload_default (real JavaScriptBridge interface on web;
+# no-op off-web). Tests inject a stub so the assignment branch can be
+# exercised without a browser.
+var _js_set_onbeforeunload_hook: Callable = Callable(self, "_js_set_onbeforeunload_default")
+
+# Holds the JavaScriptObject reference returned by create_callback for the
+# unload flush. Godot's JavaScriptBridge docs require the reference to be
+# kept until the callback happens, or it won't be called at all, so this
+# field is what keeps the registered handler alive for the session.
+var _web_unload_callback_ref: Variant = null
+
+# Function-pointer hook for OS.has_feature used by the web-only unload
+# flush (issue #403). Defaults to _os_has_feature_default (forwards to
+# the real OS.has_feature). Tests inject a stub so the registration
+# branch can be exercised without a browser — there is no portable way
+# to make the real OS.has_feature report a different platform from a
+# headless run.
+var _os_has_feature_hook: Callable = Callable(self, "_os_has_feature_default")
+
+var _backup_counter := 0
+
+func _ready() -> void:
+	if _os_has_feature_hook.call("web"):
+		use_local_storage = JavaScriptBridge.eval("typeof localStorage !== 'undefined'", true)
+
+# Default JavaScriptBridge.create_callback impl: forwards to the real
+# JavaScriptBridge on the web build, returns null off-web so the
+# registration no-ops cleanly without raising on desktop / in headless
+# tests (issue #403). Godot 4.7's create_callback takes a single Callable
+# and returns a JavaScriptObject reference that must be retained.
+func _js_create_callback_default(callback: Callable) -> Variant:
+	if not _os_has_feature_hook.call("web"):
+		return null
+	return JavaScriptBridge.create_callback(callback)
+
+# Default installer: assigns the created callback reference to
+# window.onbeforeunload through the JavaScriptBridge window interface, the
+# pattern documented for Godot 4.7 (issue #403). A single property
+# assignment (not addEventListener) is what bounds the browser to at most
+# one callback invocation per unload. Returns false off-web so the
+# registration no-ops cleanly without raising on desktop / in headless
+# tests.
+func _js_set_onbeforeunload_default(callback_ref: Variant) -> bool:
+	if not _os_has_feature_hook.call("web"):
+		return false
+	var window = JavaScriptBridge.get_interface("window")
+	if window == null:
+		return false
+	window.onbeforeunload = callback_ref
+	return true
+
+# Default OS.has_feature impl: forwards to the real OS.has_feature.
+# Tests inject a stub so the web branch can be exercised without a
+# browser (issue #403).
+func _os_has_feature_default(feature: String) -> bool:
+	return OS.has_feature(feature)
+
+# Try to register a window-level flush so closing the web tab forces
+# the debounced save (issue #403). The persist callable is wrapped with
+# JavaScriptBridge.create_callback (Godot 4.7: takes one Callable, returns
+# a JavaScriptObject reference) and the reference is assigned to
+# window.onbeforeunload through the window interface. The reference is
+# retained on this node because the docs require it to stay alive until
+# the callback fires. A single property assignment (not addEventListener)
+# guarantees the browser fires the callback at most once per unload —
+# meeting the "no save duplication or double-write regressions"
+# acceptance criterion.
+#
+# The callable must follow the JavaScriptBridge callback contract: it is
+# invoked with exactly one Array holding the converted JS arguments (the
+# unload event), so callers bind a wrapper rather than persist() itself.
+#
+# Returns true when a handler is installed (created here or by an earlier
+# call), false when running off-web (desktop, headless) or when
+# localStorage is unavailable — so desktop behavior is unchanged
+# (issue #403 acceptance).
+func register_web_unload_flush(persist_callable: Callable) -> bool:
+	# A second call would create a second JavaScript reference while the
+	# single-property assignment keeps only the newest handler installed,
+	# orphaning the old reference. Treat re-registration as a no-op on the
+	# already-installed handler.
+	if _web_unload_callback_ref != null:
+		return true
+	if not _os_has_feature_hook.call("web") or not use_local_storage:
+		return false
+	var callback_ref: Variant = _js_create_callback_hook.call(persist_callable)
+	if callback_ref == null:
+		return false
+	if not _js_set_onbeforeunload_hook.call(callback_ref):
+		return false
+	# Keep the JS reference alive for the session; dropping it would let
+	# the runtime revoke the callback (Godot docs: "the reference must be
+	# kept until the callback happens, or it won't be called at all").
+	_web_unload_callback_ref = callback_ref
+	return true
+
+# ── Shared persistence plumbing ───────────────────────────────────────────────
+# The web build stores a JSON string inside localStorage (hence the double
+# stringify/parse dance); the desktop build writes plain JSON files. These
+# helpers are the only place either quirk lives.
+
+# Completion value appended to the write eval statement: a fixed string
+# literal evaluated after setItem. Needed because setItem returns undefined
+# on success and JavaScriptBridge.eval converts both that value and a thrown
+# quota/security error to null, so the bare call cannot signal success.
+const WRITE_EVAL_SUCCESS_SENTINEL := "windowstead-write-ok"
+
+# Builds the JavaScript statement used to write `payload` to `key` in
+# localStorage. The key and payload are JSON-encoded so any quotes or
+# backslashes they contain cannot break out of the resulting JavaScript
+# string literal. The trailing sentinel literal gives the statement a
+# deterministic completion value (see WRITE_EVAL_SUCCESS_SENTINEL).
+# Exposed as a static helper so tests can assert on the exact eval'd string
+# without invoking JavaScriptBridge.
+static func build_local_storage_write_eval(key: String, payload: String) -> String:
+	return "localStorage.setItem(%s, %s); %s" % [JSON.stringify(key), JSON.stringify(payload), JSON.stringify(WRITE_EVAL_SUCCESS_SENTINEL)]
+
+# Builds the JavaScript statement used to read `key` from localStorage.
+# See `build_local_storage_write_eval` for why the key is JSON-encoded.
+static func build_local_storage_read_eval(key: String) -> String:
+	return "localStorage.getItem(%s)" % JSON.stringify(key)
+
+# Builds the JavaScript statement used to remove `key` from localStorage.
+# See `build_local_storage_write_eval` for why the key is JSON-encoded.
+static func build_local_storage_remove_eval(key: String) -> String:
+	return "localStorage.removeItem(%s)" % JSON.stringify(key)
+
+func _local_storage_write(key: String, payload: String) -> bool:
+	var result = JavaScriptBridge.eval(build_local_storage_write_eval(key, payload), true)
+	return local_storage_write_succeeded(result)
+
+# Decodes the completion value of the statement produced by
+# build_local_storage_write_eval: only the exact sentinel string means the
+# write succeeded. Throws (quota / security errors) and any other value are
+# failures; `undefined` also arrives as null from JavaScriptBridge.eval.
+static func local_storage_write_succeeded(result: Variant) -> bool:
+	return typeof(result) == TYPE_STRING and result == WRITE_EVAL_SUCCESS_SENTINEL
+
+func _local_storage_read(key: String) -> Dictionary:
+	var raw = JavaScriptBridge.eval(build_local_storage_read_eval(key), true)
+	if raw == null or String(raw).is_empty() or String(raw) == "null":
+		return {}
+	var parsed = JSON.parse_string(String(raw))
+	if typeof(parsed) == TYPE_STRING:
+		parsed = JSON.parse_string(parsed)
+	return parsed if parsed is Dictionary else {}
+
+func _local_storage_remove(key: String) -> void:
+	JavaScriptBridge.eval(build_local_storage_remove_eval(key), true)
+
+func _write_text_file(path: String, payload: String) -> bool:
+	if path.is_empty():
+		return false
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		# Disk full, permission denied, unwritable path, sandbox, etc.
+		return false
+	file.store_string(payload)
+	return true
+
+## Returns the parsed JSON from a file, or null when missing/empty/unreadable.
+func _read_json_file(path: String) -> Variant:
+	if not FileAccess.file_exists(path):
+		return null
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return null
+	var text := file.get_as_text()
+	if text.strip_edges().is_empty():
+		return null
+	return JSON.parse_string(text)
+
+func save_game(data: Dictionary, path: String = "") -> bool:
+	return _save_game_hook.call(data, path)
+
+func _save_game_impl(data: Dictionary, path: String = "") -> bool:
+	var target_path := path if not path.is_empty() else SAVE_PATH
+	var payload := JSON.stringify(data)
+	if use_local_storage:
+		return bool(_local_storage_writer.call(SAVE_KEY, payload))
+	return _write_text_file(target_path, payload)
+
+func load_game(path: String = "") -> Dictionary:
+	# Desktop + web share this loader, but the web (localStorage) branch
+	# previously skipped validate_save_schema() and migrate_save(). Issue
+	# #313 brings it in line with the desktop lifecycle so corrupt, hand-
+	# edited, or pre-migration web saves are rejected or upgraded instead
+	# of loaded raw.
+	var target_path := path if not path.is_empty() else SAVE_PATH
+	if use_local_storage:
+		var stored: Dictionary = _local_storage_reader.call(SAVE_KEY)
+		return _validate_and_apply_save(stored)
+	var parsed: Variant = _read_json_file(target_path)
+	if not parsed is Dictionary:
+		return {}
+	return _validate_and_apply_save(parsed)
+
+# Shared post-load pipeline used by both the desktop and web load paths
+# (issue #313). Returns {} when the save fails schema validation so the
+# caller falls back to a fresh start. On success, runs migrate_save() and,
+# if the result is non-empty, rebuilds worker reservations.
+func _validate_and_apply_save(data: Variant) -> Dictionary:
+	if not data is Dictionary:
+		return {}
+	var typed: Dictionary = data
+	var validation_result := validate_save_schema(typed)
+	if not validation_result.valid:
+		print("SAVE_SCHEMA_VALIDATION_ERROR: ", validation_result.reason)
+		return {}
+	var migrated := migrate_save(typed)
+	if not migrated.is_empty():
+		rebuild_reservations_from_workers(migrated)
+	return migrated
+
+# ── Rebuild reserved_resources from active worker tasks ──────────────────────
+# Called after load/migration to prevent double-booking when reservations are
+# missing or stale. Only rebuilds when the field is empty (missing from old
+# saves). The implementation lives in ColonySim so it exists exactly once.
+
+func rebuild_reservations_from_workers(state: Dictionary) -> void:
+	ColonySim.rebuild_reservations_from_workers(state)
+
+# ── Schema validation ────────────────────────────────────────────────────────
+# Returns {valid: bool, reason: String}
+# Only validates fields that are present; missing optional fields are allowed.
+
+func _is_numeric(v: Variant) -> bool:
+	return typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT
+
+func validate_save_schema(data: Dictionary) -> Dictionary:
+	# Validate 'save_version' if present — must be a known version
+	if data.has("save_version"):
+		var sv = int(data["save_version"])
+		if sv < 0:
+			return {"valid": false, "reason": "save_version is negative"}
+
+	# Validate 'resources' is a dictionary with numeric values (if present)
+	if data.has("resources"):
+		var resources = data.get("resources", {})
+		if not resources is Dictionary:
+			return {"valid": false, "reason": "'resources' must be a dictionary"}
+		for resource_name in resources:
+			if not _is_numeric(resources[resource_name]):
+				return {"valid": false, "reason": "'resources.%s' must be numeric" % resource_name}
+
+	# Validate 'harvested' is a dictionary with numeric values (if present)
+	if data.has("harvested"):
+		var harvested = data.get("harvested", {})
+		if not harvested is Dictionary:
+			return {"valid": false, "reason": "'harvested' must be a dictionary"}
+		for resource_name in harvested:
+			if not _is_numeric(harvested[resource_name]):
+				return {"valid": false, "reason": "'harvested.%s' must be numeric" % resource_name}
+
+	# Validate declared grid dimensions whenever both are present — even for
+	# tile-less saves, so a bad grid_w/grid_h can't slip through (issue #280).
+	if data.has("grid_w") and data.has("grid_h"):
+		if typeof(data["grid_w"]) != TYPE_INT or typeof(data["grid_h"]) != TYPE_INT:
+			return {"valid": false, "reason": "'grid_w' and 'grid_h' must be integers"}
+		if int(data["grid_w"]) <= 0 or int(data["grid_h"]) <= 0:
+			return {"valid": false, "reason": "'grid_w' and 'grid_h' must be positive"}
+
+	# Validate 'tiles' is an array (if present)
+	if data.has("tiles"):
+		var tiles = data.get("tiles", [])
+		if not tiles is Array:
+			return {"valid": false, "reason": "'tiles' must be an array"}
+
+		# If tiles are present and non-empty, validate grid size and shape
+		var tile_count = tiles.size()
+		if tile_count > 0:
+			# Derive the expected grid sizes from the anchor family configuration
+			# exported by LayoutMath rather than maintaining a hardcoded list.
+			var expected_sizes: Array = _expected_grid_sizes()
+			if not expected_sizes.has(tile_count):
+				return {"valid": false, "reason": "'tiles' count %d does not match expected grid sizes (%s)" % [tile_count, str(expected_sizes)]}
+
+			# Internal consistency: tile count must equal grid_w * grid_h for the
+			# anchor family declared in the save (when both fields are present;
+			# dimensions were type/positivity-checked above).
+			if data.has("grid_w") and data.has("grid_h"):
+				if tile_count != int(data["grid_w"]) * int(data["grid_h"]):
+					return {"valid": false, "reason": "'tiles' count %d does not match grid_w*grid_h=%d" % [tile_count, int(data["grid_w"]) * int(data["grid_h"])]}
+
+			# Validate each tile has required shape
+			for i in range(tiles.size()):
+				var tile = tiles[i]
+				if not tile is Dictionary:
+					return {"valid": false, "reason": "tile[%d] must be a dictionary" % i}
+				for tile_key in ["kind", "amount", "resource", "build_kind"]:
+					if not tile.has(tile_key):
+						return {"valid": false, "reason": "tile[%d] missing key '%s'" % [i, tile_key]}
+				# Validate tile shape: amount must be numeric, resource must be string
+				if not _is_numeric(tile.get("amount", -1)):
+					return {"valid": false, "reason": "tile[%d].amount must be numeric" % i}
+				var res: Variant = tile.get("resource", "")
+				if typeof(res) != TYPE_STRING:
+					return {"valid": false, "reason": "tile[%d].resource must be string" % i}
+				# build_kind is optional; if present must be string
+				if tile.has("build_kind") and typeof(tile["build_kind"]) != TYPE_STRING:
+					return {"valid": false, "reason": "tile[%d].build_kind must be string" % i}
+
+	# Validate 'workers' is an array (if present)
+	if data.has("workers"):
+		var workers = data.get("workers", [])
+		if not workers is Array:
+			return {"valid": false, "reason": "'workers' must be an array"}
+
+		# Validate each worker has required shape and numeric bounds
+		for k in range(workers.size()):
+			var worker = workers[k]
+			if not worker is Dictionary:
+				return {"valid": false, "reason": "worker[%d] must be a dictionary" % k}
+			# Validate name is string
+			var wname = worker.get("name", "")
+			if typeof(wname) != TYPE_STRING or String(wname).is_empty():
+				return {"valid": false, "reason": "worker[%d].name must be non-empty string" % k}
+			# Validate pos is a dictionary (vec2 serialized as {x, y})
+			var wpos = worker.get("pos", {})
+			if not wpos is Dictionary:
+				return {"valid": false, "reason": "worker[%d].pos must be dictionary" % k}
+			# Validate carrying is a dictionary with numeric values
+			var wcarrying = worker.get("carrying", {})
+			if not wcarrying is Dictionary:
+				return {"valid": false, "reason": "worker[%d].carrying must be dictionary" % k}
+			for res_name in wcarrying:
+				if not _is_numeric(wcarrying[res_name]):
+					return {"valid": false, "reason": "worker[%d].carrying.%s must be numeric" % [k, res_name]}
+			# Validate task is a dictionary
+			var wtask = worker.get("task", {})
+			if not wtask is Dictionary:
+				return {"valid": false, "reason": "worker[%d].task must be dictionary" % k}
+			# Validate break_ticks is numeric and non-negative (optional — missing defaults to 0 for v1 compat)
+			if worker.has("break_ticks"):
+				var wbreak = worker.get("break_ticks", 0)
+				if not _is_numeric(wbreak):
+					return {"valid": false, "reason": "worker[%d].break_ticks must be numeric" % k}
+				if float(wbreak) < 0:
+					return {"valid": false, "reason": "worker[%d].break_ticks must be non-negative" % k}
+
+	# Validate 'builds' is an array (if present)
+	if data.has("builds"):
+		var builds = data.get("builds", [])
+		if not builds is Array:
+			return {"valid": false, "reason": "'builds' must be an array"}
+
+		# Validate each build has required shape and numeric bounds
+		for j in range(builds.size()):
+			var build = builds[j]
+			if not build is Dictionary:
+				return {"valid": false, "reason": "build[%d] must be a dictionary" % j}
+			for build_key in ["id", "kind", "pos", "complete"]:
+				if not build.has(build_key):
+					return {"valid": false, "reason": "build[%d] missing key '%s'" % [j, build_key]}
+			# Validate id is numeric
+			if not _is_numeric(build.get("id", -1)):
+				return {"valid": false, "reason": "build[%d].id must be numeric" % j}
+			# Validate kind is string
+			var bkind = build.get("kind", "")
+			if typeof(bkind) != TYPE_STRING:
+				return {"valid": false, "reason": "build[%d].kind must be string" % j}
+			# Validate pos is a dictionary (vec2 serialized as {x, y})
+			var bpos = build.get("pos", {})
+			if not bpos is Dictionary:
+				return {"valid": false, "reason": "build[%d].pos must be dictionary" % j}
+			# Validate complete is boolean
+			var bcomplete = build.get("complete", false)
+			if typeof(bcomplete) != TYPE_BOOL:
+				return {"valid": false, "reason": "build[%d].complete must be boolean" % j}
+
+	# Validate 'priority_order' is an array (if present)
+	if data.has("priority_order"):
+		var priority_order = data.get("priority_order", [])
+		if not priority_order is Array:
+			return {"valid": false, "reason": "'priority_order' must be an array"}
+
+	# Validate 'events' is an array of well-formed event dictionaries (if
+	# present). The runtime producer (colony_sim.gd: push_event) always writes
+	# {"tick": <int>, "text": <String>}, so the validator is the only line of
+	# defense against a hand-edited or partially-migrated save. _render_event_log
+	# and render_event_drawer call int(entry.tick) / String(entry.text) on every
+	# entry, so a non-Dictionary entry — or one missing 'tick'/'text', or with a
+	# non-numeric tick / non-string text — must be rejected here rather than
+	# crash the renderer in main.gd (issue #392).
+	if data.has("events"):
+		var events = data.get("events", [])
+		if not events is Array:
+			return {"valid": false, "reason": "'events' must be an array"}
+		for ev in range(events.size()):
+			var event = events[ev]
+			if not event is Dictionary:
+				return {"valid": false, "reason": "events[%d] must be a dictionary" % ev}
+			if not event.has("tick"):
+				return {"valid": false, "reason": "events[%d] missing key 'tick'" % ev}
+			if not _is_numeric(event.get("tick", -1)):
+				return {"valid": false, "reason": "events[%d].tick must be numeric" % ev}
+			if not event.has("text"):
+				return {"valid": false, "reason": "events[%d] missing key 'text'" % ev}
+			var etext = event.get("text", "")
+			if typeof(etext) != TYPE_STRING:
+				return {"valid": false, "reason": "events[%d].text must be string" % ev}
+
+	# Validate 'active_rewards' is an array of structurally valid reward dicts (if present)
+	if data.has("active_rewards"):
+		var active_rewards = data.get("active_rewards", [])
+		if not active_rewards is Array:
+			return {"valid": false, "reason": "'active_rewards' must be an array"}
+		var reward_err := _validate_active_rewards(active_rewards)
+		if not reward_err.is_empty():
+			return {"valid": false, "reason": reward_err}
+
+	# Validate 'active_goal' (if present) — must be {} or reference a known goal template
+	if data.has("active_goal"):
+		var goal_err := _validate_active_goal(data["active_goal"])
+		if not goal_err.is_empty():
+			return {"valid": false, "reason": goal_err}
+
+	# Validate 'completed_goal_ids' (if present) — every entry must reference a known goal
+	if data.has("completed_goal_ids"):
+		var completed = data["completed_goal_ids"]
+		if not completed is Array:
+			return {"valid": false, "reason": "'completed_goal_ids' must be an array"}
+		var known_ids := _known_goal_ids()
+		for ci in range(completed.size()):
+			var entry = completed[ci]
+			if typeof(entry) != TYPE_STRING:
+				return {"valid": false, "reason": "completed_goal_ids[%d] must be a string" % ci}
+			if not known_ids.has(entry):
+				return {"valid": false, "reason": "completed_goal_ids[%d]='%s' is not a known goal" % [ci, entry]}
+
+	# Validate 'colony_stance' (if present) — must be one of the known stances or empty
+	if data.has("colony_stance"):
+		var stance_holder = data["colony_stance"]
+		if typeof(stance_holder) != TYPE_STRING:
+			return {"valid": false, "reason": "'colony_stance' must be a string"}
+		var stance := String(stance_holder)
+		if not stance.is_empty() and not _known_stances().has(stance):
+			return {"valid": false, "reason": "'colony_stance'='%s' is not a known stance" % stance}
+
+	# Validate 'reserved_resources' (if present) — must be a Dictionary of
+	# non-negative numeric reservations. A non-Dictionary value (e.g. a String
+	# from a hand-edited save) would otherwise crash ColonySim.get_reserved()
+	# on the first sim tick.
+	if data.has("reserved_resources"):
+		var reservations = data["reserved_resources"]
+		if typeof(reservations) != TYPE_DICTIONARY:
+			return {"valid": false, "reason": "'reserved_resources' must be a dictionary"}
+		for rkey in reservations.keys():
+			var rval = reservations[rkey]
+			if not (typeof(rval) == TYPE_INT or typeof(rval) == TYPE_FLOAT):
+				return {"valid": false, "reason": "reserved_resources['%s'] must be numeric" % String(rkey)}
+			if float(rval) < 0.0:
+				return {"valid": false, "reason": "reserved_resources['%s'] must be non-negative" % String(rkey)}
+
+	# Validate 'next_build_id' (if present) — must be a non-negative number.
+	# Storing a String or negative value here would let build IDs collide
+	# when the simulator hands out the next id.
+	if data.has("next_build_id"):
+		var nbid = data["next_build_id"]
+		if not (typeof(nbid) == TYPE_INT or typeof(nbid) == TYPE_FLOAT):
+			return {"valid": false, "reason": "'next_build_id' must be numeric"}
+		if float(nbid) < 0.0:
+			return {"valid": false, "reason": "'next_build_id' must be non-negative"}
+
+	# Validate 'current_milestone_id' (if present) — must be a String (empty
+	# String when no milestone is active, otherwise a non-empty id). The
+	# runtime's milestone catalog is not exposed as a static list, so we
+	# accept any non-empty String for forward-compatibility.
+	if data.has("current_milestone_id"):
+		var cmid = data["current_milestone_id"]
+		if typeof(cmid) != TYPE_STRING:
+			return {"valid": false, "reason": "'current_milestone_id' must be a string"}
+
+	# Validate 'completed_milestone_ids' (if present) — must be an Array of
+	# non-empty Strings. The milestone catalog is not exposed as a static
+	# list, so we accept any non-empty String for forward-compatibility.
+	if data.has("completed_milestone_ids"):
+		var cmi = data["completed_milestone_ids"]
+		if not (cmi is Array):
+			return {"valid": false, "reason": "'completed_milestone_ids' must be an array"}
+		for mj in range(cmi.size()):
+			var mentry = cmi[mj]
+			if typeof(mentry) != TYPE_STRING:
+				return {"valid": false, "reason": "completed_milestone_ids[%d] must be a string" % mj}
+			if String(mentry).is_empty():
+				return {"valid": false, "reason": "completed_milestone_ids[%d] must be a non-empty string" % mj}
+
+	# Validate 'migration_log' (if present) — must be an Array. Each entry
+	# is a migration descriptor Dictionary; the load path tolerates any
+	# well-formed shape but rejects non-array payloads outright.
+	if data.has("migration_log"):
+		var mlog = data["migration_log"]
+		if not (mlog is Array):
+			return {"valid": false, "reason": "'migration_log' must be an array"}
+
+	return {"valid": true, "reason": ""}
+
+# ── Schema helpers ──────────────────────────────────────────────────────────
+
+# Back-fills the economy dictionaries the sim reads unconditionally on the
+# first tick after load (issue #378): state.resources and state.harvested.
+# bootstrap_state always sets both, but the load path historically did not,
+# so a save omitting either crashed ColonySim on the first process_tick.
+# Existing values are preserved; only missing keys are filled.
+func _backfill_required_state(data: Dictionary) -> void:
+	if not data.has("resources") or not data["resources"] is Dictionary:
+		data["resources"] = {"wood": 0, "stone": 0, "food": 0}
+	if not data.has("harvested") or not data["harvested"] is Dictionary:
+		data["harvested"] = {"wood": 0, "stone": 0, "food": 0}
+
+# Compute valid tile counts from the LayoutMath anchor family configuration.
+# Legacy grid sizes (25/36/64/100/150) are still accepted so historical saves
+# remain loadable until they are migrated.
+func _expected_grid_sizes() -> Array:
+	var sizes: Array = []
+	for anchor in LayoutMath.ALL_ANCHOR_FAMILIES:
+		var dims = LayoutMath.grid_dims_for_anchor(anchor)
+		if typeof(dims) != TYPE_DICTIONARY or dims.is_empty():
+			continue
+		var w: int = int(dims.get("grid_w", 0))
+		var h: int = int(dims.get("grid_h", 0))
+		if w <= 0 or h <= 0:
+			continue
+		var total: int = w * h
+		if not sizes.has(total):
+			sizes.append(total)
+	for legacy in _LEGACY_GRID_SIZES:
+		if not sizes.has(legacy):
+			sizes.append(legacy)
+	return sizes
+
+# Set of goal identifiers drawn from RotatingGoal's catalog. Anything outside
+# this set cannot be loaded as a completed/active goal.
+func _known_goal_ids() -> Array:
+	var ids: Array = []
+	for template in RotatingGoal.GOAL_CATALOG:
+		if typeof(template) == TYPE_DICTIONARY and template.has("id"):
+			var gid = String(template.get("id", ""))
+			if not gid.is_empty() and not ids.has(gid):
+				ids.append(gid)
+	return ids
+
+# Set of reward keys granted by GoalReward.apply_reward. Used to validate the
+# shape of each entry in 'active_rewards'.
+func _known_reward_keys() -> Array:
+	return ["type", "remaining", "duration", "label", "trickle_ticks", "resource"]
+
+# Set of recognized reward types (union of REWARD_* constants) used to
+# validate the 'type' field on each active_rewards entry.
+func _known_reward_types() -> Array:
+	return [
+		GoalReward.REWARD_RESOURCE_TRICKLE,
+		GoalReward.REWARD_HAUL_SPEED,
+		GoalReward.REWARD_BUILD_SPEED,
+		GoalReward.REWARD_AMBIENT_IMPROVE,
+		GoalReward.REWARD_RECRUIT_DISCOUNT,
+	]
+
+# Set of recognized colony stances exported by ColonyStance.
+func _known_stances() -> Array:
+	return ColonyStance.ALL_STANCES
+
+# Validate an active_goal value. Returns empty string when valid, or a reason.
+func _validate_active_goal(value) -> String:
+	# No active goal is encoded as an empty Dictionary by the runtime.
+	if typeof(value) == TYPE_DICTIONARY:
+		if value.is_empty():
+			return ""
+		if not value.has("id"):
+			return "'active_goal' dictionary missing key 'id'"
+		var gid = String(value.get("id", ""))
+		if not _known_goal_ids().has(gid):
+			return "'active_goal.id'='%s' is not a known goal" % gid
+		return ""
+	return "'active_goal' must be a dictionary"
+
+# Validate the contents of an active_rewards array. Returns empty string on
+# success, or a human-readable reason for the first failure.
+func _validate_active_rewards(rewards: Array) -> String:
+	var known_keys := _known_reward_keys()
+	var known_types := _known_reward_types()
+	for ri in range(rewards.size()):
+		var r = rewards[ri]
+		if typeof(r) != TYPE_DICTIONARY:
+			return "active_rewards[%d] must be a dictionary" % ri
+		if not r.has("type"):
+			return "active_rewards[%d] missing key 'type'" % ri
+		var rtype = String(r.get("type", ""))
+		if rtype.is_empty():
+			return "active_rewards[%d].type must be non-empty" % ri
+		if not known_types.has(rtype):
+			return "active_rewards[%d].type='%s' is not a known reward type" % [ri, rtype]
+		for key in known_keys:
+			if not r.has(key):
+				continue
+			var v = r[key]
+			if key in ["type", "label", "resource"] and typeof(v) != TYPE_STRING:
+				return "active_rewards[%d].%s must be a string" % [ri, key]
+			if key in ["remaining", "duration", "trickle_ticks"]:
+				if not _is_numeric(v):
+					return "active_rewards[%d].%s must be numeric" % [ri, key]
+				if float(v) < 0:
+					return "active_rewards[%d].%s must be non-negative" % [ri, key]
+	return ""
+
+func migrate_save(data: Dictionary) -> Dictionary:
+	# Back-fill the two economy dictionaries the sim reads unconditionally on
+	# the first tick after load (issue #378). bootstrap_state always sets both,
+	# but a hand-edited, corrupted, or future-migrated save can omit either;
+	# without this, ColonySim.apply_food_upkeep / gather_haul_tasks / do_gather
+	# raise on state.resources.get(...) / state.harvested[...] against a
+	# missing key. Applied before the version branching so every valid return
+	# path carries both fields; the invalid paths return a fresh {} and the
+	# mutation is discarded.
+	_backfill_required_state(data)
+	# Missing version key means "current" — backward compatible
+	if not data.has("save_version"):
+		data["save_version"] = SAVE_VERSION
+		return data
+
+	var save_version: int = int(data.get("save_version", 0))
+
+	# Reject unknown or future versions explicitly
+	if save_version > SAVE_VERSION:
+		print("SAVE_MIGRATION_ERROR: unknown future version ", save_version, " (expected <=", SAVE_VERSION, ")")
+		return {}
+
+	# Version 0: treat as invalid/unsupported
+	if save_version == 0:
+		print("SAVE_MIGRATION_ERROR: missing or version 0 save is not supported")
+		return {}
+
+	if save_version == SAVE_VERSION:
+		return data
+
+	if save_version == 1:
+		data = migrate_v1_to_v2(data)
+		data["save_version"] = SAVE_VERSION
+		return data
+
+	# Fallback: should not reach here, but handle defensively
+	print("SAVE_MIGRATION_ERROR: unhandled save version ", save_version)
+	return {}
+
+func migrate_v1_to_v2(data: Dictionary) -> Dictionary:
+	# Add migration_log to track history
+	if not data.has("migration_log"):
+		data["migration_log"] = []
+	data["migration_log"].append({"from_version": 1, "to_version": 2, "step": "initial_v2_schema"})
+	# Ensure all workers have a spawn_tick for future tracking
+	for worker in data.get("workers", []):
+		if not worker.has("spawn_tick"):
+			worker["spawn_tick"] = int(data.get("tick", 0))
+	return data
+
+func clear_game() -> void:
+	if use_local_storage:
+		_local_storage_remover.call(SAVE_KEY)
+		_local_storage_remover.call(SETTINGS_KEY)
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	if FileAccess.file_exists(SETTINGS_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SETTINGS_PATH))
+
+
+# ── Timestamped backup / restore ─────────────────────────────────────────────
+
+# Default timestamp source for backup filenames: the system clock with
+# characters stripped so the result is filesystem- and localStorage-safe
+# (issue #411). Indirected through _timestamp_source so tests can pin a
+# single second without sleeping.
+func _system_timestamp() -> String:
+	return Time.get_datetime_string_from_system().replace(":", "").replace("-", "").replace(" ", "_")
+
+func _backup_filename() -> String:
+	"""Generate a unique timestamped backup filename."""
+	_backup_counter += 1
+	var ts := String(_timestamp_source.call())
+	# BACKUP_PREFIX is what list_backups() filters on — without it backups
+	# were written but could never be listed or restored.
+	return "%s%s_%d.save" % [BACKUP_PREFIX, ts, _backup_counter]
+
+func _copy_file(src_path: String, dst_path: String) -> bool:
+	var src := FileAccess.open(src_path, FileAccess.READ)
+	if not src:
+		return false
+	var content := src.get_as_text()
+	src.close()
+	var dst := FileAccess.open(dst_path, FileAccess.WRITE)
+	if not dst:
+		return false
+	dst.store_string(content)
+	dst.close()
+	return true
+
+func backup_save() -> String:
+	"""Create a timestamped backup of the current save.
+	Returns the backup path (desktop) or localStorage key (web) on success,
+	empty string on failure. Prunes oldest backups so only the most recent
+	MAX_BACKUPS are kept.
+
+	Returns "" (not a stale path) when the freshly created snapshot was
+	itself pruned. The sort tiebreak fix in _sorted_backup_names keeps the
+	newest snapshot inside the cap, but we still verify the file is on
+	disk before claiming it as success — restore_backup() trusts the
+	returned path (issue #411)."""
+	if use_local_storage:
+		return _backup_save_local_storage()
+	if not FileAccess.file_exists(SAVE_PATH):
+		return ""
+	var backup_path := "user://%s" % _backup_filename()
+	var ok := _copy_file(SAVE_PATH, backup_path)
+	if ok:
+		_prune_old_backups()
+		if not FileAccess.file_exists(backup_path):
+			return ""
+	return backup_path if ok else ""
+
+func _backup_save_local_storage() -> String:
+	var current: Dictionary = _local_storage_reader.call(SAVE_KEY)
+	if current.is_empty():
+		return ""
+	var backups := _load_web_backups()
+	var backup_key := _backup_filename()
+	backups[backup_key] = current
+	# Prune the candidate BEFORE writing — the BACKUP_STORAGE_KEY value
+	# is one aggregated JSON payload, so writing the full
+	# MAX_BACKUPS+1 set first and then pruning would briefly require
+	# storage for MAX_BACKUPS+1 entries. If the browser's remaining
+	# capacity only fits the intended MAX_BACKUPS retained set, the
+	# old write-before-prune order failed before any pruning happened
+	# and the New Game caller reset the colony with no recoverable
+	# backup (issue #421).
+	backups = _prune_backups_in_memory(backups)
+	if not _store_web_backups(backups):
+		# The final retained payload did not fit either. Do not delete
+		# stored backups first to make space — preserve the previously
+		# stored backups unchanged (issue #421).
+		return ""
+	# Same defensive check as backup_save() — see issue #411.
+	if not _load_web_backups().has(backup_key):
+		return ""
+	return backup_key
+
+func _load_web_backups() -> Dictionary:
+	var stored: Variant = _local_storage_reader.call(BACKUP_STORAGE_KEY)
+	return stored if stored is Dictionary else {}
+
+func _store_web_backups(backups: Dictionary) -> bool:
+	return bool(_local_storage_writer.call(BACKUP_STORAGE_KEY, JSON.stringify(backups)))
+
+# Parses a backup filename into its timestamp and counter parts. The
+# counter is exposed as an int so the sort comparator can order equal-
+# timestamp backups numerically (issue #411) — `_10.save` correctly
+# sorts after `_9.save` even when both share a second-resolution
+# timestamp. Tolerates both "user://" prefixed paths and bare filenames
+# (the web/localStorage branch uses the same name as a localStorage key,
+# without the .save suffix sometimes appearing in legacy entries).
+static func parse_backup_name(name: String) -> Dictionary:
+	var stripped := String(name)
+	if stripped.begins_with("user://"):
+		stripped = stripped.substr("user://".length())
+	if stripped.begins_with(BACKUP_PREFIX):
+		stripped = stripped.substr(BACKUP_PREFIX.length())
+	var base := stripped.get_basename()
+	var underscore_idx := base.rfind("_")
+	if underscore_idx < 0:
+		return {"ts": base, "counter": 0}
+	var ts := base.substr(0, underscore_idx)
+	var counter_str := base.substr(underscore_idx + 1)
+	var counter := 0
+	if counter_str.is_valid_int():
+		counter = int(counter_str)
+	return {"ts": ts, "counter": counter}
+
+func _sorted_backup_names(names: Array) -> Array[String]:
+	var sorted_names := [] as Array[String]
+	for name in names:
+		sorted_names.append(String(name))
+	# Sort newest-first: higher timestamp first, then within the same
+	# timestamp a higher counter is newer (numeric, not lex). Without the
+	# numeric tiebreak, the unpadded counter `_10.save` sorts AFTER
+	# `_1.save` (since "1" < "0" at the second character), which caused
+	# backups to be pruned in the wrong order — inserting counter 10 into
+	# a same-second set of 1..9 evicted the newly created snapshot
+	# instead of the oldest one (issue #411).
+	sorted_names.sort_custom(func(a: String, b: String) -> bool:
+		var pa := parse_backup_name(a)
+		var pb := parse_backup_name(b)
+		if pa.ts != pb.ts:
+			return String(pa.ts) > String(pb.ts)
+		return int(pa.counter) > int(pb.counter)
+	)
+	return sorted_names
+
+func _prune_old_backups() -> void:
+	"""Delete oldest backups beyond MAX_BACKUPS. list_backups() is newest-first."""
+	if use_local_storage:
+		var backups := _load_web_backups()
+		var pruned := _prune_backups_in_memory(backups)
+		if pruned.size() == backups.size():
+			return
+		_store_web_backups(pruned)
+		return
+	var backups := list_backups()
+	if backups.size() <= MAX_BACKUPS:
+		return
+	for old_path in backups.slice(MAX_BACKUPS):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(String(old_path)))
+
+# Returns a copy of `backups` trimmed to at most MAX_BACKUPS entries
+# using the same newest-first numeric ordering the public list/prune
+# logic uses (issue #411). The web backup write path calls this BEFORE
+# writing BACKUP_STORAGE_KEY so the on-disk payload never has to store
+# more than MAX_BACKUPS entries — see issue #421.
+func _prune_backups_in_memory(backups: Dictionary) -> Dictionary:
+	var names := _sorted_backup_names(backups.keys())
+	if names.size() <= MAX_BACKUPS:
+		return backups
+	for old_name in names.slice(MAX_BACKUPS):
+		backups.erase(old_name)
+	return backups
+
+func list_backups() -> Array[String]:
+	"""Return sorted (newest-first) list of backup paths (desktop) or keys (web)."""
+	if use_local_storage:
+		return _sorted_backup_names(_load_web_backups().keys())
+	var names: Array = []
+	var dir := DirAccess.open("user://")
+	if not dir:
+		return [] as Array[String]
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if file_name.begins_with(BACKUP_PREFIX):
+			names.append("user://%s" % file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	return _sorted_backup_names(names)
+
+func restore_backup() -> String:
+	"""Restore from the latest backup.
+	Returns the restored backup path/key on success, empty string on failure."""
+	if use_local_storage:
+		var backups := _load_web_backups()
+		var names := _sorted_backup_names(backups.keys())
+		if names.is_empty():
+			return ""
+		var latest := names[0]
+		var payload: Variant = backups.get(latest, {})
+		if not payload is Dictionary or (payload as Dictionary).is_empty():
+			return ""
+		if not bool(_local_storage_writer.call(SAVE_KEY, JSON.stringify(payload))):
+			return ""
+		return latest
+	var backups := list_backups()
+	if backups.is_empty():
+		return ""
+	var latest := backups[0]
+	return latest if _copy_file(latest, SAVE_PATH) else ""
+
+# ── Settings persistence ────────────────────────────────────────────────────
+
+# Persists user settings (dock anchor, tick speed, focus mode, zoom, etc.)
+# and returns whether the write actually landed. Previously this swallowed
+# the writer's bool on both the web and desktop paths, so a quota/security
+# failure on the web branch (silent in the runtime, since JavaScriptBridge
+# converts both successful undefined returns and thrown errors to null) or
+# a disk-full/permission-denied on the desktop branch went unnoticed by
+# callers. Returning the bool lets the caller in main.gd mirror the
+# persist() retry-and-announce pattern (issue #409).
+func save_settings(data: Dictionary) -> bool:
+	var payload := JSON.stringify(data)
+	if use_local_storage:
+		return bool(_local_storage_writer.call(SETTINGS_KEY, payload))
+	return _write_text_file(SETTINGS_PATH, payload)
+
+func load_settings() -> Dictionary:
+	if use_local_storage:
+		return _local_storage_read(SETTINGS_KEY)
+	var parsed: Variant = _read_json_file(SETTINGS_PATH)
+	return parsed if parsed is Dictionary else {}

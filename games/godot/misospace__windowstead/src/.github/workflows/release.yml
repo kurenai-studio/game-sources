@@ -1,0 +1,426 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Tag to build and publish assets for
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
+
+jobs:
+  validate:
+    name: Pre-release validation
+    runs-on: ubuntu-latest
+    steps:
+      # The release tag may predate the validator, so load it from main first.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+
+      # Shared single source of truth for what a release tag looks like
+      # (same check as manual-release.yml). Fails the run before any export
+      # job's sed substitution can interpolate the tag.
+      - uses: ./.github/actions/validate-release-tag
+        with:
+          tag: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot-config
+
+      - name: Download Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
+          curl -fsSL "${{ steps.godot-config.outputs.linux_url }}" -o /tmp/godot_linux.zip
+          printf '%s  %s\n' "${{ steps.godot-config.outputs.linux_sha256 }}" /tmp/godot_linux.zip | shasum -a 256 -c -
+          unzip -oq /tmp/godot_linux.zip -d .tools/
+          chmod +x .tools/Godot_v${{ steps.godot-config.outputs.version }}-${{ steps.godot-config.outputs.status }}_linux.x86_64
+
+      - name: Run script tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./.tools/Godot_v${{ steps.godot-config.outputs.version }}-${{ steps.godot-config.outputs.status }}_linux.x86_64 --headless --path . --script res://tests/test_runner.gd > tests.log 2>&1
+          SCRIPT_EXIT=$?
+          cat tests.log
+          if [ $SCRIPT_EXIT -ne 0 ]; then
+            echo "::error::Script tests failed — aborting release"
+            exit 1
+          fi
+
+      - name: Run E2E gameplay flow tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./.tools/Godot_v${{ steps.godot-config.outputs.version }}-${{ steps.godot-config.outputs.status }}_linux.x86_64 --headless --path . --script res://tests/test_e2e.gd > e2e-tests.log 2>&1
+          E2E_EXIT=$?
+          cat e2e-tests.log
+          if [ $E2E_EXIT -ne 0 ]; then
+            echo "::error::E2E tests failed — aborting release"
+            exit 1
+          fi
+
+      - name: Run layout regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./.tools/Godot_v${{ steps.godot-config.outputs.version }}-${{ steps.godot-config.outputs.status }}_linux.x86_64 --headless --path . --script res://tests/test_layout_math.gd > layout-tests.log 2>&1
+          LAYOUT_EXIT=$?
+          cat layout-tests.log
+          if [ $LAYOUT_EXIT -ne 0 ]; then
+            echo "::error::Layout regression tests failed — aborting release"
+            exit 1
+          fi
+
+  linux:
+    name: Linux export
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Verify Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 --version
+
+      - name: Export Linux build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release/linux
+          "${{ steps.godot.outputs.godot_binary }}" --headless --path . --export-release "Linux/X11" ./build/release/linux/windowstead.x86_64
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="build/release/linux/windowstead.x86_64"
+          PCK="build/release/linux/windowstead.pck"
+          if [ ! -s "$BINARY" ]; then
+            echo "::error::Export binary not found or empty: $BINARY"
+            exit 1
+          fi
+          if [ ! -s "$PCK" ]; then
+            echo "::error::Export PCK not found or empty: $PCK"
+            exit 1
+          fi
+          echo "Export validation passed — binary and PCK present"
+
+      - name: Package Linux build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          archive = Path("build/windowstead-linux.zip")
+          base = Path("build/release/linux")
+
+          with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+              for relative in [Path("windowstead.x86_64"), Path("windowstead.pck")]:
+                  zf.write(base / relative, relative.as_posix())
+          PY
+
+      - name: Generate release upload token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh release upload "${{ env.RELEASE_TAG }}" build/windowstead-linux.zip --clobber --repo "$GITHUB_REPOSITORY"
+
+  windows:
+    name: Windows export
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Verify Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 --version
+
+      - name: Export Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release/windows
+          "${{ steps.godot.outputs.godot_binary }}" --headless --path . --export-release "Windows Desktop" ./build/release/windows/windowstead.exe
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          BINARY="build/release/windows/windowstead.exe"
+          PCK="build/release/windows/windowstead.pck"
+          if [ ! -s "$BINARY" ]; then
+            echo "::error::Export binary not found or empty: $BINARY"
+            exit 1
+          fi
+          if [ ! -s "$PCK" ]; then
+            echo "::error::Export PCK not found or empty: $PCK"
+            exit 1
+          fi
+          echo "Export validation passed — binary and PCK present"
+
+      - name: Package Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          archive = Path("build/windowstead-windows.zip")
+          base = Path("build/release/windows")
+
+          with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+              for relative in [Path("windowstead.exe"), Path("windowstead.pck")]:
+                  zf.write(base / relative, relative.as_posix())
+          PY
+
+      - name: Generate release upload token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh release upload "${{ env.RELEASE_TAG }}" build/windowstead-windows.zip --clobber --repo "$GITHUB_REPOSITORY"
+
+  macos:
+    name: macOS export
+    runs-on: macos-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: macos
+          install_templates: "true"
+
+      - name: Export macOS build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release/macos
+
+          # Inject release version into export_presets.cfg so the macOS bundle
+          # reports the correct CFBundleShortVersionString / CFBundleVersion.
+          sed -i '' \
+            -e "s/application\/short_version=\"0\.1\.0\"/application\/short_version=\"${{ env.RELEASE_TAG }}\"/" \
+            -e "s/application\/version=\"0\.1\.0\"/application\/version=\"${{ env.RELEASE_TAG }}\"/" \
+            export_presets.cfg
+
+          # Fail CI if the placeholders were absent — prevents future drift from
+          # silently shipping an untracked bundle version.
+          if grep -q 'application\/short_version="0.1.0"' export_presets.cfg || \
+             grep -q 'application\/version="0.1.0"' export_presets.cfg; then
+            echo 'ERROR: export_presets.cfg still contains 0.1.0 placeholders after sed replacement.' >&2
+            echo 'The preset file may have drifted; the macOS bundle version will be incorrect.' >&2
+            exit 1
+          fi
+
+          "${{ steps.godot.outputs.godot_binary }}" --headless --path . --export-release "macOS" ./build/release/macos/windowstead.app
+
+          # The sed above only mutates the working copy; restore the committed
+          # preset so any subsequent step sees export_presets.cfg as checked out.
+          git checkout -- export_presets.cfg
+
+          # Verify the exported bundle reports the correct version.
+          INFO_PLIST="build/release/macos/windowstead.app/Contents/Info.plist"
+          if [ ! -f "$INFO_PLIST" ]; then
+            echo "ERROR: Info.plist not found at $INFO_PLIST" >&2
+            exit 1
+          fi
+          BUNDLE_VERSION=$(python3 -c "import plistlib; print(plistlib.load(open('$INFO_PLIST','rb')).get('CFBundleShortVersionString',''))")
+          if [ "$BUNDLE_VERSION" != "${{ env.RELEASE_TAG }}" ]; then
+            echo "ERROR: CFBundleShortVersionString is '$BUNDLE_VERSION', expected '${{ env.RELEASE_TAG }}'" >&2
+            exit 1
+          fi
+          echo "macOS bundle version verified: $BUNDLE_VERSION"
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/release/macos/windowstead.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::Export app bundle not found: $APP"
+            exit 1
+          fi
+          if [ ! -s "$APP/Contents/MacOS/Windowstead" ]; then
+            echo "::error::App bundle missing executable: $APP/Contents/MacOS/Windowstead"
+            exit 1
+          fi
+          if [ ! -s "$APP/Contents/Resources/Windowstead.pck" ]; then
+            echo "::error::App bundle missing embedded PCK: $APP/Contents/Resources/Windowstead.pck"
+            exit 1
+          fi
+          echo "Export validation passed — app bundle contains executable and embedded PCK"
+
+      - name: Package macOS build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          archive = Path("build/windowstead-macos.zip")
+          base = Path("build/release/macos")
+
+          with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+              pck_path = base / "windowstead.pck"
+              if pck_path.is_file():
+                  zf.write(pck_path, pck_path.relative_to(base).as_posix())
+
+              app_root = base / "windowstead.app"
+              for path in app_root.rglob("*"):
+                  if path.is_file():
+                      zf.write(path, path.relative_to(base).as_posix())
+          PY
+
+      - name: Generate release upload token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh release upload "${{ env.RELEASE_TAG }}" build/windowstead-macos.zip --clobber --repo "$GITHUB_REPOSITORY"
+
+  web:
+    name: Web export
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: ./.github/actions/load-godot-toolchain
+        id: godot
+        with:
+          platform: linux
+          install_templates: "true"
+
+      - name: Verify Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 --version
+
+      - name: Export Web build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release/web
+          "${{ steps.godot.outputs.godot_binary }}" --headless --path . --export-release "Web" ./build/release/web/windowstead.html
+
+      - name: Verify export output
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIR="build/release/web"
+          MISSING=0
+          for ext in html pck wasm js; do
+            ARTIFACT="$DIR/windowstead.$ext"
+            if [ ! -s "$ARTIFACT" ]; then
+              echo "::error::Expected Web export artifact missing or empty: $ARTIFACT"
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" -ne 0 ]; then
+            echo "::error::Web export validation failed — see missing artifacts above"
+            exit 1
+          fi
+          echo "Export validation passed — .html/.pck/.wasm/.js all present"
+
+      - name: Package Web build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          archive = Path("build/windowstead-web.zip")
+          base = Path("build/release/web")
+          expected = ["windowstead.html", "windowstead.pck", "windowstead.wasm", "windowstead.js"]
+
+          with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+              for relative in expected:
+                  zf.write(base / relative, relative)
+          PY
+
+      - name: Generate release upload token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh release upload "${{ env.RELEASE_TAG }}" build/windowstead-web.zip --clobber --repo "$GITHUB_REPOSITORY"
+

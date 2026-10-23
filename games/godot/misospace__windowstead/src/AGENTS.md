@@ -1,0 +1,134 @@
+# CLAUDE.md
+
+## Project Summary
+
+Windowstead is a Godot 4 desktop-resident idle colony sim.
+
+The core product pillars are:
+- desktop-native, low-attention, edge-docked overlay UX
+- indirect control systems for priorities, planning, and agent-driven work
+
+The intended fantasy is:
+- "My colony is alive while I work."
+
+## Product Direction
+
+Treat Windowstead as a desktop companion, not a normal management game window.
+
+Key rules:
+- Bottom dock is the primary mode.
+- Vertical side dock is an alternate orientation family, not the default.
+- The world strip is the product.
+- Menus should be temporary popup overlays, not persistent sidebars.
+- The player plans and places; workers execute.
+- The game should be glanceable, low-attention, and forgiving when ignored.
+
+## UX Constraints
+
+Prefer these behaviors:
+- Tile-first dock sizing: choose square tile geometry first, with tile size responsive to screen/work-area percentage, then derive dock size from the grid and UI chrome
+- Bottom-of-screen strip as the strongest presentation
+- Separate layout assumptions for bottom vs vertical mode
+- Focus Mode and zoom as first-class UX features
+- Dense tile strip with minimal dead space
+- Workers rendered over the strip with visible movement
+- Build placement directly on the world, with clear preview/cancel feedback
+
+Avoid these regressions:
+- Building a normal app-like sidebar UI
+- Making bottom and vertical mode just resized versions of each other
+- Hiding the actual game behind menus
+- Requiring high attention or frequent urgent clicks
+
+## Current Collaboration Preferences
+
+- Push directly to `main` unless told otherwise.
+- Do not cut a release after every small change; discuss between releases when practical.
+
+### Release Process
+Releases are tag-driven and automated. No source version bump is required.
+
+#### Steps
+
+1. Confirm the intended changes are merged and CI is green on `main`.
+2. Open **Actions → Manual Release → Run workflow** and enter a version such as `0.0.20` (`v0.0.20` is also accepted).
+3. The workflow tags protected `main` and creates the GitHub release.
+
+The published release triggers `.github/workflows/release.yml`: Godot export builds + asset upload.
+
+#### Version convention
+
+- Tags use plain semver (e.g. `0.4.0`, no `v` prefix)
+- Do not cut a release after every small change; discuss between releases when practical
+
+#### Validation gates
+
+Before running the release workflow, CI must pass on `main` (`.github/workflows/test.yml`) and there must be no known regressions from the last release.
+- Detailed GitHub issues are used to delegate work to a local model, so issue text should be concrete and implementation-oriented.
+
+
+## Review / Implementation Notes
+
+- Save/version migration should be migration-first because the game auto-loads the latest save on startup.
+- If changing orientation family in a meaningful way, prefer explicit behavior over silent layout morphing.
+- Screen/work-area percentage can inform target tile size, but final dock sizing should be driven by tile geometry rather than sizing the dock first.
+- Bottom dock should stay shallow and wide.
+- Side dock should stay modest in width, especially on ultrawide monitors.
+
+## Validation
+
+Useful checks:
+
+```bash
+./.tools/Godot_v4.7.1-stable_linux.x86_64 --headless --path . --script res://tests/test_runner.gd
+```
+
+macOS runtime validation has also been important in this repo because GDScript warnings are treated as errors in practice.
+
+## Open Work Themes
+
+The current major themes are:
+- bottom-dock-first polish
+- distinct vertical mode behavior
+- popup management UX
+- denser strip filling
+- smoother worker motion
+- clearer economy/build bottleneck feedback
+- focus mode and zoom
+
+## Testing Traps (learned by the loop)
+
+- `assert_eq` takes `(actual, expected, name)` — the `name` is **required**. A
+  2-arg call is a GDScript **parse error**, and a parse error drops the whole
+  test file: every other test in it silently stops running, and the failure is
+  reported as "Parse Error" in the output, never as a failing assertion. Check
+  output for `Parse Error` as well as the summary line. (Shipped in #321: the
+  suite lost its pre-existing coverage without a single red assertion.)
+- Run suites headless the way CI does:
+  `godot --headless --path . --script res://tests/<suite>.gd` with
+  `HOME=/tmp XDG_DATA_HOME=/tmp/.local/share` in constrained environments.
+- `tick_rewards` checks `remaining <= 0` **before** decrementing: a reward with
+  duration N survives N ticks and expires on tick N+1. Tests asserting expiry
+  must tick one past the duration.
+
+## Repository review skills
+
+Review-specific checklists live in `.agents/skills/windowstead-gameplay-review/SKILL.md` and `.agents/skills/windowstead-workflow-security/SKILL.md`. Load the gameplay skill for save, worker, economy, or UI changes; load the workflow skill for Actions, secrets, or reviewer configuration.
+
+## Filing issues for the autonomous loop
+
+Issues here are picked up by an autonomous coding loop (dispatch → foreman), and two
+parts of the body feed deterministic reviewer rails. Agents filing issues in this repo
+must include both.
+
+**1. State the ask in one imperative sentence.** The reviewer quotes it verbatim to
+prove it actually read the issue. If it can only paraphrase, its GO is demoted to NO-GO
+unless the rail below vouches — costing a revision cycle and an escalation review.
+
+**2. Name the concrete file paths the fix is expected to touch** (backticks are fine).
+The scope-overlap rail vouches for a diff that touches a named file, and that vouch is
+what survives a paraphrased ask.
+
+Name only paths you are confident about. An issue that names files the diff does *not*
+touch is read as scope drift and also gets the change rejected — so when unsure, name
+none rather than guessing.
