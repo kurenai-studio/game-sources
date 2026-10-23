@@ -1,0 +1,351 @@
+buildscript {
+
+    ext {
+        appName = 'Ore Infinium'
+
+        gdxVersion = '1.9.6'
+
+        aiVersion = '1.8.1'
+
+        artemisVersion = '2.1.0'
+        artemisContribVersion = '1.2.1'
+        kryonetVersion = '2.22.0-RC1'
+
+        jcommanderVersion = "1.68"
+        tweenEngineVersion = "6.3.3"
+
+        kotlinVersion = '1.1.1'
+        kotlinCoroutinesVersion = '0.14'
+        kotlinxJdk8Version = '0.3'
+
+        kotlinLoggingVersion = '1.4.4'
+
+        junitVersion = '4.12'
+
+        joiseVersion = '1.0.1'
+
+        visUiVersion = '1.2.5'
+
+        ktxVersion = '1.9.6-SNAPSHOT'
+
+        protobufGradlePlugin = '0.8.1'
+        protobufVersion = '3.2.0'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+
+        jcenter()
+
+        repositories {
+            maven { url "https://kotlin.bintray.com/kotlinx/" }
+        }
+
+        maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1/" }
+
+        maven { url "https://dl.bintray.com/heri/frostcode" }
+    }
+
+    dependencies {
+        // lib for artemis-odb weaving.
+        // see https://github.com/junkdog/artemis-odb/wiki/Bytecode-weaving
+        classpath "net.onedaybeard.artemis:artemis-odb-gradle-plugin:$artemisVersion"
+
+        // introduces support for provided scope gradle keyword.
+        //3.0.3 FIXME
+        //classpath "com.netflix.nebula:gradle-extra-configurations-plugin:$gradleExtraConfigurationsPluginVersion"
+
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+
+        classpath "com.google.protobuf:protobuf-gradle-plugin:$protobufGradlePlugin"
+        classpath 'co.riiid:gradle-github-plugin:0.4.2'
+
+        classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+
+        //classpath "com.github.czyzby:ktx-tools:$ktxVersion"
+    }
+}
+
+plugins {
+    id 'nebula.provided-base' version '3.1.0'
+
+    //for extracting git sha at deploy time
+    id "org.ajoberstar.grgit" version "1.7.1"
+
+    //run :dependencyUpdates to get a list of updates needed
+
+    //gradle versions plugin
+    id "com.github.ben-manes.versions" version "0.14.0"
+
+    id "co.riiid.gradle" version "0.4.2"
+}
+
+//hack this is required for kotlin asset source generator or gradle daemon will crash
+// https://youtrack.jetbrains.com/issue/KT-17031
+// https://github.com/fusesource/jansi/issues/66
+// https://github.com/gradle/gradle/issues/778
+System.setProperty("kotlin.colors.enabled", "false")
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "3.2.1"
+}
+
+subprojects {
+
+    apply plugin: "java"
+    apply plugin: "kotlin"
+
+    //apply plugin: 'ktx.tools.plugin'
+
+    //apply plugin: 'ktx.tools.demo.plugin'
+
+    //demoSetting {
+    //    message = "Hi from an extension"
+    //}
+
+    kotlin {
+        experimental {
+            coroutines "enable"
+        }
+    }
+
+    compileJava {
+        sourceCompatibility = '1.8'
+    }
+
+    apply plugin: "eclipse"
+
+    configurations.all {
+        resolutionStrategy {
+            // failOnVersionConflict()
+        }
+        resolutionStrategy.force "net.onedaybeard.artemis:artemis-odb:$artemisVersion"
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+
+        //for kryonet
+        maven { url "http://clojars.org/repo" }
+
+        //for universal tween engine
+        maven { url "https://dl.bintray.com/heri/frostcode/" }
+
+        maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1/" }
+    }
+
+    apply plugin: 'idea'
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+}
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
+import org.ajoberstar.grgit.Grgit
+
+// Import the texture packer
+//todo duped in desktop gradle
+def getVersion = '0.1'
+
+def date = new Date()
+def formattedDate = date.format("yyyyMMdd-HHmmss-")
+
+def getJarFile = { ->
+    def tree = fileTree('desktop/build/libs/') { include '**/*.jar' }
+    if (tree.files.empty) {
+        return ""
+    }
+
+    println(tree.first().path)
+    return tree.first().path
+}
+
+def getSha() {
+    return Grgit.open(project.file('.')).head().getAbbreviatedId()
+}
+
+//todo share this between here and desktop..waiting on gradle-script-kotlin port, i think
+def getDate() {
+    def date = new Date()
+
+    def formattedDate = date.format("yyyyMMdd-HHmmss-")
+    formattedDate += getSha()
+
+    return formattedDate
+}
+
+project(":desktop") {
+    apply plugin: "java"
+
+    github {
+        owner = 'sreich'
+        repo = 'ore-infinium'
+        token = System.getenv("GITHUB_TOKEN") ?: "xxxxxxxxx"
+        tagName = "jenkins-${getDate()}"
+        targetCommitish = 'master'
+        name = getVersion + '-' + getDate()
+        prerelease = true
+        body = """# Ore Infinium
+#### Automatic snapshot build
+"""
+
+        assets = [getJarFile()]
+    }
+
+    //  apply plugin: "com.google.protobuf"
+
+    dependencies {
+
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+    }
+
+    //    sourceSets {
+    // run the annotation processor compile time.
+    //      main {
+    //            compileClasspath = files(configurations.provided)
+    //         proto {
+    //            srcDir 'core/src/com/ore/infinium/proto'
+    //           srcDir 'proto/'
+    //          include '**/*.proto'
+    //     }
+    //        }
+    //   }
+
+    project(":core") {
+        apply plugin: "java"
+        apply plugin: "idea"
+        apply plugin: "com.google.protobuf"
+
+        // Add a new task that packs the textures for you
+        task("packTextures") {
+            logger.info "Calling TexturePacker root outputdir ${projectDir}"
+
+            TexturePacker.process("${projectDir}/assets/tiles", "${projectDir}/assets/packed", "tiles")
+            TexturePacker.process("${projectDir}/assets/blocks", "${projectDir}/assets/packed", "blocks")
+            TexturePacker.process("${projectDir}/assets/ui", "${projectDir}/assets/packed", "ui")
+            TexturePacker.process("${projectDir}/assets/entities", "${projectDir}/assets/packed", "entities")
+            TexturePacker.process("${projectDir}/assets/backgrounds", "${projectDir}/assets/packed", "backgrounds")
+        }
+
+        configurations {
+            provided
+        }
+
+        idea {
+            module {
+                sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/java")
+                downloadJavadoc = true
+                downloadSources = true
+            }
+        }
+
+        sourceSets {
+            // run the annotation processor compile time.
+            main {
+                //compileClasspath = files(configurations.provided)
+                proto {
+                    srcDir 'src/com/ore/infinium/proto'
+                }
+                //NOTE this is also added to source set in core/build.gradle
+            }
+        }
+
+        compileKotlin {
+            dependsOn(':core:generateProto')
+        }
+
+        dependencies {
+            // kotlin
+            //compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
+            compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+
+            compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+            compile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
+            compile "org.jetbrains.kotlinx:kotlinx-support-jdk8:$kotlinxJdk8Version"
+
+            compile "io.github.microutils:kotlin-logging:$kotlinLoggingVersion"
+            //            compile "org.slf4j:slf4j-log4j12:1.7.25"
+
+            compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.8.2'
+            compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.8.2'
+            compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.2'
+
+            // libgdx core
+            compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+            //libgdx addons
+            compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+            compile "com.badlogicgames.gdx:gdx-ai:$aiVersion"
+
+            compile "com.kotcrab.vis:vis-ui:$visUiVersion"
+
+            //junit
+            testCompile "junit:junit:$junitVersion"
+            testCompile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+
+            // kryonet
+            compile "com.esotericsoftware:kryonet:$kryonetVersion"
+
+            //artemis-odb
+            compile "net.onedaybeard.artemis:artemis-odb:$artemisVersion"
+
+            // Artemis-odb bonus functionality (systems, events, components).
+            compile "net.mostlyoriginal.artemis-odb:contrib-core:$artemisContribVersion"
+
+            // jcommander for command line parsing
+            compile "com.beust:jcommander:$jcommanderVersion"
+
+            //junit
+            testCompile "junit:junit:$junitVersion"
+
+            //universal tween engine
+            compile "com.aurelienribon:tween-engine-api:$tweenEngineVersion"
+
+            compile "com.sudoplay.joise:joise:$joiseVersion"
+
+            compile "com.google.protobuf:protobuf-java:$protobufVersion"
+
+            compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+
+            compile "com.esotericsoftware.minlog:minlog:1.2-slf4j-jdanbrown-0"
+
+            compile "com.github.czyzby:ktx-vis:$ktxVersion"
+            compile "com.github.czyzby:ktx-vis-style:$ktxVersion"
+            compile "com.github.czyzby:ktx-style:$ktxVersion"
+            compile "com.github.czyzby:ktx-scene2d:$ktxVersion"
+            compile "com.github.czyzby:ktx-math:$ktxVersion"
+            compile "com.github.czyzby:ktx-i18n:$ktxVersion"
+            compile "com.github.czyzby:ktx-assets:$ktxVersion"
+            compile "com.github.czyzby:ktx-app:$ktxVersion"
+            compile "com.github.czyzby:ktx-actors:$ktxVersion"
+            //compile "com.github.czyzby:ktx-tools:$ktxVersion"
+
+            //compile project(":core:packTextures")
+        }
+
+        protobuf {
+            protoc {
+                // download the artifact spec for the Protobuf Compiler
+                artifact = "com.google.protobuf:protoc:3.1.0"
+            }
+
+            //generatedFilesBaseDir = "$buildDir/generated/source/proto"
+        }
+    }
+}
+
