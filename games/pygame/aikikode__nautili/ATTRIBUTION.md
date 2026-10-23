@@ -3,9 +3,9 @@
 - **Game:** nautili
 - **Upstream:** https://github.com/aikikode/nautili
 - **Author:** aikikode
-- **License:** GNU General Public License v3.0 (see )
+- **License:** GNU General Public License v3.0 (see `LICENSE`)
 - **Engine:** pygame
-- **Snapshot commit:** 
+- **Snapshot commit:** `5549d4b1f1a69568b120853b513012ef925fca1e`
 - **Collected by:** bot b
 - **Collected at:** 2026-10-23T04:17:07-07:00 (America/Los_Angeles)
 - **Claim issue:** #1041
