@@ -1,0 +1,179 @@
+# Exosphere Agent Notes
+
+This file is the short operational guide for agents working in this repo. `ROADMAP.md` is the live product plan. `PLAN_REALISM.md` is the physics/telemetry audit log. `PLAN_VISUAL_REALISM.md` is the next visual-fidelity track. Do not look for `PLAN_MEJORAS.md`; it has been retired. The maintained physics source of truth is `docs/physics/PHYSICS_MODEL.md`; the coupled migration and parity gates are tracked in `docs/physics/coupled_6dof_migration.md`.
+
+## Required Checks
+
+Run these after C# changes:
+
+```bash
+dotnet build ExosphereSimulation/ExosphereSimulation.csproj --nologo -v quiet
+dotnet build Exosphere.csproj --nologo -v quiet
+dotnet test ExosphereSimulation.Tests/ExosphereSimulation.Tests.csproj --nologo
+```
+
+Or run the local aggregate:
+
+```bash
+bash tools/ci_check.sh
+```
+
+Run Godot smoke checks when scene/game-layer behavior changes:
+
+```bash
+/home/sebasvelace/Downloads/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64 \
+  --headless --path . --quit-after 3 --rendering-driver opengl3
+```
+
+For fast VAB iteration (cached builds + construction tests + VAB scene smoke):
+
+```bash
+bash tools/vab_quick_check.sh
+```
+
+Use the full `tools/ci_check.sh` once before committing instead of after every UI edit.
+
+For atmosphere work (optical/physical tests + flight-scene shader smoke):
+
+```bash
+bash tools/atmosphere_quick_check.sh
+```
+
+For VAB:
+
+```bash
+/home/sebasvelace/Downloads/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64 \
+  --headless --path . --quit-after 3 --rendering-driver opengl3 \
+  res://scenes/construction/Construction.tscn
+```
+
+Expected standard: 0 warnings, 0 errors, tests passing.
+
+## Visual Capture Rule
+
+Use Godot `--headless` only for smoke/load checks. For screenshot validation, run
+Godot under a real framebuffer:
+
+```bash
+xvfb-run -a -s "-screen 0 1920x1080x24" "$GODOT" --path . --rendering-driver opengl3
+```
+
+Screenshot harnesses must be temporary and untracked: `scripts/_*Shot.cs`,
+`scripts/*VerifyShot.cs`, `scenes/*VerifyShot.tscn`, and temporary autoload edits
+in `project.godot`.
+
+## Architecture Boundary
+
+There are two assemblies:
+
+- `ExosphereSimulation/`: pure C#, no Godot dependency.
+- `scripts/` via `Exosphere.csproj`: Godot game layer.
+
+Never import `Godot` in `ExosphereSimulation/`.
+
+`SimulationBridge` is the boundary object:
+- owns `Universe`
+- exposes `ActiveVessel`
+- manages time warp
+- places constructed vessels on the pad
+- lets Godot controllers read/write simulation state
+
+## Simulation Rules
+
+- Use SI units in sim code: meters, m/s, kg, seconds, radians internally.
+- Use double precision sim types: `Vector3d`, `Quaterniond`.
+- Do not use Godot float vectors in simulation code.
+- Keep public simulation contracts in English.
+- Add or update xUnit tests when touching shared physics, orbital logic, construction logic, or data contracts.
+
+Important implemented systems:
+- RK4 and Kepler/on-rails propagation
+- SOI selection
+- radial/suborbital impact guards
+- pressure-corrected thrust/Isp/mass flow
+- orientation-dependent aero and heating
+- opt-in coupled rigid-body 6-DoF RK4 with COM/inertia, candidate-state forces and contact
+- heat-shield flag from part JSON
+- hard impact destruction
+- VAB catalog/assembly/export in `ExosphereSimulation/Construction`
+- Hohmann planetary transfers, Earth–Moon Lambert/B-plane planning, encounter prediction, and patched-conic SOI transitions in `ExosphereSimulation/Navigation` and `Universe`
+
+## Game Layer Rules
+
+- Godot code lives under `scripts/` and namespace `Exosphere.Game`.
+- Project main scene: `scenes/ui/MainMenu.tscn`. Playable flight: `scenes/flight/Flight.tscn`.
+- VAB scene: `scenes/construction/Construction.tscn`.
+- Flight opens VAB with `V`; VAB launches the current craft through `CraftLaunchRequest`.
+- VAB direct picking lives in `scripts/VabPickingLayer.cs`; it creates collision bodies for parts and compatible attachment nodes and is driven by `ConstructionController`.
+- The active vessel is rendered at origin through `FloatingOrigin`.
+- Render scale: `1 Godot unit = 2.8 m`.
+- Planets are scaled-space backdrops, not placed at true render distances.
+
+`Exosphere.csproj` must exclude:
+
+```xml
+<Compile Remove="ExosphereSimulation/**/*.cs" />
+<Compile Remove="ExosphereSimulation.Tests/**/*.cs" />
+<Compile Remove=".godot/**/*.cs" />
+```
+
+## Data Rules
+
+Data lives in JSON:
+- `data/bodies/*.json` — an atmosphere must declare `molar_mass`, `heat_capacity_ratio`
+  (non-air gases), `surface_gravity` and `geopotential_radius`; the defaults are Earth's, so omitting them silently holds an alien
+  column up with Earth gravity and Earth air. Layer `alt_min`/`alt_max` are GEOPOTENTIAL
+  metres (USSA-76 convention), not geometric.
+- `data/parts/*.json`
+- `data/launch_sites/*.json` — live: `SimulationBridge.LaunchSiteId` picks the pad, and the
+  site's latitude sets the rotational boost the vehicle inherits (ω·R·cos φ). Never spawn a
+  vessel on a hardcoded axis; derive the pad frame from `CelestialBody.GetSurfacePosition`.
+
+Do not hardcode physical constants in game code when they belong in JSON. Copy the schema of nearby files when adding data.
+
+Attachment-node rules used by VAB V1:
+- stack nodes attach only to stack nodes of the same size
+- radial nodes attach only to radial nodes
+- `engine_bell` nodes are not attachable
+
+The default Starship stack uses `decoupler_heavy`, not `decoupler_medium`, because the Starship stack uses size-3 nodes.
+
+## Known Limits
+
+- Per-engine lifecycle/gimbal/thermal/feed state is modeled per instance; fuel exhaustion cuts delivered thrust without creating a gameplay failure state. Per-mount torque (`PartGraph.GetTotalTorque`), differential TVC (R5b: `SolveDifferentialGimbal`), and per-mount thrust vector sum (R5d: `GetThrustVector`) are landed; `Vessel.Tick` applies real per-mount torque with and without pilot input.
+- VAB 2.0 has filtered catalog, double-click auto-attach, Starter/Starship templates, undo/redo, launch validation, 3D picking, craft persistence, MainMenu entry, and VAB-to-launch flow. It still lacks drag/rotate gizmos. Catalog drag-ghost, symmetry, and part-rotation UX are not in the construction UI.
+- Reentry has physics basis and tests plus windward plasma, tile charring, survivable belly-flop EDL, thermal break-up VFX, per-piece structural breakup, and control-loss authority. Richer shock/plasma rendering vs IFT references is still pending.
+- Mission UX: usable save/load (C1), orbit→deorbit→ENTRY without teleport (C2), and EDL phase-track/cues (C3) are landed. LEO warp decay (B3), hot-stage thrust overlap (B2), structural breakup (B1) and `ControlAuthority` are landed. Visual oleada A is landed. Mechazilla Ship catch + booster return (R12 boostback → entry burn → catch via `BoosterReturnController`, HUD status line) are landed. R11 systems phase loads + ground command delay (`GroundCommandRelay`) are landed; crewed pad/LEO stick is onboard (`PilotCommandRouting`) so LOS does not dead-stick the player, `[G]` yields to WASD, and Minimal HUD is a broadcast band with catalog-derived stage/mount engine boards for all launchers, navball, observed-event timeline and telemetry; Clean retains only the navball and critical alerts. Apollo 11 flies TD&E on SM RCS (real capture, no teleport), docked LOI, crew transfer, undocking, DOI and powered descent (`LunarPoweredDescent`) to a soft lunar touchdown; LM ascent, rendezvous and the return are pending. Player guidance: `FlightPhaseObserver` recognises hand-flown milestones (MissionManager queues one phase per frame, forward only); `[K]` toggles the historical director mid-flight (`ToggleMissionControl`, flags realigned from the phase); mission JSON `procedure` steps drive the in-flight guide (`MissionGuide`); `MoonIndicator`/`LunarStatusReadout` and `TargetIndicator`/`DockingTargeting` (arrow keys = RCS translation, real capture) cover lunar and docking navigation. `tools/visual_playtest.sh` has `--hotstage`, `--reentry-compare`, `--apollo8-mission`, `--gemini-mission` and `--apollo11-mission` (observe-only pad→lunar orbit; `--until-phase ORBIT|TLI|…` for segment checks, powered ascent fast-forwarded unless `--no-fast-forward`, periodic `TRACE_MISSION` evidence). Interrupting the harness (SIGINT/SIGTERM) now stops Godot and restores `project.godot` immediately. R5/R5b/R5c/R5d are landed.
+- Patched-conic SOI transitions are implemented for on-rails vessels (warp-resolution-independent); inside on-rails propagation use `BodyStateAt(body, t)` for body state at the epoch/crossing time, not the end-of-tick global position.
+- Interplanetary planning has tested Hohmann planetary transfers, an ephemeris-targeted
+  geocentric Moon route, patched-conic SOI transitions, encounter/perilunium prediction
+  and TLI/LOI readouts. Apollo 8/11 now fly finite TLI, mid-course correction, LOI and
+  circularization burns (`Flight/ProgradeEnergyBurn`, `LambertGuidedBurn`,
+  `PeriapsisCaptureBurn`); [L] holds on the pad for a lunar launch window
+  (`Navigation/LunarLaunchWindow`, azimuth 72°–108°) and the S-II/S-IVB fly closed-loop,
+  plane-steered insertion into the lunar plane (only a resumed ascent falls back to a
+  scripted plane correction). TEI is a finite SPS burn (`Navigation/TransearthInjectionPlanner`),
+  three `TransearthCorrection` burns hit the 38 km corridor perigee, and the CM flies a lifting
+  entry on trimmed-capsule aerodynamics with `CapsuleEntryGuidance` bank control. Translunar
+  corrections target the perilune (`TranslunarCorrection`, in-SOI trim), LOI 108 × 312 km.
+- Gemini 8 flies rendezvous and docking on translation RCS (`Vessel.TranslationCommand`,
+  `RendezvousPlanner`, `ProximityApproach`, real `TryDock`), the thruster 8 failure as a
+  `DisturbanceTorqueBody` with re-entry RCS recovery, and a solid-motor retrofire. Its launch
+  still starts from an Agena placed overhead (scenario geometry).
+  Dated lunar ephemerides and timeline maneuver nodes are still needed.
+- CI runs `tools/contract_checks.sh` (the same static contract list as local `tools/ci_check.sh`), builds/tests the sim, builds the Godot C# layer, downloads Godot 4.6.3 mono in GitHub Actions, and runs strict headless smoke checks. Local `tools/ci_check.sh` runs Godot smoke only when `GODOT_BIN` or the default local Godot path exists.
+- Godot `--headless` in this environment uses a dummy renderer, so viewport PNG capture needs a real framebuffer.
+- Current product priority after documentation cleanup: visual fidelity against real Starship/Super Heavy references. Prefer scoped improvements to `VesselRenderer`, `ReentryPlasmaController`, `PlumeSystem`, camera/lighting, and visual capture before broad new gameplay systems.
+- Flight 14 exploration now continues beyond its retained 100 m witness to estimated low-speed water entry, then freezes after ten seconds of water-only coupled mass-centre translation/rotation. Inclined sealed-cylinder buoyancy and projected wet-section drag are opt-in and region-gated; the global ascent/EDL integration mode is unchanged. An independent Super Heavy engineering return now reaches Gulf water contact with selectable observation and an abstracted FTS boundary; see `docs/audits/flight14_booster_return_2026-10-03.md`. Estimated booster apogee/landing guidance now improves height and timing; see `docs/audits/flight14_booster_calibration_2026-10-03.md`. Exact targeting, flooding, measured capsize timing and full booster reference-timing/trajectory calibration remain pending. See `docs/audits/flight14_water_motion_2026-10-03.md`; the earlier water-entry and inclined-water audits describe prior increments.
+- The coupled 6-DoF path remains disabled by default. Coast and simplified powered parity pass;
+  Starship ascent/EDL parity and full SAS/flap/RCS equivalence are still required before activation.
+
+## Workflow
+
+- Keep `ROADMAP.md` current when closing or adding roadmap items.
+- Keep `README.md` and this file aligned with the repo.
+- One coherent commit per task.
+- Do not commit generated files: `.godot/`, `bin/`, `obj/`, `*.uid`.
+- Do not commit temporary visual harnesses such as `scripts/_*Shot.cs`,
+  `scripts/*VerifyShot.cs`, or `scenes/*VerifyShot.tscn`.
+- Do not break `[G]` ascent or EDL while working on unrelated features.

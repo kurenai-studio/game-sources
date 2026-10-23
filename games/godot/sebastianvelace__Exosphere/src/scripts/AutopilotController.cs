@@ -1,0 +1,397 @@
+namespace Exosphere.Game;
+
+using Godot;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Flight;
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Parts;
+using Exosphere.Simulation.Physics;
+
+/// <summary>
+/// Executes a planned maneuver. When armed it waits until the active vessel reaches
+/// the node's true anomaly, then orients the vessel to the (live) burn direction and
+/// throttles up until the planned ΔV magnitude has been delivered.
+/// </summary>
+public partial class AutopilotController : Node
+{
+    private ManeuverPlanner _planner = null!;
+
+    public bool IsArmed  { get; private set; }
+    public bool IsBurning{ get; private set; }
+    /// <summary>True while the vehicle is being physically prepared for atmospheric entry.</summary>
+    public bool IsPreparingEntryAttitude => _entryAttitudePreparation;
+
+    private double _deliveredDv;          // m/s accumulated during the burn
+    private double _targetDv;             // m/s snapshot at ignition
+    private double _prevNu;               // for node-crossing detection
+    private bool   _restoreSas;
+    private bool   _burnCommandCommitted;
+    private Vector3d _burnDirectionWorld = Vector3d.Zero;
+    private bool   _deorbitBurn;
+    private double _targetPeriapsisRadius;
+    private bool   _entryAttitudePreparation;
+
+    private const double NodeWindow = 0.10;   // rad: how close to node before igniting
+    // A deorbit burn commonly starts 180° away from the current thrust axis. The generic
+    // guidance defaults leave that exact retrograde turn under-damped and can keep the
+    // autopilot in the throttle-inhibited alignment loop. Use a deliberately damped loop
+    // for maneuver execution only; EDL/ascent retain their own tuned callers.
+    private const double BurnProportionalGain = 2.0;
+    private const double BurnDampingGain = 25.0;
+    // The controller runs after the current physics tick. Near a circular orbit, one more
+    // 0.1 s thrust slice can move periapsis by tens of kilometres, so stop when a forecast of
+    // the next bounded slice reaches the requested target instead of waiting for overshoot.
+    private const double DeorbitForecastSeconds = 0.1;
+
+    public override void _Ready()
+    {
+        // Maneuver execution must be the final guidance writer before EDL. HUD input and
+        // ascent assist may publish a zero/old stick command earlier in the frame; leaving
+        // this at the default priority made a correctly armed deorbit burn sit forever at
+        // pyr=(0,0,0) until its watchdog expired.
+        ProcessPriority = 150;
+    }
+
+    public void Bind(ManeuverPlanner planner) => _planner = planner;
+
+    public void Arm()
+    {
+        if (SimulationBridge.Instance?.IsFlight14Exploration == true) return;
+        _entryAttitudePreparation = false;
+        if (_planner is { HasNode: true } && _planner.DeltaVMagnitude > 0.01)
+        {
+            IsArmed = true;
+            IsBurning = false;
+            _deliveredDv = 0.0;
+            _prevNu = double.NaN;
+            _burnCommandCommitted = false;
+
+            // Explicit deorbit preset: leave ORBIT into COAST while waiting for ignition.
+            if (_planner.IsDeorbitNode
+                && MissionManager.Instance?.Phase == MissionPhase.ORBIT)
+            {
+                MissionManager.Instance.EnterPhase(MissionPhase.COAST);
+            }
+        }
+    }
+
+    public void Disarm()
+    {
+        _entryAttitudePreparation = false;
+        if (IsBurning) EndBurn();
+        IsArmed = false;
+        IsBurning = false;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_entryAttitudePreparation)
+        {
+            if (!GuidePreEntryAttitude())
+                _entryAttitudePreparation = false;
+            else
+                return;
+        }
+
+        if (!IsArmed) return;
+
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (bridge == null || vessel == null || universe == null) { Disarm(); return; }
+
+        var refBody = universe.GetDominantBody(vessel.Position);
+        var relPos  = vessel.Position - refBody.Position;
+        var relVel  = vessel.Velocity - refBody.Velocity;
+
+        // Re-capture the live orbit so the burn basis stays correct as we thrust.
+        _planner.SetOrbit(relPos, relVel, refBody.GM);
+        if (!_planner.HasOrbit) return;
+
+        double nu = _planner.TrueAnomalyNow;
+
+        if (!IsBurning)
+        {
+            // The deorbit preset deliberately places a near-circular node at the current
+            // true anomaly. Waiting for a future node-crossing test here is numerically
+            // fragile: SetOrbit's tiny eccentricity noise can move the angle outside the
+            // 0.10 rad window on the next frame, leaving the armed burn permanently idle.
+            if (_planner.IsDeorbitNode && _planner.Eccentricity < 0.01)
+            {
+                BeginBurn(vessel, relVel);
+            }
+            else
+            {
+            // Detect arrival at (or crossing of) the node true anomaly.
+            double diff = AngleDiff(nu, _planner.NodeTrueAnomaly);
+            bool crossed = !double.IsNaN(_prevNu) &&
+                           System.Math.Sign(AngleDiff(_prevNu, _planner.NodeTrueAnomaly)) !=
+                           System.Math.Sign(diff);
+            _prevNu = nu;
+
+            if (System.Math.Abs(diff) <= NodeWindow || crossed)
+                BeginBurn(vessel, relVel);
+            else
+                return;
+            }
+        }
+
+        // ── Burning ──────────────────────────────────────────────────────────
+        // The burn basis is impulsive: once ignition begins, keep the direction computed
+        // at the node. Rebuilding it from the changing orbit every frame can rotate the
+        // target as the burn itself changes eccentricity, turning a retrograde deorbit into
+        // a prograde/normal excursion on larger burns.
+        Vector3d dir = _burnDirectionWorld;
+        if (dir.Magnitude < 1e-6) { EndBurn(); IsArmed = false; return; }
+
+        // Slew through bounded torque and wait for the physical attitude to settle before
+        // ignition. The engine remains pointed by its actual integrated quaternion throughout.
+        vessel.PitchYawRoll = AttitudeGuidance.ComputeAxisPointingCommand(
+            vessel.Orientation, Vector3d.Up, dir, vessel.AngularVelocity,
+            BurnProportionalGain, BurnDampingGain);
+        double alignment = vessel.Orientation.Rotate(Vector3d.Up).Normalized.Dot(dir);
+        if (!_burnCommandCommitted
+            && (alignment < 0.998 || vessel.AngularVelocity.Magnitude > 0.03))
+        {
+            vessel.Throttle = 0.0;
+            return;
+        }
+        // Once the first ignition command is accepted, do not cut throttle and let the
+        // engine lifecycle re-enter Chill/SpinPrime on every small attitude oscillation.
+        // A burn is a single committed event; guidance continues correcting attitude while
+        // the planned ΔV is delivered, and the propulsion runtime policy remains authoritative.
+        _burnCommandCommitted = true;
+        vessel.Throttle = 1.0;
+
+        // Accumulate delivered ΔV from the actual thrust in the last committed physics
+        // interval. Using render delta · TimeScale would overrun a burn when scheduler
+        // debt is capped.
+        double mass = vessel.TotalMass;
+        if (mass > 0.0)
+        {
+            double simStep = bridge.LastProcessedSimulationSeconds;
+            double thrust  = vessel.ComputeThrust(refBody).Magnitude;
+            _deliveredDv += thrust / mass * simStep;
+        }
+
+        bool deorbitTargetReached = _deorbitBurn
+            && (_planner.PeriapsisRadius <= _targetPeriapsisRadius
+                || PredictNextDeorbitPeriapsis(vessel, refBody) <= _targetPeriapsisRadius);
+        bool burnSafetyLimitReached = _deorbitBurn
+            && _deliveredDv >= _targetDv * 1.5;
+        if ((!_deorbitBurn && _deliveredDv >= _targetDv)
+            || deorbitTargetReached
+            || burnSafetyLimitReached)
+            FinishBurn(vessel);
+    }
+
+    private double PredictNextDeorbitPeriapsis(Vessel vessel, CelestialBody refBody)
+    {
+        if (vessel.TotalMass <= 0.0 || _burnDirectionWorld.MagnitudeSquared < 1e-12)
+            return double.PositiveInfinity;
+
+        double pressure = refBody.Atmosphere?.GetPressure(refBody.GetAltitude(vessel.Position)) ?? 0.0;
+        double thrust = vessel.ComputeThrust(refBody).Magnitude;
+        double forecastThrust = 0.0;
+        foreach (var engine in vessel.Parts.ActiveEngines)
+        {
+            double fullThrust = engine.GetFullThrottleThrustMagnitude(pressure);
+            double nextThrottle = System.Math.Clamp(
+                engine.ThrottleLevel + Part.SpoolRate * DeorbitForecastSeconds,
+                0.0,
+                1.0);
+            forecastThrust += fullThrust * nextThrottle;
+        }
+        thrust = System.Math.Max(thrust, forecastThrust);
+        if (!double.IsFinite(thrust) || thrust <= 0.0)
+            return double.PositiveInfinity;
+
+        Vector3d relativePosition = vessel.Position - refBody.Position;
+        Vector3d relativeVelocity = vessel.Velocity - refBody.Velocity;
+        Vector3d predictedVelocity = relativeVelocity
+            + _burnDirectionWorld.Normalized
+                * (thrust / vessel.TotalMass * DeorbitForecastSeconds);
+        try
+        {
+            var predictedOrbit = OrbitalElements.FromStateVector(
+                relativePosition,
+                predictedVelocity,
+                refBody.GM,
+                refBody.Id,
+                SimulationBridge.Instance?.Universe.CurrentTime ?? 0.0);
+            return predictedOrbit.PeriapsisRadius;
+        }
+        catch (ArgumentException)
+        {
+            return double.PositiveInfinity;
+        }
+    }
+
+    private void BeginBurn(Vessel vessel, Vector3d currentRelativeVelocity = default)
+    {
+        IsBurning   = true;
+        _targetDv   = _planner.DeltaVMagnitude;
+        _deliveredDv = 0.0;
+        _deorbitBurn = _planner.IsDeorbitNode;
+        _targetPeriapsisRadius = _planner.TargetPeriapsisRadius;
+        _burnDirectionWorld = _deorbitBurn
+            && currentRelativeVelocity.MagnitudeSquared > 1e-9
+            ? -currentRelativeVelocity.Normalized
+            : _planner.DeltaVInertial().Normalized;
+        _restoreSas = vessel.SASEnabled;
+        vessel.SASEnabled = false;
+
+        // Orbital deorbit preset: expose RETRO_BURN on the mission track.
+        if (_planner.IsDeorbitNode)
+            MissionManager.Instance?.EnterPhase(MissionPhase.RETRO_BURN);
+    }
+
+    private void FinishBurn(Vessel vessel)
+    {
+        bool wasDeorbit = _deorbitBurn;
+        vessel.Throttle = 0.0;
+        EndBurn();
+        IsArmed = false;
+        _planner.ClearNode();
+
+        // After the deorbit burn, coast toward entry interface so EDL can arm ENTRY
+        // (RETRO_BURN alone is also used later for the landing flip and is InDescent).
+        if (wasDeorbit
+            && MissionManager.Instance?.Phase == MissionPhase.RETRO_BURN)
+        {
+            MissionManager.Instance.EnterPhase(MissionPhase.COAST);
+        }
+
+        if (wasDeorbit && ShouldPrepareEntry(vessel))
+        {
+            _entryAttitudePreparation = true;
+            vessel.SASEnabled = false;
+            GD.Print("[AUTOPILOT] post-deorbit entry attitude preparation armed");
+        }
+    }
+
+    /// <summary>
+    /// Rotates a Starship into its aerodynamic entry attitude during the coast after a
+    /// deorbit burn. This uses the vessel's normal attitude actuators and never snaps the
+    /// quaternion or changes translational state. EDL takes ownership at atmospheric entry.
+    /// </summary>
+    private bool GuidePreEntryAttitude()
+    {
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        var mission = MissionManager.Instance;
+        if (bridge == null || vessel == null || universe == null || vessel.IsDestroyed)
+            return false;
+
+        var body = universe.GetDominantBody(vessel.Position);
+        if (body?.Atmosphere == null)
+            return false;
+
+        double altitude = vessel.GetAltitude(body);
+        var surfaceVelocity = vessel.GetSurfaceVelocity(body);
+        bool handoff = mission?.Phase is MissionPhase.ENTRY
+            or MissionPhase.PEAK_HEATING
+            or MissionPhase.AERO_DESCENT
+            or MissionPhase.RETRO_BURN
+            or MissionPhase.FINAL_DESCENT
+            or MissionPhase.LANDED
+            or MissionPhase.CAUGHT
+            or MissionPhase.CRASHED
+            || vessel.IsAttemptingTowerCatch
+            || altitude <= body.Atmosphere.MaxAltitude * 1.05;
+        if (handoff)
+        {
+            vessel.PitchYawRoll = Vector3d.Zero;
+            vessel.SASEnabled = false;
+            GD.Print($"[AUTOPILOT] entry attitude handoff alt={altitude:F0} m " +
+                     $"phase={mission?.Phase}");
+            return false;
+        }
+
+        if (surfaceVelocity.Magnitude < 1.0)
+        {
+            vessel.PitchYawRoll = Vector3d.Zero;
+            return true;
+        }
+
+        var up = (vessel.Position - body.Position).Normalized;
+        var flow = surfaceVelocity.Normalized;
+        // Start atmospheric interface lift-up. A continuous down-lift pre-entry target
+        // steepens the trajectory before the corridor predictor has measured an overflight;
+        // the entry guidance may still reverse lift later when downrange energy requires it.
+        var target = EntryAttitudeGuidance.ComputeTarget(
+            up, flow, liftTowardBody: false);
+        vessel.PitchYawRoll = AttitudeGuidance.ComputeCommand(
+            vessel.Orientation,
+            target,
+            vessel.AngularVelocity,
+            proportionalGain: 1.8,
+            dampingGain: 4.0,
+            allowRoll: true);
+        vessel.Throttle = 0.0;
+        vessel.SASEnabled = false;
+        return true;
+    }
+
+    private static bool ShouldPrepareEntry(Vessel vessel)
+    {
+        var bridge = SimulationBridge.Instance;
+        var body = bridge?.Universe?.GetDominantBody(vessel.Position);
+        if (body?.Atmosphere == null || vessel.IsDestroyed)
+            return false;
+
+        bool starship = vessel.Parts.Parts.Any(part =>
+            part.Definition.IsStarshipFamily
+            && part.Definition.HasVehicleRole("command"));
+        bool shipEngines = vessel.Parts.Parts.Any(part =>
+            part.Definition.IsStarshipFamily
+            && part.Definition.HasVehicleRole("ship_engines"));
+        return starship && shipEngines;
+    }
+
+    private void EndBurn(Vessel? vessel = null)
+    {
+        var v = vessel ?? SimulationBridge.Instance?.ActiveVessel;
+        if (v != null)
+        {
+            v.Throttle    = 0.0;
+            v.PitchYawRoll = Vector3d.Zero;
+            v.SASEnabled  = _restoreSas;
+        }
+        IsBurning = false;
+        _burnCommandCommitted = false;
+        _burnDirectionWorld = Vector3d.Zero;
+        _deorbitBurn = false;
+        _targetPeriapsisRadius = 0.0;
+    }
+
+    // ── Math helpers ──────────────────────────────────────────────────────────
+
+    // Signed smallest angular difference a → b, in [-π, π].
+    private static double AngleDiff(double a, double b)
+    {
+        double d = b - a;
+        while (d >  System.Math.PI) d -= 2.0 * System.Math.PI;
+        while (d < -System.Math.PI) d += 2.0 * System.Math.PI;
+        return d;
+    }
+
+    // Shortest-arc quaternion rotating `from` onto `to` (both assumed unit-ish).
+    private static Quaterniond ShortestArc(Vector3d from, Vector3d to)
+    {
+        var f = from.Normalized;
+        var t = to.Normalized;
+        double dot = f.Dot(t);
+        if (dot >  0.99999) return Quaterniond.Identity;
+        if (dot < -0.99999)
+        {
+            // 180°: rotate about any axis perpendicular to `from`.
+            Vector3d axis = System.Math.Abs(f.X) < 0.9 ? f.Cross(Vector3d.Right) : f.Cross(Vector3d.Up);
+            return Quaterniond.FromAxisAngle(axis.Normalized, System.Math.PI);
+        }
+        Vector3d a = f.Cross(t).Normalized;
+        double angle = System.Math.Acos(System.Math.Clamp(dot, -1.0, 1.0));
+        return Quaterniond.FromAxisAngle(a, angle);
+    }
+}

@@ -1,0 +1,20 @@
+<Project Sdk="Godot.NET.Sdk/4.6.3">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Exosphere.Game</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="ExosphereSimulation/ExosphereSimulation.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="ExosphereSimulation/**/*.cs" />
+    <Compile Remove="ExosphereSimulation.Tests/**/*.cs" />
+    <Compile Remove="tools/SpectralValidation/**/*.cs" />
+    <Compile Remove="tools/SchedulerBenchmark/**/*.cs" />
+    <Compile Remove="tools/Flight14TrajectoryProbe/**/*.cs" />
+    <Compile Remove=".godot/**/*.cs" />
+  </ItemGroup>
+</Project>

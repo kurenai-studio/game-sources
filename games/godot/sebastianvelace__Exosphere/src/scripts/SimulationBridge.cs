@@ -1,0 +1,2133 @@
+namespace Exosphere.Game;
+
+using System.Diagnostics;
+using Godot;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Construction;
+using Exosphere.Simulation.Flight;
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Parts;
+using Exosphere.Simulation.Physics;
+using Exosphere.Simulation.Propulsion;
+
+[GlobalClass]
+public partial class SimulationBridge : Node, IPhysicsStepController
+{
+    public static SimulationBridge Instance { get; private set; } = null!;
+
+    public Universe Universe { get; private set; } = null!;
+    /// <summary>Presentation focus in exploration; Universe retains the mission's physics owner.</summary>
+    public Vessel?  ActiveVessel => Flight14Preview?.ObservedVessel ?? Universe.ActiveVessel;
+    /// <summary>Camera observation never hands the automatic mission's systems authority to a detached stage.</summary>
+    public Vessel? ControlledVessel => IsFlight14Exploration ? Universe.ActiveVessel : ActiveVessel;
+
+    /// <summary>
+    /// Observes interest for one vessel and overlays authoritative active-mission/system
+    /// state when the vessel is the controlled craft. This does not enable deferred work,
+    /// mutate rails, or change the current physics dispatch path.
+    /// </summary>
+    public SimulationInterestDecision GetSimulationInterestDecision(Vessel vessel)
+    {
+        ArgumentNullException.ThrowIfNull(vessel);
+        SimulationExternalInterestInputs externalInputs =
+            SystemsController.Instance?.BuildSimulationInterestInputs(vessel)
+                ?? SimulationExternalInterestInputs.None;
+        return Universe.GetSimulationInterestDecision(vessel, externalInputs);
+    }
+
+    /// <summary>
+    /// Materializes a callback owner's systems runtime at the current committed epoch
+    /// without changing the player-selected vessel. Unknown owners fail closed so a
+    /// deferred callback cannot silently target a fresh default runtime.
+    /// </summary>
+    public bool EnsureSystemsRuntimeMaterialized(
+        string vesselId,
+        double simulationTime)
+    {
+        if (Universe == null || string.IsNullOrWhiteSpace(vesselId)) return false;
+        Vessel? vessel = Universe.Vessels.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, vesselId, StringComparison.Ordinal));
+        return vessel != null
+            && SystemsController.Instance?.EnsureVesselRuntimeMaterialized(
+                vessel, simulationTime) == true;
+    }
+
+    /// <summary>
+    /// Simulation seconds committed by the most recently completed Universe tick.
+    /// Systems that model rates must consume this value rather than multiplying the
+    /// current render-frame delta by TimeScale; the latter would double-count time when
+    /// scheduler debt is enabled. Before the first tick it is zero by design.
+    /// </summary>
+    public double LastProcessedSimulationSeconds
+    {
+        get
+        {
+            if (Flight14Preview != null) return _previewProcessedSeconds;
+            if (Universe == null || !Universe.LastSchedulerTelemetry.IsInitialized)
+                return 0.0;
+            double seconds = Universe.LastSchedulerTelemetry.ProcessedSimulationSeconds;
+            return double.IsFinite(seconds) && seconds > 0.0 ? seconds : 0.0;
+        }
+    }
+
+    /// <summary>Requested simulation time from the most recently completed tick.</summary>
+    public double LastRequestedSimulationSeconds =>
+        Universe != null && Universe.LastSchedulerTelemetry.IsInitialized
+            ? Universe.LastSchedulerTelemetry.RequestedSimulationSeconds
+            : 0.0;
+    public string ActiveFlightProfileId { get; private set; } = "manual";
+    public Flight14Exploration? Flight14Preview { get; private set; }
+    public bool IsFlight14Exploration => ActiveFlightProfileId == Flight14Exploration.ProfileId;
+    private double _previewProcessedSeconds;
+    private readonly HashSet<string> _previewRenderedVessels = new(StringComparer.Ordinal);
+    private int _previewPartCount;
+    public void SetActiveFlightProfile(string profileId)
+    {
+        if (!string.IsNullOrWhiteSpace(profileId))
+            ActiveFlightProfileId = profileId;
+    }
+
+    [Export] public string DataDirectory { get; set; } = "res://data";
+
+    [Signal] public delegate void VesselStagedEventHandler(string detachedVesselId);
+    [Signal] public delegate void VesselDestroyedEventHandler(string vesselId);
+    [Signal] public delegate void SimulationLoadedEventHandler();
+
+    // ── Time-warp API ─────────────────────────────────────────────────────
+    public static readonly double[] WarpLevels = { 1, 2, 3, 5, 10, 50, 100, 200, 1000, 10000, 100000 };
+    public int WarpIndex          { get; private set; } = 0;
+    public int MaxAllowedWarpIndex { get; private set; } = WarpLevels.Length - 1;
+
+    /// <summary>Reason shown when the player tries to warp above <see cref="MaxAllowedWarpIndex"/>.</summary>
+    public string? WarpClampReason { get; private set; }
+    /// <summary>Simulation time (s) until <see cref="WarpClampReason"/> stops displaying.</summary>
+    public double WarpClampReasonUntil { get; private set; }
+
+    public void SetWarpIndex(int i)
+    {
+        int requested = i;
+        i = System.Math.Clamp(i, 0, MaxAllowedWarpIndex);
+        if (requested > MaxAllowedWarpIndex)
+        {
+            WarpClampReason = ComputeWarpClampReason();
+            WarpClampReasonUntil = Universe.CurrentTime + 4.0;
+        }
+        WarpIndex = i;
+        SetTimeScale(WarpLevels[WarpIndex]);
+    }
+
+    private string ComputeWarpClampReason()
+    {
+        var v = ActiveVessel;
+        if (v != null && v.Throttle > 0.01) return "THRUSTING";
+        if (v != null)
+        {
+            var refB = Universe.GetDominantBody(v.Position);
+            if (refB.GetAtmosphericDensity(v.Position) > 0.01) return "ATMOSPHERE";
+        }
+        return "WARP LIMIT";
+    }
+
+    private bool                 _running        = false;
+    private VesselRenderer?      _vesselRenderer = null;
+    private Camera3D?            _camera         = null;
+    private LaunchPadController? _launchPad      = null;
+    private bool?                _lastLaunchPadVisibility;
+    private bool                 _skipDefaultPadDaylight;
+    private bool                 _defaultPadDaylightApplied;
+
+    // ── Launch site ───────────────────────────────────────────────────────
+    /// <summary>Id of the pad every vessel launches from (see data/launch_sites).</summary>
+    [Export] public string LaunchSiteId { get; set; } = "starbase";
+
+    private LaunchSite? _launchSite;
+
+    /// <summary>Active launch site, if the configured id resolved from data.</summary>
+    public LaunchSite? LaunchSiteOrNull => _launchSite;
+
+    // Planet meshes/materials are presentation resources, not simulation state.  Keep only
+    // the body needed by the initial vessel in the synchronous load path; an interplanetary
+    // transition requests its presentation lazily after the physics tick.
+    private readonly HashSet<string> _spawnedPlanetIds = new(StringComparer.OrdinalIgnoreCase);
+    // Every scaled-space planet uses the same unit sphere topology. MeshInstance3D keeps
+    // material overrides per instance, so sharing this procedural resource does not couple
+    // Earth/Mars/Venus colours or shader uniforms and avoids rebuilding the 96x48 topology
+    // on every lazy body transition.
+    private SphereMesh? _planetSphereMesh;
+    private string? _pendingPlanetPresentationBodyId;
+
+    // ── Ignition ramp state ───────────────────────────────────────────────
+    // True while Ignite() is spooling up and waiting for the commit-to-launch gate.
+    private bool   _ignitionActive  = false;
+    // Throttle rate used during the ignition ramp (throttle units per second).
+    private const double IgnitionRampRate = 0.5;
+
+    public override void _Ready()
+    {
+        Instance = this;
+        GraphicsSettings.ApplyViewport(GetViewport());
+
+        // Render timing is opt-in because enabling viewport measurements can add
+        // backend work every frame. The probe is attached to the Flight root only
+        // for explicit profiling runs and never changes simulation state.
+        if (RenderPerformanceProbe.IsRequested())
+        {
+            var renderProbe = new RenderPerformanceProbe { Name = "RenderPerformanceProbe" };
+            GetParent()?.CallDeferred("add_child", renderProbe);
+        }
+
+        var startup = Stopwatch.StartNew();
+        GD.Print("PERF_STARTUP phase=begin");
+
+        var dataPath = GameDataPath.Resolve(DataDirectory);
+        Universe = Universe.LoadFromDataDirectory(dataPath);
+        Universe.TimeScale = 1.0;
+        Universe.PhysicsStepController = this;
+        Universe.DeferredPhysicsCandidateEnabled = ProjectSettings
+            .GetSetting("simulation/deferred_physics_candidate_enabled", false)
+            .AsBool();
+        Universe.DeferredPhysicsCandidateEligibility = (vessel, epoch) =>
+            SystemsController.Instance?.CanUseDeferredPhysicsCandidate(vessel, epoch)
+            == true;
+        _running = true;
+        GD.Print($"PERF_STARTUP phase=universe_loaded ms={startup.Elapsed.TotalMilliseconds:F1} bodies={Universe.Bodies.Count}");
+
+        var pendingIntent = CraftLaunchRequest.Pop();
+        if (pendingIntent != null)
+        {
+            LaunchSiteId = pendingIntent.LaunchSiteId;
+            ActiveFlightProfileId = pendingIntent.FlightProfileId;
+        }
+        var sites = LaunchSite.LoadAllFromDirectory(System.IO.Path.Combine(dataPath, "launch_sites"));
+        if (!sites.TryGetValue(LaunchSiteId, out _launchSite))
+            GD.PushWarning($"[Sim] Launch site '{LaunchSiteId}' not found; pad will fall back to the equator.");
+        GD.Print($"PERF_STARTUP phase=launch_sites_loaded ms={startup.Elapsed.TotalMilliseconds:F1} sites={sites.Count}");
+
+        // Create sibling nodes — deferred: parent (Flight) is busy in _Ready()
+        var mm = new MissionManager { Name = "MissionManager" };
+        GetParent()?.CallDeferred("add_child", mm);
+
+        var sky = new SkyController { Name = "SkyController" };
+        GetParent()?.CallDeferred("add_child", sky);
+
+        var audio = new AudioManager { Name = "AudioManager" };
+        GetParent()?.CallDeferred("add_child", audio);
+
+        // Sun-accurate lighting: orients the DirectionalLight from the real Sun direction
+        // and feeds sun_dir to the planet materials (day/night terminator + city lights).
+        var sun = new SunController { Name = "SunController" };
+        GetParent()?.CallDeferred("add_child", sun);
+
+        // Phase-driven environment: blends ambient/glow/sun energy by altitude so the
+        // pad daylight and the space vacuum look are each correct. SunController owns
+        // the light orientation; this owns its energy + the WorldEnvironment.
+        var phaseLight = new PhaseLightingController { Name = "PhaseLightingController" };
+        GetParent()?.CallDeferred("add_child", phaseLight);
+
+        // Human-eye exposure adapts after the sky and phase-light controllers have
+        // established the physical luminance state for this frame.
+        var exposure = new VisualExposureController { Name = "VisualExposureController" };
+        GetParent()?.CallDeferred("add_child", exposure);
+
+        // Orbital map panel (toggle with M). Lives under the UI CanvasLayer so it
+        // renders above the 3D world; it owns the autopilot as a child.
+        var uiLayer = GetTree().Root.FindChild("UI", true, false) as CanvasLayer;
+        if (uiLayer != null)
+        {
+            var map = new MapViewController { Name = "MapViewController" };
+            uiLayer.CallDeferred("add_child", map);
+
+            if (!IsFlight14Exploration)
+            {
+                var edl = new EDLController { Name = "EDLController" };
+                uiLayer.CallDeferred("add_child", edl);
+
+                var ascent = new AscentController { Name = "AscentController" };
+                uiLayer.CallDeferred("add_child", ascent);
+
+                var boosterReturn = new BoosterReturnController { Name = "BoosterReturnController" };
+                uiLayer.CallDeferred("add_child", boosterReturn);
+
+                var historical = new HistoricalFlightProfileController
+                {
+                    Name = "HistoricalFlightProfileController",
+                };
+                uiLayer.CallDeferred("add_child", historical);
+            }
+            else uiLayer.CallDeferred("add_child", new Flight14ExplorationHUD { Name = "Flight14ExplorationHUD" });
+
+            var warpCtrl = new WarpController { Name = "WarpController" };
+            uiLayer.CallDeferred("add_child", warpCtrl);
+
+            var systemsCtrl = new SystemsController { Name = "SystemsController" };
+            uiLayer.CallDeferred("add_child", systemsCtrl);
+        }
+
+        // Create LaunchPadController in the World node
+        var worldNode = GetTree().Root.FindChild("World", true, false) as Node3D;
+        if (worldNode != null)
+        {
+            _launchPad = new LaunchPadController { LaunchSiteId = LaunchSiteId };
+            _launchPad.Name = "LaunchPadController";
+            worldNode.CallDeferred("add_child", _launchPad);
+
+            var marsTerrain = new MarsTerrainController { Name = "MarsTerrainController" };
+            worldNode.CallDeferred("add_child", marsTerrain);
+
+            // Local true-scale Earth ground patch: flat far horizon + scrolling surface
+            // features for motion at low altitude; fades into the scaled-space backdrop.
+            var earthGround = new EarthGroundController { Name = "EarthGroundController" };
+            worldNode.CallDeferred("add_child", earthGround);
+            if (IsFlight14Exploration)
+                worldNode.CallDeferred("add_child", new Flight14LandingVisualController { Name = "Flight14LandingVisuals" });
+
+            // Liftoff steam/dust deluge cloud at the pad.
+            var launchFx = new LaunchEffectsController { Name = "LaunchEffectsController" };
+            worldNode.CallDeferred("add_child", launchFx);
+
+            // Pre-release engine startup glow, steam and ignition flicker at the mount.
+            var startupFx = new EngineStartupController { Name = "EngineStartupController" };
+            worldNode.CallDeferred("add_child", startupFx);
+
+            // Transient Ship-engine flash and soot burst at Starship/Super Heavy hot-staging.
+            var hotStageFx = new HotStageFlashController { Name = "HotStageFlashController" };
+            worldNode.CallDeferred("add_child", hotStageFx);
+        }
+
+        bool needsDefaultStack = pendingIntent == null
+            || pendingIntent.Craft == null
+                && string.IsNullOrWhiteSpace(pendingIntent.SaveSlot);
+        if (IsFlight14Exploration)
+        {
+            Universe.PhysicsStepController = null;
+            Flight14Preview = new Flight14Exploration(Flight14LaunchDiagnostic.CreateWithBoosterReturn(dataPath, Universe));
+            Flight14Preview.Run.Ship.Name = "Starship Flight 14 / Engineering preview";
+            EnsureActiveVesselPresentation(Flight14Preview.Run.Ship);
+            _previewRenderedVessels.Add(Flight14Preview.Run.Ship.Id);
+            _previewPartCount = Flight14Preview.Run.Ship.Parts.Parts.Count;
+            MaxAllowedWarpIndex = 7;
+        }
+        else if (needsDefaultStack)
+            SpawnStarshipStack(dataPath);
+        GD.Print($"PERF_STARTUP phase=starship_spawned ms={startup.Elapsed.TotalMilliseconds:F1} vessels={Universe.Vessels.Count}");
+        if (!IsFlight14Exploration) SpawnPendingConstructedVessel(dataPath, pendingIntent);
+        var campaignRuntime = new CampaignRuntime
+        {
+            Name = "CampaignRuntime",
+        };
+        AddChild(campaignRuntime);
+        bool continuingSave =
+            !string.IsNullOrWhiteSpace(pendingIntent?.SaveSlot);
+        _skipDefaultPadDaylight = continuingSave;
+        campaignRuntime.Initialize(
+            dataPath,
+            pendingIntent?.MissionId
+                ?? (continuingSave
+                    ? SaveSystem.LastLoadedMetadata?.Mission.MissionId
+                    : null),
+            pendingIntent?.CampaignState
+                ?? SaveSystem.LastLoadedMetadata?.Campaign,
+            continuingSave ? SaveSystem.LastLoadedMetadata?.Mission : null);
+        GD.Print($"PERF_STARTUP phase=campaign_initialized ms={startup.Elapsed.TotalMilliseconds:F1}");
+        SpawnPlanets();
+        GD.Print($"PERF_STARTUP phase=planets_spawned ms={startup.Elapsed.TotalMilliseconds:F1}");
+        EmitSignal(SignalName.SimulationLoaded);
+        GD.Print($"PERF_STARTUP phase=simulation_loaded ms={startup.Elapsed.TotalMilliseconds:F1}");
+
+        _camera = GetTree().Root.FindChild("Camera3D", true, false) as Camera3D;
+        if (_camera != null)
+        {
+            // Planets render as scaled-space backdrops at ~50 k units, so a modest far
+            // plane suffices — which keeps the depth buffer precise across the whole scene.
+            _camera.Near = 0.5f;
+            _camera.Far  = 120_000.0f;
+        }
+
+        var light = GetTree().Root.FindChild("DirectionalLight3D", true, false) as DirectionalLight3D;
+        if (light != null)
+            light.RotationDegrees = new Godot.Vector3(-45f, -30f, 0f);
+    }
+
+    private AutopilotController? _autopilotController;
+
+    /// <summary>
+    /// True while an onboard autopilot owns the attitude command. An idle pilot stick must
+    /// not overwrite it between control epochs; any held attitude key still takes over.
+    /// </summary>
+    public bool IsAttitudeAutopilotEngaged()
+    {
+        if (AscentController.Instance is { } ascent && (ascent.IsEngaged || ascent.IsAssistEngaged))
+            return true;
+        if (EDLController.Instance?.IsPresentationActive == true
+            || ManeuverExecutor.Instance?.IsExecuting == true
+            || HistoricalFlightProfileController.Instance?.IsEngaged == true)
+            return true;
+        if (_autopilotController == null || !IsInstanceValid(_autopilotController))
+            _autopilotController = GetTree().Root.FindChild(
+                "AutopilotController", true, false) as AutopilotController;
+        return _autopilotController is { } autopilot
+            && (autopilot.IsArmed || autopilot.IsBurning || autopilot.IsPreparingEntryAttitude);
+    }
+
+    bool IPhysicsStepController.RequiresFixedCadence(Universe universe) =>
+        AscentController.Instance?.RequiresFixedPhysicsCadence == true
+        || HistoricalFlightProfileController.Instance?.RequiresFixedPhysicsCadence == true
+        || EDLController.Instance?.RequiresFixedPhysicsCadence(universe) == true;
+
+    void IPhysicsStepController.BeforePhysicsStep(
+        Universe universe,
+        double controlIntervalSeconds)
+    {
+        // Ascent first: it yields to EDL itself once the mission enters descent.
+        AscentController.Instance?.AdvancePhysicsStep(controlIntervalSeconds);
+        if (HistoricalFlightProfileController.Instance?.RequiresFixedPhysicsCadence == true)
+            HistoricalFlightProfileController.Instance.AdvancePhysicsStep();
+        EDLController.Instance?.AdvancePhysicsStep(universe, controlIntervalSeconds);
+    }
+
+    public override void _ExitTree()
+    {
+        if (Universe != null && ReferenceEquals(Universe.PhysicsStepController, this))
+            Universe.PhysicsStepController = null;
+        if (ReferenceEquals(Instance, this))
+            Instance = null!;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!_running || Universe == null) return;
+        ApplyDefaultPadDaylightIfNeeded();
+
+        // ── Recalculate MaxAllowedWarpIndex ──────────────────────────────
+        var av = ActiveVessel;
+        if (av != null && !IsFlight14Exploration)
+        {
+            var refB = Universe.GetDominantBody(av.Position);
+            var warpRequirements = Universe.GetWarpPhysicsRequirements(av);
+            // An idle residual-thermosphere coast (LEO) or an idle pad hold still needs
+            // off-rails integration, but at coast-sized steps it is safe at high warp.
+            bool highWarpCoast = warpRequirements.ForceSensitive
+                && Universe.AllowsHighWarpCoast(av);
+            bool forceSensitive = warpRequirements.ForceSensitive && !highWarpCoast;
+            bool boundedEntry = warpRequirements.BoundedEntry && !highWarpCoast;
+            bool atmosphericZone = refB.Atmosphere != null
+                && av.GetAltitude(refB) <= refB.Atmosphere.MaxAltitude * 1.05;
+            var missionPhase = MissionManager.Instance?.Phase;
+            bool preparingEntryAttitude = GetTree().Root.FindChild(
+                "AutopilotController", true, false) is AutopilotController autopilot
+                && autopilot.IsPreparingEntryAttitude
+                && av.GetAltitude(refB) <= 300_000.0;
+            bool finalEntryApproach = preparingEntryAttitude
+                && av.GetAltitude(refB) <= 160_000.0;
+            // Real-time remains the player-facing limit through tower clear and EDL. The EDL
+            // controller itself now refreshes at deterministic 20 ms simulation boundaries;
+            // this limit preserves camera readability and terminal-contact resolution rather
+            // than compensating for render-cadence guidance.
+            if (finalEntryApproach
+                || missionPhase is MissionPhase.COUNTDOWN
+                or MissionPhase.IGNITION
+                or MissionPhase.LIFTOFF
+                or MissionPhase.ENTRY
+                or MissionPhase.PEAK_HEATING
+                or MissionPhase.AERO_DESCENT
+                or MissionPhase.RETRO_BURN
+                or MissionPhase.FINAL_DESCENT)
+            {
+                MaxAllowedWarpIndex = 0;
+            }
+            else if (preparingEntryAttitude)
+            {
+                // The pre-entry attitude loop still needs render-frame command refresh,
+                // but it can safely use x10 while the ship remains above the atmosphere.
+                MaxAllowedWarpIndex = 4;
+            }
+            else if (av.Throttle > 0.01)
+            {
+                // Warp IS allowed while thrusting now — the active vessel stays on RK4 with a
+                // bounded sub-step (Universe.MaxThrustStep) so the burn is physics-faithful.
+                // Cap it: x3 in atmosphere, x10 in vacuum (never on-rails while powered).
+                MaxAllowedWarpIndex = atmosphericZone ? 2 : 4; // x3 atmosphere, x10 vacuum
+            }
+            else
+            {
+                bool historicalOrbitalCoast =
+                    ActiveFlightProfileId is
+                        MercuryAtlasFlightProfile.Id
+                        or Gemini8FlightProfile.Id
+                    && missionPhase is MissionPhase.ORBIT
+                        or MissionPhase.COAST
+                    && av.GetAltitude(refB) > 120_000.0;
+                MaxAllowedWarpIndex = forceSensitive
+                    ? historicalOrbitalCoast ? 6 : 2
+                    : boundedEntry ? 8                         // x1000 bounded coast to entry
+                    : WarpLevels.Length - 1;
+            }
+            // Clamp current warp index if it now exceeds the allowed maximum
+            if (WarpIndex > MaxAllowedWarpIndex)
+                SetWarpIndex(MaxAllowedWarpIndex);
+        }
+
+        // Ownership handoff happens before physics so the systems runtime epoch is the
+        // same committed epoch that AdvanceProcessedSimulation will close below.
+        if (ControlledVessel is { } controlled)
+            SystemsController.Instance?.PrepareForPhysicsTick(controlled, Universe.CurrentTime);
+
+        if (Flight14Preview is { } preview)
+        {
+            MaxAllowedWarpIndex = 7; // Up to x200, always whole 20 ms full-physics steps.
+            if (WarpIndex > MaxAllowedWarpIndex) SetWarpIndex(MaxAllowedWarpIndex);
+            if (preview.IsAdvancingToEntry)
+            {
+                // No threads mutate the live universe. Yield between bounded batches so
+                // cancel/menu remain usable, and sample systems for each committed interval.
+                var budget = System.Diagnostics.Stopwatch.StartNew();
+                double totalProcessed = 0;
+                for (int batch = 0; batch < 32 && preview.IsAdvancingToEntry; batch++)
+                {
+                    _previewProcessedSeconds = preview.AdvanceToEntry();
+                    totalProcessed += _previewProcessedSeconds;
+                    SystemsController.Instance?.AdvanceProcessedSimulation();
+                    if (budget.Elapsed.TotalMilliseconds >= 40) break;
+                }
+                _previewProcessedSeconds = totalProcessed;
+                SyncFlight14Presentation(preview);
+                QueueRequiredPlanetPresentation();
+                SyncStructuralDebrisRenderers();
+                return; // Systems already consumed each batch; never integrate twice.
+            }
+            _previewProcessedSeconds = preview.AdvanceFrame(delta);
+            SyncFlight14Presentation(preview);
+        }
+        else
+        {
+            Universe.Tick(delta);
+            ArmValidStarbaseReentryCatch();
+        }
+        // Consumable and blackout systems integrate only the committed simulation
+        // interval. This call is deliberately after the scheduler and before ascent/EDL
+        // post-processors; render/UI controllers continue to use wall-clock delta.
+        SystemsController.Instance?.AdvanceProcessedSimulation();
+        QueueRequiredPlanetPresentation();
+        SyncStructuralDebrisRenderers();
+
+        // Hot-stage overlap finished in sim time → mechanical separation this frame.
+        if (!IsFlight14Exploration && av != null && av.HotStageOverlapCompletedPending)
+        {
+            av.HotStageOverlapCompletedPending = false;
+            TriggerStaging();
+            av = ActiveVessel;
+        }
+
+        // ── Ignition ramp: spool throttle; release only at commit-to-launch ──────
+        if (_ignitionActive && av != null)
+        {
+            // Avanzar el throttle comandado hacia 1.0 a una tasa controlada
+            av.Throttle = System.Math.Min(av.Throttle + IgnitionRampRate * delta, 1.0);
+
+            if (av.IsGroundHeld)
+            {
+                var refB2 = Universe.GetDominantBody(av.Position);
+                if (refB2 != null && av.TotalMass > 0.0)
+                {
+                    double twr = av.GetThrustToWeightRatio(refB2);
+                    if (HoldDownReleasePolicy.CanRelease(twr, av.Throttle))
+                    {
+                        av.ReleaseGroundHold();
+                        // PRE_LAUNCH → LIFTOFF (manual [Z]); IGNITION → LIFTOFF ([L]/[G]).
+                        // BeginFlight alone left countdown/ignition missions stuck in IGNITION
+                        // after a WASD soft-disengage, which also kept MISSION CONTROLS up.
+                        MissionManager.Instance?.BeginFlight();
+                        MissionManager.Instance?.NotifyHoldDownReleased();
+                    }
+                }
+            }
+            else
+            {
+                // Ya en vuelo: ignición completada cuando throttle alcanza 1.0
+                if (av.Throttle >= 1.0)
+                    _ignitionActive = false;
+            }
+        }
+
+        // Anchor the launch complex to its fixed geodetic site, not to the point below the
+        // moving vessel. Its local +Y must follow radial up; leaving Basis.Identity makes
+        // the entire tower lean by the site's latitude/axial tilt in render space.
+        var padEarth = Universe.GetBody("earth");
+        var catchAnchorVessel = FindCatchAnchorVessel()
+            ?? ActiveVessel;
+        if (_launchPad != null && catchAnchorVessel != null && padEarth != null)
+        {
+            const float metresPerUnit = 2.8f;
+            double alt = catchAnchorVessel.GetAltitude(padEarth);
+            double time = Universe.CurrentTime;
+            var surfacePos = _launchSite?.GetPosition(padEarth, time)
+                ?? padEarth.GetSurfacePositionAtTime(0.0, 0.0, time);
+            var offset = surfacePos - catchAnchorVessel.Position;     // = -up·alt metres
+            var position = new Godot.Vector3(
+                (float)(offset.X / metresPerUnit),
+                (float)(offset.Y / metresPerUnit),
+                (float)(offset.Z / metresPerUnit));
+            var frame = _launchSite?.GetLocalFrame(padEarth, time);
+            var east = frame?.East ?? padEarth.GetEastDirection(surfacePos);
+            var up = frame?.Up ?? (surfacePos - padEarth.Position).Normalized;
+            var south = frame?.South ?? east.Cross(up).Normalized;
+            var basis = new Basis(ToGodotVector(east), ToGodotVector(up), ToGodotVector(south));
+            _launchPad.Transform = new Transform3D(basis, position);
+            bool catchApproachActive = HasCatchApproach(padEarth.Id);
+            var activeVessel = ActiveVessel;
+            bool activeEarth = activeVessel != null
+                && activeVessel.ReferenceBodyId == padEarth.Id;
+            double activeAlt = activeEarth
+                ? activeVessel!.GetAltitude(padEarth)
+                : double.PositiveInfinity;
+            bool activeCatch = activeVessel != null
+                && (activeVessel.IsAttemptingTowerCatch || activeVessel.IsTowerCatchDemonstration);
+            bool catchAnchorIsStarship = HasStarshipRole(catchAnchorVessel, "command")
+                || HasStarshipRole(catchAnchorVessel, "booster");
+            // The launch complex is framed by the camera as well as by the vessel. A
+            // pulled-back pad shot can therefore leave the vehicle below the old 12 km
+            // cutoff while the camera has already entered the next visual scale. Use the
+            // larger of the two altitudes so hero geometry and its contextual LOD cannot
+            // occupy the same image as two competing Starbases.
+            double presentationAlt = activeEarth
+                ? System.Math.Max(activeAlt, FloatingOrigin.CameraAltOverEarth)
+                : double.PositiveInfinity;
+            // The pad is a local presentation anchored to the vessel being viewed. A
+            // returning booster may be in its catch approach while the player is still
+            // looking at a Starship in orbit; using any fleet vessel here made the pad
+            // reappear at the floating origin and filled the orbital beauty shot with
+            // launch hardware. Keep it for low active-vessel views and validated
+            // Starship-family catches only; a generic vessel must never summon the
+            // launch complex into an unrelated orbital shot.
+            bool padVisible = activeEarth
+                && (presentationAlt <= LaunchPadController.PadVisibilityCeilingM
+                    || (activeCatch && catchAnchorIsStarship));
+            if (!_lastLaunchPadVisibility.HasValue || _lastLaunchPadVisibility.Value != padVisible)
+            {
+                _lastLaunchPadVisibility = padVisible;
+                _launchPad.Visible = padVisible;
+                GD.Print($"[PAD_VISUAL] visible={padVisible} body={padEarth.Id} alt={activeAlt:F0} " +
+                    $"cameraAlt={FloatingOrigin.CameraAltOverEarth:F0} presentationAlt={presentationAlt:F0} " +
+                    $"fleetCatchApproach={catchApproachActive} activeCatch={activeCatch}");
+            }
+
+            // While a catch approach is armed, refresh the sim-side cradle target every
+            // frame from the same site/spec data the render tower uses — the tower is
+            // bolted to a rotating body, so a target computed once at arm time would drift
+            // away under it exactly like the render pad would without this same refresh.
+            // R12: refresh EVERY vessel attempting a catch (Ship or returning booster),
+            // not only ActiveVessel — the booster return flies while Ship stays active.
+            if (_launchSite != null)
+            {
+                var cradle = LaunchComplexSpec.StarbasePostDeluge.GetCatchCradlePosition(
+                    _launchSite, padEarth, time);
+                var cradleVel = padEarth.Velocity + padEarth.GetSurfaceVelocity(cradle);
+                for (int vesselIndex = 0;
+                     vesselIndex < Universe.Vessels.Count;
+                     vesselIndex++)
+                {
+                    var vessel = Universe.Vessels[vesselIndex];
+                    if (!vessel.IsAttemptingTowerCatch) continue;
+                    vessel.CatchTargetPositionWorld = cradle;
+                    vessel.CatchTargetUpWorld = up;
+                    vessel.CatchTargetVelocityWorld = cradleVel;
+                    vessel.CatchTargetEpochSeconds = time;
+                }
+            }
+        }
+    }
+
+    // These helpers are deliberately index-based because Universe.Vessels exposes a
+    // stable IReadOnlyList facade. This path runs after every physics tick; using LINQ
+    // extension enumeration here would repeatedly route through the interface even when
+    // the normal session contains only the active vessel. The predicates and ordering are
+    // kept identical to the former FirstOrDefault/Any calls.
+    private Vessel? FindCatchAnchorVessel()
+    {
+        for (int vesselIndex = 0;
+             vesselIndex < Universe.Vessels.Count;
+             vesselIndex++)
+        {
+            var vessel = Universe.Vessels[vesselIndex];
+            if (vessel.IsAttemptingTowerCatch || vessel.IsTowerCatchDemonstration)
+                return vessel;
+        }
+
+        return null;
+    }
+
+    private bool HasCatchApproach(string bodyId)
+    {
+        for (int vesselIndex = 0;
+             vesselIndex < Universe.Vessels.Count;
+             vesselIndex++)
+        {
+            var vessel = Universe.Vessels[vesselIndex];
+            if (vessel.ReferenceBodyId == bodyId
+                && (vessel.IsAttemptingTowerCatch || vessel.IsTowerCatchDemonstration))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasStarshipRole(Vessel vessel, string role)
+    {
+        var parts = vessel.Parts.Parts;
+        for (int partIndex = 0; partIndex < parts.Count; partIndex++)
+        {
+            var part = parts[partIndex];
+            if (part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole(role))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Arms a return-to-launch-site tower catch for the active ship. No-ops (and returns
+    /// false) if the vessel does not carry catch-pin hardpoints — most vehicles, and every
+    /// non-V3 Starship, always fall through to the normal leg landing untouched.
+    /// </summary>
+    public bool ArmTowerCatchApproach() => ArmTowerCatchApproach(ActiveVessel);
+
+    /// <summary>
+    /// Arms a tower catch for an explicit vessel (R12 booster return while Ship remains
+    /// the active/piloted vessel).
+    /// </summary>
+    public bool ArmTowerCatchApproach(Vessel? vessel)
+    {
+        if (IsFlight14Exploration || vessel == null || !vessel.HasCatchPins
+            || !LaunchSiteId.StartsWith("starbase", StringComparison.OrdinalIgnoreCase))
+            return false;
+        var body = Universe.GetDominantBody(vessel.Position);
+        if (body.Id != "earth" || vessel.IsDestroyed) return false;
+        vessel.IsAttemptingTowerCatch = true;
+        return true;
+    }
+
+    /// <summary>
+    /// Arms a valid normal Starbase entry before EDL's later-priority pass runs.  This
+    /// removes the one-frame gap where EDL was already descending but the launch complex
+    /// still used the old mission phase to decide visibility.  The policy remains strict:
+    /// no pins, non-Earth body, non-Starbase site, ascent, low-speed coast, or invalid
+    /// trajectory can arm this path.
+    /// </summary>
+    private void ArmValidStarbaseReentryCatch()
+    {
+        var vessel = ActiveVessel;
+        if (vessel == null || vessel.IsDestroyed) return;
+        var body = Universe.GetDominantBody(vessel.Position);
+        if (body?.Atmosphere == null) return;
+        TryArmStarbaseCatchForReentry(vessel, body);
+    }
+
+    /// <summary>
+    /// Applies the Starbase return policy used by ordinary Earth Starship reentries.
+    /// The physical solver remains the authority: this only arms the approach when the
+    /// destination is an Earth Starbase site and the vessel is the crewed Ship section.
+    /// Other launch sites, bodies and vehicles retain their normal landing/fallback path.
+    /// </summary>
+    public bool TryArmStarbaseCatchForReentry(Vessel? vessel, CelestialBody? body)
+    {
+        if (IsFlight14Exploration || vessel == null || body == null || body.Id != "earth") return false;
+        if (!LaunchSiteId.StartsWith("starbase", StringComparison.OrdinalIgnoreCase))
+            return false;
+        bool isStarshipShip = HasStarshipRole(vessel, "command")
+            && HasStarshipRole(vessel, "ship_engines");
+        double altitude = vessel.GetAltitude(body);
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        double verticalSpeed = vessel.GetSurfaceVelocity(body).Dot(up);
+        double surfaceSpeed = vessel.GetSurfaceVelocity(body).Magnitude;
+        bool validEntry = StarbaseCatchPolicy.IsValidEntry(
+            body.Id,
+            LaunchSiteId,
+            vessel.IsDestroyed,
+            vessel.HasCatchPins,
+            isStarshipShip,
+            altitude,
+            body.Atmosphere?.MaxAltitude ?? double.NaN,
+            verticalSpeed,
+            surfaceSpeed);
+        if (!validEntry) return false;
+
+        bool newlyArmed = !vessel.IsAttemptingTowerCatch;
+        bool armed = ArmTowerCatchApproach(vessel);
+        if (newlyArmed && armed)
+            GD.Print($"[CATCH] state=ARMED valid=starbase-entry alt={altitude:F0} " +
+                $"speed={surfaceSpeed:F0} vUp={verticalSpeed:F0} pins={vessel.CatchContactPoints.Count}");
+        return armed;
+    }
+
+    private void SpawnPendingConstructedVessel(
+        string dataPath,
+        LaunchIntent? intent)
+    {
+        if (intent == null) return;
+
+        if (!string.IsNullOrWhiteSpace(intent.SaveSlot))
+        {
+            if (!SaveSystem.LoadGame(intent.SaveSlot))
+                throw new InvalidDataException($"Could not continue save '{intent.SaveSlot}'.");
+            RebuildActiveVesselRenderer();
+            return;
+        }
+
+        var craft = intent.Craft;
+        if (craft == null)
+        {
+            if (intent.FlightProfileId == "starship-reentry-70km")
+                BeginReentryDemonstration();
+            return;
+        }
+
+        var catalog = PartCatalog.LoadFromDirectory(System.IO.Path.Combine(dataPath, "parts"));
+        var sites = LaunchSite.LoadAllFromDirectory(System.IO.Path.Combine(dataPath, "launch_sites"));
+        if (!sites.TryGetValue(intent.LaunchSiteId, out _launchSite))
+            throw new InvalidOperationException(
+                $"Launch intent references unknown site '{intent.LaunchSiteId}'.");
+        LaunchSiteId = intent.LaunchSiteId;
+        var assembly = VesselAssembly.FromCraft(catalog, craft);
+        PlaceConstructedVesselOnPad(assembly.ToVessel(craft.Name));
+        GD.Print(
+            $"[VAB] Placed {craft.Name} at {intent.LaunchSiteId}; " +
+            $"profile={intent.FlightProfileId}, mission={intent.MissionId ?? "sandbox"}");
+        if (intent.FlightProfileId == "starship-reentry-70km")
+            BeginReentryDemonstration();
+    }
+
+    // ── Starship + Super Heavy stack on Starbase launchpad ────────────────
+
+    private void SpawnStarshipStack(string dataPath)
+    {
+        var earth = Universe.GetBody("earth");
+        if (earth == null) return;
+
+        var defs = PartCatalog.LoadFromDirectory(
+            System.IO.Path.Combine(dataPath, "parts")).Parts;
+
+        if (!defs.TryGetValue("starship_command",  out var cmdDef))  return;
+        if (!defs.TryGetValue("starship_tank",      out var tankDef)) return;
+        if (!defs.TryGetValue("starship_engines",   out var engDef))  return;
+        if (!defs.TryGetValue("starship_landing_gear", out var gearDef)) return;
+        if (!defs.TryGetValue("decoupler_heavy",    out var decDef))  return;
+        if (!defs.TryGetValue("super_heavy_booster",out var shDef))   return;
+
+        var vessel = new Vessel { Name = "Starship IFT-7" };
+
+        var command  = new Part(cmdDef);
+        var tank     = new Part(tankDef);
+        var engines  = new Part(engDef);
+        var gear     = new Part(gearDef);
+        var decoupler= new Part(decDef);
+        var sh       = new Part(shDef);
+
+        vessel.Parts.SetRoot(command);
+        vessel.Parts.AddPart(command);
+        vessel.Parts.AddPart(tank);
+        vessel.Parts.AddPart(engines);
+        vessel.Parts.AddPart(gear);
+        vessel.Parts.AddPart(decoupler);
+        vessel.Parts.AddPart(sh);
+
+        // Stack (top → bottom): command → tank → engines → EDL gear → decoupler → SH.
+        // The zero-length aggregate gear keeps the physical engine/interstage datum unchanged.
+        vessel.Parts.AddJoint(new Joint(command,   tank,      "bottom", "top"));
+        vessel.Parts.AddJoint(new Joint(tank,      engines,   "bottom", "top"));
+        vessel.Parts.AddJoint(new Joint(engines,   gear,      "bottom", "top"));
+        vessel.Parts.AddJoint(new Joint(gear,      decoupler, "bottom", "top"));
+        vessel.Parts.AddJoint(new Joint(decoupler, sh,        "bottom", "top"));
+        vessel.ConfigureLandingContactsFromParts();
+        vessel.ConfigureCatchContactsFromParts();
+
+        // Stand the stack on the real launch site. The hull's +Y is rotated onto the local
+        // vertical there, so the rocket is upright at the pad's true latitude instead of
+        // being planted on an arbitrary axis. The stack bottom is placed at the shared
+        // engineering spec's vehicle-interface elevation above civil grade.
+        double mountHeightM = LaunchComplexSpec.StarbasePostDeluge.VehicleInterfaceElevation;
+        StandOnPad(vessel, earth, mountHeightM);
+
+        Universe.AddVessel(vessel);
+        Universe.SetActiveVessel(vessel.Id);
+
+        EnsureActiveVesselPresentation(vessel);
+    }
+
+    // ── Planets ───────────────────────────────────────────────────────────
+
+    private void SpawnPlanets()
+    {
+        var planetsNode = GetTree().Root.FindChild("Planets", true, false) as Node3D;
+        var fo          = GetTree().Root.FindChild("FloatingOrigin", true, false) as FloatingOrigin;
+        if (planetsNode == null || fo == null) return;
+
+        var requiredBody = ActiveVessel != null
+            ? Universe.GetDominantBody(ActiveVessel.Position)
+            : Universe.GetBody("earth");
+        int created = 0;
+        int deferred = 0;
+        foreach (var body in Universe.Bodies)
+        {
+            if (body.Id == "sun") continue;
+            if (string.Equals(body.Id, requiredBody?.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                if (SpawnPlanet(body, planetsNode, fo)) created++;
+            }
+            else
+            {
+                deferred++;
+            }
+        }
+
+        GD.Print(
+            $"PERF_PLANETS mode=lazy initial={requiredBody?.Id ?? "none"} " +
+            $"created={created} deferred={deferred} total={created + deferred}");
+    }
+
+    private bool SpawnPlanet(CelestialBody body, Node3D planetsNode, FloatingOrigin fo)
+    {
+        // The photosphere is rendered by the sky shader at its exact angular radius.  A
+        // second scaled-space sphere would overlap it and break eclipse silhouettes.
+        if (body.Id == "sun" || !_spawnedPlanetIds.Add(body.Id)) return false;
+
+        // Unit sphere — FloatingOrigin scales each planet per-frame to its correct angular
+        // size as a precision-safe "scaled-space" backdrop. The shader supplies its own
+        // camera-to-surface optical path; the sky owns the off-limb atmosphere.
+        var sphere = GetSharedPlanetSphereMesh();
+        var mat = body.Id == "earth"
+            ? PlanetMaterials.CreateEarth(body, LaunchSiteId)
+            : PlanetMaterials.CreatePlanet(body.Id, GetPlanetColor(body.Id));
+
+        var mesh = new MeshInstance3D
+        {
+            Name = body.Name + "_mesh",
+            Mesh = body.Id == "earth" ? new QuadMesh { Size = new Vector2(2f, 2f) } : sphere,
+            // Earth's shader ray-tests the real sphere; its screen quad must not be
+            // culled by the unrelated scaled-space plane orientation.
+            CustomAabb = new Aabb(-Vector3.One * 2f, Vector3.One * 4f),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        mesh.SetSurfaceOverrideMaterial(0, mat);
+        planetsNode.AddChild(mesh);
+
+        fo.RegisterPlanetNode(body.Id, mesh);
+
+        if (body.Id == "saturn") AddSaturnRing(mesh);
+        return true;
+    }
+
+    private SphereMesh GetSharedPlanetSphereMesh()
+    {
+        if (_planetSphereMesh != null)
+            return _planetSphereMesh;
+
+        _planetSphereMesh = new SphereMesh
+        {
+            Radius = 1f,
+            Height = 2f,
+            RadialSegments = 96,
+            Rings = 48,
+        };
+        GD.Print("PERF_PLANETS mesh_cache=created radial=96 rings=48 shared=True");
+        return _planetSphereMesh;
+    }
+
+    private void QueueRequiredPlanetPresentation()
+    {
+        var vessel = ActiveVessel;
+        if (vessel == null) return;
+
+        var body = Universe.GetDominantBody(vessel.Position);
+        if (body == null || body.Id == "sun" || _spawnedPlanetIds.Contains(body.Id)) return;
+        if (_pendingPlanetPresentationBodyId == body.Id) return;
+
+        _pendingPlanetPresentationBodyId = body.Id;
+        GD.Print($"PERF_PLANETS stage=queued body={body.Id} reason=dominant_body_transition");
+        CallDeferred(nameof(SpawnPendingPlanetPresentation));
+    }
+
+    public void SpawnPendingPlanetPresentation()
+    {
+        var bodyId = _pendingPlanetPresentationBodyId;
+        _pendingPlanetPresentationBodyId = null;
+        if (string.IsNullOrWhiteSpace(bodyId) || Universe == null) return;
+
+        var body = Universe.GetBody(bodyId);
+        var planetsNode = GetTree().Root.FindChild("Planets", true, false) as Node3D;
+        var fo = GetTree().Root.FindChild("FloatingOrigin", true, false) as FloatingOrigin;
+        var requiredBody = ActiveVessel != null
+            ? Universe.GetDominantBody(ActiveVessel.Position)
+            : null;
+        if (body == null
+            || requiredBody == null
+            || !string.Equals(body.Id, requiredBody.Id, StringComparison.OrdinalIgnoreCase)
+            || planetsNode == null
+            || fo == null)
+            return;
+
+        var timer = Stopwatch.StartNew();
+        if (SpawnPlanet(body, planetsNode, fo))
+            GD.Print($"PERF_PLANETS stage=lazy_spawn body={body.Id} ms={timer.Elapsed.TotalMilliseconds:F1}");
+    }
+
+    // Saturn's rings: a flat annulus child (local XZ plane) that scales/tilts with the
+    // scaled-space backdrop sphere. Inner/outer radii in body-radius units (sphere = 1).
+    private static void AddSaturnRing(MeshInstance3D parent)
+    {
+        var ring = new MeshInstance3D { Name = "SaturnRing", Mesh = BuildRingMesh(1.20f, 2.30f, 160) };
+        var shader = GD.Load<Shader>("res://assets/shaders/saturn_ring.gdshader");
+        if (shader != null)
+        {
+            var rmat = new ShaderMaterial { Shader = shader };
+            // Use Godot's imported/cached texture directly. The former Image.LoadFromFile
+            // path decoded the 8192x500 PNG on the CPU and created a second ImageTexture
+            // with runtime mipmaps, duplicating staging/resident memory for one backdrop
+            // that is instantiated only when Saturn becomes the dominant body.
+            var ringTexture = GD.Load<Texture2D>("res://assets/textures/saturn_ring.png");
+            if (ringTexture != null)
+                rmat.SetShaderParameter("ring_tex", ringTexture);
+            ring.SetSurfaceOverrideMaterial(0, rmat);
+        }
+        ring.CustomAabb = new Aabb(new Godot.Vector3(-2.4f, -0.1f, -2.4f), new Godot.Vector3(4.8f, 0.2f, 4.8f));
+        parent.AddChild(ring);
+    }
+
+    private static ArrayMesh BuildRingMesh(float inner, float outer, int seg)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (int i = 0; i < seg; i++)
+        {
+            float a0 = i / (float)seg * Mathf.Tau, a1 = (i + 1) / (float)seg * Mathf.Tau;
+            var d0 = new Godot.Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0));
+            var d1 = new Godot.Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1));
+            float u0 = i / (float)seg, u1 = (i + 1) / (float)seg;
+            RingVert(st, d0 * inner, 0f, u0); RingVert(st, d0 * outer, 1f, u0); RingVert(st, d1 * outer, 1f, u1);
+            RingVert(st, d0 * inner, 0f, u0); RingVert(st, d1 * outer, 1f, u1); RingVert(st, d1 * inner, 0f, u1);
+        }
+        return st.Commit();
+    }
+
+    private static void RingVert(SurfaceTool st, Godot.Vector3 p, float radialU, float angV)
+    {
+        st.SetNormal(Godot.Vector3.Up);
+        st.SetUV(new Godot.Vector2(radialU, angV));
+        st.AddVertex(p);
+    }
+
+    private static Color GetPlanetColor(string id) => id switch
+    {
+        "earth"   => new Color(0.20f, 0.45f, 0.80f),
+        "moon"    => new Color(0.60f, 0.60f, 0.60f),
+        "mars"    => new Color(0.70f, 0.30f, 0.15f),
+        "venus"   => new Color(0.85f, 0.75f, 0.40f),
+        "mercury" => new Color(0.50f, 0.48f, 0.46f),
+        "jupiter" => new Color(0.80f, 0.65f, 0.45f),
+        "saturn"  => new Color(0.90f, 0.80f, 0.55f),
+        "sun"     => new Color(1.00f, 0.90f, 0.30f),
+        _         => new Color(0.70f, 0.70f, 0.70f),
+    };
+
+    private static Godot.Vector3 ToGodotVector(Vector3d value) => new(
+        (float)value.X, (float)value.Y, (float)value.Z);
+
+    // ── Public API ────────────────────────────────────────────────────────
+
+    public void SetThrottle(double t) { if (!IsFlight14Exploration && ActiveVessel != null) ActiveVessel.Throttle = t; }
+    public void SetSAS(bool on)       { if (ActiveVessel != null) ActiveVessel.SASEnabled = on; }
+    public void ReleaseGroundHold()   { ActiveVessel?.ReleaseGroundHold(); }
+
+    /// <summary>
+    /// Stands <paramref name="vessel"/> on the launch pad: at the launch site's real
+    /// geodetic position, upright along the local vertical, and already moving with the
+    /// ground beneath it.
+    ///
+    /// The site's latitude is what earns the free eastward velocity the body's rotation
+    /// gives a pad (ω·R·cos φ — ≈408 m/s at Kennedy). Spawning along an arbitrary axis
+    /// instead puts the pad at the wrong latitude and quietly steals that delta-v, so the
+    /// pad frame is derived from data, never hardcoded.
+    /// </summary>
+    private void StandOnPad(Vessel vessel, CelestialBody body, double mountHeightM)
+    {
+        Vector3d padSurface = _launchSite != null
+            ? _launchSite.GetPosition(body)
+            : body.GetSurfacePosition(0.0, 0.0);   // fallback: the equator, not the pole
+
+        var upDir = body.GetGeodeticUp(padSurface);
+
+        vessel.Position    = padSurface + upDir * mountHeightM;
+        vessel.Velocity    = body.Velocity + body.GetSurfaceVelocity(vessel.Position);
+        vessel.Orientation = Quaterniond.FromTo(Vector3d.Up, upDir);
+        vessel.SASEnabled  = true;
+
+        vessel.IsGroundHeld = true;
+        // Hold snap reconstructs from a geocentric ray after the body has already
+        // moved this tick; storing the geodetic normal here would slide the pad
+        // tens of kilometres on the first tick.
+        vessel.GroundNormal = (padSurface - body.Position).Normalized;
+        vessel.GroundOffset = mountHeightM;
+
+    }
+
+    /// <summary>
+    /// Rebuilds the active vessel mesh after a mission load (Id and part graph may be new).
+    /// </summary>
+    public void RebuildActiveVesselRenderer()
+    {
+        var vessel = ActiveVessel;
+        if (vessel == null) return;
+        EnsureActiveVesselPresentation(vessel);
+    }
+
+    /// <summary>
+    /// Places an externally constructed vessel on the active launch pad and makes it the
+    /// controlled vessel. Used by the VAB/export flow; keeps the same ground-hold contract
+    /// as the default Starship stack.
+    /// </summary>
+    public void PlaceConstructedVesselOnPad(Vessel vessel, double mountHeightM = -1.0)
+    {
+        var earth = Universe.GetBody("earth");
+        if (earth == null) return;
+
+        if (ActiveVessel != null)
+            Universe.RemoveVessel(ActiveVessel);
+
+        if (mountHeightM < 0.0)
+            mountHeightM = _launchPad?.VehicleInterfaceElevationM
+                ?? LaunchComplexSpec.StarbasePostDeluge.VehicleInterfaceElevation;
+        StandOnPad(vessel, earth, mountHeightM);
+        vessel.ConfigureLandingContactsFromParts();
+        vessel.ConfigureCatchContactsFromParts();
+
+        Universe.AddVessel(vessel);
+        Universe.SetActiveVessel(vessel.Id);
+
+        EnsureActiveVesselPresentation(vessel);
+    }
+
+    private void EnsureActiveVesselPresentation(Vessel vessel)
+    {
+        var root = GetTree().Root;
+        var vesselsNode = root.FindChild("Vessels", true, false) as Node3D;
+        if (vesselsNode == null) return;
+
+        if (_vesselRenderer == null)
+        {
+            _vesselRenderer = new VesselRenderer { Name = "ActiveVesselRenderer" };
+            vesselsNode.AddChild(_vesselRenderer);
+        }
+        _vesselRenderer.BuildFromVessel(vessel);
+
+        // These consumers follow the active vessel and are independent of vehicle identity.
+        if (root.FindChild("CockpitRenderer", true, false) == null)
+            vesselsNode.AddChild(new CockpitRenderer { Name = "CockpitRenderer" });
+        if (root.FindChild("CockpitInstruments", true, false) == null)
+            AddChild(new CockpitInstruments { Name = "CockpitInstruments" });
+        if (root.FindChild("MaxQRing", true, false) == null)
+            vesselsNode.AddChild(new MaxQRingController { Name = "MaxQRing" });
+        if (root.FindChild("ReentryPlasma", true, false) == null)
+            vesselsNode.AddChild(
+                new ReentryPlasmaController { Name = "ReentryPlasma" });
+
+        var floating = root.FindChild("FloatingOrigin", true, false) as FloatingOrigin;
+        floating?.RegisterVesselNode(vessel.Id, _vesselRenderer);
+    }
+
+    // ── Ignition / throttle contracts (consumed by HUDController / Agente E) ─
+
+    /// <summary>
+    /// True while Ignite() is ramping up thrust and waiting for the commit-to-launch
+    /// gate (TWR &gt; 1.05 and throttle ≥ 0.95). Resets once the vessel lifts off and
+    /// throttle reaches 1.0.
+    /// </summary>
+    public bool IsIgnitionActive => _ignitionActive;
+
+    /// <summary>
+    /// Fresh pad flights start at J2000, which puts Starbase in astronomical twilight
+    /// (~−17°). That is why the play camera showed a black star field while the
+    /// DirectionalLight still looked like day. Presentation-only daylight keeps
+    /// ephemeris/forces unchanged.
+    /// </summary>
+    private void ApplyDefaultPadDaylightIfNeeded()
+    {
+        if (_defaultPadDaylightApplied || _skipDefaultPadDaylight) return;
+        var sun = SunController.Instance;
+        if (sun == null) return;
+        _defaultPadDaylightApplied = true;
+        if (sun.VisualSunElevationOverrideDegrees.HasValue) return;
+        sun.SetVisualSunElevationOverride(28.0);
+        GD.Print("PERF_SOLAR_CYCLE default_pad_daylight elevationDeg=28.0 "
+            + "presentationOnly=True");
+    }
+
+    /// <summary>
+    /// Secuencia de ignición: arranca la rampa de throttle comandado hacia 1.0 y suelta
+    /// los hold-downs automáticamente al commit-to-launch
+    /// (<see cref="HoldDownReleasePolicy"/>).
+    /// Si el vessel ya está en vuelo, fija el throttle al máximo de inmediato.
+    /// </summary>
+    public void Ignite()
+    {
+        if (IsFlight14Exploration) return;
+        var v = ActiveVessel;
+        if (v == null) return;
+
+        if (v.IsGroundHeld)
+        {
+            // Inicio de secuencia de despegue: rampa controlada hasta soltar los clamps
+            _ignitionActive = true;
+        }
+        else
+        {
+            // En vuelo: throttle máximo instantáneo (sin secuencia de hold-down)
+            v.Throttle = 1.0;
+            _ignitionActive = false;
+        }
+    }
+
+    /// <summary>
+    /// Sube el throttle comandado de forma continua. El spool de los motores suaviza la respuesta.
+    /// Llamar cada frame con el dt real para un ascenso fluido sosteniendo la tecla.
+    /// </summary>
+    public void ThrottleUp(double dt)
+    {
+        var v = ActiveVessel;
+        if (v == null) return;
+        v.Throttle = System.Math.Min(v.Throttle + 0.5 * dt, 1.0);
+    }
+
+    /// <summary>
+    /// Baja el throttle comandado de forma continua. El spool de los motores suaviza la respuesta.
+    /// </summary>
+    public void ThrottleDown(double dt)
+    {
+        var v = ActiveVessel;
+        if (v == null) return;
+        v.Throttle = System.Math.Max(v.Throttle - 0.5 * dt, 0.0);
+    }
+
+    /// <summary>
+    /// Starts the Flight 7 dual-thrust hot-stage window. Ship engines join the burning set
+    /// while Super Heavy remains attached; mechanical stage fires when the window expires.
+    /// </summary>
+    public void BeginHotStageOverlap(double durationSeconds = -1.0)
+    {
+        if (ActiveVessel == null) return;
+        if (ActiveVessel.IsHotStageOverlapping) return;
+        double duration = durationSeconds > 0.0
+            ? durationSeconds
+            : AscentStagingPolicy.HotStageOverlapSeconds;
+        ActiveVessel.BeginHotStageOverlap(duration);
+    }
+
+    public void TriggerStaging()
+    {
+        if (IsFlight14Exploration) return;
+        if (ActiveVessel == null) return;
+        // Instant stage (manual / post-overlap) cancels any remaining overlap cleanly.
+        ActiveVessel.HotStageOverlapCompletedPending = false;
+        var debris = ActiveVessel.Stage();
+        if (debris == null) return;
+
+        Universe.AddVessel(debris);
+
+        // Rebuild active vessel renderer: SH is now gone → shows standalone Starship
+        _vesselRenderer?.BuildFromVessel(ActiveVessel);
+        SpawnDebrisRenderer(debris, "SHDebris_");
+
+        PublishMissionCallback(
+            "VesselStaged", debris.Id,
+            () => EmitSignal(SignalName.VesselStaged, debris.Id),
+            debris.Id);
+        MissionManager.Instance?.NotifyStaged();
+    }
+
+    /// <summary>
+    /// Detaches an arbitrary part subtree as another persisted vessel while keeping the
+    /// surviving carrier active. Used by historical escape-tower and spacecraft events.
+    /// </summary>
+    public Vessel? DeployPartAsVessel(
+        string rootPartInstanceId,
+        string name,
+        Vector3d separationVelocityLocal)
+    {
+        var carrier = ActiveVessel;
+        if (carrier == null) return null;
+        var detached = carrier.DeployPayload(
+            rootPartInstanceId,
+            name,
+            separationVelocityLocal);
+        if (detached == null) return null;
+        Universe.AddVessel(detached);
+        _vesselRenderer?.BuildFromVessel(carrier);
+        SpawnDebrisRenderer(detached, "Separated_");
+        PublishMissionCallback(
+            "VesselStaged", detached.Id,
+            () => EmitSignal(SignalName.VesselStaged, detached.Id),
+            detached.Id);
+        return detached;
+    }
+
+    /// <summary>
+    /// Creates the already-orbiting Agena 5003 target for the Gemini VIII campaign.
+    /// Its stable identity and ordinary PartGraph make it saveable, targetable and
+    /// dockable through the same multi-vessel path as player-deployed payloads.
+    /// </summary>
+    public Vessel? EnsureGemini8AgenaTarget()
+    {
+        const string targetId = "gemini8-agena-5003";
+        var existing = Universe.Vessels.FirstOrDefault(v => v.Id == targetId);
+        if (existing != null) return existing;
+
+        var earth = Universe.GetBody("earth");
+        var carrier = ActiveVessel;
+        if (earth == null || carrier == null) return null;
+        string dataPath = GameDataPath.Resolve(DataDirectory);
+        var catalog = PartCatalog.LoadFromDirectory(
+            System.IO.Path.Combine(dataPath, "parts"));
+        var variant = VehicleVariantDefinition.LoadFromJson(
+            System.IO.Path.Combine(
+                dataPath, "vehicles", "agena8_target_5003_1966.json"));
+        var target = variant.Build(catalog).ToVessel(
+            "Gemini Agena Target Vehicle 5003", targetId);
+
+        Vector3d up = (carrier.Position - earth.Position).Normalized;
+        if (up.MagnitudeSquared < 1e-9) up = Vector3d.Right;
+        Vector3d tangent = GetLaunchHeadingDirection();
+        tangent = (tangent - up * tangent.Dot(up)).Normalized;
+        if (tangent.MagnitudeSquared < 1e-9)
+            tangent = earth.RotationAxis.Cross(up).Normalized;
+        double radius = earth.Radius
+            + Gemini8FlightProfile.HistoricalTargetOrbitM;
+        target.Position = earth.Position + up * radius;
+        target.Velocity = earth.Velocity
+            + tangent * System.Math.Sqrt(earth.GM / radius);
+        target.Orientation = Quaterniond.FromTo(Vector3d.Up, tangent);
+        target.ReferenceBodyId = earth.Id;
+        target.IsOnRails = true;
+        target.OrbitalState = OrbitalElements.FromStateVector(
+            target.Position - earth.Position,
+            target.Velocity - earth.Velocity,
+            earth.GM,
+            earth.Id,
+            Universe.CurrentTime);
+        target.SASEnabled = true;
+        Universe.AddVessel(target);
+        SpawnDebrisRenderer(target, "Target_");
+        GD.Print("[HISTORICAL] Agena 5003 acquired in its 161.3 nmi target orbit.");
+        return target;
+    }
+
+    /// <summary>
+    /// After CSM/S-IVB separation, extract LM-5 Eagle from the opaque SLA envelope,
+    /// carve its wet mass out of the SLA dry mass, and spawn Eagle as a dockable vessel.
+    /// </summary>
+    public Vessel? EnsureApollo11EagleExtracted()
+    {
+        const string eagleId = Exosphere.Simulation.Flight.Apollo11FlightProfile.EagleVesselId;
+        var existing = Universe.Vessels.FirstOrDefault(v => v.Id == eagleId);
+        if (existing != null) return existing;
+
+        var slaHost = Universe.Vessels.FirstOrDefault(v =>
+            v.Parts.Parts.Any(part =>
+                part.Definition.HasVehicleRole("sla_lunar_module")));
+        if (slaHost == null) return null;
+
+        var sla = slaHost.Parts.Parts.First(part =>
+            part.Definition.HasVehicleRole("sla_lunar_module"));
+        sla.MassDryOffset =
+            Exosphere.Simulation.Flight.Apollo11FlightProfile.EmptySlaDryMassKg
+            - sla.Definition.MassDry;
+
+        string dataPath = GameDataPath.Resolve(DataDirectory);
+        var catalog = PartCatalog.LoadFromDirectory(
+            System.IO.Path.Combine(dataPath, "parts"));
+        var variant = VehicleVariantDefinition.LoadFromJson(
+            System.IO.Path.Combine(
+                dataPath, "vehicles", "apollo11_lm5_eagle_1969.json"));
+        var eagle = variant.Build(catalog).ToVessel("LM-5 Eagle", eagleId);
+
+        // Place Eagle just ahead of the SLA nose along the host +Y thrust/stack axis.
+        Vector3d forward = slaHost.Orientation.Rotate(Vector3d.Up).Normalized;
+        eagle.Position = slaHost.Position + forward * 12.0;
+        eagle.Velocity = slaHost.Velocity;
+        eagle.Orientation = slaHost.Orientation;
+        eagle.AngularVelocity = Vector3d.Zero;
+        eagle.ReferenceBodyId = slaHost.ReferenceBodyId;
+        eagle.IsOnRails = false;
+        eagle.OrbitalState = null;
+        eagle.SASEnabled = true;
+        eagle.Throttle = 0.0;
+        Universe.AddVessel(eagle);
+        SpawnDebrisRenderer(eagle, "Eagle_");
+        GD.Print(
+            $"[HISTORICAL] LM-5 Eagle extracted from SLA "
+            + $"(SLA shell {Exosphere.Simulation.Flight.Apollo11FlightProfile.EmptySlaDryMassKg:F0} kg).");
+        return eagle;
+    }
+
+    /// <summary>
+    /// Hands control and the camera to another vessel already in flight (Eagle undocking
+    /// from Columbia). The active renderer is rebuilt for <paramref name="next"/>, whose own
+    /// secondary renderer is retired, and the previous active vessel gets one of its own.
+    /// </summary>
+    public bool TransferControlTo(Vessel next)
+    {
+        var previous = ActiveVessel;
+        if (previous == null || next == previous || next.IsDestroyed
+            || !Universe.Vessels.Contains(next))
+            return false;
+
+        var floating = GetTree().Root.FindChild("FloatingOrigin", true, false) as FloatingOrigin;
+        var nextRenderer = floating?.GetVesselNode(next.Id);
+        if (nextRenderer != null && nextRenderer != _vesselRenderer)
+        {
+            floating!.UnregisterVesselNode(next.Id);
+            nextRenderer.QueueFree();
+        }
+        Universe.SetActiveVessel(next.Id);
+        SpawnDebrisRenderer(previous, "Handover_");
+        EnsureActiveVesselPresentation(next);
+        GD.Print($"[SimulationBridge] Control handed from {previous.Name} to {next.Name}.");
+        return true;
+    }
+
+    public Vector3d GetLaunchHeadingDirection()
+    {
+        var earth = Universe.GetBody("earth");
+        if (earth == null || ActiveVessel == null) return Vector3d.Forward;
+        var frame = _launchSite?.GetLocalFrame(earth, Universe.CurrentTime);
+        Vector3d east = frame?.East ?? earth.GetEastDirection(ActiveVessel.Position);
+        Vector3d north = frame?.North
+            ?? (ActiveVessel.Position - earth.Position)
+                .Normalized.Cross(east).Normalized;
+        double heading = (_launchSite?.Heading ?? 90.0) * MathUtils.DEG_TO_RAD;
+        return (north * System.Math.Cos(heading)
+            + east * System.Math.Sin(heading)).Normalized;
+    }
+
+    /// <summary>
+    /// After each sim tick, spawn renderers for vessels created by structural breakup
+    /// (overload joints). Staging debris is registered in <see cref="TriggerStaging"/>
+    /// and is not listed in the structural pending drain.
+    /// </summary>
+    private void SyncFlight14Presentation(Flight14Exploration preview)
+    {
+        bool rebuild = _previewPartCount != preview.Run.Ship.Parts.Parts.Count;
+        foreach (var vessel in Universe.Vessels)
+        {
+            if (!_previewRenderedVessels.Add(vessel.Id)) continue;
+            SpawnDebrisRenderer(vessel, "Flight14Detached_");
+            if (ReferenceEquals(vessel, preview.Run.Controller.DetachedBooster))
+            {
+                MissionManager.Instance?.EnterPhase(MissionPhase.SEPARATION);
+                EmitSignal(SignalName.VesselStaged, vessel.Id);
+            }
+        }
+        if (rebuild)
+        {
+            _previewPartCount = preview.Run.Ship.Parts.Parts.Count;
+            _vesselRenderer?.BuildFromVessel(preview.Run.Ship);
+        }
+    }
+
+    public Godot.Collections.Dictionary GetFlight14ExplorationSnapshot()
+    {
+        var preview = Flight14Preview;
+        if (preview == null) return new();
+        return new()
+        {
+            ["phase"] = preview.Phase,
+            ["observed_vessel_id"] = preview.ObservedVessel.Id,
+            ["observing_booster"] = preview.IsObservingBooster,
+            ["booster_phase"] = preview.Run.BoosterReturnController?.Phase.ToString() ?? "",
+            ["booster_blocked"] = preview.Run.BoosterReturnController?.BlockReason ?? "",
+            ["water_entry_speed"] = preview.Run.PoweredReturnController?.Landing?.WaterEntryWitness?.AtmosphereRelativeSpeedMps ?? -1,
+            ["water_clearance"] = preview.Run.Ship.LastWaterContact?.LowestPointAltitudeM ?? -1,
+            ["water_force"] = preview.Run.Ship.LastWaterContact?.ForceWorld.Magnitude ?? 0,
+            ["ground_held"] = preview.Run.Ship.IsGroundHeld,
+            ["met"] = preview.MissionElapsedSeconds,
+            ["altitude"] = preview.Run.Ship.GetAltitude(preview.Run.Earth),
+            ["payloads"] = preview.Run.PayloadController.Releases.Count,
+            ["throttle"] = preview.Run.Ship.Throttle,
+            ["command_x"] = preview.Run.Ship.PitchYawRoll.X,
+            ["command_y"] = preview.Run.Ship.PitchYawRoll.Y,
+            ["command_z"] = preview.Run.Ship.PitchYawRoll.Z,
+            ["ship_id"] = preview.Run.Ship.Id,
+            ["mass"] = preview.Run.Ship.TotalMass,
+            ["rendered_vessels"] = _previewRenderedVessels.Count,
+            ["vessels"] = Universe.Vessels.Count,
+            ["paused"] = preview.IsPaused,
+            ["advancing_to_entry"] = preview.IsAdvancingToEntry,
+            ["can_advance_to_entry"] = preview.CanAdvanceToEntry,
+            ["entry_reached"] = preview.Run.ReturnController?.EntryInterface != null,
+            ["vertical_speed"] = preview.Run.Ship.GetSurfaceVelocity(preview.Run.Earth)
+                .Dot(preview.Run.Earth.GetGeodeticUp(preview.Run.Ship.Position)),
+            ["terminal"] = preview.IsTerminal,
+            ["blocked"] = preview.BlockReason ?? "",
+        };
+    }
+
+    private void SyncStructuralDebrisRenderers()
+    {
+        var pending = Universe.DrainPendingStructuralDebris();
+        if (pending.Count == 0) return;
+
+        foreach (var debris in pending)
+            SpawnDebrisRenderer(debris, "StructuralDebris_");
+
+        // Parent stack lost parts — rebuild so meshes match the remaining graph.
+        if (ActiveVessel != null)
+            _vesselRenderer?.BuildFromVessel(ActiveVessel);
+
+        foreach (var debris in pending)
+            PublishMissionCallback(
+                "VesselStaged", debris.Id,
+                () => EmitSignal(SignalName.VesselStaged, debris.Id));
+
+        if (ActiveVessel != null
+            && ActiveVessel.IsDestroyed
+            && ActiveVessel.DestructionCause == VesselDestructionCause.StructuralBreakup)
+        {
+            PublishMissionCallback(
+                "VesselDestroyed", ActiveVessel.Id,
+                () => EmitSignal(SignalName.VesselDestroyed, ActiveVessel.Id),
+                ActiveVessel.Id);
+        }
+    }
+
+    private void PublishMissionCallback(
+        string eventType,
+        string payload,
+        Action emit,
+        string? ownerVesselId = null)
+    {
+        if (MissionManager.Instance is { } missionManager)
+            missionManager.PublishMissionCallback(
+                eventType, payload, emit, ownerVesselId);
+        else
+            emit();
+    }
+
+    private void SpawnDebrisRenderer(Vessel debris, string namePrefix)
+    {
+        var fo          = GetTree().Root.FindChild("FloatingOrigin", true, false) as FloatingOrigin;
+        var vesselsNode = GetTree().Root.FindChild("Vessels",        true, false) as Node3D;
+        if (vesselsNode == null) return;
+
+        var debrisRenderer = new VesselRenderer();
+        debrisRenderer.Name = namePrefix + debris.Id[..8];
+        vesselsNode.AddChild(debrisRenderer);
+        debrisRenderer.BuildFromVessel(debris);
+        fo?.RegisterVesselNode(debris.Id, debrisRenderer);
+    }
+
+    public void SetTimeScale(double scale) => Universe.TimeScale = scale;
+
+    /// <summary>
+    /// Starts the verified Starship entry-to-landing demonstration used by the HUD and the
+    /// visual regression harness.  This is a real physics state: EDL owns attitude/throttle,
+    /// atmospheric drag and heating run normally, Raptors relight for the powered flip, and
+    /// landing contact is solved by the regular surface-contact model.
+    /// </summary>
+    /// <param name="bellyFirst">
+    /// True (default) seeds the protected heat-shield-forward belly-flop attitude used by the
+    /// HUD button. False seeds a deliberately wrong nose-first attitude with a tumble rate,
+    /// solely so the visual capture harness (tools/visual_playtest.sh --reentry-compare) can
+    /// show the VFX/thermal difference against a bad attitude. EDL guidance itself is
+    /// untouched — this only changes the initial state handed to it.
+    /// </param>
+    public bool BeginReentryDemonstration(bool bellyFirst = true)
+    {
+        var earth = Universe.GetBody("earth");
+        var vessel = ActiveVessel;
+        if (earth == null || vessel == null || vessel.IsDestroyed) return false;
+
+        // The launch scene begins as a full stack. Separate first so EDL controls the Ship
+        // engine cluster and aerodynamic body rather than an impossible attached booster.
+        if (vessel.Parts.Parts.Any(
+                p => p.Definition.IsStarshipFamily
+                    && p.Definition.HasVehicleRole("booster")))
+        {
+            TriggerStaging();
+            vessel = ActiveVessel;
+        }
+        if (vessel == null || !vessel.Parts.Parts.Any(
+                p => p.Definition.IsStarshipFamily
+                    && p.Definition.HasVehicleRole("ship_engines")))
+            return false;
+
+        EnsureStarshipReentryLandingGear(vessel);
+
+        Vector3d currentUp = (vessel.Position - earth.Position).Normalized;
+        if (currentUp.MagnitudeSquared < 1e-9) currentUp = Vector3d.Right;
+
+        // Catch-equipped Starship must be seeded above the actual launch-site meridian;
+        // placing it on an arbitrary daylight-side great circle can leave it thousands of
+        // kilometres from the Mechazilla cradle even though the EDL state is correctly armed.
+        // Vehicles without catch pins retain the daylight-side seed so the generic visual
+        // demonstration remains inspectable at any launch site's local time.
+        bool towerCatchCapable = vessel.Parts.Parts.Any(
+            p => p.Definition.CatchPinLateralOffsetM > 0.0);
+        Vector3d up = towerCatchCapable
+            ? _launchSite?.GetLocalFrame(earth, Universe.CurrentTime).Up ?? currentUp
+            : currentUp;
+        var sun = Universe.GetBody("sun");
+        if (!towerCatchCapable && sun != null)
+        {
+            Vector3d toSun = (sun.Position - earth.Position).Normalized;
+            Vector3d terminatorUp = currentUp - toSun * currentUp.Dot(toSun);
+            if (terminatorUp.MagnitudeSquared < 1e-9)
+            {
+                Vector3d seed = System.Math.Abs(toSun.Dot(Vector3d.Up)) < 0.9
+                    ? Vector3d.Up
+                    : Vector3d.Right;
+                terminatorUp = seed - toSun * seed.Dot(toSun);
+            }
+            const double solarElevation = 25.0 * System.Math.PI / 180.0;
+            up = (terminatorUp.Normalized * System.Math.Cos(solarElevation)
+                + toSun * System.Math.Sin(solarElevation)).Normalized;
+        }
+        Vector3d east = earth.RotationAxis.Cross(up).Normalized;
+        if (east.MagnitudeSquared < 1e-9) east = Vector3d.Forward;
+
+        // A repeatable suborbital entry state chosen to expose heating, aerodynamic descent,
+        // belly-flop, powered flip and touchdown in one watchable session. It intentionally
+        // starts at the 70 km entry interface instead of pretending to perform a deorbit burn.
+        //
+        // The catch-capable fixture still uses the physical tower path, but it now arrives on
+        // a shallow, downrange entry plane. The previous vertical 1.8 km/s drop had no real
+        // ground track: body lift created the entire horizontal velocity, so the corridor
+        // controller appeared to “turbulate” while chasing a target that was initially below
+        // the vehicle. This seed gives EDL the same geometry as a real Starship return and
+        // lets drag, body lift and the moving target determine the final miss naturally.
+        Vector3d airVelocity;
+        if (towerCatchCapable && _launchSite != null)
+        {
+            // The visual EDL fixture is a 70 km atmospheric handoff rather than a full orbital
+            // return. The measured vehicle footprint covers roughly 150 km before the ship
+            // reaches the low-altitude flip corridor; seed it at that footprint so the target
+            // is reached by the physical trajectory instead of asking crossrange guidance to
+            // solve a longitudinal error it cannot control.
+            // The deterministic demonstration must enter the powered corridor before it
+            // crosses the cradle ground track. The previous 143 km seed reached the low
+            // corridor with a residual downrange error that the physical retro burn could
+            // not remove before the catch gate. Keep the seed upstream by a measured
+            // trajectory correction rather than widening the catch gates.
+            const double EntryDownrangeLeadM = 143_900.0;
+            var targetCradle = LaunchComplexSpec.StarbasePostDeluge.GetCatchCradlePosition(
+                _launchSite, earth, Universe.CurrentTime);
+            var targetUp = (targetCradle - earth.Position).Normalized;
+            var targetEast = earth.RotationAxis.Cross(targetUp).Normalized;
+            if (targetEast.MagnitudeSquared < 1e-9)
+                targetEast = Vector3d.Forward;
+
+            // Move the entry point upstream along the local ground track, then recompute the
+            // geodetic up vector so the 70 km shell remains normal to the ellipsoid.
+            var entryGround = targetCradle - targetEast * EntryDownrangeLeadM;
+            up = (entryGround - earth.Position).Normalized;
+            east = earth.RotationAxis.Cross(up).Normalized;
+            if (east.MagnitudeSquared < 1e-9)
+                east = targetEast;
+            airVelocity = east * 1_800.0 - up * 120.0;
+        }
+        else
+        {
+            airVelocity = east * 1_800.0 - up * 120.0;
+        }
+        Vector3d velocityDirection = airVelocity.Normalized;
+        Vector3d longAxis;
+        if (towerCatchCapable)
+        {
+            // Keep the deterministic catch demonstration in the same nonzero-alpha regime as
+            // real Starship entry. Exact 90° broadside has zero body lift in the symmetric hull
+            // model, so it offers no aerodynamic trajectory control and invites the static
+            // margin to rotate the nose into the flow before the flap loop can settle.
+            longAxis = AerodynamicsModel.ComputeLiftDownEntryAxis(up, velocityDirection);
+        }
+        else
+        {
+            longAxis = AerodynamicsModel.ComputeLiftUpEntryAxis(up, velocityDirection);
+        }
+
+        Vector3d entryPosition = earth.Position + up * (earth.Radius + 70_000.0);
+        Vector3d rotationReferencePosition = entryPosition;
+        if (towerCatchCapable && _launchSite != null)
+        {
+            // Keep the entry position on the same upstream radial line used to build the
+            // shallow-entry velocity. Replacing it with the cradle radial line here would
+            // make the position and velocity belong to different surface points: the ship
+            // would be visually seeded above the pad while its velocity was aimed from an
+            // upstream point. That inconsistency was the source of the large, seed-insensitive
+            // downrange miss in the EDL traces.
+            var cradle = LaunchComplexSpec.StarbasePostDeluge.GetCatchCradlePosition(
+                _launchSite, earth, Universe.CurrentTime);
+            // The atmosphere target is the rotating cradle at the surface, not a free
+            // inertial point at entry altitude. Its tangential velocity is the seed that
+            // produced the stable low-cross-range approach in the flight trace.
+            rotationReferencePosition = cradle;
+        }
+        vessel.Position = entryPosition;
+        Vector3d rotationalVelocity = earth.GetSurfaceVelocity(rotationReferencePosition);
+        vessel.Velocity = earth.Velocity + rotationalVelocity + airVelocity;
+        if (bellyFirst)
+        {
+            vessel.Orientation = AerodynamicsModel.ComputeBellyFirstOrientation(
+                longAxis, velocityDirection);
+            vessel.AngularVelocity = Vector3d.Zero;
+        }
+        else
+        {
+            // Deliberately wrong entry attitude for capture comparison only: broadside to
+            // the airflow (nose pointed radially outward, perpendicular to velocity) instead
+            // of the protected belly-flop. Left at zero initial spin — imposing an explicit
+            // tumble rate here previously destabilized the linear velocity state that
+            // EDLController's activation check depends on (_vUp < -20) in a non-deterministic
+            // way; a fixed wrong orientation is deterministic, and any tumble should emerge
+            // physically from aerodynamic instability once EDLController/aero take over.
+            // Capture-only — does not touch EDLController/AscentController guidance.
+            vessel.Orientation = Quaterniond.FromTo(Vector3d.Up, up);
+            vessel.AngularVelocity = Vector3d.Zero;
+        }
+        vessel.PitchYawRoll = Vector3d.Zero;
+        vessel.SASEnabled = false;
+        vessel.IsGroundHeld = false;
+        vessel.IsOnRails = false;
+        vessel.OrbitalState = null;
+        vessel.ReferenceBodyId = earth.Id;
+        vessel.Throttle = 0.0;
+        vessel.ConfigureLandingContactsFromParts();
+        vessel.ConfigureCatchContactsFromParts();
+        ArmTowerCatchApproach(vessel);
+        vessel.IsTowerCatchDemonstration = towerCatchCapable;
+
+        foreach (var part in vessel.Parts.Parts)
+        {
+            part.Temperature = 290.0;
+            part.SkinTemperature = 290.0;
+            part.ThermalDamage = 0.0;
+            part.IsBroken = false;
+            part.IsDeployed = false;
+            part.ThrottleLevel = 0.0;
+            part.GimbalOffset = Vector3d.Zero;
+
+            double totalCapacity = part.Definition.FuelCapacityLF
+                + part.Definition.FuelCapacityOx;
+            if (totalCapacity <= 0.0) continue;
+            double target = totalCapacity * 0.12;
+            double mixtureCapacity = totalCapacity > 1e-9
+                ? part.Definition.FuelCapacityLF / totalCapacity
+                : 0.45;
+            part.LiquidFuel = target * mixtureCapacity;
+            part.Oxidizer = target * (1.0 - mixtureCapacity);
+        }
+
+        SetWarpIndex(0);
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        CameraController.Instance?.EnterShipChaseView();
+        GD.Print($"[DEMO] Starship reentry → landing started at 70 km / 1.80 km/s " +
+            $"(bellyFirst={bellyFirst})");
+        return true;
+    }
+
+    /// DEBUG: drop the active vessel straight into a circular orbit (~200 km) around Earth,
+    /// to test orbital features (transfer planner, etc.) without flying the whole ascent.
+    /// <paramref name="phaseOffsetDegrees"/> advances the insertion point along the seeded
+    /// prograde track. It is intentionally explicit because orbital-return fixtures must
+    /// choose their intercept phase; an unphased orbit can be physically valid and still
+    /// miss the launch site by an entire ground track.
+    public void JumpToOrbit(double altitude = 200_000.0, double phaseOffsetDegrees = 0.0)
+    {
+        var earth = Universe.GetBody("earth");
+        var v = ActiveVessel;
+        if (earth == null || v == null) return;
+
+        CancelGuidanceForTeleport();
+
+        var up = (v.Position - earth.Position).Normalized;
+        if (up.MagnitudeSquared < 1e-9) up = new Vector3d(0, 1, 0);
+        double r = earth.Radius + altitude;
+
+        var refDir  = System.Math.Abs(up.Dot(new Vector3d(0, 1, 0))) < 0.9 ? new Vector3d(0, 1, 0) : new Vector3d(1, 0, 0);
+        var baseTangent = refDir.Cross(up).Normalized;
+        var orbitNormal = up.Cross(baseTangent).Normalized;
+        double phase = phaseOffsetDegrees * System.Math.PI / 180.0;
+        var radial = up * System.Math.Cos(phase) + baseTangent * System.Math.Sin(phase);
+        var tangent = orbitNormal.Cross(radial).Normalized;
+        double vCirc = System.Math.Sqrt(earth.GM / r);
+        v.Position = earth.Position + radial * r;
+        v.Velocity = earth.Velocity + tangent * vCirc;
+        v.PrepareForTeleport();
+        v.ReferenceBodyId = earth.Id;
+        v.Orientation = Quaterniond.FromTo(Vector3d.Up, tangent);
+        v.SASEnabled = true;
+        v.Throttle = 0.0;
+
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        GD.Print($"[DEBUG] JumpToOrbit -> {altitude / 1000:F0} km circular, " +
+            $"phase={phaseOffsetDegrees:F2} deg, v={vCirc:F0} m/s");
+    }
+
+    /// <summary>
+    /// Seeds a circular orbit whose deorbit periapsis is on the rotating launch site after
+    /// the requested flight time. This is setup-only: the public map planner still owns the
+    /// actual retro burn. The site-now/site-at-return plane preserves a valid inertial orbit
+    /// while accounting for planetary rotation instead of hiding the miss in EDL homing.
+    /// </summary>
+    public bool JumpToOrbitForLaunchSiteReturn(
+        double altitude = 1_200_000.0,
+        double expectedReturnSeconds = 3_300.0,
+        double returnLatitudeBiasDegrees = 0.0,
+        double returnLongitudeLeadDegrees = 0.0)
+    {
+        var earth = Universe.GetBody("earth");
+        var vessel = ActiveVessel;
+        if (earth == null || vessel == null || _launchSite == null
+            || !string.Equals(_launchSite.BodyId, earth.Id, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        EnsureStarshipReentryLandingGear(vessel);
+
+        CancelGuidanceForTeleport();
+        double now = Universe.CurrentTime;
+        var siteNow = _launchSite.GetPosition(earth, now) - earth.Position;
+        // The atmosphere's lift/drag model produces a repeatable downrange delay during the
+        // shallow return. The caller may aim the inertial transfer point ahead of the future
+        // site to compensate for that modeled footprint loss; the physical catch target
+        // remains the unmodified launch-site geodetic position.
+        var siteAtReturn = earth.GetSurfacePositionAtTime(
+                _launchSite.Latitude + returnLatitudeBiasDegrees,
+                _launchSite.Longitude + returnLongitudeLeadDegrees,
+                now + System.Math.Max(0.0, expectedReturnSeconds),
+                _launchSite.Altitude)
+            - earth.Position;
+        var siteNowUp = siteNow.Normalized;
+        var returnUp = siteAtReturn.Normalized;
+        if (siteNowUp.MagnitudeSquared < 1e-9 || returnUp.MagnitudeSquared < 1e-9)
+            return false;
+
+        // The orbit plane contains the present site radial and the future site radial. The
+        // burn point is the future site's antipode; after the retrograde burn, the lowered
+        // periapsis is therefore the rotating Starbase radial, not a fixed meridian.
+        var orbitNormal = siteNowUp.Cross(returnUp).Normalized;
+        if (orbitNormal.MagnitudeSquared < 1e-9)
+        {
+            var reference = System.Math.Abs(siteNowUp.Dot(new Vector3d(0, 1, 0))) < 0.9
+                ? new Vector3d(0, 1, 0)
+                : new Vector3d(1, 0, 0);
+            orbitNormal = siteNowUp.Cross(reference).Normalized;
+        }
+
+        var burnRadial = -returnUp;
+        var tangent = orbitNormal.Cross(burnRadial).Normalized;
+        if (tangent.MagnitudeSquared < 1e-9) return false;
+
+        double r = earth.Radius + altitude;
+        double vCirc = System.Math.Sqrt(earth.GM / r);
+        vessel.Position = earth.Position + burnRadial * r;
+        vessel.Velocity = earth.Velocity + tangent * vCirc;
+        vessel.PrepareForTeleport();
+        vessel.ReferenceBodyId = earth.Id;
+        vessel.Orientation = Quaterniond.FromTo(Vector3d.Up, -tangent);
+        vessel.SASEnabled = true;
+        vessel.Throttle = 0.0;
+
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        GD.Print($"[DEBUG] JumpToOrbitForLaunchSiteReturn -> {altitude / 1000:F0} km circular, " +
+            $"targetLead={expectedReturnSeconds:F0} s latitudeBias={returnLatitudeBiasDegrees:F2} deg " +
+            $"longitudeLead={returnLongitudeLeadDegrees:F2} deg, " +
+            $"v={vCirc:F0} m/s");
+        return true;
+    }
+
+    /// <summary>
+    /// Configures the explicit propellant reserve for a deterministic orbital-return setup.
+    /// A direct orbit jump is a debug/setup operation, not a flown ascent; keeping this
+    /// transition in the bridge makes the landing mass assumption visible and reusable by
+    /// the map/reentry validation path without allowing a harness to mutate part resources.
+    /// </summary>
+    /// <param name="fraction">Fraction of each liquid tank's declared capacity to retain.</param>
+    public bool ConfigureOrbitalReturnReserve(double fraction = 0.12)
+    {
+        var vessel = ActiveVessel;
+        if (vessel == null || vessel.IsDestroyed) return false;
+
+        double reserve = System.Math.Clamp(fraction, 0.0, 1.0);
+        bool configured = false;
+        foreach (var part in vessel.Parts.Parts)
+        {
+            double capacity = part.Definition.FuelCapacityLF
+                + part.Definition.FuelCapacityOx;
+            if (capacity <= 0.0) continue;
+
+            double mixtureCapacity = part.Definition.FuelCapacityLF / capacity;
+            double target = capacity * reserve;
+            part.LiquidFuel = target * mixtureCapacity;
+            part.Oxidizer = target * (1.0 - mixtureCapacity);
+            configured = true;
+        }
+
+        if (configured)
+            GD.Print($"[DEBUG] Orbital return reserve configured fraction={reserve:F3} "
+                + $"propellant={vessel.Parts.TotalLiquidFuel + vessel.Parts.TotalOxidizer:F0} kg");
+        return configured;
+    }
+
+    /// <summary>
+    /// Seeds a standalone Starship at a declared physical entry interface. This is an
+    /// initial-condition fixture, not the deterministic EDL demonstration: after the one-time
+    /// position, velocity and attitude assignment, the regular EDL controller, actuators,
+    /// aerodynamics, thermal model and force integrator own the complete trajectory.
+    /// </summary>
+    public bool SeedPhysicalEntryInterfaceForValidation(
+        double altitudeM = 120_000.0,
+        double inertialSpeedMps = 7_600.0,
+        double flightPathAngleDegrees = -1.6,
+        double propellantReserveFraction = 0.06)
+    {
+        if (!double.IsFinite(altitudeM) || altitudeM <= 0.0
+            || !double.IsFinite(inertialSpeedMps)
+            || inertialSpeedMps <= 0.0
+            || !double.IsFinite(flightPathAngleDegrees)
+            || flightPathAngleDegrees is <= -90.0 or >= 90.0
+            || !double.IsFinite(propellantReserveFraction))
+            return false;
+
+        var earth = Universe.GetBody("earth");
+        var vessel = ActiveVessel;
+        if (earth == null || vessel == null || vessel.IsDestroyed || _launchSite == null)
+            return false;
+
+        if (vessel.Parts.Parts.Any(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("booster")))
+        {
+            TriggerStaging();
+            vessel = ActiveVessel;
+        }
+        if (vessel == null || !vessel.Parts.Parts.Any(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("ship_engines")))
+            return false;
+
+        CancelGuidanceForTeleport();
+        EnsureStarshipReentryLandingGear(vessel);
+        if (!ConfigureOrbitalReturnReserve(propellantReserveFraction))
+            return false;
+
+        LaunchSiteFrame frame = _launchSite.GetLocalFrame(earth, Universe.CurrentTime);
+        double flightPathRadians = flightPathAngleDegrees * MathUtils.DEG_TO_RAD;
+        Vector3d referencePosition = earth.GetSurfacePositionFromGeodeticUp(
+            frame.Up,
+            altitudeM);
+        const double InitialDownrangeMarginM = 80_000.0;
+        // Preview the air-relative state at the pad latitude. The declared speed is
+        // body-centred inertial; Earth rotation is already inside that vector, so the
+        // footprint must be propagated with the slower eastward airspeed.
+        EntryInterfaceState.Velocity preview = EntryInterfaceState.Compose(
+            earth,
+            referencePosition,
+            frame.East,
+            inertialSpeedMps,
+            flightPathRadians);
+        var entryDynamics = EntryCorridorPropagation.ForVessel(vessel, earth) with
+        {
+            LatitudeRad = earth.GetLatitude(referencePosition) * MathUtils.DEG_TO_RAD,
+            TrackEast = 1.0,
+            CrossEast = 0.0
+        };
+        EntryCorridorPropagation.Result propagated = EntryCorridorPropagation.Propagate(
+            altitudeM,
+            preview.AtmosphereRelativeSpeedMps,
+            preview.AtmosphereRelativeFlightPathRad,
+            entryDynamics);
+        double interfaceRadius = (referencePosition - earth.Position).Magnitude;
+        double leadAngle = propagated.CentralAngleRad
+            + InitialDownrangeMarginM / System.Math.Max(1.0, interfaceRadius);
+        double downrangeLead = leadAngle * interfaceRadius;
+        Vector3d entryUp = (
+            frame.Up * System.Math.Cos(leadAngle)
+            - frame.East * System.Math.Sin(leadAngle)).Normalized;
+        Vector3d position = earth.GetSurfacePositionFromGeodeticUp(entryUp, altitudeM);
+        Vector3d up = earth.GetGeodeticUp(position);
+        Vector3d targetPosition = _launchSite.GetPosition(earth, Universe.CurrentTime);
+        Vector3d targetTangent = targetPosition - position;
+        targetTangent -= up * targetTangent.Dot(up);
+        if (targetTangent.MagnitudeSquared < 1e-12)
+            targetTangent = earth.GetEastDirection(position);
+        EntryInterfaceState.Velocity flown = EntryInterfaceState.Compose(
+            earth,
+            position,
+            targetTangent,
+            inertialSpeedMps,
+            flightPathRadians);
+        vessel.Position = position;
+        vessel.Velocity = earth.Velocity + flown.InertialRelativeToBody;
+        vessel.PrepareForTeleport();
+        vessel.ReferenceBodyId = earth.Id;
+        Vector3d airflow = flown.AtmosphereRelative.MagnitudeSquared > 1.0
+            ? flown.AtmosphereRelative
+            : targetTangent;
+        vessel.Orientation = EntryAttitudeGuidance.ComputeTarget(
+            up,
+            airflow,
+            liftTowardBody: false);
+        vessel.SASEnabled = false;
+        vessel.Throttle = 0.0;
+
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        GD.Print($"[DEBUG] Physical entry interface seeded altitude={altitudeM:F0} m "
+            + $"inertial={flown.InertialSpeedMps:F0} m/s "
+            + $"airspeed={flown.AtmosphereRelativeSpeedMps:F0} m/s "
+            + $"flightPath={flightPathAngleDegrees:F2} deg "
+            + $"upRange={downrangeLead:F0} m horizon={propagated.DurationS:F1} s "
+            + $"energyChange={propagated.FinalSpecificEnergyJPerKg - propagated.InitialSpecificEnergyJPerKg:F0} J/kg "
+            + $"reserve={System.Math.Clamp(propellantReserveFraction, 0.0, 1.0):F3}");
+        return true;
+    }
+
+    /// <summary>
+    /// Adds the simulator's explicit Starship EDL landing kit to a reentry fixture when the
+    /// selected historical vehicle has no landing hardware. The Flight 7 source variant stays
+    /// historically faithful (its data and launch mass remain gearless); only the playable
+    /// return demonstration gets the recoverability hardware needed by the leg-landing abort.
+    /// </summary>
+    private bool EnsureStarshipReentryLandingGear(Vessel vessel)
+    {
+        if (!vessel.Parts.Parts.Any(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("ship_engines")))
+            return false;
+
+        if (vessel.Parts.Parts.Any(part => part.Definition.Category == PartCategory.Landing))
+        {
+            vessel.ConfigureLandingContactsFromParts();
+            return true;
+        }
+
+        string partsPath = System.IO.Path.Combine(
+            GameDataPath.Resolve(DataDirectory), "parts");
+        var definitions = PartCatalog.LoadFromDirectory(partsPath).Parts;
+        if (!definitions.TryGetValue("starship_landing_gear", out var gearDefinition))
+            return false;
+
+        var engines = vessel.Parts.Parts.FirstOrDefault(part =>
+            part.Definition.IsStarshipFamily
+            && part.Definition.HasVehicleRole("ship_engines"));
+        if (engines == null) return false;
+
+        var gear = new Part(gearDefinition, $"{vessel.Id}-reentry-gear");
+        vessel.Parts.AddPart(gear);
+        vessel.Parts.AddJoint(new Joint(engines, gear, "bottom", "top"));
+        vessel.ConfigureLandingContactsFromParts();
+        RebuildActiveVesselRenderer();
+        GD.Print("[EDL] provisioned explicit Starship reentry landing gear for fallback landing");
+        return true;
+    }
+
+    /// <summary>
+    /// Map-facing helper: plan a retrograde deorbit burn on the orbital-map planner that
+    /// lowers periapsis into the atmosphere (default Pe altitude 60 km). Does not execute
+    /// the burn — arm with Enter on the map. Leaves <see cref="BeginReentryDemonstration"/>
+    /// alone (that remains a teleport demo).
+    /// </summary>
+    public bool PlanDeorbitForActiveVessel(double targetPeAltitudeM =
+        ManeuverPlanner.DefaultDeorbitTargetPeAltitudeM)
+    {
+        var map = MapViewController.Instance;
+        var vessel = ActiveVessel;
+        var earth = Universe.GetBody("earth");
+        if (map == null || vessel == null || earth == null || vessel.IsDestroyed)
+            return false;
+
+        var relPos = vessel.Position - earth.Position;
+        var relVel = vessel.Velocity - earth.Velocity;
+        map.Planner.SetOrbit(relPos, relVel, earth.GM);
+        if (!map.Planner.PlanDeorbit(earth, targetPeAltitudeM))
+            return false;
+
+        GD.Print($"[Bridge] Deorbit planned: Δv={map.Planner.DeltaVMagnitude:F1} m/s " +
+                 $"(Pe target {targetPeAltitudeM / 1000.0:F0} km)");
+        return true;
+    }
+
+    /// DEBUG: jump to a ~300 km circular orbit around an arbitrary body (e.g. the transfer
+    /// target), to preview arrival/EDL without flying the whole cruise.
+    public void JumpToBody(string bodyId, double altitude = 300_000.0)
+    {
+        var body = Universe.GetBody(bodyId);
+        var v = ActiveVessel;
+        if (body == null || v == null) return;
+
+        CancelGuidanceForTeleport();
+
+        // Approach direction + distance: ringed bodies (Saturn) are viewed from OUTSIDE the
+        // ring system (rings reach ~2.3 R) at a 3/4 angle so the rings read as an open ellipse;
+        // other bodies are viewed from a sensible fraction of their radius.
+        Vector3d up;
+        double r;
+        if (bodyId == "saturn")
+        {
+            // Use a sun-facing 3/4 arrival vector. The former fixed vector could put
+            // the vessel behind Saturn relative to the Sun, making the correctly
+            // textured planet read as a black cutout while the rings stayed bright.
+            var sun = Universe.GetBody("sun");
+            var toSun = sun == null
+                ? new Vector3d(0.45, 0.65, 0.5).Normalized
+                : (sun.Position - body.Position).Normalized;
+            var axial = body.RotationAxis.Normalized;
+            up = (toSun * 0.82 + axial * 0.57).Normalized;
+            r  = body.Radius * 5.0;
+        }
+        else
+        {
+            up = new Vector3d(1, 0, 0);
+            r  = body.Radius + System.Math.Max(altitude, body.Radius * 0.6);
+        }
+        v.Position = body.Position + up * r;
+        var tangent = new Vector3d(0, 1, 0).Cross(up).Normalized;
+        if (tangent.MagnitudeSquared < 1e-9)
+            tangent = Vector3d.Right;
+        double vCirc = System.Math.Sqrt(body.GM / r);
+        v.Velocity = body.Velocity + tangent * vCirc;
+        v.PrepareForTeleport();
+        v.ReferenceBodyId = body.Id;
+        v.Orientation = Quaterniond.FromTo(Vector3d.Up, tangent);
+        v.SASEnabled = true;
+        v.Throttle = 0.0;
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        GD.Print($"[DEBUG] JumpToBody {bodyId} -> orbit {altitude / 1000:F0} km");
+    }
+
+    /// <summary>
+    /// Invalidates all game-layer flight commands before a discontinuous navigation
+    /// state change. The simulation reset clears rigid-body state; this companion reset
+    /// prevents a Godot controller from writing its old command back on the next frame.
+    /// </summary>
+    private void CancelGuidanceForTeleport()
+    {
+        // The relay is independent from map/autopilot nodes. Clear it before the
+        // vessel reset so an interplanetary command queued under the old body cannot
+        // re-apply stale attitude or throttle after JumpToBody installs the new orbit.
+        SystemsController.Instance?.ClearPendingGroundCommandsForTeleport();
+        // A map jump is a discontinuity. Cancel every guidance owner before its next
+        // post-physics pass can write commands for the old body; PrepareForTeleport below
+        // then clears the sim-side rigid-body state when the destination is installed.
+        AscentController.Instance?.CancelGuidanceForTeleport();
+        HistoricalFlightProfileController.Instance?.CancelGuidanceForTeleport();
+
+        if (MapViewController.Instance is { } map)
+        {
+            map.CancelGuidanceForTeleport();
+            return;
+        }
+
+        // Keep the bridge safe in lightweight/debug scenes that do not instantiate the
+        // map panel, while preserving the same fail-closed behavior.
+        ManeuverExecutor.Instance?.Abort();
+        if (GetTree().Root.FindChild("AutopilotController", true, false)
+            is AutopilotController autopilot)
+            autopilot.Disarm();
+    }
+}

@@ -1,0 +1,255 @@
+namespace ExosphereSimulation.Tests;
+
+using Exosphere.Simulation.Flight;
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Physics;
+using Xunit;
+
+public sealed class AttitudeGuidanceTests
+{
+    [Theory]
+    [InlineData(0.087)]
+    [InlineData(0.5)]
+    public void DampingGainGivesTheRequestedLinearDampingRatio(double authority)
+    {
+        double kp = 2.3;
+        double kd = AttitudeGuidance.DampingGainFor(kp, authority, dampingRatio: 0.8);
+        double naturalFrequency = System.Math.Sqrt(authority * kp);
+        Assert.Equal(0.8, authority * kd / (2.0 * naturalFrequency), 9);
+    }
+
+    [Fact]
+    public void QuaternionErrorMapsToSemanticYawForAYUpVehicle()
+    {
+        var desired = Quaterniond.FromAxisAngle(new Vector3d(0.0, 0.0, 1.0), 20.0 * MathUtils.DEG_TO_RAD);
+
+        var command = AttitudeGuidance.ComputeCommand(
+            Quaterniond.Identity, desired, Vector3d.Zero);
+
+        Assert.True(command.Y > 0.0, $"Expected semantic yaw command, got {command}");
+        Assert.True(System.Math.Abs(command.X) < 1e-12);
+        Assert.True(System.Math.Abs(command.Z) < 1e-12);
+    }
+
+    [Fact]
+    public void RollCanBeCommandedOrExplicitlySuppressed()
+    {
+        var desired = Quaterniond.FromAxisAngle(Vector3d.Up, 30.0 * MathUtils.DEG_TO_RAD);
+
+        var full = AttitudeGuidance.ComputeCommand(
+            Quaterniond.Identity, desired, Vector3d.Zero, allowRoll: true);
+        var noRoll = AttitudeGuidance.ComputeCommand(
+            Quaterniond.Identity, desired, Vector3d.Zero, allowRoll: false);
+
+        Assert.True(full.Z > 0.0);
+        Assert.Equal(0.0, noRoll.Z);
+    }
+
+    [Fact]
+    public void ControllerDoesNotMutateOrSnapCurrentAttitude()
+    {
+        var current = Quaterniond.FromEuler(5.0, -3.0, 2.0);
+        var before = current;
+        var desired = Quaterniond.FromAxisAngle(Vector3d.Right, System.Math.PI * 0.5);
+
+        var command = AttitudeGuidance.ComputeCommand(current, desired, Vector3d.Zero);
+
+        Assert.Equal(before, current);
+        Assert.True(command.Magnitude > 0.0);
+        Assert.True(AttitudeGuidance.ErrorAngleRadians(current, desired) > 1.0);
+    }
+
+    [Fact]
+    public void RateFeedbackOpposesExistingAngularVelocity()
+    {
+        var command = AttitudeGuidance.ComputeCommand(
+            Quaterniond.Identity,
+            Quaterniond.Identity,
+            new Vector3d(0.2, -0.1, 0.3),
+            dampingGain: 1.0,
+            allowRoll: true);
+
+        Assert.True(command.X < 0.0); // local X pitch rate
+        Assert.True(command.Y < 0.0); // local Z yaw rate
+        Assert.True(command.Z > 0.0); // local Y roll rate was negative
+    }
+
+    [Fact]
+    public void SmoothDirectionLimitsOnePhysicsSampleReferenceChange()
+    {
+        var smoothed = AttitudeGuidance.SmoothDirection(
+            Vector3d.Right, Vector3d.Up, deltaSeconds: 0.02, timeConstantSeconds: 0.35);
+
+        Assert.True(smoothed.Dot(Vector3d.Right) > 0.99,
+            $"one entry sample must not rotate the reference abruptly: {smoothed}");
+        Assert.True(smoothed.Dot(Vector3d.Up) > 0.0,
+            "the filtered reference must still move toward the new direction");
+    }
+
+    [Fact]
+    public void SmoothDirectionConvergesToAStableEntryReference()
+    {
+        var smoothed = Vector3d.Right;
+        for (int i = 0; i < 200; i++)
+            smoothed = AttitudeGuidance.SmoothDirection(
+                smoothed, Vector3d.Up, deltaSeconds: 0.02, timeConstantSeconds: 0.35);
+
+        Assert.True(smoothed.Dot(Vector3d.Up) > 0.999,
+            $"filtered entry reference failed to converge: {smoothed}");
+    }
+
+    [Fact]
+    public void PreEntryTargetPreservesNominalAlphaAndWindwardBelly()
+    {
+        var flow = (Vector3d.Forward - Vector3d.Right * 0.12).Normalized;
+        var target = EntryAttitudeGuidance.ComputeTarget(
+            Vector3d.Up, flow, liftTowardBody: true);
+        var axis = target.Rotate(Vector3d.Up).Normalized;
+        var flowLocal = target.Inverse().Rotate(flow);
+
+        Assert.Equal(
+            System.Math.Cos(AerodynamicsModel.NominalEntryAngleOfAttackDegrees
+                * MathUtils.DEG_TO_RAD),
+            axis.Dot(flow),
+            10);
+        Assert.Equal(
+            System.Math.Sin(AerodynamicsModel.NominalEntryAngleOfAttackDegrees
+                * MathUtils.DEG_TO_RAD),
+            ThermalModel.WindwardFactor(flowLocal),
+            10);
+    }
+
+    [Fact]
+    public void BellyFirstOrientationCorrectsRollWithoutChangingEntryAlpha()
+    {
+        var flow = (Vector3d.Forward - Vector3d.Right * 0.12).Normalized;
+        var axis = AerodynamicsModel.ComputeLiftDownEntryAxis(Vector3d.Up, flow);
+        var nominal = AerodynamicsModel.ComputeBellyFirstOrientation(axis, flow);
+        var rollError = Quaterniond.FromAxisAngle(axis, 90.0 * MathUtils.DEG_TO_RAD);
+        var current = (rollError * nominal).Normalize();
+        var target = AerodynamicsModel.ComputeBellyFirstOrientation(
+            current.Rotate(Vector3d.Up), flow);
+
+        Assert.Equal(
+            System.Math.Cos(AerodynamicsModel.NominalEntryAngleOfAttackDegrees
+                * MathUtils.DEG_TO_RAD),
+            target.Rotate(Vector3d.Up).Dot(flow),
+            10);
+        Assert.True(ThermalModel.WindwardFactor(
+            target.Inverse().Rotate(flow)) > 0.90);
+    }
+
+    [Fact]
+    public void SlewQuaternionLimitsReferenceRotationPerFrame()
+    {
+        var current = Quaterniond.Identity;
+        var target = Quaterniond.FromAxisAngle(
+            Vector3d.Up, 90.0 * MathUtils.DEG_TO_RAD);
+        var slewed = AttitudeGuidance.SlewQuaternion(
+            current, target, deltaSeconds: 0.02,
+            maximumRateRadPerSecond: 10.0 * MathUtils.DEG_TO_RAD);
+
+        Assert.Equal(0.02, AttitudeGuidance.ErrorAngleRadians(current, slewed)
+            / (10.0 * MathUtils.DEG_TO_RAD), 8);
+        Assert.True(AttitudeGuidance.ErrorAngleRadians(slewed, target)
+            < AttitudeGuidance.ErrorAngleRadians(current, target));
+    }
+
+    [Fact]
+    public void AxisPointingIgnoresRollAndMapsTheShortestYaw()
+    {
+        var rolled = Quaterniond.FromAxisAngle(Vector3d.Up, 75.0 * MathUtils.DEG_TO_RAD);
+        var alreadyPointed = AttitudeGuidance.ComputeAxisPointingCommand(
+            rolled, Vector3d.Up, Vector3d.Up, Vector3d.Zero);
+        var retro = AttitudeGuidance.ComputeAxisPointingCommand(
+            Quaterniond.Identity, Vector3d.Up, -Vector3d.Right, Vector3d.Zero);
+
+        Assert.True(alreadyPointed.Magnitude < 1e-12, "roll about the thrust axis is irrelevant");
+        Assert.True(retro.Y > 0.0, $"+Y to -X requires positive local-Z yaw, got {retro}");
+        Assert.Equal(0.0, retro.Z);
+    }
+
+    [Fact]
+    public void AxisPointingConvergesThroughIntegratedAngularDynamics()
+    {
+        var orientation = Quaterniond.FromAxisAngle(-Vector3d.Forward, 20.0 * MathUtils.DEG_TO_RAD);
+        var angularVelocity = Vector3d.Zero;
+        var target = -Vector3d.Right;
+        const double dt = 0.01;
+        const double authority = 0.25;
+
+        for (int i = 0; i < 2_000; i++)
+        {
+            var command = AttitudeGuidance.ComputeAxisPointingCommand(
+                orientation, Vector3d.Up, target, angularVelocity, 2.6, 1.2);
+            var localAcceleration = new Vector3d(command.X, 0.0, command.Y) * authority;
+            angularVelocity += orientation.Rotate(localAcceleration) * dt;
+            double rate = angularVelocity.Magnitude;
+            if (rate > 0.35) angularVelocity *= 0.35 / rate;
+            if (rate > 1e-12)
+            {
+                var dq = Quaterniond.FromAxisAngle(angularVelocity.Normalized, angularVelocity.Magnitude * dt);
+                orientation = (dq * orientation).Normalize();
+            }
+        }
+
+        double alignment = orientation.Rotate(Vector3d.Up).Normalized.Dot(target);
+        Assert.True(alignment > 0.999, $"axis controller failed to converge: alignment={alignment:F6}");
+        Assert.True(angularVelocity.Magnitude < 0.04,
+            $"controller must settle instead of spinning through target: rate={angularVelocity.Magnitude:F6}");
+    }
+
+    [Fact]
+    public void AxisPointingConvergesWhenTheTargetIsExactlyRetrograde()
+    {
+        var orientation = Quaterniond.FromAxisAngle(Vector3d.Right, 37.0 * MathUtils.DEG_TO_RAD);
+        var target = -orientation.Rotate(Vector3d.Up).Normalized;
+        var angularVelocity = Vector3d.Zero;
+        const double dt = 0.01;
+        const double authority = 0.01;
+
+        for (int i = 0; i < 10_000; i++)
+        {
+            var command = AttitudeGuidance.ComputeAxisPointingCommand(
+                orientation, Vector3d.Up, target, angularVelocity, 2.0, 25.0);
+            var localAcceleration = new Vector3d(command.X, 0.0, command.Y) * authority;
+            angularVelocity += orientation.Rotate(localAcceleration) * dt;
+            double rate = angularVelocity.Magnitude;
+            if (rate > 0.35) angularVelocity *= 0.35 / rate;
+            if (rate > 1e-12)
+            {
+                var dq = Quaterniond.FromAxisAngle(angularVelocity.Normalized, rate * dt);
+                orientation = (dq * orientation).Normalize();
+            }
+        }
+
+        double alignment = orientation.Rotate(Vector3d.Up).Normalized.Dot(target);
+        Assert.True(alignment > 0.999,
+            $"exact retrograde axis failed to converge: alignment={alignment:F6}");
+        Assert.True(angularVelocity.Magnitude < 0.04,
+            $"exact retrograde axis must settle: rate={angularVelocity.Magnitude:F6}");
+    }
+
+    [Fact]
+    public void AimFromElevationMatchesTheGeodeticHorizonEvenIfDownrangeLeansRadial()
+    {
+        var up = new Vector3d(0.12, 0.99, 0.02).Normalized;
+        var downrange = (Vector3d.Right + up * 0.4).Normalized;
+        var aim = AttitudeGuidance.AimFromElevation(up, downrange, 0.0);
+        Assert.InRange(aim.Dot(up), -1e-12, 1e-12);
+        var horizon = (downrange - up * downrange.Dot(up)).Normalized;
+        Assert.True(aim.Dot(horizon) > 0.999);
+    }
+
+    [Fact]
+    public void AimFromElevationStaysInTheUpDownrangePlane()
+    {
+        var up = new Vector3d(0.08, 0.995, 0.04).Normalized;
+        var downrange = new Vector3d(0.9, 0.1, 0.3);
+        double elevation = 35.0 * MathUtils.DEG_TO_RAD;
+        var aim = AttitudeGuidance.AimFromElevation(up, downrange, elevation);
+        Assert.Equal(System.Math.Sin(elevation), aim.Dot(up), 8);
+        var horizon = (downrange - up * downrange.Dot(up)).Normalized;
+        Assert.InRange(aim.Dot(up.Cross(horizon)), -1e-12, 1e-12);
+    }
+}

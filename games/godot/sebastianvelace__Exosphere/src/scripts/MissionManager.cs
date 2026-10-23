@@ -1,0 +1,530 @@
+namespace Exosphere.Game;
+
+using Godot;
+using System.Linq;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Campaign;
+using Exosphere.Simulation.Flight;
+
+public enum MissionPhase
+{
+    PRE_LAUNCH,
+    COUNTDOWN,
+    IGNITION,
+    LIFTOFF,
+    ASCENT_SH,
+    MAX_Q,
+    MECO,
+    SEPARATION,
+    ASCENT_SHIP,
+    ORBIT,
+    COAST,
+    TLI,
+    LUNAR_APPROACH,
+    LOI,
+    LUNAR_ORBIT,
+    TEI,
+    // ── Entry, Descent & Landing (driven by EDLController) ──
+    ENTRY,
+    PEAK_HEATING,
+    AERO_DESCENT,
+    RETRO_BURN,
+    FINAL_DESCENT,
+    LANDED,
+    CAUGHT,   // tower catch — distinct terminal state from a leg touchdown
+    CRASHED,  // hard impact — vehicle lost
+}
+
+[GlobalClass]
+public partial class MissionManager : Node
+{
+    public static MissionManager? Instance { get; private set; }
+
+    public MissionPhase Phase        { get; private set; } = MissionPhase.PRE_LAUNCH;
+    public double       CountdownTimer { get; private set; } = 10.0;
+    public bool         IsCountingDown { get; private set; }
+
+    /// <summary>
+    /// Simulation time at which a held launch-window countdown resumes, or NaN when no hold
+    /// is active. Lunar profiles hold on the pad (at warp) until their window opens.
+    /// </summary>
+    public double LaunchWindowCountdownStart { get; private set; } = double.NaN;
+    public bool IsHoldingForLaunchWindow => double.IsFinite(LaunchWindowCountdownStart);
+    public bool         IsCrashed => Phase == MissionPhase.CRASHED;
+
+    [Signal] public delegate void PhaseChangedEventHandler(string phaseName);
+    [Signal] public delegate void LaunchCommittedEventHandler();
+
+    private bool _maxQTriggered;
+    private readonly FlightPhaseObserver _flightPhaseObserver = new();
+    private readonly System.Collections.Generic.Queue<MissionPhase> _observedPhaseQueue = new();
+    private int  _lastTickSecond = -1;   // last whole-second countdown beep emitted
+    private readonly MissionCallbackQueue _callbackQueue = new();
+
+    /// <summary>True only when an event has been recorded but not delivered.</summary>
+    public bool HasPendingMissionCallbacks => _callbackQueue.HasPending;
+
+    /// <summary>
+    /// Returns whether a pending callback can affect the specified vessel. Global mission
+    /// callbacks are conservatively visible to every vessel; owned callbacks are scoped by
+    /// stable identity so a future scheduler can wake only the correct runtime.
+    /// </summary>
+    public bool HasPendingMissionCallbackFor(string vesselId) =>
+        _callbackQueue.HasPendingFor(vesselId);
+
+    public MissionCallbackQueueState CaptureCallbackState() => _callbackQueue.CaptureState();
+
+    public void RestoreCallbackState(MissionCallbackQueueState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        _callbackQueue.RestoreState(state);
+    }
+
+    /// <summary>
+    /// Delivers restored/pending callbacks in sequence order. Unknown event types remain
+    /// pending and fail closed so a future producer cannot be silently discarded.
+    /// </summary>
+    public bool DispatchPendingMissionCallbacks()
+    {
+        if (!HasPendingMissionCallbacks) return true;
+        try
+        {
+            _callbackQueue.DispatchPending(callback =>
+            {
+                if (callback.OwnerVesselId is { } owner
+                    && SimulationBridge.Instance?.EnsureSystemsRuntimeMaterialized(
+                        owner, SimulationBridge.Instance.Universe.CurrentTime) != true)
+                {
+                    throw new InvalidOperationException(
+                        $"Callback owner vessel '{owner}' is not materialized.");
+                }
+
+                switch (callback.EventType)
+                {
+                    case "PhaseChanged":
+                        EmitSignal(SignalName.PhaseChanged, callback.Payload);
+                        break;
+                    case "LaunchCommitted":
+                        EmitSignal(SignalName.LaunchCommitted);
+                        break;
+                    case "VesselStaged":
+                        SimulationBridge.Instance?.EmitSignal(
+                            SimulationBridge.SignalName.VesselStaged, callback.Payload);
+                        break;
+                    case "VesselDestroyed":
+                        SimulationBridge.Instance?.EmitSignal(
+                            SimulationBridge.SignalName.VesselDestroyed, callback.Payload);
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            $"Unknown mission callback '{callback.EventType}'.");
+                }
+            });
+            return !HasPendingMissionCallbacks;
+        }
+        catch (InvalidOperationException ex)
+        {
+            GD.PushWarning($"[Mission] Pending callback retained: {ex.Message}");
+            return false;
+        }
+    }
+
+    public override void _Ready()
+    {
+        Instance = this;
+
+        // Spawn ExplosionController into the World node so it lives in 3D space.
+        var worldNode = GetTree()?.Root.FindChild("World", true, false) as Node3D;
+        if (worldNode != null)
+        {
+            var explosion = new ExplosionController { Name = "ExplosionController" };
+            worldNode.CallDeferred("add_child", explosion);
+        }
+
+        if (SaveSystem.PendingMissionPhase is MissionPhase pending)
+        {
+            SaveSystem.PendingMissionPhase = null;
+            EnterPhase(pending);
+        }
+
+        if (SaveSystem.PendingCallbackState is { } callbackState)
+        {
+            SaveSystem.PendingCallbackState = null;
+            RestoreCallbackState(callbackState);
+        }
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────
+
+    public void StartCountdown()
+    {
+        if (Phase != MissionPhase.PRE_LAUNCH || IsHoldingForLaunchWindow) return;
+        var universe = SimulationBridge.Instance?.Universe;
+        if (universe != null
+            && HistoricalFlightProfileController.Instance?.PlanLaunchWindow(
+                universe.CurrentTime + CountdownSeconds) is double liftoff
+            && liftoff - CountdownSeconds > universe.CurrentTime + 1.0)
+        {
+            LaunchWindowCountdownStart = liftoff - CountdownSeconds;
+            GD.Print($"[Mission] Launch-window hold: countdown resumes in "
+                + $"{(LaunchWindowCountdownStart - universe.CurrentTime) / 3600.0:F2} h.");
+            return;
+        }
+        BeginCountdown();
+    }
+
+    private const double CountdownSeconds = 10.0;
+
+    private void BeginCountdown()
+    {
+        LaunchWindowCountdownStart = double.NaN;
+        CountdownTimer  = CountdownSeconds;
+        IsCountingDown  = true;
+        _maxQTriggered  = false;
+        _lastTickSecond = -1;
+        SetPhase(MissionPhase.COUNTDOWN);
+    }
+
+    /// <summary>
+    /// Lanzamiento manual (hold-[Z]): salta el countdown y arranca la FSM en LIFTOFF.
+    /// La llama SimulationBridge cuando suelta los hold-downs por primera vez (TWR &gt; 1.02).
+    /// Idempotente: si ya salió de PRE_LAUNCH (countdown en curso o ya en vuelo) no hace nada,
+    /// para no pisar [L] (StartCountdown) ni reiniciar una misión en progreso.
+    ///
+    /// Manual launch (hold-[Z]): skips the countdown and starts the FSM at LIFTOFF.
+    /// Called by SimulationBridge once it releases the hold-downs at commit-to-launch.
+    /// Idempotent: does nothing unless we are still in PRE_LAUNCH.
+    /// </summary>
+    public void BeginFlight()
+    {
+        if (Phase != MissionPhase.PRE_LAUNCH) return;
+        // No estábamos en countdown, pero reseteamos los gatillos de fase por si acaso.
+        IsCountingDown  = false;
+        _maxQTriggered  = false;
+        SetPhase(MissionPhase.LIFTOFF);
+        PublishMissionCallback(
+            "LaunchCommitted", "", () => EmitSignal(SignalName.LaunchCommitted),
+            SimulationBridge.Instance?.ActiveVessel?.Id);
+    }
+
+    /// <summary>
+    /// Hold-downs just released during countdown/ignition — enter LIFTOFF and fire
+    /// <see cref="LaunchCommitted"/> once. No-op if already past ignition.
+    /// </summary>
+    public void NotifyHoldDownReleased()
+    {
+        IsCountingDown = false;
+        if (Phase is not (MissionPhase.PRE_LAUNCH or MissionPhase.COUNTDOWN
+            or MissionPhase.IGNITION))
+            return;
+        SetPhase(MissionPhase.LIFTOFF);
+        PublishMissionCallback(
+            "LaunchCommitted", "", () => EmitSignal(SignalName.LaunchCommitted),
+            SimulationBridge.Instance?.ActiveVessel?.Id);
+    }
+
+    /// Call from SimulationBridge.TriggerStaging when a stage fires.
+    /// MECO/separation timing for [G] is owned by AscentController; manual staging skips MECO.
+    public void NotifyStaged()
+    {
+        if (Phase is MissionPhase.MECO or MissionPhase.ASCENT_SH or MissionPhase.MAX_Q)
+            SetPhase(MissionPhase.SEPARATION);
+    }
+
+    /// Allows the EDLController to drive entry/descent/landing phases.
+    public void EnterPhase(MissionPhase p) => SetPhase(p);
+
+    /// True once an interplanetary/descent profile has begun — pauses ascent logic.
+    public bool InDescent => Phase is MissionPhase.ENTRY or MissionPhase.PEAK_HEATING
+        or MissionPhase.AERO_DESCENT or MissionPhase.RETRO_BURN
+        or MissionPhase.FINAL_DESCENT or MissionPhase.LANDED or MissionPhase.CAUGHT
+        or MissionPhase.CRASHED;
+
+    // ── Process ───────────────────────────────────────────────────────────
+
+    public override void _Process(double delta)
+    {
+        var bridge   = SimulationBridge.Instance;
+        var vessel   = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (bridge == null || universe == null) return;
+
+        DispatchPendingMissionCallbacks();
+
+        if (IsHoldingForLaunchWindow)
+        {
+            // Pad hold at warp: step down as the window approaches so a long frame cannot
+            // overshoot the countdown start (pad holds already allow high warp).
+            double remaining = LaunchWindowCountdownStart - universe.CurrentTime;
+            if (remaining <= 0.0 || Phase != MissionPhase.PRE_LAUNCH)
+            {
+                bridge.SetWarpIndex(0);
+                if (Phase == MissionPhase.PRE_LAUNCH) BeginCountdown();
+                else LaunchWindowCountdownStart = double.NaN;
+            }
+            else
+            {
+                int warp = 0;
+                while (warp + 1 < SimulationBridge.WarpLevels.Length
+                    && SimulationBridge.WarpLevels[warp + 1] * 0.5 < 0.25 * remaining)
+                    warp++;
+                bridge.SetWarpIndex(warp);
+            }
+        }
+
+        if (bridge.Flight14Preview is { } preview)
+        {
+            IsCountingDown = false;
+            if (double.IsFinite(preview.Run.Controller.LiftoffEpoch)
+                && Phase is MissionPhase.PRE_LAUNCH or MissionPhase.IGNITION)
+                NotifyHoldDownReleased();
+            MissionPhase phase = preview.Run.Ship.IsDestroyed ? MissionPhase.CRASHED
+                : preview.Run.PoweredReturnController?.Landing != null
+                ? MissionPhase.RETRO_BURN
+                : preview.Run.DescentController?.Phase is Flight14DescentPhase.AerodynamicDescent or Flight14DescentPhase.DescentReached
+                    ? MissionPhase.AERO_DESCENT
+                : preview.Run.ReturnController?.Phase is Flight14ReturnPhase.AtmosphericEntry or Flight14ReturnPhase.EntryReached
+                    ? MissionPhase.ENTRY
+                : preview.Run.ReturnController?.Phase is not (null or Flight14ReturnPhase.WaitingForPayload)
+                    ? MissionPhase.COAST
+                : preview.Run.Controller.Phase switch
+                {
+                    Flight14LaunchPhase.Ignition => MissionPhase.IGNITION,
+                    Flight14LaunchPhase.BoosterAscent => MissionPhase.ASCENT_SH,
+                    Flight14LaunchPhase.HotStage => MissionPhase.MECO,
+                    Flight14LaunchPhase.ShipAscent => MissionPhase.ASCENT_SHIP,
+                    Flight14LaunchPhase.SuborbitalCoast => MissionPhase.COAST,
+                    Flight14LaunchPhase.Insertion => MissionPhase.ASCENT_SHIP,
+                    Flight14LaunchPhase.OrbitReady => MissionPhase.ORBIT,
+                    _ => Phase,
+                };
+            if (Phase != phase) SetPhase(phase);
+            return; // This preview's pure controller exclusively owns ignition and guidance.
+        }
+
+        // ── Crash detection (highest priority) ────────────────────────────────
+        if (vessel != null && vessel.IsDestroyed && Phase != MissionPhase.CRASHED)
+        {
+            SetPhase(MissionPhase.CRASHED);
+            return; // stop all ascent/descent logic
+        }
+        // CRASHED es terminal solo mientras el vessel siga destruido.
+        // Si el vessel fue recreado/no-está-destruido (e.g. un descenso fue abortado y el
+        // vessel rebotó de vuelta a órbita), limpiamos la fase para que el juego continúe.
+        // CRASHED is terminal only while the vessel is actually destroyed; if the vessel
+        // is not destroyed we fall through so normal ascent/descent logic can resume.
+        if (Phase == MissionPhase.CRASHED)
+        {
+            if (vessel == null || vessel.IsDestroyed) return;
+            // Vessel alive — clear the stuck CRASHED state so the player can fly again.
+            SetPhase(MissionPhase.ORBIT);
+        }
+
+        // ── Countdown ──────────────────────────────────────────────────────
+        if (IsCountingDown)
+        {
+            CountdownTimer -= delta;
+
+            // Audio: beep once per whole second as the countdown crosses each integer.
+            int sec = (int)System.Math.Ceiling(System.Math.Max(CountdownTimer, 0.0));
+            if (sec != _lastTickSecond)
+            {
+                _lastTickSecond = sec;
+                AudioManager.Instance?.PlayCountdownTick(sec);
+            }
+
+            if (CountdownTimer <= 3.0 && Phase == MissionPhase.COUNTDOWN)
+                SetPhase(MissionPhase.IGNITION);
+
+            // Engine spool-up: ramp thrust over the final 3 s instead of snapping to full.
+            if (Phase == MissionPhase.IGNITION)
+                bridge.SetThrottle(System.Math.Clamp((3.0 - CountdownTimer) / 3.0, 0.0, 1.0));
+
+            if (CountdownTimer <= 0.0)
+            {
+                CountdownTimer = 0.0;
+                bridge.SetThrottle(1.0);
+                IsCountingDown = false;
+                // Do NOT ReleaseGroundHold here — that used to skip Ascent Ignition and
+                // make [L] feel like an instant tower snap. Engage() owns the release
+                // gate (TWR + near-full throttle) and emits LaunchCommitted on liftoff.
+                if (HistoricalFlightProfileController.Instance?
+                        .EngageIfSupported() != true)
+                    AscentController.Instance?.Engage();
+            }
+        }
+
+        if (vessel == null) return;
+
+        var refBody   = universe.GetDominantBody(vessel.Position);
+        double alt    = vessel.GetAltitude(refBody);
+
+        // ── Phase auto-transitions ─────────────────────────────────────────
+        switch (Phase)
+        {
+            case MissionPhase.LIFTOFF when alt > 150:
+                SetPhase(MissionPhase.ASCENT_SH);
+                break;
+
+            case MissionPhase.ASCENT_SH:
+                // Max-Q detection
+                if (!_maxQTriggered && alt is > 8_000 and < 30_000 && refBody.Atmosphere != null)
+                {
+                    double density = refBody.Atmosphere.GetDensity(alt);
+                    var    surfVel = vessel.GetSurfaceVelocity(refBody);
+                    double dynQ   = 0.5 * density * surfVel.Magnitude * surfVel.Magnitude;
+                    if (dynQ > 30_000)
+                    {
+                        _maxQTriggered = true;
+                        SetPhase(MissionPhase.MAX_Q);
+                    }
+                }
+                break;
+
+            case MissionPhase.MAX_Q when alt > 25_000:
+                SetPhase(MissionPhase.ASCENT_SH);
+                break;
+
+            case MissionPhase.SEPARATION:
+                // Auto-relight Starship engines after staging
+                if (vessel.HasActiveEngineParts)
+                {
+                    bridge.SetThrottle(1.0);
+                    SetPhase(MissionPhase.ASCENT_SHIP);
+                }
+                break;
+
+            case MissionPhase.ASCENT_SHIP:
+                // Altitude + speed is not an orbit test: a vehicle near apoapsis can meet
+                // both while its periapsis still intersects Earth.  Require a bound conic
+                // whose complete path clears the modeled atmosphere.
+                var trajectory = OrbitalElements.FromStateVector(
+                    vessel.Position - refBody.Position,
+                    vessel.Velocity - refBody.Velocity,
+                    refBody.GM,
+                    refBody.Id,
+                    universe.CurrentTime);
+                double atmosphereTop = refBody.Atmosphere?.MaxAltitude ?? 0.0;
+                if (OrbitQualificationPolicy.HasSafePeriapsis(
+                        trajectory,
+                        refBody.Radius,
+                        atmosphereTop))
+                    SetPhase(MissionPhase.ORBIT);
+                break;
+        }
+
+        ObserveHandFlownPhases(universe, vessel);
+        SupportHandFlownProximityOperations(bridge, universe, vessel);
+    }
+
+    /// <summary>
+    /// Proximity operations without the historical director: Gemini 8's Agena exists from
+    /// liftoff whoever flies, and a pilot who flies the ports into their capture envelope
+    /// docks for real.
+    /// </summary>
+    private void SupportHandFlownProximityOperations(SimulationBridge bridge, Universe universe, Vessel vessel)
+    {
+        if (HistoricalFlightProfileController.Instance?.IsEngaged == true
+            || Phase is MissionPhase.PRE_LAUNCH or MissionPhase.COUNTDOWN or MissionPhase.IGNITION)
+            return;
+        if (bridge.ActiveFlightProfileId == Gemini8FlightProfile.Id) bridge.EnsureGemini8AgenaTarget();
+        if (DockingTargeting.TryCapture(universe, vessel) is { Succeeded: true })
+        {
+            vessel.TranslationCommand = Exosphere.Simulation.Math.Vector3d.Zero;
+            GD.Print("[MissionManager] Hand-flown docking captured.");
+        }
+    }
+
+    /// <summary>
+    /// Campaign missions flown by hand reach their milestones through physics, not through
+    /// the historical director: <see cref="FlightPhaseObserver"/> recognises them and the
+    /// mission phase follows, one phase per frame so the campaign samples each of them
+    /// (entering lunar orbit records LOI, then LUNAR_ORBIT). Phases only ever move forward.
+    /// </summary>
+    private void ObserveHandFlownPhases(Universe universe, Vessel vessel)
+    {
+        if (CampaignRuntime.Instance?.Director == null
+            || HistoricalFlightProfileController.Instance?.IsEngaged == true
+            || Phase is MissionPhase.PRE_LAUNCH or MissionPhase.COUNTDOWN or MissionPhase.IGNITION
+                or MissionPhase.LANDED or MissionPhase.CAUGHT or MissionPhase.CRASHED)
+            return;
+
+        switch (_flightPhaseObserver.Observe(vessel, universe))
+        {
+            case ObservedFlightPhase.Orbit: _observedPhaseQueue.Enqueue(MissionPhase.ORBIT); break;
+            case ObservedFlightPhase.TranslunarInjection: _observedPhaseQueue.Enqueue(MissionPhase.TLI); break;
+            case ObservedFlightPhase.LunarApproach: _observedPhaseQueue.Enqueue(MissionPhase.LUNAR_APPROACH); break;
+            case ObservedFlightPhase.LunarOrbit:
+                _observedPhaseQueue.Enqueue(MissionPhase.LOI);
+                _observedPhaseQueue.Enqueue(MissionPhase.LUNAR_ORBIT);
+                break;
+            case ObservedFlightPhase.TransearthInjection: _observedPhaseQueue.Enqueue(MissionPhase.TEI); break;
+            case ObservedFlightPhase.Entry: _observedPhaseQueue.Enqueue(MissionPhase.ENTRY); break;
+            case ObservedFlightPhase.Landed: _observedPhaseQueue.Enqueue(MissionPhase.LANDED); break;
+        }
+        while (_observedPhaseQueue.Count > 0)
+        {
+            var next = _observedPhaseQueue.Dequeue();
+            if (next <= Phase) continue;
+            SetPhase(next);
+            break;
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private void SetPhase(MissionPhase newPhase)
+    {
+        Phase = newPhase;
+
+        // Audio cues on phase entry (null-safe; AudioManager may not exist yet).
+        // COAST is set by AutopilotController on deorbit arm / post-burn — do not override here.
+        switch (newPhase)
+        {
+            case MissionPhase.LIFTOFF:     AudioManager.Instance?.PlayLiftoff(); break;
+            case MissionPhase.SEPARATION:  AudioManager.Instance?.PlayStaging(); break;
+            case MissionPhase.RETRO_BURN:  AudioManager.Instance?.PlayRetroBurn(); break;
+            case MissionPhase.ENTRY:       AudioManager.Instance?.PlayEntryInterface(); break;
+            case MissionPhase.LANDED:      AudioManager.Instance?.PlayTouchdown(); break;
+            case MissionPhase.CAUGHT:      AudioManager.Instance?.PlayTouchdown(); break;
+        }
+
+        PublishMissionCallback(
+            "PhaseChanged", newPhase.ToString(),
+            () => EmitSignal(SignalName.PhaseChanged, newPhase.ToString()));
+
+        if (newPhase == MissionPhase.CRASHED)
+        {
+            var activeVessel = SimulationBridge.Instance?.ActiveVessel;
+            GD.Print($"[Mission] → CRASHED (VEHICLE LOST / CRASHED) (impact {activeVessel?.CrashImpactSpeed:F0} m/s)");
+        }
+        else
+        {
+            GD.Print($"[Mission] → {newPhase}");
+        }
+    }
+
+    /// <summary>
+    /// Records and immediately delivers a callback owned by another game controller. This
+    /// keeps external mission events in the same ordered log without changing signal timing.
+    /// </summary>
+    public MissionCallbackState PublishMissionCallback(
+        string eventType,
+        string payload,
+        Action emit,
+        string? ownerVesselId = null)
+    {
+        double simulationTime = SimulationBridge.Instance?.Universe?.CurrentTime ?? 0.0;
+        if (ownerVesselId is { } owner
+            && SimulationBridge.Instance?.EnsureSystemsRuntimeMaterialized(
+                owner, simulationTime) != true)
+        {
+            // Keep the event ordered but pending. DispatchPending will retry the owner
+            // boundary after the Universe/controller has finished materializing vessels.
+            return _callbackQueue.Enqueue(
+                eventType, payload, simulationTime, owner);
+        }
+        return _callbackQueue.Publish(
+            eventType, payload, simulationTime, emit, ownerVesselId);
+    }
+}

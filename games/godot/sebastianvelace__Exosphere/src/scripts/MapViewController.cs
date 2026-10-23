@@ -1,0 +1,910 @@
+namespace Exosphere.Game;
+
+using Godot;
+using System.Collections.Generic;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Math;
+
+/// <summary>
+/// Bottom-right orbital map panel (toggle with M). Draws the active vessel's orbit
+/// around its dominant body as a perifocal ellipse/conic, a draggable maneuver node,
+/// and the projected post-burn orbit (dashed). Mouse wheel adjusts prograde ΔV;
+/// Enter arms the autopilot to execute the planned burn.
+/// </summary>
+public partial class MapViewController : Control
+{
+    public static MapViewController? Instance { get; private set; }
+
+    public ManeuverPlanner Planner { get; } = new();
+    public bool HasNavigationTarget =>
+        _selectedTarget != null || Planner.HasNode || TransferPlanner.Instance?.CurrentNode != null;
+    private AutopilotController _autopilot = null!;
+
+    // ── Transfer planner state ────────────────────────────────────────────────
+    private string? _selectedTarget;   // body ID selected for the appropriate transfer model
+    private bool    _solarView;        // top-down whole-solar-system overview (toggle [Tab])
+
+    // Planets available for transfer, in keyboard order (keys 1–6)
+    private static readonly (string id, string label, Key key)[] TransferTargets =
+    {
+        ("mars",    "Mars",    Key.Key1),
+        ("moon",    "Moon",    Key.Key2),
+        ("venus",   "Venus",   Key.Key3),
+        ("jupiter", "Jupiter", Key.Key4),
+        ("mercury", "Mercury", Key.Key5),
+        ("saturn",  "Saturn",  Key.Key6),
+    };
+
+    // ── Layout ────────────────────────────────────────────────────────────────
+    private const float PanelSize = 460f;
+    private const float Margin    = 34f;     // px padding inside panel for the orbit
+    private Vector2 _center;                  // panel-local centre of the plot
+    private double  _metersPerPixel = 1.0;    // current draw scale
+    private Vector2 _plotOrigin;              // panel-local px of refBody centre
+
+    // ── Palette ───────────────────────────────────────────────────────────────
+    private static readonly Color BgCol      = new(0.02f, 0.03f, 0.06f, 0.82f);
+    private static readonly Color BorderCol  = new(0.35f, 0.65f, 0.95f, 0.65f);
+    private static readonly Color OrbitCol   = new(0.40f, 0.85f, 1.00f, 0.95f);
+    private static readonly Color ProjCol    = new(1.00f, 0.65f, 0.20f, 0.95f);
+    private static readonly Color BodyCol    = new(0.30f, 0.55f, 0.95f, 1.00f);
+    private static readonly Color VesselCol  = new(0.95f, 0.98f, 1.00f, 1.00f);
+    private static readonly Color NodeCol    = new(1.00f, 0.80f, 0.25f, 1.00f);
+    private static readonly Color ApCol      = new(0.55f, 0.95f, 1.00f, 1.00f);
+    private static readonly Color PeCol      = new(1.00f, 0.55f, 0.45f, 1.00f);
+    private static readonly Color TextDim    = new(0.62f, 0.72f, 0.84f, 1.00f);
+    private static readonly Color TextBright = new(0.92f, 0.97f, 1.00f, 1.00f);
+
+    private Font _font = null!;
+    private bool _dragging;
+
+    public override void _Ready()
+    {
+        Instance = this;
+        Visible  = false;
+
+        _font = ThemeDB.GetFallbackFont();
+        CustomMinimumSize = new Vector2(PanelSize, PanelSize);
+        Size = new Vector2(PanelSize, PanelSize);
+        SetAnchorsPreset(LayoutPreset.BottomRight);
+        GrowHorizontal = GrowDirection.Begin;
+        GrowVertical   = GrowDirection.Begin;
+        OffsetLeft = -PanelSize - 18; OffsetTop = -PanelSize - 18;
+        OffsetRight = -18; OffsetBottom = -18;
+        MouseFilter = MouseFilterEnum.Stop;
+
+        _center = new Vector2(PanelSize * 0.5f, PanelSize * 0.5f - 14f);
+
+        _autopilot = new AutopilotController { Name = "AutopilotController" };
+        _autopilot.Bind(Planner);
+        AddChild(_autopilot);
+
+        // Instanciar el planificador de transferencias y el ejecutor de maniobras
+        var planner  = new TransferPlanner  { Name = "TransferPlanner" };
+        var executor = new ManeuverExecutor { Name = "ManeuverExecutor" };
+        AddChild(planner);
+        AddChild(executor);
+    }
+
+    public void ToggleVisible() => Visible = !Visible;
+
+    /// <summary>
+    /// Clears every map-owned command before a debug/navigation teleport. A transfer
+    /// executor or the local deorbit autopilot writes attitude/throttle every frame;
+    /// leaving either armed would overwrite the freshly reset vessel state on the
+    /// first frame at the destination and present as an unexplained tumble.
+    /// </summary>
+    public void CancelGuidanceForTeleport()
+    {
+        Planner.ClearNode();
+        _autopilot?.Disarm();
+        TransferPlanner.Instance?.ClearNode();
+        ManeuverExecutor.Instance?.Abort();
+    }
+
+    /// <summary>
+    /// Selects and plans a supported transfer target through the same path used by
+    /// keyboard input. Exposed for controller UI and deterministic visual acceptance.
+    /// </summary>
+    public ManeuverNode? SelectTransferTarget(string bodyId)
+    {
+        bool supported = false;
+        foreach (var (id, _, _) in TransferTargets)
+        {
+            if (id != bodyId) continue;
+            supported = true;
+            break;
+        }
+        if (!supported) return null;
+
+        _selectedTarget = bodyId;
+        ManeuverNode? node = TransferPlanner.Instance?.PlanTransfer(bodyId);
+        if (node != null)
+        {
+            GD.Print($"[Map] Transfer to {bodyId}: " +
+                     $"Δv={node.DvMagnitude:F0} m/s, " +
+                     $"ToF={node.TimeOfFlight / 86400.0:F1} days");
+        }
+        QueueRedraw();
+        return node;
+    }
+
+    // ── Input ─────────────────────────────────────────────────────────────────
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (SimulationBridge.Instance?.IsFlight14Exploration == true
+            && @event is InputEventKey previewKey
+            && previewKey.Keycode is Key.Enter or Key.KpEnter or Key.J or Key.B)
+            return;
+        if (@event is InputEventKey key && key.Pressed && !key.Echo)
+        {
+            switch (key.Keycode)
+            {
+                case Key.M:
+                    ToggleVisible();
+                    QueueRedraw();
+                    break;
+
+                case Key.Enter or Key.KpEnter when Visible:
+                    // Enter with a transfer node selected: arm the ManeuverExecutor
+                    if (TransferPlanner.Instance?.CurrentNode is { } tNode)
+                    {
+                        ManeuverExecutor.Instance?.ExecuteNode(tNode);
+                        QueueRedraw();
+                        break;
+                    }
+                    // Fallback: arm the local autopilot for a manual node
+                    if (Planner.HasNode)
+                        _autopilot.Arm();
+                    break;
+
+                case Key.J when Visible && _selectedTarget != null:
+                    SimulationBridge.Instance?.JumpToBody(_selectedTarget);
+                    Visible = false;
+                    break;
+
+                case Key.Tab when Visible:
+                    _solarView = !_solarView;
+                    QueueRedraw();
+                    break;
+
+                case Key.B when Visible:
+                {
+                    // Deorbit preset: retrograde burn that drops Pe into the atmosphere.
+                    var bridge = SimulationBridge.Instance;
+                    var vessel = bridge?.ActiveVessel;
+                    var universe = bridge?.Universe;
+                    if (vessel != null && universe != null)
+                    {
+                        var earth = universe.GetBody("earth")
+                            ?? universe.GetDominantBody(vessel.Position);
+                        var relPos = vessel.Position - earth.Position;
+                        var relVel = vessel.Velocity - earth.Velocity;
+                        Planner.SetOrbit(relPos, relVel, earth.GM);
+                        if (Planner.PlanDeorbit(earth))
+                        {
+                            _autopilot.Disarm();
+                            GD.Print($"[Map] Deorbit planned: Δv={Planner.DeltaVMagnitude:F1} m/s " +
+                                     $"(pro {Planner.DvPrograde:+0.0;-0.0})");
+                        }
+                        else
+                        {
+                            GD.Print("[Map] Deorbit: no closed orbit to plan from.");
+                        }
+                        QueueRedraw();
+                    }
+                    break;
+                }
+
+                case Key.Delete or Key.Backspace when Visible:
+                    Planner.ClearNode();
+                    _autopilot.Disarm();
+                    TransferPlanner.Instance?.ClearNode();
+                    ManeuverExecutor.Instance?.Abort();
+                    _selectedTarget = null;
+                    QueueRedraw();
+                    break;
+
+                // Transfer Δv factor adjustment: [ decreases, ] increases (5% steps)
+                case Key.Bracketleft when Visible:
+                {
+                    var tn = TransferPlanner.Instance?.CurrentNode;
+                    if (tn != null)
+                    {
+                        tn.DvAdjustFactor = System.Math.Max(0.50, tn.DvAdjustFactor - 0.05);
+                        TransferPlanner.Instance?.PredictEncounter();   // refresh encounter readout
+                        QueueRedraw();
+                    }
+                    break;
+                }
+                case Key.Bracketright when Visible:
+                {
+                    var tn = TransferPlanner.Instance?.CurrentNode;
+                    if (tn != null)
+                    {
+                        tn.DvAdjustFactor = System.Math.Min(1.50, tn.DvAdjustFactor + 0.05);
+                        TransferPlanner.Instance?.PredictEncounter();   // refresh encounter readout
+                        QueueRedraw();
+                    }
+                    break;
+                }
+
+                default:
+                    // Transfer target selection (1–5) when map is open
+                    if (Visible)
+                    {
+                        foreach (var (id, _, tKey) in TransferTargets)
+                        {
+                            if (key.Keycode == tKey)
+                            {
+                                SelectTransferTarget(id);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    public override void _GuiInput(InputEvent @event)
+    {
+        if (!Visible || !Planner.HasOrbit) return;
+
+        if (@event is InputEventMouseButton mb)
+        {
+            if (mb.ButtonIndex == MouseButton.Left)
+            {
+                _dragging = mb.Pressed;
+                if (mb.Pressed) PlaceNodeFromMouse(mb.Position);
+                AcceptEvent();
+            }
+            else if (mb.Pressed && Planner.HasNode &&
+                     (mb.ButtonIndex == MouseButton.WheelUp || mb.ButtonIndex == MouseButton.WheelDown))
+            {
+                double dir  = mb.ButtonIndex == MouseButton.WheelUp ? 1.0 : -1.0;
+                double step = Input.IsKeyPressed(Key.Shift) ? 100.0 : 10.0;
+                if (Input.IsKeyPressed(Key.Alt)) Planner.DvRadial   += dir * step;
+                else                             Planner.DvPrograde += dir * step;
+                _autopilot.Disarm();   // editing invalidates a previously-armed burn
+                QueueRedraw();
+                AcceptEvent();
+            }
+        }
+        else if (@event is InputEventMouseMotion motion && _dragging)
+        {
+            PlaceNodeFromMouse(motion.Position);
+            AcceptEvent();
+        }
+    }
+
+    private void PlaceNodeFromMouse(Vector2 panelPos)
+    {
+        // Invert the draw transform: panel px → map metres → true anomaly.
+        double xm = (panelPos.X - _plotOrigin.X) * _metersPerPixel;
+        double ym = -(panelPos.Y - _plotOrigin.Y) * _metersPerPixel;   // screen Y is down
+        double nu = System.Math.Atan2(ym, xm);
+        Planner.CreateNodeAt(nu);
+        _autopilot.Disarm();
+        QueueRedraw();
+    }
+
+    // ── Per-frame ─────────────────────────────────────────────────────────────
+
+    public override void _Process(double delta)
+    {
+        if (!Visible) return;
+        QueueRedraw();   // orbit evolves with the vessel; redraw live
+    }
+
+    // ── Draw ──────────────────────────────────────────────────────────────────
+
+    public override void _Draw()
+    {
+        DrawRect(new Rect2(Vector2.Zero, Size), BgCol);
+        DrawRect(new Rect2(Vector2.Zero, Size), BorderCol, false, 1.5f);
+
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (vessel == null || universe == null)
+        {
+            DrawText("NO VESSEL", new Vector2(16, 28), TextDim, 16);
+            return;
+        }
+
+        var refBody = universe.GetDominantBody(vessel.Position);
+        var relPos  = vessel.Position - refBody.Position;
+        var relVel  = vessel.Velocity - refBody.Velocity;
+        Planner.SetOrbit(relPos, relVel, refBody.GM);
+
+        DrawText($"MAP · {refBody.Name.ToUpperInvariant()}", new Vector2(14, 24), Accentify(refBody.Id), 15);
+
+        // Whole-solar-system overview ([Tab] toggles it) — pick a destination from here too.
+        if (_solarView)
+        {
+            DrawSolarSystem(universe, refBody);
+            DrawTransferPanel();
+            DrawFooter();
+            return;
+        }
+
+        if (TransferPlanner.Instance?.CurrentNode is
+            { TransferKind: TransferKind.LunarLambert } lunarNode
+            && refBody.Id == "earth")
+        {
+            DrawLunarTransferView(universe, refBody, vessel, lunarNode);
+            DrawTransferPanel();
+            DrawFooter();
+            return;
+        }
+
+        if (!Planner.HasOrbit)
+        {
+            DrawText("SUB-ORBITAL", new Vector2(14, 46), TextDim, 13);
+            DrawBodyOnly(refBody, relPos);
+            DrawTransferPanel();
+            DrawFooter();
+            return;
+        }
+
+        // ── Collect all points to fit (current orbit, projection, body) ──────
+        var master = (Planner.PeriapsisDir, Planner.AheadDir);
+        var curve  = SampleConic(Planner.Eccentricity, Planner.SemiLatusRectum,
+                                 Planner.PeriapsisDir, Planner.AheadDir, master,
+                                 Planner.TrueAnomalyLimit());
+
+        List<Vector2>?  projCurve = null;
+        ManeuverPlanner? projOrbit = null;   // post-burn orbit, for the resulting Ap/Pe readout
+        if (Planner.HasNode && Planner.DeltaVMagnitude > 0.01)
+        {
+            var (pPos, pVel) = Planner.PostBurnState();
+            var tmp = new ManeuverPlanner();
+            tmp.SetOrbit(pPos, pVel, refBody.GM);
+            if (tmp.HasOrbit)
+            {
+                projOrbit = tmp;
+                projCurve = SampleConic(tmp.Eccentricity, tmp.SemiLatusRectum,
+                                        tmp.PeriapsisDir, tmp.AheadDir, master,
+                                        tmp.TrueAnomalyLimit());
+            }
+        }
+
+        ComputeScale(curve, projCurve);
+
+        // ── Reference body disc + SOI ring ───────────────────────────────────
+        float bodyPx = System.Math.Max(4f, (float)(refBody.Radius / _metersPerPixel));
+        DrawCircle(_plotOrigin, bodyPx, BodyCol);
+        if (refBody.SphereOfInfluence < 1e12)
+        {
+            float soiPx = (float)(refBody.SphereOfInfluence / _metersPerPixel);
+            if (soiPx < PanelSize) DrawArc(_plotOrigin, soiPx, 0, Mathf.Tau, 64, new Color(BodyCol, 0.18f), 1f);
+        }
+
+        // ── Orbit ────────────────────────────────────────────────────────────
+        DrawPolylineFrom(curve, OrbitCol, 2f);
+        if (projCurve != null) DrawDashed(projCurve, ProjCol, 1.6f);
+
+        // Apo / Peri markers (closed orbits only)
+        if (Planner.Eccentricity < 1.0)
+        {
+            DrawMarker(ToPx(Planner.PositionAt(0.0), master), PeCol, "Pe");
+            DrawMarker(ToPx(Planner.PositionAt(System.Math.PI), master), ApCol, "Ap");
+        }
+
+        // ── Vessel marker ────────────────────────────────────────────────────
+        Vector2 vPx = ToPx(Planner.PositionAt(Planner.TrueAnomalyNow), master);
+        DrawVesselTriangle(vPx, VesselCol);
+
+        // ── Maneuver node ────────────────────────────────────────────────────
+        if (Planner.HasNode)
+        {
+            Vector2 nPx = ToPx(Planner.PositionAt(Planner.NodeTrueAnomaly), master);
+            DrawNodeDiamond(nPx, NodeCol);
+        }
+
+        DrawReadout(vessel, refBody, projOrbit);
+        DrawTransferPanel();
+        DrawFooter();
+    }
+
+    // ── Solar-system overview (top-down, log radial scale) ─────────────────────
+    private void DrawSolarSystem(Universe universe, CelestialBody refBody)
+    {
+        var sun = universe.GetBody("sun");
+        if (sun == null) { DrawText("NO SUN", new Vector2(14, 46), TextDim, 12); return; }
+        Vector2 c = _center;
+        float innerR = 24f, outerR = PanelSize * 0.5f - Margin - 4f;
+
+        // Heliocentric distance range (planets only) → log radial scale so inner + outer fit.
+        double dMin = double.MaxValue, dMax = 0;
+        foreach (var b in universe.Bodies)
+        {
+            if (b.Id == "sun" || IsMoon(b)) continue;
+            double d = (b.Position - sun.Position).Magnitude;
+            if (d > 1e6) { dMin = System.Math.Min(dMin, d); dMax = System.Math.Max(dMax, d); }
+        }
+        if (dMax <= 0) return;
+        double lMin = System.Math.Log10(dMin * 0.7), lMax = System.Math.Log10(dMax * 1.35);
+
+        float RPix(double d)
+        {
+            double t = (System.Math.Log10(System.Math.Max(d, 1.0)) - lMin) / (lMax - lMin);
+            return innerR + (float)System.Math.Clamp(t, 0, 1) * (outerR - innerR);
+        }
+        Vector2 Pt(double d, double ang) =>
+            c + new Vector2((float)System.Math.Cos(ang), -(float)System.Math.Sin(ang)) * RPix(d);
+
+        DrawText("SOLAR SYSTEM    [Tab] local view", new Vector2(14, 46), TextDim, 11);
+
+        // Sun.
+        DrawCircle(c, 7f, new Color(1f, 0.85f, 0.30f));
+        DrawArc(c, 9f, 0, Mathf.Tau, 24, new Color(1f, 0.7f, 0.2f, 0.5f), 2f);
+
+        foreach (var b in universe.Bodies)
+        {
+            if (b.Id == "sun" || IsMoon(b)) continue;
+            var rel = b.Position - sun.Position;
+            double d = rel.Magnitude;
+            double ang = System.Math.Atan2(rel.Y, rel.X);   // ecliptic longitude (XY plane)
+            float rp = RPix(d);
+            DrawArc(c, rp, 0, Mathf.Tau, 96, new Color(0.40f, 0.55f, 0.75f, 0.22f), 1f);
+
+            var p = Pt(d, ang);
+            bool sel = b.Id == _selectedTarget;
+            bool cur = b.Id == refBody.Id;
+            DrawCircle(p, sel ? 5f : 3.5f, Accentify(b.Id));
+            if (cur) DrawArc(p, 8f, 0, Mathf.Tau, 20, VesselCol, 1.3f);
+            if (sel) DrawArc(p, 9f, 0, Mathf.Tau, 20, NodeCol, 1.8f);
+            DrawText(b.Name, p + new Vector2(7, -4), sel ? NodeCol : TextDim, 10);
+
+            // Moons of this body, clustered just outside the planet dot.
+            foreach (var m in universe.Bodies)
+            {
+                if (!IsMoon(m) || m.OrbitalElements?.ReferenceBodyId != b.Id) continue;
+                var mrel = m.Position - b.Position;
+                double mang = System.Math.Atan2(mrel.Y, mrel.X);
+                var mp = p + new Vector2((float)System.Math.Cos(mang), -(float)System.Math.Sin(mang)) * 11f;
+                bool msel = m.Id == _selectedTarget;
+                DrawCircle(mp, msel ? 4f : 2.5f, Accentify(m.Id));
+                if (msel) DrawArc(mp, 6f, 0, Mathf.Tau, 16, NodeCol, 1.5f);
+            }
+        }
+
+        // ── Encounter marker (SOI entry / closest approach) for the planned transfer ──
+        // Position is heliocentric; map it through the same log-radial projection. A filled
+        // ring means SOI capture; a hollow ring means a miss (closest approach only).
+        if (TransferPlanner.Instance?.Encounter is { } enc)
+        {
+            var ePos = enc.EncounterPosition;   // relative to the Sun
+            double ed   = ePos.Magnitude;
+            double eang = System.Math.Atan2(ePos.Y, ePos.X);
+            if (ed > 1e6)
+            {
+                var ep = Pt(ed, eang);
+                Color ecol = enc.HasEncounter ? GreenCol : new Color(1f, 0.65f, 0.30f);
+                if (enc.HasEncounter) DrawCircle(ep, 4.5f, ecol);
+                DrawArc(ep, 7f, 0, Mathf.Tau, 20, ecol, 1.6f);
+                // small "X" crosshair so the marker reads clearly against orbit rings
+                DrawLine(ep + new Vector2(-5, -5), ep + new Vector2(5, 5), ecol, 1.2f);
+                DrawLine(ep + new Vector2(-5, 5),  ep + new Vector2(5, -5), ecol, 1.2f);
+            }
+        }
+    }
+
+    private void DrawLunarTransferView(
+        Universe universe,
+        CelestialBody earth,
+        Vessel vessel,
+        ManeuverNode node)
+    {
+        var moon = universe.GetBody("moon");
+        var moonOrbit = moon?.OrbitalElements;
+        var transfer = TransferPlanner.Instance?.CurrentTransferOrbit;
+        if (moon == null || moonOrbit == null || transfer == null)
+        {
+            DrawText("LUNAR SOLUTION UNAVAILABLE", new Vector2(14, 48), TextDim, 11);
+            return;
+        }
+
+        DrawText("EARTH–MOON · PATCHED CONIC", new Vector2(14, 46), TextDim, 11);
+
+        Vector3d planeX = node.PlannedDeparturePosition.Normalized;
+        Vector3d postBurnVelocity =
+            node.PlannedPreBurnVelocity
+            + node.DeltaV.Normalized
+              * (node.DvMagnitude * node.DvAdjustFactor);
+        Vector3d planeNormal =
+            node.PlannedDeparturePosition.Cross(postBurnVelocity).Normalized;
+        Vector3d planeY = planeNormal.Cross(planeX).Normalized;
+        if (planeX.Magnitude < 1e-9 || planeY.Magnitude < 1e-9)
+            return;
+
+        Vector2 origin = new(164f, 244f);
+        double lunarExtent =
+            moonOrbit.SemiMajorAxis * (1.0 + moonOrbit.Eccentricity)
+            + moon.SphereOfInfluence;
+        double metresPerPixel = lunarExtent / 142.0;
+
+        Vector2 Project(Vector3d position) => origin + new Vector2(
+            (float)(position.Dot(planeX) / metresPerPixel),
+            (float)(-position.Dot(planeY) / metresPerPixel));
+
+        // Moving lunar ephemeris in the selected transfer plane.
+        double lunarPeriod = 2.0 * System.Math.PI * System.Math.Sqrt(
+            System.Math.Pow(moonOrbit.SemiMajorAxis, 3.0) / earth.GM);
+        var lunarCurve = new Vector2[129];
+        for (int i = 0; i < lunarCurve.Length; i++)
+        {
+            double t = universe.CurrentTime + lunarPeriod * i / (lunarCurve.Length - 1.0);
+            lunarCurve[i] = Project(moonOrbit.GetStateAtTime(t, earth.GM).position);
+        }
+        DrawPolyline(lunarCurve, new Color(0.48f, 0.58f, 0.72f, 0.42f), 1.1f, true);
+
+        // Planned Earth-centred transfer, from TLI through the intended LOI epoch.
+        var transferCurve = new Vector2[161];
+        for (int i = 0; i < transferCurve.Length; i++)
+        {
+            double t = node.BurnTime + node.TimeOfFlight * i / (transferCurve.Length - 1.0);
+            transferCurve[i] = Project(transfer.GetStateAtTime(t, earth.GM).position);
+        }
+        DrawPolyline(transferCurve, ProjCol, 2.0f, true);
+
+        DrawCircle(origin, 7f, BodyCol);
+        DrawArc(origin, 10f, 0f, Mathf.Tau, 24, new Color(BodyCol, 0.42f), 1.2f);
+        DrawText("EARTH", origin + new Vector2(10, -7), BodyCol, 10);
+
+        Vector3d currentMoonPosition =
+            moonOrbit.GetStateAtTime(universe.CurrentTime, earth.GM).position;
+        Vector3d arrivalMoonPosition =
+            moonOrbit.GetStateAtTime(node.BurnTime + node.TimeOfFlight, earth.GM).position;
+        Vector2 currentMoonPx = Project(currentMoonPosition);
+        Vector2 arrivalMoonPx = Project(arrivalMoonPosition);
+        DrawCircle(currentMoonPx, 3.5f, Accentify("moon"));
+        DrawText("MOON NOW", currentMoonPx + new Vector2(6, -5), TextDim, 9);
+
+        float lunarSoiPx = (float)(moon.SphereOfInfluence / metresPerPixel);
+        DrawArc(arrivalMoonPx, lunarSoiPx, 0f, Mathf.Tau, 48,
+                new Color(GreenCol, 0.32f), 1.2f);
+        DrawCircle(arrivalMoonPx, 4.5f, Accentify("moon"));
+        DrawText("MOON · LOI", arrivalMoonPx + new Vector2(7, -6),
+                 Accentify("moon"), 10);
+
+        Vector2 burnPx = Project(node.PlannedDeparturePosition);
+        DrawNodeDiamond(burnPx, NodeCol);
+        DrawText("TLI", burnPx + new Vector2(7, -6), NodeCol, 10);
+
+        if (TransferPlanner.Instance?.EarthFrameEncounter is { } encounter)
+        {
+            Vector2 encounterPx = Project(encounter.EncounterPosition);
+            Color encounterColor = node.ArrivalImpact
+                ? new Color(1f, 0.35f, 0.30f)
+                : encounter.HasEncounter ? GreenCol : ProjCol;
+            DrawArc(encounterPx, 5f, 0f, Mathf.Tau, 20, encounterColor, 1.5f);
+            DrawText(encounter.HasEncounter ? "SOI" : "MISS",
+                     encounterPx + new Vector2(6, 10), encounterColor, 9);
+        }
+
+        Vector2 vesselPx = Project(vessel.Position - earth.Position);
+        DrawVesselTriangle(vesselPx, VesselCol);
+    }
+
+    private static bool IsMoon(CelestialBody b)
+    {
+        var r = b.OrbitalElements?.ReferenceBodyId;
+        return !string.IsNullOrEmpty(r) && r != "sun";
+    }
+
+    // ── Drawing helpers ───────────────────────────────────────────────────────
+
+    private void DrawBodyOnly(CelestialBody body, Vector3d relPos)
+    {
+        double rMax = System.Math.Max(relPos.Magnitude, body.Radius) * 1.25;
+        _metersPerPixel = rMax / (PanelSize * 0.5 - Margin);
+        _plotOrigin = _center;
+        float bodyPx = System.Math.Max(6f, (float)(body.Radius / _metersPerPixel));
+        DrawCircle(_plotOrigin, bodyPx, BodyCol);
+        Vector2 vPx = _plotOrigin + new Vector2((float)(relPos.X / _metersPerPixel),
+                                                -(float)(relPos.Y / _metersPerPixel));
+        DrawVesselTriangle(vPx, VesselCol);
+    }
+
+    private void ComputeScale(List<Vector2> a, List<Vector2>? b)
+    {
+        float minX = 0, maxX = 0, minY = 0, maxY = 0;   // include body at (0,0)
+        void Acc(List<Vector2> pts)
+        {
+            foreach (var p in pts)
+            {
+                if (p.X < minX) minX = p.X; if (p.X > maxX) maxX = p.X;
+                if (p.Y < minY) minY = p.Y; if (p.Y > maxY) maxY = p.Y;
+            }
+        }
+        Acc(a); if (b != null) Acc(b);
+
+        float spanX = System.Math.Max(maxX - minX, 1f);
+        float spanY = System.Math.Max(maxY - minY, 1f);
+        float usable = PanelSize - 2f * Margin;
+        double scale = System.Math.Max(spanX, spanY) / usable;   // metres per pixel
+        if (scale <= 0 || double.IsNaN(scale)) scale = 1.0;
+        _metersPerPixel = scale;
+
+        // Centre the bounding box (in metres) within the plot.
+        float midXm = (minX + maxX) * 0.5f;
+        float midYm = (minY + maxY) * 0.5f;
+        _plotOrigin = _center - new Vector2((float)(midXm / scale), -(float)(midYm / scale));
+    }
+
+    // Maps a relative 3D position to panel pixels via the master (p̂, q̂) projection.
+    private Vector2 ToPx(Vector3d rel, (Vector3d p, Vector3d q) master)
+    {
+        double xm = rel.Dot(master.p);
+        double ym = rel.Dot(master.q);
+        return _plotOrigin + new Vector2((float)(xm / _metersPerPixel),
+                                         -(float)(ym / _metersPerPixel));
+    }
+
+    // Samples a conic (a or p form) and projects onto the master frame, in metres.
+    private static List<Vector2> SampleConic(double e, double p,
+        Vector3d pHat, Vector3d qHat, (Vector3d p, Vector3d q) master, double nuLimit)
+    {
+        const int N = 220;
+        var pts = new List<Vector2>(N + 1);
+        double start = e < 1.0 ? 0.0 : -nuLimit;
+        double end   = e < 1.0 ? 2.0 * System.Math.PI : nuLimit;
+        for (int i = 0; i <= N; i++)
+        {
+            double nu = start + (end - start) * i / N;
+            double denom = 1.0 + e * System.Math.Cos(nu);
+            if (System.Math.Abs(denom) < 1e-6) continue;
+            double rr = p / denom;
+            if (rr <= 0) continue;
+            Vector3d rel = pHat * (rr * System.Math.Cos(nu)) + qHat * (rr * System.Math.Sin(nu));
+            pts.Add(new Vector2((float)rel.Dot(master.p), (float)rel.Dot(master.q)));
+        }
+        return pts;
+    }
+
+    private void DrawPolylineFrom(List<Vector2> metresPts, Color col, float width)
+    {
+        if (metresPts.Count < 2) return;
+        var px = new Vector2[metresPts.Count];
+        for (int i = 0; i < metresPts.Count; i++)
+            px[i] = _plotOrigin + new Vector2(metresPts[i].X / (float)_metersPerPixel,
+                                              -metresPts[i].Y / (float)_metersPerPixel);
+        DrawPolyline(px, col, width, true);
+    }
+
+    private void DrawDashed(List<Vector2> metresPts, Color col, float width)
+    {
+        for (int i = 0; i < metresPts.Count - 1; i += 2)
+        {
+            Vector2 a = _plotOrigin + new Vector2(metresPts[i].X / (float)_metersPerPixel,
+                                                  -metresPts[i].Y / (float)_metersPerPixel);
+            Vector2 b = _plotOrigin + new Vector2(metresPts[i + 1].X / (float)_metersPerPixel,
+                                                  -metresPts[i + 1].Y / (float)_metersPerPixel);
+            DrawLine(a, b, col, width, true);
+        }
+    }
+
+    private void DrawMarker(Vector2 px, Color col, string tag)
+    {
+        DrawCircle(px, 3.5f, col);
+        DrawText(tag, px + new Vector2(5, -4), col, 11);
+    }
+
+    private void DrawVesselTriangle(Vector2 c, Color col)
+    {
+        var pts = new[]
+        {
+            c + new Vector2(0, -6), c + new Vector2(-5, 5), c + new Vector2(5, 5),
+        };
+        DrawColoredPolygon(pts, col);
+    }
+
+    private void DrawNodeDiamond(Vector2 c, Color col)
+    {
+        var pts = new[]
+        {
+            c + new Vector2(0, -7), c + new Vector2(7, 0),
+            c + new Vector2(0, 7),  c + new Vector2(-7, 0),
+        };
+        DrawColoredPolygon(pts, new Color(col, 0.85f));
+        DrawPolyline(new[] { pts[0], pts[1], pts[2], pts[3], pts[0] }, new Color(0, 0, 0, 0.6f), 1f);
+    }
+
+    private void DrawReadout(Vessel vessel, CelestialBody refBody, ManeuverPlanner? projOrbit)
+    {
+        // Stacked higher than before to fit the richer node readout (current + resulting orbit).
+        float x = 14, y = PanelSize - 132;
+        if (Planner.Eccentricity < 1.0)
+        {
+            double ap = Planner.SemiMajorAxis * (1 + Planner.Eccentricity) - refBody.Radius;
+            double pe = Planner.SemiMajorAxis * (1 - Planner.Eccentricity) - refBody.Radius;
+            DrawText($"Ap {Fmt(ap)}   Pe {Fmt(pe)}", new Vector2(x, y), TextBright, 13);
+        }
+        else
+        {
+            DrawText("HYPERBOLIC ESCAPE", new Vector2(x, y), ProjCol, 13);
+        }
+        y += 18;
+
+        if (Planner.HasNode)
+        {
+            double thrustVac = 0;
+            foreach (var en in vessel.Parts.ActiveEngines) thrustVac += en.Definition.ThrustVac;
+            double burn = Planner.EstimateBurnTime(thrustVac, vessel.TotalMass);
+            DrawText($"ΔV {Planner.DeltaVMagnitude:F0} m/s  (pro {Planner.DvPrograde:+0;-0}  rad {Planner.DvRadial:+0;-0})",
+                     new Vector2(x, y), NodeCol, 13);
+            y += 17;
+
+            // Time to the node (next pass) — drag/scroll updates this live.
+            double tNode = Planner.TimeToNode();
+            string etaStr = tNode > 0.0 ? FmtTime(tNode) : "—";
+            string burnStr = thrustVac > 0 ? $"{burn:F1} s" : "no engines";
+            string armed = _autopilot.IsArmed ? "  [ARMED]" : "";
+            DrawText($"T-node {etaStr}   burn {burnStr}{armed}",
+                     new Vector2(x, y), _autopilot.IsArmed ? GreenCol : TextDim, 13);
+            y += 17;
+
+            // Resulting orbit after the burn (drawn dashed above) — its Ap/Pe in numbers.
+            if (projOrbit != null)
+            {
+                if (projOrbit.Eccentricity < 1.0)
+                {
+                    double rap = projOrbit.SemiMajorAxis * (1 + projOrbit.Eccentricity) - refBody.Radius;
+                    double rpe = projOrbit.SemiMajorAxis * (1 - projOrbit.Eccentricity) - refBody.Radius;
+                    DrawText($"→ Ap {Fmt(rap)}   Pe {Fmt(rpe)}", new Vector2(x, y), ProjCol, 12);
+                }
+                else
+                {
+                    DrawText("→ HYPERBOLIC ESCAPE", new Vector2(x, y), ProjCol, 12);
+                }
+            }
+        }
+        else
+        {
+            DrawText("click/drag orbit to add or move node", new Vector2(x, y), TextDim, 12);
+        }
+    }
+
+    // ── Transfer panel (top-right corner) ────────────────────────────────────
+
+    private void DrawTransferPanel()
+    {
+        // Draw compact planet-selector list in the top-right of the panel
+        float x = PanelSize - 110f;
+        float y = 14f;
+        DrawText("TRANSFER", new Vector2(x, y), TextDim, 10);
+        y += 14f;
+
+        foreach (var (id, label, tKey) in TransferTargets)
+        {
+            bool selected = id == _selectedTarget;
+            Color col = selected ? Accentify(id) : TextDim;
+            string prefix = selected ? ">" : " ";
+            int keyNum = (int)(tKey - Key.Key1) + 1;
+            DrawText($"{prefix}[{keyNum}] {label}", new Vector2(x, y), col, 11);
+            y += 14f;
+        }
+
+        // Show current node details if one is planned
+        var node = TransferPlanner.Instance?.CurrentNode;
+        if (node != null)
+        {
+            y += 4f;
+            Color tCol = Accentify(node.TargetBodyId ?? "");
+            DrawText($"{node.BurnLabel} {node.DvMagnitude * node.DvAdjustFactor:F0} m/s", new Vector2(x, y), tCol, 11);
+            y += 13f;
+            DrawText($"{node.ArrivalBurnLabel} {node.SecondBurnDv:F0} m/s", new Vector2(x, y), TextDim, 11);
+            y += 13f;
+            DrawText($"ToF {node.TimeOfFlight / 86400.0:F1} d", new Vector2(x, y), TextDim, 11);
+            y += 13f;
+            double timeToBurn =
+                node.BurnTime - (SimulationBridge.Instance?.Universe.CurrentTime ?? node.BurnTime);
+            if (timeToBurn > 1.0)
+            {
+                DrawText($"T-{FmtTime(timeToBurn)}", new Vector2(x, y), NodeCol, 11);
+                y += 13f;
+            }
+            string adjPct = $"{node.DvAdjustFactor * 100.0:F0}%";
+            DrawText($"adj {adjPct}", new Vector2(x, y), TextDim, 11);
+            y += 13f;
+
+            // Encounter readout: SOI capture (green) or closest-approach miss (orange).
+            if (TransferPlanner.Instance?.Encounter is { } enc)
+            {
+                y += 3f;
+                Color ecol = enc.HasEncounter ? GreenCol : new Color(1f, 0.65f, 0.30f);
+                string encounterLabel = node.ArrivalImpact
+                    ? "IMPACT"
+                    : enc.HasEncounter ? "ENCOUNTER" : "miss";
+                if (node.ArrivalImpact)
+                    ecol = new Color(1f, 0.35f, 0.30f);
+                DrawText(encounterLabel, new Vector2(x, y), ecol, 10);
+                y += 12f;
+                if (node.TransferKind == TransferKind.LunarLambert &&
+                    double.IsFinite(node.PredictedPeriapsisAltitude))
+                {
+                    DrawText($"Pe Moon {Fmt(node.PredictedPeriapsisAltitude)}",
+                             new Vector2(x, y), ecol, 11);
+                }
+                else
+                {
+                    DrawText($"appr {Fmt(enc.ClosestApproachDistance)}",
+                             new Vector2(x, y), ecol, 11);
+                }
+                y += 13f;
+                double eta = enc.TimeOfClosestApproach - node.BurnTime;
+                DrawText($"ETA {FmtTime(eta)}", new Vector2(x, y), TextDim, 11);
+                y += 13f;
+            }
+
+            // Executor status
+            if (ManeuverExecutor.Instance is { IsExecuting: true } exec)
+            {
+                string status = exec.TimeToBurn > 1.0
+                    ? $"{exec.BurnLabel} ARMED T-{FmtTime(exec.TimeToBurn)}"
+                    : $"{exec.BurnLabel} {exec.RemainingDv:F0} m/s";
+                DrawText(status, new Vector2(x, y),
+                         exec.TimeToBurn > 1.0
+                            ? NodeCol
+                            : new Color(1f, 0.4f, 0.4f, 1f), 11);
+            }
+            else
+            {
+                DrawText("⏎ EXECUTE", new Vector2(x, y), GreenCol, 11);
+            }
+        }
+        else if (_selectedTarget == "moon"
+                 && TransferPlanner.Instance?.LastPlanningError != null)
+        {
+            y += 5f;
+            DrawText("NO TLI WINDOW", new Vector2(x, y),
+                     new Color(1f, 0.65f, 0.30f), 10);
+            y += 13f;
+            DrawText("check orbit plane", new Vector2(x, y), TextDim, 10);
+        }
+    }
+
+    private void DrawFooter()
+    {
+        DrawText("drag: node  wheel: ΔV  [B] deorbit  ⏎ exec  ⌫ clear  1-6 transfer  [/] adj  Tab: sys",
+                 new Vector2(14, PanelSize - 14), new Color(0.50f, 0.58f, 0.68f, 0.9f), 10);
+    }
+
+    private static readonly Color GreenCol = new(0.35f, 1.0f, 0.5f, 1f);
+
+    private void DrawText(string text, Vector2 pos, Color col, int size) =>
+        DrawString(_font, pos, text, HorizontalAlignment.Left, -1, size, col);
+
+    private static Color Accentify(string id) => id switch
+    {
+        "earth"   => new Color(0.45f, 0.80f, 1.00f),
+        "moon"    => new Color(0.80f, 0.82f, 0.86f),
+        "mars"    => new Color(1.00f, 0.55f, 0.35f),
+        "sun"     => new Color(1.00f, 0.85f, 0.35f),
+        "venus"   => new Color(0.95f, 0.85f, 0.50f),
+        "jupiter" => new Color(0.90f, 0.72f, 0.50f),
+        "mercury" => new Color(0.70f, 0.68f, 0.66f),
+        "saturn"  => new Color(0.95f, 0.88f, 0.60f),
+        _         => TextBright,
+    };
+
+    private static string Fmt(double m)
+    {
+        if (System.Math.Abs(m) >= 1e6) return $"{m / 1e6:F2} Mm";
+        if (System.Math.Abs(m) >= 1e3) return $"{m / 1e3:F0} km";
+        return $"{m:F0} m";
+    }
+
+    // Human-readable elapsed time: days / hours / minutes / seconds.
+    private static string FmtTime(double s)
+    {
+        if (s >= 86400.0) return $"{s / 86400.0:F1} d";
+        if (s >= 3600.0)  return $"{s / 3600.0:F1} h";
+        if (s >= 60.0)    return $"{s / 60.0:F0} m";
+        return $"{s:F0} s";
+    }
+}

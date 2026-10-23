@@ -1,0 +1,275 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Exosphere — Raptor engine plume shader (full-flow staged-combustion methalox).
+//
+// Apply to a vertical cone/cylinder mesh whose MOUTH sits at the nozzle exit
+// (local +Y) and whose body extends DOWN along local -Y. The mesh is built once
+// per ring at unit-ish scale; PlumeSystem stretches/recolours it via uniforms.
+//
+// The shader paints, from nozzle outward:
+//   • a bright, near-white incandescent base right at the throat (over-expanded
+//     sea-level flame — hot, slightly orange at the very root),
+//   • a bright blue-white supersonic core down the axis,
+//   • periodic Mach (shock) diamonds — sharp bright nodes along the axis whose
+//     spacing widens (fewer diamonds) as ambient pressure drops with altitude,
+//   • a translucent, additive outer sheath that broadens and fades downstream,
+//     with faint incandescent orange edges,
+//   • high-frequency flicker so the flame is alive.
+//
+// SL→vacuum behaviour (driven by `expansion`, 0 = sea level, 1 = vacuum):
+//   • sea level  → short, tight, bright plume; many closely-spaced sharp diamonds
+//                  packed near the throat; strong hot/orange base.
+//   • vacuum     → very long, broad, faint plume dominated by the smooth bright
+//                  core; diamonds few, soft and pushed downstream.
+//
+// Methalox burns nearly translucent blue — NOT orange/yellow. Orange only
+// appears as hot recombination at the very base and along the plume skin.
+//
+// Atmospheric pressure inputs (N7):
+//   atmo_pressure  1.0 = sea level, 0.0 = vacuum. Drives plume length, diamond
+//                  sharpness/count, and core brightness. Alias for (1-expansion).
+//   throttle_level 0.0 = off, 1.0 = full thrust. Alias for `throttle`.
+// ─────────────────────────────────────────────────────────────────────────────
+shader_type spatial;
+#include "res://assets/shaders/cloud_foreground_transmission.gdshaderinc"
+// Mix (not additive): additive methalox cores vanish against a daylight sky and
+// the pale pad concrete — that is why THR 100% / 33/33 read as a dry stack.
+// Mix keeps a bright, readable column at sea level and a thinner vacuum plume.
+render_mode unshaded, blend_mix, cull_disabled, depth_draw_never, shadows_disabled;
+
+// 0 = off, 1 = full thrust. Scales brightness & opacity.
+uniform float throttle : hint_range(0.0, 1.0) = 1.0;
+
+// 0 = sea level (tight plume, tight diamonds), 1 = vacuum (broad, long, widely
+// spaced diamonds — an underexpanded vacuum plume).
+uniform float expansion : hint_range(0.0, 1.0) = 0.0;
+
+// ── N7: atmospheric-pressure inputs ─────────────────────────────────────────
+// atmo_pressure: 1.0 = sea level, 0.0 = vacuum. exp(-alt/7000) proxy.
+// Maps directly to (1.0 - expansion) so both control paths produce the same
+// visual; PlumeSystem writes both each frame.
+uniform float atmo_pressure : hint_range(0.0, 1.0) = 1.0;
+// throttle_level: alias for throttle uniform, written by PlumeSystem as a
+// second path; the fragment stage uses the max of the two so either caller works.
+uniform float throttle_level : hint_range(0.0, 1.0) = 1.0;
+
+// Engine-specific tint of the core (blue-white). Vacuum Raptors read slightly
+// bluer/purpler than sea-level.
+uniform vec3 core_color : source_color = vec3(0.70, 0.85, 1.0);
+// Incandescent edge/base tint (hot orange recombination glow).
+uniform vec3 edge_color : source_color = vec3(1.0, 0.45, 0.12);
+
+// Number of Mach diamonds at sea level (they get sparser as `expansion` rises).
+uniform float diamond_count : hint_range(2.0, 14.0) = 8.0;
+
+// Runtime visibility controls. Shock cells need a pressure mismatch and enough
+// contrast to survive steam/deluge in the near field; they are not a permanent
+// decorative texture. Afterburn is intentionally confined to the hot root.
+uniform float shock_cell_strength : hint_range(0.0, 1.0) = 1.0;
+uniform float shock_cell_spacing : hint_range(0.5, 1.5) = 1.0;
+uniform float shock_cell_softness : hint_range(0.0, 0.6) = 0.10;
+uniform float steam_occlusion : hint_range(0.0, 1.0) = 0.0;
+uniform float afterburn_strength : hint_range(0.0, 1.0) = 1.0;
+uniform float pad_interaction : hint_range(0.0, 1.0) = 0.0;
+// Cluster overlap washes out individual shock cells in the booster reference.
+uniform float merged_cluster : hint_range(0.0, 1.0) = 0.0;
+
+// Master energy multiplier.
+uniform float energy : hint_range(0.0, 10.0) = 3.2;
+// Per-layer alpha: the narrow core and the broad outer sheath use the same
+// physically-driven profile but different optical densities.
+uniform float layer_opacity : hint_range(0.0, 1.0) = 1.0;
+// The narrow core keeps a restrained optical floor in vacuum. It represents
+// visible hot gas near the nozzle, not a full opaque billboard.
+uniform float core_layer : hint_range(0.0, 1.0) = 0.0;
+uniform float tail_radius : hint_range(0.02, 1.0) = 0.14;
+// Far-field keeps only the narrow core and gives it a bounded optical floor.
+// The CPU side hides the broad shell/particles in this mode to avoid transparent
+// overdraw and preserve a stable silhouette when the vehicle is a few pixels wide.
+uniform float far_field : hint_range(0.0, 1.0) = 0.0;
+
+varying float v_axial;   // 0 at nozzle exit → 1 at plume tip (along the mesh -Y)
+varying vec3 v_view_radial; // radial normal, excluding the cone's axial slope
+
+void vertex() {
+	// The cone mesh is unit height (1.0), centred on its own origin: the wide
+	// mouth (toward the nozzle) sits at VERTEX.y = +0.5 and the fine tip at
+	// VERTEX.y = -0.5. Re-derive normalised axial/radial coords so the fragment
+	// stage is scale-independent (PlumeSystem pre-scales the mesh non-uniformly).
+	v_axial  = clamp(0.5 - VERTEX.y, 0.0, 1.0);          // 0 at mouth → 1 at tip
+	// SH uses a contracting merged core; individual Ship plumes expand downstream.
+	// Every cylinder vertex lies on the skin: length(xz)/skin is always one.
+	// Interpolate a radial normal instead so the fragment can estimate the
+	// projected chord through the gas, with a bright centre and transparent limb.
+	v_view_radial = MODELVIEW_NORMAL_MATRIX * normalize(vec3(VERTEX.x, 0.0, VERTEX.z));
+
+	// Subtle breathing of the skin so the envelope shimmers (cheap, vertex-rate).
+	float wob = 1.0 + 0.04 * sin(TIME * 37.0 + VERTEX.y * 9.0);
+	VERTEX.xz *= wob;
+}
+
+// Cheap hash noise for high-frequency combustion flicker.
+float hash(float n) { return fract(sin(n) * 43758.5453123); }
+float noise1(float x) {
+	float i = floor(x);
+	float f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(hash(i), hash(i + 1.0), f);
+}
+
+void fragment() {
+	float a = v_axial;            // 0 = nozzle, 1 = tip
+	float facing = abs(dot(normalize(v_view_radial), normalize(VIEW)));
+	float r = sqrt(max(0.0, 1.0 - facing * facing));
+
+	// ── N7: reconcile the two control paths. PlumeSystem may write either
+	// expansion+throttle (legacy) or atmo_pressure+throttle_level (N7).
+	// We resolve the effective values here so both code paths work correctly.
+	// atmo_pressure = 1 - expansion (same physics, opposite polarity).
+	// Use the stricter of the two so neither path can accidentally disable effects.
+	float effExpansion = max(expansion, 1.0 - atmo_pressure);
+	effExpansion = clamp(effExpansion, 0.0, 1.0);
+	float effThrottle  = max(throttle, throttle_level);
+	effThrottle = clamp(effThrottle, 0.0, 1.0);
+
+	// ── N7: plume_length factor. At sea level the cone mesh is already scaled
+	// short by PlumeSystem; the shader reinforces the axial envelope based on
+	// effective pressure. At vacuum the envelope opens far downstream.
+	// mix(0.4, 2.5, 1-atmo) * throttle is the CPU-side length; here we modulate
+	// the axial fade-out reach to match the desired atmosphere-dependent length.
+	float plumeLength = mix(0.64, 2.5, effExpansion) * effThrottle;
+	// Remap to a [0.62..1.0] reach that the axial envelope already understands.
+	// plumeLength=0.4 → reach≈0.62 (short SL); plumeLength=2.5 → reach≈1.0 (vacuum).
+	float reach = clamp(mix(0.72, 1.0, (plumeLength - 0.64) / 1.86), 0.72, 1.0);
+
+	// ── Radial profile: bright on axis, fades to skin. The plume narrows
+	// downstream at sea level but stays fat (underexpanded) in vacuum. ───────
+	float cluster = merged_cluster * (1.0 - effExpansion);
+	float widthAtA = mix(1.0 - a * mix(0.70, 0.24, cluster), 1.0 - a * 0.08, effExpansion);
+	float coreR    = clamp(r / max(widthAtA, 0.05), 0.0, 1.4);
+	// Tighter gaussian at SL (a pencil core), softer/broader in vacuum.
+	float falloff  = mix(3.6, 2.2, effExpansion);
+	float radial   = exp(-coreR * coreR * falloff);          // gaussian falloff
+	// A short path through the limb emits less light. No constant skin floor:
+	// it paints the polygon outline and turns overlapping shells into solids.
+	radial *= smoothstep(0.0, 0.35, facing);
+
+	// ── Axial envelope: full near the nozzle, fades toward the tip. Vacuum
+	// plumes reach much farther before fading (the long faint core). ─────────
+	// A vacuum plume remains optically thin, but its emissive core must not collapse
+	// into a nozzle-sized disc. Hold the plateau farther downstream as density falls,
+	// then keep the same smooth fade to a transparent tip.
+	float axialPlateau = mix(0.50, 0.74, effExpansion) * reach;
+	float axialEnv = (1.0 - smoothstep(axialPlateau, 1.0, a)) * smoothstep(-0.04, 0.05, a);
+
+	// ── N7: Mach diamonds — sea-level over-expanded shock cells.
+	// At sea level (atmo_pressure≈1, effExpansion≈0): many, sharp, packed near
+	// the throat. As pressure drops the diamonds separate, soften, and move
+	// downstream. In vacuum (atmo_pressure≈0, effExpansion≈1): nearly gone.
+	float count   = mix(diamond_count, diamond_count * 0.35, effExpansion);
+	// Diamonds bunch up toward the throat (sqrt warps spacing tighter near a=0).
+	float warpedA = sqrt(max(a, 0.0));
+	float phase   = warpedA * count * 3.14159 * shock_cell_spacing;
+	float sharp   = mix(8.0, 3.0, effExpansion) * mix(1.0, 0.62, shock_cell_softness);
+	float diamond = pow(max(sin(phase), 0.0), sharp);        // sharp bright nodes
+	// Diamonds only live in the supersonic near field and on-axis; their reach
+	// downstream grows a little in vacuum.
+	float dReach  = mix(0.65, 0.9, effExpansion);
+	// N7: diamond intensity fades strongly with pressure drop — nearly gone in vacuum.
+	float diamondStrength = mix(1.0, 0.08, effExpansion)
+		* shock_cell_strength * (1.0 - steam_occlusion * 0.55);
+	float diamondMask = (1.0 - smoothstep(0.0, dReach, a)) * exp(-coreR * coreR * 4.5);
+	diamond *= diamondMask * diamondStrength * mix(1.0, 0.18, cluster);
+
+	// ── Flicker: high-frequency turbulence so the flame is alive. ───────────
+	float flick = 0.85
+		+ 0.15 * noise1(TIME * 40.0 + a * 30.0)
+		+ 0.08 * sin(TIME * 90.0 + r * 20.0);
+
+	// ── Compose colour. Hot near-white incandescent base at the throat (with a
+	// faint orange root), cooling to the blue-white core down the axis. The hot
+	// base is strongest at sea level (over-expanded), nearly gone in vacuum. ──
+	vec3 whiteHot = vec3(1.0);
+	// White at the throat → blue-white core downstream.
+	vec3 col = mix(whiteHot, core_color, smoothstep(0.0, 0.45, a));
+	// Reference-calibrated pale rose hot-gas appearance, not a temperature lookup.
+	// Only the merged sea-level booster receives this tint; vacuum is unchanged.
+	col = mix(col, vec3(1.0, 0.64, 0.78), cluster * smoothstep(0.02, 0.32, a) * 0.62);
+	// Hot orange root, only at the very base and mostly at sea level.
+	float hotBase = (1.0 - smoothstep(0.0, 0.18, a))
+		* (1.0 - effExpansion * 0.85) * afterburn_strength;
+	col = mix(col, edge_color, hotBase * 0.42);
+	// Keep the outer sheath pale. Any warm pad interaction dies quickly away from
+	// the nozzle instead of turning the whole methalox envelope orange.
+	float padWarm = smoothstep(0.0, 0.16, 1.0 - a) * pad_interaction
+		* smoothstep(0.78, 1.0, r) * 0.07;
+	col = mix(col, edge_color, padWarm);
+	// Vacuum methalox remains a pale blue-white, not a solid purple volume.
+    vec3 vacuumTint = vec3(0.78, 0.88, 1.0);
+    col = mix(col, vacuumTint, effExpansion * (1.0 - coreR) * 0.18);
+    // A far-field core is sampled only at its envelope, where the normalised
+    // radial coordinate is near the skin and the axial tint above contributes
+    // little. Keep a restrained blue-white identity there so distance does not
+    // turn the exhaust into a neutral grey streak.
+    col = mix(col, vec3(0.66, 0.84, 1.0), far_field * effExpansion * 0.42);
+
+	// N7: brightness — SL core is punchy and brilliant; vacuum core is dim and diffuse.
+	// At sea level: strong over-expanded shock boosts brightness near the throat.
+	// In vacuum: plume is long/broad but optically thin (dim, translucent).
+	float baseBoost = 1.0 + hotBase * (0.9 - effExpansion * 0.6);
+	float coreBright = radial * axialEnv * baseBoost;
+	float bright = coreBright * (1.0 + diamond * 3.0) * flick;
+
+	// Diamonds flash bright white.
+	col = mix(col, whiteHot, clamp(diamond * 1.3, 0.0, 1.0));
+
+	// N7: vacuum plume dims the core — thin gas, far fewer photons per unit volume.
+	// Kept dimmer than sea level (realistic optically-thin plume) but lifted enough so the
+	// orbital-insertion burn still reads clearly against the bright Earth/space backdrop.
+    float vacuumDim = mix(1.0, mix(0.92, 0.96, far_field), effExpansion * effExpansion);
+
+	// Sea-level plumes are visually punchier per unit length; vacuum a touch
+	// dimmer (very thin gas), but its length makes it dominant in frame.
+	// Daylight pad needs a photosphere-white core, not a faint additive haze.
+    float eScale = mix(1.45, 1.10, effExpansion) * vacuumDim
+        * mix(1.0, 1.12, far_field);
+	float e   = energy * eScale * (0.45 + 0.55 * effThrottle);
+
+	// Compatibility's mix path must receive a real source colour. A black ALBEDO
+	// with high alpha turns the transparent envelope into a black polygon even
+	// when its HDR emission is bright. Keep the source pale and put intensity in
+	// emission; alpha below controls optical density independently.
+	float layerRadiance = mix(radial * axialEnv * 0.50, bright, core_layer);
+	vec3 emission = col * e * layerRadiance * (1.0 + diamond * 0.8) * flick;
+	vec3 albedoColor = mix(col * 0.86, mix(col, whiteHot, 0.18), core_layer);
+	albedoColor = mix(albedoColor, whiteHot, diamond * 0.34);
+
+	ALBEDO   = albedoColor;
+	EMISSION = emission;
+
+	// Treat the two meshes as different optical layers. The broad sheath stays
+	// faint and broken up; the narrow core carries daylight readability. Neither
+	// layer inherits radiance/shock multipliers in alpha, which previously made
+	// five nested Super Heavy units clamp into one solid triangular cone.
+	float sheathBreakup = 0.68 + 0.32
+		* noise1(a * 37.0 - TIME * 24.0 + facing * 11.0);
+	float opticalProfile = radial * axialEnv;
+	float sheathAlpha = opticalProfile * sheathBreakup
+		* mix(0.22, 0.090, effExpansion) * layer_opacity;
+	float coreAlpha = opticalProfile
+		* mix(0.56, 0.36, effExpansion) * layer_opacity;
+	float farCoreAlpha = opticalProfile
+		* mix(0.40, 0.24, effExpansion) * layer_opacity;
+	coreAlpha = mix(coreAlpha, farCoreAlpha, far_field);
+	float shockAlpha = diamond * mix(0.08, 0.02, effExpansion)
+		* mix(0.35, 1.0, core_layer) * layer_opacity;
+
+	// Preserve a restrained near-nozzle core in vacuum. It follows throttle and
+	// remains much thinner than the sea-level core; far-field may lift it only
+	// because the CPU hides the sheath there.
+	float vacuumCoreAlpha = core_layer * effExpansion * radial
+		* (1.0 - smoothstep(0.22, 0.74, a))
+		* mix(0.15, 0.18, far_field) * layer_opacity;
+	float profileAlpha = mix(sheathAlpha, coreAlpha, core_layer) + shockAlpha;
+	ALPHA = clamp(max(profileAlpha, vacuumCoreAlpha) * effThrottle, 0.0, 0.62);
+    ALPHA *= foreground_cloud_transmission((INV_VIEW_MATRIX * vec4(VERTEX, 0.0)).xyz);
+}

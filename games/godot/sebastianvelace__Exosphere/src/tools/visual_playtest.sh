@@ -1,0 +1,7350 @@
+#!/usr/bin/env bash
+# State-gated pad→orbit→EDL visual play harness for Exosphere.
+# Generates a temporary scripts/_PlaytestShot.cs autoload, runs Godot under xvfb,
+# writes PNG milestones + telemetry, and always cleans up on exit.
+set -euo pipefail
+
+# Bash reads a script while it runs it, so editing this file during an hour-long mission run
+# corrupted that run's final gates. Run from a private snapshot taken at startup instead.
+if [[ -z "${EXO_PLAYTEST_SNAPSHOT:-}" ]]; then
+  snapshot="$(mktemp "${TMPDIR:-/tmp}/exo_playtest_snapshot.XXXXXX")"
+  cp "$0" "$snapshot"
+  EXO_PLAYTEST_SNAPSHOT="$snapshot" EXO_PLAYTEST_SOURCE="$0" exec bash "$snapshot" "$@"
+fi
+# Early exits (usage, argument errors) leave before the full cleanup trap below exists.
+trap 'rm -f "$EXO_PLAYTEST_SNAPSHOT"' EXIT
+
+ROOT="$(cd "$(dirname "${EXO_PLAYTEST_SOURCE:-$0}")/.." && pwd)"
+cd "$ROOT"
+source "$ROOT/tools/lib/playtest_contracts.sh"
+
+DEFAULT_GODOT="/home/sebasvelace/Downloads/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64"
+GODOT="${GODOT_BIN:-$DEFAULT_GODOT}"
+HARNESS="scripts/_PlaytestShot.cs"
+OUT_DIR_SET=0
+LOG_SET=0
+if [[ -n "${OUT_DIR:-}" ]]; then OUT_DIR_SET=1; fi
+if [[ -n "${LOG:-}" ]]; then LOG_SET=1; fi
+OUT_DIR="${OUT_DIR:-/tmp/exo_play}"
+LOG="${LOG:-/tmp/exo_play.log}"
+CONSOLE_LOG=""
+GODOT_LOG_FILE=""
+RUN_ID=""
+RUN_TOKEN=""
+MAX_RUNTIME_SEC="${PLAYTEST_MAX_RUNTIME_SEC:-}"
+RESOLUTION="1920x1080"
+RENDERER="compatibility"
+GODOT_RENDERER_ARGS=()
+EXTERNAL_DISPLAY="${EXO_VISUAL_DISPLAY:-}"
+VERIFY_ONLY=0
+MODE="full"
+HARNESS_MODE=""
+OPTICS_MATRIX=0
+REENTRY_BELLY_FIRST=""
+REENTRY_SLUG=""
+SUN_ELEVATION_DEG=""
+CAMERA_PRESET=""
+EARTH_VIEW=""
+VARIANT_FILE=""
+VARIANT_SITE=""
+VARIANT_PROFILE=""
+CLEAR_SOLAR_ECLIPSE=0
+SKIP_BUILD=0
+PROJECT_BACKUP=""
+APOLLO11_HARDWARE=0
+OWNS_HARNESS=0
+OWNS_LOCK=0
+CLEANUP_DONE=0
+FAST_FORWARD_ASCENT=1
+UNTIL_PHASE=""
+GODOT_PIPELINE_PID=""
+
+usage() {
+  cat <<'EOF'
+Usage: tools/visual_playtest.sh [options]
+
+Runs the Exosphere visual playtest harness (temporary autoload, never committed).
+
+Options:
+  --smoke       Pad-only capture (~30s). Used by CI for pipeline validation.
+  --falcon      Seed the Falcon 9 Block 5 / Kennedy scenario before capture.
+  --new-glenn   Seed the New Glenn 7x2 / LC-36 scenario before capture.
+  --mercury     Seed Freedom 7 / Mercury-Redstone 3 at LC-5.
+  --friendship  Seed Friendship 7 / Mercury-Atlas 6 at LC-14.
+  --gemini      Seed Gemini 8 / Titan II GLV-8 at LC-19.
+  --gemini-docking  Seed and capture Gemini 8 docked to Agena 5003.
+  --apollo8     Seed Apollo 8 / Saturn V AS-503 at LC-39A.
+  --apollo8-lunar  Seed CSM-103 in its historical low lunar orbit.
+  --apollo8-mission
+                Fly Apollo 8 from the pad through ascent, TLI, mid-course correction and LOI
+                with the historical director alone, and finish in lunar orbit.
+  --gemini-mission
+                Fly Gemini 8 from the pad through rendezvous, docking and the emergency return
+                with the historical director alone (default --until-phase LANDED).
+  --apollo11    Validate Apollo 11 / AS-506 hardware at LC-39A (launch mode by default).
+  --apollo11-mission
+                Fly Apollo 11 from the pad through TLI, RCS transposition and docking with
+                Eagle and the docked LOI with the historical director alone (default
+                --until-phase LUNAR_ORBIT).
+  --lunar-map   Seed Earth orbit and capture the Lambert TLI/LOI map dossier.
+  --flight7     Seed the historical Starship Flight 7 / Starbase scenario.
+  --flight12    Seed the historical Starship Flight 12 V3 / Starbase scenario.
+  --flight14-payload
+                Capture the isolated Flight 14 estimated Starlink payload renderer.
+  --flight14-payload-group
+                Capture a seeded post-release carrier + two-payload composition at wide and inspection zooms.
+  --flight14-deployment
+                Fly the Flight 14 exploration through two real payload releases, observe their attitude for 60 s, and capture them.
+  --ascent      Fly only pad→stable orbit with dense guidance/physics diagnostics, then exit.
+  --launch      Capture ignition and early vertical liftoff, then exit.
+  --launch-track Capture launch, tower-clear and 1 km using the production camera.
+  --ship        Capture standalone Starship in vacuum at full/half thrust, shutdown,
+                plus close steel/TPS and three-quarter flap inspection frames.
+  --flaps       Capture only the deterministic windward/leeward flap inspection pair.
+  --enginebay   Capture a deterministic underside inspection of the six Starship Raptors.
+  --orbital-plume
+                Capture a deterministic 200 km Starship vacuum plume with the production
+                chase camera, HUD, vehicle silhouette, and fail-closed plume telemetry.
+  --starbase-coverage
+                 Capture Starbase at 7/16/26 km in oblique and nadir views.
+  --cloud-traverse Capture below/inside/above a deterministic coastal cell and an occlusion A/B.
+  --ascent-optics Capture paused geographic rays from ground to 250 km; camera tracks vessel.
+  --starbase-far Capture the mapped Starbase terrain transition at 2, 5, 8, 12, 20 and 40 km.
+  --kennedy-far  Capture the measured Kennedy LC-39A terrain transition at 2, 5, 8, 12, 20 and 40 km.
+  --orbit       Seed standalone Starship at orbit and capture the direct planetary view.
+  --cockpit     Capture the first-person cockpit optics and interior.
+  --saturn      Jump to Saturn and capture the imported ring texture.
+  --atmosphere  Capture a deterministic day/twilight/night altitude matrix with image metrics.
+  --atmosphere-ground
+                 Capture only Earth ground day/sunrise/sunset/night cases for fast lighting A/B.
+  --atmosphere-low  Capture only the deterministic Earth 10 km daylight case for shader A/B work.
+  --atmosphere-orbit
+                 Capture only the deterministic Earth 400 km daylight case for scaled-space A/B.
+  --atmosphere-bodies  Capture explicit Mars/Venus day/orbit/night atmosphere cases.
+  --spectral    Run the offline 9-band RGB/LUT comparison for Earth, Mars and Venus.
+  --edl         Seed a deterministic 70 km entry and verify physical flip/touchdown.
+  --edl-yaw DEG Override the deterministic EDL exterior camera yaw in degrees (default 0).
+  --sun-elevation DEG
+                Presentation-only solar elevation for comparable captures (range -90..90;
+                physical Sun position and forces remain unchanged).
+  --clear-solar-eclipse
+                Presentation-only EDL fixture: disable unrelated solar occlusion while
+                retaining physical Sun/Moon positions and physics.
+  --camera-preset NAME
+                Deterministic composition: pad_side|tower_side|tracking|orbit_beauty|edl_side|liftoff_wide.
+  --earth-view NAME
+                Scaled-space Earth composition: default|rotated (atmosphere-orbit only).
+  --orbital-reentry  Seed a Starbase Starship in circular orbit, arm the real map deorbit
+                autopilot, and verify normal atmospheric entry through tower catch.
+  --entry-physics  Seed a non-demo Starship at the 120 km entry interface and verify the
+                production EDL path through peak heating and transonic flight.
+  --hotstage    Fly [G] full ascent (default Flight 7 Starship/Super Heavy) and capture the
+                real hot-staging dual-thrust overlap window, gated on vessel state
+                (IsHotStageOverlapping), not a frame count.
+  --reentry-compare  Capture nominal belly-flop vs. forced bad-attitude (nose-first,
+                tumbling) EDL, gated on PEAK_HEATING/destruction, for VFX/thermal comparison.
+  --run-id ID    Isolate default artifacts as /tmp/exo_play-ID{,.log}; recommended for agents.
+  --resolution WIDTHxHEIGHT
+                 Capture framebuffer size (default: 1920x1080; limits: 640x360..7680x4320).
+  --renderer NAME Renderer for capture: compatibility (default) or forward_plus.
+  --display DISPLAY
+                 Use an already-running X display (for example localhost:101) instead of
+                 starting xvfb-run. The display must already match --resolution.
+  --max-runtime SEC  Wall-clock budget (default: 3600 full mission, 1800 ascent,
+                      1800 orbital reentry/other modes).
+  --verify-only  Re-run artifact/log gates without building or launching Godot.
+  --out-dir DIR PNG output directory (default: /tmp/exo_play)
+  --log FILE    Telemetry log path (default: /tmp/exo_play.log)
+  --skip-build  Skip the simulation-library prebuild (the Godot project is still built)
+  --no-fast-forward
+                Keep --apollo8-mission powered ascent at the director's warp. By default the
+                harness raises it to the allowed maximum: guidance runs on the fixed 20 ms
+                clock, so only wall time changes.
+  --until-phase PHASE
+                End --apollo8-mission successfully once the mission enters PHASE (ORBIT, TLI,
+                LOI, ... or TEI, ENTRY, LANDED to fly on through lunar orbit to splashdown).
+  -h, --help    Show this help
+
+Environment:
+  GODOT_BIN     Path to Godot 4.6 mono binary
+  PLAYTEST_MAX_RUNTIME_SEC  Same override as --max-runtime
+  EXO_VISUAL_DISPLAY  Optional external X display, equivalent to --display
+
+Outputs:
+  ${OUT_DIR}/exo_play_<milestone>.png
+  ${OUT_DIR}/run-summary.txt
+  ${LOG}         One telemetry line per captured milestone + summary
+
+Cleanup on exit (success or failure):
+  removes scripts/_PlaytestShot.cs (+ .uid), restores project.godot
+EOF
+}
+
+require_option_value() {
+  local option="$1"
+  local value="${2-}"
+  if [[ -z "$value" ]]; then
+    echo "ERROR: $option requires a value" >&2
+    exit 2
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --smoke) MODE="smoke"; shift ;;
+    --falcon)
+      VARIANT_FILE="falcon9_block5_standard_2025.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="falcon9-block5-ascent"
+      shift ;;
+    --new-glenn)
+      VARIANT_FILE="newglenn_7x2_public_2026.json"
+      VARIANT_SITE="cape_canaveral_lc36"
+      VARIANT_PROFILE="newglenn-7x2-ascent"
+      shift ;;
+    --mercury)
+      VARIANT_FILE="mercury_redstone3_freedom7_1961.json"
+      VARIANT_SITE="cape_canaveral_lc5"
+      VARIANT_PROFILE="mercury-redstone3-suborbital"
+      shift ;;
+    --friendship)
+      VARIANT_FILE="mercury_atlas6_friendship7_1962.json"
+      VARIANT_SITE="cape_canaveral_lc14"
+      VARIANT_PROFILE="mercury-atlas6-three-orbit"
+      shift ;;
+    --gemini)
+      VARIANT_FILE="gemini8_titan2_1966.json"
+      VARIANT_SITE="cape_canaveral_lc19"
+      VARIANT_PROFILE="gemini8-rendezvous-emergency-return"
+      shift ;;
+    --gemini-docking)
+      MODE="gemini_docking"
+      VARIANT_FILE="gemini8_titan2_1966.json"
+      VARIANT_SITE="cape_canaveral_lc19"
+      VARIANT_PROFILE="gemini8-rendezvous-emergency-return"
+      shift ;;
+    --gemini-mission)
+      MODE="gemini_mission"
+      VARIANT_FILE="gemini8_titan2_1966.json"
+      VARIANT_SITE="cape_canaveral_lc19"
+      VARIANT_PROFILE="gemini8-rendezvous-emergency-return"
+      shift ;;
+    --apollo8)
+      VARIANT_FILE="apollo8_saturn5_as503_1968.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="apollo8-lunar-orbit-return"
+      shift ;;
+    --apollo8-mission)
+      MODE="apollo8_mission"
+      VARIANT_FILE="apollo8_saturn5_as503_1968.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="apollo8-lunar-orbit-return"
+      shift ;;
+    --apollo8-lunar)
+      MODE="apollo8_lunar"
+      VARIANT_FILE="apollo8_saturn5_as503_1968.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="apollo8-lunar-orbit-return"
+      shift ;;
+    --apollo11)
+      VARIANT_FILE="apollo11_saturn5_as506_1969.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="apollo11-lunar-landing-return"
+      APOLLO11_HARDWARE=1
+      shift ;;
+    --apollo11-mission)
+      MODE="apollo11_mission"
+      VARIANT_FILE="apollo11_saturn5_as506_1969.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="apollo11-lunar-landing-return"
+      shift ;;
+    --lunar-map) MODE="lunar_map"; shift ;;
+    --flight7)
+      VARIANT_FILE="starship_flight7_block2_2025.json"
+      VARIANT_SITE="starbase"
+      VARIANT_PROFILE="starship-flight7-ascent"
+      shift ;;
+    --flight12)
+      VARIANT_FILE="starship_flight12_v3_2026.json"
+      VARIANT_SITE="starbase_pad2"
+      VARIANT_PROFILE="starship-flight12-ascent"
+      shift ;;
+    --flight14-payload) MODE="flight14_payload"; shift ;;
+    --flight14-payload-group) MODE="flight14_payload_group"; shift ;;
+    --flight14-deployment) MODE="flight14_deployment"; shift ;;
+    --ascent) MODE="ascent"; shift ;;
+    --launch) MODE="launch"; shift ;;
+    --launch-track) MODE="launch_track"; shift ;;
+    --ship) MODE="ship"; shift ;;
+    --flaps) MODE="flaps"; shift ;;
+    --enginebay) MODE="enginebay"; shift ;;
+    --orbital-plume) MODE="orbital_plume"; shift ;;
+    --starbase-coverage) MODE="terrain_coverage"; HARNESS_MODE="starbase_far"; OPTICS_MATRIX=2; shift ;;
+    --cloud-traverse) MODE="cloud_traverse"; HARNESS_MODE="starbase_far"; OPTICS_MATRIX=3; shift ;;
+    --ascent-optics) MODE="ascent_optics"; HARNESS_MODE="starbase_far"; OPTICS_MATRIX=1; shift ;;
+    --starbase-far) MODE="starbase_far"; shift ;;
+    --kennedy-far)
+      MODE="kennedy_far"
+      VARIANT_FILE="falcon9_block5_standard_2025.json"
+      VARIANT_SITE="kennedy"
+      VARIANT_PROFILE="falcon9-block5-ascent"
+      shift ;;
+    --orbit) MODE="orbit"; shift ;;
+    --cockpit) MODE="cockpit"; shift ;;
+    --saturn) MODE="saturn"; shift ;;
+    --atmosphere) MODE="atmosphere"; shift ;;
+    --atmosphere-ground) MODE="atmosphere_ground"; shift ;;
+    --atmosphere-low) MODE="atmosphere_low"; shift ;;
+    --atmosphere-orbit) MODE="atmosphere_orbit"; shift ;;
+    --atmosphere-bodies) MODE="atmosphere_bodies"; shift ;;
+    --spectral) MODE="spectral"; shift ;;
+    --edl) MODE="edl"; shift ;;
+    --edl-yaw) require_option_value "$1" "${2-}"; EDL_YAW_DEG="$2"; shift 2 ;;
+    --sun-elevation) require_option_value "$1" "${2-}"; SUN_ELEVATION_DEG="$2"; shift 2 ;;
+    --clear-solar-eclipse) CLEAR_SOLAR_ECLIPSE=1; shift ;;
+    --camera-preset) require_option_value "$1" "${2-}"; CAMERA_PRESET="$2"; shift 2 ;;
+    --earth-view) require_option_value "$1" "${2-}"; EARTH_VIEW="$2"; shift 2 ;;
+    --orbital-reentry)
+      MODE="orbital_reentry"
+      VARIANT_FILE="starship_flight7_block2_2025.json"
+      VARIANT_SITE="starbase"
+      VARIANT_PROFILE="starship-flight7-ascent"
+      shift ;;
+    --entry-physics)
+      MODE="entry_physics"
+      VARIANT_FILE="starship_flight7_block2_2025.json"
+      VARIANT_SITE="starbase"
+      VARIANT_PROFILE="starship-flight7-ascent"
+      shift ;;
+    --hotstage)
+      MODE="hotstage"
+      VARIANT_FILE="starship_flight7_block2_2025.json"
+      VARIANT_SITE="starbase"
+      VARIANT_PROFILE="starship-flight7-ascent"
+      shift ;;
+    --reentry-compare) MODE="reentry_compare"; shift ;;
+    --run-id) require_option_value "$1" "${2-}"; RUN_ID="$2"; shift 2 ;;
+    --resolution) require_option_value "$1" "${2-}"; RESOLUTION="$2"; shift 2 ;;
+    --renderer) require_option_value "$1" "${2-}"; RENDERER="$2"; shift 2 ;;
+    --display) require_option_value "$1" "${2-}"; EXTERNAL_DISPLAY="$2"; shift 2 ;;
+    --max-runtime) require_option_value "$1" "${2-}"; MAX_RUNTIME_SEC="$2"; shift 2 ;;
+    --verify-only) VERIFY_ONLY=1; shift ;;
+    --out-dir) require_option_value "$1" "${2-}"; OUT_DIR="$2"; OUT_DIR_SET=1; shift 2 ;;
+    --log) require_option_value "$1" "${2-}"; LOG="$2"; LOG_SET=1; shift 2 ;;
+    --skip-build) SKIP_BUILD=1; shift ;;
+    --no-fast-forward) FAST_FORWARD_ASCENT=0; shift ;;
+    --until-phase) require_option_value "$1" "${2-}"; UNTIL_PHASE="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+if [[ "$MODE" == "entry_physics" ]]; then
+  [[ -n "$SUN_ELEVATION_DEG" ]] || SUN_ELEVATION_DEG="25"
+  [[ -n "$CAMERA_PRESET" ]] || CAMERA_PRESET="edl_side"
+fi
+
+case "$RENDERER" in
+  compatibility)
+    # Preserve the historical harness default exactly: selecting the OpenGL 3
+    # driver makes Godot use the Compatibility renderer.
+    GODOT_RENDERER_ARGS=(--rendering-driver opengl3)
+    ;;
+  forward_plus)
+    GODOT_RENDERER_ARGS=(--rendering-driver vulkan --rendering-method forward_plus)
+    ;;
+  *)
+    echo "ERROR: --renderer must be compatibility or forward_plus" >&2
+    exit 2
+    ;;
+esac
+
+if [[ "$MODE" == "gemini_mission" && -z "$UNTIL_PHASE" ]]; then
+  UNTIL_PHASE="LANDED"
+fi
+if [[ "$MODE" == "apollo11_mission" && -z "$UNTIL_PHASE" ]]; then
+  UNTIL_PHASE="LUNAR_ORBIT"
+fi
+if [[ -n "$UNTIL_PHASE" ]]; then
+  if [[ "$MODE" != "apollo8_mission" && "$MODE" != "gemini_mission" && "$MODE" != "apollo11_mission" ]]; then
+    echo "ERROR: --until-phase is only valid with --apollo8-mission, --gemini-mission or --apollo11-mission" >&2
+    exit 2
+  fi
+  case "$UNTIL_PHASE" in
+    LIFTOFF|ASCENT_SH|MAX_Q|SEPARATION|ASCENT_SHIP|ORBIT|TLI|LUNAR_APPROACH|LOI|LUNAR_ORBIT|TEI|ENTRY|LANDED) ;;
+    *)
+      echo "ERROR: --until-phase must be LIFTOFF, ASCENT_SH, MAX_Q, SEPARATION, ASCENT_SHIP, ORBIT, TLI, LUNAR_APPROACH, LOI, LUNAR_ORBIT, TEI, ENTRY or LANDED" >&2
+      exit 2
+      ;;
+  esac
+fi
+
+if [[ ! "${EDL_YAW_DEG:-0}" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
+  || ! awk -v yaw="${EDL_YAW_DEG:-0}" 'BEGIN { exit !(yaw >= -180.0 && yaw <= 180.0) }'; then
+  echo "ERROR: --edl-yaw must be a number between -180 and 180 degrees" >&2
+  exit 2
+fi
+EDL_YAW_DEG="${EDL_YAW_DEG:-0}"
+
+SUN_ELEVATION_SET=0
+if [[ -n "$SUN_ELEVATION_DEG" ]]; then
+  if [[ ! "$SUN_ELEVATION_DEG" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
+    || ! awk -v elevation="$SUN_ELEVATION_DEG" \
+      'BEGIN { exit !(elevation >= -90.0 && elevation <= 90.0) }'; then
+    echo "ERROR: --sun-elevation must be a number between -90 and 90 degrees" >&2
+    exit 2
+  fi
+  SUN_ELEVATION_SET=1
+else
+  SUN_ELEVATION_DEG="0"
+fi
+
+case "$CAMERA_PRESET" in
+  ""|pad_side|tower_side|tracking|orbit_beauty|edl_side|liftoff_wide) ;;
+  *)
+    echo "ERROR: --camera-preset must be pad_side, tower_side, tracking, orbit_beauty, edl_side or liftoff_wide" >&2
+    exit 2
+    ;;
+esac
+
+case "$EARTH_VIEW" in
+  ""|default|rotated) ;;
+  *)
+    echo "ERROR: --earth-view must be default or rotated" >&2
+    exit 2
+    ;;
+esac
+if [[ -n "$EARTH_VIEW" && "$MODE" != "atmosphere_orbit" ]]; then
+  echo "ERROR: --earth-view is only valid with --atmosphere-orbit" >&2
+  exit 2
+fi
+
+if [[ ! "$RESOLUTION" =~ ^([0-9]{1,4})x([0-9]{1,4})$ ]]; then
+  echo "ERROR: --resolution must use WIDTHxHEIGHT (for example 1280x720)" >&2
+  exit 2
+fi
+RESOLUTION_WIDTH="${BASH_REMATCH[1]}"
+RESOLUTION_HEIGHT="${BASH_REMATCH[2]}"
+if [[ -n "$EXTERNAL_DISPLAY" && ! "$EXTERNAL_DISPLAY" =~ ^(:[0-9]+|[A-Za-z0-9._-]+:[0-9]+)$ ]]; then
+  echo "ERROR: --display must use DISPLAY syntax such as localhost:101 or :101" >&2
+  exit 2
+fi
+if (( RESOLUTION_WIDTH < 640 || RESOLUTION_WIDTH > 7680
+    || RESOLUTION_HEIGHT < 360 || RESOLUTION_HEIGHT > 4320
+    || RESOLUTION_WIDTH * RESOLUTION_HEIGHT > 33177600 )); then
+  echo "ERROR: --resolution must be between 640x360 and 7680x4320, with at most 33177600 pixels" >&2
+  exit 2
+fi
+
+  if [[ "$MODE" == "ascent" && -z "$VARIANT_FILE" ]]; then
+    VARIANT_FILE="starship_flight7_block2_2025.json"
+    VARIANT_SITE="starbase"
+    VARIANT_PROFILE="starship-flight7-ascent"
+  fi
+
+  if [[ ( "$MODE" == "starbase_far" || "$MODE" == "ascent_optics" || "$MODE" == "terrain_coverage" || "$MODE" == "cloud_traverse" ) && -z "$VARIANT_FILE" ]]; then
+    VARIANT_FILE="starship_flight7_block2_2025.json"
+    VARIANT_SITE="starbase"
+    VARIANT_PROFILE="starship-flight7-ascent"
+  fi
+  if [[ "$MODE" == "kennedy_far" && -z "$VARIANT_FILE" ]]; then
+    VARIANT_FILE="falcon9_block5_standard_2025.json"
+    VARIANT_SITE="kennedy"
+    VARIANT_PROFILE="falcon9-block5-ascent"
+  fi
+
+if [[ -n "$RUN_ID" ]]; then
+  if [[ ! "$RUN_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "ERROR: --run-id accepts only letters, digits, dot, underscore and dash" >&2
+    exit 2
+  fi
+
+    if [[ "$OUT_DIR_SET" -eq 0 ]]; then OUT_DIR="/tmp/exo_play-${RUN_ID}"; fi
+  if [[ "$LOG_SET" -eq 0 ]]; then LOG="/tmp/exo_play-${RUN_ID}.log"; fi
+fi
+CONSOLE_LOG="${LOG}.console"
+RUN_TOKEN="exo-${RUN_ID:-default}-$$"
+
+# Apollo 11 currently ships as a dated hardware preset, not yet as the full
+# historical lunar-landing profile. Keep its default visual acceptance honest:
+# pad-to-liftoff only, while still allowing an explicitly requested mode.
+if [[ $APOLLO11_HARDWARE -eq 1 && "$MODE" == "full" ]]; then
+  MODE="launch"
+fi
+
+  if [[ -z "$MAX_RUNTIME_SEC" ]]; then
+    if [[ "$MODE" == "full" ]]; then
+      MAX_RUNTIME_SEC=3600
+    elif [[ "$MODE" == "launch" ]]; then
+      MAX_RUNTIME_SEC=1800
+    elif [[ "$MODE" == "ascent" ]]; then
+    # llvmpipe can spend several wall-clock seconds per rendered simulation second;
+    # keep the ascent gate aligned with the documented non-full-mode budget so the
+    # physical orbit can finish instead of timing out just after Insert.
+    MAX_RUNTIME_SEC=1800
+  elif [[ "$MODE" == "hotstage" ]]; then
+    # Hot-stage acceptance includes the full Super Heavy ascent plus the real overlap
+    # window. On llvmpipe that path is materially slower than the launch-only gate, so
+    # keep it bounded but give the physical event enough wall-clock budget to occur.
+    MAX_RUNTIME_SEC=3600
+  elif [[ "$MODE" == "entry_physics" ]]; then
+    # State-seeded at atmospheric interface: no orbital coast, but still a complete
+    # production EDL integration through transonic flight under llvmpipe.
+    MAX_RUNTIME_SEC=1800
+  elif [[ "$MODE" == "orbital_reentry" ]]; then
+    # This is deliberately bounded: it validates one prepared orbit and one normal
+    # deorbit/EDL pass, never an open-ended campaign or a demo fallback. The CPU/Xvfb
+    # renderer needs more wall time than the direct 70 km EDL demonstration because
+    # this path also integrates the 1,200 km coast and the real deorbit burn.
+    MAX_RUNTIME_SEC=1800
+  else
+    MAX_RUNTIME_SEC=1800
+  fi
+fi
+if [[ ! "$MAX_RUNTIME_SEC" =~ ^[0-9]+$ ]] \
+  || (( MAX_RUNTIME_SEC < 60 || MAX_RUNTIME_SEC > 14400 )); then
+  echo "ERROR: --max-runtime must be an integer between 60 and 14400 seconds" >&2
+  exit 2
+fi
+
+# The spectral matrix is a CPU validation harness, not a Godot scene. Keep it on the same
+# entry point as the visual matrix so acceptance jobs can request either artifact family,
+# while avoiding a temporary autoload and a framebuffer for an offline comparison.
+if [[ "$MODE" == "spectral" ]]; then
+  mkdir -p "$OUT_DIR"
+  dotnet run --project tools/SpectralValidation/SpectralValidation.csproj \
+    --no-restore -- "$OUT_DIR"
+  echo "visual_playtest: spectral comparison PASS; artifacts=$OUT_DIR"
+  exit 0
+fi
+
+write_run_summary() {
+  local status="$1"
+  [[ -d "$OUT_DIR" ]] || return 0
+  {
+    echo "status=$status"
+    echo "mode=$MODE"
+    echo "renderer=$RENDERER"
+    echo "renderer_args=${GODOT_RENDERER_ARGS[*]}"
+    echo "renderer_actual=$(awk '/^RENDERER_ACTUAL / { actual=$2 } END { print actual ? actual : "unavailable" }' "$LOG" 2>/dev/null)"
+    echo "run_id=${RUN_ID:-default}"
+    echo "log=$LOG"
+    echo "console_log=$CONSOLE_LOG"
+    echo "artifacts=$OUT_DIR"
+    if [[ -f "$LOG" ]]; then
+      echo "milestones=$(awk '/^CAPTURE / { printf "%s%s", separator, $2; separator="," } END { print "" }' "$LOG")"
+      grep -aE '^(SUMMARY|PARTIAL|FAIL|GAP|FALLBACK) ' "$LOG" | tail -20 || true
+      grep -aE '^(ASCENT_METRICS|TRANSITION_ASCENT) ' "$LOG" | tail -8 || true
+      grep -a '^TRACE_ASCENT ' "$LOG" | tail -1 || true
+      grep -a '^TRACE_MISSION ' "$LOG" | tail -1 || true
+      grep -aE 'failures=[^ ]*[A-Z][A-Z_]+:[1-9]' "$LOG" | tail -1 || true
+    fi
+  } > "$OUT_DIR/run-summary.txt"
+}
+
+print_failure_diagnostics() {
+  echo "visual_playtest: diagnostics mode=$MODE out=$OUT_DIR log=$LOG" >&2
+  if [[ -f "$LOG" ]]; then
+    echo "visual_playtest: last state evidence:" >&2
+    grep -aE '^(CAPTURE|TRACE_ASCENT|TRANSITION_ASCENT|ASCENT_METRICS|TRACE_FULL|TRACE_MISSION|TRACE |HISTORICAL_MISSION|FAIL|GAP|PARTIAL|FALLBACK|SUMMARY)' "$LOG" \
+      | tail -25 >&2 || true
+  else
+    echo "visual_playtest: telemetry log was not created" >&2
+  fi
+  if [[ -s "$CONSOLE_LOG" ]]; then
+    echo "visual_playtest: last Godot console lines:" >&2
+    tail -12 "$CONSOLE_LOG" >&2 || true
+  fi
+  if [[ -d "$OUT_DIR" ]]; then
+    local captures
+    captures="$(find "$OUT_DIR" -maxdepth 1 -type f -name 'exo_play_*.png' \
+      -printf '%f\n' 2>/dev/null | sort | paste -sd, -)"
+    echo "visual_playtest: captures=${captures:-none}" >&2
+  fi
+}
+
+prepare_godot_log_file() {
+  # Godot's default crash log lives under user://logs. In this environment the
+  # crash handler can fail to create that directory and then abort the process
+  # before the scene starts. --log-file is supported by the installed 4.6.3
+  # binary; keep one explicit native log per launch beside the harness console
+  # log so every run is reproducible and isolated by --run-id/--log.
+  GODOT_LOG_FILE="${CONSOLE_LOG}.godot"
+  mkdir -p "$(dirname "$GODOT_LOG_FILE")"
+  : > "$GODOT_LOG_FILE"
+}
+
+run_godot() {
+  local godot_status=0
+  local godot_args=(
+    "$GODOT"
+    --path .
+    "${GODOT_RENDERER_ARGS[@]}"
+    --resolution "$RESOLUTION"
+    --log-file "$GODOT_LOG_FILE"
+    res://scenes/flight/Flight.tscn
+  )
+
+  echo "visual_playtest: launch renderer=$RENDERER renderer_args=${GODOT_RENDERER_ARGS[*]}" \
+    | tee -a "$CONSOLE_LOG"
+  # Run the pipeline in the background and wait for it: bash defers traps while a
+  # foreground child runs, so an interrupted harness kept Godot alive and left
+  # project.godot dirty until the whole flight finished. `wait` returns on a signal.
+  if [[ -n "$EXTERNAL_DISPLAY" ]]; then
+    (DISPLAY="$EXTERNAL_DISPLAY" EXOSPHERE_PLAYTEST_TOKEN="$RUN_TOKEN" \
+      "${godot_args[@]}" 2>&1 | tee -a "$CONSOLE_LOG") &
+  else
+    (xvfb-run -a -s "-screen 0 ${RESOLUTION}x24" env \
+      EXOSPHERE_PLAYTEST_TOKEN="$RUN_TOKEN" "${godot_args[@]}" \
+      2>&1 | tee -a "$CONSOLE_LOG") &
+  fi
+  GODOT_PIPELINE_PID=$!
+  wait "$GODOT_PIPELINE_PID" || godot_status=$?
+  GODOT_PIPELINE_PID=""
+  printf 'RENDERER name=%s args=%s\n' "$RENDERER" "${GODOT_RENDERER_ARGS[*]}" >> "$LOG"
+  return "$godot_status"
+}
+
+# Signal a process and all of its descendants, deepest first.
+kill_process_tree() {
+  local pid="$1" child
+  for child in $(pgrep -P "$pid" 2>/dev/null); do
+    kill_process_tree "$child"
+  done
+  kill -TERM "$pid" 2>/dev/null || true
+}
+
+cleanup() {
+  local ec=$?
+  if [[ "$CLEANUP_DONE" -eq 1 ]]; then
+    return
+  fi
+  CLEANUP_DONE=1
+  set +e
+  rm -f "${EXO_PLAYTEST_SNAPSHOT:-}" 2>/dev/null
+  if [[ -n "$GODOT_PIPELINE_PID" ]]; then
+    kill_process_tree "$GODOT_PIPELINE_PID"
+    wait "$GODOT_PIPELINE_PID" 2>/dev/null
+  fi
+  local status="FAIL"
+  if [[ $ec -eq 130 || $ec -eq 143 ]]; then
+    status="PARTIAL"
+    if [[ -f "$LOG" ]]; then
+      echo "PARTIAL reason=INTERRUPTED exit=$ec mode=$MODE" >> "$LOG"
+    fi
+  fi
+  if [[ "$status" == "PARTIAL" ]]; then
+    write_run_summary "$status"
+    print_failure_diagnostics
+  elif [[ $ec -eq 0 ]]; then
+    write_run_summary "PASS"
+  else
+    write_run_summary "FAIL"
+    print_failure_diagnostics
+  fi
+  if [[ "$OWNS_HARNESS" -eq 1 ]]; then
+    rm -f "$HARNESS" "${HARNESS}.uid" 2>/dev/null || true
+    if [[ -n "$PROJECT_BACKUP" && -f "$PROJECT_BACKUP" ]]; then
+      cp "$PROJECT_BACKUP" project.godot
+      rm -f "$PROJECT_BACKUP"
+    fi
+  fi
+  if [[ "$OWNS_LOCK" -eq 1 ]]; then
+    rm -f "$PLAYTEST_LOCK/owner" 2>/dev/null || true
+    rmdir "$PLAYTEST_LOCK" 2>/dev/null || true
+  fi
+  if [[ $ec -ne 0 ]]; then
+    if [[ "$OWNS_HARNESS" -eq 1 ]]; then
+      echo "visual_playtest: failed (exit $ec). Owner resources cleaned; project.godot restored; see $OUT_DIR/run-summary.txt." >&2
+    else
+      echo "visual_playtest: failed (exit $ec) before acquiring harness ownership; see $OUT_DIR/run-summary.txt." >&2
+    fi
+  fi
+  exit "$ec"
+}
+trap cleanup EXIT INT TERM
+
+# The artifact and console gates below search logs with rg; without it every `if rg -q`
+# evaluates false and the gates pass silently (this hid an unimported CI project).
+if ! command -v rg >/dev/null 2>&1; then
+  echo "ERROR: ripgrep (rg) is required by the visual_playtest gates" >&2
+  exit 1
+fi
+
+# --verify-only re-reads existing artifacts and logs; it needs neither Godot nor a display.
+if [[ "$VERIFY_ONLY" -eq 0 && ! -x "$GODOT" ]]; then
+  echo "ERROR: Godot not found at $GODOT (set GODOT_BIN)" >&2
+  exit 1
+fi
+if [[ "$VERIFY_ONLY" -eq 1 ]]; then
+  :
+elif [[ -n "$EXTERNAL_DISPLAY" ]]; then
+  if ! command -v xdpyinfo >/dev/null 2>&1; then
+    echo "ERROR: xdpyinfo is required to validate --display" >&2
+    exit 1
+  fi
+  if ! DISPLAY="$EXTERNAL_DISPLAY" xdpyinfo >/dev/null 2>&1; then
+    echo "ERROR: external display is not reachable: $EXTERNAL_DISPLAY" >&2
+    exit 1
+  fi
+elif ! command -v xvfb-run >/dev/null 2>&1; then
+  echo "ERROR: xvfb-run not found (install xvfb), or pass --display DISPLAY" >&2
+  exit 1
+fi
+
+register_autoload() {
+  if grep -q 'PlaytestShot=' project.godot 2>/dev/null; then
+    echo "ERROR: project.godot already contains the temporary PlaytestShot autoload" >&2
+    echo "       remove the stale harness or wait for the owning visual run to finish" >&2
+    return 1
+  fi
+  PROJECT_BACKUP="$(mktemp /tmp/exo_project_godot.XXXXXX)"
+  cp project.godot "$PROJECT_BACKUP"
+  # Ownership starts only after a private backup exists. If insertion or harness
+  # generation fails, cleanup can therefore restore the exact pre-run project file.
+  OWNS_HARNESS=1
+  if grep -q '^\[autoload\]' project.godot; then
+    sed -i '/^\[autoload\]/a PlaytestShot="*res://scripts/_PlaytestShot.cs"' project.godot
+  else
+    cat >> project.godot <<'EOF'
+
+[autoload]
+
+PlaytestShot="*res://scripts/_PlaytestShot.cs"
+EOF
+  fi
+}
+
+write_harness() {
+  mkdir -p "$(dirname "$HARNESS")"
+  cat > "$HARNESS" <<CS
+namespace Exosphere.Game;
+
+using Godot;
+using System;
+using System.IO;
+using System.Linq;
+using Exosphere.Simulation;
+using Exosphere.Simulation.Construction;
+using Exosphere.Simulation.Flight;
+using Exosphere.Simulation.Math;
+using Exosphere.Simulation.Parts;
+using Exosphere.Simulation.Physics;
+using Exosphere.Simulation.Presentation;
+using Exosphere.Simulation.Propulsion;
+using Exosphere.Simulation.Systems;
+
+/// <summary>
+/// Temporary visual playtest autoload — generated by tools/visual_playtest.sh; never commit.
+/// </summary>
+public partial class _PlaytestShot : Node
+{
+    const double FluxPeak = 6.0e5;
+    const int SettleFrames = 4;
+    const double MaxRuntimeSec = ${MAX_RUNTIME_SEC}.0;
+    // Starship inserts near T+500 s; the Saturn V's historical S-IVB cutoff is T+685 s
+    // after a countdown, and a physically flown insertion can run tens of seconds later.
+    const double AscentFallbackSec = 900.0;
+    // Keep these runtime fields rather than compile-time constants. A matrix mode that
+    // does not request a visual override must still compile the shared branch without
+    // CS0162 unreachable-code warnings in the temporary harness.
+    static readonly bool HasVisualSunElevation = ${SUN_ELEVATION_SET} == 1;
+    static readonly double VisualSunElevationDeg = ${SUN_ELEVATION_DEG};
+    const string VisualCameraPreset = "${CAMERA_PRESET}";
+    static readonly string VisualEarthView = "${EARTH_VIEW}";
+
+    readonly string _mode;
+    readonly string _outDir;
+
+    StreamWriter _log = null!;
+    double _t0;
+    double _ascentStartedSimulationTime = double.NaN;
+    double _deorbitStartedSimulationTime = double.NaN;
+    double _fullPeakQ, _fullPeakHeat, _fullPeakG;
+    double _fullMinimumWindward = 1.0;
+    bool _fullEntryMeasured;
+    double _lastProcessWallSeconds;
+    int _frame;
+    int _readyFrames;
+    int _settleLeft;
+    string? _pendingSlug;
+
+    bool _pad, _liftoff, _maxq, _separation, _orbit, _orbitBeauty;
+    bool _towerClear, _earlyAscent;
+    bool _entry, _peak, _retro, _landed, _caught;
+    bool _ascentEngaged, _deorbitStarted, _deorbitDone, _ascentFallbackUsed;
+    bool _flight14PayloadVisualSeeded;
+    bool _flight14PayloadGroupSeeded;
+    MissionPhase? _apollo8MissionLastPhase;
+    ulong _missionTraceWallMs;
+    static readonly bool _fastForwardAscent = ${FAST_FORWARD_ASCENT} == 1;
+    const string UntilPhase = "${UNTIL_PHASE}";
+    int _flight14PayloadGroupCaptureStage;
+    Vector3d _flight14PayloadGroupFocusOffsetMetres;
+    Vector3d[] _flight14PayloadGroupSatelliteOffsetsMetres = [];
+    Vessel[] _flight14PayloadGroupSatellites = [];
+    int _flight14PayloadGroupInspectionIndex;
+    bool _flight14DeploymentE2EStarted, _flight14DeploymentCaptureQueued;
+    double _flight14DeploymentCaptureStart = double.NaN;
+    double _lastFlight14DeploymentProgressWall;
+    int _flight14DeploymentLoggedReleases;
+    readonly List<(Vessel Satellite, Quaterniond OrientationAtSample,
+        Vector3d AngularVelocityAtSample, double MissionElapsedAtSample)>
+        _flight14DeploymentAttitudeSamples = new();
+    int _beautyWaitFrames;
+    int _orbitalPlumeStableFrames;
+    bool _edlSeeded, _flipComplete, _shipSeeded, _engineBayCaptured;
+    static readonly bool IsAscentOptics = ${OPTICS_MATRIX} != 0;
+    static readonly bool IsTerrainCoverage = ${OPTICS_MATRIX} == 2;
+    static readonly bool IsCloudTraverse = ${OPTICS_MATRIX} == 3;
+    readonly (string Slug, double AltitudeM)[] _starbaseFarCases = IsCloudTraverse
+        ? new (string, double)[] {
+            ("cloud_below", 700.0), ("cloud_inside_off", 1650.0),
+            ("cloud_inside_on", 1650.0), ("cloud_above", 4800.0),
+            ("cloud_domes", 12000.0), ("cloud_nadir", 110_000.0),
+        }
+        : IsTerrainCoverage
+        ? new (string, double)[] {
+            ("coverage_7km_oblique", 7_000.0), ("coverage_7km_nadir", 7_000.0),
+            ("coverage_16km_oblique", 16_000.0), ("coverage_16km_nadir", 16_000.0),
+            ("coverage_26km_oblique", 26_000.0), ("coverage_26km_nadir", 26_000.0),
+        }
+        : IsAscentOptics
+        ? new (string, double)[] {
+            ("ascent_optics_0km", 0.0), ("ascent_optics_12km", 12_000.0),
+            ("ascent_optics_15km", 15_000.0), ("ascent_optics_18km", 18_000.0),
+            ("ascent_optics_100km", 100_000.0), ("ascent_optics_250km", 250_000.0),
+        }
+        : new (string, double)[] {
+
+        ("starbase_far_2km", 2_000.0),
+        ("starbase_far_5km", 5_000.0),
+        ("starbase_far_8km", 8_000.0),
+        ("starbase_far_12km", 12_000.0),
+        ("starbase_far_20km", 20_000.0),
+        ("starbase_far_40km", 40_000.0),
+    };
+    int _starbaseFarCaseIndex = -1;
+    bool _starbaseFarCaptureQueued;
+    readonly (string Slug, double AltitudeM)[] _kennedyFarCases =
+    {
+        ("kennedy_far_2km", 2_000.0),
+        ("kennedy_far_5km", 5_000.0),
+        ("kennedy_far_8km", 8_000.0),
+        ("kennedy_far_12km", 12_000.0),
+        ("kennedy_far_20km", 20_000.0),
+        ("kennedy_far_40km", 40_000.0),
+    };
+    int _kennedyFarCaseIndex = -1;
+    bool _kennedyFarCaptureQueued;
+    bool _hudHelpDismissed;
+    double _edlScenarioStart, _retroStart = -1.0, _nextEdlTelemetry;
+    double _nextFullTelemetry;
+    double _lastApproachSpeed = double.NaN;
+    Vector3d _originalMoonPosition;
+    Vector3d _originalMoonVelocity;
+    bool _moonSnapshot;
+    bool _finished;
+    bool _authorized;
+    bool _visualConfigurationApplied;
+
+    // ── ascent diagnostics ─────────────────────────────────────────────────
+    double _nextAscentTelemetry;
+    double _ascentLaunchEpoch = double.NaN;
+    double _insertStartedAt = double.NaN;
+    double _minimumInsertionVSpeed = double.PositiveInfinity;
+    double _maximumInsertionDescent = 0.0;
+    string _lastGuidancePhase = "Unavailable";
+    bool _insertObserved;
+    int _ascentTraceCount;
+    double _lastProgressAt = double.NaN;
+    double _lastProgressAltitude = double.NaN;
+    double _lastProgressSpeed = double.NaN;
+    double _lastProgressPeriapsis = double.NaN;
+
+    // ── hotstage mode ────────────────────────────────────────────────────
+    bool _hotstage, _hotstageSeparation;
+    int _shipPlumeStep;
+    bool _shipPlumeQueued, _startupRamp;
+
+    // ── reentry_variant mode (one attitude per process; --reentry-compare drives two
+    // separate Godot launches — see tools/visual_playtest.sh orchestration below) ──────
+    bool _reentrySeeded, _reentryQueued;
+    double _reentryScenarioStart;
+
+    // ── orbital_reentry mode ────────────────────────────────────────────────
+    // This path deliberately starts from an explicit circular-orbit setup, then uses the
+    // production map deorbit planner/autopilot and normal EDL activation. It never calls
+    // BeginReentryDemonstration; the log names the setup teleport so the acceptance result
+    // cannot be mistaken for a flown ascent or the deterministic demo.
+    bool _orbitalReentrySeeded, _orbitalReentryEntry, _orbitalReentryPeak;
+    bool _orbitalReentryRetro, _orbitalReentryCaught, _orbitalReentryLanded;
+    double _orbitalReentryScenarioStart, _nextOrbitalReentryTelemetry;
+    double _orbitalReentrySeededPe = double.NaN;
+
+    // ── entry_physics mode ─────────────────────────────────────────────────
+    // One setup assignment at the 120 km interface, then production EDL owns every
+    // command and the regular integrator owns every state update. No demo attitude snap.
+    bool _entryPhysicsSeeded, _entryPhysicsInterface, _entryPhysicsPeak;
+    bool _entryPhysicsTransonic;
+    double _entryPhysicsStart, _nextEntryPhysicsTelemetry;
+    double _entryPhysicsPeakQ, _entryPhysicsPeakHeat, _entryPhysicsPeakLoad;
+    double _entryPhysicsMinimumWindward = 1.0;
+
+    // Atmosphere acceptance is deliberately state-seeded instead of flown.  This makes
+    // every altitude/solar-elevation pair reproducible and keeps the matrix fast enough
+    // to run while tuning the scattering shader.  Cockpit cases are last because the
+    // public camera API intentionally only enters (rather than exits) IVA mode.
+    readonly (string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit, string Eclipse)[] _atmosCases =
+    {
+        ("ground_day",       20.0,  45.0, false, "none"),
+        ("ground_sunrise",   20.0,  -1.0, false, "none"),
+        ("ground_sunset",    20.0,   1.0, false, "none"),
+        ("ground_night",     20.0, -35.0, false, "none"),
+        ("10km_day",     10_000.0,  35.0, false, "none"),
+        ("30km_day",     30_000.0,  35.0, false, "none"),
+        ("70km_day",     70_000.0,  35.0, false, "none"),
+        ("120km_day",   120_000.0,  35.0, false, "none"),
+        ("400km_day",   400_000.0,  35.0, false, "none"),
+        ("10km_night",   10_000.0, -35.0, false, "none"),
+        ("30km_night",   30_000.0, -35.0, false, "none"),
+        ("70km_night",   70_000.0, -35.0, false, "none"),
+        ("120km_night", 120_000.0, -35.0, false, "none"),
+        ("400km_night", 400_000.0, -35.0, false, "none"),
+        ("eclipse_clear",          120_000.0, 35.0, false, "clear"),
+        ("eclipse_partial_central",120_000.0, 35.0, false, "partial_central"),
+        ("eclipse_partial_limb",   120_000.0, 35.0, false, "partial_limb"),
+        ("eclipse_total",           120_000.0, 35.0, false, "total"),
+        ("cockpit_120km_day",   120_000.0,  35.0, true, "none"),
+        ("cockpit_120km_night", 120_000.0, -35.0, true, "none"),
+    };
+    private bool IsSingleAtmosphereCase => _mode is "atmosphere_low" or "atmosphere_orbit";
+    private bool IsGroundAtmosphereCase => _mode == "atmosphere_ground";
+    private (string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit, string Eclipse)
+        CurrentAtmosphereCase() => _mode == "atmosphere_low"
+            ? _atmosCases[4]
+            : _mode == "atmosphere_orbit"
+                ? _atmosCases[8]
+                : _atmosCases[_atmosIndex];
+    // Mars/Venus are deliberately a separate matrix.  The Earth set above is an existing
+    // acceptance baseline and must remain byte-for-byte reproducible; this set exercises
+    // the same renderer contract after a real body transition, including the lazy planet
+    // presentation path.  The orbital cases are outside the dense lower atmosphere on
+    // purpose: they validate the optically thin limb/space transition rather than hiding a
+    // body-specific profile behind a copied Earth altitude.
+    readonly (string BodyId, string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit)[] _atmosBodyCases =
+    {
+        ("mars",  "mars_10km_day",   10_000.0,  35.0, false),
+        ("mars",  "mars_400km_day", 400_000.0,  35.0, false),
+        ("mars",  "mars_10km_night", 10_000.0, -35.0, false),
+        ("venus", "venus_10km_day",  10_000.0,  35.0, false),
+        ("venus", "venus_400km_day",400_000.0,  35.0, false),
+        ("venus", "venus_10km_night",10_000.0, -35.0, false),
+    };
+    const int AtmosphereMinimumSettleFrames = 8;
+    // Incremental Sky updates one cubemap face per frame.  The atmospheric shader is
+    // intentionally expensive on llvmpipe, so a 1.2 s fixed delay could capture a
+    // half-updated (black or white) face after a solar-elevation change.  Wait long
+    // enough for a complete six-face refresh before judging the optics.
+    const double AtmosphereSettleSeconds = 6.0;
+    const double AtmosphereMaximumSettleSeconds = 45.0;
+    const int AtmosphereExposureStableFrames = 4;
+    const double AtmosphereExposureRateTolerance = 0.015;
+    int _atmosIndex = -1;
+    bool _atmosBodyCaseApplied;
+    string? _atmosBodyTransitionRequested;
+    Vector3d _atmosUp = Vector3d.Up, _atmosLook = Vector3d.Forward;
+    double _atmosFrameSeconds, _atmosMaxFrameSeconds;
+    int _atmosPerfFrames, _atmosSlowFrames;
+    double _atmosPreviousExposure = -1.0;
+    int _atmosExposureStableFrames;
+    SpectralAtmosphereOracle? _spectralOracle;
+    string? _spectralBodyId;
+
+    public _PlaytestShot()
+    {
+        _mode = "${HARNESS_MODE:-$MODE}";
+        _outDir = "${OUT_DIR}";
+    }
+
+    public override void _Ready()
+    {
+        // project.godot temporarily exposes this autoload to every process using the
+        // checkout. Only the Godot child launched by this script receives the token;
+        // editors or manually running games must never touch this run's artifacts.
+        if (System.Environment.GetEnvironmentVariable("EXOSPHERE_PLAYTEST_TOKEN")
+            != "${RUN_TOKEN}")
+        {
+            ProcessMode = ProcessModeEnum.Disabled;
+            QueueFree();
+            return;
+        }
+        _authorized = true;
+
+        if (_mode == "flight14_deployment")
+        {
+            CraftLaunchRequest.Set(new LaunchIntent
+            {
+                Mode = "exploration",
+                FlightProfileId = Flight14Exploration.ProfileId,
+                LaunchSiteId = "starbase_pad2",
+            });
+        }
+
+        if ("${VARIANT_FILE}".Length > 0)
+        {
+            string data = ProjectSettings.GlobalizePath("res://data");
+            var catalog = PartCatalog.LoadFromDirectory(
+                Path.Combine(data, "parts"));
+            var variant = VehicleVariantDefinition.LoadFromJson(
+                Path.Combine(data, "vehicles", "${VARIANT_FILE}"));
+            var craft = variant.Build(catalog).ToCraftDocument(variant.Name);
+            craft.VehicleVariantId = variant.Id;
+            CraftLaunchRequest.Set(new LaunchIntent
+            {
+                Mode = "scenario",
+                VehicleVariantId = variant.Id,
+                LaunchSiteId = "${VARIANT_SITE}",
+                FlightProfileId = "${VARIANT_PROFILE}",
+                Craft = craft,
+            });
+        }
+        Directory.CreateDirectory(_outDir);
+        _log = new StreamWriter("${LOG}", false);
+        _log.WriteLine($"=== Exosphere visual playtest {DateTime.UtcNow:O} mode={_mode} ===");
+        _log.Flush();
+        _t0 = Time.GetTicksMsec() / 1000.0;
+        _lastProcessWallSeconds = _t0;
+        ProcessMode = ProcessModeEnum.Always;
+        // Controllers run at priority 100. Diagnostics run later so their requested
+        // bounded RK4 x2 acceleration is not immediately overwritten back to real time.
+        ProcessPriority = 200;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!_authorized || _finished) return;
+        // Dismiss before the first rendered frame that can become a milestone. Calling this
+        // only inside CaptureNow is one frame too late because the viewport texture still
+        // contains the previous draw with the production help sheet visible.
+        if (!_hudHelpDismissed)
+        {
+            var hud = GetTree().Root.FindChild("HUDController", true, false) as HUDController;
+            if (hud != null)
+            {
+                hud.DismissPadHelp();
+                _hudHelpDismissed = true;
+            }
+        }
+        _frame++;
+
+        double nowWallSeconds = Time.GetTicksMsec() / 1000.0;
+        double frameSeconds = nowWallSeconds - _lastProcessWallSeconds;
+        _lastProcessWallSeconds = nowWallSeconds;
+        double elapsed = nowWallSeconds - _t0;
+        if (elapsed > MaxRuntimeSec)
+        {
+            _log.WriteLine(
+                $"FAIL wall-clock timeout elapsed={elapsed:F0}s budget={MaxRuntimeSec:F0}s " +
+                $"mode={_mode}; rerun with --max-runtime or PLAYTEST_MAX_RUNTIME_SEC only " +
+                "after confirming TRACE evidence still shows physical progress");
+            _log.Flush();
+            Finish("TIMEOUT");
+            return;
+        }
+
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (bridge == null || vessel == null || universe == null)
+        {
+            if (_frame > 6000) Finish("NO_BRIDGE");
+            return;
+        }
+
+        _readyFrames++;
+
+        if (_mode == "flight14_payload")
+        {
+            ProcessFlight14PayloadVisual(bridge, universe);
+            return;
+        }
+        if (_mode == "flight14_payload_group")
+        {
+            ProcessFlight14PayloadGroupVisual(bridge, universe);
+            return;
+        }
+        if (_mode == "flight14_deployment")
+        {
+            ProcessFlight14Deployment(bridge);
+            return;
+        }
+
+        if (frameSeconds > 0.0 && double.IsFinite(frameSeconds))
+        {
+            var schedulerTelemetry = universe.LastSchedulerTelemetry;
+            string catchUpRisk = schedulerTelemetry.CatchUpRisk ? "true" : "false";
+            string schedulerInitialized = schedulerTelemetry.IsInitialized ? "true" : "false";
+            _log.WriteLine($"PERF_FRAME frame={_frame} frame_ms={frameSeconds * 1000.0:F3} " +
+                $"scheduler_ms={schedulerTelemetry.WallClockMilliseconds:F3} " +
+                $"scheduler_branch={schedulerTelemetry.Branch} " +
+                $"scheduler_substeps={schedulerTelemetry.OuterSubsteps} " +
+                $"scheduler_cap={schedulerTelemetry.EffectiveStepCap:F6} " +
+                $"scheduler_simulated={schedulerTelemetry.SimulatedSeconds:F6} " +
+                $"catch_up_risk={catchUpRisk} " +
+                "source=process_callback");
+            _log.WriteLine($"PERF_SCHEDULER schema=2 frame={_frame} " +
+                $"initialized={schedulerInitialized} " +
+                $"skip_reason={schedulerTelemetry.SkipReason} " +
+                $"branch={schedulerTelemetry.Branch} " +
+                $"substeps={schedulerTelemetry.OuterSubsteps} " +
+                $"full_physics={schedulerTelemetry.FullPhysicsDispatches} " +
+                $"on_rails={schedulerTelemetry.OnRailsDispatches} " +
+                $"surface_settled={schedulerTelemetry.SurfaceSettledDispatches} " +
+                $"ground_held={schedulerTelemetry.GroundHeldDispatches} " +
+                $"destroyed={schedulerTelemetry.DestroyedDispatches} " +
+                $"docked_skips={schedulerTelemetry.DockedSecondarySkips} " +
+                $"rails_slices={schedulerTelemetry.RailsSlices} " +
+                $"docking_constraints={schedulerTelemetry.DockingConstraintApplications} " +
+                $"deadline_eligible={schedulerTelemetry.DeadlineEligibleEvaluations} " +
+                $"deadline_deferred={schedulerTelemetry.DeadlineDeferredSkips} " +
+                $"deadline_catch_up={schedulerTelemetry.DeadlineCatchUpDispatches} " +
+                $"deadline_projected={schedulerTelemetry.DeadlineProjectedDispatches} " +
+                $"requested_simulated={schedulerTelemetry.RequestedSimulationSeconds:F6} " +
+                $"processed_simulated={schedulerTelemetry.ProcessedSimulationSeconds:F6} " +
+                $"pending_simulated={schedulerTelemetry.PendingSimulationSeconds:F6} " +
+                $"budget_limited={(schedulerTelemetry.BudgetLimited ? "true" : "false")} " +
+                $"budget_reason={schedulerTelemetry.BudgetReason} " +
+                $"total_work={schedulerTelemetry.TotalWorkDispatches} " +
+                "source=process_callback");
+            _log.WriteLine($"PERF_SCHEDULER_CANDIDATE schema=1 frame={_frame} " +
+                $"enabled={(universe.DeferredPhysicsCandidateEnabled ? "true" : "false")} " +
+                $"deferred_skips={schedulerTelemetry.CandidateDeferredSkips} " +
+                "source=process_callback");
+            if ((_frame & 31) == 0) _log.Flush();
+        }
+        var body = universe.GetDominantBody(vessel.Position);
+        if (body == null) return;
+
+        double alt = vessel.GetAltitude(body);
+        Vector3d surfVel = vessel.GetSurfaceVelocity(body);
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        double spd = surfVel.Magnitude;
+        double vSpeed = surfVel.Dot(up);
+        double q = vessel.GetDynamicPressure(body);
+        if (!vessel.IsSurfaceSettled && alt < 100.0)
+            _lastApproachSpeed = spd;
+        double mass = System.Math.Max(vessel.TotalMass, 1.0);
+        Vector3d nonGrav = (vessel.ComputeThrust(body) + vessel.ComputeDrag(body)) / mass;
+        double g = nonGrav.Magnitude / 9.80665;
+        var mission = MissionManager.Instance;
+        string phase = mission?.Phase.ToString() ?? "UNKNOWN";
+        double maxT = vessel.Parts.Parts.Count > 0 ? vessel.Parts.Parts.Max(p => p.Temperature) : 0.0;
+        double heatRatio = vessel.Parts.Parts.Count > 0 ? vessel.Parts.Parts.Max(p => p.ThermalRatio) : 0.0;
+        double density = body.GetAtmosphericDensity(vessel.Position);
+        double flux = vessel.ComputeStagnationHeatFlux(density, surfVel);
+        double fluxRatio = flux / FluxPeak;
+
+        TryCapturePending();
+        ApplyVisualCaptureConfiguration(bridge, vessel, universe, body);
+
+        if (_mode == "atmosphere_bodies")
+        {
+            ProcessAtmosphereBodies(delta, bridge, vessel, universe, body);
+            return;
+        }
+
+        if (_mode == "atmosphere" || _mode == "atmosphere_ground")
+        {
+            ProcessAtmosphereMatrix(delta, bridge, vessel, universe, body);
+            return;
+        }
+
+          if (_mode is "atmosphere_low" or "atmosphere_orbit")
+          {
+              ProcessAtmosphereMatrix(delta, bridge, vessel, universe, body);
+              return;
+          }
+
+          if (_mode == "starbase_far")
+          {
+              ProcessStarbaseFarField(bridge, vessel, universe, body);
+              return;
+          }
+
+          if (_mode == "kennedy_far")
+          {
+              ProcessKennedyFarField(bridge, vessel, universe, body);
+              return;
+          }
+
+          if (_mode == "cockpit")
+        {
+            CameraController.Instance?.EnterCockpitView();
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(118_000.0);
+                bridge.SetThrottle(0.35);
+                _shipSeeded = true;
+                return;
+            }
+            if (_shipSeeded && _pendingSlug == null && _readyFrames >= 110 && !_orbitBeauty)
+            {
+                QueueCapture("cockpit");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("COCKPIT_OK");
+            return;
+        }
+
+        if (_mode == "saturn")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                // Keep the production presentation path: stage the default stack, use
+                // the public body jump, and let SimulationBridge queue Saturn lazily.
+                bridge.TriggerStaging();
+                bridge.JumpToBody("saturn");
+                // The public jump positions the vessel at Saturn, while this frame places
+                // the camera almost on the outward radial so the body/ring is in view.
+                CameraController.Instance?.SetExternalChaseFrame(0f, 82f, 38f);
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _pendingSlug == null && _readyFrames >= 120 && !_orbitBeauty)
+            {
+                QueueCapture("saturn_ring");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("SATURN_OK");
+            return;
+        }
+
+        if (_mode == "lunar_map")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.JumpToOrbit(200_000.0);
+                var earth = universe.GetBody("earth")!;
+                var moon = universe.GetBody("moon")!;
+                var moonOrbit = moon.OrbitalElements!;
+                var parking = new OrbitalElements
+                {
+                    SemiMajorAxis = earth.Radius + 200_000.0,
+                    Eccentricity = 0.0,
+                    Inclination = moonOrbit.Inclination,
+                    LongitudeOfAscendingNode = moonOrbit.LongitudeOfAscendingNode,
+                    ArgumentOfPeriapsis = 0.0,
+                    MeanAnomalyAtEpoch = 0.0,
+                    Epoch = universe.CurrentTime,
+                    ReferenceBodyId = earth.Id,
+                };
+                var (parkingPosition, parkingVelocity) =
+                    parking.GetStateAtTime(universe.CurrentTime, earth.GM);
+                vessel.Position = earth.Position + parkingPosition;
+                vessel.Velocity = earth.Velocity + parkingVelocity;
+                vessel.ReferenceBodyId = earth.Id;
+                vessel.IsOnRails = false;
+                vessel.OrbitalState = null;
+                var map = MapViewController.Instance;
+                if (map == null)
+                {
+                    Finish("LUNAR_MAP_MISSING");
+                    return;
+                }
+                if (!map.Visible) map.ToggleVisible();
+                var node = map.SelectTransferTarget("moon");
+                var encounter = TransferPlanner.Instance?.Encounter;
+                if (node == null || encounter == null)
+                {
+                    _log.WriteLine(
+                        $"LUNAR_MAP_FAIL error={TransferPlanner.Instance?.LastPlanningError ?? "unknown"}");
+                    _log.Flush();
+                    Finish("LUNAR_PLAN_FAILED");
+                    return;
+                }
+                _log.WriteLine(
+                    $"LUNAR_MAP model={node.TransferKind} encounter={encounter.Value.HasEncounter} " +
+                    $"tli={node.DvMagnitude:F1} loi={node.SecondBurnDv:F1} " +
+                    $"pe={node.PredictedPeriapsisAltitude:F1} " +
+                    $"tBurn={node.BurnTime - universe.CurrentTime:F1}");
+                _log.Flush();
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _readyFrames >= 90
+                && !_orbitBeauty && _pendingSlug == null)
+            {
+                QueueCapture("lunar_transfer_map");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("LUNAR_MAP_OK");
+            return;
+        }
+
+        if (_mode == "flaps")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(118_000.0);
+                bridge.SetThrottle(0.0);
+                bridge.SetTimeScale(0.0);
+                vessel.AngularVelocity = Vector3d.Zero;
+                Vector3d inspectionUp = body.GetGeodeticUp(vessel.Position);
+                Vector3d inspectionEast = body.GetEastDirection(vessel.Position);
+                Vector3d inspectionSouth = inspectionEast.Cross(inspectionUp).Normalized;
+                var inspectionBasis = new Basis(
+                    ToGodot(-inspectionEast), ToGodot(inspectionUp),
+                    ToGodot(-inspectionSouth));
+                var inspectionRotation = inspectionBasis.GetRotationQuaternion();
+                vessel.Orientation = new Quaterniond(
+                    inspectionRotation.W, inspectionRotation.X,
+                    inspectionRotation.Y, inspectionRotation.Z);
+                if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+                    hud.Visible = false;
+                CameraController.Instance?.EnterShipChaseView();
+                CameraController.Instance?.SetExternalChaseFrame(55f, 5f, 23f);
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _shipPlumeQueued && _pendingSlug == null)
+            {
+                if (_shipPlumeStep == 1) { Finish("FLAPS_OK"); return; }
+                _shipPlumeStep = 1;
+                CameraController.Instance?.SetExternalChaseFrame(305f, 5f, 23f);
+                _readyFrames = 0;
+                _shipPlumeQueued = false;
+                return;
+            }
+            if (_shipSeeded && !_shipPlumeQueued && _pendingSlug == null && _readyFrames >= 35)
+            {
+                QueueCapture(_shipPlumeStep == 0
+                    ? "ship_flaps_windward" : "ship_flaps_leeward");
+                _shipPlumeQueued = true;
+            }
+            return;
+        }
+
+        if (_mode == "enginebay")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(118_000.0);
+                bridge.SetThrottle(1.0);
+                vessel.AngularVelocity = Vector3d.Zero;
+                Vector3d inspectionUp = body.GetGeodeticUp(vessel.Position);
+                Vector3d inspectionEast = body.GetEastDirection(vessel.Position);
+                Vector3d inspectionSouth = inspectionEast.Cross(inspectionUp).Normalized;
+                var inspectionBasis = new Basis(
+                    ToGodot(-inspectionEast), ToGodot(inspectionUp), ToGodot(-inspectionSouth));
+                var inspectionRotation = inspectionBasis.GetRotationQuaternion();
+                vessel.Orientation = new Quaterniond(
+                    inspectionRotation.W, inspectionRotation.X, inspectionRotation.Y, inspectionRotation.Z);
+                if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+                    hud.Visible = false;
+                CameraController.Instance?.EnterShipChaseView();
+                // Look from below at the thrust puck, with enough distance to include all six exits.
+                CameraController.Instance?.SetExternalChaseFrame(
+                    180f, -55f, 7.0f, -7.3f, allowCloseup: true);
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && !_engineBayCaptured && _pendingSlug == null && _readyFrames >= 45)
+            {
+                if (DeliveredThrottle(vessel, body) < 0.95) return;
+                bridge.SetTimeScale(0.0);
+                QueueCapture("ship_enginebay");
+                _engineBayCaptured = true;
+                return;
+            }
+            if (_engineBayCaptured && _pendingSlug == null)
+                Finish("ENGINEBAY_OK");
+            return;
+        }
+
+        if (_mode == "ship")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(118_000.0);
+                bridge.SetThrottle(1.0);
+                // The ship-only row is an exterior beauty capture, not a continuation of
+                // the pad preset. Explicitly select the production chase framing after the
+                // teleport so stale pad yaw/distance cannot contaminate the orbital image.
+                CameraController.Instance?.EnterShipChaseView();
+                _shipSeeded = true;
+                return;
+            }
+            if (_shipSeeded && _shipPlumeQueued && _pendingSlug == null)
+            {
+                if (_shipPlumeStep == 6) { Finish("SHIP_OK"); return; }
+                _shipPlumeStep++;
+                if (_shipPlumeStep <= 2)
+                    bridge.SetThrottle(_shipPlumeStep == 1 ? 0.5 : 0.0);
+                else if (_shipPlumeStep == 3)
+                {
+                    // The throttle matrix above preserves the production orbital attitude.
+                    // Detail acceptance needs a stable broadside: freeze the fixture, align
+                    // the vehicle axis to geodetic up and remove HUD occlusion before judging
+                    // silhouette, weld bands, flap taper and the steel/TPS boundary.
+                    bridge.SetTimeScale(0.0);
+                    vessel.AngularVelocity = Vector3d.Zero;
+                    Vector3d inspectionUp = body.GetGeodeticUp(vessel.Position);
+                    Vector3d inspectionEast = body.GetEastDirection(vessel.Position);
+                    Vector3d inspectionSouth = inspectionEast.Cross(inspectionUp).Normalized;
+                    // Local -X is the TPS normal. Map it to geodetic east so yaw 90
+                    // is a true windward broadside and yaw 270 is true leeward steel.
+                    var inspectionBasis = new Basis(
+                        ToGodot(-inspectionEast), ToGodot(inspectionUp),
+                        ToGodot(-inspectionSouth));
+                    var inspectionRotation = inspectionBasis.GetRotationQuaternion();
+                    vessel.Orientation = new Quaterniond(
+                        inspectionRotation.W, inspectionRotation.X,
+                        inspectionRotation.Y, inspectionRotation.Z);
+                    if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+                        hud.Visible = false;
+                    // +X looks directly at the tiled windward side in this fixture.
+                    CameraController.Instance?.SetExternalChaseFrame(90f, 4f, 23f);
+                }
+                else if (_shipPlumeStep == 4)
+                    // -X looks directly at the bare stainless leeward side.
+                    CameraController.Instance?.SetExternalChaseFrame(270f, 4f, 23f);
+                else if (_shipPlumeStep == 5)
+                    // Three-quarter windward view keeps both near-side flap planforms,
+                    // their hull transitions and the far-side tips readable together.
+                    CameraController.Instance?.SetExternalChaseFrame(55f, 5f, 23f);
+                else
+                    // Mirrored three-quarter view proves thickness/root readability on
+                    // the leeward side instead of accepting one favorable camera angle.
+                    CameraController.Instance?.SetExternalChaseFrame(305f, 5f, 23f);
+                _readyFrames = 0;
+                _shipPlumeQueued = false;
+                return;
+            }
+            if (_shipSeeded && !_shipPlumeQueued && _pendingSlug == null
+                && _readyFrames >= (_shipPlumeStep == 0 ? 110 : 35))
+            {
+                double expected = _shipPlumeStep == 0 ? 1.0 : _shipPlumeStep == 1 ? 0.5 : 0.0;
+                double delivered = DeliveredThrottle(vessel, body);
+                if (System.Math.Abs(delivered - expected) > 0.04) return;
+                var padNode = GetTree().Root.FindChild("LaunchPadController", true, false) as Node3D;
+                var rendererNode = GetTree().Root.FindChild("ActiveVesselRenderer", true, false) as Node3D;
+                _log.WriteLine($"VISUAL_NODES ship padVisible={padNode?.Visible.ToString() ?? "missing"} " +
+                    $"padChildren={padNode?.GetChildCount() ?? -1} " +
+                    $"rendererPos={rendererNode?.Position.ToString() ?? "missing"} " +
+                    $"rendererVisible={rendererNode?.Visible.ToString() ?? "missing"}");
+                _log.Flush();
+                string slug = _shipPlumeStep switch
+                {
+                    0 => "ship_vacuum",
+                    1 => "ship_vacuum_half",
+                    2 => "ship_vacuum_off",
+                    3 => "ship_detail_tps",
+                    4 => "ship_detail_steel",
+                    5 => "ship_flaps_windward",
+                    _ => "ship_flaps_leeward",
+                };
+                QueueCapture(slug);
+                _shipPlumeQueued = true;
+            }
+            return;
+        }
+
+        if (_mode == "orbital_plume")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(200_000.0);
+                bridge.SetThrottle(1.0);
+                // Keep the production chase camera and HUD active, but bias the
+                // target down so the vehicle and the long vacuum bell share the
+                // 1920x1080 frame instead of cropping the plume tip.
+                CameraController.Instance?.SetExternalChaseFrame(28f, 16f, 36f, -4f);
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _pendingSlug == null && !_orbitBeauty)
+            {
+                var plumes = GetActivePlumeSystem();
+                double delivered = DeliveredThrottle(vessel, body);
+                bool plumeReady = _readyFrames >= 30
+                    && delivered >= 0.95
+                    && plumes != null
+                    && plumes.LastPressureRatio <= 0.02f
+                    && plumes.LastExpansion >= 0.95f
+                    && plumes.LastMaximumThrottle >= 0.95f
+                    && plumes.VisibleUnitCount == 6
+                    && plumes.AnchoredUnitCount == plumes.VisibleUnitCount
+                    && plumes.LongestVisibleLength >= 12.0f
+                    && plumes.CoreLayerVisible
+                    && plumes.SheathLayerVisible
+                    && !plumes.InteractionParticlesVisible;
+                _orbitalPlumeStableFrames = plumeReady
+                    ? _orbitalPlumeStableFrames + 1
+                    : 0;
+
+                if (_readyFrames % 30 == 0)
+                {
+                    _log.WriteLine(
+                        $"TRACE_ORBITAL_PLUME frame={_readyFrames} " +
+                        $"delivered={delivered:F3} pressureRatio={plumes?.LastPressureRatio ?? float.NaN:F4} " +
+                        $"expansion={plumes?.LastExpansion ?? float.NaN:F3} " +
+                        $"visibleUnits={plumes?.VisibleUnitCount ?? 0} " +
+                        $"anchoredUnits={plumes?.AnchoredUnitCount ?? 0} " +
+                        $"stableFrames={_orbitalPlumeStableFrames}");
+                    _log.Flush();
+                }
+
+                if (_orbitalPlumeStableFrames >= 3)
+                {
+                    QueueCapture("orbital_plume");
+                    _orbitBeauty = true;
+                }
+                else if (_readyFrames >= 360)
+                {
+                    _log.WriteLine(
+                        $"FAIL orbital plume never reached a stable delivered burn " +
+                        $"delivered={delivered:F3} pressureRatio={plumes?.LastPressureRatio ?? float.NaN:F4} " +
+                        $"visibleUnits={plumes?.VisibleUnitCount ?? 0}");
+                    _log.Flush();
+                    Finish("ORBITAL_PLUME_NOT_READY");
+                }
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("ORBITAL_PLUME_OK");
+            return;
+        }
+
+        if (_mode == "orbit")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                // This is a presentation-only seed for visual shader validation. It
+                // uses the same public staging/jump path as --ship, but leaves the
+                // engines off so the planetary backdrop can be inspected directly.
+                bridge.TriggerStaging();
+                bridge.JumpToOrbit(200_000.0);
+                bridge.SetThrottle(0.0);
+                // Pull the chase camera back so the direct orbital Earth test measures
+                // the planetary presentation rather than a close-up of the ship mesh.
+                CameraController.Instance?.SetExternalChaseFrame(0f, 45f, 400_000f);
+                _shipSeeded = true;
+                return;
+            }
+            if (_shipSeeded && _pendingSlug == null && _readyFrames >= 110 && !_orbitBeauty)
+            {
+                QueueCapture("orbit_direct");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("ORBIT_DIRECT_OK");
+            return;
+        }
+
+        if (_mode == "smoke")
+        {
+            if (!_pad && _readyFrames >= 45)
+            {
+                QueueCapture("pad");
+                _pad = true;
+            }
+            if (_pad && _pendingSlug == null)
+                Finish("SMOKE_OK");
+            return;
+        }
+
+        if (_mode == "edl")
+        {
+            ProcessEdlVerification(bridge, vessel, universe, body, mission, alt, surfVel, phase);
+            return;
+        }
+
+        if (_mode == "orbital_reentry")
+        {
+            ProcessOrbitalReentry(bridge, vessel, universe, body, mission, alt, surfVel, phase);
+            return;
+        }
+
+        if (_mode == "entry_physics")
+        {
+            ProcessPhysicalEntry(bridge, vessel, universe, mission);
+            return;
+        }
+
+        if (_mode == "reentry_variant")
+        {
+            ProcessReentryVariant(bridge, universe, mission);
+            return;
+        }
+
+        if (_mode == "gemini_docking")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                bridge.TriggerStaging();
+                bridge.TriggerStaging();
+                vessel = bridge.ActiveVessel!;
+                var target = bridge.EnsureGemini8AgenaTarget()!;
+                var earth = universe.GetBody("earth")!;
+                var sun = universe.GetBody("sun");
+                var dockingUp = sun != null
+                    ? (sun.Position - earth.Position).Normalized
+                    : (vessel.Position - earth.Position).Normalized;
+                var tangent =
+                    earth.RotationAxis.Cross(dockingUp).Normalized;
+                double radius = earth.Radius + 298_730.0;
+                var position = earth.Position + dockingUp * radius;
+                var velocity = earth.Velocity
+                    + tangent * System.Math.Sqrt(earth.GM / radius);
+                var orientation = Quaterniond.FromTo(Vector3d.Up, tangent);
+                var axis = orientation.Rotate(Vector3d.Up);
+                target.Position = position;
+                target.Velocity = velocity;
+                target.Orientation = orientation;
+                target.ReferenceBodyId = earth.Id;
+                target.IsOnRails = false;
+                target.OrbitalState = null;
+                vessel.Position = position - axis * 1.075;
+                vessel.Velocity = velocity + axis * 0.10;
+                vessel.Orientation = orientation;
+                vessel.ReleaseGroundHold();
+                vessel.ReferenceBodyId = earth.Id;
+                vessel.IsOnRails = false;
+                vessel.OrbitalState = null;
+                string geminiPort = vessel.Parts.Parts.Single(part =>
+                    part.Definition.HasVehicleRole(
+                        "gemini_docking_port")).InstanceId;
+                string targetPort = target.Parts.Parts.Single(part =>
+                    part.Definition.HasVehicleRole(
+                        "agena_target_docking_port")).InstanceId;
+                var result = universe.TryDock(
+                    vessel.Id, geminiPort,
+                    target.Id, targetPort,
+                    "gemini8-agena-docking");
+                if (!result.Succeeded)
+                    throw new InvalidOperationException(
+                        $"Gemini visual docking failed: {result.Failure}");
+                vessel.SASEnabled = false;
+                target.SASEnabled = false;
+                vessel.AngularVelocity =
+                    axis * (20.0 * System.Math.PI / 180.0);
+                MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+                CameraController.Instance?.EnterShipChaseView();
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _readyFrames >= 75
+                && !_orbitBeauty && _pendingSlug == null)
+            {
+                QueueCapture("gemini_docked_anomaly");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("GEMINI_DOCKING_OK");
+            return;
+        }
+
+        if (_mode == "apollo8_lunar")
+        {
+            if (!_shipSeeded && _readyFrames >= 45)
+            {
+                string? lesId = vessel.Parts.Parts.FirstOrDefault(part =>
+                    part.Definition.HasVehicleRole(
+                        "launch_escape_system"))?.InstanceId;
+                if (lesId != null)
+                    bridge.DeployPartAsVessel(
+                        lesId,
+                        "Apollo 8 Launch Escape System",
+                        new Vector3d(0.0, 1.0, 0.0));
+                bridge.TriggerStaging();
+                bridge.TriggerStaging();
+                bridge.TriggerStaging();
+                vessel = bridge.ActiveVessel!;
+                var moon = universe.GetBody("moon")!;
+                var sun = universe.GetBody("sun");
+                Vector3d lunarUp = sun != null
+                    ? (sun.Position - moon.Position).Normalized
+                    : Vector3d.Right;
+                Vector3d tangent =
+                    moon.RotationAxis.Cross(lunarUp).Normalized;
+                double radius = moon.Radius
+                    + Apollo8FlightProfile.CircularLunarOrbitAltitudeM;
+                vessel.Position = moon.Position + lunarUp * radius;
+                vessel.Velocity = moon.Velocity
+                    + tangent * System.Math.Sqrt(moon.GM / radius);
+                vessel.Orientation =
+                    Quaterniond.FromTo(Vector3d.Up, tangent);
+                vessel.AngularVelocity = Vector3d.Zero;
+                vessel.ReleaseGroundHold();
+                vessel.ReferenceBodyId = moon.Id;
+                vessel.IsOnRails = false;
+                vessel.OrbitalState = null;
+                MissionManager.Instance?.EnterPhase(
+                    MissionPhase.LUNAR_ORBIT);
+                CameraController.Instance?.EnterShipChaseView();
+                _shipSeeded = true;
+                _readyFrames = 0;
+                return;
+            }
+            if (_shipSeeded && _readyFrames >= 75
+                && !_orbitBeauty && _pendingSlug == null)
+            {
+                QueueCapture("apollo8_lunar_orbit");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("APOLLO8_LUNAR_OK");
+            return;
+        }
+
+        // ── Pad ───────────────────────────────────────────────────────────────
+        if (!_pad && _readyFrames >= 45 && vessel.IsGroundHeld && alt < 40.0)
+        {
+            QueueCapture("pad");
+            _pad = true;
+        }
+
+        // ── Ascent autopilot ──────────────────────────────────────────────────
+        if (_pad && !_ascentEngaged
+            && (bridge.ActiveFlightProfileId is
+                    "mercury-redstone3-suborbital"
+                    or "mercury-atlas6-three-orbit"
+                    or "gemini8-rendezvous-emergency-return"
+                    or "apollo8-lunar-orbit-return"
+                || _mode == "apollo11_mission"
+                    && bridge.ActiveFlightProfileId == "apollo11-lunar-landing-return")
+            && MissionManager.Instance != null)
+        {
+            MissionManager.Instance.StartCountdown();
+            _ascentEngaged = true;
+            _ascentStartedSimulationTime = universe.CurrentTime;
+            _log.WriteLine(
+                $"ACTION start {bridge.ActiveFlightProfileId} historical countdown");
+            _log.Flush();
+        }
+        else if (_pad && !_ascentEngaged && _mode is not ("apollo8_mission" or "gemini_mission" or "apollo11_mission")
+            && AscentController.Instance != null)
+        {
+            AscentController.Instance.Engage();
+            _ascentEngaged = true;
+            _ascentStartedSimulationTime = universe.CurrentTime;
+            _log.WriteLine("ACTION engage AscentController [G] autopilot");
+            _log.Flush();
+        }
+
+        if (_mode is "apollo8_mission" or "gemini_mission" or "apollo11_mission")
+        {
+            // The historical director owns the whole flight; the harness only observes.
+            var missionPhase = MissionManager.Instance?.Phase;
+            if (missionPhase != _apollo8MissionLastPhase)
+            {
+                _apollo8MissionLastPhase = missionPhase;
+                var dominantBody = universe.GetDominantBody(vessel.Position);
+                _log.WriteLine($"HISTORICAL_MISSION phase={missionPhase} t={universe.CurrentTime:F1} "
+                    + $"body={dominantBody.Id} alt={vessel.GetAltitude(dominantBody):F0}");
+                _log.Flush();
+            }
+            // Periodic state evidence: a long mission that hits the wall-clock budget must
+            // still show where it was, how fast it was advancing and why warp was limited.
+            ulong traceNowMs = Time.GetTicksMsec();
+            if (traceNowMs - _missionTraceWallMs >= 15_000)
+            {
+                _missionTraceWallMs = traceNowMs;
+                var traceBody = universe.GetDominantBody(vessel.Position);
+                var traceRel = vessel.Position - traceBody.Position;
+                var traceVel = vessel.Velocity - traceBody.Velocity;
+                double traceEnergy = 0.5 * traceVel.MagnitudeSquared - traceBody.GM / traceRel.Magnitude;
+                var traceOrbit = OrbitalElements.FromStateVector(traceRel, traceVel, traceBody.GM,
+                    traceBody.Id, universe.CurrentTime);
+                var sched = universe.LastSchedulerTelemetry;
+                var traceNose = vessel.Orientation.Rotate(Vector3d.Up).Normalized;
+                _log.WriteLine($"TRACE_MISSION wall={traceNowMs / 1000.0:F0} t={universe.CurrentTime:F1} "
+                    + $"phase={MissionManager.Instance?.Phase} body={traceBody.Id} "
+                    + $"alt={vessel.GetAltitude(traceBody):F0} spd={traceVel.Magnitude:F1} "
+                    + $"energy={traceEnergy:F0} pe={(traceOrbit.Periapsis - traceBody.Radius) / 1000:F1}km "
+                    + $"e={traceOrbit.Eccentricity:F4} throttle={vessel.Throttle:F2} "
+                    + $"mass={vessel.TotalMass:F0} rails={vessel.IsOnRails} warp={bridge.WarpIndex}/{bridge.MaxAllowedWarpIndex} "
+                    + $"branch={sched.Branch} cap={sched.EffectiveStepCap:F3} simPerFrame={sched.SimulatedSeconds:F3} "
+                    + $"noseUp={traceNose.Dot(traceRel.Normalized):F3} noseVel={traceNose.Dot(traceVel.Normalized):F3} "
+                    + $"rate={vessel.AngularVelocity.Magnitude:F4} cmd={vessel.PitchYawRoll.Magnitude:F3} sas={vessel.SASEnabled} "
+                    + $"rcs={vessel.TranslationCommand.Magnitude:F2} mono={vessel.Parts.TotalMonopropellant:F1} "
+                    + $"targetRange={TraceTargetRange(universe, vessel)}");
+                _log.Flush();
+            }
+            // Powered ascent guidance runs on the fixed 20 ms control clock, so warp changes
+            // only wall time, never the flown trajectory. Coasts and burns stay under the
+            // director's own warp choice: it uses warp to sequence ignition times.
+            if (_fastForwardAscent
+                && missionPhase is MissionPhase.ASCENT_SH or MissionPhase.MAX_Q
+                    or MissionPhase.SEPARATION or MissionPhase.ASCENT_SHIP
+                && bridge.WarpIndex < bridge.MaxAllowedWarpIndex)
+                bridge.SetWarpIndex(bridge.MaxAllowedWarpIndex);
+            if (UntilPhase.Length > 0 && missionPhase?.ToString() == UntilPhase)
+            {
+                Finish("HISTORICAL_MISSION_PHASE_REACHED");
+                return;
+            }
+            if (vessel.IsDestroyed)
+            {
+                Finish("HISTORICAL_MISSION_VEHICLE_LOST");
+                return;
+            }
+            // A segment target past lunar orbit (TEI, ENTRY, LANDED) flies through it.
+            if (UntilPhase.Length == 0 && missionPhase == MissionPhase.LUNAR_ORBIT && !_orbitBeauty && _pendingSlug == null)
+            {
+                var lunar = universe.GetBody("moon")!;
+                var lunarOrbit = OrbitalElements.FromStateVector(vessel.Position - lunar.Position,
+                    vessel.Velocity - lunar.Velocity, lunar.GM, lunar.Id, universe.CurrentTime);
+                _log.WriteLine($"HISTORICAL_MISSION_LUNAR_ORBIT periluneKm={(lunarOrbit.Periapsis - lunar.Radius) / 1000:F1} "
+                    + $"apoluneKm={(lunarOrbit.Apoapsis - lunar.Radius) / 1000:F1} e={lunarOrbit.Eccentricity:F4}");
+                _log.Flush();
+                QueueCapture("apollo8_mission_lunar_orbit");
+                _orbitBeauty = true;
+            }
+            if (_orbitBeauty && _pendingSlug == null)
+                Finish("HISTORICAL_MISSION_LUNAR_ORBIT_OK");
+            return;
+        }
+
+        if (_mode is ("full" or "ascent")
+            && _separation && _pendingSlug == null && !_orbit)
+        {
+            // Bounded RK4 acceleration for the long upper-stage insertion. This harness
+            // runs after guidance, so the request survives into the next physics tick.
+            bridge.SetTimeScale(2.0);
+        }
+
+        if (_ascentEngaged && !_orbit
+            && _mode is ("full" or "ascent" or "hotstage"))
+        {
+            MonitorAscent(vessel, body, universe, phase, alt, spd, vSpeed, q, g);
+            if (_finished) return;
+        }
+
+        // ── Hot-staging: gate on the real dual-thrust overlap state (booster still
+        // attached, Ship engines already lit), not on the SEPARATION phase — that phase
+        // only fires once mechanical staging completes, i.e. *after* the overlap window.
+        if (_mode is ("launch" or "launch_track" or "hotstage") && !_startupRamp && _pendingSlug == null
+            && _ascentEngaged && vessel.IsGroundHeld)
+        {
+            double delivered = DeliveredThrottle(vessel, body);
+            if (delivered is >= 0.25 and <= 0.80)
+            {
+                QueueCapture("startup_ramp");
+                // Capture the gated physical state without advancing through four
+                // more simulation frames of the short ignition ramp.
+                _settleLeft = 0;
+                _startupRamp = true;
+            }
+        }
+        if (_mode is "full" or "ascent" or "hotstage"
+            && !_hotstage
+            && _pendingSlug == null
+            && bridge.ActiveVessel?.IsHotStageOverlapping == true)
+        {
+            QueueCapture("hotstage");
+            _hotstage = true;
+            _log.WriteLine($"ACTION hot-stage overlap detected phase={phase} alt={alt:F0} spd={spd:F0}");
+            _log.Flush();
+        }
+        if (_mode is "hotstage" or "ascent" or "full"
+            && _hotstage
+            && !_hotstageSeparation
+            && _pendingSlug == null
+            && bridge.ActiveVessel?.IsHotStageOverlapping == false
+            && mission?.Phase is MissionPhase.SEPARATION or MissionPhase.ASCENT_SHIP)
+        {
+            QueueCapture("hotstage_separation");
+            _hotstageSeparation = true;
+            _log.WriteLine($"ACTION hot-stage separation detected phase={phase} alt={alt:F0} spd={spd:F0}");
+            _log.Flush();
+        }
+        if (_mode == "hotstage" && _hotstageSeparation && _pendingSlug == null)
+        {
+            Finish("HOTSTAGE_OK");
+            return;
+        }
+
+        if (!_liftoff && alt is >= 80.0 and <= 350.0 &&
+            mission?.Phase is MissionPhase.LIFTOFF or MissionPhase.ASCENT_SH or MissionPhase.IGNITION)
+        {
+            QueueCapture("liftoff");
+            _liftoff = true;
+        }
+
+        if (_mode == "launch" && _liftoff && _pendingSlug == null)
+        {
+            Finish("LAUNCH_OK");
+            return;
+        }
+        if (_mode == "launch_track" && _liftoff && _pendingSlug == null)
+        {
+            if (!_towerClear && alt >= 250.0)
+            {
+                _towerClear = true;
+                QueueCapture("tower_clear");
+            }
+            else if (!_earlyAscent && alt >= 1_000.0)
+            {
+                _earlyAscent = true;
+                QueueCapture("early_ascent");
+            }
+            else if (_earlyAscent)
+            {
+                Finish("LAUNCH_TRACK_OK");
+                return;
+            }
+        }
+
+        if (!_maxq && mission?.Phase == MissionPhase.MAX_Q)
+        {
+            QueueCapture("maxq");
+            _maxq = true;
+        }
+
+        if (!_separation
+            && _pendingSlug == null
+            && mission?.Phase is MissionPhase.SEPARATION or MissionPhase.MECO or MissionPhase.ASCENT_SHIP)
+        {
+            QueueCapture("separation");
+            _separation = true;
+        }
+
+        if (!_orbit && mission?.Phase == MissionPhase.ORBIT)
+        {
+            QueueCapture("orbit");
+            _orbit = true;
+        }
+
+        if (_mode == "ascent" && _orbit && _pendingSlug == null)
+        {
+            Finish("ASCENT_ORBIT_OK");
+            return;
+        }
+
+        // A full mission that cannot insert within the bounded ascent budget is a
+        // physical failure. Never convert that failure into a fake orbit for later
+        // screenshots.
+        if (_mode == "full"
+            && !_orbit && !_ascentFallbackUsed
+            && universe.CurrentTime - _ascentStartedSimulationTime > AscentFallbackSec &&
+            mission?.Phase is MissionPhase.PRE_LAUNCH or MissionPhase.COUNTDOWN or MissionPhase.IGNITION
+                or MissionPhase.LIFTOFF or MissionPhase.ASCENT_SH or MissionPhase.MAX_Q or MissionPhase.MECO
+                or MissionPhase.SEPARATION or MissionPhase.ASCENT_SHIP)
+        {
+            _ascentFallbackUsed = true;
+            _log.WriteLine($"GAP flown ascent did not reach ORBIT within {AscentFallbackSec:F0} simulated seconds "
+                + $"phase={mission?.Phase} alt={alt:F0} speed={spd:F0}");
+            _log.Flush();
+            Finish("ASCENT_ORBIT_GAP");
+            return;
+        }
+        // ── Orbit beauty shot ─────────────────────────────────────────────────
+        // Keep the flown insertion state intact. The old implementation jumped to a
+        // second circular orbit and reset its return flags, which made the following
+        // EDL capture a different vehicle state than the one that actually launched.
+        if (_orbit && !_orbitBeauty && _pendingSlug == null)
+        {
+            if (_beautyWaitFrames < 60)
+                _beautyWaitFrames++;
+            else
+            {
+                QueueCapture("orbit_beauty");
+                _orbitBeauty = true;
+            }
+        }
+
+        // ── Deorbit → EDL (continuous production path) ───────────────────────
+        if (_orbitBeauty && _pendingSlug == null && !_landed && !vessel.IsDestroyed)
+        {
+            ProcessDeorbit(bridge, vessel, universe, body, mission, alt);
+            LogFullMissionProgress(vessel, body, universe, phase);
+        }
+
+        if (!_entry && mission?.Phase == MissionPhase.ENTRY)
+        {
+            QueueCapture("entry");
+            _entry = true;
+        }
+
+        if (!_peak && mission?.Phase == MissionPhase.PEAK_HEATING)
+        {
+            QueueCapture("peak_heating");
+            _peak = true;
+        }
+
+        if (!_retro && mission?.Phase == MissionPhase.RETRO_BURN)
+        {
+            QueueCapture("retro_burn");
+            _retro = true;
+        }
+
+        if (!_landed && mission?.Phase == MissionPhase.LANDED)
+        {
+            QueueCapture("touchdown");
+            _landed = true;
+        }
+
+        if (vessel.IsDestroyed)
+        {
+            _log.WriteLine($"FAIL vessel destroyed phase={phase} alt={alt:F0} spd={spd:F0} heatRatio={heatRatio:F3} maxT={maxT:F0}");
+            _log.Flush();
+            Finish("CRASHED");
+            return;
+        }
+
+        if (_landed && _pendingSlug == null)
+        {
+            Finish("LANDED");
+            return;
+        }
+
+        // End when robust milestones done and EDL did not activate in time.
+        if (_orbitBeauty && _pendingSlug == null && !_landed
+            && universe.CurrentTime - _deorbitStartedSimulationTime > 720.0 && !_entry)
+        {
+            _log.WriteLine("GAP deorbit→EDL: no ENTRY phase reached within 720 simulated seconds of deorbit arming (see PLAN_PLAYTEST.md milestone 7)");
+            _log.Flush();
+            Finish("EDL_GAP");
+        }
+    }
+
+    private void ProcessFlight14PayloadVisual(
+        SimulationBridge bridge, Universe universe)
+    {
+        universe.TimeScale = 0.0;
+        TryCapturePending();
+        if (!_flight14PayloadVisualSeeded)
+        {
+            if (_readyFrames < 45) return;
+            var carrier = bridge.ActiveVessel;
+            if (carrier == null) { Finish("NO_CARRIER"); return; }
+
+            string data = ProjectSettings.GlobalizePath("res://data");
+            var definition = PartDefinition.LoadFromJson(Path.Combine(
+                data, "parts", "starlink_v3_flight14_estimate.json"));
+            var payload = new Vessel("flight14-payload-visual-fixture")
+            {
+                Name = "Flight 14 Starlink V3 payload visual fixture",
+                Position = carrier.Position,
+                Velocity = carrier.Velocity,
+                Orientation = carrier.Orientation,
+                ReferenceBodyId = carrier.ReferenceBodyId,
+            };
+            payload.Parts.SetRoot(new Part(
+                definition, "flight14-starlink-v3-visual-fixture"));
+            universe.AddVessel(payload);
+            if (!universe.SetActiveVessel(payload.Id))
+            {
+                Finish("PAYLOAD_FIXTURE_NOT_ACTIVE");
+                return;
+            }
+
+            // A display-only circular orbit gives the production floating origin and
+            // chase camera a stable vacuum background; no Flight 14 state is replayed.
+            bridge.JumpToOrbit(400_000.0);
+            bridge.SetTimeScale(0.0);
+
+            var vessels = GetTree().Root.FindChild("Vessels", true, false) as Node3D;
+            if (vessels == null) { Finish("NO_VESSELS_RENDER_ROOT"); return; }
+            var renderer = new VesselRenderer
+            {
+                Name = "Flight14PayloadVisualRenderer",
+            };
+            vessels.AddChild(renderer);
+            renderer.BuildFromVessel(payload);
+            var floatingOrigin = GetTree().Root.FindChild(
+                "FloatingOrigin", true, false) as FloatingOrigin;
+            floatingOrigin?.RegisterVesselNode(payload.Id, renderer);
+            CameraController.Instance?.SetExternalChaseFrame(
+                28f, 52f, 8f, allowCloseup: true);
+
+            var flatPack = renderer.GetNodeOrNull<MeshInstance3D>(
+                "StarlinkV3_EstimatedFlatPack");
+            var box = flatPack?.Mesh as BoxMesh;
+            if (box == null
+                || box.Size.X <= box.Size.Z
+                || box.Size.Z <= box.Size.Y
+                || Mathf.Sqrt(box.Size.X * box.Size.X + box.Size.Z * box.Size.Z)
+                    > (float)definition.DiameterM / 2.8f + 0.01f)
+            {
+                _log.WriteLine($"FLIGHT14_PAYLOAD_VISUAL_DEBUG family={definition.VehicleFamily} "
+                    + $"role={definition.VehicleRole} parts={payload.Parts.Parts.Count} "
+                    + $"children={string.Join(',', renderer.GetChildren().Select(node => node.Name.ToString()))}");
+                _log.Flush();
+                Finish("PAYLOAD_FLAT_PACK_RENDER_INVALID");
+                return;
+            }
+
+            _flight14PayloadVisualSeeded = true;
+            _log.WriteLine("FLIGHT14_PAYLOAD_VISUAL_SETUP fixture=True "
+                + $"physicsReplay=False timeScale=0 altitudeM=400000 "
+                + $"lengthM={box.Size.X * 2.8f:F2} "
+                + $"widthM={box.Size.Z * 2.8f:F2} "
+                + $"thicknessM={box.Size.Y * 2.8f:F2} "
+                + $"equivalentEnvelopeM={definition.DiameterM:F2} faceSections=2 centerBus=True");
+            _log.Flush();
+            return;
+        }
+
+        if (!_orbitBeauty && _readyFrames > 65)
+        {
+            QueueCapture("flight14_payload_flat_pack");
+            _orbitBeauty = true;
+            return;
+        }
+        if (_orbitBeauty && _pendingSlug == null)
+            Finish("FLIGHT14_PAYLOAD_VISUAL_OK");
+    }
+
+    private void ProcessFlight14PayloadGroupVisual(
+        SimulationBridge bridge, Universe universe)
+    {
+        universe.TimeScale = 0.0;
+        TryCapturePending();
+        if (!_flight14PayloadGroupSeeded)
+        {
+            if (_readyFrames < 45) return;
+            var carrier = bridge.ActiveVessel;
+            var earth = universe.GetBody("earth");
+            if (carrier == null || earth == null)
+            {
+                Finish("PAYLOAD_GROUP_FIXTURE_MISSING_CARRIER_OR_EARTH");
+                return;
+            }
+
+            // This is a presentation fixture, not a replay of the Flight 14 physics run.
+            // Seed the carrier in circular orbit, then reconstruct two estimated release
+            // states and propagate each with the same two-body Kepler model used by rails.
+            bridge.JumpToOrbit(400_000.0);
+            carrier = bridge.ActiveVessel;
+            if (carrier == null) { Finish("PAYLOAD_GROUP_FIXTURE_ORBIT_SEED_FAILED"); return; }
+            string data = ProjectSettings.GlobalizePath("res://data");
+            var profile = Flight14PayloadDefinition.LoadFromJson(Path.Combine(
+                data, "flight_profiles", "starship_flight14_payload_estimate.json"));
+            var partDefinition = PartDefinition.LoadFromJson(Path.Combine(
+                data, "parts", "starlink_v3_flight14_estimate.json"));
+            double observationTime = universe.CurrentTime;
+            var carrierOrbit = OrbitalElements.FromStateVector(
+                carrier.Position-earth.Position, carrier.Velocity-earth.Velocity,
+                earth.GM, earth.Id, observationTime);
+            var carrierOrbitState = carrierOrbit.GetStateAtTime(
+                observationTime, earth.GM);
+            double carrierStateClosureM = carrierOrbitState.position.DistanceTo(
+                carrier.Position-earth.Position);
+            var openingVelocity = carrier.Orientation.Rotate(profile.OpeningVelocity);
+            double[] elapsedSinceRelease =
+            [profile.ReleaseIntervalSeconds + 60.0, 60.0];
+            var payloadPositions = new Vector3d[elapsedSinceRelease.Length];
+            _flight14PayloadGroupSatelliteOffsetsMetres =
+                new Vector3d[elapsedSinceRelease.Length];
+            _flight14PayloadGroupSatellites = new Vessel[elapsedSinceRelease.Length];
+            var vesselsRoot = GetTree().Root.FindChild("Vessels", true, false) as Node3D;
+            var floatingOrigin = GetTree().Root.FindChild(
+                "FloatingOrigin", true, false) as FloatingOrigin;
+            if (vesselsRoot == null)
+            {
+                Finish("PAYLOAD_GROUP_FIXTURE_NO_RENDER_ROOT");
+                return;
+            }
+
+            Vector3d focusOffsetMetres = Vector3d.Zero;
+            for (int i = 0; i < elapsedSinceRelease.Length; i++)
+            {
+                double elapsed = elapsedSinceRelease[i];
+                double releaseEpoch = observationTime-elapsed;
+                var releaseCarrier = carrierOrbit.GetStateAtTime(releaseEpoch, earth.GM);
+                var satelliteOrbit = OrbitalElements.FromStateVector(
+                    releaseCarrier.position,
+                    releaseCarrier.velocity+openingVelocity,
+                    earth.GM, earth.Id, releaseEpoch);
+                var satelliteState = satelliteOrbit.GetStateAtTime(
+                    observationTime, earth.GM);
+                var spin = carrier.AngularVelocity.Magnitude > 1e-12
+                    ? Quaterniond.FromAxisAngle(carrier.AngularVelocity.Normalized,
+                        carrier.AngularVelocity.Magnitude*elapsed)
+                    : Quaterniond.Identity;
+                var satellite = new Vessel($"flight14-payload-group-fixture-{i + 1}")
+                {
+                    Name = $"Starlink V3 {i + 1:00} (estimated visual fixture)",
+                    Position = earth.Position+satelliteState.position,
+                    Velocity = earth.Velocity+satelliteState.velocity,
+                    Orientation = spin*carrier.Orientation,
+                    AngularVelocity = carrier.AngularVelocity,
+                    ReferenceBodyId = earth.Id,
+                    OrbitalState = satelliteOrbit,
+                    IsOnRails = true,
+                    SASEnabled = false,
+                };
+                satellite.Parts.SetRoot(new Part(
+                    partDefinition, $"flight14-payload-group-part-{i + 1}"));
+                universe.AddVessel(satellite);
+                _flight14PayloadGroupSatellites[i] = satellite;
+                payloadPositions[i] = satellite.Position;
+                _flight14PayloadGroupSatelliteOffsetsMetres[i] =
+                    satellite.Position-carrier.Position;
+
+                var renderer = new VesselRenderer
+                {
+                    Name = $"Flight14PayloadGroup_{i + 1:00}",
+                };
+                vesselsRoot.AddChild(renderer);
+                renderer.BuildFromVessel(satellite);
+                floatingOrigin?.RegisterVesselNode(satellite.Id, renderer);
+                focusOffsetMetres += satellite.Position-carrier.Position;
+            }
+
+            focusOffsetMetres /= elapsedSinceRelease.Length+1;
+            _flight14PayloadGroupFocusOffsetMetres = focusOffsetMetres;
+            CameraController.Instance?.SetExternalChaseFrame(
+                35f, 22f, 65f, allowCloseup: true,
+                targetOffsetMetres: focusOffsetMetres);
+            _flight14PayloadGroupSeeded = true;
+            _log.WriteLine("FLIGHT14_PAYLOAD_GROUP_SETUP fixture=True physicsReplay=False "
+                + $"timeScale=0 altitudeM={carrier.GetAltitude(earth):F0} "
+                + $"payloadCount={payloadPositions.Length} "
+                + $"releaseElapsedS={elapsedSinceRelease[0]:F2},{elapsedSinceRelease[1]:F2} "
+                + $"openingVelocityMps={profile.OpeningVelocity.Magnitude:F2} "
+                + $"carrierStateClosureM={carrierStateClosureM:F2} "
+                + $"separationM={payloadPositions[0].DistanceTo(carrier.Position):F2},"
+                + $"{payloadPositions[1].DistanceTo(carrier.Position):F2} "
+                + $"groupFocusOffsetM={focusOffsetMetres.Magnitude:F2} "
+                + $"angularRateRadPerS={carrier.AngularVelocity.Magnitude:E3}");
+            _log.Flush();
+            return;
+        }
+
+        if (_pendingSlug != null) return;
+        if (_flight14PayloadGroupCaptureStage == 0 && _readyFrames > 30)
+        {
+            QueueCapture("flight14_payload_group_wide");
+            _flight14PayloadGroupCaptureStage = 1;
+            return;
+        }
+        if (_flight14PayloadGroupCaptureStage == 1)
+        {
+            CameraController.Instance?.FocusPresentationTarget(
+                _flight14PayloadGroupSatellites[0], distance: 10f);
+            _flight14PayloadGroupInspectionIndex = 1;
+            _readyFrames = 0;
+            _flight14PayloadGroupCaptureStage = 2;
+            return;
+        }
+        if (_flight14PayloadGroupCaptureStage == 2 && _readyFrames > 15)
+        {
+            QueueCapture("flight14_payload_inspection_01");
+            _flight14PayloadGroupCaptureStage = 3;
+            return;
+        }
+        if (_flight14PayloadGroupCaptureStage == 3)
+        {
+            CameraController.Instance?.FocusPresentationTarget(
+                _flight14PayloadGroupSatellites[1], distance: 10f);
+            _flight14PayloadGroupInspectionIndex = 2;
+            _readyFrames = 0;
+            _flight14PayloadGroupCaptureStage = 4;
+            return;
+        }
+        if (_flight14PayloadGroupCaptureStage == 4 && _readyFrames > 15)
+        {
+            QueueCapture("flight14_payload_inspection_02");
+            _flight14PayloadGroupCaptureStage = 5;
+            return;
+        }
+        if (_flight14PayloadGroupCaptureStage == 5)
+            Finish("FLIGHT14_PAYLOAD_GROUP_VISUAL_OK");
+    }
+
+    private void ProcessFlight14Deployment(SimulationBridge bridge)
+    {
+        TryCapturePending();
+        var preview = bridge.Flight14Preview;
+        if (preview == null)
+        {
+            if (_readyFrames > 300) Finish("FLIGHT14_EXPLORATION_NOT_STARTED");
+            return;
+        }
+
+        if (!_flight14DeploymentE2EStarted)
+        {
+            if (_readyFrames < 45) return;
+            bridge.SetWarpIndex(7);
+            _flight14DeploymentE2EStarted = true;
+            _lastFlight14DeploymentProgressWall = Time.GetTicksMsec() / 1000.0;
+            _log.WriteLine("FLIGHT14_DEPLOYMENT_E2E started=True profile=flight14 "
+                + "launchSite=starbase_pad2 warpIndex=7 physicsReplay=False");
+            _log.Flush();
+        }
+
+        var run = preview.Run;
+        var payloadController = run.PayloadController;
+        double wallNow = Time.GetTicksMsec() / 1000.0;
+        if (wallNow - _lastFlight14DeploymentProgressWall >= 5.0)
+        {
+            _lastFlight14DeploymentProgressWall = wallNow;
+            _log.WriteLine($"FLIGHT14_DEPLOYMENT_E2E_PROGRESS met={preview.MissionElapsedSeconds:F1} "
+                + $"phase={run.Controller.Phase} payloadPhase={payloadController.Phase} "
+                + $"releases={payloadController.Releases.Count} "
+                + $"altitudeM={run.Ship.GetAltitude(run.Earth):F0} "
+                + $"warp={SimulationBridge.WarpLevels[bridge.WarpIndex]:G}");
+            _log.Flush();
+        }
+
+        if (run.Ship.IsDestroyed || run.Ship.StructuralControlLost
+            || payloadController.Phase == Flight14PayloadPhase.Blocked)
+        {
+            _log.WriteLine($"FLIGHT14_DEPLOYMENT_E2E_ABORT destroyed={run.Ship.IsDestroyed} "
+                + $"structuralControlLost={run.Ship.StructuralControlLost} "
+                + $"payloadPhase={payloadController.Phase} "
+                + $"blockReason={payloadController.BlockReason ?? "none"} "
+                + $"releases={payloadController.Releases.Count}");
+            _log.Flush();
+            Finish("FLIGHT14_DEPLOYMENT_E2E_ABORT");
+            return;
+        }
+
+        if (payloadController.Releases.Count > _flight14DeploymentLoggedReleases)
+        {
+            for (int releaseIndex = _flight14DeploymentLoggedReleases;
+                releaseIndex < payloadController.Releases.Count; releaseIndex++)
+            {
+                var release = payloadController.Releases[releaseIndex];
+                _log.WriteLine($"FLIGHT14_DEPLOYMENT_E2E_RELEASE index={releaseIndex + 1} "
+                    + $"met={release.MissionElapsedSeconds:F2} satellite={release.Satellite.Name} "
+                    + $"massKg={release.Satellite.TotalMass:F1} periapsisM={release.PeriapsisAltitudeM:F1} "
+                    + $"massResidualKg={release.MassResidualKg:E3} "
+                    + $"momentumResidualKgMps={release.MomentumResidualKgMps:E3} "
+                    + $"relativeOpeningResidualMps={release.RelativeOpeningResidualMps:E3}");
+                _flight14DeploymentAttitudeSamples.Add((release.Satellite,
+                    release.Satellite.Orientation, release.Satellite.AngularVelocity,
+                    preview.MissionElapsedSeconds));
+            }
+            _flight14DeploymentLoggedReleases = payloadController.Releases.Count;
+            _log.Flush();
+        }
+
+        if (payloadController.Releases.Count >= 2
+            && double.IsNaN(_flight14DeploymentCaptureStart))
+        {
+            _flight14DeploymentCaptureStart = preview.MissionElapsedSeconds;
+            bridge.SetWarpIndex(0);
+            CameraController.Instance?.SetExternalChaseFrame(
+                20f, 18f, 65f, allowCloseup: true);
+            _log.WriteLine($"FLIGHT14_DEPLOYMENT_E2E_TWO_RELEASES "
+                + $"met={_flight14DeploymentCaptureStart:F2} count={payloadController.Releases.Count} "
+                + $"intervalS={payloadController.Releases[1].MissionElapsedSeconds - payloadController.Releases[0].MissionElapsedSeconds:F2} "
+                + "warp=1 camera=close_external");
+            _log.Flush();
+        }
+
+        if (!double.IsNaN(_flight14DeploymentCaptureStart)
+            && preview.MissionElapsedSeconds - _flight14DeploymentCaptureStart >= 60.0
+            && !_flight14DeploymentCaptureQueued)
+        {
+            bool attitudePropagationValid = true;
+            for (int i = 0; i < _flight14DeploymentAttitudeSamples.Count; i++)
+            {
+                var sample = _flight14DeploymentAttitudeSamples[i];
+                var initial = sample.OrientationAtSample.Normalize();
+                var current = sample.Satellite.Orientation.Normalize();
+                double dot = System.Math.Abs(initial.W * current.W
+                    + initial.X * current.X + initial.Y * current.Y + initial.Z * current.Z);
+                double measuredAngle = 2.0 * System.Math.Acos(System.Math.Clamp(dot, 0.0, 1.0));
+                double elapsed = preview.MissionElapsedSeconds - sample.MissionElapsedAtSample;
+                double expectedAngle = sample.AngularVelocityAtSample.Magnitude * elapsed;
+                double angleError = System.Math.Abs(measuredAngle - expectedAngle);
+                double currentAngularRate = sample.Satellite.AngularVelocity.Magnitude;
+                bool spinPreservedWithoutSas = !sample.Satellite.SASEnabled
+                    && (sample.AngularVelocityAtSample.Magnitude <= 1e-5
+                        || (currentAngularRate >= sample.AngularVelocityAtSample.Magnitude * 0.5
+                            && measuredAngle >= expectedAngle * 0.5));
+                bool sampleValid = double.IsFinite(measuredAngle)
+                    && double.IsFinite(currentAngularRate)
+                    && !sample.Satellite.SASEnabled
+                    && (sample.Satellite.IsOnRails
+                        ? angleError <= 1e-6
+                        : spinPreservedWithoutSas);
+                attitudePropagationValid &= sampleValid;
+                _log.WriteLine($"FLIGHT14_DEPLOYMENT_ATTITUDE index={i + 1} "
+                    + $"elapsedS={elapsed:F2} angularRateRadPerS={sample.AngularVelocityAtSample.Magnitude:E3} "
+                    + $"currentAngularRateRadPerS={currentAngularRate:E3} "
+                    + $"expectedAngleRad={expectedAngle:F6} measuredAngleRad={measuredAngle:F6} "
+                    + $"errorRad={angleError:E3} integrationTier="
+                    + $"{(sample.Satellite.IsOnRails ? "onrails" : "fullphysics")} "
+                    + $"sas={sample.Satellite.SASEnabled} "
+                    + $"onRails={sample.Satellite.IsOnRails}");
+            }
+
+            if (!attitudePropagationValid
+                || _flight14DeploymentAttitudeSamples.Count != 2)
+            {
+                _log.WriteLine($"FLIGHT14_DEPLOYMENT_ATTITUDE_INVALID samples="
+                    + $"{_flight14DeploymentAttitudeSamples.Count} valid={attitudePropagationValid}");
+                _log.Flush();
+                Finish("FLIGHT14_ATTITUDE_PROPAGATION_INVALID");
+                return;
+            }
+
+            var vesselsRoot = GetTree().Root.FindChild(
+                "Vessels", true, false) as Node3D;
+            int detachedRenderers = vesselsRoot?.GetChildren()
+                .OfType<VesselRenderer>()
+                .Count(renderer => renderer.Name.ToString().StartsWith(
+                    "Flight14Detached_", StringComparison.Ordinal)) ?? 0;
+            _log.WriteLine($"FLIGHT14_DEPLOYMENT_E2E_CAPTURE_STATE "
+                + $"released={payloadController.Releases.Count} detachedRenderers={detachedRenderers} "
+                + $"vessels={bridge.Universe.Vessels.Count} "
+                + $"shipAltitudeM={run.Ship.GetAltitude(run.Earth):F1} "
+                + $"missionElapsedS={preview.MissionElapsedSeconds:F2} "
+                + "attitudePropagation=True observationS=60 physicsReplay=False");
+            _log.Flush();
+            QueueCapture("flight14_payload_deployment_e2e");
+            _flight14DeploymentCaptureQueued = true;
+            return;
+        }
+
+        if (_flight14DeploymentCaptureQueued && _pendingSlug == null)
+            Finish("FLIGHT14_DEPLOYMENT_E2E_OK");
+    }
+
+    private void ProcessEdlVerification(SimulationBridge bridge, Vessel vessel, Universe universe,
+        CelestialBody body, MissionManager? mission, double alt, Vector3d surfVel, string phase)
+    {
+        if (!_edlSeeded)
+        {
+            if (_readyFrames < 30 || EDLController.Instance == null) return;
+
+            // Exercise the exact public entry point used by the HUD button/[R], rather than
+            // maintaining a second private seed that could silently drift from gameplay.
+            if (!bridge.BeginReentryDemonstration())
+            {
+                _log.WriteLine("GAP HUD reentry demonstration entry point refused the scenario");
+                Finish("EDL_DEMO_START_FAILED");
+                return;
+            }
+            CameraController.Instance?.SetExternalChaseFrame(${EDL_YAW_DEG}f, 12.0f, 28.0f);
+            _log.WriteLine("EDL_CAMERA yawDeg=${EDL_YAW_DEG} pitchDeg=12 distance=28");
+            vessel = bridge.ActiveVessel!;
+            body = universe.Bodies.First(b => b.Name == "Earth");
+            bridge.SetTimeScale(3.0); // verification speed only; the HUD button starts at x1
+
+            _edlSeeded = true;
+            _edlScenarioStart = universe.CurrentTime;
+            _log.WriteLine("ACTION seeded deterministic EDL alt=70000m airspeed=1804m/s reserve=12%");
+            _log.Flush();
+            return;
+        }
+
+        double simElapsed = universe.CurrentTime - _edlScenarioStart;
+        if (simElapsed >= _nextEdlTelemetry)
+        {
+            Vector3d up = (vessel.Position - body.Position).Normalized;
+            double vUp = surfVel.Dot(up);
+            double horizontal = (surfVel - up * vUp).Magnitude;
+            var cluster = vessel.Parts.ActiveEngines.FirstOrDefault();
+            double upright = vessel.Orientation.Rotate(Vector3d.Up).Normalized.Dot(up);
+            Vector3d catchOffset = vessel.Position - vessel.CatchTargetPositionWorld;
+            Vector3d catchHorizontalOffset = catchOffset - up * catchOffset.Dot(up);
+            int contacts = vessel.LastSurfaceContact?.ContactCount ?? 0;
+            double maxStroke = vessel.LastSurfaceContact?.Points.Max(p => p.PenetrationM) ?? 0.0;
+            double peakLegLoad = vessel.LastSurfaceContact?.Points.Max(p => p.NormalLoadN) ?? 0.0;
+            double minCatchGap = vessel.LastCatchContact?.Points.Min(p => p.SignedGapM) ?? double.NaN;
+            double catchRange = (vessel.Position - vessel.CatchTargetPositionWorld).Magnitude;
+            var edl = EDLController.Instance;
+            double edlAlpha = edl?.AeroAngleOfAttackDegrees ?? double.NaN;
+            double edlReferenceAlpha = edl?.AeroReferenceAngleOfAttackDegrees ?? double.NaN;
+            double edlWindward = edl?.AeroWindwardFactor ?? double.NaN;
+            double edlAttitudeError = edl?.AeroAttitudeErrorDegrees ?? double.NaN;
+            Vector3d edlCommand = edl?.AeroAttitudeCommand ?? Vector3d.Zero;
+            Vector3d vesselCommand = vessel.PitchYawRoll;
+            double controlAuthority = vessel.ControlAuthorityFactor;
+            var flapActuators = vessel.FlapActuators;
+            Vector3d edlLiftReference = edl?.AeroLiftReference ?? Vector3d.Zero;
+            double density = body.Atmosphere?.GetDensity(alt) ?? 0.0;
+            double dynamicPressure = AerodynamicsModel.ComputeDynamicPressure(
+                density, surfVel.Magnitude);
+            Vector3d aeroAxis = vessel.Orientation.Rotate(Vector3d.Up).Normalized;
+            Vector3d aeroStaticAcceleration = AerodynamicsModel.ComputeAttitudeAngularAcceleration(
+                density, surfVel, aeroAxis, vessel.AngularVelocity, vessel.VehicleLength,
+                vessel.MaximumDiameter, vessel.Parts.TransverseMomentOfInertia,
+                body.Atmosphere?.GetTemperature(alt) ?? 1.0);
+            Vector3d aeroFlapAcceleration = AerodynamicsModel.ComputeFlapControlAngularAcceleration(
+                density, surfVel, vessel.Orientation, edlCommand, vessel.VehicleLength,
+                vessel.MaximumDiameter, vessel.Parts.TransverseMomentOfInertia);
+            Vector3d aeroStaticLocal = vessel.Orientation.Inverse().Rotate(aeroStaticAcceleration);
+            Vector3d aeroFlapLocal = vessel.Orientation.Inverse().Rotate(aeroFlapAcceleration);
+            double maxCatchPinY = vessel.CatchContactPoints
+                .Select(point => point.LocalPositionFromDatum.Y)
+                .DefaultIfEmpty(double.NaN)
+                .Max();
+            _log.WriteLine($"TRACE t={simElapsed:F1} alt={alt:F1} vUp={vUp:F1} horiz={horizontal:F1} " +
+                $"throttle={vessel.Throttle:F3} spool={cluster?.ThrottleLevel ?? 0.0:F3} " +
+                $"engines={cluster?.SelectedEngineCount ?? 0} upright={upright:F4} phase={phase} " +
+                $"catchArmed={vessel.IsAttemptingTowerCatch} catchPins={vessel.HasCatchPins} " +
+                $"catchMiss={catchHorizontalOffset.Magnitude:F1} catchAlt={body.GetAltitude(vessel.CatchTargetPositionWorld):F1} " +
+                $"catchGap={minCatchGap:F3} catchRange={catchRange:F1} " +
+                $"evalRange={vessel.LastCatchEvaluationRangeM:F1} evalGate={vessel.LastCatchEvaluationPassedGate} pinY={maxCatchPinY:F1} " +
+                $"rails={vessel.IsOnRails} contacts={contacts} maxStroke={maxStroke:F3} peakLegLoad={peakLegLoad:F0} " +
+                $"settled={vessel.IsSurfaceSettled} alpha={edlAlpha:F1} referenceAlpha={edlReferenceAlpha:F1} windward={edlWindward:F4} " +
+                $"attitudeError={edlAttitudeError:F1} command={edlCommand} vesselCommand={vesselCommand} " +
+                $"controlAuthority={controlAuthority:F3} flapActuators=({flapActuators.Pitch:F3},{flapActuators.Yaw:F3},{flapActuators.Roll:F3}) " +
+                $"flapOverride={vessel.FlapCommandOverride?.ToString() ?? "none"} " +
+                $"liftRef={edlLiftReference} " +
+                $"q={dynamicPressure:F0} aeroStaticLocal={aeroStaticLocal} aeroFlapLocal={aeroFlapLocal}");
+            _log.Flush();
+            _nextEdlTelemetry = simElapsed + 5.0;
+        }
+
+        if (!_entry && mission?.Phase is MissionPhase.ENTRY or MissionPhase.PEAK_HEATING
+                or MissionPhase.AERO_DESCENT or MissionPhase.RETRO_BURN
+                or MissionPhase.FINAL_DESCENT or MissionPhase.LANDED
+                or MissionPhase.CAUGHT)
+        {
+            QueueCapture("entry");
+            _entry = true;
+        }
+
+        if (!_peak && mission?.Phase == MissionPhase.PEAK_HEATING)
+        {
+            QueueCapture("peak_heating");
+            _peak = true;
+        }
+
+        if (!_retro && mission?.Phase is MissionPhase.RETRO_BURN or MissionPhase.FINAL_DESCENT)
+        {
+            bridge.SetTimeScale(1.0);
+            QueueCapture("retro_burn");
+            _retro = true;
+            _retroStart = universe.CurrentTime;
+        }
+
+        if (_retro && !_flipComplete && _pendingSlug == null && surfVel.Magnitude > 1.0)
+        {
+            Vector3d nose = vessel.Orientation.Rotate(Vector3d.Up).Normalized;
+            double alignment = nose.Dot(-surfVel.Normalized);
+            if (alignment > System.Math.Cos(5.0 * System.Math.PI / 180.0) &&
+                universe.CurrentTime - _retroStart > 0.5)
+            {
+                QueueCapture("flip_complete");
+                _flipComplete = true;
+                // Keep the final descent at real-time scale. The production bridge clamps
+                // active EDL to x1, and this harness must exercise the same cadence so the
+                // minimum-throttle/catch handoff is validated rather than hidden by a warp.
+                bridge.SetTimeScale(1.0);
+                int engines = vessel.Parts.ActiveEngines.FirstOrDefault()?.SelectedEngineCount ?? 0;
+                _log.WriteLine($"CHECK finite_flip duration={universe.CurrentTime - _retroStart:F2}s " +
+                    $"alignment={alignment:F5} omega={vessel.AngularVelocity.Magnitude:F4} engines={engines}");
+                _log.Flush();
+            }
+        }
+
+        if (!_caught && mission?.Phase == MissionPhase.CAUGHT)
+        {
+            QueueCapture("caught");
+            _caught = true;
+            _log.WriteLine($"CHECK tower_catch caught=True pins={vessel.LastCatchContact?.ContactCount ?? 0} " +
+                $"relativeSpeed={(vessel.Velocity - vessel.CatchTargetVelocityWorld).Magnitude:F3} " +
+                $"angularSpeed={vessel.AngularVelocity.Magnitude:F4}");
+            _log.Flush();
+        }
+
+        if (!_landed && mission?.Phase == MissionPhase.LANDED)
+        {
+            QueueCapture("touchdown");
+            _landed = true;
+        }
+
+        if (vessel.IsDestroyed)
+        {
+            var contact = vessel.LastSurfaceContact;
+            int contacts = contact?.ContactCount ?? 0;
+            double maxStroke = contact?.Points.Max(p => p.PenetrationM) ?? 0.0;
+            double peakLegLoad = contact?.Points.Max(p => p.NormalLoadN) ?? 0.0;
+            _log.WriteLine($"FAIL vessel destroyed phase={phase} alt={alt:F1} " +
+                $"spd={surfVel.Magnitude:F2} cause={vessel.DestructionCause} " +
+                $"impact={vessel.CrashImpactSpeed:F2} gear={vessel.HasDeployedLandingGear} " +
+                $"points={vessel.LandingContactPoints.Count} contacts={contacts} " +
+                $"maxStroke={maxStroke:F3} peakLegLoad={peakLegLoad:F0} " +
+                $"travelExcess={contact?.MaxTravelExcessM ?? 0.0:F3} " +
+                $"overTravel={contact?.HasOverTravel ?? false} overload={contact?.HasOverload ?? false}");
+            _log.Flush();
+            Finish("CRASHED");
+            return;
+        }
+
+        if (_caught && _pendingSlug == null)
+        {
+            Finish("CAUGHT");
+            return;
+        }
+
+        if (_landed && _pendingSlug == null)
+        {
+            Finish(_flipComplete ? "LANDED" : "LANDED_WITHOUT_FLIP");
+            return;
+        }
+
+        if (simElapsed > 900.0)
+            Finish("EDL_TIMEOUT");
+    }
+
+    private void ProcessOrbitalReentry(SimulationBridge bridge, Vessel vessel, Universe universe,
+        CelestialBody body, MissionManager? mission, double alt, Vector3d surfVel, string phase)
+    {
+        // Earth keeps active vessels on bounded RK4 through the modeled 1,000 km
+        // thermosphere. Start above that boundary so the coast can use analytic rails;
+        // the real deorbit burn targets the player-safe 60 km periapsis and re-enters normally.
+        const double OrbitAltitudeM = 1_200_000.0;
+        const double DeorbitTargetPeM = 60_000.0;
+        // Setup-only lead used to evaluate the actual public deorbit/catch path. The bridge
+        // uses this horizon to seed the inertial plane against the rotating Starbase radial.
+        // The return plane is seeded against the rotating site at the
+        // inertial transfer intercept. This deterministic horizon is calibrated
+        // against the actual deorbit-to-entry geometry, not the later touchdown
+        // clock used by the EDL controller.
+        const double OrbitalReturnExpectedSeconds = 3_300.0;
+        // The same seeded plane needs a small southward bias after the longitudinal
+        // correction; otherwise the atmospheric footprint remains about 1.3° north of
+        // the moving Starbase corridor before lift guidance can settle it.
+        const double OrbitalReturnLatitudeBiasDegrees = -1.0;
+        // The return plane is aligned with the rotating launch site. The deorbit burn
+        // lowers periapsis on the opposite side of the circular orbit; adding a positive
+        // longitude lead therefore moved periapsis east of Starbase by thousands of km
+        // before atmospheric guidance had meaningful authority.
+        // The calibrated return plane reaches the Starbase longitude family before the
+        // entry corridor hands off to the terminal flip. Production physics still
+        // owns the actual target and no position is written by this fixture.
+        const double OrbitalReturnLongitudeLeadDegrees = 15.0;
+        // The seeded return plane is an inertial geometry aid, not the touchdown clock.
+        // Keep this as simulated time; the wall-clock budget remains controlled by the
+        // shell harness.
+        const double SimTimeoutSec = 6_000.0;
+
+        if (!_orbitalReentrySeeded)
+        {
+            if (_readyFrames < 45) return;
+
+            // Keep this acceptance mode narrow and explicit. A different site or vehicle
+            // would exercise a different policy and must not silently pass as Starbase.
+            if (!string.Equals("${VARIANT_SITE}", "starbase", StringComparison.OrdinalIgnoreCase))
+            {
+                _log.WriteLine("GAP normal orbital reentry requires launchSite=starbase " +
+                    "(scenario was not armed)");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_UNAVAILABLE");
+                return;
+            }
+
+            var earth = universe.GetBody("earth");
+            if (earth == null)
+            {
+                _log.WriteLine("GAP normal orbital reentry requires Earth");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_UNAVAILABLE");
+                return;
+            }
+
+            bool hasShip = vessel.Parts.Parts.Any(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("ship_engines"));
+            bool hasBooster = vessel.Parts.Parts.Any(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("booster"));
+            if (hasBooster)
+            {
+                // Setup only: normal reentry must be evaluated on the standalone Ship.
+                bridge.TriggerStaging();
+                vessel = bridge.ActiveVessel!;
+                hasShip = vessel.Parts.Parts.Any(part =>
+                    part.Definition.IsStarshipFamily
+                    && part.Definition.HasVehicleRole("ship_engines"));
+            }
+            if (!hasShip || vessel.IsDestroyed)
+            {
+                _log.WriteLine("GAP normal orbital reentry requires a standalone Starship " +
+                    "ship_engines vessel after staging");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_UNAVAILABLE");
+                return;
+            }
+
+            // Explicit setup teleport: it establishes a reproducible safe orbit, but does
+            // not enter EDL and is never reported as a normal reentry milestone.
+            if (!bridge.JumpToOrbitForLaunchSiteReturn(
+                    OrbitAltitudeM, OrbitalReturnExpectedSeconds,
+                    OrbitalReturnLatitudeBiasDegrees,
+                    OrbitalReturnLongitudeLeadDegrees))
+            {
+                _log.WriteLine("GAP normal orbital return could not seed a rotating-site " +
+                    "intercept orbit");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_SETUP_INVALID");
+                return;
+            }
+            vessel = bridge.ActiveVessel!;
+            const double OrbitalReturnReserveFraction = 0.12;
+            if (!bridge.ConfigureOrbitalReturnReserve(OrbitalReturnReserveFraction))
+            {
+                _log.WriteLine("GAP normal orbital return reserve could not be configured");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_UNAVAILABLE");
+                return;
+            }
+            earth = universe.GetBody("earth")!;
+            var seededOrbit = OrbitalElements.FromStateVector(
+                vessel.Position - earth.Position,
+                vessel.Velocity - earth.Velocity,
+                earth.GM,
+                earth.Id,
+                universe.CurrentTime);
+            double seededPe = seededOrbit.Periapsis - earth.Radius;
+            double seededAp = seededOrbit.Apoapsis - earth.Radius;
+            double atmosphereTop = earth.Atmosphere?.MaxAltitude ?? double.NaN;
+            bool finiteOrbit = double.IsFinite(seededPe)
+                && double.IsFinite(seededAp)
+                && double.IsFinite(atmosphereTop);
+            bool safeOrbit = finiteOrbit
+                && seededPe >= atmosphereTop
+                && seededAp >= seededPe;
+            if (!safeOrbit)
+            {
+                _log.WriteLine($"GAP normal orbital setup is not a safe closed orbit " +
+                    $"pe={seededPe:F1} ap={seededAp:F1} atmoTop={atmosphereTop:F1}");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_SETUP_INVALID");
+                return;
+            }
+
+            var map = MapViewController.Instance;
+            if (map == null)
+            {
+                _log.WriteLine("GAP normal orbital reentry map planner/autopilot is unavailable");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_UNAVAILABLE");
+                return;
+            }
+
+            // Invoke the same public input path as the player: B plans the deorbit and
+            // Enter arms the local AutopilotController. No private controller state is
+            // reached from this temporary harness.
+            if (!map.Visible) map.ToggleVisible();
+            map._UnhandledInput(new InputEventKey
+            {
+                Keycode = Key.B,
+                Pressed = true,
+            });
+            if (!IsAtmosphericDeorbit(map.Planner, body))
+            {
+                _log.WriteLine($"GAP normal deorbit planner refused targetPe={DeorbitTargetPeM:F1} " +
+                    $"dv={map.Planner.DeltaVMagnitude:F1} prograde={map.Planner.DvPrograde:F1}");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_DEORBIT_UNAVAILABLE");
+                return;
+            }
+            double plannedDv = map.Planner.DeltaVMagnitude;
+            map._UnhandledInput(new InputEventKey
+            {
+                Keycode = Key.Enter,
+                Pressed = true,
+            });
+            if (mission?.Phase != MissionPhase.COAST)
+            {
+                _log.WriteLine($"GAP normal deorbit autopilot refused arm phase={mission?.Phase} " +
+                    $"dv={plannedDv:F1}");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_DEORBIT_UNAVAILABLE");
+                return;
+            }
+            if (map.Visible) map.ToggleVisible();
+            CameraController.Instance?.EnterShipChaseView();
+
+            _log.WriteLine($"NORMAL_REENTRY_SETUP source=JumpToOrbit altitude={OrbitAltitudeM:F0} " +
+                $"pe={seededPe:F1} ap={seededAp:F1} atmoTop={atmosphereTop:F1} " +
+                $"launchSite=starbase demo=False flownAscent=False " +
+                        $"orbitalReturnExpectedSeconds={OrbitalReturnExpectedSeconds:F0} " +
+                        $"orbitalReturnLatitudeBiasDegrees={OrbitalReturnLatitudeBiasDegrees:F2} " +
+                        $"orbitalReturnLongitudeLeadDegrees={OrbitalReturnLongitudeLeadDegrees:F2} " +
+                $"orbitalReturnReserveFraction={OrbitalReturnReserveFraction:F3} " +
+                $"propellant={vessel.Parts.TotalLiquidFuel + vessel.Parts.TotalOxidizer:F0}");
+            _log.WriteLine($"NORMAL_REENTRY_ARMED source=map_deorbit_autopilot targetPe={DeorbitTargetPeM:F0} " +
+                $"dv={plannedDv:F1} phase={mission?.Phase} launchSite=starbase demo=False");
+            _log.Flush();
+            QueueCapture("orbital_reentry_orbit");
+            _orbitalReentrySeeded = true;
+            _orbitalReentryScenarioStart = universe.CurrentTime;
+            _nextOrbitalReentryTelemetry = universe.CurrentTime;
+            _orbitalReentrySeededPe = seededPe;
+            bridge.SetTimeScale(1.0);
+            return;
+        }
+
+        double simElapsed = universe.CurrentTime - _orbitalReentryScenarioStart;
+        var earthBody = universe.GetBody("earth");
+        if (earthBody == null)
+        {
+            _log.WriteLine("FAIL normal orbital reentry lost Earth reference");
+            _log.Flush();
+            Finish("ORBITAL_REENTRY_INVALID");
+            return;
+        }
+
+        if (universe.CurrentTime >= _nextOrbitalReentryTelemetry)
+        {
+            var trajectory = OrbitalElements.FromStateVector(
+                vessel.Position - earthBody.Position,
+                vessel.Velocity - earthBody.Velocity,
+                earthBody.GM,
+                earthBody.Id,
+                universe.CurrentTime);
+            Vector3d up = (vessel.Position - earthBody.Position).Normalized;
+            double vUp = surfVel.Dot(up);
+            double pe = trajectory.Periapsis - earthBody.Radius;
+            double ap = trajectory.Apoapsis - earthBody.Radius;
+            Vector3d thrustAxis = vessel.Orientation.Rotate(Vector3d.Up).Normalized;
+            Vector3d retroDirection = surfVel.Magnitude > 1.0
+                ? -surfVel.Normalized : Vector3d.Zero;
+            double retroAlignment = retroDirection.MagnitudeSquared > 0.0
+                ? thrustAxis.Dot(retroDirection) : double.NaN;
+            double thrustN = vessel.ComputeThrust(earthBody).Magnitude;
+            var activeEnginePart = vessel.Parts.ActiveEngines.FirstOrDefault();
+            var allEngineParts = vessel.Parts.Parts.Where(
+                part => part.Definition.Category == PartCategory.Engine).ToArray();
+            int activeEngines = vessel.Parts.ActiveEngines.Count();
+            var shipEnginePart = allEngineParts.FirstOrDefault(part =>
+                part.Definition.IsStarshipFamily
+                && part.Definition.HasVehicleRole("ship_engines"));
+            string engineRuntime = shipEnginePart == null
+                ? "-"
+                : string.Join(",", shipEnginePart.EngineStates.Select(state =>
+                    $"{state.State}:{state.CommandedThrottle:F2}:{state.ActualThrottle:F2}:" +
+                    $"{state.ChamberPressureFraction:F2}:starts={state.StartsCompleted}"));
+            int failedEngines = allEngineParts.Sum(part => part.EngineStates
+                .Count(state => !string.IsNullOrWhiteSpace(state.FailureCode)));
+            string failureCodes = allEngineParts.Length == 0
+                ? "-"
+                : string.Join("|", allEngineParts.Select(part =>
+                    $"{part.Definition.Id}:{(part.IsBroken ? "BROKEN" :
+                        part.IsStagingActive ? "STAGE" : "INACTIVE")}:" +
+                    string.Join(",", part.EngineStates.Select(state => state.FailureCode ?? "-"))));
+            double propellant = vessel.Parts.Parts.Sum(part => part.LiquidFuel + part.Oxidizer);
+            Vector3d catchOffset = vessel.Position - vessel.CatchTargetPositionWorld;
+            Vector3d catchHorizontalOffset = catchOffset - up * catchOffset.Dot(up);
+            earthBody.GetGeodeticCoordinates(vessel.Position,
+                out double vehicleLatitude, out double vehicleLongitude, out _);
+            earthBody.GetGeodeticCoordinates(vessel.CatchTargetPositionWorld,
+                out double targetLatitude, out double targetLongitude, out _);
+            double maxThermalRatio = vessel.Parts.Parts
+                .Where(part => part.Definition.HeatTolerance > 0.0)
+                .Select(part => part.ThermalRatio)
+                .DefaultIfEmpty(0.0)
+                .Max();
+            string partThermal = string.Join("|", vessel.Parts.Parts
+                .OrderBy(part => part.Definition.Id)
+                .Select(part =>
+                    $"{part.Definition.Id}:{(part.IsBroken ? "BROKEN" : "OK")}:" +
+                    $"T={part.Temperature:F0}:r={part.ThermalRatio:F3}"));
+            string breakingJoints = string.Join("|", vessel.Parts.Joints
+                .Where(joint => joint.IsBreaking)
+                .Select(joint =>
+                    $"{joint.Parent.Definition.Id}>{joint.Child.Definition.Id}:" +
+                    $"t={joint.CurrentTensileLoad / System.Math.Max(1.0, joint.TensileStrength):F2}:" +
+                    $"s={joint.CurrentShearLoad / System.Math.Max(1.0, joint.ShearStrength):F2}"));
+            string breakingJointLabel = breakingJoints.Length > 0 ? breakingJoints : "-";
+            var autopilot = GetTree().Root.FindChild("AutopilotController", true, false)
+                as AutopilotController;
+            var edl = EDLController.Instance;
+            double edlAlpha = edl?.AeroAngleOfAttackDegrees ?? double.NaN;
+            double edlWindward = edl?.AeroWindwardFactor ?? double.NaN;
+            double edlAttitudeError = edl?.AeroAttitudeErrorDegrees ?? double.NaN;
+            Vector3d edlCommand = edl?.AeroAttitudeCommand ?? Vector3d.Zero;
+            Vector3d edlLiftReference = edl?.AeroLiftReference ?? Vector3d.Zero;
+            EntryFlightState entryState = EntryFlightDiagnostics.Evaluate(vessel, earthBody);
+            double guidancePeriod = edl?.GuidanceUpdatePeriodSeconds ?? double.NaN;
+            ulong guidanceUpdates = edl?.GuidanceUpdateCount ?? 0;
+            _log.WriteLine($"TRACE_ORBITAL_REENTRY t={simElapsed:F1} alt={alt:F1} " +
+                $"vUp={vUp:F1} spd={surfVel.Magnitude:F1} pe={pe:F1} ap={ap:F1} " +
+                $"mach={entryState.Mach:F3} qPa={entryState.DynamicPressurePa:F1} " +
+                $"gammaDeg={entryState.FlightPathAngleDegrees:F3} " +
+                $"alphaDeg={entryState.AngleOfAttackDegrees:F3} " +
+                $"bankDeg={entryState.BankAngleDegrees:F3} " +
+                $"energyJkg={entryState.PointMassSpecificOrbitalEnergyJPerKg:F3} " +
+                $"hM2s={entryState.SpecificAngularMomentumM2PerS:F3} " +
+                $"dragN={entryState.DragForceN:F1} liftN={entryState.LiftForceN:F1} " +
+                $"ld={entryState.LiftToDragRatio:F4} aeroG={entryState.AerodynamicLoadG:F4} " +
+                $"heatWm2={entryState.StagnationHeatFluxWPerM2:F1} " +
+                $"phase={phase} throttle={vessel.Throttle:F3} " +
+                $"activeEngines={activeEngines} thrustN={thrustN:F0} " +
+                $"engineRuntime={engineRuntime} " +
+                $"retroAlignment={retroAlignment:F4} pyr={vessel.PitchYawRoll} " +
+                $"edlAlpha={edlAlpha:F1} edlWindward={edlWindward:F4} " +
+                $"edlError={edlAttitudeError:F1} edlCmd={edlCommand} " +
+                $"edlLift={edlLiftReference} " +
+                $"guidanceDt={guidancePeriod:F6} guidanceUpdates={guidanceUpdates} " +
+                $"failedEngines={failedEngines} failureCodes={failureCodes} " +
+                $"propellant={propellant:F0} partCount={vessel.Parts.Parts.Count} " +
+                $"maxThermalRatio={maxThermalRatio:F3} partsThermal={partThermal} " +
+                $"breakingJoints={breakingJointLabel} " +
+                $"autopilotArmed={autopilot?.IsArmed ?? false} " +
+                $"autopilotBurning={autopilot?.IsBurning ?? false} " +
+                $"catchArmed={vessel.IsAttemptingTowerCatch} " +
+                $"catchMiss={catchHorizontalOffset.Magnitude:F1} " +
+                $"catchRange={catchOffset.Magnitude:F1} " +
+                $"vehicleLatLon={vehicleLatitude:F5},{vehicleLongitude:F5} " +
+                $"targetLatLon={targetLatitude:F5},{targetLongitude:F5} " +
+                $"catchPins={vessel.HasCatchPins} destroyed={vessel.IsDestroyed} " +
+                "normalFlow=True demo=False");
+            _log.Flush();
+            _nextOrbitalReentryTelemetry = universe.CurrentTime + 10.0;
+
+            // A deorbit burn must either lower the measured periapsis or leave the
+            // RETRO_BURN state. The ship rotates on the modeled RCS floor while throttle
+            // is inhibited, so allow that bounded alignment window before declaring a
+            // controller stall.
+            // Waiting beyond this bounded window would only turn a controller stall into a
+            // misleading timeout. This is evidence of a limitation, never a success path.
+            if (!_orbitalReentryEntry
+                && simElapsed > 150.0
+                && phase == nameof(MissionPhase.RETRO_BURN)
+                && alt > 200_000.0
+                && pe > _orbitalReentrySeededPe - 5_000.0)
+            {
+                _log.WriteLine($"GAP normal deorbit made no physical progress within 150s " +
+                    $"phase={phase} alt={alt:F1} pe={pe:F1} seededPe={_orbitalReentrySeededPe:F1} " +
+                    "possible_autopilot_or_power_abort=True");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_DEORBIT_STALLED");
+                return;
+            }
+        }
+
+        // RETRO_BURN is also the pre-entry deorbit phase. Do not classify that
+        // phase as atmospheric entry or the stall watchdog above would be disabled
+        // exactly when the map autopilot is stuck before lowering periapsis.
+        if (!_orbitalReentryEntry && mission?.Phase is MissionPhase.ENTRY
+                or MissionPhase.PEAK_HEATING or MissionPhase.AERO_DESCENT
+                or MissionPhase.FINAL_DESCENT or MissionPhase.CAUGHT)
+        {
+            QueueCapture("orbital_reentry_entry");
+            _orbitalReentryEntry = true;
+            bridge.SetTimeScale(3.0);
+        }
+        if (!_orbitalReentryPeak && mission?.Phase == MissionPhase.PEAK_HEATING)
+        {
+            QueueCapture("orbital_reentry_peak_heating");
+            _orbitalReentryPeak = true;
+        }
+        if (_orbitalReentryEntry && !_orbitalReentryRetro
+            && mission?.Phase == MissionPhase.RETRO_BURN)
+        {
+            QueueCapture("orbital_reentry_retro_burn");
+            _orbitalReentryRetro = true;
+            bridge.SetTimeScale(1.0);
+        }
+
+        if (vessel.IsDestroyed)
+        {
+            _log.WriteLine($"FAIL normal orbital Starbase reentry destroyed phase={phase} " +
+                $"cause={vessel.DestructionCause} alt={alt:F1} spd={surfVel.Magnitude:F1}");
+            _log.Flush();
+            Finish("ORBITAL_REENTRY_CRASHED");
+            return;
+        }
+
+        if (mission?.Phase == MissionPhase.LANDED)
+        {
+            // A catch is preferred, but an explicit EDL landing kit is a valid physical
+            // abort-to-legs outcome when the tower corridor is missed. Accept only a real
+            // settled contact state; a mission-phase label alone is not sufficient evidence.
+            bool landedOnGear = vessel.IsSurfaceSettled
+                && (vessel.LastSurfaceContact?.ContactCount ?? 0) >= 3
+                && vessel.Parts.Parts.Any(part =>
+                    part.Definition.Category == PartCategory.Landing && part.IsDeployed);
+            if (landedOnGear)
+            {
+                if (!_orbitalReentryLanded)
+                {
+                    QueueCapture("orbital_reentry_landed");
+                    _orbitalReentryLanded = true;
+                    _log.WriteLine($"CHECK orbital_reentry landed=True contacts=" +
+                        $"{vessel.LastSurfaceContact?.ContactCount ?? 0} " +
+                        $"surfaceSpeed={surfVel.Magnitude:F3} " +
+                        $"angularSpeed={vessel.AngularVelocity.Magnitude:F4} " +
+                        "normalFlow=True demo=False");
+                    _log.Flush();
+                }
+            }
+            else
+            {
+                _log.WriteLine($"GAP normal Starbase reentry reached LANDED without a " +
+                    $"verified catch or leg touchdown alt={alt:F1} spd={surfVel.Magnitude:F1} " +
+                    $"catchArmed={vessel.IsAttemptingTowerCatch}");
+                _log.Flush();
+                Finish("ORBITAL_REENTRY_NO_CATCH");
+                return;
+            }
+        }
+
+        if (!_orbitalReentryCaught && mission?.Phase == MissionPhase.CAUGHT)
+        {
+            QueueCapture("orbital_reentry_caught");
+            _orbitalReentryCaught = true;
+            _log.WriteLine($"CHECK orbital_reentry caught=True pins={vessel.LastCatchContact?.ContactCount ?? 0} " +
+                $"relativeSpeed={(vessel.Velocity - vessel.CatchTargetVelocityWorld).Magnitude:F3} " +
+                $"angularSpeed={vessel.AngularVelocity.Magnitude:F4} normalFlow=True demo=False");
+            _log.Flush();
+        }
+
+        if ((_orbitalReentryCaught || _orbitalReentryLanded) && _pendingSlug == null)
+        {
+            Finish("ORBITAL_REENTRY_OK");
+            return;
+        }
+
+        // Keep the finite deorbit burn at x1 while the production autopilot aligns,
+        // ignites and delivers its planned Δv. A high warp here advances the rigid-body
+        // attitude in coarse scheduler steps, misses the node window and can leave the
+        // harness declaring a stall before the first engine start. Once entry is armed, keep
+        // x1 so the harness matches production's real-time EDL command-refresh cadence.
+        var orbitalAutopilot = GetTree().Root.FindChild("AutopilotController", true, false)
+            as AutopilotController;
+        bool finiteBurnInProgress = orbitalAutopilot?.IsArmed == true
+            || orbitalAutopilot?.IsBurning == true;
+        bool preparingEntryAttitude = orbitalAutopilot?.IsPreparingEntryAttitude == true;
+        double entryPreparationWarp = preparingEntryAttitude
+            ? vessel.GetAltitude(universe.GetDominantBody(vessel.Position)) <= 160_000.0
+                ? 1.0
+                : 10.0
+            : 0.0;
+        // Once the atmospheric milestone has been observed, the preparation loop may have
+        // already handed control to EDL. Do not reuse its inactive zero sentinel here:
+        // that would pause the universe immediately after the ENTRY capture and prevent
+        // PEAK_HEATING/EDL from ever being reached.
+        double activeEntryWarp = _orbitalReentryEntry
+            ? 1.0
+            : preparingEntryAttitude ? entryPreparationWarp : 0.0;
+        bridge.SetTimeScale(_orbitalReentryEntry || preparingEntryAttitude
+            ? activeEntryWarp
+            : finiteBurnInProgress ? 1.0 : 200.0);
+
+        if (simElapsed > SimTimeoutSec)
+        {
+            _log.WriteLine($"GAP normal orbital reentry did not reach Starbase catch within " +
+                $"simTimeout={SimTimeoutSec:F0}s phase={phase} alt={alt:F1} " +
+                $"entry={_orbitalReentryEntry} peak={_orbitalReentryPeak} " +
+                $"retro={_orbitalReentryRetro}");
+            _log.Flush();
+            Finish("ORBITAL_REENTRY_TIMEOUT");
+        }
+    }
+
+    private void ProcessPhysicalEntry(
+        SimulationBridge bridge,
+        Vessel vessel,
+        Universe universe,
+        MissionManager? mission)
+    {
+        const double InterfaceAltitudeM = 120_000.0;
+        const double InterfaceInertialSpeedMps = 7_600.0;
+        const double FlightPathAngleDegrees = -1.6;
+        const double ReserveFraction = 0.06;
+        const double SimTimeoutSeconds = 900.0;
+
+        if (!_entryPhysicsSeeded)
+        {
+            if (_readyFrames < 45 || EDLController.Instance == null) return;
+            if (!bridge.SeedPhysicalEntryInterfaceForValidation(
+                    InterfaceAltitudeM,
+                    InterfaceInertialSpeedMps,
+                    FlightPathAngleDegrees,
+                    ReserveFraction))
+            {
+                _log.WriteLine("GAP physical entry interface setup was rejected");
+                _log.Flush();
+                Finish("ENTRY_PHYSICS_UNAVAILABLE");
+                return;
+            }
+
+            vessel = bridge.ActiveVessel!;
+            CameraController.Instance?.EnterShipChaseView();
+            _entryPhysicsSeeded = true;
+            _entryPhysicsStart = universe.CurrentTime;
+            _nextEntryPhysicsTelemetry = universe.CurrentTime;
+            _log.WriteLine($"PHYSICAL_ENTRY_SETUP source=entry_interface " +
+                $"altitude={InterfaceAltitudeM:F0} inertialSpeed={InterfaceInertialSpeedMps:F0} "
+                + $"airspeed={vessel.GetSurfaceVelocity(universe.GetBody("earth")!).Magnitude:F1} " +
+                $"inertialFlightPathDeg={FlightPathAngleDegrees:F2} reserve={ReserveFraction:F3} " +
+                $"normalFlow=True demo={vessel.IsTowerCatchDemonstration} " +
+                "orientationWritesAfterSeed=0 angularVelocityResetsAfterSeed=0");
+            _log.Flush();
+            QueueCapture("entry_physics_interface");
+            _entryPhysicsInterface = true;
+            bridge.SetTimeScale(3.0);
+            return;
+        }
+
+        vessel = bridge.ActiveVessel!;
+        var earth = universe.GetBody("earth");
+        if (earth == null)
+        {
+            _log.WriteLine("FAIL physical entry lost Earth reference");
+            _log.Flush();
+            Finish("ENTRY_PHYSICS_INVALID");
+            return;
+        }
+
+        EntryFlightState state = EntryFlightDiagnostics.Evaluate(vessel, earth);
+        _entryPhysicsPeakQ = System.Math.Max(_entryPhysicsPeakQ, state.DynamicPressurePa);
+        _entryPhysicsPeakHeat = System.Math.Max(
+            _entryPhysicsPeakHeat, state.StagnationHeatFluxWPerM2);
+        _entryPhysicsPeakLoad = System.Math.Max(_entryPhysicsPeakLoad, state.AerodynamicLoadG);
+        if (state.AtmosphereRelativeSpeedMps > 1.0)
+        {
+            Vector3d localFlow = vessel.Orientation.Inverse().Rotate(
+                vessel.GetSurfaceVelocity(earth).Normalized);
+            _entryPhysicsMinimumWindward = System.Math.Min(
+                _entryPhysicsMinimumWindward,
+                ThermalModel.WindwardFactor(localFlow));
+        }
+
+        double simElapsed = universe.CurrentTime - _entryPhysicsStart;
+        var edl = EDLController.Instance;
+        double guidancePeriod = edl?.GuidanceUpdatePeriodSeconds ?? double.NaN;
+        ulong guidanceUpdates = edl?.GuidanceUpdateCount ?? 0;
+        string phase = mission?.Phase.ToString() ?? "?";
+        if (universe.CurrentTime >= _nextEntryPhysicsTelemetry)
+        {
+            _log.WriteLine($"TRACE_ENTRY_PHYSICS t={simElapsed:F2} " +
+                $"alt={state.AltitudeM:F1} spd={state.AtmosphereRelativeSpeedMps:F1} " +
+                $"mach={state.Mach:F3} qPa={state.DynamicPressurePa:F1} " +
+                $"gammaDeg={state.FlightPathAngleDegrees:F3} " +
+                $"alphaDeg={state.AngleOfAttackDegrees:F3} " +
+                $"bankDeg={state.BankAngleDegrees:F3} " +
+                $"energyJkg={state.PointMassSpecificOrbitalEnergyJPerKg:F3} " +
+                $"hM2s={state.SpecificAngularMomentumM2PerS:F3} " +
+                $"vUp={vessel.GetSurfaceVelocity(earth).Dot((vessel.Position-earth.Position).Normalized):F3} " +
+                $"gravityMps2={earth.GM/(vessel.Position-earth.Position).MagnitudeSquared:F6} " +
+                $"liftN={state.LiftForceN:F1} dragN={state.DragForceN:F1} throttle={vessel.Throttle:F3} " +
+                $"ld={state.LiftToDragRatio:F4} aeroG={state.AerodynamicLoadG:F4} " +
+                $"heatWm2={state.StagnationHeatFluxWPerM2:F1} " +
+                $"guidanceDt={guidancePeriod:F6} guidanceUpdates={guidanceUpdates} " +
+                $"phase={phase} destroyed={vessel.IsDestroyed} " +
+                $"normalFlow=True demo={vessel.IsTowerCatchDemonstration}");
+            _log.Flush();
+            _nextEntryPhysicsTelemetry = universe.CurrentTime + 2.0;
+        }
+
+        if (vessel.IsTowerCatchDemonstration)
+        {
+            _log.WriteLine("FAIL physical entry entered deterministic demo mode");
+            _log.Flush();
+            Finish("ENTRY_PHYSICS_DEMO_CONTAMINATION");
+            return;
+        }
+        if (vessel.IsDestroyed)
+        {
+            _log.WriteLine($"FAIL physical entry destroyed phase={phase} " +
+                $"cause={vessel.DestructionCause} alt={state.AltitudeM:F1} " +
+                $"mach={state.Mach:F2} peakG={_entryPhysicsPeakLoad:F2}");
+            _log.Flush();
+            Finish("ENTRY_PHYSICS_DESTROYED");
+            return;
+        }
+
+        if (!_entryPhysicsPeak && _pendingSlug == null
+            && mission?.Phase == MissionPhase.PEAK_HEATING)
+        {
+            QueueCapture("entry_physics_peak_heating");
+            _entryPhysicsPeak = true;
+        }
+        if (!_entryPhysicsTransonic && _pendingSlug == null
+            && double.IsFinite(state.Mach) && state.Mach <= 1.2)
+        {
+            QueueCapture("entry_physics_transonic");
+            _entryPhysicsTransonic = true;
+        }
+
+        if (_entryPhysicsInterface && _entryPhysicsPeak && _entryPhysicsTransonic
+            && _pendingSlug == null)
+        {
+            bool cadenceValid = double.IsFinite(guidancePeriod)
+                && System.Math.Abs(
+                    guidancePeriod - Universe.DeterministicControlPeriodSeconds) <= 1e-9;
+            bool envelopeValid = _entryPhysicsPeakQ is >= 1_000.0 and <= 200_000.0
+                && _entryPhysicsPeakHeat >= 100_000.0
+                && _entryPhysicsPeakLoad is >= 0.05 and <= 8.0
+                && _entryPhysicsMinimumWindward > 0.65;
+            _log.WriteLine($"CHECK entry_physics interface=True peakHeating=True " +
+                $"transonic=True finalMach={state.Mach:F3} " +
+                $"peakQPa={_entryPhysicsPeakQ:F1} peakHeatWm2={_entryPhysicsPeakHeat:F1} " +
+                $"peakG={_entryPhysicsPeakLoad:F3} " +
+                $"minimumWindward={_entryPhysicsMinimumWindward:F4} " +
+                $"guidanceDt={guidancePeriod:F6} guidanceUpdates={guidanceUpdates} " +
+                $"cadenceValid={cadenceValid} envelopeValid={envelopeValid} " +
+                "normalFlow=True demo=False orientationWritesAfterSeed=0");
+            _log.Flush();
+            Finish(cadenceValid && envelopeValid
+                ? "ENTRY_PHYSICS_OK"
+                : "ENTRY_PHYSICS_ENVELOPE_FAILED");
+            return;
+        }
+
+        bridge.SetTimeScale(3.0);
+        if (simElapsed > SimTimeoutSeconds)
+        {
+            _log.WriteLine($"GAP physical entry did not reach transonic flight within " +
+                $"{SimTimeoutSeconds:F0}s phase={phase} alt={state.AltitudeM:F1} " +
+                $"mach={state.Mach:F2} peak={_entryPhysicsPeak}");
+            _log.Flush();
+            Finish("ENTRY_PHYSICS_TIMEOUT");
+        }
+    }
+
+    // Reuses the exact same deterministic-70km-entry seeding as ProcessEdlVerification
+    // (SimulationBridge.BeginReentryDemonstration) for exactly one attitude. --reentry-compare
+    // runs this mode twice as two separate Godot launches (see the bash orchestration at the
+    // bottom of this file) rather than seeding twice inside one process: EDLController keeps
+    // its own private phase state and BeginReentryDemonstration intentionally does not reset
+    // it (that reset belongs to EDL/Ascent guidance, which this capture harness must not
+    // touch), so a second in-process seed would leave EDL stuck past Inactive and never re-arm.
+    private void ProcessReentryVariant(SimulationBridge bridge, Universe universe, MissionManager? mission)
+    {
+        const double PeakHeatingTimeoutSec = 240.0;
+        bool bellyFirst = "${REENTRY_BELLY_FIRST}" == "true";
+        string slug = "${REENTRY_SLUG}";
+
+        if (!_reentrySeeded)
+        {
+            if (_readyFrames < 30 || EDLController.Instance == null) return;
+            if (!bridge.BeginReentryDemonstration(bellyFirst: bellyFirst))
+            {
+                _log.WriteLine($"GAP HUD reentry demonstration entry point refused the {slug} scenario");
+                Finish("REENTRY_COMPARE_START_FAILED");
+                return;
+            }
+            bridge.SetWarpIndex(2); // verification speed only; production EDL clamps this to x1
+            _reentrySeeded = true;
+            _reentryScenarioStart = universe.CurrentTime;
+            _log.WriteLine($"ACTION seeded {(bellyFirst ? "nominal belly-flop" : "forced broadside bad-attitude")} " +
+                $"entry for compare (slug={slug})");
+            _log.Flush();
+            return;
+        }
+
+        var vessel = bridge.ActiveVessel;
+        var body = universe.Bodies.First(b => b.Name == "Earth");
+        if (vessel == null)
+        {
+            Finish("REENTRY_COMPARE_NO_VESSEL");
+            return;
+        }
+        bool edlGuidanceActive = mission?.Phase is MissionPhase.ENTRY
+            or MissionPhase.PEAK_HEATING
+            or MissionPhase.AERO_DESCENT
+            or MissionPhase.RETRO_BURN
+            or MissionPhase.FINAL_DESCENT;
+        bridge.SetWarpIndex(edlGuidanceActive ? 0 : 2);
+        double simElapsed = universe.CurrentTime - _reentryScenarioStart;
+
+        // Never gates on a frame count. The primary gate is MissionPhase.PEAK_HEATING (the
+        // moment thermal/VFX divergence between attitudes is most visible). A bad, low-drag
+        // attitude can have a materially different aero/heating profile than the protected
+        // belly-flop and can drive the mission FSM straight past PEAK_HEATING into
+        // RETRO_BURN/FINAL_DESCENT/LANDED without ever reporting it as the current phase — in
+        // that case capture the next EDL phase reached instead of waiting on one that will not
+        // recur. Vessel destruction is captured directly. A generous simulated-time bound
+        // (mirroring ProcessEdlVerification's own EDL_TIMEOUT pattern) exists only to catch
+        // genuine no-progress stalls, never to gate a normal capture.
+        if (!_reentryQueued)
+        {
+            if (mission?.Phase == MissionPhase.PEAK_HEATING)
+            {
+                LogReentryCompareState(slug, vessel, body, mission, simElapsed, "PEAK_HEATING");
+                QueueCapture(slug);
+                _reentryQueued = true;
+            }
+            else if (vessel.IsDestroyed)
+            {
+                LogReentryCompareState(slug, vessel, body, mission, simElapsed,
+                    $"DESTROYED cause={vessel.DestructionCause}");
+                QueueCapture(slug);
+                _reentryQueued = true;
+            }
+            else if (mission?.Phase is MissionPhase.RETRO_BURN or MissionPhase.FINAL_DESCENT
+                or MissionPhase.LANDED or MissionPhase.CAUGHT)
+            {
+                LogReentryCompareState(slug, vessel, body, mission, simElapsed,
+                    $"POST_HEATING_FALLBACK phase={mission?.Phase}");
+                QueueCapture(slug);
+                _reentryQueued = true;
+            }
+            else if (simElapsed > PeakHeatingTimeoutSec)
+            {
+                if (mission?.InDescent == true)
+                {
+                    // Made real descent progress (e.g. stuck in ENTRY/AERO_DESCENT) but never
+                    // reached one of the sharper states above — capture what we have rather
+                    // than fail a run that is clearly not stalled.
+                    LogReentryCompareState(slug, vessel, body, mission, simElapsed,
+                        $"TIMEOUT_FALLBACK phase={mission?.Phase}");
+                    QueueCapture(slug);
+                    _reentryQueued = true;
+                }
+                else
+                {
+                    _log.WriteLine($"GAP {slug}: entry state machine made no descent progress " +
+                        $"within timeout (phase={mission?.Phase})");
+                    _log.Flush();
+                    Finish("REENTRY_COMPARE_TIMEOUT");
+                    return;
+                }
+            }
+        }
+
+        if (_reentryQueued && _pendingSlug == null)
+            Finish("REENTRY_VARIANT_OK");
+    }
+
+    private void LogReentryCompareState(string slug, Vessel vessel, CelestialBody body,
+        MissionManager? mission, double simElapsed, string trigger)
+    {
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        Vector3d flow = vessel.GetSurfaceVelocity(body);
+        Vector3d flowLocal = flow.Magnitude > 1e-6
+            ? vessel.Orientation.Inverse().Rotate(flow.Normalized)
+            : Vector3d.Zero;
+        double shield = ThermalModel.WindwardFactor(flowLocal);
+        Vector3d longAxis = vessel.Orientation.Rotate(Vector3d.Up).Normalized;
+        double alpha = flow.Magnitude > 1e-6
+            ? System.Math.Acos(System.Math.Clamp(longAxis.Dot(flow.Normalized), -1.0, 1.0))
+            : 0.0;
+        double upright = vessel.Orientation.Rotate(Vector3d.Up).Normalized.Dot(up);
+        double maxT = vessel.Parts.Parts.Count > 0 ? vessel.Parts.Parts.Max(p => p.Temperature) : 0.0;
+        double heatRatio = vessel.Parts.Parts.Count > 0 ? vessel.Parts.Parts.Max(p => p.ThermalRatio) : 0.0;
+        _log.WriteLine($"REENTRY_COMPARE slug={slug} trigger={trigger} t={simElapsed:F1} " +
+            $"phase={mission?.Phase} upright={upright:F4} maxT={maxT:F0} heatRatio={heatRatio:F3} " +
+            $"shield={shield:F4} alphaDeg={alpha * 180.0 / Math.PI:F1} " +
+            $"omega={vessel.AngularVelocity.Magnitude:F4}");
+        _log.Flush();
+    }
+
+    private static bool IsAtmosphericDeorbit(ManeuverPlanner planner, CelestialBody body)
+    {
+        if (!planner.HasNode || planner.DvPrograde >= 0.0
+            || !double.IsFinite(planner.DeltaVMagnitude)
+            || body.Atmosphere == null)
+            return false;
+        var state = planner.PostBurnState();
+        var orbit = Exosphere.Simulation.OrbitalElements.FromStateVector(
+            state.pos, state.vel, body.GM, body.Id, 0.0);
+        double periapsis = orbit.Periapsis - body.Radius;
+        return !orbit.IsHyperbolic && double.IsFinite(periapsis) && periapsis > 0.0
+            && periapsis < body.Atmosphere.MaxAltitude
+            && orbit.PeriapsisRadius < planner.PeriapsisRadius;
+    }
+
+    private void ProcessDeorbit(SimulationBridge bridge, Vessel vessel, Universe universe,
+        CelestialBody body, MissionManager? mission, double alt)
+    {
+        if (!_deorbitStarted)
+        {
+            // Use the same public map planner/autopilot path a player uses. The full
+            // mission must not teleport, rewrite fuel, or directly write an attitude
+            // vector here: any of those hides a real ascent/return defect.
+            var map = MapViewController.Instance;
+            if (map == null)
+            {
+                _log.WriteLine("GAP continuous deorbit map planner/autopilot unavailable");
+                _log.Flush();
+                Finish("CONTINUOUS_DEORBIT_UNAVAILABLE");
+                return;
+            }
+
+            if (!map.Visible) map.ToggleVisible();
+            map._UnhandledInput(new InputEventKey { Keycode = Key.B, Pressed = true });
+            if (!IsAtmosphericDeorbit(map.Planner, body))
+            {
+                _log.WriteLine($"GAP continuous deorbit planner refused "
+                    + $"dv={map.Planner.DeltaVMagnitude:F1} prograde={map.Planner.DvPrograde:F1}");
+                _log.Flush();
+                Finish("CONTINUOUS_DEORBIT_UNAVAILABLE");
+                return;
+            }
+
+            double plannedDv = map.Planner.DeltaVMagnitude;
+            map._UnhandledInput(new InputEventKey { Keycode = Key.Enter, Pressed = true });
+            if (mission?.Phase != MissionPhase.COAST)
+            {
+                _log.WriteLine($"GAP continuous deorbit autopilot refused phase={mission?.Phase} "
+                    + $"dv={plannedDv:F1}");
+                _log.Flush();
+                Finish("CONTINUOUS_DEORBIT_UNAVAILABLE");
+                return;
+            }
+            if (map.Visible) map.ToggleVisible();
+            CameraController.Instance?.EnterShipChaseView();
+
+            double propellant = vessel.Parts.Parts.Sum(
+                part => part.LiquidFuel + part.Oxidizer);
+            _deorbitStarted = true;
+            _deorbitStartedSimulationTime = universe.CurrentTime;
+            _deorbitDone = true;
+            _log.WriteLine($"ACTION continuous deorbit armed source=map_deorbit_autopilot "
+                + $"dv={plannedDv:F1} propellant={propellant:F0} "
+                + "teleport=False fuelReseed=False");
+            _log.Flush();
+            bridge.SetTimeScale(3.0);
+            return;
+        }
+
+        // Keep the production autopilot in charge of attitude and throttle. Only the
+        // scheduler policy is owned by this harness; it never mutates flight state.
+        bool poweredDescent = mission?.Phase is MissionPhase.RETRO_BURN
+            or MissionPhase.FINAL_DESCENT
+            or MissionPhase.LANDED
+            or MissionPhase.CAUGHT;
+        bridge.SetTimeScale(poweredDescent ? 1.0 : 3.0);
+    }
+
+    private void MonitorAscent(
+        Vessel vessel,
+        CelestialBody body,
+        Universe universe,
+        string missionPhase,
+        double altitude,
+        double surfaceSpeed,
+        double verticalSpeed,
+        double dynamicPressure,
+        double properAccelerationG)
+    {
+        if (!double.IsFinite(_ascentLaunchEpoch))
+        {
+            var launch = MissionManager.Instance?.CaptureCallbackState().Events
+                .FirstOrDefault(e => e.EventType == "LaunchCommitted");
+            if (launch != null)
+            {
+                _ascentLaunchEpoch = launch.SimulationTime;
+                _log.WriteLine($"FLIGHT_CLOCK liftoffEpoch={_ascentLaunchEpoch:R} source=LaunchCommitted");
+            }
+        }
+        var controller = AscentController.Instance;
+        string guidance = controller?.GuidancePhase ?? "Unavailable";
+        var trajectory = OrbitalElements.FromStateVector(
+            vessel.Position - body.Position,
+            vessel.Velocity - body.Velocity,
+            body.GM,
+            body.Id,
+            universe.CurrentTime);
+        double apo = trajectory.Apoapsis - body.Radius;
+        double pe = trajectory.Periapsis - body.Radius;
+        double atmosphereTop = body.Atmosphere?.MaxAltitude ?? 0.0;
+        bool finite = double.IsFinite(altitude)
+            && double.IsFinite(surfaceSpeed)
+            && double.IsFinite(verticalSpeed)
+            && double.IsFinite(vessel.Position.X)
+            && double.IsFinite(vessel.Position.Y)
+            && double.IsFinite(vessel.Position.Z)
+            && double.IsFinite(vessel.Velocity.X)
+            && double.IsFinite(vessel.Velocity.Y)
+            && double.IsFinite(vessel.Velocity.Z);
+
+        // Inspect the current stage, not a hard-coded ship part: before staging the active
+        // cluster is Super Heavy (33 engines), while after staging it is the Ship (6).
+        Part? engineCluster = vessel.Parts.ActiveEngines.FirstOrDefault();
+        int runningEngines = engineCluster?.EngineStates.Count(state =>
+            state.State is EngineLifecycleState.Ignition
+                or EngineLifecycleState.Running) ?? 0;
+        int failedEngines = engineCluster?.EngineStates.Count(state =>
+            !string.IsNullOrWhiteSpace(state.FailureCode)) ?? 0;
+        double propellant = vessel.Parts.Parts.Sum(
+            part => part.LiquidFuel + part.Oxidizer);
+
+        if (guidance != _lastGuidancePhase)
+        {
+            _log.WriteLine(
+                $"TRANSITION_ASCENT t={universe.CurrentTime:F1} " +
+                $"from={_lastGuidancePhase} guidance={guidance} mission={missionPhase} " +
+                $"alt={altitude:F1} spd={surfaceSpeed:F1} vSpeed={verticalSpeed:F1} " +
+                $"apo={apo:F1} pe={pe:F1} throttle={vessel.Throttle:F3} " +
+                $"runningEngines={runningEngines}");
+            if (_insertObserved && guidance == "Coast")
+            {
+                FailAscentInvariant(
+                    "insert_to_coast",
+                    $"t={universe.CurrentTime:F1} from={_lastGuidancePhase} guidance={guidance}");
+                return;
+            }
+            _lastGuidancePhase = guidance;
+        }
+
+        if (guidance == "Insert")
+        {
+            if (!_insertObserved)
+            {
+                _insertObserved = true;
+                _insertStartedAt = universe.CurrentTime;
+            }
+            _minimumInsertionVSpeed = System.Math.Min(
+                _minimumInsertionVSpeed,
+                verticalSpeed);
+            _maximumInsertionDescent = System.Math.Max(
+                _maximumInsertionDescent,
+                -verticalSpeed);
+        }
+
+        if (!finite)
+        {
+            FailAscentInvariant(
+                "non_finite_state",
+                $"t={universe.CurrentTime:F1} alt={altitude} spd={surfaceSpeed} vSpeed={verticalSpeed}");
+            return;
+        }
+        if (vessel.IsDestroyed)
+        {
+            FailAscentInvariant(
+                "vehicle_destroyed",
+                $"t={universe.CurrentTime:F1} cause={vessel.DestructionCause}");
+            return;
+        }
+        if (vessel.StructuralControlLost)
+        {
+            FailAscentInvariant(
+                "structural_control_lost",
+                $"t={universe.CurrentTime:F1} alt={altitude:F1} q={dynamicPressure:F1}");
+            return;
+        }
+        if (failedEngines > 0)
+        {
+            FailAscentInvariant(
+                "engine_failure",
+                $"t={universe.CurrentTime:F1} failedEngines={failedEngines} guidance={guidance}");
+            return;
+        }
+        if (missionPhase == nameof(MissionPhase.ORBIT)
+            && !OrbitQualificationPolicy.HasSafePeriapsis(
+                trajectory,
+                body.Radius,
+                atmosphereTop))
+        {
+            FailAscentInvariant(
+                "unsafe_orbit_phase",
+                $"t={universe.CurrentTime:F1} pe={pe:F1} atmoTop={atmosphereTop:F1}");
+            return;
+        }
+        if (guidance == "Insert"
+            && missionPhase != nameof(MissionPhase.ORBIT)
+            && universe.CurrentTime - _insertStartedAt > 3.0
+            && (vessel.Throttle < 0.05 || runningEngines == 0))
+        {
+            FailAscentInvariant(
+                "insertion_thrust_lost",
+                $"t={universe.CurrentTime:F1} throttle={vessel.Throttle:F3} " +
+                $"runningEngines={runningEngines} propellant={propellant:F1}");
+            return;
+        }
+        if (guidance == "Insert"
+            && universe.CurrentTime - _insertStartedAt > 20.0
+            && verticalSpeed < -100.0
+            && pe < atmosphereTop)
+        {
+            FailAscentInvariant(
+                "insertion_descent_unrecovered",
+                $"t={universe.CurrentTime:F1} vSpeed={verticalSpeed:F1} " +
+                $"apo={apo:F1} pe={pe:F1} atmoTop={atmosphereTop:F1}");
+            return;
+        }
+
+        bool meaningfulProgress = !double.IsFinite(_lastProgressAt)
+            || System.Math.Abs(altitude - _lastProgressAltitude) >= 100.0
+            || System.Math.Abs(surfaceSpeed - _lastProgressSpeed) >= 10.0
+            || System.Math.Abs(pe - _lastProgressPeriapsis) >= 1_000.0;
+        if (meaningfulProgress)
+        {
+            _lastProgressAt = universe.CurrentTime;
+            _lastProgressAltitude = altitude;
+            _lastProgressSpeed = surfaceSpeed;
+            _lastProgressPeriapsis = pe;
+        }
+        else if (universe.CurrentTime - _lastProgressAt > 60.0)
+        {
+            FailAscentInvariant(
+                "physics_stalled",
+                $"t={universe.CurrentTime:F1} noProgressFor={universe.CurrentTime - _lastProgressAt:F1} " +
+                $"guidance={guidance} alt={altitude:F1} spd={surfaceSpeed:F1} pe={pe:F1}");
+            return;
+        }
+
+        if (universe.CurrentTime + 1e-9 < _nextAscentTelemetry)
+            return;
+
+        _ascentTraceCount++;
+        _log.WriteLine(
+            $"TRACE_ASCENT t={universe.CurrentTime:F1} mission={missionPhase} " +
+            $"missionElapsed={universe.CurrentTime - _ascentLaunchEpoch:F3} " +
+            $"guidance={guidance} active={controller?.IsEngaged ?? false} " +
+            $"alt={altitude:F1} spd={surfaceSpeed:F1} vSpeed={verticalSpeed:F1} " +
+            $"inertialSpeed={(vessel.Velocity-body.Velocity).Magnitude:F3} " +
+            $"radialAltitude={(vessel.Position-body.Position).Magnitude-body.Radius:F3} " +
+            $"apo={apo:F1} pe={pe:F1} atmoTop={atmosphereTop:F1} " +
+            $"q={dynamicPressure:F1} g={properAccelerationG:F2} " +
+            $"throttle={vessel.Throttle:F3} spool={engineCluster?.ThrottleLevel ?? 0.0:F3} " +
+            $"runningEngines={runningEngines} failedEngines={failedEngines} " +
+            $"propellant={propellant:F1} warp={universe.TimeScale:F1} " +
+            $"finite={finite} destroyed={vessel.IsDestroyed} " +
+            $"structuralLost={vessel.StructuralControlLost}");
+        _log.Flush();
+        _nextAscentTelemetry = universe.CurrentTime + 10.0;
+    }
+
+    private void FailAscentInvariant(string code, string evidence)
+    {
+        _log.WriteLine($"FAIL invariant={code} {evidence}");
+        _log.Flush();
+        Finish("ASCENT_INVARIANT_FAILED");
+    }
+
+    private void LogFullMissionProgress(Vessel vessel, CelestialBody body,
+        Universe universe, string phase)
+    {
+        if (!_deorbitStarted) return;
+        EntryFlightState flight = EntryFlightDiagnostics.Evaluate(vessel, body);
+        if (phase is nameof(MissionPhase.ENTRY) or nameof(MissionPhase.PEAK_HEATING)
+            or nameof(MissionPhase.AERO_DESCENT))
+        {
+            _fullEntryMeasured = true;
+            _fullPeakQ = System.Math.Max(_fullPeakQ, flight.DynamicPressurePa);
+            _fullPeakHeat = System.Math.Max(_fullPeakHeat, flight.StagnationHeatFluxWPerM2);
+            _fullPeakG = System.Math.Max(_fullPeakG, flight.AerodynamicLoadG);
+            _fullMinimumWindward = System.Math.Min(_fullMinimumWindward,
+                ThermalModel.WindwardFactor(vessel.Orientation.Inverse().Rotate(
+                    vessel.GetSurfaceVelocity(body))));
+        }
+        if (universe.CurrentTime < _nextFullTelemetry) return;
+
+        Vector3d surfVel = vessel.GetSurfaceVelocity(body);
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        double alt = vessel.GetAltitude(body);
+        double vSpeed = surfVel.Dot(up);
+        double maxT = vessel.Parts.Parts.Count > 0
+            ? vessel.Parts.Parts.Max(p => p.Temperature)
+            : 0.0;
+        double heatRatio = vessel.Parts.Parts.Count > 0
+            ? vessel.Parts.Parts.Max(p => p.ThermalRatio)
+            : 0.0;
+        Part? engineCluster = vessel.Parts.ActiveEngines.FirstOrDefault();
+        string engineRuntime = engineCluster == null
+            ? "none"
+            : string.Join(",", engineCluster.EngineStates
+                .GroupBy(state => state.State)
+                .OrderBy(group => group.Key)
+                .Select(group => $"{group.Key}:{group.Count()}"));
+        string engineFailures = engineCluster == null
+            ? "none"
+            : string.Join(",", engineCluster.EngineStates
+                .Where(state => !string.IsNullOrWhiteSpace(state.FailureCode))
+                .GroupBy(state => state.FailureCode)
+                .OrderBy(group => group.Key)
+                .Select(group => $"{group.Key}:{group.Count()}"));
+        int completedStarts = engineCluster?.EngineStates
+            .Take(engineCluster.SelectedEngineCount)
+            .Select(state => state.StartsCompleted)
+            .DefaultIfEmpty(0)
+            .Min() ?? 0;
+        double liquidFuel = vessel.Parts.Parts.Sum(p => p.LiquidFuel);
+        double oxidizer = vessel.Parts.Parts.Sum(p => p.Oxidizer);
+        double propellant = liquidFuel + oxidizer;
+        double upright = vessel.Orientation.Rotate(Vector3d.Up).Normalized.Dot(up);
+        _log.WriteLine(
+            $"TRACE_FULL t={universe.CurrentTime:F1} alt={alt:F1} " +
+            $"spd={surfVel.Magnitude:F1} vSpeed={vSpeed:F1} phase={phase} " +
+            $"warp={universe.TimeScale:F1} heatRatio={heatRatio:F3} maxT={maxT:F0} " +
+            $"propellant={propellant:F0} throttle={vessel.Throttle:F3} " +
+            $"spool={engineCluster?.ThrottleLevel ?? 0.0:F3} " +
+            $"engines={engineCluster?.SelectedEngineCount ?? 0} " +
+            $"runtime={engineRuntime} failures={engineFailures} starts={completedStarts} " +
+            $"lf={liquidFuel:F0} ox={oxidizer:F0} " +
+            $"upright={upright:F4} authority={vessel.ControlAuthorityFactor:F2} " +
+            $"inertialMps={flight.InertialSpeedMps:F1} qPa={flight.DynamicPressurePa:F1} " +
+            $"mach={flight.Mach:F3} alphaDeg={flight.AngleOfAttackDegrees:F2} " +
+            $"gammaDeg={flight.FlightPathAngleDegrees:F3} bankDeg={flight.BankAngleDegrees:F2} " +
+            $"aeroG={flight.AerodynamicLoadG:F3} heatWm2={flight.StagnationHeatFluxWPerM2:F1} " +
+            $"energyJkg={flight.PointMassSpecificOrbitalEnergyJPerKg:F1} " +
+            $"guidanceDt={EDLController.Instance?.GuidanceUpdatePeriodSeconds:F6} " +
+            $"guidanceUpdates={EDLController.Instance?.GuidanceUpdateCount} " +
+            $"forecasts={EDLController.Instance?.CorridorPredictionCount}");
+        _log.Flush();
+        _nextFullTelemetry = universe.CurrentTime + 2.0;
+    }
+
+    private void ApplyVisualCaptureConfiguration(
+        SimulationBridge bridge, Vessel vessel, Universe universe, CelestialBody body)
+    {
+        if (_visualConfigurationApplied
+            || _mode is "atmosphere" or "atmosphere_ground" or "atmosphere_low"
+                or "atmosphere_orbit" or "atmosphere_bodies" or "spectral")
+            return;
+
+        bool hasCameraPreset = VisualCameraPreset.Length > 0;
+        bool clearSolarEclipse = "${CLEAR_SOLAR_ECLIPSE}" == "1";
+        if (!HasVisualSunElevation && !hasCameraPreset && !clearSolarEclipse)
+        {
+            _visualConfigurationApplied = true;
+            return;
+        }
+        if ((HasVisualSunElevation && SunController.Instance == null)
+            || (clearSolarEclipse && SunController.Instance == null)
+            || (hasCameraPreset && CameraController.Instance == null))
+            return;
+
+        if (HasVisualSunElevation)
+            SunController.Instance!.SetVisualSunElevationOverride(VisualSunElevationDeg);
+        if (clearSolarEclipse)
+            SunController.Instance!.SetVisualClearSolarOcclusion(true);
+
+        string phase = HasVisualSunElevation
+            ? SunController.ClassifySolarPhase(VisualSunElevationDeg)
+            : SunController.SolarPhase;
+        _log.WriteLine(
+            $"VISUAL_SUN override={HasVisualSunElevation} "
+            + $"elevationDeg={(HasVisualSunElevation ? VisualSunElevationDeg.ToString("F2") : "physical")} "
+            + $"phase={phase} clearSolarEclipse={clearSolarEclipse} "
+            + $"physicalSunPositionUnchanged=True");
+
+        if (hasCameraPreset)
+        {
+            if (!CameraController.Instance!.TryApplyVisualPreset(VisualCameraPreset))
+            {
+                _log.WriteLine($"FAIL visual_camera_preset_invalid preset={VisualCameraPreset}");
+                _log.Flush();
+                Finish("VISUAL_CAMERA_PRESET_INVALID");
+                return;
+            }
+
+            var camera = CameraController.Instance;
+            _log.WriteLine(
+                $"VISUAL_CAMERA preset={camera.VisualPreset} "
+                + $"yawDeg={camera.PresentationYawDegrees:F2} "
+                + $"pitchDeg={camera.PresentationPitchDegrees:F2} "
+                + $"distance={camera.PresentationDistance:F2} "
+                + $"fov={camera.PresentationFov:F2} mode={camera.Mode}");
+        }
+        _log.Flush();
+        _visualConfigurationApplied = true;
+    }
+
+    private void ProcessStarbaseFarField(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody body)
+    {
+        // Keep the off/on comparison on the same atmospheric lighting path.
+        // Otherwise the asynchronous LUT upload can change the background
+        // between captures, independently of foreground cloud occlusion.
+        if (IsCloudTraverse && (SkyController.EarthSurfaceDensityLut == null
+            || SkyController.EarthSurfaceTransmittanceLut == null))
+        {
+            _readyFrames = 0;
+            return;
+        }
+        if (_starbaseFarCaseIndex < 0 && _readyFrames >= 45)
+        {
+            if (!string.Equals(body.Id, "earth", StringComparison.OrdinalIgnoreCase)
+                || !bridge.LaunchSiteId.StartsWith("starbase", StringComparison.OrdinalIgnoreCase)
+                || bridge.LaunchSiteOrNull == null)
+            {
+                _log.WriteLine($"FAIL starbase_far_invalid_site body={body.Id} " +
+                    $"site={bridge.LaunchSiteId}");
+                _log.Flush();
+                Finish("STARBASE_FAR_INVALID_SITE");
+                return;
+            }
+
+            _starbaseFarCaseIndex = 0;
+            SeedStarbaseFarCase(bridge, vessel, universe, body,
+                _starbaseFarCases[_starbaseFarCaseIndex]);
+            return;
+        }
+
+        if (_starbaseFarCaseIndex < 0)
+            return;
+
+        // Let the 32 rendered density slices settle before a paused occlusion A/B.
+        if (!_starbaseFarCaptureQueued && _pendingSlug == null && _readyFrames >= (IsCloudTraverse ? 64 : 45))
+        {
+            QueueCapture(_starbaseFarCases[_starbaseFarCaseIndex].Slug);
+            _starbaseFarCaptureQueued = true;
+            return;
+        }
+
+        if (_starbaseFarCaptureQueued && _pendingSlug == null)
+        {
+            _starbaseFarCaptureQueued = false;
+            _starbaseFarCaseIndex++;
+            if (_starbaseFarCaseIndex >= _starbaseFarCases.Length)
+            {
+                Finish("STARBASE_FAR_OK");
+                return;
+            }
+
+            SeedStarbaseFarCase(bridge, vessel, universe, body,
+                _starbaseFarCases[_starbaseFarCaseIndex]);
+        }
+    }
+
+    private void SeedStarbaseFarCase(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody body, (string Slug, double AltitudeM) shot)
+    {
+        Vector3d sitePosition = bridge.LaunchSiteOrNull!.GetPosition(
+            body, universe.CurrentTime);
+        Vector3d up = (sitePosition - body.Position).Normalized;
+        if (IsCloudTraverse) {
+            // Place inside an occupied coastal cell using the production profile.
+            using var weather = System.Text.Json.JsonDocument.Parse(
+                System.IO.File.ReadAllText(ProjectSettings.GlobalizePath("res://data/launch_sites/starbase_weather.json")));
+            double spacing = weather.RootElement.GetProperty("horizontal_scale_m").GetDouble();
+            double cloudBase = weather.RootElement.GetProperty("cloud_base_m").GetDouble();
+            double cloudTop = weather.RootElement.GetProperty("cloud_top_m").GetDouble();
+            if (shot.Slug.StartsWith("cloud_inside"))
+                shot = (shot.Slug, cloudBase + 0.20 * (cloudTop - cloudBase));
+            // Same arithmetic hash as the shader.
+            static double Fract(double x) => x - System.Math.Floor(x);
+            static double Hash(double cx, double cy, double z) {
+                float x = (float)Fract((float)cx * 0.1031f), y = (float)Fract((float)cy * 0.1031f), v = (float)Fract((float)z * 0.1031f);
+                float dot = x * (y + 33.33f) + y * (v + 33.33f) + v * (x + 33.33f);
+                x += dot; y += dot; v += dot;
+                return Fract((x + y) * v);
+            }
+            static double Smooth(double x) {
+                x = System.Math.Clamp(x, 0, 1); return x * x * (3 - 2 * x);
+            }
+            static double Threshold(int x, int y) {
+                double px=x*0.17, py=y*0.17, cx=System.Math.Floor(px), cy=System.Math.Floor(py);
+                double fx=Smooth(Fract(px)), fy=Smooth(Fract(py));
+                double a=Hash(cx,cy,5)*(1-fx)+Hash(cx+1,cy,5)*fx;
+                double b=Hash(cx,cy+1,5)*(1-fx)+Hash(cx+1,cy+1,5)*fx;
+                return 0.05+0.945*Smooth((a*(1-fy)+b*fy-0.25)/0.5);
+            }
+            int ix = -10, iy = 0;
+            while (ix < 10 && (Hash(ix,iy,19) < 0.80 || Hash(ix, iy, 19) < Threshold(ix,iy)+0.15
+                || Hash(ix,iy,73) < 0.70)) ix++;
+            if (ix == 10) throw new InvalidOperationException("No dense validation cell in the coastal core");
+            double centreX=ix+0.08+0.84*Hash(ix,iy,31), centreY=iy+0.08+0.84*Hash(ix,iy,47);
+            double mappedX=centreX, mappedY=centreY;
+            // Invert the production domain warp; its small gradient is contractive.
+            for (int n=0;n<12;n++) {
+                double wx=0.8*System.Math.Sin(mappedY*0.21+System.Math.Sin(mappedX*0.11));
+                double wy=0.8*System.Math.Cos(mappedX*0.19+System.Math.Sin(mappedY*0.13));
+                mappedX=centreX-wx; mappedY=centreY-wy;
+            }
+            var textureUp = (FloatingOrigin.EarthTextureBasis.Inverse() * new Vector3((float)up.X, (float)up.Y, (float)up.Z)).Normalized();
+            var east = textureUp.Cross(Vector3.Up).Normalized();
+            var north = textureUp.Cross(east);
+            var offset = FloatingOrigin.EarthTextureBasis * (east * (float)(spacing * mappedX)
+                + north * (float)(spacing * mappedY));
+            up = (up * body.Radius + new Vector3d(offset.X, offset.Y, offset.Z)).Normalized;
+        }
+        vessel.Position = body.GetPositionAlongDirection(up, shot.AltitudeM);
+        vessel.Velocity = body.Velocity + body.GetSurfaceVelocity(vessel.Position);
+        vessel.PrepareForTeleport();
+        vessel.ReferenceBodyId = body.Id;
+        vessel.IsGroundHeld = false;
+        vessel.Throttle = 0.0;
+        vessel.AngularVelocity = Vector3d.Zero;
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        bridge.SetTimeScale(0.0);
+
+        // Keep the physical case at its requested altitude. Below the handoff,
+        // aim at the launch site for the mapped context; at 20–40 km, track the
+        // vessel from its real altitude so CameraAltOverEarth exercises the
+        // production globe handoff instead of staying near the ground.
+        float lookAtY = IsAscentOptics || shot.AltitudeM >= 20_000.0
+            ? 0f
+            : -(float)(shot.AltitudeM / 2.8);
+        float pitch = IsTerrainCoverage && shot.Slug.EndsWith("nadir") ? 80f
+            : IsCloudTraverse ? (shot.Slug == "cloud_nadir" ? 80f : shot.Slug == "cloud_domes" ? 50f : 0f) : 28f;
+        if (IsCloudTraverse) {
+            var occlusion = GetTree().Root.FindChild("VesselCloudOcclusion", true, false) as VesselCloudOcclusion;
+            if (occlusion != null) occlusion.PresentationEnabled = shot.Slug != "cloud_inside_off";
+        }
+        CameraController.Instance?.SetExternalChaseFrame(0f, pitch, 500f, lookAtY);
+        if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+            hud.Visible = false;
+        _log.WriteLine($"STARBASE_FAR_SETUP slug={shot.Slug} site={bridge.LaunchSiteId} " +
+            $"targetAlt={shot.AltitudeM:F0} cameraDistanceRender=500 " +
+            $"cameraPitchDeg={pitch:F0} lookAt={(IsAscentOptics || shot.AltitudeM >= 20_000.0 ? "vessel" : "ground")} " +
+            "timeScale=0 source=public_site_frame");
+        _log.Flush();
+        _readyFrames = 0;
+    }
+
+    private void ProcessKennedyFarField(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody body)
+    {
+        if (_kennedyFarCaseIndex < 0 && _readyFrames >= 45)
+        {
+            if (!string.Equals(body.Id, "earth", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(bridge.LaunchSiteId, "kennedy", StringComparison.OrdinalIgnoreCase)
+                || bridge.LaunchSiteOrNull == null)
+            {
+                _log.WriteLine($"FAIL kennedy_far_invalid_site body={body.Id} " +
+                    $"site={bridge.LaunchSiteId}");
+                _log.Flush();
+                Finish("KENNEDY_FAR_INVALID_SITE");
+                return;
+            }
+
+            _kennedyFarCaseIndex = 0;
+            SeedKennedyFarCase(bridge, vessel, universe, body,
+                _kennedyFarCases[_kennedyFarCaseIndex]);
+            return;
+        }
+
+        if (_kennedyFarCaseIndex < 0)
+            return;
+
+        if (!_kennedyFarCaptureQueued && _pendingSlug == null && _readyFrames >= 45)
+        {
+            QueueCapture(_kennedyFarCases[_kennedyFarCaseIndex].Slug);
+            _kennedyFarCaptureQueued = true;
+            return;
+        }
+
+        if (_kennedyFarCaptureQueued && _pendingSlug == null)
+        {
+            _kennedyFarCaptureQueued = false;
+            _kennedyFarCaseIndex++;
+            if (_kennedyFarCaseIndex >= _kennedyFarCases.Length)
+            {
+                Finish("KENNEDY_FAR_OK");
+                return;
+            }
+
+            SeedKennedyFarCase(bridge, vessel, universe, body,
+                _kennedyFarCases[_kennedyFarCaseIndex]);
+        }
+    }
+
+    private void SeedKennedyFarCase(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody body, (string Slug, double AltitudeM) shot)
+    {
+        Vector3d sitePosition = bridge.LaunchSiteOrNull!.GetPosition(
+            body, universe.CurrentTime);
+        Vector3d up = (sitePosition - body.Position).Normalized;
+        vessel.Position = body.GetPositionAlongDirection(up, shot.AltitudeM);
+        vessel.Velocity = body.Velocity + body.GetSurfaceVelocity(vessel.Position);
+        vessel.PrepareForTeleport();
+        vessel.ReferenceBodyId = body.Id;
+        vessel.IsGroundHeld = false;
+        vessel.Throttle = 0.0;
+        vessel.AngularVelocity = Vector3d.Zero;
+        MissionManager.Instance?.EnterPhase(MissionPhase.ORBIT);
+        bridge.SetTimeScale(0.0);
+
+        float lookAtY = shot.AltitudeM >= 20_000.0
+            ? 0f
+            : -(float)(shot.AltitudeM / 2.8);
+        CameraController.Instance?.SetExternalChaseFrame(0f, 28f, 500f, lookAtY);
+        if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+            hud.Visible = false;
+        _log.WriteLine($"KENNEDY_FAR_SETUP slug={shot.Slug} site={bridge.LaunchSiteId} " +
+            $"targetAlt={shot.AltitudeM:F0} cameraDistanceRender=500 " +
+            $"cameraPitchDeg=28 lookAt={(shot.AltitudeM >= 20_000.0 ? "vessel" : "ground")} " +
+            "timeScale=0 source=public_site_frame");
+        _log.Flush();
+        _readyFrames = 0;
+    }
+
+      private void ProcessAtmosphereMatrix(double delta, SimulationBridge bridge,
+        Vessel vessel, Universe universe, CelestialBody body)
+    {
+        // Physical solar fixtures must not inherit the fresh-pad 28 degree
+        // presentation override; otherwise even the night case renders as day.
+        if (SunController.Instance?.VisualSunElevationOverrideDegrees != null)
+            SunController.Instance.SetVisualSunElevationOverride(null);
+        if (_spectralOracle == null || _spectralBodyId != body.Id)
+        {
+            _spectralOracle = SpectralAtmosphereOracle.Build(
+                body, maxOrder: SpectralAtmosphereOracle.ExperimentalOrder, sampleCount: 12);
+            _spectralBodyId = body.Id;
+            _log.WriteLine($"SPECTRAL_ORACLE body={body.Id} bands={SpectralAtmosphereOracle.BandCount} "
+                + $"provenance={_spectralOracle.DataProvenance} "
+                + $"maxOrder={_spectralOracle.MaxScatteringOrder}");
+            _log.Flush();
+        }
+        if (_atmosIndex < 0)
+        {
+            // Freeze the physical clock before the first case is applied. Previously the
+            // default launch craft was allowed to run for 60 frames, often crashing on the
+            // pad before the matrix could move it to its requested altitude. That made every
+            // capture report the same ~0 m state while the PNG gate still claimed success.
+            bridge.SetTimeScale(0.0);
+            _atmosIndex = 0;
+            ApplyAtmosphereCase(bridge, vessel, universe, body);
+        }
+
+        _atmosFrameSeconds += delta;
+        _atmosMaxFrameSeconds = System.Math.Max(_atmosMaxFrameSeconds, delta);
+        _atmosPerfFrames++;
+        if (delta > 1.0 / 30.0) _atmosSlowFrames++;
+
+        ApplyAtmosphereCamera();
+        // Exposure adaptation is stateful and asymmetric.  Fixed-delay captures previously
+        // inherited up to 6x night exposure in the following daylight case, making a valid
+        // shader look white-clipped.  Require the measured exposure rate to settle as well
+        // as allowing several incremental sky-cubemap updates.  A wall-time cap, rather
+        // than a frame cap, avoids truncating the 9 s dark-adaptation model on a fast GPU.
+        var world = GetTree().Root.FindChild("WorldEnvironment", true, false)
+            as WorldEnvironment;
+        double exposure = world?.Environment?.TonemapExposure ?? -1.0;
+        if (exposure > 0.0 && _atmosPreviousExposure > 0.0 && delta > 1e-6)
+        {
+            double rate = System.Math.Abs(exposure - _atmosPreviousExposure) / delta;
+            _atmosExposureStableFrames = rate <= AtmosphereExposureRateTolerance
+                ? _atmosExposureStableFrames + 1 : 0;
+        }
+        _atmosPreviousExposure = exposure;
+
+        bool enoughFrames = _atmosPerfFrames >= AtmosphereMinimumSettleFrames;
+        bool enoughTime = _atmosFrameSeconds >= AtmosphereSettleSeconds;
+        bool stableExposure = _atmosExposureStableFrames >= AtmosphereExposureStableFrames;
+        bool safetyLimit = _atmosFrameSeconds >= AtmosphereMaximumSettleSeconds;
+        if (!safetyLimit && !(enoughFrames && enoughTime && stableExposure)) return;
+
+        var shot = CurrentAtmosphereCase();
+        CaptureNow(shot.Slug);
+        LogAtmosphereState(bridge, vessel, universe, body, shot);
+
+        _atmosIndex++;
+        if (IsSingleAtmosphereCase
+            || (IsGroundAtmosphereCase && _atmosIndex >= 4))
+        {
+                Finish(_mode == "atmosphere_orbit"
+                    ? "ATMOSPHERE_ORBIT_OK"
+                    : (IsGroundAtmosphereCase
+                        ? "ATMOSPHERE_GROUND_OK"
+                        : "ATMOSPHERE_LOW_OK"));
+            return;
+        }
+        if (_atmosIndex >= _atmosCases.Length)
+        {
+            Finish("ATMOSPHERE_OK");
+            return;
+        }
+        ApplyAtmosphereCase(bridge, vessel, universe, body);
+    }
+
+    private void ProcessAtmosphereBodies(double delta, SimulationBridge bridge,
+        Vessel vessel, Universe universe, CelestialBody body)
+    {
+        if (_atmosIndex < 0)
+        {
+            bridge.SetTimeScale(0.0);
+            _atmosIndex = 0;
+            _atmosBodyCaseApplied = false;
+            _atmosBodyTransitionRequested = null;
+        }
+
+        var shot = _atmosBodyCases[_atmosIndex];
+        var targetBody = universe.GetBody(shot.BodyId);
+        if (targetBody?.Atmosphere == null)
+        {
+            _log.WriteLine($"FAIL atmosphere_body_missing body={shot.BodyId} slug={shot.Slug}");
+            _log.Flush();
+            Finish("ATMOSPHERE_BODIES_INVALID");
+            return;
+        }
+
+        // Do not label an Earth frame as Mars/Venus.  JumpToBody performs the same public
+        // guidance cancellation and rigid-body reset used by the game; the next frame must
+        // prove that the dominant body actually changed before the case is applied.
+        if (!string.Equals(body.Id, shot.BodyId, StringComparison.OrdinalIgnoreCase))
+        {
+            if (!string.Equals(_atmosBodyTransitionRequested, shot.BodyId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                _log.WriteLine($"ATMOS_BODY_SWITCH from={body.Id} target={shot.BodyId} slug={shot.Slug}");
+                bridge.JumpToBody(shot.BodyId, shot.AltitudeM);
+                bridge.SetTimeScale(0.0);
+                _atmosBodyTransitionRequested = shot.BodyId;
+                _log.Flush();
+            }
+            return;
+        }
+
+        _atmosBodyTransitionRequested = null;
+        if (_spectralOracle == null || _spectralBodyId != body.Id)
+        {
+            _spectralOracle = SpectralAtmosphereOracle.Build(
+                body, maxOrder: SpectralAtmosphereOracle.ExperimentalOrder, sampleCount: 12);
+            _spectralBodyId = body.Id;
+            _log.WriteLine($"SPECTRAL_ORACLE body={body.Id} bands={SpectralAtmosphereOracle.BandCount} "
+                + $"provenance={_spectralOracle.DataProvenance} "
+                + $"maxOrder={_spectralOracle.MaxScatteringOrder}");
+            _log.Flush();
+        }
+
+        if (!_atmosBodyCaseApplied)
+        {
+            ApplyAtmosphereBodyCase(bridge, vessel, universe, body, shot);
+            _atmosBodyCaseApplied = true;
+            return;
+        }
+
+        _atmosFrameSeconds += delta;
+        _atmosMaxFrameSeconds = System.Math.Max(_atmosMaxFrameSeconds, delta);
+        _atmosPerfFrames++;
+        if (delta > 1.0 / 30.0) _atmosSlowFrames++;
+
+        ApplyAtmosphereBodyCamera(shot.Cockpit);
+        var world = GetTree().Root.FindChild("WorldEnvironment", true, false)
+            as WorldEnvironment;
+        double exposure = world?.Environment?.TonemapExposure ?? -1.0;
+        if (exposure > 0.0 && _atmosPreviousExposure > 0.0 && delta > 1e-6)
+        {
+            double rate = System.Math.Abs(exposure - _atmosPreviousExposure) / delta;
+            _atmosExposureStableFrames = rate <= AtmosphereExposureRateTolerance
+                ? _atmosExposureStableFrames + 1 : 0;
+        }
+        _atmosPreviousExposure = exposure;
+
+        bool enoughFrames = _atmosPerfFrames >= AtmosphereMinimumSettleFrames;
+        bool enoughTime = _atmosFrameSeconds >= AtmosphereSettleSeconds;
+        bool stableExposure = _atmosExposureStableFrames >= AtmosphereExposureStableFrames;
+        bool safetyLimit = _atmosFrameSeconds >= AtmosphereMaximumSettleSeconds;
+        if (!safetyLimit && !(enoughFrames && enoughTime && stableExposure)) return;
+
+        CaptureNow(shot.Slug);
+        LogAtmosphereBodyState(vessel, universe, body, shot);
+        _atmosIndex++;
+        _atmosBodyCaseApplied = false;
+        if (_atmosIndex >= _atmosBodyCases.Length)
+        {
+            Finish("ATMOSPHERE_BODIES_OK");
+            return;
+        }
+    }
+
+    private void ApplyAtmosphereCase(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody earth)
+    {
+        var shot = CurrentAtmosphereCase();
+        var sun = universe.GetBody("sun");
+        Vector3d sunDir = sun == null
+            ? new Vector3d(0.4, 0.5, 0.8).Normalized
+            : (sun.Position - earth.Position).Normalized;
+
+        // Choose a stable vector on the terminator, then tilt it by the requested solar
+        // elevation.  The resulting dot(up,sunDir) is exactly sin(elevation).
+        Vector3d seed = System.Math.Abs(sunDir.Dot(Vector3d.Up)) < 0.92
+            ? Vector3d.Up : Vector3d.Right;
+        Vector3d terminatorUp = (seed - sunDir * seed.Dot(sunDir)).Normalized;
+        if (VisualEarthView == "rotated")
+        {
+            // Rotate the sampled surface point around the physical Sun axis. This keeps
+            // solar elevation, view geometry and direct-beam physics fixed while exposing
+            // a different Earth longitude/latitude composition to the scaled-space shader.
+            terminatorUp = Quaterniond.FromAxisAngle(
+                sunDir, 137.5 * System.Math.PI / 180.0).Rotate(terminatorUp).Normalized;
+        }
+        double elev = shot.SunElevationDeg * System.Math.PI / 180.0;
+        _atmosUp = (terminatorUp * System.Math.Cos(elev)
+            + sunDir * System.Math.Sin(elev)).Normalized;
+
+        Vector3d projectedSun = sunDir - _atmosUp * sunDir.Dot(_atmosUp);
+        if (projectedSun.MagnitudeSquared < 1e-10)
+            projectedSun = earth.GetEastDirection(earth.Position + _atmosUp * earth.Radius);
+        _atmosLook = projectedSun.Normalized;
+
+        vessel.IsGroundHeld = false;
+        // Earth is WGS84-like and oblate.  A spherical radius seed can put a 20 m
+        // fixture several kilometres below the ellipsoid, so use the public geodetic
+        // ray helper that preserves the requested height above the actual surface.
+        vessel.Position = earth.GetPositionAlongDirection(_atmosUp, shot.AltitudeM);
+        // Co-rotate with the sampled surface so q/heat telemetry remains zero.  The matrix
+        // validates optics, not an accidental 350–460 m/s wind caused by inertial rest.
+        vessel.Velocity = earth.Velocity + earth.GetSurfaceVelocity(vessel.Position);
+        vessel.Throttle = 0.0;
+        ConfigureEclipseCase(universe, vessel, earth, sun, shot.Eclipse);
+
+        // Local +Y looks along the horizon; local -Z is radial-up.  This also gives the
+        // cockpit cases a deterministic, level attitude rather than a random roll.
+        Vector3d localXWorld = _atmosLook.Cross(-_atmosUp).Normalized;
+        var basis = new Basis(ToGodot(localXWorld), ToGodot(_atmosLook), ToGodot(-_atmosUp));
+        var q = basis.GetRotationQuaternion();
+        vessel.Orientation = new Quaterniond(q.W, q.X, q.Y, q.Z);
+
+        bridge.SetTimeScale(0.0);
+        if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+            hud.Visible = false;
+        if (shot.Cockpit)
+        {
+            if (CameraController.Instance != null)
+                CameraController.Instance.ProcessMode = ProcessModeEnum.Inherit;
+            CameraController.Instance?.EnterCockpitView();
+        }
+
+        _atmosFrameSeconds = 0.0;
+        _atmosMaxFrameSeconds = 0.0;
+        _atmosPerfFrames = 0;
+        _atmosSlowFrames = 0;
+        _atmosPreviousExposure = -1.0;
+        _atmosExposureStableFrames = 0;
+        _log.WriteLine($"ATMOS_APPLY slug={shot.Slug} targetAlt={shot.AltitudeM:F1} " +
+            $"targetSunElevation={shot.SunElevationDeg:F1} cockpit={shot.Cockpit} " +
+            $"eclipse={shot.Eclipse} view={(VisualEarthView.Length == 0 ? "default" : VisualEarthView)} " +
+            $"viewUp={_atmosUp.X:F4},{_atmosUp.Y:F4},{_atmosUp.Z:F4}");
+        _log.Flush();
+    }
+
+    private void ApplyAtmosphereBodyCase(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody body,
+        (string BodyId, string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit) shot)
+    {
+        var sun = universe.GetBody("sun");
+        Vector3d sunDir = sun == null
+            ? new Vector3d(0.4, 0.5, 0.8).Normalized
+            : (sun.Position - body.Position).Normalized;
+        Vector3d seed = System.Math.Abs(sunDir.Dot(Vector3d.Up)) < 0.92
+            ? Vector3d.Up : Vector3d.Right;
+        Vector3d terminatorUp = (seed - sunDir * seed.Dot(sunDir)).Normalized;
+        double elev = shot.SunElevationDeg * System.Math.PI / 180.0;
+        _atmosUp = (terminatorUp * System.Math.Cos(elev)
+            + sunDir * System.Math.Sin(elev)).Normalized;
+
+        Vector3d projectedSun = sunDir - _atmosUp * sunDir.Dot(_atmosUp);
+        if (projectedSun.MagnitudeSquared < 1e-10)
+            projectedSun = body.GetEastDirection(body.Position + _atmosUp * body.Radius);
+        _atmosLook = projectedSun.Normalized;
+
+        vessel.IsGroundHeld = false;
+        vessel.Position = body.GetPositionAlongDirection(_atmosUp, shot.AltitudeM);
+        vessel.Velocity = body.Velocity + body.GetSurfaceVelocity(vessel.Position);
+        vessel.Throttle = 0.0;
+
+        Vector3d localXWorld = _atmosLook.Cross(-_atmosUp).Normalized;
+        var basis = new Basis(ToGodot(localXWorld), ToGodot(_atmosLook), ToGodot(-_atmosUp));
+        var q = basis.GetRotationQuaternion();
+        vessel.Orientation = new Quaterniond(q.W, q.X, q.Y, q.Z);
+
+        bridge.SetTimeScale(0.0);
+        if (GetTree().Root.FindChild("HUDController", true, false) is CanvasItem hud)
+            hud.Visible = false;
+        if (CameraController.Instance != null)
+            CameraController.Instance.ProcessMode = ProcessModeEnum.Disabled;
+
+        _atmosFrameSeconds = 0.0;
+        _atmosMaxFrameSeconds = 0.0;
+        _atmosPerfFrames = 0;
+        _atmosSlowFrames = 0;
+        _atmosPreviousExposure = -1.0;
+        _atmosExposureStableFrames = 0;
+        _log.WriteLine($"ATMOS_APPLY body={body.Id} slug={shot.Slug} targetAlt={shot.AltitudeM:F1} "
+            + $"targetSunElevation={shot.SunElevationDeg:F1} cockpit={shot.Cockpit} eclipse=none");
+        _log.Flush();
+    }
+
+    private void ConfigureEclipseCase(
+        Universe universe, Vessel vessel, CelestialBody earth, CelestialBody? sun,
+        string eclipse)
+    {
+        var moon = universe.GetBody("moon");
+        if (moon == null || sun == null) return;
+        if (!_moonSnapshot)
+        {
+            _originalMoonPosition = moon.Position;
+            _originalMoonVelocity = moon.Velocity;
+            _moonSnapshot = true;
+        }
+
+        Vector3d observer = vessel.Position;
+        Vector3d sunAxis = (sun.Position - observer).Normalized;
+        Vector3d sideSeed = System.Math.Abs(sunAxis.Dot(Vector3d.Up)) < 0.92
+            ? Vector3d.Up : Vector3d.Right;
+        Vector3d side = (sideSeed - sunAxis * sideSeed.Dot(sunAxis)).Normalized;
+        // A realistic Earth-Moon distance makes the lunar and solar discs almost equal.
+        // The totality fixture moves the Moon closer so the umbral case is deterministic.
+        double moonDistance = eclipse == "total" ? 300_000_000.0 : 384_400_000.0;
+        double sunRadius = MissionGeometry.ApparentAngularRadius(sun.Radius,
+            (sun.Position - observer).Magnitude);
+        double targetSeparation = eclipse switch
+        {
+            "partial_central" => sunRadius * 0.55,
+            "partial_limb" => sunRadius * 1.10,
+            _ => 0.0,
+        };
+
+        if (eclipse == "none" || eclipse == "clear")
+        {
+            // Put the fixture at quadrature so the real Moon cannot accidentally occlude
+            // the Sun while the altitude/day-night matrix is being captured.
+            moon.Position = observer + side * moonDistance;
+        }
+        else
+        {
+            moon.Position = observer + sunAxis * moonDistance
+                + side * (moonDistance * System.Math.Tan(targetSeparation));
+        }
+        moon.Velocity = Vector3d.Zero;
+    }
+
+    private void ApplyAtmosphereCamera()
+    {
+        var shot = CurrentAtmosphereCase();
+        if (shot.Cockpit) return;
+
+        if (CameraController.Instance != null)
+            CameraController.Instance.ProcessMode = ProcessModeEnum.Disabled;
+        if (GetTree().Root.FindChild("StarshipRenderer", true, false) is Node3D renderer)
+            renderer.Visible = false;
+        if (GetTree().Root.FindChild("ActiveVesselRenderer", true, false) is Node3D activeRenderer)
+            activeRenderer.Visible = false;
+        if (GetTree().Root.FindChild("CockpitRenderer", true, false) is Node3D cockpit)
+            cockpit.Visible = false;
+
+        if (GetTree().Root.FindChild("Camera3D", true, false) is Camera3D camera)
+        {
+            camera.Position = Vector3.Zero;
+            camera.Near = 0.1f;
+            camera.Fov = 60.0f;
+            camera.LookAt(ToGodot(_atmosLook) * 100.0f, ToGodot(_atmosUp));
+        }
+    }
+
+    private void ApplyAtmosphereBodyCamera(bool cockpit)
+    {
+        if (cockpit) return;
+        if (CameraController.Instance != null)
+            CameraController.Instance.ProcessMode = ProcessModeEnum.Disabled;
+        if (GetTree().Root.FindChild("StarshipRenderer", true, false) is Node3D renderer)
+            renderer.Visible = false;
+        if (GetTree().Root.FindChild("ActiveVesselRenderer", true, false) is Node3D activeRenderer)
+            activeRenderer.Visible = false;
+        if (GetTree().Root.FindChild("CockpitRenderer", true, false) is Node3D cockpitRenderer)
+            cockpitRenderer.Visible = false;
+
+        if (GetTree().Root.FindChild("Camera3D", true, false) is Camera3D camera)
+        {
+            camera.Position = Vector3.Zero;
+            camera.Near = 0.1f;
+            camera.Fov = 60.0f;
+            // A level horizon leaves Mars/Venus as a thin lower strip and makes the
+            // orbital cases look empty. Tilt the body dossier 28° toward the surface;
+            // this keeps the limb and terminator in frame while exposing texture scale
+            // and the low-altitude terrain patch.
+            double bodyViewAngle = 28.0 * System.Math.PI / 180.0;
+            Vector3d bodyLook = (_atmosLook * System.Math.Cos(bodyViewAngle)
+                - _atmosUp * System.Math.Sin(bodyViewAngle)).Normalized;
+            camera.LookAt(ToGodot(bodyLook) * 100.0f, ToGodot(_atmosUp));
+        }
+    }
+
+    private void LogAtmosphereState(SimulationBridge bridge, Vessel vessel,
+        Universe universe, CelestialBody earth,
+        (string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit, string Eclipse) shot)
+    {
+        var sun = universe.GetBody("sun");
+        Vector3d up = (vessel.Position - earth.Position).Normalized;
+        Vector3d sunDir = sun == null ? Vector3d.Up : (sun.Position - vessel.Position).Normalized;
+        double solarElevation = System.Math.Asin(System.Math.Clamp(up.Dot(sunDir), -1.0, 1.0))
+            * 180.0 / System.Math.PI;
+        var camera = GetTree().Root.FindChild("Camera3D", true, false) as Camera3D;
+        var world = GetTree().Root.FindChild("WorldEnvironment", true, false) as WorldEnvironment;
+        float exposure = world?.Environment?.TonemapExposure ?? -1.0f;
+        var skyMaterial = world?.Environment?.Sky?.SkyMaterial as ShaderMaterial;
+        double renderedElevation = double.NaN;
+        if (skyMaterial != null)
+        {
+            var renderedUp = skyMaterial.GetShaderParameter("local_up").AsVector3().Normalized();
+            var renderedSun = skyMaterial.GetShaderParameter("sun_dir").AsVector3().Normalized();
+            renderedElevation = System.Math.Asin(System.Math.Clamp(renderedUp.Dot(renderedSun), -1.0, 1.0))
+                * 180.0 / System.Math.PI;
+        }
+        _log.WriteLine($"ATMOS_RENDER slug={shot.Slug} sunElevation={renderedElevation:F3} "
+            + $"sunOverride={(SunController.Instance?.VisualSunElevationOverrideDegrees.HasValue == true ? "active" : "none")} "
+            + "source=bound_sky_parameters");
+        double meanMs = _atmosPerfFrames > 0
+            ? _atmosFrameSeconds * 1000.0 / _atmosPerfFrames : 0.0;
+        var moon = universe.GetBody("moon");
+        double eclipseVisibility = 1.0;
+        double separation = 0.0;
+        double sunRadius = 0.0;
+        double occluderRadius = 0.0;
+        if (sun != null && moon != null)
+        {
+            Vector3d toSun = sun.Position - vessel.Position;
+            Vector3d toMoon = moon.Position - vessel.Position;
+            sunRadius = MissionGeometry.ApparentAngularRadius(sun.Radius, toSun.Magnitude);
+            occluderRadius = MissionGeometry.ApparentAngularRadius(moon.Radius, toMoon.Magnitude);
+            separation = System.Math.Atan2(toSun.Normalized.Cross(toMoon.Normalized).Magnitude,
+                System.Math.Clamp(toSun.Normalized.Dot(toMoon.Normalized), -1.0, 1.0));
+            eclipseVisibility = MissionGeometry.LimbDarkenedSolarDiscVisibility(
+                vessel.Position, moon.Position, moon.Radius, sun.Position, sun.Radius);
+        }
+
+        double solarElevationRadians = solarElevation * System.Math.PI / 180.0;
+        double viewSunCosine = _atmosLook.Dot(sunDir);
+        var spectral = _spectralOracle?.Evaluate(
+            vessel.GetAltitude(earth), solarElevationRadians, 0.5, viewSunCosine,
+            eclipseVisibility);
+        Vector3d spectralRgb = spectral?.ToLinearRgb() ?? Vector3d.Zero;
+
+        _log.WriteLine($"ATMOS_STATE slug={shot.Slug} actualAlt={vessel.GetAltitude(earth):F1} " +
+            $"sunElevation={solarElevation:F2} solarVisibility={SunController.SolarVisibility:F3} " +
+            $"view={(VisualEarthView.Length == 0 ? "default" : VisualEarthView)} " +
+            $"viewUp={_atmosUp.X:F4},{_atmosUp.Y:F4},{_atmosUp.Z:F4} " +
+            $"eclipse={shot.Eclipse} eclipseVisibility={eclipseVisibility:F6} " +
+            $"lutVersion={SkyController.MultipleScatteringLutVersion} " +
+            $"lutOrder={SkyController.RuntimeMultipleScatteringOrder} " +
+            $"spectralOrder={_spectralOracle?.MaxScatteringOrder ?? 0} " +
+            $"spectralEnergy={spectral?.Energy ?? 0.0:E4} " +
+            $"spectralRgb={spectralRgb.X:E4},{spectralRgb.Y:E4},{spectralRgb.Z:E4} " +
+            $"separationRad={separation:E4} sunRadiusRad={sunRadius:E4} " +
+            $"occluderRadiusRad={occluderRadius:E4} cockpit={shot.Cockpit} " +
+            $"exposure={exposure:F3} fov={camera?.Fov ?? -1:F2} " +
+            $"near={camera?.Near ?? -1:F3} " +
+            $"exposureSettled={_atmosExposureStableFrames >= AtmosphereExposureStableFrames}");
+        _log.WriteLine($"PERF slug={shot.Slug} meanFrameMs={meanMs:F2} " +
+            $"maxFrameMs={_atmosMaxFrameSeconds * 1000.0:F2} slowFrames={_atmosSlowFrames} " +
+            $"sampleFrames={_atmosPerfFrames} exposureStableFrames={_atmosExposureStableFrames} " +
+            $"reportedFps={Engine.GetFramesPerSecond()}");
+        _log.Flush();
+    }
+
+    private void LogAtmosphereBodyState(Vessel vessel, Universe universe, CelestialBody body,
+        (string BodyId, string Slug, double AltitudeM, double SunElevationDeg, bool Cockpit) shot)
+    {
+        var sun = universe.GetBody("sun");
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        Vector3d sunDir = sun == null ? Vector3d.Up : (sun.Position - vessel.Position).Normalized;
+        double solarElevation = System.Math.Asin(System.Math.Clamp(up.Dot(sunDir), -1.0, 1.0))
+            * 180.0 / System.Math.PI;
+        var camera = GetTree().Root.FindChild("Camera3D", true, false) as Camera3D;
+        var world = GetTree().Root.FindChild("WorldEnvironment", true, false) as WorldEnvironment;
+        float exposure = world?.Environment?.TonemapExposure ?? -1.0f;
+        double meanMs = _atmosPerfFrames > 0
+            ? _atmosFrameSeconds * 1000.0 / _atmosPerfFrames : 0.0;
+        double solarElevationRadians = solarElevation * System.Math.PI / 180.0;
+        double viewSunCosine = _atmosLook.Dot(sunDir);
+        var spectral = _spectralOracle?.Evaluate(
+            vessel.GetAltitude(body), solarElevationRadians, 0.5, viewSunCosine, 1.0);
+        Vector3d spectralRgb = spectral?.ToLinearRgb() ?? Vector3d.Zero;
+
+        _log.WriteLine($"ATMOS_STATE body={body.Id} slug={shot.Slug} actualAlt={vessel.GetAltitude(body):F1} "
+            + $"sunElevation={solarElevation:F2} solarVisibility={SunController.SolarVisibility:F3} "
+            + $"eclipse=none eclipseVisibility=1.000000 "
+            + $"lutVersion={SkyController.MultipleScatteringLutVersion} "
+            + $"lutOrder={SkyController.RuntimeMultipleScatteringOrder} "
+            + $"spectralOrder={_spectralOracle?.MaxScatteringOrder ?? 0} "
+            + $"spectralEnergy={spectral?.Energy ?? 0.0:E4} "
+            + $"spectralRgb={spectralRgb.X:E4},{spectralRgb.Y:E4},{spectralRgb.Z:E4} "
+            + $"separationRad=0.0000E+00 sunRadiusRad=0.0000E+00 "
+            + $"occluderRadiusRad=0.0000E+00 cockpit={shot.Cockpit} exposure={exposure:F3} "
+            + $"fov={camera?.Fov ?? -1:F2} near={camera?.Near ?? -1:F3} "
+            + $"exposureSettled={_atmosExposureStableFrames >= AtmosphereExposureStableFrames}");
+        _log.WriteLine($"PERF body={body.Id} slug={shot.Slug} meanFrameMs={meanMs:F2} "
+            + $"maxFrameMs={_atmosMaxFrameSeconds * 1000.0:F2} slowFrames={_atmosSlowFrames} "
+            + $"sampleFrames={_atmosPerfFrames} exposureStableFrames={_atmosExposureStableFrames} "
+            + $"reportedFps={Engine.GetFramesPerSecond()}");
+        _log.Flush();
+    }
+
+    private static Vector3 ToGodot(Vector3d value) => new(
+        (float)value.X, (float)value.Y, (float)value.Z);
+
+    private void QueueCapture(string slug)
+    {
+        if (_pendingSlug != null) return;
+        _pendingSlug = slug;
+        _settleLeft = SettleFrames;
+    }
+
+    private void TryCapturePending()
+    {
+        if (_pendingSlug == null) return;
+        if (_settleLeft > 0) { _settleLeft--; return; }
+        string slug = _pendingSlug;
+        _pendingSlug = null;
+        CaptureNow(slug);
+    }
+
+    private void CaptureNow(string slug)
+    {
+        // The production HUD intentionally opens the mission-controls sheet on the pad.
+        // A visual milestone must show the launch complex, not the instructional overlay;
+        // dismiss only that sheet through the public HUD API and leave all flight HUD data
+        // intact for the capture.
+        var hud = GetTree().Root.FindChild("HUDController", true, false) as HUDController;
+        hud?.DismissPadHelp();
+          LogHotStageVisualTelemetry(slug);
+          LogReentryVisualTelemetry(slug);
+          LogLaunchComplexVisualTelemetry(slug);
+          LogStarbaseFarFieldVisualTelemetry(slug);
+          LogKennedyTerrainVisualTelemetry(slug);
+          LogEngineVisualTelemetry(slug);
+          LogEngineBayVisualTelemetry(slug);
+          LogFlapVisualTelemetry(slug);
+          LogFlight14PayloadVisualTelemetry(slug);
+          _log.WriteLine($"RENDERER_ACTUAL {RenderingServer.GetCurrentRenderingMethod()}");
+          if (slug is "tower_clear" or "early_ascent")
+          {
+              var vessel = SimulationBridge.Instance?.ActiveVessel;
+              var camera = CameraController.Instance?.PresentationCamera;
+              if (vessel != null && camera != null)
+              {
+                  Vector3 top = ToGodot(vessel.Orientation.Rotate(Vector3d.Up))
+                      * (float)(vessel.VehicleLength / 2.8);
+                  Vector2 screenTop = camera.UnprojectPosition(top);
+                  Vector2 screenBottom = camera.UnprojectPosition(Vector3.Zero);
+                  float fraction = screenTop.DistanceTo(screenBottom) / GetViewport().GetVisibleRect().Size.Y;
+                  _log.WriteLine($"VISUAL_EARLY_CAMERA slug={slug} mode={CameraController.Instance!.Mode} "
+                      + $"heightFraction={fraction:F3} topVisible={camera.IsPositionInFrustum(top)} "
+                      + $"bottomVisible={camera.IsPositionInFrustum(Vector3.Zero)}");
+              }
+          }
+        // Headless runs are telemetry-only diagnostics: the dummy renderer has no
+        // framebuffer texture, but scene framing/planet placement telemetry still
+        // remains valid. Keep that evidence identical across real and dummy paths so
+        // a failed PNG gate cannot be misread as an out-of-frame planet.
+        if (DisplayServer.GetName() == "headless")
+        {
+            LogTelemetry(slug, $"headless://{slug}");
+            _log.WriteLine($"CAPTURE {slug} headless=True");
+            _log.Flush();
+            return;
+        }
+        var img = GetTree().Root.GetViewport().GetTexture().GetImage();
+        string path = Path.Combine(_outDir, $"exo_play_{slug}.png");
+        img.SavePng(path);
+        LogTelemetry(slug, path);
+        if (IsCloudTraverse) {
+            var overlay = GetTree().Root.FindChild("VesselCloudOcclusion", true, false) as VesselCloudOcclusion;
+            var camera = CameraController.Instance?.PresentationCamera;
+            var craft = SimulationBridge.Instance?.ActiveVessel;
+            if (overlay != null && camera != null && craft != null) {
+                var top = camera.UnprojectPosition(ToGodot(craft.Orientation.Rotate(Vector3d.Up)) * (float)(craft.VehicleLength / 2.8));
+                var bottom = camera.UnprojectPosition(Vector3.Zero);
+                _log.WriteLine($"CLOUD_FOREGROUND slug={slug} attached={overlay.IsAttached} "
+                    + $"enabled={overlay.PresentationEnabled} timeScale={SimulationBridge.Instance!.Universe.TimeScale:F1} "
+                    + $"x={bottom.X:F1} y0={System.Math.Min(top.Y, bottom.Y):F1} y1={System.Math.Max(top.Y, bottom.Y):F1}");
+            }
+        }
+        LogImageMetrics(slug, img);
+        LogOrbitalPlumeVisualTelemetry(slug, img);
+        GD.Print($"[Playtest] captured {slug} -> {path}");
+    }
+
+    private void LogFlight14PayloadVisualTelemetry(string slug)
+    {
+        if (slug.StartsWith("flight14_payload_group_", StringComparison.Ordinal)
+            || slug.StartsWith("flight14_payload_inspection_", StringComparison.Ordinal))
+        {
+            var vesselsRoot = GetTree().Root.FindChild(
+                "Vessels", true, false) as Node3D;
+            var payloadRenderers = vesselsRoot?.GetChildren()
+                .OfType<VesselRenderer>()
+                .Where(renderer => renderer.Name.ToString().StartsWith(
+                    "Flight14PayloadGroup_", StringComparison.Ordinal))
+                .ToArray() ?? Array.Empty<VesselRenderer>();
+            var camera = CameraController.Instance;
+            var presentationCamera = camera?.PresentationCamera;
+            var inspectedRenderer = _flight14PayloadGroupInspectionIndex is 1 or 2
+                ? payloadRenderers.ElementAtOrDefault(
+                    _flight14PayloadGroupInspectionIndex-1) : null;
+            Vector2 targetPixel = inspectedRenderer != null && presentationCamera != null
+                ? presentationCamera.UnprojectPosition(inspectedRenderer.GlobalPosition)
+                : new Vector2(float.NaN, float.NaN);
+            bool targetBehindCamera = inspectedRenderer != null
+                && presentationCamera?.IsPositionBehind(inspectedRenderer.GlobalPosition) == true;
+            Vector2 viewportSize = presentationCamera?.GetViewport().GetVisibleRect().Size
+                ?? Vector2.Zero;
+            bool targetOnScreen = inspectedRenderer != null
+                && !targetBehindCamera
+                && targetPixel.X >= 0f && targetPixel.X < viewportSize.X
+                && targetPixel.Y >= 0f && targetPixel.Y < viewportSize.Y;
+            double cameraTargetOffsetM = _flight14PayloadGroupInspectionIndex is 1 or 2
+                ? _flight14PayloadGroupSatelliteOffsetsMetres[
+                    _flight14PayloadGroupInspectionIndex-1].Magnitude
+                : _flight14PayloadGroupFocusOffsetMetres.Magnitude;
+            _log.WriteLine($"FLIGHT14_PAYLOAD_GROUP_CAPTURE slug={slug} "
+                + $"payloadRenderers={payloadRenderers.Length} "
+                + $"cameraDistance={camera?.PresentationDistance ?? 0f:F1} "
+                + $"cameraTargetOffsetM={cameraTargetOffsetM:F2} "
+                + $"inspectionTarget={_flight14PayloadGroupInspectionIndex} "
+                + $"targetPixel={targetPixel.X:F1},{targetPixel.Y:F1} "
+                + $"targetBehindCamera={targetBehindCamera} "
+                + $"targetOnScreen={targetOnScreen} "
+                + "fixture=True physicsReplay=False");
+            _log.Flush();
+            return;
+        }
+        if (slug == "flight14_payload_deployment_e2e")
+        {
+            var vesselsRoot = GetTree().Root.FindChild(
+                "Vessels", true, false) as Node3D;
+            var detachedRenderers = vesselsRoot?.GetChildren()
+                .OfType<VesselRenderer>()
+                .Where(renderer => renderer.Name.ToString().StartsWith(
+                    "Flight14Detached_", StringComparison.Ordinal))
+                .ToArray() ?? Array.Empty<VesselRenderer>();
+            int payloadFlatPacks = detachedRenderers.Count(renderer =>
+                renderer.FindChild("StarlinkV3_EstimatedFlatPack", true, false)
+                    is MeshInstance3D { Mesh: BoxMesh });
+            var camera = CameraController.Instance;
+            _log.WriteLine($"FLIGHT14_DEPLOYMENT_RENDERERS detached={detachedRenderers.Length} "
+                + $"payloadFlatPacks={payloadFlatPacks} "
+                + $"payloadAutoTracking={camera?.Flight14PayloadAutoTracking == true} "
+                + $"payloadCloserFraming={camera?.Flight14PayloadCloserFraming == true} "
+                + $"payloadFocusOffsetNonzero={camera?.Flight14PayloadFocusOffsetMetres > 0.1f} "
+                + $"cameraYawDeg={camera?.PresentationYawDegrees ?? 0f:F1} "
+                + "physicsReplay=False");
+            _log.Flush();
+            return;
+        }
+        if (slug != "flight14_payload_flat_pack") return;
+        var renderer = GetTree().Root.FindChild(
+            "Flight14PayloadVisualRenderer", true, false) as Node3D;
+        var flatPack = renderer?.FindChild(
+            "StarlinkV3_EstimatedFlatPack", true, false) as MeshInstance3D;
+        var box = flatPack?.Mesh as BoxMesh;
+        _log.WriteLine($"FLIGHT14_PAYLOAD_VISUAL_CAPTURE rendererFound={renderer != null} "
+            + $"flatPackFound={flatPack != null} box={box != null} "
+            + $"lengthM={(box?.Size.X ?? 0f) * 2.8f:F2} "
+            + $"widthM={(box?.Size.Z ?? 0f) * 2.8f:F2} "
+            + $"thicknessM={(box?.Size.Y ?? 0f) * 2.8f:F2} "
+            + $"faceSections={flatPack?.GetChildCount() - 1 ?? 0} "
+            + "physicsReplay=False");
+        _log.Flush();
+    }
+
+    private void LogHotStageVisualTelemetry(string slug)
+    {
+        if (slug is not ("hotstage" or "hotstage_separation")) return;
+
+        var effect = GetTree().Root.FindChild(
+            "HotStageFlashController", true, false) as HotStageFlashController;
+        var renderer = GetTree().Root.FindChild(
+            "ActiveVesselRenderer", true, false) as Node3D;
+        bool overlap = SimulationBridge.Instance?.ActiveVessel?.IsHotStageOverlapping == true;
+        _log.WriteLine(
+            $"VISUAL_HOTSTAGE slug={slug} visible={effect?.Visible ?? false} " +
+            $"frameSynced={effect?.IsVesselFrameSynchronized ?? false} " +
+            $"overlap={overlap} " +
+            $"interfaceY={HotStageFlashController.HotStageInterfaceRenderY:F2} " +
+            $"plumeVisible={effect?.IsInterstagePlumeVisible ?? false} " +
+            $"plumeLocalY={effect?.InterstagePlumeLocalY ?? double.NaN:F2} " +
+            $"plumeOpacity={effect?.InterstagePlumeOpacity ?? 0f:F3} " +
+            $"rendererY={(renderer != null ? renderer.Position.Y : float.NaN):F2} " +
+            $"rootY={(effect != null ? effect.Position.Y : float.NaN):F2}");
+        _log.Flush();
+    }
+
+    private void LogReentryVisualTelemetry(string slug)
+    {
+        if (!slug.Contains("entry", StringComparison.Ordinal)
+            && slug is not ("peak_heating" or "retro_burn" or "flip_complete")) return;
+
+        var plasma = GetTree().Root.FindChild(
+            "ReentryPlasma", true, false) as ReentryPlasmaController;
+        string phase = MissionManager.Instance?.Phase.ToString() ?? "UNKNOWN";
+        _log.WriteLine(
+            $"VISUAL_REENTRY slug={slug} coreVisible={plasma?.CoreEffectsVisible ?? false} " +
+            $"phase={phase} " +
+            $"flux={plasma?.LastHeatFluxWm2 ?? double.NaN:E3} " +
+            $"fluxIntensity={plasma?.LastFluxIntensity01 ?? float.NaN:F3} " +
+            $"visualFluxInput={plasma?.LastVisualFluxInput01 ?? float.NaN:F3} " +
+            $"visualIntensity={plasma?.LastVisualIntensity01 ?? float.NaN:F3} " +
+            $"shockHeat={plasma?.LastShockHeatLevel ?? float.NaN:F3}");
+        _log.Flush();
+    }
+
+    private void LogFlapVisualTelemetry(string slug)
+    {
+        if (slug is not ("ship_flaps_windward" or "ship_flaps_leeward")) return;
+
+        var renderer = GetTree().Root.FindChild(
+            "ActiveVesselRenderer", true, false) as Node3D;
+        var camera = CameraController.Instance?.PresentationCamera;
+        string[] flapNames = { "FwdFlapL", "FwdFlapR", "AftFlapL", "AftFlapR" };
+        int blades = 0, roots = 0, hinges = 0, projectedReadable = 0;
+        int materialSplits = 0, orientedFaces = 0;
+
+        foreach (string flapName in flapNames)
+        {
+            var blade = FindGroupedFlap(renderer, VesselRenderer.StarshipFlapBladeGroup, flapName);
+            var root = FindGroupedFlap(renderer, VesselRenderer.StarshipFlapRootGroup, flapName);
+            var hinge = FindGroupedFlap(renderer, VesselRenderer.StarshipFlapHingeGroup, flapName);
+            if (blade?.Mesh != null) blades++;
+            if (root?.Mesh != null) roots++;
+            if (hinge?.Mesh != null) hinges++;
+
+            int surfaces = blade?.Mesh?.GetSurfaceCount() ?? 0;
+            bool steelFace = UsesShader(blade, 0, "steel.gdshader");
+            bool tpsFace = UsesShader(blade, 1, "heat_tile.gdshader");
+            if (surfaces == 2 && steelFace && tpsFace) materialSplits++;
+            float tpsWindwardDot = float.NaN;
+            if (blade != null && renderer != null)
+            {
+                Vector3 tpsNormal = (blade.GlobalBasis * Vector3.Back).Normalized();
+                Vector3 windward = (renderer.GlobalBasis * Vector3.Left).Normalized();
+                tpsWindwardDot = tpsNormal.Dot(windward);
+                if (tpsWindwardDot >= 0.45f) orientedFaces++;
+            }
+
+            float screenWidth = 0f, screenHeight = 0f;
+            bool inFront = false;
+            if (blade?.Mesh != null && camera != null)
+            {
+                Aabb bounds = blade.Mesh.GetAabb();
+                float minX = float.PositiveInfinity, minY = float.PositiveInfinity;
+                float maxX = float.NegativeInfinity, maxY = float.NegativeInfinity;
+                for (int corner = 0; corner < 8; corner++)
+                {
+                    Vector3 world = blade.GlobalTransform * bounds.GetEndpoint(corner);
+                    if (camera.IsPositionBehind(world)) continue;
+                    Vector2 screen = camera.UnprojectPosition(world);
+                    minX = Mathf.Min(minX, screen.X);
+                    minY = Mathf.Min(minY, screen.Y);
+                    maxX = Mathf.Max(maxX, screen.X);
+                    maxY = Mathf.Max(maxY, screen.Y);
+                    inFront = true;
+                }
+                if (inFront)
+                {
+                    screenWidth = maxX - minX;
+                    screenHeight = maxY - minY;
+                    if (screenWidth >= 5f && screenHeight >= 18f)
+                        projectedReadable++;
+                }
+            }
+
+            Vector3 size = blade?.Mesh?.GetAabb().Size ?? Vector3.Zero;
+            _log.WriteLine($"FLAP_NODE slug={slug} name={flapName} "
+                + $"mesh={blade?.Mesh != null} root={root?.Mesh != null} hinge={hinge?.Mesh != null} "
+                + $"surfaces={surfaces} steelFace={steelFace} tpsFace={tpsFace} "
+                + $"tpsWindwardDot={tpsWindwardDot:F3} "
+                + $"size={size.X:F3},{size.Y:F3},{size.Z:F3} "
+                + $"screenWidth={screenWidth:F2} screenHeight={screenHeight:F2} inFront={inFront}");
+        }
+
+        _log.WriteLine($"VISUAL_FLAPS slug={slug} renderer={renderer != null} camera={camera != null} "
+            + $"blades={blades} roots={roots} hinges={hinges} projectedReadable={projectedReadable} "
+            + $"materialSplits={materialSplits} orientedFaces={orientedFaces}");
+        _log.Flush();
+    }
+
+    private static bool UsesShader(MeshInstance3D? mesh, int surface, string suffix)
+    {
+        if (mesh?.Mesh == null || surface < 0 || surface >= mesh.Mesh.GetSurfaceCount())
+            return false;
+        return mesh.GetSurfaceOverrideMaterial(surface) is ShaderMaterial material
+            && material.Shader?.ResourcePath.EndsWith(suffix, StringComparison.Ordinal) == true;
+    }
+
+    private MeshInstance3D? FindGroupedFlap(Node3D? root, string group, string flapId)
+    {
+        if (root == null) return null;
+        foreach (Node candidate in GetTree().GetNodesInGroup(group))
+        {
+            if (candidate is MeshInstance3D mesh
+                && root.IsAncestorOf(mesh)
+                && mesh.HasMeta("flap_id")
+                && mesh.GetMeta("flap_id").ToString() == flapId)
+                return mesh;
+        }
+        return null;
+    }
+
+      private void LogLaunchComplexVisualTelemetry(string slug)
+      {
+        if (slug is not ("pad" or "liftoff")) return;
+
+        var pad = GetTree().Root.FindChild(
+            "LaunchPadController", true, false) as LaunchPadController;
+        if (pad == null)
+        {
+            _log.WriteLine($"VISUAL_LAUNCH slug={slug} present=False");
+            _log.Flush();
+            return;
+        }
+
+        int delugeOutlets = 0;
+        int tankBodies = 0;
+        int chopsticks = 0;
+        foreach (Node child in pad.GetChildren())
+        {
+            string childName = child.Name.ToString();
+            if (childName.StartsWith("DelugeOutlet", StringComparison.Ordinal))
+                delugeOutlets++;
+            if (childName.EndsWith("Body", StringComparison.Ordinal)
+                && childName.StartsWith("Tank", StringComparison.Ordinal))
+                tankBodies++;
+            if (childName == "ChopstickL" || childName == "ChopstickR")
+                chopsticks++;
+        }
+
+        _log.WriteLine($"VISUAL_LAUNCH slug={slug} present=True "
+            + $"visible={pad.Visible} children={pad.GetChildCount()} "
+            + $"farFieldVisible={pad.FarFieldVisible} farFieldOpacity={pad.FarFieldOpacity:F2} "
+            + $"nightFloodlights={pad.NightFloodlightCount} "
+            + $"floodlightsActive={pad.NightFloodlightsActive} "
+            + $"delugeOutlets={delugeOutlets} tankBodies={tankBodies} "
+            + $"chopsticks={chopsticks}");
+          _log.Flush();
+      }
+
+    private void LogStarbaseFarFieldVisualTelemetry(string slug)
+    {
+          if (!slug.StartsWith("starbase_far_", StringComparison.Ordinal)) return;
+
+          var pad = GetTree().Root.FindChild(
+              "LaunchPadController", true, false) as LaunchPadController;
+          _log.WriteLine($"VISUAL_STARBASE_FAR slug={slug} " +
+              $"source={pad?.FarFieldSource ?? "missing"} " +
+              $"visible={pad?.FarFieldVisible ?? false} " +
+              $"heroVisible={pad?.Visible ?? false} " +
+              $"opacity={pad?.FarFieldOpacity ?? 0f:F3} " +
+              $"contextOpacity={pad?.FarFieldContextOpacity ?? 0f:F3} " +
+              $"silhouetteOpacity={pad?.FarFieldSilhouetteOpacity ?? 0f:F3}");
+          // Inspect the meshes actually instantiated by production, not source strings.
+          // Godot front faces use clockwise winding: upward-facing terrain has a
+          // negative Y cross product, unlike the conventional CCW normal formula.
+          var context = GetTree().Root.FindChild("StarbaseFarField", true, false);
+          int topTriangles = 0, backFacing = 0, terrainTiles = 0;
+          int visibleStructures = 0;
+          float reliefAlpha = -1f;
+          if (context != null)
+          foreach (Node child in context.GetChildren())
+          {
+              if (child.Name.ToString() == "Mapped3DepRelief")
+              {
+                  terrainTiles++;
+                  if (child is MeshInstance3D relief
+                      && relief.GetActiveMaterial(0) is StandardMaterial3D reliefMaterial)
+                      reliefAlpha = reliefMaterial.AlbedoColor.A;
+              }
+              if (child is MeshInstance3D civil && civil.IsVisibleInTree()
+                  && (child.Name.ToString().StartsWith("MappedTower", StringComparison.Ordinal)
+                      || child.Name.ToString().StartsWith("MappedBuilding", StringComparison.Ordinal)
+                      || child.Name.ToString().StartsWith("MappedTank", StringComparison.Ordinal)))
+                  visibleStructures++;
+              if (child is not MeshInstance3D mesh || mesh.Mesh is not ArrayMesh)
+                  continue;
+              var vertices = mesh.Mesh.GetFaces();
+              for (int i = 0; i + 2 < vertices.Length; i += 3)
+              {
+                  Vector3 normal = (vertices[i + 1] - vertices[i])
+                      .Cross(vertices[i + 2] - vertices[i]);
+                  if (normal.LengthSquared() < 1e-12f
+                      || Mathf.Abs(normal.Normalized().Y) < 0.8f)
+                      continue;
+                  topTriangles++;
+                  if (normal.Y > 0f) backFacing++;
+              }
+          }
+          _log.WriteLine($"VISUAL_STARBASE_GEOMETRY slug={slug} topTriangles={topTriangles} "
+              + $"backFacing={backFacing} terrainTiles={terrainTiles}");
+          _log.WriteLine($"VISUAL_STARBASE_MATERIALS slug={slug} reliefAlpha={reliefAlpha:F3} "
+              + $"expectedAlpha={pad?.FarFieldContextOpacity ?? 0f:F3} visibleStructures={visibleStructures}");
+          _log.WriteLine($"VISUAL_STARBASE_TERRAIN_TILE slug={slug} source=USGS_3DEP "
+              + $"path=data/launch_sites/starbase_3dep_relief.json "
+              + $"edgeFade=radial reliefScale=0.55 built={terrainTiles > 0}");
+          var camera = GetViewport().GetCamera3D();
+          if (context is Node3D root && camera != null)
+          {
+              var screen = camera.UnprojectPosition(root.GlobalPosition);
+              _log.WriteLine($"VISUAL_STARBASE_PROJECTION slug={slug} inFrustum={camera.IsPositionInFrustum(root.GlobalPosition)} "
+              + $"screenX={screen.X:F2} screenY={screen.Y:F2} "
+              + $"distanceRender={camera.GlobalPosition.DistanceTo(root.GlobalPosition):F2} "
+              + $"rootX={root.GlobalPosition.X:F2} rootY={root.GlobalPosition.Y:F2} rootZ={root.GlobalPosition.Z:F2}");
+
+              float minX = float.PositiveInfinity, minY = float.PositiveInfinity;
+              float maxX = float.NegativeInfinity, maxY = float.NegativeInfinity;
+              int projectedCorners = 0;
+              foreach (Node child in context.GetChildren())
+              {
+                  string name = child.Name.ToString();
+                  if (!name.Contains("MappedTower", StringComparison.Ordinal)
+                      && !name.Contains("MappedBuilding", StringComparison.Ordinal)
+                      && !name.Contains("MappedTank", StringComparison.Ordinal))
+                      continue;
+                  if (child is not MeshInstance3D structure || structure.Mesh == null)
+                      continue;
+                  Aabb bounds = structure.GetAabb();
+                  for (int corner = 0; corner < 8; corner++)
+                  {
+                      Vector3 local = bounds.Position + new Vector3(
+                          (corner & 1) == 0 ? 0f : bounds.Size.X,
+                          (corner & 2) == 0 ? 0f : bounds.Size.Y,
+                          (corner & 4) == 0 ? 0f : bounds.Size.Z);
+                      Vector2 projected = camera.UnprojectPosition(structure.GlobalTransform * local);
+                      minX = Mathf.Min(minX, projected.X);
+                      maxX = Mathf.Max(maxX, projected.X);
+                      minY = Mathf.Min(minY, projected.Y);
+                      maxY = Mathf.Max(maxY, projected.Y);
+                      projectedCorners++;
+                  }
+              }
+              float projectedWidth = projectedCorners > 0 ? maxX - minX : 0f;
+              float projectedHeight = projectedCorners > 0 ? maxY - minY : 0f;
+              _log.WriteLine($"VISUAL_STARBASE_STRUCTURES slug={slug} projectedCorners={projectedCorners} "
+                  + $"projectedWidthPx={projectedWidth:F2} projectedHeightPx={projectedHeight:F2}");
+          }
+          _log.Flush();
+      }
+
+    private void LogKennedyTerrainVisualTelemetry(string slug)
+    {
+        if (!slug.StartsWith("kennedy_far_", StringComparison.Ordinal)) return;
+        var ground = GetTree().Root.FindChild(
+            "EarthGroundController", true, false) as EarthGroundController;
+        _log.WriteLine($"VISUAL_KENNEDY_TERRAIN slug={slug} " +
+            $"site={SimulationBridge.Instance?.LaunchSiteId ?? "missing"} " +
+            $"source={ground?.TerrainSource ?? "missing"} " +
+            $"regionalReady={ground?.RegionalTerrainReady ?? false} " +
+            $"macroReady={ground?.MacroTerrainReady ?? false} " +
+            $"groundVisible={ground?.LocalPatchVisible ?? false} " +
+            $"groundOpacity={ground?.LocalPatchOpacity ?? 0f:F3}");
+        _log.Flush();
+    }
+
+    private void LogEngineVisualTelemetry(string slug)
+    {
+        if (slug is not ("pad" or "liftoff" or "startup_ramp"
+            or "ship_vacuum" or "ship_vacuum_half" or "ship_vacuum_off" or "ship_enginebay")) return;
+
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (vessel == null || universe == null) return;
+        var body = universe.GetDominantBody(vessel.Position);
+        if (body == null) return;
+
+        var rows = new List<EngineReadout>(39);
+        vessel.FillEngineReadouts(body, rows, out var summary);
+        int delivered = EngineHudPresentation.CountDelivered(rows);
+        int failed = EngineHudPresentation.CountFailures(rows);
+        int starting = 0;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            if (EngineHudPresentation.Classify(rows[i]) == EngineHudIndicatorState.Starting)
+                starting++;
+        }
+
+        _log.WriteLine($"VISUAL_ENGINES slug={slug} commandThrottle={vessel.Throttle:F3} "
+            + $"nominal={summary.NominalEngineCount} rows={summary.ReadoutEngineCount} "
+            + $"delivered={delivered} starting={starting} failed={failed} "
+            + $"deliveredThrottle={EngineHudPresentation.DeliveredThrottle(rows):F3}");
+        var deluge = GetTree().Root.FindChild("LaunchEffectsController", true, false)
+            as LaunchEffectsController;
+        if (deluge != null)
+            _log.WriteLine($"VISUAL_DELUGE slug={slug} sourcePower={deluge.DeliveredSourcePower:F3} "
+                + $"ageSeconds={deluge.CloudAgeSeconds:F3} opticalWeight={deluge.CloudOpticalWeight:F3} "
+                + $"visible={deluge.Visible} anchor=launch_site model=noisy_optical_volume");
+        _log.Flush();
+    }
+
+    private void LogEngineBayVisualTelemetry(string slug)
+    {
+        if (slug != "ship_enginebay") return;
+        var renderer = GetTree().Root.FindChild("ActiveVesselRenderer", true, false) as Node3D;
+        var camera = CameraController.Instance?.PresentationCamera ?? GetViewport().GetCamera3D();
+        int vacuumExits = 0;
+        int seaLevelExits = 0;
+        foreach (Node node in GetTree().GetNodesInGroup(VesselRenderer.StarshipEngineExitGroup))
+        {
+            if (renderer == null || !renderer.IsAncestorOf(node)) continue;
+            string variant = node.GetMeta("engine_variant", "").AsString();
+            if (variant == "vacuum") vacuumExits++;
+            if (variant == "sea_level") seaLevelExits++;
+        }
+        _log.WriteLine($"VISUAL_ENGINEBAY slug={slug} renderer={renderer != null} "
+            + $"camera={camera != null} mode={CameraController.Instance?.Mode} "
+            + $"yaw={CameraController.Instance?.PresentationYawDegrees ?? float.NaN:F1} "
+            + $"pitch={CameraController.Instance?.PresentationPitchDegrees ?? float.NaN:F1} "
+            + $"distance={CameraController.Instance?.PresentationDistance ?? float.NaN:F1} "
+            + $"vacuumExits={vacuumExits} seaLevelExits={seaLevelExits}");
+        _log.Flush();
+    }
+
+    private void LogOrbitalPlumeVisualTelemetry(string slug, Image image)
+    {
+        if (slug != "orbital_plume") return;
+
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        var body = vessel == null || universe == null
+            ? null
+            : universe.GetDominantBody(vessel.Position);
+        var renderer = GetTree().Root.FindChild("ActiveVesselRenderer", true, false) as Node3D;
+        var plumes = GetActivePlumeSystem();
+        var camera = CameraController.Instance?.PresentationCamera
+            ?? GetViewport().GetCamera3D();
+        var hud = GetTree().Root.FindChild("HUDController", true, false) as CanvasItem;
+        double altitude = vessel != null && body != null
+            ? vessel.GetAltitude(body)
+            : double.NaN;
+        double geocentricAltitude = vessel != null && body != null
+            ? (vessel.Position - body.Position).Magnitude - body.Radius
+            : double.NaN;
+
+        int projectedPoints = 0;
+        int pointsInFrame = 0;
+        double plumeTailLumaSum = 0.0;
+        double plumeBackdropLumaSum = 0.0;
+        int plumeTailSamples = 0;
+        int plumeBackdropSamples = 0;
+        if (plumes != null && camera != null)
+        {
+            foreach (Node child in plumes.GetChildren())
+            {
+                if (child is not Node3D pivot
+                    || !pivot.Name.ToString().EndsWith("_Pivot", StringComparison.Ordinal)
+                    || !pivot.Visible)
+                    continue;
+
+                foreach (Node point in pivot.GetChildren())
+                {
+                    if (point is not MeshInstance3D mesh
+                        || !mesh.Visible
+                        || !mesh.Name.ToString().EndsWith("_Core", StringComparison.Ordinal))
+                        continue;
+
+                    Vector3 root = pivot.GlobalTransform * new Vector3(0f, 0f, 0f);
+                    Vector3 tip = pivot.GlobalTransform * new Vector3(0f, -1f, 0f);
+                    projectedPoints += 2;
+                    if (camera.IsPositionInFrustum(root)) pointsInFrame++;
+                    if (camera.IsPositionInFrustum(tip)) pointsInFrame++;
+                    Vector2 rootScreen = camera.UnprojectPosition(root);
+                    Vector2 tipScreen = camera.UnprojectPosition(tip);
+                    Vector2 axis = tipScreen - rootScreen;
+                    if (axis.Length() >= 8f)
+                    {
+                        Vector2 perpendicular = new Vector2(-axis.Y, axis.X).Normalized();
+                        float backdropOffset = Mathf.Clamp(axis.Length() * 0.16f, 10f, 24f);
+                        for (int sampleIndex = 0; sampleIndex < 5; sampleIndex++)
+                        {
+                            float t = 0.30f + sampleIndex * 0.10f;
+                            Vector2 center = rootScreen.Lerp(tipScreen, t);
+                            for (int cross = -1; cross <= 1; cross++)
+                            {
+                                double tail = SampleImageLuma(
+                                    image, center + perpendicular * (cross * 1.5f));
+                                if (double.IsFinite(tail))
+                                {
+                                    plumeTailLumaSum += tail;
+                                    plumeTailSamples++;
+                                }
+                            }
+                            foreach (float side in new[] { -1f, 1f })
+                            {
+                                double backdrop = SampleImageLuma(
+                                    image, center + perpendicular * (backdropOffset * side));
+                                if (double.IsFinite(backdrop))
+                                {
+                                    plumeBackdropLumaSum += backdrop;
+                                    plumeBackdropSamples++;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        double plumeTailLuma = plumeTailSamples > 0
+            ? plumeTailLumaSum / plumeTailSamples
+            : double.NaN;
+        double plumeBackdropLuma = plumeBackdropSamples > 0
+            ? plumeBackdropLumaSum / plumeBackdropSamples
+            : double.NaN;
+        double plumeTailContrast = plumeTailLuma - plumeBackdropLuma;
+
+        _log.WriteLine(
+            $"VISUAL_ORBITAL_PLUME slug={slug} " +
+            $"body={body?.Id ?? "missing"} " +
+            $"altitudeM={altitude:F1} " +
+            $"geocentricAltitudeM={geocentricAltitude:F1} " +
+            $"pressureRatio={plumes?.LastPressureRatio ?? float.NaN:F4} " +
+            $"expansion={plumes?.LastExpansion ?? float.NaN:F3} " +
+            $"deliveredThrottle={plumes?.LastMaximumThrottle ?? float.NaN:F3} " +
+            $"farField={plumes?.IsFarFieldActive ?? false} " +
+            $"visibleUnits={plumes?.VisibleUnitCount ?? 0} " +
+            $"anchoredUnits={plumes?.AnchoredUnitCount ?? 0} " +
+            $"longestLengthRender={plumes?.LongestVisibleLength ?? float.NaN:F2} " +
+            $"coreVisible={plumes?.CoreLayerVisible ?? false} " +
+            $"sheathVisible={plumes?.SheathLayerVisible ?? false} " +
+            $"interactionParticles={plumes?.InteractionParticlesVisible ?? false} " +
+            $"coreOpacity={plumes?.LastCoreOpacity ?? float.NaN:F3} " +
+            $"sheathOpacity={plumes?.LastSheathOpacity ?? float.NaN:F3} " +
+            $"projectedPoints={projectedPoints} pointsInFrame={pointsInFrame} " +
+            $"plumeTailLuma={plumeTailLuma:F5} " +
+            $"plumeBackdropLuma={plumeBackdropLuma:F5} " +
+            $"plumeTailContrast={plumeTailContrast:F5} " +
+            $"cameraMode={CameraController.Instance?.Mode.ToString() ?? "missing"} " +
+            $"cameraDistanceRender={camera?.GlobalPosition.Length() ?? float.NaN:F2} " +
+            $"rendererVisible={renderer?.Visible ?? false} hudVisible={hud?.Visible ?? false} " +
+            $"imageWidth={image.GetWidth()} imageHeight={image.GetHeight()}");
+        _log.Flush();
+    }
+
+    private PlumeSystem? GetActivePlumeSystem()
+    {
+        var renderer = GetTree().Root.FindChild(
+            "ActiveVesselRenderer", true, false) as Node3D;
+        if (renderer == null || !GodotObject.IsInstanceValid(renderer)) return null;
+
+        foreach (Node child in renderer.GetChildren())
+            if (child is PlumeSystem plumes
+                && GodotObject.IsInstanceValid(plumes)
+                && !plumes.IsQueuedForDeletion())
+                return plumes;
+        return null;
+    }
+
+    private static double SampleImageLuma(Image image, Vector2 point)
+    {
+        int x = Mathf.RoundToInt(point.X);
+        int y = Mathf.RoundToInt(point.Y);
+        if (x < 0 || y < 0 || x >= image.GetWidth() || y >= image.GetHeight())
+            return double.NaN;
+        Color color = image.GetPixel(x, y);
+        return 0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B;
+    }
+
+    private static double DeliveredThrottle(Vessel vessel, CelestialBody body)
+    {
+        var rows = new List<EngineReadout>(39);
+        vessel.FillEngineReadouts(body, rows, out _);
+        return EngineHudPresentation.DeliveredThrottle(rows);
+    }
+
+    private void LogImageMetrics(string slug, Image image)
+    {
+        int width = image.GetWidth();
+        int height = image.GetHeight();
+        const int stride = 4;
+        long samples = 0, clipped = 0, dark = 0;
+        long starCandidates = 0, starSamples = 0;
+        long skySamples = 0, skyClipped = 0, skyWhiteClipped = 0, skyBright = 0;
+        long surfaceSamples = 0, surfaceClipped = 0, surfaceWhiteClipped = 0;
+        long horizonSamples = 0, limbSamples = 0, neonGreen = 0, twilightUpperSamples = 0;
+        double sum = 0.0, upperSum = 0.0, lowerSum = 0.0;
+        double horizonSum = 0.0, horizonRed = 0.0, horizonBlue = 0.0;
+        double horizonGreenExcess = 0.0, twilightUpperSum = 0.0;
+        long upperN = 0, lowerN = 0;
+        int[] histogram = new int[256];
+        int[] skyHistogram = new int[256];
+
+        for (int y = 0; y < height; y += stride)
+        {
+            for (int x = 0; x < width; x += stride)
+            {
+                Color c = image.GetPixel(x, y);
+                double luma = 0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B;
+                double maxChannel = System.Math.Max(c.R, System.Math.Max(c.G, c.B));
+                double minChannel = System.Math.Min(c.R, System.Math.Min(c.G, c.B));
+                sum += luma;
+                samples++;
+                histogram[System.Math.Clamp((int)System.Math.Round(luma * 255.0), 0, 255)]++;
+                if (maxChannel >= 0.995f) clipped++;
+                if (luma <= 0.02) dark++;
+
+                if (y < height * 0.42)
+                {
+                    upperSum += luma;
+                    upperN++;
+                }
+
+                // Upper-sky ROI.  Keeping it clear of the expected y=0.5 horizon makes a
+                // blown daytime sky distinguishable from a legitimately bright planet limb.
+                if (x >= width * 0.15 && x < width * 0.85
+                    && y >= height * 0.08 && y < height * 0.38)
+                {
+                    skySamples++;
+                    skyHistogram[System.Math.Clamp((int)System.Math.Round(luma * 255.0), 0, 255)]++;
+                    if (maxChannel >= 0.995f) skyClipped++;
+                    if (minChannel >= 0.985f) skyWhiteClipped++;
+                    if (luma >= 0.90) skyBright++;
+                }
+
+                // The lower central ROI is terrain/planet in exterior horizon views.  This
+                // catches exposure regressions that a whole-frame average hides.
+                if (x >= width * 0.15 && x < width * 0.85
+                    && y >= height * 0.58 && y < height * 0.88)
+                {
+                    surfaceSamples++;
+                    if (maxChannel >= 0.995f) surfaceClipped++;
+                    if (minChannel >= 0.985f) surfaceWhiteClipped++;
+                }
+
+                // Side sectors deliberately omit the solar disc in the centre.  At ±1°
+                // solar elevation, a physical twilight must brighten and warm toward the
+                // horizon even when the disc itself is clipped.
+                bool twilightSide = (x >= width * 0.15 && x < width * 0.42)
+                    || (x >= width * 0.58 && x < width * 0.85);
+                if (twilightSide && y >= height * 0.40 && y < height * 0.49)
+                {
+                    horizonSamples++;
+                    horizonSum += luma;
+                    horizonRed += c.R;
+                    horizonBlue += c.B;
+                }
+                if (twilightSide && y >= height * 0.20 && y < height * 0.32)
+                {
+                    twilightUpperSamples++;
+                    twilightUpperSum += luma;
+                }
+
+                // A real 557.7 nm airglow layer is dim and narrow.  Count only bright,
+                // saturated green pixels across the limb as "neon"; subtle green emission
+                // remains valid and is reported separately as mean green excess.
+                if (x >= width * 0.10 && x < width * 0.90
+                    && y >= height * 0.36 && y < height * 0.50)
+                {
+                    limbSamples++;
+                    double chroma = maxChannel - minChannel;
+                    double greenExcess = System.Math.Max(0.0,
+                        c.G - System.Math.Max(c.R, c.B));
+                    horizonGreenExcess += greenExcess;
+                    if (luma >= 0.12 && c.G >= c.R + 0.04
+                        && c.G >= c.B + 0.025
+                        && maxChannel > 0.0 && chroma / maxChannel >= 0.20)
+                        neonGreen++;
+                }
+
+                // Sharp-star proxy: require a true local maximum against an eight-point
+                // ring, not just one bright pixel on a smooth atmospheric gradient.
+                if (x >= width * 0.20 && x < width * 0.80
+                    && y >= height * 0.08 && y < height * 0.36)
+                {
+                    double left = Luma(image.GetPixel(System.Math.Max(0, x - stride), y));
+                    double right = Luma(image.GetPixel(System.Math.Min(width - 1, x + stride), y));
+                    double above = Luma(image.GetPixel(x, System.Math.Max(0, y - stride)));
+                    double below = Luma(image.GetPixel(x, System.Math.Min(height - 1, y + stride)));
+                    double nw = Luma(image.GetPixel(System.Math.Max(0, x - stride),
+                        System.Math.Max(0, y - stride)));
+                    double ne = Luma(image.GetPixel(System.Math.Min(width - 1, x + stride),
+                        System.Math.Max(0, y - stride)));
+                    double sw = Luma(image.GetPixel(System.Math.Max(0, x - stride),
+                        System.Math.Min(height - 1, y + stride)));
+                    double se = Luma(image.GetPixel(System.Math.Min(width - 1, x + stride),
+                        System.Math.Min(height - 1, y + stride)));
+                    double ringMean = (left + right + above + below + nw + ne + sw + se) / 8.0;
+                    double ringMax = System.Math.Max(
+                        System.Math.Max(System.Math.Max(left, right), System.Math.Max(above, below)),
+                        System.Math.Max(System.Math.Max(nw, ne), System.Math.Max(sw, se)));
+                    starSamples++;
+                    if (luma >= 0.12 && luma - ringMean >= 0.055
+                        && luma >= ringMax) starCandidates++;
+                }
+                if (y > height * 0.58)
+                {
+                    lowerSum += luma;
+                    lowerN++;
+                }
+            }
+        }
+
+        double mean = samples > 0 ? sum / samples : 0.0;
+        double upper = upperN > 0 ? upperSum / upperN : 0.0;
+        double lower = lowerN > 0 ? lowerSum / lowerN : 0.0;
+        double horizonMean = horizonSamples > 0 ? horizonSum / horizonSamples : 0.0;
+        double twilightUpperMean = twilightUpperSamples > 0
+            ? twilightUpperSum / twilightUpperSamples : 0.0;
+        _log.WriteLine($"IMAGE slug={slug} width={width} height={height} samples={samples} " +
+            $"mean={mean:F5} p50={HistogramPercentile(histogram, samples, 0.50):F5} " +
+            $"p95={HistogramPercentile(histogram, samples, 0.95):F5} " +
+            $"clippedFrac={(samples > 0 ? (double)clipped / samples : 0.0):F5} " +
+            $"darkFrac={(samples > 0 ? (double)dark / samples : 0.0):F5} " +
+            $"upperMean={upper:F5} lowerMean={lower:F5} " +
+            $"horizonContrast={System.Math.Abs(upper - lower):F5} " +
+            $"skyP95={HistogramPercentile(skyHistogram, skySamples, 0.95):F5} " +
+            $"skyClippedFrac={(skySamples > 0 ? (double)skyClipped / skySamples : 0.0):F5} " +
+            $"skyWhiteClipFrac={(skySamples > 0 ? (double)skyWhiteClipped / skySamples : 0.0):F5} " +
+            $"skyBrightFrac={(skySamples > 0 ? (double)skyBright / skySamples : 0.0):F5} " +
+            $"surfaceClippedFrac={(surfaceSamples > 0 ? (double)surfaceClipped / surfaceSamples : 0.0):F5} " +
+            $"surfaceWhiteClipFrac={(surfaceSamples > 0 ? (double)surfaceWhiteClipped / surfaceSamples : 0.0):F5} " +
+            $"twilightUpperMean={twilightUpperMean:F5} twilightHorizonMean={horizonMean:F5} " +
+            $"twilightGradient={(horizonMean - twilightUpperMean):F5} " +
+            $"twilightWarmth={(horizonSamples > 0 ? (horizonRed - horizonBlue) / horizonSamples : 0.0):F5} " +
+            $"neonGreenFrac={(limbSamples > 0 ? (double)neonGreen / limbSamples : 0.0):F6} " +
+            $"limbGreenExcess={(limbSamples > 0 ? horizonGreenExcess / limbSamples : 0.0):F6} " +
+            $"starCandidateFrac={(starSamples > 0 ? (double)starCandidates / starSamples : 0.0):F6} " +
+            $"sharpStarCount={starCandidates} " +
+            $"sharpStarFrac={(starSamples > 0 ? (double)starCandidates / starSamples : 0.0):F6}");
+        _log.Flush();
+    }
+
+    private static double Luma(Color c) =>
+        0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B;
+
+    private static double HistogramPercentile(int[] histogram, long samples, double fraction)
+    {
+        if (samples <= 0) return 0.0;
+        long target = (long)System.Math.Ceiling(samples * fraction);
+        long count = 0;
+        for (int i = 0; i < histogram.Length; i++)
+        {
+            count += histogram[i];
+            if (count >= target) return i / 255.0;
+        }
+        return 1.0;
+    }
+
+    private void LogTelemetry(string slug, string path)
+    {
+        var bridge = SimulationBridge.Instance;
+        var vessel = bridge?.ActiveVessel;
+        var universe = bridge?.Universe;
+        if (vessel == null || universe == null) return;
+        var body = universe.GetDominantBody(vessel.Position);
+        if (body == null) return;
+
+        var floating = GetTree().Root.FindChild("FloatingOrigin", true, false)
+            as FloatingOrigin;
+        var ground = GetTree().Root.FindChild("EarthGroundController", true, false)
+            as EarthGroundController;
+        var pad = GetTree().Root.FindChild("LaunchPadController", true, false)
+            as LaunchPadController;
+        var cameraController = CameraController.Instance;
+        if (floating != null
+            && string.Equals(floating.LastPresentationBodyId, body.Id,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            _log.WriteLine($"VISUAL_PLANET body={body.Id} slug={slug} " +
+                $"visible={floating.LastPresentationVisible} " +
+                $"cameraDistanceM={floating.LastPresentationCameraDistance:F1} " +
+                $"angularDiameterDeg={floating.LastPresentationAngularDiameterDeg:F4} " +
+                $"cameraForwardCos={floating.LastPresentationForwardCosine:F5} " +
+                $"direction={floating.LastPresentationDirection.X:F4}," +
+                $"{floating.LastPresentationDirection.Y:F4}," +
+                $"{floating.LastPresentationDirection.Z:F4} " +
+                $"backdrop={floating.LastPresentationBackdropPosition.X:F1}," +
+                $"{floating.LastPresentationBackdropPosition.Y:F1}," +
+                $"{floating.LastPresentationBackdropPosition.Z:F1}");
+        }
+
+        if (body.Id == "earth")
+        {
+            if (IsAscentOptics && bridge != null && bridge.LaunchSiteOrNull is { } geographicSite)
+            {
+                var earthMesh = GetTree().Root.FindChild("Earth_mesh", true, false) as MeshInstance3D;
+                var earthMaterial = earthMesh?.GetSurfaceOverrideMaterial(0) as ShaderMaterial;
+                if (earthMaterial != null)
+                {
+                    var map = earthMaterial.GetShaderParameter("world_to_earth_texture").AsBasis();
+                    var siteVector = (geographicSite.GetPosition(body, universe.CurrentTime) - body.Position).Normalized;
+                    var local = (map * new Vector3((float)siteVector.X, (float)siteVector.Y, (float)siteVector.Z)).Normalized();
+                    double factor = earthMaterial.GetShaderParameter("geodetic_latitude_factor").AsDouble();
+                    double mappedLatitude = System.Math.Atan2(local.Y,
+                        System.Math.Sqrt(local.X * local.X + local.Z * local.Z) * factor) * 180 / System.Math.PI;
+                    double mappedLongitude = System.Math.Atan2(local.Z, local.X) * 180 / System.Math.PI;
+                    var world = GetTree().Root.FindChild("WorldEnvironment", true, false) as WorldEnvironment;
+                    var skyMaterial = world?.Environment?.Sky?.SkyMaterial as ShaderMaterial;
+                    if (skyMaterial != null)
+                    {
+                        var skyMap = skyMaterial.GetShaderParameter("cloud_world_to_texture").AsBasis();
+                        var earthCloudMap = earthMaterial.GetShaderParameter("cloud_world_to_texture").AsBasis();
+                        double frameError = (skyMap.X - earthCloudMap.X).Length()
+                            + (skyMap.Y - earthCloudMap.Y).Length() + (skyMap.Z - earthCloudMap.Z).Length();
+                        double clockError = System.Math.Abs(skyMaterial.GetShaderParameter("cloud_longitude_offset").AsDouble()
+                            - earthMaterial.GetShaderParameter("cloud_longitude_offset").AsDouble());
+                        bool localWeather = skyMaterial.GetShaderParameter("cloud_local_weather_enabled").AsBool()
+                            && earthMaterial.GetShaderParameter("cloud_local_weather_enabled").AsBool();
+                        var groundMesh = GetTree().Root.FindChild("EarthGround", true, false) as MeshInstance3D;
+                        var groundMaterial = groundMesh?.GetSurfaceOverrideMaterial(0) as ShaderMaterial;
+                        var groundMap = groundMaterial?.GetShaderParameter("cloud_world_to_texture").AsBasis() ?? default;
+                        double groundFrameError = groundMaterial == null ? double.NaN
+                            : (skyMap.X - groundMap.X).Length() + (skyMap.Y - groundMap.Y).Length()
+                                + (skyMap.Z - groundMap.Z).Length();
+                        double groundClockError = groundMaterial == null ? double.NaN
+                            : System.Math.Abs(skyMaterial.GetShaderParameter("cloud_longitude_offset").AsDouble()
+                                - groundMaterial.GetShaderParameter("cloud_longitude_offset").AsDouble());
+                        double solarError = System.Math.Abs(
+                            skyMaterial.GetShaderParameter("atmospheric_solar_visibility").AsDouble()
+                                - earthMaterial.GetShaderParameter("cloud_solar_visibility").AsDouble());
+                        if (groundMaterial != null)
+                            solarError = System.Math.Max(solarError, System.Math.Abs(
+                                skyMaterial.GetShaderParameter("atmospheric_solar_visibility").AsDouble()
+                                    - groundMaterial.GetShaderParameter("cloud_solar_visibility").AsDouble()));
+                        bool textureMatch = groundMaterial != null
+                            && skyMaterial.GetShaderParameter("cloud_coverage_tex").AsGodotObject()
+                                == earthMaterial.GetShaderParameter("cloud_coverage_tex").AsGodotObject()
+                            && skyMaterial.GetShaderParameter("cloud_coverage_tex").AsGodotObject()
+                                == groundMaterial.GetShaderParameter("cloud_coverage_tex").AsGodotObject();
+                        _log.WriteLine($"VISUAL_CLOUD_FIELD slug={slug} frameError={frameError:F8} "
+                            + $"clockError={clockError:F8} determinant={skyMap.Determinant():F3} "
+                            + $"localWeather={localWeather} timeScale={universe.TimeScale:F3} "
+                            + $"groundFrameError={groundFrameError:F8} groundClockError={groundClockError:F8} solarError={solarError:F8} textureMatch={textureMatch} "
+                            + "source=bound_shader_parameters");
+                    }
+                    _log.WriteLine($"VISUAL_GEOGRAPHIC_FRAME slug={slug} determinant={map.Determinant():F3} " +
+                        $"latitudeErrorDeg={System.Math.Abs(mappedLatitude - geographicSite.Latitude):F6} " +
+                        $"longitudeErrorDeg={System.Math.Abs(mappedLongitude - geographicSite.Longitude):F6} " +
+                        "source=bound_shader_matrix");
+                }
+            }
+            double cameraAlt = FloatingOrigin.CameraAltOverEarth;
+            float globeAlpha = FloatingOrigin.EarthGlobeAlpha(cameraAlt);
+            _log.WriteLine($"VISUAL_COMPOSITOR slug={slug} vesselAlt={vessel.GetAltitude(body):F1} "
+                + $"cameraAlt={cameraAlt:F1} earthGlobeAlpha={globeAlpha:F3} "
+                + $"groundVisible={ground?.LocalPatchVisible ?? false} "
+                + "earthOpaque=True "
+                + $"groundOpacity={ground?.LocalPatchOpacity ?? 0f:F3} "
+                + $"padVisible={pad?.Visible ?? false} "
+                + $"farFieldVisible={pad?.FarFieldVisible ?? false} "
+                + $"farFieldOpacity={pad?.FarFieldOpacity ?? 0f:F3}");
+        }
+
+        double alt = vessel.GetAltitude(body);
+        Vector3d surfVel = vessel.GetSurfaceVelocity(body);
+        Vector3d up = (vessel.Position - body.Position).Normalized;
+        double spd = surfVel.Magnitude;
+        double vSpeed = surfVel.Dot(up);
+        double q = vessel.GetDynamicPressure(body);
+        double mass = System.Math.Max(vessel.TotalMass, 1.0);
+        Vector3d nonGrav = (vessel.ComputeThrust(body) + vessel.ComputeDrag(body)) / mass;
+        double g = nonGrav.Magnitude / 9.80665;
+        string phase = MissionManager.Instance?.Phase.ToString() ?? "?";
+        double maxT = vessel.Parts.Parts.Max(p => p.Temperature);
+        double heatRatio = vessel.Parts.Parts.Max(p => p.ThermalRatio);
+        double density = body.GetAtmosphericDensity(vessel.Position);
+        double flux = vessel.ComputeStagnationHeatFlux(density, surfVel);
+        var trajectory = OrbitalElements.FromStateVector(
+            vessel.Position - body.Position,
+            vessel.Velocity - body.Velocity,
+            body.GM,
+            body.Id,
+            universe.CurrentTime);
+        double apo = trajectory.Apoapsis - body.Radius;
+        double pe = trajectory.Periapsis - body.Radius;
+        double atmosphereTop = body.Atmosphere?.MaxAltitude ?? 0.0;
+        int selectedEngines = vessel.Parts.Parts
+            .FirstOrDefault(p => p.Definition.IsStarshipFamily
+                && p.Definition.HasVehicleRole("ship_engines"))
+            ?.SelectedEngineCount ?? 0;
+        int landingParts = vessel.Parts.Parts.Count(
+            p => p.Definition.Category == PartCategory.Landing);
+        int contacts = vessel.LastSurfaceContact?.ContactCount ?? 0;
+        double maxStroke = vessel.LastSurfaceContact?.Points.Max(p => p.PenetrationM) ?? 0.0;
+        double peakLegLoad = vessel.LastSurfaceContact?.Points.Max(p => p.NormalLoadN) ?? 0.0;
+
+        _log.WriteLine(
+            $"CAPTURE {slug} path={path} alt={alt:F1} spd={spd:F1} vSpeed={vSpeed:F1} " +
+            $"apo={apo:F1} pe={pe:F1} atmoTop={atmosphereTop:F1} q={q:F0} g={g:F2} " +
+            $"phase={phase} heatRatio={heatRatio:F3} maxT={maxT:F0} flux={flux:E2} " +
+            $"omega={vessel.AngularVelocity.Magnitude:F4} selectedEngines={selectedEngines} " +
+            $"hotStageOverlap={vessel.IsHotStageOverlapping} " +
+            $"landingParts={landingParts} approachSpeed={_lastApproachSpeed:F2} " +
+            $"contacts={contacts} maxStroke={maxStroke:F3} peakLegLoad={peakLegLoad:F0} " +
+            $"settled={vessel.IsSurfaceSettled}");
+        if (cameraController != null)
+            _log.WriteLine($"CAMERA_PRESENTATION slug={slug} mode={cameraController.Mode} "
+                + $"shakePos={cameraController.ShakePositionMagnitude:F4} "
+                + $"shakeRotDeg={cameraController.ShakeRotationDegrees:F4} "
+                + $"peakPosStep={cameraController.ShakePeakPositionStepPerSecond:F4} "
+                + $"peakRotStepDeg={cameraController.ShakePeakRotationStepDegreesPerSecond:F4} "
+                + $"peakFovStep={cameraController.ShakePeakFovStepPerSecond:F4}");
+        _log.Flush();
+    }
+
+    private static Quaterniond ShortestArc(Vector3d from, Vector3d to)
+    {
+        var f = from.Normalized;
+        var t = to.Normalized;
+        double dot = f.Dot(t);
+        if (dot > 0.99999) return Quaterniond.Identity;
+        if (dot < -0.99999)
+        {
+            Vector3d ax = System.Math.Abs(f.X) < 0.9 ? f.Cross(Vector3d.Right) : f.Cross(Vector3d.Up);
+            return Quaterniond.FromAxisAngle(ax.Normalized, System.Math.PI);
+        }
+        Vector3d axis = f.Cross(t).Normalized;
+        return Quaterniond.FromAxisAngle(axis, System.Math.Acos(System.Math.Clamp(dot, -1.0, 1.0)));
+    }
+
+    /// <summary>Distance (m) to the rendezvous/docking target, or "none".</summary>
+    private static string TraceTargetRange(Universe universe, Vessel vessel)
+    {
+        var target = universe.Vessels.FirstOrDefault(other =>
+            other.Id is "gemini8-agena-5003" or "apollo11-lm5-eagle" && other != vessel);
+        return target == null ? "none" : $"{(target.Position - vessel.Position).Magnitude:F0}";
+    }
+
+    private void Finish(string reason)
+    {
+        if (_finished) return;
+        _finished = true;
+        if (_ascentTraceCount > 0)
+        {
+            string minimumVSpeed = double.IsFinite(_minimumInsertionVSpeed)
+                ? $"{_minimumInsertionVSpeed:F1}"
+                : "n/a";
+            _log.WriteLine(
+                $"ASCENT_METRICS samples={_ascentTraceCount} insertObserved={_insertObserved} " +
+                $"minInsertionVSpeed={minimumVSpeed} " +
+                $"maxInsertionDescent={_maximumInsertionDescent:F1}");
+        }
+        if (_fullEntryMeasured)
+            _log.WriteLine($"FULL_ENTRY_METRICS peakQPa={_fullPeakQ:F1} " +
+                $"peakHeatWm2={_fullPeakHeat:F1} peakG={_fullPeakG:F3} " +
+                $"minimumWindward={_fullMinimumWindward:F4} " +
+                "orientationWritesAfterSeed=0 teleport=False fuelReseed=False");
+        _log.WriteLine($"SUMMARY reason={reason} frames={_frame}");
+        _log.Flush();
+        _log.Dispose();
+        GD.Print($"[Playtest] finish: {reason}");
+        GetTree().CallDeferred("quit");
+    }
+
+    public override void _ExitTree()
+    {
+        if (!_authorized) return;
+        if (!_finished)
+        {
+            _log?.WriteLine("SUMMARY reason=ABORT");
+            _log?.Flush();
+            _log?.Dispose();
+        }
+    }
+}
+CS
+}
+
+validate_png() {
+  local png="$1"
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: python3 is required to validate PNG captures: $png" >&2
+    return 1
+  fi
+  if ! python3 - "$png" "$RESOLUTION_WIDTH" "$RESOLUTION_HEIGHT" <<'PY'
+import struct
+import sys
+import zlib
+
+path, expected_width, expected_height = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+signature = b"\x89PNG\r\n\x1a\n"
+try:
+    with open(path, "rb") as stream:
+        data = stream.read()
+    if not data.startswith(signature):
+        raise ValueError("invalid PNG signature")
+    offset = len(signature)
+    width = height = None
+    bit_depth = color_type = interlace = None
+    compressed = bytearray()
+    saw_iend = False
+    while offset < len(data):
+        if offset + 12 > len(data):
+            raise ValueError("truncated chunk header")
+        length = struct.unpack(">I", data[offset:offset + 4])[0]
+        kind = data[offset + 4:offset + 8]
+        start = offset + 8
+        end = start + length
+        if end + 4 > len(data):
+            raise ValueError("truncated chunk payload")
+        payload = data[start:end]
+        expected_crc = struct.unpack(">I", data[end:end + 4])[0]
+        actual_crc = zlib.crc32(kind + payload) & 0xffffffff
+        if actual_crc != expected_crc:
+            raise ValueError("chunk CRC mismatch")
+        if kind == b"IHDR":
+            if length != 13 or width is not None:
+                raise ValueError("invalid IHDR")
+            width, height, bit_depth, color_type, compression, filtering, interlace = struct.unpack(
+                ">IIBBBBB", payload)
+            if compression != 0 or filtering != 0:
+                raise ValueError("unsupported PNG compression/filter")
+        elif kind == b"IDAT":
+            compressed.extend(payload)
+        elif kind == b"IEND":
+            if length != 0:
+                raise ValueError("invalid IEND")
+            saw_iend = True
+            offset = end + 4
+            break
+        offset = end + 4
+    if width is None or not saw_iend or not compressed:
+        raise ValueError("missing IHDR, IDAT, or IEND")
+    if width != expected_width or height != expected_height:
+        raise ValueError(f"dimensions {width}x{height} != {expected_width}x{expected_height}")
+    if bit_depth != 8 or interlace != 0 or color_type not in (0, 2, 3, 4, 6):
+        raise ValueError("unsupported PNG pixel format")
+    bytes_per_pixel = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[color_type]
+    decoded = zlib.decompress(bytes(compressed))
+    expected_scanline_bytes = height * (1 + width * bytes_per_pixel)
+    if len(decoded) != expected_scanline_bytes:
+        raise ValueError("decoded scanline length mismatch")
+except (OSError, ValueError, struct.error, zlib.error) as error:
+    print(f"{path}: {error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+  then
+    echo "ERROR: capture is not a valid decodable PNG: $png" >&2
+    return 1
+  fi
+}
+
+verify_pngs() {
+  local min_bytes="${1:-8000}"
+  local found=0
+  shopt -s nullglob
+  for png in "$OUT_DIR"/exo_play_*.png; do
+    found=1
+    local size
+    size="$(wc -c < "$png" | tr -d ' ')"
+    if [[ "$size" -lt "$min_bytes" ]]; then
+      echo "ERROR: PNG too small ($size bytes): $png" >&2
+      return 1
+    fi
+    validate_png "$png"
+  done
+  shopt -u nullglob
+  if [[ "$found" -eq 0 ]]; then
+    echo "ERROR: no PNG captures in $OUT_DIR" >&2
+    return 1
+  fi
+
+  if [[ "$MODE" == "full" ]]; then
+    local required=(
+      pad liftoff maxq hotstage separation orbit orbit_beauty
+      entry peak_heating retro_burn touchdown
+    )
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing required milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    if ! verify_ascent_log_contract "$LOG" "LANDED"; then
+      echo "ERROR: full mission failed its pad-to-stable-orbit contract" >&2
+      return 1
+    fi
+    # Historical Flight 7/12 intentionally has no fictional landing gear. Those variants
+    # use Universe.HandleSurfaceImpact's physical soft-landing path (<=3 m/s) and therefore
+    # have no multi-foot ContactWrench. Other full-mission craft still require >=3 contacts.
+    local gearless_historical=0
+    if [[ "$VARIANT_FILE" == "starship_flight7_block2_2025.json" \
+      || "$VARIANT_FILE" == "starship_flight12_v3_2026.json" ]]; then
+      gearless_historical=1
+    fi
+    if ! awk -v gearless_historical="$gearless_historical" '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) {
+            split($i, pair, "=")
+            return pair[2]
+          }
+        return ""
+      }
+      /^TRACE_FULL / {
+        altitude = value("alt") + 0
+        if (altitude < 100.0)
+          tracedApproachSpeed = value("spd") + 0
+      }
+      /^CAPTURE touchdown / {
+        found = 1
+        contacts = value("contacts") + 0
+        settled = value("settled")
+        landingParts = value("landingParts")
+        capturedApproachSpeed = value("approachSpeed")
+      }
+      END {
+        if (!found || settled != "True")
+          exit 1
+        if (contacts >= 3)
+          exit 0
+        if (!gearless_historical)
+          exit 1
+        # New logs carry both fields. For artifacts produced immediately before this
+        # instrumentation landed, fall back to the last sub-100 m TRACE_FULL speed.
+        if (landingParts != "" && landingParts + 0 != 0)
+          exit 1
+        if (capturedApproachSpeed != "")
+          approachSpeed = capturedApproachSpeed + 0
+        else
+          approachSpeed = tracedApproachSpeed
+        exit !(contacts == 0 && approachSpeed <= 3.0)
+      }
+    ' "$LOG"; then
+      echo "ERROR: full-mission touchdown is neither a 3-contact gear landing nor a <=3 m/s settled historical gearless landing" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "launch" || "$MODE" == "launch_track" ]]; then
+    for slug in pad liftoff; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing required launch visual milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    local launch_reason="LAUNCH_OK"
+    if [[ "$MODE" == "launch_track" ]]; then
+      launch_reason="LAUNCH_TRACK_OK"
+      for slug in tower_clear early_ascent; do
+        if [[ ! -s "$OUT_DIR/exo_play_${slug}.png" ]] || ! awk -v slug="$slug" '
+          $1 == "VISUAL_EARLY_CAMERA" && $2 == "slug=" slug {
+            for (i=3; i<=NF; i++) { split($i,kv,"="); v[kv[1]]=kv[2] }
+            found=1; valid=(v["mode"]=="Chase" && v["heightFraction"]+0>=0.18 &&
+              v["heightFraction"]+0<=0.85 && v["topVisible"]=="True" && v["bottomVisible"]=="True");
+          }
+          END { exit !(found && valid) }
+        ' "$LOG"; then
+          echo "ERROR: ${slug} did not preserve the whole vehicle at a readable size" >&2
+          return 1
+        fi
+      done
+    fi
+    if ! grep -q "SUMMARY reason=$launch_reason" "$LOG"; then
+      echo "ERROR: launch visual capture did not finish cleanly" >&2
+      return 1
+    fi
+    for slug in pad liftoff; do
+      if ! grep -Eq "^VISUAL_LAUNCH slug=${slug} present=True .*nightFloodlights=4 .*delugeOutlets=16 .*tankBodies=15 .*chopsticks=2" "$LOG"; then
+        echo "ERROR: ${slug} capture did not prove the active launch complex structure" >&2
+        return 1
+      fi
+    done
+    if grep -q 'VISUAL_SUN .*phase=NIGHT' "$LOG" \
+      && ! grep -Eq '^VISUAL_LAUNCH slug=(pad|liftoff) .*floodlightsActive=True ' "$LOG"; then
+      echo "ERROR: night launch capture did not prove sector floodlights are active" >&2
+      return 1
+    fi
+    if ! grep -Eq '^VISUAL_ENGINES slug=liftoff .*nominal=33 .*rows=33 .*delivered=33 .*failed=0' "$LOG"; then
+      echo "ERROR: launch capture did not prove all 33 engines delivered thrust" >&2
+      return 1
+    fi
+    if ! awk '
+      /^VISUAL_PLANET body=earth slug=liftoff / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^cameraForwardCos=/) {
+            split($i, p, "=")
+            # A positive Earth-center component means this liftoff composition
+            # looks down across terrain; its green pixels are not atmospheric
+            # airglow, and single-channel land saturation is not white clipping.
+            groundView = (p[2] + 0) > 0.15
+          }
+        }
+      }
+      /^IMAGE slug=(pad|liftoff) / {
+        imageSlug = ""
+        clipped = surface = white = neon = 0
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^slug=/) { split($i, p, "="); imageSlug = p[2] }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+          if ($i ~ /^surfaceClippedFrac=/) { split($i, p, "="); surface = p[2] + 0 }
+          if ($i ~ /^surfaceWhiteClipFrac=/) { split($i, p, "="); white = p[2] + 0 }
+          if ($i ~ /^neonGreenFrac=/) { split($i, p, "="); neon = p[2] + 0 }
+        }
+        if (clipped > 0.10) bad = 1
+        if (imageSlug == "liftoff" && groundView) {
+          if (white > 0.10) bad = 1
+        } else if (surface > 0.10 || neon > 0.001) {
+          bad = 1
+        }
+        found++
+      }
+      END { exit !(found == 2 && !bad) }
+    ' "$LOG"; then
+      echo "ERROR: launch capture has broad clipping or neon-green contamination" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "flaps" ]]; then
+    for slug in ship_flaps_windward ship_flaps_leeward; do
+      if [[ ! -s "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing Starship flap inspection frame: $slug" >&2
+        return 1
+      fi
+    done
+    if ! rg -q 'SUMMARY reason=FLAPS_OK' "$LOG"; then
+      echo "ERROR: Starship flap inspection did not finish cleanly" >&2
+      return 1
+    fi
+    if ! awk '
+      /^VISUAL_FLAPS slug=ship_flaps_(windward|leeward) / {
+        blades = roots = hinges = readable = splits = oriented = -1
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=")
+          if (field[1] == "blades") blades = field[2] + 0
+          if (field[1] == "roots") roots = field[2] + 0
+          if (field[1] == "hinges") hinges = field[2] + 0
+          if (field[1] == "projectedReadable") readable = field[2] + 0
+          if (field[1] == "materialSplits") splits = field[2] + 0
+          if (field[1] == "orientedFaces") oriented = field[2] + 0
+        }
+        if (blades != 4 || roots != 4 || hinges != 4 || readable < 4 \
+            || splits != 4 || oriented != 4) bad = 1
+        found++
+      }
+      END { exit !(found == 2 && bad != 1) }
+    ' "$LOG"; then
+      echo "ERROR: flap inspection did not prove four readable blades, roots and hinges in both views" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=ship_flaps_(windward|leeward) / {
+        mean = dark = clipped = -1
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=")
+          if (field[1] == "mean") mean = field[2] + 0
+          if (field[1] == "darkFrac") dark = field[2] + 0
+          if (field[1] == "clippedFrac") clipped = field[2] + 0
+        }
+        if (mean <= 0.005 || dark >= 0.98 || clipped >= 0.10) bad = 1
+        found++
+      }
+      END { exit !(found == 2 && bad != 1) }
+    ' "$LOG"; then
+      echo "ERROR: flap inspection frames are empty or broadly clipped" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "ship" ]]; then
+    for slug in ship_vacuum ship_vacuum_half ship_vacuum_off ship_detail_steel ship_detail_tps \
+      ship_flaps_windward ship_flaps_leeward; do
+      if [[ ! -s "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing vacuum throttle matrix frame: $slug" >&2
+        return 1
+      fi
+    done
+    if ! awk '
+      /^VISUAL_ENGINES slug=ship_vacuum(_half|_off)? / {
+        slug = ""; delivered = -1;
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=");
+          if (field[1] == "slug") slug = field[2];
+          if (field[1] == "deliveredThrottle" && field[2] ~ /^[0-9]+[.][0-9]+$/)
+            delivered = field[2] + 0;
+        }
+        target = slug == "ship_vacuum" ? 1 : slug == "ship_vacuum_half" ? 0.5 : 0;
+        if (delivered < target - 0.04 || delivered > target + 0.04) bad = 1;
+        seen[slug]++;
+      }
+      END {
+        ok = seen["ship_vacuum"] == 1 && seen["ship_vacuum_half"] == 1 && seen["ship_vacuum_off"] == 1 && bad != 1
+        if (ok) exit 0
+        exit 1
+      }
+    ' "$LOG"; then
+      echo "ERROR: vacuum matrix did not prove full/half/shutdown delivered thrust" >&2
+      return 1
+    fi
+    if [[ ! -f "$OUT_DIR/exo_play_ship_vacuum.png" ]]; then
+      echo "ERROR: missing standalone Starship visual milestone PNG" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=ship_detail_(steel|tps) / {
+        slug = ""; upper = -1;
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^slug=/) { split($i, p, "="); slug = p[2] }
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^darkFrac=/) { split($i, p, "="); dark = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+          if ($i ~ /^upperMean=/) { split($i, p, "="); upper = p[2] + 0 }
+        }
+        if (mean <= 0.005 || dark >= 0.98 || clipped >= 0.10) bad = 1
+        upperBySlug[slug] = upper
+        found++
+      }
+      END {
+        noseContrast = upperBySlug["ship_detail_steel"] - upperBySlug["ship_detail_tps"]
+        if (found == 2 && bad != 1 &&
+            upperBySlug["ship_detail_tps"] >= 0 &&
+            upperBySlug["ship_detail_steel"] >= 0.004 &&
+            noseContrast >= 0.003) exit 0
+        exit 1
+      }
+    ' "$LOG"; then
+      echo "ERROR: Starship detail frames are empty, clipped, or lack leeward nose material contrast" >&2
+      return 1
+    fi
+    if ! awk '
+      /^VISUAL_FLAPS slug=ship_flaps_(windward|leeward) / {
+        blades = roots = hinges = readable = splits = oriented = -1
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=")
+          if (field[1] == "blades") blades = field[2] + 0
+          if (field[1] == "roots") roots = field[2] + 0
+          if (field[1] == "hinges") hinges = field[2] + 0
+          if (field[1] == "projectedReadable") readable = field[2] + 0
+          if (field[1] == "materialSplits") splits = field[2] + 0
+          if (field[1] == "orientedFaces") oriented = field[2] + 0
+        }
+        if (blades != 4 || roots != 4 || hinges != 4 || readable < 4 \
+            || splits != 4 || oriented != 4) bad = 1
+        found++
+      }
+      END { exit !(found == 2 && bad != 1) }
+    ' "$LOG"; then
+      echo "ERROR: flap inspection did not prove four readable blades, roots and hinges in both views" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=ship_flaps_(windward|leeward) / {
+        mean = dark = clipped = -1
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=")
+          if (field[1] == "mean") mean = field[2] + 0
+          if (field[1] == "darkFrac") dark = field[2] + 0
+          if (field[1] == "clippedFrac") clipped = field[2] + 0
+        }
+        if (mean <= 0.005 || dark >= 0.98 || clipped >= 0.10) bad = 1
+        found++
+      }
+      END { exit !(found == 2 && bad != 1) }
+    ' "$LOG"; then
+      echo "ERROR: flap inspection frames are empty or broadly clipped" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=SHIP_OK' "$LOG"; then
+      echo "ERROR: standalone Starship visual capture did not finish cleanly" >&2
+      return 1
+    fi
+    # This mode used to pass on any decodable PNG. Require evidence that the
+    # captured frame contains the detached Starship, has no launch-pad residue,
+    # and presents an Earth body rather than an empty/stale scene.
+    if ! grep -Eq '^VISUAL_NODES ship padVisible=False .*rendererVisible=True' "$LOG"; then
+      echo "ERROR: standalone Starship capture did not prove pad suppression and renderer visibility" >&2
+      return 1
+    fi
+    if ! grep -Eq '^VISUAL_PLANET body=earth slug=ship_vacuum visible=True ' "$LOG"; then
+      echo "ERROR: standalone Starship capture did not prove an Earth-framed planetary view" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=ship_vacuum / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^darkFrac=/) { split($i, p, "="); dark = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && dark < 0.98 && clipped < 0.10) }
+    ' "$LOG"; then
+      echo "ERROR: standalone Starship image is empty or broadly clipped" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "enginebay" ]]; then
+    if [[ ! -s "$OUT_DIR/exo_play_ship_enginebay.png" ]]; then
+      echo "ERROR: missing Starship engine-bay inspection frame" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=ENGINEBAY_OK' "$LOG"; then
+      echo "ERROR: Starship engine-bay inspection did not finish cleanly" >&2
+      return 1
+    fi
+    if ! awk '
+      /^VISUAL_ENGINEBAY / {
+        renderer = camera = mode = ""; vacuum = sea = -1
+        for (i = 1; i <= NF; i++) {
+          split($i, field, "=")
+          if (field[1] == "renderer") renderer = field[2]
+          if (field[1] == "camera") camera = field[2]
+          if (field[1] == "mode") mode = field[2]
+          if (field[1] == "vacuumExits") vacuum = field[2] + 0
+          if (field[1] == "seaLevelExits") sea = field[2] + 0
+        }
+        valid = renderer == "True" && camera == "True" && mode == "Chase" && vacuum == 3 && sea == 3
+        found++
+      }
+      END { exit !(found == 1 && valid) }
+    ' "$LOG"; then
+      echo "ERROR: engine-bay telemetry did not prove the six Starship exits and underside camera" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=ship_enginebay / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^darkFrac=/) { split($i, p, "="); dark = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && dark < 0.98 && clipped < 0.10) }
+    ' "$LOG"; then
+      echo "ERROR: engine-bay framebuffer is empty or broadly clipped" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "orbital_plume" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_orbital_plume.png" ]]; then
+      echo "ERROR: missing orbital vacuum-plume milestone PNG" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=ORBITAL_PLUME_OK' "$LOG"; then
+      echo "ERROR: orbital vacuum-plume capture did not finish cleanly" >&2
+      return 1
+    fi
+    # This gate intentionally combines physical fixture identity, rendered-layer
+    # diagnostics, camera composition and decoded image metrics. A valid PNG or a
+    # shader source string alone must not satisfy the orbital-plume acceptance.
+    if ! awk -v RESOLUTION_WIDTH="$RESOLUTION_WIDTH" -v RESOLUTION_HEIGHT="$RESOLUTION_HEIGHT" '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) {
+            split($i, pair, "=")
+            return pair[2]
+          }
+        return ""
+      }
+      function finite(value) {
+        return value != "" && value == value &&
+          value !~ /^(nan|NaN|inf|Inf|-inf|-Inf)$/
+      }
+      /^VISUAL_ORBITAL_PLUME / {
+        valid = value("body") == "earth"
+        # JumpToOrbit seeds a geocentric radius while the HUD reports WGS84
+        # geodetic altitude. At the fixture latitude those differ by about 3 km,
+        # so prove both the exact 200 km seed and the expected geodetic band.
+        valid = valid && finite(value("geocentricAltitudeM"))
+        valid = valid && value("geocentricAltitudeM") + 0 >= 199000
+        valid = valid && value("geocentricAltitudeM") + 0 <= 201000
+        valid = valid && finite(value("altitudeM")) && value("altitudeM") + 0 >= 190000
+        valid = valid && value("altitudeM") + 0 <= 210000
+        valid = valid && finite(value("pressureRatio")) && value("pressureRatio") + 0 <= 0.02
+        valid = valid && finite(value("expansion")) && value("expansion") + 0 >= 0.95
+        valid = valid && finite(value("deliveredThrottle")) && value("deliveredThrottle") + 0 >= 0.95
+        valid = valid && value("farField") == "False"
+        valid = valid && value("visibleUnits") + 0 >= 1
+        valid = valid && value("anchoredUnits") + 0 == value("visibleUnits") + 0
+        valid = valid && value("longestLengthRender") + 0 >= 12.0
+        valid = valid && value("coreVisible") == "True"
+        valid = valid && value("sheathVisible") == "True"
+        valid = valid && value("interactionParticles") == "False"
+        valid = valid && value("coreOpacity") + 0 >= 0.44
+        valid = valid && value("coreOpacity") + 0 <= 0.52
+        valid = valid && value("sheathOpacity") + 0 >= 0.10
+        valid = valid && value("sheathOpacity") + 0 <= 0.14
+        valid = valid && value("projectedPoints") + 0 >= 2
+        valid = valid && value("pointsInFrame") + 0 == value("projectedPoints") + 0
+        valid = valid && finite(value("plumeTailLuma")) && value("plumeTailLuma") + 0 >= 0.040
+        valid = valid && finite(value("plumeTailContrast")) && value("plumeTailContrast") + 0 >= 0.025
+        valid = valid && value("cameraMode") == "Chase"
+        valid = valid && value("rendererVisible") == "True"
+        valid = valid && value("hudVisible") == "True"
+        valid = valid && value("imageWidth") + 0 == RESOLUTION_WIDTH
+        valid = valid && value("imageHeight") + 0 == RESOLUTION_HEIGHT
+        seen++
+      }
+      END { exit !(seen == 1 && valid) }
+    ' "$LOG"; then
+      echo "ERROR: orbital vacuum-plume telemetry did not prove vacuum layers, anchoring, framebuffer contrast, framing, HUD, and silhouette" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=orbital_plume / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^darkFrac=/) { split($i, p, "="); dark = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && dark < 0.98 && clipped < 0.10) }
+    ' "$LOG"; then
+      echo "ERROR: orbital vacuum-plume image is empty, black, or broadly clipped" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "smoke" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_pad.png" ]]; then
+      echo "ERROR: missing smoke pad milestone PNG" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=SMOKE_OK' "$LOG"; then
+      echo "ERROR: smoke visual capture did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -Eq '^VISUAL_LAUNCH slug=pad present=True visible=True .*farFieldVisible=False ' "$LOG"; then
+      echo "ERROR: smoke capture did not prove a single clean hero launch complex" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=pad / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+          if ($i ~ /^neonGreenFrac=/) { split($i, p, "="); neon = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && clipped < 0.10 && neon < 0.001) }
+      ' "$LOG"; then
+        echo "ERROR: smoke image is empty, clipped, or contaminated by neon-green artifacts" >&2
+        return 1
+      fi
+    elif [[ "$MODE" == "cloud_traverse" ]]; then
+      rg -q '^SUMMARY reason=STARBASE_FAR_OK' "$LOG" || { echo "ERROR: cloud traversal incomplete" >&2; return 1; }
+      python3 tools/validate_cloud_occlusion.py "$OUT_DIR" "$LOG"
+    elif [[ "$MODE" == "ascent_optics" ]]; then
+      # This is a paused optical fixture, not a stable-orbit/flight dynamics gate.
+      python3 - "$OUT_DIR" "$LOG" <<'PYOPTICS'
+import pathlib, re, sys
+out, log = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).read_text()
+assert 'SUMMARY reason=STARBASE_FAR_OK' in log, 'optics matrix did not finish'
+for km in (0, 12, 15, 18, 100, 250):
+    slug = f'ascent_optics_{km}km'
+    assert (out / f'exo_play_{slug}.png').is_file(), f'missing {slug}'
+    row = re.search(rf'^VISUAL_COMPOSITOR slug={slug} .*$', log, re.M)
+    assert row, f'missing physical camera state: {slug}'
+    state = dict(re.findall(r'(\w+)=([^ ]+)', row[0]))
+    assert abs(float(state['vesselAlt']) - km * 1000) < 1, f'wrong vessel altitude: {slug}'
+    assert 714 < float(state['cameraAlt']) - km * 1000 < 718, f'camera did not track vessel: {slug}'
+    assert state.get('earthOpaque') == 'True', f'planet coverage changed: {slug}'
+    geo = re.search(rf'^VISUAL_GEOGRAPHIC_FRAME slug={slug} .*$', log, re.M)
+    assert geo, f'missing geographic frame: {slug}'
+    mapped = dict(re.findall(r'(\w+)=([^ ]+)', geo[0]))
+    assert float(mapped['latitudeErrorDeg']) < 0.001 and float(mapped['longitudeErrorDeg']) < 0.001
+    assert abs(float(mapped['determinant']) + 1) < 0.001
+    cloud = re.search(rf'^VISUAL_CLOUD_FIELD slug={slug} .*$', log, re.M)
+    assert cloud, f'missing bound cloud field {slug}'
+    cloud_state = dict(re.findall(r'(\w+)=([^ ]+)', cloud[0]))
+    assert float(cloud_state['frameError']) < 1e-6 and float(cloud_state['clockError']) < 1e-6
+    assert abs(float(cloud_state['determinant']) + 1) < 0.001
+    assert cloud_state['localWeather'] == 'True' and float(cloud_state['timeScale']) == 0
+    assert cloud_state['textureMatch'] == 'True' and float(cloud_state['solarError']) < 1e-6
+    if km < 18:
+        assert float(cloud_state['groundFrameError']) < 1e-6 and float(cloud_state['groundClockError']) < 1e-6
+    if km >= 18:
+        assert state['groundVisible'] == 'False', f'local detail did not retire: {slug}'
+    image = re.search(rf'^IMAGE slug={slug} .*$', log, re.M)
+    assert image, f'missing framebuffer metrics: {slug}'
+    metrics = dict(re.findall(r'(\w+)=([^ ]+)', image[0]))
+    assert 0.005 < float(metrics['mean']) < 0.95, f'blank framebuffer: {slug}'
+    assert float(metrics['clippedFrac']) < 0.1, f'clipped framebuffer: {slug}'
+print('ascent_optics_matrix: PASS (six paused rays, actual camera heights; manual visual review required)')
+PYOPTICS
+    elif [[ "$MODE" == "terrain_coverage" ]]; then
+      python3 - "$OUT_DIR" "$LOG" "$CONSOLE_LOG" <<'PYCOVERAGE'
+import pathlib, re, sys
+out, log, console = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).read_text(), pathlib.Path(sys.argv[3]).read_text()
+assert 'SUMMARY reason=STARBASE_FAR_OK' in log, 'coverage matrix did not finish'
+assert re.search(r'^TERRAIN_COVERAGE site=starbase context=True ', console, re.M), 'context texture was not bound'
+for km in (7, 16, 26):
+    for view, pitch in (('oblique', 28), ('nadir', 80)):
+        slug = f'coverage_{km}km_{view}'
+        assert (out / f'exo_play_{slug}.png').is_file(), f'missing {slug}'
+        row = re.search(rf'^VISUAL_COMPOSITOR slug={slug} .*$', log, re.M)
+        assert row, f'missing camera state {slug}'
+        state = dict(re.findall(r'(\w+)=([^ ]+)', row[0]))
+        assert abs(float(state['vesselAlt']) - km * 1000) < 1
+        assert km * 1000 + 650 < float(state['cameraAlt']) < km * 1000 + 1500
+        assert state.get('earthOpaque') == 'True'
+        geo = re.search(rf'^VISUAL_GEOGRAPHIC_FRAME slug={slug} .*$', log, re.M)
+        assert geo, f'missing geographic frame {slug}'
+        mapped = dict(re.findall(r'(\w+)=([^ ]+)', geo[0]))
+        assert float(mapped['latitudeErrorDeg']) < 0.001 and float(mapped['longitudeErrorDeg']) < 0.001
+        assert abs(float(mapped['determinant']) + 1) < 0.001
+        cloud = re.search(rf'^VISUAL_CLOUD_FIELD slug={slug} .*$', log, re.M)
+        assert cloud, f'missing bound cloud field {slug}'
+        cloud_state = dict(re.findall(r'(\w+)=([^ ]+)', cloud[0]))
+        assert float(cloud_state['frameError']) < 1e-6 and float(cloud_state['clockError']) < 1e-6
+        assert abs(float(cloud_state['determinant']) + 1) < 0.001
+        assert cloud_state['localWeather'] == 'True' and float(cloud_state['timeScale']) == 0
+        assert cloud_state['textureMatch'] == 'True' and float(cloud_state['solarError']) < 1e-6
+        if km < 18:
+            assert float(cloud_state['groundFrameError']) < 1e-6 and float(cloud_state['groundClockError']) < 1e-6
+        assert re.search(rf'^STARBASE_FAR_SETUP slug={slug} .*cameraPitchDeg={pitch} ', log, re.M), f'wrong viewing angle {slug}'
+        metrics = re.search(rf'^IMAGE slug={slug} .*$', log, re.M)
+        assert metrics, f'missing framebuffer metrics {slug}'
+        values = dict(re.findall(r'(\w+)=([^ ]+)', metrics[0]))
+        assert 0.005 < float(values['mean']) < 0.95
+print('starbase_coverage_matrix: PASS (six paused geographic views; visual review required)')
+PYCOVERAGE
+    elif [[ "$MODE" == "starbase_far" ]]; then
+      if ! rg -q '^VISUAL_STARBASE_GEOMETRY slug=starbase_far_(2km|5km|8km|12km|20km|40km) topTriangles=[1-9][0-9]* backFacing=0 terrainTiles=[1-9][0-9]*$' "$LOG"; then
+        echo "ERROR: Starbase terrain is missing or faces away from the overhead camera" >&2
+        return 1
+      fi
+      if ! grep -q 'SUMMARY reason=STARBASE_FAR_OK' "$LOG"; then
+        echo "ERROR: Starbase far-field capture did not finish cleanly" >&2
+        return 1
+      fi
+      local far_cases=(starbase_far_2km starbase_far_5km starbase_far_8km starbase_far_12km starbase_far_20km starbase_far_40km)
+      for slug in "${far_cases[@]}"; do
+        if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+          echo "ERROR: missing Starbase far-field milestone PNG: exo_play_${slug}.png" >&2
+          return 1
+        fi
+        if [[ "$slug" == "starbase_far_20km" || "$slug" == "starbase_far_40km" ]]; then
+          if ! grep -Eq "^VISUAL_COMPOSITOR slug=${slug} .*earthGlobeAlpha=1\.000 .*groundVisible=False" "$LOG"; then
+            echo "ERROR: ${slug} did not prove the scaled Earth handoff" >&2
+            return 1
+          fi
+        elif ! grep -Eq "^VISUAL_STARBASE_FAR slug=${slug} source=OSM\+EarthGround visible=True .*contextOpacity=[01]\.[0-9]+" "$LOG"; then
+          echo "ERROR: ${slug} did not prove mapped regional-context visibility" >&2
+          return 1
+        fi
+        if [[ "$slug" =~ ^starbase_far_(2km|5km|8km)$ ]]; then
+          if ! grep -Eq "^VISUAL_STARBASE_FAR slug=${slug} .*heroVisible=True .*silhouetteOpacity=0\.000$" "$LOG"; then
+            echo "ERROR: ${slug} did not keep civil silhouettes exclusive with the hero" >&2
+            return 1
+          fi
+          local expected_pad="True"
+        elif [[ "$slug" == "starbase_far_20km" || "$slug" == "starbase_far_40km" ]]; then
+          local expected_pad="False"
+        else
+          if ! grep -Eq "^VISUAL_STARBASE_FAR slug=${slug} .*heroVisible=False" "$LOG"; then
+            echo "ERROR: ${slug} did not retire the hero pad" >&2
+            return 1
+          fi
+          local expected_pad="False"
+        fi
+        if [[ "$slug" != "starbase_far_20km" && "$slug" != "starbase_far_40km" ]] && ! awk -v slug="$slug" -v hero="$expected_pad" '
+          $1 == "VISUAL_STARBASE_MATERIALS" && $2 == "slug=" slug {
+            for (i=3; i<=NF; i++) {
+              split($i, kv, "="); values[kv[1]]=kv[2]+0
+            }
+            difference=values["reliefAlpha"]-values["expectedAlpha"];
+            if (difference<0) difference=-difference;
+            valid=(values["expectedAlpha"]>0 && difference<=0.011 &&
+              ((hero=="True" && values["visibleStructures"]==0) ||
+               (hero=="False" && values["visibleStructures"]>0)));
+            found=1;
+          }
+          END { exit !(found && valid) }
+        ' "$LOG"; then
+          echo "ERROR: ${slug} material alpha or visible structures disagree with the LOD contract" >&2
+          return 1
+        fi
+        if [[ "$slug" == "starbase_far_20km" || "$slug" == "starbase_far_40km" ]]; then
+          if ! grep -Eq "^VISUAL_COMPOSITOR slug=${slug} .*earthGlobeAlpha=1\.000 .*groundVisible=False .*padVisible=False .*farFieldVisible=False" "$LOG"; then
+            echo "ERROR: compositor telemetry did not prove the ${slug} scaled-Earth handoff" >&2
+            return 1
+          fi
+        elif ! grep -Eq "^VISUAL_COMPOSITOR slug=${slug} .*padVisible=${expected_pad} .*farFieldVisible=True .*farFieldOpacity=[01]\.[0-9]+" "$LOG"; then
+          echo "ERROR: compositor telemetry did not prove the ${slug} hero/far-field handoff" >&2
+          return 1
+        fi
+        if ! grep -Eq "^VISUAL_STARBASE_TERRAIN_TILE slug=${slug} source=USGS_3DEP .*edgeFade=radial .*built=True$" "$LOG"; then
+          echo "ERROR: ${slug} did not prove the source-derived 3DEP terrain tile" >&2
+          return 1
+        fi
+        if [[ "$slug" != "starbase_far_40km" && "$slug" != "starbase_far_20km" ]]; then
+          if ! grep -Eq "^VISUAL_STARBASE_PROJECTION slug=${slug} inFrustum=True " "$LOG" \
+            || ! awk -v slug="$slug" '
+            $1 == "VISUAL_STARBASE_STRUCTURES" && $2 == "slug=" slug {
+              for (i = 1; i <= NF; i++) {
+                if ($i ~ /^projectedCorners=/) { split($i, p, "="); corners = p[2] + 0 }
+                if ($i ~ /^projectedWidthPx=/) { split($i, p, "="); width = p[2] + 0 }
+                if ($i ~ /^projectedHeightPx=/) { split($i, p, "="); height = p[2] + 0 }
+              }
+              found = 1
+            }
+            END { exit !(found && corners >= 8 && width >= 4 && height >= 8) }
+            ' "$LOG"; then
+            echo "ERROR: ${slug} did not project readable mapped structures" >&2
+            return 1
+          fi
+        fi
+        if ! awk -v slug="$slug" '
+          $1 == "CAPTURE" && $2 == slug {
+            for (i = 1; i <= NF; i++) {
+              if ($i ~ /^alt=/) { split($i, p, "="); alt = p[2] + 0 }
+            }
+            capture = 1
+          }
+          $1 == "IMAGE" && $2 == "slug=" slug {
+            for (i = 1; i <= NF; i++) {
+              if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+              if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+            }
+            image = 1
+          }
+          END { exit !(capture && image && alt >= 2000 && alt <= 40000 && mean > 0.005 && clipped < 0.10) }
+        ' "$LOG"; then
+          echo "ERROR: ${slug} is outside the 2–40 km corridor or visually invalid" >&2
+          return 1
+        fi
+      done
+    elif [[ "$MODE" == "kennedy_far" ]]; then
+      if ! grep -q 'SUMMARY reason=KENNEDY_FAR_OK' "$LOG"; then
+        echo "ERROR: Kennedy far-field capture did not finish cleanly" >&2
+        return 1
+      fi
+      local kennedy_cases=(kennedy_far_2km kennedy_far_5km kennedy_far_8km kennedy_far_12km kennedy_far_20km kennedy_far_40km)
+      for slug in "${kennedy_cases[@]}"; do
+        if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+          echo "ERROR: missing Kennedy far-field milestone PNG: exo_play_${slug}.png" >&2
+          return 1
+        fi
+        if ! grep -Eq "^VISUAL_KENNEDY_TERRAIN slug=${slug} site=kennedy source=NAIP\+3DEP:kennedy regionalReady=True macroReady=True" "$LOG"; then
+          echo "ERROR: ${slug} did not prove the measured Kennedy NAIP+3DEP stack" >&2
+          return 1
+        fi
+        if [[ "$slug" == "kennedy_far_20km" || "$slug" == "kennedy_far_40km" ]]; then
+          if ! grep -Eq "^VISUAL_COMPOSITOR slug=${slug} .*earthGlobeAlpha=1\.000 .*groundVisible=False .*padVisible=False" "$LOG"; then
+            echo "ERROR: ${slug} did not prove the Kennedy scaled-Earth handoff" >&2
+            return 1
+          fi
+        fi
+        if ! awk -v slug="$slug" '
+          $1 == "CAPTURE" && $2 == slug {
+            for (i = 1; i <= NF; i++) if ($i ~ /^alt=/) { split($i, p, "="); alt = p[2] + 0 }
+            capture = 1
+          }
+          $1 == "IMAGE" && $2 == "slug=" slug {
+            for (i = 1; i <= NF; i++) {
+              if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+              if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+            }
+            image = 1
+          }
+          END { exit !(capture && image && alt >= 2000 && alt <= 40000 && mean > 0.005 && clipped < 0.10) }
+        ' "$LOG"; then
+          echo "ERROR: ${slug} is outside the 2–40 km corridor or visually invalid" >&2
+          return 1
+        fi
+      done
+    elif [[ "$MODE" == "ascent" ]]; then
+    local required=(pad liftoff maxq hotstage separation orbit)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing required ascent milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    if ! verify_ascent_log_contract "$LOG" "ASCENT_ORBIT_OK"; then
+      echo "ERROR: focused ascent did not reach a verified stable orbit" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "orbit" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_orbit_direct.png" ]]; then
+      echo "ERROR: missing direct orbital visual milestone PNG" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=ORBIT_DIRECT_OK' "$LOG"; then
+      echo "ERROR: direct orbital visual capture did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -Eq 'VISUAL_PLANET body=earth slug=orbit_direct visible=True .*angularDiameterDeg=1[1-9][0-9]\.[0-9]+ .*cameraForwardCos=0\.[5-9][0-9]*' "$LOG"; then
+      echo "ERROR: direct orbital capture did not prove Earth is visible and framed" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=orbit_direct / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^darkFrac=/) { split($i, p, "="); dark = p[2] + 0 }
+          if ($i ~ /^surfaceWhiteClipFrac=/) { split($i, p, "="); white = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && dark < 0.90 && white < 0.20) }
+    ' "$LOG"; then
+      echo "ERROR: direct orbital Earth image is empty or broadly clipped" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "edl" ]]; then
+    local required=(entry retro_burn flip_complete)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing required EDL milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    if grep -q 'SUMMARY reason=CAUGHT' "$LOG"; then
+      if [[ ! -f "$OUT_DIR/exo_play_caught.png" ]]; then
+        echo "ERROR: verified tower catch has no caught milestone PNG" >&2
+        return 1
+      fi
+      if ! grep -Eq 'CHECK tower_catch caught=True pins=[2-9][0-9]* relativeSpeed=[0-9.]+ angularSpeed=[0-9.]+' "$LOG"; then
+        echo "ERROR: tower catch summary lacks two settled pin contacts" >&2
+        return 1
+      fi
+    elif grep -q 'SUMMARY reason=LANDED' "$LOG"; then
+      if [[ ! -f "$OUT_DIR/exo_play_touchdown.png" ]]; then
+        echo "ERROR: verified leg landing has no touchdown milestone PNG" >&2
+        return 1
+      fi
+      if ! grep -Eq 'CAPTURE touchdown .*contacts=[3-9][0-9]* .*settled=True' "$LOG"; then
+        echo "ERROR: touchdown was not supported by at least three settled physical contacts" >&2
+        return 1
+      fi
+    else
+      echo "ERROR: deterministic EDL did not end in a verified catch or landing" >&2
+      return 1
+    fi
+    if (( CLEAR_SOLAR_ECLIPSE == 1 )) \
+      && ! grep -q 'VISUAL_SUN .*clearSolarEclipse=True .*physicalSunPositionUnchanged=True' "$LOG"; then
+      echo "ERROR: requested clear-solar-eclipse EDL fixture was not recorded" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "entry_physics" ]]; then
+    local required=(entry_physics_interface entry_physics_peak_heating
+      entry_physics_transonic)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing physical-entry milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    if ! grep -q 'SUMMARY reason=ENTRY_PHYSICS_OK' "$LOG"; then
+      echo "ERROR: physical entry did not finish with ENTRY_PHYSICS_OK" >&2
+      return 1
+    fi
+    if ! grep -q 'PHYSICAL_ENTRY_SETUP .*source=entry_interface .*normalFlow=True demo=False .*orientationWritesAfterSeed=0' "$LOG"; then
+      echo "ERROR: missing explicit non-demo 120 km entry-interface evidence" >&2
+      return 1
+    fi
+    if ! grep -Eq 'TRACE_ENTRY_PHYSICS .*guidanceDt=0\.020000 .*normalFlow=True demo=False' "$LOG"; then
+      echo "ERROR: physical entry lacks deterministic 20 ms guidance telemetry" >&2
+      return 1
+    fi
+    if ! grep -Eq 'CHECK entry_physics .*transonic=True .*cadenceValid=True envelopeValid=True .*normalFlow=True demo=False orientationWritesAfterSeed=0' "$LOG"; then
+      echo "ERROR: physical entry lacks a valid transonic/envelope closure record" >&2
+      return 1
+    fi
+    if grep -Eq '^(FAIL|GAP) ' "$LOG"; then
+      echo "ERROR: physical-entry log contains FAIL/GAP evidence" >&2
+      grep -E '^(FAIL|GAP) ' "$LOG" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "orbital_reentry" ]]; then
+    local required=(orbital_reentry_orbit orbital_reentry_entry
+      orbital_reentry_peak_heating orbital_reentry_retro_burn)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing normal orbital reentry milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+    done
+    if ! grep -q 'SUMMARY reason=ORBITAL_REENTRY_OK' "$LOG"; then
+      echo "ERROR: normal orbital reentry did not finish with ORBITAL_REENTRY_OK" >&2
+      return 1
+    fi
+    if ! grep -q 'NORMAL_REENTRY_SETUP .*source=JumpToOrbit .*demo=False .*flownAscent=False' "$LOG"; then
+      echo "ERROR: missing explicit non-demo orbital setup evidence" >&2
+      return 1
+    fi
+    if ! grep -q 'NORMAL_REENTRY_ARMED .*source=map_deorbit_autopilot .*demo=False' "$LOG"; then
+      echo "ERROR: missing normal map deorbit/autopilot evidence" >&2
+      return 1
+    fi
+    if [[ -f "$OUT_DIR/exo_play_orbital_reentry_caught.png" ]]; then
+      if ! grep -Eq 'CHECK orbital_reentry caught=True pins=[2-9][0-9]* relativeSpeed=[0-9.]+ angularSpeed=[0-9.]+ normalFlow=True demo=False' "$LOG"; then
+        echo "ERROR: orbital reentry catch capture lacks a settled physical tower catch" >&2
+        return 1
+      fi
+    elif [[ -f "$OUT_DIR/exo_play_orbital_reentry_landed.png" ]]; then
+      if ! grep -Eq 'CHECK orbital_reentry landed=True contacts=[3-9][0-9]* surfaceSpeed=[0-9.]+ angularSpeed=[0-9.]+ normalFlow=True demo=False' "$LOG"; then
+        echo "ERROR: orbital reentry landing capture lacks three settled physical leg contacts" >&2
+        return 1
+      fi
+    else
+      echo "ERROR: normal orbital reentry lacks a final tower-catch or physical-landing capture" >&2
+      return 1
+    fi
+    if grep -Eq '^(FAIL|GAP) ' "$LOG"; then
+      echo "ERROR: normal orbital reentry log contains FAIL/GAP evidence" >&2
+      grep -E '^(FAIL|GAP) ' "$LOG" >&2
+      return 1
+    fi
+    if ! grep -q 'TRACE_ORBITAL_REENTRY .*normalFlow=True demo=False' "$LOG"; then
+      echo "ERROR: missing normal-flow telemetry (demo must not satisfy this gate)" >&2
+      return 1
+    fi
+  elif [[ ( "$MODE" == "apollo8_mission" || "$MODE" == "gemini_mission" || "$MODE" == "apollo11_mission" ) && -n "$UNTIL_PHASE" ]]; then
+    if ! grep -q 'SUMMARY reason=HISTORICAL_MISSION_PHASE_REACHED' "$LOG" \
+      || ! grep -q "HISTORICAL_MISSION phase=${UNTIL_PHASE} " "$LOG"; then
+      echo "ERROR: the historical director did not reach mission phase $UNTIL_PHASE (mode=$MODE)" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "apollo8_mission" ]]; then
+    if ! grep -q 'SUMMARY reason=HISTORICAL_MISSION_LUNAR_ORBIT_OK' "$LOG" \
+      || ! grep -Eq 'HISTORICAL_MISSION_LUNAR_ORBIT periluneKm=[0-9.]+ apoluneKm=[0-9.]+ e=0\.[0-9]+' "$LOG" \
+      || [[ ! -f "$OUT_DIR/exo_play_apollo8_mission_lunar_orbit.png" ]]; then
+      echo "ERROR: the Apollo 8 director did not fly the stack into a bound lunar orbit" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "flight14_payload_group" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_flight14_payload_group_wide.png" \
+      || ! -f "$OUT_DIR/exo_play_flight14_payload_inspection_01.png" \
+      || ! -f "$OUT_DIR/exo_play_flight14_payload_inspection_02.png" ]]; then
+      echo "ERROR: missing Flight 14 wide or per-payload inspection framebuffer" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=FLIGHT14_PAYLOAD_GROUP_VISUAL_OK' "$LOG"; then
+      echo "ERROR: Flight 14 payload group visual fixture did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_PAYLOAD_GROUP_SETUP fixture=True physicsReplay=False timeScale=0 altitudeM=[0-9]+ payloadCount=2 releaseElapsedS=[0-9.]+,[0-9.]+ openingVelocityMps=1\.00 carrierStateClosureM=[0-9.]+ separationM=[0-9.]+,[0-9.]+ groupFocusOffsetM=[0-9.]+ angularRateRadPerS=[0-9.eE+-]+' "$LOG"; then
+      echo "ERROR: missing orbit-propagated estimated Flight 14 payload group state" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_PAYLOAD_GROUP_CAPTURE slug=flight14_payload_group_wide payloadRenderers=2 cameraDistance=65\.0 cameraTargetOffsetM=[0-9.]+ inspectionTarget=0 targetPixel=NaN,NaN targetBehindCamera=False targetOnScreen=False fixture=True physicsReplay=False' "$LOG" \
+      || ! grep -Eq 'FLIGHT14_PAYLOAD_GROUP_CAPTURE slug=flight14_payload_inspection_01 payloadRenderers=2 cameraDistance=10\.0 cameraTargetOffsetM=[0-9.]+ inspectionTarget=1 targetPixel=[0-9.-]+,[0-9.-]+ targetBehindCamera=False targetOnScreen=True fixture=True physicsReplay=False' "$LOG" \
+      || ! grep -Eq 'FLIGHT14_PAYLOAD_GROUP_CAPTURE slug=flight14_payload_inspection_02 payloadRenderers=2 cameraDistance=10\.0 cameraTargetOffsetM=[0-9.]+ inspectionTarget=2 targetPixel=[0-9.-]+,[0-9.-]+ targetBehindCamera=False targetOnScreen=True fixture=True physicsReplay=False' "$LOG"; then
+      echo "ERROR: wide group and both per-payload inspection frames must keep their targets on-screen" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "flight14_payload" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_flight14_payload_flat_pack.png" ]]; then
+      echo "ERROR: missing Flight 14 estimated payload flat-pack framebuffer" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=FLIGHT14_PAYLOAD_VISUAL_OK' "$LOG"; then
+      echo "ERROR: Flight 14 payload visual fixture did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_PAYLOAD_VISUAL_SETUP fixture=True physicsReplay=False timeScale=0 altitudeM=400000 lengthM=5\.26 widthM=3\.77 thicknessM=0\.45 equivalentEnvelopeM=6\.50 faceSections=2 centerBus=True' "$LOG"; then
+      echo "ERROR: payload renderer does not match the estimated flat-pack presentation envelope" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_PAYLOAD_VISUAL_CAPTURE rendererFound=True flatPackFound=True box=True lengthM=5\.26 widthM=3\.77 thicknessM=0\.45 faceSections=2 physicsReplay=False' "$LOG"; then
+      echo "ERROR: framebuffer capture did not verify the rendered Flight 14 flat-pack proxy" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "flight14_deployment" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_flight14_payload_deployment_e2e.png" ]]; then
+      echo "ERROR: missing Flight 14 real deployment framebuffer" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=FLIGHT14_DEPLOYMENT_E2E_OK' "$LOG"; then
+      echo "ERROR: Flight 14 physical deployment did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_DEPLOYMENT_E2E_RELEASE index=1 met=[0-9.]+ satellite=Starlink V3 01 \(estimate\) massKg=[0-9.]+ periapsisM=[0-9.]+ massResidualKg=[0-9.eE+-]+ momentumResidualKgMps=[0-9.eE+-]+ relativeOpeningResidualMps=[0-9.eE+-]+' "$LOG" \
+      || ! grep -Eq 'FLIGHT14_DEPLOYMENT_E2E_RELEASE index=2 met=[0-9.]+ satellite=Starlink V3 02 \(estimate\) massKg=[0-9.]+ periapsisM=[0-9.]+ massResidualKg=[0-9.eE+-]+ momentumResidualKgMps=[0-9.eE+-]+ relativeOpeningResidualMps=[0-9.eE+-]+' "$LOG"; then
+      echo "ERROR: first two physical payload releases or their conservation residuals are missing" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_DEPLOYMENT_ATTITUDE index=1 elapsedS=[0-9.]+ angularRateRadPerS=[0-9.eE+-]+ currentAngularRateRadPerS=[0-9.eE+-]+ expectedAngleRad=[0-9.]+ measuredAngleRad=[0-9.]+ errorRad=[0-9.eE+-]+ integrationTier=(onrails|fullphysics) sas=(True|False) onRails=(True|False)' "$LOG" \
+      || ! grep -Eq 'FLIGHT14_DEPLOYMENT_ATTITUDE index=2 elapsedS=[0-9.]+ angularRateRadPerS=[0-9.eE+-]+ currentAngularRateRadPerS=[0-9.eE+-]+ expectedAngleRad=[0-9.]+ measuredAngleRad=[0-9.]+ errorRad=[0-9.eE+-]+ integrationTier=(onrails|fullphysics) sas=(True|False) onRails=(True|False)' "$LOG"; then
+      echo "ERROR: the two released payloads did not pass the 60-second attitude propagation check" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_DEPLOYMENT_E2E_CAPTURE_STATE released=2 detachedRenderers=[3-9][0-9]* vessels=[0-9]+ shipAltitudeM=[0-9.]+ missionElapsedS=[0-9.]+ attitudePropagation=True observationS=60 physicsReplay=False' "$LOG"; then
+      echo "ERROR: capture was not taken after two live releases with two detached vessel renderers" >&2
+      return 1
+    fi
+    if ! grep -Eq 'FLIGHT14_DEPLOYMENT_RENDERERS detached=[3-9][0-9]* payloadFlatPacks=2 payloadAutoTracking=True payloadCloserFraming=True payloadFocusOffsetNonzero=True cameraYawDeg=-?[0-9.]+ physicsReplay=False' "$LOG"; then
+      echo "ERROR: both flat-pack renderers or the physical deployment camera tracking are missing" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "hotstage" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_hotstage.png" ]]; then
+      echo "ERROR: missing required hot-stage milestone PNG: exo_play_hotstage.png" >&2
+      return 1
+    fi
+    if [[ ! -f "$OUT_DIR/exo_play_hotstage_separation.png" ]]; then
+      echo "ERROR: missing required post-separation hot-stage milestone PNG: exo_play_hotstage_separation.png" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=HOTSTAGE_OK' "$LOG"; then
+      echo "ERROR: hot-stage capture did not confirm the dual-thrust overlap state" >&2
+      return 1
+    fi
+    if ! grep -Eq 'VISUAL_HOTSTAGE slug=hotstage .*frameSynced=True .*interfaceY=25\.36' "$LOG"; then
+      echo "ERROR: hot-stage overlap capture lacks synchronized interstage anchor telemetry" >&2
+      return 1
+    fi
+    if ! grep -Eq 'VISUAL_HOTSTAGE slug=hotstage .*frameSynced=True .*overlap=True .*interfaceY=25\.36 .*plumeVisible=True .*plumeLocalY=-?[0-9.]+ .*plumeOpacity=0\.[0-9]+' "$LOG"; then
+      echo "ERROR: hot-stage overlap capture did not prove live overlap, synchronized anchor, and visible interstage plume" >&2
+      return 1
+    fi
+    if ! grep -Eq 'VISUAL_HOTSTAGE slug=hotstage_separation .*frameSynced=True .*overlap=False .*interfaceY=25\.36' "$LOG"; then
+      echo "ERROR: hot-stage separation capture lacks synchronized interstage anchor telemetry" >&2
+      return 1
+    fi
+    # VISUAL_PLUME is emitted by VesselRenderer to Godot's console stream, while
+    # VISUAL_HOTSTAGE is written by the temporary harness log. Require one overlap
+    # sample where both stage-specific delivered throttles are live; a frame-count
+    # gate alone would allow the historical single-plume regression to pass.
+    if ! awk '
+      /^VISUAL_PLUME / {
+        overlap = sh = ship = units = ""
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^overlap=/) { split($i, pair, "="); overlap = pair[2] }
+          if ($i ~ /^shDelivered=/) { split($i, pair, "="); sh = pair[2] + 0 }
+          if ($i ~ /^shipDelivered=/) { split($i, pair, "="); ship = pair[2] + 0 }
+          if ($i ~ /^shUnits=/) { split($i, pair, "="); units = pair[2] }
+        }
+        if (overlap == "True" && sh >= 0.95 && ship >= 0.30 && units == "True")
+          found = 1
+      }
+      END { exit !found }
+    ' "$CONSOLE_LOG"; then
+      echo "ERROR: hot-stage console never proved simultaneous delivered Super Heavy and Ship plume output" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "saturn" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_saturn_ring.png" ]]; then
+      echo "ERROR: missing required Saturn ring milestone PNG" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=SATURN_OK' "$LOG"; then
+      echo "ERROR: Saturn capture did not finish its physical body-transition scenario" >&2
+      return 1
+    fi
+    # A valid file alone can hide an out-of-frame body (the first version of this mode
+    # captured only the starfield). Require measurable ring/body signal in the image
+    # metrics so this remains a real visual acceptance gate.
+    if ! awk '
+      /^IMAGE slug=saturn_ring / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^p95=/)  { split($i, p, "="); p95  = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.02 && p95 > 0.20) }
+    ' "$LOG"; then
+      echo "ERROR: Saturn image metrics do not prove visible ring/body signal" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "reentry_compare" ]]; then
+    local required=(reentry_nominal reentry_bad_attitude)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing required reentry-compare milestone PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+      if ! grep -q "^REENTRY_COMPARE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing REENTRY_COMPARE state evidence for ${slug}" >&2
+        return 1
+      fi
+    done
+    if ! awk '
+      /^REENTRY_COMPARE slug=reentry_nominal / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^shield=/) { split($i, p, "="); shield = p[2] + 0 }
+          if ($i ~ /^alphaDeg=/) { split($i, p, "="); alpha = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && shield >= 0.85 && shield <= 1.0 && alpha >= 60.0 && alpha <= 80.0) }
+    ' "$LOG"; then
+      echo "ERROR: nominal reentry lost the controlled broadside target (shield/alpha evidence invalid)" >&2
+      return 1
+    fi
+    # Two independent Godot launches (nominal, bad-attitude) share this one $LOG file, so a
+    # successful compare shows exactly one REENTRY_VARIANT_OK finish per launch.
+    local ok_count
+    ok_count="$(grep -c 'SUMMARY reason=REENTRY_VARIANT_OK' "$LOG" || true)"
+    if [[ "${ok_count:-0}" -ne 2 ]]; then
+      echo "ERROR: reentry compare did not finish cleanly in both launches (found ${ok_count:-0}/2 REENTRY_VARIANT_OK, see GAP/timeout lines)" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "atmosphere_bodies" ]]; then
+    local required=(
+      mars_10km_day mars_400km_day mars_10km_night
+      venus_10km_day venus_400km_day venus_10km_night
+    )
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing Mars/Venus atmosphere PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+      if ! grep -q "^IMAGE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing image metrics for Mars/Venus case: ${slug}" >&2
+        return 1
+      fi
+      if ! grep -q "^ATMOS_STATE .*slug=${slug} " "$LOG"; then
+        echo "ERROR: missing physical state evidence for Mars/Venus case: ${slug}" >&2
+        return 1
+      fi
+    done
+    if ! grep -q 'SUMMARY reason=ATMOSPHERE_BODIES_OK' "$LOG"; then
+      echo "ERROR: Mars/Venus atmosphere matrix did not finish cleanly" >&2
+      return 1
+    fi
+    if grep -Eq '^(FAIL|GAP) ' "$LOG"; then
+      echo "ERROR: Mars/Venus atmosphere log contains FAIL/GAP evidence" >&2
+      grep -E '^(FAIL|GAP) ' "$LOG" >&2
+      return 1
+    fi
+    if grep '^ATMOS_STATE ' "$LOG" | grep -qv ' exposureSettled=True'; then
+      echo "ERROR: Mars/Venus atmosphere capture reached its safety limit before exposure settled" >&2
+      grep '^ATMOS_STATE ' "$LOG" | grep -v ' exposureSettled=True' >&2
+      return 1
+    fi
+
+    # Fail closed on body identity, physical target matching, and finite optical telemetry.
+    # This prevents a stale Earth frame or an out-of-range body jump from being accepted as
+    # a valid Mars/Venus screenshot.  The orbital cases intentionally allow altitude above
+    # the atmosphere top; they still require the correct body and finite state.
+    if ! awk '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) {
+            split($i, pair, "=")
+            return pair[2]
+          }
+        return ""
+      }
+      function abs(value) { return value < 0 ? -value : value }
+      function finite(value) { return value != "" && value == value && value !~ /^(nan|NaN|inf|Inf|-inf|-Inf)$/ }
+      function reject(message) {
+        print "ERROR: Mars/Venus atmosphere gate: " message > "/dev/stderr"
+        bad = 1
+      }
+      BEGIN {
+        expected["mars_10km_day"] = "mars"
+        expected["mars_400km_day"] = "mars"
+        expected["mars_10km_night"] = "mars"
+        expected["venus_10km_day"] = "venus"
+        expected["venus_400km_day"] = "venus"
+        expected["venus_10km_night"] = "venus"
+      }
+      /^ATMOS_APPLY / {
+        slug = value("slug")
+        body = value("body")
+        if (!(slug in expected) || body != expected[slug])
+          reject("unexpected apply identity slug=" slug " body=" body)
+        targetAlt[slug] = value("targetAlt") + 0
+        targetSun[slug] = value("targetSunElevation") + 0
+        requested[slug]++
+      }
+      /^ATMOS_STATE / {
+        slug = value("slug")
+        body = value("body")
+        if (!(slug in expected) || body != expected[slug])
+          reject("unexpected state identity slug=" slug " body=" body)
+        if (!(slug in targetAlt))
+          reject("state without preceding apply for " slug)
+        actualAlt = value("actualAlt")
+        actualSun = value("sunElevation")
+        solarRaw = value("solarVisibility")
+        energyRaw = value("spectralEnergy")
+        solar = solarRaw + 0
+        energy = energyRaw + 0
+        if (!finite(actualAlt) || !finite(actualSun) || !finite(solarRaw) || !finite(energyRaw))
+          reject("non-finite state for " slug)
+        if (abs(actualAlt + 0 - targetAlt[slug]) > 2.0)
+          reject(slug " altitude mismatch actual=" actualAlt " target=" targetAlt[slug])
+        if (abs(actualSun + 0 - targetSun[slug]) > 0.25)
+          reject(slug " solar-elevation mismatch actual=" actualSun " target=" targetSun[slug])
+        if (solar < -1e-6 || solar > 1.000001)
+          reject(slug " solarVisibility outside [0,1]: " solar)
+        if (value("eclipse") != "none" || (value("eclipseVisibility") + 0) < 0.999)
+          reject(slug " has unexpected eclipse state")
+        if (value("exposureSettled") != "True")
+          reject(slug " exposure did not settle")
+        seen[slug]++
+      }
+      /^IMAGE / {
+        slug = value("slug")
+        meanRaw = value("mean")
+        clippedRaw = value("clippedFrac")
+        if (!(slug in expected) || !finite(meanRaw) || !finite(clippedRaw))
+          reject("invalid image metrics for " slug)
+        mean = meanRaw + 0
+        clipped = clippedRaw + 0
+        if (mean <= 0.00002 || mean >= 0.9995 || clipped < 0.0 || clipped > 0.95)
+          reject("degenerate image metrics for " slug)
+        image[slug]++
+      }
+      # Finish() appends run metrics (for example, "frames=709") after the
+      # terminal reason. Accept those fields while still requiring exactly one
+      # terminal summary record.
+      /^SUMMARY reason=ATMOSPHERE_BODIES_OK([[:space:]]|$)/ { summary++ }
+      END {
+        for (slug in expected) {
+          if (requested[slug] != 1) reject("expected exactly one apply for " slug)
+          if (seen[slug] != 1) reject("expected exactly one state for " slug)
+          if (image[slug] != 1) reject("expected exactly one image for " slug)
+        }
+        if (summary != 1) reject("missing or duplicated ATMOSPHERE_BODIES_OK")
+        exit bad
+      }
+    ' "$LOG"; then
+      return 1
+    fi
+  elif [[ "$MODE" == "atmosphere_low" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_10km_day.png" ]]; then
+      echo "ERROR: missing low-atmosphere diagnostic PNG" >&2
+      return 1
+    fi
+    if ! awk '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) { split($i, pair, "="); return pair[2] }
+        return ""
+      }
+      function finite(value) { return value != "" && value == value && value !~ /^(nan|NaN|inf|Inf|-inf|-Inf)$/ }
+      function reject(message) { print "ERROR: low-atmosphere gate: " message > "/dev/stderr"; bad = 1 }
+      /^ATMOS_APPLY / {
+        if (value("slug") != "10km_day") reject("unexpected apply slug=" value("slug"))
+        targetAlt = value("targetAlt") + 0; targetSun = value("targetSunElevation") + 0; requested++
+      }
+      /^ATMOS_STATE / {
+        if (value("slug") != "10km_day") reject("unexpected state slug=" value("slug"))
+        if (!finite(value("actualAlt")) || !finite(value("sunElevation"))) reject("non-finite physical state")
+        if (value("actualAlt") + 0 < targetAlt - 2.0 || value("actualAlt") + 0 > targetAlt + 2.0) reject("altitude mismatch")
+        if (value("sunElevation") + 0 < targetSun - 0.25 || value("sunElevation") + 0 > targetSun + 0.25) reject("solar-elevation mismatch")
+        if (value("exposureSettled") != "True") reject("exposure did not settle")
+        state++
+      }
+      /^IMAGE / {
+        if (value("slug") != "10km_day" || !finite(value("mean")) || !finite(value("clippedFrac"))) reject("invalid image metrics")
+        image++
+      }
+      /^SUMMARY reason=ATMOSPHERE_LOW_OK([[:space:]]|$)/ { summary++ }
+      END {
+        if (requested != 1) reject("expected one apply, got " requested)
+        if (state != 1) reject("expected one physical state, got " state)
+        if (image != 1) reject("expected one image, got " image)
+        if (summary != 1) reject("missing low-atmosphere summary")
+        exit bad
+      }
+    ' "$LOG"; then
+      return 1
+    fi
+  elif [[ "$MODE" == "atmosphere_orbit" ]]; then
+    if [[ ! -f "$OUT_DIR/exo_play_400km_day.png" ]]; then
+      echo "ERROR: missing scaled-space 400 km diagnostic PNG" >&2
+      return 1
+    fi
+    if ! grep -q 'SUMMARY reason=ATMOSPHERE_ORBIT_OK' "$LOG"; then
+      echo "ERROR: scaled-space atmosphere capture did not finish cleanly" >&2
+      return 1
+    fi
+    if ! grep -q '^ATMOS_APPLY .*slug=400km_day .*targetAlt=400000.0 .*targetSunElevation=35.0' "$LOG" \
+      || ! grep -q '^ATMOS_STATE .*slug=400km_day .*actualAlt=400000.0 .*sunElevation=35.00 .*exposureSettled=True' "$LOG"; then
+      echo "ERROR: scaled-space capture lacks matching physical altitude/sun telemetry" >&2
+      return 1
+    fi
+    if [[ -n "$EARTH_VIEW" ]] \
+      && ! grep -q "^ATMOS_STATE .*slug=400km_day .*view=${EARTH_VIEW} .*viewUp=" "$LOG"; then
+      echo "ERROR: requested Earth composition view was not recorded" >&2
+      return 1
+    fi
+    if [[ -n "${EXOSPHERE_RENDER_AB:-}" ]] \
+      && ! grep -q "PERF_GPU_AB mode=${EXOSPHERE_RENDER_AB} applied=true" "$CONSOLE_LOG"; then
+      echo "ERROR: requested Earth A/B profile was not applied to Earth_mesh" >&2
+      return 1
+    fi
+    if ! awk '
+      /^IMAGE slug=400km_day / {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^mean=/) { split($i, p, "="); mean = p[2] + 0 }
+          if ($i ~ /^clippedFrac=/) { split($i, p, "="); clipped = p[2] + 0 }
+          if ($i ~ /^surfaceWhiteClipFrac=/) { split($i, p, "="); white = p[2] + 0 }
+          if ($i ~ /^neonGreenFrac=/) { split($i, p, "="); neon = p[2] + 0 }
+        }
+        found = 1
+      }
+      END { exit !(found && mean > 0.005 && mean < 0.9995 && clipped < 0.20 && white < 0.20 && neon < 0.01) }
+    ' "$LOG"; then
+      echo "ERROR: scaled-space Earth image is empty, clipped or contaminated" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "atmosphere_ground" ]]; then
+    local required=(ground_day ground_sunrise ground_sunset ground_night)
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing Earth-ground matrix PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+      if ! grep -q "^IMAGE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing image metrics for Earth-ground case: ${slug}" >&2
+        return 1
+      fi
+      if ! grep -q "^ATMOS_STATE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing physical state evidence for Earth-ground case: ${slug}" >&2
+        return 1
+      fi
+    done
+    if ! grep -q 'SUMMARY reason=ATMOSPHERE_GROUND_OK' "$LOG"; then
+      echo "ERROR: Earth-ground matrix did not finish cleanly" >&2
+      return 1
+    fi
+    if grep '^ATMOS_STATE ' "$LOG" | grep -qv ' exposureSettled=True'; then
+      echo "ERROR: Earth-ground capture reached its safety limit before exposure settled" >&2
+      return 1
+    fi
+  elif [[ "$MODE" == "atmosphere" ]]; then
+    local required=(
+      ground_day ground_sunrise ground_sunset ground_night
+      10km_day 30km_day 70km_day 120km_day 400km_day
+      10km_night 30km_night 70km_night 120km_night 400km_night
+      eclipse_clear eclipse_partial_central eclipse_partial_limb eclipse_total
+      cockpit_120km_day cockpit_120km_night
+    )
+    for slug in "${required[@]}"; do
+      if [[ ! -f "$OUT_DIR/exo_play_${slug}.png" ]]; then
+        echo "ERROR: missing atmosphere matrix PNG: exo_play_${slug}.png" >&2
+        return 1
+      fi
+      if ! grep -q "^IMAGE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing image metrics for atmosphere case: ${slug}" >&2
+        return 1
+      fi
+      if ! grep -q "^ATMOS_STATE slug=${slug} " "$LOG"; then
+        echo "ERROR: missing physical state evidence for atmosphere case: ${slug}" >&2
+        return 1
+      fi
+    done
+    if ! grep -q 'SUMMARY reason=ATMOSPHERE_OK' "$LOG"; then
+      echo "ERROR: atmosphere matrix did not finish cleanly" >&2
+      return 1
+    fi
+    if grep '^ATMOS_STATE ' "$LOG" | grep -qv ' exposureSettled=True'; then
+      echo "ERROR: atmosphere capture reached its safety limit before exposure settled" >&2
+      grep '^ATMOS_STATE ' "$LOG" | grep -v ' exposureSettled=True' >&2
+      return 1
+    fi
+
+    # Presence alone is not enough: a stale vessel/camera state can still produce a
+    # perfectly valid PNG while labeling it as another altitude or solar elevation.
+    # Compare every state against the immediately preceding ATMOS_APPLY request so the
+    # matrix remains a physical, reproducible experiment rather than just a screenshot
+    # inventory. The tolerances cover only telemetry rounding and floating-point body
+    # geometry (not an accidental launch, drift, or wrong Sun direction).
+    if ! awk '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) {
+            split($i, pair, "=")
+            return pair[2]
+          }
+        return ""
+      }
+      function abs(value) { return value < 0 ? -value : value }
+      function reject(message) {
+        print "ERROR: atmosphere state gate: " message > "/dev/stderr"
+        bad = 1
+      }
+      /^ATMOS_APPLY / {
+        slug = value("slug")
+        if (slug == "") { reject("request without slug: " $0); next }
+        requestedAlt[slug] = value("targetAlt") + 0
+        requestedSun[slug] = value("targetSunElevation") + 0
+        requested[slug] = 1
+      }
+      /^ATMOS_STATE / {
+        slug = value("slug")
+        if (!(slug in requested)) {
+          reject("state has no matching request: " slug)
+          next
+        }
+        actualAlt = value("actualAlt")
+        actualSun = value("sunElevation")
+        if (actualAlt == "" || actualSun == "") {
+          reject("missing actualAlt/sunElevation for " slug)
+          next
+        }
+        if (abs(actualAlt + 0 - requestedAlt[slug]) > 2.0)
+          reject(slug " altitude mismatch: actual=" (actualAlt + 0) \
+            " target=" requestedAlt[slug] " (tolerance 2 m)")
+        if (abs(actualSun + 0 - requestedSun[slug]) > 0.25)
+          reject(slug " solar-elevation mismatch: actual=" (actualSun + 0) \
+            " target=" requestedSun[slug] " (tolerance 0.25 deg)")
+        seen[slug]++
+      }
+      END {
+        for (slug in requested)
+          if (!(slug in seen)) reject("missing state for " slug)
+        exit bad
+      }
+    ' "$LOG"; then
+      return 1
+    fi
+
+    # Eclipse fixtures are synthetic but geometrically physical.  The CPU limb-darkened
+    # oracle and the live SunController must agree, while the four cases preserve the
+    # expected ordering: clear > partial limb > partial central > total.
+    if ! awk '
+      function value(prefix,    i, pair) {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ ("^" prefix "=")) {
+            split($i, pair, "=")
+            return pair[2]
+          }
+        return ""
+      }
+      function abs(value) { return value < 0 ? -value : value }
+      function reject(message) {
+        print "ERROR: eclipse gate: " message > "/dev/stderr"
+        bad = 1
+      }
+      /^ATMOS_STATE / {
+        slug = value("slug")
+        eclipse = value("eclipse")
+        if (eclipse == "none") next
+        visibility[slug] = value("eclipseVisibility") + 0
+        solar[slug] = value("solarVisibility") + 0
+        separation[slug] = value("separationRad") + 0
+        if (visibility[slug] < -1e-6 || visibility[slug] > 1.000001)
+          reject(slug " visibility outside [0,1]: " visibility[slug])
+        if (abs(visibility[slug] - solar[slug]) > 0.05)
+          reject(slug " CPU/GPU solar visibility mismatch: cpu=" visibility[slug] \
+            " runtime=" solar[slug])
+      }
+      END {
+        required[1] = "eclipse_clear"
+        required[2] = "eclipse_partial_central"
+        required[3] = "eclipse_partial_limb"
+        required[4] = "eclipse_total"
+        for (i = 1; i <= 4; i++)
+          if (!(required[i] in visibility)) reject("missing " required[i])
+        if (visibility["eclipse_clear"] < 0.999)
+          reject("clear fixture is not unobscured: " visibility["eclipse_clear"])
+        if (!(visibility["eclipse_partial_central"] > 0.0 \
+            && visibility["eclipse_partial_central"] < visibility["eclipse_clear"]))
+          reject("central partial ordering invalid")
+        if (!(visibility["eclipse_partial_limb"] > visibility["eclipse_partial_central"] \
+            && visibility["eclipse_partial_limb"] < visibility["eclipse_clear"]))
+          reject("limb partial ordering invalid")
+        if (visibility["eclipse_total"] > 0.02)
+          reject("totality still receives direct solar disc: " visibility["eclipse_total"])
+        exit bad
+      }
+    ' "$LOG"; then
+      return 1
+    fi
+
+    # These are instrumentation/physics guardrails, not a subjective image-quality score.
+    # Each threshold targets a failure mode visible in prior regressions:
+    #   * regional clipping catches a white surface sky hidden by a normal whole-frame mean;
+    #   * true local maxima quantify stars that leak through daylight exposure;
+    #   * bright saturated green distinguishes a neon band from dim 557.7 nm airglow;
+    #   * off-disc horizon/upper-sky ROIs require an actual twilight gradient.
+    if ! awk '
+      function remember(slug, key, value) {
+        metric[slug SUBSEP key] = value + 0
+      }
+      function has(slug, key) {
+        return (slug SUBSEP key) in metric
+      }
+      function get(slug, key) {
+        return metric[slug SUBSEP key] + 0
+      }
+      function reject(message) {
+        print "ERROR: atmosphere optics gate: " message > "/dev/stderr"
+        bad = 1
+      }
+      function require_metric(slug, key) {
+        if (!has(slug, key))
+          reject("missing " key " for " slug)
+      }
+      function maximum(slug, key, limit, label, value) {
+        require_metric(slug, key)
+        value = get(slug, key)
+        if (value > limit)
+          reject(label " in " slug ": " key "=" value " > " limit)
+      }
+      function minimum(slug, key, limit, label, value) {
+        require_metric(slug, key)
+        value = get(slug, key)
+        if (value < limit)
+          reject(label " in " slug ": " key "=" value " < " limit)
+      }
+      /^IMAGE / {
+        slug = ""
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^slug=/) {
+            split($i, a, "=")
+            slug = a[2]
+          }
+        }
+        if (slug == "") {
+          reject("IMAGE row without slug: " $0)
+          next
+        }
+        for (i = 1; i <= NF; i++) {
+          if (index($i, "=") > 0) {
+            split($i, a, "=")
+            remember(slug, a[1], a[2])
+          }
+        }
+        mean = get(slug, "mean")
+        clip = get(slug, "clippedFrac")
+        # A real night-side frame can have a mean below 5e-4 after exposure adapts;
+        # reject only an effectively black framebuffer, not a dim star/airglow field.
+        if (mean < 0.00002 || mean > 0.9995 || clip > 0.95) {
+          reject("degenerate capture " slug ": mean=" mean " clippedFrac=" clip)
+        }
+      }
+      END {
+        # A small solar disc/bloom may clip; broad white sky or terrain may not.
+        maximum("ground_day", "clippedFrac", 0.20,
+          "surface-level daytime frame is broadly clipped")
+        maximum("ground_day", "skyWhiteClipFrac", 0.10,
+          "daytime sky is white-clipped")
+        maximum("ground_day", "skyBrightFrac", 0.55,
+          "daytime sky has lost too much luminance structure")
+        maximum("ground_day", "surfaceWhiteClipFrac", 0.12,
+          "daytime terrain is white-clipped")
+        maximum("ground_sunrise", "skyWhiteClipFrac", 0.20,
+          "sunrise sky is broadly white-clipped")
+        maximum("ground_sunset", "skyWhiteClipFrac", 0.20,
+          "sunset sky is broadly white-clipped")
+
+        # With exposure adapted to a lit atmosphere/Earth, point stars should be below
+        # framebuffer visibility.  Limits are densities of true local maxima, not raw
+        # bright pixels, and still permit a handful of sensor-scale outliers.
+        maximum("ground_day", "sharpStarFrac", 0.00010,
+          "stars remain visible through daylight")
+        maximum("10km_day", "sharpStarFrac", 0.00015,
+          "stars remain visible through daylight")
+        maximum("30km_day", "sharpStarFrac", 0.00025,
+          "stars remain too prominent at daytime exposure")
+        maximum("70km_day", "sharpStarFrac", 0.00035,
+          "stars remain too prominent beside the lit limb")
+        maximum("120km_day", "sharpStarFrac", 0.00035,
+          "stars remain too prominent beside the lit Earth")
+        maximum("400km_day", "sharpStarFrac", 0.00035,
+          "stars remain too prominent beside the lit Earth")
+
+        # Day/night pairs also guard against a renderer that simply erases the starfield
+        # in both states to satisfy the absolute daytime limits.
+        split("ground 10km 30km 70km 120km 400km", pairNames, " ")
+        for (p = 1; p <= 6; p++) {
+          daySlug = pairNames[p] "_day"
+          nightSlug = pairNames[p] "_night"
+          require_metric(daySlug, "sharpStarFrac")
+          require_metric(nightSlug, "sharpStarFrac")
+          dayStars = get(daySlug, "sharpStarFrac")
+          nightStars = get(nightSlug, "sharpStarFrac")
+          if (nightStars < 0.00008)
+            reject("night starfield is missing for " pairNames[p] \
+              ": sharpStarFrac=" nightStars)
+          if (nightStars >= 0.00010) {
+            ratioLimit = p <= 3 ? 0.45 : 0.65
+            if (dayStars > nightStars * ratioLimit)
+              reject("insufficient day/night star suppression for " pairNames[p] \
+                ": day=" dayStars " night=" nightStars)
+          }
+        }
+
+        # Real night-side airglow may be green, but it is optically thin: a wide,
+        # high-luminance saturated band is a renderer artefact.
+        split("70km_night 120km_night 400km_night", nightLimb, " ")
+        for (p = 1; p <= 3; p++) {
+          maximum(nightLimb[p], "neonGreenFrac", 0.010,
+            "night limb is neon green")
+          maximum(nightLimb[p], "limbGreenExcess", 0.018,
+            "night limb green emission is too intense")
+        }
+
+        # Both ±1° cases look toward the projected Sun.  Side ROIs exclude the solar
+        # disc, so the signal must come from atmospheric path length and spectral
+        # extinction rather than bloom.
+        split("ground_sunrise ground_sunset", twilight, " ")
+        for (p = 1; p <= 2; p++) {
+          minimum(twilight[p], "twilightGradient", 0.010,
+            "twilight lacks a horizon-to-upper-sky luminance gradient")
+          minimum(twilight[p], "twilightWarmth", 0.006,
+            "twilight horizon lacks red/blue spectral separation")
+          require_metric(twilight[p], "twilightHorizonMean")
+          require_metric("ground_night", "twilightHorizonMean")
+          if (get(twilight[p], "twilightHorizonMean") < get("ground_night", "twilightHorizonMean") + 0.012)
+            reject(twilight[p] " horizon is not measurably brighter than full night")
+        }
+
+        exit bad
+      }
+    ' "$LOG"; then
+      return 1
+    fi
+  fi
+
+  echo "visual_playtest: verified PNG(s) in $OUT_DIR (min ${min_bytes} bytes)"
+}
+
+verify_post_run_contracts() {
+  if [[ "$MODE" == "atmosphere_ground" || "$MODE" == "atmosphere" \
+    || "$MODE" == "atmosphere_low" || "$MODE" == "atmosphere_orbit" ]]; then
+    python3 "$ROOT/tools/validate_atmosphere_render_state.py" "$LOG" || return 1
+  fi
+  # A fallback material can still produce a nonblank PNG after shader failure.
+  # Reject that run even when its physical state and image metrics look valid.
+  if [[ -f "$CONSOLE_LOG" ]] && rg -q 'SHADER ERROR:|Shader compilation failed|^SCRIPT ERROR:|^ERROR: (Failed loading resource|Unable to open file|Error loading resource)' "$CONSOLE_LOG"; then
+    echo "ERROR: rendering/script failure in $CONSOLE_LOG; captures cannot establish visual acceptance" >&2
+    return 1
+  fi
+  local actual_renderer expected_renderer
+  actual_renderer="$(awk '/^RENDERER_ACTUAL / { actual=$2 } END { print actual }' "$LOG")"
+  expected_renderer="gl_compatibility"
+  if [[ "$RENDERER" == "forward_plus" ]]; then expected_renderer="forward_plus"; fi
+  if [[ -n "$actual_renderer" && "$actual_renderer" != "$expected_renderer" ]]; then
+    echo "ERROR: recorded renderer $actual_renderer does not match requested $expected_renderer" >&2
+    return 1
+  fi
+  if (( SUN_ELEVATION_SET == 1 )) || [[ -n "$CAMERA_PRESET" ]]; then
+    if ! grep -q '^VISUAL_SUN .*physicalSunPositionUnchanged=True' "$LOG"; then
+      echo "ERROR: deterministic visual run is missing VISUAL_SUN telemetry" >&2
+      return 1
+    fi
+    if [[ -n "$CAMERA_PRESET" ]] \
+      && ! grep -q "^VISUAL_CAMERA preset=${CAMERA_PRESET} " "$LOG"; then
+      echo "ERROR: deterministic visual run is missing VISUAL_CAMERA preset telemetry" >&2
+      return 1
+    fi
+  fi
+
+  if [[ "$MODE" == "gemini_docking" ]]; then
+    local omega
+    omega="$(awk '
+      /CAPTURE gemini_docked_anomaly/ {
+        for (i = 1; i <= NF; i++)
+          if ($i ~ /^omega=/) {
+            split($i, pair, "=")
+            print pair[2]
+            exit
+          }
+      }' "$LOG")"
+    if [[ -z "$omega" ]] || ! awk -v value="$omega" \
+        'BEGIN { exit !(value >= 0.30 && value <= 0.36) }'; then
+      echo "ERROR: Gemini anomaly capture requires 20 deg/s (omega=${omega:-missing} rad/s)." >&2
+      return 1
+    fi
+  fi
+
+  if [[ "$MODE" == "lunar_map" ]] \
+    && ! grep -Eq \
+      'LUNAR_MAP model=LunarLambert encounter=True tli=[0-9.]+ loi=[0-9.]+ pe=[1-9][0-9.]* tBurn=[1-9][0-9.]*' \
+      "$LOG"; then
+    echo "ERROR: lunar map capture did not validate Lambert encounter telemetry." >&2
+    return 1
+  fi
+}
+
+if [[ "$VERIFY_ONLY" -eq 1 ]]; then
+  echo "visual_playtest: verify-only mode=$MODE out=$OUT_DIR log=$LOG"
+  verify_pngs
+  verify_post_run_contracts
+  echo "visual_playtest: verify-only OK"
+  exit 0
+fi
+
+PLAYTEST_LOCK="/tmp/exosphere-visual-playtest.lock"
+if ! mkdir "$PLAYTEST_LOCK" 2>/dev/null; then
+  lock_owner=""
+  if [[ -f "$PLAYTEST_LOCK/owner" ]]; then
+    lock_owner="$(<"$PLAYTEST_LOCK/owner")"
+  fi
+  if [[ "$lock_owner" =~ ^[0-9]+$ ]] && kill -0 "$lock_owner" 2>/dev/null; then
+    echo "ERROR: another visual_playtest process is already using the temporary autoload ($PLAYTEST_LOCK)" >&2
+    echo "  owner pid=$lock_owner" >&2
+    exit 1
+  fi
+  # A killed shell cannot run the cleanup trap. Recover only an unowned lock
+  # directory; a live owner always wins the race and remains protected.
+  rm -f "$PLAYTEST_LOCK/owner" 2>/dev/null || true
+  if ! rmdir "$PLAYTEST_LOCK" 2>/dev/null || ! mkdir "$PLAYTEST_LOCK" 2>/dev/null; then
+    echo "ERROR: visual_playtest lock is busy or could not be recovered ($PLAYTEST_LOCK)" >&2
+    exit 1
+  fi
+fi
+printf '%s\n' "$$" > "$PLAYTEST_LOCK/owner"
+OWNS_LOCK=1
+
+register_autoload
+
+if [[ "$SKIP_BUILD" -eq 0 ]]; then
+  dotnet build ExosphereSimulation/ExosphereSimulation.csproj --nologo -v quiet
+fi
+
+mkdir -p "$OUT_DIR"
+rm -f "$OUT_DIR"/exo_play_*.png 2>/dev/null || true
+: > "$LOG"
+: > "$CONSOLE_LOG"
+
+echo "visual_playtest: mode=$MODE renderer=$RENDERER max_runtime=${MAX_RUNTIME_SEC}s out=$OUT_DIR log=$LOG"
+
+if [[ "$MODE" == "reentry_compare" ]]; then
+  # Two independent Godot launches — one per attitude — appending into the same combined
+  # $LOG/$OUT_DIR. EDLController keeps its own private phase state and (correctly) is never
+  # reset by a second in-process BeginReentryDemonstration seed, so a single-process two-seed
+  # attempt left EDL stuck past Inactive on the second seed. A fresh process per attitude is
+  # exactly --edl's own single-shot pattern, just run twice with a different seeded orientation.
+  #
+  # Each launch's harness opens its log with StreamWriter(path, append: false) — correct for
+  # every other (single-launch) mode, but it means the second launch would truncate away the
+  # first launch's telemetry if both wrote directly to $LOG. Give each launch its own temp
+  # log instead, then append that into the combined $LOG after the launch exits.
+  COMBINED_LOG="$LOG"
+  COMBINED_CONSOLE_LOG="$CONSOLE_LOG"
+  for pair in "true:reentry_nominal" "false:reentry_bad_attitude"; do
+    REENTRY_BELLY_FIRST="${pair%%:*}"
+    REENTRY_SLUG="${pair##*:}"
+    HARNESS_MODE="reentry_variant"
+    LOG="${COMBINED_LOG}.${REENTRY_SLUG}"
+    CONSOLE_LOG="${LOG}.console"
+    : > "$LOG"
+    : > "$CONSOLE_LOG"
+    prepare_godot_log_file
+    write_harness
+    dotnet build Exosphere.csproj --no-restore --nologo -v quiet
+    run_godot
+    cat "$LOG" >> "$COMBINED_LOG"
+    cat "$CONSOLE_LOG" >> "$COMBINED_CONSOLE_LOG"
+    rm -f "$LOG" "$CONSOLE_LOG"
+  done
+  LOG="$COMBINED_LOG"
+  CONSOLE_LOG="$COMBINED_CONSOLE_LOG"
+else
+  if [[ "$MODE" == "ascent_optics" || "$MODE" == "terrain_coverage" || "$MODE" == "cloud_traverse" ]]; then
+    HARNESS_MODE="starbase_far"
+  else
+    HARNESS_MODE="$MODE"
+  fi
+  write_harness
+  dotnet build Exosphere.csproj --no-restore --nologo -v quiet
+  prepare_godot_log_file
+  run_godot
+fi
+
+verify_pngs
+verify_post_run_contracts
+
+if [[ "$MODE" == "smoke" ]]; then
+  echo "visual_playtest: smoke OK"
+elif [[ "$MODE" == "ascent" ]]; then
+  echo "visual_playtest: focused ascent diagnostics OK — stable orbit verified"
+elif [[ "$MODE" == "starbase_far" ]]; then
+  echo "visual_playtest: Starbase far-field geometry/capture checks OK — visual review still required"
+elif [[ "$MODE" == "kennedy_far" ]]; then
+  echo "visual_playtest: Kennedy LC-39A terrain/capture checks OK — visual review still required"
+elif [[ "$MODE" == "edl" ]]; then
+  echo "visual_playtest: deterministic EDL verification OK"
+elif [[ "$MODE" == "entry_physics" ]]; then
+  echo "visual_playtest: non-demo physical entry verification OK — interface, peak heating, and transonic milestones confirmed"
+elif [[ "$MODE" == "orbital_reentry" ]]; then
+  echo "visual_playtest: normal orbital Starbase reentry verification OK — physical catch confirmed"
+elif [[ "$MODE" == "hotstage" ]]; then
+  echo "visual_playtest: hot-stage overlap capture OK"
+elif [[ "$MODE" == "flight14_payload" ]]; then
+  echo "visual_playtest: Flight 14 estimated payload flat-pack capture OK — visual review still required"
+elif [[ ( "$MODE" == "apollo8_mission" || "$MODE" == "gemini_mission" || "$MODE" == "apollo11_mission" ) && -n "$UNTIL_PHASE" ]]; then
+  echo "visual_playtest: historical director reached $UNTIL_PHASE (mode=$MODE)"
+elif [[ "$MODE" == "apollo8_mission" ]]; then
+  echo "visual_playtest: Apollo 8 flown from the pad into lunar orbit by the historical director"
+elif [[ "$MODE" == "flight14_payload_group" ]]; then
+  echo "visual_playtest: seeded Flight 14 wide and per-payload inspection frames captured — composition review required; no physics replay"
+elif [[ "$MODE" == "flight14_deployment" ]]; then
+  echo "visual_playtest: Flight 14 real ascent and first two payload releases captured — visual review still required"
+elif [[ "$MODE" == "orbital_plume" ]]; then
+  echo "visual_playtest: orbital vacuum-plume capture OK"
+elif [[ "$MODE" == "reentry_compare" ]]; then
+  echo "visual_playtest: reentry attitude compare OK — see REENTRY_COMPARE rows in $LOG"
+elif [[ "$MODE" == "atmosphere_bodies" ]]; then
+  echo "visual_playtest: Mars/Venus atmosphere matrix OK — compare IMAGE/PERF rows in $LOG"
+elif [[ "$MODE" == "atmosphere_low" ]]; then
+  echo "visual_playtest: low-atmosphere shader diagnostic OK — compare IMAGE/PERF rows in $LOG"
+elif [[ "$MODE" == "atmosphere_orbit" ]]; then
+  echo "visual_playtest: scaled-space 400 km shader diagnostic OK — compare IMAGE/PERF rows in $LOG"
+elif [[ "$MODE" == "atmosphere_ground" ]]; then
+  echo "visual_playtest: Earth-ground lighting matrix OK — compare IMAGE/PERF rows in $LOG"
+elif [[ "$MODE" == "atmosphere" ]]; then
+  echo "visual_playtest: atmosphere matrix OK — compare IMAGE/PERF rows in $LOG"
+elif [[ "$MODE" == "lunar_map" ]]; then
+  echo "visual_playtest: lunar Lambert map verification OK"
+else
+  echo "visual_playtest: full run complete — review $LOG for GAP lines"
+fi

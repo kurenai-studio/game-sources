@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SHADER="$ROOT/assets/shaders/space_sky.gdshader"
+fail() { echo "space_sky_banding_contract_test: FAIL: $*" >&2; exit 1; }
+
+[[ -f "$SHADER" ]] || fail "space sky shader missing"
+
+# The visible artifact is produced by the cloud-shell view quadrature, not by the
+# atmospheric colour gradient. Keep enough stratified samples to resolve tangent
+# horizon crossings and retain stable (non-TIME) in-segment jitter.
+rg -q '^const int CLOUD_VIEW_STEPS = 24;$' "$SHADER" \
+  || fail "cloud view quadrature regressed below the validated 24-sample path"
+rg -q '^const float CLOUD_VIEW_JITTER = 0\.40;$' "$SHADER" \
+  || fail "stable cloud-segment jitter changed without revalidation"
+rg -q 'float jitter = stable_jitter\(' "$SHADER" \
+  || fail "cloud view integration lost deterministic sample jitter"
+rg -q --fixed-strings 'clamp(0.5 + jitter * (local_interval ? 0.04 : CLOUD_VIEW_JITTER), 0.14, 0.86)' "$SHADER" \
+  || fail "cloud jitter is not bounded inside each ray segment"
+if rg -q 'CLOUD_VIEW_STEPS = (1[0-9]|2[0-3]);' "$SHADER"; then
+  fail "cloud view quadrature is in the known banding-prone range"
+fi
+
+rg -q 'uniform float ground_fill_strength' "$SHADER" \
+  || fail "sky ground fill is not altitude-gated during the globe handoff"
+rg -q 'clamp\(ground_fill_strength, 0.0, 1.0\)' "$SHADER" \
+  || fail "sky ground fill strength is not applied to the geometric ground"
+rg -q 'float daylight_tail_top = max\(55000.0, atmosphere_height \* 0\.86\);' "$SHADER" \
+  || fail "daylight pad/ascent tail is not coupled to the configured atmosphere shell"
+rg -q 'float thick_column = 1.0 - smoothstep\(8000.0, daylight_tail_top' "$SHADER" \
+  || fail "daylight pad/ascent does not occlude the starmap by optical column"
+rg -q 'float preserve_integrated = smoothstep\(0\.035, 0\.18, h\);' "$SHADER" \
+  || fail "daylight floor does not restore integrated radiance over a finite limb interval"
+rg -q 'vec3 daylight_floor = mix\(dome, max\(atmosphere, dome\), preserve_integrated\);' "$SHADER" \
+  || fail "daylight floor does not start at the shared dome radiance on the limb"
+rg -q 'float tangent_shell_width = max\(20000\.0, atmosphere_height\);' "$SHADER" \
+  || fail "tangent sky floor is not coupled to the full active atmosphere shell"
+rg -q 'float view_tangent_altitude = length\(origin \+ view_dir' "$SHADER" \
+  || fail "tangent sky floor does not classify the ray closest approach"
+rg -q 'float tangent_sky = hits_ground \? 0\.0' "$SHADER" \
+  || fail "tangent sky floor is not gated away from opaque ground hits"
+
+echo "space_sky_banding_contract_test: PASS (stable cloud jitter: global 24 samples, bounded local quadrature)"

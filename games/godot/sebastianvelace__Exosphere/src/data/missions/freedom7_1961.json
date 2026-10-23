@@ -1,0 +1,173 @@
+{
+  "id": "mission-freedom7-1961",
+  "sequence": 1,
+  "program": "NASA Project Mercury",
+  "titleEn": "Freedom 7",
+  "titleEs": "Freedom 7",
+  "summaryEn": "Recreate Alan Shepard's first U.S. human spaceflight: a controlled Mercury-Redstone suborbital arc followed by safe Atlantic splashdown.",
+  "summaryEs": "Recrea el primer vuelo espacial humano de Estados Unidos de Alan Shepard: un arco suborbital controlado Mercury-Redstone y amerizaje seguro en el Atlántico.",
+  "historicalDate": "1961-05-05",
+  "vehicleVariantId": "mercury-redstone3-freedom7-1961-05-05",
+  "launchSiteId": "cape_canaveral_lc5",
+  "flightProfileId": "mercury-redstone3-suborbital",
+  "crewIds": [
+    "alan-b-shepard-jr"
+  ],
+  "prerequisiteMissionIds": [],
+  "objectives": [
+    {
+      "id": "reach-space",
+      "titleEn": "Reach space (100 km)",
+      "titleEs": "Llega al espacio (100 km)",
+      "metric": "peak_altitude_m",
+      "comparison": "at_least",
+      "target": 100000,
+      "required": true
+    },
+    {
+      "id": "atlantic-splashdown",
+      "titleEn": "Splash down safely",
+      "titleEs": "Ameriza de forma segura",
+      "metric": "splashdown",
+      "comparison": "true",
+      "target": 1,
+      "required": true
+    },
+    {
+      "id": "reach-landed-phase",
+      "titleEn": "Complete recovery phase",
+      "titleEs": "Completa la fase de recuperación",
+      "metric": "phase_reached",
+      "comparison": "reached",
+      "target": 0,
+      "expectedText": "LANDED",
+      "required": true
+    },
+    {
+      "id": "reach-suborbital-apogee",
+      "titleEn": "Historical: reach Shepard's 180 km corridor",
+      "titleEs": "Histórico: alcanza el corredor de 180 km de Shepard",
+      "metric": "peak_altitude_m",
+      "comparison": "at_least",
+      "target": 180000,
+      "required": false
+    },
+    {
+      "id": "reach-mercury-speed",
+      "titleEn": "Historical: reach 2,200 m/s",
+      "titleEs": "Histórico: alcanza 2.200 m/s",
+      "metric": "peak_inertial_speed_mps",
+      "comparison": "at_least",
+      "target": 2200,
+      "required": false
+    },
+    {
+      "id": "cover-suborbital-range",
+      "titleEn": "Historical: travel 450 km downrange",
+      "titleEs": "Histórico: recorre 450 km",
+      "metric": "maximum_downrange_m",
+      "comparison": "at_least",
+      "target": 450000,
+      "required": false
+    },
+    {
+      "id": "complete-flight-window",
+      "titleEn": "Historical: land 850-1,000 s after liftoff",
+      "titleEs": "Histórico: ameriza entre 850 y 1.000 s tras el despegue",
+      "metric": "elapsed_seconds",
+      "comparison": "between",
+      "target": 850,
+      "upperTarget": 1000,
+      "required": false
+    }
+  ],
+  "limits": [
+    {
+      "id": "crew-survival",
+      "titleEn": "Return Alan Shepard alive",
+      "titleEs": "Regresa con Alan Shepard con vida",
+      "metric": "crew_alive",
+      "comparison": "true",
+      "target": 1,
+      "required": true
+    },
+    {
+      "id": "vehicle-survival",
+      "titleEn": "Avoid vehicle loss",
+      "titleEs": "Evita la pérdida del vehículo",
+      "metric": "vessel_destroyed",
+      "comparison": "false",
+      "target": 0,
+      "required": true
+    },
+    {
+      "id": "crew-load-limit",
+      "titleEn": "Remain below 15 g",
+      "titleEs": "Mantente por debajo de 15 g",
+      "metric": "maximum_g_force",
+      "comparison": "at_most",
+      "target": 15.0,
+      "required": true
+    },
+    {
+      "id": "crew-load-envelope",
+      "titleEn": "Historical: stay below Shepard's 13 g",
+      "titleEs": "Histórico: mantente por debajo de los 13 g de Shepard",
+      "metric": "maximum_g_force",
+      "comparison": "at_most",
+      "target": 13.0,
+      "required": false
+    }
+  ],
+  "procedure": [
+    {
+      "id": "launch",
+      "titleEn": "Launch the Mercury-Redstone",
+      "titleEs": "Lanzá el Mercury-Redstone",
+      "hintEn": "Press [L] for the automatic count; Mission Control flies the launch. Or hold [Z] to light the engines yourself.",
+      "hintEs": "Pulsá [L] para la cuenta automática; Control de Misión vuela el lanzamiento. O mantené [Z] para encender los motores vos.",
+      "doneWhenPhase": "LIFTOFF"
+    },
+    {
+      "id": "space",
+      "titleEn": "Climb above 100 km",
+      "titleEs": "Subí por encima de 100 km",
+      "hintEn": "Keep the nose steady while the Redstone burns; the capsule separates by itself. [K] hands this step to Mission Control and back.",
+      "hintEs": "Mantené la nariz firme mientras quema el Redstone; la cápsula se separa sola. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "reach-space"
+    },
+    {
+      "id": "splashdown",
+      "titleEn": "Splash down in the Atlantic",
+      "titleEs": "Amerizá en el Atlántico",
+      "hintEn": "Keep the heat shield forward, then arm the parachutes with [P]. [K] hands this step to Mission Control and back.",
+      "hintEs": "Mantené el escudo térmico adelante y armá los paracaídas con [P]. [K] le pasa este paso a Control de Misión y te lo devuelve.",
+      "doneWhenObjectiveId": "atlantic-splashdown"
+    }
+  ],
+  "anomalies": [],
+  "rewards": [
+    {
+      "id": "historical-completion",
+      "amount": 100,
+      "unlockIds": [
+        "mission-friendship7-1962",
+        "vehicle-family-mercury-atlas"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "nasa-freedom7-mission",
+      "url": "https://www.nasa.gov/mission/mercury-redstone-3-freedom-7/",
+      "accessedDate": "2026-07-28",
+      "description": "NASA mission identity, crew, vehicle, LC-5, altitude, duration, range, velocity, Max-Q and Max-G."
+    },
+    {
+      "id": "nasa-historical-data-book-v2",
+      "url": "https://www.nasa.gov/wp-content/uploads/2023/04/sp-4012v2.pdf",
+      "accessedDate": "2026-07-28",
+      "description": "NASA historical table for Mercury capsule 7, mission events, 187.42 km apogee, 487.26 km range and 15:22 duration."
+    }
+  ]
+}

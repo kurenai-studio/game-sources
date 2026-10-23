@@ -1,0 +1,46 @@
+# Godot
+.godot/
+*.uid
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Python tooling caches
+__pycache__/
+*.pyc
+.vscode/settings.json
+
+# Exports / private test builds (binaries, pcks, zips — never commit)
+exports/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Saves (dev)
+saves/
+
+# Claude Code — versionar config compartida (skills/agents/hooks/settings),
+# ignorar estado transitorio y overrides personales.
+.claude/*
+!.claude/skills/
+!.claude/agents/
+!.claude/hooks/
+!.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+
+# Harness de captura visual temporal (nunca debe commitearse — ver skill visual-testing)
+scripts/_*Shot.cs
+scripts/_*Shot.cs.uid
+scripts/*VerifyShot.cs
+scripts/*VerifyShot.cs.uid
+scenes/*VerifyShot.tscn
+scenes/*VerifyShot.tscn.uid
+
+# Local agent memory (Engram)
+.engram/
