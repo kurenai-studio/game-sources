@@ -1,0 +1,35 @@
+[gd_resource type="ArrayMesh" format=4 uid="uid://dvahm4rfvpaeo"]
+
+[ext_resource type="Material" uid="uid://c41x0p4p7sa2x" path="res://multimeshes/materials/grass.tres" id="1_cqyq6"]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_ijmx6"]
+_surfaces = [{
+"aabb": AABB(-0.5, 0, -0.5, 1, 1, 1),
+"format": 34896613377,
+"index_count": 12,
+"index_data": PackedByteArray("AAABAAIAAgABAAMABAAFAAYABgAFAAcA"),
+"name": "Billboard",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 8,
+"vertex_data": PackedByteArray("//8AAP9/AAAAAAAA/38AAP//////fwAAAAD///9/AAD/fwAAAAAAAP9/AAD//wAA/3///wAAAAD/f/////8AAA==")
+}]
+blend_shape_mode = 0
+
+[resource]
+resource_name = "Billboard"
+_surfaces = [{
+"aabb": AABB(-0.5, 0, -0.5, 1, 1, 1),
+"attribute_data": PackedByteArray("AAAA//////8AAAD/AAD//////////wAA/////wAAAAAAAAD//////wAAAP8AAP//////////AAD/////AAAAAA=="),
+"format": 34896613407,
+"index_count": 12,
+"index_data": PackedByteArray("AAABAAIAAgABAAMABAAFAAYABgAFAAcA"),
+"material": ExtResource("1_cqyq6"),
+"name": "Billboard",
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 8,
+"vertex_data": PackedByteArray("//8AAP9/AIAAAAAA/38AgP//////fwCAAAD///9/AID/fwAAAAD/v/9/AAD///+//3///wAA/7//f///////v/9/////f////3////9/////fwAA/38AAP9/AAD/fwAA")
+}]
+blend_shape_mode = 0
+shadow_mesh = SubResource("ArrayMesh_ijmx6")
