@@ -1,0 +1,292 @@
+# player.py
+import pygame
+
+from . import config
+from . import ui
+from .galaxy import Galaxy
+
+class PlayerController:
+    def __init__(
+        self,
+        galaxy: Galaxy,
+    ):
+        self.galaxy = galaxy
+        self.selected_system_id: int | None = None
+        self.hovered_system_id: int | None = None
+
+        self.send_percent = (
+            config.DEFAULT_SEND_PERCENT
+        )
+        self.send_count = 1
+        self.use_percent = True
+
+        self.message = ""
+        self.message_timer = 0.0
+
+    def set_galaxy(
+        self,
+        galaxy: Galaxy,
+    ) -> None:
+        self.galaxy = galaxy
+        self.selected_system_id = None
+        self.hovered_system_id = None
+        self.send_percent = (
+            config.DEFAULT_SEND_PERCENT
+        )
+        self.send_count = 1
+        self.use_percent = True
+        self.message = ""
+        self.message_timer = 0.0
+
+    def _screen_height(self) -> int:
+        surface = pygame.display.get_surface()
+        if surface is not None:
+            return surface.get_height()
+        return config.HEIGHT
+
+    def _over_bottom_bar(self, pos: tuple[int, int]) -> bool:
+        return pos[1] >= self._screen_height() - ui.bottom_bar_height
+
+    def _in_drag_zone(self, pos: tuple[int, int]) -> bool:
+        bar_top = self._screen_height() - ui.bottom_bar_height
+        return abs(pos[1] - bar_top) <= config.BAR_DRAG_TOLERANCE
+
+    def update(
+        self,
+        dt: float,
+        camera: dict,
+    ) -> None:
+        mouse_screen_pos = pygame.mouse.get_pos()
+        world_pos = (
+            (mouse_screen_pos[0] - camera['offset_x']) / camera['zoom'],
+            (mouse_screen_pos[1] - camera['offset_y']) / camera['zoom'],
+        )
+
+        hovered = self.galaxy.system_at(world_pos)
+
+        if mouse_screen_pos[1] >= self._screen_height() - ui.bottom_bar_height:
+            hovered = None
+
+        self.hovered_system_id = (
+            None
+            if hovered is None
+            else hovered.id
+        )
+
+        if self.message_timer > 0:
+            self.message_timer -= dt
+
+            if self.message_timer <= 0:
+                self.message = ""
+
+        self._validate_selection()
+
+    def autopilot_active(self) -> bool:
+        return self.galaxy.autopilot
+
+    def handle_event(
+        self,
+        event: pygame.event.Event,
+        camera: dict,
+    ) -> None:
+        if self.galaxy.autopilot:
+            return
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if self._in_drag_zone(event.pos):
+                    ui.bar_dragging = True
+                    return
+                if self._over_bottom_bar(event.pos):
+                    return
+                self._left_click(event.pos, camera)
+
+            elif event.button == 3:
+                if self._over_bottom_bar(event.pos):
+                    return
+                self._right_click(event.pos, camera)
+
+        elif event.type == pygame.MOUSEMOTION:
+            if ui.bar_dragging:
+                screen_h = self._screen_height()
+                ui.bottom_bar_height = ui.clamp_bar_height(
+                    screen_h - event.pos[1],
+                    screen_h,
+                )
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                ui.bar_dragging = False
+
+    def _convert_screen_to_world(
+        self,
+        screen_pos: tuple[int, int],
+        camera: dict,
+    ) -> tuple[int, int]:
+        return (
+            int((screen_pos[0] - camera['offset_x']) / camera['zoom']),
+            int((screen_pos[1] - camera['offset_y']) / camera['zoom']),
+        )
+
+    def _left_click(
+        self,
+        position: tuple[int, int],
+        camera: dict,
+    ) -> None:
+        world_pos = self._convert_screen_to_world(position, camera)
+        system = self.galaxy.system_at(world_pos)
+
+        if system is None:
+            self.selected_system_id = None
+            return
+
+        if system.owner_id == config.PLAYER_ID:
+            self.selected_system_id = system.id
+            self._set_message(
+                f"Selected {system.name}"
+            )
+        else:
+            self._set_message(
+                "You can only select your own systems."
+            )
+
+    def _right_click(
+        self,
+        position: tuple[int, int],
+        camera: dict,
+    ) -> None:
+        if self.selected_system_id is None:
+            self._set_message(
+                "Select one of your systems first."
+            )
+            return
+
+        world_pos = self._convert_screen_to_world(position, camera)
+        target = self.galaxy.system_at(world_pos)
+
+        if target is None:
+            return
+
+        source = self.galaxy.get_system(
+            self.selected_system_id
+        )
+
+        if source.owner_id != config.PLAYER_ID:
+            self.selected_system_id = None
+            self._set_message(
+                "That system is no longer yours."
+            )
+            return
+
+        if target.id == source.id:
+            return
+
+        route = self.galaxy.shortest_path(
+            source.id,
+            target.id,
+        )
+
+        if route is None:
+            self._set_message(
+                "No route exists to that system."
+            )
+            return
+
+        if self.use_percent:
+            launched = self.galaxy.launch_fleet(
+                source.id,
+                target.id,
+                self.send_percent,
+            )
+            order_desc = f"{self.send_percent}%"
+        else:
+            launched = self.galaxy._launch_exact(
+                source.id,
+                target.id,
+                self.send_count,
+                route,
+            )
+            order_desc = (
+                f"{self.send_count} ship"
+                if self.send_count == 1
+                else f"{self.send_count} ships"
+            )
+
+        if not launched:
+            self._set_message(
+                "Unable to launch that fleet."
+            )
+            return
+
+        action = (
+            "Reinforcing"
+            if target.owner_id == config.PLAYER_ID
+            else "Fleet sent to"
+        )
+
+        hops = len(route) - 1
+
+        self._set_message(
+            f"{action} {target.name} "
+            f"({order_desc}, {hops} hyperlane"
+            f"{'' if hops == 1 else 's'})"
+        )
+
+    def _validate_selection(self) -> None:
+        if self.selected_system_id is None:
+            return
+
+        system = self.galaxy.get_system(
+            self.selected_system_id
+        )
+
+        if system.owner_id != config.PLAYER_ID:
+            self.selected_system_id = None
+
+    def _set_message(
+        self,
+        message: str,
+    ) -> None:
+        self.message = message
+        self.message_timer = 2.5
+
+    def valid_target_ids(self) -> set[int]:
+        if self.selected_system_id is None:
+            return set()
+        if self.galaxy.autopilot:
+            return set()
+
+        return self.galaxy.reachable_system_ids(
+            self.selected_system_id
+        )
+
+    def toggle_gathering_point(
+        self,
+        camera: dict,
+        screen_pos: tuple[int, int],
+    ) -> None:
+        if self.galaxy.autopilot:
+            return
+
+        if self._over_bottom_bar(screen_pos):
+            return
+
+        world_pos = self._convert_screen_to_world(screen_pos, camera)
+        system = self.galaxy.system_at(world_pos)
+
+        if system is None:
+            return
+
+        if self.galaxy.toggle_gathering_point(system.id):
+            if system.id in self.galaxy.gathering_points:
+                self._set_message(
+                    f"{system.name} is now a gathering point."
+                )
+            else:
+                self._set_message(
+                    f"{system.name} is no longer a gathering point."
+                )
+        else:
+            self._set_message(
+                "Unable to set gathering point."
+            )
