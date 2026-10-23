@@ -1,0 +1,22 @@
+# Ignores scoped to the MonoGame port. The repo root .gitignore covers Godot and its
+# build output; nothing there knows about .NET or the content pipeline.
+
+# .NET build output
+bin/
+obj/
+
+# MonoGame content pipeline intermediates and its build log
+Content/obj/
+Content/bin/
+*.mgstats
+
+# Build output that is regenerated on demand: frame captures written by
+# --screenshot-at, and the console build's AOT object, layout and package.
+artifacts/
+
+# Autopilot run logs
+*.log
+
+.vs/
+*.user
+/loosebuild
