@@ -1,0 +1,433 @@
+local smiley_scale_small = 0.5
+local smiley_scale_big = 1.0
+local smileys_success = {}
+local smileys_failure = {}
+local showing_wrong_smiley_feedback = false
+local show_wrong_smiley_feedback_time = 1.0
+local show_wrong_smiley_feedback_timer = 0.0
+local stars_inc_speed = 60
+local menu_btns_initial_scale = 0.67
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	
+	self.score = 0
+
+	-- for counting-up animation of stars at gameover screen
+	self.do_update_gameover_stars = false
+	self.current_stars = 0
+	self.target_stars = 0
+	self.displayed_stars = 0
+	
+	-- GUI NODES --
+	self.node_gui_ingame = gui.get_node("gui_ingame")
+	self.node_dialog_success = gui.get_node("dialog_level_complete")
+	self.node_dialog_gameover = gui.get_node("dialog_gameover")
+	self.node_dialog_main_menu = gui.get_node("dialog_main_menu")
+	-- gui ingame
+	--self.score_node = gui.get_node("txt_score")
+	self.time_node = gui.get_node("txt_time")
+	self.level_node = gui.get_node("txt_level")
+	self.smiley_node_0 = gui.get_node("box0")
+	self.smiley_node_1 = gui.get_node("box1")
+	self.smiley_node_2 = gui.get_node("box2")
+	self.heart_node_0 = gui.get_node("box_life0")
+	self.heart_node_1 = gui.get_node("box_life1")
+	self.heart_node_2 = gui.get_node("box_life2")
+	self.node_wrong_smiley = gui.get_node("box_touched_wrong")
+	self.node_txt_pause = gui.get_node("txt_pause")
+	self.node_btn_pause = gui.get_node("btn_pause")
+	-- dialog gameover
+	self.node_gameover_score = gui.get_node("txt_gameover_score")
+	self.node_gameover_level = gui.get_node("txt_gameover_level")
+	self.node_gameover = gui.get_node("txt_gameover")
+	self.node_gameover_stars = gui.get_node("txt_stars")
+	self.node_gameover_stars_total = gui.get_node("txt_total_stars")
+	self.node_gameover_continue_btn = gui.get_node("img_continue")
+	self.node_gameover_continue_cost = gui.get_node("txt_continue_cost")
+	self.node_gameover_continue_stars = gui.get_node("img_continue_stars")
+	self.node_gameover_menu_btn = gui.get_node("box_menu")
+	self.node_box_gameover_emoji = gui.get_node("box_gameover_emoji")
+	-- dialog level complete
+	self.node_complete_seconds = gui.get_node("txt_level_complete_seconds")
+	self.node_complete_level = gui.get_node("txt_level_complete_level")
+	self.node_complete = gui.get_node("txt_level_complete")
+	self.node_box_success = gui.get_node("box_success_emoji")
+	self.node_complete_img_time = gui.get_node("img_time")
+	-- dialog main menu
+	self.node_menu_btn_start = gui.get_node("btn_start")
+	self.node_menu_stars = gui.get_node("txt_stars_total")
+	self.node_sound_enabled = gui.get_node("img_sound_active")
+	self.node_sound_disabled = gui.get_node("img_sound_muted")
+	self.node_txt_highscore = gui.get_node("txt_highscore")
+	
+	-- hide image showing that wrong smiley was touched
+	gui.set_enabled(self.node_wrong_smiley, false)
+	showing_wrong_smiley_feedback = false
+
+	-- set time on gui
+	gui.set_text(self.time_node, tostring(math.ceil(g_constants.LEVEL_TIME)))
+
+	-- set stars in menu
+	gui.set_text(self.node_menu_stars, tostring(g_stars))
+
+	-- show GDPR dialog (for ads)
+	--on_gdpr_show_dialogs_clicked()
+	--on_gdpr_opt_out_clicked() -- comment out at html5 build
+end
+
+-- animation helper (have to be at the beginning)
+
+local function scale_down(self, node)
+	local s = 1.0
+	gui.animate(node, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.05)
+end
+
+local function scale_down_active_gui_smiley(self, node)
+	local s = smiley_scale_big
+	gui.animate(node, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.05)
+end
+
+-- gui code 
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		-- pause
+		if g_pause or gui.pick_node(self.node_btn_pause, action.x, action.y) then
+			toggle_pause(self)
+		end		
+		-- main menu screen
+		if g_main_menu == true then
+			_handle_menu_input(self, action)
+		-- game over screen	
+		elseif g_game_over == true then 
+			_handle_gameover_input(self, action)
+
+		-- if level complete and screen was touched, start new level
+		elseif g_completed == true then
+			_handle_level_complete_input(self, action)
+		end
+	end
+end
+
+function _handle_menu_input(self, action)
+	if gui.pick_node(gui.get_node("btn_start"), action.x, action.y) then
+		play_sound_button()
+		msg.post("main", "restart", {})
+	elseif gui.pick_node(gui.get_node("btn_sound"), action.x, action.y) then
+		_toggle_sound(self)
+	end
+end
+
+function _handle_gameover_input(self, action)
+	if gui.pick_node(self.node_gameover_continue_btn, action.x, action.y) then
+		play_sound_button()
+		msg.post("main", "continue_level", {})
+		--on_show_rewarded_clicked()
+
+	elseif gui.pick_node(self.node_gameover_menu_btn, action.x, action.y) then
+		play_sound_button()
+		increase_reset_counter() --main.script
+		--show ad 
+		if g_show_ad_gameover then 
+			--on_show_interstitial_clicked() -- comment out at html5 build
+			g_show_ad_gameover = false
+		end
+		--show main menu
+		msg.post(".", "show_dialog_main_menu", {show = true})
+		msg.post("main", "reset", {})
+	end
+end
+
+function _handle_level_complete_input(self, action)
+	play_sound_button()
+	msg.post("main", "next_level", {})
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("toggle_pause") then
+		toggle_pause(self)
+	
+	elseif message_id == hash("set_time") then
+		_set_time(self, message)
+		
+	elseif message_id == hash("set_level") then
+		_set_level(self)
+
+	elseif message_id == hash("update_lifes") then
+		_update_lifes(self, message)
+		
+	elseif message_id == hash("set_smileys") then
+		_set_smileys(self, message)
+		
+	elseif message_id == hash("activate_smiley") then
+		_activate_next_smiley(self, message)
+
+	elseif message_id == hash("show_dialog_main_menu") then
+		_show_main_menu(self)
+		
+	elseif message_id == hash("show_ingame_gui") then
+		_show_gui_ingame(self)
+	
+	elseif message_id == hash("show_dialog_level_complete") then
+		_show_dialog_success(self)
+		
+	elseif message_id == hash("show_dialog_gameover") then
+		_show_dialog_gameover(self)
+		
+	elseif message_id == hash("feedback_wrong_smiley") then
+		_show_feedback_wrong_smiley(self)
+	end
+end
+
+function _set_time(self, message)
+	gui.set_text(self.time_node, tostring(math.ceil(message.time)))
+	if message.scale == 1 then
+		local s = 1.6
+		gui.animate(self.time_node, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.0, scale_down)
+	end
+end
+
+function _set_level(self)
+	gui.set_text(self.level_node, "Level " .. tostring(g_level))
+	gui.set_text(self.node_complete_level, "Level " .. tostring(g_level))
+	gui.set_text(self.node_gameover_level, "Level " .. tostring(g_level))
+end
+
+function _update_lifes(self, message)
+	gui.set_enabled(self.heart_node_0, false)
+	gui.set_enabled(self.heart_node_1, false)
+	gui.set_enabled(self.heart_node_2, false)
+	if message.lifes >= 1 then gui.set_enabled(self.heart_node_0, true) end
+	if message.lifes >= 2 then gui.set_enabled(self.heart_node_1, true) end
+	if message.lifes >= 3 then gui.set_enabled(self.heart_node_2, true) end
+end
+
+function _set_smileys(self, message)
+	gui.set_texture(self.smiley_node_0, "smileys")
+	gui.play_flipbook(self.smiley_node_0,"emoji_u1f" ..  message.smiley0)
+	gui.set_scale(self.smiley_node_0, vmath.vector4(smiley_scale_big, smiley_scale_big, 0, 0))
+
+	gui.set_texture(self.smiley_node_1, "smileys")
+	gui.play_flipbook(self.smiley_node_1, "emoji_u1f" .. message.smiley1)
+
+	gui.set_texture(self.smiley_node_2, "smileys")
+	gui.play_flipbook(self.smiley_node_2, "emoji_u1f" .. message.smiley2)
+end
+
+function _activate_next_smiley(self, message)
+	-- cancel all animations
+	gui.cancel_animation(self.smiley_node_0, "scale")
+	gui.cancel_animation(self.smiley_node_1, "scale")
+	gui.cancel_animation(self.smiley_node_2, "scale")
+	-- reset all smiley sizes
+	gui.set_scale(self.smiley_node_0, vmath.vector4(smiley_scale_small, smiley_scale_small, 0, 0))
+	gui.set_scale(self.smiley_node_1, vmath.vector4(smiley_scale_small, smiley_scale_small, 0, 0))
+	gui.set_scale(self.smiley_node_2, vmath.vector4(smiley_scale_small, smiley_scale_small, 0, 0))
+	-- set to background layer
+	gui.set_layer(self.smiley_node_0, "ingame_gui_bottom_layer")
+	gui.set_layer(self.smiley_node_1, "ingame_gui_bottom_layer")
+	gui.set_layer(self.smiley_node_2, "ingame_gui_bottom_layer")
+
+	if message.nr > 0 then
+		-- smiley scale of according smiley
+		local smiley = self.smiley_node_0
+		if message.nr == 1 then
+			smiley = self.smiley_node_0
+		elseif message.nr == 2 then
+			smiley = self.smiley_node_1
+		elseif message.nr == 3 then
+			smiley = self.smiley_node_2
+		end
+		-- scale up
+		--gui.set_scale(smiley, vmath.vector4(smiley_scale_big, smiley_scale_big, 0, 0))
+		local s = 1.2
+		gui.animate(smiley, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.15, scale_down_active_gui_smiley)
+		-- set to foreground layer
+		gui.set_layer(smiley, "ingame_gui_top_layer")
+	end
+end
+
+function _show_feedback_wrong_smiley(self)
+	gui.set_enabled(self.node_wrong_smiley, true)
+	local s = 1.4
+	gui.animate(self.node_wrong_smiley, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.0, scale_down)
+	showing_wrong_smiley_feedback = true
+end
+
+function _hide_all_dialogs(self)
+	gui.set_enabled(self.node_dialog_gameover, false)
+	gui.set_enabled(self.node_dialog_success, false)
+	gui.set_enabled(self.node_dialog_main_menu, false)
+	gui.set_enabled(self.node_gui_ingame, false)
+	g_main_menu = false
+end
+
+function _show_main_menu(self)
+	_hide_all_dialogs(self)
+
+	_update_gui_sound_image(self)
+
+	play_music(true)
+	
+	gui.set_enabled(self.node_dialog_main_menu, true)
+	-- start scaling animation
+	gui.set_scale(self.node_menu_btn_start, vmath.vector4(1.0, 1.0, 1.0, 0))
+	local s = 1.1
+	gui.animate(self.node_menu_btn_start, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_INOUTSINE, 0.5, 0.0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+	-- update amount of stars
+	gui.set_text(self.node_menu_stars, tostring(g_stars))
+	gui.set_text(self.node_txt_highscore, "Level " .. tostring(g_highscore_level))
+	-- set global flag
+	g_main_menu = true
+end
+
+function _show_gui_ingame(self)
+	_hide_all_dialogs(self)
+	gui.set_enabled(self.node_gui_ingame, true)
+	gui.set_enabled(self.node_txt_pause, false)
+end
+
+function _show_dialog_success(self)
+	_hide_all_dialogs(self)
+	gui.set_enabled(self.node_dialog_success, true)
+
+	-- set random success smiley
+	local index = math.random(tablelength(g_constants.SMILEY_SUCCESS_IDS))
+	local success_smiley =  g_constants.SMILEY_SUCCESS_IDS[ index ] --"u1f973"
+	gui.set_texture(self.node_box_success, "smileys")
+	gui.play_flipbook(self.node_box_success,"emoji_" .. success_smiley)
+	
+	--gui.set_text(self.node_complete_seconds, tostring(g_score))
+	local s = 1.2
+	gui.animate(self.node_complete, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.0, scale_down)
+
+	local s_init = 0.62
+	local s = 1.4
+	gui.set_scale(self.node_complete_img_time, vmath.vector4(0.01, 0.01, 0.01, 0))
+	gui.set_scale(self.node_complete_seconds, vmath.vector4(0.01, 0.01, 0.01, 0))
+	gui.animate(self.node_complete_img_time, gui.PROP_SCALE, vmath.vector4(s_init, s_init, s_init, 0), gui.EASING_OUT, 0.1, 0.7, nil)
+	gui.animate(self.node_complete_seconds, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_OUT, 0.1, 0.7, scale_down)
+end
+
+function _show_dialog_gameover(self)
+	_hide_all_dialogs(self)
+	gui.set_enabled(self.node_dialog_gameover, true)
+
+	play_music(false)
+
+	-- set random "fail" smiley
+	local index = math.random(tablelength(g_constants.SMILEY_GAMEOVER_IDS))
+	local gameover_smiley =  g_constants.SMILEY_GAMEOVER_IDS[ index ] --"u1f4a9"
+	gui.set_texture(self.node_box_gameover_emoji, "smileys")
+	gui.play_flipbook(self.node_box_gameover_emoji,"emoji_" .. gameover_smiley)
+	
+	--gui.set_text(self.node_gameover_stars, "+" .. tostring(g_stars_of_game))
+	-- debug: g_stars_of_game = 100
+	if g_stars_of_game > 0 then
+		self.target_stars = g_stars_of_game
+		self.current_stars = 0
+		self.displayed_stars = 0
+		self.do_update_gameover_stars = true
+		play_sound_count_stars(true) --main.script
+	else 
+		gui.set_text(self.node_gameover_stars, tostring(g_stars_of_game))
+	end
+	gui.set_text(self.node_menu_stars, tostring(g_stars))
+	gui.set_text(self.node_gameover, "Game Over!")
+	gui.set_text(self.node_gameover_stars_total, tostring(g_stars))
+	
+	gui.cancel_animation(self.node_gameover_continue_btn, "scale")
+	gui.cancel_animation(self.node_gameover_menu_btn, "scale")
+	gui.set_scale(self.node_gameover_continue_btn, vmath.vector4(menu_btns_initial_scale, menu_btns_initial_scale, menu_btns_initial_scale, 0))
+	gui.set_scale(self.node_gameover_menu_btn, vmath.vector4(menu_btns_initial_scale, menu_btns_initial_scale, menu_btns_initial_scale, 0))
+	gui.set_enabled(self.node_gameover_continue_cost, true)
+	gui.set_text(self.node_gameover_continue_cost, tostring(g_constants.CONTINUE_STARS))
+	
+	gui.set_enabled(self.node_gameover_continue_stars, true)
+	local s = 0.75
+	if not g_restarted and g_stars >= g_constants.CONTINUE_STARS then  				
+		gui.animate(self.node_gameover_continue_btn, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_INOUTSINE, 0.5, 0.0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+		gui.set_color(self.node_gameover_continue_btn, vmath.vector3(1, 1, 1))
+		gui.set_color(self.node_gameover_continue_stars, vmath.vector3(1, 1, 1))
+		gui.set_color(self.node_gameover_continue_cost, vmath.vector3(1, 1, 0.4))
+	else
+		gui.animate(self.node_gameover_menu_btn, gui.PROP_SCALE, vmath.vector4(s, s, s, 0), gui.EASING_INOUTSINE, 0.5, 0.0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+		gui.set_color(self.node_gameover_continue_btn, vmath.vector3(0.4, 0.4, 0.4))
+		gui.set_color(self.node_gameover_continue_cost, vmath.vector3(0.4, 0.4, 0.4))
+		gui.set_color(self.node_gameover_continue_stars, vmath.vector3(0.4, 0.4, 0.4))
+		if g_restarted then
+			gui.set_enabled(self.node_gameover_continue_cost, false)
+			gui.set_enabled(self.node_gameover_continue_stars, false)
+		end	
+	end
+end
+
+function _update_gameover_stars(self, dt)
+	if self.do_update_gameover_stars == true then
+		-- check if the score needs to be updated
+		if self.current_stars < self.target_stars then
+			-- increment the score for this timestep to grow towards the target score
+			self.current_stars = self.current_stars + stars_inc_speed * dt
+			-- clamp the score so it doesn't grow past the target score
+			self.current_stars = math.min(self.current_stars, self.target_stars)
+			-- floor the score so it can be displayed without decimals
+			local floored_stars = math.floor(self.current_stars)
+			-- check if the displayed score should be updated
+			if self.displayed_stars ~= floored_stars then
+				-- update displayed score
+				self.displayed_stars = floored_stars
+				-- update the text of the score node
+				gui.set_text(self.node_gameover_stars, tostring(self.displayed_stars))
+				-- set the scale of the score node to be slightly bigger than normal
+				local s = 1.3
+				gui.set_scale(self.node_gameover_stars, vmath.vector3(s, s, s))
+				-- then animate the scale back to the original value
+				s = 1.0
+				gui.animate(self.node_gameover_stars, gui.PROP_SCALE, vmath.vector3(s, s, s), gui.EASING_OUT, 0.2)				
+			end
+		else
+			play_sound_count_stars(false)
+			self.do_update_gameover_stars = false
+		end
+	end
+end
+
+function update(self, dt)
+	if showing_wrong_smiley_feedback then 
+		show_wrong_smiley_feedback_timer = show_wrong_smiley_feedback_timer + dt 
+		if show_wrong_smiley_feedback_timer >= show_wrong_smiley_feedback_time then
+			show_wrong_smiley_feedback_timer = 0.0
+			gui.set_enabled(self.node_wrong_smiley, false)
+			showing_wrong_smiley_feedback = false
+		end
+	end
+
+	_update_gameover_stars(self, dt)
+end
+
+function toggle_pause(self)
+	g_pause = not g_pause
+	print("pause: " .. tostring(g_pause))
+	gui.set_enabled(self.node_txt_pause, g_pause)
+	msg.post("main", "pause", {})
+end
+
+function _toggle_sound(self)
+	g_sound_active = not g_sound_active
+	play_music(g_sound_active)
+	_update_gui_sound_image(self)
+	save_game()
+end
+
+function _update_gui_sound_image(self)
+	gui.set_enabled(self.node_sound_enabled, g_sound_active)
+	gui.set_enabled(self.node_sound_disabled, not g_sound_active)
+end
+
+-- Write logs to the screen
+function write_log(text)
+	local text_node = gui.get_node("text_log")
+	--gui.set_text(text_node, text)
+	print(text)
+end
