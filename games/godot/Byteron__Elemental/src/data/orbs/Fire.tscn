@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://source/booster/Orb.tscn" type="PackedScene" id=1]
+[ext_resource path="res://assets/graphics/materials/orbs/orb_fire.tres" type="Material" id=2]
+[ext_resource path="res://assets/graphics/particles/FireParticles.tscn" type="PackedScene" id=3]
+[ext_resource path="res://assets/graphics/particles/SmokeParticles.tscn" type="PackedScene" id=4]
+
+
+
+
+[node name="Fire" instance=ExtResource( 1 )]
+element = 2
+
+[node name="MeshInstance" parent="." index="1"]
+material_override = ExtResource( 2 )
+
+[node name="FireParticles" parent="." index="2" instance=ExtResource( 3 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0627018, 0.819795, 0 )
+
+[node name="SmokeParticles" parent="." index="3" instance=ExtResource( 4 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0627018, 0.819795, 0 )

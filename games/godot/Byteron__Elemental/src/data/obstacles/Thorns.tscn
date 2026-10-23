@@ -1,0 +1,19 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://source/entity/obstacle/Obstacle.tscn" type="PackedScene" id=1]
+[ext_resource path="res://data/obstacles/Thorns.gd" type="Script" id=2]
+[ext_resource path="res://assets/graphics/models/Thorns_A.jpg" type="Texture" id=3]
+[ext_resource path="res://assets/graphics/models/Thorns.obj" type="ArrayMesh" id=4]
+
+[sub_resource type="SpatialMaterial" id=1]
+albedo_texture = ExtResource( 3 )
+
+[node name="Thorns" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+alias = "Thorns"
+
+[node name="Thorns" type="MeshInstance" parent="Meshes" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.63027, 0 )
+material_override = SubResource( 1 )
+mesh = ExtResource( 4 )
+material/0 = null

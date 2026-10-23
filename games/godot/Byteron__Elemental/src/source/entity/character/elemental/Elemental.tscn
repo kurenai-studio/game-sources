@@ -1,0 +1,98 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://source/entity/character/Character.tscn" type="PackedScene" id=1]
+[ext_resource path="res://source/entity/character/elemental/Elemental.gd" type="Script" id=2]
+[ext_resource path="res://source/entity/character/elemental/ElementalVFXPicker.tscn" type="PackedScene" id=3]
+[ext_resource path="res://assets/graphics/models/Elemental_earth.obj" type="ArrayMesh" id=9]
+[ext_resource path="res://assets/graphics/materials/elemental/elemental_earth.tres" type="Material" id=14]
+
+[sub_resource type="Animation" id=1]
+resource_name = "finished"
+step = 0.05
+tracks/0/type = "value"
+tracks/0/path = NodePath("Meshes:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.15, 0.3, 0.45, 0.7 ),
+"transitions": PoolRealArray( 1.8025, 0.5, 1.8025, 0.5, 1 ),
+"update": 0,
+"values": [ Vector3( 0.7, 0.7, 0.7 ), Vector3( 0.5, 1, 0.5 ), Vector3( 0.7, 0.7, 0.7 ), Vector3( 0.5, 1, 0.5 ), Vector3( 0.7, 0.7, 0.7 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Meshes:translation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.15, 0.3, 0.45, 0.7 ),
+"transitions": PoolRealArray( 2, 1, 2, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0.5, 0 ), Vector3( 0, 1, 0 ), Vector3( 0, 0.5, 0 ), Vector3( 0, 1, 0 ), Vector3( 0, 0.5, 0 ) ]
+}
+
+[sub_resource type="Animation" id=2]
+length = 2.0
+loop = true
+step = 0.05
+tracks/0/type = "value"
+tracks/0/path = NodePath("Meshes:translation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1, 2 ),
+"transitions": PoolRealArray( 0.5, 0.5, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0.5, 0 ), Vector3( 0, 0.3, 0 ), Vector3( 0, 0.5, 0 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Items:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ) ]
+}
+tracks/2/type = "value"
+tracks/2/path = NodePath("Meshes:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"times": PoolRealArray( 0, 0.8, 2 ),
+"transitions": PoolRealArray( 1.8025, 1.51572, 1 ),
+"update": 0,
+"values": [ Vector3( 0.7, 0.7, 0.7 ), Vector3( 0.74, 0.68, 0.74 ), Vector3( 0.7, 0.7, 0.7 ) ]
+}
+
+[node name="Elemental" instance=ExtResource( 1 )]
+script = ExtResource( 2 )
+
+[node name="AnimationPlayer" parent="." index="1"]
+autoplay = "idle"
+anims/finished = SubResource( 1 )
+anims/idle = SubResource( 2 )
+
+[node name="Meshes" parent="." index="2"]
+transform = Transform( 0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0.5, 0 )
+
+[node name="MeshInstance" type="MeshInstance" parent="Meshes" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
+material_override = ExtResource( 14 )
+mesh = ExtResource( 9 )
+material/0 = null
+
+[node name="Items" type="Spatial" parent="." index="3"]
+
+[node name="ElementalVFXPicker" parent="." index="4" instance=ExtResource( 3 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.66587, 0 )
