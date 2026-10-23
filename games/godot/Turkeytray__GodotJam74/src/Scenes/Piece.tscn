@@ -1,0 +1,53 @@
+[gd_scene load_steps=4 format=3 uid="uid://bgyicg7l7naa6"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_u6nc0"]
+size = Vector2(16, 16)
+
+[sub_resource type="GDScript" id="GDScript_moji6"]
+script/source = "extends Area2D
+
+var inRadius := false
+@onready var interactionPopUp : CanvasLayer = get_parent().get_parent().get_node(\"InteractionPopup\")
+@onready var interactTextPopUp : RichTextLabel = interactionPopUp.get_node(\"InteractText\")
+var text := \"null\"
+
+signal collected
+
+func _ready() -> void:
+	text = get_parent().get_meta(\"text\")
+
+func _process(_delta: float) -> void:
+	if Input.is_key_pressed(KEY_E) and inRadius:
+		collected.emit()
+		get_parent().queue_free()
+
+func _on_player_enter(body: Node2D) -> void:
+	if body.name != \"Player\":
+		return
+	interactTextPopUp.show()
+	inRadius = true
+
+func _on_player_exited(body: Node2D) -> void:
+	if body.name != \"Player\":
+		return
+	interactTextPopUp.hide()
+	inRadius = false
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ln8ct"]
+radius = 64.0
+
+[node name="Piece" type="Sprite2D"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = SubResource("PlaceholderTexture2D_u6nc0")
+metadata/text = ""
+
+[node name="Interaction" type="Area2D" parent="."]
+script = SubResource("GDScript_moji6")
+
+[node name="InteractionArea" type="CollisionShape2D" parent="Interaction"]
+shape = SubResource("CircleShape2D_ln8ct")
+
+[connection signal="body_entered" from="Interaction" to="Interaction" method="_on_player_enter"]
+[connection signal="body_exited" from="Interaction" to="Interaction" method="_on_player_exited"]
