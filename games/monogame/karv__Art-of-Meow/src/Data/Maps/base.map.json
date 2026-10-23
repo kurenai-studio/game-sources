@@ -1,0 +1,65 @@
+﻿{
+  "$type": "Maps.Map, Art_of_Meow",
+  "Populator": {
+    "$type": "Maps.Populator, Art_of_Meow",
+    "Rules": {
+      "$type": "Maps.PopulationRule[], Art_of_Meow",
+      "$values": [
+        {
+          "$type": "Maps.PopulationRule, Art_of_Meow",
+          "Stacks": {
+            "$type": "Maps.DistributedStack[], Art_of_Meow",
+            "$values": [
+              {
+                "$type": "Maps.DistributedStack, Art_of_Meow",
+                "RaceName": "Imp",
+                "SpawnProbPerCell": 0.0012
+              }
+            ]
+          },
+          "Chance": 1
+        }
+      ]
+    }
+  },
+  "AddFeatures": true,
+  "MapItemGroundItems": {
+    "$type": "Helper.ProbabilityInstanceSet`1[[Items.IItemFactory, Art_of_Meow]], Art_of_Meow",
+    "Values": {
+      "$type": "System.Collections.Generic.List`1[[Helper.ItemWeightPair`1[[Items.IItemFactory, Art_of_Meow]], Art_of_Meow]], mscorlib",
+      "$values": [
+        {
+          "$type": "Helper.ItemWeightPair`1[[Items.IItemFactory, Art_of_Meow]], Art_of_Meow",
+          "Item": {
+            "$type": "Items.RandomItemRecipe, Art_of_Meow",
+            "MinItemVal": 0.0,
+            "MaxItemVal": 100.0,
+            "AllowedItemNames": {
+              "$type": "System.String[], mscorlib",
+              "$values": [
+                "Knife",
+                "Lance"
+              ]
+            },
+          },
+          "Weight": 1.0
+        },
+				{
+				  "$type": "Helper.ItemWeightPair`1[[Items.IItemFactory, Art_of_Meow]], Art_of_Meow",
+          "Item": {
+            "$type": "Items.RandomItemRecipe, Art_of_Meow",
+            "MinItemVal": 0.0,
+            "MaxItemVal": 100.0,
+            "AllowedItemNames": {
+              "$type": "System.String[], mscorlib",
+              "$values": [
+                "Hp potion"
+              ]
+            },
+          },
+          "Weight": 1.0
+				}
+      ]
+    }
+  }
+}

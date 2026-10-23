@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{63EB1C06-BE20-4A59-B879-C9E52DA53204}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Moggle</RootNamespace>
+    <AssemblyName>Controles_Moggle</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Description>Controles MonoGame
+Un juego de controles para MonoGame</Description>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <DocumentationFile>bin\Debug\Controles_Moggle.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <DocumentationFile>bin\Release\Controles_Moggle.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="MonoGame.Framework">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="NVorbis">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\NVorbis.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.5.0.1678\lib\net40\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoGame.Extended">
+      <HintPath>..\packages\MonoGame.Extended.0.6.0.0\lib\MonoGame.Extended.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Screens\IScreen.cs" />
+    <Compile Include="Screens\ListaControles.cs" />
+    <Compile Include="Controles\IControl.cs" />
+    <Compile Include="Controles\SBC.cs" />
+    <Compile Include="Primitivos.cs" />
+    <Compile Include="Screens\Screen.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="Controles\Ratón.cs" />
+    <Compile Include="Screens\MostrarListaScreen.cs" />
+    <Compile Include="Controles\Listas\IListaControl.cs" />
+    <Compile Include="Controles\Listas\Lista.cs" />
+    <Compile Include="Controles\EntradaTexto.cs" />
+    <Compile Include="Controles\Etiqueta.cs" />
+    <Compile Include="Controles\MultiEtiqueta.cs" />
+    <Compile Include="Controles\SBCC.cs" />
+    <Compile Include="VisualPortManager.cs" />
+    <Compile Include="Controles\SBCRel.cs" />
+    <Compile Include="Shape\IShape.cs" />
+    <Compile Include="Shape\Rectangle.cs" />
+    <Compile Include="Shape\Circle.cs" />
+    <Compile Include="Controles\Botón.cs" />
+    <Compile Include="Shape\Ellipse.cs" />
+    <Compile Include="Controles\IComponent.cs" />
+    <Compile Include="BatchExt.cs" />
+    <Compile Include="Controles\IComponentContainerComponent.cs" />
+    <Compile Include="Controles\DSBC.cs" />
+    <Compile Include="Controles\IActivable.cs" />
+    <Compile Include="Controles\IBotón.cs" />
+    <Compile Include="Controles\KeyStringListener.cs" />
+    <Compile Include="Controles\MargenType.cs" />
+    <Compile Include="Controles\IDibujable.cs" />
+    <Compile Include="Controles\FlyingSprite.cs" />
+    <Compile Include="Controles\ContenedorSelección.cs" />
+    <Compile Include="Controles\Contenedor.cs" />
+    <Compile Include="Controles\SelectionManager.cs" />
+    <Compile Include="Textures\SimpleTextures.cs" />
+    <Compile Include="Controles\ContenedorImage.cs" />
+    <Compile Include="Comm\IReceptor.cs" />
+    <Compile Include="Comm\IEmisor.cs" />
+    <Compile Include="Controles\MouseObserver.cs" />
+    <Compile Include="Controles\ISpaceable.cs" />
+    <Compile Include="Screens\ScreenThread.cs" />
+    <Compile Include="Screens\ScreenThreadManager.cs" />
+    <Compile Include="Text\StringExt.cs" />
+    <Compile Include="Controles\EtiquetaMultiLínea.cs" />
+    <Compile Include="Screens\Dials\ScreenDialSerial.cs" />
+    <Compile Include="Controles\VanishingLabel.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Screens\" />
+    <Folder Include="Controles\" />
+    <Folder Include="Controles\Listas\" />
+    <Folder Include="Shape\" />
+    <Folder Include="Comm\" />
+    <Folder Include="Textures\" />
+    <Folder Include="Screens\Dials\" />
+    <Folder Include="Text\" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <DotNetNamingPolicy DirectoryNamespaceAssociation="PrefixedHierarchical" ResourceNamePolicy="FileName" />
+          <TextStylePolicy TabsToSpaces="False" inheritsSet="VisualStudio" inheritsScope="text/plain" scope="text/x-csharp" />
+          <CSharpFormattingPolicy IndentSwitchBody="True" AutoPropertyFormatting="ForceOneLine" AnonymousMethodBraceStyle="NextLine" PropertyBraceStyle="NextLine" PropertyGetBraceStyle="NextLine" PropertySetBraceStyle="NextLine" EventBraceStyle="NextLine" EventAddBraceStyle="NextLine" EventRemoveBraceStyle="NextLine" StatementBraceStyle="NextLine" ElseNewLinePlacement="NewLine" CatchNewLinePlacement="NewLine" FinallyNewLinePlacement="NewLine" WhileNewLinePlacement="NewLine" ArrayInitializerBraceStyle="NextLine" NewLineBeforeConstructorInitializerColon="NewLine" NewLineAfterConstructorInitializerColon="SameLine" AfterDelegateDeclarationParameterComma="True" BeforeSizeOfParentheses="True" BeforeTypeOfParentheses="True" SpacesBeforeArrayDeclarationBrackets="True" MethodCallArgumentWrapping="WrapIfTooLong" MethodDeclarationParameterWrapping="WrapIfTooLong" IndexerDeclarationParameterWrapping="WrapIfTooLong" IndexerArgumentWrapping="WrapIfTooLong" inheritsSet="Mono" inheritsScope="text/x-csharp" scope="text/x-csharp" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+  <ItemGroup>
+    <None Include="OpenTK.dll.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>
