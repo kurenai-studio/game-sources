@@ -3,9 +3,9 @@
 - **Game:** LOVEchess
 - **Upstream:** https://github.com/badduck32/LOVEchess
 - **Author:** badduck32 (Badduck)
-- **License:** MIT License (see )
+- **License:** MIT License (see `LICENSE`)
 - **Engine:** love2d
-- **Snapshot commit:** 
+- **Snapshot commit:** `c2964b62ce6c0d006ee894861ba16dd3e5a46691`
 - **Collected by:** bot b
 - **Collected at:** 2026-10-23T04:17:50-07:00 (America/Los_Angeles)
 - **Claim issue:** #1053
