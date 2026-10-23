@@ -1,0 +1,42 @@
+# The room service for playing together (see README.md here).
+# Deployed by .github/workflows/rooms.yml with the CLOUDFLARE_API_TOKEN and
+# CLOUDFLARE_ACCOUNT_ID repository secrets. The moderator's ADMIN_TOKEN is a
+# Worker secret, set from the ROOMS_ADMIN_TOKEN repository secret on deploy.
+name = "mte-rooms"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+# The service lives at rooms.robertasrudys.com: a Custom Domain on the
+# robertasrudys.com zone, added in the Cloudflare dashboard (Workers & Pages ->
+# mte-rooms -> Domains), so Cloudflare's firewall and rate-limiting rule sit in
+# front of it. No workers.dev or preview addresses: everything goes through
+# the domain and its rules.
+workers_dev = false
+preview_urls = false
+
+[vars]
+# The pages allowed to use the service (comma-separated origins).
+ALLOWED_ORIGINS = "https://play.robertasrudys.com"
+ALLOW_LOCALHOST = "false"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Rooms"
+
+[[durable_objects.bindings]]
+name = "REGISTRY"
+class_name = "Registry"
+
+# The free plan needs SQLite-backed Durable Objects.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Rooms", "Limiter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Registry"]
+
+# The creations counter went with worlds becoming Watch's to make: the door
+# is shut for everyone else (src/worker.js, POST /rooms).
+[[migrations]]
+tag = "v3"
+deleted_classes = ["Limiter"]

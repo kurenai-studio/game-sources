@@ -1,0 +1,1204 @@
+/* MORE THAN ENOUGH — styles. Mobile Safari first, desktop friendly.
+   The layout and the rules behind it are in docs/ui.md. */
+
+:root {
+  color-scheme: dark;
+  /* Surfaces: glass over the map, and the solid panels of sheets. */
+  --glass: rgba(12, 17, 14, 0.78);
+  --panel: rgb(12, 17, 14);
+  --panel-line: rgba(255, 255, 255, 0.10);
+  --raised: rgba(255, 255, 255, 0.06);
+  /* Ink and accents. */
+  --ink: #e9f1e6;
+  --chalk: #f5f2e9;
+  --ink-dim: #93a291;
+  --green: #7fd07a;
+  --gold: #ffd166;
+  --earth: #ecd3a4;
+  --danger: #f08a7a;
+  /* Shape. */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+  --shadow-1: 0 3px 12px rgba(0, 0, 0, 0.38);
+  --shadow-2: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  --blur: blur(8px);   /* frosted glass, dropped on a device that can't keep up (quality.js) */
+  /* The safe edges every HUD piece keeps to. */
+  --edge-t: calc(env(safe-area-inset-top, 0px) + 8px);
+  --edge-r: calc(env(safe-area-inset-right, 0px) + 12px);
+  --edge-b: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  --edge-l: calc(env(safe-area-inset-left, 0px) + 12px);
+  /* The thumb cluster: the big action and the buttons around it. */
+  --act: 84px;
+  --sub: 56px;
+  --gap: 14px;
+}
+
+.no-glass { --blur: none; }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #05070a;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+body { position: fixed; inset: 0; }
+
+canvas#game {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* ------------------------------------------------------------------ HUD */
+
+/* Status along the top: trophies, the resource bar, settings. It lets taps
+   through to the map everywhere but on its buttons. */
+#hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: var(--edge-t) var(--edge-r) 0 var(--edge-l);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#topbar {
+  width: 100%; max-width: 560px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* The version, always in view under the gear (src/game/news.js): small and
+   quiet, a dot once there's something new, and after an update the old
+   number rolls away as the new one rolls in and glows. Its touch area is
+   bigger than it looks. */
+#btnVersion {
+  position: relative; align-self: flex-end;
+  margin: -6px max(0px, (100% - 560px) / 2) -2px 0;
+  height: 20px; padding: 0 8px;
+  display: flex; align-items: center; gap: 5px;
+  border: 1px solid transparent; border-radius: var(--r-pill);
+  background: rgba(10, 14, 12, 0.35);
+  color: var(--ink-dim);
+  font: 700 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.04em; font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  pointer-events: auto; touch-action: manipulation; cursor: pointer;
+}
+#btnVersion::after { content: ''; position: absolute; inset: -12px -6px; }
+#btnVersion .was { position: absolute; left: 8px; opacity: 0; }
+#btnVersion.fresh::before {
+  content: ''; order: 2; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 6px var(--gold);
+}
+#btnVersion.rolling { animation: ver-glow 2.4s ease-out 0.8s backwards; }
+#btnVersion.rolling .was { animation: ver-out 0.4s ease-in 0.8s backwards; }
+#btnVersion.rolling .now { animation: ver-in 0.6s cubic-bezier(.2, 1.4, .4, 1) 1.1s backwards; }
+@keyframes ver-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-120%); } }
+@keyframes ver-in { from { opacity: 0; transform: translateY(120%); } to { opacity: 1; transform: none; } }
+@keyframes ver-glow {
+  0%, 25% { color: var(--ink-dim); border-color: transparent; box-shadow: none; }
+  40% { color: var(--gold); border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 209, 102, 0.7); }
+  100% { color: var(--ink-dim); border-color: transparent; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #btnVersion.rolling .was, #btnVersion.rolling .now { animation: none; }
+}
+body.signing #btnVersion { visibility: hidden; }
+
+/* Friends in a shared world, under the top bar on the right: a chip each in
+   their colour, showing how they're doing. */
+#friends {
+  align-self: flex-end;
+  /* Clear of the depth meter on the left; chips that don't fit fold into
+     the "+N" (src/game/players.js). */
+  max-width: calc(100% - 56px);
+  display: flex; gap: 6px;
+  pointer-events: none;
+}
+#friends[hidden] { display: none; }
+.friend {
+  flex: none; display: flex; align-items: center; gap: 5px;
+  height: 30px; padding: 0 10px 0 7px;
+  border: 1px solid var(--panel-line); border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+  color: var(--ink); font: 800 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  pointer-events: auto; touch-action: manipulation; cursor: pointer;
+}
+.friend i {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--friend); box-shadow: 0 0 0 2px rgba(0, 0, 0, .35);
+}
+.friend.away i { opacity: .7; }
+.friend.away::after { content: "z"; color: var(--ink-dim); font-size: 11px; }
+.friend.lost i { animation: friend-lost 1s ease-in-out infinite; }
+.friend.lost { border-color: rgba(255, 209, 102, .6); }
+.friend.offline { opacity: .5; }
+.friend.more { padding: 0 10px; color: var(--ink-dim); }
+.friend.offline i { background: transparent; box-shadow: inset 0 0 0 2px var(--friend); }
+@keyframes friend-lost { 50% { opacity: .2; } }
+
+/* Round glass buttons on the top bar. */
+.hudBtn {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px; height: 44px; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--panel-line); border-radius: 50%;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+  color: var(--ink);
+  pointer-events: auto; touch-action: manipulation; cursor: pointer;
+  transition: transform .08s ease;
+}
+.hudBtn:active { transform: scale(0.92); }
+.hudBtn .gear { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Milestones reached: a trophy with its count on a badge. It glows after a
+   new one until the Awards are opened. */
+#btnAwards { color: var(--gold); border-color: rgba(255, 209, 102, 0.45); }
+#btnAwards .trophy { width: 22px; height: 22px; }
+#awardCount {
+  position: absolute; right: -4px; bottom: -4px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  display: grid; place-items: center;
+  border-radius: 999px; border: 2px solid #0c140e;
+  background: var(--gold); color: #2a1e04;
+  font: 800 11px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+#btnAwards.new { animation: awardGlow 1.4s ease-in-out infinite; background: rgba(70, 52, 14, 0.92); }
+@keyframes awardGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.55); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 209, 102, 0); }
+}
+.trophy { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; stroke-linecap: round; }
+.row .ic .trophy { width: 28px; height: 28px; color: var(--gold); }
+.awardsLeft .trophy { opacity: 0.35; color: var(--ink-dim) !important; }
+.row.nextGoal { border-color: rgba(255, 209, 102, 0.45); }
+.row.farGoal .trophy { opacity: 0.6; }
+
+/* One resource bar: every resource in one capsule, tap one for the earnings
+   statement. */
+#resources {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: stretch;
+  height: 44px; padding: 0 4px;
+  border: 1px solid var(--panel-line); border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+}
+.chip {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  padding: 0 3px; overflow: hidden;
+  background: none; border: 0;
+  font: inherit; color: inherit; line-height: 1.05;
+  pointer-events: auto; touch-action: manipulation; cursor: pointer;
+}
+.chip + .chip { border-left: 1px solid var(--panel-line); }
+.chip:active { background: var(--raised); }
+.chip:first-child { border-radius: 999px 0 0 999px; }
+.chip:last-child { border-radius: 0 999px 999px 0; }
+/* The count beside its picture, the rate under both, using the chip's whole
+ * width. Counts and rates are abbreviated to fit (fmtShort: at most three
+ * digits and a unit, "987B"); the picture and the gap are kept just tight
+ * enough that even that fits, so a full stockpile is never cut short. */
+.chip .top { display: flex; align-items: center; gap: 2px; max-width: 100%; }
+.chip .ic { width: 17px; height: 17px; flex: 0 0 auto; }
+.chip .val, .chip .rate { min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chip .val {
+  font-size: 15px; font-weight: 800; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.chip .rate { font-size: 9.5px; color: var(--green); font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip .rate:empty { display: none; }
+/* Most phones: a little smaller, so four digits fit beside the picture. */
+@media (max-width: 413px) {
+  .chip { padding: 0 2px; }
+  .chip .top { gap: 1px; }
+  .chip .ic { width: 15px; height: 15px; }
+  .chip .val { font-size: 13px; }
+}
+/* Narrow phones: each resource's picture over its count, rates left out. */
+@media (max-width: 374px) {
+  .chip .top { flex-direction: column; gap: 1px; }
+  .chip .ic { width: 15px; height: 15px; }
+  .chip .val { font-size: 13px; }
+  .chip .rate { display: none; }
+}
+
+/* Performance panel: F3, or ?perf in the address. */
+#perf {
+  align-self: flex-end;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--green);
+  border-radius: 8px;
+  background: rgba(8, 12, 10, 0.82);
+  color: #d6e4d3;
+  font: 10.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+  pointer-events: none;
+}
+#perf[hidden] { display: none; }
+#perf[data-grade="ok"] { border-left-color: var(--gold); }
+#perf[data-grade="bad"] { border-left-color: #ff5a5a; }
+
+/* A milestone reached: a banner under the top bar, a few seconds each. It
+   lets taps through to the map; the trophy button lists them all. */
+#milestone {
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  margin-top: 4px; padding: 10px 22px 12px; max-width: 90%;
+  background: linear-gradient(180deg, rgb(58, 44, 16), rgb(28, 22, 10));
+  border: 1px solid rgba(255, 209, 102, 0.6); border-radius: var(--r-md);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 209, 102, 0.18);
+  text-align: center;
+  animation: milestone-in .35s cubic-bezier(.2, 1.4, .4, 1);
+}
+#milestone[hidden] { display: none; }
+/* Underground on a narrow screen, the banner moves over to clear the depth
+   meter down the left edge rather than cover it. */
+@media (max-width: 700px) {
+  body.below #milestone { margin-left: 66px; max-width: calc(100% - 66px); }
+}
+#milestone .trophy { width: 30px; height: 30px; color: var(--gold); filter: drop-shadow(0 0 6px rgba(255, 209, 102, 0.6)); }
+#milestone small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+#milestone strong { font-size: 17px; line-height: 1.25; color: #fff3d6; }
+#milestone .next { font-size: 13px; line-height: 1.3; color: rgba(255, 243, 214, 0.75); }
+#milestone .next:empty { display: none; }
+@keyframes milestone-in { from { opacity: 0; transform: translateY(-14px) scale(.85); } 60% { transform: scale(1.06); } to { opacity: 1; transform: none; } }
+
+/* Underground: which layer you're on ("Layer 3"), and the layers as a
+   column under it: the forest on top in green, every layer you've been down
+   to, a dashed one for deeper still, and yours lit with a marker. Going down
+   moves the light down. */
+#depthMeter {
+  position: absolute; z-index: 10;
+  left: var(--edge-l);
+  top: calc(var(--edge-t) + 56px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+}
+#depth {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 48px; padding: 4px 6px 5px;
+  border: 1px solid rgba(225, 181, 105, 0.4); border-radius: 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+  text-align: center; line-height: 1; color: var(--earth);
+}
+#depth small { font-size: 8px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; opacity: .85; }
+#depth b { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+#depth[hidden], #depthGauge[hidden], #battery[hidden] { display: none; }
+/* The battery of the device in your hands, once it isn't full: a little
+   battery that empties, green, then amber when the light starts to shrink,
+   red when nearly flat. Narrow as the depth pill, so friends' chips keep
+   clear of it. */
+#battery {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 44px; max-width: 50px; padding: 5px 4px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+  font-size: 11px; font-weight: 800; line-height: 1; color: var(--ink);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+#battery i {
+  position: relative; display: block; width: 20px; height: 11px; padding: 1px;
+  border: 1.5px solid currentColor; border-radius: 3px;
+}
+#battery i::after {
+  content: ''; position: absolute; right: -4px; top: 3px;
+  width: 2px; height: 4px; border-radius: 0 1px 1px 0; background: currentColor;
+}
+#battery b { display: block; height: 100%; border-radius: 1px; background: #7fd07a; }
+#battery.low b { background: #f0b552; }
+#battery.flat b { background: #ff6b5e; }
+#battery.charging b { background: #8fd6ff; }
+#depthGauge {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 4px; border-radius: 8px;
+  background: var(--glass);
+  border: 1px solid rgba(225, 181, 105, 0.25);
+}
+#depthGauge i { position: relative; display: block; width: 20px; height: 9px; border-radius: 2px; background: #5e4a36; }
+/* The forest: grass over earth, plainly green. */
+#depthGauge i.forest { height: 12px; background: linear-gradient(#8fd35a 0 45%, #4f8a32 45%); }
+#depthGauge i.deeper { background: none; border: 1px dashed rgba(236, 211, 164, 0.35); }
+#depthGauge i.here { background: #ffd28a; box-shadow: 0 0 6px rgba(255, 210, 138, 0.8); }
+#depthGauge i.here::after {
+  content: ''; position: absolute; left: calc(100% + 6px); top: 50%; margin-top: -4px;
+  border: 4px solid transparent; border-left: none; border-right: 5px solid #ffd28a;
+}
+
+/* ----------------------------------------------------- thumb cluster */
+
+#controls { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+
+/* One-hand play: everything you press sits in the right thumb's arc around
+   the big action. Build and Upgrade to its left; the climb button pops in
+   above-left of it, only beside a way between layers. The map keeps the
+   rest of the screen. */
+#thumbDock {
+  position: absolute;
+  right: var(--edge-r); bottom: var(--edge-b);
+  width: var(--act); height: var(--act);
+  pointer-events: none;
+}
+
+.btn {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: radial-gradient(circle at 50% 30%, rgba(44, 58, 48, 0.92), rgba(16, 22, 18, 0.92));
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform .08s ease;
+}
+.btn:active { transform: scale(0.93); }
+.btn .big { width: 30px; height: 30px; object-fit: contain; pointer-events: none; }
+/* Every button's name on a small plate across its bottom edge. The plate
+ * keeps its words whole; a label too wide for the screen shrinks to fit
+ * (--cap-scale, set by the HUD) rather than running off the edge. */
+.btn .cap {
+  position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%) scale(var(--cap-scale, 1));
+  padding: 2px 6px;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #141c17;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.03em; line-height: 1.2;
+  white-space: nowrap; color: #c9d6c6;
+  pointer-events: none;
+}
+/* NEW: something on that sheet became affordable that you couldn't get
+   before; it stays until you look (src/game/fresh.js). The same tag marks
+   those rows inside the sheet. */
+.newTag {
+  display: inline-block; padding: 2px 5px; border-radius: var(--r-pill);
+  background: #7fe06e; color: #08200b; border: 1.5px solid #0c140e;
+  font: 900 9px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.04em; vertical-align: middle; white-space: nowrap;
+}
+.btn .newTag {
+  display: none; position: absolute; top: -6px; right: -8px;
+  box-shadow: 0 0 8px rgba(127, 224, 110, 0.8);
+  pointer-events: none;
+}
+.btn.has .newTag { display: block; }
+
+#btnBuild, #btnUpgrade, #btnMine { width: var(--sub); height: var(--sub); }
+#btnUpgrade { right: calc(var(--act) + var(--gap)); bottom: calc((var(--act) - var(--sub)) / 2); }
+#btnBuild { right: calc(var(--act) + var(--sub) + var(--gap) * 2); bottom: calc((var(--act) - var(--sub)) / 2); }
+
+/* The big action: what holding it does right now. */
+#btnAction {
+  right: 0; bottom: 0;
+  width: var(--act); height: var(--act);
+  background: radial-gradient(circle at 50% 32%, rgba(84, 146, 94, 0.95), rgba(24, 44, 31, 0.95));
+  border: 2px solid rgba(150, 230, 150, 0.5);
+}
+#btnAction .big { width: 42px; height: 42px; }
+#btnAction .cap { font-size: 11px; color: #e4f7df; background: #1d3524; border-color: rgba(150, 230, 150, 0.45); }
+#btnAction.disabled { opacity: 0.55; }
+#btnAction.ready { animation: readyPulse 1.6s ease-in-out infinite; }
+#btnAction.ready:active { animation: none; }
+@keyframes readyPulse {
+  0%, 100% { box-shadow: var(--shadow-1), 0 0 0 0 rgba(127, 208, 122, 0.3); }
+  50% { box-shadow: var(--shadow-1), 0 0 0 8px rgba(127, 208, 122, 0); }
+}
+
+/* Perfect: a smaller button right above Gather. Holding it plays the game;
+   the badge in its corner shows what it's doing (or would do), and it
+   glows gold when the world is ready to Embark, which only the player
+   presses. */
+#btnPerfect {
+  width: var(--sub); height: var(--sub);
+  right: calc((var(--act) - var(--sub)) / 2); bottom: calc(var(--act) + 8px);
+  background: radial-gradient(circle at 50% 32%, rgba(120, 100, 52, 0.95), rgba(40, 32, 16, 0.95));
+  border: 2px solid rgba(240, 206, 120, 0.5);
+}
+#btnPerfect .big { width: 26px; height: 26px; }
+#btnPerfect .cap { color: #fbeec4; background: #33280f; border-color: rgba(240, 206, 120, 0.45); }
+#btnPerfect .badge {
+  position: absolute; top: -6px; right: -6px;
+  width: 24px; height: 24px; padding: 3px; box-sizing: border-box;
+  border-radius: 50%; background: #141c17; border: 2px solid rgba(240, 206, 120, 0.5);
+  object-fit: contain; pointer-events: none;
+}
+#btnPerfect.on { border-color: #ffe39a; background: radial-gradient(circle at 50% 32%, rgba(176, 146, 70, 0.98), rgba(60, 46, 20, 0.98)); }
+/* Held, a dashed gold ring turns round it: it's playing. */
+#btnPerfect.on:not(.embark)::before {
+  content: ''; position: absolute; inset: -7px; border-radius: 50%;
+  border: 3px dashed #ffe39a; pointer-events: none;
+  animation: autoTurn 2.4s linear infinite;
+}
+@keyframes autoTurn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #btnPerfect.on::before { animation: none; } }
+/* After a quick tap: a bubble over it saying to hold it down. */
+#btnPerfect .tip {
+  position: absolute; right: -10px; bottom: calc(100% + 14px);
+  background: #fbeec4; color: #33280f; font: 700 14px/1.25 system-ui, sans-serif;
+  padding: 8px 12px; border-radius: 12px; white-space: nowrap;
+  box-shadow: var(--shadow-1); pointer-events: none;
+}
+#btnPerfect .tip::after {
+  content: ''; position: absolute; right: 28px; bottom: -8px;
+  border: 8px solid transparent; border-bottom: 0; border-top-color: #fbeec4;
+}
+#btnPerfect .tip[hidden] { display: none; }
+#btnPerfect.embark { border-color: var(--gold); animation: embarkPulse 1.6s ease-in-out infinite; }
+#btnPerfect.embark .badge { border-color: var(--gold); }
+@keyframes embarkPulse {
+  0%, 100% { box-shadow: var(--shadow-1), 0 0 0 0 rgba(255, 200, 90, 0.45); }
+  50% { box-shadow: var(--shadow-1), 0 0 0 10px rgba(255, 200, 90, 0); }
+}
+
+/* Invite: the other main action, as big as Gather, in the left thumb's
+   corner. Pressed while your sign is up (tap again to put it down). Its
+   colour is the sign's friendly sky blue. */
+#btnInvite {
+  left: var(--edge-l); bottom: var(--edge-b);
+  width: var(--act); height: var(--act);
+  color: #eaf6ff;
+  background: radial-gradient(circle at 50% 32%, rgba(98, 180, 234, 0.95), rgba(22, 62, 98, 0.95));
+  border: 2px solid rgba(160, 214, 255, 0.55);
+}
+#btnInvite[hidden] { display: none; }
+#btnInvite .big { width: 40px; height: 40px; }
+#btnInvite .cap { font-size: 11px; color: #eaf6ff; background: #133150; border-color: rgba(160, 214, 255, 0.45); }
+#btnInvite.up { background: radial-gradient(circle at 50% 32%, #fff, #dcecf7); color: #133150; border-color: #fff; }
+
+/* The climb button, above-left of the action, beside Perfect; it pops in
+   beside a way up or down and is gone elsewhere. */
+#btnMine {
+  right: calc((var(--act) + var(--sub)) / 2 + var(--gap) * 2); /* room for long labels on both */
+  bottom: calc(var(--act) + 8px);
+  border-color: rgba(225, 181, 105, 0.6);
+  background: radial-gradient(circle at 50% 30%, rgba(96, 72, 44, 0.95), rgba(36, 26, 16, 0.95));
+  animation: pop-in .22s cubic-bezier(.2, 1.5, .4, 1);
+}
+#btnMine[hidden] { display: none; }
+#btnMine .big { width: 26px; height: 26px; }
+#btnMine .cap { color: var(--earth); background: #2a1f13; border-color: rgba(225, 181, 105, 0.45); }
+@keyframes pop-in { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
+
+/* Zoom: a slim column on the right edge, above the cluster. The middle
+   shows the magnification; tap it for 1×. Pinching zooms too. */
+#zoomControls {
+  position: absolute;
+  right: calc(var(--edge-r) + (var(--act) - 42px) / 2);
+  bottom: calc(var(--edge-b) + var(--act) + 78px);
+  width: 42px;
+  display: flex; flex-direction: column; align-items: stretch;
+  border: 1px solid var(--panel-line); border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  pointer-events: auto;
+}
+/* Nothing on the HUD may cover your QR sign (zoom doesn't change its size). */
+body.signing #zoomControls { visibility: hidden; }
+#zoomControls button {
+  height: 40px; padding: 0;
+  border: 0; background: none; color: var(--ink);
+  font: 600 22px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  touch-action: manipulation;
+}
+#zoomControls button:active { background: rgba(80, 130, 90, 0.5); }
+#zoomControls #zoomLevel {
+  height: 26px;
+  border-top: 1px solid var(--panel-line); border-bottom: 1px solid var(--panel-line);
+  color: var(--ink-dim); font-size: 10.5px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- sheet */
+
+#sheet {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  max-width: 640px; margin: 0 auto;
+  height: min(72vh, 720px);
+  background: var(--panel);
+  border-top-left-radius: var(--r-lg); border-top-right-radius: var(--r-lg);
+  border: 1px solid var(--panel-line); border-bottom: 0;
+  transform: translateY(110%);
+  transition: transform .26s cubic-bezier(.2, .9, .3, 1);
+  display: flex; flex-direction: column;
+  z-index: 30;
+  box-shadow: var(--shadow-2);
+}
+#sheet.open { transform: translateY(0); }
+/* Settings is short: it takes only the room it needs. */
+#sheet[data-tab="settings"], #sheet[data-tab="nerds"] { height: auto; max-height: 88vh; }
+
+#sheetGrab {
+  flex: 0 0 auto;
+  height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+#sheetGrab span {
+  width: 40px; height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+#sheetGrab:active span { background: rgba(255, 255, 255, 0.4); }
+
+/* The tabs, or a screen's own title, with × on the right. */
+#sheetHead {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 12px 8px;
+}
+#sheetTitle { flex: 1 1 auto; padding-left: 6px; font-size: 20px; font-weight: 800; color: var(--ink); }
+#sheet:not(.titled) #sheetTitle, #sheet.titled #tabs, #btnBack[hidden] { display: none; }
+#btnBack:not([hidden]) + #sheetTitle { padding-left: 0; }
+#sheet[data-tab="map"] { height: min(88vh, 900px); max-width: 900px; }
+#btnClose, #btnBack { flex: 0 0 auto; width: 40px; height: 40px; box-shadow: none; background: var(--raised); }
+#btnClose svg, #btnBack svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Tabs: one segmented control under the title. */
+#tabs {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-line);
+}
+#tabs [hidden] { display: none; }
+.tab {
+  flex: 1 1 auto;
+  min-width: 0; height: 38px; padding: 0 6px;
+  border: 0; border-radius: 9px;
+  background: none;
+  color: var(--ink-dim);
+  font: 800 13.5px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  touch-action: manipulation; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+/* Phones: a little smaller, so every tab's whole name fits (Lithuanian's
+   are long: Patobulinimai, Apdovanojimai). */
+@media (max-width: 413px) { .tab { font-size: 12.5px; } }
+@media (max-width: 374px) { .tab { font-size: 11.5px; padding: 0 3px; letter-spacing: -0.01em; } }
+.tab.active { color: #0c1a0e; background: var(--green); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+
+#sheetBody {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  flex: 1 1 auto;
+  padding: 2px 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
+  min-height: 60px;
+}
+
+.row {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 10px 6px; padding: 10px 12px;
+  border: 1px solid var(--panel-line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+.row .ic { width: 34px; height: 34px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.row .ic .ico { width: 34px; height: 34px; object-fit: contain; }
+/* Pictures inline with text: prices, rates, tags. */
+.ico { width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: -0.28em; }
+.row .main { flex: 1 1 auto; min-width: 0; }
+.row .nm { font-size: 15px; font-weight: 800; color: var(--ink); }
+.row .nm .tag {
+  font-size: 10px; font-weight: 700; color: var(--ink-dim);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 1px 6px; margin-left: 4px;
+  vertical-align: 1px;
+}
+.row .sub { font-size: 11.5px; color: var(--ink-dim); margin-top: 2px; }
+.row .sub .cost { color: #e8d59a; }
+.row .sub .ok { color: var(--green); }
+.row .sub .bad { color: #e08a7a; }
+
+/* Prices: one pill per resource, picture first. Short of it: how much more
+   to gather (red). Enough of it: a tick. All there: what it costs (green). */
+.price { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.amt {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 8px 1px 3px;
+  border: 1px solid color-mix(in srgb, var(--res, #fff) 45%, transparent); border-radius: 999px;
+  background: color-mix(in srgb, var(--res, #fff) 10%, transparent);
+  font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.amt .ico { width: 16px; height: 16px; vertical-align: 0; }
+.amt.need .n { color: #f0a08f; }
+.amt.met { opacity: 0.6; }
+.amt.met .n { color: var(--green); }
+.amt.cost .n { color: var(--green); }
+.price .still { align-self: center; font-size: 12px; font-weight: 700; color: #f0a08f; margin-right: 2px; }
+.row .sub .where { display: inline-block; margin-top: 3px; font-size: 12px; }
+.row .buy {
+  flex: 0 0 auto;
+  min-width: 84px; min-height: 46px;
+  border-radius: 12px;
+  padding: 0 12px;
+  font: 800 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+/* One you can press looks like a real button: solid, raised, glowing. */
+.row .buy:not(:disabled) {
+  border: 1px solid #a4ec92;
+  background: linear-gradient(180deg, #6fcf62, #3f9a45);
+  color: #08200b;
+  box-shadow: 0 4px 0 #24652c, 0 6px 14px rgba(80, 200, 90, 0.28);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  transition: transform .06s ease, box-shadow .06s ease;
+}
+.row .buy:not(:disabled):active { transform: translateY(2px); box-shadow: 0 0 0 #24652c, 0 2px 6px rgba(80, 200, 90, 0.2); }
+/* One you can't press yet is flat and outlined, like a label. */
+.row .buy:disabled {
+  border: 1px dashed rgba(255,255,255,0.18);
+  background: transparent;
+  color: rgba(147, 162, 145, 0.75);
+  cursor: default;
+}
+.row .buy.max { border: 1px solid transparent; background: rgba(255,255,255,0.04); color: var(--ink-dim); }
+.row.locked { opacity: 0.6; }
+.section { padding: 12px 20px 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+
+/* ------------------------------------------- The earnings statement */
+
+/* The bar's end: a small chart saying the bar opens the statement. */
+.chip.ledger { flex: 0 0 24px; padding: 0; color: var(--green); }
+.chip.ledger svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Most phones: the chart at the end slim, and the bar's own edges too, so
+   the counts keep their room. */
+@media (max-width: 413px) {
+  #resources { padding: 0 2px; }
+  .chip.ledger { flex-basis: 16px; }
+  .chip.ledger svg { width: 13px; height: 13px; }
+}
+/* Per second, minute or hour. */
+.units { display: flex; gap: 4px; margin: 8px 10px 0; padding: 3px; border: 1px solid var(--panel-line); border-radius: 999px; background: rgba(255, 255, 255, 0.035); }
+.unit {
+  flex: 1 1 0; min-height: 44px; border: 0; border-radius: 999px; background: none;
+  color: var(--ink-dim); font: 800 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  touch-action: manipulation; cursor: pointer;
+}
+.unit.on { background: var(--raised); color: var(--ink); box-shadow: inset 0 0 0 1px var(--panel-line); }
+.colHead .headRate { margin-left: auto; color: var(--green); font-size: 14px; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.section .headNote { margin-left: 6px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-dim); opacity: 0.8; }
+/* A resource's income over your play, in its own colour. */
+.chart { position: relative; height: 84px; margin: 0 10px 6px; padding: 14px 0 16px; border: 1px solid var(--panel-line); border-radius: var(--r-md); background: rgba(255, 255, 255, 0.025); touch-action: pan-y; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chart .line { fill: none; stroke: var(--res); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.chart .area { fill: color-mix(in srgb, var(--res) 14%, transparent); stroke: none; }
+.chart .y, .chart .x { position: absolute; font-size: 10px; font-weight: 700; color: var(--ink-dim); font-variant-numeric: tabular-nums; pointer-events: none; }
+.chart .y { left: 8px; }
+.chart .y.hi { top: 2px; }
+.chart .y.lo { bottom: 2px; }
+.chart .x.from { bottom: 2px; left: 50%; transform: translateX(-50%); opacity: 0.8; }
+.chart .x.now { bottom: 2px; right: 8px; }
+.chart.empty { height: auto; padding: 12px; font-size: 12px; color: var(--ink-dim); text-align: center; }
+.chartCross { position: fixed; z-index: 60; width: 1px; background: var(--ink-dim); pointer-events: none; }
+.chartTip {
+  position: fixed; z-index: 60; transform: translateX(-50%); padding: 3px 8px; white-space: nowrap;
+  border: 1px solid var(--panel-line); border-radius: 999px; background: var(--panel);
+  font-size: 11.5px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.row.line .nm { display: flex; align-items: baseline; gap: 4px; }
+.row.line .nm .amount { margin-left: auto; color: var(--green); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row.note { padding: 6px 12px; background: none; border-style: dashed; }
+/* This world's account: earned, spent, held, and where it came from. */
+.row.account .cols { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 3px; font-size: 11.5px; color: var(--ink-dim); }
+.row.account .cols b { margin-right: 3px; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.row.account .stack { display: flex; gap: 2px; height: 6px; margin-top: 6px; border-radius: 3px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+.row.account .stack i { display: block; height: 100%; background: var(--res); }
+.row.account .stack .src-finds { opacity: 0.75; }
+.row.account .stack .src-buildings { opacity: 0.5; }
+.row.account .stack .src-engine { opacity: 0.3; }
+.row .buy.go { min-width: 72px; }
+.amt.spent .n { color: var(--ink); }
+
+/* A resource's heading, lit for a moment when its counter was tapped. */
+.colHead { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--ink); transition: background 1.2s; border-radius: 10px; }
+.colHead .ico { width: 20px; height: 20px; }
+.colHead.lit { background: rgba(127, 208, 122, 0.22); }
+/* Where it came from: a share bar in the resource's own colour. */
+.row.share .bar { height: 6px; margin-top: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.row.share .bar i { display: block; height: 100%; width: var(--share); background: var(--res); border-radius: 3px; }
+/* Every kind of mushroom, as a card; ones not found yet are shadows. */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; padding: 4px 12px 12px; }
+.card {
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--panel-line); border-radius: 12px;
+  padding: 8px 6px 7px; text-align: center; min-width: 0;
+}
+.card .ico { width: 64px; height: 52px; object-fit: contain; display: block; margin: 0 auto 4px; }
+.card .nm { font-size: 13px; font-weight: 800; color: var(--ink); }
+.card .sub { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+.card.unseen .ico { filter: brightness(0); opacity: 0.35; }
+.card.unseen .nm { color: var(--ink-dim); }
+.card.magic { border-color: rgba(201, 166, 255, 0.5); }
+.card.magic:not(.unseen) { background: rgba(201, 166, 255, 0.1); }
+.card .spark { color: #c9a6ff; }
+
+/* ------------------------------------ progression map (Upgrades tab) */
+
+/* A family header: full-width tap target with icon, name, a progress rail of
+   nodes, a count, and a chevron. */
+.railHead {
+  display: flex; align-items: center; gap: 10px;
+  width: calc(100% - 20px); text-align: left;
+  min-height: 56px;
+  margin: 0 10px 6px; padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-line); border-radius: var(--r-md);
+  color: var(--ink); font: inherit; font-weight: 700;
+  cursor: pointer; touch-action: manipulation;
+}
+.railHead.ready { background: rgba(60, 120, 80, 0.18); border-color: rgba(127, 208, 122, 0.35); }
+.railHead:active { background: rgba(255,255,255,0.06); }
+.railHead .fh-ic { width: 28px; height: 28px; flex: 0 0 auto; }
+.railHead .fh-ic .ico { width: 28px; height: 28px; }
+.railHead .fh-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.railHead .fh-nm { font-size: 14px; font-weight: 800; color: var(--ink); }
+.railHead .fh-count { flex: 0 0 auto; font-size: 11.5px; font-weight: 700; color: var(--ink-dim); }
+.railHead .chev {
+  flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--panel-line); background: rgba(255,255,255,0.05);
+  color: var(--ink); font-size: 13px;
+}
+.railHead.ready .chev { border-color: rgba(127,208,122,0.6); color: var(--green); }
+
+/* One dot per system in the family: filled = maxed, half = in progress,
+   ringed = a next level is affordable, hollow = not started. */
+.rail { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.rail .node {
+  width: 12px; height: 12px; border-radius: 999px;
+  border: 1.5px solid var(--panel-line);
+  background: rgba(255,255,255,0.04);
+}
+.rail .node.owned { background: var(--green); border-color: var(--green); }
+.rail .node.partial {
+  border-color: var(--green);
+  background: linear-gradient(90deg, var(--green) 50%, rgba(255,255,255,0.05) 50%);
+}
+.rail .node.ready { border-color: var(--green); background: rgba(127,208,122,0.22); }
+.rail .node.saving { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); }
+
+/* Expanded family: the existing buy rows, indented under their header. */
+.familyBody { margin-bottom: 8px; }
+.familyBody .row { margin-left: 24px; }
+
+/* Settings and Nerds: grouped rows, a name on the left and its value on the
+   right. No tabs: they aren't game lists. */
+.setPanel {
+  overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 6px 12px calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+.setPanel[hidden], #sheetBody[hidden], #mapPanel[hidden] { display: none; }
+
+/* The world map fills the sheet; its own zoom sits in the corner like the
+   game's, and a button brings you back to where you are. */
+#mapPanel { position: relative; flex: 1 1 auto; min-height: 0; margin: 0 10px calc(env(safe-area-inset-bottom, 0px) + 10px); border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--panel-line); }
+#worldMap { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#mapTools {
+  position: absolute; right: 10px; bottom: 10px; width: 40px;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--panel-line); border-radius: 999px; overflow: hidden;
+  background: var(--glass); box-shadow: var(--shadow-1);
+}
+#mapTools button { height: 40px; padding: 0; border: 0; background: none; color: var(--ink); font: 600 22px/1 -apple-system, BlinkMacSystemFont, sans-serif; touch-action: manipulation; }
+#mapTools button + button { border-top: 1px solid var(--panel-line); }
+#mapTools svg, #btnMap svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vertical-align: middle; }
+#zoomControls #btnMap { border-top: 1px solid var(--panel-line); }
+/* Invite links: one card per link, newest first. */
+#invitesPanel { overflow-y: auto; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+#invitesPanel[hidden] { display: none; }
+#invitesPanel .empty { color: var(--ink-dim); text-align: center; padding: 24px 8px; line-height: 1.45; }
+.invite {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--r-md);
+  border: 1px solid var(--panel-line); background: rgba(255, 255, 255, 0.03);
+}
+.invite.dead { opacity: .55; }
+/* Picks for new invite links: how many people, for how long. */
+.inviteAsk { display: flex; flex-direction: column; gap: 6px; }
+.inviteAsk > span { font-size: 12.5px; font-weight: 700; color: var(--ink-dim); padding-left: 2px; }
+.inviteAsk .pick {
+  display: flex; gap: 2px; padding: 3px; border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35); border: 1px solid var(--panel-line);
+}
+.inviteAsk .pick button {
+  flex: 1 1 0; min-width: 0; height: 38px; border: 0; border-radius: 9px;
+  background: none; color: var(--ink-dim);
+  font: 800 13.5px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  white-space: nowrap; touch-action: manipulation; cursor: pointer;
+}
+.inviteAsk .pick button.on { color: #0c1a0e; background: var(--green); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+.inviteAsk + .inviteAsk { margin-bottom: 6px; }
+.invite i { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--friend); }
+.invite div { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.invite strong { font-size: 15px; }
+.invite small { font-size: 12.5px; color: var(--ink-dim); }
+.invite button {
+  flex: none; min-height: 40px; padding: 0 14px; border-radius: var(--r-sm);
+  border: 1px solid var(--panel-line); background: var(--raised); color: var(--ink);
+  font: 800 13px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  touch-action: manipulation; cursor: pointer;
+}
+.invite button.stop { color: var(--danger); border-color: rgba(240, 138, 122, 0.35); }
+
+.setGroup {
+  flex: 0 0 auto;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--panel-line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+.setRow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 52px; padding: 0 16px;
+  border: 0; background: none;
+  color: var(--ink); font: 700 15px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  text-align: left; text-decoration: none;
+  touch-action: manipulation; cursor: pointer;
+}
+.setRow[hidden], .setGroup[hidden] { display: none; }
+.setRow + .setRow { border-top: 1px solid var(--panel-line); }
+.setRow:active { background: var(--raised); }
+.setRow b {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; color: var(--green);
+}
+.setRow b::first-letter { text-transform: uppercase; }
+#version {
+  align-self: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  color: var(--ink-dim);
+}
+#version #brand { color: #e8d9a8; letter-spacing: 0.12em; }
+#version span + span::before { content: '\00B7'; margin: 0 6px; opacity: 0.6; }
+
+/* --------------------------------------------------------------- toast */
+
+/* Status messages drop in under the top bar, out of the thumb's way. */
+#toast {
+  position: absolute; left: 50%; top: calc(var(--edge-t) + 56px);
+  transform: translate(-50%, -8px);
+  background: rgba(20, 26, 22, 0.95);
+  border: 1px solid var(--panel-line);
+  border-radius: 12px;
+  padding: 9px 15px;
+  font-size: 13.5px; font-weight: 700; color: var(--ink);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 40;
+  max-width: 88%;
+  text-align: center;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 700px) { body.below #toast { max-width: calc(100% - 140px); } }
+
+/* A region's name as you walk into it: big and quiet across the upper
+   middle of the map, fading in and away on its own. Taps go through. */
+#place {
+  position: absolute; left: 50%; top: 24%; z-index: 20;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  pointer-events: none; text-align: center; white-space: nowrap;
+  color: #fff6dc; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75), 0 0 18px rgba(0, 0, 0, 0.45);
+  animation: place-show 5s ease forwards;
+}
+#place[hidden] { display: none; }
+#place small { font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+#place strong { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(26px, 8vw, 40px); font-weight: 700; letter-spacing: .02em; }
+#place.brief { animation-duration: 2.2s; }
+@keyframes place-show { 0% { opacity: 0; transform: translate(-50%, 8px); } 14%, 70% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
+
+/* ------------------------------------------------------------ dialogs */
+
+/* Every question and report the game puts in front of you is a card in the
+   middle of the screen over a dimmed map: a title, what it means, and its
+   buttons at the bottom, the safe one first. */
+.scrim {
+  position: fixed; inset: 0; z-index: 95;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+.scrim[hidden] { display: none; }
+.dialog {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 18px 18px;
+  border: 1px solid var(--panel-line); border-radius: var(--r-lg);
+  background: #121a15; color: var(--ink);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+  animation: fade-in .16s ease-out;
+  /* Never taller than the screen: a long one scrolls (landscape phones). */
+  max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch; touch-action: pan-y;
+}
+.dialog > * { flex-shrink: 0; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+/* A frozen character: the joke "FBI" badge (a glowcap, not a real seal),
+   over a police-blue map, with one way on. */
+#fbi { z-index: 120; background: radial-gradient(circle at 50% 40%, rgba(16, 48, 96, 0.6), rgba(0, 0, 0, 0.85)); }
+#fbi .dialog { align-items: center; text-align: center; gap: 8px; border-color: rgba(232, 193, 90, 0.5); }
+#fbi .fbiBadge { width: min(150px, 42vw); height: auto; margin-bottom: 2px; animation: fbi-flash 1.2s steps(2) infinite; }
+#fbi .fbiBadge text { fill: #e8c15a; font: 900 22px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; letter-spacing: 0.12em; }
+#fbi .fbiBureau { color: var(--gold); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+#fbi .dialog strong { font-size: 22px; }
+#fbi .choices { align-self: stretch; }
+@keyframes fbi-flash { 50% { filter: drop-shadow(0 0 14px rgba(255, 70, 70, 0.7)); } 0%, 100% { filter: drop-shadow(0 0 14px rgba(80, 140, 255, 0.7)); } }
+@media (prefers-reduced-motion: reduce) { #fbi .fbiBadge { animation: none; } }
+.dialog strong { font-size: 19px; line-height: 1.25; }
+.dialog p { margin: 0 0 6px; font-size: 14.5px; line-height: 1.45; color: var(--ink-dim); }
+.dialog .askLink { margin: -4px 0 6px; font-size: 14.5px; font-weight: 700; color: var(--green); }
+.dialog .askLink[hidden] { display: none; }
+.dialog .choices { display: flex; gap: 10px; }
+.dialog .choices button {
+  flex: 1 1 0; min-height: 48px; padding: 0 12px;
+  border-radius: 12px;
+  font: 800 15px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  touch-action: manipulation; cursor: pointer;
+}
+.dialog .secondary { border: 1px solid var(--panel-line); background: var(--raised); color: var(--ink); }
+.dialog .primary { border: 1px solid #a4ec92; background: linear-gradient(180deg, #6fcf62, #3f9a45); color: #08200b; }
+.dialog .primary.danger { border-color: #ffab9c; background: linear-gradient(180deg, #e86f5c, #b6432f); color: #fff4f1; }
+.dialog .choices button:active { transform: scale(0.97); }
+
+/* Landscape phones: the big pictures shrink so each dialog fits the height. */
+@media (max-height: 500px) {
+  .scrim { padding: 10px 16px; }
+  .dialog { padding: 14px 18px; gap: 8px; max-width: 520px; }
+  .dialog p { font-size: 13.5px; line-height: 1.35; margin-bottom: 0; }
+  #fbi .fbiBadge { width: min(90px, 22vh); }
+  /* The milestone banner stays a thin strip above you, not over you. */
+  #milestone { padding: 5px 16px 6px; gap: 1px; }
+  #milestone .trophy { display: none; }
+  #milestone strong { font-size: 15px; }
+  #milestone .next { font-size: 12px; }
+}
+
+/* Two tabs saved the same world: pick which to keep, one card each. */
+#fork .picks { display: flex; flex-direction: column; gap: 8px; }
+#fork .picks button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  padding: 12px 14px; text-align: left;
+  border: 1px solid var(--panel-line); border-radius: var(--r-md);
+  background: var(--raised); color: inherit; font: inherit;
+  touch-action: manipulation; cursor: pointer;
+}
+#fork .picks button.ahead { border-color: var(--green); background: rgba(127, 208, 122, 0.12); }
+#fork .title { font-weight: 800; font-size: 15px; }
+#fork .title em { margin-left: 6px; font-style: normal; font-size: 12px; color: var(--green); }
+#fork .text { font-size: 13px; color: var(--ink-dim); }
+
+/* A texture pack that didn't load: every problem, by thing and slot. */
+.dialog.warn { border-color: rgba(255, 179, 71, 0.6); background: #1e160a; color: #ffe9cc; }
+.dialog.warn strong { color: #ffc46b; }
+#packReport ul {
+  margin: 0; padding-left: 18px; max-height: 50vh; overflow: auto;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-word;
+}
+
+/* Fail loud: the crash report covers the game so nothing broken looks fine. */
+/* Shown instead of the game when another page frames it (src/game/main.js). */
+#framed {
+  position: fixed; inset: 0; display: grid; place-items: center; padding: 24px;
+  text-align: center; font: 700 18px/1.4 system-ui, sans-serif; color: var(--ink); background: var(--bg, #0a0e0b);
+}
+#crash {
+  position: fixed; inset: 12px; z-index: 100;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px;
+  border: 2px solid #ff5a5a; border-radius: 14px;
+  background: rgba(30, 6, 6, 0.96); color: #ffd9d9;
+}
+#crash[hidden] { display: none; }
+#crash strong { color: #ff7b7b; font-size: 18px; }
+#crash pre {
+  flex: 1; margin: 0; overflow: auto;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap; word-break: break-word;
+}
+#crash button {
+  align-self: flex-start; padding: 8px 16px;
+  border: 1px solid #ff7b7b; border-radius: 10px;
+  background: transparent; color: inherit; font: inherit; font-weight: 700;
+}
+
+@media (min-width: 700px) {
+  :root { --edge-t: calc(env(safe-area-inset-top, 0px) + 12px); }
+  #depth { font-size: 14px; }
+}
+
+/* Keyboard users get a clear focus ring; touch users never see it. */
+:focus-visible { outline: 2px solid rgba(127, 208, 122, 0.85); outline-offset: 2px; }
+
+/* Narrow phones (iPhone SE 1st gen, 320px): a slightly smaller cluster, so
+   Invite on the left thumb keeps clear of Build. */
+@media (max-width: 374px) {
+  :root { --act: 76px; --sub: 50px; --gap: 10px; }
+}
+
+/* Short screens (landscape phones): keep the map visible and controls reachable. */
+@media (max-height: 500px) {
+  :root { --act: 72px; --sub: 50px; --gap: 10px; --edge-b: calc(env(safe-area-inset-bottom, 0px) + 14px); }
+  /* Zoom lies down: a column this tall would reach the top bar. */
+  /* Low enough to clear a milestone banner, above the climb button. */
+  #zoomControls {
+    right: var(--edge-r); bottom: calc(var(--edge-b) + var(--act) + 62px); /* over the layer button */
+    width: auto; height: 40px; flex-direction: row;
+  }
+  #zoomControls button { width: 40px; }
+  #zoomControls #zoomLevel { height: 40px; width: 34px; border: 0; border-left: 1px solid var(--panel-line); border-right: 1px solid var(--panel-line); }
+  #zoomControls #btnMap { border-top: 0; border-left: 1px solid var(--panel-line); }
+  #sheet { height: 88vh; }
+  .tab { height: 34px; }
+  .setRow { min-height: 44px; }
+}
+
+@supports (height: 100dvh) {
+  #sheet { height: min(72dvh, 720px); }
+  @media (max-height: 500px) { #sheet { height: 88dvh; } }
+}
+
+/* Respect the OS "reduce motion" setting. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+/* Worlds: your own and every shared world you've been in, to switch between. */
+#worldsPanel { overflow-y: auto; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+#worldsPanel[hidden] { display: none; }
+#worldsPanel .empty { color: var(--ink-dim); text-align: center; padding: 16px 8px; line-height: 1.45; font-size: 13.5px; }
+.world {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r-md);
+  border: 1px solid var(--panel-line); background: rgba(255, 255, 255, 0.03);
+}
+.world.here { border-color: var(--green); }
+.world div { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.world strong { font-size: 15px; overflow-wrap: anywhere; }
+.world small { font-size: 12.5px; color: var(--ink-dim); }
+.world > span { flex: none; font-size: 12.5px; font-weight: 800; color: var(--green); }
+.world button {
+  flex: none; min-height: 44px; padding: 0 14px; border-radius: var(--r-sm);
+  border: 1px solid var(--panel-line); background: var(--raised); color: var(--ink);
+  font: 800 13px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  touch-action: manipulation; cursor: pointer;
+}
+.world button.stop { color: var(--danger); border-color: rgba(240, 138, 122, 0.35); }
+#worldNow, #playersCount { font-weight: 600; }
+/* Players: everyone in the shared world, you first, then awake, then asleep. */
+/* What's new: every release, newest first; the ones not seen yet stand out. */
+#newsPanel { overflow-y: auto; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+#newsPanel[hidden] { display: none; }
+#newsPanel .setRow b { flex: none; }
+#newsPanel section { padding: 10px 12px; border: 1px solid var(--panel-line); border-radius: var(--r-md); background: var(--raised); }
+#newsPanel section.fresh { border-color: rgba(255, 209, 102, 0.6); box-shadow: 0 0 12px rgba(255, 209, 102, 0.12); }
+#newsPanel h3 { margin: 0 0 4px; display: flex; align-items: baseline; gap: 6px; font-size: 13px; letter-spacing: 0.04em; color: var(--ink); }
+#newsPanel h3 small { font-size: 11px; font-weight: 600; color: var(--green); }
+#newsPanel h3 em {
+  margin-left: auto; padding: 2px 7px; border-radius: var(--r-pill);
+  background: var(--gold); color: #2a1e06;
+  font: 800 10px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+}
+#newsPanel ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.45; color: var(--ink-dim); }
+#newsPanel .fresh ul { color: var(--ink); }
+#newsPanel li + li { margin-top: 4px; }
+#playersPanel { overflow-y: auto; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+#playersPanel[hidden] { display: none; }
+#playersPanel .count { color: var(--ink-dim); font-size: 13px; padding: 2px 4px 4px; }
+.player {
+  flex: none; display: flex; align-items: center; gap: 12px;
+  min-height: 56px; padding: 6px 12px; border-radius: var(--r-md);
+  border: 1px solid var(--panel-line); background: rgba(255, 255, 255, 0.03);
+}
+.player.you { border-color: var(--green); }
+.player > i { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--friend); box-shadow: 0 0 0 2px rgba(0, 0, 0, .35); }
+.player.away > i { opacity: .7; }
+.player.lost > i { animation: friend-lost 1s ease-in-out infinite; }
+.player.offline > i { background: transparent; box-shadow: inset 0 0 0 2px var(--friend); }
+.player.offline strong { color: var(--ink-dim); }
+.player div { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.player strong { font-size: 15px; overflow-wrap: anywhere; }
+.player strong span { font-size: 12px; font-weight: 800; color: var(--green); }
+.player small { font-size: 12.5px; color: var(--ink-dim); }
+.player button {
+  flex: none; min-height: 44px; padding: 0 14px; border-radius: var(--r-sm);
+  border: 1px solid rgba(240, 138, 122, 0.35); background: var(--raised); color: var(--danger);
+  font: 800 13px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  touch-action: manipulation; cursor: pointer;
+}
+
+/* An admin's copy of a shared world (src/game/copy.js): an amber frame round
+   the screen and a label along its foot, under the thumb cluster. Taps go
+   through. */
+#copyBadge {
+  position: fixed; inset: 0; z-index: 130; pointer-events: none;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+  box-shadow: inset 0 0 0 3px rgba(255, 179, 71, 0.85);
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; color: #ffcf8a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+#copyBadge[hidden] { display: none; }
+
+a.setRow { text-decoration: none; }
+
+/* Construction reads like a chalk plan on the existing dark slate panel.
+   Body text, resource colors, status and controls keep their readable grammar. */
+.chalkPlan .section { color: var(--chalk); }
+.chalkPlan .section::after {
+  content: "";
+  display: block;
+  width: 68px;
+  height: 3px;
+  margin-top: 7px;
+  opacity: 0.7;
+  background: repeating-linear-gradient(92deg, var(--chalk) 0 9px, transparent 9px 10px, var(--chalk) 10px 16px);
+  clip-path: polygon(0 30%, 18% 15%, 37% 35%, 65% 0, 100% 20%, 99% 75%, 74% 85%, 43% 65%, 17% 100%, 0 80%);
+}
+.chalkPlan .row {
+  border-color: rgba(245,242,233,0.23);
+  border-radius: 15px 18px 14px 17px;
+  box-shadow: inset 0 0 0 1px rgba(245,242,233,0.025);
+}
+
+#btnPerfect[hidden] { display: none; }
+.crystalTolerance { display:block; width:100%; max-width:160px; height:12px; }
