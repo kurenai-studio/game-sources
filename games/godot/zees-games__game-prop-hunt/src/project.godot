@@ -1,0 +1,32 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="mg-prop-hunt"
+config/description="Hide as the furniture. The props pick something in the room to become and stay still; the hunters, blindfolded while they hide, then have a few minutes to find them, and every wrong guess costs them health."
+run/main_scene="res://game/ph.tscn"
+config/features=PackedStringArray("4.7")
+
+[audio]
+
+driver/enable_input=true
+
+[importer_defaults]
+
+texture={
+"detect_3d/compress_to": 0
+}
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
