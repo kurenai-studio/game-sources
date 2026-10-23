@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Sintaxis de los scripts
+        run: |
+          for f in $(find . -name '*.js' -not -path './.git/*' -not -path './node_modules/*'); do
+            node --check "$f" || exit 1
+          done
+          echo "JS OK"
+      - name: HTML bien formado
+        continue-on-error: true
+        run: npx --yes html-validate@9 --formatter stylish *.html
