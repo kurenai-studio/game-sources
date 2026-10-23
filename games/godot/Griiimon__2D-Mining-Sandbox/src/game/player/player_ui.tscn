@@ -1,0 +1,169 @@
+[gd_scene load_steps=11 format=3 uid="uid://b4uyq2o7u54dp"]
+
+[ext_resource type="Script" path="res://game/player/player_ui.gd" id="1_cefh8"]
+[ext_resource type="PackedScene" uid="uid://dco5af8vue5ff" path="res://game/player/hotbar/hotbar_slot.tscn" id="2_8gj2r"]
+[ext_resource type="PackedScene" uid="uid://dtq28wgfpmux8" path="res://game/player/inventory/inventory_slot.tscn" id="3_gh4v7"]
+[ext_resource type="PackedScene" uid="uid://d05k54ks64l8d" path="res://game/player/crafting/crafting_ui.tscn" id="4_xvfww"]
+[ext_resource type="PackedScene" uid="uid://c6l1jqs4ln37t" path="res://game/player/build_menu.tscn" id="5_0rt6d"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_82jp2"]
+bg_color = Color(0.34902, 0.34902, 0.34902, 0.423529)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_84786"]
+bg_color = Color(0.317647, 0.513726, 0.584314, 0.2)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_cj0bk"]
+font_size = 20
+font_color = Color(0.972549, 0.890196, 0.894118, 1)
+outline_size = 1
+outline_color = Color(0.87451, 0.254902, 0.498039, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vepwu"]
+bg_color = Color(0.6, 0.6, 0.6, 0.12549)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_noruo"]
+bg_color = Color(0.843137, 0.101961, 0.0156863, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="Player UI" type="CanvasLayer"]
+script = ExtResource("1_cefh8")
+hotbar_slot_scene = ExtResource("2_8gj2r")
+inventory_slot_scene = ExtResource("3_gh4v7")
+
+[node name="Hotbar" type="MarginContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_bottom = 20
+
+[node name="Hotbar" type="PanelContainer" parent="Hotbar"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_82jp2")
+
+[node name="MarginContainer" type="MarginContainer" parent="Hotbar/Hotbar"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HBox Hotbar" type="HBoxContainer" parent="Hotbar/Hotbar/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Interaction Hint" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -324.0
+offset_right = -575.0
+offset_bottom = -288.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_84786")
+label_settings = SubResource("LabelSettings_cj0bk")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Health" type="MarginContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 30
+
+[node name="ProgressBar Health" type="ProgressBar" parent="Health"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(500, 20)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_vepwu")
+theme_override_styles/fill = SubResource("StyleBoxFlat_noruo")
+value = 90.0
+show_percentage = false
+
+[node name="Inventory" type="CenterContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Inventory"]
+custom_minimum_size = Vector2(800, 400)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Inventory/PanelContainer"]
+layout_mode = 2
+
+[node name="Crafting UI" parent="Inventory/PanelContainer/HBoxContainer" instance=ExtResource("4_xvfww")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VSeparator" type="VSeparator" parent="Inventory/PanelContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer Inventory" type="MarginContainer" parent="Inventory/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 15
+
+[node name="PanelContainer" type="PanelContainer" parent="Inventory/PanelContainer/HBoxContainer/MarginContainer Inventory"]
+layout_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Inventory/PanelContainer/HBoxContainer/MarginContainer Inventory/PanelContainer"]
+layout_mode = 2
+
+[node name="GridContainer Inventory" type="GridContainer" parent="Inventory/PanelContainer/HBoxContainer/MarginContainer Inventory/PanelContainer/CenterContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 8
+
+[node name="Build Menu" parent="." instance=ExtResource("5_0rt6d")]
+visible = false
+
+[connection signal="select_buildable" from="Build Menu" to="." method="_on_build_menu_select_buildable"]
