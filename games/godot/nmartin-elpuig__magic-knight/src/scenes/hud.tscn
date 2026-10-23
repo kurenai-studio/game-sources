@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://bteoevth6qvf"]
+
+[ext_resource type="Script" uid="uid://d4lf3806n16tv" path="res://scripts/hud.gd" id="1_5ysmq"]
+[ext_resource type="Texture2D" uid="uid://du2vvgj12b7ov" path="res://assets/sprites/coin.png" id="1_ahhtf"]
+[ext_resource type="FontFile" uid="uid://c8fwufct8e7i2" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="2_oo0fn"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ndffr"]
+atlas = ExtResource("1_ahhtf")
+region = Rect2(0, 0, 16, 16)
+
+[node name="HUD" type="CanvasLayer" unique_id=229808931]
+script = ExtResource("1_5ysmq")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=653157313]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 84.0
+offset_bottom = 84.0
+texture = SubResource("AtlasTexture_ndffr")
+
+[node name="Label" type="Label" parent="." unique_id=1381358958]
+offset_left = 79.0
+offset_top = 34.0
+offset_right = 191.0
+offset_bottom = 66.0
+theme_override_colors/font_color = Color(0, 0.012617188, 0.012617188, 1)
+theme_override_fonts/font = ExtResource("2_oo0fn")
+theme_override_font_sizes/font_size = 32
+text = "x"
+
+[node name="ContadorMonedas" type="Label" parent="." unique_id=441259717]
+offset_left = 114.0
+offset_top = 35.0
+offset_right = 226.0
+offset_bottom = 67.0
+theme_override_colors/font_color = Color(0, 0.012617188, 0.012617188, 1)
+theme_override_fonts/font = ExtResource("2_oo0fn")
+theme_override_font_sizes/font_size = 32
+text = "0"
