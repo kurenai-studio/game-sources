@@ -1,0 +1,450 @@
+import {regionalHousePlan,regionalRivalStep} from "./rivalhouses.mjs";
+// M2 playable slice: game state and player actions on top of the M1 sim. No DOM here, so it is testable.
+import { setRoute, setRouteAdv, clearRoute, processRoutes } from "./routes.mjs";
+import { takeLoan, repayLoan, loansOwed, loanRoom } from "./bank.mjs";
+import { addRespect, updateRank, rankOf, repOf } from "./rank.mjs";
+import { RANKS } from "./rank.mjs";
+import { chronicleWeek, chronicleTick } from "./chronicle.mjs";
+import { buyCannon as buyCannonShip, buyWeapon as buyWeaponShip, repairGuns as repairGunsShip, wearGuns, hireCrew as hireCrewShip, dismissCrew as dismissCrewShip, speedFactor } from "./crew.mjs";
+export const buyCannon = buyCannonShip, buyWeapon = buyWeaponShip, repairGuns = repairGunsShip, hireCrew = hireCrewShip, dismissCrew = dismissCrewShip;
+import { openVoyage, recordSale } from "./voyages.mjs";
+import { chargeToll, tollsDue } from "./tolls.mjs";
+import { processLoans } from "./bank.mjs";
+const r2d = (x) => Math.round(x * 100) / 100;
+import { accrueDay, settleWeek, warnLowCash, accruedTotal, post, logBuy, logSell, OVERDRAFT_LIMIT } from "./ledger.mjs";
+import { route } from "../sim/world.mjs";
+import { freeId, locate, planTrip } from "./freenav.mjs";
+import { ticksForKm } from "../sim/clock.mjs";
+import { makeMarket, tickMarket, tickMarketCity, price } from "../sim/market.mjs";
+import { previewSell, makeShip, tickShip, sailTick, sail, buy, sell, SHIP_TYPES, cargoUsed, shipCapacity, FEE } from "../sim/trade.mjs";
+import { TICKS_PER_DAY as CLOCK_TICKS_PER_DAY, TICKS_PER_HOUR, START_YEAR } from "../sim/clock.mjs";
+import { captainSpeed } from "./captains.mjs";
+import { seeded } from "../view/cityscene.mjs";
+import { rollEvent } from "./events.mjs";
+import { tickShocks, portClosed } from "./shocks.mjs";
+import { tickAlerts } from "./alerts.mjs";
+import { rollContracts, expireContracts, contractOnSale } from "./contracts.mjs";
+import { defaultProfile } from "./profile.mjs";
+import { refreshIntel, knownMarket, buyRumor as buyRumorIntel, RUMOR_PRICE } from "./intel.mjs";
+import { arrivalNews } from "./news.mjs";
+import { arrivalPregon } from "./pregon.mjs";
+import { arrivalIdentity } from "./identity.mjs";
+import { arrivalMood } from "./moodout.mjs";
+import { seasonsTick } from "./seasons.mjs";
+import { craftCount } from "./crafts.mjs";
+import { memoryDeed, memoryGossipLine, MEMORY_GRAIN_SCARCE } from "./memory.mjs";
+import { relationsOnSale } from "./relations.mjs";
+import { growthTick, growthMul } from "./growth.mjs";
+import { festivalsTick, festivalDemandMul } from "./festivals.mjs";
+import { seasonOf } from "../sim/market.mjs";
+import { councilDay, creditCaja } from "./council.mjs";
+import { householdWeek } from "./household.mjs";
+import { tickContacts } from "./contacts.mjs";
+import { isDiscovered, refreshDiscovery, startingChart, discover } from "./fog.mjs";
+import {automaticEncounter} from "./encounterdaily.mjs";
+import { tickBuildings, accrueBuildings, workshopTick, housePopBonus, warehouseCapBonus, BUILDING_TYPES } from "./buildings.mjs";
+import { initCitylife, citylifeDay, citylifeExtra } from "./citylife.mjs";
+import { initPlague, plagueWeek, plaguePopMul } from "./plague.mjs";
+import { initCalamities, calamityWeek, calamityDemandMul } from "./calamities.mjs";
+import { stewardTick } from "./steward.mjs";
+import { aiStep } from "../sim/ai.mjs";
+import { prizeLocked } from "./privateering.mjs";
+import { feeMul, repairMul, repOnBuy, repOnSale, scarcityOf, noteTrade, decayRep } from "./reputation.mjs";
+export { feeMul } from "./reputation.mjs"; // the UI previews with the same fee the port will charge
+import { npcPlan } from "../sim/npcplan.mjs";
+import { newCampaign, campaignEvent, campaignTick } from "./campaigns.mjs";
+import { arrivalJustice, dailyJustice, heldNow } from "./justicewire.mjs";
+import { embargoOn, embargoNotice, GRAIN } from "./embargo.mjs";
+import { withKidMeat, withLegumes, withPottery } from "../sim/optional_goods.mjs";
+
+export const HISTORY_DAYS = 30;
+/** Append today's price of every good in every port; keep the last HISTORY_DAYS. */
+export function recordPrices(world, market, hist) {
+  for (const [city, goods] of Object.entries(market))
+    for (const [good, e] of Object.entries(goods)) {
+      const a = ((hist[city] ??= {})[good] ??= []);
+      a.push(price(world, e, good));
+      if (a.length > HISTORY_DAYS) a.shift();
+    }
+}
+/** Price history of one good in one port (oldest first); [] for saves from before history existed. */
+export function priceHistory(g, city, good) { return g.hist?.[city]?.[good] ?? []; }
+/** Change over the last `days` days, as a whole percent; null if there is not enough history. */
+export function trendPct(g, city, good, days = 7) {
+  const a = priceHistory(g, city, good);
+  if (a.length <= days) return null;
+  const old = a[a.length - 1 - days];
+  return old ? Math.round((a[a.length - 1] - old) / old * 100) : null;
+}
+export const START_CASH = 2000, GOAL_CASH = 50000, DEADLINE_DAYS = 365, CARAVEL_PRICE = 3000, WARMUP_DAYS = 60;
+/** Ticks per game day (10 per hour). The tick is the simulation unit; the day stays the accounting unit. See docs/design/time-model.md. */
+export const TICKS_PER_DAY = CLOCK_TICKS_PER_DAY;
+
+/** A game seed is an integer 0..2^32-1; anything else (including none) means 0, so tests and simulations stay reproducible.
+ *  The web client passes a fresh random seed for every new game; it is saved with the game and shown in the menu. */
+export const normalizeSeed = (n) => (Number.isSafeInteger(n) && n >= 0 && n <= 0xFFFFFFFF ? n : 0);
+export function newGame(world, start = "cadiz", opts = {}) {
+  if (opts.pottery === true) world = withPottery(world); // optional processor good and kiln, default OFF
+  if (opts.legumes === true) world = withLegumes(world); // optional staple, default OFF
+  if (opts.kidMeat === true) world = withKidMeat(world); // optional luxury meat, default OFF (src/sim/optional_goods.mjs)
+  const ids = world.cities.map((c) => c.id);
+  // Opt-in research option only. Production defaults stay exactly three traders.
+  const houses = opts.regionalRivals === true ? regionalHousePlan(world,normalizeSeed(opts.seed)) : null;
+  const origins = houses ? houses.map(h=>h.home) : opts.npcCompetition === "planned" ? npcPlan(world).ports.flatMap(r=>Array(r.count).fill(r.city)) : Array.from({length:3},(_,i)=>ids[(i*3+1)%ids.length]);
+  const ai = origins.map((at, i) => ({ cash: 2000, home: at, ship: makeShip(100 + i, i % 2 ? "caravel" : "cog", at) })); // home: where the trader started; its realm decides if a letter of marque covers it
+  if(houses)ai.forEach((bot,i)=>{bot.house=houses[i];});
+  const market = makeMarket(world), hist = {};
+  for (let d = 0; d < WARMUP_DAYS; d++) { tickMarket(market, d - WARMUP_DAYS, world); for (const t of ai) { for (let i = 0; i < TICKS_PER_DAY && t.ship.voyage; i++) if (sailTick(t.ship)) break; tickShip(t.ship); if(houses)regionalRivalStep({world,market,day:d-WARMUP_DAYS,tick:d*TICKS_PER_DAY,seed:normalizeSeed(opts.seed),regionalRivals:true},t);else aiStep(world, market, t, t.ship); } recordPrices(world, market, hist); } // so prices differ from day 0
+  const g = { world, day: 0, tick: 0, cash: START_CASH + (opts.cash ?? 0), market, hist, ships: [makeShip(1, "cog", start)], ai, nextId: 2, log: [], over: null, warehouses: {}, offices: [], upkeepMul: opts.upkeepMul ?? 1, freePlay: !!opts.freePlay, seed: normalizeSeed(opts.seed), startYear: START_YEAR, kidMeat: opts.kidMeat === true, credit: opts.credit === true, ...(opts.foreclosure === true ? { foreclosure: true } : {}), ...(opts.freeNav === true ? { freeNav: true } : {}), legumes: opts.legumes === true, pottery: opts.pottery === true, pirateFight: opts.pirateFight === true, marque: opts.marque === true, ...(opts.household === true ? { household: true } : {}), profile: opts.profile ?? { ...defaultProfile(), home: start }, eventsOn: !!opts.events, pending: null, campaign: opts.freePlay ? null : (opts.campaign === undefined ? newCampaign() : opts.campaign) }; // campaign mode starts the mission arc; free play and tests can opt out // saves always carry a profile (pre-launch saves are not kept)
+  if(houses)g.regionalRivals=true;
+  if (opts.citylife === true) g.citylife = initCitylife(world); // city-life flag, OFF by default: no key at all in an off game (saves stay identical)
+  if (opts.plague === true) g.plague = initPlague(); // plague flag, OFF by default
+  if (opts.cityIdentity === true) g.cityIdentity = true; // city-identity flag, OFF by default: no key in an off game (saves stay identical)
+  if (opts.cityMoodOut === true) g.cityMoodOut = true; // visible-mood flag, OFF by default: no key in an off game
+  if (opts.citySeasons === true) { g.citySeasons = true; g.seasonSeen = { season: seasonOf(0) }; } // seasons flag: day one knows its season, no false 'arrival' notice
+  if (opts.cityCrafts === true) g.cityCrafts = true; // city-crafts flag, OFF by default: no key in an off game
+  if (opts.cityFestivals === true) g.cityFestivals = true; // city-festivals flag, OFF by default: no key in an off game
+  if (opts.cityMemory === true) g.cityMemory = true; // city-memory flag, OFF by default: no key in an off game
+  if (opts.cityRelations === true) g.cityRelations = true; // city-relations flag, OFF by default: no key in an off game
+  if (opts.cityGrowth === true) g.cityGrowth = true; // city-growth flag, OFF by default: no key in an off game
+  if (opts.cityIdentity === true) arrivalIdentity(g, start); // home port introduces itself on day one
+  if (opts.calamities === true) g.calamities = initCalamities(); // calamities flag, OFF by default
+  refreshIntel(g);
+  startingChart(g, start); // a new trader knows his home coast
+  return g;
+}
+const say = (g, key, p = {}) => { g.log.unshift({ day: g.day, key, ...p }); if (g.log.length > 30) g.log.pop(); };
+export const botWorth = (g, t) => t.cash + Object.entries(t.ship?.cargo ?? {}).reduce((w, [k, q]) => w + q * g.world.goods[k].base, 0) + (t.ship ? shipValue(t.ship) : 0); // a bot house counts its ship too
+export const houseWorth = (g) => netWorth(g) + g.ships.reduce((w, s) => w + shipValue(s), 0); // tribute base: the same as a bot (cash + cargo + ships), net of debts
+export function netWorth(g) {
+  let w = g.cash - accruedTotal(g) - tollsDue(g) - loansOwed(g); // upkeep owed but not yet settled counts against you
+  for (const s of g.ships) for (const [good, q] of Object.entries(s.cargo)) w += q * g.world.goods[good].base;
+  for (const wh of Object.values(g.warehouses ?? {})) for (const [good, q] of Object.entries(wh.goods)) w += q * g.world.goods[good].base; // goods in warehouses count
+  return w;
+}
+/** Free play bankruptcy: the bank seizes cargo, warehouse stock and buildings, sells them at half value,
+ * writes off whatever debt remains (loans included), and the trader starts over with just his ships. */
+export const MISSION = { post, addRespect, repOf, netWorth }; // mission engine hooks (post from ledger, respect from rank)
+export function resolveBankruptcy(g) {
+  let recovered = 0;
+  // Seize like a sale to zero: drop the cargo key AND its cost basis, the same cleanup a real sale does.
+  const seize = (hold, goodsKey) => { const goods = hold?.[goodsKey]; for (const [good, q] of Object.entries(goods ?? {})) if (q > 0) { recovered += q * g.world.goods[good].base / 2; delete goods[good]; if (hold.basis) delete hold.basis[good]; } };
+  for (const s of g.ships ?? []) seize(s, "cargo");
+  for (const wh of Object.values(g.warehouses ?? {})) seize(wh, "goods");
+  for (const plots of Object.values(g.buildings ?? {})) for (const [plotId, b] of Object.entries(plots))
+    { recovered += (BUILDING_TYPES[b.type]?.fee ?? 0) * (b.level ?? 1) / 2; delete plots[plotId]; }
+  const forgiven = Math.max(0, Math.round(-g.cash + loansOwed(g) - recovered));
+  g.cash = Math.max(0, Math.round(g.cash + recovered));
+  g.loans = [];
+  g.bankruptcies = (g.bankruptcies ?? 0) + 1;
+  post(g, "bankrupt", { recovered: Math.round(recovered), forgiven });
+}
+/** Optional per-day hooks registered by the host (data files are loaded by the caller, never by game.mjs). Empty by default: a game with no hooks is unchanged. */
+export const DAILY_HOOKS = [];
+/** The work of one day boundary: markets, AI traders, ships, upkeep; then check the end. */
+function dayTick(g) {
+  g.day++;
+  for (const t of g.ai) { tickShip(t.ship); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // aiStep no-ops at sea; arrivals act on their own tick
+  // price history is recorded per port at its market slot (marketTick), not in one midnight pulse
+  for (const s of g.ships) {
+    if (s.voyage) { wearGuns(s); tickShip(s); } // armament and hull wear at sea, once per day
+    accrueDay(g, s);
+  }
+  accrueBuildings(g); // active buildings add their daily upkeep to the weekly book
+  citylifeDay(g); // city life: no-ops unless the flag created its state at newGame (OFF = untouched)
+  if (g.day % 7 === 0) plagueWeek(g, post); // weekly plague roll: no-ops without the plague flag
+  seasonsTick(g); // the year turns out loud when your ship is in port (flag off: nothing)
+  festivalsTick(g); // a docked ship hears the city's festival (flag off: nothing)
+  if (g.day % 7 === 0) calamityWeek(g, post); // weekly calamity roll: no-ops without the calamities flag
+  decayRep(g); // reputation fades in ports not traded in for a month
+  councilDay(g); // the concejos collect their sisas, pay the watch and vote taxes on meeting days
+  processRoutes(g, { doBuy, doSell, doSail }); // ships with a standing route act on the day they are docked
+  g.weekLoanPrincipal = r2d((g.weekLoanPrincipal ?? 0) + processLoans(g, post)); // loans fall due on their day, not at the next weekly settlement
+  warnLowCash(g);
+  dailyJustice(g); // flag off: nothing
+  for (const h of DAILY_HOOKS) h(g);
+  campaignTick(g, MISSION);
+  const chronSnap = () => ({ cash: g.cash, worth: netWorth(g), ships: g.ships.length, rank: RANKS[g.rankIdx ?? 0]?.id ?? null });
+  chronicleWeek(g, settleWeek(g), chronSnap()); // fold the weekly settlement into the open chronicle year
+  chronicleTick(g, chronSnap()); // closes the year book on New Year's Day
+  const hc = householdWeek(g, houseWorth, botWorth); // optional tribute (flag off): same weekly charge for the player and the bots, paid to their home port
+  if (hc && g.reports?.[0]?.day === g.day) g.reports[0].household = hc;
+  updateRank(g, netWorth(g), post);
+  if (g.cash < -OVERDRAFT_LIMIT) { if (g.freePlay) resolveBankruptcy(g); else { g.over = "lose"; g.overReason = "bankrupt"; } }
+  expireContracts(g); // a council contract past its due day lapses
+  if (g.day % 7 === 0) rollContracts(g); // town councils post their weekly offers
+  rollEvent(g);
+  tickShocks(g); // regional shocks expire (market restored) and maybe a new one starts
+  tickContacts(g); // hired contacts send their inexact price reports (presence re-wins the port below)
+  tickAlerts(g); // price alerts compare against today's market and fire once
+  deliverOrders(g);
+  refreshIntel(g);
+  if (!g.freePlay) { // free play has no deadline and no goal: the world just goes on
+    if (g.cash - loansOwed(g) >= GOAL_CASH) g.over = "win"; // borrowed money does not count towards the goal
+    else if (!g.over && g.day >= DEADLINE_DAYS) g.over = "lose";
+  }
+}
+/** Arrival of a player's ship on its exact tick: the current day's sea wear (as under the day model), tolls, log and ledger. */
+function arrive(g, s) {
+  wearGuns(s); tickShip(s, true); // the arrival day counts as a day at sea, charged now instead of at the boundary
+  chargeToll(g, s, s.at); say(g, "arrive", { ship: s.id, city: s.at }); post(g, "arrival", { ship: s.id, city: s.at });
+  arrivalJustice(g, s); // flag off or no data: nothing
+  arrivalNews(g, s.at); // dockside talk: price news from passing ships
+  arrivalPregon(g, s.at); // the concejo cries its needs when stores run empty
+  arrivalIdentity(g, s.at); // first docking: the port shows its character (flag off: nothing)
+  arrivalMood(g, s.at); // dockside talk: how the city feels (flag off: nothing)
+  { const gossip = memoryGossipLine(g, s.at); if (gossip) { (g.memoryGossip ??= {})[s.at] = g.day; post(g, "info", { city: s.at, txt: gossip.txt }); } } // the city recalls your deeds (flag off: nothing)
+  campaignEvent(g, { kind: "arrive", city: s.at }, MISSION);
+}
+/** Advance one whole day: step ticks to the next day boundary (same as the old daily step, including its progress reset). Stops early when one of the player's ships arrives, so no day work runs before the player can act. */
+export function advanceDay(g) {
+  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
+  const target = (Math.floor(g.tick / TICKS_PER_DAY) + 1) * TICKS_PER_DAY;
+  do {
+    const atSea = new Set(g.ships.filter((s) => s.voyage).map((s) => s.id));
+    advanceTick(g);
+    if (atSea.size && g.ships.some((s) => atSea.has(s.id) && !s.voyage)) break; // a ship of yours just arrived
+  } while (g.tick < target && !g.over && !g.pending && !g.encounterReport);
+}
+/** The slot inside the day at which port i ticks its market (P3-style stagger: updates spread through the day). */
+export const marketSlot = (world, i) => Math.floor(i * TICKS_PER_DAY / world.cities.length);
+/** Ports whose daily market tick is this tick run it now, with their own day count (bit-identical per port to a daily tick). */
+function marketTick(g) {
+  const slot = g.tick % TICKS_PER_DAY, day = Math.ceil(g.tick / TICKS_PER_DAY), n = g.world.cities.length;
+  g.world.cities.forEach((c, i) => {
+    if (marketSlot(g.world, i) !== slot) return;
+    for (const [good, e] of Object.entries(g.market[c.id])) e.pop = Math.round(((c.pop ?? 8000) + housePopBonus(g, c.id) + citylifeExtra(g, c.id)) * plaguePopMul(g, c.id) * festivalDemandMul(g, c.id, good, day) * growthMul(g, c.id) * calamityDemandMul(g, c.id, good)); // houses and city life first; a plague shuts people in; a festival doubles the thirst for its goods on its market day; a growing city eats more (flags off: x1)
+    growthTick(g, c.id); // a fed city swells, a hungry one shrinks (flag off: nothing)
+    tickMarketCity(g.market[c.id], day, g.world);
+    workshopTick(g, c.id); // workshops produce with the fresh prices of their own port's tick
+    stewardTick(g, c.id, warehouseCap(g, c.id)); // standing warehouse orders run on the fresh prices
+    const hist = (g.hist ??= {});
+    for (const [good, e] of Object.entries(g.market[c.id])) {
+      const a = ((hist[c.id] ??= {})[good] ??= []);
+      a.push(price(g.world, e, good));
+      if (a.length > HISTORY_DAYS) a.shift();
+    }
+  });
+}
+/** Advance one tick: ships move continuously and arrive on the exact tick; staggered markets tick at their slot; day work runs only at a day boundary. */
+export function advanceTick(g) {
+  if (g.over || g.pending || g.encounterReport) return; // an event waits for the player's choice
+  g.tick++;
+  for (const s of g.ships) if (sailTick(s)) arrive(g, s);
+  for (const c of refreshDiscovery(g)) say(g, "discovered", { city: c }); // the chart fills in as ships sail
+  for (const t of g.ai) if (sailTick(t.ship)) { tickShip(t.ship, true); const plan = regionalRivalStep(g,t); if (plan?.bought) { craftCount(g, t.ship.at, plan.good, plan.bought); if (plan.good === "grain" && scarcityOf(g.market[t.ship.at]?.grain ?? { target: 1, stock: 1 }) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, t.ship.at, "botGrievance", plan.bought); } } // AI traders act (and pay the arrival day's wear) on their own arrival tick
+  if (!g.over) for (const s of g.ships) if (s.voyage) automaticEncounter(g, s); // one seeded roll per tick at sea; a pirate decision stops time
+  marketTick(g);
+  tickBuildings(g); // construction finishes on its exact tick
+  if (g.tick % TICKS_PER_DAY === 0) dayTick(g);
+}
+export function waitUntilArrival(g, ship) {
+  let n = 0;
+  while (ship.voyage && !ship.voyage.anchored && !g.over && !g.pending && !g.encounterReport && n++ < 400) advanceDay(g);
+}
+export function doBuy(g, ship, good, qty) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
+  if (good === GRAIN && embargoOn(g, ship.at)) { embargoNotice(g, ship.at); return { ok: false, reason: "embargo" }; } // the council keeps its grain at home (flag off: never)
+  const f = FEE * feeMul(g, ship.at);
+  const r = buy(g.world, g.market, ship, g.cash, good, qty, f);
+  // Reputation uses the scarcity AFTER the purchase: re-buying the unit you just sold into a shortage
+  // recreates the shortage and costs back the same points - the sell/rebuy farming loop nets zero.
+  if (r.ok) { craftCount(g, ship.at, good, r.qty); if (good === "grain" && scarcityOf(g.market[ship.at].grain) >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "grievance", r.qty); noteTrade(g, ship.at); g.cash -= r.cost; creditCaja(g, ship.at, Math.round(r.cost * f / (1 + f) * 100) / 100); repOnBuy(g, ship.at, scarcityOf(g.market[ship.at][good]), r.cost); logBuy(g, good, r.qty, r.cost); say(g, "buy", { qty: r.qty, good, sum: r.cost }); campaignEvent(g, { kind: "buy", good, qty: r.qty, city: ship.at }, MISSION); }
+  return r;
+}
+export function doSell(g, ship, good, qty) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (prizeLocked(g, ship, good) > 0 && qty > (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good)) return { ok: false, reason: "prize" }; // prize goods wait for a court (flag off: never)
+  if (portClosed(g, ship.at)) return { ok: false, reason: "port closed" };
+  const scarcity = scarcityOf(g.market[ship.at]?.[good] ?? { stock: 1, target: 1 });
+  const f = FEE * feeMul(g, ship.at);
+  const r = sell(g.world, g.market, ship, good, qty, f);
+  if (r.ok) { noteTrade(g, ship.at); if (good === "grain" && scarcity >= MEMORY_GRAIN_SCARCE) memoryDeed(g, ship.at, "favor", r.qty); relationsOnSale(g, ship.at, good, r.qty, r.revenue); g.cash += r.revenue; creditCaja(g, ship.at, Math.round(r.revenue * f / (1 - f)) / 100); repOnSale(g, ship.at, scarcity, r.revenue); recordSale(g, ship, r.qty, r.revenue, logSell(g, good, r.qty, r.revenue)); contractOnSale(g, ship.at, good, r.qty); /* council contracts count every unit sold into the port */ if (addRespect(g, ship.at, r.revenue)) post(g, "respect", { city: ship.at }); say(g, "sell", { qty: r.qty, good, sum: r.revenue }); campaignEvent(g, { kind: "sell", good, qty: r.qty, city: ship.at }, MISSION); if (g.cash - loansOwed(g) >= GOAL_CASH && !g.over && !g.freePlay) g.over = "win"; } // victory is checked right after a sale
+  return r;
+}
+/** Free navigation (flag g.freeNav): send a ship, docked or already sailing, to any navigable point of the sea or to a port. The ship only moves along sea lanes. */
+export function doGoTo(g, ship, lat, lon) {
+  if (g.freeNav !== true) return { ok: false, reason: "off" };
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!g.ships?.includes(ship)) return { ok: false, reason: "foreign ship" };
+  if (ship.convoy && g.convoys?.[ship.convoy]) return { ok: false, reason: "convoy" }; // a convoy sails together to a port
+  if (speedFactor(ship) <= 0) return { ok: false, reason: "crew" };
+  const docked = !ship.voyage;
+  if (docked && heldNow(g, ship)) return { ok: false, reason: "held" };
+  const plan = planTrip(g.world, ship, lat, lon);
+  if (!plan.ok) return plan;
+  if (docked && plan.toPort) return doSail(g, ship, plan.to); // a port from a port: the ordinary departure, all its checks
+  // Leg origin: the port when docked, the ship's own position when at sea or anchored, so the diary and the panel never name a port the ship is no longer in.
+  const pos = docked ? null : locate(g.world, ship);
+  const from = docked ? ship.at : pos?.id ?? (pos ? freeId(pos.lat, pos.lon) : (ship.voyage.from ?? ship.at)); // at a lane node the place IS that port/waypoint
+  // Wind is rolled when a ship leaves port; changing course at sea keeps the wind it already had (no re-roll fishing).
+  const wind = docked ? 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${plan.to}`)() : (ship.voyage.wind ?? 1);
+  const spec = SHIP_TYPES[ship.type], mul = speedFactor(ship) * captainSpeed(ship);
+  const ticks = Math.max(1, Math.round(ticksForKm(plan.km, spec.kmPerDay) / (mul * wind)));
+  const prevSailLogged = ship.voyage?.sailLogged === true;
+  ship.voyage = { from, to: plan.to, ticksLeft: ticks, totalTicks: ticks, path: plan.path, km: plan.km, wind, pts: plan.pts, ...(plan.toPort ? {} : { free: true }), sailLogged: prevSailLogged };
+  say(g, "sail", { ship: ship.id, city: plan.to, hours: Math.max(1, Math.round(ticks / TICKS_PER_HOUR)) });
+  if (plan.toPort) {
+    // Ledger: the ship's open entry is retargeted only while nothing closed it - no sale booked
+    // and no docking at its port (ship.at is still the port the leg left from); a closed leg earns its own entry.
+    const last = (g.voyages ?? []).find((v) => v.ship === ship.id); // openVoyage prepends: first match is the ship's latest entry
+    if (last && last.sold === 0 && last.to !== ship.at) { last.from = from; last.to = plan.to; }
+    else openVoyage(g, ship, from, plan.to);
+    // Chart: ordering into a port sighted up close puts it on the chart at once.
+    if (discover(g, plan.to)) say(g, "discovered", { city: plan.to });
+    // Missions: a port-bound outing logs one sail event; rerouting keeps the one already logged.
+    if (!ship.voyage.sailLogged) { campaignEvent(g, { kind: "sail", to: plan.to }, MISSION); ship.voyage.sailLogged = true; }
+  }
+  return { ok: true, ticks, km: Math.round(plan.km), toPort: plan.toPort };
+}
+export function doSail(g, ship, to) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (ship.at !== undefined && !ship.voyage && speedFactor(ship) <= 0) return { ok: false, reason: "crew" }; // below the minimum crew a ship cannot leave port
+  if (heldNow(g, ship)) return { ok: false, reason: "held" }; // the court keeps the ship in port
+  const from = ship.at;
+  // Per-leg wind, seeded by departure tick and leg, so replays and save/load keep the same weather.
+  const wind = 0.8 + 0.4 * seeded(`wind-v1:${g.seed ?? 0}:${g.tick}:${ship.id}:${from}>${to}`)();
+  const r = sail(g.world, ship, to, { speedMul: speedFactor(ship) * captainSpeed(ship), wind });
+  if (r.ok) openVoyage(g, ship, from, to);
+  if (r.ok) say(g, "sail", { ship: ship.id, city: to, hours: Math.max(1, Math.round(r.ticks / TICKS_PER_HOUR)) });
+  if (r.ok) campaignEvent(g, { kind: "sail", to }, MISSION);
+  if (r.ok && ship.voyage) ship.voyage.sailLogged = true; // this outing already logged its departure; reroutes will not log again
+  return r;
+}
+/** Buy a second ship (caravel) at the port where ship[0] is docked. */
+export function buyCaravel(g, at) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if (g.cash < CARAVEL_PRICE) return { ok: false, reason: "no cash" };
+  g.cash -= CARAVEL_PRICE;
+  const s = makeShip(g.nextId++, "caravel", at);
+  g.ships.push(s); say(g, "caravel", { city: at });
+  return { ok: true, ship: s };
+}
+export const SELL_RATE = 0.6, REPAIR_PER_POINT = 4;
+/** Order a new ship at the shipyard of the port where a ship of yours is docked. It is delivered after buildDays. */
+export function orderShip(g, type, at) {
+  const t = SHIP_TYPES[type];
+  if (g.over) return { ok: false, reason: "game over" };
+  if (!t || !Object.hasOwn(SHIP_TYPES, type)) return { ok: false, reason: "unknown type" };
+  if (!g.ships.some((s) => !s.voyage && s.at === at)) return { ok: false, reason: "no ship here" };
+  if (g.cash < t.price) return { ok: false, reason: "no cash" };
+  g.cash -= t.price;
+  (g.orders ??= []).push({ type, at, readyDay: g.day + t.buildDays });
+  say(g, "ordered", { city: at, type });
+  return { ok: true, readyDay: g.day + t.buildDays };
+}
+/** Deliver finished orders (called every day). */
+export function deliverOrders(g) {
+  for (const o of [...(g.orders ?? [])]) {
+    if (o.readyDay > g.day) continue;
+    g.orders.splice(g.orders.indexOf(o), 1);
+    const s = makeShip(g.nextId++, o.type, o.at); g.ships.push(s); say(g, "built", { city: o.at, type: o.type, ship: s.id }); post(g, "order", { city: o.at, type: o.type, ship: s.id });
+  }
+}
+export const repairCost = (ship) => Math.ceil((100 - (ship.hull ?? 100)) * REPAIR_PER_POINT);
+export const repairPrice = (g, ship) => Math.ceil(repairCost(ship) * repairMul(g, ship.at)); // reputation discounts the shipyard bill
+export function repairShip(g, ship) {
+  if (ship.voyage) return { ok: false, reason: "at sea" };
+  const c = repairPrice(g, ship);
+  if (c <= 0) return { ok: false, reason: "no damage" };
+  if (g.cash < c) return { ok: false, reason: "no cash" };
+  g.cash -= c; ship.hull = 100; return { ok: true, cost: c };
+}
+export const PRIZE_SELL_RATE = 0.4; // a captured pirate ship resells below the cared-for rate
+export const shipValue = (ship) => Math.round(SHIP_TYPES[ship.type].price * (ship.prize ? PRIZE_SELL_RATE : SELL_RATE) * (0.5 + 0.5 * (ship.hull ?? 100) / 100));
+export function sellShip(g, ship) {
+  if(g.over||!g.ships.includes(ship))return {ok:false,reason:"not an active owned ship"};
+  if (ship.voyage) return { ok: false, reason: "at sea" };
+  if (g.ships.length <= 1) return { ok: false, reason: "last ship" };
+  if (cargoUsed(ship) > 0) return { ok: false, reason: "hold not empty" };
+  const v = shipValue(ship); g.cash += v; g.ships.splice(g.ships.indexOf(ship), 1);
+  removeFromConvoy(g, ship); // a sold ship leaves its convoy (posted); a single hull is no convoy
+  return { ok: true, value: v };
+}
+export const WAREHOUSE_PRICE = 1500, WAREHOUSE_CAP = 300;
+/** Storage cap at a port: the base warehouse plus each active warehouse-building level (design doc piece 5). */
+export const warehouseCap = (g, city) => WAREHOUSE_CAP + warehouseCapBonus(g, city);
+const whUsed = (w) => Object.values(w.goods).reduce((a, b) => a + b, 0);
+export const warehouseOf = (g, city) => g.warehouses?.[city] ?? null;
+/** Buy a warehouse in the port where a ship is docked. One per port. */
+export function buyWarehouse(g, city) {
+  if (g.over) return { ok: false, reason: "game over" };
+  if(!g.ships.some(s=>s.at===city&&!s.voyage))return {ok:false,reason:"no ship here"};
+  g.warehouses ??= {};
+  if (g.warehouses[city]) return { ok: false, reason: "already owned" };
+  if (g.cash < WAREHOUSE_PRICE) return { ok: false, reason: "no cash" };
+  g.cash -= WAREHOUSE_PRICE; g.warehouses[city] = { goods: {} }; refreshIntel(g); say(g, "warehouse", { city });
+  return { ok: true };
+}
+/** Move goods from the ship's hold into the warehouse of the port where it is docked. */
+export function storeGoods(g, ship, good, qty) {
+  if (prizeLocked(g, ship, good) > 0 && qty > (ship.cargo?.[good] ?? 0) - prizeLocked(g, ship, good)) return { ok: false, reason: "prize" };
+  if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
+  const w = warehouseOf(g, ship.at);
+  if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
+  qty = Math.min(Math.floor(qty), ship.cargo[good] ?? 0, warehouseCap(g, ship.at) - whUsed(w));
+  if (!(qty > 0)) return { ok: false, reason: "nothing to store" };
+  const had=ship.cargo[good],paid=ship.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  if(ship.basis)ship.basis[good]=paid-transferred;
+  (w.basis??={})[good]=(w.basis[good]??0)+transferred;
+  ship.cargo[good] -= qty; if (!ship.cargo[good]){delete ship.cargo[good];if(ship.basis)delete ship.basis[good];}
+  w.goods[good] = (w.goods[good] ?? 0) + qty;
+  return { ok: true, qty };
+}
+/** Move goods from the warehouse into the hold (limited by the free room). */
+export function takeGoods(g, ship, good, qty) {
+  if(!g.ships.includes(ship))return {ok:false,reason:"not owned"};
+  const w = warehouseOf(g, ship.at);
+  if (g.over || ship.voyage || !w) return { ok: false, reason: "no warehouse here" };
+  qty = Math.min(Math.floor(qty), w.goods[good] ?? 0, Math.max(0, shipCapacity(ship) - cargoUsed(ship)));
+  if (!(qty > 0)) return { ok: false, reason: "nothing to take" };
+  const had=w.goods[good],paid=w.basis?.[good]??0,transferred=Math.round(paid*qty/had);
+  if(w.basis)w.basis[good]=paid-transferred;
+  (ship.basis??={})[good]=(ship.basis[good]??0)+transferred;
+  w.goods[good] -= qty; if (!w.goods[good]){delete w.goods[good];if(w.basis)delete w.basis[good];}
+  ship.cargo[good] = (ship.cargo[good] ?? 0) + qty;
+  return { ok: true, qty };
+}
+export function quote(g, city, good) { return price(g.world, g.market[city][good], good); }
+export { cargoUsed, SHIP_TYPES };
+/** A tavern rumour also puts the named port on the chart: now the trader knows where it is. */
+export function buyRumor(g, city, at) {
+  const r = buyRumorIntel(g, city, at);
+  if (r.ok && discover(g, city)) say(g, "discovered", { city });
+  if (r.ok) say(g, "rumor", { city, at, price: RUMOR_PRICE });
+  return r;
+}
+export { RUMOR_PRICE, isLive } from "./intel.mjs";
+export { isDiscovered } from "./fog.mjs";
+
+/**
+ * Where would the whole hold sell best at today's prices? One row per other port, best first:
+ * {city, revenue, profit, days}. Prices at arrival will differ; this is a guide, not a promise.
+ */
+export function bestPorts(g, ship) {
+  if (ship.voyage || Object.keys(ship.cargo).length === 0) return [];
+  const rows = [], { market: km, age } = knownMarket(g);
+  for (const c of g.world.cities) {
+    if (c.id === ship.at || !km[c.id]) continue; // unknown port: no price
+    const r = route(g.world, ship.at, c.id);
+    if (!r) continue;
+    const there = { ...ship, at: c.id, voyage: null };
+    let revenue = 0, profit = 0, any = false;
+    for (const [good, q] of Object.entries(ship.cargo)) {
+      const p = previewSell(g.world, km, there, good, q, FEE * feeMul(g, there));
+      if (p.qty) { revenue += p.revenue; profit += p.profit; any = true; }
+    }
+    if (any) rows.push({ city: c.id, age: age[c.id].days, exact: age[c.id].exact, revenue, profit, days: Math.max(1, Math.ceil(r.km / SHIP_TYPES[ship.type].kmPerDay)) });
+  }
+  return rows.sort((a, b) => b.revenue - a.revenue);
+}
+
+/** Bank: borrow at a port where one of your ships is docked. */
+export const borrow = (g, city, amount) => takeLoan(g, city, amount, netWorth(g), post);
+export const repay = (g, id, amount) => repayLoan(g, id, amount, post);
+export const bankRoom = (g, city) => loanRoom(g, netWorth(g), city); // pass the port: the lender of that port sets the terms
+export { loansOwed };
+export { setRoute, setRouteAdv, clearRoute };
+import { removeFromConvoy } from "./convoys.mjs";
+export { formConvoy, leaveConvoy, disbandConvoy, sailConvoy, escortOf, convoyOf, removeFromConvoy } from "./convoys.mjs";
