@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pong</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>🏓 Pong</h1>
+      <p class="tagline">Classic two-paddle rally. First to 7 wins.</p>
+    </header>
+
+    <section class="hud" aria-label="Game statistics">
+      <div class="stat"><span class="stat-label">You</span><span class="stat-value" id="you">0</span></div>
+      <div class="stat"><span class="stat-label">AI</span><span class="stat-value" id="ai">0</span></div>
+      <div class="stat"><span class="stat-label">Target</span><span class="stat-value" id="target">7</span></div>
+    </section>
+
+    <div class="stage">
+      <canvas id="game" width="640" height="420"></canvas>
+      <p class="message" id="message">Move your mouse or use ↑ ↓ to control the left paddle.</p>
+    </div>
+
+    <footer class="controls">
+      <button class="btn" id="start">Start</button>
+      <button class="btn" id="restart">Restart</button>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
