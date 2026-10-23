@@ -1,0 +1,229 @@
+body { 
+    margin: 0; 
+    background: black;
+}
+#container { width: 100%; height: 100% }
+canvas {display: block}
+.noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome and Opera */
+  }
+
+#crosshairdiv {
+    display: none;
+    position: absolute; 
+    top:50%; 
+    left:50%;
+    margin: -50px 0 0 -50px;
+} 
+
+.transpGUI {
+    opacity: 0.8;
+}
+.progressBar{
+    background: white;
+    box-shadow: 2px 2px 0px rgb(31, 31, 31);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+.progressBarBG {
+    background: rgba(196, 196, 196, 0.1);
+    
+}
+/* Time Speed Styles */
+#timespeedcontainerdiv {
+    display: none;
+    position: absolute;
+    left: 5px;
+    bottom: 24%;
+    height: 60%;
+    width: 5px;
+}
+
+/* Weapon Indicators Styles */
+#weaponui {
+    display: none;
+    position: absolute;
+    left: 30px;
+    bottom: 30px;
+    background: #0e0e0e;
+    width: 290px;
+    height: 65px;
+    border-radius: 5px;
+}
+
+#weaponicon {
+    position: absolute;
+    left: 0px;
+    width: 180px;
+    height: 60px;
+}
+#reload {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 5px;
+    background: white;
+    border-radius: 10px;
+    
+    
+}
+#currentreload {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 5px;
+    background: #ffb403;
+    border-radius: 10px;
+    
+}
+
+#maxAmmo {
+    position: absolute;
+    left: 180px;
+    top: 0px;
+    width: 40px;
+    height: 60px;
+    font-size: 20px;
+    line-height: 60px; 
+    text-align: right;
+    border-right: solid 2px #ffb403  ;
+    padding-right: 7px;
+    color: white;
+    
+}
+#currentAmmo {
+    position: absolute;
+    left: 230px;
+    top: 0px;
+    font-size: 35px;
+    width: 60px;
+    height: 60px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 60px; 
+    color: white;
+    
+}
+
+
+#loading {
+    width: 200px;
+    height: 20px;
+    margin: -10px 0 0 -100px;
+    background: rgb(255, 255, 255);
+    border: 2px solid rgb(87, 87, 87);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+#loadingBar {
+    width: 200px;
+    height: 20px;
+    background: red;
+    border: none;
+    position: absolute;
+    left: 0;
+}
+
+
+#blocker {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+#instructions {
+    width: 100%;
+    height: 100%;
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    -webkit-box-orient: horizontal;
+    -moz-box-orient: horizontal;
+    box-orient: horizontal;
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    box-pack: center;
+    -webkit-box-align: center;
+    -moz-box-align: center;
+    box-align: center;
+    color: #ffffff;
+    text-align: center;
+    cursor: pointer;
+    margin-top: -25px;
+}
+
+#bulletPoolDiv {
+    position: absolute;
+    bottom: 10px;
+    right: 50px;
+    color: white;
+}
+
+#enemyPoolDiv {
+    position: absolute;
+    bottom: 40px;
+    right: 50px;
+    color: white;
+}
+
+#scoreDiv {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    color: white;
+    font-size: 30px;
+}
+
+#endgameDiv {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+}
+
+#finalScoreDiv {
+    width: 100%;
+    height: 100%;
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    -webkit-box-orient: horizontal;
+    -moz-box-orient: horizontal;
+    box-orient: horizontal;
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    box-pack: center;
+    -webkit-box-align: center;
+    -moz-box-align: center;
+    box-align: center;
+    color: #ffffff;
+    text-align: center;
+}
+
+#finalScore {
+    margin: 20px;
+    padding: 20px;
+}
+#retryButton {
+    width: 150px;
+    height: 50px;
+    font-size: 20px;
+    font-weight: bold;
+}
