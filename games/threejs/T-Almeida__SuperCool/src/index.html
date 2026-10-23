@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-153384025-2"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-153384025-2');
+    </script>
+
+    <title>SuperCool</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link href="https://fonts.googleapis.com/css?family=Arima+Madurai" rel="stylesheet"> 
+</head>
+<body>
+
+    <div id="container">
+        <!-- CROSSHAIR -->
+        <svg id="crosshairdiv"  height="100" width="100">
+            <defs>
+                <clipPath id="cut-off-bottom">
+                    <rect x="0" y="41" width="100" height="18" />
+                </clipPath>
+            </defs>
+            <circle id="crosshaircircle" cx="50" cy="50" r="11" stroke="white" stroke-width="3" fill="none" clip-path="url(#cut-off-bottom)"/>
+        </svg>
+
+        <!-- TIME SPEED INDICATOR -->
+        <div id="timespeedcontainerdiv" class="noselect progressBarBG">
+            <div id="timespeeddiv" class="progressBar transpGUI"></div>
+        </div>
+    
+        <!-- SCORE -->
+        <div id="scoreDiv" class="noselect"></div>
+
+        <!-- WEAPON HUD -->
+        <div id="weaponui" class="transpGUI" >
+            <img id="weaponicon" class="noselect " src="icons/pistol.png"/>
+
+            <div id="maxAmmo" class="noselect "></div>
+            <div id="currentAmmo" class="noselect "></div>
+
+            <div id="reload" class="noselect">
+                <div id="currentreload"></div>
+            </div>
+        </div>
+    
+        <!-- LOADING BAR -->
+        <div id="loading">
+            <div id="loadingBar"></div>
+        </div>
+    
+        <!-- POINTER LOCK WAITING -->
+        <div id="blocker">
+            <div id="instructions">
+                <span style="font-size:40px">Click to play</span>
+                <br />
+                (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around and shoot, 1-2 = Select a gun)
+                <br />
+                <br />
+                <br />
+                <span style="font-size:20px">Tiago Almeida and Yuriy Muryn</span>
+            </div>
+        </div>
+    
+        <!-- ENDGAME SCORE -->
+        <div id="endgameDiv">
+           <div id="finalScoreDiv">
+                <span style="font-size:20px">YOUR FINAL SCORE</span>
+                <br>
+                <span id="finalScore" style="font-size:80px">80</span>
+                <br>
+                <button id="retryButton">PLAY AGAIN</button>        
+            </div>
+        </div>
+    </div>
+
+    
+
+    
+    <div id="bulletPoolDiv" class="noselect"></div>
+    <div id="enemyPoolDiv" class="noselect"></div>
+
+
+
+
+
+
+    <!-- THREEJS SCRIPTS -->
+    <script src="threejs/three.js"></script>
+    <script src="threejs/stats.min.js"></script>
+    <script src="threejs/PointerLockControls.js"></script>
+    <script src='threejs/MD2CharacterComplex.js'></script>
+    <script src='threejs/MorphBlendMesh.js'></script>
+    <script src="threejs/OBJLoader.js"></script>
+    <script src="threejs/MTLLoader.js"></script>
+    <script src="threejs/DDSLoader.js"></script>
+    <script src="threejs/TDSLoader.js"></script>
+    <script src="threejs/TGALoader.js"></script>
+    <script src="threejs/MD2Loader.js"></script>
+
+    <script src="threejs/CopyShader.js"></script>
+    <script src="threejs/DigitalGlitch.js"></script>
+
+    <script src="threejs/EffectComposer.js"></script>
+    <script src="threejs/RenderPass.js"></script>
+    <script src="threejs/MaskPass.js"></script>
+    <script src="threejs/ShaderPass.js"></script>
+    <script src="threejs/GlitchPass.js"></script>
+
+
+
+    <!-- CREATED SCRIPTS -->
+    <script src="utils.js"></script>
+    <script src="bullet.js"></script>
+    <script src="weapon.js"></script>
+    <script src="player.js"></script>
+    <script src="enemy.js"></script>
+    <script src="boost.js"></script>
+    <script src="loader.js"></script>
+    <script src="game.js"></script>
+
+    <script>
+        var loader;
+        var bPool = new BulletPool();
+        var enemyPool = new EnemyPool();
+        var game = new Game();
+
+
+        var clock = new THREE.Clock();
+
+        
+        // carregamento dos modelos 3d
+        loader = new Loader();
+        loader.loadModels();
+
+        waitForLoad();
+
+        // espera até todos os modelos estarem carregados
+        function waitForLoad() {
+            if (!loader.gun1 || !loader.gun2 || !loader.enemy 
+                || !loader.map || !loader.floors || !loader.walls
+                || !loader.mapAccentMaterial) {
+                setTimeout(waitForLoad,200);
+            } else {
+                console.log("finished loading")
+                startGame();
+            }
+        }
+
+        function startGame() {
+            document.getElementById("loading").style.display  = "none" ;
+            document.getElementById("loadingBar").style.display  = "none" ;
+            blocker.style.display  = "block" ;
+            loadGUI();
+            game.init();
+             // criação das balas
+            bPool.init(200);
+            enemyPool.init(100);
+
+            game.animate();
+        }
+        
+        function loadGUI() {
+            document.getElementById("weaponui").style.display  = "block" ;
+            document.getElementById("crosshairdiv").style.display  = "block" ;
+            document.getElementById("timespeedcontainerdiv").style.display  = "block" ;
+        }
+    </script>
+</body>
+</html>
