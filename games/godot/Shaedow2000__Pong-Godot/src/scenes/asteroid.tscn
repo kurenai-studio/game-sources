@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://dwvh3t4wkvc2n"]
+
+[ext_resource type="Script" uid="uid://dplmi32aafrf" path="res://scripts/asteroid.gd" id="1_6mo6b"]
+[ext_resource type="Texture2D" uid="uid://l4y43ya7xmrn" path="res://assets/sprites.png" id="1_akfqu"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_c044d"]
+radius = 11.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_irq48"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6mo6b"]
+atlas = ExtResource("1_akfqu")
+region = Rect2(0, 16, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_irq48"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6mo6b")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Asteroid" type="CharacterBody2D" unique_id=1380654977]
+script = ExtResource("1_6mo6b")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1474918162]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1632339124]
+shape = SubResource("CircleShape2D_c044d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=117754565]
+shape = SubResource("CircleShape2D_irq48")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1640607504]
+scale = Vector2(2.1, 2.1)
+sprite_frames = SubResource("SpriteFrames_irq48")
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]
