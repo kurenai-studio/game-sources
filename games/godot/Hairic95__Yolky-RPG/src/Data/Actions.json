@@ -1,0 +1,174 @@
+{
+	"tackle": {
+		"name" : "Tackle",
+		"action_type" : "damage",
+		"uses": 4,
+		"stat": "adaptable",
+		"target": "enemy_single",
+		"power" : 40,
+		"description": ""
+	},
+	"wax_swing" : 
+	{
+		"name" : "Wax Swing",
+		"action_type" : "damage",
+		"uses": 5,
+		"stat": "special",
+		"target": "enemy_single",
+		"power" : 20,
+		"effects" : [
+			{
+				"code": "status",
+				"status": "slow",
+				"amount": 1
+			}
+		],
+		"description": "The user launches sticky wax to the target. The target is Slowed."
+	},
+	"recover" : 
+	{
+		"name" : "Recover",
+		"action_type" : "effect",
+		"uses": 2,
+		"target": "self",
+		"self_effects" : [
+			{
+				"code": "heal",
+				"amount": 50
+			}
+		],
+		"description": "The user heals himself ."
+	},
+	"flaming_shot" : 
+	{
+		"name" : "Flaming Shot",
+		"action_type" : "damage",
+		"uses": 8,
+		"stat": "special",
+		"target": "enemy_single",
+		"power" : 70,
+		"effects" : [
+			{
+				"code": "status",
+				"status": "burn",
+				"amount": 5
+			}
+		]
+	},
+	"peak" : 
+	{
+		"name": "Peak",
+		"action_type": "damage",
+		"uses": 8,
+		"stat": "physical",
+		"target": "enemy_single",
+		"power" : 80,
+		"self_effects" : [
+		]
+	},
+	"steam_boost" : 
+	{
+		"name": "Steam Boost",
+		"action_type": "effect",
+		"uses": 4,
+		"target": "ally_single",
+		"self_effects" : [
+			{
+				"code": "status",
+				"status": "thorns",
+				"amount": 3
+			}
+		]
+	},
+	"dizzing_vapors" : 
+	{
+		"name": "Dizzing Vapors",
+		"action_type": "damage",
+		"uses": 4,
+		"power": 30,
+		"stat": "special",
+		"target": "enemy_all",
+		"self_effects" : [
+			{
+				"code": "status",
+				"status": "confused",
+				"amount": 2
+			}
+		]
+	},
+	"profume_wave" : 
+	{
+		"name": "Profume Wave",
+		"action_type": "effect",
+		"uses": 2,
+		"target": "ally_all",
+		"effects" : [
+			{
+				"code": "heal",
+				"amount": 20
+			}
+		]
+	},
+	"relief" : 
+	{
+		"name": "Relief",
+		"action_type": "effect",
+		"uses": 3,
+		"target": "ally_single",
+		"effects" : [
+			{
+				"code": "heal",
+				"amount": 50
+			}
+		]
+	},
+	"fire_punch" : 
+	{
+		"name": "Fire Punch",
+		"action_type": "damage",
+		"stat": "physical",
+		"uses": 8,
+		"power": 70,
+		"target": "enemy_single"
+	},
+	"firering": {
+		"name": "Fire Ring",
+		"action_type": "damage",
+		"stat": "special",
+		"uses": 4,
+		"power": 15,
+		"target": "enemy_single",
+		"effects": [
+			{
+				"code": "status",
+				"status": "burn",
+				"amount": 3
+			},
+			{
+				"code": "status",
+				"status": "mark",
+				"amount": 3
+			}
+		]
+	},
+	"test_magic" : 
+	{
+		"name" : "Test Magic",
+		"action_type" : "damage",	
+		"power" : 1,
+		"stat": "adaptable",
+		"target" : "enemy_single",
+		"type" : "Magic",
+		"effects" : []
+	},
+	"front_attack" :
+	{
+		"name" : "Front Attack",
+		"action_type" : "damage",	
+		"power" : 1,
+		"stat": "adaptable",
+		"target" : "enemy_single",
+		"type" : "Normal",
+		"effects" : []
+	}
+}
