@@ -1,0 +1,60 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Scripts/Bolt.cs" type="Script" id=1]
+[ext_resource path="res://Assets/bolt.png" type="Texture" id=2]
+[ext_resource path="res://Assets/Textures/LightCookieSmooth.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Sounds/hit.wav" type="AudioStream" id=4]
+
+[sub_resource type="Gradient" id=1]
+offsets = PoolRealArray( 0, 0.736434, 1 )
+colors = PoolColorArray( 0, 0.765625, 1, 1, 0, 0.180392, 1, 1, 0, 0.345098, 1, 0 )
+
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
+
+[sub_resource type="ParticlesMaterial" id=3]
+flag_disable_z = true
+spread = 180.0
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 58.14
+initial_velocity_random = 1.0
+angular_velocity = 167.45
+orbit_velocity = 0.0
+orbit_velocity_random = 0.0
+damping = 9.3
+scale = 2.0
+color_ramp = SubResource( 2 )
+
+[sub_resource type="RectangleShape2D" id=4]
+extents = Vector2( 16, 5 )
+
+[node name="Bolt" type="KinematicBody2D"]
+collision_layer = 8
+script = ExtResource( 1 )
+Speed = 1500.0
+
+[node name="Particles2D" type="Particles2D" parent="."]
+position = Vector2( 8, 0 )
+amount = 50
+explosiveness = 0.23
+visibility_rect = Rect2( -1000, -1000, 2000, 2000 )
+local_coords = false
+process_material = SubResource( 3 )
+
+[node name="Sprite" type="Sprite" parent="."]
+position = Vector2( 0, 1 )
+scale = Vector2( 2, 2 )
+texture = ExtResource( 2 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource( 4 )
+
+[node name="Light2D" type="Light2D" parent="."]
+position = Vector2( 0, 0.26487 )
+texture = ExtResource( 3 )
+color = Color( 0, 0.203922, 1, 1 )
+energy = 0.5
+shadow_enabled = true
+
+[node name="HitSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 4 )
