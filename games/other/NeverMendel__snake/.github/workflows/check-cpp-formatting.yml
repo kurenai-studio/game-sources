@@ -1,0 +1,21 @@
+name: Check C++ Code Formatting
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Install clang-format
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt install -y clang-format-18
+      - name: List source code files
+        run: find -type f \( -iname "*.h" -o -iname "*.cpp" \)
+      - name: Run clang-format
+        run: find -type f \( -iname "*.h" -o -iname "*.cpp" \) | xargs clang-format-18 --dry-run -Werror -style=file

@@ -1,0 +1,39 @@
+name: Build snake
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-11, macos-12, macos-13, macos-14, ubuntu-20.04, ubuntu-22.04, windows-2019, windows-2022]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt update && sudo apt install xorg-dev
+        
+      - name: Build with CMake
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -B build
+          cmake --build build --config Release
+
+      - name: Export artifacts on ubuntu and macos
+        if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-${{ matrix.os }}
+          path: build/snake
+
+      - name: Export artifacts on windows
+        if: startsWith(matrix.os, 'windows')
+        uses: actions/upload-artifact@v4
+        with:
+          name: snake-${{ matrix.os }}
+          path: build/Release/snake.exe
