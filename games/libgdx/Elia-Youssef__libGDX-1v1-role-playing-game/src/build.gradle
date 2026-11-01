@@ -1,0 +1,29 @@
+allprojects {
+    group = 'com.micro1.immortalcombat'
+    version = '1.0.0'
+
+    ext {
+        appName = 'ImmortalCombat'
+        gdxVersion = '1.14.0'
+        junitVersion = '5.13.1'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 8
+        options.compilerArgs += ['-Xlint:-options']
+    }
+}
