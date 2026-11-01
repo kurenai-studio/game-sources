@@ -1,0 +1,397 @@
+/*
+ * Two complete looks share this markup. `dark` is Glass, `light` is
+ * Paper. Tokens live here; each look's surfaces are in themes.css.
+ */
+:root {
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif:
+    'Newsreader Variable', 'Iowan Old Style', Charter, Georgia, serif;
+}
+
+/* `data-look` gives one element a look's tokens, whatever the page theme. */
+:root,
+:root[data-theme='dark'],
+[data-look='dark'] {
+  color-scheme: dark;
+  --page-bg: #060913;
+  --page-fg: #f4f7ff;
+  --page-backdrop:
+    radial-gradient(
+      120% 90% at 50% 40%,
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.5) 100%
+    ),
+    #060913;
+  --accent: #3b9dff;
+  --modal-overlay-bg: rgba(2, 4, 12, 0.72);
+  --modal-bg: linear-gradient(160deg, #141c30 0%, #0b1020 100%);
+  --modal-fg: #f4f7ff;
+  --modal-divider: rgba(255, 255, 255, 0.1);
+  --modal-border: rgba(160, 210, 255, 0.22);
+  --modal-close-hover-bg: rgba(255, 255, 255, 0.1);
+  --input-border: rgba(255, 255, 255, 0.2);
+  --input-border-hover: rgba(255, 255, 255, 0.4);
+}
+
+:root[data-theme='light'],
+[data-look='light'] {
+  color-scheme: light;
+  --ink: #16181d;
+  --ink-body: #2a2d36;
+  --ink-soft: #5b6170;
+  --page-bg: #f6f5f0;
+  --page-fg: var(--ink);
+  /* Paper grain: fractal noise at a few percent, tiled. */
+  --page-backdrop:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.09 0 0 0 0 0.09 0 0 0 0 0.11 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    #f6f5f0;
+  --accent: #1f55d6;
+  --modal-overlay-bg: rgba(22, 24, 29, 0.45);
+  --modal-bg: #f6f5f0;
+  --modal-fg: var(--ink);
+  --modal-divider: rgba(22, 24, 29, 0.12);
+  --modal-border: rgba(22, 24, 29, 0.85);
+  --modal-close-hover-bg: rgba(22, 24, 29, 0.07);
+  --input-border: rgba(22, 24, 29, 0.25);
+  --input-border-hover: rgba(22, 24, 29, 0.5);
+}
+
+body {
+  margin: 0;
+  background: var(--page-backdrop);
+  color: var(--page-fg);
+  font-family: var(--font-sans);
+  text-align: center;
+}
+
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+/*
+ * Start screen: the résumé in both looks, split down the middle. `--split` is
+ * the seam's position; it leans toward the side being considered and sweeps
+ * to one edge once a look is chosen.
+ */
+@property --split {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+/*
+ * `--split` is not inherited on purpose. If it were, every one of the
+ * résumé's hundreds of bricks would be restyled on each frame the seam moves.
+ * Only the pieces that place themselves by it take it from their parent.
+ */
+.look-pane,
+.look-card,
+.look-seam {
+  --split: inherit;
+}
+
+#startOverlay {
+  --split: 50%;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  background: #060913;
+  /* One-finger moves drag the seam; pinch still zooms. */
+  touch-action: pinch-zoom;
+  transition:
+    --split 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease,
+    visibility 0s linear 0s;
+}
+
+/* A mouse leans the seam toward the side it is over. A finger drags it. */
+@media (hover: hover) {
+  #startOverlay:has(.look-pane--light:hover) {
+    --split: 56%;
+  }
+
+  #startOverlay:has(.look-pane--dark:hover) {
+    --split: 44%;
+  }
+}
+
+#startOverlay:has(.look-pane--light :focus-visible) {
+  --split: 56%;
+}
+
+#startOverlay:has(.look-pane--dark :focus-visible) {
+  --split: 44%;
+}
+
+/* While a finger is on the seam it follows at once, with no easing. */
+#startOverlay.is-dragging {
+  transition: none;
+}
+
+#startOverlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    --split 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease 0.4s,
+    visibility 0s linear 0.85s;
+}
+
+#startOverlay.hidden[data-chosen='light'] {
+  --split: 100%;
+}
+
+#startOverlay.hidden[data-chosen='dark'] {
+  --split: 0%;
+}
+
+/* Each pane fills the window and is clipped to its side of the seam. */
+.look-pane {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--page-backdrop);
+  color: var(--page-fg);
+}
+
+.look-pane--light {
+  clip-path: inset(0 calc(100% - var(--split)) 0 0);
+}
+
+.look-pane--dark {
+  clip-path: inset(0 0 0 var(--split));
+}
+
+.look-resume {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The paper lies over the glass and casts a shadow onto it. */
+.look-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--split);
+  z-index: 3;
+  width: 30px;
+  border-left: 1px solid rgba(22, 24, 29, 0.55);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+/*
+ * The strip below the résumé, which never extends past three quarters of the
+ * height. The title straddles the seam; a card sits in each half.
+ */
+.overlay-title {
+  position: absolute;
+  top: 75%;
+  right: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: clamp(4px, 1.4vh, 14px) 16px 0;
+  /* White under `difference` reads as ink on paper and as light on glass. */
+  color: #ffffff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+
+#startOverlay h1,
+#startOverlay p {
+  margin: 0;
+}
+
+#startOverlay h1 {
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.overlay-title p {
+  font: 400 clamp(13px, 2vh, 16px) / 1.3 var(--font-sans);
+  text-wrap: balance;
+}
+
+.look-card {
+  position: absolute;
+  top: 75%;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3px, 0.9vh, 8px);
+  padding: clamp(44px, 7vh, 62px) 10px 34px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* A card dragged too narrow to hold its button steps out of the way. */
+.look-card {
+  container-type: inline-size;
+}
+
+@container (max-width: 150px) {
+  .look-name,
+  .look-line,
+  .look-start {
+    visibility: hidden;
+  }
+}
+
+.look-pane--light .look-card {
+  left: 0;
+  width: var(--split);
+}
+
+.look-pane--dark .look-card {
+  right: 0;
+  left: var(--split);
+}
+
+.look-name {
+  font-size: clamp(20px, 3.2vh, 28px);
+  line-height: 1.05;
+}
+
+.look-line {
+  font: 400 14px/1.3 var(--font-sans);
+}
+
+.look-start {
+  margin-top: clamp(2px, 0.8vh, 8px);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+}
+
+.look-start:disabled {
+  cursor: default;
+}
+
+/* Once a look is chosen, the chrome steps aside for the sweep. */
+#startOverlay.hidden .look-card,
+#startOverlay.hidden .overlay-title,
+#startOverlay.hidden .look-seam,
+#startOverlay.hidden .overlay-attribution {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.overlay-attribution {
+  position: absolute;
+  right: 18px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font: 500 13px/1 var(--font-sans);
+  white-space: nowrap;
+}
+
+.overlay-attribution .brick-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.overlay-attribution .brick-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+@media (max-width: 700px), (max-height: 760px) {
+  .look-line {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .overlay-attribution span {
+    display: none;
+  }
+
+  .overlay-attribution {
+    right: 12px;
+    font-size: 12px;
+  }
+}
+
+/* On a short window a card can reach the résumé; fade what it covers. */
+@media (max-height: 620px) {
+  .look-card {
+    top: auto;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      var(--page-bg) 40px
+    );
+  }
+
+  .overlay-title {
+    top: auto;
+    bottom: clamp(96px, 20vh, 130px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #startOverlay,
+  #startOverlay.hidden {
+    transition: none;
+  }
+}
+
+/* Geometry shared by both looks; each brick is positioned by its layout. */
+.overlay-brick,
+.brick-ghost {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  line-height: 1;
+  box-sizing: border-box;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.overlay-brick {
+  overflow: hidden;
+}
+
+/* What a broken brick leaves behind; styled per look in themes.css. */
+.brick-particle,
+.brick-ring,
+.brick-word {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brick-particle,
+  .brick-ring,
+  .brick-word {
+    display: none;
+  }
+}

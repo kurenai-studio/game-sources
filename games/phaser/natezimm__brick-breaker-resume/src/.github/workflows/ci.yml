@@ -1,0 +1,90 @@
+name: CI & Deploy
+
+on:
+  pull_request:
+    branches: ['main']
+  push:
+    branches: ['main']
+
+# Pinned to Ubuntu 24.04 rather than ubuntu-latest: Playwright 1.60 cannot install Chromium
+# on the newer 26.04 image. Move the pin once it can.
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run quality gate
+        run: npm run quality
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: brick-breaker-build
+          path: dist
+          if-no-files-found: error
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: brick-breaker-build
+          path: site
+
+      - name: Setup SSH
+        env:
+          GCP_KNOWN_HOSTS: ${{ secrets.GCP_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          if [ -z "$GCP_KNOWN_HOSTS" ]; then
+            echo "GCP_KNOWN_HOSTS secret is not set; refusing to connect without a pinned host key"
+            exit 1
+          fi
+          printf '%s\n' "$GCP_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          cat <<SSHCONFIG > ~/.ssh/config
+          Host gcp
+            HostName ${{ secrets.GCP_HOST }}
+            User ${{ secrets.GCP_USER }}
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking yes
+          SSHCONFIG
+
+      - name: Deploy to GCP
+        run: |
+          rsync -avz --delete site/ gcp:/var/www/brick-breaker/
+
+      - name: Health check
+        run: |
+          echo "Waiting for site to come up..."
+          sleep 6
+
+          curl -f https://${{ secrets.APP_DOMAIN }} || {
+            echo "Brick Breaker health check failed"
+            exit 1
+          }
+
+          echo "Brick Breaker deployed successfully"
