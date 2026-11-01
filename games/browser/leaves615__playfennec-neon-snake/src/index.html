@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Neon Snake - open-source HTML5 snake</title>
+<meta name="description" content="A glowing take on the arcade classic. Arrow keys, WASD or swipe. Single-file vanilla JS canvas game, MIT licensed.">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #020617; color: #e2e8f0; font-family: system-ui, -apple-system, Arial, sans-serif; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 12px; }
+.wrap { width: 100%; max-width: 560px; display: flex; flex-direction: column; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font-size: 20px; font-weight: 800; color: #fff; }
+h1 span { color: #4ade80; }
+.scores { display: flex; gap: 8px; }
+.pill { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 4px 14px; text-align: center; }
+.pill small { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+.pill b { font-size: 14px; color: #fff; }
+.pill b.best { color: #4ade80; }
+.stage { position: relative; margin-top: 12px; aspect-ratio: 24/18; width: 100%; touch-action: none; }
+canvas { width: 100%; height: 100%; display: block; border-radius: 12px; border: 1px solid #1e293b; background: #020617; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: rgba(2,6,23,.88); text-align: center; padding: 16px; }
+.overlay.hidden { display: none; }
+.overlay h2 { font-size: 26px; font-weight: 800; color: #fff; }
+.overlay p { margin-top: 6px; font-size: 14px; color: #94a3b8; }
+.overlay button { margin-top: 18px; border: 1px solid #1e293b; background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.overlay button:hover { border-color: #22c55e; color: #fff; }
+.hint { margin-top: 8px; text-align: center; font-size: 12px; color: #64748b; }
+footer { margin: 14px 0 8px; font-size: 12px; color: #475569; text-align: center; }
+footer a { color: #4ade80; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="bar"><h1>Neon <span>Snake</span></h1><div class="scores"><div class="pill"><small>Score</small><b id="score">0</b></div><div class="pill"><small>Best</small><b id="best" class="best">0</b></div></div></div>
+<div class="stage" id="stage">
+<canvas id="board" width="720" height="540"></canvas>
+<div id="overlay" class="overlay hidden"><h2 id="overlay-title"></h2><p id="overlay-sub"></p><button id="overlay-new">Start</button></div>
+</div>
+<p class="hint">Arrow keys / WASD / swipe - eat apples, don&apos;t bite yourself</p>
+<footer>Open-source (MIT) by <a href="https://playfennec.com">PlayFennec</a> - full 8-language version: <a href="https://playfennec.com/game/neon-snake/">playfennec.com/game/neon-snake/</a></footer>
+</div>
+<script>
+// Open-source build (MIT). Extracted from the PlayFennec site version:
+(function () {
+var COLS = 24;
+var ROWS = 18;
+var CELL = 30;
+var BEST_KEY = 'wg_best_snake';
+var canvas = document.getElementById('board');
+var ctx = canvas.getContext('2d');
+var scoreEl = document.getElementById('score');
+var bestEl = document.getElementById('best');
+var overlay = document.getElementById('overlay');
+var overlayTitle = document.getElementById('overlay-title');
+var overlaySub = document.getElementById('overlay-sub');
+var overlayNew = document.getElementById('overlay-new');
+var snake = [];
+var dir = { x: 1, y: 0 };
+var queuedDirs = [];
+var food = { x: 0, y: 0 };
+var score = 0;
+var best = Number(localStorage.getItem(BEST_KEY) || 0);
+var tickMs = 140;
+var timer = null;
+var alive = false;
+bestEl.textContent = String(best);
+function spawnFood() {
+  do {
+    food = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+  } while (snake.some(function (s) { return s.x === food.x && s.y === food.y; }));
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
+  ctx.fill();
+}
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = 'rgba(20,83,45,0.25)';
+  ctx.lineWidth = 1;
+  var i;
+  for (i = 1; i < COLS; i++) { ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, canvas.height); ctx.stroke(); }
+  for (i = 1; i < ROWS; i++) { ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(canvas.width, i * CELL); ctx.stroke(); }
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(252,165,165,0.9)';
+  ctx.beginPath();
+  ctx.arc(food.x * CELL + CELL * 0.4, food.y * CELL + CELL * 0.4, CELL * 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  snake.forEach(function (s, idx) {
+    var t = idx / Math.max(snake.length - 1, 1);
+    ctx.fillStyle = idx === 0 ? '#bef264' : 'rgb(' + Math.round(34 + 60 * (1 - t)) + ',' + Math.round(197 - 60 * t) + ',' + Math.round(94 + 40 * t) + ')';
+    ctx.shadowColor = '#22c55e';
+    ctx.shadowBlur = idx === 0 ? 14 : 6;
+    roundRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4, 7);
+    ctx.shadowBlur = 0;
+  });
+}
+function setSpeed() {
+  tickMs = Math.max(70, 140 - Math.floor(score / 5) * 8);
+  if (timer) { clearInterval(timer); timer = setInterval(tick, tickMs); }
+}
+function tick() {
+  dir = queuedDirs.shift() || dir;
+  var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+  var hitWall = head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS;
+  var hitSelf = snake.some(function (s) { return s.x === head.x && s.y === head.y; });
+  if (hitWall || hitSelf) { gameOver(); return; }
+  snake.unshift(head);
+  if (head.x === food.x && head.y === food.y) {
+    score += 10;
+    scoreEl.textContent = String(score);
+    if (score > best) { best = score; bestEl.textContent = String(best); localStorage.setItem(BEST_KEY, String(best)); }
+    spawnFood();
+    setSpeed();
+  } else { snake.pop(); }
+  draw();
+}
+function showOverlay(title, sub, cta) {
+  overlayTitle.textContent = title;
+  overlaySub.textContent = sub;
+  overlayNew.textContent = cta;
+  overlay.classList.remove('hidden');
+}
+function hideOverlay() { overlay.classList.add('hidden'); }
+function start() {
+  snake = [{ x: 8, y: 9 }, { x: 7, y: 9 }, { x: 6, y: 9 }];
+  dir = { x: 1, y: 0 };
+  queuedDirs = [];
+  score = 0;
+  scoreEl.textContent = '0';
+  tickMs = 140;
+  alive = true;
+  hideOverlay();
+  spawnFood();
+  draw();
+  if (timer) clearInterval(timer);
+  timer = setInterval(tick, tickMs);
+}
+function gameOver() {
+  alive = false;
+  if (timer) clearInterval(timer);
+  draw();
+  ctx.fillStyle = 'rgba(239,68,68,0.25)';
+  roundRect(snake[0].x * CELL + 2, snake[0].y * CELL + 2, CELL - 4, CELL - 4, 7);
+  showOverlay('Game over', 'Score: ' + score, 'Play again');
+}
+function queueDir(d) {
+  if (!alive) return;
+  var last = queuedDirs.length ? queuedDirs[queuedDirs.length - 1] : dir;
+  if (d.x === -last.x && d.y === -last.y) return;
+  if (queuedDirs.length < 2) queuedDirs.push(d);
+}
+var KEY_DIR = {
+  ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
+  ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 },
+  w: { x: 0, y: -1 }, s: { x: 0, y: 1 }, a: { x: -1, y: 0 }, d: { x: 1, y: 0 },
+  W: { x: 0, y: -1 }, S: { x: 0, y: 1 }, A: { x: -1, y: 0 }, D: { x: 1, y: 0 }
+};
+window.addEventListener('keydown', function (e) {
+  var d = KEY_DIR[e.key];
+  if (!d) {
+    if (!alive && (e.key === ' ' || e.key === 'Enter')) start();
+    return;
+  }
+  e.preventDefault();
+  queueDir(d);
+});
+var touchStart = null;
+var stage = document.getElementById('stage');
+stage.addEventListener('touchstart', function (e) {
+  var t = e.touches[0];
+  touchStart = [t.clientX, t.clientY];
+}, { passive: true });
+stage.addEventListener('touchend', function (e) {
+  if (!touchStart || !alive) return;
+  var t = e.changedTouches[0];
+  var dx = t.clientX - touchStart[0];
+  var dy = t.clientY - touchStart[1];
+  touchStart = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+  if (Math.abs(dx) > Math.abs(dy)) queueDir({ x: dx > 0 ? 1 : -1, y: 0 });
+  else queueDir({ x: 0, y: dy > 0 ? 1 : -1 });
+});
+overlayNew.addEventListener('click', start);
+snake = [{ x: 8, y: 9 }, { x: 7, y: 9 }, { x: 6, y: 9 }];
+spawnFood();
+draw();
+showOverlay('Neon Snake', 'Ready?', 'Start');
+})();
+</script>
+</body>
+</html>
