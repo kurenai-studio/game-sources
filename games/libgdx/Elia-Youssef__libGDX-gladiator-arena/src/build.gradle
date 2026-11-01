@@ -1,0 +1,41 @@
+// Root build script. GladiatorArena is a libGDX 1.14.1, Java 21 project, lwjgl3 desktop
+// backend only (gdx-liftoff-style, no android/ios/html modules). Two modules: core (arena
+// combat simulation + screens/render/input) + lwjgl3 (desktop launcher).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'GladiatorArena'
+        gdxVersion = '1.14.1'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Java 21 source + target (task requirement), pinned via --release so the build
+        // targets the Java 21 platform exactly.
+        options.release = 21
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
