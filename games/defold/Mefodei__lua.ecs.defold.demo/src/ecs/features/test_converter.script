@@ -1,0 +1,38 @@
+local GameECS = require("ecs.gameecs")
+local Components = require("ecs.components.defaultcomponents")
+local TestComponents = require("ecs.features.test_components")
+local Entity = nil
+
+function init(self)
+	
+	local world = GameECS:World()
+	local pos = go.get_position()
+	local id = go.get_id()
+
+	Entity = world:Entity()
+	Entity:Set(Components.Position({x = pos.x, y=pos.y}))
+	Entity:Set(Components.GameObject({value = go, id = id}))
+	Entity:Set(TestComponents.TestAnimation())
+	
+	print(string.format("Entity Init : %s",id))
+end
+
+function final(self)
+	local world = GameECS:World()
+	world:Remove(Entity)
+end
+
+function update(self, dt)
+
+	-- local pos = go.get_position()	
+	--Entity:Set(Components.PositionComponent({x = pos.x, y=pos.y}))
+
+	Components.DemoValue = Components.DemoValue + 1
+	
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
