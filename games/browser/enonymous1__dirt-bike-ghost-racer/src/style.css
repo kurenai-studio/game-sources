@@ -1,0 +1,188 @@
+/* Dirt Bike Ghost Racer — layout and HUD styling.
+   The canvas itself is drawn in game.js; this file only scales it
+   and styles the page around it. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #101418;
+  color: #f2f2f2;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.header { text-align: center; }
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  letter-spacing: 0.12em;
+  color: #ff3b30;
+  text-shadow: 3px 3px 0 #7a0000, 6px 6px 0 rgba(0, 0, 0, 0.6);
+}
+
+.subtitle { margin: 6px 0 14px; color: #cbd5e1; }
+
+/* --- HUD --------------------------------------------------------------- */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #1f2937;
+  border: 2px solid #475569;
+  border-radius: 8px;
+}
+
+.hud-item { display: flex; align-items: center; gap: 8px; }
+.hud-label { font-size: 0.75rem; letter-spacing: 0.12em; color: #94a3b8; }
+.hud-value { font-size: 1.15rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+
+.temp-item { flex: 1 1 220px; }
+.temp-bar {
+  flex: 1;
+  height: 18px;
+  min-width: 140px;
+  background: #0f172a;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.temp-fill {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+  transition: width 0.08s linear, background-color 0.2s;
+}
+.temp-fill.warm { background: #facc15; }
+.temp-fill.hot { background: #ef4444; }
+
+/* --- Canvas: fixed internal resolution, responsive display size -------- */
+.game-wrap { position: relative; margin-top: 12px; }
+
+canvas#game {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  background: #7ec8f7; /* blue sky, matches the canvas clear colour */
+  border: 3px solid #334155;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+
+.state-note {
+  margin: 8px 0 0;
+  text-align: center;
+  color: #e2e8f0;
+  font-weight: bold;
+}
+
+/* --- Custom track editor ------------------------------------------------ */
+.editor {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+.editor.active { border-color: #facc15; }
+.editor h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin: 10px 0;
+}
+.editor-row label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.editor select, .editor input[type="number"], .editor input[type="text"] {
+  padding: 8px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #fff;
+}
+.editor button {
+  padding: 10px 14px;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  background: #334155;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+.editor button:active { background: #475569; }
+.editor button.go { background: #166534; }
+.editor-check { display: block; margin: 8px 0; }
+.editor textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: monospace;
+}
+.editor-status { color: #facc15; font-weight: bold; }
+.obstacle-list { margin: 8px 0 0; padding-left: 0; list-style: none; }
+.obstacle-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #334155;
+}
+.obstacle-list button {
+  padding: 4px 10px;
+  background: #991b1b;
+}
+
+/* --- Controls / touch -------------------------------------------------- */
+.controls {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #1e293b;
+  border-radius: 8px;
+  line-height: 1.55;
+}
+.controls h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.controls ul { margin: 0; padding-left: 20px; }
+.tip { color: #cbd5e1; }
+
+.touch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.touch button {
+  padding: 12px 14px;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  background: #334155;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.touch button:active { background: #475569; }
+.touch button.go { background: #166534; }
+.touch button.turbo { background: #991b1b; }
+
+@media (max-width: 560px) {
+  .hud { gap: 10px; }
+  .temp-item { flex-basis: 100%; }
+}

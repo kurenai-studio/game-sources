@@ -1,0 +1,43 @@
+name: Pages
+
+# Deploys this static site to GitHub Pages with no build step.
+# One-time setup after the first push (still the repo owner's step):
+#   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+# After that, every push to main (and every manual dispatch) deploys,
+# and the site is live at https://enonymous1.github.io/dirt-bike-ghost-racer/
+# The branch-deploy alternative in README.md is superseded by this workflow:
+# do not set Pages Source back to "Deploy from a branch" while this runs.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one Pages deployment at a time, and do not cancel one that
+# is already in progress (the recommended Pages concurrency setting).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # The whole repo root is the site: index.html at the root is
+          # what Pages serves. No build output directory exists.
+          path: .
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
