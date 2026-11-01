@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+    <property name="LOG_LEVEL_true" value="DEBUG"/>
+    <property name="LOG_LEVEL_false" value="INFO"/>
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:-${LOG_LEVEL_${boxbot.dev:-${BOXBOT_DEV:-false}}:-INFO}}"/>
+
+    <!-- [15:42:18.321][INFO ][System] [T:124] <message> -->
+    <property
+            name="LOG_PATTERN"
+            value="[%d{HH:mm:ss.SSS}][%-5level][%-6logger]%msg%n"
+    />
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/boxbot.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <!-- Roll daily, with additional files when a day exceeds 5 MB. -->
+            <fileNamePattern>
+                logs/archive/boxbot-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+
+            <maxFileSize>5MB</maxFileSize>
+
+            <!-- Keep at most seven days of archived logs. -->
+            <maxHistory>7</maxHistory>
+
+            <!-- Never retain more than 50 MB of archived logs. -->
+            <totalSizeCap>50MB</totalSizeCap>
+
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

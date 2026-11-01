@@ -1,0 +1,22 @@
+name: boxbot
+
+services:
+  codex:
+    image: ghcr.io/meowpow-png/mipe-runtime-codex-java:latest
+    volumes:
+      - codex-home:/home/dev/.codex
+      - .:/workspace:z
+    stdin_open: true
+    tty: true
+
+  claude:
+    image: ghcr.io/meowpow-png/mipe-runtime-claude-java:latest
+    volumes:
+      - claude-home:/home/dev
+      - .:/workspace:z
+    stdin_open: true
+    tty: true
+
+volumes:
+  codex-home:
+  claude-home:

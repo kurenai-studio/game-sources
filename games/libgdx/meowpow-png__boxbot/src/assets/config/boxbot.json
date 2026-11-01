@@ -1,0 +1,39 @@
+{
+  "seed": 1,
+  "timing": {
+    "robotMovementTickDuration": 0.25,
+    "robotActionTickDuration": 0.35,
+    "robotChargingTickDuration": 0.5,
+    "simulationTickDuration": 0.75
+  },
+  "warehouse": {
+    "batteryMaxCapacity": 100,
+    "backlogLimit": 3
+  },
+  "demand": {
+    "preseedFraction": 0.50,
+    "baseOrderIntervalTicks": 20,
+    "deliveryTimerTicks": 100,
+    "urgentThresholdTicks": 27,
+    "truckVisitIntervalTicks": 60,
+    "truckOperationDelayTicks": 1,
+    "truckCapacity": 6,
+    "supply": {
+      "cycleLengthTicks": 700,
+      "minimumFactor": 0.35,
+      "floorFraction": 0.15
+    },
+    "demandCycle": {
+      "cycleLengthTicks": 700,
+      "minimumRateFactor": 0.5,
+      "maximumRateFactor": 1.5
+    }
+  },
+  "input": {
+    "selectionQueueLimit": 5
+  },
+  "ui": {
+    "orderWarningThresholdPercent": 0.5,
+    "orderCriticalThresholdPercent": 0.2
+  }
+}

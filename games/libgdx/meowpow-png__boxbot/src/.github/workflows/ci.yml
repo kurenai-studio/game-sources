@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, dev]
+    paths: &all-paths
+      - "core/src/**"
+      - "lwjgl3/src/**"
+      - "**/build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/libs.versions.toml"
+      - "gradle/wrapper/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main, dev]
+    paths: *all-paths
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build project
+        run: ./gradlew assemble
+
+      - name: Run tests with coverage
+        run: ./gradlew :core:test :core:archTest :core:integrationTest :core:jacocoTestReport
+
+      - name: Calculate line coverage
+        id: coverage
+        run: bash .github/scripts/calculate-line-coverage.sh
+
+      - name: Upload code coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: code-coverage-report
+          path: core/build/reports/jacoco/test
+
+      - name: Update coverage badge
+        if: github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.9.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: 9d82a498aa63b2b7b872629c4cd6759c
+          filename: boxbot-coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.percentage }}
+          color: ${{ steps.coverage.outputs.color }}
+
+      - name: Generate coverage summary
+        env:
+          TESTS_PASSED: ${{ steps.coverage.outputs.tests_passed }}
+          COVERAGE: ${{ steps.coverage.outputs.percentage }}
+        run: bash .github/scripts/render-ci-summary.sh

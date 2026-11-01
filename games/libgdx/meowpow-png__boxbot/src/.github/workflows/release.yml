@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*-rc.*"
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  check-ci:
+    name: Verify release preconditions
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Verify commit is tagged with version
+        run: bash .github/scripts/verify-version-tag.sh "${{ github.ref_name }}"
+
+      - name: Check CI status for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/check-ci-status.sh "${{ github.repository }}" "${{ github.sha }}"
+
+  linux-artifacts:
+    name: Build Linux artifacts
+    needs: check-ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install jpackage deb dependencies
+        run: sudo apt-get update && sudo apt-get install -y fakeroot
+
+      - name: Resolve release version
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build fat jar and native artifacts
+        run: ./gradlew :lwjgl3:jpackageInstaller -Pversion="${{ steps.version.outputs.value }}"
+
+      - name: Build AppImage
+        run: bash scripts/build-appimage.sh "${{ steps.version.outputs.value }}"
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-artifacts
+          path: |
+            lwjgl3/build/jpackage/dist/*.deb
+            lwjgl3/build/jpackage/dist/*.AppImage
+
+      - name: Upload fat jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: fat-jar
+          path: lwjgl3/build/libs/*.jar
+
+  windows-artifacts:
+    name: Build Windows artifacts
+    needs: check-ci
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install WiX Toolset
+        run: choco install wixtoolset -y
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build fat jar and native artifacts
+        run: ./gradlew.bat :lwjgl3:jpackageInstaller "-Pversion=${{ steps.version.outputs.value }}"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-artifacts
+          path: lwjgl3/build/jpackage/dist/*.msi
+
+  publish-release:
+    name: Publish GitHub release
+    needs: [ linux-artifacts, windows-artifacts ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-artifacts
+          path: dist
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-artifacts
+          path: dist
+
+      - name: Download fat jar
+        uses: actions/download-artifact@v8
+        with:
+          name: fat-jar
+          path: dist
+
+      - name: Extract changelog section for this release
+        run: bash .github/scripts/extract-changelog-section.sh "${GITHUB_REF_NAME#v}" > release-notes.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          prerelease: ${{ contains(github.ref_name, '-rc.') }}
+          body_path: release-notes.md
+          files: |
+            dist/**/*.jar
+            dist/**/*.deb
+            dist/**/*.AppImage
+            dist/**/*.msi
