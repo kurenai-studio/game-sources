@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hamurapi</title>
+<meta name="description" content="Be king for 10 years. Feed your people. Keep your crown. The 1968 game, rebuilt with a living city.">
+<link rel="icon" href="../icon.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f6f6f4">
+<meta name="mobile-web-app-capable" content="yes">
+<script>if(/[?&]embed\b/.test(location.search))document.documentElement.classList.add('embed');if(/[?&]shot=/.test(location.search))document.documentElement.classList.add('still')</script>
+<style>
+:root{--ink:#23262d;--muted:#666b75;--accent:#b5502c;--sky:#f6f6f4}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--sky);color:var(--ink);font:15px/1.35 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:10px 12px max(10px,env(safe-area-inset-bottom));pointer-events:none}
+#ui>*{pointer-events:auto}
+.glass{background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(0,0,0,.10);border-radius:28px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#hud{display:flex;gap:8px;width:100%;align-items:center;min-height:42px}
+.stats{display:flex;gap:6px 24px;padding:7px 18px;border-radius:24px;flex-wrap:wrap;justify-content:center;max-width:330px}
+.pips{flex-basis:100%;display:flex;gap:5px;justify-content:center}.pips i{width:8px;height:4px;border-radius:2px;background:rgba(0,0,0,.1)}.pips .done{background:var(--ink)}.pips .bad{background:var(--accent)}.pips .now{width:16px}
+.stat{text-align:center}.stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}.stat span{font-size:11px;color:var(--muted)}
+.spacer{flex:1}
+.pill{padding:10px 14px;border-radius:20px;font-size:13px;font-weight:600}
+.round{width:40px;height:40px;border-radius:20px;display:grid;place-items:center}
+.round svg{width:18px;height:18px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#heading{margin-top:8px;padding:14px 26px;text-align:center;border-radius:30px}
+#heading h1{font-size:clamp(46px,9vw,78px);font-weight:800;letter-spacing:-1px;margin:0;line-height:1.05}
+#heading p{margin:6px 0 0;color:var(--muted);font-size:clamp(14px,2vw,19px)}
+.embed #heading{display:none}
+#panel{margin-top:auto;width:100%;max-width:1040px;padding:18px}
+#panel.narrow{max-width:560px}
+.primary{display:block;width:100%;padding:13px;border-radius:14px;background:var(--accent);color:#fff;font-weight:600;font-size:16px}
+.primary:disabled{background:#a9adb5;cursor:default}
+.quiet{flex:1;padding:11px 6px;border-radius:14px;background:rgba(255,255,255,.62);font-weight:600;font-size:14px}
+.quiet:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px}.col{display:flex;flex-direction:column;gap:10px}
+.small{font-size:12px;color:var(--muted)}.center{text-align:center}.bad{color:var(--accent)}
+h2{margin:0;font-size:22px}h3{margin:0;font-size:16px}p{margin:0}
+.note{background:rgba(255,255,255,.62);border-radius:12px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+.orders{display:flex;gap:16px;align-items:flex-start}
+.order{flex:1;min-width:0}.order .top{display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap}
+.order .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;order:5;flex-basis:100%}
+.order .detail{order:6}
+.quick{margin-left:auto;color:var(--accent);font-size:12px;font-weight:600}
+.slide{display:flex;align-items:center;gap:8px;margin-top:4px}
+.slide button{width:30px;height:30px;border-radius:15px;border:1.5px solid var(--accent);color:var(--accent);font-size:18px;line-height:1;flex:none}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:28px}
+.sum{width:190px;flex:none;display:flex;flex-direction:column;gap:6px}
+.sum .left{display:flex;justify-content:space-between;align-items:baseline}.sum .left b{font-size:16px;font-variant-numeric:tabular-nums}
+.verdict{display:flex;gap:22px;align-items:center}
+.letter{font-size:88px;font-weight:800;line-height:1}
+.vstats{display:flex;gap:18px;margin-top:8px}.vstats b{display:block;font-variant-numeric:tabular-nums}.vstats span{font-size:11px;color:var(--muted)}
+.actions{width:210px;flex:none;display:flex;flex-direction:column;gap:8px}
+dialog{border:0;padding:24px;width:min(480px,92vw);max-height:86vh;overflow:auto;color:var(--ink);background:var(--sky);border-radius:22px}
+dialog::backdrop{background:rgba(0,0,0,.25)}
+dialog .col{gap:14px;font-size:14px}dialog label{display:flex;justify-content:space-between;align-items:center}
+dialog hr{border:0;border-top:1px solid rgba(0,0,0,.1);width:100%}
+select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.2);background:#fff;color:var(--ink)}
+@media (max-width:699px){
+  #heading{order:2;margin:auto 0 10px}#panel{order:3;margin-top:0}
+  .stats{gap:12px;padding:7px 12px}#panel{padding:14px}
+  .orders{flex-direction:column;gap:6px}.order{width:100%}.order .top{flex-wrap:nowrap}
+  .order .big{order:0;flex-basis:auto;font-size:15px}.order .detail{order:0;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.order .quick{margin-left:0;flex:none}
+  .sum{width:100%}.verdict{flex-direction:column;align-items:stretch;gap:10px}.letter{font-size:64px}.actions{width:100%}
+  .vstats{gap:12px;flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:no-preference){html:not(.still) #panel{animation:rise .35s ease-out}@keyframes rise{from{transform:translateY(24px);opacity:0}}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<main id="ui">
+  <div id="hud"></div>
+  <div id="heading" class="glass" hidden><h1>Hamurapi</h1><p>Be king for 10 years. Feed your people. Keep your crown.</p></div>
+  <div id="panel" class="glass"></div>
+</main>
+<dialog id="settings"></dialog>
+<script src="rules.js"></script>
+<script src="scene.js"></script>
+<script>
+// The game around the rules. Mirrors app/App/GameModel.swift and Views.swift.
+const $ = s => document.querySelector(s), fmt = n => n.toLocaleString("en-US");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("hamurabi." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("hamurabi." + k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem("hamurabi." + k); } catch {} },
+};
+const params = new URLSearchParams(location.search);
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const RANK = { F: 0, C: 1, B: 2, "A+": 3 };
+const today = () => Math.floor(Date.now() / 86400000);  // days since 1970, UTC: everyone gets the same dice today
+let STORY = null;
+
+const Snd = {
+  cache: {}, gen: 0, muted: store.get("muted", false), musicOff: store.get("musicOff", false), silent: params.has("shot"),
+  el(n) { return this.cache[n] ??= Object.assign(new Audio(`audio/${n}.mp3`), n === "music" ? { loop: true, volume: 0.5 } : {}); },
+  music() { if (this.silent) return; if (this.muted || this.musicOff) this.el("music").pause(); else this.el("music").play().catch(() => {}); },
+  play(n, after = 0) {
+    if (this.muted || this.silent) return;
+    const mine = this.gen;
+    setTimeout(() => { if (mine === this.gen && !this.muted) { const a = this.el(n); a.currentTime = 0; a.play().catch(() => {}); } }, after * 1000);
+  },
+  cancel() { this.gen++; },
+};
+
+const G = {
+  city: newCity(), orders: { buy: 0, feed: 0, plant: 0 }, phase: "title", mode: "story", report: null, reportStart: 0, frozenAge: null,
+  lastPlanted: 0, log: [], card: null, note: "", demo: false, demoRun: 0, rng: new SplitMix(0), storyRng: new SplitMix(0), seen: [], playing: "normal",
+  best: store.get("best", ""), reigns: store.get("reigns", 0), dailyDay: store.get("dailyDay", 0), dailyGrade: store.get("dailyGrade", ""),
+  difficulty: store.get("difficulty", "normal"),
+};
+const playedToday = () => G.dailyDay === today() && G.dailyGrade;
+const error = () => check(G.city, G.orders);
+const hint = () => G.reigns === 0 && !G.demo ? STORY.hints[G.city.year] || "" : "";
+const randomSeed = () => { const a = new BigUint64Array(1); crypto.getRandomValues(a); return a[0]; };
+
+function snapshot() {
+  const c = G.city;
+  const s = { year: Math.min(c.year, YEARS), people: c.people, acres: c.acres, grain: c.grain, planted: 0, starved: c.starvedTotal };
+  if (G.phase === "title") return { year: 1, people: 100, acres: 1000, grain: 2800, planted: 800, starved: 0 };
+  if (G.phase === "card") { s.omen = G.card?.omen?.id; s.cats = c.guarded; s.yearStart = G.yearStart; }
+  if (G.phase === "orders") { s.acres = c.acres + G.orders.buy; s.planted = G.orders.plant; s.cats = c.guarded; s.yearStart = G.yearStart; }
+  if (G.phase === "report") { s.year = c.year; s.planted = G.lastPlanted; s.cats = G.lastGuarded; s.report = G.report; s.reportStart = G.reportStart; s.frozenAge = G.frozenAge; }
+  if (G.phase === "over") { s.planted = Math.min(c.acres, c.people * TEND); s.grade = grade(c); }
+  return s;
+}
+
+// ---- a reign
+// Wipes the last reign and seats a new one. Everything a reign owns is reset here and nowhere else.
+function fresh(mode, level) {
+  G.mode = mode; G.day = today(); G.playing = level;
+  const seed = mode === "daily" ? BigInt(G.day) : randomSeed();
+  G.rng = new SplitMix(seed); G.storyRng = new SplitMix(seed ^ 0x5707n);
+  Object.assign(G, { city: newCity(RULES[level]), log: [], report: null, seen: [], frozenAge: null, note: "", card: null, lastPlanted: 0, lastGuarded: false, staged: false });
+  Snd.cancel(); Snd.music();
+}
+function begin(mode = "story") {
+  stopDemo();
+  fresh(mode, mode === "story" ? G.difficulty : "normal");
+  enterYear();
+}
+// Story mode stops at the gate of each year for a card: the opening, a turning point, or an omen.
+function enterYear() {
+  G.note = ""; G.card = null; G.yearStart = performance.now() / 1000;
+  if (G.mode === "story" && !G.demo) {
+    const y = G.city.year;
+    if (y === 1) G.card = { ...STORY.intro };
+    else if (STORY.interludes[y]) G.card = { ...STORY.interludes[y] };
+    else {
+      const o = omenFor(STORY, G.city, G.seen, G.storyRng);
+      if (o) { G.seen.push(o.id); G.card = { title: o.title, text: o.text, omen: o }; Snd.cancel(); Snd.play("omen"); }
+    }
+  }
+  if (G.card) { G.phase = "card"; render(); } else toOrders();
+}
+function choose(i) {
+  if (G.phase !== "card") return;
+  const ch = G.card?.omen?.choices[i];
+  if (ch) G.note = applyChoice(ch, G.city, G.storyRng, G.rng);
+  Snd.play("tap");
+  toOrders();
+}
+function toOrders() { G.card = null; save(false); G.orders = sensible(G.city); G.phase = "orders"; render(); }
+// Keeps each order inside what the earlier ones leave possible.
+function clamp() {
+  const c = G.city, o = G.orders;
+  o.buy = Math.min(Math.max(o.buy, -c.acres), maxBuy(c));
+  o.feed = Math.min(Math.max(o.feed, 0), maxFeed(c, o));
+  o.plant = Math.min(Math.max(o.plant, 0), maxPlant(c, o));
+}
+function submit() {
+  if (G.phase !== "orders" || error()) return;
+  G.lastPlanted = G.orders.plant; G.lastGuarded = G.city.guarded;
+  const r = step(G.city, G.orders, G.rng, RULES[G.playing]);
+  G.report = r; G.log.push(r); G.reportStart = performance.now() / 1000; G.phase = "report";
+  // The dice are thrown: save now, so leaving on this screen cannot buy a second try at the year.
+  if (G.city.over) finish(); else save(true);
+  Snd.cancel();
+  Snd.play(r.yield >= 3 ? "harvest" : "poor", 0.3);
+  if (r.rats > 0) Snd.play("rats", 1.4);
+  if (r.starved > 0) Snd.play("starve", 1.9);
+  if (r.born > 0) Snd.play("arrive", 2.6);
+  if (r.plague) Snd.play("plague", 3.4);
+  render();
+}
+// Counts the reign the moment it ends. The robot's grades are not yours.
+function finish() {
+  if (G.demo) return;
+  const g = grade(G.city);
+  store.set("reigns", ++G.reigns);
+  if (!G.best || RANK[g] > RANK[G.best]) store.set("best", G.best = g);
+  if (G.mode === "daily" && G.dailyDay !== G.day) { store.set("dailyDay", G.dailyDay = G.day); store.set("dailyGrade", G.dailyGrade = g); }
+  store.del("saved");
+}
+function next() {
+  if (G.phase !== "report") return;
+  Snd.cancel();
+  if (!G.city.over) return enterYear();
+  const g = grade(G.city);
+  G.phase = "over";
+  Snd.play(g === "F" ? "lose" : g === "A+" ? "win" : "arrive");
+  render();
+}
+function quitToMenu() { stopDemo(); Snd.cancel(); G.phase = "title"; render(); }
+
+// ---- keep playing later: saved at the start of each year
+function save(atGate) {  // atGate: saved before this year's card was drawn
+  if (G.demo || G.staged) return;
+  store.set("saved", { city: G.city, log: G.log, mode: G.mode, playing: G.playing, rng: String(G.rng.x), storyRng: String(G.storyRng.x), seen: G.seen, day: G.day, atGate });
+}
+function resume() {
+  const s = store.get("saved", null);
+  if (!s?.city || !s.rng) { store.del("saved"); return render(); }  // a save this build cannot read is no save
+  stopDemo();
+  Object.assign(G, { city: s.city, log: s.log, mode: s.mode, playing: s.playing, seen: s.seen, day: s.day, report: null, frozenAge: null, note: "", card: null });
+  G.rng = new SplitMix(0); G.storyRng = new SplitMix(0);
+  G.rng.x = BigInt(s.rng); G.storyRng.x = BigInt(s.storyRng);
+  Snd.music();
+  if (s.atGate) enterYear(); else { G.yearStart = performance.now() / 1000; toOrders(); }
+}
+
+// ---- demo: the robot ruler plays a whole reign while you watch
+const wait = secs => new Promise(done => setTimeout(done, secs * 1000));
+async function startDemo() {
+  stopDemo();
+  const run = ++G.demoRun;
+  G.demo = true;
+  fresh("classic", "normal");
+  G.yearStart = performance.now() / 1000;
+  toOrders();
+  const live = () => G.demo && run === G.demoRun;
+  while (live()) {
+    if (G.phase === "orders") {
+      await wait(1.2); if (!live()) return;
+      G.orders = Ruler.legal(G.city); refreshOrders();
+      await wait(1.5); if (!live()) return;
+      submit();
+    } else if (G.phase === "report") {
+      await wait(G.report.plague ? 7.5 : 5); if (!live()) return;
+      next();
+    } else return;
+  }
+}
+function stopDemo() { G.demo = false; G.demoRun++; }
+
+// ---- staged moments for screenshots and the trailer: ?shot=title|card|orders|report|plague|over
+function stage(shot) {
+  stopDemo(); G.mode = shot === "card" ? "story" : "classic"; G.staged = true;
+  const play = (robot, match) => {
+    for (let seed = 0; seed < 500; seed++) {
+      const dice = new SplitMix(seed), c = newCity(), years = [];
+      while (!c.over) {
+        const o = robot ? Ruler.legal(c) : sensible(c), r = step(c, o, dice);
+        years.push(r);
+        if (!c.over && r.year >= 3 && match(r)) { Object.assign(G, { city: c, report: r, log: years, lastPlanted: o.plant, rng: dice }); return true; }
+      }
+    }
+    return false;
+  };
+  if (shot === "orders" && play(true, r => r.year === 4 && !r.plague)) { G.orders = sensible(G.city); G.phase = "orders"; }
+  else if (shot === "report" && play(false, r => r.yield >= 4 && r.rats > 0 && r.born > 0 && !r.plague)) { G.frozenAge = 2.3; G.phase = "report"; }
+  else if (shot === "plague" && play(false, r => r.plague && r.yield >= 3 && r.starved === 0)) { G.frozenAge = 5.0; G.phase = "report"; }
+  else if (shot === "card") { const o = STORY.omens.find(o => o.id === "refugees"); G.city = newCity(); G.city.year = 3; G.card = { title: o.title, text: o.text, omen: o }; G.phase = "card"; }
+  else if (shot === "over") {
+    for (let seed = 0; seed < 500; seed++) if (grade(Ruler.reign(seed)) === "A+") {
+      const dice = new SplitMix(seed); G.city = newCity(); G.log = [];
+      while (!G.city.over) G.log.push(step(G.city, Ruler.legal(G.city), dice));
+      G.phase = "over"; break;
+    }
+  } else G.phase = "title";
+  render();
+}
+
+// ---- screens
+const ICON = {
+  on: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>',
+  off: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+  full: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>',
+};
+const stat = (label, value) => `<div class="stat"><b>${esc(value)}</b><span>${label}</span></div>`;
+
+function renderHud() {
+  const c = G.city, playing = G.phase !== "title" && G.phase !== "over";
+  $("#hud").innerHTML =
+    (playing ? `<div class="stats glass" id="stats">${stat("Year", `${G.phase === "report" ? G.report.year : Math.min(c.year, YEARS)} of ${YEARS}`)}${stat("People", fmt(c.people))}${stat("Acres", fmt(c.acres))}${stat("Grain", fmt(c.grain))}<div class="pips" aria-hidden="true">${Array.from({ length: YEARS }, (_, i) => { const past = G.log[i]; return `<i class="${past ? (past.starved > 0 || past.plague ? "bad" : "done") : i + 1 === c.year ? "now" : ""}"></i>`; }).join("")}</div></div>` : "")
+    + '<div class="spacer"></div>'
+    + (G.demo ? '<button class="pill glass" data-act="begin">Play it yourself</button>'
+       : playing && G.mode !== "story" && innerWidth >= 700 ? `<span class="pill glass small">${G.mode === "daily" ? "Today's game" : "Classic 1968"}</span>` : "")
+    + `<button class="round glass" data-act="mute" aria-label="${Snd.muted ? "Turn sound on" : "Turn sound off"}">${Snd.muted ? ICON.off : ICON.on}</button>`
+    + (document.fullscreenEnabled ? `<button class="round glass" data-act="full" aria-label="${document.fullscreenElement ? "Leave full screen" : "Full screen"}">${ICON.full}</button>` : "")
+    + `<button class="round glass" data-act="settings" aria-label="Settings and how to play">${ICON.gear}</button>`;
+}
+
+function orderHtml(key, title, quick) {
+  return `<div class="order" data-order="${key}">
+    <div class="top"><h3>${title}</h3><span class="big"></span><span class="detail small"></span>${quick ? `<button class="quick" data-act="quick-${key}" aria-label="${title}: ${quick}">${quick}</button>` : ""}</div>
+    <div class="slide"><button data-act="less-${key}" aria-label="Less ${title}">&minus;</button><input type="range" aria-label="${title}" data-range="${key}"><button data-act="more-${key}" aria-label="More ${title}">+</button></div>
+  </div>`;
+}
+// Updates the numbers under the sliders without rebuilding them, so a drag is never interrupted.
+function refreshOrders() {
+  if (G.phase !== "orders") return;
+  const c = G.city, o = G.orders, left = c.grain - o.buy * c.price - o.feed - o.plant, fed = Math.min(div(o.feed, FOOD), c.people);
+  const set = (key, min, max, value, big, detail) => {
+    const el = $(`[data-order=${key}]`), range = el.querySelector("input");
+    range.min = min; range.max = Math.max(max, min); range.value = value; range.disabled = max <= min || G.demo;
+    range.setAttribute("aria-valuetext", big);
+    el.querySelector(".big").textContent = big; el.querySelector(".detail").textContent = detail;
+  };
+  set("buy", -c.acres, maxBuy(c), o.buy, o.buy >= 0 ? `Buy ${fmt(o.buy)}` : `Sell ${fmt(-o.buy)}`, `${o.buy >= 0 ? "costs" : "pays"} ${fmt(Math.abs(o.buy) * c.price)} bushels, ${c.price} an acre`);
+  set("feed", 0, maxFeed(c, o), o.feed, fmt(o.feed), `feeds ${fmt(fed)} of ${fmt(c.people)} people`);
+  set("plant", 0, maxPlant(c, o), o.plant, fmt(o.plant), `acres, uses ${fmt(o.plant)} bushels of seed`);
+  const err = error();
+  $("#left").textContent = fmt(left);
+  $("#word").textContent = err || (c.people - fed > 0 ? `${fmt(c.people - fed)} will go hungry.${o.buy >= 0 && c.grain - o.buy * c.price < c.people * FOOD ? " Sell land to buy food." : ""}` : "Everyone eats");
+  $("#word").className = "small" + (err || c.people - fed > 0 ? " bad" : "");
+  $("#go").disabled = !!err || G.demo;
+}
+
+function render() {
+  const c = G.city, panel = $("#panel");
+  renderHud();
+  $("#heading").hidden = G.phase !== "title";
+  panel.className = "glass" + (G.phase === "orders" || G.phase === "over" ? "" : " narrow");
+  panel.style.animation = "none"; void panel.offsetWidth; panel.style.animation = "";
+  if (G.phase === "title") {
+    const saved = store.get("saved", null);
+    panel.innerHTML = `<div class="col">
+      ${saved ? '<button class="primary" data-act="resume">Keep playing</button><div class="row"><button class="quiet" data-act="begin">Start a new game</button></div>'
+              : '<button class="primary" data-act="begin">Start a new game</button>'}
+      <div class="row"><button class="quiet" data-act="daily" title="Everyone playing today gets the same luck">${playedToday() ? `Today: ${G.dailyGrade}` : "Today's game"}</button>
+        <button class="quiet" data-act="classic">Classic 1968</button><button class="quiet" data-act="demo">Watch a demo</button></div>
+      ${G.best ? `<p class="small center">Best grade ${G.best} in ${G.reigns} ${G.reigns === 1 ? "game" : "games"}</p>` : ""}
+      <p class="small center">Based on Hamurabi by Doug Dyment, 1968. Copyright 2026 Joshua Trommel. MIT License.</p></div>`;
+  } else if (G.phase === "card") {
+    const o = G.card.omen;
+    panel.innerHTML = `<div class="col"><h2>${esc(G.card.title)}</h2><p>${esc(G.card.text)}</p>
+      ${o ? o.choices.map((ch, i) => `<button class="${i ? "quiet" : "primary"}" data-act="choose-${i}" ${canAfford(ch, G.city) ? "" : "disabled"}>${esc(ch.label)}</button>`).join("")
+          : '<button class="primary" data-act="choose-0">Continue</button>'}</div>`;
+  } else if (G.phase === "orders") {
+    const word = G.note || hint();
+    panel.innerHTML = `${word ? `<p class="note">${esc(word)}</p>` : ""}<div class="orders">
+      ${orderHtml("buy", "Land")}${orderHtml("feed", "Feed", "Everyone")}${orderHtml("plant", "Plant", "All I can")}
+      <div class="sum"><div class="left"><span class="small">Grain left</span><b id="left"></b></div><span id="word" class="small"></span>
+        <button class="primary" id="go" data-act="submit">End the year</button></div></div>`;
+    refreshOrders();
+  } else if (G.phase === "report") {
+    const r = G.report, line = (t, bad) => `<p class="${bad ? "bad" : ""}">${esc(t)}</p>`;
+    panel.innerHTML = `<div class="col" style="gap:8px"><h3>Year ${r.year}</h3><div>
+      ${line(`${r.yield <= 2 ? "Bad" : r.yield >= 4 ? "Great" : "Good"} harvest: ${r.yield} bushels an acre, ${fmt(r.harvest)} in all.`, r.yield <= 2)}
+      ${line(r.rats > 0 ? `Rats ate ${fmt(r.rats)} bushels.` : "No rats this year.", r.rats > 0)}
+      ${line(r.starved > 0 ? `${fmt(r.starved)} ${r.starved === 1 ? "person" : "people"} starved.` : "Nobody starved.", r.starved > 0)}
+      ${r.born > 0 ? line(`${fmt(r.born)} new ${r.born === 1 ? "person" : "people"} moved in.`) : ""}
+      ${r.plague ? line("A sickness killed half your people.", true) : ""}
+      ${c.over ? line(c.over, c.impeached) : ""}</div>
+      <button class="primary" data-act="next" ${G.demo ? "disabled" : ""}>${c.over ? "See your grade" : "Next year"}</button></div>`;
+  } else {
+    const g = grade(c), each = c.people === 0 ? "none" : (c.acres / c.people).toFixed(1);
+    panel.innerHTML = `<div class="verdict"><div class="letter ${g === "F" ? "bad" : ""}" aria-label="Grade ${g}">${g}</div>
+      <div style="flex:1"><p class="small">${G.demo ? "The robot played this one. " : ""}${esc(c.over)}</p><p>${esc(STORY.epilogues[g])}</p>
+        ${g !== "A+" && !c.impeached ? '<p class="small">For an A+, let almost nobody starve and keep 10 acres for each person.</p>' : ""}
+        <div class="vstats">${[["People", fmt(c.people)], ["Acres each", each], ["Starved", fmt(c.starvedTotal)], ["Harvested", fmt(G.log.reduce((a, r) => a + r.harvest, 0))], ["Plagues", G.log.filter(r => r.plague).length]]
+          .map(([l, v]) => `<div><b>${v}</b><span>${l}</span></div>`).join("")}</div></div>
+      <div class="actions"><button class="primary" data-act="again">Play again</button>
+        <div class="row">${G.demo ? "" : '<button class="quiet" data-act="share">Share</button>'}<button class="quiet" data-act="menu">Menu</button></div></div></div>`;
+  }
+}
+
+function shareText() {
+  const c = G.city, link = "hamurapi.jaybulb.com";
+  if (c.impeached) return `I got thrown out as king in year ${G.log.length} of Hamurapi. Can you do better? ${link}`;
+  const each = c.people === 0 ? "nobody left" : `${(c.acres / c.people).toFixed(1)} acres each`;
+  return `I ${G.mode === "daily" ? "played today's game" : "was king for 10 years"} in Hamurapi and got ${grade(c)}. ${fmt(c.starvedTotal)} starved, ${each}. ${link}`;
+}
+
+function openSettings() {
+  const d = $("#settings");
+  const about = { easy: "More grain and land to start. Fewer rats.", normal: "The same odds as the 1968 game.", hard: "Less grain and land to start. More rats." };
+  d.innerHTML = `<div class="col">
+    <div class="row" style="justify-content:space-between;align-items:center"><h2>Settings</h2><button class="quick bad" data-act="close" style="font-weight:600">Done</button></div>
+    <label><b>How hard</b><select id="hard">${["easy", "normal", "hard"].map(k => `<option value="${k}" ${k === G.difficulty ? "selected" : ""}>${k[0].toUpperCase() + k.slice(1)}</option>`).join("")}</select></label>
+    <p class="small" id="hardAbout">${about[G.difficulty]} This changes new story games. Classic and today's game always use Normal.</p>
+    <label>Music <input type="checkbox" id="music" ${Snd.musicOff ? "" : "checked"}></label>
+    <label>Sound <input type="checkbox" id="sound" ${Snd.muted ? "" : "checked"}></label>
+    ${G.phase !== "title" ? '<button class="bad" data-act="menu" style="text-align:left">Back to the menu</button><p class="small">Your game is saved at the start of each year.</p>' : ""}
+    <button class="bad" data-act="reset" style="text-align:left">Clear my best grade</button>
+    <hr><h3>How to play</h3>
+    <p>You are king for 10 years. Each year you make 3 choices.</p>
+    <p><b>Land.</b> Buy or sell land. The price changes every year, from 17 to 26 bushels an acre.</p>
+    <p><b>Feed.</b> Each person eats 20 bushels a year. If too many people starve in one year, you are thrown out.</p>
+    <p><b>Plant.</b> Each acre needs 1 bushel of seed. One person can farm 10 acres. You get back 1 to 5 bushels an acre. It is luck.</p>
+    <p>Then rats, sickness and the harvest decide how the year went. After 10 years you get a grade. For an A+, let almost nobody starve and keep 10 acres for each person.</p>
+    <p><b>3 ways to play.</b> A new game has a story with choices. Classic is the 1968 game with nothing added. Today's game gives everyone the same luck for one day.</p>
+    <hr><h3>Credits</h3>
+    <p>This game began as The Sumer Game by Mabel Addis and William McKay in 1964. Doug Dyment wrote Hamurabi in 1968. David Ahl put it in his book 101 BASIC Computer Games in 1973, and it spread everywhere. This version is new: new code, new art, new music and a new story. Nothing is copied from the old ones.</p>
+    <p class="small">Copyright 2026 Joshua Trommel. MIT License.</p></div>`;
+  d.querySelector("#hard").onchange = e => { store.set("difficulty", G.difficulty = e.target.value); d.querySelector("#hardAbout").textContent = `${about[G.difficulty]} This changes new story games. Classic and today's game always use Normal.`; };
+  d.querySelector("#music").onchange = e => { store.set("musicOff", Snd.musicOff = !e.target.checked); if (G.phase !== "title") Snd.music(); else if (Snd.musicOff) Snd.el("music").pause(); };
+  d.querySelector("#sound").onchange = e => { setMuted(!e.target.checked); };
+  d.showModal();
+}
+function setMuted(m) { store.set("muted", Snd.muted = m); if (m) Snd.el("music").pause(); else if (G.phase !== "title") Snd.music(); renderHud(); }
+
+// ---- input
+document.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (!act) return;
+  const [verb, arg] = act.split("-");
+  const c = G.city, o = G.orders;
+  if (verb === "begin") begin("story");
+  else if (verb === "daily" || verb === "classic") begin(verb);
+  else if (verb === "resume") resume();
+  else if (verb === "demo") startDemo();
+  else if (verb === "choose") choose(+arg);
+  else if (verb === "submit") submit();
+  else if (verb === "next") next();
+  else if (verb === "again") begin(G.mode === "daily" ? "story" : G.mode);
+  else if (verb === "menu") { $("#settings").close(); quitToMenu(); }
+  else if (verb === "mute") setMuted(!Snd.muted);
+  else if (verb === "settings") openSettings();
+  else if (verb === "full") { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }
+  else if (verb === "close") $("#settings").close();
+  else if (verb === "reset") { if (confirm("Clear your best grade and game count?")) { G.best = ""; G.reigns = 0; G.dailyDay = 0; G.dailyGrade = ""; ["best", "reigns", "dailyDay", "dailyGrade"].forEach(k => store.del(k)); $("#settings").close(); render(); } }
+  else if (verb === "share") { const text = shareText(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard?.writeText(text).then(() => { e.target.textContent = "Copied"; }); }
+  else if (verb === "less" || verb === "more") { o[arg] += verb === "more" ? 1 : -1; clamp(); refreshOrders(); }
+  else if (verb === "quick") { o[arg] = arg === "feed" ? Math.min(maxFeed(c, o), c.people * FOOD) : maxPlant(c, o); clamp(); refreshOrders(); Snd.play("tap"); }
+});
+document.addEventListener("input", e => {
+  const key = e.target.dataset.range;
+  if (key) { G.orders[key] = Math.round(+e.target.value); clamp(); refreshOrders(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || $("#settings").open || e.target.closest("button,select")) return;
+  $("#panel .primary:not(:disabled)")?.click();
+});
+addEventListener("resize", renderHud);
+document.addEventListener("fullscreenchange", renderHud);
+
+// ---- go
+function frame(now) {
+  paintScene($("#scene"), snapshot(), now, innerWidth < 700 ? 340 : 200, REDUCE);
+  requestAnimationFrame(frame);
+}
+if ("serviceWorker" in navigator && !params.has("shot")) navigator.serviceWorker.register("sw.js").catch(() => {});  // offline play, and installable
+Promise.all([fetch("story.json").then(r => r.json()), loadSprites()]).then(([story]) => {
+  STORY = story;
+  if (params.has("shot")) stage(params.get("shot")); else render();
+  if (params.has("demo")) startDemo();
+  requestAnimationFrame(frame);
+}).catch(() => { $("#panel").innerHTML = '<p class="center">The game did not load. Check your connection and <a href="">try again</a>.</p>'; });
+</script>
+</body>
+</html>
