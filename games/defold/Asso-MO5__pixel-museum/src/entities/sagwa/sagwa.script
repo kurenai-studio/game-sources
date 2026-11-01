@@ -1,0 +1,354 @@
+local COLORS = require("shared.const.colors")
+
+go.property(
+"palette_material",
+resource.material("/shared/scripts/palette_swap.material")
+)
+
+local BODY_SPRITE = "#sprite"
+local HAT_SPRITE = "#hat"
+
+local ANIMATED_SPRITES = {
+	BODY_SPRITE,
+	HAT_SPRITE,
+}
+
+local MAX_GROUND_SPEED = 100
+local MAX_AIR_SPEED = 80
+local MAX_FALL_SPEED = 500
+
+local GRAVITY = -500
+local JUMP_TAKEOFF_SPEED = 240
+local DOUBLE_JUMP_TAKEOFF_SPEED = 200
+
+local CONTACT_POINT_RESPONSE = hash("contact_point_response")
+local GROUND = hash("ground")
+local RESPAWN = hash("respawn")
+local ENEMY = hash("enemy")
+
+local LEFT = hash("left")
+local RIGHT = hash("right")
+local JUMP = hash("jump")
+
+local ANIM_WALK = hash("walk")
+local ANIM_JUMP = hash("jump")
+local ANIM_FALL = hash("fall")
+
+-- ANIMATIONS 
+local ANIM_IDLE = hash("idle")
+local ANIM_IDLE_BLINK = hash("idle_blink")
+local ANIM_IDLE_LOOK = hash("idle_look")
+
+local IDLE_MIN_DELAY = 2
+local IDLE_MAX_DELAY = 6
+
+local IDLE_ANIMATIONS = {
+	ANIM_IDLE_BLINK,
+	ANIM_IDLE_LOOK,
+}
+
+
+
+local function cancel_idle_timer(self)
+	if self.idle_timer then
+		timer.cancel(self.idle_timer)
+		self.idle_timer = nil
+	end
+end
+
+
+local function schedule_idle_animation(self)
+	cancel_idle_timer(self)
+
+	local delay = math.random(IDLE_MIN_DELAY, IDLE_MAX_DELAY)
+
+	self.idle_timer = timer.delay(delay, false, function()
+		self.idle_timer = nil
+
+		-- Vérifie que le personnage est toujours en idle.
+		if self.anim ~= ANIM_IDLE then
+			return
+		end
+
+		local index = math.random(1, #IDLE_ANIMATIONS)
+		local idle_animation = IDLE_ANIMATIONS[index]
+
+		self.idle_animation_playing = true
+		self.anim = idle_animation
+		
+		sprite.play_flipbook(HAT_SPRITE, idle_animation)
+		sprite.play_flipbook(BODY_SPRITE, idle_animation, function()
+			self.idle_animation_playing = false
+
+			-- Le personnage a peut-être commencé à marcher ou sauter
+			-- pendant l'animation.
+			if self.input_direction ~= 0 or not self.ground_contact then
+				return
+			end
+
+			self.anim = ANIM_IDLE
+			sprite.play_flipbook(BODY_SPRITE, ANIM_IDLE)
+
+			schedule_idle_animation(self)
+		end)
+	end)
+end
+
+local function play_flipbook_on_layers(animation)
+	for _, sprite_url in ipairs(ANIMATED_SPRITES) do
+		sprite.play_flipbook(sprite_url, animation)
+	end
+end
+
+local function play_animation(self, animation)
+	
+	if self.anim == animation then
+		return
+	end
+
+	cancel_idle_timer(self)
+
+	-- Une animation de déplacement interrompt l'idle spécial.
+	if animation ~= ANIM_IDLE then
+		self.idle_animation_playing = false
+	end
+
+	self.anim = animation
+	play_flipbook_on_layers(animation)
+	
+	if animation == ANIM_IDLE then
+		schedule_idle_animation(self)
+	end
+
+	print(self.anim)
+end
+
+
+local function squish()
+-- À compléter plus tard avec une animation de scale.
+end
+
+
+local function handle_obstacle_contact(self, normal, distance)
+	if distance > 0 then
+		-- Projette la correction déjà effectuée sur
+		-- le vecteur de pénétration actuel.
+		local projection = vmath.project(self.correction,normal * distance)
+
+	if projection < 1 then
+			-- Calcule la correction restante.
+			local compensation =
+			(distance - distance * projection) * normal
+
+			-- Corrige immédiatement la position.
+			go.set_position(
+			go.get_position() + compensation
+		)
+
+		-- Mémorise la correction pour les autres contacts
+		-- reçus pendant la même frame.
+		self.correction =
+		self.correction + compensation
+	end
+end
+
+	-- Mur.
+	if math.abs(normal.x) > 0.7 then
+		self.velocity.x = 0
+	end
+
+	-- Sol.
+	if normal.y > 0.7 then
+		self.ground_contact = true
+		self.ground_contact_timer = 0.1
+		self.velocity.y = 0
+		self.double_jump = false
+	end
+
+	-- Plafond.
+	if normal.y < -0.7 then
+		self.velocity.y = 0
+	end
+end
+
+
+local function walk(self, direction)
+	self.input_direction = direction
+
+	if direction ~= 0 then
+		self.direction = direction
+	end
+
+	if self.ground_contact then
+		self.velocity.x = direction * MAX_GROUND_SPEED
+	else
+		self.velocity.x = direction * MAX_AIR_SPEED
+	end
+end
+
+local function jump(self)
+	if self.ground_contact then
+		self.velocity.y = JUMP_TAKEOFF_SPEED
+		self.ground_contact = false
+		self.ground_contact_timer = 0
+
+		play_animation(self, ANIM_JUMP)
+		squish()
+
+	elseif not self.double_jump then
+		self.velocity.y = DOUBLE_JUMP_TAKEOFF_SPEED
+		self.double_jump = true
+
+		play_animation(self, ANIM_JUMP)
+	end
+end
+
+
+local function abort_jump(self)
+	if self.velocity.y > 0 then
+		self.velocity.y = self.velocity.y * 0.5
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.spawn_position = go.get_position()
+
+	self.velocity = vmath.vector3()
+	self.correction = vmath.vector3()
+
+	self.input_direction = 0
+	self.direction = 1
+
+	self.ground_contact = false
+	self.ground_contact_timer = 0
+	self.double_jump = false
+
+	self.anim = nil
+	self.idle_animation_playing = false
+	self.idle_timer = nil
+
+	local sprite_url = msg.url("#sprite")
+
+	go.set(sprite_url, "material", self.palette_material)
+
+	go.set(
+		sprite_url,
+		"source_color",
+		vmath.vector4(232 / 255, 208 / 255, 170 / 255, 1)
+	)
+
+	go.set(
+		sprite_url,
+		"target_color",
+		COLORS.red
+	)
+
+	go.set(
+		sprite_url,
+		"tolerance",
+		vmath.vector4(2 / 255, 0, 0, 0)
+	)
+end
+
+
+function final(self)
+	cancel_idle_timer(self)
+	msg.post(".", "release_input_focus")
+end
+
+
+function fixed_update(self, dt)
+	self.ground_contact_timer =
+	math.max(0, self.ground_contact_timer - dt)
+
+	self.ground_contact =
+	self.ground_contact_timer > 0
+
+	-- Gravité uniquement lorsque le personnage n'est pas au sol.
+	if self.ground_contact then
+		if self.velocity.y < 0 then
+			self.velocity.y = 0
+		end
+	else
+		self.velocity.y =
+		self.velocity.y + GRAVITY * dt
+
+		self.velocity.y =
+		math.max(self.velocity.y, -MAX_FALL_SPEED)
+	end
+
+	-- Déplacement.
+	local position = go.get_position()
+	
+	position = position + self.velocity * dt
+	go.set_position(position)
+
+	-- Orientation.
+	local flip = self.direction < 0
+
+	sprite.set_hflip(BODY_SPRITE, flip)
+	sprite.set_hflip(HAT_SPRITE, flip)
+
+	-- Animations.
+	if self.ground_contact then
+		if math.abs(self.velocity.x) > 0.1 then
+			play_animation(self, ANIM_WALK)
+		elseif not self.idle_animation_playing then
+			play_animation(self, ANIM_IDLE)
+		end
+
+	elseif self.velocity.y > 10 then
+		play_animation(self, ANIM_JUMP)
+
+	elseif self.velocity.y < -30 then
+		play_animation(self, ANIM_FALL)
+	end
+
+	-- Ne change pas d'animation lorsque velocity.y est proche de zéro.
+	-- Cela évite le passage idle → fall → idle pendant une micro-perte
+	-- de contact avec le sol.
+	self.correction = vmath.vector3()
+end
+
+
+
+function on_input(self, action_id, action)
+	
+	if action_id == LEFT then
+		walk(self, -action.value)
+
+	elseif action_id == RIGHT then
+		walk(self, action.value)
+
+	elseif action_id == JUMP then
+		if action.pressed then
+			jump(self)
+		elseif action.released then
+			abort_jump(self)
+		end
+	end
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id ~= CONTACT_POINT_RESPONSE then
+		return
+	end
+
+	if message.group == GROUND then
+		handle_obstacle_contact(self,message.normal,message.distance)
+
+	elseif message.group == RESPAWN or message.group == ENEMY then
+		go.set_position(self.spawn_position)
+
+		self.velocity = vmath.vector3()
+		self.correction = vmath.vector3()
+		self.input_direction = 0
+		self.ground_contact = false
+		self.double_jump = false
+	end
+end
