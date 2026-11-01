@@ -1,0 +1,17 @@
+/* https://css-tricks.com/centering-css-complete-guide/#center-horizontally-and-vertically */
+#root {
+  height: 100%;
+  position: relative;
+}
+
+.App__main {
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.App__h1 {
+  font-size: 3rem;
+  margin-bottom: 2rem;
+}
