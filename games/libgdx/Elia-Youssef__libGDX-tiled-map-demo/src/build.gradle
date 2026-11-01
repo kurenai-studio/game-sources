@@ -1,0 +1,39 @@
+// Root build script. TiledMap-Demo is a libGDX 1.14.1 project with Gradle source compatibility set to
+// Java 17 (task requirement), lwjgl3 desktop backend only. Two modules: core (map/render/player code)
+// and lwjgl3 (desktop launcher + runnable fat JAR).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'TiledMapDemo'
+        gdxVersion = '1.14.1'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        // Task requirement: LibGDX 1.14.1 and Java 17.
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
