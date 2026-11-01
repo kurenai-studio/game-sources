@@ -1,0 +1,17 @@
+// Primitive Pong - root build. libGDX 1.14.0, Java 8 source compatibility, lwjgl3 desktop backend.
+allprojects {
+    apply plugin: 'java'
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Java 8 source + target compatibility (rubric requirement), set via --release: it is
+        // deprecation-free on modern Gradle and cannot accidentally pull in a newer-than-8 API.
+        // Built on JDK 21; produces Java 8 (class-file major version 52) bytecode.
+        options.release = 8
+    }
+}

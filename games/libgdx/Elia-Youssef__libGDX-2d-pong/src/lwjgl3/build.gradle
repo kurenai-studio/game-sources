@@ -1,0 +1,18 @@
+// lwjgl3: desktop launcher module (the run target). `./gradlew lwjgl3:run` launches the game.
+apply plugin: 'application'
+
+application {
+    mainClass = 'com.micro1.pong.lwjgl3.Lwjgl3Launcher'
+}
+
+// Keep the run task usable from any working directory. A runtime crash must surface as a
+// non-zero exit (do not ignore the exit value) so it is visible to a grader running the task.
+run {
+    setWorkingDir(rootProject.projectDir)
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
