@@ -1,0 +1,17 @@
+// Core module: the provided CubePuzzleFactory.java, the GL-free puzzle simulation
+// (Orientation / PuzzlePiece / CubePuzzleWorld), and the ApplicationAdapter render/input
+// layer (CubePuzzleGame). No external assets - every visual is a CubePuzzleFactory Model or
+// generated text/shapes.
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
