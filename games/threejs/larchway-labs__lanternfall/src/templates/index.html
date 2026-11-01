@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ town.name }} · Lanternfall</title>
+<style>
+  :root {
+    --ink: #f3ead6;
+    --ink-soft: #c9bda4;
+    --panel: rgba(22, 18, 14, 0.78);
+    --edge: rgba(243, 234, 214, 0.22);
+    --ember: #f0b45a;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020; color: var(--ink); font-family: var(--serif); }
+  #stage, #stage canvas { position: fixed; inset: 0; display: block; }
+  [hidden] { display: none !important; }
+  .panel { background: var(--panel); border: 1px solid var(--edge); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); }
+  button { font: inherit; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer;
+           color: #1c140c; background: var(--ember); border: 0; padding: 12px 22px; }
+  button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--edge); }
+  button:hover { filter: brightness(1.08); }
+  kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--edge); border-bottom-width: 2px; padding: 1px 6px; margin-right: 6px; color: var(--ember); }
+
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; font-style: italic; color: var(--ink-soft); }
+
+  #title { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px;
+           background: radial-gradient(ellipse at center, rgba(10,8,6,0.15), rgba(10,8,6,0.65)); }
+  #title .card { max-width: 560px; width: 100%; padding: 36px 36px 28px; }
+  #title h1 { font-weight: 400; font-size: 44px; letter-spacing: 0.08em; margin: 6px 0 4px; }
+  #title .realm { font-style: italic; color: var(--ink-soft); margin: 0 0 18px; }
+  #title p.story { line-height: 1.6; margin: 0 0 24px; }
+  #title .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  #title .controls { margin-top: 22px; font-size: 14px; color: var(--ink-soft); line-height: 1.9; }
+  #title details { margin-top: 18px; border-top: 1px solid var(--edge); padding-top: 14px; }
+  #title summary { cursor: pointer; }
+  #title ul { list-style: none; padding: 0; margin: 10px 0 0; max-height: 150px; overflow: auto; }
+  #title li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 15px; }
+  #title li a { color: var(--ink); }
+  #title li span { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  #title form { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; margin-top: 10px; }
+  #title input, #title select { font: inherit; font-size: 14px; background: rgba(0,0,0,0.3); color: var(--ink); border: 1px solid var(--edge); padding: 8px; min-width: 0; }
+
+  #hud .status { position: fixed; top: 16px; left: 16px; padding: 12px 16px; min-width: 200px; }
+  #hud .status .town { font-size: 20px; letter-spacing: 0.06em; }
+  #hud .status .row { display: flex; justify-content: space-between; gap: 18px; margin-top: 6px; font-family: var(--mono); font-size: 14px; }
+  #hud .status .row b { color: var(--ember); font-weight: 400; }
+  #minimap { position: fixed; top: 16px; right: 16px; width: 180px; height: 180px; border-radius: 50%; border: 2px solid var(--edge); }
+  #prompt { position: fixed; left: 50%; bottom: 120px; transform: translateX(-50%); padding: 8px 16px; font-size: 16px; }
+  #dialog { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); padding: 16px 20px; }
+  #dialog-name { color: var(--ember); margin-bottom: 6px; }
+  #dialog-text { font-size: 18px; line-height: 1.5; }
+  #dialog .more { text-align: right; margin-top: 6px; }
+  #toast { position: fixed; left: 50%; top: 22px; transform: translate(-50%, -8px); padding: 8px 18px; opacity: 0; transition: all .3s ease; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #times { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 6px; }
+  #times button { padding: 8px 12px; font-size: 11px; }
+  #btn-help { position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; font-size: 11px; }
+  #help { position: fixed; left: 16px; bottom: 60px; padding: 14px 18px; font-size: 14px; line-height: 2; }
+  #stick { position: fixed; left: 24px; bottom: 24px; width: 120px; height: 120px; border-radius: 50%; touch-action: none;
+           border: 1px solid var(--edge); background: rgba(22,18,14,0.35); display: grid; place-items: center; }
+  #knob { width: 48px; height: 48px; border-radius: 50%; background: rgba(243,234,214,0.55); }
+  #act { position: fixed; right: 24px; bottom: 76px; width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 22px; letter-spacing: 0; touch-action: none; }
+  .controls.touch { display: none; }
+  @media (pointer: coarse) { .controls.keys { display: none; } .controls.touch { display: block; } #btn-help, #times { bottom: auto; top: 210px; } #btn-help { display: none; } }
+  #end { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8,6,4,0.45); padding: 16px; }
+  #end .card { max-width: 460px; padding: 30px; text-align: center; }
+  #end h2 { font-weight: 400; font-size: 32px; margin: 0 0 10px; letter-spacing: 0.06em; }
+  #end p { line-height: 1.6; margin: 0 0 20px; }
+  @media (max-width: 640px) {
+    #title h1 { font-size: 32px; }
+    #title .card { padding: 24px 20px; }
+    #title form { grid-template-columns: 1fr 1fr; }
+    #minimap { width: 120px; height: 120px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="loading">Raising {{ town.name }}…</div>
+
+<div id="title">
+  <div class="card panel">
+    <div class="label">Lanternfall · {{ town.size }} · {{ town.season }}</div>
+    <h1>{{ town.name }}</h1>
+    <p class="realm">{{ realm }}</p>
+    <p class="story">It is the eve of the Lantern Fair, and every lamp in {{ town.name }} has gone dark. The old lamplighter has not been seen since noon. Walk the streets, ask the townsfolk, and light all the lanterns before midnight.</p>
+    <div class="actions">
+      <button id="btn-play">Begin at dusk</button>
+      <button id="btn-wander" class="quiet">Wander freely</button>
+    </div>
+    <div class="controls keys"><kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Q</kbd><kbd>E</kbd> turn the view &nbsp; <kbd>F</kbd> talk, light</div>
+    <div class="controls touch">The stick walks, a drag turns the view, and <kbd>F</kbd> talks and lights.</div>
+    {% if scores %}
+    <details open>
+      <summary class="label">Quickest lamplighters in {{ town.name }}</summary>
+      <ul>{% for s in scores %}<li><span>{{ loop.index }}.</span>{{ s.clock }} · {{ s.seconds // 60 }}m {{ s.seconds % 60 }}s<span>{{ s.at }}</span></li>{% endfor %}</ul>
+    </details>
+    {% endif %}
+    <details {{ 'open' if towns else '' }}>
+      <summary class="label">Other towns · {{ towns|length }} founded</summary>
+      <ul>
+        {% for t in towns %}
+        <li><a href="{{ url_for('town_page', seed=t.seed, name=t.name, size=t.size, season=t.season) }}">{{ t.name }}</a><span>{{ t.size }} · {{ t.season }} · run {{ t.run }}</span></li>
+        {% endfor %}
+      </ul>
+      {% if on_toft %}
+      <form method="post" action="{{ url_for('found') }}">
+        <input name="name" placeholder="Name a new town" maxlength="32" required>
+        <select name="size">{% for s in sizes %}<option {{ 'selected' if s == 'town' }}>{{ s }}</option>{% endfor %}</select>
+        <select name="season">{% for s in seasons %}<option {{ 'selected' if s == 'autumn' }}>{{ s }}</option>{% endfor %}</select>
+        <button type="submit">Found</button>
+      </form>
+      {% endif %}
+    </details>
+  </div>
+</div>
+
+<div id="hud" hidden>
+  <div class="status panel">
+    <div class="town">{{ town.name }}</div>
+    <div class="row"><span class="label">Lanterns</span><b id="count">0</b></div>
+    <div class="row"><span class="label">Hour</span><b id="clock">18:30</b></div>
+  </div>
+  <canvas id="minimap" width="360" height="360"></canvas>
+  <div id="prompt" class="panel" hidden></div>
+  <div id="dialog" class="panel" hidden>
+    <div id="dialog-name" class="label"></div>
+    <div id="dialog-text"></div>
+    <div class="more label"><kbd>F</kbd> continue</div>
+  </div>
+  <div id="times" hidden>
+    <button class="quiet" data-hour="6.6">Dawn</button>
+    <button class="quiet" data-hour="12.5">Noon</button>
+    <button class="quiet" data-hour="18.8">Dusk</button>
+    <button class="quiet" data-hour="22.5">Night</button>
+  </div>
+  <div id="touch" hidden>
+    <div id="stick"><div id="knob"></div></div>
+    <button id="act" aria-label="Talk or light">F</button>
+  </div>
+  <button id="btn-help" class="quiet">Keys</button>
+  <div id="help" class="panel" hidden>
+    <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run<br>
+    <kbd>Q</kbd><kbd>E</kbd> or drag: turn the view · wheel: zoom<br>
+    <kbd>F</kbd> talk to someone, light a lantern
+  </div>
+</div>
+<div id="toast" class="panel"></div>
+<div id="end" hidden>
+  <div class="card panel">
+    <h2 id="end-title"></h2>
+    <p id="end-text"></p>
+    <button id="btn-again">Play again</button>
+  </div>
+</div>
+
+<script>
+  window.LANTERNFALL = {
+    base: {{ url_for('index')|tojson }},
+    layoutUrl: {{ url_for('layout', seed=town.seed, name=town.name, size=town.size, season=town.season)|tojson }},
+    startHour: 17.2,
+  };
+</script>
+<script type="importmap">
+  {"imports": {
+    "three": "{{ url_for('static', filename='vendor/three.module.min.js') }}",
+    "three/addons/": "{{ url_for('static', filename='vendor/addons/') }}"
+  }}
+</script>
+<script type="module" src="{{ url_for('static', filename='game.js') }}"></script>
+</body>
+</html>
