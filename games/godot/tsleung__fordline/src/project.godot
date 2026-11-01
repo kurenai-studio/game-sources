@@ -1,0 +1,33 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+
+config/name="Fordline"
+config/description="Hold the river crossings. A five-battle campaign of regiments, flanks and broken morale."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Sfx="*res://scripts/sfx.gd"
+WindowFit="*res://scripts/window_fit.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=6
+
+[gui]
+
+common/drop_mouse_on_gui_input_disabled=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.07, 0.09, 0.12, 1)
