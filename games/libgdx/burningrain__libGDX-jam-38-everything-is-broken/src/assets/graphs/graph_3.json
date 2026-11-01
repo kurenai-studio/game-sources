@@ -1,0 +1,120 @@
+{
+  "timeSeconds": "70",
+  "vertices": [
+    {
+      "name": "sphere_money",
+      "x": "625",
+      "y": "275",
+      "energy": "80",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_rest",
+      "x": "625",
+      "y": "540",
+      "energy": "50",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_family",
+      "x": "880",
+      "y": "110",
+      "energy": "50",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_creation",
+      "x": "880",
+      "y": "460",
+      "energy": "50",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_work",
+      "x": "880",
+      "y": "810",
+      "energy": "80",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_knowing",
+      "x": "1150",
+      "y": "275",
+      "energy": "30",
+      "emissionPercent": "0.05",
+      "state": "TARGET",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_soul",
+      "x": "1150",
+      "y": "810",
+      "energy": "30",
+      "emissionPercent": "0.05",
+      "state": "TARGET",
+      "isFreeze": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "sphere_money",
+      "to": "sphere_family"
+    },
+    {
+      "from": "sphere_money",
+      "to": "sphere_creation"
+    },
+    {
+      "from": "sphere_money",
+      "to": "sphere_rest"
+    },
+    {
+      "from": "sphere_money",
+      "to": "sphere_work"
+    },
+    {
+      "from": "sphere_work",
+      "to": "sphere_rest"
+    },
+    {
+      "from": "sphere_work",
+      "to": "sphere_creation"
+    },
+    {
+      "from": "sphere_family",
+      "to": "sphere_knowing"
+    },
+    {
+      "from": "sphere_creation",
+      "to": "sphere_knowing"
+    },
+    {
+      "from": "sphere_creation",
+      "to": "sphere_soul"
+    },
+    {
+      "from": "sphere_rest",
+      "to": "sphere_soul"
+    }
+  ],
+  "targets": [
+    {
+      "name": "sphere_knowing",
+      "energy": "100"
+    },
+    {
+      "name": "sphere_soul",
+      "energy": "100"
+    }
+  ]
+}
