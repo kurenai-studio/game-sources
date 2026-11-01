@@ -1,0 +1,133 @@
+name: "main"
+scale_along_z: 0
+embedded_instances {
+  id: "camera"
+  children: "cam_pivot"
+  data: "components {\n"
+  "  id: \"scene_input\"\n"
+  "  component: \"/assets/script/scene_input.script\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"input\"\n"
+  "  component: \"/assets/misc/input.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "scene"
+  data: "components {\n"
+  "  id: \"Scene\"\n"
+  "  component: \"/assets/model/Scene.model\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "chest"
+  data: "components {\n"
+  "  id: \"Chest\"\n"
+  "  component: \"/assets/model/Chest.model\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"sparkle\"\n"
+  "  component: \"/assets/misc/sparkle.particlefx\"\n"
+  "  position {\n"
+  "    x: -0.7\n"
+  "    y: 1.0\n"
+  "    z: 2.6\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "cam_pivot"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: -1.05
+    y: 8.25
+    z: 19.0
+  }
+  rotation {
+    x: -0.20791169
+    w: 0.9781476
+  }
+}
+embedded_instances {
+  id: "eyes"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"eyes\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/misc/sprites.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 2.36
+    y: 4.16
+    z: -2.91
+  }
+  rotation {
+    y: -0.22495106
+    w: 0.97437006
+  }
+  scale3 {
+    x: 0.02
+    y: 0.02
+  }
+}
+embedded_instances {
+  id: "bug_pivot"
+  children: "bug"
+  data: ""
+  position {
+    x: -7.0
+    y: 1.0
+    z: 6.0
+  }
+}
+embedded_instances {
+  id: "bug"
+  data: "components {\n"
+  "  id: \"bug\"\n"
+  "  component: \"/assets/model/bug.model\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1.5
+  }
+}
+embedded_instances {
+  id: "bug_pivot2"
+  children: "bug2"
+  data: ""
+  position {
+    x: -6.8
+    y: 1.4
+    z: 5.9
+  }
+}
+embedded_instances {
+  id: "bug2"
+  data: "components {\n"
+  "  id: \"bug\"\n"
+  "  component: \"/assets/model/bug.model\"\n"
+  "}\n"
+  ""
+  position {
+    x: -1.5
+  }
+}
