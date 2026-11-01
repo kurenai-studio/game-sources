@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://day7v7snsfnq8"]
+
+[ext_resource type="Texture2D" uid="uid://bo0nwuhf86e5i" path="res://Assets/tile_0507.png" id="1_0hwh5"]
+[ext_resource type="Texture2D" uid="uid://dm2ob1r0gqad0" path="res://Assets/tile_0508.png" id="2_g4slr"]
+[ext_resource type="Texture2D" uid="uid://ca6gj77nhyypu" path="res://Assets/tile_0509.png" id="3_axwjx"]
+
+[node name="JumpCntrl" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-16, 0)
+texture = ExtResource("1_0hwh5")
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
+texture = ExtResource("2_g4slr")
+
+[node name="Sprite2D3" type="Sprite2D" parent="."]
+position = Vector2(16, 0)
+texture = ExtResource("3_axwjx")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -13.0
+offset_top = -20.0
+offset_right = 29.0
+offset_bottom = 3.0
+scale = Vector2(0.636453, 0.636453)
+text = "JUMP"
