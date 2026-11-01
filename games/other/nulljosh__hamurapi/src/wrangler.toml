@@ -1,0 +1,15 @@
+name = "hamurabi"
+compatibility_date = "2025-07-01"
+
+workers_dev = false
+# The game was called Hamurabi until the App Store name was taken. The old address still serves the site.
+routes = [
+  { pattern = "hamurapi.heyitsmejosh.com", custom_domain = true }, { pattern = "hamurapi.jaybulb.com", custom_domain = true },
+  { pattern = "hamurabi.heyitsmejosh.com", custom_domain = true }, { pattern = "hamurabi.jaybulb.com", custom_domain = true },
+]
+
+[assets]
+directory = "web"
+
+[observability]
+enabled = true
