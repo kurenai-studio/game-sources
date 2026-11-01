@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.desktopGL" Version="3.8.4" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.4" />
+    <PackageReference Include="Myra" Version="1.5.9" />
+	<EmbeddedResource Include="Icon.ico" />
+	<None Remove="Icon.ico" />
+	<None Update="Content/PublicPixel.ttf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+    <None Update="Content/CustomEffect.mgfx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+	<None Update="Content/CloudEffect.mgfx">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+  </ItemGroup>
+  <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
+    <Message Text="Restoring dotnet tools (this might take a while depending on your internet speed and should only happen upon building your project for the first time, or after upgrading MonoGame, or clearing your nuget cache)" Importance="High" />
+    <Exec Command="dotnet tool restore" />
+  </Target>
+</Project>

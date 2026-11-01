@@ -1,0 +1,1 @@
+"""Galaxy Strike game modules."""
