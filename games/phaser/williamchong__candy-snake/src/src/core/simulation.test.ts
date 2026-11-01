@@ -1,0 +1,1846 @@
+import { describe, expect, it } from 'vitest';
+
+import { CHOP_BLOCK_CELLS, COLS, ROWS, eq } from './board';
+import {
+  PRIMARIES,
+  colorInfo,
+  mixCount,
+  TIER_ORDER,
+  noServes,
+  primariesOf,
+  type ColorTier,
+  type Primary,
+} from './colors';
+import { RAMP, SPEED_RUNGS } from './difficulty';
+import { DEFAULT_CONFIG, Game, STARTING_LIVES } from './game';
+import { TIERS, echoable, type StageConfig } from './orders';
+import { demandedWants } from './pity';
+import { SHELF_SLOTS } from './shelf';
+import { ordersLeft, stockedPrimaries, stocksSugar } from './tutorial';
+import {
+  Dir,
+  OPPOSITE,
+  RAW,
+  type ColorMask,
+  type GameState,
+  type TurnSource,
+  type Vec2,
+} from './types';
+
+/**
+ * Two bots that actually play the game, rather than turning at random. Both
+ * run the whole production loop — sugar, jars, bench — so a run of either
+ * exercises every rule in this phase (the opening levels, matching, staling,
+ * patience, lives) against invariants that must hold on every single tick.
+ *
+ * They differ in the one thing the balancing pass cares about: how much sugar
+ * they keep on the strand. `grinderGoal` carries a single segment; `batcherGoal`
+ * builds a production line. Tuning against only one of them would tune the game
+ * around that way of playing, so both are kept.
+ */
+const BENCH = CHOP_BLOCK_CELLS[0]!;
+
+const sum = (numbers: readonly number[]): number =>
+  numbers.reduce((total, value) => total + value, 0);
+
+/** Signed distance the short way round, since the kitchen edges wrap. */
+const shortest = (delta: number, size: number): number =>
+  ((((delta + size / 2) % size) + size) % size) - size / 2;
+
+const steerTowards = (state: GameState, goal: Vec2): Dir => {
+  const dx = shortest(goal.x - state.snake.head.x, COLS);
+  const dy = shortest(goal.y - state.snake.head.y, ROWS);
+
+  const moves: { dir: Dir; distance: number }[] = [
+    { dir: dx > 0 ? Dir.Right : Dir.Left, distance: Math.abs(dx) },
+    { dir: dy > 0 ? Dir.Down : Dir.Up, distance: Math.abs(dy) },
+  ];
+
+  return (
+    moves
+      .filter((move) => move.distance > 0)
+      .sort((a, b) => b.distance - a.distance)
+      .map((move) => move.dir)
+      // The core rejects a reversal anyway; picking the other axis instead
+      // means the bot keeps making progress rather than stalling.
+      .find((dir) => dir !== OPPOSITE[state.snake.dir]) ?? state.snake.dir
+  );
+};
+
+/** Where a bot is heading this move, given the row the ramp is on. */
+type Goal = (state: GameState, stage: StageConfig, twinChance: number) => Vec2;
+
+/**
+ * The cube a maker standing here would actually walk to, measured the short way
+ * round rather than by array order — `shortest` above, so the wrap through a
+ * service door is defined in one place and not a second time here.
+ *
+ * Inert while design §8.1's floor is one cube: with a single cube on the map the
+ * nearest is the only one, so this cannot move a number until something raises
+ * that floor. That is exactly why it goes in ahead of time — a sugar-supply
+ * lever that lays three would otherwise be measured against a bot walking past
+ * two of them to reach whichever the spawner happened to push first.
+ */
+const nearestSugar = (state: GameState): Vec2 | undefined => {
+  const { head } = state.snake;
+  let best: Vec2 | undefined;
+  let bestDistance = Infinity;
+
+  for (const pickup of state.pickups) {
+    if (pickup.kind !== 'sugar') continue;
+
+    const distance =
+      Math.abs(shortest(pickup.pos.x - head.x, COLS)) +
+      Math.abs(shortest(pickup.pos.y - head.y, ROWS));
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = pickup.pos;
+    }
+  }
+
+  return best;
+};
+
+/** Where a primary's jar is standing, if it is out. */
+const jarFor = (state: GameState, primary: Primary): Vec2 | undefined =>
+  state.pickups.find((pickup) => pickup.kind === 'dye' && pickup.primary === primary)
+    ?.pos;
+
+/**
+ * The jar for the first primary `held` still lacks, if one is on the board —
+ * an order's primaries, for the maker filling that order. The batcher wants the
+ * same thing against its *ladder* rather than against one order, and reads the
+ * rung index out while it is there, so it does this inline; what the two share
+ * is `jarFor` above.
+ */
+const jarTowards = (
+  state: GameState,
+  held: ColorMask,
+  needed: readonly Primary[],
+): Vec2 | undefined => {
+  const missing = needed.find((primary) => (held & primary) === 0);
+  return missing === undefined ? undefined : jarFor(state, missing);
+};
+
+/**
+ * How likely the next child through the door is to ask for `color`, read off
+ * the stage's own mix rather than guessed: `rollOrder` draws a tier by weight
+ * and then a color uniformly inside it, so the chance is the tier's share of
+ * the weights divided by how many colors that tier holds.
+ *
+ * The tier is `mixCount` rather than `colorInfo().tier`, because what is needed
+ * here is the index into `StageConfig.mix` — and the two agree by construction:
+ * raw mixes nothing, a primary one, a secondary two. Brown mixes three and no
+ * regular customer orders it (design §4), so it is worth nothing to build for.
+ *
+ * This is the only thing either bot knows that is not on the board in front of
+ * it, and it is what "building ahead of the window" is made of: a maker who has
+ * played a few minutes knows roughly what gets asked for, and the plan's open
+ * finding is about a maker who builds for demand that has not arrived yet.
+ */
+const demandFor = (
+  stage: StageConfig,
+  color: ColorMask,
+  waiting: readonly ColorMask[],
+  twinChance: number,
+): number => {
+  const tier = mixCount(color);
+  const weight = stage.mix[tier];
+  if (weight === undefined) return 0;
+
+  const rolled = weight / sum(stage.mix) / (TIERS[tier]?.length ?? 1);
+
+  // What `rollOrder` will echo if the twin roll comes up — the window as it
+  // stands, less the brown the mercy path owns. A maker planning a batch under
+  // a correlated window has to know that a color already being asked for is
+  // likelier to be asked for again, or it plans for a demand shape the game
+  // stopped having. The window it echoes is the one standing now, which is an
+  // approximation: children leave. It is the same approximation `openings`
+  // already makes about children arriving.
+  //
+  // And a second one, worth naming because this file's habit is to name them:
+  // `planLadder` feeds this chance into `atLeast`, a binomial that takes the
+  // arrivals as independent — which the echo is precisely what stops them being.
+  // It over-counts the chance of *one* more mouth and under-counts a third, so
+  // the plan is a shade conservative under a correlated window.
+  const echoes = echoable(waiting);
+  if (twinChance <= 0 || echoes.length === 0) return rolled;
+
+  const echoed = echoes.filter((want) => want === color).length / echoes.length;
+
+  return twinChance * echoed + (1 - twinChance) * rolled;
+};
+
+/**
+ * The chance that at least `count` of `trials` mouths ask for a color with this
+ * `chance` — the binomial tail, walked term by term rather than through
+ * factorials, since `trials` is never more than a window plus a rack.
+ *
+ * This is what stops a batch running away. The *worth* of the second red
+ * segment in a batch is not the worth of the first: it only pays if a *second*
+ * child wants red, which is rarer. Asking the question that way makes the plan
+ * self-limiting — the ladder stops growing on its own, at the rung where an
+ * extra segment is likelier to go stale on the rack than to be handed to
+ * anybody, instead of at a cap somebody had to pick.
+ */
+const atLeast = (count: number, trials: number, chance: number): number => {
+  if (count <= 0) return 1;
+  if (trials <= 0 || chance <= 0) return 0;
+  if (chance >= 1) return trials >= count ? 1 : 0;
+
+  let below = 0;
+  let term = (1 - chance) ** trials;
+
+  for (let seen = 0; seen < count; seen += 1) {
+    below += term;
+    term *= ((trials - seen) / (seen + 1)) * (chance / (1 - chance));
+  }
+
+  return Math.max(1 - below, 0);
+};
+
+/**
+ * `wanted` cubes, through the jars the child at the window still needs, then the
+ * bench. At one that is the grinder — a candy per trip, never more than one
+ * segment on the strand — which is the cheapest way to play and, at the tuning
+ * Phase 4 pinned, an extremely good one (see "the reference players" below). It
+ * is deliberately kept as a reference: it is the floor a balancing pass has to
+ * beat.
+ *
+ * The count is a parameter rather than a second function because the pair maker
+ * below is this maker with one more cube on the strand, and that has to be true
+ * *structurally*. Its whole job is to move one variable — how long the strand
+ * is — while who it is built for is held still, and a second copy of this body
+ * is a place for the second variable to creep back in.
+ */
+const frontGoal = (state: GameState, wanted: number): Vec2 => {
+  const want = state.customers[0]?.want ?? RAW;
+  const carried = state.snake.body;
+
+  // Every cube goes down before the first jar — one taken after a jar stays
+  // raw, so a pair would come off the block one candy short of a pair (§4).
+  // That holds while `wanted` is stable for the trip. `pairGrinderGoal` reads it
+  // fresh each move, so a second child arriving after the jars are crossed sends
+  // this maker back for a cube that misses them — noise in the pair arm rather
+  // than a rule, and cheaper to say than to latch.
+  if (carried.length < wanted) {
+    const sugar = nearestSugar(state);
+    if (sugar !== undefined) return sugar;
+  }
+
+  const held = carried[0]?.color;
+  if (held === undefined) return BENCH;
+
+  return jarTowards(state, held, primariesOf(want)) ?? BENCH;
+};
+
+const grinderGoal: Goal = (state) => frontGoal(state, 1);
+
+/**
+ * Every dye sequence a maker could lay, which is a short list: the empty one
+ * (a batch of plain sugar), each primary on its own, and each *ordered* pair.
+ *
+ * Ordered, because `ladderColors` below turns the sequence into different rungs
+ * depending which jar goes on first. And pairs at most, because a third primary
+ * takes the top rung to brown, which no regular customer orders (design §4) —
+ * so a three-dye ladder is a two-dye ladder with a wasted trip on the end.
+ *
+ * Enumerated up front rather than derived from whoever is waiting, which is
+ * what the ceiling raise turns on: a maker planning only the orders in front of
+ * them can never want a ladder no current child asked for.
+ */
+const LADDER_ORDERS: readonly (readonly Primary[])[] = [
+  [],
+  ...PRIMARIES.map((dye) => [dye]),
+  ...PRIMARIES.flatMap((first) =>
+    PRIMARIES.filter((second) => second !== first).map((second) => [first, second]),
+  ),
+];
+
+/**
+ * What a ladder built by laying `order`'s dyes on in that sequence comes out as.
+ *
+ * The segment laid before the first jar crosses every jar after it, the next
+ * one crosses all but the first, and the cube laid after the last jar crosses
+ * none — so the rungs are the running OR of the *tail* of the order, raw last.
+ * Which is why the sequence matters and not just the set: red-then-yellow banks
+ * an orange over a **yellow**, yellow-then-red an orange over a **red**.
+ */
+const ladderColors = (order: readonly Primary[]): ColorMask[] => [
+  ...order.map((_dye, index) =>
+    order.slice(index).reduce<ColorMask>((mask, dye) => mask | dye, RAW),
+  ),
+  RAW,
+];
+
+/**
+ * A batch as a build instruction rather than as a list of colors: the jars to
+ * cross, in order, and how many cubes to lay before each of them — `counts` is
+ * one longer than `order`, the last entry being the raws laid after the final
+ * jar.
+ *
+ * The counts are the ceiling raise. A ladder is a nested bundle, so its
+ * *distinct* rungs are capped at four by the color system itself — but a rung
+ * can carry more than one segment, because laying two cubes before a jar gives
+ * two segments of that rung's color. Height therefore comes from repeats, and
+ * `Primary[]` alone could not say so.
+ */
+interface Ladder {
+  readonly order: readonly Primary[];
+  readonly counts: readonly number[];
+}
+
+const ladderSize = (ladder: Ladder): number => sum(ladder.counts);
+
+/** One plain cube — the grinder's whole batch, and `bestLadder`'s floor. */
+const SOLO_CUBE: Ladder = { order: [], counts: [1] };
+
+/** Coverage is worth an order of magnitude more than length; see `planLadder`. */
+const COVERAGE_WEIGHT = 10;
+
+/**
+ * How many of each rung to build, and what that batch is worth.
+ *
+ * Two kinds of demand are counted, and the second is the one that is new:
+ *
+ * - **Children already waiting.** Every one of them this ladder's rungs can
+ *   match takes a segment of its own — which is the repeat case, and what the
+ *   old plan could not express: two children wanting red is two red segments,
+ *   not one red rung serving one of them and the other going hungry.
+ * - **Children who have not walked in yet.** `openings` is how many more mouths
+ *   this batch could ever reach: the window slots still to be filled, plus the
+ *   room left on the rack, because a candy nobody wants now is not thrown away
+ *   — it is racked, and every child arriving sweeps the rack first (design §5).
+ *   That second term is the ceiling raise. Slots alone go to zero exactly when
+ *   the window is full, which is most of a ramped run, and a maker who stops
+ *   planning ahead whenever three children are waiting is the maker the harness
+ *   already had.
+ *
+ * `cap` is the most segments the plan may ask for at all. It is `Infinity` for
+ * the maker this harness has always run — the plan stops itself, at the rung
+ * where the next segment is likelier to stale than to sell — and a small number
+ * for the pair-capped maker below, which exists to ask whether the *smallest*
+ * batch is punished or only the long production line is. It is spent in the
+ * order the plan already values: children at the window first, speculation
+ * after, so a cap of two buys the two segments most likely to be handed over.
+ *
+ * Speculation stacks with diminishing returns: the *j*th segment of a color is
+ * worth the chance that **at least *j* of the `openings` ask for it** (`atLeast`
+ * above), since a second red only sells if a second child wants red. A segment
+ * costs 1 against the `COVERAGE_WEIGHT` a serve is worth, so the plan stops
+ * adding rungs the moment the next one is likelier to stale than to sell. That
+ * tie-break is the one that matters: what kills a maker is not waste but the
+ * time spent building before anybody is handed anything.
+ */
+const planLadder = (
+  order: readonly Primary[],
+  wants: readonly ColorMask[],
+  stage: StageConfig,
+  openings: number,
+  cap: number,
+  twinChance: number,
+): { ladder: Ladder; score: number } => {
+  const rungs = ladderColors(order);
+  const counts = rungs.map(() => 0);
+  const spare = [...wants];
+  let matched = 0;
+  let size = 0;
+
+  rungs.forEach((color, rung) => {
+    for (let slot = spare.indexOf(color); slot >= 0; slot = spare.indexOf(color)) {
+      if (size >= cap) return;
+      spare.splice(slot, 1);
+      counts[rung] = (counts[rung] ?? 0) + 1;
+      matched += 1;
+      size += 1;
+    }
+  });
+
+  const chances = rungs.map((color) => demandFor(stage, color, wants, twinChance));
+  const guessed = rungs.map(() => 0);
+  let expected = 0;
+
+  for (let spent = 0; spent < openings; spent += 1) {
+    if (size >= cap) break;
+
+    let pick = -1;
+    let best = 0;
+
+    chances.forEach((chance, rung) => {
+      const value = atLeast((guessed[rung] ?? 0) + 1, openings, chance);
+      if (value > best) {
+        best = value;
+        pick = rung;
+      }
+    });
+
+    if (pick < 0 || best * COVERAGE_WEIGHT <= 1) break;
+
+    guessed[pick] = (guessed[pick] ?? 0) + 1;
+    counts[pick] = (counts[pick] ?? 0) + 1;
+    expected += best;
+    size += 1;
+  }
+
+  // A rung nobody wants is a jar crossed with nothing under it, which kneads
+  // nothing and wastes the trip (design §5). Dropping the leading jar is
+  // exactly slicing both lists, since the rungs are the running OR of the
+  // order's tail — so what is left is a shorter ladder rather than a bad one.
+  let from = 0;
+  while (from < counts.length - 1 && counts[from] === 0) from += 1;
+
+  const ladder = { order: order.slice(from), counts: counts.slice(from) };
+
+  return {
+    ladder,
+    score: (matched + expected) * COVERAGE_WEIGHT - ladderSize(ladder),
+  };
+};
+
+/**
+ * Which ladder to build. Every sequence in `LADDER_ORDERS` is planned against
+ * the window as it stands *and* as the ramp will fill it, and the best-scoring
+ * plan wins.
+ *
+ * The maker plans against the **whole** window rather than whoever is at the
+ * front of it, and past the end of it rather than only into it. Building for
+ * one order leaves the lower rungs to sell themselves, and against seven colors
+ * of uncorrelated demand they mostly do not: measured, the strand banked more
+ * candy than the grinder and sold less of it. Choosing *which* ladder, how many
+ * of each rung, and in which sequence, is what puts those rungs in front of
+ * children — including the ones still at the door.
+ */
+const bestLadder = (
+  state: GameState,
+  stage: StageConfig,
+  cap: number,
+  twinChance: number,
+): Ladder => {
+  /**
+   * The window *and* the doorway. `state.upcoming` is empty unless the run
+   * pins `previewDepth`, so this is the maker the harness has
+   * always run until the moment an arm asks for lead time — which is what
+   * makes the preview one number's difference rather than a fourth bot.
+   *
+   * A fourth bot is what this was going to be, and it would have repeated the
+   * mistake the tenth sitting caught: every batcher-against-grinder reading
+   * before it varied how long the strand was *and* who it was built for, then
+   * attributed the whole difference to the first.
+   *
+   * A previewed want is treated exactly like a waiting one, which is only
+   * honest because `pity.ts` extends design §8.3's promise to cover it. Were it
+   * not, `promised` below would vouch for jars the board had never undertaken
+   * to lay, and the maker would circle for them.
+   */
+  const wants = demandedWants(state);
+  const openings =
+    Math.max(stage.maxQueue - wants.length, 0) +
+    Math.max(SHELF_SLOTS - state.shelf.length, 0);
+
+  /**
+   * A jar is worth planning around if it is on the floor, or if a child waiting
+   * needs it — design §8.3 guarantees the pity spawner lays that one within
+   * seconds, which is what makes circling for it a wait rather than a stall.
+   *
+   * A *speculative* rung gets no such promise, and the opening levels are where
+   * that bites: level 1 stocks one cube and no jars at all (`stocksDyes`), so a
+   * maker who planned a red rung for a child who has not arrived would circle
+   * the kitchen forever waiting on a jar the level will never lay.
+   */
+  const promised = new Set(wants.flatMap((want) => primariesOf(want)));
+  const buildable = (order: readonly Primary[]): boolean =>
+    order.every((dye) => promised.has(dye) || jarFor(state, dye) !== undefined);
+
+  let best: Ladder | undefined;
+  let bestScore = -Infinity;
+
+  for (const order of LADDER_ORDERS) {
+    if (!buildable(order)) continue;
+
+    const planned = planLadder(order, wants, stage, openings, cap, twinChance);
+    if (planned.score > bestScore) {
+      bestScore = planned.score;
+      best = planned.ladder;
+    }
+  }
+
+  // Nothing worth building — no one waiting and no rung likelier to sell than
+  // to stale. One plain cube is still better than standing still: it is the
+  // grinder's whole batch, and the bench is on the way to everything.
+  //
+  // Defensive rather than live, and measured as such: `LADDER_ORDERS` opens
+  // with the empty order, which `buildable` can never reject, so the loop
+  // always assigns — and a zero-size winner wants `openings` at nought, which
+  // is a **full** window over a **full** rack with no waiting child matching
+  // any rung. Neither fired once in 8263 calls across four seven-minute runs.
+  return best !== undefined && ladderSize(best) > 0 ? best : SOLO_CUBE;
+};
+
+/**
+ * The other way to play, and the one the color system was designed around: the
+ * maker builds a production line before chopping.
+ *
+ * A jar tints every segment already on the strand, and a cube taken after a jar
+ * stays raw (design §4), so a batch can only ever be a **nested ladder** —
+ * most-mixed at the head end, shedding a primary per segment toward the tail.
+ * Alternating sugar and jars banks one candy per tier in a single trip:
+ *
+ *     sugar, red, sugar, yellow, sugar  →  [orange, yellow, raw]
+ *
+ * The ladder is planned against the window as a whole and past the end of it
+ * (`bestLadder`): as many segments per rung as there is demand for, plus the
+ * raws under them all. Nothing is counted between moves — how far the build has
+ * got is read back off the head-end segment's color — so a strand broken
+ * mid-build, or a queue that changed while it was being built, simply re-plans
+ * from whatever survived.
+ *
+ * That read-back is the first of the ladder's jars the oldest segment has *not*
+ * been through. Finding that jar rather than counting how many it has been
+ * through is what keeps a re-plan honest: a queue that changed can leave the
+ * strand carrying a primary the new ladder does not call for, and a count would
+ * then point at the wrong rung while the jar pointed at the right one.
+ *
+ * Where the board withholds a cube, the bot takes the next jar it still needs
+ * rather than stalling. That is not a special case for the opening levels: it
+ * is what those levels are stocked to teach, since each lays one cube and waits
+ * for it to come back (design §7). The same rule plays them correctly.
+ */
+const ladderGoal = (
+  state: GameState,
+  stage: StageConfig,
+  cap: number,
+  twinChance: number,
+): Vec2 => {
+  const carried = state.snake.body;
+  const held = carried[0]?.color ?? RAW;
+  const { order, counts } = bestLadder(state, stage, cap, twinChance);
+  /**
+   * Steering at nothing in particular, which `steerTowards` reads as "no turn":
+   * the maker carries straight on. It is what to do when the jar the ladder
+   * wants is not out yet — design §8.3 guarantees one within seconds, and a lap
+   * of the kitchen costs far less than taking a half-built ladder to the block
+   * and throwing the rest of the trip away.
+   */
+  const circle = state.snake.head;
+
+  // How far the build has got: the first jar the strand has *not* been through.
+  // Found rather than counted, and found **once** — a re-plan mid-build can
+  // leave the strand holding a later rung's primary and not an earlier one, so
+  // the jar to head for and the rungs already owed have to come off the same
+  // index or the maker fetches cubes for a rung it is not on. `findIndex` gives
+  // both from one scan, which is the coupling rather than a second lookup that
+  // has to agree with the first.
+  const at = order.findIndex((dye) => (held & dye) === 0);
+  /** The ladder's jars are all through the strand; only the bench is left. */
+  const finished = at < 0;
+  const rung = finished ? order.length : at;
+  /** Every segment that must be on the strand before that jar is crossed. */
+  const wanted = sum(counts.slice(0, rung + 1));
+
+  // Lay this rung's cubes before crossing the jar that tints them. A cube taken
+  // after the jar stays raw, so the ladder would come out a rung short.
+  if (carried.length < wanted) {
+    const sugar = nearestSugar(state);
+    if (sugar !== undefined) return sugar;
+    // No cube to be had, so press on with the next jar rather than stall.
+  }
+
+  return finished ? BENCH : (jarFor(state, order[rung]!) ?? circle);
+};
+
+/**
+ * The maker the open finding is about: uncapped, so the plan stops itself where
+ * the next segment is likelier to stale than to sell.
+ */
+const batcherGoal: Goal = (state, stage, twinChance) =>
+  ladderGoal(state, stage, Infinity, twinChance);
+
+/**
+ * The grinder, plus one segment when the window is offering a pair — and
+ * nothing else changed.
+ *
+ * This is the arm that isolates the variable, and it exists because capping the
+ * *planner* does not. Measured at a cap of one, the planner carries the
+ * grinder's own 1.06 segments and scores a third of what the grinder scores: it
+ * targets whichever ladder covers the most expected demand, while the grinder
+ * walks at the child standing in front of it. So every batcher-against-grinder
+ * reading this harness has ever taken has varied two things at once — how long
+ * the strand is, and who it is being built for — and attributed the difference
+ * to the first.
+ *
+ * Here only the length moves. The maker takes the front child's order exactly
+ * as the grinder does; the one difference is that when a second child is
+ * waiting on the *same* color, it lays two cubes before crossing the jars, so
+ * one cut feeds both. That is the whole of what a combo tutorial level would
+ * teach, and the cheapest batch the game has.
+ */
+const pairGrinderGoal: Goal = (state) => {
+  const want = state.customers[0]?.want;
+  // A pair is only worth laying if a second mouth is already asking for it: the
+  // second candy of a color nobody else wants is a rack slot, not a serve.
+  const twin = state.customers.some((other, at) => at > 0 && other.want === want);
+
+  return frontGoal(state, twin ? 2 : 1);
+};
+
+/**
+ * The planner carrying the grinder's own single segment — the control that
+ * showed the two makers above differ in more than the length of the strand.
+ *
+ * A cap of one leaves it building exactly what the grinder builds, one candy a
+ * trip, and it scores about a third of what the grinder scores. So the ladder
+ * bot's deficit is not all length: most of it is *who the strand is built for*.
+ * The grinder walks at the child in front of it, which is a mouth that is
+ * certainly there; the planner walks at whichever ladder covers the most
+ * expected demand, which on a re-plan can be a different ladder from the one
+ * the strand is halfway through. It is kept and asserted below so that the two
+ * variables cannot silently be read as one again.
+ */
+const soloPlannerGoal: Goal = (state, stage, twinChance) =>
+  ladderGoal(state, stage, 1, twinChance);
+
+/**
+ * The maker's beliefs come off the **game**, never off a default of their own:
+ * `stage` is where the difficulty is, and `twinChance` is how correlated the
+ * window is. An arm of a sweep sets one number on the `Game` and both the rule
+ * and the maker planning against it move together — which is the whole point of
+ * `echoable` being shared rather than copied, and it is not something a second
+ * default over here could keep true.
+ */
+const botFor = (game: Game, goalOf: Goal = grinderGoal): TurnSource => ({
+  take: () => steerTowards(game.state, goalOf(game.state, game.stage, game.twinChance)),
+});
+
+/** Everything that must be true after every single step of every run. */
+const violationsIn = (game: Game, tick: number): string[] => {
+  const { state } = game;
+  const broken: string[] = [];
+  const at = (message: string): string => `tick ${tick}: ${message}`;
+
+  if (state.lives < 0 || state.lives > STARTING_LIVES) {
+    broken.push(at(`${state.lives} lives`));
+  }
+  if (state.shelf.length > SHELF_SLOTS) {
+    broken.push(at(`${state.shelf.length} candies on a ${SHELF_SLOTS}-slot shelf`));
+  }
+
+  const inTutorial = game.openingLevel !== undefined;
+  // The live cap, not a fixed row: the ramp widens the window as it climbs
+  // (design §7), so the only thing that can be asserted is that the queue never
+  // outgrows whatever difficulty is asking for right now.
+  const level = game.openingLevel;
+  const cap = level === undefined ? game.stage.maxQueue : ordersLeft(level, state);
+  if (state.customers.length > cap) {
+    broken.push(at(`${state.customers.length} children waiting, cap ${cap}`));
+  }
+
+  for (const customer of state.customers) {
+    if (customer.patience !== undefined && customer.patience.remainingMs < 0) {
+      broken.push(at(`customer ${customer.id} past the end of their bar`));
+    }
+    // The opening levels must never put a clock on the window (design §7).
+    if (inTutorial && customer.patience !== undefined) {
+      broken.push(at(`opening-level customer ${customer.id} has a patience clock`));
+    }
+    // Every candy is offered to the queue as it is made, and every arrival
+    // sweeps the rack — so this pairing is unreachable by construction.
+    if (state.shelf.some((candy) => candy.color === customer.want)) {
+      broken.push(at(`customer ${customer.id} waiting beside a candy they ordered`));
+    }
+  }
+
+  const stocked: readonly Primary[] = stockedPrimaries(game.openingLevel);
+  for (const primary of PRIMARIES) {
+    const jars = state.pickups.filter(
+      (pickup) => pickup.kind === 'dye' && pickup.primary === primary,
+    );
+    if (jars.length > 1) broken.push(at(`${jars.length} jars of primary ${primary}`));
+    if (jars.length > 0 && !stocked.includes(primary)) {
+      broken.push(at(`primary ${primary} on a board stocked for ${stocked.join()}`));
+    }
+  }
+
+  // Design §8.1's floor, narrowed by design §7: an opening level hands out only
+  // the cubes its orders still need, and never more than one at a time.
+  //
+  // The second half used to read "no cube on the floor once the level has
+  // stopped asking", which held only while every level asked for exactly one:
+  // the cube was always picked up before the rule could flip. Level 4 asks for
+  // two, so a cube can be lying there unclaimed when the maker chops the first
+  // segment and `severed` closes the tap. What the rule is actually protecting
+  // is the floor against a pile of cubes, so that is what it now says.
+  const cubes = state.pickups.filter((pickup) => pickup.kind === 'sugar').length;
+  if (stocksSugar(game.openingLevel, state) && cubes === 0) {
+    broken.push(at('no sugar on the map'));
+  }
+  if (cubes > 1) broken.push(at(`${cubes} cubes on the floor`));
+
+  return broken;
+};
+
+interface RunResult {
+  readonly violations: string[];
+  readonly game: Game;
+  /** Candies that left the block, however they were then disposed of. */
+  readonly chopped: number;
+  /** Candies the shelf had to let go of to make room (design §5). */
+  readonly staled: number;
+  /**
+   * Cuts holding more than one color — a production line rather than a single
+   * candy. The only direct evidence that a maker batched at all, since a
+   * one-segment strand cannot produce one.
+   */
+  readonly ladders: number;
+  /** Mean segments in a batch at the moment it was cut loose. */
+  readonly meanBatch: number;
+  /**
+   * Strands lost to a self-hit (design §6). A production line is a longer
+   * strand, and a longer strand is easier to steer into — so this is the cost
+   * of batching that no amount of demand tuning can pay off.
+   */
+  readonly broken: number;
+  /**
+   * How long the run lasted, or undefined for a maker still standing when the
+   * sweep ran out of ticks. `step` returns before it advances the clock once
+   * the run is over, so `elapsedMs` is already the moment of death rather than
+   * however long the loop kept calling afterwards.
+   */
+  readonly diedAtMs: number | undefined;
+  /**
+   * The deepest the window ever got. Design §7 has carried a max-queue column
+   * since Phase 4 and no sweep ever read it back — which is how the queue came
+   * to be stuck at one for six sittings with every assertion green (see the
+   * plan's seventh sitting). Measured now, so it cannot go quiet again.
+   */
+  readonly peakQueue: number;
+  /**
+   * The share of the run the window spent offering a **pair** — two children
+   * waiting on the same color at the same time, which is the one shape a single
+   * cut can feed twice (design §9).
+   *
+   * This is what `TWIN_CHANCE` moves and the reading it is tuned against. It is
+   * a property of the *window* rather than of the maker, so it comes back nearly
+   * the same for every bot on a given arm; what differs between them is whether
+   * they take it.
+   */
+  readonly pairOffered: number;
+  /**
+   * The most sugar the strand ever carried. Segments rather than `snakeLength`,
+   * which counts the head: what is being measured is how much of a ladder got
+   * built, and the maker is not a rung of it.
+   *
+   * This is the direct read on whether a lever aimed at the *cost* of a ladder
+   * actually bought one — `ladders` says a batch held more than one color, and
+   * says nothing about how tall it was.
+   */
+  readonly peakSegments: number;
+  /** The same, averaged over the ticks the maker was alive. */
+  readonly meanSegments: number;
+  /**
+   * Every gear change the run was told about, in order (design §7's speed
+   * ladder). Collected here because this is the only harness that plays long
+   * enough to reach the top of it: an unattended `Game` loses its lives to
+   * walkouts before the sixth rung, so `game.test.ts` can only ever see the
+   * ease-in.
+   */
+  readonly gears: { readonly rung: number; readonly top: boolean }[];
+  /**
+   * Every rush edge the run was told about, in order (design §7's tide). Here
+   * for the reason `gears` is: an unattended `Game` loses its lives long before
+   * the tide has run a cycle, so this harness is the only one that can watch a
+   * one-shot fire over a curve that rises and falls all run.
+   */
+  readonly rushes: boolean[];
+  /**
+   * Every order that reached the window, split by tier — what demand the run
+   * actually *delivered*, as against the T1/T2/T3 column design §7 asked for.
+   *
+   * The twin-arm sweep is the reason this is a reading rather than a
+   * calculation: an easy color leaves the window faster than it can be echoed,
+   * so what a run delivers drifts from what the table weights, and at a twin
+   * constant of 0.75 it drifted by more than a whole step of the column. Any
+   * arm that touches when an order is drawn owes this number.
+   *
+   * The opening levels' own orders are in here too. They are a fixed handful
+   * against a seven-minute run and they are the same handful in every arm, so
+   * they move a share by well under the drift being looked for.
+   */
+  readonly orderedByTier: Record<ColorTier, number>;
+}
+
+const play = (
+  seed: number,
+  ticks: number,
+  goalOf: Goal = grinderGoal,
+  twinChance?: number,
+  previewDepth?: number,
+): RunResult => {
+  const game = new Game({ ...DEFAULT_CONFIG, seed, twinChance, previewDepth });
+  const bot = botFor(game, goalOf);
+  const violations: string[] = [];
+  let score = 0;
+  let served = 0;
+  let level = 0;
+  let chopped = 0;
+  let staled = 0;
+  let ladders = 0;
+  let cuts = 0;
+  let cutSum = 0;
+  let broken = 0;
+  let peakQueue = 0;
+  let peakSegments = 0;
+  let segmentSum = 0;
+  let liveTicks = 0;
+  let pairTicks = 0;
+  const gears: { rung: number; top: boolean }[] = [];
+  const rushes: boolean[] = [];
+  const orderedByTier = noServes();
+
+  for (let tick = 0; tick < ticks; tick += 1) {
+    for (const event of game.step(20, bot)) {
+      if (event.type === 'candy-chopped') chopped += 1;
+      if (event.type === 'candy-staled') staled += 1;
+      if (event.type === 'strand-broken') broken += 1;
+      if (event.type === 'speed-raised') gears.push({ rung: event.rung, top: event.top });
+      if (event.type === 'rush-changed') rushes.push(event.on);
+      if (event.type === 'customer-arrived') {
+        orderedByTier[colorInfo(event.customer.want).tier] += 1;
+      }
+      if (event.type !== 'strand-cut') continue;
+
+      // Both readings are of the **strand the maker built**, which is the batch
+      // plus whatever stayed on the head — not of the batch alone. Today those
+      // are the same thing, since a chop severs the whole body (design §5) and
+      // leaves the snake head-only; the retained term is here so that a rule
+      // keeping part of the strand back cannot quietly turn "how long a line
+      // did this maker build" into "how much of it was sold this trip". A
+      // metric that answers a different question after a rules change, under
+      // the same name, is how this harness has gone blind four times.
+      //
+      // `kept` is the body at the end of the step, not at the cut — `step`
+      // returns its events already materialised, so reading it in here moves
+      // nothing in time. What being in here buys is that the accounting no
+      // longer assumes **one cut a step**. That assumption holds today
+      // (`SPEED_RUNGS` floors a move at 125 ms against this loop's fixed 20, so
+      // at most one move and so at most one cut) and is exactly the kind of
+      // thing a rules change costs you quietly. A second cut in one step would
+      // still add `kept` twice, so this is honest about the count and not yet
+      // about the length; if a rule ever lands that can part a strand twice in
+      // a move, that is the line to come back to.
+      const kept = game.state.snake.body;
+      const colors = new Set([...event.batch, ...kept].map((segment) => segment.color));
+      if (colors.size > 1) ladders += 1;
+      cuts += 1;
+      cutSum += event.batch.length + kept.length;
+    }
+
+    violations.push(...violationsIn(game, tick));
+
+    const { state } = game;
+    if (state.score < score) violations.push(`tick ${tick}: score went backwards`);
+    if (state.served < served) violations.push(`tick ${tick}: serves went backwards`);
+    if (state.tutorialIndex < level) violations.push(`tick ${tick}: tutorial rewound`);
+    ({ score, served, tutorialIndex: level } = state);
+
+    // Sampled over the ticks the maker was alive rather than over the sweep: a
+    // run that ended at four minutes would otherwise be read as having spent
+    // the next three carrying nothing. It is the mean that needs saying so —
+    // `step` returns before it touches anything once the run is over, so a
+    // finished game's state never moves and neither peak could shift anyway.
+    if (!state.over) {
+      peakQueue = Math.max(peakQueue, state.customers.length);
+      peakSegments = Math.max(peakSegments, state.snake.body.length);
+      segmentSum += state.snake.body.length;
+      liveTicks += 1;
+
+      // Fewer distinct colors than children is a duplicate at the window, which
+      // is the shape one cut can feed twice (design §9).
+      const wants = new Set(state.customers.map((customer) => customer.want));
+      if (wants.size < state.customers.length) pairTicks += 1;
+    }
+  }
+
+  return {
+    violations: violations.slice(0, 10),
+    game,
+    chopped,
+    staled,
+    ladders,
+    meanBatch: cuts === 0 ? 0 : cutSum / cuts,
+    broken,
+    diedAtMs: game.state.over ? game.state.elapsedMs : undefined,
+    peakQueue,
+    peakSegments,
+    meanSegments: segmentSum / liveTicks,
+    pairOffered: pairTicks / liveTicks,
+    gears,
+    rushes,
+    orderedByTier,
+  };
+};
+
+const SEEDS = [1, 17, 404, 9_001];
+/** 20 000 × 20 ms is a shade under seven minutes of play per seed. */
+const TICKS = 20_000;
+
+describe('a full run', () => {
+  it.each(SEEDS)('holds every invariant end to end (seed %d)', (seed) => {
+    expect(play(seed, TICKS).violations).toEqual([]);
+  });
+
+  it.each(SEEDS)('holds them for a maker who batches too (seed %d)', (seed) => {
+    expect(play(seed, TICKS, batcherGoal).violations).toEqual([]);
+  });
+
+  it('builds a production line and serves off it', () => {
+    const seed = SEEDS[0] ?? 1;
+    const batcher = play(seed, TICKS, batcherGoal);
+
+    expect(batcher.game.state.tutorialIndex).toBe(batcher.game.tutorial.length);
+    expect(batcher.game.state.served).toBeGreaterThan(batcher.game.tutorial.length);
+    // Serving is not the claim — laddering is, and only a multi-colored cut
+    // shows it. A maker carrying one segment can barely manage one by accident.
+    // The floor is 8 rather than the 10 it was, and *not* because the shipped
+    // build needs the room — this seed measures 21 → 31 across the preview-tide
+    // pass, up by half. It is because an intermediate arm of that same pass put
+    // it at exactly **10**: the preview tide alone, before the tide grew, costs
+    // the maker a fifth of its ladders draw-wide and this seed half of them.
+    // A bound a build inside one pass can sit on is a bound set too close, and
+    // `buys a batching maker more candy per minute` below has the rest of it.
+    expect(batcher.ladders).toBeGreaterThan(8);
+    expect(play(seed, TICKS).ladders).toBeLessThan(batcher.ladders);
+  });
+
+  it('gets through the opening levels and serves real orders', () => {
+    const { game } = play(SEEDS[0] ?? 1, TICKS);
+
+    expect(game.state.tutorialIndex).toBe(game.tutorial.length);
+    expect(game.state.served).toBeGreaterThan(game.tutorial.length);
+    expect(game.state.score).toBeGreaterThan(0);
+  });
+
+  it('cannot end while the opening levels are still running', () => {
+    const game = new Game({ ...DEFAULT_CONFIG, seed: 5 });
+    const idle: TurnSource = { take: () => undefined };
+
+    // A player who never touches the controls drives straight forever and
+    // serves nobody. The run has to survive that for as long as they leave it.
+    for (let tick = 0; tick < TICKS; tick += 1) game.step(20, idle);
+
+    expect(game.state.tutorialIndex).toBe(0);
+    expect(game.state.lives).toBe(STARTING_LIVES);
+    expect(game.state.over).toBe(false);
+  });
+
+  it('ends the run when the maker walks away from a real queue', () => {
+    const game = new Game({ ...DEFAULT_CONFIG, seed: 5 });
+    const bot = botFor(game);
+    const idle: TurnSource = { take: () => undefined };
+
+    const levels = game.tutorial.length;
+    for (let tick = 0; tick < TICKS && game.state.tutorialIndex < levels; tick += 1) {
+      game.step(20, bot);
+    }
+    expect(game.state.tutorialIndex).toBe(levels);
+
+    // Three children, each with a clock now: walking away has to cost the run.
+    for (let tick = 0; tick < TICKS && !game.state.over; tick += 1) {
+      game.step(20, idle);
+    }
+
+    expect(game.state.over).toBe(true);
+    expect(game.state.lives).toBe(0);
+  });
+
+  it('never spawns a pickup under an unopened cell of the strand', () => {
+    const game = new Game({ ...DEFAULT_CONFIG, seed: 21 });
+    const bot = botFor(game);
+
+    for (let tick = 0; tick < 4_000; tick += 1) {
+      game.step(20, bot);
+      const { snake, pickups } = game.state;
+      const cells = [snake.head, ...snake.body.map((segment) => segment.pos)];
+
+      for (const pickup of pickups) {
+        if (pickup.open) continue;
+        expect(cells.some((cell) => eq(cell, pickup.pos))).toBe(false);
+      }
+    }
+  });
+});
+
+/** 30 000 × 20 ms — the far end of the 8–10 min run Phase 5 is aiming at. */
+const TARGET_TICKS = 30_000;
+
+/**
+ * A wider draw for the one question that is about a *rate* rather than about a
+ * run: how often the ramp closes a batching run out.
+ *
+ * `SEEDS`' four are enough for an invariant, which either holds on a run or
+ * does not. They are not enough for a proportion. Anything that shifts when a
+ * pickup spawns re-rolls every free cell drawn after it, so a run either side
+ * of such a change is a different run rather than the same one played harder —
+ * and with a sample of four, "3 of 4 died" and "2 of 4 died" is the same
+ * measurement twice. Sixteen makes the reshuffle visible as noise instead of
+ * reading as a curve that stopped biting.
+ */
+const SWEEP = [...SEEDS, 2, 3, 5, 7, 11, 13, 23, 31, 57, 88, 123, 777];
+
+/**
+ * Wider still, because sixteen turns out not to be enough — a thing this file
+ * has now learned **three times about three statistics**. It carried only the
+ * median until the twin-arm sweep; the batcher-against-grinder proportion the
+ * open finding hangs on now comes off it too, for the reason that test states.
+ *
+ * A proportion needed sixteen where four would not do (`SWEEP` above). A median
+ * needs sixty-four: measured on the same build, the batching maker's death
+ * reads **3.95 min across `SWEEP` and 4.21 across this draw** — a quarter of a
+ * minute apart, which straddles the floor of the 4–6 window the ramp was aimed
+ * at when this was measured (it is 6–8 since the eleventh sitting; the point
+ * about draw width is unaffected, which is why the figures are left as read). Half the sittings recorded in the plan compared two medians sixteen seeds
+ * wide and read the difference as a curve that moved; on this evidence some of
+ * those differences were the draw.
+ *
+ * Sixty-four rather than a rounder thirty-two, and the margin is the reason.
+ * Bootstrapped against a 512-seed pool of batcher deaths (true median ≈ 4.41),
+ * the chance a draw's own median lands under the 4-minute floor runs 12.3% at
+ * sixteen seeds, 6.4% at thirty-two and **1.8% at sixty-four** — and the
+ * sub-draw medians are not even monotonic below that (forty-eight reads lower
+ * than thirty-two), which is the noise saying so itself. The true median sits
+ * only ~0.4 min above a hard floor, so the draw has to be wide enough to
+ * resolve less than that or the assertion fails on the draw rather than on the
+ * game.
+ *
+ * **What it costs, now that two tests read it.** The median's batcher runs are
+ * ~48 ms a seed and the open finding's grinder runs ~57 ms — the grinder is the
+ * dearer of the two because it outlives the ticks on seeds where the batcher
+ * dies half way. The memo is per (bot, seed), so each arm is played once and
+ * the two tests are ~3.1 s and ~2.7 s: about six seconds of the file's ten, and
+ * the price of every median and proportion here being read off a draw that can
+ * resolve it. The figure this note carried before — "about a second, ~14 ms a
+ * seed, paid only by the batcher" — was measured when the batcher was the only
+ * arm that paid, and was low by three times even then.
+ */
+const WIDE = [...SWEEP, ...Array.from({ length: 48 }, (_unused, at) => 1_000 + at * 37)];
+
+/**
+ * The deepest window the ramp ever opens, off the table rather than written
+ * down again — the last row's, since the cap only climbs and then holds past
+ * the end of the table (`difficulty.test.ts` pins both). A retune that widens
+ * the window should not read here as a run that failed to fill it.
+ */
+const PEAK_QUEUE = RAMP[RAMP.length - 1]!.maxQueue;
+
+/**
+ * Where the balance stands *after* the ramp went in, measured rather than
+ * guessed — the after half of the comparison the pre-Phase-5 block set up. The
+ * plan's mitigation for "balance is opinion" is seeded simulations that make
+ * tuning comparable run-to-run, so the numbers stay committed as assertions and
+ * the next change to them shows up as a diff.
+ *
+ * Two of the three findings that opened the phase are answered:
+ *
+ * - **Losing is possible now.** The maker who batches — the way the color
+ *   system is meant to be played — dies inside the minute window the plan is
+ *   aiming at, where before neither bot could be touched. That window has read
+ *   8–10, then 4–6, and 6–8 since the eleventh sitting; the argument behind
+ *   each move is in the plan, under the seventh and eleventh sittings.
+ * - **The window is no longer the only constraint.** The ramp shortens the
+ *   arrival interval past what either maker can keep up with, so the run ends
+ *   on the queue rather than on the clock running out of customers.
+ *
+ * The third is **not** answered, and the assertions below say so plainly rather
+ * than quietly dropping it: batching is still the worse way to play. It is not
+ * a tuning failure — the levers were measured and none of them close it. A
+ * nested ladder is a fixed bundle (a secondary over one particular primary over
+ * a raw) while demand is spread uncorrelated across seven colors, so the extra
+ * candy a longer strand buys is mostly candy nobody ordered. Removing staling
+ * entirely (a 60-slot shelf) does not fix it, flattening the tier mix does not
+ * fix it, and teaching the bot to plan against the whole window rather than the
+ * child at the front of it only narrows it.
+ *
+ * That is a rules question, not a numbers question, and it is recorded here as
+ * the open one — but read the last two tests in this block before taking it at
+ * the width the paragraph above states it. A third reference player, the
+ * grinder plus one segment whenever two children want the same color, beats the
+ * grinder on 54 seeds of 64. What is punished is not a second candy on the
+ * strand; it is building a ladder for demand that has not walked in yet.
+ *
+ * Both bots are kept for the same reason as before: tightening the ramp until
+ * the *grinder* died on schedule would be tuning the game around the strategy
+ * it least wants to reward.
+ */
+describe('the reference players, after the ramp went in', () => {
+  /**
+   * The runs behind the tests below, memoised per (bot, seed). `play` is a pure
+   * function of (seed, ticks, goal) — the core takes all its randomness from
+   * the seeded rng (architecture §2) — so re-running one can only produce what
+   * the last one did. Nothing here may step these games further.
+   *
+   * Per seed rather than per sweep, because the sweeps overlap: `SWEEP` opens
+   * with `SEEDS`, and the four would otherwise be played out twice.
+   */
+  const runs = new Map<Goal, Map<number, RunResult>>();
+  const target = (goalOf: Goal, seeds: readonly number[] = SEEDS): RunResult[] => {
+    const bySeed = runs.get(goalOf) ?? new Map<number, RunResult>();
+    runs.set(goalOf, bySeed);
+
+    return seeds.map((seed) => {
+      const run = bySeed.get(seed) ?? play(seed, TARGET_TICKS, goalOf);
+      bySeed.set(seed, run);
+      return run;
+    });
+  };
+
+  /**
+   * Candies off the block per minute the maker was alive — `elapsedMs` stops
+   * at death, so it is the length of the run either way.
+   *
+   * Counting candies instead is the obvious measure and the wrong one: the
+   * ramp closes the batcher's run out and leaves the grinder standing, so a
+   * raw count sets a six-minute run against a ten-minute one and reads the
+   * shorter as the less productive. Per minute, the batcher leads on every one
+   * of an offline draw of 96 seeds, before this level-2 change and after;
+   * counted raw it led on about two thirds of them, and which two thirds is a
+   * re-roll.
+   */
+  const choppedPerMinute = (run: RunResult): number =>
+    run.chopped / (run.game.state.elapsedMs / 60_000);
+
+  /** When the ramp closed each batching run out, for the runs it closed. */
+  const deathsOf = (seeds: readonly number[]): number[] =>
+    target(batcherGoal, seeds)
+      .map((run) => run.diedAtMs)
+      .filter((ms): ms is number => ms !== undefined);
+
+  it('ends a batching run inside the window the ramp is aimed at', () => {
+    // How often the ramp closes a run out is a rate, so it is asked of the
+    // wider draw (`SWEEP`) rather than of the four. Every seed, now that an
+    // emptied window refills rather than standing open: the queue the run ends
+    // on is one the maker actually had to hold off. Measured 16/16, against
+    // 14/16 when the window admitted one child per interval whatever it held.
+    const diedAt = deathsOf(SWEEP);
+    expect(diedAt.length).toBeGreaterThanOrEqual(14);
+
+    // *When* it closes them out is the target itself, and the median is what
+    // carries it: the tail is a re-roll on any given seed (anything that moves
+    // a spawn re-rolls every free cell drawn after it) but the middle of the
+    // draw is not — or so this said until the ceiling went up, when the middle
+    // of *sixteen* turned out to move by a quarter of a minute against sixty-
+    // four (3.95 against 4.21) and to straddle the floor while doing it. The
+    // median has moved to `WIDE` for that reason, and every median quoted below
+    // was read off sixteen seeds and should be taken as ±0.3 min.
+    //
+    // Measured **5.22 min on `WIDE`** as of the preview-tide pass, against 5.28
+    // on the build before it — and the 4.21 recorded here before that was stale
+    // by two passes, which is the hazard of a number that only prints on
+    // failure. The figures that follow are the history of this number and were
+    // all read off sixteen seeds; the jump from the 5.16 recorded below is
+    // mostly the draw widening and not the curve moving. Against
+    // 5.79 while the tide still waited for the three-minute mark — the ninth
+    // sitting moved it to `SETTLED_MS` and a shape the maker meets a minute in
+    // is one they have to hold off for the rest of the run.
+    //
+    // The score-ramp pass then keyed the ramp on score rather than on a count
+    // of serves. `MS_PER_POINT` was fitted to leave the median where it was and
+    // did (4.66 → 4.67) — but the same pass found the brown-mercy gate reading
+    // the raw clock where its own rule said "once the ramp has settled", and
+    // fixing *that* is what put the median at 5.16: a maker whose score runs
+    // ahead of the stopwatch now reaches the settled row, and the free serve a
+    // mercy customer is, sooner than the clock would have let them. Both arms
+    // re-measured with the gate fixed read 4.66 (serve count) against 5.16
+    // (score), and this file has had to say three times that a run either side
+    // of a change that moves an rng draw is a different run, not the same one
+    // played harder.
+    //
+    // **The window reads 6–8, and the eleventh sitting is what moved it there.**
+    // It has now been 8–10 (as written), 4–6 (the seventh sitting) and this, and
+    // the round trip is worth reading as one argument rather than as indecision.
+    //
+    // The seventh sitting cut it to 4–6 on a structural point that still holds:
+    // nothing new arrives after the three-minute mark — max queue is done at
+    // 2 min, the order mix and the speed cap at 3 — so a target set past the
+    // last of the levers was asking the ramp to hold attention with arithmetic.
+    // What that argument settles is where the run should *end*. What it does not
+    // settle is how much room there is inside it, and the chair's report is that
+    // there is none: *too fast, no time to stock candy at all*.
+    //
+    // So the levers-run-out point is answered by the tide instead, which is the
+    // one thing on the curve still growing when they have all stopped, and the
+    // target goes back out to make room for a maker to build into it. Measured
+    // **7.05 min on `WIDE`**, against 5.22 before this pass. What bought it is
+    // the patience column, ×1.2 across the table, which is the lever that most
+    // directly pays for a ladder: patience is the time a candy has to be *made*
+    // in, and the arrival interval only says how much is being asked for. See
+    // the plan's eleventh sitting for the arms — the arrival column and the
+    // score rate were both tried first and neither could reach 6 alone.
+    const sorted = [...deathsOf(WIDE)].sort((a, b) => a - b);
+    const median =
+      sorted.length % 2 === 1
+        ? sorted[(sorted.length - 1) / 2]!
+        : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+    // Said once for both ends, since a median outside the window fails one of
+    // them and the reader wants the same number either way.
+    const measured = `median death at ${(median / 60_000).toFixed(1)} min`;
+    expect(median, measured).toBeGreaterThanOrEqual(6 * 60_000);
+    expect(median, measured).toBeLessThanOrEqual(8 * 60_000);
+
+    // And the long tail stays a tail. Not a bound on the median twice over: a
+    // draw could sit dead centre and still send a quarter of its runs past the
+    // point the levers ran out, which is the thing the target is against.
+    //
+    // The mark moves with the target — one minute past its top, as it has been
+    // since it was written, so widening the window cannot quietly buy the tail
+    // an amnesty it did not earn. At 6–8 that is **nine minutes**, and measured
+    // it is **6 of 62** closed-out runs, comfortably inside the quarter.
+    //
+    // The distribution behind that, on the same draw: min 1.36, q1 6.07,
+    // median 7.05, q3 7.83, max 9.92, with 62 of 64 seeds closed out at all.
+    // The interquartile range is 1.8 min wide against 1.5 before this pass, so
+    // the target moved out without the spread opening much — which is the thing
+    // to check when a curve is loosened, since the cheap way to a later median
+    // is a handful of runs that simply never end.
+    const late = sorted.filter((ms) => ms > 9 * 60_000);
+    expect(
+      late.length * 4,
+      `${late.length} of ${sorted.length} closed-out runs passed seven minutes`,
+    ).toBeLessThanOrEqual(sorted.length);
+  });
+
+  it('says when each rush starts and when it lets go, once each', () => {
+    // The one-shot over a curve that rises and falls (`announceRush`). A speed
+    // rung only ever climbs, so its announcement needs no hysteresis and a
+    // high-water mark is memory enough; this edge goes both ways, and the
+    // failure it is guarding against is the cue flapping on the frames either
+    // side of the threshold.
+    //
+    // What that would look like here is two `true`s in a row, so alternation is
+    // the assertion — and it is a stronger one than "fires sometimes": the
+    // doorway is drawn from the same threshold, so a flapping bell would be a
+    // crowd flickering in and out at the edge of the eye that is steering.
+    target(batcherGoal).forEach((run) => {
+      const { rushes } = run;
+
+      // A run of this length meets several tides, and the first edge it can
+      // ever cross is into one: there is no tide at all before `RUSH_FROM_MS`.
+      expect(rushes.length).toBeGreaterThanOrEqual(4);
+      expect(rushes[0]).toBe(true);
+      rushes.forEach((on, index) => {
+        if (index === 0) return;
+        expect(on, `edge ${index} of ${rushes.join(',')}`).toBe(!rushes[index - 1]);
+      });
+    });
+  });
+
+  it('climbs the whole speed ladder and says so, once per rung', () => {
+    // The half of the ladder no unattended game can reach: the sixth rung lands
+    // at 91 s of ramp and the seventh at 151, and a `Game` nobody plays has
+    // lost its three lives to walkouts by 58 s. So the announcement is checked
+    // end to end here, on runs that actually last (design §7).
+    target(batcherGoal).forEach((run) => {
+      expect(run.gears.map((gear) => gear.rung)).toEqual(
+        // Rung 0 is the speed every run opens at, so it is never announced.
+        Array.from({ length: SPEED_RUNGS.length - 1 }, (_, index) => index + 1),
+      );
+
+      // And the top of the ladder is called exactly once, at the end of it.
+      // This is the one piece of news the ramp had no way to deliver before:
+      // from here the strand never gets faster, and only the window tightens.
+      const tops = run.gears.filter((gear) => gear.top);
+      expect(tops).toHaveLength(1);
+      expect(run.gears[run.gears.length - 1]!.top).toBe(true);
+    });
+  });
+
+  it('buys a batching maker more candy per minute than a grinder', () => {
+    const grinders = target(grinderGoal);
+    const batchers = target(batcherGoal);
+
+    // Breaks are counted over the draw rather than per seed, for the reason the
+    // ladder floor below has just had to learn twice: a per-seed ceiling is the
+    // draw's *maximum*, which is as noisy as its minimum, and this one caught a
+    // re-roll rather than a regression. The shipped tide reads **7** breaks
+    // across `SWEEP`'s sixteen seven-minute runs against a baseline **6**, with
+    // one seed contributing 2 where the most any seed had carried was 1 — and an
+    // intermediate arm of the same pass read 9, with one of *these four* seeds
+    // on 2, which is what failed the per-seed ceiling this replaced. A count
+    // that small cannot separate a trend from a shuffle, and nothing about where
+    // the tide starts touches how a maker steers into their own strand except
+    // through the spawns it re-rolls. What the number is actually here to
+    // establish is unchanged and is a rate: a production line is a longer
+    // strand and a longer strand is easier to run into, so the cost has to be
+    // small enough that it cannot account for the score gap below — a break
+    // every second run over these four (measured 2, against 1 at baseline)
+    // leaves the 2.24× to be read as economics.
+    const breaks = sum(batchers.map((batcher) => batcher.broken));
+    expect(breaks).toBeLessThanOrEqual(4);
+
+    batchers.forEach((batcher, seed) => {
+      const grinder = grinders[seed]!;
+
+      // The longer strand is genuinely the more productive one: fewer trips to
+      // the jars and the block per candy that comes off it.
+      expect(choppedPerMinute(batcher)).toBeGreaterThan(choppedPerMinute(grinder));
+      // And it is laddering to get there, rather than chopping singles fast.
+      // A floor rather than a target, and it has now come down three times —
+      // twice because a run that ends sooner makes fewer cuts, and this third
+      // time for a reason worth separating from that one, because it looks the
+      // same and is not.
+      //
+      // `ladders` counts a cut whose strand held more than one *color*, so it
+      // measures variety and not length. Raising the ceiling bought length by
+      // letting a rung carry several segments, and a rung carried twice is the
+      // same color twice — so the batcher builds longer strands and trips this
+      // counter less often. Measured 11 … 28 across the wider draw against
+      // 32 … 51 before, while the batch at the bench went 2.32 → 2.96 segments.
+      // Read the two together or neither means anything: `meanBatch` below is
+      // the length, this is the variety, and the grinder's 1 … 10 is still the
+      // separation the number is here for.
+      //
+      // **It has come down a fourth time, and this one is a correction rather
+      // than a re-measure — laddering did not move.** Across `SWEEP` the
+      // preview-tide pass reads 9 … 34 (median 21.5) → 9 … 31 (median 21), with
+      // the batch at the bench going 3.10 → 3.20 segments: the same maker,
+      // building the same way. What moved was inside the pass. The preview tide
+      // *alone*, before the tide grew, reads 10 … 35 (median 17.5) — a fifth
+      // fewer, against deaths only 6% sooner, so genuinely build time lost to a
+      // lull arriving 20 s earlier — and growing the tide hands it back.
+      //
+      // The correction is that **10 was never a sound floor**: the min across
+      // `SWEEP` is 9 in *both* arms, and this passed only because that seed is
+      // not among the four here. A per-seed floor is the draw's minimum, which
+      // is the noisiest statistic a sweep has and the second time this file has
+      // learned it (`offers the pair a single cut can feed`). Set under the
+      // measured minimum with room for the next re-roll.
+      expect(batcher.ladders).toBeGreaterThan(8);
+      // The gap is *mostly* what the candy is worth, and no longer quite all of
+      // it: the batcher now steers into itself occasionally where it never did
+      // before the ceiling went up (`breaks` above holds that to a rate). The
+      // grinder still never does, and that half stays per-seed — it is a
+      // structural claim about a maker who carries one segment, not a count
+      // that a re-roll can move. The gap is **2.24×** in aggregate over the four
+      // seeds here (2.64× over `SWEEP`).
+      expect(grinder.broken).toBe(0);
+    });
+  });
+
+  it('fills the window the seventh sitting opened', () => {
+    // See `peakQueue` for why occupancy is read back at all. The claim is about
+    // the **ramp** — that every slot it promises is a slot a run actually sees
+    // — so it is carried by the maker who lives long enough to be shown them
+    // all. That is the grinder, on every seed of the draw.
+    target(grinderGoal, SWEEP).forEach((run, index) => {
+      expect(run.peakQueue, `seed ${SWEEP[index]}`).toBe(PEAK_QUEUE);
+    });
+
+    // The batcher is held one slot lower, and the slack is a run length rather
+    // than a window that failed to open: the last widening is a row on the ramp,
+    // and a maker who dies before reaching that row never sees it. Measured
+    // 15 of 16 at the full depth and one at three, on a `SWEEP` median run of
+    // 3.95 min — where before the ceiling went up it was 16 of 16 on 5.7.
+    // A *second* seed dropping would not be slack; it would be the window
+    // closing, which is the thing the seventh sitting built this to catch.
+    const short = target(batcherGoal, SWEEP).filter((run) => run.peakQueue < PEAK_QUEUE);
+    expect(
+      short.length,
+      `${short.length} of ${SWEEP.length} short of the window`,
+    ).toBeLessThanOrEqual(1);
+    target(batcherGoal, SWEEP).forEach((run, index) => {
+      expect(run.peakQueue, `seed ${SWEEP[index]}`).toBeGreaterThanOrEqual(
+        PEAK_QUEUE - 1,
+      );
+    });
+  });
+
+  it('builds the long strand the open finding is about', () => {
+    // What this harness can answer, pinned rather than left to be rediscovered
+    // — and it is the *inverse* of what stood here for five sittings. The old
+    // `bestLadder` sized a batch from the primaries of one waiting order plus
+    // the raw beneath them, so the bot could not ask for a fourth segment, and
+    // this test said so: peak 4, mean 1.31. A green sweep was then evidence
+    // about a maker who batches three and about nothing longer, which is why
+    // four arms of a sugar-supply change moved the number by 0.1.
+    //
+    // The ceiling is up. A rung can now carry several segments (`planLadder`'s
+    // counts), and the plan runs past the window into the rack the next child
+    // sweeps — so the maker builds for demand that has not walked in yet, which
+    // is what the plan named as the prerequisite for asking any long-strand
+    // question at all.
+    //
+    // Measured over `SWEEP`, before → after: batch at the bench 2.32 → 2.96
+    // segments, carried mean 1.22 → 1.94, peak 4 → 9. The floors below are set
+    // under the *worst* seed rather than at the mean (batch 2.69, peak 5,
+    // carried 1.71), since what has to be true for the evidence to mean
+    // anything is that no seed is quietly still playing the old game.
+    //
+    // **The batch floor came down to 2.0 in the eleventh sitting, and the draw
+    // it is protecting against moved the other way.** With patience ×1.2 the
+    // whole of `SWEEP` reads 2.89-3.51 — above the old 2.69-3.4 at both ends,
+    // which is what more time to build is supposed to buy — except seed 88,
+    // which reads 2.08. That seed is not a maker that stopped batching: it
+    // carries the *most* of any seed here (2.27 against a 1.84-1.96 typical) and
+    // peaks at 8, so it is building longer strands and cutting them into more,
+    // smaller batches. Anything that moves an arrival moves every draw after it,
+    // and this is one seed's plan re-rolling around the new timings. The floor
+    // follows the doctrine above and goes under the worst rather than the
+    // second-worst, because a floor fitted to the draw's shoulders is a floor
+    // that fails on the next re-roll for no reason anybody can act on.
+    target(batcherGoal, SWEEP).forEach((batcher, index) => {
+      const seed = `seed ${SWEEP[index]}`;
+      expect(batcher.peakSegments, seed).toBeGreaterThan(4);
+      expect(batcher.meanBatch, seed).toBeGreaterThan(2.0);
+      // Pinned beside the batch it is quoted with. `meanSegments` is what the
+      // old ceiling test held *under* 2 on every seed; it is a different
+      // question from `meanBatch` — what the maker drags around all run, not
+      // what reaches the bench — and a documented metric nothing reads is how
+      // this file has gone blind before.
+      expect(batcher.meanSegments, seed).toBeGreaterThan(1.5);
+    });
+
+    // And the grinder is untouched by all of it: it carries one segment by
+    // construction, so it stays the floor a balancing pass has to beat.
+    target(grinderGoal, SWEEP).forEach((grinder, index) => {
+      expect(grinder.meanBatch, `seed ${SWEEP[index]}`).toBeLessThan(1.5);
+    });
+  });
+
+  it('still pays it nothing for the extra work — the open finding', () => {
+    // Every extra candy the batcher makes is made for a window that did not
+    // ask for it. That is an invariant — it holds on a run or it does not — so
+    // the four carry it. Measured 16 of 16 across the wider draw as well.
+    const grinders = target(grinderGoal);
+    target(batcherGoal).forEach((batcher, seed) => {
+      expect(batcher.staled).toBeGreaterThan(grinders[seed]!.staled);
+    });
+
+    // Whether the maker doing more work is *paid* less for it used to be an
+    // invariant, asked of the same four. It is a proportion, so it is asked of
+    // the draw that can carry one — and for six sittings that was read as
+    // `SWEEP`, which is the mistake this file has now made three times about
+    // three different statistics. Sixteen seeds size a proportion the way
+    // `SWEEP`'s own note says; they do not size *this* one, because it is a
+    // proportion of a comparison between two runs rather than of one run's
+    // events, and the two arms re-roll independently. **Measured 15 of 64**,
+    // against 3 of 16 on `SWEEP` for the same build — and at a twin constant of
+    // 0.5 the two draws read 2 of 16 against 23 of 64, which is 12% and 36% of
+    // the same game. The figure quoted here for two sittings was "2 of 16",
+    // stale as well as narrow. So the number that carries the open finding now
+    // comes off `WIDE`, like the median above and for the same reason.
+    //
+    // It read 1 of 16 for two sittings before that, on a window that refills
+    // giving a fixed bundle more targets to land on. Raising the bot ceiling
+    // took it back to zero, and that is the more useful number: the seed the
+    // batcher used to win is gone, but it is gone from a bot that now builds a
+    // batch of three at the bench instead of two, plans past the window, and
+    // still loses on every seed of the narrow draw. Five sittings held this
+    // open on the grounds that the harness could not be asked. Asked properly,
+    // the answer did not change.
+    //
+    // The combo bonus (design §9) was the sitting that tried to close it, and
+    // did not. Two of sixteen — that sitting's own reading, before the draw
+    // widened — is inside the re-roll: bonus points feed the ramp
+    // like any others, so each constant swept is a *different run*, and the
+    // proportion came back 0, 2, 0, 1, 1, 2 at 10, 15, 25, 40, 60 and 100.
+    // Excluding the bonus from the ramp feed makes the runs identical and the
+    // arithmetic legible: mean batcher score then climbs 16.93 points per point
+    // of bonus — the same slope across 0→15, 15→40 and 40→100 — off 4932
+    // against the grinder's flat ~13060. Closing
+    // that 8126-point gap this way needs a bonus near 480, against a tier-3
+    // serve worth 50. The gap is not a rate the bonus can raise; it is that the
+    // grinder does not die. See the plan's measurement record.
+    //
+    // **The bound is the halfway mark, because that is what the claim is.** A
+    // tighter one is available — 15 of 64 is 23% — and is deliberately not
+    // taken: it would fail on the re-roll any spawn-moving change causes and
+    // read as the finding closing when nothing had closed. It is a strict
+    // majority that has to stay behind, so an even split of 32 fails too: at
+    // 32 nothing has crossed halfway, but nothing is behind on more than half
+    // either, and this test only ever claimed the second.
+    //
+    // The twin sweep recorded in the plan crosses it on every arm it swept above
+    // a twin constant of 0.6, so crossing is not by itself the achievement. What
+    // makes the 34 of 64 the plan quotes the one worth naming is the death
+    // target: it and the patience −13% arm are the only two that also landed the
+    // batcher's median inside the window in force then (4–6), and that one pays
+    // with a quarter of the grinder's score. The rest buy the inversion by
+    // letting runs live longer, which is the game getting easier rather than
+    // batching getting paid.
+    //
+    // The grinder over `WIDE` is this test's own cost — every other sweep reads
+    // it off `SWEEP`, and the memo is per (bot, seed), so this is the only site
+    // that pays for the other 48. At ~57 ms a seed that is ~2.7 s in the file
+    // and ~6.7 s run alone, which is what the budget below is for: the 5 s
+    // default fails the `-t` invocation CLAUDE.md documents. The median test
+    // needs no budget because its batcher runs are memoised by the time it asks.
+    //
+    // Two neighbours are owed the same widening and did not get it here, so
+    // they are written down rather than left to be rediscovered. `'offers the
+    // pair a single cut can feed'` is grinder-only and would now cost **nothing**
+    // — its 64 runs are already played by the time it asks — and its own note
+    // says `SWEEP` once hid a seed that sat under its floor. `'pays a maker who
+    // takes the pair the window offers'` needs 48 new pair-maker runs, and its
+    // floor of 12 sits two seeds under a `SWEEP` reading of 14, which is the
+    // same margin this test was failing on.
+    const wideGrinders = target(grinderGoal, WIDE);
+    const ahead = target(batcherGoal, WIDE).filter(
+      (batcher, seed) => batcher.game.state.score > wideGrinders[seed]!.game.state.score,
+    );
+    expect(
+      ahead.length,
+      `the batching maker outscored the grinder on ${ahead.length} of ${WIDE.length} seeds`,
+    ).toBeLessThan(WIDE.length / 2);
+  }, 20_000);
+
+  it('pays a maker who takes the pair the window offers', () => {
+    // The finding the pair arm was built to settle, and it comes out the other
+    // way up from the one above. A maker who plays the grinder's game and takes
+    // the *second* segment whenever two children are waiting on the same color
+    // beats the grinder on **14 of 16** here and 54 of 64 across `WIDE`: 15 967
+    // against 13 080, 158 serves against 139, and it loses a life on 21 seeds
+    // where the grinder loses one on 26.
+    //
+    // So batching as such is not what the open finding is about. One cut
+    // feeding two children is already the best way to play this game that this
+    // harness knows — it is *building ahead of the window* that is punished,
+    // which is the thing `batcherGoal` does and this maker does not. The two
+    // have been quoted as one sentence for six sittings.
+    //
+    // A floor rather than the measurement: the proportion is asked of `SWEEP`,
+    // which is the draw that can carry one, and 12 leaves room for the re-roll
+    // any change to a pickup spawn causes without letting a reversal through.
+    const grinders = target(grinderGoal, SWEEP);
+    const ahead = target(pairGrinderGoal, SWEEP).filter(
+      (pair, seed) => pair.game.state.score > grinders[seed]!.game.state.score,
+    );
+
+    expect(
+      ahead.length,
+      `the pair maker outscored the grinder on ${ahead.length} of ${SWEEP.length} seeds`,
+    ).toBeGreaterThanOrEqual(12);
+  });
+
+  it('holds the window at the floor while the tide runs, and still fills it', () => {
+    // The floor's own assertion, and the only one that plays a real run past
+    // the rush — `game.test.ts` cannot: the tide is dead for a pinned stage, and
+    // an unattended game loses its three lives to walkouts around the 50-second
+    // mark. That is now just past `RUSH_FROM_MS` rather than well short of it,
+    // and it does not help: 50 s of ramp is the exact frame the first tide first
+    // holds the window, so an unattended run ends on the mechanism's first tick
+    // and has no tide to measure.
+    //
+    // Two claims, and the second is the one with a bug behind it. The first cut
+    // of the floor spent the arrival clock on the children it insisted on, so
+    // every serve during a rush restarted the ordinary fill and the window sat
+    // pinned *at* the floor — a floor working as a ceiling. It cost the window a
+    // fifth of its pairs and nothing caught it, because "the window holds two"
+    // was still perfectly true. So the second claim is asserted beside `held`:
+    // the tide has to leave the window room to fill past what it insists on, or
+    // the mechanism has quietly inverted again.
+    //
+    // **The second claim is read at the cap rather than one above the floor**,
+    // and the reason is that the grown floor is three of the table's four
+    // places. At a floor of two, "gets past the floor" had two places of
+    // headroom to prove itself in and measured 0.855-0.909; at three it has one,
+    // it measures 0.557-0.615, and the same number would go on passing if the
+    // floor were doing all the work. Asking whether the window still reaches
+    // **four** is the same question with the headroom put back — a pinned window
+    // never gets there, and the ordinary arrival clock has to still be running
+    // for it to.
+    //
+    // Measured on the grinder, which takes no pairs, so this is the window and
+    // not the maker: held 0.9991-0.9999 and at the cap 0.487-0.564 across these
+    // seeds, mean occupancy 3.37-3.47 children. The floors are set well under
+    // that — this is a structural claim, not a tuning one, and it should survive
+    // any re-roll that leaves the mechanism alone. For scale, the same figures
+    // before the tide grew: at-cap 0.449-0.519, mean 3.35-3.43. The window was
+    // already this full at a peak; what the third child changes is that it
+    // cannot be emptied below three while the doorway reads as a crowd.
+    for (const seed of SEEDS) {
+      const game = new Game({ ...DEFAULT_CONFIG, seed });
+      const bot = botFor(game, grinderGoal);
+      let sampled = 0;
+      let held = 0;
+      let filled = 0;
+
+      for (let tick = 0; tick < TARGET_TICKS && !game.state.over; tick += 1) {
+        game.step(20, bot);
+        // The floor in force rather than a constant: it grows with the tide, and
+        // a test that pinned one of its two values would stop reading the other.
+        // Read once and used for both the gate and the comparison — a floor of
+        // zero is exactly "no tide worth sampling", so asking `rush` separately
+        // would walk the ramp twice a tick to answer the same question.
+        const floor = game.rushFloor;
+        if (game.state.over || floor === 0) continue;
+
+        sampled += 1;
+        const waiting = game.state.customers.length;
+        if (waiting >= floor) held += 1;
+        if (waiting >= PEAK_QUEUE) filled += 1;
+      }
+
+      // A run has to actually meet the tide for the rest to mean anything.
+      expect(sampled, `seed ${seed}`).toBeGreaterThan(1_000);
+      // The floor holds — and it is **0.95 rather than the 0.999 this read
+      // before the eleventh sitting**, which is the walk-in gap showing up in
+      // the one measurement that can see it.
+      //
+      // The old number was that high because a serve emptied a place and the
+      // *next tick* filled it: the floor skips the arrival clock entirely, so
+      // the replacement child was already at the counter 20 ms later and the
+      // window was never observably under its floor. That is precisely the
+      // teleport the chair reported as Sisyphus, and `WALK_IN_MS` is the
+      // answer — a child now takes a second to cross the room, which at 20 ms a
+      // tick is fifty of them. Measured 0.9518-0.9732 across these seeds, so
+      // three to five per cent of a running tide is a doorway with somebody
+      // walking through it.
+      //
+      // The bound is set under the worst of those rather than at the mechanism's
+      // arithmetic limit, because how *often* a place is emptied is the maker's
+      // business and re-rolls with the seed; what must not happen is the floor
+      // quietly ceasing to bind, which at anything like this figure it has not.
+      expect(held / sampled, `seed ${seed} held`).toBeGreaterThan(0.93);
+      // And it is a floor rather than a ceiling: the ordinary clock is still
+      // filling the window past what the tide insists on, all the way to the
+      // table's own cap.
+      expect(filled / sampled, `seed ${seed} at the cap`).toBeGreaterThan(0.3);
+    }
+  });
+
+  it('offers the pair a single cut can feed', () => {
+    // What `TWIN_CHANCE` buys, read off the window rather than off the maker.
+    // Uncorrelated, a duplicate is already there 43% of the time — three or four
+    // children over seven colors collide often, which is the thing the twin was
+    // proposed on the assumption it would not. The echo takes that to **58%**
+    // across `WIDE` without moving the tier shares the table asks for
+    // (`orders.test.ts` pins the marginals) and without moving the death target
+    // (the median above still lands inside the window the ramp is aimed at).
+    //
+    // Read off the grinder, which takes no pairs at all: this is a property of
+    // the window, and measuring it on a maker that exploits it would fold the
+    // two together.
+    //
+    // **A mean and a floor, where this used to be a floor alone**, and the
+    // change is a correction rather than a relaxation. `pairOffered` is a
+    // proportion, and the file already knows what that costs: sixteen seeds
+    // read a proportion and sixty-four read a median (`SWEEP`, `WIDE`). A
+    // *per-seed* floor is weaker than either — it is the draw's minimum, which
+    // is the noisiest statistic a sweep has — and at 0.45 it was one the
+    // baseline could not hold: measured across `WIDE` on the build before the
+    // rush pass, **two seeds of sixty-four already sat under it** (min 0.414).
+    // It passed only because neither of them was in `SWEEP`. Any change that
+    // re-rolls a pickup spawn reshuffles which seeds land where, so that
+    // assertion was going to fail on the next such change whatever the change
+    // was, and it would have read as the window losing its pairs.
+    //
+    // What the tide pass actually did to it, measured both arms across `WIDE`:
+    // mean 0.574 → **0.572**, seeds at or under 0.45 **2 → 1**, min 0.414 →
+    // 0.364. The claim above is the mean and the mean is intact, so that is
+    // what is asserted; the floor stays as a guard against a collapse, set
+    // under the measured minimum with room for the next re-roll.
+    const runs = target(grinderGoal, SWEEP);
+    const mean = sum(runs.map((run) => run.pairOffered)) / runs.length;
+
+    expect(mean, `mean pairOffered ${mean.toFixed(3)}`).toBeGreaterThan(0.5);
+    runs.forEach((run, index) => {
+      expect(run.pairOffered, `seed ${SWEEP[index]}`).toBeGreaterThan(0.3);
+    });
+  });
+
+  it('is the echo that puts the pair at the window', () => {
+    // The one assertion that turns the knob, and it is here so the override path
+    // has a caller: `twinChance` runs from `GameConfig` through `rollWant` to
+    // `rollOrder`, and `botFor` hands the same number to the maker. Threaded end
+    // to end and never exercised, it would be four signatures of plumbing that
+    // nothing proves still works — and the arm it exists for is the control the
+    // twin pass was measured against.
+    //
+    // Measured on the grinder, which takes no pairs, so this is the window and
+    // not the maker: 43% of the run without the echo, 58% with it.
+    const off = SWEEP.map((seed) => play(seed, TARGET_TICKS, grinderGoal, 0));
+    const bare = sum(off.map((run) => run.pairOffered)) / SWEEP.length;
+    const shipped =
+      sum(target(grinderGoal, SWEEP).map((run) => run.pairOffered)) / SWEEP.length;
+
+    expect(bare).toBeLessThan(0.5);
+    expect(shipped).toBeGreaterThan(bare + 0.1);
+  });
+
+  it('does not let strand length stand in for who the strand is built for', () => {
+    // The control behind the test above, pinned because this harness has gone
+    // blind five times by letting one number answer a question it was not
+    // asked. Every batcher-against-grinder reading ever taken here varies two
+    // things at once: how much sugar is on the strand, and who it is being
+    // dyed for. This is the arm that holds the first still — the planner, capped
+    // to the grinder's own one segment.
+    //
+    // It carries what the grinder carries and scores well under half what the
+    // grinder scores — 6 190 against 13 573 pooled over `SWEEP`, and 3 625
+    // against 12 892 before the eleventh sitting widened the patience column.
+    // Whatever the ladder costs, most of the gap the open finding names is not
+    // the ladder.
+    //
+    // **The score claim is pooled rather than per seed, and that is a
+    // correction the file has had to make twice before** (see `pairOffered`
+    // above, and the median that moved to `WIDE`). Per seed it is a
+    // sixteen-sample comparison of two noisy runs, and on seed 777 it inverted
+    // — solo 7 976 against grinder 7 029 — because *the grinder* had a bad run
+    // there, not because the solo had a good one: every other seed reads
+    // 0.44-0.69 of the grinder, and 7 029 is half what a grinder normally makes
+    // on this draw. A claim about which strategy is better is a claim about the
+    // draw, so it is asked of the draw.
+    //
+    // The per-seed guard stays, loosened to what it is actually for: catching a
+    // solo that has started to *win*, rather than one seed where the control
+    // stumbled. Measured worst 1.13.
+    const grinders = target(grinderGoal, SWEEP);
+    const solos = target(soloPlannerGoal, SWEEP);
+    const pooled =
+      sum(solos.map((run) => run.game.state.score)) /
+      sum(grinders.map((run) => run.game.state.score));
+
+    expect(pooled, `pooled solo/grinder ${pooled.toFixed(3)}`).toBeLessThan(0.6);
+    solos.forEach((solo, seed) => {
+      const grinder = grinders[seed]!;
+      // Same strand, by construction and then by measurement.
+      expect(solo.meanBatch, `seed ${SWEEP[seed]}`).toBeLessThan(1.5);
+      // And on no seed does it run away with the run.
+      expect(solo.game.state.score, `seed ${SWEEP[seed]}`).toBeLessThan(
+        grinder.game.state.score * 1.25,
+      );
+    });
+  });
+});
+
+/**
+ * The preview sweep — the campaign behind the plan's "the maker was never short
+ * of information" pass, and the first one in this record whose control arm is
+ * the shipped game rather than another roll of it. (It said "the twelfth
+ * sitting" until the eleventh was written, which is one more argument for
+ * naming a pass rather than counting ahead to one that has not happened.)
+ *
+ * Skipped unless `SWEEP_PREVIEW` is set, because it is minutes of arithmetic
+ * and CI has no use for it: `SWEEP_PREVIEW=0,1,2 npx vitest run
+ * src/core/simulation.test.ts -t 'the preview sweep'`. The suite keeps the
+ * assertions; this prints the table they will be rewritten from.
+ *
+ * **Read the arms as different games, and the pairs inside an arm as the same
+ * one.** Drawing an order early moves the seeded stream, so the grinder at
+ * depth 1 is not the grinder at depth 0 played harder — which is why criterion
+ * 2 is a mean over sixty-four seeds and not a comparison seed by seed. Within
+ * one arm both makers take the same stream from the same seed, so `ahead` is a
+ * fair pairing.
+ */
+const previewArms = import.meta.env.SWEEP_PREVIEW as string | undefined;
+(previewArms === undefined ? describe.skip : describe)('the preview sweep', () => {
+  const mean = (values: readonly number[]): number => sum(values) / values.length;
+
+  const median = (values: readonly number[]): number => {
+    const sorted = [...values].sort((a, b) => a - b);
+    if (sorted.length === 0) return NaN;
+
+    return sorted.length % 2 === 1
+      ? sorted[(sorted.length - 1) / 2]!
+      : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+  };
+
+  const minutes = (run: RunResult): number => run.game.state.elapsedMs / 60_000;
+
+  /** Children handed a candy per minute alive — asked of either maker. */
+  const servePerMin = (runs: readonly RunResult[]): string =>
+    mean(runs.map((run) => run.game.state.served / minutes(run))).toFixed(1);
+
+  it('measures every arm on the wide draw', () => {
+    // Filtered and then insisted on, so a typo in the arm list fails loudly
+    // rather than printing an empty table that reads like a finished sweep.
+    const depths = (previewArms ?? '')
+      .split(',')
+      .map((arm: string) => Number.parseInt(arm.trim(), 10))
+      .filter((depth: number) => Number.isInteger(depth) && depth >= 0);
+    expect(depths.length, `no arms in SWEEP_PREVIEW="${previewArms}"`).toBeGreaterThan(0);
+
+    const rows = depths.map((depth: number) => {
+      const grinders = WIDE.map((seed) =>
+        play(seed, TARGET_TICKS, grinderGoal, undefined, depth),
+      );
+      const batchers = WIDE.map((seed) =>
+        play(seed, TARGET_TICKS, batcherGoal, undefined, depth),
+      );
+
+      // Minutes, because design §7's death window is stated in them.
+      const deaths = batchers
+        .map((run) => run.diedAtMs)
+        .filter((ms): ms is number => ms !== undefined)
+        .map((ms) => ms / 60_000);
+
+      // Delivered demand, pooled over the draw — design §7's column is a share
+      // of orders and not of runs, so the tiers are summed before they are
+      // divided rather than averaged per run.
+      const tiers = batchers.reduce((totals, run) => {
+        for (const tier of TIER_ORDER) totals[tier] += run.orderedByTier[tier];
+        return totals;
+      }, noServes());
+      // Mercy browns are counted but kept out of the denominator: design §7's
+      // column is a mix of the tiers it weights, and brown is not one of them
+      // (design §4). Printed all the same — the preview defers a mercy child
+      // rather than dropping them, so this is the bucket where that would show.
+      const orders = tiers[1] + tiers[2] + tiers[3];
+
+      return {
+        depth,
+        ahead: batchers.filter(
+          (batcher, seed) => batcher.game.state.score > grinders[seed]!.game.state.score,
+        ).length,
+        median: median(deaths).toFixed(2),
+        died: deaths.length,
+        grinder: Math.round(mean(grinders.map((run) => run.game.state.score))),
+        batcher: Math.round(mean(batchers.map((run) => run.game.state.score))),
+        choppedPerMin: mean(batchers.map((run) => run.chopped / minutes(run))).toFixed(1),
+        // Candy made against children actually handed one: the two come apart
+        // exactly when a maker is producing but not producing *in time*.
+        servedPerMin: servePerMin(batchers),
+        // The grinder cannot read the doorway, so this column is the control on
+        // the control: if it moves with depth, the preview is buying something
+        // through a channel other than the maker's plan — the likeliest being
+        // the pity promise now pre-stocking jars for orders still at the door.
+        grinderServedPerMin: servePerMin(grinders),
+        staled: Math.round(mean(batchers.map((run) => run.staled))),
+        broken: sum(batchers.map((run) => run.broken)),
+        segments: mean(batchers.map((run) => run.meanSegments)).toFixed(2),
+        t1: ((100 * tiers[1]) / orders).toFixed(1),
+        t2: ((100 * tiers[2]) / orders).toFixed(1),
+        t3: ((100 * tiers[3]) / orders).toFixed(1),
+        mercy: tiers.mistake,
+      };
+    });
+
+    // The control is depth 0, not whatever was typed first — `SWEEP_PREVIEW=1,0`
+    // would otherwise print drift against depth 1 under a header saying control.
+    const base = rows.find((row: { depth: number }) => row.depth === 0);
+    console.log(`\n${WIDE.length} seeds an arm, ${TARGET_TICKS} ticks a run\n`);
+    console.log(
+      '| depth | ahead | median | grinder | g serve/min | batcher | chop/min | serve/min | staled | broken | segs | T1 | T2 | T3 | mercy |',
+    );
+    console.log(
+      '| ----- | ----- | ------ | ------- | ----------- | ------- | -------- | --------- | ------ | ------ | ---- | -- | -- | -- | ----- |',
+    );
+    for (const row of rows) {
+      console.log(
+        `| ${row.depth} | ${row.ahead}/${WIDE.length} | ${row.median} | ${row.grinder} | ${row.grinderServedPerMin} | ${row.batcher} | ${row.choppedPerMin} | ${row.servedPerMin} | ${row.staled} | ${row.broken} | ${row.segments} | ${row.t1} | ${row.t2} | ${row.t3} | ${row.mercy} |`,
+      );
+    }
+
+    // The pre-registered criteria, said in the output rather than asserted: an
+    // arm that fails one is a result to write down, not a broken test.
+    if (base !== undefined) {
+      console.log('\nagainst the control arm:');
+      for (const row of rows) {
+        const drift = (100 * (row.grinder - base.grinder)) / base.grinder;
+        console.log(
+          `  depth ${row.depth}: ahead ${row.ahead}/${WIDE.length} (needs >${WIDE.length / 2}), ` +
+            `grinder ${drift >= 0 ? '+' : ''}${drift.toFixed(1)}% (needs within 5%), ` +
+            `median ${row.median} (needs 6–8), T3 ${row.t3}`,
+        );
+      }
+    }
+  }, 3_600_000);
+});
