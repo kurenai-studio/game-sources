@@ -1,0 +1,63 @@
+// Root build script. 3D Cube Puzzle is a libGDX 1.14.0 project with Gradle source
+// compatibility set to Java 8 (task requirement), lwjgl3 desktop backend only. Two modules:
+// core (GL-free puzzle simulation + the ApplicationAdapter render/input layer) and lwjgl3
+// (desktop launcher + the runnable fat JAR deliverable).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'CubePuzzle'
+        gdxVersion = '1.14.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Task requirement: build against the Java 8 API (libGDX 1.14.0 targets Java 8).
+        // options.release enforces the Java-8 bootclasspath, not just v52 bytecode.
+        options.release = 8
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+tasks.register('projectZip', Zip) {
+    group = 'distribution'
+    description = 'Builds the complete source-project ZIP required by the task.'
+    archiveFileName = '3D-Cube-Puzzle.zip'
+    destinationDirectory = layout.buildDirectory.dir('deliverables')
+
+    from(rootDir) {
+        into '3D-Cube-Puzzle'
+        exclude '.gradle/**', 'build/**', '**/build/**', 'tests/**', '.idea/**', '*.iml'
+    }
+}
+
+tasks.register('copyDesktopJar', Copy) {
+    group = 'distribution'
+    description = 'Copies the runnable desktop JAR beside the source-project ZIP.'
+    dependsOn ':lwjgl3:jar'
+    from project(':lwjgl3').tasks.named('jar')
+    into layout.buildDirectory.dir('deliverables')
+}
+
+tasks.register('deliverables') {
+    group = 'distribution'
+    description = 'Builds the required source ZIP and runnable desktop JAR.'
+    dependsOn 'projectZip', 'copyDesktopJar'
+}

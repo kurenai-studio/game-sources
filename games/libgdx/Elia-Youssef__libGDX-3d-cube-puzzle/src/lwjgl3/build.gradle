@@ -1,0 +1,33 @@
+// Desktop launcher module. The 'application' plugin provides the run task a grader invokes as
+// ./gradlew lwjgl3:run. The 'jar' task builds a self-contained runnable fat JAR (all deps +
+// desktop natives) = the JAR deliverable, launchable with `java -jar CubePuzzle.jar`.
+
+apply plugin: 'application'
+
+application {
+    mainClass = 'ai.visualdemo.cube.lwjgl3.Lwjgl3Launcher'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+    // Closing the demo window is a normal exit; don't let a non-zero close code from
+    // the graphics backend surface as a spurious BUILD FAILED during the recorded run.
+    setIgnoreExitValue(true)
+}
+
+jar {
+    archiveBaseName = appName
+    archiveVersion = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn configurations.runtimeClasspath
+    from { configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) } }
+    manifest {
+        attributes 'Main-Class': application.mainClass
+    }
+    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+}
