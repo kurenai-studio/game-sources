@@ -1,0 +1,47 @@
+diff --git a/src/platforms/rcore_desktop_glfw.c b/src/platforms/rcore_desktop_glfw.c
+index 829ba582..8326d738 100644
+--- a/src/platforms/rcore_desktop_glfw.c
++++ b/src/platforms/rcore_desktop_glfw.c
+@@ -1747,6 +1747,16 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
+     // Reset viewport and projection matrix for new size
+     SetupViewport(width, height);
+ 
++#if defined(__APPLE__)
++    // During the first live resize Cocoa can report the new logical size before
++    // its content-scale query settles. Use GLFW's framebuffer as ground truth
++    // so the OpenGL viewport never remains at the pre-resize Retina dimensions.
++    int framebufferWidth = 0;
++    int framebufferHeight = 0;
++    glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
++    rlViewport(0, 0, framebufferWidth, framebufferHeight);
++#endif
++
+     CORE.Window.currentFbo.width = width;
+     CORE.Window.currentFbo.height = height;
+     CORE.Window.resizedLastFrame = true;
+@@ -1756,8 +1766,13 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
+     // if we are doing automatic DPI scaling, then the "screen" size is divided by the window scale
+     if (IsWindowState(FLAG_WINDOW_HIGHDPI))
+     {
++#if defined(__APPLE__)
++        // Cocoa reports logical window coordinates and applies framebuffer scaling.
++        CORE.Window.screenScale = MatrixIdentity();
++#else
+         width = (int)(width / GetWindowScaleDPI().x);
+         height = (int)(height / GetWindowScaleDPI().y);
++#endif
+     }
+ 
+     // Set current screen size
+@@ -1774,7 +1789,11 @@ static void WindowPosCallback(GLFWwindow* window, int x, int y)
+ }
+ static void WindowContentScaleCallback(GLFWwindow *window, float scalex, float scaley)
+ {
++#if defined(__APPLE__)
++    CORE.Window.screenScale = MatrixIdentity();
++#else
+     CORE.Window.screenScale = MatrixScale(scalex, scaley, 1.0f);
++#endif
+ }
+ 
+ // GLFW3 WindowIconify Callback, runs when window is minimized/restored
