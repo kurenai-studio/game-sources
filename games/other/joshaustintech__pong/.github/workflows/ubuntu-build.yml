@@ -1,0 +1,22 @@
+name: Ubuntu
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Add build tools
+      run: sudo apt-get install build-essential xorg-dev libglu1-mesa-dev -y
+    - name: Build
+      run: cargo build --verbose
