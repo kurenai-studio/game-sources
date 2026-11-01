@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r6_l1",
+  "name": "Cart Bridge",
+  "grid": [
+    ".1.....",
+    ".#.o.o.",
+    ".#.###.",
+    ".#.#o#o",
+    "o##X##.",
+    "..o#oG.",
+    "...#.#.",
+    ".###G#.",
+    ".#oG.G.",
+    ".G.#.#o",
+    ".#o#o#.",
+    ".##B##.",
+    "......."
+  ],
+  "start_gold": 750,
+  "gates": 2,
+  "strength": 245,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery", "bramble_cottage"],
+  "star3": {"kind": "tier_at_most", "value": 2},
+  "hint": {"text": "At a bridge one road crosses over another. Walkers go straight across.", "cell": [5, 5]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 0, "every_ms": 1200}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 6000, "every_ms": 500}]},
+    {"strength": 110, "groups": [{"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 600}, {"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 4000, "every_ms": 1500}]},
+    {"strength": 105, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "mossbud", "count": 4, "entrance": 1, "at_ms": 4000, "every_ms": 1300}]},
+    {"strength": 110, "groups": [{"enemy": "puffball", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 350}]},
+    {"strength": 190, "groups": [{"enemy": "pip", "count": 48, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 5000, "every_ms": 250}]},
+    {"strength": 115, "groups": [{"enemy": "scamp", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 300}, {"enemy": "mistwisp", "count": 3, "entrance": 1, "at_ms": 1000, "every_ms": 2500}, {"enemy": "bubbler", "count": 5, "entrance": 1, "at_ms": 7000, "every_ms": 1300}]},
+    {"strength": 120, "groups": [{"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1300}, {"enemy": "dusk_moth", "count": 1, "entrance": 1, "at_ms": 6000, "every_ms": 3000}]},
+    {"strength": 200, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 14, "entrance": 1, "at_ms": 4000, "every_ms": 200}, {"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 6000, "every_ms": 50}]},
+    {"strength": 125, "groups": [{"enemy": "puffball", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "bubbler", "count": 6, "entrance": 1, "at_ms": 3000, "every_ms": 1100}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 8000, "every_ms": 3000}]},
+    {"strength": 125, "groups": [{"enemy": "mossbud", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 1500, "every_ms": 3000}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 6000, "every_ms": 600}]},
+    {"strength": 135, "groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 3000, "every_ms": 4000}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 8000, "every_ms": 3000}, {"enemy": "scamp", "count": 24, "entrance": 1, "at_ms": 12000, "every_ms": 200}]}
+  ],
+  "twist": {"name": "Stuck Gates", "text": "Both gates are stuck on their sockets for the whole level.",
+            "effects": [{"type": "fixed_gates", "cells": [[5, 5], [3, 8]]}]}
+}

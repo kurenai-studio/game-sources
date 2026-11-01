@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r3_l6",
+  "name": "Moon Moth",
+  "grid": [
+    ".1...2.",
+    ".#...#.",
+    ".#####.",
+    ".Go.oG.",
+    ".#####.",
+    "oG.o.G.",
+    ".#####.",
+    ".Go.oG.",
+    ".#####.",
+    ".#o.o#.",
+    ".#####.",
+    "...o.B.",
+    "......."
+  ],
+  "start_gold": 650,
+  "gates": 3,
+  "strength": 200,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower"],
+  "star3": {"kind": "tower_ban", "tower": "sling_post"},
+  "hint": {"text": "The Moon Moth flies straight in. Line its path with Fireworks.", "cell": [3, 5]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "scamp", "count": 4, "entrance": 2, "at_ms": 5000, "every_ms": 1500}]},
+    {"strength": 115, "groups": [{"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 450}, {"enemy": "puffball", "count": 4, "entrance": 1, "at_ms": 4000, "every_ms": 1600}]},
+    {"strength": 125, "groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "skitter", "count": 5, "entrance": 2, "at_ms": 4000, "every_ms": 900}, {"enemy": "bubbler", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 1400}]},
+    {"strength": 80, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1700}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 4000, "every_ms": 3500}, {"enemy": "scamp", "count": 6, "entrance": 2, "at_ms": 8000, "every_ms": 1200}]},
+    {"strength": 130, "groups": [{"enemy": "puffball", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 350}, {"enemy": "pip", "count": 18, "entrance": 2, "at_ms": 8000, "every_ms": 50}]},
+    {"strength": 100, "groups": [{"enemy": "bubbler", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 4000, "every_ms": 3500}, {"enemy": "shellback", "count": 3, "entrance": 2, "at_ms": 8000, "every_ms": 1600}]},
+    {"strength": 140, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 3000, "every_ms": 300}, {"enemy": "skitter", "count": 6, "entrance": 2, "at_ms": 7000, "every_ms": 800}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "puffball", "count": 5, "entrance": 2, "at_ms": 4000, "every_ms": 1300}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 3000}]},
+    {"strength": 145, "groups": [{"enemy": "puffball", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 3000, "every_ms": 250}, {"enemy": "pip", "count": 22, "entrance": 2, "at_ms": 7000, "every_ms": 50}]},
+    {"strength": 120, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "shellback", "count": 4, "entrance": 2, "at_ms": 3000, "every_ms": 1400}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 2500}]},
+    {"strength": 145, "groups": [{"enemy": "shellback", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "flitter", "count": 14, "entrance": 1, "at_ms": 3000, "every_ms": 250}, {"enemy": "puffball", "count": 6, "entrance": 2, "at_ms": 7000, "every_ms": 1200}, {"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 11000, "every_ms": 50}]},
+    {"strength": 70, "groups": [{"enemy": "moon_moth", "count": 1, "entrance": 1, "at_ms": 0, "every_ms": 1000}]}
+  ],
+  "twist": {"name": "Double Trouble", "text": "The final wave is twice as big, with two bosses.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": false, "last_wave": true}]}
+}

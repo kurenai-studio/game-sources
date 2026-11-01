@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r2_l6",
+  "name": "Ironshell",
+  "grid": [
+    ".....1.",
+    ".o.o.#.",
+    ".#####.",
+    ".G.o.G.",
+    ".#####o",
+    "o..o.#.",
+    ".##G##.",
+    ".#...#.",
+    "oG.o.G.",
+    ".#...#o",
+    ".#####.",
+    "...B...",
+    "......."
+  ],
+  "start_gold": 500,
+  "gates": 2,
+  "strength": 160,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft"],
+  "star3": {"kind": "kinds_at_most", "value": 3},
+  "hint": {"text": "Ironshell gets faster as it gets hurt. Keep it drowsy.", "cell": [3, 8]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1400}]},
+    {"strength": 110, "groups": [{"enemy": "skitter", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 900}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 7000, "every_ms": 1400}]},
+    {"strength": 100, "groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "bubbler", "count": 3, "entrance": 1, "at_ms": 4000, "every_ms": 1400}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 1800}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 5000, "every_ms": 500}, {"enemy": "skitter", "count": 5, "entrance": 1, "at_ms": 9000, "every_ms": 900}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "bubbler", "count": 4, "entrance": 1, "at_ms": 4000, "every_ms": 1200}]},
+    {"strength": 120, "groups": [{"enemy": "shellback", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 7000, "every_ms": 200}, {"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 11000, "every_ms": 400}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 4000, "every_ms": 700}, {"enemy": "bubbler", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 1200}]},
+    {"strength": 125, "groups": [{"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "bubbler", "count": 6, "entrance": 1, "at_ms": 5000, "every_ms": 1100}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 10000, "every_ms": 400}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 46, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 4000, "every_ms": 600}, {"enemy": "shellback", "count": 5, "entrance": 1, "at_ms": 9000, "every_ms": 1400}]},
+    {"strength": 140, "groups": [{"enemy": "shellback", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "bubbler", "count": 7, "entrance": 1, "at_ms": 5000, "every_ms": 1000}, {"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 12000, "every_ms": 150}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 15000, "every_ms": 400}]},
+    {"strength": 120, "groups": [{"enemy": "pip", "count": 46, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 3000, "every_ms": 1300}, {"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 8000, "every_ms": 600}, {"enemy": "bubbler", "count": 6, "entrance": 1, "at_ms": 12000, "every_ms": 1100}]},
+    {"strength": 100, "groups": [{"enemy": "ironshell", "count": 1, "entrance": 1, "at_ms": 0, "every_ms": 1000}]}
+  ],
+  "twist": {"name": "Stuck Gates", "text": "Both gates are stuck on their sockets for the whole level.",
+            "effects": [{"type": "fixed_gates", "cells": [[1, 3], [5, 8]]}]}
+}

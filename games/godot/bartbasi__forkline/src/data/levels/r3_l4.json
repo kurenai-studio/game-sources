@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "id": "r3_l4",
+  "name": "Moth Lights",
+  "grid": [
+    ".1...2.",
+    ".#...#.",
+    ".#.o.#.",
+    ".##G##.",
+    ".#o.o#.",
+    ".G...G.",
+    ".#o.o#.",
+    ".#####.",
+    ".G.o.G.",
+    ".#o.o#.",
+    ".##B##.",
+    "...o..."
+  ],
+  "start_gold": 600,
+  "gates": 2,
+  "strength": 185,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower"],
+  "star3": {"kind": "tower_ban", "tower": "sling_post"},
+  "hint": {"text": "Dusk Moths wear armor. Build a Firework on the glow and upgrade it early.", "cell": [3, 8]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "scamp", "count": 6, "entrance": 2, "at_ms": 3000, "every_ms": 1400}]},
+    {"strength": 105, "groups": [{"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 450}, {"enemy": "puffball", "count": 4, "entrance": 2, "at_ms": 4000, "every_ms": 1600}]},
+    {"strength": 50, "groups": [{"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 4000}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 18, "entrance": 2, "at_ms": 0, "every_ms": 150}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 5000, "every_ms": 350}, {"enemy": "skitter", "count": 6, "entrance": 2, "at_ms": 9000, "every_ms": 900}]},
+    {"strength": 80, "groups": [{"enemy": "shellback", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "scamp", "count": 10, "entrance": 2, "at_ms": 4000, "every_ms": 1000}, {"enemy": "dusk_moth", "count": 1, "entrance": 1, "at_ms": 9000, "every_ms": 3500}]},
+    {"strength": 115, "groups": [{"enemy": "puffball", "count": 6, "entrance": 2, "at_ms": 0, "every_ms": 1400}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 4000, "every_ms": 300}, {"enemy": "bubbler", "count": 5, "entrance": 1, "at_ms": 8000, "every_ms": 1300}]},
+    {"strength": 90, "groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "shellback", "count": 4, "entrance": 2, "at_ms": 4000, "every_ms": 1600}, {"enemy": "dusk_moth", "count": 2, "entrance": 2, "at_ms": 8000, "every_ms": 3500}]},
+    {"strength": 120, "groups": [{"enemy": "shellback", "count": 5, "entrance": 2, "at_ms": 0, "every_ms": 1500}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 4000, "every_ms": 300}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 8000, "every_ms": 700}]},
+    {"strength": 100, "groups": [{"enemy": "puffball", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1300}, {"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 4000, "every_ms": 100}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 3000}]},
+    {"strength": 125, "groups": [{"enemy": "pip", "count": 30, "entrance": 2, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 4000, "every_ms": 250}, {"enemy": "bubbler", "count": 7, "entrance": 2, "at_ms": 8000, "every_ms": 1100}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "puffball", "count": 6, "entrance": 2, "at_ms": 4000, "every_ms": 1300}, {"enemy": "dusk_moth", "count": 3, "entrance": 2, "at_ms": 8000, "every_ms": 2500}]},
+    {"strength": 120, "groups": [{"enemy": "puffball", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1200}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 3000, "every_ms": 2500}, {"enemy": "flitter", "count": 14, "entrance": 1, "at_ms": 7000, "every_ms": 250}, {"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 10000, "every_ms": 1300}]}
+  ],
+  "twist": {"name": "Twice the Wings", "text": "Twice as many flyers in every wave.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": true, "last_wave": false}]}
+}

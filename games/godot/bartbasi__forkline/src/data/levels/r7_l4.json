@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r7_l4",
+  "name": "Drowsy Huts",
+  "grid": [
+    ".1...2.",
+    ".#####.",
+    "o#...Go",
+    ".G.o.v.",
+    "o#o.ov.",
+    ".#<<<#.",
+    "o#o..#o",
+    ".G.o.G.",
+    ".#..o#.",
+    ".#G#G#.",
+    "...B..."
+  ],
+  "start_gold": 900,
+  "gates": 3,
+  "strength": 270,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery", "bramble_cottage", "scarecrow", "snow_fort"],
+  "star3": {"kind": "towers_at_most", "value": 7},
+  "hint": {"text": "Yawners make towers beside them doze. Towers set back stay awake.", "cell": [3, 3]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "scamp", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 1300}]},
+    {"strength": 100, "groups": [{"enemy": "pip", "count": 24, "entrance": 2, "at_ms": 0, "every_ms": 150}, {"enemy": "snowroller", "count": 5, "entrance": 1, "at_ms": 4000, "every_ms": 800}]},
+    {"strength": 100, "groups": [{"enemy": "yawner", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 3000}]},
+    {"strength": 105, "groups": [{"enemy": "shellback", "count": 5, "entrance": 2, "at_ms": 0, "every_ms": 1400}, {"enemy": "yawner", "count": 3, "entrance": 1, "at_ms": 2000, "every_ms": 3000}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 500}]},
+    {"strength": 160, "groups": [{"enemy": "pip", "count": 28, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 28, "entrance": 2, "at_ms": 500, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 600}]},
+    {"strength": 110, "groups": [{"enemy": "yawner", "count": 3, "entrance": 2, "at_ms": 0, "every_ms": 3000}, {"enemy": "scamp", "count": 20, "entrance": 2, "at_ms": 500, "every_ms": 300}, {"enemy": "puffball", "count": 5, "entrance": 1, "at_ms": 4000, "every_ms": 1300}]},
+    {"strength": 165, "groups": [{"enemy": "pip", "count": 26, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 26, "entrance": 2, "at_ms": 500, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 500}]},
+    {"strength": 115, "groups": [{"enemy": "snowroller", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 600}, {"enemy": "yawner", "count": 3, "entrance": 2, "at_ms": 1000, "every_ms": 3000}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 125, "groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1200}, {"enemy": "yawner", "count": 3, "entrance": 1, "at_ms": 2000, "every_ms": 3000}, {"enemy": "dusk_moth", "count": 1, "entrance": 2, "at_ms": 7000, "every_ms": 3000}]},
+    {"strength": 120, "groups": [{"enemy": "gleamer", "count": 3, "entrance": 2, "at_ms": 0, "every_ms": 3000}, {"enemy": "sleepyhead", "count": 8, "entrance": 2, "at_ms": 500, "every_ms": 1000}, {"enemy": "mossbud", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 1100}, {"enemy": "mistwisp", "count": 3, "entrance": 1, "at_ms": 5000, "every_ms": 2500}]},
+    {"strength": 200, "groups": [{"enemy": "pip", "count": 32, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 32, "entrance": 1, "at_ms": 500, "every_ms": 50}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 4000, "every_ms": 4000}]},
+    {"strength": 140, "groups": [{"enemy": "yawner", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 2500}, {"enemy": "shellback", "count": 10, "entrance": 2, "at_ms": 1000, "every_ms": 1100}, {"enemy": "snowroller", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 600}, {"enemy": "flitter", "count": 6, "entrance": 2, "at_ms": 10000, "every_ms": 400}]}
+  ],
+  "twist": {"name": "Thick Shells", "text": "Every creature has 2 more armor.",
+            "effects": [{"type": "armor_add", "amount": 2}]}
+}

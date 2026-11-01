@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r2_l4",
+  "name": "Two Fords",
+  "grid": [
+    ".1.....",
+    ".#..o..",
+    ".###...",
+    ".GoG...",
+    ".###.o.",
+    ".#.o...",
+    ".#####.",
+    ".G...#.",
+    "o#.o.Go",
+    ".#...#.",
+    ".#####.",
+    ".B.o..."
+  ],
+  "start_gold": 450,
+  "gates": 2,
+  "strength": 145,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft"],
+  "star3": {"kind": "gates_at_most", "value": 1},
+  "hint": {"text": "Two gates now. Make their road as long as you can.", "cell": [1, 7]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1500}]},
+    {"strength": 110, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "skitter", "count": 5, "entrance": 1, "at_ms": 9000, "every_ms": 1000}]},
+    {"strength": 100, "groups": [{"enemy": "pip", "count": 16, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "shellback", "count": 2, "entrance": 1, "at_ms": 6000, "every_ms": 2000}]},
+    {"strength": 110, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 500}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 5000, "every_ms": 800}, {"enemy": "shellback", "count": 2, "entrance": 1, "at_ms": 12000, "every_ms": 2000}]},
+    {"strength": 115, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 8000, "every_ms": 200}, {"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 14000, "every_ms": 400}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 5000, "every_ms": 700}, {"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 10000, "every_ms": 1600}]},
+    {"strength": 130, "groups": [{"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 700}, {"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 1400}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 14000, "every_ms": 400}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 44, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "shellback", "count": 7, "entrance": 1, "at_ms": 4000, "every_ms": 1300}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 12000, "every_ms": 700}]},
+    {"groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 6000, "every_ms": 600}, {"enemy": "scamp", "count": 16, "entrance": 1, "at_ms": 16000, "every_ms": 150}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 20000, "every_ms": 400}]},
+    {"strength": 125, "groups": [{"enemy": "pip", "count": 44, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "shellback", "count": 9, "entrance": 1, "at_ms": 4000, "every_ms": 1300}, {"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 10000, "every_ms": 600}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 14000, "every_ms": 400}]}
+  ],
+  "twist": {"name": "No Gates", "text": "You get no gates.",
+            "effects": [{"type": "set_gates", "count": 0}]}
+}

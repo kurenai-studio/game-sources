@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "id": "r8_l5",
+  "name": "Stone Circle",
+  "grid": [
+    ".1.2.3.",
+    ".#.#.#.",
+    "o#o#o#o",
+    ".#####.",
+    ".G.G.G.",
+    "oP.#.#o",
+    ".##X##.",
+    ".G.#o#o",
+    "o#oG.G.",
+    ".##G##.",
+    ".#o#oP.",
+    ".##B##.",
+    "......."
+  ],
+  "start_gold": 950,
+  "gates": 3,
+  "strength": 290,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery", "bramble_cottage", "scarecrow", "snow_fort", "moth_lantern"],
+  "star3": {"kind": "kinds_at_most", "value": 3},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "scamp", "count": 8, "entrance": 2, "at_ms": 3000, "every_ms": 1300}, {"enemy": "scamp", "count": 8, "entrance": 3, "at_ms": 6000, "every_ms": 1300}]},
+    {"strength": 100, "groups": [{"enemy": "pip", "count": 24, "entrance": 2, "at_ms": 0, "every_ms": 150}, {"enemy": "blinker", "count": 5, "entrance": 1, "at_ms": 3000, "every_ms": 1000}, {"enemy": "flitter", "count": 4, "entrance": 3, "at_ms": 6000, "every_ms": 500}]},
+    {"strength": 105, "groups": [{"enemy": "shellback", "count": 4, "entrance": 3, "at_ms": 0, "every_ms": 1500}, {"enemy": "hootling", "count": 2, "entrance": 3, "at_ms": 800, "every_ms": 3000}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 600}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 30, "entrance": 3, "at_ms": 1000, "every_ms": 50}]},
+    {"strength": 110, "groups": [{"enemy": "puffball", "count": 6, "entrance": 2, "at_ms": 0, "every_ms": 1300}, {"enemy": "mistwisp", "count": 3, "entrance": 2, "at_ms": 1000, "every_ms": 2500}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 175, "groups": [{"enemy": "pip", "count": 40, "entrance": 3, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 2000, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 500}]},
+    {"strength": 115, "groups": [{"enemy": "gleamer", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "scamp", "count": 20, "entrance": 1, "at_ms": 500, "every_ms": 300}, {"enemy": "blinker", "count": 6, "entrance": 3, "at_ms": 4000, "every_ms": 900}]},
+    {"strength": 120, "groups": [{"enemy": "snowroller", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 600}, {"enemy": "yawner", "count": 3, "entrance": 3, "at_ms": 1000, "every_ms": 3000}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 6000, "every_ms": 2500}]},
+    {"strength": 190, "groups": [{"enemy": "pip", "count": 40, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 3000, "every_ms": 4000}, {"enemy": "pip", "count": 24, "entrance": 3, "at_ms": 6000, "every_ms": 50}]},
+    {"strength": 125, "groups": [{"enemy": "bubbler", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1100}, {"enemy": "hootling", "count": 3, "entrance": 1, "at_ms": 800, "every_ms": 2500}, {"enemy": "flitter", "count": 8, "entrance": 3, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 130, "groups": [{"enemy": "mossbud", "count": 8, "entrance": 3, "at_ms": 0, "every_ms": 1000}, {"enemy": "mender", "count": 2, "entrance": 3, "at_ms": 1500, "every_ms": 3000}, {"enemy": "blinker", "count": 8, "entrance": 2, "at_ms": 4000, "every_ms": 900}, {"enemy": "sleepyhead", "count": 6, "entrance": 1, "at_ms": 8000, "every_ms": 1100}]},
+    {"strength": 205, "groups": [{"enemy": "pip", "count": 48, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 16, "entrance": 3, "at_ms": 2000, "every_ms": 50}, {"enemy": "gatecrasher", "count": 2, "entrance": 2, "at_ms": 4000, "every_ms": 4000}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 8000, "every_ms": 500}]}
+  ],
+  "twist": {"name": "Five Lives", "text": "Start with 5 lives, or 10 on Relaxed.",
+            "effects": [{"type": "set_lives", "lives": 5}]}
+}

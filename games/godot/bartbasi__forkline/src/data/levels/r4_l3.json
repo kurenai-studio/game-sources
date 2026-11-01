@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r4_l3",
+  "name": "Gatecrash",
+  "grid": [
+    "...1...",
+    "...#...",
+    ".###.o.",
+    ".GoGo..",
+    ".#####2",
+    ".o.G.#.",
+    "..o#o#.",
+    ".#####.",
+    ".G.G.o.",
+    ".#oGo..",
+    ".###...",
+    "...B...",
+    "......."
+  ],
+  "start_gold": 700,
+  "gates": 3,
+  "strength": 230,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery"],
+  "star3": {"kind": "gates_whole"},
+  "hint": {"text": "Gatecrashers break gates. Guard the gate on their dashed line.", "cell": [3, 5]},
+  "waves": [
+    {"strength": 105, "groups": [{"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "skitter", "count": 6, "entrance": 2, "at_ms": 5000, "every_ms": 900}]},
+    {"strength": 105, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 3500, "every_ms": 1000}, {"enemy": "flitter", "count": 6, "entrance": 2, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 100, "groups": [{"enemy": "gatecrasher", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 4000}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1600}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 6000, "every_ms": 5000}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 36, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 4000, "every_ms": 300}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 7000, "every_ms": 4000}]},
+    {"strength": 180, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 12, "entrance": 2, "at_ms": 4000, "every_ms": 250}]},
+    {"strength": 110, "groups": [{"enemy": "skitter", "count": 12, "entrance": 2, "at_ms": 0, "every_ms": 700}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 4000, "every_ms": 3000}, {"enemy": "gatecrasher", "count": 3, "entrance": 1, "at_ms": 6000, "every_ms": 4000}]},
+    {"strength": 120, "groups": [{"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 0, "every_ms": 1400}, {"enemy": "mender", "count": 3, "entrance": 2, "at_ms": 800, "every_ms": 1400}, {"enemy": "gatecrasher", "count": 3, "entrance": 1, "at_ms": 4000, "every_ms": 4000}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 9000, "every_ms": 300}]},
+    {"strength": 195, "groups": [{"enemy": "pip", "count": 40, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 14, "entrance": 1, "at_ms": 3000, "every_ms": 200}, {"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 6000, "every_ms": 50}]},
+    {"strength": 125, "groups": [{"enemy": "bubbler", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1100}, {"enemy": "gatecrasher", "count": 4, "entrance": 1, "at_ms": 2000, "every_ms": 3500}, {"enemy": "mender", "count": 3, "entrance": 1, "at_ms": 2500, "every_ms": 3500}, {"enemy": "dusk_moth", "count": 3, "entrance": 2, "at_ms": 8000, "every_ms": 2500}]},
+    {"strength": 200, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 16, "entrance": 2, "at_ms": 3000, "every_ms": 200}, {"enemy": "skitter", "count": 12, "entrance": 2, "at_ms": 6000, "every_ms": 600}]},
+    {"strength": 135, "groups": [{"enemy": "gatecrasher", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "mender", "count": 4, "entrance": 1, "at_ms": 1500, "every_ms": 3000}, {"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 2000, "every_ms": 1300}, {"enemy": "flitter", "count": 16, "entrance": 2, "at_ms": 7000, "every_ms": 200}]}
+  ],
+  "twist": {"name": "Quick Crashers", "text": "Gatecrashers break gates in 2 seconds instead of 4.",
+            "effects": [{"type": "break_ms", "enemy": "gatecrasher", "ms": 2000}]}
+}

@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r8_l4",
+  "name": "Hoot Glen",
+  "grid": [
+    ".......",
+    "1#####2",
+    ".#.o.#.",
+    "oG.o.Go",
+    ".#GP.#.",
+    "o#...#o",
+    ".#####.",
+    ".G.o.G.",
+    ".#ooo#.",
+    ".#.o.P.",
+    ".G...G.",
+    ".##B##.",
+    "......."
+  ],
+  "start_gold": 950,
+  "gates": 3,
+  "strength": 280,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery", "bramble_cottage", "scarecrow", "snow_fort", "moth_lantern"],
+  "star3": {"kind": "tower_ban", "tower": "lullaby_bell"},
+  "hint": {"text": "Hootlings keep everything near them awake. Nothing near one can be slowed.", "cell": [3, 7]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "scamp", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 1300}]},
+    {"strength": 100, "groups": [{"enemy": "pip", "count": 24, "entrance": 2, "at_ms": 0, "every_ms": 150}, {"enemy": "blinker", "count": 5, "entrance": 1, "at_ms": 4000, "every_ms": 1000}]},
+    {"strength": 100, "groups": [{"enemy": "hootling", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 2500}]},
+    {"strength": 105, "groups": [{"enemy": "scamp", "count": 16, "entrance": 1, "at_ms": 0, "every_ms": 400}, {"enemy": "hootling", "count": 2, "entrance": 1, "at_ms": 1000, "every_ms": 3000}, {"enemy": "flitter", "count": 6, "entrance": 2, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 105, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 20, "entrance": 2, "at_ms": 500, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 600}]},
+    {"strength": 110, "groups": [{"enemy": "bubbler", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1100}, {"enemy": "hootling", "count": 2, "entrance": 2, "at_ms": 800, "every_ms": 3000}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 170, "groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 30, "entrance": 2, "at_ms": 500, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 500}]},
+    {"strength": 115, "groups": [{"enemy": "snowroller", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 600}, {"enemy": "hootling", "count": 2, "entrance": 2, "at_ms": 600, "every_ms": 2500}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 6000, "every_ms": 2000}]},
+    {"strength": 120, "groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1200}, {"enemy": "hootling", "count": 2, "entrance": 1, "at_ms": 1600, "every_ms": 4000}, {"enemy": "flitter", "count": 8, "entrance": 2, "at_ms": 8000, "every_ms": 400}]},
+    {"strength": 120, "groups": [{"enemy": "gleamer", "count": 3, "entrance": 2, "at_ms": 0, "every_ms": 3000}, {"enemy": "sleepyhead", "count": 8, "entrance": 2, "at_ms": 500, "every_ms": 1000}, {"enemy": "blinker", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 1000}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 400}]},
+    {"strength": 200, "groups": [{"enemy": "pip", "count": 32, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "pip", "count": 32, "entrance": 1, "at_ms": 500, "every_ms": 50}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 4000, "every_ms": 4000}]},
+    {"strength": 140, "groups": [{"enemy": "yawner", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "bubbler", "count": 8, "entrance": 2, "at_ms": 1000, "every_ms": 1100}, {"enemy": "hootling", "count": 3, "entrance": 2, "at_ms": 1500, "every_ms": 3000}, {"enemy": "dusk_moth", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 1800}]}
+  ],
+  "twist": {"name": "Twice the Wings", "text": "Twice as many flyers in every wave.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": true, "last_wave": false}]}
+}

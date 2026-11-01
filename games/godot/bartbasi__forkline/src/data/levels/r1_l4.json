@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "id": "r1_l4",
+  "name": "Pumpkin Patch",
+  "grid": [
+    ".....1.",
+    ".....#.",
+    ".#####.",
+    ".#.o.G.",
+    ".##G##.",
+    "....o#.",
+    ".#####.",
+    ".#oGo..",
+    ".###...",
+    "...#.o.",
+    "...B..."
+  ],
+  "start_gold": 300,
+  "gates": 1,
+  "strength": 100,
+  "towers": ["sling_post", "pumpkin_catapult"],
+  "star3": {"kind": "tier_at_most", "value": 1},
+  "hint": {"text": "Pips come in crowds. Catapults hit the whole crowd.", "cell": [4, 5]},
+  "waves": [
+    {"groups": [{"enemy": "scamp", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "scamp", "count": 3, "entrance": 1, "at_ms": 9000, "every_ms": 1500}]},
+    {"groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 9000, "every_ms": 400}]},
+    {"groups": [{"enemy": "pip", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 400}]},
+    {"groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 200}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 6000, "every_ms": 1300}]},
+    {"strength": 160, "groups": [{"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 0, "every_ms": 1600}]},
+    {"groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 1300}, {"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 14000, "every_ms": 150}]},
+    {"strength": 160, "groups": [{"enemy": "scamp", "count": 17, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 24000, "every_ms": 400}]},
+    {"groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 6000, "every_ms": 1200}, {"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 16000, "every_ms": 150}]},
+    {"groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 6000, "every_ms": 100}, {"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 14000, "every_ms": 1200}, {"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 20000, "every_ms": 100}]}
+  ],
+  "twist": {"name": "No Catapults", "text": "Pumpkin Catapults cannot be built.",
+            "effects": [{"type": "ban_tower", "tower": "pumpkin_catapult"}]}
+}

@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r8_l1",
+  "name": "Twin Stumps",
+  "grid": [
+    "...1...",
+    "..o#o..",
+    ".###GP.",
+    ".G.o.o.",
+    ".#####.",
+    "..oGoG.",
+    ".P####.",
+    ".#ooo..",
+    ".#####.",
+    "..oG.#o",
+    "...B##."
+  ],
+  "start_gold": 850,
+  "gates": 2,
+  "strength": 265,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery", "bramble_cottage", "scarecrow", "snow_fort"],
+  "star3": {"kind": "towers_at_most", "value": 6},
+  "hint": {"text": "Hollow stumps come in twins. Walkers that step into one come out of the other.", "cell": [4, 2]},
+  "waves": [
+    {"strength": 130, "groups": [{"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 0, "every_ms": 1100}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 34, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 6000, "every_ms": 500}]},
+    {"strength": 140, "groups": [{"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 500}, {"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 1400}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 44, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "mossbud", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 1200}]},
+    {"strength": 150, "groups": [{"enemy": "puffball", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 160, "groups": [{"enemy": "scamp", "count": 26, "entrance": 1, "at_ms": 0, "every_ms": 250}, {"enemy": "mistwisp", "count": 3, "entrance": 1, "at_ms": 1000, "every_ms": 2500}, {"enemy": "snowroller", "count": 6, "entrance": 1, "at_ms": 7000, "every_ms": 800}]},
+    {"strength": 205, "groups": [{"enemy": "pip", "count": 56, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 4000, "every_ms": 500}]},
+    {"strength": 165, "groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1100}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1200}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 170, "groups": [{"enemy": "gleamer", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "sleepyhead", "count": 10, "entrance": 1, "at_ms": 1000, "every_ms": 1000}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 8000, "every_ms": 2500}]},
+    {"strength": 210, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "gatecrasher", "count": 2, "entrance": 1, "at_ms": 3000, "every_ms": 4000}, {"enemy": "pip", "count": 28, "entrance": 1, "at_ms": 6000, "every_ms": 50}]},
+    {"strength": 175, "groups": [{"enemy": "yawner", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "bubbler", "count": 8, "entrance": 1, "at_ms": 2000, "every_ms": 1000}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 8000, "every_ms": 400}]},
+    {"strength": 180, "groups": [{"enemy": "shellback", "count": 9, "entrance": 1, "at_ms": 0, "every_ms": 1100}, {"enemy": "gatecrasher", "count": 3, "entrance": 1, "at_ms": 3000, "every_ms": 4000}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 8000, "every_ms": 2500}, {"enemy": "scamp", "count": 26, "entrance": 1, "at_ms": 12000, "every_ms": 200}]}
+  ],
+  "twist": {"name": "One Gate", "text": "You get 1 gate instead of 2.",
+            "effects": [{"type": "set_gates", "count": 1}]}
+}
