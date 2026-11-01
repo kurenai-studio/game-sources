@@ -1,0 +1,52 @@
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 12.0
+    y: 526.0
+    z: 0.0
+  }
+  size {
+    x: 200.0
+    y: 30.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Score 0   Wave 1   Lives 3"
+  font: "default"
+  id: "score"
+  pivot: PIVOT_NW
+  color {
+    x: 0.92
+    y: 0.96
+    z: 1.0
+    w: 1.0
+  }
+}
+nodes {
+  position {
+    x: 480.0
+    y: 18.0
+    z: 0.0
+  }
+  size {
+    x: 800.0
+    y: 24.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "← → rotate   |   ↑ thrust   |   ↓ brake   |   Del fire   |   End restart   |   Esc quit"
+  font: "default"
+  id: "controls"
+  pivot: PIVOT_CENTER
+  color {
+    x: 0.62
+    y: 0.7
+    z: 0.85
+    w: 1.0
+  }
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

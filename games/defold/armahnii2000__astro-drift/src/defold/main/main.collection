@@ -1,0 +1,30 @@
+name: "main"
+scale_along_z: 0
+instances {
+  id: "player"
+  prototype: "/main/player.go"
+  position {
+    x: 480.0
+    y: 270.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+}
+embedded_instances {
+  id: "factories"
+  data: "embedded_components {\n"
+  "  id: \"bullet_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/bullet.go\\\"\\n\"\n"
+  "}\n"
+  position {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+}
