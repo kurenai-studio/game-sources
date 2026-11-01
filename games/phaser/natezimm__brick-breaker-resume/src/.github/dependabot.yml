@@ -1,0 +1,37 @@
+# Dependency updates once a month, one grouped pull request per ecosystem, so they do not
+# eat into the monthly Actions minutes.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns: ['*']
+    # A major release (Phaser 4, ESLint, Jest) can change the API or config format and arrives
+    # bundled with routine updates. Take major upgrades by hand.
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      docker:
+        patterns: ['*']
+    # The Dockerfile's Node version is kept in step with .nvmrc, package.json and CI. Move it by
+    # hand, to the next long-term-support release, rather than to whatever the newest release is.
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
