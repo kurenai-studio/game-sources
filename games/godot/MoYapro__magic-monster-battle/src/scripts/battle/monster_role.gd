@@ -1,0 +1,25 @@
+class_name MonsterRole
+
+# Ordered front to back for placement purposes
+enum Type {
+	NONE,
+	OBSTACLE,
+	TANK,
+	DRAIN_TANK,
+	PALADIN,
+	BRUISER,
+	BATTLEMAGE,
+	ASSASSIN,
+	SUSTAINER,
+	STALKER,
+	CROWD_CONTROLLER,
+	TRAPPER,
+	DAMAGE,
+	DEBUFFER,
+	SUMMONER,
+	BUFFER,
+	HEALER,
+	MAGE,
+	SPLIT_PUSHER,
+	ARTILLERY,
+}
