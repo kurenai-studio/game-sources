@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wobble Rush 3D</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game-container"></div>
+
+<!-- In-game HUD -->
+<div id="hud" class="hidden">
+  <div id="cp-pill" class="pill">&#9873; CP <span id="cp-count">0/2</span></div>
+  <div id="timer-pill" class="pill"><span id="timer">0:00.00</span></div>
+  <div id="best-pill" class="pill small hidden">BEST <span id="best-hud"></span></div>
+  <div id="hint-bar">WASD / Arrows &mdash; move &nbsp;&middot;&nbsp; Space &mdash; jump &nbsp;&middot;&nbsp; Shift &mdash; dive &nbsp;&middot;&nbsp; R &mdash; retry checkpoint</div>
+</div>
+
+<!-- Center flash ("GO!") and small toast ("CHECKPOINT!") -->
+<div id="flash" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+
+<!-- Start screen -->
+<div id="start-screen" class="screen">
+  <div class="card">
+    <h1 class="title">WOBBLE<br>RUSH 3D</h1>
+    <p class="subtitle">One wobbly runner. One very silly course. Beat your best time.</p>
+    <button id="play-btn" class="big-btn">&#9654; PLAY</button>
+    <div class="controls">
+      <span><kbd>W A S D</kbd> move</span>
+      <span><kbd>Space</kbd> jump</span>
+      <span><kbd>Shift</kbd> dive</span>
+      <span><kbd>R</kbd> retry</span>
+    </div>
+  </div>
+</div>
+
+<!-- Finish screen -->
+<div id="finish-screen" class="screen hidden">
+  <div class="card">
+    <h1 class="title small-title">FINISH!</h1>
+    <p class="time-label">YOUR TIME</p>
+    <p id="final-time" class="big-time">0:00.00</p>
+    <p id="best-time" class="best-time"></p>
+    <button id="restart-btn" class="big-btn">&#8635; RESTART</button>
+  </div>
+</div>
+
+<!-- Fatal error overlay -->
+<div id="error-overlay" class="screen hidden">
+  <div class="card error-card">
+    <h1>&#9888; Could not start</h1>
+    <p id="error-message"></p>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/obstacle.js"></script>
+<script src="js/checkpoint.js"></script>
+<script src="js/course.js"></script>
+<script src="js/player.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
