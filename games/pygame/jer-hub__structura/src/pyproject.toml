@@ -1,0 +1,56 @@
+[project]
+name = "structura"
+version = "0.1.0"
+description = "A teaching game for data structures and algorithms, built for the BSIT program."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "Jerwin Carreon" }]
+keywords = [
+    "education",
+    "data-structures",
+    "algorithms",
+    "pygame",
+    "teaching",
+    "bsit",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Other Environment",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Games/Entertainment",
+]
+dependencies = ["pygame-ce>=2.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+build = ["pyinstaller>=6.10"]
+
+[project.urls]
+Homepage = "https://github.com/jer-hub/structura"
+Repository = "https://github.com/jer-hub/structura"
+Issues = "https://github.com/jer-hub/structura/issues"
+
+[project.scripts]
+structura = "structura.__main__:main"
+structura-combine = "structura.combine:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+structura = ["codemirror/snippets/*", "content/zones/*.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

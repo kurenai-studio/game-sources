@@ -1,0 +1,8 @@
+def insert(root, value):
+    if root is None:
+        return Node(value)  @@place
+    if value < root.value:  @@go_left
+        root.left = insert(root.left, value)
+    else:  @@go_right
+        root.right = insert(root.right, value)
+    return root

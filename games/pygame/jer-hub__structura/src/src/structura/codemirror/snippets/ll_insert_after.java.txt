@@ -1,0 +1,9 @@
+void insertAfter(Node head, int position, int value) {
+    Node cur = head;
+    for (int k = 0; k < position; k++) {
+        cur = cur.next;  @@walk
+    }
+    Node node = new Node(value);  @@new_node
+    node.next = cur.next;  @@link_next
+    cur.next = node;  @@relink
+}

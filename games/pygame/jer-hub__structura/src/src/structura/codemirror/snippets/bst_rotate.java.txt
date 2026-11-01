@@ -1,0 +1,13 @@
+Node rotateLeft(Node x) {
+    Node y = x.right;
+    x.right = y.left;
+    y.left = x;  @@rotate_left
+    return y; // y takes x's place
+}
+
+Node rotateRight(Node x) {
+    Node y = x.left;
+    x.left = y.right;
+    y.right = x;  @@rotate_right
+    return y;
+}

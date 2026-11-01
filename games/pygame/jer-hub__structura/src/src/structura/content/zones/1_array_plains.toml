@@ -1,0 +1,103 @@
+[zone]
+id = "z1"
+name = "The Array Plains"
+order = 1
+structure = "array"
+color = [235, 190, 80]
+map_pos = [0.14, 0.72]
+requires = []
+intro = "Golden fields laid out in neat numbered plots, now scrambled by the Corruption. Restore order, one cell at a time."
+
+[lesson]
+initial = [7, 2, 9, 4]
+
+[[lesson.beat]]
+say = "An array stores values side by side. Every cell has an index, starting from 0."
+
+[[lesson.beat]]
+say = "Reading a cell by its index is instant, O(1): the computer jumps straight to it."
+do = ["visit 2"]
+code = "linear_search"
+
+[[lesson.beat]]
+say = "Inserting in the middle is slower. Every later cell shifts right to make room: O(n)."
+do = ["insert 1 5"]
+code = "array_insert"
+
+[[lesson.beat]]
+say = "Deleting shifts the later cells back to the left. Also O(n)."
+do = ["delete 0"]
+code = "array_delete"
+
+[[lesson.beat]]
+say = "Swapping two cells is O(1). Every sorting algorithm in this Zone is built out of swaps."
+do = ["swap 0 3"]
+code = "swap"
+
+[[puzzle]]
+id = "z1_p1"
+title = "Find the Lantern"
+type = "trace"
+stage = "guided"
+brief = "Linear search: click the cells in the order linear search checks them, until you find 9."
+initial = [4, 8, 1, 9, 3, 6]
+ops = ["visit"]
+goal = { kind = "search", value = 9, method = "linear" }
+code = "linear_search"
+hints = ["Linear search doesn't skip anything. Where does it start?", "Look for {target}, checking the cells from left to right."]
+intro = "Somewhere in this row is the lantern we need. We'll have to look plot by plot."
+outro = "Found it! Linear search is simple, but on a long row it can take a while: O(n)."
+
+[[puzzle]]
+id = "z1_p2"
+title = "Gather the Grain"
+type = "build"
+stage = "guided"
+brief = "Insert the Tray values so the array reads in increasing order. Click the gap where each one belongs."
+initial = [3, 5, 9]
+tray = [1, 7]
+ops = ["insert"]
+goal = { kind = "target", state = [1, 3, 5, 7, 9] }
+code = "array_insert"
+hints = ["Each value goes into the gap between a smaller and a larger neighbour.", "Next: {next}."]
+intro = "Two sacks of grain fell off the cart. Put them back where they belong."
+outro = "The cells after each insertion had to shift right. That's the cost of inserting into an array."
+
+[[puzzle]]
+id = "z1_p3"
+title = "Bubbling Up"
+type = "sort"
+stage = "challenge"
+brief = "Bubble sort: walk left to right and swap neighbours that are out of order. Click two cells, then press Swap."
+initial = [5, 1, 4, 2, 8]
+ops = ["swap"]
+strict = true
+goal = { kind = "sorted", algorithm = "bubble" }
+code = "bubble_sort"
+hints = ["Compare neighbours starting from the left. Swap only if the left one is bigger.", "After each full pass, the largest unsorted value has bubbled to the end."]
+intro = "The Corruption scrambled the harvest. Bubble sort will settle it, one neighbour at a time."
+outro = "Bubble sort works, but it compares a lot of neighbours: O(n²) in the worst case."
+
+[[puzzle]]
+id = "z1_boss"
+title = "The Shuffler"
+type = "sort"
+stage = "boss"
+brief = "Sort the array any way you like, in as few swaps as you can. The Shuffler will scramble part of it while you work."
+initial = [8, 3, 5, 1, 7, 2, 6, 4]
+ops = ["swap"]
+goal = { kind = "sorted" }
+code = "swap"
+hints = ["Put each value straight into its final position. The smallest belongs at index zero.", "When the Shuffler strikes, look again: some cells may already be right."]
+intro = "Something is moving in the grass. The Shuffler doesn't like order..."
+outro = "The Shuffler slinks away. The plains are in order again."
+
+[[puzzle.disruption]]
+after = 2
+do = ["reverse 0 3"]
+say = "The Shuffler flips the first four cells!"
+
+[[puzzle.disruption]]
+after = 4
+do = ["reverse 4 7"]
+say = "The Shuffler flips the last four cells!"

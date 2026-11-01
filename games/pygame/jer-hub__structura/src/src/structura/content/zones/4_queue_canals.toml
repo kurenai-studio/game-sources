@@ -1,0 +1,107 @@
+[zone]
+id = "z4"
+name = "The Queue Canals"
+order = 4
+structure = "queue"
+color = [80, 170, 255]
+map_pos = [0.68, 0.58]
+requires = ["z3"]
+intro = "Boats wait in narrow canals. The first boat in is always the first boat out."
+
+[lesson]
+initial = []
+
+[[lesson.beat]]
+say = "A queue is a line of boats. They join at the back and leave from the front."
+
+[[lesson.beat]]
+say = "enqueue adds a value at the back."
+do = ["enqueue 3", "enqueue 8"]
+code = "queue"
+
+[[lesson.beat]]
+say = "dequeue removes the value at the front, the one that has waited longest. First In, First Out (FIFO)."
+do = ["dequeue"]
+code = "queue"
+
+[[lesson.beat]]
+say = "Printers, ticket lines and message systems all use queues. Both operations are O(1)."
+
+[[puzzle]]
+id = "z4_p1"
+title = "Launch the Boats"
+type = "build"
+stage = "guided"
+brief = "Enqueue every Tray value."
+tray = [4, 7, 1]
+ops = ["enqueue"]
+goal = { kind = "target", state = [4, 7, 1] }
+code = "queue"
+hints = ["Press Enqueue to send the next boat into the canal.", "Next: {next}."]
+
+[[puzzle]]
+id = "z4_p2"
+title = "Who's First?"
+type = "trace"
+stage = "guided"
+brief = "Starting empty: enqueue 3, enqueue 5, dequeue, enqueue 8. Which value is at the front?"
+ops = []
+goal = { kind = "quiz", script = ["enqueue 3", "enqueue 5", "dequeue", "enqueue 8"], ask = "front" }
+code = "queue"
+hints = ["Draw the line of boats and apply each operation in turn.", "dequeue removes the boat that arrived first."]
+
+[[puzzle]]
+id = "z4_p3"
+title = "Same Order Out"
+type = "build"
+stage = "challenge"
+brief = "Make the Output read 1, 2, 3."
+tray = [1, 2, 3]
+ops = ["enqueue", "dequeue"]
+goal = { kind = "target", output = [1, 2, 3] }
+code = "queue"
+hints = ["What does a queue do to the order of whatever passes through it?", "Unlike a stack, a queue keeps the order."]
+outro = "A queue keeps order. A stack reverses it. That difference matters more than it looks."
+
+[[puzzle]]
+id = "z4_p4"
+title = "Canal Log"
+type = "trace"
+stage = "challenge"
+brief = "Starting empty: enqueue 2, enqueue 4, dequeue, enqueue 6, enqueue 8, dequeue. What came out, in order?"
+ops = []
+goal = { kind = "quiz", script = ["enqueue 2", "enqueue 4", "dequeue", "enqueue 6", "enqueue 8", "dequeue"], ask = "output" }
+code = "queue"
+hints = ["Track the line of boats after every operation.", "Each dequeue outputs whichever boat is at the front."]
+
+[[puzzle]]
+id = "z4_p5"
+title = "Keep Two Afloat"
+type = "build"
+stage = "challenge"
+brief = "Finish with the Output 1, 2, 3 and only 4 and 5 still in the canal."
+tray = [1, 2, 3, 4, 5]
+ops = ["enqueue", "dequeue"]
+goal = { kind = "target", state = [4, 5], output = [1, 2, 3] }
+code = "queue"
+hints = ["Some boats leave and some stay. Which ones leave first?", "Values leave in the same order they arrive."]
+
+[[puzzle]]
+id = "z4_boss"
+title = "The Lock Keeper"
+type = "build"
+stage = "boss"
+brief = "Leave only the boat carrying 3 in the canal. The Lock Keeper will open the gate when you least expect it."
+initial = [7, 8]
+tray = [1, 2, 3]
+ops = ["enqueue", "dequeue"]
+goal = { kind = "target", state = [3] }
+code = "queue"
+hints = ["Every boat ahead of the one you want to keep has to leave first.", "When the gate opens early, one boat has left for you. Recount what is still ahead of the one you want."]
+intro = "The Lock Keeper controls the canal gates and doesn't like visitors."
+outro = "The gates swing open. The canals flow again."
+
+[[puzzle.disruption]]
+after = 3
+do = ["dequeue"]
+say = "The Lock Keeper opens the gate early, and the front boat is swept out!"

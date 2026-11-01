@@ -1,0 +1,5 @@
+// Swapping two cells is O(1), however big the array is.
+static void swap(int[] a, int i, int j) {
+    boolean outOfOrder = a[i] > a[j];  @@compare
+    int t = a[i]; a[i] = a[j]; a[j] = t;  @@swap
+}

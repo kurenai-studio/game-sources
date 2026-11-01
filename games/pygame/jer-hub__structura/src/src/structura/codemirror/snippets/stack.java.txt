@@ -1,0 +1,11 @@
+Deque<Integer> stack = new ArrayDeque<>();
+
+void push(int value) {
+    stack.push(value);  @@push
+}
+
+int pop() {
+    int value = stack.pop();  @@pop
+    Integer top = stack.peek();  @@new_top
+    return value;
+}

@@ -1,0 +1,4 @@
+# Swapping two cells is O(1), however big the array is.
+def swap(a, i, j):
+    out_of_order = a[i] > a[j]  @@compare
+    a[i], a[j] = a[j], a[i]  @@swap

@@ -1,0 +1,9 @@
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+
+def insert_head(head, value):
+    node = Node(value)  @@new_node
+    node.next = head  @@link_next
+    return node  # new head  @@set_head

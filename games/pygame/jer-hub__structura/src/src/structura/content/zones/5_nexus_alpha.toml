@@ -1,0 +1,121 @@
+[zone]
+id = "nexus_alpha"
+name = "Nexus Alpha"
+order = 5
+structure = "array"
+nexus = true
+color = [255, 115, 175]
+map_pos = [0.84, 0.38]
+requires = ["z4"]
+intro = "Where the plains, marshes, towers and canals meet. Here you must choose the right structure for the job."
+
+[lesson]
+initial = []
+
+[[lesson.beat]]
+say = "Every structure is good at some operations and bad at others. Choosing well is half of programming."
+structure = "array"
+initial = [3, 8, 5, 1]
+big_o = ["access_index", "search", "add_front", "add_back", "remove_front", "remove_back"]
+
+[[lesson.beat]]
+say = "An Array jumps straight to any position: O(1). But adding at the front shifts every cell right: O(n)."
+do = ["visit 2", "insert 0 9"]
+
+[[lesson.beat]]
+say = "A Linked List adds at the head in O(1), with nothing to shift. But reaching a position means walking from the head: O(n)."
+structure = "linked_list"
+initial = [3, 8, 5, 1]
+do = ["insert_head 9", "visit 0", "visit 1", "visit 2"]
+
+[[lesson.beat]]
+say = "A Stack only adds and removes at the top: Last In, First Out."
+structure = "stack"
+initial = [3, 8, 5]
+do = ["push 1", "pop"]
+
+[[lesson.beat]]
+say = "A Queue adds at the back and removes from the front: First In, First Out."
+structure = "queue"
+initial = [3, 8, 5]
+do = ["enqueue 1", "dequeue"]
+
+[[lesson.beat]]
+say = "Stacks and queues do less on purpose. When a job only needs LIFO or FIFO, they say so clearly and can't be misused."
+big_o = ["access_index", "search", "add_front", "add_back", "remove_front", "remove_back"]
+
+[[puzzle]]
+id = "nx_p1"
+title = "Undo History"
+type = "select"
+stage = "guided"
+brief = "A text editor saves every action and the Undo button reverses the most recent one first. Which structure fits?"
+ops = []
+goal = { kind = "select", choices = ["array", "linked_list", "stack", "queue"], scenario = { add_back = 10, remove_back = 10 } }
+hints = ["Which action gets undone first: the oldest or the newest?", "Newest in, first out. Which structure works that way?"]
+
+[[puzzle]]
+id = "nx_p2"
+title = "Ticket Line"
+type = "select"
+stage = "guided"
+brief = "A ticket booth serves customers in the order they arrived. Which structure fits?"
+ops = []
+goal = { kind = "select", choices = ["array", "linked_list", "stack", "queue"], scenario = { add_back = 10, remove_front = 10 } }
+hints = ["Who gets served first?", "Customers join at one end and leave from the other."]
+
+[[puzzle]]
+id = "nx_p3"
+title = "Seat Numbers"
+type = "select"
+stage = "challenge"
+brief = "A cinema looks up seats by seat number thousands of times a night, and rarely adds seats. Which structure fits?"
+ops = []
+goal = { kind = "select", choices = ["array", "linked_list", "stack", "queue"], scenario = { access_index = 10, add_back = 1 } }
+hints = ["What is the most frequent operation?", "Which structure can jump straight to a given position?"]
+
+[[puzzle]]
+id = "nx_p4"
+title = "Breaking News"
+type = "select"
+stage = "challenge"
+brief = "A news feed adds each new story at the top, often drops the top story, and rarely searches. Which structure fits?"
+ops = []
+goal = { kind = "select", choices = ["array", "linked_list", "stack", "queue"], scenario = { add_front = 10, remove_front = 5, search = 1 } }
+hints = ["Most of the work happens at the front.", "Which structure adds and removes at the front without shifting anything?"]
+
+[[puzzle]]
+id = "nx_p5"
+title = "Same Script, Different Line"
+type = "trace"
+stage = "challenge"
+structure = "queue"
+brief = "Starting with an empty queue: enqueue 1, enqueue 2, enqueue 3, dequeue. What's left, front to back?"
+ops = []
+goal = { kind = "quiz", script = ["enqueue 1", "enqueue 2", "enqueue 3", "dequeue"], ask = "state" }
+code = "queue"
+hints = ["Careful: this is a queue, not a stack.", "dequeue removes the value that arrived first."]
+
+[[puzzle]]
+id = "nx_boss"
+title = "The Entropy Serpent"
+type = "sort"
+stage = "boss"
+brief = "Sort the Serpent's array any way you like, in as few swaps as you can. It will strike back twice."
+initial = [9, 4, 7, 1, 10, 3, 6, 2, 8, 5]
+ops = ["swap"]
+goal = { kind = "sorted" }
+code = "swap"
+hints = ["Put each value straight into its final position.", "After each strike, check which cells are still right before you swap again."]
+intro = "The Entropy Serpent has coiled around the Nexus's central array. It feeds on disorder."
+outro = "The Serpent unravels. Nexus Alpha is restored, and the path to the Binary Forest opens."
+
+[[puzzle.disruption]]
+after = 3
+do = ["reverse 0 4"]
+say = "The Serpent thrashes and reverses the first five cells!"
+
+[[puzzle.disruption]]
+after = 6
+do = ["reverse 5 9"]
+say = "The Serpent's tail reverses the last five cells!"

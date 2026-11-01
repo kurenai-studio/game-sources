@@ -1,0 +1,10 @@
+def search(root, value):
+    cur = root
+    while cur is not None:
+        if value == cur.value:  @@found,visit
+            return cur
+        if value < cur.value:  @@go_left
+            cur = cur.left
+        else:  @@go_right
+            cur = cur.right
+    return None

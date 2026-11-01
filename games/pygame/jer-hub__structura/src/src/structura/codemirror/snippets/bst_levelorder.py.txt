@@ -1,0 +1,9 @@
+from collections import deque
+
+def level_order(root):
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        visit(node.value)  @@visit
+        if node.left: queue.append(node.left)
+        if node.right: queue.append(node.right)

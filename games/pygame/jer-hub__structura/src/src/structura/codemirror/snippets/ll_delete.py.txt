@@ -1,0 +1,8 @@
+def delete(head, position):
+    if position == 0:
+        return head.next  @@unlink_head
+    cur = head
+    for _ in range(position - 1):
+        cur = cur.next  @@walk
+    cur.next = cur.next.next  @@unlink
+    return head

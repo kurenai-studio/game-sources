@@ -1,0 +1,6 @@
+void walk(Node node) { // preorder
+    if (node == null) return;
+    visit(node.value);  @@visit
+    walk(node.left);
+    walk(node.right);
+}

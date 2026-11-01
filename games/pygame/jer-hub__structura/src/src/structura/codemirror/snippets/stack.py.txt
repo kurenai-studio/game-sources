@@ -1,0 +1,9 @@
+stack = []
+
+def push(value):
+    stack.append(value)  @@push
+
+def pop():
+    value = stack.pop()  @@pop
+    top = stack[-1] if stack else None  @@new_top
+    return value
