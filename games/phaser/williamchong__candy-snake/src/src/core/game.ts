@@ -1,0 +1,1117 @@
+import { COLS, ROWS, isChopBlock } from './board';
+import { BROWN, PRIMARIES, colorInfo, noServes, type Primary } from './colors';
+import { createCustomer, matchIndex, removeAt, tickPatience } from './customers';
+import {
+  RUSH_QUIET,
+  SETTLED_MS,
+  SPEED_RUNGS,
+  rampMs,
+  rushFloorAt,
+  rushMeterAt,
+  speedRungOf,
+  stageAt,
+  type RushMeter,
+} from './difficulty';
+import { rollOrder, TWIN_CHANCE, type StageConfig } from './orders';
+import {
+  NO_PITY,
+  duePrimaries,
+  starvedPrimaries,
+  tickPity,
+  type PityClock,
+} from './pity';
+import { createRng, type Rng } from './rng';
+import { scoreServe } from './scoring';
+import { pushCandy } from './shelf';
+import {
+  coversCell,
+  createSnake,
+  dyeSegmentAt,
+  findSelfHit,
+  growTail,
+  moveSnake,
+  shatterAt,
+  snakeLength,
+} from './snake';
+import { ensurePickups, pickupIndexAt } from './spawner';
+import {
+  TUTORIAL_ARRIVAL_GAP_MS,
+  ordersLeft,
+  rollTutorial,
+  stocksDyes,
+  stocksSugar,
+  type TutorialLevel,
+} from './tutorial';
+import {
+  Dir,
+  OPPOSITE,
+  type ColorMask,
+  type Customer,
+  type GameConfig,
+  type GameEvent,
+  type GameState,
+  type Pickup,
+  type Segment,
+  type Severed,
+  type SnakeState,
+  type TurnSource,
+  type Vec2,
+} from './types';
+
+/** Lost only to a customer walking out on you (design §6). */
+export const STARTING_LIVES = 3;
+
+/** How often a child takes the brown one off your hands (design §7). */
+export const MERCY_CHANCE = 0.05;
+
+/**
+ * The shortest gap the endless window will put between two arrivals — the walk
+ * from the doorway to the counter, which nothing is allowed to skip.
+ *
+ * Two rules in `admitCustomer` bottom out well under this and one of them
+ * bottoms out at nothing. `arrivalGapMs` shortens the gap in proportion to how
+ * empty the window is, so at a grown peak an emptied window refills at 577 ms a
+ * child; and `belowFloor` does not wait out a gap at all, so serving the third
+ * of three children a running tide insists on puts the replacement at the
+ * counter *on the same step*. Both were built to keep the window full and both
+ * do — but what they deliver at the sharp end is a shop that refills by
+ * teleport, which the chair read back as Sisyphus.
+ *
+ * So the walk is a floor under every endless arrival, and the reason it is a
+ * floor rather than a longer interval is that it only ever binds where the
+ * complaint was: at the ordinary gaps of the anchor table it is nowhere near,
+ * and it takes nothing at all off a window that is merely busy. What it buys is
+ * a beat in which a serve *reads* before the next child is standing in the
+ * gap — which is a rule the game already had and only ever applied to the
+ * opening levels.
+ *
+ * **So it is that same number, and deliberately not a new one.** The tutorial's
+ * beat and this floor are one measurement asked twice: how long a child takes
+ * to walk from the door to the counter. The tutorial reads it as an *interval*,
+ * because a level's window is empty and the beat is the whole wait; the endless
+ * game reads it as a *floor*, because its window has a clock of its own and
+ * this only ever catches the gaps that fall under a walk. Written as two
+ * constants they would drift, and the first thing to drift would be the
+ * handover — where the endless game's first child is brought in on the
+ * tutorial's beat exactly (`finishOpeningLevel`), which a floor a fraction
+ * above it would silently push late.
+ *
+ * It still stops at the endless game, because the opening levels pace their own
+ * window: level 4 deliberately *halves* the beat so its pair reads as a pair,
+ * and a floor over the top would overrule the one place this game already got
+ * this right.
+ */
+export const WALK_IN_MS = TUTORIAL_ARRIVAL_GAP_MS;
+
+/** A real run: seeded, taught, and ramped by `core/difficulty.ts`. */
+export const DEFAULT_CONFIG: GameConfig = {
+  seed: 1,
+  openingLevels: true,
+};
+
+/**
+ * Owns the game state and advances it. The Phaser layer holds this by
+ * convention as read-only: it renders `state` and plays effects from the
+ * returned events, and never writes back (docs/architecture.md §2, §5).
+ */
+export class Game {
+  readonly state: GameState;
+  /** The run's opening levels, rolled from the seed (design §7). */
+  readonly tutorial: readonly TutorialLevel[];
+
+  private readonly config: GameConfig;
+  private readonly rng: Rng;
+  private moveAccMs = 0;
+  /** Time the window has had room, against the current arrival gap. */
+  private waitMs = 0;
+  /**
+   * Time since the last child reached the window, against `WALK_IN_MS`.
+   *
+   * A second clock rather than a floor under `waitMs`, because the two count
+   * different things and one of them stands still: `waitMs` only runs while the
+   * window has room, and the rush floor skips it entirely. This one runs every
+   * step whatever the window holds, which is what makes it a rule about the
+   * *doorway* rather than about the queue.
+   *
+   * Starts at `Infinity` — no child has arrived yet, so the first one is not
+   * kept waiting for a door nobody has come through.
+   */
+  private sinceArrivalMs = Infinity;
+  /**
+   * The last speed rung the run was told about. Held here rather than derived,
+   * because the event is a one-shot and the rung is a level: without a memory
+   * the announcement would either fire every step or not at all.
+   *
+   * Starts at 0 — the handover rung, which is where every run begins and so is
+   * never news.
+   */
+  private announcedRung = 0;
+  /**
+   * Which side of the rush edge the run was last told it was on. A `boolean`
+   * where the rung above is a level, because this edge falls as well as rises —
+   * but held for the identical reason: a one-shot over a curve needs a memory or
+   * it is not a one-shot.
+   *
+   * Starts `false`, which is where every run starts: there is no tide at all
+   * until `RUSH_FROM_MS`, so the first crossing is always into a rush.
+   */
+  private announcedRush = false;
+  /**
+   * Time on the endless ramp, which only starts once the opening levels are
+   * done (design §7) — so a player who takes their time learning does not find
+   * the rush already waiting for them. It is not `elapsedMs` minus a handover
+   * stamp, because there is nothing to stamp until the last child is served.
+   */
+  private endlessMs = 0;
+  /**
+   * What the score read at the handover, so the points the ramp is driven by
+   * can be taken as a difference below. Unlike `endlessMs` there *is* something
+   * to stamp here — `finishOpeningLevel` already has the "that was the last"
+   * branch, and the serve that trips it has been paid by the time it runs — so
+   * this is a stamp rather than a second running total that could drift from
+   * `state.score`.
+   */
+  private handoverScore = 0;
+  /** How long each primary has been needed and missing (design §8.3). */
+  private pity: PityClock = NO_PITY;
+  private nextCustomerId = 1;
+  /** Events raised before the first step, so no spawn goes unannounced. */
+  private pending: GameEvent[] = [];
+
+  constructor(config: GameConfig = DEFAULT_CONFIG) {
+    this.config = config;
+    this.rng = createRng(config.seed);
+    // Before the first spawn: which jars the board stocks is the opening
+    // level's to decide (design §7).
+    this.tutorial = config.openingLevels ? rollTutorial(this.rng) : [];
+    this.state = {
+      snake: createSnake({ x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) }, Dir.Right),
+      pickups: [],
+      severed: [],
+      shelf: [],
+      customers: [],
+      upcoming: [],
+      score: 0,
+      lives: STARTING_LIVES,
+      streak: 0,
+      served: 0,
+      bestStreak: 0,
+      bestCombo: 0,
+      servedByTier: noServes(),
+      over: false,
+      tutorialIndex: 0,
+      tutorialServes: 0,
+      tick: 0,
+      elapsedMs: 0,
+    };
+
+    this.spawnPickups(this.pending);
+    // The first level's child *is* the instruction, so they are at the window
+    // before the run starts rather than a few seconds into it. A game opening
+    // straight into the endless ramp waits out its own interval instead.
+    if (this.tutorial.length > 0) this.waitMs = TUTORIAL_ARRIVAL_GAP_MS;
+    this.admitCustomer(0, this.pending);
+  }
+
+  /**
+   * The opening level being played, or undefined once they are done — the one
+   * place that question is answered, for the spawner, the window and the HUD
+   * alike (design §7).
+   */
+  get openingLevel(): TutorialLevel | undefined {
+    return this.tutorial[this.state.tutorialIndex];
+  }
+
+  /**
+   * The difficulty in force right now — every knob the ramp varies, read
+   * through one place so nothing downstream has to know whether it came from
+   * the curve or from a pinned row (design §7, `core/difficulty.ts`).
+   *
+   * Points count from the handover too, for the same reason the clock does:
+   * the opening levels are taught, not earned, and crediting what they
+   * pay to the ramp would start the endless game part of the way up it.
+   */
+  get stage(): StageConfig {
+    if (this.config.stage !== undefined) return this.config.stage;
+
+    return stageAt(this.endlessMs, this.endlessScore);
+  }
+
+  /**
+   * How correlated the window is (`orders.ts`'s `TWIN_CHANCE`), or whatever a
+   * balancing sim pinned instead — the same shape as `stage` above and for the
+   * same reason: a maker's model of the rules is read off the game, so an arm
+   * of a sweep cannot move the rule and leave the maker planning against the
+   * old one.
+   */
+  get twinChance(): number {
+    return this.config.twinChance ?? TWIN_CHANCE;
+  }
+
+  /**
+   * How many arrivals ahead the doorway shows its colors, the same shape as
+   * `twinChance` above and pinned the same way — 0 is the shipped game and
+   * draws nothing early (`GameConfig.previewDepth`).
+   *
+   * Read through a getter rather than off `config` at the call site so that a
+   * sweep arm and the maker planning against it can never disagree about how
+   * far ahead the window is legible.
+   */
+  get previewDepth(): number {
+    return this.config.previewDepth ?? 0;
+  }
+
+  /**
+   * How many children the tide insists on having at the window right now — the
+   * delivery half of the promise `rushMeter` draws (`rushFloorAt`).
+   *
+   * It is a getter beside `rush` rather than a call inside `admitCustomer` so
+   * that the two halves of the tide are read the same way and guarded the same
+   * way; and it goes to the table with the (clock, score) pair rather than with
+   * the gauge, because the floor needs to know how far along the ramp the
+   * *cycle* stands as well as how hard it is running — a preview tide and a full
+   * one both crest at 1, and only the ramp position tells them apart.
+   *
+   * Public for the sweep that pins the mechanism (`simulation.test.ts`), which
+   * cannot ask for the floor in force any other way: the ramp position it would
+   * have to rebuild it from is private, and a test that rebuilt it would be
+   * measuring its own arithmetic.
+   */
+  get rushFloor(): number {
+    if (this.config.stage !== undefined) return 0;
+
+    return rushFloorAt(this.endlessMs, this.endlessScore);
+  }
+
+  /**
+   * The tide as a gauge rather than as a strength (`RushMeter`) — whether a rush
+   * is on, and how far it is from ending or from starting.
+   *
+   * A third reader of the same curve beside `rush` and `rushFloor`, and it is
+   * the one the player is actually told things by: the doorway draws the tide's
+   * *size*, which answers "something is coming" and none of the three questions
+   * the eleventh sitting asked — am I in one, when does it end, when is the
+   * next. Guarded and shaped exactly like the two above, so all three halves of
+   * the tide are read the same way and a pinned stage has none of them.
+   */
+  get rushMeter(): RushMeter {
+    if (this.config.stage !== undefined) return RUSH_QUIET;
+
+    return rushMeterAt(this.endlessMs, this.endlessScore);
+  }
+
+  /**
+   * Points that count toward the ramp. The opening levels are taught
+   * rather than earned, and crediting what they pay would start the endless
+   * game part of the way up the curve — see `stage`. A difference rather than
+   * a running total of its own, so it cannot drift from `state.score`, which
+   * only ever climbs.
+   */
+  private get endlessScore(): number {
+    return this.state.score - this.handoverScore;
+  }
+
+  /**
+   * Says so when the strand changes gear (design §7, `SPEED_RUNGS`).
+   *
+   * Read off `stage` rather than recomputed from the ramp, so the rung the
+   * player is told about is by construction the rung they are being moved at —
+   * the two cannot drift the way a second path through the curve would let
+   * them.
+   *
+   * A pinned stage has no ladder, for the same reason it has no ramp or tide.
+   */
+  private announceSpeed(events: GameEvent[]): void {
+    if (this.config.stage !== undefined) return;
+    // The window can end the run on the way past — `loseCustomer` sets this and
+    // pushes `game-over` into the very batch being built. Without the guard a
+    // rung crossing on that same step lands *after* it, and `GameScene.play`
+    // walks the batch in order: it stops the HUD, starts the score screen, and
+    // then tweens the head of the scene it just shut down. `serveWindow` keeps
+    // the same guard over its own tail for the same reason.
+    if (this.state.over) return;
+
+    const rung = speedRungOf(this.stage.moveIntervalMs);
+    // `>` and not `!==`: the ladder only climbs (see `SPEED_RUNGS`), so anything
+    // else is a bug rather than a gear the player wants announcing.
+    if (rung <= this.announcedRung) return;
+
+    this.announcedRung = rung;
+    events.push({
+      type: 'speed-raised',
+      rung,
+      top: rung === SPEED_RUNGS.length - 1,
+    });
+  }
+
+  /**
+   * Says so when the tide crosses into a rush and when it comes back out
+   * (design §7, §11). The drawn half is `rushMeter`; this is the said half.
+   *
+   * Read off `rushMeter` rather than recomputed, for the reason `announceSpeed`
+   * reads off `stage`: two paths through the same curve are two things that can
+   * disagree, and the whole point of tying the announcement to `rushFloorAt`'s
+   * own threshold is that what the player is told is what the window is doing.
+   *
+   * Unlike the speed ladder this edge goes both ways, so the memory is the state
+   * itself rather than a high-water mark — and it starts on the quiet side,
+   * which every run does: the tide does not exist until `RUSH_FROM_MS`.
+   */
+  private announceRush(events: GameEvent[]): void {
+    if (this.config.stage !== undefined) return;
+    // The same guard `announceSpeed` carries, and for the same reason: the
+    // window can end the run on the way past, and an edge crossed on that step
+    // would land after `game-over` in a batch the scene walks in order.
+    if (this.state.over) return;
+
+    const { on } = this.rushMeter;
+    if (on === this.announcedRush) return;
+
+    this.announcedRush = on;
+    events.push({ type: 'rush-changed', on });
+  }
+
+  /**
+   * How far the snake stands between its last cell and its next, 0…1.
+   * Movement is discrete here but must not look it, so the view draws the
+   * snake at this fraction of the way across. `extraMs` lets a caller add
+   * time it has accumulated but not yet handed to `step`.
+   */
+  moveProgress(extraMs = 0): number {
+    return Math.min((this.moveAccMs + extraMs) / this.stage.moveIntervalMs, 1);
+  }
+
+  /**
+   * Accumulates real time and moves the snake one cell every
+   * `moveIntervalMs`, so timers stay smooth while movement stays on-grid.
+   */
+  step(dtMs: number, input: TurnSource): GameEvent[] {
+    const events = this.pending;
+    this.pending = [];
+    if (this.state.over) return events;
+
+    this.state.elapsedMs += dtMs;
+    this.moveAccMs += dtMs;
+    // Only once the teaching is over — see `endlessMs`. The pity clocks are
+    // held back for the same reason: an opening level's board is stocked with
+    // exactly what its one order needs (design §7), so nothing on it can starve.
+    if (this.openingLevel === undefined) {
+      this.endlessMs += dtMs;
+      this.pity = tickPity(this.pity, starvedPrimaries(this.state), dtMs);
+    }
+
+    // Read once a pass and not once a test: `stage` is a fresh row off the
+    // curve every time it is asked. Re-read *between* passes all the same — the
+    // ramp can shorten the interval between one move and the next, and a stale
+    // one would spend time the maker no longer takes.
+    for (;;) {
+      const { moveIntervalMs } = this.stage;
+      if (this.moveAccMs < moveIntervalMs) break;
+
+      this.moveAccMs -= moveIntervalMs;
+      this.advance(input, events);
+    }
+
+    this.serveWindow(dtMs, events);
+    // After the window, not before it: a serve moves the score, the score moves
+    // the ramp, and a rung reached by *this* step's serve belongs to this step.
+    this.announceSpeed(events);
+    // And after the ladder, on the same reasoning: both read a curve the serve
+    // above has just moved, and the tide is the later of the two to be drawn.
+    this.announceRush(events);
+
+    return events;
+  }
+
+  /**
+   * One grid move. Pickups resolve *around* the strand rather than at the
+   * head: the head opens one on the way in, each segment is served as it
+   * crosses the cell, and the pickup only leaves once the strand has cleared
+   * it (design §5). The body retraces the head's path exactly, so opening a
+   * pickup already guarantees every current segment will cross it.
+   */
+  private advance(input: TurnSource, events: GameEvent[]): void {
+    const state = this.state;
+    const dir = this.takeTurn(input);
+    const before = state.snake;
+
+    state.snake = moveSnake(state.snake, dir);
+    state.tick += 1;
+
+    this.consumeSevered(events);
+    this.openPickupAt(state.snake.head, events);
+    this.kneadOpenDyes(events);
+    // Before the cubes are spent, not after: a chop can abandon an open cube
+    // mid-pass, and it has to be closed again before `spendClearedPickups`
+    // would plant its segment at a cell the tail is no longer heading for.
+    this.cutAtBlock(before, events);
+    this.spendClearedPickups(events);
+
+    const hitIndex = findSelfHit(state.snake);
+    if (hitIndex >= 0) this.breakStrand(hitIndex, before, events);
+
+    this.spawnPickups(events);
+  }
+
+  private openPickupAt(pos: Vec2, events: GameEvent[]): void {
+    const index = pickupIndexAt(this.state, pos);
+    const pickup = this.state.pickups[index];
+    if (pickup === undefined || pickup.open) return;
+
+    this.state.pickups[index] = { ...pickup, open: true };
+
+    // A jar only announces itself the first time it is opened, so a strand
+    // that abandons one mid-pass and comes back for it says so twice — which
+    // is right: the player made the pickup twice.
+    if (pickup.kind === 'dye') {
+      events.push({ type: 'dye-opened', pos: pickup.pos, primary: pickup.primary });
+    }
+  }
+
+  /**
+   * Kneads each open jar into whichever single segment is standing on it now.
+   * The head carries no color, so the tick it opens a jar colors nothing —
+   * the strand starts turning one segment later, and one segment per move.
+   */
+  private kneadOpenDyes(events: GameEvent[]): void {
+    this.state.pickups.forEach((pickup, index) => {
+      if (pickup.kind !== 'dye' || !pickup.open) return;
+
+      const dyed = dyeSegmentAt(this.state.snake, pickup.pos, pickup.primary);
+      if (dyed === undefined) return;
+
+      this.state.snake = dyed.snake;
+      this.state.pickups[index] = { ...pickup, kneaded: pickup.kneaded + 1 };
+      events.push({
+        type: 'dye-kneaded',
+        pos: pickup.pos,
+        primary: pickup.primary,
+        color: dyed.color,
+      });
+    });
+  }
+
+  /**
+   * The head reaching the chopping block cuts the whole strand loose there
+   * (design §5). The maker drives on empty-handed while the batch stays
+   * exactly where it lay and is drawn into the block one segment per move,
+   * block end first — see `consumeSevered`.
+   *
+   * Cutting the strand off entirely, rather than chopping the segments that
+   * cross the block while the head runs on, is what keeps the body
+   * follow-the-leader: a segment removed from the middle of a live strand
+   * leaves the one behind it two cells adrift, and next move it teleports to
+   * close the gap. Nothing on this board teleports.
+   *
+   * That covers a cut in the *middle*, and it is only half the reason — which
+   * is worth saying here, because the missing half is what makes a partial chop
+   * keep getting proposed. `sever` takes an index, so keeping the front of the
+   * strand and cutting the rest loose is already legal and already happens on a
+   * self-hit. It is the wrong end. `growTail` appends, so the front is the
+   * oldest sugar, and the oldest sugar has crossed the most jars — a partial
+   * cut can only ever bank the dear end and sell the cheap one (design §5).
+   */
+  private cutAtBlock(before: SnakeState, events: GameEvent[]): void {
+    if (!isChopBlock(this.state.snake.head) || this.state.snake.body.length === 0) return;
+
+    const batch = this.sever(0, 'chop', before, events);
+    events.push({ type: 'strand-cut', batch });
+  }
+
+  /**
+   * Retires every open pickup the strand has just moved off. The last segment
+   * to leave is always the tail, so a sugar cube's cell is exactly the cell
+   * the tail vacated this move — which is why the new segment can be planted
+   * there and the cube appears to *become* the tail rather than vanish.
+   */
+  private spendClearedPickups(events: GameEvent[]): void {
+    for (let index = this.state.pickups.length - 1; index >= 0; index -= 1) {
+      const pickup = this.state.pickups[index];
+      if (pickup === undefined) continue;
+      if (!pickup.open || coversCell(this.state.snake, pickup.pos)) continue;
+
+      if (pickup.kind === 'dye') {
+        this.spendDye(index, pickup, events);
+        continue;
+      }
+
+      this.state.pickups.splice(index, 1);
+      this.state.snake = growTail(this.state.snake, pickup.pos);
+      events.push({
+        type: 'sugar-pulled',
+        pos: pickup.pos,
+        length: snakeLength(this.state.snake),
+      });
+    }
+  }
+
+  /**
+   * Takes a jar off the board and reports what it managed to color. The two
+   * ways a jar can leave — the strand clearing it, and the strand being cut off
+   * it — differ in *when* they fire and not in what they mean, so the event is
+   * built here rather than at both.
+   */
+  private spendDye(
+    index: number,
+    pickup: Extract<Pickup, { kind: 'dye' }>,
+    events: GameEvent[],
+  ): void {
+    this.state.pickups.splice(index, 1);
+    events.push({
+      type: 'dye-spent',
+      pos: pickup.pos,
+      primary: pickup.primary,
+      kneaded: pickup.kneaded,
+    });
+  }
+
+  /**
+   * Cuts the strand at the impact. The severed piece stops where it is and
+   * becomes debris rather than disappearing (design §6).
+   */
+  private breakStrand(hitIndex: number, before: SnakeState, events: GameEvent[]): void {
+    const severed = this.sever(hitIndex, 'crumble', before, events);
+    events.push({ type: 'strand-broken', severed });
+  }
+
+  /**
+   * Takes everything from `cutIndex` back off the strand and stands it still.
+   * The piece stops dead on the cells it was *leaving*, not the ones it was
+   * entering — which is also where the view last drew it, so it settles
+   * without jumping a cell. Colors come from the cut itself, which may have
+   * been dyed after the move; a segment a cube planted this move has no
+   * earlier cell and is already standing still.
+   *
+   * Both cuts end here: a self-hit and a chop differ only in where the strand
+   * parts and what becomes of the piece afterwards (design §5, §6).
+   */
+  private sever(
+    cutIndex: number,
+    fate: Severed['fate'],
+    before: SnakeState,
+    events: GameEvent[],
+  ): Segment[] {
+    const { snake, severed } = shatterAt(this.state.snake, cutIndex);
+    this.state.snake = snake;
+
+    const segments = severed.map((segment, index) => ({
+      ...segment,
+      pos: before.body[cutIndex + index]?.pos ?? segment.pos,
+    }));
+    this.state.severed.push({ segments, fate, batchServes: 0 });
+
+    this.releaseAbandonedPickups(events);
+    return segments;
+  }
+
+  /**
+   * Settles every open pickup the strand no longer covers. Both ways a strand
+   * can lose length — a break, a chop — can abandon one mid-pass, and no tail
+   * is ever coming to clear it, so `spendClearedPickups` will never see it
+   * again. The two kinds want opposite answers, for the same reason: *when*
+   * they pay.
+   *
+   * A **cube** pays at spend time, by planting its segment at the cell the tail
+   * has just vacated. Abandoned, there is no such cell — it would plant one
+   * nowhere near the tail — so it is closed again and left for the head to come
+   * back for, which is also fair: the player was given nothing (design §6).
+   *
+   * A **jar** pays at knead time, and the color it kneaded has just left with
+   * the piece that was cut. Closing that one would hand the payment back, and
+   * the bench turns that into a loop: a jar laid on the cell before it is
+   * crossed, kneads the segment behind the head, and is re-closed by the very
+   * chop the player was driving at — free dye, every pass, from a jar that
+   * never leaves. It never leaving is the second half, because a jar on the map
+   * holds its primary's only slot (`missingPickups`, design §8.2), so the board
+   * can no longer lay that color anywhere reachable. Spent, both go away.
+   *
+   * (A jar reaching here has always kneaded at least once — `kneadOpenDyes`
+   * runs before the cut, and a jar the strand covers by anything but the head
+   * has a segment standing on it. `kneaded` is still carried on the event, as
+   * the wasted-dye case does through `spendClearedPickups`.)
+   */
+  private releaseAbandonedPickups(events: GameEvent[]): void {
+    for (let index = this.state.pickups.length - 1; index >= 0; index -= 1) {
+      const pickup = this.state.pickups[index];
+      if (pickup === undefined) continue;
+      if (!pickup.open || coversCell(this.state.snake, pickup.pos)) continue;
+
+      if (pickup.kind === 'dye') this.spendDye(index, pickup, events);
+      else this.state.pickups[index] = { ...pickup, open: false };
+    }
+  }
+
+  /**
+   * Every cut piece loses its front segment, so pieces cut at different
+   * moments come apart side by side rather than queueing behind each other
+   * (design §6). What that segment becomes is the piece's fate: a break puffs
+   * away as sugar, a chopped batch leaves the block as a candy.
+   */
+  private consumeSevered(events: GameEvent[]): void {
+    this.state.severed = this.state.severed.flatMap((piece) => {
+      const [segment, ...rest] = piece.segments;
+      if (segment === undefined) return [];
+
+      let batchServes = piece.batchServes;
+      if (piece.fate === 'crumble') events.push({ type: 'debris-crumbled', segment });
+      else if (this.deliverCandy(segment, events, batchServes)) batchServes += 1;
+
+      return rest.length > 0 ? [{ ...piece, segments: rest, batchServes }] : [];
+    });
+  }
+
+  /**
+   * A candy leaving the block. Whoever is waiting gets first refusal, and only
+   * what nobody wants is racked — reporting the one a full shelf had to let go
+   * of (design §5).
+   *
+   * Because every candy is offered to the queue as it is made, and every child
+   * arriving sweeps the rack, "a waiting customer next to a matching candy on
+   * the shelf" is a state this game cannot reach.
+   *
+   * Returns whether a child took the candy, so the batch's serve counter —
+   * owned by `consumeSevered`, the one place that holds the piece — can count
+   * it. A racked candy is off the batch for good: `Candy` carries no
+   * provenance, so a child sweeping the rack later starts no combo.
+   */
+  private deliverCandy(
+    segment: Segment,
+    events: GameEvent[],
+    batchServes: number,
+  ): boolean {
+    events.push({ type: 'candy-chopped', pos: segment.pos, color: segment.color });
+
+    const waiting = matchIndex(this.state.customers, segment.color);
+    if (waiting >= 0) {
+      this.serveCustomer(waiting, events, batchServes);
+      return true;
+    }
+
+    const { shelf, staled } = pushCandy(this.state.shelf, {
+      color: segment.color,
+      bornAt: this.state.tick,
+    });
+    this.state.shelf = shelf;
+
+    if (staled !== undefined) events.push({ type: 'candy-staled', color: staled.color });
+    return false;
+  }
+
+  /**
+   * The serving window runs on its own clock: patience and arrivals are counted
+   * in real ms rather than grid moves, so the bars stay smooth however fast the
+   * ramp is driving the snake (architecture §5).
+   *
+   * It runs after the move loop, so a child arriving this step sees a rack that
+   * already holds whatever was chopped on the way in.
+   */
+  private serveWindow(dtMs: number, events: GameEvent[]): void {
+    const { customers, expired } = tickPatience(this.state.customers, dtMs);
+    this.state.customers = customers;
+    for (const customer of expired) this.loseCustomer(customer, events);
+
+    if (!this.state.over) this.admitCustomer(dtMs, events);
+  }
+
+  /**
+   * A child gives up and walks out — the only way a life is ever lost
+   * (design §6), and the only thing that breaks a streak.
+   */
+  private loseCustomer(customer: Customer, events: GameEvent[]): void {
+    this.state.streak = 0;
+    this.state.lives -= 1;
+    events.push({ type: 'customer-left', customer });
+    events.push({ type: 'life-lost', lives: this.state.lives });
+
+    if (this.state.lives > 0) return;
+
+    this.state.over = true;
+    events.push({
+      type: 'game-over',
+      score: this.state.score,
+      served: this.state.served,
+      servedByTier: { ...this.state.servedByTier },
+      bestStreak: this.state.bestStreak,
+      bestCombo: this.state.bestCombo,
+      elapsedMs: this.state.elapsedMs,
+    });
+  }
+
+  /**
+   * How long until the next child walks up, given how many are already there.
+   *
+   * A flat interval cannot fill a window: children arrived on a metronome
+   * whatever the queue held, so a maker serving faster than the interval left
+   * the window empty for the rest of it and the queue never rose above one —
+   * `maxQueue` was unreachable by construction, and design §7's "max queue 3"
+   * was a number nobody ever saw. An order you cannot see is an order you
+   * cannot plan a ladder against, which is the shape of what the second
+   * sitting reported (implementation plan).
+   *
+   * So the gap is a share of the interval, scaled by how full the window is:
+   * `arrivalIntervalMs` is the gap with **one slot left** to fill, and an
+   * emptier window fills proportionally faster. A queue near capacity is under
+   * exactly the pressure the table always named; a queue that has just been
+   * cleared refills instead of leaving the maker to wait out the rest of an
+   * interval in front of an empty window.
+   *
+   * That is more demand over a run, not the same demand rearranged, and it is
+   * meant to be: on the same anchor table it closes a batching run out at 5
+   * minutes where the flat interval took 8 (the plan's seventh sitting).
+   *
+   * Counting `length + 1` rather than `length` is what keeps a window with no
+   * interval shut: `Infinity` times a positive share is still `Infinity`,
+   * where times zero it would be `NaN` and let every child straight in. It is
+   * also what paces the tutorial's own window: the three levels that hold one
+   * child wait the whole beat, and level 4's two slots halve it, so its second
+   * child follows the first in rather than a full beat behind.
+   */
+  private arrivalGapMs(intervalMs: number, maxQueue: number): number {
+    return (intervalMs * (this.state.customers.length + 1)) / maxQueue;
+  }
+
+  /**
+   * Brings the next child to the window once the wait is up. The clock only
+   * runs while there is room, so clearing a full queue cannot dump the backlog
+   * all at once — and the gap is read fresh each time, so the wait a tutorial
+   * level started carries over into the next one. The handover to the endless
+   * ramp sets the clock itself, in `finishOpeningLevel`.
+   */
+  private admitCustomer(dtMs: number, events: GameEvent[]): void {
+    const level = this.openingLevel;
+    const stage = this.stage;
+    // Nobody but the level's own children, and no clock on any of them: a
+    // tutorial that plays on every run must not be able to cost you the run
+    // (design §7).
+    const window =
+      level === undefined
+        ? {
+            maxQueue: stage.maxQueue,
+            intervalMs: stage.arrivalIntervalMs,
+            patienceMs: stage.patienceMs as number | undefined,
+          }
+        : {
+            // Exactly the children this level has left to send, so the last of
+            // them opens two places at the window and the three before it one.
+            maxQueue: ordersLeft(level, this.state),
+            intervalMs: TUTORIAL_ARRIVAL_GAP_MS,
+            patienceMs: undefined,
+          };
+
+    // Above the `maxQueue` guard, and the only clock here that is: the walk
+    // from the doorway happens whether or not the window has room, so time
+    // spent at a full window is time the next child has already spent walking.
+    // Counted before the guard rather than in `step` so that both arrival
+    // clocks stay in the one method that spends them.
+    this.sinceArrivalMs += dtMs;
+
+    if (this.state.customers.length >= window.maxQueue) return;
+
+    this.waitMs += dtMs;
+    // What a running tide insists on having at the window, whatever the clock
+    // says (`rushFloorAt`). Under it the gap is not waited out at all: a rate is
+    // the one thing a maker can outrun, and the better they are the more of the
+    // rush they serve away before it is ever visible. Only the endless game has
+    // a tide — an opening level's window is the level's own to pace, and a
+    // tutorial must not be able to cost you the run (design §7).
+    //
+    // It sits *below* the `maxQueue` guard above rather than beside it, so the
+    // floor can only ever say how empty the window may get and never how full:
+    // no rush can admit past the row the table names. Folding it into `window`
+    // alongside the other endless-vs-tutorial differences would read tidier and
+    // is measurably worse — the guard short-circuits first, so `this.rushFloor`
+    // is paid on 0.33 steps in 1 here against 1 in 1 there, and it is cheapest
+    // exactly when the window is full, which is when a tide is running.
+    const belowFloor =
+      level === undefined && this.state.customers.length < this.rushFloor;
+    const due = this.waitMs >= this.arrivalGapMs(window.intervalMs, window.maxQueue);
+    if (!due && !belowFloor) return;
+    // And then the walk itself (`WALK_IN_MS`), which is the last word on both of
+    // the rules above. *Held back* rather than turned away: the clock has been
+    // paid and is not spent below, so the child arrives the moment the doorway
+    // is clear rather than starting the whole gap again — a floor on the shape
+    // of the arrivals, never a second interval added to them. The tutorial
+    // paces its own window and is exempt, the way it is exempt from the tide.
+    if (level === undefined && this.sinceArrivalMs < WALK_IN_MS) return;
+    // Only an arrival the clock actually paid for spends it. A child the tide
+    // insisted on is *extra*, and taking the clock with them would restart the
+    // ordinary fill on every serve — which pins the window at the floor instead
+    // of letting the rush build past it, and a floor that is also a ceiling is
+    // the opposite of the mechanism. Measured: spending it costs the window a
+    // fifth of its pairs, because a duplicate order is far likelier among three
+    // or four children than among two (`simulation.test.ts`'s `pairOffered`),
+    // so the rush meant to make one cut feed two was making it feed one.
+    //
+    // Before the serve below, which is the last opening level's way of ending:
+    // clearing the clock after it would wipe the handover's own setting.
+    if (due) this.waitMs = 0;
+
+    const customer = createCustomer(
+      this.nextCustomerId,
+      // Drawn only now that a child is actually arriving, so the seeded run of
+      // orders does not depend on how often `step` was called — or taken off
+      // the front of the doorway, which is that same draw made a turn earlier.
+      level?.want ?? this.rollWant(stage),
+      window.patienceMs,
+    );
+    this.nextCustomerId += 1;
+    this.sinceArrivalMs = 0;
+    this.state.customers = [...this.state.customers, customer];
+    events.push({ type: 'customer-arrived', customer });
+
+    this.serveFromShelf(this.state.customers.length - 1, events);
+    // After the rack sweep, so a previewed order is drawn against the window as
+    // it actually stands. That is the rule `rollWant` already follows; the
+    // preview reads it a moment earlier rather than reading a different one.
+    this.fillPreview(stage);
+  }
+
+  /**
+   * The order the doorway has been showing, or a fresh draw when there is
+   * nothing queued there.
+   *
+   * At `previewDepth` 0 the doorway is always empty, so this is `orderWant` at
+   * the call site it has always been at and the seeded stream is untouched.
+   * That is what makes the shipped game the control arm rather than one more
+   * arm of the sweep — the mistake this record has made about every lever it
+   * has measured so far.
+   *
+   * Mercy is settled before this is ever reached (`rollWant`), so a previewed
+   * order is never spent on a child who turned out to want brown: it stays
+   * queued and arrives a turn late instead.
+   */
+  private takePreviewed(stage: StageConfig): ColorMask {
+    const [previewed, ...rest] = this.state.upcoming;
+    if (previewed === undefined) return this.orderWant(stage);
+
+    this.state.upcoming = rest;
+    return previewed;
+  }
+
+  /**
+   * Tops the doorway back up to `previewDepth`.
+   *
+   * Only the endless game previews. An opening level's orders are the level's
+   * own (design §7), so there is nothing to draw ahead — and drawing one anyway
+   * would spend the seeded stream on a want no child is ever going to ask for.
+   *
+   * Each draw sees the window as it stands, which means a previewed order can
+   * echo a child who has *arrived* and never another guess. A queue of guesses
+   * echoing each other would raise the twin rate without anyone asking for it,
+   * and `TWIN_CHANCE` is a knob the twin-arm sweep has already priced.
+   */
+  private fillPreview(stage: StageConfig): void {
+    if (this.openingLevel !== undefined) return;
+
+    while (this.state.upcoming.length < this.previewDepth) {
+      this.state.upcoming = [...this.state.upcoming, this.orderWant(stage)];
+    }
+  }
+
+  /**
+   * What the child at the window asks for. Almost always a roll against the
+   * stage's tier weights — but occasionally the one customer who *wants* the
+   * over-mix (design §4, §7).
+   *
+   * They only ever turn up when there is a brown candy going spare, which is
+   * what makes them a mercy rather than another order to fill: brown is the
+   * mistake the color system is built around, and this is the one way it leaves
+   * the shelf other than going stale. They are held back until the ramp has
+   * settled, so a run's first minutes are not spent teaching that the mistake
+   * pays — and that is read off the *ramp*, not off the clock. The two used to
+   * be the same question and are not any more: now that score drives the curve,
+   * a maker scoring well reaches the settled row before the stopwatch does, and
+   * gating on `endlessMs` would have held the mercy back from exactly the
+   * player the rest of the ramp had already moved on.
+   * Because a new arrival sweeps the rack (`serveFromShelf` above), they
+   * are served the moment they walk up — the cleanup is the whole visit.
+   */
+  private rollWant(stage: StageConfig): ColorMask {
+    return this.mercyWant() ?? this.takePreviewed(stage);
+  }
+
+  /**
+   * The mercy customer, or nobody — the brown half of `rollWant` above, split
+   * out because it is the half a preview must not touch.
+   *
+   * Every condition it reads is a fact about *now*: a brown on the rack this
+   * moment, a ramp that has settled by this moment. Drawn an arrival early
+   * those facts go stale — the spare brown can be staled off a full rack before
+   * the child it was rolled for arrives (design §5), and at a depth of two the
+   * same unchanged rack would license two of them. So mercy stays a
+   * substitution made at the window, and the doorway shows the ordinary draw.
+   *
+   * The order of the two rolls is unchanged, which is what keeps depth 0 the
+   * control: the mercy draw is taken at the arrival, before the tier draw, in
+   * exactly the run of the stream it has always been taken in.
+   */
+  private mercyWant(): ColorMask | undefined {
+    const spare = this.state.shelf.some((candy) => candy.color === BROWN);
+    const settled = rampMs(this.endlessMs, this.endlessScore) >= SETTLED_MS;
+
+    return spare && settled && this.rng.next() < MERCY_CHANCE ? BROWN : undefined;
+  }
+
+  /** An ordinary order off the stage's weights — the half the doorway shows. */
+  private orderWant(stage: StageConfig): ColorMask {
+    return rollOrder(
+      stage,
+      this.rng,
+      this.state.customers.map((customer) => customer.want),
+      this.twinChance,
+    );
+  }
+
+  /**
+   * A child walking up checks the rack first (design §5). The oldest match
+   * goes, which is the end staleness eats from — so a candy is never stepped
+   * over and left to go stale behind a newer twin.
+   */
+  private serveFromShelf(index: number, events: GameEvent[]): void {
+    const customer = this.state.customers[index];
+    if (customer === undefined) return;
+
+    const slot = this.state.shelf.findIndex((candy) => candy.color === customer.want);
+    if (slot < 0) return;
+
+    this.state.shelf = removeAt(this.state.shelf, slot);
+    this.serveCustomer(index, events);
+  }
+
+  /**
+   * Pays for a serve and sends the child off happy (design §9). `batchServes`
+   * is how many children the batch this candy came off has already fed — the
+   * combo bonus's input. Leaving it out is what makes a serve a shelf serve:
+   * a racked candy has no batch behind it to count, so "off the rack" and "no
+   * batch" are one fact rather than two parameters that could disagree.
+   *
+   * The first three opening levels never pay the bonus by construction rather
+   * than by a guard: their window holds one child, so a batch direct-serves at
+   * most once. The fourth pays it on purpose — teaching the combo is the whole
+   * of what that level is for (design §7).
+   */
+  private serveCustomer(index: number, events: GameEvent[], batchServes?: number): void {
+    const customer = this.state.customers[index];
+    if (customer === undefined) return;
+
+    const fromShelf = batchServes === undefined;
+    const points = scoreServe(customer, this.state.streak, batchServes);
+    const combo = fromShelf ? 0 : batchServes + 1;
+    this.state.customers = removeAt(this.state.customers, index);
+    this.state.score += points;
+    this.state.streak += 1;
+    this.state.served += 1;
+    this.state.bestStreak = Math.max(this.state.bestStreak, this.state.streak);
+    this.state.bestCombo = Math.max(this.state.bestCombo, combo);
+    this.state.servedByTier[colorInfo(customer.want).tier] += 1;
+    // While the tutorial runs the queue holds nobody but the level's own
+    // children, so counting serves against the level is what finishes it.
+    const level = this.openingLevel;
+    if (level !== undefined) {
+      this.state.tutorialServes += 1;
+      if (this.state.tutorialServes >= level.children) this.finishOpeningLevel();
+    }
+
+    events.push({
+      type: 'customer-served',
+      customer,
+      points,
+      streak: this.state.streak,
+      combo,
+      fromShelf,
+    });
+  }
+
+  /**
+   * Closes an opening level, and hands the window over to the endless ramp on
+   * the last of them — `openingLevel` is read again *after* the index moves,
+   * so it coming up empty is exactly "that was the last one".
+   *
+   * The arrival clock has stood still all level: a queue with no room never
+   * counts (see `admitCustomer`), so it reads 0 at every opening serve. Left
+   * there, the window would stand empty for the handover's whole gap right
+   * after the levels' own beat. Crediting the wait already served
+   * brings the first real child on that same beat instead. A window with no
+   * interval to speak of has no wait to credit: `Infinity` would sit level
+   * with the guard rather than under it, and admit a child at once.
+   */
+  private finishOpeningLevel(): void {
+    this.state.tutorialIndex += 1;
+    this.state.tutorialServes = 0;
+    if (this.openingLevel !== undefined) return;
+
+    // The serve that got us here has already been paid (`serveCustomer` adds
+    // to the score before calling this), so the ramp starts from zero points
+    // rather than from what the teaching happened to be worth — see `stage`.
+    this.handoverScore = this.state.score;
+
+    // Read after the index moved, so this is the handover row the ramp starts
+    // at rather than the tutorial's own beat — and the *gap* an empty window
+    // waits there, not the interval a nearly full one does.
+    const stage = this.stage;
+    const served =
+      this.arrivalGapMs(stage.arrivalIntervalMs, stage.maxQueue) -
+      TUTORIAL_ARRIVAL_GAP_MS;
+    this.waitMs = Number.isFinite(served) ? Math.max(0, served) : 0;
+
+    // The doorway opens with the endless game and not an arrival later. Left to
+    // `admitCustomer`, the first real child would find nothing queued and be
+    // drawn on the spot — so the one arrival the preview exists to get ahead of
+    // is the one arrival it would have missed. A no-op at depth 0.
+    //
+    // This is the handover's to do because the handover is where the endless
+    // game starts *for a real run*. A game built without the opening levels —
+    // tests and the balancing sims — never reaches here, and fills on its first
+    // arrival instead; it has no handover to hang this on and nothing before
+    // the first child to get ahead of.
+    this.fillPreview(stage);
+  }
+
+  private spawnPickups(events: GameEvent[]): void {
+    const level = this.openingLevel;
+    const stocked =
+      level === undefined ? this.endlessStock() : stocksDyes(level, this.state);
+    const sugar = stocksSugar(level, this.state);
+
+    for (const pickup of ensurePickups(this.state, this.rng, stocked, sugar)) {
+      this.state.pickups.push(pickup);
+      events.push(
+        pickup.kind === 'sugar'
+          ? { type: 'sugar-spawned', pos: pickup.pos }
+          : { type: 'dye-spawned', pos: pickup.pos, primary: pickup.primary },
+      );
+    }
+  }
+
+  /**
+   * Which jars the endless board carries — design §8.3's pity spawner, which
+   * replaces the Phase 4 floor of one jar of every primary at all times.
+   *
+   * Two things put a jar out. A shortage that has run its five seconds is the
+   * rule proper: whatever the queue needs and cannot get, it gets. The second
+   * is a floor under *that* — a board with no dye on it at all lays one, rolled,
+   * so a maker can still build ahead of the window. Without it the only jars
+   * that ever appeared would be ones some waiting child already needed, and
+   * batching — the thing the color system is for — could never start early.
+   */
+  private endlessStock(): readonly Primary[] {
+    const due = duePrimaries(this.pity);
+    if (due.length > 0) return due;
+
+    if (this.state.pickups.some((pickup) => pickup.kind === 'dye')) return [];
+
+    // Rolled only when it is actually wanted: an unconditional draw here would
+    // burn a number every move and no two runs of the same seed would match.
+    return [PRIMARIES[this.rng.int(PRIMARIES.length)] ?? PRIMARIES[0]];
+  }
+
+  /**
+   * The queue already rejects reversals, but the core re-checks so no
+   * TurnSource implementation can walk the head into its own neck.
+   */
+  private takeTurn(input: TurnSource): Dir {
+    const current = this.state.snake.dir;
+    const next = input.take();
+    return next !== undefined && next !== OPPOSITE[current] ? next : current;
+  }
+}
