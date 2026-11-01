@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c0a0f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta
+      name="description"
+      content="Mournwell: a short browser room-crawler. Fight down two depths of a haunted well and ring a toll bell that trades health for a room-wide hit."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <title>MOURNWELL — Descend. Break. Become.</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#primary-action">Skip to controls</a>
+    <main id="app" aria-label="Mournwell game application">
+      <section id="game-shell" aria-label="Game viewport">
+        <div id="game-container" aria-label="Mournwell canvas"></div>
+
+        <section id="hud" class="hud is-hidden" aria-label="Run status">
+          <div class="hud__top">
+            <div class="vital-card">
+              <span class="eyebrow">VESSEL</span>
+              <div id="hearts" class="hearts" aria-label="Health"></div>
+              <div class="run-meta">
+                <span id="floor-label">DEPTH I</span><span aria-hidden="true">•</span
+                ><span id="room-label">CHAMBER 1/6</span>
+              </div>
+            </div>
+            <div id="minimap" class="minimap" aria-label="Dungeon minimap"></div>
+            <div class="stat-card" aria-label="Player attributes">
+              <span class="eyebrow">RELIC ENGINE</span>
+              <dl id="stats" class="stats"></dl>
+            </div>
+          </div>
+          <div id="boss-meter" class="boss-meter is-hidden" aria-label="Boss health">
+            <div class="boss-meter__meta"><span>THE TOLLMOTHER</span><b id="boss-phase">FIRST TOLL</b></div>
+            <div class="boss-meter__track"><span id="boss-meter-fill"></span></div>
+          </div>
+          <div class="hud__bottom">
+            <div>
+              <span class="eyebrow">BOUND RELICS</span>
+              <div id="inventory" class="inventory"><span class="inventory__empty">None — yet.</span></div>
+            </div>
+            <div class="hud-actions">
+              <button
+                id="bell-button"
+                class="icon-button bell-button"
+                type="button"
+                aria-label="Ring the toll bell"
+              >
+                TOLL · SPACE
+              </button>
+              <button id="sound-button" class="icon-button" type="button" aria-label="Toggle sound">
+                SOUND ON
+              </button>
+              <button id="pause-button" class="icon-button" type="button" aria-label="Pause game">
+                PAUSE
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section id="menu" class="overlay menu" aria-labelledby="game-title">
+          <div class="menu__ornament" aria-hidden="true">✦</div>
+          <p class="kicker">A TWO-DEPTH DESCENT</p>
+          <h1 id="game-title">MOURN<span>WELL</span></h1>
+          <p class="tagline">Descend. Break. Become.</p>
+          <p class="menu__copy">
+            Two depths, two Tollmothers. Bind strange relics, clear the living chambers, and when a room turns
+            on you, ring the bell: it costs resolve, and nothing in the chamber escapes it.
+          </p>
+          <div class="menu__controls" aria-label="Controls">
+            <div><kbd>WASD</kbd><span>MOVE</span></div>
+            <div><kbd>↑ ↓ ← →</kbd><span>CAST</span></div>
+            <div><kbd>SPACE</kbd><span>TOLL</span></div>
+            <div><kbd>ESC</kbd><span>PAUSE</span></div>
+          </div>
+          <label class="seed-field" for="seed-input">
+            <span>RUN SEED</span>
+            <input id="seed-input" maxlength="20" autocomplete="off" spellcheck="false" />
+          </label>
+          <button id="primary-action" class="primary-button" type="button">
+            <span>ENTER THE WELL</span><small>NEW DESCENT</small>
+          </button>
+          <p class="menu__hint">Keyboard · Touch · No downloads · No external art</p>
+        </section>
+
+        <section id="pause-overlay" class="overlay compact-overlay is-hidden" aria-labelledby="pause-title">
+          <p class="kicker">THE WELL HOLDS ITS BREATH</p>
+          <h2 id="pause-title">Descent paused</h2>
+          <p>Your current chamber is preserved.</p>
+          <div class="button-row">
+            <button id="resume-button" class="primary-button" type="button">RESUME</button>
+            <button id="quit-button" class="secondary-button" type="button">ABANDON RUN</button>
+          </div>
+        </section>
+
+        <section id="result-overlay" class="overlay result-overlay is-hidden" aria-labelledby="result-title">
+          <p id="result-kicker" class="kicker">THE WELL REMEMBERS</p>
+          <h2 id="result-title">Your vessel broke</h2>
+          <p id="result-copy">The dark settles around what remains.</p>
+          <dl id="result-stats" class="result-stats"></dl>
+          <div class="button-row">
+            <button id="retry-button" class="primary-button" type="button">DESCEND AGAIN</button>
+            <button id="menu-button" class="secondary-button" type="button">RETURN TO GATE</button>
+          </div>
+        </section>
+
+        <div id="toast" class="toast is-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <section id="touch-controls" class="touch-controls" aria-label="Touch controls">
+          <div
+            id="move-pad"
+            class="touch-pad touch-pad--move"
+            data-control="move"
+            aria-label="Movement joystick"
+          >
+            <span class="touch-pad__label">MOVE</span><span class="touch-pad__knob"></span>
+          </div>
+          <button id="bell-touch" class="bell-touch" type="button" aria-label="Ring the toll bell">
+            TOLL
+          </button>
+          <div
+            id="shoot-pad"
+            class="touch-pad touch-pad--shoot"
+            data-control="shoot"
+            aria-label="Casting joystick"
+          >
+            <span class="touch-pad__label">CAST</span><span class="touch-pad__knob"></span>
+          </div>
+        </section>
+      </section>
+    </main>
+    <noscript>MOURNWELL needs JavaScript enabled to run.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "mournwell",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A short browser room-crawler: fight down two depths of a haunted well and ring a toll bell that trades health for a room-wide hit.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/appleweiping/mournwell.git"
+  },
+  "homepage": "https://appleweiping.github.io/mournwell/",
+  "bugs": "https://github.com/appleweiping/mournwell/issues",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build && npm run verify:dist",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:prod": "playwright test --config=playwright.prod.config.ts",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:all": "npm run format && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run test:e2e:prod",
+    "audit:prod": "npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org",
+    "verify:dist": "node scripts/verify-dist.mjs"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.3.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-security": "^3.0.1",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.66.0",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
