@@ -110,6 +110,7 @@
 | games/defold/joachimvalente__defold-tetris | https://github.com/joachimvalente/defold-tetris | MIT | defold | d | 2026-10-23 |
 | games/defold/schlista__Kabocha_Game | https://github.com/schlista/Kabocha_Game | GPL-3.0 | defold | d | 2026-10-23 |
 | games/defold/Sefan90__MadeWithDefoldJam | https://github.com/Sefan90/MadeWithDefoldJam | MIT | defold | d | 2026-10-23 |
+| games/defold/TheSardunya__UltiFight-Remake | https://github.com/TheSardunya/UltiFight-Remake | GPL-3.0 | defold | d | 2026-11-01 |
 | games/defold/unindented__defold-pong | https://github.com/unindented/defold-pong | GPL-3.0 | defold | d | 2026-10-23 |
 | games/defold/vokaimoh__blocks-cubes-2048 | https://github.com/vokaimoh/blocks-cubes-2048 | MIT | defold | d | 2026-10-23 |
 | games/defold/William-Weng__defold-sokoban | https://github.com/William-Weng/defold-sokoban | MIT | defold | d | 2026-11-01 |
@@ -746,6 +747,7 @@
 | games/unity/Quang170107__My-project- | https://github.com/Quang170107/My-project- | MIT | unity | e | 2026-10-23 |
 | games/unity/raxelf__Idle-RPG-Slime-Adventure | https://github.com/raxelf/Idle-RPG-Slime-Adventure | GPL-3.0 | unity | e | 2026-10-23 |
 | games/unity/Requieem__Tetris | https://github.com/Requieem/Tetris | MIT | unity | e | 2026-10-23 |
+| games/unity/RichardManthorpe__snake | https://github.com/RichardManthorpe/snake | MIT | unity | e | 2026-11-01 |
 | games/unity/robot518__UnityGames | https://github.com/robot518/UnityGames | MIT | unity | e | 2026-10-23 |
 | games/unity/RomanZhu__Endless-Runner-Entitas-ECS | https://github.com/RomanZhu/Endless-Runner-Entitas-ECS | MIT | unity | e | 2026-10-22 |
 | games/unity/RomanZhu__Match-Line-Entitas-ECS | https://github.com/RomanZhu/Match-Line-Entitas-ECS | MIT | unity | e | 2026-10-23 |
