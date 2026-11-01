@@ -1,0 +1,111 @@
+name: Generate Devlog on PR Merge
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches:
+      - main
+    paths:
+      - '**.gd'
+      - '**.tscn'
+      - '**.tres'
+      - 'project.godot'
+
+jobs:
+  update-devlog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate PR Diff and Summarize with Retry
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          DIFF=$(git diff $BASE_SHA $HEAD_SHA -- '*.gd' '*.tscn' '*.tres' 'project.godot')
+
+          if [ -z "$DIFF" ]; then
+            echo "No GDScript, Scene, or Project setting changes detected. Skipping."
+            exit 0
+          fi
+
+          mkdir -p docs
+          if [ ! -f docs/DEVLOG.md ]; then
+            echo "# YAISS Development Log" > docs/DEVLOG.md
+          fi
+
+          PROMPT="You are an automated technical writer and systems engineer for YAISS (Yet Another Incremental Space Shooter), a 2D Godot 4 GDScript game.
+          Analyze the provided git diff and write a concise technical changelog entry.
+
+          Requirements:
+          - Focus on concrete engine and architectural changes: Node structures (Area2D, Marker2D, Sprite2D), GDScript signals, exported dependencies (@export), math/vector transformations (positions, clamping, angles), and project input actions.
+          - Omit conversational filler, greetings, and generic phrases like 'improved mechanics' or 'refactored code for clarity'.
+          - Output 2 to 4 bullet points. Each bullet must state WHAT changed and the TECHNICAL IMPACT or mechanism.
+          - If a Godot scene (.tscn) or project configuration (project.godot) changed, mention node additions or input action adjustments.
+
+          Git Diff:
+          $DIFF"
+
+          MAX_RETRIES=3
+          ATTEMPT=1
+          SUCCESS=0
+          RESPONSE=""
+
+          while [ $ATTEMPT -le $MAX_RETRIES ]; do
+            echo "Attempt $ATTEMPT of $MAX_RETRIES: Calling Gemini API..."
+            
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${GEMINI_API_KEY}" \
+              -H 'Content-Type: application/json' \
+              -d "{\"contents\": [{\"parts\": [{\"text\": $(echo "$PROMPT" | jq -Rs .)}]}]}")
+
+            HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+            HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              PARSED_TEXT=$(echo "$HTTP_BODY" | jq -r '.candidates[0].content.parts[0].text // empty')
+              if [ -n "$PARSED_TEXT" ]; then
+                RESPONSE="$PARSED_TEXT"
+                SUCCESS=1
+                echo "Summary generated successfully on attempt $ATTEMPT."
+                break
+              fi
+            fi
+
+            echo "Attempt $ATTEMPT failed with HTTP status $HTTP_STATUS: $HTTP_BODY"
+            DELAY=$(( ATTEMPT * 5 ))
+            echo "Sleeping for $DELAY seconds before retry..."
+            sleep $DELAY
+            ATTEMPT=$(( ATTEMPT + 1 ))
+          done
+
+          if [ $SUCCESS -ne 1 ]; then
+            echo "::error::Failed to generate devlog summary after $MAX_RETRIES attempts."
+            exit 1
+          fi
+
+          ENTRY_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+          ENTRY=$(cat <<EOF
+
+          ### PR #$PR_NUMBER: $PR_TITLE ($ENTRY_DATE)
+          $RESPONSE
+          EOF
+          )
+
+          echo "$ENTRY" >> docs/DEVLOG.md
+
+      - name: Commit Devlog
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: update devlog for PR #${{ github.event.pull_request.number }} [skip ci]"
+          file_pattern: 'docs/DEVLOG.md'
