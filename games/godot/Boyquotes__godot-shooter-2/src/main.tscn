@@ -1,0 +1,62 @@
+[gd_scene load_steps=10 format=3 uid="uid://cpemx5w7o7try"]
+
+[ext_resource type="Script" path="res://Player.gd" id="1_jge7p"]
+[ext_resource type="Texture2D" uid="uid://cptjxwrln3sgg" path="res://square.png" id="1_wyqps"]
+[ext_resource type="Texture2D" uid="uid://bc6kk3bshee1i" path="res://light.png" id="3_21dud"]
+[ext_resource type="PackedScene" uid="uid://bp7aasxw0xobf" path="res://enemy.tscn" id="3_mn6yc"]
+[ext_resource type="PackedScene" uid="uid://b1inhrtyvu5c4" path="res://tile.tscn" id="4_i2ieq"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_66t6v"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0kqed"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_ktdl1"]
+scenes/1/scene = ExtResource("4_i2ieq")
+
+[sub_resource type="TileSet" id="TileSet_j1igw"]
+sources/0 = SubResource("TileSetScenesCollectionSource_ktdl1")
+
+[node name="World" type="Node2D"]
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(295, 203)
+script = ExtResource("1_jge7p")
+movespeed = 600.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_66t6v")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+texture = ExtResource("1_wyqps")
+
+[node name="Area2D" type="Area2D" parent="Player"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Area2D"]
+shape = SubResource("RectangleShape2D_0kqed")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+zoom = Vector2(0.6, 0.6)
+position_smoothing_enabled = true
+
+[node name="PointLight2D" type="PointLight2D" parent="Player"]
+color = Color(0.996078, 0.572549, 0.572549, 1)
+shadow_enabled = true
+texture = ExtResource("3_21dud")
+
+[node name="Enemy" parent="." instance=ExtResource("3_mn6yc")]
+position = Vector2(-45, -28)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.403922, 0.196078, 0.196078, 1)
+z_index = -1
+scale = Vector2(1000, 1000)
+texture = ExtResource("1_wyqps")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_j1igw")
+format = 2
+layer_0/tile_data = PackedInt32Array(1703918, 0, 65536, 1703919, 0, 65536, 1703920, 0, 65536, 1703921, 0, 65536, 1703922, 0, 65536, 1703923, 0, 65536, 1703924, 0, 65536, 1703925, 0, 65536, 1703926, 0, 65536, 1703927, 0, 65536, 1703928, 0, 65536, 1703929, 0, 65536, 1703930, 0, 65536, 1703931, 0, 65536, 1703932, 0, 65536, 1703933, 0, 65536, 1703934, 0, 65536, 1703935, 0, 65536, 1638400, 0, 65536, 1638401, 0, 65536, 1572865, 0, 65536, 1572866, 0, 65536, 1507330, 0, 65536, 1507331, 0, 65536, 1507332, 0, 65536, 1507333, 0, 65536, 1507334, 0, 65536, 1441798, 0, 65536, 1441799, 0, 65536, 1441800, 0, 65536, 1441801, 0, 65536, 1441802, 0, 65536, 1441803, 0, 65536, 1441804, 0, 65536, 1441805, 0, 65536, 1441806, 0, 65536, 1376270, 0, 65536, 1376271, 0, 65536, 1376272, 0, 65536, 1376273, 0, 65536, 1376274, 0, 65536, 1310738, 0, 65536, 1245202, 0, 65536, 1179666, 0, 65536, 1114130, 0, 65536, 1114131, 0, 65536, 1048595, 0, 65536, 983059, 0, 65536, 917524, 0, 65536, 851988, 0, 65536, 851989, 0, 65536, 786453, 0, 65536, 720917, 0, 65536, 655381, 0, 65536, 589845, 0, 65536, 524309, 0, 65536, 458773, 0, 65536, 393238, 0, 65536, 327702, 0, 65536, 262167, 0, 65536, 196632, 0, 65536, 196633, 0, 65536, 131097, 0, 65536, 131098, 0, 65536, 65561, 0, 65536, 25, 0, 65536, -65511, 0, 65536, -131047, 0, 65536, -196583, 0, 65536, -262119, 0, 65536, -327655, 0, 65536, -393191, 0, 65536, -458727, 0, 65536, -524263, 0, 65536, -589799, 0, 65536, -589800, 0, 65536, -524264, 0, 65536, -524265, 0, 65536, -458729, 0, 65536, -458730, 0, 65536, -458731, 0, 65536, -458732, 0, 65536, -458733, 0, 65536, -458734, 0, 65536, -458735, 0, 65536, -458736, 0, 65536, -458737, 0, 65536, -458738, 0, 65536, -458739, 0, 65536, -458740, 0, 65536, -393205, 0, 65536, -393206, 0, 65536, -458743, 0, 65536, -458744, 0, 65536, -458745, 0, 65536, -458746, 0, 65536, -458747, 0, 65536, -458748, 0, 65536, -458749, 0, 65536, -458750, 0, 65536, -458751, 0, 65536, -458752, 0, 65536, -393217, 0, 65536, -393218, 0, 65536, -393219, 0, 65536, -393220, 0, 65536, -458756, 0, 65536, -458757, 0, 65536, -458758, 0, 65536, -458759, 0, 65536, -524296, 0, 65536, -524297, 0, 65536, -524298, 0, 65536, -524299, 0, 65536, -524300, 0, 65536, -524301, 0, 65536, -458765, 0, 65536, -458766, 0, 65536, -393230, 0, 65536, -393231, 0, 65536, -393232, 0, 65536, -327696, 0, 65536, -327697, 0, 65536, -262162, 0, 65536, -262163, 0, 65536, -196628, 0, 65536, -196629, 0, 65536, -131093, 0, 65536, -131094, 0, 65536, -65558, 0, 65536, -65559, 0, 65536, -23, 0, 65536, -24, 0, 65536, 65512, 0, 65536, 65511, 0, 65536, 131047, 0, 65536, 196583, 0, 65536, 196582, 0, 65536, 262118, 0, 65536, 327654, 0, 65536, 327653, 0, 65536, 393189, 0, 65536, 458725, 0, 65536, 524261, 0, 65536, 589797, 0, 65536, 655333, 0, 65536, 720869, 0, 65536, 786405, 0, 65536, 851941, 0, 65536, 917477, 0, 65536, 983013, 0, 65536, 1048549, 0, 65536, 1114085, 0, 65536, 1179621, 0, 65536, 1245157, 0, 65536, 1310693, 0, 65536, 1310694, 0, 65536, 1376230, 0, 65536, 1441766, 0, 65536, 1507303, 0, 65536, 1572840, 0, 65536, 1638376, 0, 65536, 1638377, 0, 65536, 1638378, 0, 65536, 1638379, 0, 65536, 1638380, 0, 65536, 1638381, 0, 65536, 1638382, 0, 65536)
+metadata/Tag = "Tilemap"
+
+[connection signal="body_entered" from="Player/Area2D" to="Player" method="_on_area_2d_body_entered"]

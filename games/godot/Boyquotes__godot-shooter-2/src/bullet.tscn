@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://bv67p1wcmjql7"]
+
+[ext_resource type="Texture2D" uid="uid://cptjxwrln3sgg" path="res://square.png" id="1_p8k2v"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wkfev"]
+size = Vector2(8, 4)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_u14fy"]
+size = Vector2(8, 4)
+
+[node name="Bullet" type="RigidBody2D"]
+gravity_scale = 0.0
+continuous_cd = 1
+metadata/Tag = "Bullet"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_wkfev")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.2)
+texture = ExtResource("1_p8k2v")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_u14fy")

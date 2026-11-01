@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3 uid="uid://bp7aasxw0xobf"]
+
+[ext_resource type="Texture2D" uid="uid://cptjxwrln3sgg" path="res://square.png" id="1_75hds"]
+[ext_resource type="Script" path="res://enemy.gd" id="1_ec6bm"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xb3l3"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vnl7o"]
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_nface"]
+polygon = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[node name="Enemy" type="CharacterBody2D"]
+script = ExtResource("1_ec6bm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_xb3l3")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.905882, 0.32549, 0.32549, 1)
+texture = ExtResource("1_75hds")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_vnl7o")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_nface")
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]
