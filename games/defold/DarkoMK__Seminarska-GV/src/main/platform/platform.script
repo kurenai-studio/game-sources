@@ -1,0 +1,13 @@
+function init(self)
+    self.speed = 2 -- brzina na platforma
+end
+
+function update(self, dt)
+    local pos = go.get_position()
+    if pos.x < -100 then
+        --go.delete()
+        msg.post("platformi/platform_build#platform_build", "delete_spawn", { id = go.get_id() })
+    end
+    pos.x = pos.x - self.speed
+    go.set_position(pos)
+end

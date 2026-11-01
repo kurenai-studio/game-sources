@@ -1,0 +1,30 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+    self.paketcinja = 0
+    self.snegulki = 0
+    --print(msg.url('.'))
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function on_input(self, action_id, action)
+	if action.pressed and gui.pick_node(gui.get_node("playme"), action.x, action.y) then
+		msg.post("controller:/controller_object#click_sound", "play_sound", {delay = 0, gain = 0.5})
+		msg.post("controller:/controller_object", "show_game")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_snegulki") then
+		local s = gui.get_node("snegulki")
+        gui.set_text(s, message.pp)
+	elseif message_id == hash("set_paketcinja") then
+		local s = gui.get_node("paketcinja")
+        gui.set_text(s, message.pp)
+    elseif message_id == hash("set_vrednost") then
+		local s = gui.get_node("vkupno")
+        gui.set_text(s, message.pp)
+	end
+end

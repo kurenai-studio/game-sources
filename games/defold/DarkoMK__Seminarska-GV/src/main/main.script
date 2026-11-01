@@ -1,0 +1,34 @@
+local grid = 1200 -- sirina na screen
+local o_spawn = 1300 -- pocetok na spawn na oblaci
+local speed = 15 -- brzina na oblaci
+local gridw = 0 -- pomosna za presmetka
+local minh_cloud = 0 --minimum visina na oblaci
+local maxh_cloud = 600 --max visina na oblaci
+
+function init(self)
+    msg.post("@render:", "clear_color", { color = vmath.vector4(0.52, 0.80, 1, 0) } ) --pozadina
+    --msg.post(".", "acquire_input_focus")
+end
+
+function final(self)
+    --msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	--oblaci
+	gridw = gridw + speed
+	if gridw >= grid then
+        gridw = 0
+        
+		if math.random() > 0.1 then
+			local h = math.random(minh_cloud, maxh_cloud)
+            local f = "#zaden_oblak"
+            if math.random() > 0.5 then
+                f = "#preden_oblak"
+            end
+           	local p = factory.create(f, vmath.vector3(o_spawn, h, 0), nil, {}, 1)
+		end
+	end
+	--oblaci
+	
+end
