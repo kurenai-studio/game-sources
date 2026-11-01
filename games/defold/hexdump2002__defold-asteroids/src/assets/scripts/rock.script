@@ -1,0 +1,10 @@
+function init(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			msg.post("/RockSpawner#rock_spawner","rock_destroyed", {id=go.get_id()})
+		end
+	end
+end

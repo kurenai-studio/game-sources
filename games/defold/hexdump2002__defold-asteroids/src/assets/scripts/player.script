@@ -1,0 +1,99 @@
+
+-- Vars common to any game object containing this script (shared)
+local krotation_speed = 90
+local kthrust_acc = 100 
+local kbullet_speed = 300
+local kmax_speed= 300
+
+local function rotateGameObject(self, degrees)
+	local radians = math.rad(degrees)
+	local rotation = vmath.quat_rotation_z(radians)
+	go.set_rotation(rotation)
+end
+
+local function getLookAt(self)
+	rotation = go.get(".", "euler.z")
+	local worldXAxis = vmath.vector3(math.cos(math.rad(rotation)), math.sin(math.rad(rotation)), 0)
+	worldXAxis = vmath.normalize(worldXAxis)
+	return worldXAxis
+end
+
+local function getFiringPoint(self) 
+	local lookAt = getLookAt(self)
+	return go.get_position()+lookAt*50
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	-- Instance vars
+	self.rotation_speed = 0
+	self.velocity = vmath.vector3(0,0,0)
+	self.thrust_acc = 0
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if self.rotation_speed ~= 0 then
+		local rotation = go.get('.', 'euler.z')+self.rotation_speed*dt
+		rotateGameObject(self,rotation)
+		self.rotation_speed=0
+	end
+	
+	if self.thrust_acc ~= 0 then
+		self.velocity = self.velocity+getLookAt(self)*self.thrust_acc*dt
+		if vmath.length(self.velocity) > kmax_speed then
+			self.velocity = vmath.normalize(self.velocity)*kmax_speed
+		end
+		self.thrust_acc = 0
+	end
+
+	go.set_position(go.get_position()+self.velocity*dt)
+
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("fire") and action.pressed then
+		local lookAt = getLookAt(self)
+		msg.post("#weapon", "fire",{direction=lookAt, initial_pos=getFiringPoint(self)})
+	elseif action_id == hash("thrust") then
+		self.thrust_acc = kthrust_acc
+	end
+
+	if action_id == hash("left")  then
+		self.rotation_speed=krotation_speed
+	elseif action_id == hash("right") then
+		self.rotation_speed=-krotation_speed 
+
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
+
+
+
+
+
