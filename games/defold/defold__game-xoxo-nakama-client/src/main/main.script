@@ -1,0 +1,17 @@
+local xoxo = require "xoxo.xoxo"
+local xoxo_nakama = require "main.xoxo_nakama"
+
+function init(self)
+	xoxo.on_connect(function()
+		-- login and set up nakama
+		xoxo_nakama.login(function(ok, err)
+			if ok then
+				msg.post(".", "acquire_input_focus")
+				-- let the game know that we are connected
+				xoxo.show_menu()
+			else
+				msg.post("/xoxo/controller", "ready")
+			end
+		end)
+	end)
+end
