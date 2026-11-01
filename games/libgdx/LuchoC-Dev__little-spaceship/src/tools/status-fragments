@@ -1,0 +1,74 @@
+#!/bin/sh
+# The single source of truth for what counts as a status fragment, and where it
+# belongs.
+#
+# Two callers ask these questions — tools/pre-pr-check before the pull request
+# exists, and .github/workflows/pr-check.yml on the pull request itself — and the
+# same rule written twice is the same rule drifting. That happened twice in one
+# phase: tools/hooks/commit-msg and tools/pre-pr-check kept separate lists of
+# exempt commit subjects until a legitimate revert failed the gate (issue #154),
+# and then these two kept separate fragment logic until pre-pr-check was taught to
+# count only added files and pr-check was not — caught by pr-check failing the
+# pull request that fixed the first drift.
+#
+# Usage: tools/status-fragments <base-ref> [head]
+#          prints the fragments this branch adds, zero or more, one per line
+#        tools/status-fragments --misplaced <base-ref> [head]
+#          prints only the added fragments that sit in the WRONG phase directory
+#
+# Exit status is always 0; the caller decides what a line means.
+#
+# ADDED, not merely changed: correcting an older fragment is not writing a new
+# one, and a branch must be able to fix a past fragment and record the fix.
+#
+# "Wrong directory" is derivable, and that is what makes it cheap. A branch is
+# opened against `phase/<phase>-<description>`, and that phase's fragments live in
+# `docs/plan/<phase>-<description>/status/`. A fragment anywhere else records one
+# phase's work in another phase's status, leaving the phase it belongs to silently
+# short — the failure issue #136 exists to prevent, arriving through another door.
+# Found by `reviewer` auditing phase 10d, by building the shape rather than reading
+# for it: a fragment named for the right issue in the wrong phase's folder passed
+# both checks. Issue #155.
+#
+# A branch opened against `dev` is exempt from the directory rule: `dev` names no
+# phase to compare against, and a phase branch's own fragments are all in its own
+# directory anyway.
+
+set -u
+
+MODE="added"
+if [ "${1-}" = "--misplaced" ]; then
+  MODE="misplaced"
+  shift
+fi
+
+BASE="${1-}"
+HEAD_REF="${2-HEAD}"
+
+[ -n "$BASE" ] || { echo "usage: tools/status-fragments [--misplaced] <base-ref> [head]" >&2; exit 2; }
+
+MERGE_BASE="$(git merge-base "$HEAD_REF" "$BASE")" || exit 2
+
+ADDED="$(git diff --name-only --diff-filter=A "$MERGE_BASE..$HEAD_REF" \
+  | grep -E '^docs/plan/[^/]+/status/[^/]+\.md$' || true)"
+
+if [ "$MODE" = "added" ]; then
+  [ -n "$ADDED" ] && printf '%s\n' "$ADDED"
+  exit 0
+fi
+
+# Which phase does the base name? Strip any remote prefix, then `phase/`.
+case "$BASE" in
+  *phase/*) PHASE="${BASE##*phase/}" ;;
+  *) exit 0 ;;
+esac
+
+[ -n "$ADDED" ] || exit 0
+
+printf '%s\n' "$ADDED" | while IFS= read -r F; do
+  [ -n "$F" ] || continue
+  case "$F" in
+    "docs/plan/$PHASE/status/"*) ;;
+    *) echo "$F" ;;
+  esac
+done

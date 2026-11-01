@@ -1,0 +1,9 @@
+.flow{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:.4rem 1.1rem;
+  counter-reset:step}
+.flow li{counter-increment:step; display:flex; align-items:baseline; gap:.5rem; font-size:.92rem}
+.flow li::before{content:counter(step,decimal-leading-zero); font-family:var(--mono);
+  font-size:.58rem; letter-spacing:.1em; color:var(--accent)}
+.link{background:none; border:0; padding:0; cursor:pointer; color:var(--text);
+  font:inherit; border-bottom:1px solid var(--line)}
+.link:hover{color:var(--strong); border-bottom-color:var(--accent)}
+.flow li span{color:var(--muted)}
