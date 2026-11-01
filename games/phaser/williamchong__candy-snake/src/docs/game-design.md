@@ -1,0 +1,1132 @@
+# Candy Snake — Game Design Document
+
+Working title: **Candy Snake** (a.k.a. *The Candy Puller*)
+
+## 1. Pitch
+
+You are an old-fashioned candy maker. Boil sugar, pull it into a long glistening
+strand, knead dye into it, then chop the strand into bite-sized candies for the
+children lining up at your shop window.
+
+Mechanically: a **snake-like** game crossed with **Overcooked-style order
+serving**. The snake *is* the pulled sugar strand. Eating sugar grows it, eating
+dye colors it, and driving it into the chopping block converts body segments
+into candies that are served to waiting customers.
+
+- **Platforms:** Web (desktop browser + mobile browser), landscape and portrait.
+- **Session shape:** Endless arcade run. Difficulty ramps until lives run out;
+  final score goes to a local high-score table.
+- **Audience:** Casual, all ages. One-hand playable on mobile.
+
+## 2. Theme & fantasy
+
+Traditional candy making, step by step, mapped onto game verbs:
+
+| Real-world step            | Game verb                                      |
+| -------------------------- | ---------------------------------------------- |
+| Boiling / gathering sugar  | Drawing the strand over **sugar** → grows      |
+| Kneading dye into the mass | Drawing it through **dye** → segments tint     |
+| Pulling into a thin strand | The snake body itself                          |
+| Chopping into candies      | Driving into the **chopping block**            |
+| Serving the shop window    | Auto-matching candies to **customer orders**   |
+
+The board is the kitchen floor. The chopping block is a fixed bench along the
+right wall, beside the serving window where customers (children) appear. The
+shelf and the queue share that side of the board, so a candy's whole path —
+bench, shelf, child — stays in one place (§10).
+
+### Art direction — pastel cotton candy (chosen in Phase 1)
+
+Pixel art in an **8-bit format** — sprites authored at 8×8 source pixels and
+scaled up by an integer factor with nearest-neighbour filtering — but styled
+as **pale cotton candy** rather than arcade neon: soft pastels, minimal
+detail, and a floor of faint diagonal rainbow bands that never competes with
+the candy sitting on it.
+
+- Sprites are ASCII pixel maps in `render/textures.ts` — still zero image
+  assets, still generated at boot. Textures are baked at 16×16 so the strand
+  (below) can sit inset from its cell and still carry the same soft edge; the
+  8×8 maps are doubled into that, so they render exactly as authored.
+- Detail is deliberately minimal: a flat fill and one soft edge, no interior
+  shading. The head adds two dots for eyes and nothing else.
+- Sprite pixels are grays because Phaser tinting *multiplies*: white takes the
+  full candy color and the gray edge becomes a deeper shade of it. One texture
+  therefore serves every color in §4 and stays readable without a hard outline.
+- **Comfort is a constraint, not a polish item.** The snake occupies whole
+  cells five times a second, but the view slides sprites between them —
+  teleporting a high-contrast sprite a whole cell at 5 Hz reads as a strobe
+  and is genuinely painful to look at. For the same reason effects stay local
+  and soft: a self-hit puffs at the cells that broke, never a screen flash.
+- The narrative stays the candy-maker fiction (dye jars, chopping block); the
+  look is purely aesthetic and constrains only the generated textures and the
+  juice pass (Phase 7).
+
+#### The strand is drawn as one continuous rope (revised after Phase 3)
+
+The body was a chain of identical lozenges, each carrying a soft edge on all
+four sides, so every joint between two segments showed a seam — and a seamed
+chain of beads reads as a snake game however the mechanics behave. Each cell
+now draws a rope piece instead — **a bar, or the end cap** — laid along the way
+that segment is travelling, and rotated. The soft edge runs along the rope's
+flanks only, never across a joint, so the strand is unbroken and a color change
+simply runs along it.
+
+A turn is **two bars crossing at the corner cell**, not one elbow covering it.
+That is the second half of the same revision, and it was learned the hard way:
+a piece bent to where its neighbours will *end up* carries its bend up to a
+whole cell away from the corner it belongs to for the whole of a move, and the
+strand spent every turn reading as a handful of loose boxes. A segment is one
+cell of rope centred however far it has travelled, so it only straddles the
+bend for an instant at either end of a move and is a plain bar for the middle
+of it — and two bars crossing draw the same silhouette an elbow would, in the
+right place at every point of the slide. Each piece is drawn a flank's width
+longer than its cell so the crossing cannot open a hairline at the outside of
+the turn.
+
+Everything else above still holds. The strand keeps the same flat
+fill-plus-soft-edge in the same palette — no gloss, no interior shading — and
+a piece cut loose is not rope any more, so debris and the shard puff still come
+apart as the old lozenges.
+
+**Only the shape was wrong, so only the shape changed.** A literal
+confectioner's bench (stone slab, steel cutter, dark workshop), a maker's gloved
+hand in place of the head, and a wet-sugar gloss down the rope were all built
+for this and thrown away: the pastels are the identity, *Candy Snake* is the
+joke, and photo-reference is for how the sugar behaves, never for how the room
+is painted.
+
+## 3. Core loop
+
+```
+        ┌──────────────────────────────────────────────┐
+        │                                              │
+        ▼                                              │
+  eat sugar (grow) ──► eat dye (tint body) ──► reach chopping block
+        ▲                                              │
+        │                                   body → candies, one per segment
+        │                                              │
+        │                                              ▼
+        │                              candies auto-match customer orders
+        │                                   │                    │
+        │                                match: score        no match: shelf
+        │                                              │
+        └──────────── plan next batch ◄────────────────┘
+```
+
+Failure pressure comes from customer patience timers (expired customer = −1
+life) and from self-collision destroying carried sugar.
+
+## 4. The color system (RYB, discrete)
+
+Dyes are the three **paint primaries**: Red, Yellow, Blue. A color is simply
+*the set of primaries mixed in*, giving exactly 8 states:
+
+| Color      | Primaries in the mix | Tier      | Notes                          |
+| ---------- | -------------------- | --------- | ------------------------------ |
+| Raw        | (none)               | 1 — easy  | Uncolored sugar, off-white     |
+| Red        | R                    | 2         |                                |
+| Yellow     | Y                    | 2         |                                |
+| Blue       | B                    | 2         |                                |
+| Orange     | R + Y                | 3 — hard  |                                |
+| Green      | Y + B                | 3         |                                |
+| Purple     | R + B                | 3         |                                |
+| Brown      | R + Y + B            | mistake   | Over-mixed. No regular orders. |
+
+Rules:
+
+- **Blending, never overwriting.** A dye adds its primary to a segment's mix.
+  A red segment taking blue becomes purple; a purple segment taking yellow
+  becomes brown. Applying a primary a segment already holds does nothing.
+- **The jar dyes one segment per move, as that segment crosses it.** The jar
+  stays where it is and the strand is drawn through it (see §5). Because the
+  body retraces the head's path exactly, every segment on the strand when the
+  head opened the jar *will* cross it — so the strand ends up uniformly
+  blended, but it turns visibly, one segment at a time, from the head end
+  back. The head is the candy maker, not sugar, so it takes no color — it only
+  **flashes** the jar's hue as it passes through, then washes back to its own
+  dark tint. That is confirmation, not color: nothing about the head is dyed,
+  and the flash lasts less than one grid move at the ramp's fastest speed, so
+  it is always gone before the first segment turns.
+- **New sugar is raw.** A cube taken *after* the head passed a jar plants its
+  segment only once the tail has cleared the cube — which is a move later than
+  the jar is spent, so it can never catch that dye. The body therefore becomes
+  a multi-colored production line (e.g. `[purple, purple, raw, raw]`). A cube
+  taken *before* the jar is part of that batch and does get dyed.
+- **Brown is the over-mix trap.** It punishes careless dye pickups. Brown
+  candies still go to the shelf; a rare "mystery flavor" customer who accepts
+  brown appears occasionally as a mercy/cleanup mechanic.
+- **Dyes on the map are primaries only.** Secondary colors must be mixed by the
+  player — that's the skill.
+
+### Mixing cheat sheet (in-game, non-obstructive)
+
+The mixing table must always be discoverable without blocking play:
+
+1. **The opening levels are the primary hint channel** (§7). A stocked board
+   teaches the recipe by making the wrong dye impossible to reach; the queue
+   itself shows only the candy each child wants, never the jars that go into
+   it. A recipe printed beside every order is a table the player reads instead
+   of playing, and it makes the mixing rule someone else's answer.
+2. **Collapsible cheat-sheet panel.** A small tab at the screen edge (bottom
+   corner on desktop, top edge on portrait mobile) expands into a compact
+   mixing wheel: the three primaries with each pair's result drawn between
+   them, in jars and candies with their symbols (§4) rather than in letters —
+   the HUD carries no prose (§11), and a wheel is read at a glance where a
+   written table has to be studied. Semi-transparent and never covering the
+   play grid's active area, so it costs nothing to leave up.
+3. **It arrives with the mix level, and from then on is shown unless the
+   player has hidden it** — that choice is persisted. The first two opening
+   levels stock at most one jar, so a wheel over them would answer a question
+   the board cannot yet ask; §7 authors those levels by removing options, and
+   the wheel (tab included) is one of the options removed. It used to take
+   itself down a few seconds after the first turn,
+   which is what "non-obstructive" was originally read to mean. From the chair
+   it read as the game confiscating the one reference it has: *what makes
+   purple* does not stop being a question once a player starts steering, and a
+   panel that is out of the kitchen and see-through is not in the way. The tab
+   is how a player who disagrees puts it away, and the game remembers that they
+   did.
+
+### Color accessibility
+
+Color-matching gameplay must not rely on hue alone:
+
+- Every color pairs with a **symbol** shown on dyes, body segments, candies,
+  and the candy a waiting child holds up (e.g. R=♥, Y=★, B=●, O=▲, G=♣, P=◆,
+  Raw=○, Brown=✖).
+- A "high-contrast symbols" toggle in settings makes symbols larger.
+
+### Palette constraints (binding on the Phase 2 `colors.ts` table)
+
+A segment's color *is* the thing the player produces and matches, so the eight
+states are mechanics, not decoration. The pastel art direction (§2) therefore
+has to earn its palette rather than pick pretty values:
+
+- **All eight states stay mutually distinguishable at pastel saturation.**
+  Pale tints compress exactly the differences that separate red from orange
+  and blue from purple. If a pair collides, the palette gives way, not the
+  mechanic.
+- **Non-candy elements must not use candy hues.** The maker's head, sugar
+  cubes, HUD chrome and the floor are not candies. They are separated by
+  *value* — the head is the darkest thing on the board, the floor the palest —
+  which leaves the whole hue range free to carry meaning. Picking a "spare"
+  hue does not work: the eight states already span most of the wheel. The one
+  exception is momentary: the head borrows a jar's hue for the length of its
+  pickup flash (§4). A borrowed hue is readable precisely *because* the head
+  never otherwise has one, and it must always end back at its own value.
+- **The rule binds the kitchen, which is where hue means something.** On the
+  board a color is the thing the player mixes and matches, so anything else
+  wearing one is a candy that cannot be served. The menu is not the board: it
+  holds nothing to match, and its parade already walks six of the eight past.
+  So the game's name is lettered in those same six, in the same wheel order
+  (§11), and the play screen keeps the rule whole. Two conditions come with it —
+  the letters take their colors from `core/colors.ts` like everything else, so
+  the sign can never show a hue the palette does not hold; and each is edged
+  the way a candy is, in a deeper shade of its own color. The palette is tuned
+  to stay separable from *itself* on a pale floor rather than to be legible as
+  text against a pale ground, so a flat pastel word all but disappears into the
+  menu's ground — the two faintest letters clear it by 1.01 and 1.10. What
+  carries them is the rim the art direction already puts around every sprite
+  (§2), and not the symbols' ink: the sign is made of the same sugar the board
+  is, so it is shaded the way the board's sugar is shaded.
+- **Raw is off-white, so a raw strand and a sugar cube share a color.** That
+  is correct — they are the same material. Size and symbol separate them.
+- Symbols are the fallback wherever two pastels read alike, which is why they
+  are in from Phase 2 rather than bolted on during polish.
+- The table lives only in `core/colors.ts`; board, HUD and cheat sheet all read
+  it from there, so they cannot drift apart (architecture §7).
+
+## 5. Entities & stations
+
+### The snake (candy maker)
+
+- **Head** = the candy maker (a little chef sprite). Never destroyed.
+- **Body** = pulled sugar segments, each with its own color state.
+- Moves on a grid at a fixed tick rate (see §9 tuning). Constant motion,
+  classic snake steering: can turn 90°, never reverse 180° directly.
+- **Starting length:** head only (length 1, no body).
+
+### Pickups are passed *through*, not eaten
+
+Sugar and dye share one rule, and it is the rule that gives both their feel:
+
+- The head **opens** a pickup by entering its cell. The pickup does not
+  disappear — it stays put, under the strand, and does not respawn.
+- It is **spent** only once the strand has cleared its cell again, which
+  (since the body retraces the head's path) is the move after the tail
+  crosses it. A long strand therefore sits on a pickup for many moves.
+- Nothing on the board teleports: a cube is never "swallowed" at the head and
+  re-materialised as length at the far tail.
+
+### Sugar
+
+- Spawns at random free cells. **Invariant: at least one sugar is always on
+  the map.**
+- The cube stays where it is while the whole strand passes over it. When the
+  tail clears the cube's cell, **the cube becomes the new tail segment**, raw,
+  on that exact cell — visually it is never gone, it just stops being a cube.
+  (The tail vacated that cell on the same move, so the strand stays unbroken.)
+
+### Dye
+
+- Spawns as red / yellow / blue jars at random free cells; at most one jar of
+  each primary on the map at a time.
+- The jar tints **one segment per move** — whichever is standing on it — and
+  is spent when the strand clears it (see §4). A jar the strand crosses with
+  **no body** kneads nothing and is wasted (small "splash" feedback).
+- **Pity spawner:** if an active order requires a primary that the player
+  cannot currently obtain (not on map, not derivable from shelf stock or the
+  current body), that dye is guaranteed to spawn within a few seconds — orders
+  are never unwinnable by spawn luck (see §8).
+
+### Chopping block
+
+- A fixed station occupying a small run of cells down the right wall, next to
+  the serving window. Only a few cells tall, so the column it sits in is still
+  a lane the player can use — crossing the bench must be a decision, not a toll.
+  It sits off the row the maker spawns in rather than centred on the wall. The
+  maker starts empty-handed and drives straight until the player turns, so a
+  bench in that lane would chop the first strand they build a few cells after
+  they built it — the spawn lane has to be somewhere to gather.
+- **Reaching it cuts the strand loose.** The head entering a bench cell severs
+  the whole strand there and keeps going: the maker drives on, empty-handed
+  and immediately free to start pulling the next batch.
+- The cut batch **stays exactly where it lay** and is drawn into the block
+  **one segment per move, from the block end**, each leaving as a candy of
+  that segment's color. Nothing is dragged across the board and nothing
+  teleports — the same rule pickups follow above, and breaks in §6.
+- Candies therefore come out **oldest sugar first**: the dyed head end of the
+  batch leads and the raw tail end trails, which is the production line read
+  back in the order it was made.
+- Chopping the whole strand is intentional — there is no partial cut. Anything
+  no customer wants isn't wasted: it goes to the shelf.
+- **Why there is no partial cut**, since it gets proposed and the reason is not
+  the obvious one. A strand can only be parted at one end. Cutting a *suffix* —
+  keeping the front of the strand and severing everything behind — is safe, and
+  is exactly what a self-hit already does (§6); cutting from the front instead
+  would leave the segments behind the cut a gap adrift of the head, and next
+  move they would teleport to close it. But the front of the strand is the
+  **oldest** sugar, and the oldest sugar has been through the most jars, so the
+  only cut the movement rules permit is the one that keeps the dear end and
+  sells the cheap one — a maker who kept two rungs of an orange-yellow-raw
+  ladder would be selling the raw and banking the orange. **The tail is the
+  cheap end**, and a partial cut can only ever take the cheap end.
+  Two further costs, for anyone who returns to this: a retained segment can
+  never lose a primary (§4's blending is one-way), so it drifts to brown and
+  matches no regular order; and the bench is a run of cells, so a maker driving
+  *along* it would part the strand once per cell.
+- The maker is not sugar, so a head crossing the bench alone cuts nothing.
+
+### Shelf (candy cache)
+
+- Holds up to **6** candies that didn't match any active order.
+- When a new customer arrives, the shelf is checked first — instant serve if a
+  match exists.
+- If the shelf is full, the **oldest** candy is discarded (with a visible
+  "stale candy" toss animation) to make room. A batch longer than the shelf is
+  therefore a real risk: chop twelve segments with no customers waiting and the
+  first six are gone.
+
+### Customers (children)
+
+- Appear at the serving window (the right side of the kitchen, beside the
+  chopping block and the shelf), up to a cap that grows with difficulty
+  (start 1, later up to 3–4 queue slots).
+- Each child is **a character, not a card**: they walk on from the door end of
+  the queue, take their place in line, and hold the candy they came for in a
+  speech bubble over their head — the color and its symbol, and nothing else.
+  The recipe is not shown (§4): what they want is an order, not instructions.
+- Their **patience** shows twice, both without words: a bar draining in real
+  time at their feet, and their own face, which turns from calm to wide-eyed
+  once the clock is into its last stretch.
+- Serving is automatic the moment a matching candy exists (just produced or on
+  the shelf). Served customer → score, a delighted face, and a walk-off.
+- Patience reaches zero → the face turns cross, the child walks out, **−1
+  life**.
+- A child on their way out **steps clear of the line first**, and walks off in
+  front of it: the queue closes up the moment they are off it, so a leaver who
+  stayed in lane would be walked through by whoever is moving up.
+- **Nothing about the ending shows until they reach the window.** A child can be
+  spoken for while still walking on — a new arrival sweeps the rack, so one
+  whose candy is already sitting there is served on the spot (below) — and the
+  serve is settled the instant it happens. What they *do* about it is not: the
+  face, the order leaving their hands and the confetti all wait for them to
+  arrive. A candy handed over half way up the line is handed
+  over at a counter nobody has reached, and it reads as a child who changed
+  their mind about ordering.
+
+#### Who gets the candy
+
+Matching is **exact** — a purple order takes purple and nothing else, and brown
+matches no regular order — and the two directions resolve differently:
+
+- **A candy leaving the block is offered to the queue first**, and goes to the
+  **most impatient** of whoever wants it (ties to whoever has waited longest).
+  A candy that could have saved a life must never go to someone with time to
+  spare. Only what nobody wants is racked.
+- **A customer walking up sweeps the shelf first**, taking the **oldest**
+  match — the same end staleness eats from, so a candy is never stepped over
+  and left to go stale behind a newer twin.
+
+Together those make one state unreachable: a customer waiting beside a candy
+they ordered. The simulation tests assert it on every tick.
+
+## 6. Movement, collision & failure rules
+
+- **Self-collision does not kill.** Running the head into your own body
+  **breaks** the strand at the impact point: the hit segment *and everything
+  behind it* (toward the tail) is cut loose. The head and segments in front of
+  the impact survive and keep moving. Loss of material and time, not of life.
+- **The severed piece freezes and crumbles.** It stops dead where it broke and
+  comes apart **one block per move, starting at the impact and travelling
+  toward the loose tail end** — the crack propagating down the strand. Debris
+  is inert: it blocks nothing and collides with nothing, but pickups will not
+  spawn on it while it is still there.
+- A pickup the lost length was still passing through settles by **what it has
+  already paid**, and the two kinds differ: a **cube** is left on the board,
+  closed again, for the head to come back for; a **jar** has already kneaded its
+  color into the piece that was cut, so it is **spent**. A batch cut at the
+  block leaves its pickups the same way, for the same reason. §8 has the full
+  rule and the grind loop that re-closing a jar turned out to open.
+- **Walls:** the kitchen edges wrap (pass-through service doors on each wall —
+  exit left, re-enter right). This keeps flow forgiving on mobile. Station
+  cells (the chopping block) are crossed, not collided with: they interact
+  with whatever passes over them and are never hazards.
+- **Lives:** start with **3**. Lost only by letting a customer's patience
+  expire. 0 lives → game over → score screen + local high-score table.
+
+## 7. Orders & difficulty ramp
+
+Order tiers map to color tiers: Tier 1 = raw, Tier 2 = primary, Tier 3 =
+secondary (mix required).
+
+### Opening levels (built-in tutorial)
+
+Every run — not only the first — starts with four scripted levels. The board is
+stocked with exactly what that level's order needs and nothing else:
+
+| Level | Order                   | On the board                    | What it teaches                       |
+| ----- | ----------------------- | ------------------------------- | ------------------------------------- |
+| 1     | Raw                     | sugar, no jars                  | pull sugar, chop at the block         |
+| 2     | One primary             | sugar, **then** that jar        | cross the sugar *first*, then the jar |
+| 3     | That primary + one more | sugar, **then** those two jars  | two dyes blend into one color         |
+| 4     | **Two children**, both wanting that same mix | a second sugar once the first is on the strand | one cut can feed two children (§9) |
+
+A restricted board teaches better than any text can, and it restricts *when* as
+well as *what*:
+
+- **Which jars.** In level 2 the only jar on the floor is the one the order
+  wants, so "wrong dye" is not a mistake the player is able to make.
+- **When they arrive.** A level lays no jar at all until the first cube is on
+  the strand, so crossing the jar first is not a mistake the player is able to
+  make either. A board holding a cube and a jar at once offers two moves and the
+  wrong one is the *louder* one — the jar is a saturated color wearing a symbol
+  and the cube is off-white — which is how a playtester came to drive straight
+  at the jar, over and over, and never take a cube at all. With the jar withheld
+  there is one thing on the floor to take, and when it does arrive the strand is
+  already carrying something, so crossing it *visibly turns a segment*. That is
+  the lesson delivered as cause and effect rather than as a mistake to be
+  inferred from a splash.
+- **When they stop.** A level lays a jar only while that jar still has something
+  to do, so once the candy carries the color the floor goes bare and the block is
+  the only thing left on it. Re-laying the jar the moment the strand cleared the
+  last one is eating food and food respawning — a playtester who had passed level
+  1 read it exactly that way and went on crossing jars with a finished candy in
+  hand. The two halves are one rule: a jar is out while the strand still needs
+  it, which for an empty strand is never and for a dyed one is no longer.
+
+Difficulty here is authored by removing options.
+
+- The orders are **rolled from the run's seed**, so the levels teach the rule
+  rather than a memorised answer. Level 3 deliberately *extends* level 2's
+  primary instead of drawing a fresh pair — it reads as a progression (you made
+  yellow, now add red for orange), and it means the stocked set only ever grows,
+  so no jar is ever taken off the board mid-run. Nothing on this board
+  teleports, and that includes the tutorial's own furniture. Holding a jar back
+  until there is a strand to dye is not an exception to that: withholding is a
+  jar not yet laid, never one removed, so a jar already on the floor stays there
+  whatever the maker is carrying.
+- **Opening customers have no patience at all**: no bar, no countdown, no way
+  to lose a life. A tutorial that plays on every single run must not be able to
+  cost the run, and a bar that drained toward nothing would be a lie about the
+  rules. They pay base points with no patience bonus (§9) and do build the
+  streak.
+- **Only the cubes the level's orders need.** A level of one candy carries one
+  sugar cube and does not lay another until that one has come back through the
+  block; restocking the moment the first is pulled would offer a segment the
+  level never asked for, which is the same "remove the options" rule the jar
+  stock is authored by. Level 4 asks for two candies, so it lays a second cube
+  once the first is on the strand — and a third never. (The endless game keeps
+  §8.1's floor of one cube on the map at all times.)
+- **Level 4 offers its lesson rather than forcing it**, which is the one place
+  the "remove the options" rule stops short, and deliberately. Holding the jars
+  back until *both* cubes were on the strand would make the pair the only move
+  the level has — and it strands a maker who does not build to length: carry one
+  cube, find no jar, take it to the block, and the raw candy nobody ordered goes
+  on the rack while the level starts over. Nothing in the opening levels may be
+  able to stall, so the jars come out on the first cube as they always have. What
+  the level does instead is *show* the pair: two children holding up the same
+  bubble, and a second cube on the floor the moment there is room for it. A maker
+  who chops one candy at a time still finishes the level — one child fed, the
+  cube for the other laid on the empty strand — they simply do not get the combo.
+- **It is the only level that pays a combo**, and that is what it is for: the
+  meter (§11) and the bonus (§9) are otherwise things a player meets without ever
+  having been shown what makes them happen.
+- A level ends when its last customer is served; the next child walks up a second
+  later — halved for level 4, whose two places at the window share the beat, so
+  its second child follows the first in rather than trailing a whole one — and so does the endless game's first, which inherits that beat rather
+  than opening on the handover's own empty-window gap (4s at Mixing — a third
+  of its 12s interval, the window being empty of all three slots — which would
+  read as the game having ended rather than started). Nothing can
+  be soft-locked: a level's jar is not on the floor until there is a strand to
+  dye, and a strand that still needs the color still calls the jar back, however
+  it came to need it. The level-2 lesson is not taught by retry — retry was
+  tried, and a playtester met it by driving at the jar again rather than by
+  learning from it. It is taught by not offering the wrong move.
+- These four levels **are** the teaching, on their own: no modal, no toasts, and
+  nothing to dismiss. What the player is shown is a board holding exactly one
+  useful move and a child holding up what they want, which is a thing to try
+  rather than a thing to read. Each carries a one-line caption over the kitchen
+  naming its lesson, and that is the whole of the prose.
+
+The endless ramp below starts only once level 4 is served, and it starts at the
+**Mixing** row rather than Warm-up: the opening levels have already taught raw,
+primary and secondary, so dropping back to 100% raw orders would read as going
+backwards. (Warm-up's row is kept in the table as the shape of what the ramp
+grew out of.)
+
+Endless ramp, driven by elapsed time and/or **score** (whichever is further
+along — keeps both slow and strong players on curve):
+
+The curve is anchored on the rows below and interpolated between them, so every
+knob moves smoothly rather than stepping at a stage boundary. Time here is
+counted from the **handover** — the moment the last opening level is served —
+not from the start of the run, so a player who takes their time learning does
+not find the rush already waiting. `core/difficulty.ts` holds the table.
+
+| Stage    | Since handover | Order mix (T1/T2/T3) | Max queue | Patience | Arrival | Snake speed |
+| -------- | -------------- | -------------------- | --------- | -------- | ------- | ----------- |
+| Warm-up  | *(pre-tutorial — kept as the shape the ramp grew out of)* | 100 / 0 / 0 | 1 | 45 s | — | 5 cells/s |
+| Handover | 0 s            | 10 / 50 / 40         | 3         | 42 s     | 12 s    | 5 cells/s   |
+| Settled  | 1 min          | 10 / 50 / 40         | 3         | 42 s     | 10 s    | 7 cells/s   |
+| Rush     | 3 min          | 5 / 35 / 60          | 4         | 36 s     | 6 s     | 8 cells/s (cap) |
+| Past it  | 7 min          | 5 / 35 / 60          | 4         | 34 s     | 4 s     | 8 cells/s (cap) |
+| Backstop | 15 min         | 5 / 35 / 60          | 4         | 26 s     | 2.8 s   | 8 cells/s (cap) |
+
+- Demand starts at the **Mixing** row but speed starts at Warm-up's, and eases
+  up to Mixing's over the first minute. The opening levels have already taught
+  all three tiers, so dropping the order mix back would read as going backwards
+  — but a strand that jumped 40% faster the instant the third child was served
+  would lurch.
+- **Snake speed is the one stepped column.** Every other knob interpolates so
+  it cannot lurch; speed did too, and it made the game's most expensive lever
+  imperceptible — measured off the curve, the interval changed 0.52% per five
+  seconds between the Settled row and the cap, against a discrimination
+  threshold near 5%, and then stopped moving at three minutes with the median
+  run still ninety seconds from ending. So the interval is snapped to a ladder
+  of **seven geometric rungs, 6.9% apiece** (`SPEED_RUNGS`), and each new rung
+  is announced: the head pulses, and a cue climbs a step. Rung 5 is 143 ms —
+  the Settled row exactly, which fell out of the table's own proportions rather
+  than being arranged. The snap is to the *nearest* rung, so the mean interval
+  moves 0.003% and the curve the sweeps measured is the curve that still runs.
+- **The top rung is news, and is drawn and sounded as such** — a double pulse
+  and an octave. Past it the strand never gets faster, and a player who is not
+  told that spends the rest of the run braced for an acceleration that is not
+  coming. It is the only lever whose *exhaustion* the game announces, because
+  it is the only one the player would otherwise keep waiting on.
+- **Speed is not coupled to the depth of the window, deliberately.** The queue
+  already drives the arrival lever (the bullet below), so keying speed to it
+  too doubles one feedback path instead of adding one — and it points the wrong
+  way either way: faster-when-busy compounds falling behind, slower-when-busy
+  pays the maker for being late. Speed is also the tempo the player's hands are
+  matched to; a serve that *slowed the maker down* would read as success being
+  punished. The tide (below) is where "the shop got busier" belongs.
+- **Arrival interval is the lever that ends a run.** Speed caps at 8 cells/s, so
+  past the Rush row the window is the only thing still tightening; a curve that
+  flattened while the player still had headroom would never bring the run to an
+  end (§1: difficulty ramps *until lives run out*).
+- **The Arrival column is the gap with one slot left to fill**, not a flat
+  metronome, and an emptier window fills proportionally faster. Of three slots:
+  an empty window waits a third of the column figure, one child already waiting
+  makes it two thirds, and two makes it the whole figure. So an empty window
+  fills in two intervals rather than three, and a window near capacity is under
+  exactly the pressure the column always named. That is more demand over a run
+  rather than the same demand rearranged, and deliberately so: on this same
+  table it ends a batching run at 5 minutes where a flat interval took 8.
+- **But every child walks in, and nothing may skip the walk.** No two arrivals
+  fall closer than one second (`WALK_IN_MS`), which is the same beat the opening
+  levels put between a serve and the next child. The rule above and the rush
+  floor below both bottom out well under that — the floor at nothing at all, so
+  serving the third of three children a running tide insists on put the
+  replacement at the counter *on the same step*. Measured at a grown peak, an
+  emptied window was refilling at 577 ms a child. What that delivers is a shop
+  that restocks by teleport, and a maker who can never see a serve land before
+  the next order is standing in the gap; the eleventh sitting reported it back
+  as Sisyphus. It is a floor on the *shape* of the arrivals rather than a second
+  interval added to them — the clock is still paid while the child is walking,
+  so they arrive the moment the doorway clears. It binds only in the endless
+  game: the opening levels author their own beat, and level 4 deliberately
+  halves it so its pair reads as a pair.
+- **Read flat, the Max queue column was unreachable.** Children arrived on a
+  fixed beat whatever the window held, so any maker who served faster than the
+  interval emptied it and kept it empty, and the queue never rose above one on
+  any seed at any point on the ramp. A player who can only ever see one order
+  cannot plan a ladder against the window, which is the whole point of the
+  window being deeper than one.
+- **Whichever of elapsed time and score is further along drives the curve**, at
+  70 ms of ramp per point, so a strong player is not held back by the clock and
+  a stalling one still ramps. It was a count of candies served (6 s each) until
+  the score-ramp pass. Score replaced it for a legibility reason first: the HUD
+  shows a score and nothing else, so "the shop gets busier as your score climbs"
+  is a rule the player can read off the screen, where "as you serve your
+  thirtieth candy" is a rule about a number nothing displays (§11).
+  - **The 70 is measured, not chosen.** Traced against ramp position, both
+    reference bots settle at 65–70 ms per point from ramp-minute 1.5 on, despite
+    serving at very different rates — score turns out to be the *steadier* of
+    the two measures across playstyles. At 70 the swap on its own left the
+    batching maker's median death unchanged (4.66 → 4.67 min), which is what it
+    was fitted to do.
+  - **The median then moved anyway, and the cause was a bug the swap exposed.**
+    The brown-mercy gate read the raw clock where its own rule said "once the
+    ramp has settled"; every other reader of that anchor goes through the ramp.
+    Harmless while the clock and the curve were close, it holds the mercy back
+    from exactly the player the rest of the ramp has already moved on once score
+    drives the curve. Fixed, the median reads **5.16 min** — a mercy customer is
+    a free serve, and strong scorers now reach theirs sooner. Re-measured with
+    the gate fixed on both arms: 4.66 (serve count) against 5.16 (score), both
+    inside the 4–6 target.
+  - **What keying on score buys is the tail.** On that same re-measured draw,
+    runs past seven minutes fall 3 of 16 to 2 of 16 and the interquartile range
+    closes from 4.3–6.7 to 4.7–6.2 — in from *both* ends. A score is a read on
+    how well a run is *going* where a serve count reads only how long it has
+    been going on, so the runs that used to get away are the ones the curve now
+    catches.
+  - **Scoring well therefore pulls the curve forward, and that is deliberate.**
+    §9 multiplies a serve by tier, by patience and by streak, so a tier-3 served
+    promptly on a capped streak is 150 points against 10 for a late raw — 10.5 s
+    of ramp against 0.7, where the old count gave both 6 s. This is the first
+    place to look if the ramp ever reads as punishing a good run.
+  - The clock is kept as the floor rather than dropped for score alone: without
+    it a maker who serves just enough to hold their lives could park the curve
+    at the handover's interval indefinitely, and §1 has difficulty ramping
+    *until lives run out*.
+- The rare **brown-accepting customer** (~5% once the ramp has settled) only
+  appears if a brown candy is on the shelf. Because a new arrival sweeps the
+  rack, they are served the moment they walk up: the cleanup is the whole visit.
+- Measured against the reference bots, a maker who batches dies around **7.0
+  minutes** on most seeds, against a target of **6–8**.
+- **That target has now been 8–10, 4–6 and 6–8, and the round trip is one
+  argument rather than indecision.** The seventh sitting cut it to 4–6 on a
+  point that still holds: **every lever that adds a new thing to do is spent by
+  the 3-minute mark** — max queue at 2 min, the order mix and the speed cap at
+  3 — and past those only patience and the arrival interval move, neither of
+  which adds anything, only subtracts slack. A target set past the last of the
+  levers was asking this table to hold attention with arithmetic. What that
+  settles is where a run should *end*; what it does not settle is how much room
+  there is inside it, and the eleventh sitting's report was that there is none —
+  *too fast, no time to stock candy at all*. So the levers-run-out problem is
+  answered by the tide instead, which is the one thing on this curve still
+  growing when the rest have stopped, and the target goes back out to leave room
+  to build into it. What bought the move is the Patience column, widened ×1.2
+  across the table: patience is the time a candy has to be *made* in, where the
+  arrival interval only says how much is being asked for. The arrival column and
+  the score rate were both tried first and neither could reach 6 alone. See the
+  implementation plan for those runs — including the one finding this table could
+  not fix.
+
+### The window echoes itself
+
+Orders are not drawn independently. **A quarter of the time** (`orders.ts`'s
+`TWIN_CHANCE`), an arriving child asks for a color a child already at the window
+is asking for, instead of rolling one from the stage's weights.
+
+The reason is the combo (§9). One cut can feed several children, but only if
+several children want the same candy at the same moment — and that is a shape
+*demand* has to supply, not one the maker can build toward. Uncorrelated across
+seven colors it is left to coincidence.
+
+- **What it is mostly doing is changing the joint distribution.** An echo copies
+  a want that was itself drawn from the weights, so the draw invents no demand
+  the table did not ask for. What moves is how often two of those draws land
+  together — measured, a duplicate stands at the window 43% of the time without
+  the echo and 58% with it.
+- **It does move the marginal a little, and the table should be read knowing
+  it.** The window a child is copied from is not a fair sample of what was
+  ordered: an easy color leaves it faster, because a raw or a primary is the more
+  likely to be waiting on the rack when its child walks up and gets swept on the
+  spot (§5). So what is left to be echoed skews toward the slow colors. Measured
+  over 64 seeds against the mix in force at each arrival, secondaries are
+  delivered at **59.8% against the table's 57.1%**, with raw and the primaries
+  each about a point light; at a chance of zero the same measurement comes back
+  level. That is less than one step of the T3 column and the death target held
+  across the sweep, so it is recorded rather than corrected. **Measured at a
+  raised constant, it does not stay small and cannot be tuned out:** at 0.75 the
+  drift is +7.5 points, and an anchor row asking for 10% raw still delivers
+  4.1%, because raw leaves the window before anything can echo it. Above a
+  point, this constant and the tier table stop being independent knobs — which
+  is one of the two prices that kept the twin-arm sweep from shipping.
+- **Brown is never echoed.** It is the over-mix mistake and reaches the window
+  only through the mercy customer, who wants one already on the rack.
+- **It is not the fix for the batching finding.** Measured, it pays the maker who
+  takes a pair off the front of the queue, and the maker who builds a long
+  production line is still behind — see the implementation plan. The reason to
+  have it is that the combo the game already scores is a thing the window now
+  offers rather than a thing it occasionally allows.
+- The opening levels are untouched: their orders are scripted (§7 above), so
+  nothing they ask for comes through this draw at all — including level 4's
+  pair, which is authored rather than rolled.
+
+### The rush (a preview from score ~570, full size from the 3-minute row)
+
+*Drawn and sounded as a gauge — see "the doorway is the gauge" below.*
+
+The bullet above names the hole and **the rush is what goes in it**, asked for
+from the chair twice: once the maker is up to speed the window stops being a
+steady drip and becomes a **tide**, so the ramp carries a shape to read rather
+than only numbers getting smaller. `core/difficulty.ts` holds it.
+
+One period is a minute, at every size. What changes with the size is what the
+minute is spent on:
+
+|                | preview (ramp 40 s, score ~570) | full (ramp 3 min, the Rush row) |
+| -------------- | ------------------------------- | ------------------------------- |
+| lull           | 30 s                            | 22 s                            |
+| swell          | 9 s                             | 9 s                             |
+| peak           | 12 s                            | **20 s**                        |
+| ebb            | 9 s                             | 9 s                             |
+| window held at | 2 children                      | **3 children**                  |
+
+The lull runs at **0.65×** the table's arrival rate and the peak at 2.6×, so a
+cycle swings by a factor of four. It used to be 0.95× and the same 2.6, and the
+eleventh sitting deepened the trough on a report that there was nowhere in a run
+to stock candy: a lull only five per cent easier than the flat table is not a
+lull, it is the same shop with a different label. What it costs is that the tide
+now *grows* less across the run — a cheaper lull is worth more to the preview
+column, whose lull is 30 s, than to the grown one's 22 s, so mean demand over a
+cycle goes 1.5054 → 1.5925 where it used to go 1.5275 → 1.7475. That is paid
+deliberately: the swing *within* a cycle is the reading the chair was giving,
+and it is the one that doubled.
+
+A run **joins that cycle at the swell's foot** rather than at the top of the
+lull, so the first thing it meets once the tide switches on is the tide rising,
+and the two columns are interpolated between across the ramp the way `RAMP`'s
+own rows are — the tide the player is shown early is the tide they get later,
+grown. It moves the Arrival column and holds a **floor under the window** while
+it runs, and nothing else — the standing line is drawn for four children and a
+fifth walks off the frame, so a deeper queue is a layout job first. The shape is
+one pure term over ramp position with no rng in it, so a seeded run still
+replays exactly; the floor reads the window it is holding, so it is state rather
+than curve, and it lives in `Game` rather than in the table.
+
+- **It previews before the maker is up to speed, and grows to full size at the
+  Rush row.** Both halves are asked for from the chair: *a minor version as a
+  refresher and preview*, and *longer, with more children, so it feels like a
+  real rush*. The preview is the tide exactly as it was — 12 s of peak, a pair
+  at the window — met at score ~570 instead of ~860, which is the first time it
+  lands inside the stretch the staleness reports keep coming from. Everything
+  after it is one growth term: the peak buys 8 s off the lull, and the floor
+  takes a third child. Measured with no rng in it, that is **5.8% more demand a
+  minute** at full size — mean arrival rate over a cycle 1.5054 → 1.5925. (It
+  read 14%, 1.5275 → 1.7475, until the eleventh sitting deepened the lull; see
+  the note under the table for why a cheaper lull narrows the growth.)
+  **The swell does not grow**, because it is the warning
+  and a bigger rush that shortened its own telegraph would be an ambush; **the
+  period does not grow**, because a period that changed under a running cycle
+  would move the phase discontinuously and a seeded run would stop replaying.
+- **What the preview costs is the ease-in.** The last 20 s of the speed ramp now
+  runs under the first swell, which this document had ruled out on the grounds
+  that a tide over a strand still being brought up to pace is two things moving
+  at once. It is paid deliberately: the overlap is two rungs of eight, the tide
+  spends it at about a third of its strength, and the alternative is leaving the
+  first minute of the endless game flat for a fourth report running. Measured,
+  the preview alone takes the batching maker's median death 5.28 → 4.95 min and
+  a fifth of its ladders — the lull it builds in now arrives 20 s sooner.
+
+- **It started at the Rush row, then at the Settled one.** It was built for the
+  stretch *past* the last lever, on the reasoning that a tide before then would
+  be one more number moving among four. The next report of staleness arrived at
+  **400 points**, which the reference bots put at ramp-minute 0.5–0.6 — inside
+  the first minute, and nowhere near the mark the tide was waiting for. A shape
+  a player only meets in the last third of a run is not a shape the run has, so
+  the tide moved to the moment the speed ease-in finishes. Measured, that moved
+  the batching maker's median death 5.79 → **4.66 min**, still inside the 4–6
+  target, 16/16 closed out either way. The minute before it was then left flat
+  on purpose — the ease-in — until the fourth report, which is the bullet above:
+  the last third of that minute now carries the preview.
+
+- **The doorway is the gauge, and it answers three questions.** *Am I in a
+  rush, when does this one end, when is the next?* A crowd fading in cannot
+  answer any of them, because a crowd rising and a crowd falling look identical
+  at any one moment — which is what the chair reported at the eleventh sitting,
+  having been given the tide's raw strength to read. So the doorway is drawn
+  from a **gauge** instead: three figures that fill to exactly the instant a
+  rush starts, and drain to exactly the instant it ends.
+  - **They gather still, and move once it is a rush.** One arrives, then two,
+    then three — planted, waiting — and the moment the third is in, the rush is
+    on and all three start shuffling. As it spends itself they leave one at a
+    time. So the *count* says how close and how long, and the *motion* says
+    which side of the edge you are on; across the boundary itself the count does
+    not change at all, only the movement does.
+  - **Motion is the channel because it is the only one that survives out
+    here.** §4 keeps hue for candies and §11 keeps prose off the play screen, so
+    neither a colour nor the word is available — and the first cut spent what
+    was left, half a silhouette's alpha and half a step forward. Those both
+    remain, and a rushing figure is still the brighter and the further in; they
+    were simply not enough on their own, and read as two states that looked
+    alike. The doorway is only ever seen from the corner
+    of an eye that is steering, where a change of value is weak and a change of
+    movement is not; it is the lesson the urgency pulse already recorded. It is
+    this way round and not the reverse, because bobbing while waiting would put
+    the loud channel on the quiet state and make the rush the moment everything
+    went *still*.
+  - **The crowd is a count, not a fade.** Each figure is in or out, crossing in
+    a second or so, because a doorway holding one solid figure, one at three
+    quarters and one at a half is not a crowd of two or of three — it is a
+    smear, and nothing read in a fifth of a second can be read off a smear.
+  - **It goes at the door rather than on the HUD**, per §11's rule that
+    announcements go where the player is already looking — and measured: the
+    free band under the hearts falls to 16 px on every phone held sideways, so a
+    new widget would be fighting the tightest layout in the game to say
+    something at the far end of the screen from where it is happening.
+  - **The gauge and the floor are one threshold, by construction.** Its edges
+    are solved against `RUSH_FLOOR_FROM`, the same figure `admitCustomer` holds
+    the window open at, so a full doorway and a held window cannot drift apart.
+    Before the gauge they could: the door drew raw intensity, so the *first*
+    figure landed on the moment the floor engaged and the other two said only
+    "more".
+- **And both edges are sounded**, on the shop's own doorbell — one voice at two
+  pitches, rising for the doors opening and a fifth below for the peak letting
+  go, so the pair reads as a question and its answer rather than as two alarms.
+  It is the loudest thing in the game short of the run ending, which is
+  deliberate: a tide the player cannot hear arriving was the complaint. Nothing
+  on the *board* changes, because §2 makes comfort a constraint and a rush is a
+  minute long — this is the one announcement that must not be a flash across the
+  play field.
+- **The lull is the point as much as the peak is.** A nested ladder is a bundle
+  aimed at several orders at once, and it takes longer to build than it does to
+  sell; against a flat interval there is never a moment to build one. Half a
+  minute of slack, with a visible reason to spend it, is the first thing this
+  game has offered a maker who wants to build ahead of the window. It is also
+  what caps the grown peak: the lull is what the peak grows *out of*, and 22 s
+  against the 8.6 s a six-rung ladder costs at the Rush row's speed still leaves
+  room for two. That is the constraint the 20 s plateau was set against — the
+  peak stopped where the lull stopped affording it, rather than at a round
+  number.
+- **A run joins the cycle at the swell, and that is the third staleness report
+  answered by moving where the tide sits.** Joining at phase 0 meant the first
+  thing past the anchor was the whole lull — thirty seconds of nothing, with the
+  first swell 39 s in, which at 70 ms a point is **score 860 → 1414 spent being
+  told the rush had started and shown nothing**. The report came at 1063 points,
+  from a chair that had never seen two children at once. The table, the period,
+  the peak rate are all untouched, and from the second cycle on the mean arrival
+  rate is untouched too — 1.5275 either side, exactly. The **first** cycle is the
+  one exception and is worth stating rather than rounding off: its mean rate
+  falls 1.4081 → 1.2513, about 11%, because entering at the swell skips that
+  cycle's lull but also spends its second half in an ebb the old entry spent at a
+  peak. So the tide's opening minute is slightly *lighter*, the queue floor below
+  is the counterweight, and the pair is what the sweep was asked about: the
+  batching maker's median death reads **5.31 min either side**, to two decimals. It also retires the reason the tide eased in
+  over a whole period: that ease-in was hiding a step to the *easier* lull rate
+  at the moment the rush switched on, and a run that joins at the swell has no
+  such step. Cut to half a period, or the two compound and the first swell
+  arrives at 0.15 strength.
+- **A rate is the one thing a maker can outrun, so the tide also holds a floor.**
+  Arrivals scale as `interval × (waiting + 1) / Max queue`, which asks 6.4–8.0 s
+  for a second child through the early ramp against a bench round trip of two or
+  three — so a maker who keeps up empties the window faster than any interval
+  refills it, and the tide was invisible to exactly the players it was built for.
+  While the doorway reads as a crowd the window is held at **two children**. It
+  binds under Max queue, never over it, so no rush admits past the row the table
+  names; and it is what makes the batch lever cashable at all, since one cut
+  feeding two children (§9) needs two children to feed. Measured across 64 seeds
+  it moves the batching median 5.31 → 5.31 and takes the window's duplicate-order
+  rate from 0.574 to 0.572 — the mechanism is what changed, not the arithmetic.
+  Held at the floor *without* letting the ordinary arrival clock keep running it
+  is a **ceiling**: measured, that cost the window a fifth of its pairs, because
+  a duplicate is far likelier among three or four children than among two. Done
+  right the window sits *above* the floor 86–91% of a tide and still reaches the
+  table's cap of four. One consequence to know before retuning: a child the tide
+  insists on can be served off the rack in the same tick they arrive, so during a
+  rush a stocked shelf empties as fast as the maker can cut rather than as fast
+  as the window fills. That is the rush being the moment you cash your stock.
+- **The full-size tide holds three, and that is the last place the window has to
+  give.** The preview's pair grows to three of the table's four as the tide does
+  — the *more children* half of what was asked for, and the half a rate cannot
+  deliver on its own. It is also the end of that road, and the measurement says
+  so plainly: measured over every frame the doorway reads as a crowd, the window
+  already sits at the cap of four **about half the time** — before this change
+  as well as after — so both the arrival rate and the floor are clipped by Max
+  queue long before they run out of room to grow. **A deeper rush than this needs a
+  deeper queue, and that is a layout job** — the standing line is drawn for four
+  (`ui/layout.ts` gives each child a quarter of the board's width) and the combo
+  meter's four pips are derived from the same cap. Nothing above four is a
+  balance change; it is a re-sweep of the screen.
+- **A fuller window is not automatically a harder game, and the sweep keeps
+  saying so.** A child the tide insists on can be served off the rack the tick
+  they arrive, so to a maker with stock in hand the third child is throughput
+  rather than pressure: measured, growing the tide gives back most of what the
+  preview took (median death 4.95 → 5.22 min, against a 5.28 baseline). The
+  harness cannot show the cost that lands on a person — three patience bars
+  running at once, for 20 s at a stretch — so what the sweep is asked for is
+  that the curve did not move, and it did not. The same caution applies to
+  anything that deepens the window in future: measure the *rate* it is served
+  at, not the number of children standing there.
+- **It has to be seen coming, and it is drawn rather than written** (§11):
+  children gather in the shop doorway through the swell, cut by the frame edge,
+  behind the line. The nine seconds is sized against a whole ladder built from
+  nothing — ~69 moves, 8.6 s at the Rush row's speed — and not against a trip to
+  the bench, which is two. That is the difference between a rush and an ambush:
+  the warning has to be long enough to *start* the thing it is warning you to
+  start, and a batch is the thing. Where the tide now previews the strand is
+  slower still and the same ladder costs more than the 9 s swell; the swell
+  stays where it is at every size of tide, because the **lull** is where a
+  ladder is actually built and the swell only has to be long enough to start
+  one.
+- **The trough is shallower than the table, but only just, and the asymmetry is
+  measured rather than chosen.** A rate-neutral tide is not a difficulty-neutral
+  one: arrivals stop at Max queue, so surplus rate at a peak is clipped the
+  moment the window fills, while a longer lull is recovery time paid out in
+  full. Balanced to cancel on paper (arrivals at 0.8× and 1.5×) the rush pushed
+  the batching maker's median death from 5.8 minutes to **6.6** — it made the
+  game easier. At 0.95× and 2.6× the same sweep reads 5.79 against a no-rush
+  5.80, 16/16 closed out either way, while mean queue occupancy over a tide
+  swings 2.6 → 3.4 and arrivals 12.6 → 16.4 a minute. **The anchor table above
+  was not touched.**
+- **What it does not do is close the open finding.** The batching bot is ahead
+  on 0 seeds of 16 with the rush in and 0 without — and the reason is the
+  harness rather than the lever: a bot that plans against the window in front of
+  it cannot build ahead of a rush it can see coming, which is the entire
+  behaviour this is meant to reward. The combo meter is still candidate one
+  there. See the implementation plan's eighth sitting, which also has why that
+  draw is re-baselined and must not be read against the older figures.
+
+## 8. Spawn fairness rules
+
+1. ≥1 sugar on the map at all times; respawn once spent. (The opening levels
+   narrow this to exactly one cube per level — see §7.)
+2. ≤1 dye jar per primary on the map at a time.
+
+A pickup the strand is still passing through counts as on the map for both
+rules, so nothing respawns until the whole snake has cleared it.
+
+A pickup the strand is passing through when it **loses length** — to a chop or a
+break — settles by what it has already paid, and the two kinds differ:
+
+- A **cube** pays when the strand clears it, by becoming the cell the tail has
+  just vacated. Abandoned there is no such cell, so it closes again and waits
+  for the head to come back — which is also fair, since it gave nothing.
+- A **jar** pays when it kneads, and the color it kneaded leaves with the piece
+  that was cut. So it is **spent**, not re-closed. Closing it would hand the
+  payment back, and the bench makes that a loop: a jar laid on the cell before
+  the block is crossed, kneads the segment behind the head, and is re-closed by
+  the very chop the player was driving at — free dye, every pass, from a jar
+  that never leaves. It never leaving is the second half, because rule 2 makes a
+  jar on the map the *only* jar of its primary, so the board can no longer lay
+  that color anywhere reachable. Spent, both problems go away. (Reported from
+  the chair in the eighth sitting, as "a dye near the cutting table won't go
+  away after use".)
+
+3. **Pity timer:** for each active order, compute the set of primaries needed
+   that are not satisfiable from (shelf stock ∪ candies derivable from current
+   body ∪ dyes on map). Any missing primary is force-spawned within 5 s.
+4. Pickups never spawn on the snake, stations, or the cell directly in front
+   of the head (no "free" accidental pickups).
+
+5. **Baseline jar:** if rule 3 is asking for nothing and the floor is bare, one
+   jar is put out anyway, rolled. Without it the only jars that ever appeared
+   would be ones a waiting child already needed, and a maker could never build
+   ahead of the window — which is the whole point of the strand.
+
+Rule 3's "within 5 s" is a **ceiling on how long an order may be unfillable**,
+not a wait every pickup has to serve. Measured at the full five, two dyes cost
+more than most orders have patience for and the game grinds to a halt; the
+implementation keeps the actual delay well under it (`core/pity.ts`), long
+enough that a jar does not reappear under the maker's feet the instant it is
+spent. Scarcity here is *which* jars, not how long they take.
+
+Rules 3 and 5 replaced Phase 4's stopgap, which kept one jar of every primary on
+the map at all times. That floor was deliberately more generous than the
+finished game — it made every color reachable without asking what anyone
+ordered — and with it gone the *order* dyes are picked up in starts to matter.
+The opening levels are untouched by any of this: their board is stocked with
+exactly what their one order needs (§7), so nothing on it can starve.
+
+## 9. Scoring
+
+| Event                          | Points                                    |
+| ------------------------------ | ----------------------------------------- |
+| Serve Tier 1 (raw)             | 10                                        |
+| Serve Tier 2 (primary)         | 25                                        |
+| Serve Tier 3 (secondary)       | 50                                        |
+| Serve brown to mystery customer| 40                                        |
+| Patience bonus                 | + up to 50% of base, scaled by bar left   |
+| Serve streak (no losses)       | ×1.1 per consecutive serve, cap ×2        |
+| Shelf serve                    | Same as normal (planning ahead is valid)  |
+| Serve an opening-level customer| Base only — no clock, so no bonus (§7)    |
+| Combo (batch feeds >1 child)   | + 15 flat per child already fed off it    |
+
+The streak multiplier is the run standing *before* the serve, so the first
+serve after a loss pays flat and the bonus has to be earned back. Points are
+rounded once, at the end, rather than per term.
+
+The combo is what one chopped batch is worth *as a batch*: chop a strand
+carrying three colors into three waiting children and the second serve pays
++15, the third +30. It is added after the multiplier rather than being a
+fourth one, so a batch is worth the same however well the run is otherwise
+going — and because it is flat, a maker who chops one segment at a time can
+never earn it.
+
+Three things do not pay it, all for the same reason — a candy only belongs to
+a batch while it is still on the block:
+
+- **The first serve off a batch.** Nothing has been fed off it yet.
+- **A shelf serve.** A racked candy has lost its batch; it is a candy now.
+- **A crumble.** Debris from a self-hit (§6) serves nobody, so its count
+  never leaves zero.
+
+The opening levels are where it is taught: the last of them puts two children at
+the window wanting the same candy, so one cut feeds both and the bonus is paid
+for the first time somewhere it cannot cost anything (§7).
+
+The counter tops out at 4 in practice, which is the window's own ceiling
+(§7's max queue): a longer batch can be chopped, but there is nobody left to
+hand it to.
+
+High scores (top 10, with date) persist in `localStorage`.
+
+## 10. Controls
+
+### Desktop
+- **Arrow keys / WASD** — steer.
+- **P / Esc** — pause. **M** — mute. **C** — toggle cheat sheet.
+- Input is **buffered**: up to 2 queued turns so fast double-turns (e.g.
+  up-then-left within one tick) execute crisply.
+
+### Mobile
+- **Swipe anywhere** on the play area — steer (dominant-axis swipe detection,
+  small dead zone; a swipe queues a turn just like a key press).
+- Optional **virtual D-pad** (settings toggle) for players who prefer taps;
+  bottom corner, mirrored for left-handed mode.
+- Pause / cheat-sheet / mute as HUD buttons (≥44 px touch targets). Mute is a
+  button rather than a settings line because a phone has no M key and the
+  decision is made mid-run, when somebody walks into the room.
+- No action buttons are needed at all — every interaction is movement-based,
+  which is what makes the game viable on mobile.
+
+### Responsiveness
+- The serving side is whichever side of the grid the chopping block is on, in
+  both orientations: customer window, shelf and score anchor there, so the
+  candy's path (bench → shelf → child) never doubles back across the screen.
+- Landscape: bench on the right wall, customer window + shelf + score in the
+  right column — and the window is the **bench's own row**, with the shelf
+  running down the column beneath it. A child waiting at the far end of the
+  column from the counter their candy is cut on is the one thing a playtester
+  asked about unprompted; the order also happens to be the order a candy
+  travels in (offered to the queue first, racked only if nobody wants it, §5).
+  On the shortest phones sideways the column cannot pay for it: the line then
+  sits as high as the score and lives allow and no higher.
+- Portrait: same right column, narrowed — grid on the left, serving strip
+  beside it; grid stays square-ish so both orientations share one logical
+  board.
+- Board is a fixed logical grid (target **16 × 16** playfield cells) scaled to
+  fit; no gameplay difference between devices.
+
+## 11. HUD & screens
+
+- **HUD:** score, lives (heart pips), the combo meter (four pips, §9), the
+  queue of children with their bubbles and patience bars (§5), the doorway
+  crowd that gauges the rush (§7), shelf contents (6 slots), cheat-sheet tab,
+  mute tab, pause. The hearts are inked in the
+  symbol's own dark value rather than red: a life is not a candy, and hue in
+  this game belongs to candies alone (§4, palette constraints).
+- **Announcements go where the player is already looking.** The gear change of
+  §7's speed ladder pulses the *head* rather than lighting a pip beside the
+  score: the thing whose speed changed is the thing being steered, and news
+  delivered to the far end of the screen is news read late or not at all. The
+  rush follows the same rule to the opposite corner: it happens at the door, so
+  it is drawn at the door, and the measurement behind that is in §7 — the only
+  free band on the HUD is 16 px tall on a phone held sideways. It is
+  pale ink, not heat — orange would be the obvious colour for a strand running
+  hotter, which is exactly why it is not used (§4: hue belongs to candies, and a
+  head flashing a secondary reads as a candy being made).
+- **The combo meter shows up and leaves again.** It sits on the hearts' row —
+  four square pips, filling left to right as one batch feeds one child after
+  another (§9) — and it is invisible the rest of the time. A gauge parked at
+  zero all run would be a fifth fixed thing to read and, worse, would look like
+  something the player was failing to fill rather than something they had just
+  earned. So it lights on the serve, holds about two seconds (long enough for a
+  whole batch to drain onto the block), and fades out over roughly half of one.
+  The unlit pips stay drawn while it is up: what is left of the meter is what is
+  left of the batch.
+- **And it says what it is paying.** A figure sits off the end of the run —
+  `+15`, `+30`, `+45` — the bonus that serve just earned, appearing with the
+  second child off a batch and going with the pips. Pips alone say *how many*
+  and can never say *how much*, and a flat term buried in a score that also
+  carries the tier, the patience bonus and the streak multiplier is a term
+  nobody sees themselves earn. It is the batch's own bonus and not the streak
+  multiplier beside it in §9 — a different mechanic on a different clock, and
+  labelling the pips with a "×" would be a lie about which one they count.
+- **No prose in the HUD.** The only text on the play screen is the score and
+  the combo's payout, and both are numbers. Everything else — what a child
+  wants, how long they will wait, how they took it — is carried by a drawn
+  thing, because the HUD is read in glances taken from steering.
+- **The menu's sign is drawn, not written.** The one heading big enough to be
+  a picture is set one candy color per letter, running the palette's wheel
+  order and wrapping — the same rainbow the parade carries past a few lines
+  below, read left to right instead of walked. The front of a candy shop is the
+  one screen in the game whose job is to look like candy, and a gray word over
+  a rainbow strand was the shop's sign in someone else's font. It is the §4
+  exception, and it stops at this screen: the HUD's own chrome stays inked.
+- **Screens:** Boot/loading → Menu (play, settings, high scores) → Game →
+  Game Over (score breakdown, high-score entry-free — auto-saved, restart CTA).
+  The breakdown reports the run's best batch beside its best streak, on the same
+  line rather than a new one: each batch's own count dies with the piece that
+  carried it, so the end of the run is the only place the best one can be told,
+  and this screen centres its rows without fitting them to the frame's height.
+  Nothing is said below 2 — every serve straight off the block feeds one child,
+  so "best batch fed 1" would report only that the game was played. Level 4
+  teaches a batch of two but does not force one, so 2 stays something a run
+  earned: measured on the reference grinder, 193 tutorials in 200 end having fed
+  its two children separately.
+- **First-run teaching:** no modal tutorial, no toasts. The four lessons — pull
+  sugar and chop, sugar before the jar, two dyes make one color, one cut feeds
+  two children — are the four opening levels of §7, taught by what the board does
+  and does not hold. Levels that always run cannot be missed or dismissed, which is
+  what the persisted seen-once flags were working around.
+
+## 12. Audio & juice (polish targets)
+
+- Squash/stretch on eat; pop + particles on chop; shard burst on self-hit;
+  chime + confetti on serve; muffled sad trombone-ish cue on customer loss; the
+  shop's doorbell at both edges of the rush (§7).
+- Light looping kitchen ambience; all audio behind a mute toggle (and starts
+  only after first user gesture, per mobile autoplay rules).
+
+### The cues are the kitchen, not an arcade (revised after the audio pass)
+
+§2 maps every verb onto a step of real candy making, and the cues are held to
+that as much as the art is. What each one is *of*: sugar stretching, a glass jar
+tapped, dye slapping onto nothing, a snip at the block, a candy clattering off
+the rack, **hard sugar shattering** at a self-hit, a copper bell over the shop
+door, a glass chime at a serve, and something muffled and low at each of the
+three ways a run gets worse.
+
+The one that carries the idea is the crack. Sugar breaking is *thin and bright*:
+a burst of noise well above a kilohertz over partials that are not whole-number
+multiples of anything, because brittle things struck do not ring in a harmonic
+series and that is the whole of how an ear tells "shattered" from "plucked". It
+was a 200 Hz thud, which is a heavy thing breaking — a fair sound, of the wrong
+event.
+
+None of this is licence to make the kitchen loud. Every cue still has to be
+readable *under* the strand the player is steering, the counting and climbing
+that carry information (§9's streak, a batch's size) come first, and a cue that
+sounds like the fiction but hides a number is the wrong trade.
+
+## 13. Out of scope (v1) / future ideas
+
+- Online leaderboard, accounts, or any backend.
+- Level/day progression mode.
+- Special candies (striped = speed boost, sour = customer patience refill).
+- Obstacles/moving hazards in the kitchen; second chopping block.
+- PWA install / offline packaging (trivial later; not a v1 requirement).

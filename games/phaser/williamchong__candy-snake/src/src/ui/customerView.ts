@@ -1,0 +1,517 @@
+import type Phaser from 'phaser';
+
+import { colorInfo } from '../core/colors';
+import { patienceFraction } from '../core/customers';
+import { RAW, type ColorMask, type Customer } from '../core/types';
+import {
+  BORDER,
+  CHILD_TINT,
+  GLYPH_TINT,
+  HudDepth,
+  makeDrawn,
+  makeSprite,
+  paint,
+  PANEL_FILL,
+  place,
+  scaleDrawn,
+  show,
+  type Drawn,
+} from '../render/drawn';
+import type { Burst } from '../render/effects';
+import { TextureKey } from '../render/textures';
+import { CHILD_BUBBLE_GAP, CHILD_SCALE, childHeight, type QueueFrame } from './layout';
+
+/**
+ * One child at the serving window: they walk in from off-screen, stand in line
+ * holding up the candy they came for, and walk off again — smiling if they got
+ * it, cross if they gave up (design §5).
+ *
+ * Everything the card used to say in symbols is said by the character instead:
+ * the order is a bubble over their head, the clock is a bar at their feet *and*
+ * the look on their face. Nothing here is written in words, because the queue
+ * is the one part of the HUD a player reads mid-turn, with no time to read.
+ */
+
+export const Mood = {
+  Waiting: 'waiting',
+  Impatient: 'impatient',
+  Served: 'served',
+  Walkout: 'walkout',
+} as const;
+export type Mood = (typeof Mood)[keyof typeof Mood];
+
+const FACES: Record<Mood, TextureKey> = {
+  [Mood.Waiting]: TextureKey.FaceCalm,
+  [Mood.Impatient]: TextureKey.FaceWorried,
+  [Mood.Served]: TextureKey.FaceHappy,
+  [Mood.Walkout]: TextureKey.FaceCross,
+};
+
+/** The bubble is a panel like any other, and reads against the same ground. */
+const BUBBLE_TINT = PANEL_FILL;
+
+/**
+ * Rows above the standing line, in screen pixels, and so all of them measured
+ * off how big the child is drawn — which is the lane's to decide (`layout.ts`'s
+ * `queueRun`), not this file's. `bodyY` is exported because the doorway crowd
+ * stands on the same line and must not drift off it (`ui/rushDoor.ts`) — they
+ * are the same children, one room back.
+ */
+export const bodyY = (scale: number): number => -childHeight(scale) / 2;
+const bubbleY = (scale: number): number => -childHeight(scale) - CHILD_BUBBLE_GAP;
+/**
+ * The bubble's tail eats its bottom rows, so its hollow sits two source rows
+ * above the sprite's own centre (`textures.ts`'s `BUBBLE`) — which is two rows
+ * whatever the sprite has been scaled to.
+ */
+const CANDY_LIFT = 2;
+const candyY = (scale: number): number => bubbleY(scale) - CANDY_LIFT * scale;
+/**
+ * Below the line, where nothing is measured off the child: the bar is a mark on
+ * the floor they stand on, at the height `layout.ts`'s `CHILD_UNDERFOOT` keeps
+ * clear for it. Its *width* is the exception — a bar wider than the child it
+ * belongs to reads as somebody else's — so that alone shrinks with them.
+ */
+const BAR_Y = 12;
+const BAR_SHARE = 34 / childHeight(CHILD_SCALE);
+const barWidth = (scale: number): number => Math.round(childHeight(scale) * BAR_SHARE);
+const BAR_HEIGHT = 5;
+
+/** Below this much patience left the face gives it away before the bar does. */
+const IMPATIENT_AT = 0.4;
+
+/**
+ * The last-call stage, and the one thing here counted in seconds rather than in
+ * bar: the ramp takes patience from 35 s down to 22 s, so a fraction would
+ * shrink the warning exactly as the game speeds up. What the player is deciding
+ * is whether they can still get there, which is a question in seconds.
+ *
+ * `patienceFraction` is untouched by this on purpose — the bar and the score
+ * bonus read it together (design §9), so the alarm reads the clock beside it
+ * and never changes what a serve pays.
+ */
+const CRITICAL_MS = 5_000;
+
+/**
+ * The alarm, as a breath rather than a blink: design §2 asks for soft and slow,
+ * and design §11 has the queue read in glances taken from steering — where a
+ * texture swap is invisible and motion is not. Only the child actually inside
+ * the window breathes; four at once would be noise rather than urgency.
+ */
+const BREATH_MS = 800;
+const BREATH_AMOUNT = 0.12;
+
+const WALK_SPEED = 260;
+/** How long a step lasts, i.e. half a walk cycle. */
+const STEP_MS = 140;
+/** A beat to read the face on before they turn and go. */
+const REACTION_MS = 500;
+
+/**
+ * How far a child on their way out steps clear of the line. The queue closes up
+ * the moment someone is off it, so a leaver who kept the line's own lane would
+ * be walked through by whoever is moving up; out of line and in front of it
+ * (`HudDepth.Leaving*`) is how a crowd reads.
+ */
+const LEAVING_LANE = 22;
+
+export class CustomerView {
+  private readonly scene: Phaser.Scene;
+  private readonly body: Phaser.GameObjects.Image;
+  private readonly face: Phaser.GameObjects.Image;
+  private readonly bubble: Phaser.GameObjects.Image;
+  private readonly want: Drawn;
+  private readonly barTrack: Phaser.GameObjects.Rectangle;
+  private readonly barFill: Phaser.GameObjects.Rectangle;
+  /** The queue's send-off pool, shared by every child it ever builds. */
+  private readonly cheers: Burst;
+
+  /** The standing line: every child in the queue has their feet on it. */
+  private footY: number;
+  /** The window end of it, kept only to measure how far the line has moved. */
+  private frontX: number;
+  /**
+   * Where a child is before they arrive and after they go: past the frame's own
+   * edge, so nobody is ever seen to pop into or out of existence. They come from
+   * the same side they leave by — the far end of the queue is the shop door, and
+   * the near end is the window, so the line always faces the counter. Which edge
+   * that is depends on the layout, so it is handed in rather than fixed.
+   */
+  private offstage: number;
+  /**
+   * How big this one is drawn, and the rows and the bar width that follow from
+   * it. Held rather than recomputed: `draw` runs per child per frame while
+   * these move only when the lane does — the same bargain `RushDoor` makes with
+   * the same numbers. `measure` is the one place they are all written.
+   */
+  private scale = 0;
+  private headRow = 0;
+  private bubbleRow = 0;
+  private candyRow = 0;
+  private barPx = 0;
+  private x: number;
+  private targetX: number;
+  /** How far below the line they stand: nothing until they step out of it. */
+  private lane = 0;
+  private mood: Mood = Mood.Waiting;
+  private pauseMs = 0;
+  private leaving = false;
+  /** Off the far edge and done with — the queue may hand this view out again. */
+  private done = true;
+  /** Whole pixels of bar drawn, so a sub-pixel drain writes nothing. */
+  private shownBarWidth = -1;
+  /** Down to the last seconds: the bubble breathes until they are served or go. */
+  private alarmed = false;
+  /** Whether the bubble is off its resting size, so settling it writes once. */
+  private breathing = false;
+  /** Which half of the walk cycle is on screen — see `draw`. */
+  private stepping = false;
+  /**
+   * How this one ends, held from the moment they are spoken for until they are
+   * actually at the window to show it. Undefined for a send-off nobody gave a
+   * reason for, which keeps whatever face they were wearing.
+   */
+  private farewell: Mood | undefined;
+  /**
+   * Whether that ending has been played yet. Reset in `arrive` along with
+   * everything else that outlives one child: views are handed out again, and a
+   * latch left set means the *next* child served by this one gets no reaction
+   * and no party at all — silently, with nothing to catch it.
+   */
+  private reacted = false;
+  /** What they asked for, kept so the send-off can be thrown in that color. */
+  private wanted: ColorMask = RAW;
+
+  constructor(scene: Phaser.Scene, queue: QueueFrame, cheers: Burst) {
+    const { front, offstage, scale } = queue;
+
+    this.scene = scene;
+    this.cheers = cheers;
+    this.footY = front.y;
+    this.frontX = front.x;
+    this.offstage = offstage;
+    this.measure(scale);
+    this.x = offstage;
+    this.targetX = offstage;
+
+    // Everything is born off-screen at the same scale, so the four sprites
+    // differ only in what they are and where they sit in the stack.
+    const off = { x: offstage, y: front.y };
+    const sprite = (
+      key: TextureKey,
+      tint: number,
+      depth: number,
+    ): Phaser.GameObjects.Image => makeSprite(scene, key, tint, depth, off, scale);
+
+    this.bubble = sprite(TextureKey.Bubble, BUBBLE_TINT, HudDepth.Slot);
+    this.want = makeDrawn(
+      scene,
+      { key: TextureKey.Candy, depth: HudDepth.Icon, glyphDepth: HudDepth.Glyph },
+      off,
+    );
+    // The order is authored against the roomiest child there is, and shrinks
+    // with them from there — the same way the rack's candy shrinks with its slot.
+    scaleDrawn(this.want, scale / CHILD_SCALE);
+    this.body = sprite(TextureKey.Customer, CHILD_TINT, HudDepth.Icon);
+    // Tinted like the skin it sits on: the features are drawn in the detail
+    // gray, so the same tint lands them a step darker than the face.
+    this.face = sprite(FACES[Mood.Waiting], CHILD_TINT, HudDepth.Glyph);
+
+    this.barTrack = scene.add
+      .rectangle(off.x, front.y + BAR_Y, this.barPx, BAR_HEIGHT, BORDER)
+      .setDepth(HudDepth.Icon);
+    // Anchored at its left edge, so draining shortens it rather than shrinking
+    // it toward the middle.
+    this.barFill = scene.add
+      .rectangle(off.x, front.y + BAR_Y, this.barPx, BAR_HEIGHT, GLYPH_TINT)
+      .setOrigin(0, 0.5)
+      .setDepth(HudDepth.Glyph);
+
+    this.hide();
+  }
+
+  /** Free to be handed to the next child — see `CustomerQueue`. */
+  get isDone(): boolean {
+    return this.done;
+  }
+
+  /**
+   * The screen changed shape under them. The standing line and the door both
+   * move, and a child already walking out was headed for an edge that may now
+   * be in the middle of the screen — so their exit is re-aimed at the new one.
+   * Where a *waiting* child stands is not set here: `CustomerQueue.render`
+   * walks everyone to their slot every frame, so they slide across rather than
+   * jump.
+   *
+   * A child already spoken for is the exception, and the reason the whole
+   * window is handed over rather than only the row it sits on. They are off
+   * the queue's books the moment the serve lands (`CustomerQueue.depart`), so nothing walks
+   * them anywhere any more — and one still on their way up the line is now
+   * walking for the whole of it (see `leave`). Their place is carried along by
+   * however far the line itself moved, or they would walk to a coordinate the
+   * last layout owned and react to their candy standing in it.
+   */
+  relocate(queue: QueueFrame): void {
+    const { front, offstage, scale } = queue;
+    const leftFor = this.offstage;
+    const lineMovedBy = front.x - this.frontX;
+    this.frontX = front.x;
+    this.footY = front.y;
+    this.offstage = offstage;
+    if (scale !== this.scale) this.rescale(scale);
+
+    if (this.targetX === leftFor) this.targetX = offstage;
+    else if (this.leaving) this.targetX += lineMovedBy;
+    if (this.done) this.x = offstage;
+
+    // The patience bar hangs off the standing line rather than off the walk, so
+    // nothing would move it until the next arrival without this.
+    this.draw(this.stepping);
+  }
+
+  /**
+   * Redrawn at what the new lane can afford. Guarded on the scale actually
+   * changing rather than run from every layout pass: `Scale.RESIZE` fires one
+   * of those per frame of a window drag, and the scale steps in whole
+   * multiples, so it moves a handful of times across a drag that moves the line
+   * a thousand.
+   */
+  private rescale(scale: number): void {
+    // Read before the new size lands, because it is a fraction of the old one.
+    const drained = this.shownBarWidth < 0 ? 1 : this.shownBarWidth / this.barPx;
+
+    this.measure(scale);
+    this.body.setScale(scale);
+    this.face.setScale(scale);
+    // The bubble may be mid-breath, and `breathe` swells from the resting size:
+    // settling it here is what stops the next breath starting from the old one.
+    this.bubble.setScale(scale);
+    this.breathing = false;
+    scaleDrawn(this.want, scale / CHILD_SCALE);
+    this.barTrack.setDisplaySize(this.barPx, BAR_HEIGHT);
+    // The fill is carried across at the fraction it was showing rather than
+    // left for `render` to put right: a child already spoken for is off the
+    // queue's books (`CustomerQueue.depart`), so `render` is never called on
+    // them again and their bar would keep the old size's pixels to the end.
+    this.shownBarWidth = Math.round(this.barPx * drained);
+    this.barFill.setDisplaySize(this.shownBarWidth, BAR_HEIGHT);
+  }
+
+  /** Everything the scale settles, written together so it cannot half-move. */
+  private measure(scale: number): void {
+    this.scale = scale;
+    this.headRow = bodyY(scale);
+    this.bubbleRow = bubbleY(scale);
+    this.candyRow = candyY(scale);
+    this.barPx = barWidth(scale);
+  }
+
+  /** A child walks on from off-screen and heads for their place in line. */
+  arrive(customer: Customer, slotX: number): void {
+    this.done = false;
+    this.leaving = false;
+    this.pauseMs = 0;
+    this.lane = 0;
+    this.x = this.offstage;
+    this.targetX = slotX;
+    this.shownBarWidth = -1;
+    this.alarmed = false;
+    this.farewell = undefined;
+    this.reacted = false;
+    this.wanted = customer.want;
+    this.body.setDepth(HudDepth.Icon);
+    this.face.setDepth(HudDepth.Glyph);
+
+    this.setMood(Mood.Waiting);
+    paint(this.want, customer.want);
+    this.bubble.setVisible(true);
+    show(this.want, true);
+    this.body.setVisible(true);
+    this.face.setVisible(true);
+
+    this.render(customer);
+  }
+
+  /** The queue moved up: walk to the new place rather than jumping to it. */
+  moveTo(slotX: number): void {
+    if (!this.leaving) this.targetX = slotX;
+  }
+
+  /** What the clock is doing, in the two places it shows: bar and face. */
+  render(customer: Customer): void {
+    const { patience } = customer;
+    // An opening-level child has no clock at all, so they show no bar rather
+    // than a full one that never moves, and never look worried (design §7).
+    const ticking = patience !== undefined;
+    this.barTrack.setVisible(ticking);
+    this.barFill.setVisible(ticking);
+    if (patience === undefined) return;
+
+    const left = patienceFraction(patience);
+    this.setMood(left <= IMPATIENT_AT ? Mood.Impatient : Mood.Waiting);
+    // Two stages, deliberately measured against two different things: the face
+    // turns at a fraction of the bar, the alarm at a count of seconds.
+    this.alarmed = patience.remainingMs <= CRITICAL_MS;
+
+    // A full-size bar is 34 px over 35 s, which is a pixel a second — so all
+    // but one frame in sixty would redraw the identical bar, and fewer still
+    // once a small screen has drawn it shorter.
+    const width = Math.round(this.barPx * left);
+    if (width === this.shownBarWidth) return;
+
+    this.shownBarWidth = width;
+    this.barFill.setDisplaySize(width, BAR_HEIGHT);
+  }
+
+  /**
+   * Served or walked out. Only *booked* here: what the child does about it —
+   * the face, the order leaving their hands, the send-off — waits until they
+   * are standing at the window, which `step` sees them reach. A child can be
+   * spoken for while still walking on, off a rack that already held their
+   * candy (design §5), and a candy handed to someone half way up the line is
+   * handed over at a counter they have not reached yet: the face changed and
+   * the order vanished from over their head before they had asked for it.
+   *
+   * They still stop being steerable the moment it happens — `leaving` holds
+   * their place in line rather than closing up behind them.
+   */
+  leave(mood?: Mood): void {
+    this.farewell = mood;
+    this.leaving = true;
+    // Whatever they were waiting on is settled, one way or the other.
+    this.alarmed = false;
+  }
+
+  /**
+   * The ending, played at the window: the face says which it was, the bubble
+   * goes — whatever they came for, they are no longer asking for it — and a
+   * serve throws its confetti from the bubble it left. Then the reaction beat
+   * holds it all long enough to read.
+   */
+  private react(): void {
+    this.reacted = true;
+    if (this.farewell !== undefined) this.setMood(this.farewell);
+    this.pauseMs = REACTION_MS;
+    this.bubble.setVisible(false);
+    show(this.want, false);
+    this.barTrack.setVisible(false);
+    this.barFill.setVisible(false);
+    this.body.setDepth(HudDepth.LeavingIcon);
+    this.face.setDepth(HudDepth.LeavingGlyph);
+
+    if (this.farewell === Mood.Served) {
+      this.cheers.fire(
+        { x: this.x, y: this.footY + this.bubbleRow },
+        colorInfo(this.wanted).hex,
+      );
+    }
+  }
+
+  /**
+   * Walks whatever distance this frame allows. Motion is stepped by hand
+   * rather than tweened because the two-frame walk and the bob have to run off
+   * the same fact — that the child is actually moving — and a tween would own
+   * that on its own clock.
+   */
+  step(dtMs: number): void {
+    if (this.done) return;
+
+    // Booked at the window, played at the window — `leave` says why.
+    if (this.leaving && !this.reacted && this.x === this.targetX) this.react();
+
+    // The reaction beat then doubles as the step out of the line: by the time
+    // the face has been read they are clear of the slot the next child is
+    // walking into, and in front of it.
+    if (this.pauseMs > 0 && this.x === this.targetX) {
+      this.pauseMs -= dtMs;
+      this.lane = LEAVING_LANE * Math.min(1 - this.pauseMs / REACTION_MS, 1);
+      if (this.pauseMs <= 0) this.targetX = this.offstage;
+      this.draw(false);
+      return;
+    }
+
+    const stride = (WALK_SPEED * dtMs) / 1_000;
+    const gap = this.targetX - this.x;
+    const walking = Math.abs(gap) > stride;
+    this.x = walking ? this.x + Math.sign(gap) * stride : this.targetX;
+
+    this.draw(walking);
+    // `reacted` rather than `leaving`: a child spoken for on their way up is
+    // leaving from the moment the event lands, and reaching their place in the
+    // line is not reaching the door. They are done when the beat that follows
+    // the ending has run out, and never before it has been played.
+    if (!walking && this.reacted && this.pauseMs <= 0) this.hide();
+  }
+
+  private setMood(mood: Mood): void {
+    if (mood === this.mood) return;
+
+    this.mood = mood;
+    this.face.setTexture(FACES[mood]);
+  }
+
+  /**
+   * Legs and a one-pixel bob, both off the same scene clock so a queue of
+   * children walking at once steps in time rather than each on its own phase.
+   */
+  private draw(walking: boolean): void {
+    const stepping = walking && Math.floor(this.scene.time.now / STEP_MS) % 2 === 1;
+    // Guarded: a swap costs a texture lookup and a re-origin, and a child
+    // standing in line holds the same frame for as long as they wait.
+    if (stepping !== this.stepping) {
+      this.stepping = stepping;
+      this.body.setTexture(stepping ? TextureKey.CustomerStride : TextureKey.Customer);
+    }
+
+    // Whole pixels: the standing line is drawn art, and half a pixel of lane
+    // would soften the one sprite the player is meant to read a face off.
+    const floor = this.footY + Math.round(this.lane) + (stepping ? -1 : 0);
+    this.body.setPosition(this.x, floor + this.headRow);
+    this.face.setPosition(this.x, floor + this.headRow);
+    this.bubble.setPosition(this.x, floor + this.bubbleRow);
+    this.breathe();
+    place(this.want, this.x, floor + this.candyRow);
+    this.barTrack.setPosition(this.x, this.footY + BAR_Y);
+    this.barFill.setPosition(this.x - this.barPx / 2, this.footY + BAR_Y);
+  }
+
+  /**
+   * The last-seconds alarm: the bubble swells and settles, off the same scene
+   * clock the walk cycle uses, so a row of children in trouble breathes in time
+   * rather than each on its own phase.
+   *
+   * The bubble alone, and not what is inside it: the candy is the order the
+   * player has to read off a glance, so it stays still and crisp while the
+   * bubble moves around it.
+   */
+  private breathe(): void {
+    if (!this.alarmed) {
+      // The one write that settles it, on the frame the alarm ends and no
+      // other. `breathing` is true exactly when the bubble is off its resting
+      // size, so a view handed to the next child cannot inherit a swollen one.
+      if (!this.breathing) return;
+
+      this.breathing = false;
+      this.bubble.setScale(this.scale);
+      return;
+    }
+
+    // Swells from the resting size and settles back to it, rather than either
+    // side of it: a bubble that spends half the alarm *smaller* than normal
+    // reads as receding, which is the opposite of what it is for.
+    const phase = 1 - Math.cos((this.scene.time.now / BREATH_MS) * Math.PI * 2);
+    this.breathing = true;
+    this.bubble.setScale(this.scale * (1 + (BREATH_AMOUNT * phase) / 2));
+  }
+
+  private hide(): void {
+    this.done = true;
+    this.leaving = false;
+    this.bubble.setVisible(false);
+    show(this.want, false);
+    this.body.setVisible(false);
+    this.face.setVisible(false);
+    this.barTrack.setVisible(false);
+    this.barFill.setVisible(false);
+  }
+}
