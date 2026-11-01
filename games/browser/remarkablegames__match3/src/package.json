@@ -1,0 +1,39 @@
+{
+  "name": "match3",
+  "private": true,
+  "version": "1.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "check:size": "node scripts/check-size.mjs",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:tsc": "tsc --noEmit",
+    "prepare": "husky",
+    "preview": "vite preview",
+    "start": "vite --open",
+    "test": "vitest",
+    "test:ci": "CI=true npm test -- --color --coverage",
+    "test:watch": "vitest --watch"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@eslint/js": "10.0.1",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/user-event": "14.6.8",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.13.0",
+    "eslint-plugin-prettier": "5.5.7",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "eslint-plugin-tsdoc": "0.5.4",
+    "husky": "9.1.7",
+    "jsdom": "30.1.3",
+    "lint-staged": "17.6.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}
