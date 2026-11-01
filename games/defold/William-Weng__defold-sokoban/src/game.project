@@ -1,0 +1,31 @@
+[bootstrap]
+main_collection = /main/main.collectionc
+
+[script]
+shared_state = 1
+
+[display]
+width = 384
+height = 384
+high_dpi = 1
+
+[android]
+input_method = HiddenInputField
+
+[physics]
+gravity_y = -1000.0
+scale = 0.01
+
+[html5]
+scale_mode = stretch
+
+[project]
+title = 倉庫番
+version = 0.1.2
+custom_resources = /assets/file/levels.json
+dependencies#0 = https://github.com/William-Weng/defold-utils/archive/refs/tags/0.1.2.zip
+
+[ios]
+bundle_identifier = idv.william.sokoban
+bundle_version = 1.0.0
+
