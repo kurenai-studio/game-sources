@@ -1,0 +1,17 @@
+-- Defold HUD script. Listens for "update_stats" messages emitted by the
+-- scoreboard actor and refreshes the on-screen score text. Attach this to
+-- the `hud.gui` scene; the gui scene itself defines the two text nodes
+-- (`score` and `controls`) and the controls strip is static.
+
+function init(self)
+	self.score_node = gui.get_node("score")
+end
+
+function on_message(self, message_id, message, _sender)
+	if message_id == hash("update_stats") then
+		gui.set_text(
+			self.score_node,
+			string.format("Score %d   Wave %d   Lives %d",
+				message.score or 0, message.wave or 1, message.lives or 3))
+	end
+end
