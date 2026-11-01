@@ -1,7 +1,9 @@
-# Catalog
+# Game Sources Catalog INDEX
 
-| Path | Upstream | License | Engine | Collected by | Date |
-|------|----------|---------|--------|--------------|------|
+Generated: 2026-11-01 ~08:25 PT (America/Los_Angeles). Entries: **854**.
+
+| path | upstream | license | engine | by | collected_at |
+|------|----------|---------|--------|----|--------------|
 | games/browser/AJLoveChina__Piano-Tiles | https://github.com/AJLoveChina/Piano-Tiles | MIT | browser | c | 2026-10-23 |
 | games/browser/Afbcary__space-trash | https://github.com/Afbcary/space-trash | MIT | browser | c |  |
 | games/browser/Alcom1__Flatform | https://github.com/Alcom1/Flatform | GPL-3.0 | browser | c |  |
@@ -162,8 +164,9 @@
 | games/godot/Nokorpo__infinigrass | https://github.com/Nokorpo/infinigrass | GPL-3.0 | godot | a | 2026-10-23 |
 | games/godot/Piralein__ocean-king | https://github.com/Piralein/ocean-king | MIT | godot | a | 2026-10-23 |
 | games/godot/ProjectMakersDE__horizOn-Example-Godot | https://github.com/ProjectMakersDE/horizOn-Example-Godot | MIT | godot | a | 2026-10-23 |
-| games/godot/ProjectMakersDE__horizOn-Example-Godot/src/examples/public_feature_guides | https://github.com/None/None |  |  |  |  |
-| games/godot/ProjectMakersDE__horizOn-Example-Godot/src/examples/public_marketplace | https://github.com/None/None |  |  |  |  |
+| games/godot/ProjectMakersDE__horizOn-Example-Godot/src/SDK-SOURCE.json |  |  |  |  |  |
+| games/godot/ProjectMakersDE__horizOn-Example-Godot/src/examples/public_feature_guides |  |  |  |  |  |
+| games/godot/ProjectMakersDE__horizOn-Example-Godot/src/examples/public_marketplace |  |  |  |  |  |
 | games/godot/ShadowXPA__CookieDungeon | https://github.com/ShadowXPA/CookieDungeon | MIT | godot | a | 2026-10-23 |
 | games/godot/SlayHorizon__godot-2d-platformer-demo | https://github.com/SlayHorizon/godot-2d-platformer-demo | MIT | godot | a | 2026-10-23 |
 | games/godot/SlayHorizon__godot-tiny-mmo | https://github.com/SlayHorizon/godot-tiny-mmo | MIT | godot | a | 2026-10-22 |
@@ -249,7 +252,10 @@
 | games/libgdx/Elia-Youssef__libGDX-2d-pong | https://github.com/Elia-Youssef/libGDX-2d-pong | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-2d-shadow-clash | https://github.com/Elia-Youssef/libGDX-2d-shadow-clash | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-circuit-salvage | https://github.com/Elia-Youssef/libGDX-circuit-salvage | MIT | libgdx | d | 2026-11-01 |
+| games/libgdx/Elia-Youssef__libGDX-gladiator-arena | https://github.com/Elia-Youssef/libGDX-gladiator-arena | MIT | libgdx | d | 2026-11-01 |
+| games/libgdx/Elia-Youssef__libGDX-moon-courier | https://github.com/Elia-Youssef/libGDX-moon-courier | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-projectile-aiming | https://github.com/Elia-Youssef/libGDX-projectile-aiming | MIT | libgdx | d | 2026-11-01 |
+| games/libgdx/Elia-Youssef__libGDX-shadow-clone-game | https://github.com/Elia-Youssef/libGDX-shadow-clone-game | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Frappagames__le-pendu | https://github.com/Frappagames/le-pendu | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/Jespardo__SharkBoids-Game | https://github.com/Jespardo/SharkBoids-Game | MIT | libgdx | d | 2026-10-23 |
 | games/libgdx/Joffis__CastleGame | https://github.com/Joffis/CastleGame | GPL-3.0 | libgdx | d | 2026-10-23 |
@@ -312,17 +318,19 @@
 | games/libgdx/nischalbasuti__bitman | https://github.com/nischalbasuti/bitman | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/orangepascal__planetbusters | https://github.com/orangepascal/planetbusters | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/payne911__marvelous-bob | https://github.com/payne911/marvelous-bob | MIT | libgdx | d | 2026-10-23 |
-| games/libgdx/pbodyMRTF__infernum-classic | https://github.com/pbodyMRTF/infernum-classic | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/pbodyMRTF__infernum | https://github.com/pbodyMRTF/infernum | GPL-3.0 | libgdx | d | 2026-10-23 |
+| games/libgdx/pbodyMRTF__infernum-classic | https://github.com/pbodyMRTF/infernum-classic | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/retrowars__retrowars | https://github.com/retrowars/retrowars | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/sTorro__triviazo | https://github.com/sTorro/triviazo | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/sanjeev309__storklight | https://github.com/sanjeev309/storklight | GPL-3.0 | libgdx | d | 2026-10-23 |
+| games/libgdx/sevi2000__FragmentOfTheAbyss | https://github.com/sevi2000/FragmentOfTheAbyss | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/sreich__ore-infinium | https://github.com/sreich/ore-infinium | MIT | libgdx | d | 2026-10-22 |
 | games/libgdx/ssenegas__kickoff | https://github.com/ssenegas/kickoff | MIT | libgdx | d | 2026-10-22 |
 | games/libgdx/terroo__spaceship | https://github.com/terroo/spaceship | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/thebitspud__astro-agents | https://github.com/thebitspud/astro-agents | MIT | libgdx | d | 2026-10-23 |
 | games/libgdx/tomerba6__scoundrel-game | https://github.com/tomerba6/scoundrel-game | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/vanbinhstudios__thelegendofericc | https://github.com/vanbinhstudios/thelegendofericc | MIT | libgdx | d | 2026-10-23 |
+| games/libgdx/vishalvhingorani__Flying-Dino-Game | https://github.com/vishalvhingorani/Flying-Dino-Game | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/wlkrt0__BallSort | https://github.com/wlkrt0/BallSort | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/wlkrt0__EggSort | https://github.com/wlkrt0/EggSort | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/wmora__martianrun | https://github.com/wmora/martianrun | Apache-2.0 | libgdx | d | 2026-10-22 |
@@ -375,15 +383,18 @@
 | games/love2d/egordorichev__CurseOfTheArrow | https://github.com/egordorichev/CurseOfTheArrow | GPL-3.0 | love2d | b | 2026-10-22 |
 | games/love2d/g3rley__PONG | https://github.com/g3rley/PONG | MIT | love2d | b | 2026-11-01 |
 | games/love2d/hexagontal-mpti__Welcome-to-Kaliningrad | https://github.com/hexagontal-mpti/Welcome-to-Kaliningrad | GPL-3.0 | love2d | b | 2026-10-23 |
+| games/love2d/higgs-bosoff__monopole | https://github.com/higgs-bosoff/monopole | GPL-3.0 | love2d | b | 2026-11-01 |
 | games/love2d/janrizmlibres__roach-island | https://github.com/janrizmlibres/roach-island | MIT | love2d | b | 2026-10-23 |
 | games/love2d/jonthysell__RetroLove | https://github.com/jonthysell/RetroLove | MIT | love2d | b | 2026-10-23 |
 | games/love2d/meenbeese__love2D-demo | https://github.com/meenbeese/love2D-demo | MIT | love2d | b | 2026-10-23 |
 | games/love2d/misskanagi__popjumper | https://github.com/misskanagi/popjumper | MIT | love2d | b | 2026-10-23 |
 | games/love2d/muellerberndt__ladybug-love2d | https://github.com/muellerberndt/ladybug-love2d | MIT | love2d | b | 2026-10-23 |
 | games/love2d/n3g3ntr0py__Love2d-Immigration-Life | https://github.com/n3g3ntr0py/Love2d-Immigration-Life | GPL-3.0 | love2d | b | 2026-10-23 |
+| games/love2d/nguyenquan-2510__Lua-Click-Game | https://github.com/nguyenquan-2510/Lua-Click-Game | GPL-3.0 | love2d | b | 2026-11-01 |
 | games/love2d/noooway__love2d_arkanoid_tutorial | https://github.com/noooway/love2d_arkanoid_tutorial | MIT | love2d | b | 2026-10-22 |
 | games/love2d/notexplosive__monster-mash | https://github.com/notexplosive/monster-mash | MIT | love2d | b | 2026-10-23 |
 | games/love2d/omar-polo__sn4k3 | https://github.com/omar-polo/sn4k3 | MIT | love2d | b | 2026-11-01 |
+| games/love2d/pcolladosoto__GoL | https://github.com/pcolladosoto/GoL | GPL-3.0 | love2d | b | 2026-11-01 |
 | games/love2d/peppercat10__tetris-love-ecs | https://github.com/peppercat10/tetris-love-ecs | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/piXelicidio__locas-ants | https://github.com/piXelicidio/locas-ants | MIT | love2d | b | 2026-10-23 |
 | games/love2d/plinkr__bolt-love | https://github.com/plinkr/bolt-love | MIT | love2d | b | 2026-10-23 |
@@ -392,6 +403,7 @@
 | games/love2d/remyroez__love-platformer | https://github.com/remyroez/love-platformer | MIT | love2d | b | 2026-10-23 |
 | games/love2d/remyroez__love-top-down-shooter | https://github.com/remyroez/love-top-down-shooter | MIT | love2d | b | 2026-10-23 |
 | games/love2d/rkalis__minesweeper | https://github.com/rkalis/minesweeper | MIT | love2d | b | 2026-10-23 |
+| games/love2d/rm-a0__city-sim | https://github.com/rm-a0/city-sim | GPL-3.0 | love2d | b | 2026-11-01 |
 | games/love2d/ryanplusplus__love-for-lua-game-programming | https://github.com/ryanplusplus/love-for-lua-game-programming | MIT | love2d | b | 2026-10-23 |
 | games/love2d/schwarzbox__Reversi | https://github.com/schwarzbox/Reversi | MIT | love2d | b | 2026-10-23 |
 | games/love2d/skrolikowski__Love2D-Tetris-Clone | https://github.com/skrolikowski/Love2D-Tetris-Clone | MIT | love2d | b | 2026-11-01 |
@@ -440,17 +452,21 @@
 | games/monogame/starkris51__project-grabbity | https://github.com/starkris51/project-grabbity | MIT | monogame | d | 2026-10-23 |
 | games/monogame/tamanegicode__tanks | https://github.com/tamanegicode/tanks | GPL-3.0 | monogame | d | 2026-10-23 |
 | games/other/DJAcquila__Space-Infection | https://github.com/DJAcquila/Space-Infection | MIT | other | e | 2026-11-01 |
+| games/other/FunToHard__Space-Shooter | https://github.com/FunToHard/Space-Shooter | MIT | other | e | 2026-11-01 |
 | games/other/IndieCoderMM__platformer-raylib | https://github.com/IndieCoderMM/platformer-raylib | MIT | other | e | 2026-11-01 |
 | games/other/Jhyde927__DeadCityNights | https://github.com/Jhyde927/DeadCityNights | MIT | other | e | 2026-11-01 |
 | games/other/Leftium__asteroid | https://github.com/Leftium/asteroid | MIT | other | e | 2026-11-01 |
+| games/other/RocketBuddyBro__Asteroid_raylib_game | https://github.com/RocketBuddyBro/Asteroid_raylib_game | MIT | other | e | 2026-11-01 |
 | games/other/Sirvoid__Midless | https://github.com/Sirvoid/Midless | MIT | other | e | 2026-10-23 |
 | games/other/cristianscheid__space-crusher | https://github.com/cristianscheid/space-crusher | MIT | other | e | 2026-11-01 |
 | games/other/dimaglushkov__checkers-online | https://github.com/dimaglushkov/checkers-online | MIT | other | e | 2026-11-01 |
 | games/other/fogleman__Craft | https://github.com/fogleman/Craft | MIT | other | e | 2026-10-23 |
 | games/other/frederickjjoubert__bevy-ball-game | https://github.com/frederickjjoubert/bevy-ball-game | MIT | other | e | 2026-11-01 |
+| games/other/nulljosh__hamurapi | https://github.com/nulljosh/hamurapi | MIT | other | e | 2026-11-01 |
 | games/other/petergpt__lean-3d-game-axiom | https://github.com/petergpt/lean-3d-game-axiom | MIT | other | e | 2026-11-01 |
 | games/other/przemek83__tankble | https://github.com/przemek83/tankble | MIT | other | e | 2026-11-01 |
 | games/other/rainpaw__space-shooter | https://github.com/rainpaw/space-shooter | MIT | other | e | 2026-11-01 |
+| games/other/setghm__space-invaders | https://github.com/setghm/space-invaders | MIT | other | e | 2026-11-01 |
 | games/other/wolfdroid__The_Mighty_Gatot_Kaca | https://github.com/wolfdroid/The_Mighty_Gatot_Kaca | MIT | other | e | 2026-11-01 |
 | games/other/ystepanoff__ParaGopher | https://github.com/ystepanoff/ParaGopher | MIT | other | e | 2026-11-01 |
 | games/phaser/Autapomorph__dino | https://github.com/Autapomorph/dino | MIT | phaser | c | 2026-10-22 |
@@ -478,6 +494,7 @@
 | games/phaser/Vini2__phagefall | https://github.com/Vini2/phagefall | MIT | phaser | c | 2026-11-01 |
 | games/phaser/about14sheep__meltdown | https://github.com/about14sheep/meltdown | GPL-3.0 | phaser | c | 2026-10-23 |
 | games/phaser/anapdh__js-capstoneproject | https://github.com/anapdh/js-capstoneproject | MIT | phaser | c | 2026-10-23 |
+| games/phaser/anjmao__phaser-candy-crush | https://github.com/anjmao/phaser-candy-crush | MIT | phaser | c | 2026-11-01 |
 | games/phaser/botingnon__phaser3-memory-match | https://github.com/botingnon/phaser3-memory-match | MIT | phaser | c | 2026-10-23 |
 | games/phaser/botingnon__phaser3-pong | https://github.com/botingnon/phaser3-pong | MIT | phaser | c | 2026-10-23 |
 | games/phaser/cavestri__zombies | https://github.com/cavestri/zombies | MIT | phaser | c | 2026-11-01 |
@@ -505,6 +522,7 @@
 | games/phaser/mariyadavydova__starfall-phaser3-typescript | https://github.com/mariyadavydova/starfall-phaser3-typescript | MIT | phaser | c | 2026-10-22 |
 | games/phaser/marusasa__snake | https://github.com/marusasa/snake | MIT | phaser | c | 2026-11-01 |
 | games/phaser/mateusdemboski__TapTapTaxi | https://github.com/mateusdemboski/TapTapTaxi | MIT | phaser | c | 2026-10-23 |
+| games/phaser/natezimm__brick-breaker-resume | https://github.com/natezimm/brick-breaker-resume | MIT | phaser | c | 2026-11-01 |
 | games/phaser/nodes777__flower-game-phaser3 | https://github.com/nodes777/flower-game-phaser3 | GPL-3.0 | phaser | c | 2026-10-23 |
 | games/phaser/nxi2005__Whale_game | https://github.com/nxi2005/Whale_game | MIT | phaser | c |  |
 | games/phaser/openforge__openfarm-puzzle-game | https://github.com/openforge/openfarm-puzzle-game | MIT | phaser | c | 2026-10-23 |
@@ -520,6 +538,7 @@
 | games/phaser/trungvose__space-invaders-phaser-3 | https://github.com/trungvose/space-invaders-phaser-3 | MIT | phaser | c | 2026-10-23 |
 | games/phaser/tw365-org__bee-vs-hornets | https://github.com/tw365-org/bee-vs-hornets | MIT | phaser | c | 2026-11-01 |
 | games/phaser/voithos__elemental-one | https://github.com/voithos/elemental-one | MIT | phaser | c | 2026-10-23 |
+| games/phaser/williamchong__candy-snake | https://github.com/williamchong/candy-snake | GPL-3.0 | phaser | c | 2026-11-01 |
 | games/phaser/wwwookiee__Phaser-SpaceInvaders | https://github.com/wwwookiee/Phaser-SpaceInvaders | MIT | phaser | c | 2026-10-23 |
 | games/phaser/xnt__bye-bye-alien | https://github.com/xnt/bye-bye-alien | MIT | phaser | c | 2026-11-01 |
 | games/phaser/xrplove__shapeshifter-game | https://github.com/xrplove/shapeshifter-game | MIT | phaser | c |  |
@@ -555,6 +574,8 @@
 | games/pygame/StanislavPetrovV__Maze_Game | https://github.com/StanislavPetrovV/Maze_Game | MIT | pygame | b | 2026-10-23 |
 | games/pygame/StanislavPetrovV__Snake | https://github.com/StanislavPetrovV/Snake | MIT | pygame | b | 2026-10-23 |
 | games/pygame/Stray3rdBorn__2D-Game-Project | https://github.com/Stray3rdBorn/2D-Game-Project | MIT | pygame | b | 2026-10-23 |
+| games/pygame/Thibault-GAREL__driving_game | https://github.com/Thibault-GAREL/driving_game | MIT | pygame | b | 2026-11-01 |
+| games/pygame/Thibault-GAREL__snake_game | https://github.com/Thibault-GAREL/snake_game | MIT | pygame | b | 2026-11-01 |
 | games/pygame/TimoWilken__flappy-bird-pygame | https://github.com/TimoWilken/flappy-bird-pygame | MIT | pygame | b | 2026-10-22 |
 | games/pygame/UncleSocks__Meeps | https://github.com/UncleSocks/Meeps | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/VIDAKHOSHPEY22__Atari-Racer | https://github.com/VIDAKHOSHPEY22/Atari-Racer | MIT | pygame | b | 2026-10-22 |
@@ -570,6 +591,7 @@
 | games/pygame/dhhruv__Sudoku-Solver | https://github.com/dhhruv/Sudoku-Solver | MIT | pygame | b | 2026-10-23 |
 | games/pygame/estevaofon__angry-birds-python | https://github.com/estevaofon/angry-birds-python | MIT | pygame | b | 2026-10-22 |
 | games/pygame/federicocabrera1978-svg__cabrechess | https://github.com/federicocabrera1978-svg/cabrechess | GPL-3.0 | pygame | b | 2026-10-23 |
+| games/pygame/firatksee__Pygame-Game2048 | https://github.com/firatksee/Pygame-Game2048 | MIT | pygame | b | 2026-11-01 |
 | games/pygame/gnino8111__asteroids | https://github.com/gnino8111/asteroids | MIT | pygame | b | 2026-10-23 |
 | games/pygame/goswami-rahul__alien-invasion-game | https://github.com/goswami-rahul/alien-invasion-game | MIT | pygame | b | 2026-10-23 |
 | games/pygame/hamdyaea__Daylight-Pong-python3 | https://github.com/hamdyaea/Daylight-Pong-python3 | GPL-3.0 | pygame | b | 2026-10-23 |
@@ -589,6 +611,7 @@
 | games/pygame/las-r__snake-pygame | https://github.com/las-r/snake-pygame | MIT | pygame | b | 2026-11-01 |
 | games/pygame/leerob__space-invaders | https://github.com/leerob/space-invaders | MIT | pygame | b | 2026-10-22 |
 | games/pygame/max-kov__pool | https://github.com/max-kov/pool | MIT | pygame | b | 2026-10-23 |
+| games/pygame/mcckyle__pumpkin-smash | https://github.com/mcckyle/pumpkin-smash | MIT | pygame | b | 2026-11-01 |
 | games/pygame/memoiry__Snaky | https://github.com/memoiry/Snaky | MIT | pygame | b | 2026-10-23 |
 | games/pygame/memoiry__Ticky | https://github.com/memoiry/Ticky | MIT | pygame | b | 2026-10-23 |
 | games/pygame/mm12432__my_chess | https://github.com/mm12432/my_chess | MIT | pygame | b | 2026-10-23 |
@@ -603,6 +626,7 @@
 | games/pygame/sourabhv__FlapPyBird | https://github.com/sourabhv/FlapPyBird | MIT | pygame | b | 2026-10-22 |
 | games/pygame/subhranil-179__gravity-simulator | https://github.com/subhranil-179/gravity-simulator | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/tasdikrahman__spaceShooter | https://github.com/tasdikrahman/spaceShooter | MIT | pygame | b | 2026-11-01 |
+| games/pygame/timodev96-alt__Hack-Jumper | https://github.com/timodev96-alt/Hack-Jumper | MIT | pygame | b | 2026-11-01 |
 | games/pygame/tonderaikawere__my-python-pong | https://github.com/tonderaikawere/my-python-pong | MIT | pygame | b | 2026-10-23 |
 | games/pygame/unternehmen__dirt | https://github.com/unternehmen/dirt | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/vineetjc__pygame-Search-the-Key | https://github.com/vineetjc/pygame-Search-the-Key | MIT | pygame | b | 2026-10-23 |
@@ -670,6 +694,7 @@
 | games/retro/vgmoose__space-nx | https://github.com/vgmoose/space-nx | MIT | retro | e | 2026-10-23 |
 | games/retro/vilhelmbergsoe__snake | https://github.com/vilhelmbergsoe/snake | MIT | retro | e | 2026-10-23 |
 | games/retro/yujqiao__DungeonRush | https://github.com/yujqiao/DungeonRush | GPL-3.0 | retro | e | 2026-10-23 |
+| games/rpgmaker/EasyRPG__TestGame | https://github.com/EasyRPG/TestGame | GPL-3.0 | rpgmaker | e | 2026-11-01 |
 | games/threejs/Aaron-Bird__rubiks-cube | https://github.com/Aaron-Bird/rubiks-cube | MIT | threejs | c | 2026-10-23 |
 | games/threejs/EvanBacon__Expo-Crossy-Road | https://github.com/EvanBacon/Expo-Crossy-Road | MIT | threejs | c | 2026-10-23 |
 | games/threejs/EvanBacon__pillar-valley | https://github.com/EvanBacon/pillar-valley | MIT | threejs | c | 2026-10-23 |
@@ -825,3 +850,12 @@
 | games/unity/yasirkula__UnityHexicGame | https://github.com/yasirkula/UnityHexicGame | MIT | unity | e | 2026-11-01 |
 | games/unity/ytmt-stag__UnityGame | https://github.com/ytmt-stag/UnityGame | MIT | unity | e | 2026-10-23 |
 | games/unity/yushroom__MonumentVally-Demo | https://github.com/yushroom/MonumentVally-Demo | MIT | unity | e | 2026-10-22 |
+| games/unreal/GMihalkow__ToonTanks | https://github.com/GMihalkow/ToonTanks | MIT | unreal | d | 2026-11-01 |
+| games/unreal/JavierSerranoDev__unreal-engine-game-archiecture-system-course | https://github.com/JavierSerranoDev/unreal-engine-game-archiecture-system-course | MIT | unreal | d | 2026-11-01 |
+| games/unreal/MaximeRichard__GGJ2017-BEAT | https://github.com/MaximeRichard/GGJ2017-BEAT | GPL-3.0 | unreal | e | 2026-11-01 |
+| games/unreal/NoahWood01__Aghanim-RPG | https://github.com/NoahWood01/Aghanim-RPG | MIT | unreal | d | 2026-11-01 |
+| games/unreal/RLoris__TankPlayground | https://github.com/RLoris/TankPlayground | GPL-3.0 | unreal | e | 2026-11-01 |
+| games/unreal/TheosCreation__UnrealEngineGameLearning | https://github.com/TheosCreation/UnrealEngineGameLearning | MIT | unreal | d | 2026-11-01 |
+| games/unreal/ToucanTechno__Noxia | https://github.com/ToucanTechno/Noxia | GPL-3.0 | unreal | e | 2026-11-01 |
+| games/unreal/VadimDev__Spiky-Project | https://github.com/VadimDev/Spiky-Project | MIT | unreal | d | 2026-11-01 |
+
