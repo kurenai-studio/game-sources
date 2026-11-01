@@ -1,0 +1,19 @@
+{
+  "id": "thug",
+  "name": "Alley Thug",
+  "description": "A clumsy brawler. Slow but hits reasonably hard.",
+  "sprite": "content/sprites/stickman.svg",
+  "tint": "#9e9e9e",
+  "stats": {
+    "maxHp": 90,
+    "maxStamina": 80,
+    "staminaRegen": 12,
+    "moveSpeed": 150,
+    "jumpVelocity": 480
+  },
+  "attacks": {
+    "light": { "name": "Swing", "damage": 9, "staminaCost": 10, "range": 80, "cooldown": 600 },
+    "heavy": { "name": "Haymaker", "damage": 16, "staminaCost": 26, "range": 84, "cooldown": 1100 }
+  },
+  "special": { "name": "Tackle", "damage": 22, "staminaCost": 40, "range": 100, "cooldown": 4000 }
+}
