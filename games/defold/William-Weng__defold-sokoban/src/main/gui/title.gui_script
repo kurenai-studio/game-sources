@@ -1,0 +1,76 @@
+-- 引入除錯列印模組，方便在開發時輸出訊息到 console
+local dprint = require("utility.debug_print")
+-- 引入輔助函數模組，包含輸入焦點控制、投影設定、訊息發送等工具函數
+local helper = require("utility.msg_helpers")
+
+-- 內部函數：開始遊戲的邏輯
+-- @param self: 當前腳本實例（Defold 的 self 表）
+local function start_game(self)
+	-- 輸出除錯訊息，標示遊戲正在啟動
+	dprint.print("Starting game")
+
+	-- 標記當前畫面不再顯示（例如標題畫面）
+	self.is_showing = false
+
+	-- 取得名為 "title_panel" 的 GUI 節點（通常是標題選單面板）
+	local panel = gui.get_node("title_panel")
+
+	-- 停用該面板的輸入回應
+	gui.set_enabled(panel, false)
+	-- 隱藏該面板，使其不可見
+	gui.set_visible(panel, false)
+
+	-- 釋放輸入焦點，避免 GUI 繼續攔截輸入事件
+	helper.release_input_focus()
+	-- 發送訊息到 "/game#game" 元件，通知其開始遊戲
+	-- 訊息名稱為 "start_game"，遊戲邏輯應在該元件中處理
+	helper.post("/game#game", "start_game")
+end
+
+-- Defold 生命週期函數：初始化時呼叫
+function init(self)
+	-- 標記當前畫面正在顯示（例如標題畫面）
+	self.is_showing = true
+
+	-- 設定投影矩陣為固定比例填充模式
+	-- 參數 -1, 1 表示使用標準化座標系統，保持內容比例並填滿螢幕
+	-- 超出部分會自動留黑邊（letterboxing）
+	helper.use_fixed_fit_projection(-1, 1)
+
+	-- 取得輸入焦點，讓此腳本能接收 on_input 事件
+	helper.acquire_input_focus()
+end
+
+-- Defold 生命週期函數：處理輸入事件
+-- @param action_id: 輸入動作的 hash 識別碼（例如按鍵或觸控動作）
+-- @param action: 包含輸入狀態的表（如 pressed、touch 等）
+function on_input(self, action_id, action)
+	-- 如果當前畫面未顯示，忽略所有輸入
+	if not self.is_showing then
+		return false
+	end
+
+	-- 如果輸入動作不是「按下」狀態（例如放開），忽略
+	if not action.pressed then
+		return false
+	end
+
+	-- 如果是單一觸控事件（手指點擊螢幕）
+	if action.touch and #action.touch == 1 then
+		-- 呼叫開始遊戲函數
+		start_game(self)
+		-- 返回 true 表示已處理此輸入，不再傳遞給其他元件
+		return true
+	end
+
+	-- 如果輸入動作是名為 "next_level" 的按鍵或控制器按鈕
+	if action_id == hash("next_level") then
+		-- 同樣呼叫開始遊戲函數（可能用於鍵盤或控制器快速開始）
+		start_game(self)
+		-- 返回 true 表示已處理
+		return true
+	end
+
+	-- 其他未處理的輸入，返回 false 讓其他元件繼續處理
+	return false
+end
