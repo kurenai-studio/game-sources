@@ -1,0 +1,64 @@
+name: "level1"
+collection_instances {
+  id: "player"
+  collection: "/game/player/player.collection"
+  position {
+    x: 170.0
+    y: -26.0
+    z: 1.0
+  }
+}
+collection_instances {
+  id: "enemy"
+  collection: "/game/enemy/enemy.collection"
+  position {
+    x: 1703.0
+    y: -20.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "finish"
+  data: ""
+  position {
+    x: 5973.0
+    y: 133.0
+  }
+}
+embedded_instances {
+  id: "charger"
+  data: ""
+  position {
+    x: 3504.0
+    y: 804.0
+  }
+}
+embedded_instances {
+  id: "level"
+  children: "go"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/game/levels/level.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"collision_shape: \\\"/game/levels/easy/easy_1.tilemap\\\"\\n"
+  "type: COLLISION_OBJECT_TYPE_STATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"\\\"\\n"
+  "mask: \\\"player\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "go"
+  data: "components {\n"
+  "  id: \"lvl\"\n"
+  "  component: \"/game/levels/easy/easy_1.tilemap\"\n"
+  "}\n"
+  ""
+}

@@ -1,0 +1,369 @@
+script: "/menu/pause/pause.gui_script"
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+nodes {
+  position {
+    x: -20.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 500.0
+    y: 320.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "blocker"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "blocker1"
+  parent: "blocker"
+  inherit_alpha: true
+  template: "/menu/templates/blocker.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/root"
+  parent: "blocker1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/blocker"
+  parent: "blocker1/root"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.4
+    y: 0.6
+    z: 0.6
+  }
+  type: TYPE_TEXT
+  text: "Pause"
+  id: "blocker1/text"
+  parent: "blocker1/blocker"
+  overridden_fields: 5
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 362.0
+    y: 132.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "resume"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "resume1"
+  parent: "resume"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "resume1/root"
+  parent: "resume1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "resume1/button"
+  parent: "resume1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Resume"
+  id: "resume1/text"
+  parent: "resume1/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 638.0
+    y: 132.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "menu"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "menu1"
+  parent: "menu"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "menu1/root"
+  parent: "menu1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "menu1/button"
+  parent: "menu1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Menu"
+  id: "menu1/text"
+  parent: "menu1/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 228.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "warn"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 420.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "Progress will be lost!"
+  font: "text_regular"
+  id: "text"
+  parent: "warn"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 418.0
+    y: 448.0
+  }
+  type: TYPE_TEMPLATE
+  id: "music"
+  parent: "root"
+  inherit_alpha: true
+  template: "/menu/templates/checkbox.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "music/root"
+  parent: "music"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "music/button"
+  parent: "music/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "music/icon"
+  parent: "music/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "music/selected"
+  parent: "music/button"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "music"
+  id: "music/text"
+  parent: "music/button"
+  overridden_fields: 5
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 418.0
+    y: 363.0
+  }
+  type: TYPE_TEMPLATE
+  id: "sounds"
+  parent: "root"
+  inherit_alpha: true
+  template: "/menu/templates/checkbox.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "sounds/root"
+  parent: "sounds"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sounds/button"
+  parent: "sounds/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sounds/icon"
+  parent: "sounds/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sounds/selected"
+  parent: "sounds/button"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "sounds"
+  id: "sounds/text"
+  parent: "sounds/button"
+  overridden_fields: 5
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 290.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "level"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "Level: 1"
+  font: "text_regular"
+  id: "lvl"
+  parent: "level"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 323.0
+    y: 492.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "win"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+  visible: false
+}
+nodes {
+  rotation {
+    z: 20.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.702
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_TEXT
+  text: "WIN!"
+  font: "text_bold"
+  id: "wintext"
+  parent: "win"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+particlefxs {
+  name: "teleport"
+  particlefx: "/game/particles/teleport.particlefx"
+}

@@ -1,0 +1,70 @@
+local device = require("main.device")
+local state = require("main.state")
+
+go.property("length", 200)
+go.property("length_y", 50)
+go.property("apply_y", 200)
+go.property("apply_y_mobile", 1.5)
+go.property("border", 100)
+
+local function set_small(self)
+	local w, h = window.get_size()
+	if w < 1280 or h < 720 then
+		self.is_small = true
+	else
+		self.is_small = false
+	end
+end
+
+function init(self)
+	self.t = 0
+	self.t_small = 0
+	self.is_small = false
+	self.is_mobile = false
+	self.level_bounds = state.get(state.key.LEVEL_BOUNDS)
+	set_small(self)
+	if device.mobile() then
+		self.is_mobile = true
+	end
+end
+
+local function border_modify()
+	local p = go.get_position()
+	local w, h = window.get_size()
+end
+
+function update(self, dt)
+	self.t_small = self.t_small + 1
+	if self.t_small > 1 then
+		set_small(self)
+		self.t_small = 0
+	end
+	local cam_pos = go.get_position()
+	local apply = vmath.vector3()
+	if self.apply_y ~= 0 then
+		local ay = self.apply_y
+		if self.is_mobile then
+			ay = ay / self.apply_y_mobile
+		end
+		apply = vmath.vector3(0, ay, 0)
+	end
+	local player_pos = go.get(go.get_id("player"), "position") + apply
+	if self.is_small or self.is_mobile then
+		go.set_position(player_pos)
+		return
+	end
+	if
+		vmath.length(player_pos - cam_pos) <= self.length
+		and math.abs(cam_pos.y - player_pos.y) <= self.length_y
+	then
+		return
+	end
+	self.t = self.t + dt
+	if self.t > 1 then
+		self.t = 0
+		return
+	end
+	local pos = vmath.lerp(self.t, cam_pos, player_pos)
+	go.set_position(pos)
+	self.t = 0
+end

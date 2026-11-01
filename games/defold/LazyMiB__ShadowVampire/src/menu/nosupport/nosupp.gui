@@ -1,0 +1,59 @@
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 500.0
+    y: 400.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Device not supported."
+  font: "text_bold"
+  id: "title"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 230.0
+  }
+  size {
+    x: 600.0
+    y: 150.0
+  }
+  type: TYPE_TEXT
+  text: "Only for PC and TV, because need the keyboard.\n"
+  "Maybe in the future..."
+  font: "text_regular"
+  id: "desc"
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

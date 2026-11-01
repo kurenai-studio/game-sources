@@ -1,0 +1,293 @@
+script: "/menu/done/done.gui_script"
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "blocker"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 480.0
+    y: 320.0
+  }
+  type: TYPE_TEMPLATE
+  id: "blocker1"
+  parent: "blocker"
+  inherit_alpha: true
+  template: "/menu/templates/blocker.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/root"
+  parent: "blocker1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/blocker"
+  parent: "blocker1/root"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "Level done!"
+  id: "blocker1/text"
+  parent: "blocker1/blocker"
+  overridden_fields: 5
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 132.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "resume"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "button"
+  parent: "resume"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/root"
+  parent: "button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/button"
+  parent: "button/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Go next!"
+  id: "button/text"
+  parent: "button/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 450.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "desc"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.949
+    y: 0.949
+    z: 0.949
+  }
+  type: TYPE_TEXT
+  text: "This is a success!"
+  font: "text_regular"
+  id: "text"
+  line_break: true
+  parent: "desc"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 360.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "completed"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "Levels completed:"
+  font: "text_regular"
+  id: "lvl"
+  line_break: true
+  parent: "completed"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 290.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "current"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "Level done:"
+  font: "text_regular"
+  id: "lvl1"
+  line_break: true
+  parent: "current"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 220.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "time"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "Took: 0min"
+  font: "text_regular"
+  id: "min"
+  line_break: true
+  parent: "time"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 512.0
+  }
+  rotation {
+    z: 180.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "done"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_PARTICLEFX
+  id: "particlefx"
+  parent: "done"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  particlefx: "done"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+particlefxs {
+  name: "done"
+  particlefx: "/game/particles/done.particlefx"
+}

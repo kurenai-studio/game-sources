@@ -1,0 +1,156 @@
+local platypus = require("platypus.platypus")
+local state = require("main.state")
+local music_const = require("game.music.music_const")
+
+local ANIM_WALK = hash("walk")
+local ANIM_IDLE = hash("idle")
+local ANIM_JUMP = hash("jump")
+local ANIM_FALL = hash("fall")
+
+local JUMP_POWER = 1000
+local MOVE_SPEED = 300
+local RETARGET_T = 1
+local MIN_LENGTH = 0
+local MIN_JUMP_LENGTH = 32
+local STAY_LENGTH = 16
+
+go.property("pan_dist", 100)
+go.property("pan_step", 0.1)
+go.property("volume_step", 0.05)
+go.property("tp_dist", 2000)
+
+local platypus_config = {
+	collisions = {
+		groups = {
+			[hash("ground")] = platypus.DIR_ALL,
+		},
+		left = 56, right = 56, top = 90, bottom = 64, offset = vmath.vector3(0, 64, 0)
+	},
+	gravity = -1400,
+}
+
+local function target(self)
+	local player_pos = go.get(hash("/player/player"), "position")
+	self.target_pos = player_pos
+	self.old_pos = go.get_position()
+end
+
+function init(self)
+	self.platypus = platypus.create(platypus_config)
+	self.anim = nil
+	self.ground_contact = false
+	self.walk_dir = 0
+	self.walking = false
+	self.t_retarget = 0
+	self.target_pos = go.get_position()
+	self.old_pos = go.get_position()
+	target(self)
+	--sprite.set_constant("#sprite", "tint", vmath.vector4(0.3, 0.4, 0.8, 0.5))
+end
+
+local function play_animation(self, anim)
+	if self.anim ~= anim then
+		sprite.play_flipbook("#sprite", anim)
+		self.anim = anim
+	end
+end
+
+local function update_animation(self)
+	if not self.platypus.has_ground_contact() then
+		return
+	end
+	if self.walking then
+		play_animation(self, ANIM_WALK)
+	else
+		play_animation(self, ANIM_IDLE)
+	end
+end
+
+function update(self, dt)
+	self.platypus.update(dt)
+	update_animation(self)
+end
+
+local function play_sound(self, id)
+	if not state.get(state.key.SOUND_ENABLED) then
+		return
+	end
+	local gain = sound.get_group_gain("sound")
+	if gain ~= music_const.SOUND_GAIN then
+		sound.set_group_gain("sound", music_const.SOUND_GAIN)
+	end
+	local pos = go.get_position()
+	local length = vmath.length(self.target_pos - pos)
+	gain = gain - (length / self.pan_dist * self.volume_step)
+	if gain <= 0 then
+		return
+	end
+	local pan = length / self.pan_dist * self.pan_step
+	if pan > 1 then
+		pan = 1
+	end
+	local dir = 1
+	if pos.x < self.target_pos.x then
+		dir = -1
+	end
+	pan = pan * dir
+	sound.play(id, {pan = pan, gain = gain})
+end
+
+function fixed_update(self, dt)
+	local pos = go.get_position()
+	local length = vmath.length(self.target_pos - pos)
+	if length > MIN_LENGTH then
+		local x_length = math.abs(pos.x - self.target_pos.x)
+		if self.tp_dist > 0 and x_length >= self.tp_dist then
+			go.set_position(self.target_pos)
+			particlefx.play("#teleport")
+			play_sound(self, "#sound_tp_action")
+			return
+		end
+		if (pos.x > self.target_pos.x and x_length > STAY_LENGTH) or self.walk_dir == -1 then
+			self.platypus.left(MOVE_SPEED)
+			self.walking = true
+			sprite.set_hflip("#sprite", true)
+		elseif (pos.x < self.target_pos.x and x_length > STAY_LENGTH) or self.walk_dir == 1 then
+			self.platypus.right(MOVE_SPEED)
+			sprite.set_hflip("#sprite", false)
+			self.walking = true
+		else
+			self.walking = false
+		end
+	else
+		self.walking = false
+		self.jumping = false
+	end
+	self.t_retarget = self.t_retarget + dt
+	if self.t_retarget > RETARGET_T then
+		if
+			(vmath.length(pos - self.old_pos) <= STAY_LENGTH or self.target_pos.y > pos.y)
+			and length > MIN_JUMP_LENGTH
+		then
+			self.platypus.jump(JUMP_POWER)
+			play_sound(self, "#sound_jump")
+		end
+		target(self)
+		self.t_retarget = 0
+		self.walk_dir = 0
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	self.platypus.on_message(message_id, message)
+	if message_id == platypus.FALLING then
+		self.ground_contact = false
+		play_animation(self, ANIM_FALL)
+	elseif message_id == platypus.GROUND_CONTACT then
+		self.ground_contact = true
+		particlefx.play("#dust")
+	elseif message_id == platypus.JUMP then
+		self.ground_contact = false
+		play_animation(self, ANIM_JUMP)
+		particlefx.play("#dust")
+	elseif message_id == hash("hit") then
+		particlefx.play("#blood")
+	end
+end

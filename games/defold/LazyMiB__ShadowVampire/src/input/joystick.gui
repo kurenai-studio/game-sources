@@ -1,0 +1,104 @@
+script: "/input/joystick.gui_script"
+textures {
+  name: "joysteak"
+  texture: "/assets/joysteak/joysteak.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  alpha: 0.7
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 780.0
+    y: 160.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "joysteak"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "joysteak/joysteak_bg"
+  id: "bg"
+  parent: "joysteak"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  type: TYPE_BOX
+  texture: "joysteak/joysteak_j"
+  id: "analog"
+  parent: "joysteak"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 180.0
+    y: 80.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "buttons"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 125.0
+    y: -30.0
+  }
+  type: TYPE_BOX
+  texture: "joysteak/joysteak_esc"
+  id: "esc"
+  parent: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -130.0
+    y: -30.0
+  }
+  type: TYPE_BOX
+  texture: "joysteak/joysteak_r"
+  id: "r"
+  parent: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -5.0
+    y: 104.0
+  }
+  type: TYPE_BOX
+  texture: "joysteak/joysteak_w"
+  id: "w"
+  parent: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

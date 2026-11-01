@@ -1,0 +1,21 @@
+textures {
+  name: "bg"
+  texture: "/assets/images/bg.atlas"
+}
+nodes {
+  position {
+    x: 480.0
+    y: 321.0
+  }
+  type: TYPE_BOX
+  texture: "bg/bg"
+  id: "bg"
+  layer: "bg"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "bg"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

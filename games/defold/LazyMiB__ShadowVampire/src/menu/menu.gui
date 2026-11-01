@@ -1,0 +1,238 @@
+script: "/menu/menu.gui_script"
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+textures {
+  name: "bg"
+  texture: "/assets/images/bg.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 480.0
+    y: 575.0
+  }
+  size {
+    x: 350.0
+    y: 50.0
+  }
+  color {
+    x: 0.702
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_TEXT
+  text: "Shadow Vampire"
+  font: "text_bold"
+  id: "title"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 419.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "play"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "play_btn"
+  parent: "play"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "play_btn/root"
+  parent: "play_btn"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "play_btn/button"
+  parent: "play_btn/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "play_btn/text"
+  parent: "play_btn/button"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 290.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "about"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "about_btn"
+  parent: "about"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "about_btn/root"
+  parent: "about_btn"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "about_btn/button"
+  parent: "about_btn/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "About"
+  id: "about_btn/text"
+  parent: "about_btn/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 30.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "exit"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "exit_btn"
+  parent: "exit"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "exit_btn/root"
+  parent: "exit_btn"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "exit_btn/button"
+  parent: "exit_btn/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Exit"
+  id: "exit_btn/text"
+  parent: "exit_btn/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 512.0
+  }
+  rotation {
+    z: -3.0
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+  }
+  size {
+    x: 500.0
+    y: 50.0
+  }
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_TEXT
+  text: "// Nothing can go wrong..."
+  font: "text_bold"
+  id: "desc"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "bgg"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "bg"
+  parent: "bgg"
+  inherit_alpha: true
+  template: "/menu/templates/bg.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "bg/bg"
+  parent: "bg"
+  template_node_child: true
+}
+layers {
+  name: "bg"
+}
+layers {
+  name: "gui"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

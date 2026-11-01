@@ -1,0 +1,47 @@
+local druid = require("druid.druid")
+local anim = require("menu.anim")
+
+local function play_clicked(self)
+	msg.post("main:/container", "load_game")
+	self.play_btn:set_enabled(false)
+end
+
+local function about_clicked(self)
+	msg.post("main:/container", "load_about")
+	self.about_btn:set_enabled(false)
+end
+
+local function exit_clicked(self)
+	msg.post("@system:", "exit", {code = 0})
+end
+
+function init(self)
+	self.druid = druid.new(self)
+	self.play_btn = self.druid:new_button("play", play_clicked)
+	self.play_btn:set_key_trigger(hash("jump"))
+	self.about_btn = self.druid:new_button("about", about_clicked)
+	self.about_btn:set_key_trigger(hash("down"))
+	self.exit_btn = self.druid:new_button("exit", exit_clicked)
+	self.exit_btn:set_key_trigger(hash("pause"))
+	anim.animate("title", anim.MEDIUM_D)
+	anim.animate("play", anim.DEFAULT_D)
+	anim.animate("about", anim.DEFAULT_D)
+	anim.animate("exit", anim.DEFAULT_D)
+	anim.animate("desc", anim.SLOW_D)
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	return self.druid:on_input(action_id, action)
+end
