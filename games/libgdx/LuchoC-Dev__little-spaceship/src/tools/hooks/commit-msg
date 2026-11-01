@@ -1,0 +1,49 @@
+#!/bin/sh
+# Refuses a commit whose subject breaks the Conventional Commits convention.
+#
+# `tools/pre-pr-check` already checks this, but only over a sub-branch's own
+# commits. Agent memory never appears there: the pre-commit hook next to this one
+# forces `.claude/agent-memory/` to be committed from the main checkout, which
+# sits on the phase branch, so those commits are in no sub-branch's diff. Nothing
+# looked at them until the phase-level check, once, at the end.
+#
+# Phase 11b paid for that. Three agents wrote three different malformed scopes —
+# `docs(core-domain memory):`, `docs(level-designer memory):` — and by the time
+# anything noticed they were 55 commits deep in a branch about to open against
+# `dev`. Fixing three subjects cost a history rewrite, an explicit exception from
+# the project owner to a rule that forbids force-pushing, and corrections to three
+# closed issues whose cited merge hashes the rewrite destroyed.
+#
+# A subject is cheap to fix at the moment it is written and expensive afterwards,
+# which is exactly the shape a hook is for.
+#
+# This runs on every commit, not only on memory: a rule with one exception is a
+# rule someone has to remember the boundary of.
+#
+# Install: tools/install-hooks
+
+set -u
+
+MSG_FILE="$1"
+SUBJECT="$(sed -n '1p' "$MSG_FILE")"
+
+# An empty or all-comment message means the commit is being aborted, which never
+# reaches history. That is this hook's business and no gate's, so it is decided
+# here rather than in the shared rule below.
+case "$SUBJECT" in
+  "#"*|"") exit 0 ;;
+esac
+
+# One source of truth, shared with tools/pre-pr-check. These two used to keep
+# separate lists and they drifted — see tools/commit-subject-ok's own header.
+REASON="$("$(git rev-parse --show-toplevel)/tools/commit-subject-ok" "$SUBJECT")" && exit 0
+
+echo "commit-msg: $REASON" >&2
+echo "  $SUBJECT" >&2
+echo >&2
+echo "  types: feat fix docs style refactor perf test build ci chore revert" >&2
+echo >&2
+echo "  a scope with a space in it is the one that keeps happening:" >&2
+echo "    docs(core-domain memory): …   is rejected" >&2
+echo "    docs(memory): …               is the form for agent memory" >&2
+exit 1

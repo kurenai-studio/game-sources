@@ -1,0 +1,277 @@
+{
+  "waves": [
+    {
+      "id": "l1-opening-calm",
+      "spawns": [
+        { "at": 3.0, "spawn": "enemy-basic", "formation": "single", "atX": 0.35 },
+        { "at": 6.0, "spawn": "enemy-basic", "formation": "single", "atX": 0.65 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 9.0 }
+    },
+    {
+      "id": "l1-first-basics",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.50, "drop": "weapon-upgrade", "dropSlot": 1 },
+        { "at": 3.5, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.28 },
+        { "at": 6.0, "spawn": "enemy-basic", "formation": "column-3", "atX": 0.72 },
+        { "at": 8.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.80, "trajectory": "descend-and-step-left" },
+        { "at": 9.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.20, "trajectory": "descend-and-step-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 13.0 }
+    },
+    {
+      "id": "l1-light-and-fast",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-light", "formation": "single", "atX": 0.95 },
+        { "at": 1.5, "spawn": "enemy-light", "formation": "single", "atX": 0.05, "trajectory": "cut-across-right" },
+        { "at": 3.5, "spawn": "enemy-light", "formation": "diagonal", "atX": 0.88 },
+        { "at": 5.5, "spawn": "enemy-light", "formation": "diagonal-mirror", "atX": 0.12, "trajectory": "cut-across-right" },
+        { "at": 8.0, "spawn": "enemy-light", "formation": "single", "atX": 0.85, "trajectory": "dive-across-left" },
+        { "at": 8.5, "spawn": "enemy-light", "formation": "single", "atX": 0.15, "trajectory": "dive-across-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 11.0 }
+    },
+    {
+      "id": "l1-combined-formations",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50 },
+        { "at": 1.5, "spawn": "enemy-light", "formation": "diagonal", "atX": 0.90 },
+        { "at": 4.0, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.45, "trajectory": "descend-and-step-left", "drop": "shield", "dropSlot": 1 },
+        { "at": 6.0, "spawn": "enemy-light", "formation": "diagonal-mirror", "atX": 0.10, "trajectory": "cut-across-right" },
+        { "at": 8.0, "spawn": "enemy-basic", "formation": "single", "atX": 0.80, "trajectory": "descend-and-step-left" },
+        { "at": 8.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.20, "trajectory": "descend-and-step-right" },
+        { "at": 10.5, "spawn": "enemy-light", "formation": "single", "atX": 0.60, "trajectory": "dive-across-left" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "l1-tanks-and-priority",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-tank", "formation": "single", "atX": 0.35 },
+        { "at": 2.0, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.66, "drop": "weapon-upgrade", "dropSlot": 1 },
+        { "at": 5.0, "spawn": "enemy-tank", "formation": "single", "atX": 0.80, "trajectory": "grind-and-wheel-left" },
+        { "at": 7.5, "spawn": "enemy-light", "formation": "single", "atX": 0.95 },
+        { "at": 10.0, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "l1-super-fast",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.30 },
+        { "at": 1.2, "spawn": "enemy-rush", "formation": "single", "atX": 0.70 },
+        { "at": 3.0, "spawn": "enemy-rush", "formation": "column-3", "atX": 0.50 },
+        { "at": 5.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.75, "trajectory": "plunge-and-cut-left" },
+        { "at": 5.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.25, "trajectory": "plunge-and-cut-right" },
+        { "at": 7.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.50, "trajectory": "strike-and-withdraw" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 9.0 }
+    },
+    {
+      "id": "l1-heavy-carrier",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-carrier", "formation": "single", "atX": 0.50 },
+        { "at": 5.0, "spawn": "enemy-light", "formation": "single", "atX": 0.05, "trajectory": "cut-across-right" },
+        { "at": 8.0, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.30 },
+        { "at": 12.0, "spawn": "enemy-light", "formation": "single", "atX": 0.95 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 15.0 }
+    },
+    {
+      "id": "l1-evolved-shooters",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-shooter", "formation": "single", "atX": 0.30 },
+        { "at": 1.0, "spawn": "enemy-shooter", "formation": "single", "atX": 0.70 },
+        { "at": 4.0, "spawn": "enemy-shooter", "formation": "line-3", "atX": 0.50 },
+        { "at": 6.0, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50, "drop": "weapon-upgrade", "dropSlot": 2 },
+        { "at": 9.0, "spawn": "enemy-shooter", "formation": "single", "atX": 0.50, "trajectory": "advance-the-firing-line" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "l1-high-pressure",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50 },
+        { "at": 1.0, "spawn": "enemy-light", "formation": "single", "atX": 0.85, "trajectory": "dive-across-left" },
+        { "at": 2.0, "spawn": "enemy-light", "formation": "single", "atX": 0.15, "trajectory": "dive-across-right" },
+        { "at": 4.0, "spawn": "enemy-shooter", "formation": "line-3", "atX": 0.50, "drop": "extra-life", "dropSlot": 1 },
+        { "at": 6.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.80, "trajectory": "plunge-and-cut-left" },
+        { "at": 6.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.20, "trajectory": "plunge-and-cut-right" },
+        { "at": 9.0, "spawn": "enemy-basic", "formation": "line-3", "atX": 0.66, "trajectory": "descend-and-step-left" },
+        { "at": 9.5, "spawn": "enemy-light", "formation": "vee-5", "atX": 0.60, "trajectory": "dive-across-left" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 11.0 }
+    },
+    {
+      "id": "l1-twin-carriers-attachment",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-carrier", "formation": "single", "atX": 0.80, "trajectory": "anchor-and-traverse-left", "drop": "attachment", "dropSlot": 0 },
+        { "at": 0.5, "spawn": "enemy-carrier", "formation": "single", "atX": 0.20, "trajectory": "anchor-and-traverse-right" },
+        { "at": 3.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.50, "trajectory": "strike-and-withdraw" },
+        { "at": 6.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.75, "trajectory": "plunge-and-cut-left" },
+        { "at": 6.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.25, "trajectory": "plunge-and-cut-right" },
+        { "at": 9.5, "spawn": "enemy-rush", "formation": "column-3", "atX": 0.50, "trajectory": "plunge-harder" },
+        { "at": 12.0, "spawn": "enemy-shooter", "formation": "single", "atX": 0.50 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 14.0 }
+    },
+    {
+      "id": "l1-brief-rest",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-basic", "formation": "single", "atX": 0.50, "drop": "bomb-recharge", "dropSlot": 0 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 6.0 }
+    },
+    {
+      "id": "l1-final-escalation",
+      "spawns": [
+        { "at": 0.0, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50 },
+        { "at": 1.0, "spawn": "enemy-light", "formation": "single", "atX": 0.95 },
+        { "at": 1.5, "spawn": "enemy-light", "formation": "single", "atX": 0.05, "trajectory": "cut-across-right" },
+        { "at": 3.0, "spawn": "enemy-tank", "formation": "single", "atX": 0.85, "trajectory": "grind-and-wheel-left" },
+        { "at": 3.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.15, "trajectory": "grind-and-wheel-right" },
+        { "at": 5.0, "spawn": "enemy-shooter", "formation": "line-3", "atX": 0.35 },
+        { "at": 5.5, "spawn": "enemy-shooter", "formation": "line-3", "atX": 0.65 },
+        { "at": 7.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.60, "trajectory": "plunge-and-cut-left" },
+        { "at": 8.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.40, "trajectory": "plunge-and-cut-right" },
+        { "at": 10.0, "spawn": "enemy-rush", "formation": "column-3", "atX": 0.50, "trajectory": "plunge-harder" },
+        { "at": 11.0, "spawn": "enemy-light", "formation": "vee-5", "atX": 0.60, "trajectory": "dive-across-left" },
+        { "at": 12.5, "spawn": "enemy-basic", "formation": "line-5", "atX": 0.50 }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 13.5 }
+    },
+
+
+    {
+      "id": "test-path-turn",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.85, "trajectory": "descend-and-turn-left" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "test-path-mirror",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.85, "trajectory": "descend-and-turn-left" },
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.15, "trajectory": "descend-and-turn-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "test-path-wait",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.90, "trajectory": "sweep-wait-drop" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "test-path-loop",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.85, "trajectory": "stair-descent" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 15.0 }
+    },
+    {
+      "id": "test-path-oscillate",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.50, "trajectory": "descend-and-oscillate" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 13.0 }
+    },
+    {
+      "id": "test-cross",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.95, "trajectory": "cross-left" },
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.05, "trajectory": "cross-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 9.0 }
+    },
+    {
+      "id": "test-slide-descend",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.80, "trajectory": "slide-left-then-descend" },
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.20, "trajectory": "slide-right-then-descend" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 10.0 }
+    },
+    {
+      "id": "test-dive-retreat",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.50, "trajectory": "dive-and-retreat" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "test-hold-line",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-shooter", "formation": "single", "atX": 0.50, "trajectory": "hold-the-line-and-exit" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 10.0 }
+    },
+    {
+      "id": "test-sweep-width",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-shooter", "formation": "single", "atX": 0.10, "trajectory": "sweep-the-width-and-drop" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 11.0 }
+    }
+,
+
+    {
+      "id": "test-basic-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.50, "trajectory": "settle-descent" },
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.80, "trajectory": "descend-and-step-left" },
+        { "at": 0.5, "spawn": "enemy-basic", "formation": "single", "atX": 0.20, "trajectory": "descend-and-step-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 16.0 }
+    },
+    {
+      "id": "test-light-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-light", "formation": "single", "atX": 0.95, "trajectory": "cut-across-left" },
+        { "at": 0.5, "spawn": "enemy-light", "formation": "single", "atX": 0.05, "trajectory": "cut-across-right" },
+        { "at": 6.0, "spawn": "enemy-light", "formation": "single", "atX": 0.85, "trajectory": "dive-across-left" },
+        { "at": 6.0, "spawn": "enemy-light", "formation": "single", "atX": 0.15, "trajectory": "dive-across-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 12.0 }
+    },
+    {
+      "id": "test-shooter-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-shooter", "formation": "single", "atX": 0.25, "trajectory": "descend-hold-descend" },
+        { "at": 0.5, "spawn": "enemy-shooter", "formation": "single", "atX": 0.50, "trajectory": "advance-the-firing-line" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 16.0 }
+    },
+    {
+      "id": "test-rush-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.30, "trajectory": "plunge" },
+        { "at": 0.5, "spawn": "enemy-rush", "formation": "single", "atX": 0.45, "trajectory": "plunge-harder" },
+        { "at": 4.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.75, "trajectory": "plunge-and-cut-left" },
+        { "at": 4.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.25, "trajectory": "plunge-and-cut-right" },
+        { "at": 8.0, "spawn": "enemy-rush", "formation": "single", "atX": 0.50, "trajectory": "strike-and-withdraw" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 17.0 }
+    },
+    {
+      "id": "test-tank-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.50, "trajectory": "grind-down" },
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.85, "trajectory": "grind-and-wheel-left" },
+        { "at": 0.5, "spawn": "enemy-tank", "formation": "single", "atX": 0.15, "trajectory": "grind-and-wheel-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 20.0 }
+    },
+    {
+      "id": "test-carrier-family",
+      "spawns": [
+        { "at": 0.5, "spawn": "enemy-carrier", "formation": "single", "atX": 0.50, "trajectory": "descend-and-anchor" },
+        { "at": 0.5, "spawn": "enemy-carrier", "formation": "single", "atX": 0.80, "trajectory": "anchor-and-traverse-left" },
+        { "at": 0.5, "spawn": "enemy-carrier", "formation": "single", "atX": 0.20, "trajectory": "anchor-and-traverse-right" }
+      ],
+      "end": { "type": "fixedDuration", "seconds": 30.0 }
+    }
+  ]
+}

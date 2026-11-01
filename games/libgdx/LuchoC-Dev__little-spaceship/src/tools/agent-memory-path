@@ -1,0 +1,27 @@
+#!/bin/sh
+# Prints the one directory agent memory is allowed to live in, from anywhere.
+#
+#   tools/agent-memory-path            # the directory
+#   tools/agent-memory-path reviewer   # that agent's directory inside it
+#
+# Why this exists: `.claude/agent-memory/` is a tracked path, so an agent standing
+# in a linked worktree writes its memory into that checkout instead of the one
+# everybody else reads. It was corrected by hand three times during phase 09
+# alone. Git keeps one common directory per repository no matter how many
+# worktrees are attached to it, and that is what this resolves against — so the
+# answer is the same from every worktree, which is the whole point.
+
+set -u
+
+COMMON="$(git rev-parse --git-common-dir 2>/dev/null)" || {
+  echo "not inside a git repository" >&2
+  exit 2
+}
+MAIN="$(cd "$COMMON/.." && pwd)"
+DIR="$MAIN/.claude/agent-memory"
+
+if [ $# -gt 0 ]; then
+  printf '%s/%s\n' "$DIR" "$1"
+else
+  printf '%s\n' "$DIR"
+fi

@@ -1,0 +1,113 @@
+<title>Combat Screen 480×270</title>
+<div class="wrap">
+  <p class="eyebrow">little-spaceship &middot; phase 06 &middot; visual direction</p>
+  <h1>Combat screen, level 1</h1>
+  <p class="lede">
+    Every pixel below is drawn at the logical resolution the game runs at &mdash; <b>480&times;270</b>,
+    with a <b>208 px</b> playfield &mdash; from the 32 colours of <b>ls32</b> and the sprite sizes in
+    <b>02-sprite-sizes.md</b>. Nothing here is illustration: the framebuffer holds palette indices,
+    so the page can prove no pixel escaped the palette and can colour every pixel by the set it
+    belongs to. The switches on the right are the legibility tests from
+    <b>05-legibility-rules.md</b>, run on the real thing instead of described.
+  </p>
+
+  <div class="bench">
+    <div class="stage">
+      <div class="screen">
+        <div class="screen-inner" id="inner">
+          <canvas id="stack" width="960" height="540"></canvas>
+          <canvas id="overlay" width="960" height="540"></canvas>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <span id="scene-label">Pressure escalation</span>
+        <span id="scale-note" class="scale-ok">integer scale &times;2</span>
+      </div>
+      <p class="caption" id="scene-note"></p>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="group" role="radiogroup" aria-label="Scene">
+          <span>Scene</span>
+          <div class="opts" id="scene-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="View">
+          <span>View</span>
+          <div class="opts" id="view-opts"></div>
+        </div>
+        <div class="group">
+          <span>Overlay</span>
+          <div class="opts" id="toggle-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="Zoom">
+          <span>Zoom</span>
+          <div class="opts" id="zoom-opts"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2>What the scene proves</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <section>
+    <h2>What to look for</h2>
+    <div class="notes">
+      <div class="note">
+        <span class="rule">R1 &middot; two disjoint sets</span>
+        <h3>Set map</h3>
+        <p>Switch the view to <b>Set map</b>. Everything the background may draw goes flat blue,
+        everything gameplay may draw goes white, enemy fire goes magenta. The three never mix,
+        because the colours to mix them with are not available.</p>
+      </div>
+      <div class="note">
+        <span class="rule">R3 &middot; the value gap</span>
+        <h3>Greyscale</h3>
+        <p>Strip the colour and the bullets are still the brightest things on screen. That is the
+        3.2-point gap between the sets doing the work; hue is the second signal, not the first.</p>
+      </div>
+      <div class="note">
+        <span class="rule">R4 &middot; never hue alone</span>
+        <h3>Protanopia and deuteranopia</h3>
+        <p>Cyan player fire and magenta enemy fire converge under both simulations. What keeps them
+        apart is shape &mdash; elongated against compact &mdash; and value.</p>
+      </div>
+      <div class="note">
+        <span class="rule">R5 &middot; outlines</span>
+        <h3>Squint</h3>
+        <p>Blur the screen until detail is gone. Bullets, ship, enemies survive in that order. If
+        the city survives instead, R7 was broken.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Hitboxes</span>
+        <h3>What actually kills you</h3>
+        <p>The ship&rsquo;s circle is 6 px across a 15 px sprite. Enemy fire collides smaller than it
+        looks, pickups larger, enemies as drawn &mdash; generosity always points at the player.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Boss</span>
+        <h3>Five circles, not one</h3>
+        <p>Switch to the boss scene with hitboxes on. <code>Collider</code> is a circle with no
+        offset, so one circle over 119 px would swallow the gaps the player flies through.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The palette it is drawn from</h2>
+    <div class="panel" id="palette-panel"></div>
+  </section>
+
+  <p class="foot">
+    Generated from <code>docs/design/mockups/combat.html</code>. Silhouettes stand in for art that
+    has not been drawn yet &mdash; what is exact here is the footprint, the palette and the HUD
+    geometry, not the craft. This page keeps the reserved hue band too: nothing in its own interface
+    is magenta.
+  </p>
+</div>

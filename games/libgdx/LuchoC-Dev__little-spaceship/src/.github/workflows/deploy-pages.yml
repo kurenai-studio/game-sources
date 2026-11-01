@@ -1,0 +1,62 @@
+name: Deploy Pages
+
+# Deploys the release web build only from main, never automatically from a feature branch or a
+# pull request. workflow_dispatch is kept only so this workflow can be exercised manually from a
+# branch before it is merged — it does not change the automatic trigger.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Scoped to this workflow file only: ci.yml keeps its own `contents: read` and does not need
+# widening. Pages deployment needs both to mint the OIDC token and publish the artifact.
+permissions:
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # Matches ci.yml: sourceCompatibility/targetCompatibility are pinned to 17 because
+          # TeaVM cannot digest newer bytecode.
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the release web target (TeaVM/JavaScript)
+        # `clean` first is not optional: switching -Prelease on reuses stale `generateJavaScript`
+        # output (it reports UP-TO-DATE even though release mode changes obfuscation,
+        # optimisation and source maps), leaving a stale app.js.map behind. See agent memory
+        # project_teavm-source-set-isolation-and-release-builds.md.
+        run: ./gradlew clean gdx_teavm_web_js_build -Prelease
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload dist as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/build/dist/js/webapp
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

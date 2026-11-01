@@ -1,0 +1,337 @@
+#!/bin/sh
+# The one command an agent runs before opening a pull request.
+#
+# It costs no tokens on purpose: everything here is a command with an exit code,
+# so an agent reports what it printed instead of reasoning about whether the work
+# is sound. A red check means no pull request.
+#
+#   tools/pre-pr-check                 # compare against dev
+#   tools/pre-pr-check --base <ref>    # compare against the phase branch, usually
+#   tools/pre-pr-check --no-build      # skip Gradle; for CI, which builds separately
+#   tools/pre-pr-check --branch <name> # name the branch; a CI checkout is detached
+#
+# Every check below exists because this repository already paid for it once. The
+# reason is written above each one; do not add a check without one.
+
+set -u
+
+BASE="dev"
+RUN_BUILD=1
+BRANCH_OVERRIDE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --base) BASE="${2:-}"; shift 2 ;;
+    --no-build) RUN_BUILD=0; shift ;;
+    --branch) BRANCH_OVERRIDE="${2:-}"; shift 2 ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+
+cd "$(git rev-parse --show-toplevel)" || exit 2
+
+FAILURES=0
+report() { printf '%s %s\n' "$1" "$2"; }
+fail() { FAILURES=$((FAILURES + 1)); report "FAIL" "$1"; }
+pass() { report "pass" "$1"; }
+detail() { printf '       %s\n' "$1"; }
+
+# A pull-request checkout is detached, so --abbrev-ref answers "HEAD" and the
+# branch-name check below rejects it. CI passes the real name with --branch.
+if [ -n "$BRANCH_OVERRIDE" ]; then
+  BRANCH="$BRANCH_OVERRIDE"
+else
+  BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+fi
+if ! git rev-parse --verify --quiet "$BASE" >/dev/null; then
+  if git rev-parse --verify --quiet "origin/$BASE" >/dev/null; then
+    BASE="origin/$BASE"
+  else
+    echo "base ref '$BASE' does not exist. Pass --base <ref>." >&2
+    exit 2
+  fi
+fi
+MERGE_BASE="$(git merge-base HEAD "$BASE")"
+
+echo "pre-pr-check: branch '$BRANCH' against '$BASE'"
+echo
+
+# 1. main and dev are not worked on directly. main only ever receives a pull
+#    request from dev, and that merge belongs to the project owner.
+#
+#    The one exception is that merge itself: a release IS dev, as a head, against
+#    main. Added on 31/08/2026 for issue #177, which found this check's other half
+#    failing every release — and this half was worse, because it had never been
+#    observed failing at all: pr-check.yml exits at its first step, so the step
+#    that runs this script never ran on #176. Reproduced by hand on the branch
+#    that fixed it, standing on dev: `tools/pre-pr-check --base origin/main
+#    --branch dev --no-build` printed "the work is on 'dev' itself".
+#
+#    Narrow on purpose. An agent that committed on dev and ran this check the
+#    normal way — with no --base, so the base is dev — still fails, and so does
+#    dev against anything that is not main.
+case "$BRANCH" in
+  dev)
+    case "$BASE" in
+      main|origin/main) pass "branch name: dev against main — the release, and the one time dev is a head" ;;
+      *) fail "the work is on 'dev' itself. Branch first; main and dev are never worked on directly." ;;
+    esac ;;
+  main) fail "the work is on '$BRANCH' itself. Branch first; main and dev are never worked on directly." ;;
+  phase/*) pass "branch name: phase branch, so it opens its pull request against dev" ;;
+  */*) pass "branch name: $BRANCH" ;;
+  *) fail "branch '$BRANCH' is not 'type/description'" ;;
+esac
+
+COMMITS="$(git rev-list "$MERGE_BASE..HEAD" | wc -l | tr -d ' ')"
+if [ "$COMMITS" -eq 0 ]; then
+  fail "no commits on top of $BASE — there is nothing to open a pull request for"
+else
+  pass "$COMMITS commit(s) on top of $BASE"
+fi
+
+# 2. Commit hygiene. CLAUDE.md fixes the format; a hook does not enforce it here.
+# One source of truth, shared with tools/hooks/commit-msg. These two used to keep
+# separate lists of what is exempt and they drifted: the hook welcomed git's own
+# `Revert "…"` wording and this gate rejected it, so a legitimate revert passed at
+# write time and failed here, with nothing saying why. Issue #154.
+BAD_SUBJECTS=0
+for SHA in $(git rev-list "$MERGE_BASE..HEAD"); do
+  SUBJECT="$(git log -1 --format=%s "$SHA")"
+  if REASON="$(./tools/commit-subject-ok "$SUBJECT")"; then
+    continue
+  fi
+  BAD_SUBJECTS=$((BAD_SUBJECTS + 1)); detail "$REASON: $SHA $SUBJECT"
+done
+[ "$BAD_SUBJECTS" -eq 0 ] && pass "commit subjects" || fail "$BAD_SUBJECTS commit subject(s) break the convention"
+
+if git log "$MERGE_BASE..HEAD" --format=%B | grep -qi '^Co-Authored-By:'; then
+  fail "a commit carries a Co-Authored-By trailer, which this repository does not use"
+else
+  pass "no Co-Authored-By trailers"
+fi
+
+CHANGED="$(git diff --name-only "$MERGE_BASE..HEAD")"
+DIRTY="$(git status --porcelain)"
+if [ -n "$DIRTY" ]; then
+  fail "the working tree is not clean — commit or drop these before the pull request"
+  printf '%s\n' "$DIRTY" | sed 's/^/       /'
+else
+  pass "working tree clean"
+fi
+
+# 3. The memory-path trap. .claude/agent-memory/ is tracked, so an agent standing
+#    in a linked worktree writes its memory into that checkout instead of the
+#    canonical one. Corrected by hand three times during phase 09 alone.
+# Both sides go through `cd ... && pwd`: on Windows --absolute-git-dir answers
+# "C:/..." while the common dir resolves to "/c/...", and comparing the two raw
+# strings marks the main checkout as a worktree.
+GIT_DIR_PATH="$(cd "$(git rev-parse --absolute-git-dir)" && pwd)"
+COMMON_DIR_PATH="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+MEMORY_TOUCHED="$(printf '%s\n' "$CHANGED" | grep '^\.claude/agent-memory/' || true)"
+if [ -n "$MEMORY_TOUCHED" ] && [ "$GIT_DIR_PATH" != "$COMMON_DIR_PATH" ]; then
+  fail "agent memory was written from a linked worktree, so it landed in the wrong checkout"
+  detail "canonical directory: $(dirname "$COMMON_DIR_PATH")/.claude/agent-memory/"
+  printf '%s\n' "$MEMORY_TOUCHED" | sed 's/^/       /'
+elif [ -n "$MEMORY_TOUCHED" ]; then
+  pass "agent memory written in the main checkout"
+fi
+
+# 4. Build output and local artifacts. A TeaVM dist or a build/ directory is
+#    megabytes of generated noise and has been committed by accident before.
+ARTIFACTS="$(printf '%s\n' "$CHANGED" | grep -E '(^|/)(build|\.gradle|bin|out)/|\.class$|\.log$' || true)"
+if [ -n "$ARTIFACTS" ]; then
+  fail "build output or a local artifact is in the diff"
+  printf '%s\n' "$ARTIFACTS" | sed 's/^/       /'
+else
+  pass "no build output in the diff"
+fi
+
+# 5. Markdown links. docs/ links documents to each other constantly and a moved
+#    file breaks them silently. Code references — a class or a path named in
+#    backticks — are the job of docs-refs (issue #56), not of this check.
+BROKEN_LINKS=0
+MD_FILES="$(printf '%s\n' "$CHANGED" | grep '\.md$' || true)"
+for MD in $MD_FILES; do
+  [ -f "$MD" ] || continue
+  DIR="$(dirname "$MD")"
+  grep -o ']([^)#][^)]*)' "$MD" 2>/dev/null | sed 's/^](//; s/)$//' | while read -r LINK; do
+    case "$LINK" in
+      http*|mailto:*|'#'*) continue ;;
+    esac
+    TARGET="${LINK%%#*}"
+    [ -z "$TARGET" ] && continue
+    if [ ! -e "$DIR/$TARGET" ] && [ ! -e "$TARGET" ]; then
+      echo "broken:$MD -> $LINK"
+    fi
+  done > /tmp/pre-pr-links.$$ 2>/dev/null
+  if [ -s /tmp/pre-pr-links.$$ ]; then
+    BROKEN_LINKS=$((BROKEN_LINKS + 1))
+    sed 's/^broken:/       /' /tmp/pre-pr-links.$$
+  fi
+  rm -f /tmp/pre-pr-links.$$
+done
+[ "$BROKEN_LINKS" -eq 0 ] && pass "markdown links resolve" || fail "$BROKEN_LINKS changed document(s) link to something that is not there"
+
+# 6. The executable bit. Git on Windows does not record it, so a script committed
+#    from this machine arrives at a Linux runner as mode 100644 and dies with
+#    "Permission denied". That is exactly how phase 09's first two CI runs failed.
+NOT_EXECUTABLE=0
+for SCRIPT in $(printf '%s\n' "$CHANGED" | grep -E '^(tools/|gradlew$)' || true); do
+  [ -f "$SCRIPT" ] || continue
+  case "$SCRIPT" in
+    *.md|*.json|*.txt) continue ;;
+  esac
+  MODE="$(git ls-files -s -- "$SCRIPT" | awk '{print $1}')"
+  if [ "$MODE" = "100644" ]; then
+    NOT_EXECUTABLE=$((NOT_EXECUTABLE + 1))
+    detail "$SCRIPT is mode 100644 — run: git update-index --chmod=+x $SCRIPT"
+  fi
+done
+[ "$NOT_EXECUTABLE" -eq 0 ] && pass "scripts carry the executable bit" || fail "$NOT_EXECUTABLE script(s) would arrive at a Linux runner without the executable bit"
+
+# 7. Claims about a system that may have no observation behind them. In phase 09
+#    a worker wrote "it has never been run on an actual GitHub Actions runner"
+#    while four real runs sat in the API. This does NOT fail the check: every one
+#    of these phrases is legitimate when it is true, and a check that failed on
+#    them would be switched off inside a phase. It makes the claim visible while
+#    running one command is still cheap.
+CLAIM_RE='never[[:space:]]+(been[[:space:]]+)?(run|ran|executed|tested)|has[[:space:]]+not[[:space:]]+been[[:space:]]+run|cannot[[:space:]]+be[[:space:]]+(verified|tested|proven)|unverifiable|no[[:space:]]+way[[:space:]]+to[[:space:]]+verify|impossible[[:space:]]+to[[:space:]]+(verify|test)'
+CLAIMS_FOUND=0
+for MD in $MD_FILES; do
+  # Added lines are joined into one stream first: a claim usually wraps across
+  # two lines, which is how phase 09's own sentence would have escaped a
+  # line-by-line grep.
+  TEXT="$(git diff "$MERGE_BASE..HEAD" -- "$MD" | grep '^+' | grep -v '^+++' | sed 's/^+//' | tr '
+' ' ')"
+  HITS="$(printf '%s' "$TEXT" | grep -oEi ".{0,45}($CLAIM_RE).{0,45}" || true)"
+  if [ -n "$HITS" ]; then
+    if [ "$CLAIMS_FOUND" -eq 0 ]; then
+      echo
+      echo "note  a claim about a system, in an added line — cite the command and what it"
+      echo "      printed, the run id or the URL, or write \"not checked\":"
+      CLAIMS_FOUND=1
+    fi
+    echo "        $MD:"
+    printf '%s
+' "$HITS" | sed 's/^/          …/;s/$/…/'
+  fi
+done
+
+# 8. The status fragment. A branch that does work records what it did, in its own file,
+#    so two tasks running at once can never write the same path. Phase 11b had both
+#    failures a shared status.md produces: an agent force-pushed to escape a conflict in
+#    it, and two merged pull requests never touched it at all, so a defect and its fix
+#    were missing from the record until the phase closed.
+#    Exempt: a branch that changes only docs/. That is the coordinator's bookkeeping —
+#    opening a phase, closing it, correcting a document — which closes no issue either.
+#    Deliberately wider than the build check below, which asks "can this break Gradle".
+#    This asks "is this work someone will want the record of", and a change to tools/,
+#    .github/ or .claude/ is exactly that.
+#    Only presence is checked. The name carries an issue number this script cannot know:
+#    it runs before the pull request exists, which is the point of it. Checking the name
+#    against the issue the pull request closes is pr-check's job.
+NON_DOCS="$(printf '%s
+' "$CHANGED" | grep -vE '^docs/' | grep -c . || true)"
+if [ "$NON_DOCS" -gt 0 ]; then
+  # One source of truth, shared with .github/workflows/pr-check.yml.
+  FRAGMENTS="$(./tools/status-fragments "$BASE")"
+  MISPLACED="$(./tools/status-fragments --misplaced "$BASE")"
+  FRAGMENT_COUNT="$(printf '%s
+' "$FRAGMENTS" | grep -c . || true)"
+  case "$BRANCH" in
+    # The release carries every fragment of every phase in it — sixty, the first
+    # time this was observed. "Exactly one" is the sub-branch's rule and this is
+    # not a sub-branch. Narrow on purpose, exactly like the branch-name check
+    # above: dev against anything that is not main still falls through to the
+    # general case and fails. Added on 06/09/2026 for issue #345, which is the
+    # half of #177 that fix did not reach — this check had never been observed on
+    # a release at all, because the release before it failed earlier for a
+    # different reason.
+    dev)
+      case "$BASE" in
+        main|origin/main)
+          pass "$FRAGMENT_COUNT status fragment(s), one per task of every phase in this release" ;;
+        *)
+          fail "the work is on 'dev' itself, so its fragments cannot be judged" ;;
+      esac ;;
+    # A phase branch aggregates every task in the phase, so it carries one
+    # fragment per task. "Exactly one" is the sub-branch's rule, not this one.
+    # A named category, not an escape hatch anyone can claim.
+    phase/*)
+      if [ "$FRAGMENT_COUNT" -gt 0 ]; then
+        pass "$FRAGMENT_COUNT status fragment(s), one per task of this phase"
+      else
+        fail "a phase branch with no status fragment at all"
+      fi ;;
+    *)
+      if [ "$FRAGMENT_COUNT" -eq 1 ]; then
+        pass "status fragment: $FRAGMENTS"
+      elif [ "$FRAGMENT_COUNT" -eq 0 ]; then
+        fail "this branch does work and records nothing in the phase status"
+        detail "add one file at docs/plan/<phase>/status/<issue>-<slug>.md describing what"
+        detail "this task did, what it decided, and what it leaves open"
+      else
+        fail "$FRAGMENT_COUNT status fragments in one branch; a task writes exactly one"
+        printf '%s
+' "$FRAGMENTS" | while IFS= read -r F; do [ -n "$F" ] && detail "$F"; done
+      fi ;;
+  esac
+  if [ -n "$MISPLACED" ]; then
+    fail "a status fragment sits in another phase's directory"
+    printf '%s
+' "$MISPLACED" | while IFS= read -r F; do [ -n "$F" ] && detail "$F"; done
+    detail "the base branch names the phase; the fragment belongs under its own status/"
+  fi
+else
+  pass "docs-only branch, so no status fragment is required"
+fi
+
+# 9. A workflow that does not parse does not run, and its absence is silent:
+#    GitHub reports a failed run rather than a missing one, and only to whoever
+#    looks. Phase 10d shipped a pr-check.yml with a literal newline inside a shell
+#    string, written by a scripted edit whose escaping collapsed one level too far.
+#    It was caught by GitHub, after the merge, not before it.
+WORKFLOWS="$(printf '%s
+' "$CHANGED" | grep -E '^\.github/workflows/.*\.ya?ml$' || true)"
+if [ -n "$WORKFLOWS" ]; then
+  if python3 -c 'import yaml' 2>/dev/null; then
+    BAD_YAML=0
+    for WF in $WORKFLOWS; do
+      [ -f "$WF" ] || continue
+      if ! python3 -c "import sys,yaml;yaml.safe_load(open(sys.argv[1],encoding='utf-8'))" "$WF" 2>/dev/null; then
+        BAD_YAML=$((BAD_YAML + 1)); detail "does not parse: $WF"
+      fi
+    done
+    [ "$BAD_YAML" -eq 0 ] && pass "workflow files parse as YAML" || fail "$BAD_YAML workflow file(s) do not parse"
+  else
+    pass "workflow YAML not checked: python3 with PyYAML is not available here"
+  fi
+else
+  pass "no workflow file in the diff"
+fi
+
+# 9. The build, but only when the change can break it. A documentation phase that
+#    waits four minutes for Gradle learns nothing and stops running the check.
+CODE_TOUCHED="$(printf '%s\n' "$CHANGED" | grep -E '^(core|game|desktop|web|assets)/|\.gradle(\.kts)?$|^gradle/|^gradlew' || true)"
+if [ -n "$CODE_TOUCHED" ] && [ "$RUN_BUILD" -eq 0 ]; then
+  pass "code changed, but --no-build was passed: the build runs in ci.yml"
+  detail "ci.yml also runs gdx_teavm_web_js_build, which ./gradlew build does not"
+elif [ -n "$CODE_TOUCHED" ]; then
+  echo
+  echo "code changed — running ./gradlew build"
+  if ./gradlew build --console=plain -q; then
+    pass "./gradlew build"
+  else
+    fail "./gradlew build"
+  fi
+else
+  pass "no code in the diff, so the build was not run"
+fi
+
+echo
+if [ "$FAILURES" -eq 0 ]; then
+  echo "pre-pr-check: PASS — $COMMITS commit(s), $(printf '%s\n' "$CHANGED" | grep -c . ) file(s) changed"
+  exit 0
+fi
+echo "pre-pr-check: FAIL — $FAILURES check(s) failed. Fix them; do not open the pull request."
+exit 1
