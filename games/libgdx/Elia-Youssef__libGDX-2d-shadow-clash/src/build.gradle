@@ -1,0 +1,37 @@
+// Root build script. 2D Shadow Clash is a libGDX 1.14.0 project with Gradle source
+// compatibility set to Java 8 (task requirement), lwjgl3 desktop backend only. Two modules:
+// core (GL-free fight simulation + animation/render/input) and lwjgl3 (desktop launcher +
+// the runnable fat JAR deliverable).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'ShadowClash'
+        gdxVersion = '1.14.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Task requirement: build against the Java 8 API (libGDX 1.14.0 targets Java 8).
+        // options.release enforces the Java-8 bootclasspath, not just v52 bytecode.
+        options.release = 8
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
