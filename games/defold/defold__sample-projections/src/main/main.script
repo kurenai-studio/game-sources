@@ -1,0 +1,39 @@
+local CAMERA_URL = "camera#camera"
+
+local PROJECTIONS = {
+	{
+		name = "Auto Cover",
+		mode = camera.ORTHO_MODE_AUTO_COVER
+	},
+	{
+		name = "Auto Fit",
+		mode = camera.ORTHO_MODE_AUTO_FIT
+	},
+	{
+		name = "Fixed",
+		mode = camera.ORTHO_MODE_FIXED
+	},
+}
+
+local function update_projection(self)
+	local p = PROJECTIONS[self.projection]
+	camera.set_orthographic_mode("camera#camera", p.mode)
+	label.set_text("#settings", p.name)
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "clear_color", { color = vmath.vector4(1) })
+	self.projection = 1
+	update_projection(self)
+end
+
+function on_input(self, action_id, action)
+	if action.released then
+		self.projection = self.projection + 1
+		if self.projection > #PROJECTIONS then
+			self.projection = 1
+		end
+		update_projection(self)
+	end
+end
