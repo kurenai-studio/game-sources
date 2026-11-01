@@ -1,0 +1,51 @@
+--Resursi od: http://opengameart.org
+
+local menuproxy = true
+
+function init(self)
+	msg.post("@render:", "clear_color", { color = vmath.vector4(0.52, 0.80, 1, 0) } ) --pozadina
+	msg.post(".", "acquire_input_focus")
+	msg.post("controller:/controller_object#menuproxy", "load")
+    self.paketcinja = 0
+    self.snegulki = 0
+    msg.post("#bg_sound", "play_sound", {delay = 0, gain = 0.5})
+end
+
+function final(self)
+    msg.post(".", "release_input_focus")
+end
+--msg.post("menu:/splash#gui", "plus_snegulka", { pp = 1 })
+--msg.post("main:/cl_controller#gui", "plus_snegulka", { pp = 1 })
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show_game") then
+		msg.post("controller:/controller_object#gameproxy", "load")
+		msg.post("controller:/controller_object#menuproxy", "unload")
+		menuproxy = false	
+	elseif message_id == hash("show_menu") then
+		msg.post("controller:/controller_object#menuproxy", "load")
+		msg.post("controller:/controller_object#gameproxy", "unload")
+		menuproxy = true	
+	elseif message_id == hash("proxy_loaded") then
+		msg.post(sender, "enable")
+		if menuproxy then
+			msg.post("menu:/splash#gui", "set_snegulki", { pp = self.snegulki })
+			msg.post("menu:/splash#gui", "set_paketcinja", { pp = self.paketcinja })
+			msg.post("menu:/splash#gui", "set_vrednost", { pp =  self.snegulki+self.paketcinja*5})
+			self.snegulki = 0
+			self.paketcinja = 0
+		end
+    elseif message_id == hash("plus_paketce") then 
+		self.paketcinja = self.paketcinja + 1
+		if not menuproxy then
+			msg.post("main:/cl_controller#gui", "set_paketcinja", { pp = self.paketcinja })
+		end
+	elseif message_id == hash("plus_snegulka") then
+		self.snegulki = self.snegulki + 1
+		if not menuproxy then
+			msg.post("main:/cl_controller#gui", "set_snegulki", { pp = self.snegulki })
+		end
+    elseif message_id == hash("reset") then
+		self.snegulki = 0
+		self.paketcinja = 0
+    end
+end
