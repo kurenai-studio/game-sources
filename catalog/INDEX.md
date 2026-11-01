@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:24 PT (America/Los_Angeles). Entries: **884**.
+Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -124,6 +124,7 @@ Generated: 2026-11-01 ~09:24 PT (America/Los_Angeles). Entries: **884**.
 | games/godot/aikitori__hold-the-keep | https://github.com/aikitori/hold-the-keep | GPL-3.0 | godot | a | 2026-10-23 |
 | games/godot/AniMerrill__Timeshifter | https://github.com/AniMerrill/Timeshifter | MIT | godot | a | 2026-10-23 |
 | games/godot/Apple0726__helixteus-3 | https://github.com/Apple0726/helixteus-3 | GPL-3.0 | godot | a | 2026-10-23 |
+| games/godot/bartbasi__sumup | https://github.com/bartbasi/sumup | GPL-3.0 | godot | a | 2026-11-01 |
 | games/godot/bearlikelion__BoomerShooter | https://github.com/bearlikelion/BoomerShooter | MIT | godot | a | 2026-10-22 |
 | games/godot/benc-uk__super-dungeon-delve | https://github.com/benc-uk/super-dungeon-delve | MIT | godot | a | 2026-10-22 |
 | games/godot/bitbrain__mutagen | https://github.com/bitbrain/mutagen | MIT | godot | a | 2026-10-23 |
