@@ -1,0 +1,18 @@
+// Desktop launcher module. The 'application' plugin provides the run task that a
+// grader invokes as ./gradlew lwjgl3:run.
+
+apply plugin: 'application'
+
+application {
+    mainClass = 'com.micro1.leap.lwjgl3.Lwjgl3Launcher'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+    setIgnoreExitValue(true)
+}
