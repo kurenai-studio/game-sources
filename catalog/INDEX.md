@@ -329,6 +329,7 @@
 | games/love2d/chadpaulson__missile-command | https://github.com/chadpaulson/missile-command | GPL-3.0 | love2d | b | 2026-10-22 |
 | games/love2d/chrischaps__Character | https://github.com/chrischaps/Character | MIT | love2d | b | 2026-10-23 |
 | games/love2d/Cod-e-Codes__CardGame | https://github.com/Cod-e-Codes/CardGame | MIT | love2d | b | 2026-10-23 |
+| games/love2d/ctanas__rglander | https://github.com/ctanas/rglander | MIT | love2d | b | 2026-11-01 |
 | games/love2d/dirtslayer__fspace | https://github.com/dirtslayer/fspace | MIT | love2d | b | 2026-10-23 |
 | games/love2d/Duckydevhu__gamepack_lua | https://github.com/Duckydevhu/gamepack_lua | MIT | love2d | b | 2026-10-23 |
 | games/love2d/egordorichev__CurseOfTheArrow | https://github.com/egordorichev/CurseOfTheArrow | GPL-3.0 | love2d | b | 2026-10-22 |
@@ -403,6 +404,7 @@
 | games/monogame/Jeff0502__Flying-Fox | https://github.com/Jeff0502/Flying-Fox | GPL-3.0 | monogame | d | 2026-11-01 |
 | games/monogame/joncloud__tetrominoes | https://github.com/joncloud/tetrominoes | MIT | monogame | d | 2026-10-22 |
 | games/monogame/karv__Art-of-Meow | https://github.com/karv/Art-of-Meow | GPL-3.0 | monogame | d | 2026-10-23 |
+| games/monogame/kubaa2002__VoxelTechDemo | https://github.com/kubaa2002/VoxelTechDemo | GPL-3.0 | monogame | d | 2026-11-01 |
 | games/monogame/Lioncat2002__SeasonsPlatformer | https://github.com/Lioncat2002/SeasonsPlatformer | MIT | monogame |  |  |
 | games/monogame/MaKiPL__OpenVIII-monogame | https://github.com/MaKiPL/OpenVIII-monogame | MIT | monogame | d | 2026-10-23 |
 | games/monogame/microsoft__XBOX-MonoGame-NetRumble | https://github.com/microsoft/XBOX-MonoGame-NetRumble | MIT | monogame | d | 2026-10-23 |
@@ -482,6 +484,7 @@
 | games/phaser/tw365-org__bee-vs-hornets | https://github.com/tw365-org/bee-vs-hornets | MIT | phaser | c | 2026-11-01 |
 | games/phaser/voithos__elemental-one | https://github.com/voithos/elemental-one | MIT | phaser | c | 2026-10-23 |
 | games/phaser/wwwookiee__Phaser-SpaceInvaders | https://github.com/wwwookiee/Phaser-SpaceInvaders | MIT | phaser | c | 2026-10-23 |
+| games/phaser/xnt__bye-bye-alien | https://github.com/xnt/bye-bye-alien | MIT | phaser | c | 2026-11-01 |
 | games/phaser/xrplove__shapeshifter-game | https://github.com/xrplove/shapeshifter-game | MIT | phaser | c |  |
 | games/phaser/yandeu__phaser3-multiplayer-with-physics | https://github.com/yandeu/phaser3-multiplayer-with-physics | MIT | phaser | c | 2026-10-23 |
 | games/phaser/yandeu__phaser3-typescript-platformer-example | https://github.com/yandeu/phaser3-typescript-platformer-example | MIT | phaser | c | 2026-10-23 |
@@ -546,6 +549,7 @@
 | games/pygame/RealMizat__Maze-PyGame | https://github.com/RealMizat/Maze-PyGame | MIT | pygame | b | 2026-10-23 |
 | games/pygame/remance__Masendor | https://github.com/remance/Masendor | MIT | pygame | b | 2026-10-23 |
 | games/pygame/sh-eesh__pong | https://github.com/sh-eesh/pong | MIT | pygame | b | 2026-10-23 |
+| games/pygame/Siddu-119__Galaxy-Strike | https://github.com/Siddu-119/Galaxy-Strike | MIT | pygame | b | 2026-11-01 |
 | games/pygame/sourabhv__FlapPyBird | https://github.com/sourabhv/FlapPyBird | MIT | pygame | b | 2026-10-22 |
 | games/pygame/StanislavPetrovV__DOOM-style-Game | https://github.com/StanislavPetrovV/DOOM-style-Game | MIT | pygame | b | 2026-10-22 |
 | games/pygame/StanislavPetrovV__Maze_Game | https://github.com/StanislavPetrovV/Maze_Game | MIT | pygame | b | 2026-10-23 |
