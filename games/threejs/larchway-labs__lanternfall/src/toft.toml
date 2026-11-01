@@ -1,0 +1,34 @@
+# Lay out a new town. `name` is required, so `toft job run found` asks for it.
+[jobs.found]
+command = "python jobs.py found"
+timeout = "5m"
+memory  = 256
+
+[jobs.found.params.name]
+type     = "string"
+required = true
+help     = "The town's name"
+
+[jobs.found.params.size]
+type    = "string"
+default = "town"
+choices = ["hamlet", "village", "town", "city"]
+help    = "How big a town"
+
+[jobs.found.params.season]
+type    = "string"
+default = "autumn"
+choices = ["spring", "summer", "autumn", "winter"]
+help    = "The season the game is played in"
+
+[jobs.found.params.seed]
+type = "int"
+help = "Which town; otherwise one is derived from the name"
+
+# Today's town, every morning.
+[jobs.town-of-the-day]
+command  = "python jobs.py town-of-the-day"
+schedule = "0 7 * * *"
+timeout  = "5m"
+memory   = 256
+overlap  = "skip"
