@@ -1,0 +1,13 @@
+<Project Sdk="Godot.NET.Sdk/4.2.1">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Scripts\Cards\s\**" />
+    <EmbeddedResource Remove="Scripts\Cards\s\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Scripts\Cards\CardDefenses\" />
+  </ItemGroup>
+</Project>
