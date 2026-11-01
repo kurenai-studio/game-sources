@@ -1,0 +1,67 @@
+[package]
+
+name = "rust-life"
+version = "0.9.0"
+authors = ["Mike MacDonald <crazymykl@gmail.com>"]
+description = "An implementation of Conway's Game of Life."
+license = "MIT"
+repository = "https://github.com/crazymykl/rust-life"
+edition = '2024'
+
+[features]
+
+default = ["gui", "rayon"]
+unstable = []
+gui = ["dep:winit", "dep:wgpu", "dep:bytemuck", "dep:futures"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bench]]
+
+name = "e2e"
+
+# The windowed GUI self-test. It is a plain test *binary* (no test harness) so
+# that its `main` runs on the process's main thread — required by `winit` on
+# macOS, and the reason the lib unit tests can't drive a real event loop.
+[[test]]
+
+name = "gui"
+harness = false
+required-features = ["gui"]
+
+[dependencies]
+
+rand = "0.10.2"
+winit = { version = "0.31.0-beta.3", optional = true }
+wgpu = { version = "30.0.1", optional = true }
+bytemuck = { version = "1.25.2", optional = true }
+# Drives the async device request on native (the GUI self-test also uses it);
+# wasm uses `wasm-bindgen-futures` instead.
+futures = { version = "0.3.31", optional = true }
+rayon = { version = "1.10.0", optional = true }
+clap = { version = "4.5.26", features = ["derive"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+
+# On wasm the JS engine's RNG is the only source of entropy, so `rand`'s
+# sys-rng path (via `getrandom`) needs the `wasm_js` backend.
+getrandom = { version = "0.4.3", features = ["wasm_js"] }
+# Reads the display's device pixel ratio to size the initial board to the
+# canvas (see `run_web`).
+web-sys = { version = "0.3", features = ["Window"] }
+# std's `Instant` is unusable on wasm (and winit's `ControlFlow::WaitUntil`
+# takes `web_time::Instant` there), so pacing uses the same type.
+web-time = "1.1.0"
+# The web build has no command line, so it is launched by a
+# `#[wasm_bindgen(start)]` entry point instead of `fn main`.
+wasm-bindgen = "0.2"
+# The wgpu adapter/device futures resolve on browser microtasks, so the GUI's
+# async init runs as a `spawn_local` task on the wasm event loop and signals
+# the `winit` loop back via `EventLoopProxy::wake_up`.
+wasm-bindgen-futures = "0.4"
+
+[dev-dependencies]
+
+assert_cmd = "2.0.16"
+naga = { version = "30.0.1", features = ["wgsl-in"] }
