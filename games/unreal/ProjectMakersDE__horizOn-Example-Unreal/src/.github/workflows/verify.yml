@@ -1,0 +1,33 @@
+name: Example integrity and contracts
+on:
+  push:
+    branches: [main, 'task/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  source-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Read exact official SDK revision
+        id: sdk
+        run: python3 -c 'import json,os; open(os.environ["GITHUB_OUTPUT"],"a").write("commit="+json.load(open("SDK-SOURCE.json"))["commit"]+"\n")'
+      - name: Checkout official test fixtures at the pinned revision
+        uses: actions/checkout@v4
+        with:
+          repository: ProjectMakersDE/horizOn-SDK-Unreal
+          ref: ${{ steps.sdk.outputs.commit }}
+          path: official-sdk
+      - name: Verify source assets and complete embedded plugin
+        run: python3 Scripts/verify_project.py
+      - name: Compile and exercise real game boundaries and official SDK contracts
+        run: |
+          python3 Tests/run_cutout_pose_test.py
+          python3 Tests/run_input_log_test.py
+          python3 Tests/run_session_boundary_test.py
+          python3 Tests/run_sdk_contracts.py --sdk-source official-sdk
