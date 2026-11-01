@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:26 PT (America/Los_Angeles). Entries: **889**.
+Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -632,6 +632,7 @@ Generated: 2026-11-01 ~09:26 PT (America/Los_Angeles). Entries: **889**.
 | games/pygame/Onehand-Coding__python-game-suite | https://github.com/Onehand-Coding/python-game-suite | MIT | pygame | b | 2026-11-01 |
 | games/pygame/OscarJHernandez__py2ports_breakout | https://github.com/OscarJHernandez/py2ports_breakout | MIT | pygame | b | 2026-10-23 |
 | games/pygame/pearsonkai__PyPong | https://github.com/pearsonkai/PyPong | MIT | pygame | b | 2026-11-01 |
+| games/pygame/pepaskopec-blip__My-first-PyGame | https://github.com/pepaskopec-blip/My-first-PyGame | GPL-3.0 | pygame | b | 2026-11-01 |
 | games/pygame/philsnelgrove__bitzkey | https://github.com/philsnelgrove/bitzkey | GPL-3.0 | pygame | b | 2026-11-01 |
 | games/pygame/plbrault__youre-the-os | https://github.com/plbrault/youre-the-os | GPL-3.0 | pygame | b | 2026-10-22 |
 | games/pygame/punker76__Pyout | https://github.com/punker76/Pyout | MIT | pygame | b | 2026-10-23 |
