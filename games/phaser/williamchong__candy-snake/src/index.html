@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Candy Snake</title>
+    <meta
+      name="description"
+      content="An arcade game where the snake is a pulled sugar strand: grow it, knead red, yellow and blue dye into it, and chop it into candies for the children at the window."
+    />
+    <!--
+      The card. Absolute URLs on purpose: Vite builds with a relative base so the
+      game can be served from a subpath, but a crawler resolves these against
+      nothing and needs the whole address.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Candy Snake" />
+    <meta
+      property="og:description"
+      content="Pull sugar · knead dye · chop candy. A snake made of candy, in the browser."
+    />
+    <meta property="og:url" content="https://williamchong.github.io/candy-snake/" />
+    <meta
+      property="og:image"
+      content="https://williamchong.github.io/candy-snake/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* Must match the Phaser backgroundColor. Scale.RESIZE leaves no
+           letterbox bars, but the page still shows through for the frame or two
+           before the canvas is sized. */
+        background: #d8cbe4;
+        overscroll-behavior: none;
+      }
+      /* The canvas fills this, and every scene lays itself out from its real
+         size (architecture §9) — so there is nothing left over to centre. */
+      #app {
+        height: 100%;
+      }
+      #app canvas {
+        touch-action: none;
+        /* A long press over a canvas raises iOS's Save Image sheet and starts a
+           selection on Android, either of which lands on top of a run in
+           progress — the same complaint as a page that scrolls under one, and
+           the same answer: while the game is being played, nothing but the game
+           moves. Unverifiable in headless Chromium (these are real-device
+           behaviours), which is why they are the standard properties rather
+           than anything clever. */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        /* Not decoration: an inline canvas sits on a text baseline, so the line
+           box leaves descender space under it and the page is four pixels
+           taller than the viewport. That is enough for an arrow key to scroll
+           the whole game a few pixels mid-run. `block` takes the canvas off the
+           baseline and the overflow with it. */
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- `main` rather than `div`: the canvas is the whole of the page's
+         content, so a screen reader landing here should be told so. Phaser
+         parents by id and does not care which element it is. -->
+    <main id="app"></main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
