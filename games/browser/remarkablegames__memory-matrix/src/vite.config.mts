@@ -1,0 +1,66 @@
+import { resolve } from 'node:path';
+
+import babel from '@rolldown/plugin-babel';
+import tailwindcss from '@tailwindcss/vite';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules\/(react|react-dom)\//,
+            },
+            {
+              name: 'websfx',
+              test: /node_modules\/websfx\//,
+            },
+          ],
+        },
+      },
+    },
+  },
+
+  plugins: [
+    tailwindcss(),
+    react(),
+    babel({
+      presets:
+        process.env.NODE_ENV === 'test' ? undefined : [reactCompilerPreset()],
+    }),
+  ],
+
+  resolve: {
+    alias: {
+      src: resolve(import.meta.dirname, './src'),
+    },
+  },
+
+  server: {
+    watch: {
+      ignored: ['**/coverage/**'],
+    },
+  },
+
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.ts'],
+    globals: true,
+    coverage: {
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.types.ts',
+        'src/**/index.ts',
+        'src/types/',
+      ],
+      thresholds: {
+        100: true,
+      },
+    },
+  },
+});
