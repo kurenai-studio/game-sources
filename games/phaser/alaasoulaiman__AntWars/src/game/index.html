@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ant Wars" />
+    <meta name="application-name" content="Ant Wars" />
+    <meta name="description" content="One ant against the predators of the Yard, round after round." />
+    <meta name="theme-color" content="#16301a" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png" />
+    <title>Ant Wars</title>
+    <style>
+      html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        background: #16301a; overflow: hidden;
+        touch-action: none; overscroll-behavior: none;
+        -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+      }
+      /* Inside the notch and home bar safe area, so the HUD never sits under the iPhone clock. */
+      #game {
+        position: fixed; left: 0; right: 0;
+        top: env(safe-area-inset-top, 0px); bottom: env(safe-area-inset-bottom, 0px);
+      }
+      canvas { display: block; touch-action: none; }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
