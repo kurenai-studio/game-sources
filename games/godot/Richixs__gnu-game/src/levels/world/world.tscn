@@ -1,0 +1,106 @@
+[gd_scene format=3 uid="uid://baiqxij7icjlu"]
+
+[ext_resource type="PackedScene" uid="uid://cp2dkdyv3g3a1" path="res://entities/player/player.tscn" id="1_ng6r8"]
+[ext_resource type="Script" path="res://levels/world/world.gd" id="1_worldgd"]
+[ext_resource type="Shader" uid="uid://x0quhk0hc2vk" path="res://levels/world/rim_light.gdshader" id="2_6qp4l"]
+[ext_resource type="Script" uid="uid://dc0sgpsxhqx42" path="res://levels/world/scripts/track/scrolling_background.gd" id="2_6rhwe"]
+[ext_resource type="Texture2D" uid="uid://3io7eb8155b5" path="res://levels/world/sprites/background/city_half.png" id="2_b8p08"]
+[ext_resource type="Texture2D" uid="uid://ciyutln0c3ldb" path="res://levels/world/sprites/background/city_far.png" id="2_h0il2"]
+[ext_resource type="Texture2D" uid="uid://brw5gnpr3mrxu" path="res://levels/world/sprites/background/background.png" id="2_le7ry"]
+[ext_resource type="Texture2D" uid="uid://du3kg6fc6sd2l" path="res://levels/world/sprites/background/city_near.png" id="3_8gvdk"]
+[ext_resource type="Texture2D" uid="uid://c7mpu7f3u2iwh" path="res://levels/world/sprites/track/track.png" id="6_cjrbv"]
+[ext_resource type="PackedScene" uid="uid://b368g0fm5puwu" path="res://entities/obstacles/obstacle-spawner.tscn" id="9_dlib7"]
+[ext_resource type="PackedScene" uid="uid://d1cnyopxifih6" path="res://entities/obstacles/dual-monitor.tscn" id="10_vvn61"]
+[ext_resource type="PackedScene" uid="uid://cn2vrnamprbuk" path="res://entities/obstacles/hacklab-project.tscn" id="11_odyyq"]
+[ext_resource type="PackedScene" uid="uid://fhmtrkyjelws" path="res://entities/obstacles/monitor.tscn" id="12_8x81d"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cjrbv"]
+shader = ExtResource("2_6qp4l")
+shader_parameter/rim_color = Color(0.6156863, 0.5647059, 0.84313726, 1)
+shader_parameter/rim_thickness = 50.000002375
+shader_parameter/rim_falloff = 5.00000023424012
+shader_parameter/global_opacity = 0.800000038
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tsgde"]
+size = Vector2(320, 13)
+
+[node name="World" type="Node2D" unique_id=9187508]
+script = ExtResource("1_worldgd")
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=2092632211]
+script = ExtResource("2_6rhwe")
+
+[node name="Background" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1693570133]
+motion_scale = Vector2(0, 0)
+motion_mirroring = Vector2(180, 0)
+
+[node name="Background" type="ColorRect" parent="ParallaxBackground/Background" unique_id=518334078]
+offset_right = 320.0
+offset_bottom = 180.0
+color = Color(0.30981788, 0.228199, 0.4242682, 1)
+
+[node name="SanPedro" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1000023405]
+motion_scale = Vector2(0.05, 0.05)
+motion_mirroring = Vector2(600, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/SanPedro" unique_id=426416809]
+material = SubResource("ShaderMaterial_cjrbv")
+position = Vector2(300, 90)
+texture = ExtResource("2_le7ry")
+
+[node name="CityFar" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1443059567]
+motion_scale = Vector2(0.2, 0.2)
+motion_mirroring = Vector2(680, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/CityFar" unique_id=1309177091]
+position = Vector2(341, 90)
+texture = ExtResource("2_h0il2")
+
+[node name="CityHalf" type="ParallaxLayer" parent="ParallaxBackground" unique_id=223426152]
+motion_scale = Vector2(0.3, 0.3)
+motion_mirroring = Vector2(680, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/CityHalf" unique_id=1285175772]
+position = Vector2(340, 89)
+texture = ExtResource("2_b8p08")
+
+[node name="CityNear" type="ParallaxLayer" parent="ParallaxBackground" unique_id=806988047]
+motion_scale = Vector2(0.6, 0.6)
+motion_mirroring = Vector2(610, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/CityNear" unique_id=895703299]
+position = Vector2(306, 91)
+texture = ExtResource("3_8gvdk")
+
+[node name="Track" type="ParallaxLayer" parent="ParallaxBackground" unique_id=517894402]
+motion_mirroring = Vector2(1400, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/Track" unique_id=1489753750]
+position = Vector2(700, 167)
+texture = ExtResource("6_cjrbv")
+
+[node name="Ground" type="StaticBody2D" parent="." unique_id=461535637]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=1381987068]
+position = Vector2(160, 174)
+shape = SubResource("RectangleShape2D_tsgde")
+
+[node name="ColorRect" type="ColorRect" parent="Ground" unique_id=1070969399]
+offset_top = 174.0
+offset_right = 320.0
+offset_bottom = 180.0
+color = Color(0.2901961, 0.2901961, 0.2901961, 1)
+
+[node name="Player" parent="." unique_id=1303364449 instance=ExtResource("1_ng6r8")]
+position = Vector2(48, 152)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1341531380]
+anchor_mode = 0
+
+[node name="ObstacleSpawner" parent="." unique_id=1882673231 instance=ExtResource("9_dlib7")]
+position = Vector2(330, 0)
+ground_obstacles = Array[PackedScene]([ExtResource("10_vvn61"), ExtResource("11_odyyq"), ExtResource("12_8x81d")])
+min_spawn_time = 1.0
+max_spawn_time = 2.0
+ground_y = 143.0
+air_y = 100.0

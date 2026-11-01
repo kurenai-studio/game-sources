@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="SkinData" format=3 uid="uid://can2aoqvcc486"]
+
+[ext_resource type="Texture2D" uid="uid://dhsh4dh70uief" path="res://entities/player/sprites/gnu/gnu-duck.png" id="1_qwub8"]
+[ext_resource type="Script" uid="uid://caboj86bfjqp7" path="res://entities/player/skins/skin_data.gd" id="1_rs623"]
+[ext_resource type="Texture2D" uid="uid://bcvhtxyk6qjni" path="res://entities/player/sprites/gnu/gnu-idle.png" id="2_rdbl1"]
+[ext_resource type="Texture2D" uid="uid://p7rmtthd4w8f" path="res://entities/player/sprites/gnu/gnu-run.png" id="3_c6amk"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_76o4l"]
+atlas = ExtResource("1_qwub8")
+region = Rect2(0, 0, 72, 47)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yypah"]
+atlas = ExtResource("1_qwub8")
+region = Rect2(72, 0, 72, 47)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hw4ev"]
+atlas = ExtResource("3_c6amk")
+region = Rect2(0, 0, 54, 62)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a0sg7"]
+atlas = ExtResource("3_c6amk")
+region = Rect2(54, 0, 54, 62)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nbxoj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_76o4l")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yypah")
+}],
+"loop": true,
+"name": &"duck",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_rdbl1")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hw4ev")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a0sg7")
+}],
+"loop": true,
+"name": &"run",
+"speed": 7.0
+}]
+
+[resource]
+script = ExtResource("1_rs623")
+skin_name = "gnu"
+animations = SubResource("SpriteFrames_nbxoj")
+standing_size = Vector2(44, 58)
+ducking_size = Vector2(60, 40)
+ducking_offset = Vector2(0, 7)
+metadata/_custom_type_script = "uid://caboj86bfjqp7"

@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://n8ex0x5sqilc"]
+
+[ext_resource type="Script" uid="uid://bwsghsx7jbg7b" path="res://entities/obstacles/scripts/obstacle.gd" id="1_yis5g"]
+[ext_resource type="Texture2D" uid="uid://rrkmucoiih1l" path="res://entities/obstacles/sprites/apple.png" id="2_yis5g"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cugyg"]
+atlas = ExtResource("2_yis5g")
+region = Rect2(0, 0, 38, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tqqrr"]
+atlas = ExtResource("2_yis5g")
+region = Rect2(38, 0, 38, 40)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4ss3g"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cugyg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tqqrr")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nb8tu"]
+size = Vector2(15, 14.5)
+
+[node name="CollisionShape2D" type="Area2D" unique_id=1714598019]
+script = ExtResource("1_yis5g")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1960354101]
+sprite_frames = SubResource("SpriteFrames_4ss3g")
+frame_progress = 0.37636468
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1812826294]
+position = Vector2(-2, 9)
+shape = SubResource("RectangleShape2D_nb8tu")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
