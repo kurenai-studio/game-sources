@@ -1,0 +1,14 @@
+function init(self)
+   	--print(msg.url('.'))
+    --print(msg.url('#'))
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_snegulki") then
+		local s = gui.get_node("txt_snegulki")
+        gui.set_text(s, message.pp)
+	elseif message_id == hash("set_paketcinja") then
+		local s = gui.get_node("txt_paketcinja")
+        gui.set_text(s, message.pp)
+	end
+end

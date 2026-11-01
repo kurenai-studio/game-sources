@@ -1,0 +1,88 @@
+local grid = 1200 -- sirina na screen
+local platforma_skaliranje = 0.6
+local p_dimenzii = 100 -- dimenzii na platforma od atlas
+local p_sirina = p_dimenzii*platforma_skaliranje
+local p -- pomosna za skladiranje platformi
+local p_pocetok = grid + 5 -- od kade ke se kreiraat platformite
+local p_visini = {100, 250, 400} -- visini na spawn na platformi
+local p_sirina_min = 2 -- broj na minimum blokovi od koi ke bide sostavena edna platform
+local p_sirina_max = 6 -- broj na max blokovi od koi ke bide sostavena edna platforma
+local p_prostor_min = 20 -- minimum prostor pomegu platformi
+local p_prostor_max = 200 -- maximum prostor pomegu platformi
+local p_faktor = 2 -- 1 e normalno, 2 e duplo pobrzo..
+
+function init(self)
+	self.spawns = {}
+	self.prostor_min = p_prostor_min
+	self.prostor_rand = math.random(p_prostor_min, p_prostor_max)
+end
+
+function update(self, dt)
+    -- generiraj platformi so random dolzina
+    self.prostor_min = self.prostor_min + p_faktor
+    if self.prostor_min >= self.prostor_rand then
+    --ostavi prostor i povtori
+    self.prostor_min = p_prostor_min
+    self.prostor_rand = math.random(p_prostor_min, p_prostor_max)
+    
+    --zapocni so kreiranje na platforma
+    self.blokovi = math.random(p_sirina_min, p_sirina_max)
+    self.visina = p_visini[math.random(#p_visini)]
+    	self.startblock = p_pocetok
+	    for i=1,self.blokovi,1 do
+	    
+	    	self.gift = math.random()
+	    	if self.gift >=0.5 and self.gift <0.9 then
+	    		p = factory.create("#snegulka", vmath.vector3(self.startblock+10, self.visina+p_sirina+10, 0), nil, {}, 1)
+	    		table.insert(self.spawns, p)
+	    		msg.post(p, "start_animation", { delay = i/10 }) 
+	    	elseif self.gift >=0.9 then
+	    		p = factory.create("#paketce", vmath.vector3(self.startblock+10, self.visina+p_sirina+10, 0), nil, {}, 1)
+	    		table.insert(self.spawns, p)
+	    		msg.post(p, "start_animation", { delay = i/10 }) 
+	    	end
+	    	
+		    p = factory.create("#platforma", vmath.vector3(self.startblock, self.visina, 0), nil, {}, platforma_skaliranje)
+		    self.startblock = self.startblock + p_sirina
+		    table.insert(self.spawns, p)
+		    self.prostor_rand = self.prostor_rand + p_sirina -- dodaj +60 za sekoja platforma
+	    end
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("reset") then
+    	-- resetiraj poeni
+    	msg.post("main:/cl_controller#gui", "reset")
+        -- resetiraj heroj
+        msg.post("main:/hero#script", "reset")
+        -- izbrisi gi site platformi
+        for i,p in ipairs(self.spawns) do
+            go.delete(p)
+        end
+        self.spawns = {}
+        poceten_blok(self)
+        self.prostor_min = p_prostor_min + 100 -- zabrzaj go prvicnoto kreiranje pri reset, da nema golema dalecina
+		self.prostor_rand = math.random(p_prostor_min, p_prostor_max)
+		
+    elseif message_id == hash("delete_spawn") then 
+        for i,p in ipairs(self.spawns) do
+            if p == message.id then
+                table.remove(self.spawns, i)
+                go.delete(p)
+            end
+        end
+    end
+end
+
+--custom funkcii
+function poceten_blok(self)
+	--800px poceten blok
+	self.p_pocetna = 800 -- pocetna platforma za heroj
+    p = factory.create("#platforma", vmath.vector3(self.p_pocetna, 100, 0), nil, {}, platforma_skaliranje)
+    table.insert(self.spawns, p) 
+    p = factory.create("#platforma", vmath.vector3(self.p_pocetna+p_sirina, 100, 0), nil, {}, platforma_skaliranje)
+    table.insert(self.spawns, p) 
+    p = factory.create("#platforma", vmath.vector3(self.p_pocetna+2*p_sirina, 100, 0), nil, {}, platforma_skaliranje)
+    table.insert(self.spawns, p) 
+end
