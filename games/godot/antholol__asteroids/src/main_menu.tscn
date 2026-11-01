@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://di3yd07843gei"]
+
+[ext_resource type="FontFile" uid="uid://cfthvtsb2jvul" path="res://assets/fonts/SpaceMono-Bold.ttf" id="1_06t4h"]
+[ext_resource type="Theme" uid="uid://bxwqddg308rmc" path="res://theme.tres" id="1_7vrkn"]
+[ext_resource type="Script" uid="uid://hqrigu0bc2vb" path="res://main_menu.gd" id="2_fu7sn"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_pt0c6"]
+font = ExtResource("1_06t4h")
+font_size = 80
+font_color = Color(1, 1, 0, 1)
+shadow_size = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[node name="mainMenu" type="Control" unique_id=1916183014]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_7vrkn")
+script = ExtResource("2_fu7sn")
+
+[node name="bg" type="ColorRect" parent="." unique_id=455243478]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.00062740414, 0, 0.022964265, 1)
+
+[node name="Label" type="Label" parent="." unique_id=1873783759]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.5
+offset_top = -199.0
+offset_right = 220.5
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "ASTEROIDS"
+label_settings = SubResource("LabelSettings_pt0c6")
+horizontal_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1538189039]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -46.0
+offset_bottom = 108.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ButtonPLAY" type="Button" parent="VBoxContainer" unique_id=1339385925]
+layout_mode = 2
+size_flags_vertical = 3
+focus_neighbor_top = NodePath("../ButtonQUIT")
+focus_neighbor_bottom = NodePath("../ButtonQUIT")
+text = "PLAY"
+
+[node name="ButtonQUIT" type="Button" parent="VBoxContainer" unique_id=1188173637]
+layout_mode = 2
+size_flags_vertical = 3
+focus_neighbor_top = NodePath("../ButtonPLAY")
+focus_neighbor_bottom = NodePath("../ButtonPLAY")
+text = "QUIT"
+
+[connection signal="pressed" from="VBoxContainer/ButtonPLAY" to="." method="_on_button_play_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonQUIT" to="." method="_on_button_quit_pressed"]
