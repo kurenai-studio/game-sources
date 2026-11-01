@@ -1,0 +1,103 @@
+[gd_scene load_steps=9 format=3 uid="uid://gd5jtc0dccsg"]
+
+[ext_resource type="Texture2D" uid="uid://bv5hlex07pmv1" path="res://images/lightbrick.png" id="1_3vyb7"]
+[ext_resource type="Script" uid="uid://bkbflrpemv26y" path="res://scripts/player/player.gd" id="1_fjrip"]
+[ext_resource type="Script" uid="uid://bavwpimm37ikq" path="res://scripts/state_machine.gd" id="3_fjrip"]
+[ext_resource type="Script" uid="uid://c2a3tqhkflfw7" path="res://scripts/player/states/idle.gd" id="4_smehm"]
+[ext_resource type="Script" uid="uid://bt1yniyrajjme" path="res://scripts/player/states/walk.gd" id="5_ur7pv"]
+[ext_resource type="Script" uid="uid://4qgoluehjw4w" path="res://scripts/player/states/jump.gd" id="6_y4r1p"]
+[ext_resource type="Script" uid="uid://rs4qu2hyb4em" path="res://scripts/player/states/air.gd" id="7_d2wvv"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_186t8"]
+
+[node name="player" type="CharacterBody2D"]
+script = ExtResource("1_fjrip")
+
+[node name="animations" type="AnimatedSprite2D" parent="."]
+
+[node name="collider" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_186t8")
+
+[node name="model" type="Node" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="model"]
+modulate = Color(0.389496, 0.510428, 0.455687, 1)
+position = Vector2(1.19209e-07, -11)
+scale = Vector2(0.034375, 0.015625)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D2" type="Sprite2D" parent="model"]
+modulate = Color(0.388235, 0.509804, 0.454902, 1)
+position = Vector2(0, 5.5)
+scale = Vector2(0.034375, 0.0296875)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D7" type="Sprite2D" parent="model"]
+modulate = Color(0.2964, 0.39, 0.34788, 1)
+position = Vector2(-13, 5.5)
+scale = Vector2(0.00625, 0.0296875)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D8" type="Sprite2D" parent="model"]
+modulate = Color(0.2964, 0.39, 0.34788, 1)
+position = Vector2(13, 5.5)
+scale = Vector2(0.00625, 0.0296875)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D3" type="Sprite2D" parent="model"]
+self_modulate = Color(0.2508, 0.33, 0.29436, 1)
+position = Vector2(-5.36442e-07, -5)
+scale = Vector2(0.03125, 0.003125)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D6" type="Sprite2D" parent="model"]
+self_modulate = Color(0.1748, 0.23, 0.20516, 1)
+position = Vector2(2.02656e-06, -10.5)
+scale = Vector2(0.034375, 0.0015625)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D4" type="Sprite2D" parent="model"]
+self_modulate = Color(0.2508, 0.33, 0.29436, 1)
+position = Vector2(-6, -11)
+scale = Vector2(0.0078125, 0.009375)
+texture = ExtResource("1_3vyb7")
+
+[node name="Sprite2D5" type="Sprite2D" parent="model"]
+self_modulate = Color(0.2508, 0.33, 0.29436, 1)
+position = Vector2(6, -11)
+scale = Vector2(0.0078125, 0.009375)
+texture = ExtResource("1_3vyb7")
+
+[node name="state_machine" type="Node" parent="." node_paths=PackedStringArray("starting_state")]
+script = ExtResource("3_fjrip")
+starting_state = NodePath("idle")
+
+[node name="idle" type="Node" parent="state_machine" node_paths=PackedStringArray("walk_state", "jump_state", "air_state")]
+script = ExtResource("4_smehm")
+walk_state = NodePath("../walk")
+jump_state = NodePath("../jump")
+air_state = NodePath("../air")
+move_speed = 272.973
+
+[node name="walk" type="Node" parent="state_machine" node_paths=PackedStringArray("jump_state", "air_state", "idle_state")]
+script = ExtResource("5_ur7pv")
+jump_state = NodePath("../jump")
+air_state = NodePath("../air")
+idle_state = NodePath("../idle")
+walk_speed = 100.0
+walk_acc = 1000.0
+walk_friction = 750.0
+
+[node name="jump" type="Node" parent="state_machine" node_paths=PackedStringArray("air_state")]
+script = ExtResource("6_y4r1p")
+air_state = NodePath("../air")
+jump_force = 500.0
+
+[node name="air" type="Node" parent="state_machine" node_paths=PackedStringArray("idle_state", "walk_state")]
+script = ExtResource("7_d2wvv")
+idle_state = NodePath("../idle")
+walk_state = NodePath("../walk")
+fall_max_speed = 10000.0
+strafe_max_speed = 80.0
+strafe_acc = 800.0
+strafe_friction = 700.0
