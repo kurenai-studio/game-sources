@@ -1,0 +1,22 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "space.earlygrey:shapedrawer:$shapeDrawerVersion"
+  compileOnly 'org.projectlombok:lombok:1.18.36'
+  annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+  testCompileOnly 'org.projectlombok:lombok:1.18.36'
+  testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+  implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+  implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
+
+  implementation "com.github.tommyettinger:textratypist:0.8.0"
+}

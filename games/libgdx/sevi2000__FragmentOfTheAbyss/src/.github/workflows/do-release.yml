@@ -1,0 +1,19 @@
+name: Use Custom Java Setup Action
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Use Setup Java Action
+        uses: sevi2000/releaseALibGdxGameToNativeExecutable@1.2.3 # Replace with your repo and tag
+        with:
+          distribution: temurin
+          java-version: 17
+          caller-github-token: ${{ github.token }}
+
