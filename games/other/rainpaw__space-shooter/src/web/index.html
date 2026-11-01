@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Space Shooter</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        h1 {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #game-container {
+            border: 2px solid #444;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            max-width: 600px;
+        }
+        .controls h3 {
+            margin-bottom: 10px;
+        }
+        .controls p {
+            margin: 5px 0;
+            color: #aaa;
+        }
+        #loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #0096ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Space Shooter</h1>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading game...</p>
+    </div>
+    
+    <div id="game-container" style="display: none;">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <h3>Controls</h3>
+        <p><strong>WASD or Arrow Keys</strong> - Move your spaceship</p>
+        <p><strong>Space</strong> - Fire weapons</p>
+        <p><strong>P</strong> - Pause game</p>
+        <p><strong>ESC</strong> - Return to menu</p>
+    </div>
+
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        
+        WebAssembly.instantiateStreaming(fetch("game.wasm"), go.importObject)
+            .then((result) => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('game-container').style.display = 'block';
+                go.run(result.instance);
+            })
+            .catch((err) => {
+                document.getElementById('loading').innerHTML = 
+                    '<p style="color: #ff4444;">Error loading game: ' + err + '</p>';
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
