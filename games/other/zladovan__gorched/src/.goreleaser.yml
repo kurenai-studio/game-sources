@@ -1,0 +1,87 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  -
+    main: ./cmd/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+
+archives:
+  -
+    format_overrides:
+      - goos: windows
+        formats: [ 'zip' ]
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^chore:'
+    - '^docs?:'
+    - '^test:'
+    - '^refactor:'
+
+snapcrafts:
+  -
+    name: gorched
+    publish: true
+    summary: Terminal based game inspired by "The Mother of all games" Scorched Earth
+    description:  |
+      **Gorched** is multiplayer game rendered directly into your terminal.  The goal is to find out correct angle and power to hit the enemy tank.
+
+      The inspiration for this game comes from "The Mother of all games" Scorched Earth.
+
+      **Features**
+
+        * rendered in terminal
+        * ASCII graphics (actually few unicode symbols were used in tank sprite)
+        * procedurally generated world
+        * turn based multiplayer
+    license: MIT
+
+homebrew_casks:
+  -
+    name: gorched
+    repository:
+      owner: zladovan
+      name: homebrew-tap
+    homepage: https://github.com/zladovan/gorched
+    description: Terminal based game inspired by \"The Mother of all games\" Scorched Earth
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/gorched"]
+          end
+
+
+scoops:
+  -
+    repository:
+      owner: zladovan
+      name: scoop-bucket
+    homepage: https://github.com/zladovan/gorched
+    description: Terminal based game inspired by "The Mother of all games" Scorched Earth
+    license: MIT
+
+nfpms:
+  -
+    formats:
+      - deb
+      - rpm
+
+    epoch: "1"
+    release: "1"
+    vendor: zladovan
+    homepage: https://github.com/zladovan/gorched
+    maintainer: jan cabala (cabala.jan@gmail.com)
+    description: Terminal based game inspired by "The Mother of all games" Scorched Earth
+    license: MIT
