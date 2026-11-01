@@ -1,0 +1,166 @@
+require("assets.scripts.global")
+function init(self)
+	default_pos1 = go.get_position()
+	initChar1(self)
+	smap[1] = self
+end
+local function fist_end(self)
+	self.attacking1 = false
+end
+
+local function hit1_end(self)
+	self.gotHit1 = false
+end
+
+function update(self, dt)
+	self.pos = go.get_position()
+	if self.dashCooldown > 0 then self.dashCooldown = self.dashCooldown - dt end
+	if self.dashCooldown < 0 then self.dashCooldown = 0 end
+end
+
+function fixed_update(self, dt)
+	self.pos = go.get_position()
+	
+	if self.hp == 0 or self.hp < 0 then
+		self.dead = true
+	end
+
+	if self.dead and self.onGround and not self.gotHit3 then
+		animate_direction(self, "RightDefeat", "LeftDefeat")
+	end
+
+	self.jump = not (self.onGround)
+
+	if self.gotHit3 then
+		if not self.dead then animate_direction(self, "RightHit", "LeftHit") end
+		if self.dead then animate_direction(self, "RightDefeat", "LeftDefeat") end
+		self.pos.x = self.pos.x + self.gotHit3spd
+		if self.gotHit3spd < 0 then self.gotHit3spd = self.gotHit3spd + friction end
+		if self.gotHit3spd > 0 then self.gotHit3spd = self.gotHit3spd - friction end
+		if self.gotHit3spd == 0 or (self.gotHit3spd > -1 and self.gotHit3spd < 1) then self.gotHit3spd = 0 self.gotHit3 = false end
+	end
+	
+	if not self.dead then
+		fist(self)
+		bump(self)
+		flykick(self)
+		dashFist(self)
+
+		if self.onGround then 
+			self.dealDmg2 = true 
+			self.dealDmg3 = true
+			self.flyDm = 0
+		end
+
+		if not self.attacking1 then self.dealDmg1 = true end
+
+		self.idle = (keyPressed(self.LeftMovementKey) and keyPressed(self.RightMovementKey)) or ( not(keyPressed(self.LeftMovementKey)) and not(keyPressed(self.RightMovementKey)))
+
+
+		if self.attacking1 or self.gotHit1 or self.attacking2 or self.attacking3 or self.attacking4 then self.idle = false end
+		if self.attacking1 then self.gotHit1 = false end
+		if self.attacking2 then self.attacking1 = false end
+		if self.attacking3 then self.attacking1 = false end
+		if self.attacking4 then self.attacking1 = false end
+		if self.gotHit1 or self.gotHit2 or self.gotHit3 or self.gotHit4 then 
+			self.attacking2 = false
+			self.attacking3 = false 
+			self.gotHit2 = false
+			self.gotHit4 = false
+			
+		end
+		if self.gotHit3 then 
+			self.gotHit1 = false
+		end
+		
+
+
+		if self.gotHit1 then
+			animate_direction(self, "RightHit", "LeftHit", hit1_end)
+		end
+
+		if self.idle then
+			animate_direction(self, "RightIdle", "LeftIdle")
+		end
+
+		if not self.attacking2 and not self.attacking3 and not self.attacking4 then
+
+			if keyPressed(self.RightMovementKey) and not keyPressed(self.LeftMovementKey) then
+				self.direction = 1
+				self.pos.x = self.pos.x + xSpeed
+				if not self.attacking1 then animate(self, "RightWalk") end
+			end
+
+			if keyPressed(self.LeftMovementKey) and not keyPressed(self.RightMovementKey) then
+				self.direction = -1
+				self.pos.x = self.pos.x - xSpeed
+				if not self.attacking1 then animate(self, "LeftWalk") end
+			end
+
+			if keyPressed(self.JumpMovementKey) and self.onGround then
+				self.gravity = 10
+				jump(self)
+				self.jump = true
+				self.onGround = false
+			end
+
+		end
+		if self.attacking3 and self.reverse and ((self.currentanim == "RightReverseFlyKick" or self.currentanim == "LeftReverseFlyKick") and getCurrentFrame() <= 2) then
+			animate_direction(self, "RightBump", "LeftBump") 
+			self.attacking3 = false
+			self.dealDmg3 = false
+			self.reverse = false
+			self.attacking2 = true
+			self.dealDmg3 = false
+		end
+
+		if keyPressed(self.JumpThroughMovementKey) then
+			if not self.onGround and self.dealDmg2 then
+				self.attacking2 = true
+				self.dealDmg3 = false
+				if self.attacking3 and not self.reverse then 
+					animate_direction(self, "RightReverseFlyKick", "LeftReverseFlyKick") 
+					self.reverse = true
+				end 
+				if not self.attacking3 then animate_direction(self, "RightBump", "LeftBump") end
+			end
+		end
+
+		if keyPressed(self.PrimaryAttackKey) and not keyPressed(self.JumpMovementKey) and not keyPressed(self.SecondaryAttackKey) and not self.attacking2 and not self.attacking3 then
+			animate_direction(self, "RightFist", "LeftFist", fist_end)
+			self.idle = false
+			self.attacking1 = true
+		end
+
+		if keyPressed(self.PrimaryAttackKey) and keyPressed(self.JumpMovementKey) and not self.attacking2 and not self.attacking1 and self.dealDmg3 then
+			self.attacking3 = true
+			animate_direction(self, "RightFlyKick", "LeftFlyKick")
+			self.idle = false
+		end
+
+		if keyPressed(self.SecondaryAttackKey) and self.dashCooldown == 0 then
+			self.attacking4 = true
+			self.idle = false
+		end	
+		
+		
+		
+
+	end
+
+	if self.pos.x > 1320 then
+		self.pos.x = -20
+	else 
+		if self.pos.x < -20 then self.pos.x = 1320 end 
+	end
+
+	if not self.onGround and not self.attacking2 and not self.attacking3 then
+		jump(self)
+	else
+		self.gravity = 0
+	end
+
+	if self.onGround and not (self.pos.y == default_y) then self.pos.y = default_y end
+
+	go.set_position(self.pos)
+end

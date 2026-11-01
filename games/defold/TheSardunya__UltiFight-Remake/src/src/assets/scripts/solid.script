@@ -1,0 +1,14 @@
+require("assets.scripts.global")
+
+function on_message(self, message_id, message, sender)
+
+	if message_id == hash("contact_point_response") then
+		if message.other_id == hash("/char2") then
+			smap[2].onGround = true
+		end
+		if message.other_id == hash("/char1") then
+			smap[1].onGround = true
+		end
+	end
+end
+
