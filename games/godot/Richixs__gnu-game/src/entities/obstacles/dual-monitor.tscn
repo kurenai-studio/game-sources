@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://d1cnyopxifih6"]
+
+[ext_resource type="Script" uid="uid://bwsghsx7jbg7b" path="res://entities/obstacles/scripts/obstacle.gd" id="1_8aii3"]
+[ext_resource type="Texture2D" uid="uid://c6lirdbrbj6s0" path="res://entities/obstacles/sprites/dual-monitor.png" id="2_8aii3"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4ss3g"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_8aii3")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nb8tu"]
+size = Vector2(17, 42)
+
+[node name="CollisionShape2D" type="Area2D" unique_id=1714598019]
+script = ExtResource("1_8aii3")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1960354101]
+sprite_frames = SubResource("SpriteFrames_4ss3g")
+frame_progress = 0.9901819
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1812826294]
+position = Vector2(1.5, 1)
+shape = SubResource("RectangleShape2D_nb8tu")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

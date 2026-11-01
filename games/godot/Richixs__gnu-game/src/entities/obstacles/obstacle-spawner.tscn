@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://b368g0fm5puwu"]
+
+[ext_resource type="Script" uid="uid://dki4tnt7ul5jk" path="res://entities/obstacles/scripts/spawner.gd" id="1_vsswf"]
+[ext_resource type="PackedScene" uid="uid://cn2vrnamprbuk" path="res://entities/obstacles/hacklab-project.tscn" id="2_takay"]
+[ext_resource type="PackedScene" uid="uid://fhmtrkyjelws" path="res://entities/obstacles/monitor.tscn" id="3_qqexa"]
+[ext_resource type="PackedScene" uid="uid://d1cnyopxifih6" path="res://entities/obstacles/dual-monitor.tscn" id="4_rns7g"]
+[ext_resource type="PackedScene" uid="uid://n8ex0x5sqilc" path="res://entities/obstacles/apple.tscn" id="5_q4oyx"]
+
+[node name="ObstacleSpawner" type="Node2D" unique_id=1882673231]
+script = ExtResource("1_vsswf")
+ground_obstacles = Array[PackedScene]([ExtResource("2_takay"), ExtResource("3_qqexa"), ExtResource("4_rns7g")])
+air_obstacles = Array[PackedScene]([ExtResource("5_q4oyx")])
+
+[node name="Timer" type="Timer" parent="." unique_id=1520292088]

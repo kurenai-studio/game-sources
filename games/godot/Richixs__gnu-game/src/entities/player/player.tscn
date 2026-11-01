@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cp2dkdyv3g3a1"]
+
+[ext_resource type="Script" uid="uid://cbqgbe805d5v4" path="res://entities/player/player.gd" id="1_symyc"]
+[ext_resource type="Resource" uid="uid://can2aoqvcc486" path="res://entities/player/skins/player_gnu.tres" id="2_abrql"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_abrql"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sfv1e"]
+
+[node name="Player" type="CharacterBody2D" unique_id=1303364449]
+script = ExtResource("1_symyc")
+skin = ExtResource("2_abrql")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1507937670]
+sprite_frames = SubResource("SpriteFrames_abrql")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1297849045]
+shape = SubResource("RectangleShape2D_sfv1e")
