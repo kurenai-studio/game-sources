@@ -1,0 +1,35 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusMacros.h"
+#include "ArgusMath.h"
+#include "ComponentDependencies/FlightCapability.h"
+
+struct TransformComponent
+{
+	ARGUS_COMPONENT_SHARED
+
+	ARGUS_COMP_NO_DATA
+	FVector m_location = FVector::ZeroVector;
+
+	float m_radius = 45.0f;
+	
+	EFlightCapability m_flightCapability = EFlightCapability::OnlyGrounded;
+
+	bool m_isAvoidanceExcluded = false;
+
+	// m_movedThisFrame defaults to true since instantiation effectively counts as a movement.
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	bool m_movedThisFrame = true;
+
+	bool CanFly() const
+	{
+		return m_flightCapability == EFlightCapability::BothGroundedAndFlying || m_flightCapability == EFlightCapability::OnlyFlying;
+	}
+
+	bool CanWalk() const
+	{
+		return m_flightCapability == EFlightCapability::BothGroundedAndFlying || m_flightCapability == EFlightCapability::OnlyGrounded;
+	}
+};

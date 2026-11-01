@@ -1,0 +1,121 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "ArgusEditorModule.h"
+#include "ArgusStaticRecordReference.h"
+#include "AssetToolsModule.h"
+#include "IAssetTools.h"
+#include "UObject/UObjectGlobals.h"
+
+#define LOCTEXT_NAMESPACE "ArgusEditor"
+
+IMPLEMENT_MODULE(ArgusEditorModule, ArgusEditor);
+
+namespace
+{
+	template<typename StructType>
+	const StructType* CastStructValue(const FStructProperty* structProperty, const void* value)
+	{
+		check(structProperty && structProperty->Struct && value);
+
+		if (structProperty->Struct->IsChildOf(TBaseStructure<StructType>::Get()))
+		{
+			return reinterpret_cast<const StructType*>(value);
+		}
+
+		return nullptr;
+	}
+}
+
+EAssetTypeCategories::Type ArgusEditorModule::s_argusAssetCategory = EAssetTypeCategories::Type::Misc;
+
+ArgusEditorModule& ArgusEditorModule::Get()
+{
+	return FModuleManager::GetModuleChecked<ArgusEditorModule>("ArgusEditor");
+}
+
+EAssetTypeCategories::Type ArgusEditorModule::GetAssetTypeCategory()
+{
+	return s_argusAssetCategory;
+}
+
+void ArgusEditorModule::StartupModule()
+{
+	m_propertyChangedHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &ArgusEditorModule::OnObjectPropertyChanged);
+
+	IAssetTools& assetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+
+	s_argusAssetCategory = assetTools.RegisterAdvancedAssetCategory(FName(TEXT("Argus")), LOCTEXT("Argus", "Argus"));
+	RegisterAssetActions(assetTools);
+
+	m_argusHeadlessActorManager.Initialize();
+}
+
+void ArgusEditorModule::ShutdownModule()
+{
+	FCoreUObjectDelegates::OnObjectPropertyChanged.Remove(m_propertyChangedHandle);
+
+	m_argusHeadlessActorManager.Teardown();
+}
+
+void ArgusEditorModule::OnObjectPropertyChanged(UObject* object, FPropertyChangedEvent& propertyChangedEvent) const
+{
+	const FProperty* initialProperty = propertyChangedEvent.MemberProperty;
+	if (!object || !initialProperty || !propertyChangedEvent.Property)
+	{
+		return;
+	}
+
+	if (!CastField<FSoftObjectProperty>(propertyChangedEvent.Property) || !CastField<FStructProperty>(initialProperty) && !CastField<FArrayProperty>(initialProperty))
+	{
+		return;
+	}
+
+	StoreRecordReferenceRecursive(initialProperty->ContainerPtrToValuePtr<void>(object), initialProperty, propertyChangedEvent.Property);
+}
+
+void ArgusEditorModule::StoreRecordReferenceRecursive(const void* container, const FProperty* currentProperty, const FProperty* targetProperty) const
+{
+	if (!container || !currentProperty || !targetProperty)
+	{
+		return;
+	}
+
+	if (const FArrayProperty* arrayProperty = CastField<FArrayProperty>(currentProperty))
+	{
+		FScriptArrayHelper arrayHelper = FScriptArrayHelper(arrayProperty, container);
+		for (int32 i = 0; i < arrayHelper.Num(); ++i)
+		{
+			StoreRecordReferenceRecursive(arrayHelper.GetRawPtr(i), arrayProperty->Inner, targetProperty);
+		}
+		return;
+	}
+
+	const FStructProperty* structProperty = CastField<FStructProperty>(currentProperty);
+	if (!structProperty || !structProperty->Struct)
+	{
+		return;
+	}
+
+	const FField* childField = structProperty->Struct->ChildProperties;
+	while (childField)
+	{
+		if (const FProperty* childProperty = CastField<FProperty>(childField))
+		{
+			if (childProperty == targetProperty)
+			{
+				if (const FArgusStaticRecordReference* recordReference = CastStructValue<FArgusStaticRecordReference>(structProperty, container))
+				{
+					recordReference->StoreId();
+					return;
+				}
+			}
+
+			const void* childValue = childProperty->ContainerPtrToValuePtr<void>(container);
+			StoreRecordReferenceRecursive(childValue, childProperty, targetProperty);
+		}
+
+		childField = childField->Next;
+	}
+}
+
+#undef LOCTEXT_NAMESPACE

@@ -1,0 +1,609 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "AbilitySystems.h"
+#include "ArgusEntityTemplate.h"
+#include "ArgusIterators.h"
+#include "ArgusLogging.h"
+#include "ArgusStaticData.h"
+#include "ComponentDependencies/SpawnEntityInfo.h"
+#include "DataComponentDefinitions/ResourceComponentData.h"
+#include "DataComponentDefinitions/TransformComponentData.h"
+#include "RecordDefinitions/AbilityRecord.h"
+#include "RecordDefinitions/ArgusActorRecord.h"
+#include "Systems/ResourceSystems.h"
+
+void AbilitySystems::RunSystems(float deltaTime)
+{
+	ARGUS_TRACE(AbilitySystems::RunSystems);
+
+	ReticleComponent* reticleComponent = ArgusEntity::GetSingletonEntity().GetComponent<ReticleComponent>();
+	ARGUS_RETURN_ON_NULL(reticleComponent, ArgusECSLog);
+
+	ArgusIterators::IterateSystemsArgs<AbilitySystemsArgs>([reticleComponent, deltaTime](AbilitySystemsArgs& components)
+	{
+		components.m_reticleComponent = reticleComponent;
+		if ((components.m_entity.IsKillable() && !components.m_entity.IsAlive()) || components.m_entity.IsPassenger())
+		{
+			components.m_taskComponent->m_abilityState = EAbilityState::None;
+			return;
+		}
+
+		if (components.m_taskComponent->m_constructionState == EConstructionState::BeingConstructed)
+		{
+			components.m_taskComponent->m_abilityState = EAbilityState::None;
+			return;
+		}
+
+		if (components.m_abilityComponent->m_abilityToRefundId > 0u)
+		{
+			ProcessAbilityRefundRequests(components);
+		}
+
+		ProcessAbilityTaskCommands(components);
+	});
+}
+
+void AbilitySystems::CastAbility(const UAbilityRecord* abilityRecord, const AbilitySystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return;
+	}
+
+	if (!ResourceSystems::CanEntityAffordTeamResourceChange(components.m_entity, abilityRecord->m_requiredResourceChangeToCast))
+	{
+		components.m_taskComponent->m_abilityState = EAbilityState::None;
+		return;
+	}
+
+	if (abilityRecord->GetRequiresReticle() && components.m_entity.IsOnPlayerTeam())
+	{
+		if (components.m_reticleComponent->m_isBlocked || 
+			(abilityRecord->GetSingleCastPerReticle() && components.m_reticleComponent->m_wasAbilityCast))
+		{
+			components.m_taskComponent->m_abilityState = EAbilityState::None;
+			return;
+		}
+
+		components.m_reticleComponent->m_wasAbilityCast = true;
+	}
+
+	bool successfulyCast = false;
+	for (int32 i = 0; i < abilityRecord->m_abilityEffects.Num(); ++i)
+	{
+		switch (abilityRecord->m_abilityEffects[i].m_abilityType)
+		{
+			case EAbilityTypes::Spawn:
+				successfulyCast = CastSpawnAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, false, abilityRecord->GetRequiresReticle());
+				break;
+
+			case EAbilityTypes::Heal:
+				successfulyCast = CastHealAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components);
+				break;
+
+			case EAbilityTypes::Attack:
+				successfulyCast = CastAttackAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components);
+				break;
+
+			case EAbilityTypes::Construct:
+				successfulyCast = CastSpawnAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, true, abilityRecord->GetRequiresReticle());
+				break;
+
+			case EAbilityTypes::Vacate:
+				successfulyCast = CastVacateAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components);
+				break;
+
+			case EAbilityTypes::TakeOff:
+				successfulyCast = CastFlightTransitionAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, false);
+				break;
+
+			case EAbilityTypes::Land:
+				successfulyCast = CastFlightTransitionAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, true);
+				break;
+
+			case EAbilityTypes::AddAbilityOverride:
+				successfulyCast = CastAbilityOverrideAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, true);
+				break;
+
+			case EAbilityTypes::RemoveAbilityOverride:
+				successfulyCast = CastAbilityOverrideAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components, false);
+				break;
+
+			default:
+				return;
+		}
+	}
+
+	if (successfulyCast)
+	{
+		if (!ResourceSystems::ApplyTeamResourceChangeIfAffordable(components.m_entity, abilityRecord->m_requiredResourceChangeToCast))
+		{
+			ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] Successfully casted ability id %d, but could not afford it!"), ARGUS_FUNCNAME, abilityRecord->m_id);
+		}
+
+		if (components.m_reticleComponent->m_wasAbilityCast && !ResourceSystems::CanEntityAffordTeamResourceChange(components.m_entity, abilityRecord->m_requiredResourceChangeToCast))
+		{
+			components.m_reticleComponent->DisableReticle();
+		}
+	}
+}
+
+void AbilitySystems::PrepReticle(const UAbilityRecord* abilityRecord, const AbilitySystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return;
+	}
+
+	if (!abilityRecord->GetRequiresReticle())
+	{
+		return;
+	}
+
+	if (components.m_reticleComponent->m_abilityRecordId == abilityRecord->m_id)
+	{
+		return;
+	}
+
+	components.m_reticleComponent->m_abilityRecordId = abilityRecord->m_id;
+
+	if (ResourceSystems::CanEntityAffordTeamResourceChange(components.m_entity, abilityRecord->m_requiredResourceChangeToCast))
+	{
+		for (int32 i = 0; i < abilityRecord->m_abilityEffects.Num(); ++i)
+		{
+			if (abilityRecord->m_abilityEffects[i].m_abilityType == EAbilityTypes::Construct)
+			{
+				PrepReticleForConstructAbility(abilityRecord, abilityRecord->m_abilityEffects[i], components);
+				break;
+			}
+		}
+	}
+	else
+	{
+		components.m_reticleComponent->DisableReticle();
+	}
+
+	components.m_taskComponent->m_abilityState = EAbilityState::None;
+}
+
+const UArgusEntityTemplate* AbilitySystems::GetEntityTemplateForAbility(const UAbilityRecord* abilityRecord)
+{
+	ARGUS_TRACE(AbilitySystems::GetEntityTemplateForAbility);
+
+	ARGUS_RETURN_ON_NULL_POINTER(abilityRecord, ArgusECSLog);
+
+	bool hasEntity = false;
+	int32 index = 0;
+	for (; index < abilityRecord->m_abilityEffects.Num(); ++index)
+	{
+		if (abilityRecord->m_abilityEffects[index].m_abilityType == EAbilityTypes::Construct ||
+			abilityRecord->m_abilityEffects[index].m_abilityType == EAbilityTypes::Spawn)
+		{
+			hasEntity = true;
+			break;
+		}
+	}
+
+	if (!hasEntity)
+	{
+		return nullptr;
+	}
+
+	const UArgusActorRecord* argusActorRecord = ArgusStaticData::GetRecord<UArgusActorRecord>(abilityRecord->m_abilityEffects[index].m_argusActorRecordReference.GetId());
+	ARGUS_RETURN_ON_NULL_POINTER(argusActorRecord, ArgusECSLog);
+
+	return argusActorRecord->m_entityTemplate.LoadAndStorePtr();
+}
+
+float AbilitySystems::GetRadiusOfConstructionAbility(const UAbilityRecord* abilityRecord)
+{
+	ARGUS_RETURN_ON_NULL_VALUE(abilityRecord, ArgusECSLog, 0.0f);
+
+	const UArgusEntityTemplate* entityTemplate = GetEntityTemplateForAbility(abilityRecord);
+	ARGUS_RETURN_ON_NULL_VALUE(entityTemplate, ArgusECSLog, 0.0f);
+
+	const UTransformComponentData* transformComponent = entityTemplate->GetComponentFromTemplate<UTransformComponentData>();
+	ARGUS_RETURN_ON_NULL_VALUE(transformComponent, ArgusECSLog, 0.0f);
+
+	return transformComponent->m_radius;
+}
+
+float AbilitySystems::GetResourceBufferRadiusOfConstructionAbility(const UAbilityRecord* abilityRecord)
+{
+	ARGUS_RETURN_ON_NULL_VALUE(abilityRecord, ArgusECSLog, 0.0f);
+
+	const UArgusEntityTemplate* entityTemplate = GetEntityTemplateForAbility(abilityRecord);
+	ARGUS_RETURN_ON_NULL_VALUE(entityTemplate, ArgusECSLog, 0.0f);
+
+	const UResourceComponentData* resourceComponent = entityTemplate->GetComponentFromTemplate<UResourceComponentData>();
+	if (!resourceComponent)
+	{
+		return 0.0f;
+	}
+
+	return resourceComponent->m_bufferRegionRadius;
+}
+
+EAbilityState AbilitySystems::GetProcessAbilityStateForAbilityIndex(EAbilityIndex index)
+{
+	switch (index)
+	{
+		case EAbilityIndex::Ability0:
+			return EAbilityState::ProcessCastAbility0Command;
+		case EAbilityIndex::Ability1:
+			return EAbilityState::ProcessCastAbility1Command;
+		case EAbilityIndex::Ability2:
+			return EAbilityState::ProcessCastAbility2Command;
+		case EAbilityIndex::Ability3:
+			return EAbilityState::ProcessCastAbility3Command;
+		default:
+			break;
+	}
+
+	return EAbilityState::None;
+}
+
+bool AbilitySystems::GetSpawnEntityCategoryAbilities(ArgusEntity entity, FEntityCategory entityCategory, TArray<TPair<const UAbilityRecord*, EAbilityIndex>>& outAbilityIndexPairs)
+{
+	ARGUS_TRACE(AbilitySystems::GetSpawnEntityCategoryAbilities);
+
+	outAbilityIndexPairs.Reset();
+	outAbilityIndexPairs.Reserve(ArgusECSConstants::k_numEntityAbilities);
+	const AbilityComponent* abilityComponent = entity.GetComponent<AbilityComponent>();
+	if (!abilityComponent)
+	{
+		return false;
+	}
+
+	abilityComponent->IterateActiveAbilityIds([entity, entityCategory, &outAbilityIndexPairs](uint32 abilityRecordId, EAbilityIndex iteratedAbilityIndex)
+	{
+		const UAbilityRecord* record = ArgusStaticData::GetRecord<UAbilityRecord>(abilityRecordId);
+		if (!record)
+		{
+			return;
+		}
+
+		if (record->DoesAbilitySpawnEntityOfCategory(entityCategory))
+		{
+			if (ResourceSystems::CanEntityAffordTeamResourceChange(entity, record->m_requiredResourceChangeToCast))
+			{
+				outAbilityIndexPairs.Add(TPair<const UAbilityRecord*, EAbilityIndex>(record, iteratedAbilityIndex));
+			}
+		}
+	});
+
+	if (outAbilityIndexPairs.Num() > 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void AbilitySystems::ProcessAbilityRefundRequests(const AbilitySystemsArgs& components)
+{
+	ARGUS_TRACE(AbilitySystems::ProcessAbilityRefundRequests);
+
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	const UAbilityRecord* abilityRecord = ArgusStaticData::GetRecord<UAbilityRecord>(components.m_abilityComponent->m_abilityToRefundId);
+	ARGUS_RETURN_ON_NULL(abilityRecord, ArgusECSLog);
+
+	const FResourceSet refund = -abilityRecord->m_requiredResourceChangeToCast;
+	if (!ResourceSystems::ApplyTeamResourceChangeIfAffordable(components.m_entity, refund))
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] Successfully refunded ability id %d, but could not afford the refund???"), ARGUS_FUNCNAME, abilityRecord->m_id);
+	}
+
+	components.m_abilityComponent->m_abilityToRefundId = 0u;
+}
+
+void AbilitySystems::ProcessAbilityTaskCommands(const AbilitySystemsArgs& components)
+{
+	ARGUS_TRACE(AbilitySystems::ProcessAbilityTaskCommands);
+
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < components.m_abilityComponent->m_queuedAbilityIds.Num(); ++i)
+	{
+		const UAbilityRecord* abilityRecord = ArgusStaticData::GetRecord<UAbilityRecord>(components.m_abilityComponent->m_queuedAbilityIds[i]);
+		if (!abilityRecord)
+		{
+			LogAbilityRecordError(ARGUS_FUNCNAME);
+			return;
+		}
+
+		CastAbility(abilityRecord, components);
+	}
+	components.m_abilityComponent->m_queuedAbilityIds.Reset();
+
+	uint32 abilityId = 0u;
+	switch (components.m_taskComponent->m_abilityState)
+	{
+		case EAbilityState::ProcessCastAbility0Command:
+			abilityId = components.m_abilityComponent->GetActiveAbilityId(EAbilityIndex::Ability0);
+			break;
+
+		case EAbilityState::ProcessCastAbility1Command:
+			abilityId = components.m_abilityComponent->GetActiveAbilityId(EAbilityIndex::Ability1);
+			break;
+
+		case EAbilityState::ProcessCastAbility2Command:
+			abilityId = components.m_abilityComponent->GetActiveAbilityId(EAbilityIndex::Ability2);
+			break;
+
+		case EAbilityState::ProcessCastAbility3Command:
+			abilityId = components.m_abilityComponent->GetActiveAbilityId(EAbilityIndex::Ability3);
+			break;
+
+		case EAbilityState::ProcessCastReticleAbility:
+			abilityId = components.m_reticleComponent->m_abilityRecordId;
+			if (!components.m_reticleComponent->IsReticleEnabled() || !components.m_abilityComponent->HasAbility(abilityId))
+			{
+				components.m_taskComponent->m_abilityState = EAbilityState::None;
+				return;
+			}
+			components.m_targetingComponent->SetLocationTarget(components.m_reticleComponent->m_reticleLocation);
+			break;
+
+		default:
+			return;
+	}
+
+	if (abilityId == 0u)
+	{
+		components.m_taskComponent->m_abilityState = EAbilityState::None;
+		return;
+	}
+
+	const UAbilityRecord* abilityRecord = ArgusStaticData::GetRecord<UAbilityRecord>(abilityId);
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return;
+	}
+
+	if (abilityRecord->GetRequiresReticle() && components.m_entity.IsOnPlayerTeam() && components.m_taskComponent->m_abilityState != EAbilityState::ProcessCastReticleAbility)
+	{
+		PrepReticle(abilityRecord, components);
+		return;
+	}
+
+	CastAbility(abilityRecord, components);
+	components.m_taskComponent->m_abilityState = EAbilityState::None;
+}
+
+bool AbilitySystems::CastSpawnAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components, bool needsConstruction, bool atTargetLocation)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return false;
+	}
+
+	SpawningComponent* spawningComponent = components.m_entity.GetComponent<SpawningComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(spawningComponent, ArgusECSLog);
+
+	if (spawningComponent->m_spawnQueue.Num() >= spawningComponent->m_maximumQueueSize)
+	{
+		return false;
+	}
+
+	if (components.m_taskComponent->m_spawningState == ESpawningState::None)
+	{
+		components.m_taskComponent->m_spawningState = ESpawningState::ProcessQueuedSpawnEntity;
+	}
+
+	SpawnEntityInfo spawnInfo;
+	spawnInfo.m_argusActorRecordId = abilityEffect.m_argusActorRecordReference.GetId();
+	spawnInfo.m_spawningAbilityRecordId = abilityRecord->m_id;
+	spawnInfo.m_timeToCastSeconds = abilityRecord->m_timeToCastSeconds;
+	spawnInfo.m_initiatingEntityId = components.m_entity.GetId();
+	spawnInfo.m_needsConstruction = needsConstruction;
+	if (atTargetLocation)
+	{
+		spawnInfo.m_spawnLocationOverride = components.m_targetingComponent->m_targetLocation;
+	}
+	spawningComponent->m_spawnQueue.PushLast(spawnInfo);
+
+	return true;
+}
+
+bool AbilitySystems::CastHealAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components)
+{
+	return true;
+}
+
+bool AbilitySystems::CastAttackAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components)
+{
+	return true;
+}
+
+bool AbilitySystems::CastVacateAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return false;
+	}
+
+	const TransformComponent* transformComponent = components.m_entity.GetComponent<TransformComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(transformComponent, ArgusECSLog);
+
+	const FacingComponent* facingComponent = components.m_entity.GetComponent<FacingComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(facingComponent, ArgusECSLog);
+
+	CarrierComponent* carrierComponent = components.m_entity.GetComponent<CarrierComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(carrierComponent, ArgusECSLog);
+
+	for (int32 i = 0; i < carrierComponent->m_passengerEntityIds.Num(); ++i)
+	{
+		ArgusEntity passengerEntity = ArgusEntity::RetrieveEntity(carrierComponent->m_passengerEntityIds[i]);
+		if (!passengerEntity)
+		{
+			continue;
+		}
+
+		PassengerComponent* passengerComponent = passengerEntity.GetComponent<PassengerComponent>();
+		if (!passengerComponent)
+		{
+			continue;
+		}
+
+		passengerComponent->Set_m_carrierEntityId(ArgusECSConstants::k_maxEntities);
+
+		TaskComponent* passengerTaskComponent = passengerEntity.GetComponent<TaskComponent>(); 
+		TargetingComponent* passengerTargetingComponent = passengerEntity.GetComponent<TargetingComponent>();
+		TransformComponent* passengerTransformComponent = passengerEntity.GetComponent<TransformComponent>();
+		if (!passengerTaskComponent)
+		{
+			continue;
+		}
+		passengerTaskComponent->m_movementState = EMovementState::None;
+
+		if (!passengerTargetingComponent)
+		{
+			continue;
+		}
+		passengerTargetingComponent->m_targetEntityId = ArgusECSConstants::k_maxEntities;
+		passengerTargetingComponent->m_targetLocation.Reset();
+
+		if (!passengerTransformComponent)
+		{
+			continue;
+		}
+
+		float yawAdjustment = (UE_HALF_PI / 4.0f) * static_cast<float>(i);
+		if (i % 2)
+		{
+			yawAdjustment *= -1.0f;
+		}
+
+		passengerTransformComponent->m_location = transformComponent->m_location + ((-ArgusMath::GetDirectionFromYaw(facingComponent->GetCurrentFacing() + yawAdjustment)) * transformComponent->m_radius);
+	}
+
+	carrierComponent->m_passengerEntityIds.Reset();
+	return true;
+}
+
+bool AbilitySystems::CastFlightTransitionAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components, bool landing)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return false;
+	}
+
+	if (landing)
+	{
+		// TODO JAMES: Check landing zone?
+	}
+	
+	const TransformComponent* transformComponent = components.m_entity.GetComponent<TransformComponent>();
+	FlightTransitionComponent* flightTransitionComponent = components.m_entity.GetComponent<FlightTransitionComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(transformComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(flightTransitionComponent, ArgusECSLog);
+
+	if (transformComponent->m_flightCapability != EFlightCapability::BothGroundedAndFlying)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] Tried to cast a flight transition ability but do not have the required flight capability!"), ARGUS_FUNCNAME);
+		return false;
+	}
+
+	components.m_taskComponent->Set_m_flightState(landing ? EFlightState::ProcessLandCommand : EFlightState::ProcessTakeOffCommand);
+	flightTransitionComponent->m_onTransitionCompleteAbilityId = abilityEffect.m_abilityRecordReference.GetId();
+	if (flightTransitionComponent->m_onTransitionCompleteAbilityId > 0u)
+	{
+		ArgusStaticData::AsyncPreLoadRecord<UAbilityRecord>(flightTransitionComponent->m_onTransitionCompleteAbilityId);
+	}
+
+	return true;
+}
+
+
+bool AbilitySystems::CastAbilityOverrideAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components, bool adding)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return false;
+	}
+
+	if (adding)
+	{
+		components.m_abilityComponent->AddAbilityOverride(abilityEffect.m_abilityRecordReference.GetId(), abilityEffect.m_abilityIndex);
+	}
+	else
+	{
+		components.m_abilityComponent->RemoveAbilityOverride(abilityEffect.m_abilityIndex);
+	}
+
+	return true;
+}
+
+void AbilitySystems::PrepReticleForConstructAbility(const UAbilityRecord* abilityRecord, const FAbilityEffect& abilityEffect, const AbilitySystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	if (!abilityRecord)
+	{
+		LogAbilityRecordError(ARGUS_FUNCNAME);
+		return;
+	}
+
+	components.m_reticleComponent->m_radius = GetRadiusOfConstructionAbility(abilityRecord);
+}
+
+void AbilitySystems::LogAbilityRecordError(const WIDECHAR* functionName)
+{
+	ARGUS_LOG
+	(
+		ArgusECSLog,
+		Error,
+		TEXT("[%s] Could not successfully retrieve %s from %s."),
+		functionName,
+		ARGUS_NAMEOF(UAbilityRecord*),
+		ARGUS_NAMEOF(ArgusStaticData)
+	);
+}

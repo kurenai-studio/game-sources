@@ -1,0 +1,147 @@
+#pragma region #####
+const #####* UArgusStaticDatabase::Get#####(uint32 id)
+{
+	ARGUS_MEMORY_TRACE(ArgusStaticData);
+
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return nullptr;
+	}
+
+	return m_#####DatabasePersistent->GetRecord(id);
+}
+
+uint32 UArgusStaticDatabase::GetNum#####s()
+{
+	ARGUS_MEMORY_TRACE(ArgusStaticData);
+
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return 0u;
+	}
+
+	return m_#####DatabasePersistent->GetNumRecords();
+}
+
+const bool UArgusStaticDatabase::AsyncPreLoad#####(uint32 id, TFunction<void(const #####*)> callback)
+{
+	ARGUS_MEMORY_TRACE(ArgusStaticData);
+
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return false;
+	}
+
+	return m_#####DatabasePersistent->AsyncPreLoadRecord(id);
+}
+
+void UArgusStaticDatabase::ResetLoaded#####PointerArray()
+{
+	if (!m_#####DatabasePersistent)
+	{
+		return;
+	}
+
+	m_#####DatabasePersistent->ResetPersistentObjectPointerArray();
+}
+
+#if WITH_EDITOR
+#####* UArgusStaticDatabase::GetMutable#####(uint32 id)
+{
+	ARGUS_MEMORY_TRACE(ArgusStaticData);
+
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return nullptr;
+	}
+
+	return m_#####DatabasePersistent->GetMutableRecord(id);
+}
+
+uint32 UArgusStaticDatabase::Add#####ToDatabase(#####* record)
+{
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return 0u;
+	}
+
+	m_#####DatabasePersistent->Add#####ToDatabase(record);
+	
+	return record->m_id;
+}
+
+void UArgusStaticDatabase::IterateAll#####s(const TFunctionRef<void(#####*)>& function)
+{
+	LazyLoad#####Database();
+
+	if (!m_#####DatabasePersistent)
+	{
+		return;
+	}
+
+	m_#####DatabasePersistent->IterateAll#####s(function);
+}
+
+void UArgusStaticDatabase::RegisterNew#####Database(#####Database* database)
+{
+	if (!database)
+	{
+		return;
+	}
+
+	if (!m_#####Database.IsNull())
+	{
+		ARGUS_LOG
+		(
+			ArgusStaticDataLog,
+			Error,
+			TEXT("[%s] Trying to assign to %s. Potential duplicate databases."),
+			ARGUS_FUNCNAME,
+			ARGUS_NAMEOF(m_#####Database)
+		);
+		return;
+	}
+
+	m_#####Database = database;
+	SaveDatabase();
+}
+#endif //WITH_EDITOR
+
+void UArgusStaticDatabase::LazyLoad#####Database()
+{
+	if (!m_#####DatabasePersistent)
+	{
+		m_#####DatabasePersistent = m_#####Database.LoadSynchronous();
+		if (!m_#####DatabasePersistent)
+		{
+			ARGUS_LOG(ArgusStaticDataLog, Error, TEXT("[%s] Could not find %s reference. Need to set reference in %s."), ARGUS_FUNCNAME, ARGUS_NAMEOF(m_#####Database), ARGUS_NAMEOF(UArgusStaticDatabase));
+			return;
+		}
+
+		m_#####DatabasePersistent->ResizePersistentObjectPointerArrayToFitRecord(0u);
+	}
+
+	if (!m_#####DatabasePersistent)
+	{
+		ARGUS_LOG
+		(
+			ArgusStaticDataLog, Error,
+			TEXT("[%s] Could not retrieve %s. %s might not be properly assigned."),
+			ARGUS_FUNCNAME,
+			ARGUS_NAMEOF(m_#####DatabasePersistent),
+			ARGUS_NAMEOF(m_#####Database)
+		);
+		return;
+	}
+}
+#pragma endregion
