@@ -1,0 +1,24 @@
+0 (anywhere) success
+
+program:
+0 success/caught exception (check log.txt)
+1 exception when running cli tool, and earlier than cli tool would catch the error itself
+2 could not log the crash
+3 could not write to errorFile
+
+
+mod tool:
+
+create:
+1 directory with same name already exists
+
+
+validate:
+1 failed to deserialize mod config
+2 issue with mod's name or version
+
+
+compile effects task:
+1 caught exception; not Win32Exception.
+2 Win32Exception after starting MGFXC process
+3 Not enough arguments

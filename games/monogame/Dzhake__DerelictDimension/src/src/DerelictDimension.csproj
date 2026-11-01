@@ -1,0 +1,115 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="$(ProjectDir)../../Monod/src/Analyzers.props" />
+    
+    <PropertyGroup>
+        <!--  Compilation settings  -->
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <!-- 
+        Hmm who ever needs comments.
+        I sure will write comments when some things become much more stable. Currently it falls apart :)
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        -->
+        
+        <DebugType>embedded</DebugType>
+        
+        <!--  Output settings   -->
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <OutputPath>bin/</OutputPath>
+        <OutputType>WinExe</OutputType>
+        
+        <!--  App settings  -->
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
+        
+        <!--  Custom, for ItemGroup and tasks  -->
+        <ContentDir>Content/</ContentDir>
+        <LocalizationDir>Localization/</LocalizationDir>
+        <NativeLibsDir>native/</NativeLibsDir>
+	<MSBuildTasksBasePath>../../Monod/src/MSBuildTasks/bin/</MSBuildTasksBasePath>
+        
+        <!--  Removes lotsa dirs with localization files for System.CommandLine from output dir (on build)  -->
+        <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+
+        <!-- Disale 'fast up to date check' that prevents action from executing when running the game project -->
+        <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+
+        <BuildProjectReferences>true</BuildProjectReferences>
+    </PropertyGroup>
+
+
+    <!--  Import tasks -->
+    <!--  Compile effects task  -->
+    <!--  Import task from Monod repo - MSBuildTasks project -->
+    <!-- UsingTask AssemblyFile="..\..\Monod\src\MSBuildTasks\bin\MSBuildTasks.dll" TaskName="Monod.MSBuild.CompileEffectsTask" / -->
+    <!-- UsingTask AssemblyFile="$(MSBuildTasksBasePath)net6.0/MSBuildTasks.dll" TaskName="Monod.MSBuild.CreateSymlink" / -->
+
+
+    <ItemGroup>
+        <!--  Monod repo clone next to DerelictDimension repo  -->
+        <!-- Build tasks project before this one -->
+        <!--ProjectReference Include="../../Monod/src/MSBuildTasks/MSBuildTasks.csproj" /-->
+        <ProjectReference Include="../../Monod/src/Main/Monod.csproj" />
+        <ProjectReference Include="../Box2D.NET/src/Box2D.NET/Box2D.NET.csproj" />
+
+        <!--  Nuget packages  -->
+        <PackageReference Include="System.CommandLine" Version="2.0.13" />
+
+
+        <!--  Special Item for content effects files  -->
+        <Effects Include="$(ContentDir)/**/*.fx" />
+
+        <!-- Native libraries -->
+        <Content Include="$(NativeLibsDir)**" CopyToOutputDirectory="PreserveNewest" TargetPath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <Folder Include="Content\Prefabs\" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1" />
+      <PackageReference Update="Roslynator.Analyzers" Version="5.0.1" />
+    </ItemGroup>
+
+    
+    <!--  Release only actions  -->
+    <Target Name="ReleaseActions" Condition="'$(Configuration)' == 'Release'" BeforeTargets="CompileEffects">
+        <ItemGroup>
+            <CompiledShadersToDelete Include="$(ContentDir)/**/*.mgfx" />
+            <EffectOutputDir Include="$(ProjectDir)$(OutputPath)" />
+            
+            <!--  Copy everything from the 'Content/' but '*.fx' to output dir, those are handled by special task to compile them  -->
+            <Content Include="$(ContentDir)**" Exclude="$(ContentDir)**/*.fx" CopyToOutputDirectory="PreserveNewest" />
+
+            <!--  Copy everything from the 'Localization/' to output dir  -->
+            <Content Include="$(LocalizationDir)**" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    
+        <Delete Files="@(CompiledShadersToDelete)" />
+    </Target>
+    
+
+    <!-- Debug only actions -->
+    <Target Name="DebugActions" Condition="'$(Configuration)' == 'Debug'" BeforeTargets="CompileEffects">
+        <ItemGroup>
+            <EffectOutputDir Include="$(ProjectDir)$(ContenDir)" />
+        </ItemGroup>
+
+        <!--CreateSymlink Source="$(ProjectDir)$(ContentDir)" Destination="$(ProjectDir)$(OutputPath)$(ContentDir)" / -->
+        <!--CreateSymlink Source="$(ProjectDir)$(LocalizationDir)" Destination="$(ProjectDir)$(OutputPath)$(LocalizationDir)" / -->
+    </Target>
+    
+    <!-- Compile effects -->
+    <Target Name="CompileEffects" AfterTargets="Build">
+        <!--
+        <CompileEffectsTask PathToContent="$(ProjectDir)$(ContentDir)" OutputPath="@(EffectOutputDir)" />
+        -->
+    </Target>
+</Project>
