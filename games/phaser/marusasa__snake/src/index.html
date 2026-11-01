@@ -1,0 +1,32 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Snake</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <link rel="stylesheet" href="css/page.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="content-left">
+            <div id="game-loc"></div>            
+        </div>
+        <div class="content-right">
+            <div class="highscore highscore-weekly">
+                <p class="highscore-title">Weekly High Score</p>
+                <ul id="marudot-hs-weekly">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="highscore highscore-monthly">
+                <p class="highscore-title">Monthly High Score</p>
+                <ul id="marudot-hs-monthly">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="js/ssg-high-score.js"></script>
+    <script src="js/snake.js"></script>
+</body>
+</html>
