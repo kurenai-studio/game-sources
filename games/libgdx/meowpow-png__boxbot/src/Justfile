@@ -1,0 +1,22 @@
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+version := `grep '^version=' gradle.properties | cut -d= -f2`
+
+import "just/agent.just"
+
+# List available recipes
+default:
+    @just --list
+
+# Run LibGDX desktop app for development
+dev:
+    @BOXBOT_DEV=true ./gradlew :lwjgl3:run
+
+# Build a Linux AppImage
+package:
+    ./gradlew :lwjgl3:jpackageAppImage
+    bash scripts/build-appimage.sh {{ version }}
+
+# Launch the built AppImage
+play:
+    ./lwjgl3/build/jpackage/dist/Boxbot-{{ version }}-x86_64.AppImage
