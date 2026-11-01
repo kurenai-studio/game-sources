@@ -1,0 +1,42 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fly Fight // Web Duel</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="stage">
+      <canvas id="arena" aria-label="Catch the Fly arena"></canvas>
+      <div class="topbar">
+        <div>
+          <div class="eyebrow">FLY.AI // CONNECTOME DUEL</div>
+          <h1>FLY <span>FIGHT</span></h1>
+        </div>
+        <div class="status"><i></i><span id="status">READY</span></div>
+      </div>
+      <div class="hud">
+        <div class="fighter"><b>YOU</b><strong id="playerHp">100</strong><small>HP</small><div class="bar"><i id="playerBar"></i></div></div>
+        <div class="versus">VS</div>
+        <div class="fighter enemy"><b>FLY</b><strong id="flyHp">100</strong><small>HP</small><div class="bar"><i id="flyBar"></i></div></div>
+      </div>
+      <div id="banner" class="banner"></div>
+      <div class="help">WASD / ARROWS move | mouse aim | hold click or F fire | 1-8 weapons | P pause</div>
+      <button id="start" class="start">START DUEL</button>
+    </section>
+    <aside class="panel">
+      <header class="panel-head"><div><span class="eyebrow">LIVE TELEMETRY</span><h2>FLY BRAIN</h2></div><span class="chip">WEB VIEW</span></header>
+      <section class="card score"><div><span>KILLS</span><b id="kills">YOU 0 - FLY 0</b></div><div><span>RESPAWNS</span><b id="respawns">YOU 0 | FLY 0</b></div><div><span>LEARNING</span><b id="learning">DOPAMINE 0 | 0.00</b></div></section>
+      <section class="card"><div class="card-title">NERVE MAP <span>aspect-safe</span></div><canvas id="brainMap"></canvas><div class="legend"><i class="vision"></i>visual input <i class="threat"></i>escape <i class="motor"></i>motor output</div></section>
+      <section class="card signals"><div class="card-title">EYES -&gt; BRAIN <span id="brainState">TRACKING</span></div><label>DEVICE <b id="device">checking</b></label><label>LOOM <i id="loom"></i></label><label>THREAT <i id="threat"></i></label><label>ESCAPE SPIKES <b id="spikes">0</b></label><div class="signal-line"><i id="activity"></i></div></section>
+      <section class="card arsenal"><div class="card-title">ARSENAL <span>1-8</span></div><div id="weapons"></div></section>
+      <button id="fullscreen" class="secondary">FULLSCREEN</button>
+      <p class="note">Browser presentation of the same continuous duel. The real 166,700-neuron brain remains available through <code>python fly_catch_bridge.py</code>.</p>
+    </aside>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
+
