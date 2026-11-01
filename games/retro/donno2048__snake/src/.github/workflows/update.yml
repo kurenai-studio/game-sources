@@ -1,0 +1,44 @@
+name: Update docs and demo
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'demo/snake.com'
+      - 'demo/qr.png'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: $GITHUB_WORKFLOW
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - uses: actions/checkout@v7
+    - run: |
+        sudo apt-get update
+        sudo apt-get install qrencode nasm python3 -y --no-install-recommends > /dev/null
+        nasm -f bin snake.asm -o demo/snake.com -O0
+        gcc -Wno-implicit-int -w -xc - -o empty.out <<< "main;"
+        gcc -Os -nostartfiles -nodefaultlibs --entry 0 -Wl,--strip-all -xc /dev/null -o optimized.out
+        python3 docs/update.py
+        qrencode -r demo/snake.com -8 -o demo/qr.png
+        git config --global user.email "$GITHUB_REPOSITORY_OWNER_ID+$GITHUB_REPOSITORY_OWNER@users.noreply.github.com"
+        git config --global user.name "$GITHUB_REPOSITORY_OWNER"
+        git commit -am "${GITHUB_WORKFLOW,,}" -q || true
+        git push -q
+        wget https://v8.js-dos.com/latest/js-dos.js -nv -P demo
+        wget https://v8.js-dos.com/latest/emulators/emulators.js -nv -P demo
+        wget https://v8.js-dos.com/latest/emulators/wdosbox.wasm -nv -P demo
+        wget https://v8.js-dos.com/latest/emulators/wdosbox.js -nv -P demo
+    - uses: actions/upload-pages-artifact@v5
+      with:
+        path: 'demo/'
+    - uses: actions/deploy-pages@v5
+
