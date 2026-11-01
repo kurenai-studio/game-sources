@@ -1,0 +1,868 @@
+import { describe, expect, it } from 'vitest';
+
+import { CHOP_BLOCK_HEIGHT, CHOP_BLOCK_TOP, COLS, ROWS } from '../core/board';
+import { STARTING_LIVES } from '../core/game';
+import { SHELF_SLOTS } from '../core/shelf';
+import type { Vec2 } from '../core/types';
+import { CELL_SIZE } from '../render/textures';
+import {
+  centredColumn,
+  childHeadroom,
+  childHeight,
+  CHILD_UNDERFOOT,
+  COMBO_PIP,
+  COMBO_PIPS,
+  COMBO_FIGURE,
+  COMBO_WIDTH,
+  EXIT_GAP,
+  HEADLINE_ROOM,
+  hitsTab,
+  layout,
+  letterOffsets,
+  LIVES_CLEARANCE,
+  menuPlan,
+  PARADE_GROWTH,
+  QUEUE_SLOTS,
+  scoreboard,
+  SCORE_SIZE,
+  TEXT_MARGIN,
+  TAB_SIZE,
+  wheelSeats,
+  WHEEL_PAIRS,
+  type Frame,
+  type Viewport,
+} from './layout';
+
+/** The desktop frame the game shipped at before it had to be responsive. */
+const DESKTOP: Viewport = { width: 960, height: 640 };
+
+const VIEWPORTS: ReadonlyArray<readonly [string, Viewport]> = [
+  ['the desktop frame', DESKTOP],
+  ['a wide desktop window', { width: 1440, height: 900 }],
+  ['a big monitor', { width: 2560, height: 1440 }],
+  ['a tablet, landscape', { width: 1024, height: 768 }],
+  ['a tablet, portrait', { width: 768, height: 1024 }],
+  ['a phone, landscape', { width: 844, height: 390 }],
+  ['a phone, portrait', { width: 390, height: 844 }],
+  ['a small phone, landscape', { width: 568, height: 320 }],
+  ['a small phone, portrait', { width: 320, height: 568 }],
+];
+
+/** Where the rack's first slot starts, along whichever axis it runs. */
+const shelfStart = (frame: Frame): number => {
+  const { at, slot, axis } = frame.hud.shelf;
+  return (axis === 'column' ? at.y : at.x) - slot / 2;
+};
+
+/** Where the rack's last slot ends, along whichever axis it runs. */
+const shelfEnd = (frame: Frame): number => {
+  const { at, pitch, slot, axis } = frame.hud.shelf;
+  const start = axis === 'column' ? at.y : at.x;
+  return start + (SHELF_SLOTS - 1) * pitch + slot / 2;
+};
+
+interface Rect {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+const around = (centre: Vec2, width: number, height: number): Rect => ({
+  left: centre.x - width / 2,
+  right: centre.x + width / 2,
+  top: centre.y - height / 2,
+  bottom: centre.y + height / 2,
+});
+
+/** The box the cheat sheet fills when it is open. */
+const sheetRect = (frame: Frame): Rect => {
+  const { panel } = frame.hud.sheet;
+  return around(panel.at, panel.width, panel.height);
+};
+
+/** The tab's touch target, which is the tab whatever the tab is drawn as. */
+const tabRect = (frame: Frame): Rect => around(frame.hud.sheet.tab, TAB_SIZE, TAB_SIZE);
+
+/** The mute tab's, the same size and measured the same way. */
+const muteRect = (frame: Frame): Rect => around(frame.hud.mute, TAB_SIZE, TAB_SIZE);
+
+/** The pause tab's. Same again — every control is one thumb (design §10). */
+const pauseRect = (frame: Frame): Rect => around(frame.hud.pause, TAB_SIZE, TAB_SIZE);
+
+/**
+ * The HUD's controls, as the two things a test asks of one: the box it occupies
+ * and the centre a thumb aims at. A table rather than three copies of each
+ * assertion, so the D-pad (design §10) is one row and not another nine tests —
+ * and so a control cannot arrive holding only some of the guarantees.
+ */
+const TABS: ReadonlyArray<
+  readonly [string, (frame: Frame) => Rect, (frame: Frame) => Vec2]
+> = [
+  ['cheat-sheet', tabRect, (frame) => frame.hud.sheet.tab],
+  ['mute', muteRect, (frame) => frame.hud.mute],
+  ['pause', pauseRect, (frame) => frame.hud.pause],
+];
+
+const TAB_CASES = TABS.flatMap(([tab, rect, at]) =>
+  VIEWPORTS.map(([name, view]) => [tab, name, rect, at, view] as const),
+);
+
+/** The rack, as the box it actually occupies rather than as a run of slots. */
+const shelfRect = (frame: Frame): Rect => {
+  const { at, slot, axis } = frame.hud.shelf;
+  const start = shelfStart(frame);
+  const end = shelfEnd(frame);
+
+  return axis === 'column'
+    ? { left: at.x - slot / 2, right: at.x + slot / 2, top: start, bottom: end }
+    : { left: start, right: end, top: at.y - slot / 2, bottom: at.y + slot / 2 };
+};
+
+/**
+ * A row of `count` marks stepping at `pitch`, as the one box it occupies —
+ * which is what both runs sharing the hearts' row have to be measured as.
+ */
+const runRect = (at: Vec2, pitch: number, count: number, size: number): Rect =>
+  around(
+    { x: at.x + ((count - 1) * pitch) / 2, y: at.y },
+    (count - 1) * pitch + size,
+    size,
+  );
+
+/**
+ * The meter, as the box it occupies: the pips *and* the room kept beside them
+ * for what the run is paying (`ComboMeter`). Measured together, because a
+ * figure drawn in space the row was never fitted for is a figure drawn over a
+ * heart.
+ */
+const comboRect = (frame: Frame): Rect => {
+  const { at, pitch, label } = frame.hud.combo;
+  const pips = runRect(at, pitch, COMBO_PIPS, COMBO_PIP);
+
+  // The right edge is taken from the frame's own label anchor rather than
+  // rebuilt from the pips, so the box measured here is the box `layout.ts`
+  // actually placed — a figure written somewhere the row was not fitted for
+  // fails this rather than being quietly measured against the run alone.
+  return { ...pips, right: label.x + COMBO_FIGURE };
+};
+
+/**
+ * The hearts, the same way — the run rather than one glyph, since what the
+ * meter has to stay out of is all three of them. A heart is measured by the
+ * clearance the rest of the HUD already keeps off it.
+ */
+const livesRect = (frame: Frame): Rect => {
+  const { at, pitch } = frame.hud.lives;
+  return runRect(at, pitch, STARTING_LIVES, 2 * LIVES_CLEARANCE);
+};
+
+/**
+ * What the score could grow to. It is left-anchored (`UIScene`'s
+ * `setOrigin(0, 0.5)`), and a run that reaches six figures is past anything the
+ * balance sweep has produced — so this is a ceiling the real text stays under,
+ * which is what a clearance test wants. The height is the size it is actually
+ * set at, so the box follows the font rather than being re-guessed beside it.
+ */
+const SCORE_MAX_WIDTH = 110;
+
+const scoreRect = (frame: Frame): Rect => ({
+  left: frame.hud.score.x,
+  right: frame.hud.score.x + SCORE_MAX_WIDTH,
+  top: frame.hud.score.y - SCORE_SIZE / 2,
+  bottom: frame.hud.score.y + SCORE_SIZE / 2,
+});
+
+const boardRect = (frame: Frame): Rect => ({
+  left: frame.board.x,
+  right: frame.board.x + frame.board.width,
+  top: frame.board.y,
+  bottom: frame.board.y + frame.board.height,
+});
+
+/** Touching edges is not overlapping — the gutter is allowed to be nothing. */
+const overlaps = (a: Rect, b: Rect): boolean =>
+  a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+const onScreen = (rect: Rect, view: Viewport): boolean =>
+  rect.left >= 0 &&
+  rect.top >= 0 &&
+  rect.right <= view.width &&
+  rect.bottom <= view.height;
+
+describe('layout', () => {
+  it('keeps the desktop frame drawing the board at its authored size', () => {
+    // The kitchen steps up only where there is room for a whole second step,
+    // and this frame has none — so the frame the game was built at is still the
+    // frame it draws at, and nothing about the responsive pass resamples it.
+    const { board, cell } = layout(DESKTOP);
+
+    expect(cell).toBe(CELL_SIZE);
+    expect(board.scale).toBe(1);
+    expect(board).toMatchObject({ width: 512, height: 512 });
+  });
+
+  it('gives a window with the room for it a bigger kitchen', () => {
+    // The kitchen used to stop at 1:1 and spend everything past it on air,
+    // which on a large monitor left a small board adrift in an empty room.
+    const { cell, board } = layout({ width: 2560, height: 1440 });
+
+    expect(cell).toBe(2 * CELL_SIZE);
+    expect(board.scale).toBe(2);
+  });
+
+  it('scales the kitchen in whole steps or not at all', () => {
+    // Pixel art scaled by a fraction makes some source pixels wider than
+    // others, and the strand's soft edge crawls as the board slides under it.
+    // Below the authored size there is no choice — a cell has to fit whatever
+    // room is left — but above it there is, and it is always a whole multiple.
+    for (let width = 320; width <= 3840; width += 16) {
+      for (const height of [width, Math.round(width * 0.6), Math.round(width * 1.6)]) {
+        const { cell } = layout({ width, height });
+
+        if (cell > CELL_SIZE) expect(cell % CELL_SIZE).toBe(0);
+        expect(cell).toBeLessThanOrEqual(2 * CELL_SIZE);
+      }
+    }
+  });
+
+  it('puts the serving column beside the bench wall in landscape', () => {
+    const { hud, board, orientation } = layout(DESKTOP);
+
+    expect(orientation).toBe('landscape');
+    // Score, rack and queue all sit clear of the board's right edge, which is
+    // the wall the chopping block cuts against (design §10).
+    for (const x of [hud.score.x, hud.shelf.at.x, hud.queue.front.x]) {
+      expect(x).toBeGreaterThanOrEqual(board.x + board.width);
+    }
+    expect(hud.shelf.axis).toBe('column');
+    // The line runs away from the window, toward the door off the right edge.
+    expect(hud.queue.pitch).toBeGreaterThan(0);
+    expect(hud.queue.offstage).toBeGreaterThan(DESKTOP.width);
+  });
+
+  it('splits the HUD either side of the board in portrait', () => {
+    const view = { width: 390, height: 844 };
+    const frame = layout(view);
+    const { hud, board, orientation } = frame;
+
+    expect(orientation).toBe('portrait');
+    // Score above, rack and queue below: a square board on a tall screen leaves
+    // slack either way, so it is spent on both edges rather than one gap.
+    expect(hud.score.y).toBeLessThan(board.y);
+    expect(hud.lives.at.y).toBeLessThan(board.y);
+    for (const y of [hud.shelf.at.y, hud.queue.front.y]) {
+      expect(y).toBeGreaterThanOrEqual(board.y + board.height);
+    }
+    // The rack turns on its side and right-aligns with the board, so the queue
+    // still runs back from the wall the bench is on.
+    expect(hud.shelf.axis).toBe('row');
+    expect(shelfEnd(frame)).toBeLessThanOrEqual(board.x + board.width);
+    expect(hud.queue.pitch).toBeLessThan(0);
+    expect(hud.queue.offstage).toBeLessThan(0);
+  });
+
+  it('fills the width of a phone held upright', () => {
+    const { board } = layout({ width: 390, height: 844 });
+
+    // Within a gutter either side: the board is what the screen is for.
+    expect(board.width).toBeGreaterThan(390 - 2 * 16 - COLS);
+    expect(board.x + board.width).toBeLessThanOrEqual(390);
+  });
+
+  it('shrinks the rack to fit a phone held sideways', () => {
+    // Six slots at the desktop pitch need most of a laptop's height. On a phone
+    // in landscape they have to share the column with a child.
+    const phone = layout({ width: 844, height: 390 });
+    const desktop = layout(DESKTOP);
+
+    expect(phone.hud.shelf.pitch).toBeLessThan(desktop.hud.shelf.pitch);
+    expect(phone.hud.shelf.slot).toBeLessThan(desktop.hud.shelf.slot);
+  });
+
+  it.each(VIEWPORTS)('keeps the front child clear of the lives row on %s', (_n, view) => {
+    // What the window's clamp actually buys. The line wants the bench's row,
+    // but on a short screen the board rides high enough that a child standing
+    // there would hold their bubble up through the hearts.
+    const { hud, orientation } = layout(view);
+    if (orientation !== 'landscape') return;
+
+    expect(hud.queue.front.y - childHeadroom(hud.queue.scale)).toBeGreaterThanOrEqual(
+      hud.lives.at.y + LIVES_CLEARANCE,
+    );
+  });
+
+  it('stands the front child at the serving window in landscape', () => {
+    // What the playtest asked for: a child was waiting the length of the column
+    // away from the counter their candy is cut on. The standing line is the
+    // bench's own last row now, so the block and the window read as one place
+    // (design §2, §10).
+    const { hud, board, cell } = layout(DESKTOP);
+    const lastRow = board.y + (CHOP_BLOCK_TOP + CHOP_BLOCK_HEIGHT - 1) * cell;
+
+    expect(hud.queue.front.y).toBeGreaterThanOrEqual(lastRow);
+    expect(hud.queue.front.y).toBeLessThanOrEqual(lastRow + cell);
+    // In the serving lane against that wall, not out in the sheet's corner.
+    expect(hud.queue.front.x).toBeGreaterThanOrEqual(board.x + board.width);
+    expect(hud.queue.front.x).toBeLessThan(hud.sheet.tab.x - TAB_SIZE / 2);
+  });
+
+  it.each(VIEWPORTS)('keeps the rack clear of the queue on %s', (_name, view) => {
+    // The two share the landscape column, the window above and the rack below
+    // it — which is the order a candy travels in, offered to the queue first
+    // and racked only if nobody there wants it (design §5). What has to clear
+    // the top slot is not the standing line but everything hanging off it: the
+    // patience bar, and the lane a child steps into on their way out.
+    const frame = layout(view);
+    const { shelf, queue } = frame.hud;
+    if (frame.orientation === 'landscape') {
+      expect(queue.front.y + CHILD_UNDERFOOT).toBeLessThanOrEqual(shelfStart(frame));
+      return;
+    }
+    // Upright the rack is the row above the strip's child rather than below,
+    // so it is the bubble over their head that has to clear it.
+    expect(shelf.at.y + shelf.slot / 2 + childHeadroom(queue.scale)).toBeLessThanOrEqual(
+      queue.front.y,
+    );
+  });
+
+  it.each(VIEWPORTS)(
+    'hangs the tutorial headline on the kitchen edge on %s',
+    (_name, view) => {
+      const frame = layout(view);
+      const { headline, shelf } = frame.hud;
+
+      expect(headline.x).toBe(Math.round(frame.board.x + frame.board.width / 2));
+      if (frame.orientation === 'landscape') {
+        // Above the board it captions — a phone held sideways has no air over
+        // the kitchen, so there the line may lap the top wall, but it must
+        // never leave the screen instead.
+        expect(headline.y).toBeLessThanOrEqual(frame.board.y);
+        expect(headline.y).toBeGreaterThan(0);
+        return;
+      }
+      // Upright the band over the kitchen belongs to the open cheat sheet, so
+      // the line hangs under the board instead — and clear of the rack below.
+      expect(headline.y).toBeGreaterThanOrEqual(frame.board.y + frame.board.height);
+      expect(headline.y + HEADLINE_ROOM).toBeLessThanOrEqual(shelf.at.y - shelf.slot / 2);
+    },
+  );
+
+  it.each(VIEWPORTS)('lands on whole pixels on %s', (_name, view) => {
+    const { cell, board } = layout(view);
+
+    expect(Number.isInteger(cell)).toBe(true);
+    // The board is drawn at CELL_SIZE internally and scaled as one container,
+    // so this is what keeps a cell a whole number of screen pixels.
+    expect(CELL_SIZE * board.scale).toBe(cell);
+    expect(board.width).toBe(cell * COLS);
+    expect(board.height).toBe(cell * ROWS);
+  });
+
+  it.each(VIEWPORTS)('keeps the board on screen on %s', (_name, view) => {
+    const { board } = layout(view);
+
+    expect(board.x).toBeGreaterThanOrEqual(0);
+    expect(board.y).toBeGreaterThanOrEqual(0);
+    expect(board.x + board.width).toBeLessThanOrEqual(view.width);
+    expect(board.y + board.height).toBeLessThanOrEqual(view.height);
+  });
+
+  it.each(VIEWPORTS)('never laps the board over the HUD on %s', (_name, view) => {
+    const frame = layout(view);
+    const { board, hud, orientation } = frame;
+
+    // One axis separates them: the column is beside the board, the strip below
+    // it. Whichever it is, the rack may never land on the kitchen.
+    const clear =
+      orientation === 'landscape'
+        ? hud.shelf.at.x >= board.x + board.width
+        : hud.shelf.at.y >= board.y + board.height;
+    expect(clear).toBe(true);
+
+    // And the rack has to end somewhere on the screen, not past the edge of it.
+    expect(shelfEnd(frame)).toBeLessThanOrEqual(
+      orientation === 'landscape' ? view.height : view.width,
+    );
+  });
+
+  it.each(VIEWPORTS)('keeps the queue on screen on %s', (_name, view) => {
+    const { hud } = layout(view);
+
+    expect(hud.queue.front.y).toBeGreaterThan(0);
+    expect(hud.queue.front.y).toBeLessThan(view.height);
+    expect(hud.queue.front.x).toBeGreaterThan(0);
+    expect(hud.queue.front.x).toBeLessThan(view.width);
+  });
+
+  it.each(VIEWPORTS)('stands the whole queue on screen on %s', (_name, view) => {
+    // What the fitted pitch buys. The serving lane is a share of the width, so
+    // a window small enough to embed — an itch.io frame — had four children at
+    // the desktop pitch walking clean off the edge of it, and how long the
+    // queue is is what design §5 asks the player to plan against.
+    //
+    // Swept rather than universal: `MIN_QUEUE_PITCH` is a floor, so under
+    // 522 px of landscape width the tail does go back over the edge. Every
+    // viewport a phone or an embed can actually be is above that, which is what
+    // this list is.
+    const { queue } = layout(view).hud;
+    const half = childHeight(queue.scale) / 2;
+    const tail = queue.front.x + (QUEUE_SLOTS - 1) * queue.pitch;
+
+    expect(Math.min(queue.front.x, tail) - half).toBeGreaterThanOrEqual(0);
+    expect(Math.max(queue.front.x, tail) + half).toBeLessThanOrEqual(view.width);
+  });
+
+  it.each(VIEWPORTS)('leaves air between one child and the next on %s', (_name, view) => {
+    // A line drawn shoulder to shoulder is the doorway crowd, which is a
+    // different thing being said (design §7). The step shrinks first and the
+    // children only once the step can no longer pay for them.
+    const { queue } = layout(view).hud;
+
+    expect(Math.abs(queue.pitch)).toBeGreaterThan(childHeight(queue.scale));
+  });
+
+  it.each(VIEWPORTS)('cuts the doorway crowd on the frame edge on %s', (_name, view) => {
+    const { queue } = layout(view).hud;
+
+    // Between the line and off-stage, on the door's own side. A doorway wholly
+    // on screen would read as another queue; wholly off it would tell the
+    // player nothing (design §7's telegraph).
+    const downLine = Math.sign(queue.pitch);
+    expect(Math.sign(queue.door - queue.front.x)).toBe(downLine);
+    expect(Math.sign(queue.offstage - queue.door)).toBe(downLine);
+
+    // And close enough to the edge to be actually cut by it: the door is a
+    // child's centre, so anything within half a child of the boundary has the
+    // frame running through them. Off the view's own constant, so a child drawn
+    // at a different scale moves this with it.
+    const edge = downLine > 0 ? view.width : 0;
+    expect(Math.abs(queue.door - edge)).toBeLessThan(childHeight(queue.scale) / 2);
+  });
+
+  it('hangs the cheat sheet off the far corner in landscape', () => {
+    const frame = layout(DESKTOP);
+    const { sheet } = frame.hud;
+
+    // Tab in the bottom corner of the frame, on the serving side — the far
+    // side from the kitchen, and the corner design §4 asks for on desktop.
+    expect(sheet.tab.x).toBeGreaterThan(frame.board.x + frame.board.width);
+    expect(sheet.tab.y).toBeGreaterThan(DESKTOP.height - TAB_SIZE - 2 * 16);
+    // Panel and tab hang off the same edge, so the sheet reads as one column
+    // against the serving wall rather than two unrelated things.
+    expect(sheetRect(frame).right).toBe(tabRect(frame).right);
+  });
+
+  it('puts the cheat-sheet tab on the top edge in portrait', () => {
+    const view = { width: 390, height: 844 };
+    const frame = layout(view);
+
+    expect(frame.orientation).toBe('portrait');
+    expect(frame.hud.sheet.tab.y).toBeLessThan(frame.board.y);
+    expect(tabRect(frame).top).toBeGreaterThanOrEqual(0);
+    // The drawer opens above the kitchen, and the tab sits beside it rather
+    // than over it — centred, a 44px tab would cover the topmost jar.
+    expect(sheetRect(frame).bottom).toBeLessThanOrEqual(frame.board.y);
+    expect(overlaps(tabRect(frame), sheetRect(frame))).toBe(false);
+  });
+
+  it('shrinks the wheel to fit a small phone', () => {
+    // The same bargain the rack makes: the node and the radius come down
+    // together rather than the panel running off the screen.
+    const small = layout({ width: 320, height: 568 }).hud.sheet;
+    const roomy = layout({ width: 768, height: 1024 }).hud.sheet;
+
+    expect(small.node).toBeLessThan(roomy.node);
+    expect(small.radius).toBeLessThan(roomy.radius);
+    expect(small.panel.height).toBeLessThan(roomy.panel.height);
+  });
+
+  it.each(VIEWPORTS)(
+    'never covers the kitchen with the cheat sheet on %s',
+    (_name, view) => {
+      // Design §4's one non-negotiable: the sheet is allowed to veil the HUD,
+      // and never the grid the player is steering on.
+      const frame = layout(view);
+
+      expect(overlaps(sheetRect(frame), boardRect(frame))).toBe(false);
+      expect(overlaps(tabRect(frame), boardRect(frame))).toBe(false);
+    },
+  );
+
+  it.each(VIEWPORTS)('keeps the cheat sheet on screen on %s', (_name, view) => {
+    const frame = layout(view);
+
+    expect(onScreen(sheetRect(frame), view)).toBe(true);
+    expect(onScreen(tabRect(frame), view)).toBe(true);
+  });
+
+  it.each(VIEWPORTS)('keeps the wheel inside its own panel on %s', (_name, view) => {
+    // The panel's size is a formula over the node, and a formula is exactly the
+    // kind of thing that goes quietly wrong when a constant beside it moves.
+    const frame = layout(view);
+    const { node } = frame.hud.sheet;
+    const panel = sheetRect(frame);
+    const wheel = wheelSeats(frame.hud.sheet);
+    const seats = [...wheel.jars, ...wheel.results.map((result) => result.at)];
+
+    expect(wheel.jars).toHaveLength(3);
+    expect(wheel.results).toHaveLength(WHEEL_PAIRS.length);
+    for (const seat of seats) {
+      const box = around(seat, node, node);
+
+      expect(box.left).toBeGreaterThanOrEqual(panel.left);
+      expect(box.right).toBeLessThanOrEqual(panel.right);
+      expect(box.top).toBeGreaterThanOrEqual(panel.top);
+      expect(box.bottom).toBeLessThanOrEqual(panel.bottom);
+    }
+  });
+
+  it('seats each candy between the two jars that actually make it', () => {
+    // The claim the whole picture makes. `core/colors.ts` blends the pair that
+    // `WHEEL_PAIRS` names, so if a result were seated between any other two
+    // jars the wheel would quietly teach the wrong recipe — and every other
+    // assertion here would still pass, because it would still be inside the
+    // panel.
+    const wheel = wheelSeats(layout(DESKTOP).hud.sheet);
+
+    wheel.results.forEach((result, index) => {
+      const [left, right] = WHEEL_PAIRS[index] ?? [0, 0];
+
+      expect(result.from).toEqual(wheel.jars[left]);
+      expect(result.to).toEqual(wheel.jars[right]);
+      expect(result.at.x).toBe(Math.round((result.from.x + result.to.x) / 2));
+      expect(result.at.y).toBe(Math.round((result.from.y + result.to.y) / 2));
+    });
+  });
+
+  it.each(VIEWPORTS)('knows what landed on the cheat-sheet tab on %s', (_name, view) => {
+    // What the swipe's dead zone asks, so that pressing the tab opens the
+    // drawer without also steering the strand. A pointer just outside has to
+    // steer as normal, or the HUD would be eating gestures meant for the game.
+    const frame = layout(view);
+    const { tab } = frame.hud.sheet;
+
+    expect(hitsTab(frame, tab.x, tab.y)).toBe(true);
+    expect(hitsTab(frame, tab.x - TAB_SIZE / 2, tab.y)).toBe(true);
+    expect(hitsTab(frame, tab.x - TAB_SIZE / 2 - 1, tab.y)).toBe(false);
+    expect(hitsTab(frame, tab.x, tab.y + TAB_SIZE / 2 + 1)).toBe(false);
+    // The middle of the kitchen is never the tab, whatever the viewport.
+    expect(hitsTab(frame, frame.board.x + frame.board.width / 2, frame.board.y)).toBe(
+      false,
+    );
+  });
+
+  it.each(VIEWPORTS)('keeps the three tabs off each other on %s', (_name, view) => {
+    // Two 44px targets that overlap are one target and a coin toss: the player
+    // means to mute and puts the wheel away instead. Asserted over every pair
+    // rather than the one that used to exist, so a fourth control cannot be
+    // added against only some of the others.
+    const frame = layout(view);
+    const tabs = TABS.map(([, rect]) => rect(frame));
+
+    for (const [i, one] of tabs.entries()) {
+      for (const other of tabs.slice(i + 1)) expect(overlaps(one, other)).toBe(false);
+    }
+  });
+
+  it.each(TAB_CASES)(
+    'keeps the %s tab a thumb wide on %s',
+    (_tab, _name, rect, _at, view) => {
+      // Design §10's touch floor, which the HUD's controls are the only things in
+      // the game held to — a phone has none of the keys the three have on desktop.
+      // Asserting the constant against itself would prove nothing; what can go
+      // wrong is a 44px target hanging off the edge of a small phone.
+      const box = rect(layout(view));
+
+      expect(box.right - box.left).toBeGreaterThanOrEqual(44);
+      expect(box.bottom - box.top).toBeGreaterThanOrEqual(44);
+      expect(onScreen(box, view)).toBe(true);
+    },
+  );
+
+  it.each(TAB_CASES)(
+    'keeps the %s tab clear of the kitchen on %s',
+    (_tab, _name, rect, _at, view) => {
+      // A control over the grid is a control the player's thumb finds while
+      // steering. The rack matters as much as the board for the pause tab,
+      // which sits along the row the rack runs down in landscape.
+      const frame = layout(view);
+
+      expect(overlaps(rect(frame), boardRect(frame))).toBe(false);
+      expect(overlaps(rect(frame), shelfRect(frame))).toBe(false);
+      expect(overlaps(rect(frame), sheetRect(frame))).toBe(false);
+    },
+  );
+
+  it.each(TAB_CASES)(
+    'knows what landed on the %s tab on %s',
+    (_tab, _name, _rect, at, view) => {
+      // The swipe's dead zone covers every tab through the one predicate, so a
+      // tab added without being taught to it would eat the gesture *and* steer.
+      const frame = layout(view);
+      const centre = at(frame);
+
+      expect(hitsTab(frame, centre.x, centre.y)).toBe(true);
+      expect(hitsTab(frame, centre.x, centre.y - TAB_SIZE / 2)).toBe(true);
+    },
+  );
+
+  it('costs the mixing wheel nothing to have gained a third tab', () => {
+    // The reason pause went sideways along the bottom row rather than up as a
+    // third rung. A rung would have moved `sheetFloor`, and on 568×320 that
+    // takes the panel's own floor back across the children standing at 182.
+    // Measured on the frame this was chosen against, and stated as the panel
+    // clearing the queue by the margin the two-tab stack already left it.
+    const frame = layout({ width: 568, height: 320 });
+    const panel = sheetRect(frame);
+
+    expect(panel.bottom).toBeGreaterThan(frame.hud.queue.front.y);
+    expect(panel.bottom).toBeLessThanOrEqual(muteRect(frame).top);
+  });
+
+  it.each(VIEWPORTS)('keeps the cheat-sheet tab a thumb wide on %s', (_name, view) => {
+    // Asserting the constant against itself would prove nothing. What can
+    // actually go wrong is a 44px target hanging off the edge of a small
+    // phone, leaving less than a thumb of it to press (design §10).
+    const tab = tabRect(layout(view));
+
+    expect(tab.right - tab.left).toBeGreaterThanOrEqual(44);
+    expect(tab.bottom - tab.top).toBeGreaterThanOrEqual(44);
+    expect(onScreen(tab, view)).toBe(true);
+  });
+
+  it.each(VIEWPORTS)(
+    'keeps the cheat sheet clear of the rack and the queue on %s',
+    (_n, view) => {
+      const frame = layout(view);
+      const panel = sheetRect(frame);
+
+      if (frame.orientation === 'landscape') {
+        // The column is the rack's, window to floor; the sheet takes what is
+        // left beyond it, in the corner below the child's own feet.
+        expect(panel.left).toBeGreaterThanOrEqual(
+          frame.hud.shelf.at.x + frame.hud.shelf.slot / 2,
+        );
+        expect(panel.bottom).toBeGreaterThan(frame.hud.queue.front.y);
+        expect(panel.bottom).toBeLessThanOrEqual(tabRect(frame).top);
+        // Right-aligned to the frame, which is what keeps a wheel that has
+        // outgrown its band off the queue: it rises past the line rather than
+        // into the children, who queue from the wall outward.
+        expect(panel.left).toBeGreaterThan(frame.hud.queue.front.x);
+        return;
+      }
+      // Upright the sheet is above the board and the strip is below it, so the
+      // only neighbour it can collide with is the row of hearts.
+      expect(panel.right).toBeLessThanOrEqual(frame.hud.lives.at.x);
+    },
+  );
+
+  it('takes the safe area out of the frame before laying anything out', () => {
+    const view = { width: 390, height: 844 };
+    const notch = { top: 59, right: 0, bottom: 34, left: 0 };
+
+    const bare = layout(view);
+    const inset = layout(view, notch);
+
+    expect(inset.board.y).toBeGreaterThanOrEqual(notch.top);
+    // The strip is anchored to the bottom of the usable frame, so the home
+    // indicator pushes the whole queue up rather than sitting under it.
+    expect(inset.hud.queue.front.y).toBeLessThan(bare.hud.queue.front.y);
+    expect(inset.hud.queue.front.y).toBeLessThanOrEqual(view.height - notch.bottom);
+    // A top-edge control's whole failure mode: the cheat-sheet tab sitting
+    // under the notch, where it can be seen and not pressed.
+    expect(inset.hud.sheet.tab.y - TAB_SIZE / 2).toBeGreaterThanOrEqual(notch.top);
+  });
+
+  it.each(VIEWPORTS)('finds room for the combo meter on %s', (_name, view) => {
+    // The meter is the one HUD widget with no fallback: the rack shrinks, the
+    // wheel gives up its head, but four pips are four pips. So the sweep asks
+    // the two questions that would sink it — is it on the screen at all, and
+    // does it land on top of either neighbour it shares the row with.
+    const frame = layout(view);
+    const combo = comboRect(frame);
+
+    // The box measured here is the width `layout.ts` reserved when it fitted
+    // the row, so a drift between the two shows up as a failure rather than as
+    // a clearance quietly checked against the wrong run.
+    expect(combo.right - combo.left).toBe(COMBO_WIDTH);
+    expect(onScreen(combo, view)).toBe(true);
+    expect(overlaps(combo, scoreRect(frame))).toBe(false);
+    expect(overlaps(combo, livesRect(frame))).toBe(false);
+  });
+
+  it.each(VIEWPORTS)('keeps the combo meter off the kitchen on %s', (_name, view) => {
+    // Drawn HUD, not drawn *over* the board (design §11): a pip lit across the
+    // strand would read as something the maker had cooked.
+    const frame = layout(view);
+
+    expect(overlaps(comboRect(frame), boardRect(frame))).toBe(false);
+  });
+
+  it('holds a floor under the cell size on a viewport too small to fit one', () => {
+    // Nothing sane produces this, but a layout pass that returns a negative
+    // board is worse than one that returns an unplayably small one.
+    const { cell, board } = layout({ width: 200, height: 200 });
+
+    expect(cell).toBeGreaterThan(0);
+    expect(board.width).toBeGreaterThan(0);
+    expect(board.scale).toBeGreaterThan(0);
+  });
+});
+
+describe('scoreboard', () => {
+  /** What the menu leaves the table: everything under it, less the prompt. */
+  const room = ([, view]: readonly [string, Viewport]): number => view.height / 2 - 40;
+
+  it.each(VIEWPORTS)('keeps the table inside the room it was given on %s', (...entry) => {
+    const available = room(entry);
+
+    const { pitch, shown } = scoreboard(available, 10);
+
+    // The last entry's own offset, which is what has to clear the bottom.
+    expect((shown - 1) * pitch).toBeLessThanOrEqual(available);
+    expect(shown).toBeGreaterThan(0);
+  });
+
+  it('never shows more entries than there are', () => {
+    expect(scoreboard(1_000, 3).shown).toBe(3);
+    expect(scoreboard(1_000, 0).shown).toBe(0);
+  });
+
+  it('closes the pitch up before it drops an entry', () => {
+    // Room for ten at a squeeze: all ten stay, sitting closer together.
+    const tight = scoreboard(200, 10);
+
+    expect(tight.shown).toBe(10);
+    expect(tight.pitch).toBeLessThan(scoreboard(400, 10).pitch);
+  });
+
+  it('keeps every entry at any height the pitch can still absorb', () => {
+    // 200 divides by ten exactly, which is why it caught nothing. Between the
+    // pitch's floor and its ceiling the table is never the thing that gives.
+    for (let available = 180; available <= 260; available += 1) {
+      expect({ available, ...scoreboard(available, 10) }).toMatchObject({
+        available,
+        shown: 10,
+      });
+    }
+  });
+
+  it('drops entries rather than closing the pitch past reading', () => {
+    const cramped = scoreboard(90, 10);
+
+    expect(cramped.shown).toBeLessThan(10);
+    expect(cramped.pitch).toBe(scoreboard(20, 10).pitch);
+  });
+
+  it('holds a ceiling on the pitch, so a tall window is not a sparse list', () => {
+    expect(scoreboard(4_000, 10).pitch).toBe(scoreboard(400, 10).pitch);
+  });
+
+  it('asks for nothing on a frame with no room left in it', () => {
+    const { shown } = scoreboard(0, 10);
+
+    expect(shown).toBe(0);
+  });
+});
+
+describe('menuPlan', () => {
+  /** How much of a rendered line sits above the point it is centred on. */
+  const ASCENT = 0.6;
+
+  it.each(VIEWPORTS)('keeps the title inside the frame on %s', (_name, view) => {
+    const { title, size } = menuPlan(view.height, 10);
+
+    // `title` is an offset from the middle and the line is centred on it, so
+    // this is where its top edge lands. A 568×320 phone wore the title off the
+    // top of the screen before the offset was clamped against the frame.
+    expect(title - size * ASCENT).toBeGreaterThanOrEqual(-view.height / 2 + TEXT_MARGIN);
+  });
+
+  it.each(VIEWPORTS)('leaves room to press any key on %s', (_name, view) => {
+    const { top, pitch, shown } = menuPlan(view.height, 10);
+    const prompt = shown === 0 ? top : top + (shown - 1) * pitch + EXIT_GAP;
+
+    expect(prompt).toBeLessThanOrEqual(view.height / 2);
+  });
+
+  it('drops the title to a smaller size rather than let a short frame clip it', () => {
+    expect(menuPlan(320, 10).size).toBeLessThan(menuPlan(900, 10).size);
+  });
+
+  it.each(VIEWPORTS)('never buys the parade a score entry on %s', (_name, view) => {
+    // The band is furniture and the table is content, so the band is what gives
+    // way — the same order this screen already puts the title in.
+    const { top, shown, parade } = menuPlan(view.height, 10);
+    if (parade === undefined) return;
+
+    // What `top` would have been with no band to make room for, which is the
+    // layout the table has to come out of unchanged.
+    const bare = top - PARADE_GROWTH;
+
+    expect(shown).toBe(
+      scoreboard(view.height / 2 - bare - EXIT_GAP - TEXT_MARGIN, 10).shown,
+    );
+  });
+
+  it.each(VIEWPORTS)('leaves room to press any key with a parade on %s', (_n, view) => {
+    const { top, pitch, shown, parade } = menuPlan(view.height, 10);
+    if (parade === undefined) return;
+    const prompt = shown === 0 ? top : top + (shown - 1) * pitch + EXIT_GAP;
+
+    expect(prompt).toBeLessThanOrEqual(view.height / 2);
+  });
+
+  it('drops the parade rather than truncate the table on a short frame', () => {
+    // A phone held sideways is already cutting the list to what fits; the band
+    // would come straight out of what is left.
+    expect(menuPlan(320, 10).parade).toBeUndefined();
+    expect(menuPlan(900, 10).parade).not.toBeUndefined();
+  });
+
+  it('drops the parade on a frame with no room, first run or not', () => {
+    // With no scores yet the table is empty and cannot lose an entry, so the
+    // "costs no entry" rule alone would let the band walk off the bottom. Below
+    // anything with a screen, and that is the point: it is the half of the rule
+    // no real device exercises, which is exactly why it needs a test.
+    expect(menuPlan(200, 0).parade).toBeUndefined();
+    expect(menuPlan(200, 0).top).toBeLessThanOrEqual(100);
+  });
+
+  it('walks the parade between the title and the table', () => {
+    const { title, size, top, parade } = menuPlan(900, 10);
+
+    expect(parade).toBeGreaterThan(title + size);
+    expect(parade).toBeLessThan(top);
+  });
+});
+
+describe('letterOffsets', () => {
+  it('has nowhere to stand a word with no letters', () => {
+    expect(letterOffsets([])).toEqual([]);
+  });
+
+  it('gives each letter the middle of its own advance', () => {
+    // Widths 10, 20, 30 — 60 across, so the word runs from -30 to +30 and the
+    // letters sit at the middles of [-30,-20], [-20,0] and [0,30].
+    expect(letterOffsets([10, 20, 30])).toEqual([-25, -10, 15]);
+  });
+});
+
+describe('centredColumn', () => {
+  it('centres the block on zero, whatever the gaps', () => {
+    const offsets = centredColumn([0, 40, 20]);
+
+    expect(offsets[0]! + offsets[offsets.length - 1]!).toBe(0);
+  });
+
+  it('lets a row that is not there take its air away with it', () => {
+    // The whole reason the screen stacks rather than places: dropping the
+    // middle row must close the gap, not leave a hole where it was.
+    const full = centredColumn([0, 30, 30, 30]);
+    const short = centredColumn([0, 30, 30]);
+
+    expect(short.length).toBe(full.length - 1);
+    expect(short[short.length - 1]! - short[0]!).toBe(60);
+  });
+});
