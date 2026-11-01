@@ -1,0 +1,90 @@
+function init(self)
+	self.vel = vmath.vector3()
+	self.player_pos = nil
+	self.corr = vmath.vector3()
+end
+
+function final(self)
+end
+
+local function updateVel(player_pos, enemy_pos)
+	local newVel = vmath.vector3()
+	local speed = 30
+	if not player_pos then return newVel end
+	local xDiff = player_pos.x - enemy_pos.x
+	local yDiff = player_pos.y - enemy_pos.y
+	if xDiff > 0 then
+		newVel.x = speed
+	end
+	if yDiff > 0 then
+		newVel.y = speed
+	end
+	if xDiff < 0 then
+		newVel.x = -speed
+	end
+	if yDiff < 0 then
+		newVel.y = -speed
+	end
+	return newVel
+end
+
+local function post_pos_to_player()
+	local constant = 0.4
+	local size = go.get("#sprite", "size")
+	local p = go.get_position()
+	-- the position is not exactly at the center so 
+	-- we'll compensate by adding the size of the sprite
+	--p.x = p.x + (size.x * constant)
+	--p.y = p.y + (size.y * constant)
+	msg.post("player", "enemy-data", {enemy_pos=p})
+end
+
+function update(self, dt)
+	self.corr = vmath.vector3()
+	local enemy_pos = go.get_position()
+	self.vel = updateVel(self.player_pos, enemy_pos)
+	local newPosition = enemy_pos + dt * self.vel
+	go.set_position(newPosition)
+	msg.post("player", "get-player-pos")
+	post_pos_to_player()
+end
+
+local function move_enemy(self, message)
+	if message.distance <= 0 then return end
+	local projection = vmath.project(self.corr, message.normal * message.distance)
+	if projection > 1 then return end
+	local compensate = (message.distance - message.distance * projection) * message.normal
+	local currentPosition = go.get_position(".")
+	go.set_position(currentPosition + compensate)
+	self.corr = self.corr + compensate
+end
+
+local function has_bullet(message)
+	-- safe (and correct) way to inspect properties on game objects.
+	-- I could use this function and set a property on the bullet to
+	-- add different behaviour on collison. This won't be necessary
+	-- however since I can use collision groups.
+	local url = msg.url(nil, message.other_id, "bullet")
+	return pcall(go.get, url, "bullet")
+end
+
+local function is_bullets_group(collision_message)
+	return collision_message.other_group == hash("bullets")
+end
+
+local function handle_collision(self, id, message, sender)
+	if id == hash("contact_point_response") then
+		if is_bullets_group(message) then
+			go.delete()
+		end
+		move_enemy(self, message)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	handle_collision(self, message_id, message, sender)
+	if message_id == hash("player-pos") then
+		self.player_pos = message.player_pos
+	end
+end
+
