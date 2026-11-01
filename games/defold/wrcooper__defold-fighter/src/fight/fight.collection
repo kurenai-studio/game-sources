@@ -1,0 +1,76 @@
+name: "fight"
+instances {
+  id: "background"
+  prototype: "/fight/background.go"
+  position {
+    x: 640.0
+    y: 360.0
+    z: -0.5
+  }
+  scale3 {
+    x: 3.04
+    y: 3.04
+    z: 1.0
+  }
+}
+instances {
+  id: "shadow1"
+  prototype: "/fight/shadow.go"
+  position {
+    x: 440.0
+    y: 76.0
+    z: -0.1
+  }
+  scale3 {
+    x: 3.0
+    y: 3.0
+    z: 1.0
+  }
+}
+instances {
+  id: "shadow2"
+  prototype: "/fight/shadow.go"
+  position {
+    x: 840.0
+    y: 76.0
+    z: -0.1
+  }
+  scale3 {
+    x: 3.0
+    y: 3.0
+    z: 1.0
+  }
+}
+instances {
+  id: "p1"
+  prototype: "/fight/fighter.go"
+  position {
+    x: 440.0
+    y: 78.0
+    z: 0.1
+  }
+  scale3 {
+    x: 3.0
+    y: 3.0
+    z: 1.0
+  }
+}
+instances {
+  id: "p2"
+  prototype: "/fight/fighter.go"
+  position {
+    x: 840.0
+    y: 78.0
+    z: 0.1
+  }
+  scale3 {
+    x: 3.0
+    y: 3.0
+    z: 1.0
+  }
+}
+instances {
+  id: "controller"
+  prototype: "/fight/controller.go"
+}
+scale_along_z: 0

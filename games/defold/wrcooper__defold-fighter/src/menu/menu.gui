@@ -1,0 +1,668 @@
+script: "/menu/menu.gui_script"
+fonts {
+  name: "big"
+  font: "/assets/fonts/big.font"
+}
+fonts {
+  name: "medium"
+  font: "/assets/fonts/medium.font"
+}
+fonts {
+  name: "small"
+  font: "/assets/fonts/small.font"
+}
+textures {
+  name: "game"
+  texture: "/assets/game.atlas"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+    z: 0.0
+  }
+  scale {
+    x: 3.04
+    y: 3.04
+    z: 1.0
+  }
+  size {
+    x: 428.0
+    y: 240.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  texture: "game/stage_bg"
+  id: "bg"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_ZOOM
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 1400.0
+    y: 800.0
+    z: 0.0
+  }
+  color {
+    x: 0.05
+    y: 0.02
+    z: 0.1
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "dim"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  alpha: 0.55
+}
+nodes {
+  position {
+    x: 230.0
+    y: 250.0
+    z: 0.0
+  }
+  scale {
+    x: 3.0
+    y: 3.0
+    z: 1.0
+  }
+  size {
+    x: 96.0
+    y: 96.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  texture: "game/kenji_idle_0"
+  id: "preview_p1"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 1050.0
+    y: 250.0
+    z: 0.0
+  }
+  scale {
+    x: -3.0
+    y: 3.0
+    z: 1.0
+  }
+  size {
+    x: 96.0
+    y: 96.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  texture: "game/vera_idle_0"
+  id: "preview_p2"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 230.0
+    y: 90.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 30.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "PLAYER 1"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "label_p1"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 1050.0
+    y: 90.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 30.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "CPU"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "label_p2"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 620.0
+    z: 0.0
+  }
+  scale {
+    x: 1.4
+    y: 1.4
+    z: 1.0
+  }
+  size {
+    x: 1000.0
+    y: 80.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "DEFOLD FIGHTER"
+  font: "big"
+  outline {
+    x: 0.35
+    y: 0.05
+    z: 0.1
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "title"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 548.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 1000.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 0.95
+    y: 0.85
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "TWILIGHT DOJO"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "subtitle"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 480.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_mode"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_mode"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 435.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_p1"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_p1"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 390.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_p2"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_p2"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 345.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_level"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_level"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 300.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_volume"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_volume"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 235.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_start"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_start"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 190.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "row_quit"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "row_quit"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 40.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 1200.0
+    y: 30.0
+    z: 0.0
+  }
+  color {
+    x: 0.85
+    y: 0.8
+    z: 0.95
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "[Up/Down] Select     [Left/Right] Change     [Enter] Confirm"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "help"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

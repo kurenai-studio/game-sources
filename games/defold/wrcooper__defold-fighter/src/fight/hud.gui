@@ -1,0 +1,897 @@
+script: "/fight/hud.gui_script"
+fonts {
+  name: "big"
+  font: "/assets/fonts/big.font"
+}
+fonts {
+  name: "medium"
+  font: "/assets/fonts/medium.font"
+}
+fonts {
+  name: "small"
+  font: "/assets/fonts/small.font"
+}
+nodes {
+  position {
+    x: 56.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 508.0
+    y: 34.0
+    z: 0.0
+  }
+  color {
+    x: 0.12
+    y: 0.06
+    z: 0.14
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p1_bar_bg"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 0.9
+}
+nodes {
+  position {
+    x: 60.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 500.0
+    y: 26.0
+    z: 0.0
+  }
+  color {
+    x: 0.85
+    y: 0.16
+    z: 0.18
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p1_bar_lag"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 60.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 500.0
+    y: 26.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.84
+    z: 0.25
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p1_bar"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 56.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 30.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "KENJI"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "p1_name"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 550.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 18.0
+    y: 18.0
+    z: 0.0
+  }
+  color {
+    x: 0.25
+    y: 0.2
+    z: 0.28
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p1_win1"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 522.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 18.0
+    y: 18.0
+    z: 0.0
+  }
+  color {
+    x: 0.25
+    y: 0.2
+    z: 0.28
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p1_win2"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 56.0
+    y: 560.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "p1_combo"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 1224.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 508.0
+    y: 34.0
+    z: 0.0
+  }
+  color {
+    x: 0.12
+    y: 0.06
+    z: 0.14
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p2_bar_bg"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 0.9
+}
+nodes {
+  position {
+    x: 1220.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 500.0
+    y: 26.0
+    z: 0.0
+  }
+  color {
+    x: 0.85
+    y: 0.16
+    z: 0.18
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p2_bar_lag"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 1220.0
+    y: 664.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 500.0
+    y: 26.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.84
+    z: 0.25
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p2_bar"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 1224.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 30.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "KENJI"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "p2_name"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 730.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 18.0
+    y: 18.0
+    z: 0.0
+  }
+  color {
+    x: 0.25
+    y: 0.2
+    z: 0.28
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p2_win1"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 758.0
+    y: 626.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 18.0
+    y: 18.0
+    z: 0.0
+  }
+  color {
+    x: 0.25
+    y: 0.2
+    z: 0.28
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "p2_win2"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 1224.0
+    y: 560.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 300.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "p2_combo"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 652.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 96.0
+    y: 72.0
+    z: 0.0
+  }
+  color {
+    x: 0.12
+    y: 0.06
+    z: 0.14
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "timer_bg"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 0.9
+}
+nodes {
+  position {
+    x: 640.0
+    y: 652.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 96.0
+    y: 60.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "99"
+  font: "big"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "timer"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 420.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 80.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "big"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "announce"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 340.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "sub"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 1400.0
+    y: 800.0
+    z: 0.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_ALPHA
+  id: "pause_bg"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  alpha: 0.65
+  enabled: false
+}
+nodes {
+  position {
+    x: 0.0
+    y: 210.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 600.0
+    y: 60.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "PAUSED"
+  font: "big"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "pause_text"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "pause_bg"
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 0.0
+    y: 150.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "[Esc] Resume     [Q] Quit to menu     [H] Hitboxes"
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "pause_help"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "pause_bg"
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 0.0
+    y: 115.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "pause_volume"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "pause_bg"
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: 0.0
+    y: 65.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 40.0
+    z: 0.0
+  }
+  color {
+    x: 1.0
+    y: 0.82
+    z: 0.3
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: "MOVES"
+  font: "medium"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: false
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "pause_moves_title"
+  pivot: PIVOT_CENTER
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "pause_bg"
+  inherit_alpha: true
+  alpha: 1.0
+}
+nodes {
+  position {
+    x: -376.0
+    y: -50.0
+    z: 0.0
+  }
+  scale {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  size {
+    x: 900.0
+    y: 200.0
+    z: 0.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.9
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_ALPHA
+  text: ""
+  font: "small"
+  outline {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  shadow {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  line_break: true
+  outline_alpha: 1.0
+  shadow_alpha: 0.0
+  id: "pause_moves"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_FIT
+  parent: "pause_bg"
+  inherit_alpha: true
+  alpha: 1.0
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

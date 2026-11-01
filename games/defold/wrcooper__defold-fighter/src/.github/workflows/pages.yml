@@ -1,0 +1,55 @@
+# Builds the HTML5 (WebAssembly) bundle with Defold's command-line builder (Bob)
+# and publishes it to GitHub Pages on every push to main.
+name: Deploy web build to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # Defold 1.14.0 (from https://d.defold.com/stable/info.json). Keep in step with the editor version.
+  DEFOLD_SHA1: d295ed4edff2e49072719835713e625f409849f1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Download Bob
+        run: curl -fsSL -o bob.jar "https://d.defold.com/archive/stable/${DEFOLD_SHA1}/bob/bob.jar"
+
+      - name: Build HTML5 bundle
+        run: >
+          java -jar bob.jar --root . --output build/web
+          --platform wasm-web --architectures wasm-web --variant release --archive
+          --bundle-output dist/web build bundle
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/web/Defold Fighter
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
