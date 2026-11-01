@@ -1,0 +1,536 @@
+[gd_scene load_steps=47 format=3 uid="uid://db2yplxya10o7"]
+
+[ext_resource type="LightmapGIData" uid="uid://cqddx3twj841w" path="res://src/maps/KitchenAndLivingRoom.lmbake" id="1_4gxxf"]
+[ext_resource type="Script" path="res://src/maps/KitchenAndLivingRoom.gd" id="1_t78lk"]
+[ext_resource type="Environment" uid="uid://ck1htmu8kds5b" path="res://src/maps/WorldEnvironment.tres" id="1_w71gw"]
+[ext_resource type="PackedScene" uid="uid://61wb7y3t7hv0" path="res://src/environment/KitchenWallAndFloor.tscn" id="2_im26h"]
+[ext_resource type="Script" path="res://src/commons/Lightmap.gd" id="3_2cuf3"]
+[ext_resource type="PackedScene" uid="uid://bnq1tmpsus5f8" path="res://src/vfx/DirectionalLightInterior.tscn" id="3_rh4jf"]
+[ext_resource type="PackedScene" path="res://src/environment/StorageCabinet.tscn" id="4_v5llw"]
+[ext_resource type="PackedScene" uid="uid://yapvtgc75htw" path="res://src/environment/Fridge.tscn" id="5_1vd32"]
+[ext_resource type="PackedScene" uid="uid://c3n6w63ne60mw" path="res://src/ui/Transition.tscn" id="5_m4dva"]
+[ext_resource type="Script" path="res://src/commons/cinematic/Cinematic.gd" id="5_p146g"]
+[ext_resource type="PackedScene" uid="uid://8slan00w6ex0" path="res://src/player/PlayerModel.tscn" id="5_qkapy"]
+[ext_resource type="PackedScene" uid="uid://b3idgts06d20d" path="res://src/environment/Stove.tscn" id="6_b8yh6"]
+[ext_resource type="PackedScene" uid="uid://c3t13xp7bqqsv" path="res://src/environment/Sink.tscn" id="7_sfcht"]
+[ext_resource type="PackedScene" uid="uid://eld2tq4igspp" path="res://src/ui/EndCredits.tscn" id="7_u64hv"]
+[ext_resource type="Texture2D" uid="uid://c2v6hg47tj3j7" path="res://assets/textures/zelda_intro.jpg" id="8_0lamc"]
+[ext_resource type="PackedScene" uid="uid://dsljrlewhs2e8" path="res://src/environment/Table.tscn" id="8_h7npr"]
+[ext_resource type="PackedScene" uid="uid://bjje2t0htyrms" path="res://src/environment/Chair.tscn" id="9_g6jtb"]
+[ext_resource type="PackedScene" uid="uid://dgqetnxlxf3bf" path="res://src/environment/Cup.tscn" id="10_61pxw"]
+[ext_resource type="PackedScene" uid="uid://cndya70nmv4ui" path="res://src/environment/LowTable.tscn" id="11_0dlgj"]
+[ext_resource type="PackedScene" uid="uid://cusuhd538cbmh" path="res://src/environment/N64.tscn" id="12_5cbjx"]
+[ext_resource type="PackedScene" uid="uid://cgeaxvf7a30vy" path="res://src/environment/N64CartridgesPile.tscn" id="13_y3ri3"]
+[ext_resource type="PackedScene" uid="uid://dt7jxpb7h5ctj" path="res://src/environment/TvFurniture.tscn" id="14_xs8cb"]
+[ext_resource type="PackedScene" uid="uid://busjv06mc1gmm" path="res://src/environment/Tv.tscn" id="15_etraq"]
+[ext_resource type="PackedScene" uid="uid://d1c4d2uernomf" path="res://src/environment/Couch.tscn" id="16_lcit1"]
+[ext_resource type="PackedScene" uid="uid://dvmnbnugknsy6" path="res://src/environment/Tablet.tscn" id="17_rt0y8"]
+[ext_resource type="PackedScene" uid="uid://dym2664pv4cp5" path="res://src/environment/Can.tscn" id="18_p864y"]
+[ext_resource type="PackedScene" uid="uid://gu206vgjtmd6" path="res://src/portal/Portal.tscn" id="19_0po74"]
+[ext_resource type="PackedScene" uid="uid://cqg3hmfi8tudg" path="res://src/player/Player.tscn" id="19_5454n"]
+[ext_resource type="PackedScene" uid="uid://dprjlpxmbe257" path="res://src/portal/DoorInterior.tscn" id="21_2lvg4"]
+[ext_resource type="PackedScene" uid="uid://crmxe1jwab836" path="res://src/environment/CommonCup.tscn" id="21_dh6p4"]
+[ext_resource type="PackedScene" uid="uid://bypeafkir4xg8" path="res://src/portal/DoorExterior.tscn" id="22_28po3"]
+[ext_resource type="PackedScene" uid="uid://b8xkcdorlse3m" path="res://src/environment/CoffeeMachine.tscn" id="24_0mhiy"]
+[ext_resource type="PackedScene" uid="uid://fcpswayn6336" path="res://src/camera/CameraInterior.tscn" id="24_sgcm8"]
+[ext_resource type="PackedScene" path="res://src/environment/KitchenInvisibleWalls.tscn" id="25_ypq1y"]
+[ext_resource type="PackedScene" uid="uid://cbkuyuvoarrho" path="res://src/environment/Hat.tscn" id="27_2fndl"]
+[ext_resource type="PackedScene" uid="uid://cok3qxilyy4yw" path="res://src/environment/CommonCupInteractable.tscn" id="27_ix3gj"]
+[ext_resource type="PackedScene" uid="uid://djvu2oh1f6cj2" path="res://src/environment/Shovel.tscn" id="28_rhrub"]
+[ext_resource type="PackedScene" uid="uid://d2odaiw3v6a6q" path="res://src/environment/Wheel.tscn" id="29_xht3y"]
+[ext_resource type="PackedScene" uid="uid://cc7ihstkgux0a" path="res://src/environment/Picture.tscn" id="31_ruykr"]
+
+[sub_resource type="Animation" id="Animation_aoid1"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D:current")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Transition:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Transition:material:shader_parameter/circle_size")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("PlayerModel:visible")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("%Player:visible")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Camera3D:position")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.382909, 1.04783, 1.11912)]
+}
+
+[sub_resource type="Animation" id="Animation_a213y"]
+resource_name = "start"
+length = 10.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera3D:current")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.3),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Transition:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Transition:material:shader_parameter/circle_size")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.5, 0.7),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [1.0, 0.0, 0.0, 1.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("PlayerModel:visible")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("%Player:visible")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Camera3D:position")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 5, 10),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.382909, 1.04783, 1.11912), Vector3(-0.382909, 1.04783, 1.11912), Vector3(-0.382909, 5.72811, 1.11912)]
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("..")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(10),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"show_end_credit"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_twwgn"]
+_data = {
+"RESET": SubResource("Animation_aoid1"),
+"start": SubResource("Animation_a213y")
+}
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_e1jf8"]
+size = Vector2(0.539, 0.477)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xmods"]
+albedo_texture = ExtResource("8_0lamc")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_q8ovq"]
+size = Vector2(0.7, 0.7)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a8xv6"]
+albedo_color = Color(0.0313726, 0.301961, 0.207843, 1)
+
+[node name="KitchenAndLivingRoom" type="Node3D"]
+script = ExtResource("1_t78lk")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("1_w71gw")
+
+[node name="LightmapGI" type="LightmapGI" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.11378, 0)
+visible = false
+quality = 0
+interior = true
+light_data = ExtResource("1_4gxxf")
+script = ExtResource("3_2cuf3")
+
+[node name="Cinematic" type="Node3D" parent="."]
+script = ExtResource("5_p146g")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Cinematic"]
+libraries = {
+"": SubResource("AnimationLibrary_twwgn")
+}
+
+[node name="Transition" parent="Cinematic" instance=ExtResource("5_m4dva")]
+
+[node name="TheEnd" parent="Cinematic" instance=ExtResource("7_u64hv")]
+visible = false
+modulate = Color(1, 1, 1, 0)
+
+[node name="PlayerModel" parent="Cinematic" instance=ExtResource("5_qkapy")]
+transform = Transform3D(-0.0394517, 0, 0.999222, 0, 1, 0, -0.999222, 0, -0.0394517, 0.673816, 0.277262, 1.11427)
+visible = false
+
+[node name="HandLeft" parent="Cinematic/PlayerModel" index="0"]
+transform = Transform3D(-0.0336462, 0.894937, -0.444923, -0.0116923, 0.444792, 0.895558, 0.999366, 0.0353342, -0.00450172, 0.0623506, 0.324332, 0.248504)
+
+[node name="HandRight" parent="Cinematic/PlayerModel" index="1"]
+transform = Transform3D(0.0242767, -0.984748, 0.172288, -0.0873497, 0.16959, 0.981636, -0.995882, -0.0388802, -0.0819003, -0.122679, 0.324332, 0.258039)
+
+[node name="Camera3D" type="Camera3D" parent="Cinematic"]
+transform = Transform3D(-2.98023e-08, 0, -1, 0, 1, 0, 1, 0, -2.98023e-08, -0.382909, 1.04783, 1.11912)
+fov = 50.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cinematic"]
+transform = Transform3D(-4.37114e-08, -1, 0, -4.37114e-08, 1.91069e-15, -1, 1, -4.37114e-08, -4.37114e-08, 2.47916, 0.872328, 0.861593)
+mesh = SubResource("PlaneMesh_e1jf8")
+surface_material_override/0 = SubResource("StandardMaterial3D_xmods")
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" parent="Lights" instance=ExtResource("3_rh4jf")]
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.83144, 1.00268, -2.52999)
+light_energy = 0.4
+light_bake_mode = 1
+omni_range = 1.0
+
+[node name="OmniLight3D2" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.83446, 1.00268, -2.52999)
+light_energy = 0.4
+light_bake_mode = 1
+omni_range = 1.0
+
+[node name="Portals" type="Node3D" parent="."]
+
+[node name="PortalToBedroom" parent="Portals" instance=ExtResource("19_0po74")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.09161, 0.0725, -0.875809)
+next_map = 0
+portal_id = "PortalToKitchen"
+
+[node name="DoorInterior" parent="Portals/PortalToBedroom" instance=ExtResource("21_2lvg4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.000769898, -0.193104)
+
+[node name="PortalToYard" parent="Portals" instance=ExtResource("19_0po74")]
+unique_name_in_owner = true
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0.0174669, 0.0725001, -2.84473)
+next_map = 2
+portal_id = "PortalToKitchen"
+exterior_door_mesh = true
+text = "I can hear the storm outside. It must be very cold. I should put my boots and my hat or I will freeze like a popcycle."
+
+[node name="DoorExterior" parent="Portals/PortalToYard" instance=ExtResource("22_28po3")]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0.0523438, -0.0676001, 0.0183866)
+
+[node name="Environments" type="Node3D" parent="."]
+
+[node name="KitchenWallAndFloor" parent="Environments" instance=ExtResource("2_im26h")]
+
+[node name="StorageCabinet" parent="Environments" instance=ExtResource("4_v5llw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.58024, 0, 0.372358)
+text = "I could survivre a nuclear winter with that stack of coffee beans."
+
+[node name="StorageCabinet2" parent="Environments" instance=ExtResource("4_v5llw")]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 2.71027, 0, -2.21416)
+text = "Nothing of interest in there.
+The dev didn't have to time to do something cool with it."
+
+[node name="Fridge" parent="Environments" instance=ExtResource("5_1vd32")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.867052, 0, -2.53111)
+text = "This looks emptier since I have removed my boots from there."
+
+[node name="Stove" parent="Environments" instance=ExtResource("6_b8yh6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.80529, 0, -2.52476)
+
+[node name="Sink" parent="Environments" instance=ExtResource("7_sfcht")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8586, 0, -2.53142)
+
+[node name="Table" parent="Environments" instance=ExtResource("8_h7npr")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.32792, -0.0786202, 0.993438)
+
+[node name="Chair" parent="Environments/Table" instance=ExtResource("9_g6jtb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.744668)
+
+[node name="Cup" parent="Environments/Table" instance=ExtResource("10_61pxw")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.174544, 0.621467, -0.189725)
+text = "My favorite  mug. I painted it myself...but everyone thinks that my 4 years old nephew did it :'(
+
+Should It take it with me?"
+
+[node name="LowTable" parent="Environments" instance=ExtResource("11_0dlgj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.71124, 0, 0.774837)
+
+[node name="N64" parent="Environments" instance=ExtResource("12_5cbjx")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.72423, 0, 2.1707)
+text = "Almost 26 years old. This thing still run a smooth 20 frames per second."
+
+[node name="N64CartridgesPile" parent="Environments/N64" instance=ExtResource("13_y3ri3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0208552, 0.10721, -0.310762)
+
+[node name="TvFurniture" parent="Environments" instance=ExtResource("14_xs8cb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69345, 0, 0.829926)
+
+[node name="TV" parent="Environments/TvFurniture" instance=ExtResource("15_etraq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.090523, 0.572947, 0.0280211)
+text = "A good old CRT TV to play all my old video games!"
+
+[node name="TvFurniture2" parent="Environments" instance=ExtResource("14_xs8cb")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, -2.80616, 0.00690004, 1.85632)
+
+[node name="CoffeeMachine" parent="Environments/TvFurniture2" instance=ExtResource("24_0mhiy")]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -0.0606799, 0.602196, -0.41485)
+combine_success_text = "Oh Lord of the Great Coffee Beans! Give me that addictive roast taste! I could drink those non-stop!"
+combine_failed_text = "You can't make a coffee with that."
+combine_done = "This text should not appear
+
+  --- The dev"
+text = "My best friend, my wonderful coffee machine. Where is my mug!? I need one right now!"
+
+[node name="CommonCup" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.113593, 0.635227, 0.326205)
+
+[node name="CommonCup2" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.028625, 0.635227, 0.326205)
+
+[node name="CommonCup3" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.809663, 0, -0.586895, 0, 1, 0, 0.586895, 0, 0.809663, 0.028625, 0.635227, 0.0763719)
+
+[node name="CommonCup4" parent="Environments/TvFurniture2" instance=ExtResource("27_ix3gj")]
+text = "I should reconsider my life choices regarding my addiction to coffee. I should also clean those cups."
+
+[node name="CommonCup5" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.776453, 0, 0.630174, 0, 1, 0, -0.630174, 0, 0.776453, 0.127076, 0.635227, 0.175625)
+
+[node name="CommonCup6" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.635227, 0.175625)
+
+[node name="CommonCup7" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.635227, -0.00550652)
+
+[node name="CommonCup8" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.199213, 0.635227, -0.00550652)
+
+[node name="CommonCup9" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.997239, 0, 0.074265, 0, 1, 0, -0.074265, 0, 0.997239, -0.199213, 0.635227, 0.44503)
+
+[node name="CommonCup10" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.579651, 0, -0.814865, 0, 1, 0, 0.814865, 0, 0.579651, -0.0304341, 0.635227, 0.44503)
+
+[node name="CommonCup11" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.579651, 0, -0.814865, 0, 1, 0, 0.814865, 0, 0.579651, -0.139896, 0.635227, 0.352842)
+
+[node name="CommonCup12" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.967498, 0, 0.25288, 0, 1, 0, -0.25288, 0, 0.967498, -0.139896, 0.635227, 0.0981189)
+
+[node name="CommonCup13" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.113593, 0.451718, 0.326205)
+
+[node name="CommonCup14" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.028625, 0.451718, 0.326205)
+
+[node name="CommonCup15" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.809663, 0, -0.586895, 0, 1, 0, 0.586895, 0, 0.809663, 0.028625, 0.451718, 0.0763719)
+
+[node name="CommonCup16" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.407741, 0, -0.913098, 0, 1, 0, 0.913098, 0, 0.407741, -0.118124, 0.451718, 0.252022)
+
+[node name="CommonCup17" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.776453, 0, 0.630174, 0, 1, 0, -0.630174, 0, 0.776453, 0.127076, 0.451718, 0.175625)
+
+[node name="CommonCup18" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.451718, 0.175625)
+
+[node name="CommonCup19" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.451718, -0.00550652)
+
+[node name="CommonCup20" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.199213, 0.451718, -0.00550652)
+
+[node name="CommonCup21" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.997239, 0, 0.074265, 0, 1, 0, -0.074265, 0, 0.997239, -0.199213, 0.451718, 0.44503)
+
+[node name="CommonCup22" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.579651, 0, -0.814865, 0, 1, 0, 0.814865, 0, 0.579651, -0.0304341, 0.451718, 0.44503)
+
+[node name="CommonCup23" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.579651, 0, -0.814865, 0, 1, 0, 0.814865, 0, 0.579651, -0.139896, 0.451718, 0.352842)
+
+[node name="CommonCup24" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.967498, 0, 0.25288, 0, 1, 0, -0.25288, 0, 0.967498, -0.139896, 0.451718, 0.0981189)
+
+[node name="CommonCup25" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.113593, 0.451718, -0.161734)
+
+[node name="CommonCup26" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(1, 0, -2.13163e-14, 0, 1, 0, 2.13163e-14, 0, 1, 0.028625, 0.451718, -0.161734)
+
+[node name="CommonCup27" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.809663, 0, -0.586895, 0, 1, 0, 0.586895, 0, 0.809663, 0.028625, 0.451718, -0.411568)
+
+[node name="CommonCup28" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.407741, 0, -0.913098, 0, 1, 0, 0.913098, 0, 0.407741, -0.118124, 0.451718, -0.235918)
+
+[node name="CommonCup29" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.776453, 0, 0.630174, 0, 1, 0, -0.630174, 0, 0.776453, 0.127076, 0.451718, -0.312314)
+
+[node name="CommonCup30" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.451718, -0.312314)
+
+[node name="CommonCup31" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.0517819, 0.451718, -0.493446)
+
+[node name="CommonCup32" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.630174, 0, -0.776453, 0, 1, 0, 0.776453, 0, 0.630174, -0.199213, 0.451718, -0.493446)
+
+[node name="CommonCup35" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.579651, 0, -0.814865, 0, 1, 0, 0.814865, 0, 0.579651, -0.139896, 0.451718, -0.135098)
+
+[node name="CommonCup36" parent="Environments/TvFurniture2" instance=ExtResource("21_dh6p4")]
+transform = Transform3D(0.967498, 0, 0.25288, 0, 1, 0, -0.25288, 0, 0.967498, -0.139896, 0.451718, -0.389821)
+
+[node name="Couch" parent="Environments" instance=ExtResource("16_lcit1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.466805, 0, 0.732458)
+
+[node name="Tablet" parent="Environments" instance=ExtResource("17_rt0y8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.17955, 1.05166, -2.50992)
+
+[node name="Tablet2" parent="Environments" instance=ExtResource("17_rt0y8")]
+transform = Transform3D(-3.06289e-08, 0, -0.605259, 0, 0.273133, 0, 0.700707, 0, -2.64567e-08, -2.93377, 1.05166, 1.81752)
+
+[node name="N64CartridgesPile2" parent="Environments/Tablet2" instance=ExtResource("13_y3ri3")]
+transform = Transform3D(1.43083, 0, 0.713564, 0, 3.66121, 0, -0.826091, 0, 1.23593, 0.0605361, 0.455553, -0.0758185)
+
+[node name="N64CartridgesPile3" parent="Environments/Tablet2" instance=ExtResource("13_y3ri3")]
+transform = Transform3D(-1.43083, 0, 0.713564, 0, 3.66121, 0, -0.826091, 0, -1.23593, 0.319207, 0.455553, -0.0758185)
+
+[node name="N64CartridgesPile4" parent="Environments/Tablet2" instance=ExtResource("13_y3ri3")]
+transform = Transform3D(-1.16827, 0, 1.00913, 0, 3.66121, 0, -1.16827, 0, -1.00913, -0.298321, 0.455553, -0.0758185)
+
+[node name="Picture" parent="Environments/Tablet2" instance=ExtResource("31_ruykr")]
+transform = Transform3D(-0.258819, 0, 0.965925, 0, 0.999999, 0, -0.965925, 0, -0.258819, 0.645327, 0.50511, 0)
+text = "You should'nt be able to read this"
+
+[node name="Picture2" parent="Environments/Tablet2" instance=ExtResource("31_ruykr")]
+transform = Transform3D(0.499999, 0, 0.866024, 0, 0.999998, 0, -0.866024, 0, 0.499999, -0.60429, 0.50511, -0.000108719)
+text = "You should'nt be able to read this"
+
+[node name="Can" parent="Environments" instance=ExtResource("18_p864y")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.01719, 0, -2.53733)
+
+[node name="Shovel" parent="Environments/Can" instance=ExtResource("28_rhrub")]
+transform = Transform3D(-7.17562e-09, -8.44439e-08, -1, 8.9407e-08, 1, -8.44439e-08, 1, -8.9407e-08, -7.17561e-09, 0.0755569, 0.239106, 0.0576084)
+
+[node name="InvisibleWall" parent="Environments" instance=ExtResource("25_ypq1y")]
+
+[node name="Hat" parent="Environments" instance=ExtResource("27_2fndl")]
+transform = Transform3D(0.907602, 0.419832, 0, -0.419832, 0.907602, 0, 0, 0, 1, 0.766508, 0.451592, -0.00456703)
+text = "My favorite hat! Keeping me warm all the time.
+
+Should I take it with me?"
+
+[node name="Wheel" parent="Environments" instance=ExtResource("29_xht3y")]
+transform = Transform3D(1, 0, 0, 0, 0.650708, -0.759328, 0, 0.759328, 0.650708, 0.573155, 0.302321, 1.67041)
+id = 5
+text = "I don't have any explanations of how it ended up here.
+
+Should I take it with me?"
+
+[node name="PortalDirection" type="MeshInstance3D" parent="Environments"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.356945, 0, 1.03392e-08)
+mesh = SubResource("PlaneMesh_q8ovq")
+surface_material_override/0 = SubResource("StandardMaterial3D_a8xv6")
+
+[node name="Player" parent="." instance=ExtResource("19_5454n")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.236271, 0.081886, -1.40402)
+
+[node name="CameraInterior" parent="." instance=ExtResource("24_sgcm8")]
+
+[editable path="Cinematic/PlayerModel"]
