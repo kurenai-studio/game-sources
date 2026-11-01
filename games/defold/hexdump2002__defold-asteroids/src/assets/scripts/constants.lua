@@ -1,0 +1,1 @@
+kmax_rock_size = 4

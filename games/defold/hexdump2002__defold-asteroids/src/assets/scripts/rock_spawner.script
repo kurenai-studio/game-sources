@@ -1,0 +1,152 @@
+require("assets/scripts/constants")
+
+local kcreation_rate = 3
+local kmax_speed = 200
+
+local function createRock(self,player_pos)
+	local windowWidth,windowHeight = window.get_size()
+	
+	local side = math.random(1,4)
+	
+	local offset = 100
+
+	local starting_position = vmath.vector3()
+	
+	if side == 1 then -- top
+		starting_position.y = -offset
+		starting_position.x = math.random(-100,windowWidth+offset)
+	elseif side == 2 then -- bottom
+		starting_position.y = windowHeight+offset
+		starting_position.x = math.random(-100,windowWidth+offset)
+	elseif side == 3 then -- left
+		starting_position.y = math.random(-100,windowHeight+offset)
+		starting_position.x = -offset
+	elseif side == 4 then -- right
+		starting_position.y = math.random(-100,windowHeight+offset)
+		starting_position.x = windowWidth+offset
+	end
+					 
+	local objectId = factory.create("#rock_factory", starting_position)
+	local rock_to_player_vector = vmath.normalize(player_pos-starting_position)
+	local velocity = rock_to_player_vector*math.random(kmax_speed/4,200)
+		
+
+	local rock = {id=objectId, velocity=velocity, size = kmax_rock_size}
+	table.insert(self.rocks,rock)
+end
+
+local function break_rock(self,  rock_data)
+	local new_rock_count = 2
+	local new_rock_size = rock_data.size -1
+	local new_rock_scale = new_rock_size/kmax_rock_size
+
+	local objectId = factory.create("#rock_factory", go.get_position(rock_data.id),nil,nil,new_rock_scale)
+	local velocity = vmath.rotate(vmath.quat_rotation_z(math.rad(45)), rock_data.velocity)
+	local rock = {id=objectId, velocity=velocity, size=new_rock_size}
+	table.insert(self.rocks,rock)
+
+	local objectId = factory.create("#rock_factory", go.get_position(rock_data.id),nil,nil,new_rock_scale)
+	local velocity = vmath.rotate(vmath.quat_rotation_z(math.rad(-45)), rock_data.velocity)
+	local rock = {id=objectId, velocity=velocity, size=new_rock_size}
+	table.insert(self.rocks,rock)
+	
+end
+
+
+local function remove_rock_data_id(self,id)
+	for i, value in pairs(self.rocks) do
+		if value.id == id then
+			table.remove(self.rocks,i)
+		end
+	end
+end
+
+local function find_rock_data_by_id(self,id)
+	for i, value in pairs(self.rocks) do
+		if value.id == id then
+			return value
+		end
+	end
+	return nil
+end
+
+local function destroyRock(self, rock_id)
+	go.delete(rock_id)
+	remove_rock_data_id(self, rock_id)
+end
+
+local function makeRockAppear(self) 
+	createRock(self,vmath.vector3(640,360,0))
+	timer.delay(kcreation_rate, false, makeRockAppear)
+end
+
+local function buildRockAtRate()
+	timer.delay(kcreation_rate, false, makeRockAppear,self )
+end
+
+local function should_remove_rock(rock)
+	rock_position = go.get_position(rock.id)
+
+	if rock_position.x<-100 or rock_position.x> 1400 or rock_position.y<-100 or rock_position.y>800 then
+		return true
+	end
+	
+	return false
+
+end 
+
+local function handle_rocks(self, dt)
+	-- remove rocks outside screen
+	local rock_position = nil
+	for i = #self.rocks, 1, -1 do
+		local rock = self.rocks[i]
+		if should_remove_rock(rock) then
+			go.delete(rock.id)
+			table.remove(self.rocks,i)
+		end
+	end
+
+	-- Update bullet positions
+	for _,rock in ipairs(self.rocks) do
+		rock_position = go.get_position(rock.id)+rock.velocity*dt
+		go.set_position(rock_position, rock.id)
+	end
+end
+
+
+function init(self)
+	self.rocks = {}
+	makeRockAppear(self)
+end
+
+function final(self)
+	
+end
+
+
+
+function update(self, dt)
+	-- Update bullet positions
+	handle_rocks(self, dt)
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("rock_destroyed") then
+		local rock_data = find_rock_data_by_id(self, message.id)		
+		
+		if rock_data.size > 1 then
+			break_rock(self, rock_data)
+		end
+		
+		destroyRock(self, message.id)
+	end
+end

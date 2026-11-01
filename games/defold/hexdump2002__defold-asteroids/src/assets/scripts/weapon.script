@@ -1,0 +1,61 @@
+
+-- Vars common to any game object containing this script (shared)
+local kbullet_speed = 300
+
+local function addBullet(self, bulletId, velocity)
+	bullet = {}
+	bullet.id = bulletId;
+
+	bullet.velocity = velocity
+	
+	table.insert(self.bullets,bullet)msg.url(nil, my_id, "script") -- Do NOT include the '#'.
+end
+
+local function should_remove_bullet(bullet) 
+	bullet_position = go.get_position(bullet.id)
+
+	if go.get(msg.url(nil,bullet.id,"bullet"),"delete") == true then
+		return true
+	end
+	if bullet_position.x<-100 or bullet_position.x> 1400 or bullet_position.y<-100 or bullet_position.y>800 then
+		return true
+	end
+	
+	return false
+
+end 
+
+local function handleBullets(self, dt)
+
+	-- remove bullets outside screen
+	local bullet_position = nil
+	for i = #self.bullets, 1, -1 do
+		local bullet = self.bullets[i]
+		if should_remove_bullet(bullet) then
+			go.delete(bullet.id)
+			table.remove(self.bullets,i)
+		end
+	end
+
+	-- Update bullet positions
+	for _,bullet in ipairs(self.bullets) do
+		bullet_position = go.get_position(bullet.id)+bullet.velocity*dt
+		go.set_position(bullet_position, bullet.id)
+	end
+end
+
+function init(self)
+	self.bullets = {}	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id==hash("fire") then
+		local bullet_id = factory.create("#bullet_spawner",message.initial_pos,nil,  { dlete = false })
+		addBullet(self,bullet_id, message.direction*kbullet_speed)
+	end
+end
+
+function update(self, dt)
+	handleBullets(self, dt)
+end
+
