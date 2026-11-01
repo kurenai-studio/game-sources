@@ -1,0 +1,118 @@
+# What this gates, and what it cannot.
+#
+# core:check is the pure half of the project -- the rules engine, run log,
+# achievements and tutorial script -- plus the JaCoCo coverage gate on those
+# packages. It runs headless, so it belongs here.
+#
+# The screens are deliberately NOT covered. They need a window, a GPU and
+# screenshot pixels to verify (see .claude/skills/run-scoundrel), which no runner
+# has. A green check here says the build is sound and the engine is correct; it
+# says nothing about whether anything renders. Do not treat it as a substitute
+# for the screenshot pass on UI work.
+#
+# The package job says something narrower and still worth having: that the
+# release will build. It publishes nothing.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same ref makes the in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # Scoped to this job: only the badge refresh writes, and the package job
+    # below has no business holding a write token.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: gradle
+
+      # One Gradle invocation on purpose: org.gradle.daemon=false in
+      # gradle.properties means every call pays full JVM startup.
+      #
+      # core:check drags in :core:packAtlas through processResources, so this is
+      # also a clean-checkout proof that the texture atlas packs -- it is
+      # generated and gitignored, so nothing else would ever check it.
+      #
+      # Both modules' check tasks also run javadoc with doclint as errors, so a
+      # non-private declaration without its Javadoc tags fails here. The screens
+      # are covered by that even though their behaviour is not.
+      - name: Check
+        run: ./gradlew core:check lwjgl3:check
+
+      # Regenerate the README badge from the report this run just produced. Only
+      # on main, and only committed when the number actually moved, so PR runs
+      # stay read-only and green pushes don't each add a commit. [skip ci] stops
+      # the badge commit from triggering another run of this workflow.
+      - name: Refresh coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          python3 .github/scripts/coverage_badge.py \
+            core/build/reports/jacoco/test/jacocoTestReport.xml \
+            .github/badges/coverage.svg
+          if [ -n "$(git status --porcelain .github/badges/coverage.svg)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/badges/coverage.svg
+            git commit -m "chore: update coverage badge [skip ci]"
+            # A cosmetic badge must never fail the build -- branch protection
+            # can legitimately reject this push. Warn instead.
+            git push || echo "::warning::coverage badge push rejected; badge left stale"
+          else
+            echo "coverage unchanged; nothing to commit"
+          fi
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-and-coverage-reports
+          path: |
+            core/build/reports/
+            core/build/test-results/
+          retention-days: 7
+
+  # Proof that the release will build, which nothing else here provides.
+  #
+  # Packaging used to run only on a tag. That made it the one part of the build
+  # nobody exercised until the moment it mattered, and it broke: gdx-tools on the
+  # root buildscript classpath shadowed the libGDX construo loads, killing the
+  # Windows icon step. Every CI run stayed green for weeks because none of them
+  # packaged anything; the v2.0.0 tag was what finally surfaced it.
+  #
+  # Same runner and same command as release.yml, so a green run here means
+  # tagging will get as far as publishing. It uploads nothing and publishes
+  # nothing -- the artifacts are thrown away with the runner.
+  package:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: gradle
+
+      # Both targets, because a break in the macOS bundle would hide exactly as
+      # long as the Windows one did. Each downloads its own JDK, so this is the
+      # slow job -- it runs in parallel with check rather than after it.
+      - name: Build distributables
+        run: ./gradlew lwjgl3:packageWinX64 lwjgl3:packageMacM1

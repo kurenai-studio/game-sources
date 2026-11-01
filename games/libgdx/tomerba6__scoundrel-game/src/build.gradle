@@ -1,0 +1,86 @@
+// NOTE: gdx-tools is deliberately *not* on this buildscript's classpath. It was,
+// and it silently broke the Windows release: the root buildscript's classloader
+// is a parent of every subproject's, so its copy of libGDX shadowed the one
+// construo loads. construo injects the .exe icon through a native library it
+// extracts from its own jar, and SharedLibraryLoader resolves that resource
+// against whichever classloader it came from — the shadowing one, which has no
+// such library. :lwjgl3:replaceIconWinX64 then failed with "Unable to read file
+// for extraction: editpe_java64.dll". The atlas packing lives in core/ instead,
+// whose classloader is a sibling of lwjgl3's rather than an ancestor.
+//
+// Packaging only runs on a tag, so this stayed hidden from the day the sprite
+// work landed until the v2.0.0 release tried to build.
+
+allprojects {
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
+
+  // This allows you to "Build and run using IntelliJ IDEA", an option in IDEA's Settings.
+  idea {
+    module {
+      outputDir = file('build/classes/java/main')
+      testOutputDir = file('build/classes/java/test')
+    }
+  }
+}
+
+configure(subprojects) {
+  apply plugin: 'java-library'
+  java.sourceCompatibility = 21
+
+  // From https://lyze.dev/2021/04/29/libGDX-Internal-Assets-List/
+  // The article can be helpful when using assets.txt in your project.
+  tasks.register('generateAssetList') {
+    inputs.dir("${project.rootDir}/assets/")
+    // projectFolder/assets
+    File assetsFolder = new File("${project.rootDir}/assets/")
+    // projectFolder/assets/assets.txt
+    File assetsFile = new File(assetsFolder, "assets.txt")
+    // delete that file in case we've already created it
+    assetsFile.delete()
+
+    // iterate through all files inside that folder
+    // convert it to a relative path
+    // and append it to the file assets.txt
+    fileTree(assetsFolder).collect { assetsFolder.relativePath(it) }.sort().each {
+      assetsFile.append(it + "\n")
+    }
+  }
+  processResources.dependsOn 'generateAssetList'
+  // The packed atlas is an asset like any other, so it has to exist before the
+  // assets folder is copied into the jar (and before lwjgl3:run reads it off disk).
+  processResources.dependsOn ':core:packAtlas'
+
+  compileJava {
+    options.incremental = true
+  }
+
+  // Every non-private declaration carries a Javadoc comment with its @param,
+  // @return and @throws tags, and check holds it there. Doclint checks it at
+  // package visibility, since most screens helpers are package-private and the
+  // default (protected) would skip them, and any warning fails the build: a
+  // missing tag is the whole thing being checked, so it cannot be a warning
+  // nobody reads. A broken {@link} fails the same way.
+  javadoc {
+    options.encoding = 'UTF-8'
+    options.memberLevel = JavadocMemberLevel.PACKAGE
+    options.addBooleanOption('Xdoclint:all', true)
+    options.addBooleanOption('Xwerror', true)
+    options.addStringOption('Xmaxwarns', '10000')
+  }
+  check.dependsOn javadoc
+}
+
+subprojects {
+  version = "$projectVersion"
+  ext.appName = 'Scoundrel'
+  repositories {
+    mavenCentral()
+    // You may want to remove the following line if you have errors downloading dependencies.
+    mavenLocal()
+    maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+    maven { url = 'https://jitpack.io' }
+  }
+}
+
+eclipse.project.name = 'Scoundrel' + '-parent'
