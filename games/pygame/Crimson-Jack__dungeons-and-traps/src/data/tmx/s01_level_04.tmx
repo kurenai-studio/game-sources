@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.11" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="40" height="22" tilewidth="16" tileheight="16" infinite="0" nextlayerid="15" nextobjectid="37">
+ <tileset firstgid="1" source="../tsx/ground.tsx"/>
+ <tileset firstgid="81" source="../tsx/single-wall.tsx"/>
+ <tileset firstgid="97" source="../tsx/building.tsx"/>
+ <tileset firstgid="145" source="../tsx/door.tsx"/>
+ <tileset firstgid="157" source="../tsx/collectable.tsx"/>
+ <tileset firstgid="173" source="../tsx/player.tsx"/>
+ <tileset firstgid="213" source="../tsx/ghost-enemy.tsx"/>
+ <tileset firstgid="225" source="../tsx/single-wood-wall.tsx"/>
+ <tileset firstgid="241" source="../tsx/misc.tsx"/>
+ <tileset firstgid="273" source="../tsx/fire-flame-enemy.tsx"/>
+ <tileset firstgid="281" source="../tsx/monster-enemy-green.tsx"/>
+ <tileset firstgid="289" source="../tsx/monster-enemy-blue.tsx"/>
+ <tileset firstgid="297" source="../tsx/powerup.tsx"/>
+ <layer id="1" name="ground" width="40" height="22">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1610612741,4,3,4,3,3,3,3,3,4,3,3,5,0,0,1610612741,3,4,3,3,3,4,3,3,3,4,3,3,3,3,3,4,3,4,3,3,4,5,0,
+0,6,2,1,1,1,1,2,1,1,1,1,1,2684354566,0,0,6,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,2684354566,0,
+0,1,1,1,1,2,7,1,1,1,1,1,1,1,0,0,1,0,12,11,14,11,12,11,13,11,12,0,1,1,1,1,1,0,12,11,12,0,1,0,
+0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,0,11,12,11,11,11,11,11,11,11,1,1,7,7,7,2684354575,13,11,12,11,0,1,0,
+0,1,2,1,1,1,1,1,7,18,2,1,1,1,0,0,1,0,13,11,0,1,2684354563,17,17,17,1610612739,1,2,7,3221225478,3221225475,3221225476,17,11,11,11,1,2,0,
+0,1,1,1,7,1,1,1,1,0,1,1,0,0,0,0,1,0,11,12,13,1610612752,2684354564,17,17,17,1610612739,2,3221225478,3221225475,2684354565,17,17,17,3221225477,1610612742,1,1,1,0,
+0,1,1,1,1,1,1,1,2,0,1,2,0,1,0,0,2,0,14,11,13,1610612751,2684354563,17,17,1610612741,6,7,2684354563,17,17,17,17,17,17,1610612739,1,1,1,0,
+0,7,1,1,1,1,1,1,1,0,1,1,0,1,0,0,1,0,11,12,0,7,2684354563,17,17,1610612739,1,7,2684354563,17,17,17,17,17,17,1610612739,1,2,1,0,
+0,1,1,1,1,1,1,1,1,0,2,1,0,1,0,0,1,1,11,11,1,7,1,5,17,1610612739,1,2,2684354566,4,3,4,3,3,3,6,1,1,1,0,
+0,1,1,1,1,1,2,1,2,0,71,1,7,2684354565,17,3221225477,3221225475,7,2,7,7,2,7,7,3,6,7,7,1,7,2,7,2,7,2,1,7,7,7,0,
+0,1,1,1,1,1,1,1,1,0,71,1,2684354563,17,17,17,17,1610612739,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,0,
+0,1,1,1,1,1,1,1,1,0,71,1,2684354566,3,5,17,1610612741,6,1,1,1,1,1,1,1,1,7,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,0,71,2,7,1,2684354564,17,1610612740,7,1,0,12,11,12,11,0,1,7,0,11,11,12,11,13,11,12,11,11,0,1,0,
+0,1,1,1,1,1,2,7,1,0,7,0,0,1,0,0,6,7,2,0,11,13,11,12,0,2,7,0,11,12,11,11,11,14,11,12,11,0,1,0,
+0,1,1,1,1,1,1,1,1,0,2,1,0,1,0,0,1,7,7,0,12,11,12,11,0,1,7,0,12,11,12,11,12,11,12,11,12,0,2,0,
+0,1,1,2,1,1,1,1,1,0,7,1,0,1,0,0,0,1,7,0,11,12,11,12,0,1,2,0,12,11,12,12,12,12,12,11,12,0,1,0,
+0,1,1,1,1,1,1,1,1,0,2,1,0,0,0,0,0,1,7,0,13,11,14,11,0,1,1,0,12,11,12,11,12,11,12,11,12,0,1,0,
+0,1,1,1,7,1,1,1,1,18,7,1,1,1,0,0,0,1,7,1,11,11,9,11,1,1,7,0,11,12,13,11,11,11,11,12,14,0,1,0,
+0,2,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,1,7,1,1,1,15,1,1,2,7,1,11,11,12,12,10,12,12,11,11,1,1,0,
+0,1,1,1,1,1,1,1,1,7,1,1,1,1,0,0,0,1,2,7,2,7,7,7,7,7,7,1,7,1,7,7,16,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="8" name="major-game-item">
+  <object id="3" name="player" gid="173" x="544" y="64" width="16" height="16">
+   <properties>
+    <property name="speed" type="float" value="5"/>
+   </properties>
+  </object>
+  <object id="25" name="exit-point" gid="241" x="288" y="64" width="16" height="16"/>
+ </objectgroup>
+ <layer id="3" name="obstacle" width="40" height="22">
+  <data encoding="csv">
+81,85,85,85,85,85,85,85,85,85,85,85,85,85,83,83,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,82,
+84,244,0,0,0,0,0,0,243,0,0,0,0,0,236,93,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,243,0,244,0,0,0,0,244,0,0,0,236,93,0,100,101,101,101,101,101,101,101,101,101,102,0,0,0,0,0,100,101,101,101,102,0,84,
+84,243,0,0,0,0,0,243,0,244,0,0,0,0,236,93,0,106,0,0,0,0,0,0,0,0,0,108,0,0,0,0,0,106,0,0,0,108,0,84,
+84,0,244,0,244,0,0,0,0,240,229,229,229,229,230,93,0,106,0,0,100,113,113,113,113,113,113,114,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,0,0,0,243,0,243,0,0,0,0,0,0,236,93,0,106,0,0,108,0,0,0,0,0,0,0,0,0,0,0,0,112,113,113,113,114,0,84,
+84,0,0,244,0,0,0,0,0,87,0,0,225,227,230,93,0,106,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,244,0,243,0,0,244,0,0,84,0,0,236,0,86,93,0,106,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,243,0,244,0,0,0,243,84,0,0,236,0,86,93,0,106,0,0,108,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,243,0,0,84,0,0,233,0,91,90,0,112,113,113,114,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,244,0,243,244,0,0,0,243,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,243,244,0,243,0,244,0,84,0,0,0,0,0,0,0,0,0,100,101,101,101,101,102,0,0,100,101,101,101,101,101,101,101,101,101,102,0,84,
+84,244,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,106,0,0,0,0,108,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,0,244,0,0,0,0,0,84,0,240,227,0,83,82,0,0,0,106,0,0,0,0,108,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,0,0,0,0,0,0,243,84,0,0,236,0,86,93,0,0,0,106,0,0,0,0,108,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,244,0,0,0,244,0,0,84,0,0,236,0,86,86,82,0,0,106,0,0,0,0,108,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,0,0,244,0,0,0,244,95,0,0,233,235,230,86,93,0,0,106,0,0,0,0,108,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,243,0,0,0,243,0,0,0,0,0,0,0,236,86,93,0,0,112,113,113,0,113,114,0,0,106,0,0,0,0,0,0,0,0,0,108,0,84,
+84,0,0,0,0,0,0,0,0,240,229,229,229,229,230,86,93,0,0,0,0,0,0,0,0,0,0,112,113,113,113,113,0,113,113,113,113,114,0,84,
+84,0,0,243,0,0,0,243,0,0,0,0,0,0,236,86,93,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+89,85,85,85,85,85,85,85,85,85,85,85,85,85,91,91,91,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,90
+</data>
+ </layer>
+ <layer id="12" name="moving-obstacle" width="40" height="22">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,242,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,242,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,242,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <group id="7" name="enemy">
+  <objectgroup id="9" name="ghost-enemy">
+   <object id="4" name="ghost-enemy-white" gid="217" x="32" y="256" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="speed" type="float" value="3.6"/>
+    </properties>
+   </object>
+   <object id="5" name="ghost-enemy-grey" gid="213" x="64" y="192" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="7"/>
+     <property name="speed" type="float" value="5.7"/>
+    </properties>
+   </object>
+   <object id="6" name="ghost-enemy-grey" gid="213" x="96" y="144" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="7"/>
+     <property name="speed" type="float" value="5"/>
+    </properties>
+   </object>
+   <object id="7" name="ghost-enemy-white" gid="217" x="64" y="96" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="speed" type="float" value="3"/>
+    </properties>
+   </object>
+   <object id="8" name="ghost-enemy-grey" gid="213" x="80" y="272" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="7"/>
+     <property name="speed" type="float" value="5"/>
+    </properties>
+   </object>
+   <object id="13" name="ghost-enemy-white" gid="217" x="96" y="224" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="speed" type="float" value="3"/>
+    </properties>
+   </object>
+   <object id="14" name="ghost-enemy-white" gid="217" x="80" y="320" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="speed" type="float" value="3.4"/>
+    </properties>
+   </object>
+   <object id="15" name="ghost-enemy-grey" gid="213" x="112" y="112" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="7"/>
+     <property name="speed" type="float" value="5.5"/>
+    </properties>
+   </object>
+  </objectgroup>
+  <objectgroup id="13" name="monster-enemy">
+   <object id="28" name="monster-enemy-green" gid="281" x="368" y="64" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="6"/>
+     <property name="energy" type="int" value="200"/>
+     <property name="score" type="int" value="170"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="29" name="monster-enemy-blue" gid="289" x="352" y="240" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="2"/>
+     <property name="energy" type="int" value="100"/>
+     <property name="score" type="int" value="50"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="2"/>
+     <property name="start_delay" type="int" value="20"/>
+    </properties>
+   </object>
+   <object id="33" name="monster-enemy-green" gid="281" x="304" y="96" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="energy" type="int" value="200"/>
+     <property name="score" type="int" value="170"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="10"/>
+    </properties>
+   </object>
+   <object id="35" name="monster-enemy-green" gid="281" x="560" y="224" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="4"/>
+     <property name="energy" type="int" value="200"/>
+     <property name="score" type="int" value="170"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="10"/>
+    </properties>
+   </object>
+   <object id="36" name="monster-enemy-blue" gid="289" x="480" y="224" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="2"/>
+     <property name="energy" type="int" value="100"/>
+     <property name="score" type="int" value="50"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="2"/>
+     <property name="start_delay" type="int" value="20"/>
+    </properties>
+   </object>
+  </objectgroup>
+  <objectgroup id="11" name="fire-flame-enemy">
+   <object id="17" name="fire-flame-enemy-right" gid="277" x="160" y="176" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="20"/>
+     <property name="direction" value="right"/>
+     <property name="fire_length" value="7"/>
+     <property name="motion_schedule" value="0"/>
+     <property name="speed" type="float" value="6.5"/>
+    </properties>
+   </object>
+   <object id="18" name="fire-flame-enemy-right" gid="277" x="160" y="192" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="12"/>
+     <property name="direction" value="right"/>
+     <property name="fire_length" value="5"/>
+     <property name="motion_schedule" value="40"/>
+     <property name="speed" type="float" value="4.5"/>
+    </properties>
+   </object>
+   <object id="19" name="fire-flame-enemy-right" gid="277" x="160" y="208" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="12"/>
+     <property name="direction" value="right"/>
+     <property name="fire_length" value="5"/>
+     <property name="motion_schedule" value="30"/>
+     <property name="speed" type="float" value="4"/>
+    </properties>
+   </object>
+   <object id="20" name="fire-flame-enemy-right" gid="277" x="160" y="224" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="12"/>
+     <property name="direction" value="right"/>
+     <property name="fire_length" value="7"/>
+     <property name="motion_schedule" value="20, 0, 10"/>
+     <property name="speed" type="float" value="4.5"/>
+    </properties>
+   </object>
+  </objectgroup>
+ </group>
+ <group id="5" name="collectable">
+  <layer id="10" name="diamond" width="40" height="22">
+   <properties>
+    <property name="score" type="int" value="160"/>
+   </properties>
+   <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,161,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,0,0,0,163,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,160,0,162,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <objectgroup id="6" name="key">
+   <object id="2" name="key-violet" gid="166" x="320" y="272" width="16" height="16">
+    <properties>
+     <property name="key_name" value="violet"/>
+     <property name="score" type="int" value="100"/>
+    </properties>
+   </object>
+   <object id="9" name="key-gold" gid="168" x="576" y="80" width="16" height="16">
+    <properties>
+     <property name="key_name" value="gold"/>
+     <property name="score" type="int" value="100"/>
+    </properties>
+   </object>
+   <object id="23" name="key-green" gid="167" x="32" y="48" width="16" height="16">
+    <properties>
+     <property name="key_name" value="green"/>
+     <property name="score" type="int" value="100"/>
+    </properties>
+   </object>
+   <object id="27" name="key-blue" gid="165" x="208" y="96" width="16" height="16">
+    <properties>
+     <property name="key_name" value="blue"/>
+     <property name="score" type="int" value="100"/>
+    </properties>
+   </object>
+  </objectgroup>
+  <objectgroup id="14" name="powerup">
+   <object id="30" name="powerup-bow" gid="298" x="208" y="64" width="16" height="16">
+    <properties>
+     <property name="powerup_name" value="bow"/>
+     <property name="powerup_volume" type="int" value="10"/>
+    </properties>
+   </object>
+   <object id="31" name="powerup-energy" gid="301" x="208" y="32" width="16" height="16">
+    <properties>
+     <property name="powerup_name" value="energy"/>
+     <property name="powerup_volume" type="int" value="10"/>
+    </properties>
+   </object>
+   <object id="32" name="powerup-energy" gid="301" x="208" y="336" width="16" height="16">
+    <properties>
+     <property name="powerup_name" value="energy"/>
+     <property name="powerup_volume" type="int" value="10"/>
+    </properties>
+   </object>
+  </objectgroup>
+ </group>
+ <objectgroup id="4" name="door">
+  <object id="1" name="door-gold" gid="148" x="352" y="304" width="16" height="16">
+   <properties>
+    <property name="key_name" value="gold"/>
+   </properties>
+  </object>
+  <object id="16" name="door-violet" gid="152" x="144" y="304" width="16" height="16">
+   <properties>
+    <property name="key_name" value="violet"/>
+   </properties>
+  </object>
+  <object id="21" name="door-green" gid="153" x="144" y="96" width="16" height="16">
+   <properties>
+    <property name="key_name" value="green"/>
+   </properties>
+  </object>
+  <object id="26" name="door-blue" gid="145" x="512" y="320" width="16" height="16">
+   <properties>
+    <property name="key_name" value="blue"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

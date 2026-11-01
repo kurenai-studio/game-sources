@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.11" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="52" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="34">
+ <tileset firstgid="1" source="../tsx/ground.tsx"/>
+ <tileset firstgid="81" source="../tsx/single-wall-l2.tsx"/>
+ <tileset firstgid="97" source="../tsx/monster-enemy-red.tsx"/>
+ <tileset firstgid="105" source="../tsx/player.tsx"/>
+ <tileset firstgid="145" source="../tsx/teleport.tsx"/>
+ <layer id="1" name="ground" width="52" height="40">
+  <data encoding="csv">
+22,21,27,22,22,22,22,27,22,22,27,27,21,21,22,27,22,21,21,21,21,21,21,27,22,27,22,21,27,21,27,22,22,21,22,21,22,22,27,27,27,21,22,27,22,27,27,27,22,21,22,22,
+21,22,22,27,21,21,27,22,22,27,22,27,22,22,27,27,27,21,21,21,21,27,22,22,21,21,27,27,22,21,22,27,27,22,27,22,21,22,21,27,22,27,21,27,27,22,27,22,27,22,27,22,
+27,22,27,21,27,27,21,27,27,21,22,27,22,22,27,22,21,27,22,22,27,22,27,21,22,27,27,27,21,22,27,21,21,27,21,22,21,22,22,27,21,21,22,21,21,27,27,21,27,21,21,27,
+27,21,27,27,27,21,22,21,21,27,21,22,22,27,27,21,27,22,22,22,27,27,27,22,27,27,22,21,22,22,22,27,21,21,21,22,22,27,27,27,21,21,22,27,22,22,21,27,22,21,21,27,
+21,22,22,27,27,22,21,27,22,22,27,27,27,21,22,22,27,27,21,27,21,27,21,21,27,22,21,22,21,22,27,27,27,21,22,21,21,21,21,21,21,22,27,21,21,27,27,27,27,22,22,21,
+22,27,27,22,27,22,21,22,21,27,22,21,21,27,22,21,22,27,27,21,21,21,21,27,27,27,22,21,22,27,21,22,22,22,27,22,21,22,22,21,21,22,21,27,27,27,27,21,22,22,21,22,
+21,27,21,21,22,21,21,27,27,22,27,27,27,27,22,27,21,21,27,21,21,21,22,21,27,27,27,22,27,27,27,21,22,22,27,27,21,22,21,22,22,27,27,21,22,27,21,22,27,21,22,21,
+21,21,27,22,21,22,27,21,21,21,27,27,22,21,27,22,21,21,27,27,22,21,22,22,27,27,27,21,21,27,21,21,21,22,21,22,22,22,27,27,21,27,21,27,22,22,27,27,27,21,27,27,
+27,27,21,27,22,22,21,21,21,27,27,22,22,21,22,22,21,22,27,27,21,27,27,27,22,21,22,27,27,27,21,21,22,22,27,21,21,27,21,21,27,27,22,21,21,22,21,21,27,27,22,21,
+21,27,27,21,27,21,21,27,21,21,21,27,22,21,21,27,27,21,21,21,21,21,27,21,22,27,22,22,21,22,21,21,22,22,22,27,22,27,21,27,27,22,22,27,21,22,22,22,21,22,22,27,
+21,27,22,21,21,22,21,21,27,27,21,27,21,21,22,21,27,22,22,22,22,27,21,27,27,27,27,27,22,21,21,22,21,27,21,21,21,22,27,21,27,27,21,27,27,21,22,22,21,21,21,22,
+22,27,22,27,21,27,22,27,21,22,21,21,22,21,21,21,21,22,22,22,21,27,21,21,22,21,21,22,22,21,22,21,22,27,21,21,22,21,27,22,27,22,27,22,27,21,21,21,22,21,27,22,
+21,27,21,21,22,27,21,27,21,21,27,27,27,27,27,27,22,21,21,27,22,22,22,22,22,21,22,21,27,21,27,27,22,22,21,27,22,22,27,21,21,22,27,22,27,22,22,27,21,22,21,27,
+27,22,21,27,27,27,27,22,22,27,21,21,27,21,22,27,22,22,21,22,22,27,21,21,27,27,27,21,21,22,22,22,21,22,21,27,21,22,22,22,21,21,22,21,27,27,27,27,22,27,21,22,
+21,21,21,27,21,21,27,27,27,22,22,27,22,27,27,27,21,22,21,21,21,21,22,22,22,21,21,21,21,21,27,21,22,22,27,22,21,21,27,27,22,27,22,27,21,27,27,21,27,21,21,27,
+27,21,22,21,22,27,22,22,21,27,27,27,27,27,21,22,21,21,21,27,27,22,22,21,22,27,22,27,22,21,22,22,27,27,27,22,27,27,27,27,21,22,21,22,27,27,21,21,21,27,22,27,
+22,22,22,27,27,21,27,21,21,27,27,27,21,22,22,21,27,21,22,21,22,22,27,22,27,22,22,27,22,22,21,22,27,27,22,27,22,27,22,21,22,22,27,27,21,22,21,27,22,21,21,27,
+27,22,21,21,22,21,21,21,22,27,22,22,22,27,27,27,22,27,27,21,22,22,21,27,27,22,21,22,22,27,22,27,21,22,27,21,27,27,21,21,27,27,22,21,22,22,27,22,22,21,27,27,
+22,21,22,21,27,21,27,21,27,27,27,21,22,22,27,21,21,27,21,22,22,27,27,21,22,21,22,21,27,21,22,22,27,22,22,21,21,21,22,21,21,27,22,22,27,27,21,21,21,27,22,21,
+27,21,22,27,22,22,21,27,21,22,21,27,21,27,27,21,22,21,27,22,22,22,21,21,21,27,27,27,22,22,21,21,21,22,21,21,27,21,21,21,27,21,22,27,22,22,22,22,27,21,21,21,
+21,27,27,27,21,22,21,21,21,22,27,22,22,22,21,22,21,21,21,27,21,21,22,22,22,22,22,27,22,27,22,27,22,27,27,22,27,27,21,22,27,27,27,21,27,22,22,27,21,22,27,27,
+21,22,22,27,27,27,22,21,22,21,27,21,21,22,27,27,22,22,21,21,21,22,27,21,21,21,22,21,27,27,22,21,21,21,22,21,21,27,27,21,22,22,21,27,22,22,21,27,27,27,27,21,
+27,21,21,22,21,21,22,27,27,22,21,21,21,27,27,21,21,21,27,22,22,21,21,27,27,22,27,27,27,27,27,27,21,22,27,27,22,27,22,22,22,22,27,22,27,21,21,21,27,21,21,27,
+22,21,21,21,27,21,22,22,22,21,21,27,22,21,22,21,22,27,27,21,27,22,22,27,27,21,27,27,22,21,22,27,21,21,22,27,21,27,22,27,21,22,21,27,27,22,21,27,27,27,27,22,
+27,27,22,27,22,27,21,21,21,27,22,27,27,22,22,27,27,22,22,22,21,27,22,27,22,22,27,21,27,22,21,22,21,27,27,22,22,27,21,22,27,27,27,22,27,21,22,22,21,27,21,27,
+22,21,22,27,21,22,27,27,21,21,22,27,21,21,21,22,21,27,21,27,21,21,21,22,27,21,22,22,22,27,27,27,22,27,22,21,27,21,21,21,21,27,22,27,21,27,27,22,22,21,21,22,
+21,27,22,22,27,27,27,22,21,27,27,21,27,27,27,27,21,22,21,27,21,21,21,27,21,27,22,27,27,22,27,21,22,27,27,22,27,21,22,21,21,27,22,21,27,27,22,21,27,22,22,22,
+27,27,22,27,27,27,21,27,27,21,21,22,21,27,22,27,27,22,21,27,21,27,27,27,22,27,21,27,22,27,21,21,27,21,22,27,27,21,21,22,22,22,21,21,22,27,27,27,22,21,21,21,
+27,27,22,27,21,27,22,22,22,27,21,21,21,21,27,21,27,22,27,21,22,21,27,21,21,21,22,27,27,22,21,22,21,21,22,22,22,22,22,21,22,21,21,27,21,22,27,27,22,27,27,22,
+21,22,27,21,27,22,27,22,21,22,27,27,22,27,27,21,27,21,21,22,27,21,21,27,21,27,27,27,21,22,22,22,22,21,27,27,27,27,22,27,27,21,21,21,21,27,21,21,22,27,21,21,
+27,27,27,21,27,27,27,27,27,21,27,21,27,22,21,21,21,27,27,27,21,27,27,27,27,27,22,27,27,21,22,22,22,21,27,22,21,22,27,27,21,27,22,21,27,22,27,21,22,22,27,27,
+27,27,21,21,21,22,22,21,21,27,27,22,27,22,21,21,27,27,22,21,21,27,22,27,27,27,27,21,22,21,21,27,21,21,27,27,22,27,21,27,27,22,22,27,21,21,22,22,22,21,27,22,
+21,21,27,27,22,21,22,27,21,21,21,22,27,27,21,21,21,22,27,27,21,21,22,27,21,21,21,22,21,22,27,21,27,27,22,27,21,27,27,22,27,22,27,27,27,27,27,22,21,21,27,27,
+27,21,22,21,22,21,21,27,27,21,22,21,21,21,22,22,27,21,22,27,27,27,22,27,22,27,22,21,21,27,27,22,22,22,27,27,22,21,22,22,21,22,27,21,22,21,21,27,21,27,22,22,
+27,27,27,22,27,21,22,27,21,27,22,27,21,27,22,21,27,27,21,22,21,27,27,21,22,21,22,21,27,27,27,22,21,21,21,21,22,21,21,22,21,22,22,21,22,22,21,27,27,21,27,22,
+22,21,27,21,27,21,27,27,21,21,27,21,27,21,27,21,21,22,21,22,21,21,27,27,22,21,22,27,21,22,21,27,27,27,27,21,21,22,21,21,27,21,27,27,21,27,21,21,27,22,27,27,
+21,22,27,22,21,27,27,22,27,27,27,22,27,27,22,21,27,22,27,27,22,27,27,21,27,21,22,27,22,21,22,27,27,27,22,22,27,22,21,22,22,22,21,27,21,27,27,27,21,21,27,27,
+22,22,22,27,27,27,27,22,21,21,27,21,21,22,27,22,22,27,21,21,21,22,22,22,21,22,27,21,22,27,22,27,22,27,27,22,22,21,27,27,21,22,21,22,27,22,22,22,22,27,22,22,
+21,27,21,22,22,21,22,27,22,27,21,27,21,22,27,27,21,27,22,22,21,27,22,22,22,22,21,22,27,21,27,21,27,27,22,21,21,22,27,27,22,22,21,27,21,22,22,22,27,22,22,21,
+27,22,21,21,21,22,21,22,21,21,27,22,21,22,27,22,22,22,21,22,21,21,22,21,22,21,22,27,21,22,27,27,27,27,21,22,22,21,27,22,22,21,21,27,21,22,27,21,22,22,22,27
+</data>
+ </layer>
+ <objectgroup id="5" name="major-game-item">
+  <object id="31" name="player" gid="105" x="400" y="320" width="16" height="16">
+   <properties>
+    <property name="speed" type="float" value="5"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer id="2" name="obstacle" width="52" height="40">
+  <data encoding="csv">
+81,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,82,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,81,85,85,85,85,85,85,85,85,82,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,89,85,85,85,85,85,85,85,85,90,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+89,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,90
+</data>
+ </layer>
+ <objectgroup id="6" name="teleport">
+  <object id="32" name="port_1" gid="152" x="784" y="48" width="16" height="16">
+   <properties>
+    <property name="destination" value="port_2"/>
+    <property name="port_name" value="port_1"/>
+   </properties>
+  </object>
+  <object id="33" name="port_2" gid="152" x="432" y="288" width="16" height="16">
+   <properties>
+    <property name="destination" value="port_1"/>
+    <property name="port_name" value="port_2"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <group id="3" name="enemy">
+  <objectgroup id="4" name="monster-enemy">
+   <object id="1" name="monster-enemy-red" gid="97" x="352" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="2" name="monster-enemy-red" gid="97" x="432" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="3" name="monster-enemy-red" gid="97" x="352" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="4" name="monster-enemy-red" gid="97" x="368" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="5" name="monster-enemy-red" gid="97" x="352" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.5"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="6" name="monster-enemy-red" gid="97" x="432" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="7" name="monster-enemy-red" gid="97" x="416" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="8" name="monster-enemy-red" gid="97" x="432" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="9" name="monster-enemy-red" gid="97" x="416" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="10" name="monster-enemy-red" gid="97" x="416" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="11" name="monster-enemy-red" gid="97" x="432" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.3"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="12" name="monster-enemy-red" gid="97" x="400" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.3"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="13" name="monster-enemy-red" gid="97" x="432" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.3"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="14" name="monster-enemy-red" gid="97" x="416" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.3"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="15" name="monster-enemy-red" gid="97" x="416" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.3"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="16" name="monster-enemy-red" gid="97" x="400" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.2"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="17" name="monster-enemy-red" gid="97" x="384" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.2"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="18" name="monster-enemy-red" gid="97" x="400" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.2"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="19" name="monster-enemy-red" gid="97" x="384" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.2"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="20" name="monster-enemy-red" gid="97" x="384" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.2"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="21" name="monster-enemy-red" gid="97" x="400" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.1"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="22" name="monster-enemy-red" gid="97" x="368" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.1"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="23" name="monster-enemy-red" gid="97" x="400" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.1"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="24" name="monster-enemy-red" gid="97" x="384" y="192" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.1"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="25" name="monster-enemy-red" gid="97" x="384" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4.1"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="26" name="monster-enemy-red" gid="97" x="368" y="208" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="27" name="monster-enemy-red" gid="97" x="368" y="176" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="28" name="monster-enemy-red" gid="97" x="352" y="144" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="29" name="monster-enemy-red" gid="97" x="368" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+   <object id="30" name="monster-enemy-red" gid="97" x="352" y="160" width="16" height="16">
+    <properties>
+     <property name="attack_only_when_visible" type="bool" value="false"/>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="energy" type="int" value="500"/>
+     <property name="score" type="int" value="300"/>
+     <property name="search_path_algorithm" value="BFS"/>
+     <property name="speed" type="float" value="4"/>
+     <property name="start_delay" type="int" value="5"/>
+    </properties>
+   </object>
+  </objectgroup>
+ </group>
+</map>
