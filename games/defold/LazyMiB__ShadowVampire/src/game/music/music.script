@@ -1,0 +1,63 @@
+local state = require("main.state")
+local music_const = require("game.music.music_const")
+local util = require("main.util")
+
+local PAUSE = 15
+local MUSIC = {
+	{id = "#bg1", duration = 131 + PAUSE},
+	{id = "#bg2", duration = 69 + PAUSE},
+}
+
+go.property("default", 1)
+
+local function play(self)
+	if not state.get(state.key.MUSIC_ENABLED) then
+		return
+	end
+	local gain = sound.get_group_gain("music")
+	if gain ~= music_const.MUSIC_GAIN then
+		sound.set_group_gain("music", music_const.MUSIC_GAIN)
+	end
+	self.start_time = os.time(os.date("!*t"))
+	sound.play(MUSIC[self.current].id)
+end
+
+function init(self)
+	self.current = self.default
+	self.start_time = 0
+	play(self)
+end
+
+local function stop(self)
+	sound.stop(MUSIC[self.current].id)
+end
+
+local function play_next(self)
+	stop(self)
+	self.current = self.current + 1
+	local length = util.table_length(MUSIC)
+	if self.current > length then
+		self.current = self.default
+	end
+	play(self)
+end
+
+function fixed_update(self, dt)
+	if os.time(os.date("!*t")) - self.start_time > MUSIC[self.current].duration then
+		play_next(self)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_gain") then
+		if message.gain == 0 then
+			stop(self)
+		else
+			play(self)
+		end
+	elseif message_id == hash("sound_done") then
+		-- don't work
+		print("sound done")
+		--play_next(self)
+	end
+end

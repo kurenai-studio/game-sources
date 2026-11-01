@@ -1,0 +1,103 @@
+local state = require("main.state")
+local bus = require("main.bus")
+
+local MAX_LEVEL = 5
+
+go.property("default_lvl", 1)
+
+function init(self)
+	state.set(state.key.LEVEL_HUD, "0")
+	state.set(state.key.LEVEL_CURRENT, "1")
+	state.set(state.key.LEVEL_MIN, "0")
+	state.set(state.key.IS_WIN, false)
+	local level = "/level" .. tostring(self.default_lvl) .. "#proxy"
+	self.current_level = level
+	self.wait_level = nil
+	self.lvl = 0
+	self.num_level = self.default_lvl
+	self.go_next = false
+	self.start_time = os.time(os.date("!*t"))
+	self.changing_lvl = false
+	self.event_fired = false
+	self.listener_index = bus.add_listener(bus.name.CHANGE_LEVEL, function()
+		self.event_fired = true
+	end)
+	msg.post(level, "load")
+end
+
+function final(self)
+	bus.remove_listener(bus.name.CHANGE_LEVEL, self.listener_index)
+end
+
+local function unload_level(level)
+	msg.post(level, "release_input_focus")
+	msg.post(level, "disable")
+	msg.post(level, "final")
+	msg.post(level, "unload")
+end
+
+local function change_level(self, to)
+	state.set(state.key.LOADING, true)
+	self.wait_level = "/level" .. tostring(to) .. "#proxy"
+	unload_level(self.current_level)
+end
+
+local function proc_change(self)
+	if self.num_level == 0 then
+		self.num_level = self.default_lvl
+		change_level(self, self.default_lvl)
+		return
+	end
+	if self.go_next then
+		self.num_level = self.num_level + 1
+		self.go_next = false
+		state.set(state.key.LEVEL_CURRENT, tostring(self.num_level))
+		change_level(self, self.num_level)
+	end
+end
+
+local function next_level(self)
+	if self.changing_lvl then
+		return
+	end
+	self.changing_lvl = true
+	self.lvl = self.lvl + 1
+	local sec = os.time(os.date("!*t")) - self.start_time
+	local min = string.format("%.2f", sec / 60)
+	state.set(state.key.LEVEL_MIN, min)
+	if self.num_level < MAX_LEVEL then
+		self.go_next = true
+		msg.post("main:/container", "load_done")
+	else
+		self.num_level = 0
+		state.set(state.key.IS_WIN, true)
+		msg.post("main:/container", "load_win")
+	end
+	state.set(state.key.LEVEL_HUD, tostring(self.lvl))
+end
+
+function fixed_update(self, dt)
+	if self.event_fired then
+		proc_change(self)
+		self.event_fired = false
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("proxy_loaded") then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+		msg.post(sender, "acquire_input_focus")
+		state.set(state.key.LOADING, false)
+		self.changing_lvl = false
+		self.start_time = os.time(os.date("!*t"))
+	elseif message_id == hash("proxy_unloaded") then
+		if self.wait_level then
+			msg.post(self.wait_level, "load")
+			self.current_level = self.wait_level
+			self.wait_level = nil
+		end
+	elseif message_id == hash("next_level") then
+		next_level(self)
+	end
+end

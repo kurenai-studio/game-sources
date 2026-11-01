@@ -1,0 +1,357 @@
+script: "/menu/about/about.gui_script"
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 480.0
+    y: 600.0
+  }
+  size {
+    x: 240.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "About game"
+  font: "text_bold"
+  id: "title"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 30.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "back"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "button"
+  parent: "back"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/root"
+  parent: "button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/button"
+  parent: "button/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Back"
+  id: "button/text"
+  parent: "button/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 860.0
+    y: 30.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  color {
+    x: 0.2
+    y: 0.4
+    z: 0.4
+  }
+  type: TYPE_TEXT
+  text: "v0.1"
+  font: "text_regular"
+  id: "version"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 196.0
+    y: 30.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 500.0
+    y: 50.0
+  }
+  color {
+    x: 0.2
+    y: 0.4
+    z: 0.4
+  }
+  type: TYPE_TEXT
+  text: "Brackeys Game Jam 2025.1"
+  font: "text_regular"
+  id: "jam"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 230.0
+    y: 500.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 150.0
+    y: 50.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "# Team"
+  font: "text_regular"
+  id: "team"
+  pivot: PIVOT_NW
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 650.0
+    y: 500.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 500.0
+    y: 700.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "# Controls\n"
+  "\n"
+  "* A, D: move\n"
+  "* W, Space: jump\n"
+  "* R: tp to spawn\n"
+  "* Esc, Q: pause\n"
+  "\n"
+  "## In menu\'s\n"
+  "\n"
+  "* Esc, Q: resume, exit\n"
+  "* W, Space: start\n"
+  "* S: to about / to menu\n"
+  "* 1, 2: toggle checkboxes"
+  font: "text_regular"
+  id: "controls"
+  pivot: PIVOT_NW
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 635.0
+    y: 30.0
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+  }
+  size {
+    x: 360.0
+    y: 50.0
+  }
+  color {
+    x: 0.2
+    y: 0.4
+    z: 0.4
+  }
+  type: TYPE_TEXT
+  text: "Defold game engine"
+  font: "text_regular"
+  id: "engine"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 100.0
+    y: 450.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 400.0
+    y: 450.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "## LazyMiB\n"
+  "\n"
+  "* code\n"
+  "* game design\n"
+  "* level design\n"
+  "* UI\n"
+  "* music\n"
+  "* sound design\n"
+  "* text"
+  font: "text_regular"
+  id: "team1"
+  pivot: PIVOT_NW
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 350.0
+    y: 450.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 500.0
+    y: 350.0
+  }
+  color {
+    x: 0.6
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_TEXT
+  text: "## bombus\n"
+  "\n"
+  "* art\n"
+  "* game design\n"
+  "* level design"
+  font: "text_regular"
+  id: "team2"
+  pivot: PIVOT_NW
+  line_break: true
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 454.0
+    y: 306.0
+  }
+  rotation {
+    z: 5.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 350.0
+    y: 50.0
+  }
+  color {
+    x: 0.702
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_TEXT
+  text: "BEST TEAMMATE!"
+  font: "text_bold"
+  id: "best"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "bgg"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "bg"
+  parent: "bgg"
+  inherit_alpha: true
+  template: "/menu/templates/bg.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "bg/bg"
+  parent: "bg"
+  template_node_child: true
+}
+layers {
+  name: "bg"
+}
+layers {
+  name: "gui"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,95 @@
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  color {
+    x: 0.2
+    y: 0.4
+    z: 0.4
+  }
+  type: TYPE_BOX
+  texture: "druid/rect_round2_width1"
+  id: "button"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 4.0
+    y: 4.0
+    z: 4.0
+    w: 4.0
+  }
+}
+nodes {
+  scale {
+    x: 8.0
+    y: 8.0
+  }
+  color {
+    x: 0.502
+    y: 0.702
+    z: 0.702
+  }
+  type: TYPE_BOX
+  texture: "druid/pixel"
+  id: "icon"
+  parent: "button"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -17.5
+  }
+  scale {
+    x: 9.5
+    y: 0.7
+  }
+  color {
+    x: 0.702
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_BOX
+  texture: "druid/pixel"
+  id: "selected"
+  parent: "button"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 123.0
+  }
+  size {
+    x: 200.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "text_regular"
+  id: "text"
+  parent: "button"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

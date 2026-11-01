@@ -1,0 +1,64 @@
+name: "trainy_2"
+collection_instances {
+  id: "enemy"
+  collection: "/game/enemy/enemy.collection"
+  position {
+    x: 966.0
+    y: 6.0
+  }
+}
+collection_instances {
+  id: "player"
+  collection: "/game/player/player.collection"
+  position {
+    x: 95.0
+    y: 9.0
+    z: 1.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "charger"
+  data: ""
+  position {
+    x: 2416.0
+    y: 6.0
+  }
+}
+embedded_instances {
+  id: "finish"
+  data: ""
+  position {
+    x: 3028.0
+    y: 5.0
+  }
+}
+embedded_instances {
+  id: "level"
+  children: "go"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/game/levels/level.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"collision_shape: \\\"/game/levels/trainy/trainy_2.tilemap\\\"\\n"
+  "type: COLLISION_OBJECT_TYPE_STATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"\\\"\\n"
+  "mask: \\\"player\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "go"
+  data: "components {\n"
+  "  id: \"lvl\"\n"
+  "  component: \"/game/levels/trainy/trainy_2.tilemap\"\n"
+  "}\n"
+  ""
+}

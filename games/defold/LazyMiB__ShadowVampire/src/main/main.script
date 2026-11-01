@@ -1,0 +1,142 @@
+local state = require("main.state")
+local music_const = require("game.music.music_const")
+local bus = require("main.bus")
+
+local DEFAULT_SCENE = "/menu#proxy"
+
+function init(self)
+	state.set(state.key.LOADING, true)
+	state.set(state.key.MUSIC_ENABLED, true)
+	state.set(state.key.SOUND_ENABLED, true)
+	msg.post(DEFAULT_SCENE, "load")
+	self.current_scene = DEFAULT_SCENE
+	self.wait_scene = nil
+	self.game_paused = false
+	self.win_pause = false
+	self.done_pause = false
+end
+
+local function play_sound(id)
+	if not state.get(state.key.SOUND_ENABLED) then
+		return
+	end
+	local gain = sound.get_group_gain("sound")
+	if gain ~= music_const.SOUND_GAIN then
+		sound.set_group_gain("sound", music_const.SOUND_GAIN)
+	end
+	sound.play(id)
+end
+
+local function unload_scene(scene)
+	msg.post(scene, "disable")
+	msg.post(scene, "final")
+	msg.post(scene, "unload")
+	state.set(state.key.LOADING, true)
+end
+
+local function change_scene(self, to)
+	local from = self.current_scene
+	unload_scene(from)
+	self.wait_scene = to
+end
+
+local function pause(self, scene)
+	bus.send(bus.name.GAME_PAUSED, true)
+	msg.post(self.current_scene, "release_input_focus")
+	msg.post(self.current_scene, "set_time_step", {factor = 0, mode = 0})
+	msg.post(scene, "load")
+end
+
+local function unpause(self, scene)
+	msg.post(scene, "release_input_focus")
+	unload_scene(scene)
+	state.set(state.key.LOADING, false)
+	bus.send(bus.name.GAME_PAUSED, false)
+	msg.post(self.current_scene, "acquire_input_focus")
+	msg.post(self.current_scene, "set_time_step", {factor = 1, mode = 0})
+end
+
+local function game_pause(self)
+	if self.game_paused then
+		return
+	end
+	pause(self, "/pause#proxy")
+	self.game_paused = true
+end
+
+local function game_resume(self)
+	unpause(self, "/pause#proxy")
+	self.game_paused = false
+end
+
+local function win_pause(self)
+	if self.win_pause then
+		return
+	end
+	pause(self, "/win#proxy")
+	self.win_pause = true
+	play_sound("#sound_win")
+end
+
+local function win_resume(self)
+	unpause(self, "/win#proxy")
+	self.win_pause = false
+	bus.send(bus.name.CHANGE_LEVEL, nil)
+end
+
+local function done_pause(self)
+	if self.done_pause then
+		return
+	end
+	pause(self, "/done#proxy")
+	self.done_pause = true
+	play_sound("#sound_done")
+end
+
+local function done_resume(self)
+	unpause(self, "/done#proxy")
+	self.done_pause = false
+	bus.send(bus.name.CHANGE_LEVEL, nil)
+end
+
+local function game_exit(self)
+	unload_scene("/pause#proxy")
+	change_scene(self, "/menu#proxy")
+	self.game_paused = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("proxy_loaded") then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+		msg.post(sender, "acquire_input_focus")
+		msg.post(sender, "set_time_step", {factor = 1, mode = 0})
+		state.set(state.key.LOADING, false)
+	elseif message_id == hash("proxy_unloaded") then
+		if self.wait_scene then
+			msg.post(self.wait_scene, "load")
+			self.current_scene = self.wait_scene
+			self.wait_scene = nil
+		end
+	elseif message_id == hash("load_game") then
+		change_scene(self, "/game#proxy")
+	elseif message_id == hash("load_menu") then
+		change_scene(self, "/menu#proxy")
+	elseif message_id == hash("load_pause") then
+		game_pause(self)
+	elseif message_id == hash("resume_game") then
+		game_resume(self)
+	elseif message_id == hash("exit_game") then
+		game_exit(self)
+	elseif message_id == hash("load_about") then
+		change_scene(self, "/about#proxy")
+	elseif message_id == hash("load_win") then
+		win_pause(self)
+	elseif message_id == hash("win_resume") then
+		win_resume(self)
+	elseif message_id == hash("load_done") then
+		done_pause(self)
+	elseif message_id == hash("done_resume") then
+		done_resume(self)
+	end
+end

@@ -1,0 +1,254 @@
+script: "/menu/win/win.gui_script"
+fonts {
+  name: "text_bold"
+  font: "/druid/fonts/text_bold.font"
+}
+fonts {
+  name: "text_regular"
+  font: "/druid/fonts/text_regular.font"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "blocker"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 480.0
+    y: 320.0
+  }
+  type: TYPE_TEMPLATE
+  id: "blocker1"
+  parent: "blocker"
+  inherit_alpha: true
+  template: "/menu/templates/blocker.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/root"
+  parent: "blocker1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "blocker1/blocker"
+  parent: "blocker1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "YOU WIN!!!"
+  id: "blocker1/text"
+  parent: "blocker1/blocker"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 132.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "resume"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "button"
+  parent: "resume"
+  inherit_alpha: true
+  template: "/menu/templates/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/root"
+  parent: "button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button/button"
+  parent: "button/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Agree!"
+  id: "button/text"
+  parent: "button/button"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 380.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "desc"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 250.0
+  }
+  color {
+    x: 0.949
+    y: 0.949
+    z: 0.949
+  }
+  type: TYPE_TEXT
+  text: "Congratulations! You\'ve completed the game!\n"
+  "I know it wasn\'t easy, but... You did it! You\'re a\n"
+  "WINNER!!!"
+  font: "text_regular"
+  id: "winner"
+  line_break: true
+  parent: "desc"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 220.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "level"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.902
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_TEXT
+  text: "LVL\'s completed:"
+  font: "text_regular"
+  id: "lvl"
+  pivot: PIVOT_W
+  line_break: true
+  parent: "level"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 250.0
+    y: 220.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "time"
+  pivot: PIVOT_W
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 100.0
+  }
+  color {
+    x: 0.902
+    y: 0.902
+    z: 0.902
+  }
+  type: TYPE_TEXT
+  text: "Took: 0min"
+  font: "text_regular"
+  id: "min"
+  pivot: PIVOT_W
+  line_break: true
+  parent: "time"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 480.0
+    y: 512.0
+  }
+  rotation {
+    z: 180.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "win"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_PARTICLEFX
+  id: "particlefx"
+  parent: "win"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  particlefx: "win"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+particlefxs {
+  name: "win"
+  particlefx: "/game/particles/win.particlefx"
+}

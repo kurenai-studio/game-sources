@@ -1,0 +1,79 @@
+[project]
+title = Shadow Vampire
+version = 0.2
+developer = LazyMiB
+dependencies#0 = https://github.com/britzl/Platypus/archive/master.zip
+dependencies#1 = https://github.com/Insality/druid/archive/refs/tags/1.0.zip
+dependencies#2 = https://github.com/britzl/defold-input/archive/master.zip
+
+[bootstrap]
+main_collection = /main/main.collectionc
+
+[input]
+game_binding = /input/game.input_bindingc
+use_accelerometer = 0
+
+[ios]
+app_icon_180x180 = /assets/images/icons/logo180x180.png
+bundle_identifier = ru.lazymib.shadowvampire
+
+[osx]
+bundle_identifier = ru.lazymib.angryplanet
+app_icon = /assets/images/logo/logo.icns
+
+[android]
+app_icon_192x192 = /assets/images/icons/logo192x192.png
+input_method = HiddenInputField
+package = ru.lazymib.shadowvampire
+
+[script]
+shared_state = 1
+
+[physics]
+gravity_y = -1400.0
+scale = 0.01
+use_fixed_timestep = 1
+velocity_threshold = 100.0
+world_count = 8
+
+[graphics]
+max_debug_vertices = 50000
+default_texture_min_filter = nearest
+default_texture_mag_filter = nearest
+
+[html5]
+scale_mode = stretch
+show_made_with_defold = 0
+cssfile = /builtins/manifests/web/dark_theme.css
+splash_image = /assets/images/logo/logo.png
+heap_size = 128
+
+[library]
+include_dirs = shared_splites shared_tilesources
+
+[engine]
+max_time_step = 0.5
+
+[particle_fx]
+max_count = 1024
+max_particle_count = 2048
+max_particle_buffer_count = 2048
+max_emitter_count = 128
+
+[tilemap]
+max_tile_count = 2048000
+
+[liveupdate]
+mount_on_start = 0
+
+[windows]
+app_icon = /assets/images/logo/logo.ico
+
+[display]
+high_dpi = 1
+
+[render]
+clear_color_red = 0.0784
+clear_color_green = 0.1137
+clear_color_blue = 0.1058
+

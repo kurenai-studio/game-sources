@@ -1,0 +1,58 @@
+local bar = require("game.player.hud.bar")
+local state = require("main.state")
+
+local ALPHA = 0.8
+local SPRITE_OXYGEN = "#oxygen"
+local SPRITE_ENERGY = "#energy"
+
+local MSG_INCREASE = hash("increase_all")
+local MSG_DECREASE = hash("decrease_energy")
+local MSG_PAUSE = hash("pause")
+local MSG_CHARGE = hash("charge")
+
+local function update_animation(self)
+	sprite.play_flipbook(SPRITE_OXYGEN, tostring(self.oxygen:get_value()))
+	sprite.play_flipbook(SPRITE_ENERGY, tostring(self.energy:get_value()))
+end
+
+function init(self)
+	if state.has(state.key.LEVEL_HUD) then
+		label.set_text("#label", state.get(state.key.LEVEL_HUD))
+	end
+	self.oxygen = bar.new()
+	self.energy = bar.new()
+	self.energy:set_speed(bar.CHARGE_SPEED * 2, bar.DISCHARGE_SPEED * 2)
+	go.set(SPRITE_OXYGEN, "tint.w", ALPHA)
+	go.set(SPRITE_ENERGY, "tint.w", ALPHA)
+	update_animation(self)
+end
+
+function fixed_update(self, dt)
+	local o = self.oxygen:update(dt)
+	local e = self.energy:update(dt)
+	if o or e then
+		update_animation(self)
+	end
+	if not self.energy:is_paused() and (self.oxygen:is_dead() or self.energy:is_dead()) then
+		msg.post(go.get_id("player"), "teleport")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_INCREASE then
+		self.energy:increase()
+		self.oxygen:increase()
+		update_animation(self)
+	elseif message_id == MSG_DECREASE then
+		if self.energy:decrease() then
+			msg.post(go.get_id("player"), "teleport")
+		end
+		update_animation(self)
+	elseif message_id == MSG_PAUSE then
+		self.oxygen:set_pause(message.value)
+		self.energy:set_pause(message.value)
+	elseif message_id == MSG_CHARGE then
+		self.oxygen:set_charge(message.value)
+		self.energy:set_charge(message.value)
+	end
+end

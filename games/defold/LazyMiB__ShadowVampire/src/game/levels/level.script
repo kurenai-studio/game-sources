@@ -1,0 +1,9 @@
+local state = require("main.state")
+
+go.property("tile_size", 32)
+
+function init(self)
+	local x, y, w, h = tilemap.get_bounds("/go#lvl")
+	local bounds = {x = x, y = y, width = w * self.tile_size, height = h * self.tile_size}
+	state.set(state.key.LEVEL_BOUNDS, bounds)
+end

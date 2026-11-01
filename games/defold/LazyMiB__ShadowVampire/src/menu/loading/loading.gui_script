@@ -1,0 +1,17 @@
+local state = require("main.state")
+
+function init(self)
+	self.enabled = true
+end
+
+function update(self, dt)
+	if not state.has(state.key.LOADING) then
+		return
+	end
+	local e = state.get(state.key.LOADING)
+	if self.enabled ~= e then
+		self.enabled = e
+		local root = gui.get_node("root")
+		gui.set_enabled(root, self.enabled)
+	end
+end

@@ -1,0 +1,63 @@
+local druid = require("druid.druid")
+local state = require("main.state")
+local anim = require("menu.anim")
+local util = require("main.util")
+
+local INPUT_JUMP = hash("jump")
+
+local TEXTS = {
+	"This is a success!",
+	"Great progress!",
+	"A new flag awaits you.",
+	"Skill up?",
+	"I believe in you!",
+	"Good job.",
+	"And one more..."
+}
+
+local function resume_clicked(self)
+	msg.post("main:/container", "done_resume")
+	self.resume_btn:set_enabled(false)
+end
+
+local function set_random_text(self)
+	local length = util.table_length(TEXTS)
+	local ind = math.random(1, length)
+	gui.set_text(gui.get_node("text"), TEXTS[ind])
+end
+
+function init(self)
+	self.druid = druid.new(self)
+	self.resume_btn = self.druid:new_button("resume", resume_clicked)
+	self.resume_btn:set_key_trigger(hash("pause"))
+	set_random_text(self)
+	gui.set_text(gui.get_node("lvl"), "Levels completed: " .. state.get(state.key.LEVEL_HUD))
+	gui.set_text(gui.get_node("lvl1"), "Level done: " .. state.get(state.key.LEVEL_CURRENT))
+	gui.set_text(gui.get_node("min"), "Took: " .. state.get(state.key.LEVEL_MIN) .. "min")
+	anim.animate("blocker", anim.FAST_D)
+	anim.animate("resume", anim.DEFAULT_D)
+	anim.animate("desc", anim.MEDIUM_D)
+	anim.animate("completed", anim.FAST_D)
+	anim.animate("current", anim.SLOW_D)
+	local particles_node = gui.get_node("particlefx")
+	gui.play_particlefx(particles_node)
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.druid:on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	if action_id == INPUT_JUMP then
+		resume_clicked(self)
+	end
+	return self.druid:on_input(action_id, action)
+end
