@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小蜜蜂大戰虎頭蜂 (Bee vs Hornets) - 街機像素彈幕</title>
+  <meta name="description" content="使用 Phaser 3 與原生 ES Modules 打造的經典街機像素彈幕遊戲，具備 4 階重武器系統與花粉核爆必殺技。">
+  
+  <!-- Favicon (Retro Pixel Bee) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23050508' rx='3'/%3E%3Cpath d='M7 4h2v1H7zM6 5h4v2H6zM6 7h4v1H6zM7 8h2v2H7z' fill='%23ffcc00'/%3E%3Cpath d='M6 6h4v1H6zM6 8h4v1H6z' fill='%23222222'/%3E%3Cpath d='M3 4h3v2H3zM10 4h3v2h-3z' fill='%2300ffff' opacity='0.85'/%3E%3Ccircle cx='6.5' cy='5.5' r='0.5' fill='%2300ffff'/%3E%3Ccircle cx='9.5' cy='5.5' r='0.5' fill='%2300ffff'/%3E%3Crect x='7' y='10' width='2' height='2' fill='%23222222'/%3E%3C/svg%3E">
+
+  <!-- Arcade Retro Fonts & Crisp Chinese Pixel Support -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Arcade & CRT Styles -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- Phaser 3 Official CDN (3.80.1) with Verified Subresource Integrity (SRI) -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"
+          integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="arcade-cabinet">
+    <div id="cabinet-header">
+      <span>★ 1981 SPEC ★</span>
+      <span class="marquee-badge">HEAVY WEAPON SYSTEM</span>
+      <span>CREDIT: 99</span>
+    </div>
+
+    <div id="game-wrapper">
+      <div id="game-container"></div>
+      <div id="crt-overlay"></div>
+    </div>
+
+    <div id="cabinet-footer">
+      <div class="controls-hint">
+        <span>MOVE: <span class="key-tag">← → / A D</span></span>
+        <span>FIRE: <span class="key-tag">SPACE</span></span>
+        <span>BOMB: <span class="key-tag">X / B</span></span>
+      </div>
+      <div>1 COIN 1 PLAY</div>
+    </div>
+  </div>
+
+  <!-- Entry Point (Native ES Module) -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
