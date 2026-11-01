@@ -1,0 +1,137 @@
+-- 載入自訂除錯輸出工具
+-- 之後可使用 dprint.print(...) 在 Console 顯示訊息
+local dprint = require("utility.debug_print")
+local helper = require("utility.msg_helpers")
+
+local IS_FINISH = false
+
+-- 統一設定完成面板的可見性與啟用狀態，並更新腳本內部狀態
+local function gui_visible(self, visible) 
+    -- 取得 GUI 節點 "complete_panel"
+    local panel = gui.get_node("complete_panel")
+
+    -- 同時設定面板的啟用與可見狀態（true = 顯示且可互動；false = 隱藏且停用）
+    gui.set_enabled(panel, visible)
+    gui.set_visible(panel, visible)
+
+    -- 更新腳本內部的可見性標記，供 on_input 等邏輯判斷
+    self.visible = visible
+end
+
+-- 顯示完成面板的輔助函式
+local function show_panel(self, is_finish)
+
+    gui_visible(self, true)
+    
+    if IS_FINISH then return end
+    
+    local music = "/music#victory"
+    local bgm = "/music#bgm"
+
+    sound.stop(bgm)
+    
+    if is_finish then
+        music = "music#finish"
+        bgm = "music#ending"
+     end
+
+    IS_FINISH = is_finish
+
+    dprint.print(music)
+    
+    sound.play(music, {}, function()
+        -- 向當前腳本所屬遊戲物件發送訊息，取得輸入焦點（讓 on_input 能接收輸入）
+        helper.acquire_input_focus()
+        dprint.print(bgm)
+        sound.play(bgm)
+    end)
+end
+
+-- 顯示「單關完成」訊息
+local function show_level_complete(self, message)
+    
+    -- 取得顯示文字的 GUI 節點
+    local text = gui.get_node("complete_text")
+    local content = string.format("%d-%d，你過關了\n按 Enter 或 Space 繼續", message.world, message.level)
+    
+    -- 設定文字內容：顯示世界與關卡編號，並提示按 Enter 或 Space 繼續
+    gui.set_text(text, content)
+
+    -- 設定模式為「下一關」
+    self.mode = "next_level"
+
+    -- 顯示面板
+    show_panel(self, false)
+end
+
+-- 顯示「全部關卡完成」訊息
+local function show_all_levels_complete(self, message)
+    
+    -- 取得顯示文字的 GUI 節點
+    local text = gui.get_node("complete_text")
+    local content = string.format("恭喜！全部 %d 關完成！", message.total_levels)
+    
+    -- 設定文字內容：恭喜完成全部關卡
+    gui.set_text(text, content)
+
+    -- 設定模式為「全部完成」
+    self.mode = "all_complete"
+
+    -- 顯示面板
+    show_panel(self, true)
+end
+
+-- 隱藏完成面板
+local function hide_panel(self)
+    
+    gui_visible(self, false)
+    
+    -- 釋放輸入焦點（之後 on_input 不會再收到輸入）
+    helper.release_input_focus()
+end
+
+-- 初始化函式：在腳本啟動時呼叫
+function init(self)
+    gui_visible(self, false)
+end
+
+-- 訊息回呼：處理來自其他腳本的訊息
+function on_message(self, message_id, message)
+    
+    -- 若收到 "show_level_complete" 訊息，顯示單關完成畫面
+    if message_id == hash("show_level_complete") then
+        show_level_complete(self, message)
+        return
+    end
+
+    -- 若收到 "show_all_levels_complete" 訊息，顯示全部完成畫面
+    if message_id == hash("show_all_levels_complete") then
+        show_all_levels_complete(self, message)
+        return
+    end
+end
+
+-- 輸入回呼：處理玩家輸入（鍵盤、按鈕等）
+function on_input(self, action_id, action)
+    
+    -- 若面板不可見，或輸入不是「按下」狀態，則不處理
+    if not self.visible or not action.pressed then
+        return false
+    end
+
+    -- 若輸入是 "next_level" 或 "confirm"（例如 Enter / Space）
+    if action_id == hash("next_level") or action_id == hash("confirm") or (action.touch and #action.touch == 1) then
+
+        -- 隱藏面板
+        hide_panel(self)
+
+        -- 向遊戲腳本發送 "next_level" 訊息，觸發下一關
+        helper.post("/game#game", "next_level")
+
+        -- 表示此輸入已被處理
+        return true
+    end
+
+    -- 其他輸入不處理
+    return false
+end
