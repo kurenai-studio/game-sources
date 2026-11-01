@@ -1,0 +1,108 @@
+@startuml Architecture
+title Wand Magic — High-Level Architecture
+
+skinparam componentStyle rectangle
+skinparam ranksep 60
+skinparam nodesep 40
+
+' --- Global State ---
+component "GameState\n(Autoload)" as GameState
+
+' --- Screens / Game Loop ---
+package "Game Loop" {
+  [LootScreen]
+  [BattleScene]
+  [LevelUpScreen]
+  [PathSelectionScreen]
+  [GameOverScreen]
+}
+
+' --- Battle Engine ---
+package "Battle Engine" {
+  [BattleComposer]
+  [BattleSetup]
+  [BattleHistory]
+  [BattleState]
+  [EnemyGrid]
+  [Actions]
+}
+
+' --- Wand System ---
+package "Wand System" {
+  [WandData / SpellSlotData]
+  [SpellData]
+  [SpellRegistry]
+  [WandGenerator]
+  [WandEvaluator]
+  [AlchemyTable]
+}
+
+' --- Enemies ---
+package "Enemies" {
+  [EnemyData / Monsters]
+  [MonsterActions]
+  [MonsterTraits]
+  [ObstacleData / Obstacles]
+  [StatusData]
+}
+
+' --- World / Progression ---
+package "World" {
+  [BiomeData / BiomesData]
+}
+
+' --- UI ---
+package "UI" {
+  [WandDisplay]
+  [MageDisplay / ManaDisplay]
+  [BattleTooltipManager]
+  [FloatingDamage]
+}
+
+' --- Game Loop transitions ---
+[LootScreen] --> [BattleScene] : Continue →
+[BattleScene] --> [LevelUpScreen] : win
+[BattleScene] --> [GameOverScreen] : all mages dead
+[LevelUpScreen] --> [PathSelectionScreen] : Confirm →
+[PathSelectionScreen] --> [LootScreen] : pick biome
+
+' --- GameState shared by all screens ---
+[LootScreen] --> GameState : read/write mages\nwands, backpack
+[BattleScene] --> GameState : read mages/wands\nwrite battle_count, loot
+[LevelUpScreen] --> GameState : write mages
+[PathSelectionScreen] --> GameState : write current_biome
+GameState --> [BattleScene] : mages, wands,\ncurrent_biome
+
+' --- Battle Engine internals ---
+[BattleScene] --> [BattleComposer] : compose(biome, level)
+[BattleComposer] --> [BattleSetup] : populates
+[BattleScene] --> [BattleHistory] : push / undo actions
+[BattleHistory] --> [BattleState] : stack of states
+[BattleScene] --> [Actions] : ActionZapWand\nActionAddMana\nActionEndTurn
+[Actions] --> [BattleState] : pure state transition
+[BattleScene] --> [EnemyGrid] : display / hit-test
+[BattleSetup] --> [EnemyData / Monsters] : enemy instances
+[BattleSetup] --> [ObstacleData / Obstacles] : obstacle instances
+
+' --- Wand System ---
+[BattleScene] --> [WandDisplay] : per-mage wand UI
+[WandDisplay] --> [WandData / SpellSlotData] : renders
+[WandData / SpellSlotData] --> [SpellData] : contains spells
+[LootScreen] --> [WandGenerator] : generate loot wands
+[LootScreen] --> [SpellRegistry] : list all spells
+[LootScreen] --> [AlchemyTable] : catalyst fusion
+[Actions] --> [WandData / SpellSlotData] : read spell/mana cost
+
+' --- Enemies ---
+[BattleComposer] --> [BiomeData / BiomesData] : monster & obstacle pools
+[EnemyData / Monsters] --> [MonsterActions] : action pool
+[EnemyData / Monsters] --> [MonsterTraits] : passive traits
+[Actions] --> [StatusData] : apply / tick statuses
+[BattleState] --> [StatusData] : stores active statuses
+
+' --- UI ---
+[BattleScene] --> [MageDisplay / ManaDisplay] : per-mage HP/mana UI
+[BattleScene] --> [BattleTooltipManager] : spell / status tooltips
+[BattleScene] --> [FloatingDamage] : combat text popups
+
+@enduml
