@@ -1,0 +1,14 @@
+// Core module: platform-independent game logic. Depends only on libGDX core.
+// JUnit 5 is a test-only dependency (headless logic tests); it is not on the
+// runtime classpath and does not affect the lwjgl3:run task.
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}

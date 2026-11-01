@@ -1,0 +1,34 @@
+// Root build script. Leap is an asset-free 2D platformer built on libGDX 1.14.1,
+// Java 21, lwjgl3 desktop backend. Two modules: core (game logic) + lwjgl3 (launcher).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'Leap'
+        gdxVersion = '1.14.1'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+}
