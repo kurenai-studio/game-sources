@@ -1,0 +1,15 @@
+# Raylib
+
+
+# Test compiling and running:
+gcc ~/projects/c/Snakey/src/Snakey.c -o compiled/Snakey.bin -lraylib && ./compiled/Snakey.out
+
+# Full compiling for Linux:
+gcc ~/projects/c/Snakey/src/Snakey.c -o compiled/Snakey.out -lraylib
+
+# Full compiling for Windows:
+# wingcc is alias for x86_64-w64-mingw32-gcc
+wingcc ~/projects/c/Snakey/src/Snakey.c -o compiled/Snakey.exe -lraylib
+
+# Full compiling for all platforms:
+gcc ~/projects/c/Snakey/src/Snakey.c -o compiled/Snakey.bin -lraylib && wingcc ~/projects/c/Snakey/src/Snakey.c -o compiled/Snakey.exe -lraylib
