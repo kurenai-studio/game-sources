@@ -1,0 +1,23 @@
+version: 2
+
+project_name: paragopher
+
+builds:
+  - main: ./cmd/game.go
+    goos:
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # https://github.com/hajimehoshi/ebiten/issues/1162
+    # Can't build linux, can't build amd64 macs from Apple Silicon.
+    ignore:
+      - goos: darwin
+        goarch: amd64
+
+release:
+  github:
+    owner: ystepanoff
+    name: ParaGopher
+  prerelease: auto
