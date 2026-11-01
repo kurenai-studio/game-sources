@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "id": "r4_l5",
+  "name": "Castle Steps",
+  "grid": [
+    "...B...",
+    "...#...",
+    "...###.",
+    ".o.G.G.",
+    "..o#o#.",
+    ".#####.",
+    ".G.#o..",
+    ".#oG.o.",
+    ".#####2",
+    ".o.G.#.",
+    "..o#oG.",
+    "1#####.",
+    "......."
+  ],
+  "start_gold": 750,
+  "gates": 3,
+  "strength": 250,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery"],
+  "star3": {"kind": "early_calls_at_least", "value": 6},
+  "waves": [
+    {"strength": 105, "groups": [{"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "skitter", "count": 6, "entrance": 2, "at_ms": 5000, "every_ms": 900}]},
+    {"strength": 105, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1700}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1700}, {"enemy": "scamp", "count": 8, "entrance": 2, "at_ms": 5000, "every_ms": 1000}]},
+    {"strength": 105, "groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "gatecrasher", "count": 2, "entrance": 2, "at_ms": 3000, "every_ms": 4000}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 100, "groups": [{"enemy": "puffball", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 1500, "every_ms": 1400}, {"enemy": "dusk_moth", "count": 1, "entrance": 1, "at_ms": 6000, "every_ms": 3000}]},
+    {"strength": 110, "groups": [{"enemy": "gatecrasher", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 4000}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 1000, "every_ms": 4000}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 350}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 8000, "every_ms": 700}]},
+    {"strength": 195, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 3000, "every_ms": 700}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 6000, "every_ms": 250}]},
+    {"strength": 115, "groups": [{"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "mender", "count": 3, "entrance": 1, "at_ms": 800, "every_ms": 1400}, {"enemy": "gatecrasher", "count": 3, "entrance": 2, "at_ms": 4000, "every_ms": 4000}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 8000, "every_ms": 300}]},
+    {"strength": 110, "groups": [{"enemy": "puffball", "count": 7, "entrance": 2, "at_ms": 0, "every_ms": 1200}, {"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 2000, "every_ms": 600}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 7000, "every_ms": 3000}]},
+    {"strength": 205, "groups": [{"enemy": "pip", "count": 36, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 16, "entrance": 1, "at_ms": 4000, "every_ms": 200}, {"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 8000, "every_ms": 50}]},
+    {"strength": 115, "groups": [{"enemy": "shellback", "count": 7, "entrance": 2, "at_ms": 0, "every_ms": 1300}, {"enemy": "mender", "count": 4, "entrance": 2, "at_ms": 800, "every_ms": 1300}, {"enemy": "bubbler", "count": 7, "entrance": 1, "at_ms": 3000, "every_ms": 1100}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 2500}]},
+    {"strength": 210, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 18, "entrance": 1, "at_ms": 4000, "every_ms": 200}, {"enemy": "pip", "count": 24, "entrance": 2, "at_ms": 8000, "every_ms": 50}]},
+    {"strength": 150, "groups": [{"enemy": "gatecrasher", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 3000}, {"enemy": "mender", "count": 5, "entrance": 1, "at_ms": 1500, "every_ms": 3000}, {"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 2000, "every_ms": 1300}, {"enemy": "dusk_moth", "count": 3, "entrance": 1, "at_ms": 8000, "every_ms": 2500}]}
+  ],
+  "twist": {"name": "Five Lives", "text": "Start with 5 lives, or 10 on Relaxed.",
+            "effects": [{"type": "set_lives", "lives": 5}]}
+}

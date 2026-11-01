@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "id": "r1_l3",
+  "name": "Tall Posts",
+  "grid": [
+    "...1...",
+    ".###...",
+    ".#.G.o.",
+    ".#o#...",
+    ".###...",
+    "...####",
+    ".o.G..#",
+    "...#.o#",
+    "...####",
+    "..oB..."
+  ],
+  "start_gold": 250,
+  "gates": 1,
+  "strength": 100,
+  "towers": ["sling_post", "pumpkin_catapult"],
+  "star3": {"kind": "towers_at_most", "value": 2},
+  "hint": {"text": "Build on the glow, then tap your tower to upgrade it.", "cell": [2, 3]},
+  "waves": [
+    {"groups": [{"enemy": "scamp", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1500}]},
+    {"groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1400}]},
+    {"groups": [{"enemy": "scamp", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 300}]},
+    {"strength": 160, "groups": [{"enemy": "scamp", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 2000}]},
+    {"groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 250}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 1500}]},
+    {"strength": 180, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 2000}]},
+    {"groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 10000, "every_ms": 200}]},
+    {"strength": 180, "groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1800}, {"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 20000, "every_ms": 250}]},
+    {"strength": 140, "groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "scamp", "count": 24, "entrance": 1, "at_ms": 18000, "every_ms": 200}, {"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 26000, "every_ms": 1600}]}
+  ],
+  "twist": {"name": "Tier 2 Cap", "text": "No tower can go above tier 2.",
+            "effects": [{"type": "tier_cap", "tier": 2}]}
+}

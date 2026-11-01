@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r3_l2",
+  "name": "Puffball Pond",
+  "grid": [
+    ".....1.",
+    "...###2",
+    ".o.#.o.",
+    "#G####.",
+    "#..G.#.",
+    "#.o#o#.",
+    "Go.#.G.",
+    "#.o#o#.",
+    "#..#.#.",
+    "######.",
+    "..o#o..",
+    "...B..."
+  ],
+  "start_gold": 550,
+  "gates": 2,
+  "strength": 175,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower"],
+  "star3": {"kind": "tier_at_most", "value": 2},
+  "hint": {"text": "Puffballs burst into three Puffs. Pop them near a Catapult.", "cell": [4, 7]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1400}]},
+    {"strength": 100, "groups": [{"enemy": "puffball", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1800}]},
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 400}]},
+    {"strength": 105, "groups": [{"enemy": "scamp", "count": 10, "entrance": 2, "at_ms": 0, "every_ms": 1200}]},
+    {"strength": 105, "groups": [{"enemy": "pip", "count": 16, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "puffball", "count": 3, "entrance": 1, "at_ms": 5000, "every_ms": 1500}]},
+    {"strength": 110, "groups": [{"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 800}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 5000, "every_ms": 400}, {"enemy": "puffball", "count": 4, "entrance": 1, "at_ms": 9000, "every_ms": 1400}]},
+    {"strength": 115, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "pip", "count": 30, "entrance": 2, "at_ms": 5000, "every_ms": 50}, {"enemy": "puffball", "count": 4, "entrance": 1, "at_ms": 10000, "every_ms": 1400}]},
+    {"strength": 120, "groups": [{"enemy": "bubbler", "count": 7, "entrance": 2, "at_ms": 0, "every_ms": 1200}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 5000, "every_ms": 350}, {"enemy": "puffball", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 1300}]},
+    {"strength": 140, "groups": [{"enemy": "pip", "count": 40, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "puffball", "count": 7, "entrance": 1, "at_ms": 3000, "every_ms": 1200}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 8000, "every_ms": 250}]},
+    {"strength": 140, "groups": [{"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1400}, {"enemy": "puffball", "count": 8, "entrance": 2, "at_ms": 4000, "every_ms": 1200}, {"enemy": "pip", "count": 34, "entrance": 1, "at_ms": 8000, "every_ms": 50}]},
+    {"strength": 145, "groups": [{"enemy": "puffball", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1100}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 4000, "every_ms": 250}, {"enemy": "pip", "count": 30, "entrance": 2, "at_ms": 8000, "every_ms": 50}, {"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 12000, "every_ms": 1400}]}
+  ],
+  "twist": {"name": "No Catapults", "text": "Pumpkin Catapults cannot be built.",
+            "effects": [{"type": "ban_tower", "tower": "pumpkin_catapult"}]}
+}

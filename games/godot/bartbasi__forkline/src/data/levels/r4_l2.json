@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r4_l2",
+  "name": "Mending Lane",
+  "grid": [
+    ".2...1.",
+    ".#...#.",
+    ".#.o.#.",
+    ".#G###.",
+    "oG.G.o.",
+    ".#o#o..",
+    ".#####o",
+    ".o.G.G.",
+    "..o#o#.",
+    "...###o",
+    "...B..."
+  ],
+  "start_gold": 700,
+  "gates": 2,
+  "strength": 220,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery"],
+  "star3": {"kind": "tower_ban", "tower": "pumpkin_catapult"},
+  "hint": {"text": "Menders heal their friends. Set a tower to Last to hit them first.", "cell": [3, 2]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "scamp", "count": 6, "entrance": 2, "at_ms": 4000, "every_ms": 1400}]},
+    {"strength": 100, "groups": [{"enemy": "mender", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1500}]},
+    {"strength": 100, "groups": [{"enemy": "shellback", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 1800}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 1000, "every_ms": 1800}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 1200}]},
+    {"strength": 110, "groups": [{"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 900}, {"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 3000, "every_ms": 100}]},
+    {"strength": 100, "groups": [{"enemy": "puffball", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 1500, "every_ms": 1500}, {"enemy": "flitter", "count": 36, "entrance": 1, "at_ms": 6000, "every_ms": 50}]},
+    {"strength": 100, "groups": [{"enemy": "bubbler", "count": 7, "entrance": 2, "at_ms": 0, "every_ms": 1200}, {"enemy": "mender", "count": 2, "entrance": 2, "at_ms": 1000, "every_ms": 1200}, {"enemy": "dusk_moth", "count": 1, "entrance": 1, "at_ms": 6000, "every_ms": 3500}]},
+    {"strength": 140, "groups": [{"enemy": "shellback", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "mender", "count": 3, "entrance": 1, "at_ms": 1000, "every_ms": 1500}, {"enemy": "scamp", "count": 10, "entrance": 2, "at_ms": 6000, "every_ms": 900}]},
+    {"strength": 130, "groups": [{"enemy": "skitter", "count": 10, "entrance": 2, "at_ms": 0, "every_ms": 700}, {"enemy": "flitter", "count": 16, "entrance": 1, "at_ms": 3000, "every_ms": 200}, {"enemy": "pip", "count": 24, "entrance": 2, "at_ms": 6000, "every_ms": 100}]},
+    {"strength": 105, "groups": [{"enemy": "puffball", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "mender", "count": 3, "entrance": 1, "at_ms": 1500, "every_ms": 1300}, {"enemy": "dusk_moth", "count": 2, "entrance": 2, "at_ms": 6000, "every_ms": 3500}]},
+    {"strength": 190, "groups": [{"enemy": "shellback", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1300}, {"enemy": "mender", "count": 4, "entrance": 2, "at_ms": 800, "every_ms": 1300}, {"enemy": "shellback", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 1300}, {"enemy": "mender", "count": 3, "entrance": 1, "at_ms": 4800, "every_ms": 1300}]},
+    {"strength": 160, "groups": [{"enemy": "flitter", "count": 24, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 16, "entrance": 2, "at_ms": 4000, "every_ms": 150}, {"enemy": "skitter", "count": 10, "entrance": 2, "at_ms": 6000, "every_ms": 600}]},
+    {"strength": 200, "groups": [{"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "mender", "count": 5, "entrance": 1, "at_ms": 800, "every_ms": 1200}, {"enemy": "flitter", "count": 20, "entrance": 1, "at_ms": 4000, "every_ms": 100}, {"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 6000, "every_ms": 1200}]}
+  ],
+  "twist": {"name": "No Longbows", "text": "Longbow Lofts cannot be built.",
+            "effects": [{"type": "ban_tower", "tower": "longbow_loft"}]}
+}

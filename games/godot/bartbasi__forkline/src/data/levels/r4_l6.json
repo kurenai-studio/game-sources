@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "id": "r4_l6",
+  "name": "Old Tusk",
+  "grid": [
+    ".1...2.",
+    ".#...#.",
+    ".#.o.#.",
+    ".##G##.",
+    ".G.o.G.",
+    ".#o.o#.",
+    ".#####.",
+    ".#o.o#.",
+    ".G.B.G.",
+    ".#o#o#.",
+    ".#G###.",
+    "..o.o..",
+    "......."
+  ],
+  "start_gold": 800,
+  "gates": 3,
+  "strength": 260,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft", "firework_tower", "bakery"],
+  "star3": {"kind": "no_lives_lost"},
+  "hint": {"text": "Old Tusk breaks gates fast. Don't count on them to hold.", "cell": [2, 7]},
+  "waves": [
+    {"strength": 105, "groups": [{"enemy": "scamp", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "scamp", "count": 6, "entrance": 2, "at_ms": 4000, "every_ms": 1300}]},
+    {"strength": 105, "groups": [{"enemy": "flitter", "count": 6, "entrance": 2, "at_ms": 0, "every_ms": 400}, {"enemy": "puffball", "count": 5, "entrance": 1, "at_ms": 3000, "every_ms": 1500}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "mender", "count": 2, "entrance": 1, "at_ms": 800, "every_ms": 1600}, {"enemy": "skitter", "count": 8, "entrance": 2, "at_ms": 6000, "every_ms": 800}]},
+    {"strength": 110, "groups": [{"enemy": "gatecrasher", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 4000}, {"enemy": "pip", "count": 40, "entrance": 2, "at_ms": 2000, "every_ms": 50}, {"enemy": "dusk_moth", "count": 1, "entrance": 1, "at_ms": 8000, "every_ms": 3000}]},
+    {"strength": 160, "groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 8, "entrance": 2, "at_ms": 4000, "every_ms": 300}]},
+    {"strength": 115, "groups": [{"enemy": "puffball", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "gatecrasher", "count": 3, "entrance": 2, "at_ms": 3000, "every_ms": 4000}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 700}]},
+    {"strength": 110, "groups": [{"enemy": "shellback", "count": 6, "entrance": 2, "at_ms": 0, "every_ms": 1400}, {"enemy": "mender", "count": 3, "entrance": 2, "at_ms": 800, "every_ms": 1400}, {"enemy": "dusk_moth", "count": 2, "entrance": 1, "at_ms": 5000, "every_ms": 3000}, {"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 8000, "every_ms": 100}]},
+    {"strength": 175, "groups": [{"enemy": "pip", "count": 36, "entrance": 2, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 12, "entrance": 1, "at_ms": 4000, "every_ms": 250}]},
+    {"strength": 110, "groups": [{"enemy": "puffball", "count": 8, "entrance": 2, "at_ms": 0, "every_ms": 1100}, {"enemy": "bubbler", "count": 7, "entrance": 1, "at_ms": 2000, "every_ms": 1100}, {"enemy": "dusk_moth", "count": 2, "entrance": 2, "at_ms": 7000, "every_ms": 3000}]},
+    {"strength": 130, "groups": [{"enemy": "shellback", "count": 7, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "mender", "count": 4, "entrance": 1, "at_ms": 800, "every_ms": 1300}, {"enemy": "skitter", "count": 12, "entrance": 2, "at_ms": 4000, "every_ms": 600}, {"enemy": "gatecrasher", "count": 3, "entrance": 2, "at_ms": 6000, "every_ms": 4000}]},
+    {"strength": 190, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "flitter", "count": 18, "entrance": 2, "at_ms": 4000, "every_ms": 200}, {"enemy": "pip", "count": 20, "entrance": 2, "at_ms": 8000, "every_ms": 50}]},
+    {"strength": 70, "groups": [{"enemy": "old_tusk", "count": 1, "entrance": 1, "at_ms": 0, "every_ms": 1000}]}
+  ],
+  "twist": {"name": "Double Trouble", "text": "The final wave is twice as big, with two bosses.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": false, "last_wave": true}]}
+}

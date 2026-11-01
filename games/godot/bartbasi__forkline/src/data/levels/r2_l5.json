@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "id": "r2_l5",
+  "name": "Bubble Brook",
+  "grid": [
+    ".1.....",
+    ".#.o...",
+    ".#####.",
+    ".#.o.#.",
+    "oG...G.",
+    ".#.o.#o",
+    ".#####.",
+    ".#.o.#.",
+    ".G...Go",
+    ".#...#.",
+    ".#####.",
+    ".....B."
+  ],
+  "start_gold": 450,
+  "gates": 2,
+  "strength": 150,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell", "longbow_loft"],
+  "star3": {"kind": "tower_ban", "tower": "longbow_loft"},
+  "hint": {"text": "A bubble stops one hit. Quick Sling Posts pop it for the big hitters.", "cell": [3, 1]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1600}]},
+    {"strength": 100, "groups": [{"enemy": "bubbler", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}]},
+    {"strength": 110, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "bubbler", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 1400}]},
+    {"strength": 110, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "bubbler", "count": 4, "entrance": 1, "at_ms": 5000, "every_ms": 1300}]},
+    {"strength": 130, "groups": [{"enemy": "shellback", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 800}, {"enemy": "bubbler", "count": 5, "entrance": 1, "at_ms": 12000, "every_ms": 1200}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 4000, "every_ms": 400}, {"enemy": "bubbler", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "bubbler", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 1100}, {"enemy": "scamp", "count": 14, "entrance": 1, "at_ms": 10000, "every_ms": 200}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 16000, "every_ms": 700}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 44, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 1400}, {"enemy": "bubbler", "count": 8, "entrance": 1, "at_ms": 10000, "every_ms": 1100}]},
+    {"strength": 115, "groups": [{"enemy": "bubbler", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 6000, "every_ms": 400}, {"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 10000, "every_ms": 50}]},
+    {"strength": 120, "groups": [{"enemy": "pip", "count": 44, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "bubbler", "count": 10, "entrance": 1, "at_ms": 5000, "every_ms": 1000}, {"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 12000, "every_ms": 1300}]},
+    {"strength": 120, "groups": [{"enemy": "bubbler", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "pip", "count": 36, "entrance": 1, "at_ms": 6000, "every_ms": 50}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 10000, "every_ms": 400}, {"enemy": "shellback", "count": 8, "entrance": 1, "at_ms": 14000, "every_ms": 1300}]}
+  ],
+  "twist": {"name": "Bubble Night", "text": "Every creature carries a bubble that comes back 2 seconds after it pops.",
+            "effects": [{"type": "all_bubbles"}]}
+}

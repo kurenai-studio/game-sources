@@ -1,0 +1,430 @@
+{
+ "format": 1,
+ "towers": [
+  {
+   "id": "sling_post",
+   "name": "Sling Post",
+   "plural": "Sling Posts",
+   "info": "Quick pebbles at one target. Hits flyers too. Armor blunts it.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 100,
+     "reach": 250,
+     "hits": "both",
+     "damage": 6,
+     "reload_ms": 500
+    },
+    {
+     "cost": 110,
+     "reach": 300,
+     "hits": "both",
+     "damage": 8,
+     "reload_ms": 400
+    }
+   ],
+   "specs": [
+    {
+     "id": "quickshot",
+     "name": "Quickshot",
+     "info": "Fires twice as fast.",
+     "cost": 200,
+     "reach": 300,
+     "hits": "both",
+     "damage": 8,
+     "reload_ms": 200
+    },
+    {
+     "id": "stone_sling",
+     "name": "Stone Sling",
+     "info": "Big stones that get through armor.",
+     "cost": 200,
+     "reach": 300,
+     "hits": "both",
+     "damage": 20,
+     "reload_ms": 500
+    }
+   ]
+  },
+  {
+   "id": "pumpkin_catapult",
+   "name": "Pumpkin Catapult",
+   "plural": "Pumpkin Catapults",
+   "info": "Pumpkins splash every walker near the target. Can't hit flyers.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 120,
+     "reach": 250,
+     "hits": "ground",
+     "damage": 14,
+     "reload_ms": 2000,
+     "splash": 75
+    },
+    {
+     "cost": 130,
+     "reach": 300,
+     "hits": "ground",
+     "damage": 24,
+     "reload_ms": 2000,
+     "splash": 125
+    }
+   ],
+   "specs": [
+    {
+     "id": "prize_pumpkin",
+     "name": "Prize Pumpkin",
+     "info": "Huge pumpkins, wider splash.",
+     "cost": 230,
+     "reach": 350,
+     "hits": "ground",
+     "damage": 50,
+     "reload_ms": 2500,
+     "splash": 150
+    },
+    {
+     "id": "jam_pot",
+     "name": "Jam Pot",
+     "info": "Sticky jam slows every walker it splashes.",
+     "cost": 230,
+     "reach": 300,
+     "hits": "ground",
+     "damage": 24,
+     "reload_ms": 1500,
+     "splash": 125,
+     "slow_pct": 40,
+     "slow_ms": 3000
+    }
+   ]
+  },
+  {
+   "id": "lullaby_bell",
+   "name": "Lullaby Bell",
+   "plural": "Lullaby Bells",
+   "info": "Walkers in its ring get drowsy and slow. Deals no damage.",
+   "kind": "slow",
+   "tiers": [
+    {
+     "cost": 90,
+     "reach": 200,
+     "hits": "ground",
+     "slow_pct": 35,
+     "slow_ms": 1000
+    },
+    {
+     "cost": 90,
+     "reach": 250,
+     "hits": "ground",
+     "slow_pct": 45,
+     "slow_ms": 1000
+    }
+   ],
+   "specs": [
+    {
+     "id": "hush_bell",
+     "name": "Hush Bell",
+     "info": "Deeper sleep: the strongest slow.",
+     "cost": 170,
+     "reach": 250,
+     "hits": "ground",
+     "slow_pct": 60,
+     "slow_ms": 1000
+    },
+    {
+     "id": "night_bell",
+     "name": "Night Bell",
+     "info": "A wider ring that reaches flyers too.",
+     "cost": 170,
+     "reach": 300,
+     "hits": "both",
+     "slow_pct": 45,
+     "slow_ms": 1000
+    }
+   ]
+  },
+  {
+   "id": "longbow_loft",
+   "name": "Longbow Loft",
+   "plural": "Longbow Lofts",
+   "info": "Long range. Heavy arrows ignore armor. Can't hit flyers.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 150,
+     "reach": 400,
+     "hits": "ground",
+     "damage": 40,
+     "reload_ms": 2500,
+     "pierce": true
+    },
+    {
+     "cost": 160,
+     "reach": 450,
+     "hits": "ground",
+     "damage": 70,
+     "reload_ms": 2500,
+     "pierce": true
+    }
+   ],
+   "specs": [
+    {
+     "id": "giant_bow",
+     "name": "Giant Bow",
+     "info": "One giant arrow. Bosses beware.",
+     "cost": 280,
+     "reach": 500,
+     "hits": "ground",
+     "damage": 180,
+     "reload_ms": 3000,
+     "pierce": true
+    },
+    {
+     "id": "triple_bow",
+     "name": "Triple Bow",
+     "info": "Three arrows at three targets.",
+     "cost": 280,
+     "reach": 450,
+     "hits": "ground",
+     "damage": 70,
+     "reload_ms": 2500,
+     "targets": 3,
+     "pierce": true
+    }
+   ]
+  },
+  {
+   "id": "firework_tower",
+   "name": "Firework Tower",
+   "plural": "Firework Towers",
+   "info": "Bursts hit every flyer near the target. Can't hit walkers.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 110,
+     "reach": 300,
+     "hits": "air",
+     "damage": 12,
+     "reload_ms": 1000,
+     "splash": 75
+    },
+    {
+     "cost": 120,
+     "reach": 350,
+     "hits": "air",
+     "damage": 20,
+     "reload_ms": 1000,
+     "splash": 75
+    }
+   ],
+   "specs": [
+    {
+     "id": "star_bloom",
+     "name": "Star Bloom",
+     "info": "Huge bursts for big flocks.",
+     "cost": 210,
+     "reach": 350,
+     "hits": "air",
+     "damage": 30,
+     "reload_ms": 1000,
+     "splash": 125
+    },
+    {
+     "id": "skyrocket",
+     "name": "Skyrocket",
+     "info": "One heavy rocket that ignores armor.",
+     "cost": 210,
+     "reach": 400,
+     "hits": "air",
+     "damage": 90,
+     "reload_ms": 1500,
+     "pierce": true
+    }
+   ]
+  },
+  {
+   "id": "bakery",
+   "name": "Bakery",
+   "plural": "Bakeries",
+   "info": "Towers around it attack faster. Doesn't attack.",
+   "kind": "boost",
+   "tiers": [
+    {
+     "cost": 130,
+     "reach": 150,
+     "boost_pct": 15,
+     "boost_damage": 0
+    },
+    {
+     "cost": 140,
+     "reach": 150,
+     "boost_pct": 25,
+     "boost_damage": 0
+    }
+   ],
+   "specs": [
+    {
+     "id": "grand_oven",
+     "name": "Grand Oven",
+     "info": "Even faster towers around it.",
+     "cost": 240,
+     "reach": 150,
+     "boost_pct": 40,
+     "boost_damage": 0
+    },
+    {
+     "id": "spice_kitchen",
+     "name": "Spice Kitchen",
+     "info": "Faster towers that also hit 2 harder.",
+     "cost": 240,
+     "reach": 150,
+     "boost_pct": 25,
+     "boost_damage": 2
+    }
+   ]
+  },
+  {
+   "id": "bramble_cottage",
+   "name": "Bramble Cottage",
+   "plural": "Bramble Cottages",
+   "info": "Thorns scratch every walker in its ring each second. Armor blunts them.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 120,
+     "reach": 200,
+     "hits": "ground",
+     "damage": 10,
+     "reload_ms": 1000,
+     "pulse": true
+    },
+    {
+     "cost": 130,
+     "reach": 250,
+     "hits": "ground",
+     "damage": 14,
+     "reload_ms": 1000,
+     "pulse": true
+    }
+   ],
+   "specs": [
+    {
+     "id": "wild_bramble",
+     "name": "Wild Bramble",
+     "info": "A wider ring of thorns.",
+     "cost": 230,
+     "reach": 300,
+     "hits": "ground",
+     "damage": 20,
+     "reload_ms": 1000,
+     "pulse": true
+    },
+    {
+     "id": "holly_crown",
+     "name": "Holly Crown",
+     "info": "Sharp holly that ignores armor.",
+     "cost": 230,
+     "reach": 250,
+     "hits": "ground",
+     "damage": 24,
+     "reload_ms": 1000,
+     "pulse": true,
+     "pierce": true
+    }
+   ]
+  },
+  {
+   "id": "scarecrow",
+   "name": "Scarecrow",
+   "plural": "Scarecrows",
+   "info": "Walkers in its ring take more damage from every hit. Deals no damage.",
+   "kind": "fright",
+   "tiers": [
+    {
+     "cost": 100,
+     "reach": 200,
+     "hits": "ground",
+     "fright_pct": 25,
+     "fright_ms": 1000
+    },
+    {
+     "cost": 100,
+     "reach": 250,
+     "hits": "ground",
+     "fright_pct": 35,
+     "fright_ms": 1000
+    }
+   ],
+   "specs": [
+    {
+     "id": "tall_scarecrow",
+     "name": "Tall Scarecrow",
+     "info": "Frightens harder: 40% more damage.",
+     "cost": 190,
+     "reach": 250,
+     "hits": "ground",
+     "fright_pct": 50,
+     "fright_ms": 1000
+    },
+    {
+     "id": "crow_keeper",
+     "name": "Crow Keeper",
+     "info": "A wider ring that frightens flyers too.",
+     "cost": 190,
+     "reach": 300,
+     "hits": "both",
+     "fright_pct": 35,
+     "fright_ms": 1000
+    }
+   ]
+  },
+  {
+   "id": "snow_fort",
+   "name": "Snow Fort",
+   "plural": "Snow Forts",
+   "info": "Rolls a snowball in a straight line. Every walker in its path is hit.",
+   "kind": "attack",
+   "tiers": [
+    {
+     "cost": 140,
+     "reach": 300,
+     "hits": "ground",
+     "damage": 16,
+     "reload_ms": 3000,
+     "line": 80
+    },
+    {
+     "cost": 150,
+     "reach": 350,
+     "hits": "ground",
+     "damage": 28,
+     "reload_ms": 3000,
+     "line": 80
+    }
+   ],
+   "specs": [
+    {
+     "id": "big_snowball",
+     "name": "Big Snowball",
+     "info": "One huge snowball, wider and longer.",
+     "cost": 260,
+     "reach": 400,
+     "hits": "ground",
+     "damage": 64,
+     "reload_ms": 3500,
+     "line": 100
+    },
+    {
+     "id": "flurry",
+     "name": "Flurry",
+     "info": "Quick snowballs, twice as often.",
+     "cost": 260,
+     "reach": 350,
+     "hits": "ground",
+     "damage": 24,
+     "reload_ms": 1500,
+     "line": 80
+    }
+   ]
+  }
+ ]
+}

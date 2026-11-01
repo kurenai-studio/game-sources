@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "id": "r2_l2",
+  "name": "Sleepy Mill",
+  "grid": [
+    ".1.....",
+    ".#.o...",
+    ".#G###.",
+    ".#o#.#.",
+    ".G.#o#.",
+    ".#o#.#o",
+    ".###.#.",
+    "....o#.",
+    ".#####.",
+    ".#oG.o.",
+    ".###...",
+    "...B..."
+  ],
+  "start_gold": 400,
+  "gates": 1,
+  "strength": 135,
+  "towers": ["sling_post", "pumpkin_catapult", "lullaby_bell"],
+  "star3": {"kind": "gates_at_most", "value": 0},
+  "hint": {"text": "Bells make walkers drowsy. Slow crowds are easy Catapult targets.", "cell": [4, 7]},
+  "waves": [
+    {"strength": 100, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1500}]},
+    {"strength": 110, "groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "skitter", "count": 5, "entrance": 1, "at_ms": 8000, "every_ms": 1000}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 40, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 5000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "skitter", "count": 12, "entrance": 1, "at_ms": 0, "every_ms": 700}, {"enemy": "scamp", "count": 20, "entrance": 1, "at_ms": 10000, "every_ms": 150}]},
+    {"groups": [{"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 400}, {"enemy": "scamp", "count": 24, "entrance": 1, "at_ms": 3000, "every_ms": 150}, {"enemy": "skitter", "count": 8, "entrance": 1, "at_ms": 10000, "every_ms": 700}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 66, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 10, "entrance": 1, "at_ms": 5000, "every_ms": 700}]},
+    {"groups": [{"enemy": "scamp", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 4000, "every_ms": 400}, {"enemy": "skitter", "count": 14, "entrance": 1, "at_ms": 9000, "every_ms": 600}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 66, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 14, "entrance": 1, "at_ms": 5000, "every_ms": 600}]},
+    {"groups": [{"enemy": "skitter", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 450}, {"enemy": "scamp", "count": 40, "entrance": 1, "at_ms": 8000, "every_ms": 100}, {"enemy": "flitter", "count": 10, "entrance": 1, "at_ms": 12000, "every_ms": 400}]},
+    {"strength": 115, "groups": [{"enemy": "pip", "count": 56, "entrance": 1, "at_ms": 0, "every_ms": 50}, {"enemy": "skitter", "count": 16, "entrance": 1, "at_ms": 5000, "every_ms": 500}, {"enemy": "flitter", "count": 8, "entrance": 1, "at_ms": 9000, "every_ms": 400}]}
+  ],
+  "twist": {"name": "No Bells", "text": "Lullaby Bells cannot be built.",
+            "effects": [{"type": "ban_tower", "tower": "lullaby_bell"}]}
+}

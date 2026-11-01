@@ -1,0 +1,38 @@
+{
+  "format": 1,
+  "id": "r1_l5",
+  "name": "Wings at Dusk",
+  "grid": [
+    ".1.....",
+    ".###...",
+    ".#.#...",
+    ".G.#.o.",
+    ".#o#...",
+    ".#####.",
+    "o#..o#.",
+    ".G...G.",
+    ".#####.",
+    "....o#.",
+    ".....B."
+  ],
+  "start_gold": 300,
+  "gates": 1,
+  "strength": 100,
+  "towers": ["sling_post", "pumpkin_catapult"],
+  "star3": {"kind": "tier_at_most", "value": 2},
+  "hint": {"text": "Flitters fly over roads and gates. Only Sling Posts hit them.", "cell": [4, 6]},
+  "waves": [
+    {"groups": [{"enemy": "scamp", "count": 3, "entrance": 1, "at_ms": 0, "every_ms": 1500}, {"enemy": "scamp", "count": 3, "entrance": 1, "at_ms": 9000, "every_ms": 1500}]},
+    {"groups": [{"enemy": "pip", "count": 10, "entrance": 1, "at_ms": 0, "every_ms": 300}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 500}]},
+    {"groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1200}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 500}]},
+    {"groups": [{"enemy": "pip", "count": 18, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 500}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 6000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 3000, "every_ms": 500}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 12000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 8000, "every_ms": 400}]},
+    {"groups": [{"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 3000, "every_ms": 400}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 12000, "every_ms": 1000}]},
+    {"groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "pip", "count": 26, "entrance": 1, "at_ms": 6000, "every_ms": 150}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 9000, "every_ms": 400}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 18000, "every_ms": 1000}]}
+  ],
+  "twist": {"name": "Twice the Wings", "text": "Twice as many flyers in every wave.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": true, "last_wave": false}]}
+}

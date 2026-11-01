@@ -1,0 +1,38 @@
+{
+  "format": 1,
+  "id": "r1_l6",
+  "name": "Grumblesack",
+  "grid": [
+    "1#####.",
+    ".#...#.",
+    ".G.o.#o",
+    ".#...#.",
+    ".#####.",
+    "...#.o.",
+    ".#####.",
+    ".#o#o#.",
+    ".#.G.G.",
+    ".#####.",
+    "..oB..."
+  ],
+  "start_gold": 350,
+  "gates": 1,
+  "strength": 100,
+  "towers": ["sling_post", "pumpkin_catapult"],
+  "star3": {"kind": "gates_at_most", "value": 0},
+  "hint": {"text": "At tier 3, a tower picks one of two paths for good.", "cell": [3, 2]},
+  "waves": [
+    {"groups": [{"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 1300}]},
+    {"groups": [{"enemy": "pip", "count": 14, "entrance": 1, "at_ms": 0, "every_ms": 200}, {"enemy": "scamp", "count": 3, "entrance": 1, "at_ms": 6000, "every_ms": 1500}]},
+    {"groups": [{"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 0, "every_ms": 500}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 5000, "every_ms": 1300}]},
+    {"groups": [{"enemy": "pip", "count": 20, "entrance": 1, "at_ms": 0, "every_ms": 150}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 5000, "every_ms": 1400}]},
+    {"strength": 140, "groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1600}, {"enemy": "flitter", "count": 4, "entrance": 1, "at_ms": 8000, "every_ms": 500}]},
+    {"groups": [{"enemy": "pip", "count": 24, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 6, "entrance": 1, "at_ms": 2000, "every_ms": 400}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 10000, "every_ms": 1400}]},
+    {"groups": [{"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 0, "every_ms": 1300}, {"enemy": "pip", "count": 28, "entrance": 1, "at_ms": 6000, "every_ms": 100}, {"enemy": "flitter", "count": 5, "entrance": 1, "at_ms": 8000, "every_ms": 400}]},
+    {"groups": [{"enemy": "pip", "count": 30, "entrance": 1, "at_ms": 0, "every_ms": 100}, {"enemy": "flitter", "count": 7, "entrance": 1, "at_ms": 2000, "every_ms": 400}, {"enemy": "scamp", "count": 6, "entrance": 1, "at_ms": 12000, "every_ms": 1200}]},
+    {"groups": [{"enemy": "scamp", "count": 8, "entrance": 1, "at_ms": 0, "every_ms": 1000}, {"enemy": "pip", "count": 34, "entrance": 1, "at_ms": 8000, "every_ms": 100}, {"enemy": "flitter", "count": 7, "entrance": 1, "at_ms": 10000, "every_ms": 400}, {"enemy": "scamp", "count": 4, "entrance": 1, "at_ms": 16000, "every_ms": 1000}]},
+    {"strength": 50, "groups": [{"enemy": "grumblesack", "count": 1, "entrance": 1, "at_ms": 0, "every_ms": 1000}]}
+  ],
+  "twist": {"name": "Double Trouble", "text": "The final wave is twice as big, with two bosses.",
+            "effects": [{"type": "count_pct", "pct": 200, "flyers": false, "last_wave": true}]}
+}
