@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="16" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="9">
+ <tileset firstgid="1" source="../tsx/ground.tsx"/>
+ <tileset firstgid="81" source="../tsx/single-wall.tsx"/>
+ <tileset firstgid="97" source="../tsx/player.tsx"/>
+ <tileset firstgid="137" source="../tsx/misc.tsx"/>
+ <tileset firstgid="153" source="../tsx/spider-enemy-small.tsx"/>
+ <tileset firstgid="173" source="../tsx/collectable.tsx"/>
+ <tileset firstgid="189" source="../tsx/monster-enemy-red.tsx"/>
+ <tileset firstgid="197" source="../tsx/powerup.tsx"/>
+ <layer id="1" name="ground" width="16" height="16">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,3,3,3,3,3,3,3,3,3,3,3,3,5,0,
+0,1,1,1,1,1,1,2,1,1,2,1,1,1,1,0,
+0,2,1,0,0,0,0,0,0,0,0,0,0,2,1,0,
+0,1,1,0,14,11,11,11,11,11,11,11,0,1,1,0,
+0,1,1,0,11,11,13,11,11,11,11,11,0,1,2,0,
+0,1,2,0,11,11,11,11,11,11,11,11,0,1,1,0,
+0,1,1,0,11,11,11,11,11,11,11,11,0,1,1,0,
+0,1,2,0,11,11,11,11,11,11,13,11,0,2,1,0,
+0,2,1,0,11,11,11,11,11,11,11,11,0,1,1,0,
+0,1,1,0,11,11,11,11,11,11,11,14,0,1,1,0,
+0,1,1,0,13,11,11,11,11,11,11,11,0,1,1,0,
+0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,
+0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0,
+0,1,1,1,1,2,1,1,1,1,2,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="major-game-item">
+  <object id="3" name="exit-point" gid="137" x="32" y="96" width="16" height="16"/>
+  <object id="1" name="player" gid="97" x="16" y="32" width="16" height="16"/>
+ </objectgroup>
+ <layer id="3" name="obstacle" width="16" height="16">
+  <data encoding="csv">
+81,85,85,85,85,85,85,85,85,85,85,85,85,85,85,82,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+84,0,0,87,0,0,0,0,0,0,0,0,87,0,0,84,
+92,83,83,86,85,85,85,85,85,85,85,85,93,0,0,84,
+92,91,91,93,0,0,0,0,0,0,0,0,92,88,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,0,84,0,0,0,0,0,0,0,0,84,0,0,84,
+84,0,96,93,0,0,0,0,0,0,0,0,92,88,0,84,
+84,0,0,92,85,85,85,85,85,85,85,85,93,0,0,84,
+84,0,0,95,0,0,0,0,0,0,0,0,95,0,0,84,
+84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,84,
+89,85,85,85,85,85,85,85,85,85,85,85,85,85,85,90
+</data>
+ </layer>
+ <layer id="7" name="moving-obstacle" width="16" height="16">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <group id="8" name="enemy">
+  <objectgroup id="15" name="ghost-enemy"/>
+  <objectgroup id="5" name="spider-enemy">
+   <object id="4" name="spider-enemy-small" gid="153" x="224" y="32" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="motion_schedule" value="0, 60, 30"/>
+     <property name="net_length" type="int" value="3"/>
+     <property name="score" type="int" value="80"/>
+     <property name="speed" type="float" value="2"/>
+    </properties>
+   </object>
+   <object id="5" name="spider-enemy-small" gid="153" x="32" y="208" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="motion_schedule" value="0, 60, 30"/>
+     <property name="net_length" type="int" value="2"/>
+     <property name="score" type="int" value="80"/>
+     <property name="speed" type="float" value="2"/>
+    </properties>
+   </object>
+   <object id="6" name="spider-enemy-small" gid="153" x="16" y="96" width="16" height="16">
+    <properties>
+     <property name="damage_power" type="int" value="1"/>
+     <property name="motion_schedule" value="0, 60, 30"/>
+     <property name="net_length" type="int" value="8"/>
+     <property name="score" type="int" value="80"/>
+     <property name="speed" type="float" value="2"/>
+    </properties>
+   </object>
+  </objectgroup>
+  <objectgroup id="13" name="fire-flame-enemy"/>
+  <objectgroup id="14" name="monster-enemy">
+   <object id="7" name="monster-enemy-red" gid="189" x="208" y="64" width="16" height="16" visible="0">
+    <properties>
+     <property name="speed" type="float" value="1"/>
+     <property name="start_delay" type="int" value="0"/>
+    </properties>
+   </object>
+  </objectgroup>
+ </group>
+ <group id="9" name="collectable">
+  <layer id="6" name="diamond" width="16" height="16">
+   <properties>
+    <property name="score" type="int" value="500"/>
+   </properties>
+   <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,173,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <objectgroup id="12" name="key"/>
+  <objectgroup id="11" name="powerup">
+   <object id="8" name="powerup-bow" gid="198" x="176" y="48" width="16" height="16">
+    <properties>
+     <property name="powerup_name" value="bow"/>
+     <property name="powerup_volume" type="int" value="10"/>
+    </properties>
+   </object>
+  </objectgroup>
+ </group>
+ <objectgroup id="10" name="door"/>
+</map>
