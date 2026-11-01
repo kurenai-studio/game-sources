@@ -1,0 +1,51 @@
+
+    ---
+    Base Spells (Tips)
+
+    These define how you hit, not how hard:
+
+    - Single — one cell, reliable
+    - Line — column or row, punishes clustering
+    - Arc — hits cells adjacent to target (flanking feel)
+    - Lob — hits a cell 2 away, skips adjacent (bypasses front line)
+    - Cross — target + 4 cardinal neighbors
+    - Ricochet — hits target, then bounces to a random adjacent enemy
+
+    ---
+    Body Spells (Modifiers — interesting design space)
+
+    The goal is spells that change what happens, not just how much:
+
+    Elemental reactions
+    - Ignite — target burns for 2 damage next turn (delayed, stacks with other sources)
+    - Chill — frozen target skips its next action
+    - Poison — damage over time, scales with stacks
+
+    Wand shape modifiers
+    - Amplify — doubles damage of the next body spell in the chain
+    - Split — fires the tip twice at two different targets
+    - Recoil — big damage boost, but damages the mage slightly
+
+    Utility / positioning
+    - Push — knocks the target back one cell
+    - Pull — drags target toward your party
+    - Swap — exchanges positions of two enemies
+
+    Conditional
+    - Execute — deals bonus damage to enemies below 30% HP
+    - Overkill — excess damage spills to adjacent enemies
+    - Resonance — deals extra damage if the same element was used last turn
+
+    Resource manipulation
+    - Drain — converts enemy HP into global mana
+    - Overcharge — spend 2 extra mana for a massive damage spike this zap only
+    - Echo — repeats the last zap at half power for free
+
+    ---
+    Design Principles Worth Keeping
+
+    - Reactions over raw power: a Chill + Shatter combo (freeze then deal bonus damage) is more satisfying than +5 damage
+    - Positioning matters: Push/Pull/Swap make the enemy grid feel tactical rather than decorative
+    - Wand synergy: spells that care about other spells in the same wand create build decisions — you're crafting a machine, not just picking big numbers
+    - Downside spells: Recoil, Overcharge — risk/reward creates tension
+    - Information asymmetry: DoT and delayed effects make turns feel consequential beyond the immediate hit
