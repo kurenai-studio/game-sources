@@ -1,0 +1,32 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusEntity.h"
+#include "Blueprint/UserWidget.h"
+#include "ComponentDefinitions/IdentityComponent.h"
+#include "ArgusUIElement.generated.h"
+
+class UArgusInputManager;
+
+UCLASS(meta = (DisableNativeTick))
+class UArgusUIElement : public UUserWidget
+{
+	GENERATED_BODY()
+
+public:
+	struct UpdateDisplayParameters
+	{
+		const FVector2D m_currentMouseLocation = FVector2D::ZeroVector;
+		UpdateDisplayParameters(const FVector2D& currentMouseLocation) : m_currentMouseLocation(currentMouseLocation) {}
+	};
+
+	virtual void UpdateDisplay(const UpdateDisplayParameters& updateDisplayParams);
+	virtual void OnUpdateSelectedArgusActors(ArgusEntity templateEntity) {}
+	virtual void ReInitializePostLoad() {}
+
+	void SetInputManager(UArgusInputManager* inputManager);
+
+protected:
+	TWeakObjectPtr<UArgusInputManager> m_inputManager = nullptr;
+};

@@ -1,0 +1,10 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "ArgusGameStateBase.h"
+#include "ArgusLogging.h"
+
+void AArgusGameStateBase::HandleBeginPlay()
+{
+	Super::HandleBeginPlay();
+	ARGUS_LOG(ArgusUnrealObjectsLog, Display, TEXT("Argus game state base handling BeginPlay."));
+}

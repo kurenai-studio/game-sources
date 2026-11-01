@@ -1,0 +1,71 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusEntity.h"
+#include "ArgusSystemsThread.h"
+#include "ComponentDependencies/Teams.h"
+#include "GameFramework/GameModeBase.h"
+#include "ArgusGameModeBase.generated.h"
+
+class AArgusPlayerController;
+class UArgusActorPool;
+class UArgusEntityTemplate;
+class UArgusGameInstance;
+class UArgusSaveManager;
+class UTeamAlignmentRecord;
+class UTeamColorRecord;
+class UUserWidget;
+
+UCLASS()
+class AArgusGameModeBase : public AGameModeBase
+{
+	GENERATED_BODY()
+	
+public:
+	UFUNCTION(BlueprintCallable)
+	FColor GetTeamColor(ETeam team);
+
+	AArgusGameModeBase();
+	~AArgusGameModeBase();
+	virtual void StartPlay() override;
+
+	AArgusPlayerController* GetActivePlayerController() const { return m_activePlayerController.Get(); }
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "EntityTemplates")
+	TObjectPtr<UArgusEntityTemplate> m_singletonEntityTemplate = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EntityTemplates")
+	TObjectPtr<UArgusEntityTemplate> m_teamEntityTemplate = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Teams")
+	TMap<ETeam, TObjectPtr<UTeamColorRecord>> m_teamColorMap;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Teams")
+	TObjectPtr<UTeamAlignmentRecord> m_teamAlignmentRecord = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AArgusPlayerController> m_activePlayerController = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UArgusSaveManager> m_saveManager = nullptr;
+
+	virtual void Tick(float deltaTime) override;
+
+private:
+	void ManageActorStateForEntities(UWorld* worldPointer, float deltaTime);
+	void ManageActorStateInViewFrustrum(ArgusEntity entity, const LODComponent* lodComponent, const UArgusGameInstance* gameInstance, float deltaTime);
+	void ManageActorStateOutOfViewFrustrum(ArgusEntity entity, const LODComponent* lodComponent);
+	void SpawnActorForEntity(ArgusEntity spawnedEntity);
+	void DespawnActorForEntity(ArgusEntity despawnedEntity);
+	void OnLoadStart();
+	void OnLoadComplete();
+
+	UPROPERTY(VisibleAnywhere, Instanced)
+	TObjectPtr<UArgusActorPool> m_argusActorPool = nullptr;
+
+	ArgusSystemsThread m_argusSystemsThread = ArgusSystemsThread();
+
+	friend class UArgusSaveManager;
+};

@@ -1,0 +1,21 @@
+#pragma region #####
+public:
+	const #####* Get#####(uint32 id);
+	uint32 GetNum#####s();
+	const bool AsyncPreLoad#####(uint32 id, TFunction<void(const #####*)> callback = nullptr);
+	void ResetLoaded#####PointerArray();
+#if WITH_EDITOR
+	#####* GetMutable#####(uint32 id);
+	uint32 Add#####ToDatabase(#####* record);
+	void IterateAll#####s(const TFunctionRef<void(#####*)>& function);
+	void RegisterNew#####Database(#####Database* database);
+#endif //WITH_EDITOR
+
+protected:
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<#####Database> m_#####Database;
+	UPROPERTY(Transient)
+	TObjectPtr<#####Database> m_#####DatabasePersistent;
+
+	void LazyLoad#####Database();
+#pragma endregion

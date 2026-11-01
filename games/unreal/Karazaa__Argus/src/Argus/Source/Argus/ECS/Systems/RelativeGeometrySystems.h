@@ -1,0 +1,32 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusEntity.h"
+#include "ArgusMath.h"
+#include "CoreMinimal.h"
+
+class RelativeGeometrySystems
+{
+public:
+	static FVector GetWorldSpaceRelativeCircleCenter(const RelativeCircleComponent* relativeCircleComponent, const FacingComponent* facingComponent, const TransformComponent* transformComponent);
+
+	template <typename Array>
+	static void GetWorldSpaceRelativePolygonPoints(const RelativePolygonComponent* relativePolygonComponent, const FacingComponent* facingComponent, const TransformComponent* transformComponent, Array& outWorldSpacePoints)
+	{
+		ARGUS_TRACE(RelativeGeometrySystems::GetWorldSpaceRelativePolygonPoints);
+
+		ARGUS_RETURN_ON_NULL(relativePolygonComponent, ArgusECSLog);
+		ARGUS_RETURN_ON_NULL(facingComponent, ArgusECSLog);
+		ARGUS_RETURN_ON_NULL(transformComponent, ArgusECSLog);
+
+		const FVector forwardVector = ArgusMath::GetDirectionFromYaw(facingComponent->m_smoothedFacing.GetValue());
+		const FTransform basisTransform = FTransform(FRotationMatrix::MakeFromXZ(forwardVector, FVector::UpVector).ToQuat(), transformComponent->m_location);
+
+		outWorldSpacePoints.SetNum(relativePolygonComponent->m_relativeUnrealVerticies.Num());
+		for (int32 i = 0; i < relativePolygonComponent->m_relativeUnrealVerticies.Num(); ++i)
+		{
+			outWorldSpacePoints[i] = basisTransform.TransformPosition(FVector(relativePolygonComponent->m_relativeUnrealVerticies[i], 0.0f));
+		}
+	}
+};

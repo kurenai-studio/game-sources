@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://dly1ntiva4j5k"]
+
+[ext_resource type="Script" uid="uid://dbpfqrmjrx13c" path="res://Player/Laser/Laser.gd" id="1_idrpm"]
+[ext_resource type="Texture2D" uid="uid://b7fnn5wa0rhec" path="res://Player/Laser/LaserGreen.png" id="1_t20x8"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lesc4"]
+size = Vector2(10, 55)
+
+[node name="Laser" type="RigidBody2D" unique_id=1588053743]
+collision_layer = 10
+gravity_scale = 0.0
+script = ExtResource("1_idrpm")
+
+[node name="LaserGreen11" type="Sprite2D" parent="." unique_id=1000985891]
+position = Vector2(0, -27)
+texture = ExtResource("1_t20x8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2042073486]
+position = Vector2(0, -27.5)
+shape = SubResource("RectangleShape2D_lesc4")

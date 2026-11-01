@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bfja5411gtv4h"]
+
+[ext_resource type="Script" uid="uid://m8bkgwia46rx" path="res://Player/Player.gd" id="1_gme6l"]
+[ext_resource type="Texture2D" uid="uid://jr8cse33r852" path="res://Player/PlayerShipOrange.png" id="2_ju6x8"]
+[ext_resource type="Texture2D" uid="uid://bmg0sdfy43pxl" path="res://Player/Thrust.png" id="3_j14qt"]
+[ext_resource type="AudioStream" uid="uid://dcfnvhj0627d3" path="res://Player/Thruster.ogg" id="4_vlf3c"]
+
+[sub_resource type="AudioStreamPolyphonic" id="AudioStreamPolyphonic_47i0w"]
+
+[node name="Player" type="RigidBody2D" unique_id=982394303]
+collision_layer = 9
+gravity_scale = 0.0
+can_sleep = false
+script = ExtResource("1_gme6l")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=861646084]
+polygon = PackedVector2Array(0, -31, 45, 5, 30, 28, -30, 28, -45, 5)
+
+[node name="Thrust" type="Sprite2D" parent="." unique_id=763221251]
+position = Vector2(0, 43)
+rotation = -3.14159
+texture = ExtResource("3_j14qt")
+
+[node name="Ship" type="Sprite2D" parent="." unique_id=429029322]
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("2_ju6x8")
+
+[node name="MarkerLeft" type="Marker2D" parent="." unique_id=10051862]
+position = Vector2(-23, -5)
+
+[node name="MarkerRight" type="Marker2D" parent="." unique_id=259595733]
+position = Vector2(23, -5)
+
+[node name="LaserAudioPlayer" type="AudioStreamPlayer2D" parent="." unique_id=1524648393]
+stream = SubResource("AudioStreamPolyphonic_47i0w")
+autoplay = true
+attenuation = 1e-05
+max_polyphony = 5
+bus = &"Effects"
+
+[node name="ThrusterAudioPlayer" type="AudioStreamPlayer2D" parent="." unique_id=794743109]
+stream = ExtResource("4_vlf3c")
+attenuation = 1e-05
+bus = &"Effects"

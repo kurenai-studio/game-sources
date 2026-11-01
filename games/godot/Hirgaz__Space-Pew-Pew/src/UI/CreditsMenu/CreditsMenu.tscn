@@ -1,0 +1,156 @@
+[gd_scene format=3 uid="uid://m3mbkkkty30"]
+
+[ext_resource type="Script" uid="uid://dtubasbwerpo4" path="res://UI/CreditsMenu/CreditsMenu.gd" id="1_etorw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrqxn"]
+bg_color = Color(0.6, 0.6, 0.6, 0.0627451)
+
+[node name="CreditsMenu" type="Control" unique_id=1490223385]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -360.0
+offset_right = 576.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_etorw")
+
+[node name="BG" type="Panel" parent="." unique_id=103698122]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wrqxn")
+
+[node name="Panel" type="Panel" parent="BG" unique_id=1078203316]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.9
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel" unique_id=1898505290]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer" unique_id=303370474]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=247803874]
+layout_mode = 2
+theme_type_variation = &"LabelHeader"
+text = "Credits"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1039072881]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TabContainer" type="TabContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1456110986]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Game" type="Control" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=854589689]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="GameCreditsRichTextLabel" type="RichTextLabel" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Game" unique_id=404574595]
+unique_name_in_owner = true
+auto_translate_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="Engine" type="Control" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=582442163]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Control" type="Control" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine" unique_id=1321525527]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control" unique_id=1147552899]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer" unique_id=863843734]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer" unique_id=874319664]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1772933049]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "License:"
+
+[node name="LicenseOptionButton" type="OptionButton" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1579213659]
+unique_name_in_owner = true
+auto_translate_mode = 2
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Select license to view"
+tooltip_auto_translate_mode = 1
+
+[node name="HSeparator" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer" unique_id=1326744730]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="EngineCreditsRichTextLabel" type="RichTextLabel" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer" unique_id=228089118]
+unique_name_in_owner = true
+auto_translate_mode = 2
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="HSeparator2" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=545917756]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CloseButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1005056111]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close"
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="meta_clicked" from="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Game/GameCreditsRichTextLabel" to="." method="_on_credits_rich_text_label_meta_clicked"]
+[connection signal="item_selected" from="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer/HBoxContainer/LicenseOptionButton" to="." method="_on_license_option_button_item_selected"]
+[connection signal="meta_clicked" from="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Engine/Control/MarginContainer/VBoxContainer/EngineCreditsRichTextLabel" to="." method="_on_credits_rich_text_label_meta_clicked"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/CloseButton" to="." method="_on_close_button_pressed"]

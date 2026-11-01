@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://jgl7q1qs2evg"]
+
+[ext_resource type="Script" uid="uid://bbn038f07aw3g" path="res://UI/GameOverMenu/GameOverMenu.gd" id="1_1fvx2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrqxn"]
+bg_color = Color(0.6, 0.6, 0.6, 0.0627451)
+
+[node name="GameOverMenu" type="Control" unique_id=1879864710]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1fvx2")
+
+[node name="BG" type="Panel" parent="." unique_id=354142479]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wrqxn")
+
+[node name="Panel" type="Panel" parent="BG" unique_id=2076043473]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.35
+anchor_top = 0.4
+anchor_right = 0.65
+anchor_bottom = 0.6
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel" unique_id=684035385]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer" unique_id=1801006727]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=322423080]
+layout_mode = 2
+theme_type_variation = &"LabelHeader"
+text = "Game Over"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=362289291]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1380298680]
+layout_mode = 2
+
+[node name="GameOverLabel" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=418972064]
+layout_mode = 2
+text = "Score:"
+
+[node name="GameOverScore" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=257694534]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=606515032]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ButtonContainer" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=341391063]
+layout_mode = 2
+
+[node name="RestartButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer/ButtonContainer" unique_id=478262603]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Restart the game"
+text = "Restart"
+
+[node name="QuitButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer/ButtonContainer" unique_id=429312980]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Quit the game"
+text = "Quit"
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_button_pressed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/ButtonContainer/QuitButton" to="." method="_on_quit_button_game_pressed"]
