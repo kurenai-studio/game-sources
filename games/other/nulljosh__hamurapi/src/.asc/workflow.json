@@ -1,0 +1,28 @@
+// Release automation. Run: asc workflow run ship-ios VERSION:x.y.z   (then ship-mac)
+{
+  "env": {
+    "APP_ID": "6819131590",
+    "VERSION": "",
+    "SUBMIT": "true"
+  },
+  "before_all": "asc auth status",
+  "workflows": {
+    "ship-ios": {
+      "description": "Archive, export, upload and submit the iPhone build",
+      "steps": [
+        { "name": "bump", "run": "cd app && sed -i '' \"s/MARKETING_VERSION: .*/MARKETING_VERSION: \\\"$VERSION\\\"/; s/CURRENT_PROJECT_VERSION: .*/CURRENT_PROJECT_VERSION: \\\"$(date +%Y%m%d%H%M)\\\"/\" project.yml && xcodegen generate" },
+        { "name": "archive", "run": "cd app && asc xcode archive --project Hamurapi.xcodeproj --scheme Hamurapi --configuration Release --archive-path ../.asc/artifacts/Hamurapi-iOS.xcarchive --overwrite --xcodebuild-flag=-destination --xcodebuild-flag=generic/platform=iOS --xcodebuild-flag=-allowProvisioningUpdates --output json" },
+        { "name": "export", "run": "cd app && asc xcode export --archive-path ../.asc/artifacts/Hamurapi-iOS.xcarchive --export-options ExportOptions-iOS.plist --xcodebuild-flag=-allowProvisioningUpdates --overwrite --ipa-path ../.asc/artifacts/Hamurapi.ipa --output json" },
+        { "name": "publish", "if": "SUBMIT", "run": "asc publish appstore --app $APP_ID --ipa .asc/artifacts/Hamurapi.ipa --version $VERSION --wait --submit --confirm --output json" }
+      ]
+    },
+    "ship-mac": {
+      "description": "Archive, export and upload the Mac build. Uses the version and build number already in project.yml",
+      "steps": [
+        { "name": "archive", "run": "cd app && asc xcode archive --project Hamurapi.xcodeproj --scheme Hamurapi --configuration Release --archive-path ../.asc/artifacts/Hamurapi-mac.xcarchive --overwrite --xcodebuild-flag=-destination --xcodebuild-flag=generic/platform=macOS --xcodebuild-flag=-allowProvisioningUpdates --output json" },
+        { "name": "export", "run": "cd app && rm -rf ../.asc/artifacts/mac && xcodebuild -exportArchive -archivePath ../.asc/artifacts/Hamurapi-mac.xcarchive -exportOptionsPlist ExportOptions-mac.plist -exportPath ../.asc/artifacts/mac -allowProvisioningUpdates" },
+        { "name": "upload", "run": "asc builds upload --app $APP_ID --pkg .asc/artifacts/mac/Hamurapi.pkg --version $VERSION --build-number \"$(grep CURRENT_PROJECT_VERSION app/project.yml | grep -o '[0-9]*')\" --output json" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+name: hamurapi Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python3 hamurapi.py --demo
+      - name: QA, scripted reign plays a year then gets impeached
+        run: |
+          printf '0\n2000\n800\n0\n0\n0\n' | python3 hamurapi.py > out.txt
+          cat out.txt
+          grep -Eq "term is over|impeached" out.txt
+      - name: QA, the ruler still earns an A+
+        run: |
+          python3 ruler.py 8 | tail -1 | grep -q "Grade: A+"
+      - name: The Python rules give the golden number
+        run: test "$(python3 ruler.py --golden)" = 639940
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: The web rules give the same numbers, robot and story
+        run: node web/play/rules.js
+
+  app:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Swift tests, including both golden numbers
+        run: |
+          cd app && xcodegen generate
+          xcodebuild test -project Hamurapi.xcodeproj -scheme Hamurapi -destination platform=macOS CODE_SIGNING_ALLOWED=NO | tail -30
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: README file references aren't stale
+        run: |
+          python3 - <<'PY'
+          import re, os, sys
+          refs = re.findall(r'(?:src="|\]\()([^")#?\s]+)', open("README.md").read())
+          bad = [r for r in refs if "://" not in r and not r.startswith(("mailto:", "/")) and not os.path.exists(r)]
+          print("stale README refs:", bad)
+          sys.exit(bool(bad))
+          PY
