@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_ctrl"]
+[ext_resource type="Script" path="res://scripts/player/character_visual.gd" id="2_vis"]
+[ext_resource type="Resource" path="res://resources/player_rig.tres" id="3_rig"]
+[ext_resource type="Resource" path="res://resources/player_animation_tuning.tres" id="4_tun"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_zone"]
+size = Vector2(64, 70)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_ctrl")
+safe_margin = 0.3
+
+[node name="Collision" type="CollisionShape2D" parent="."]
+position = Vector2(0, -48)
+shape = SubResource("RectangleShape2D_1")
+
+[node name="GrabZone" type="Area2D" parent="."]
+
+[node name="Shape" type="CollisionShape2D" parent="GrabZone"]
+position = Vector2(0, -50)
+shape = SubResource("RectangleShape2D_zone")
+
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("2_vis")
+rig = ExtResource("3_rig")
+tuning = ExtResource("4_tun")
