@@ -1,0 +1,8 @@
+# Offline audio synthesis for Scoundrel (see docs/superpowers/plans/2026-09-24-audio.md).
+# Pinned exactly: the renders promise byte-identical output from fixed seeds, and a
+# different numpy can change the floating-point results.
+# Measured on Python 3.14.6, 2026-09-24.
+#   python -m pip install --user -r audio-source/requirements.txt
+numpy==2.5.3
+# Bundles libsndfile 1.2.2, which writes OGG/Vorbis (the music and torch loop).
+soundfile==0.14.0

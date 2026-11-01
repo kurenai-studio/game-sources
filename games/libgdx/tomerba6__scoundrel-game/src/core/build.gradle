@@ -1,0 +1,182 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    mavenLocal()
+    google()
+    maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
+  }
+  dependencies {
+    // TexturePacker, for the sprite atlas built below. Build-time only — it never
+    // reaches the shipped runtime classpath.
+    //
+    // It lives *here* rather than in the root buildscript, and that placement is
+    // load-bearing. The root buildscript's classloader is a parent of every
+    // subproject's, so gdx-tools there put a second copy of libGDX ahead of the
+    // one construo loads in :lwjgl3. construo injects the .exe icon through a
+    // native library extracted from its own jar, and SharedLibraryLoader resolves
+    // that resource against the classloader it was itself loaded from — the
+    // shadowing one, which does not contain it. :lwjgl3:replaceIconWinX64 died
+    // with "Unable to read file for extraction: editpe_java64.dll" and the v2.0.0
+    // release build failed. From core/ the classloader is a sibling of lwjgl3's,
+    // so neither can see the other.
+    classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+  }
+}
+
+import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.graphics.Texture.TextureFilter
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+// The finished pixel art (HANDOFF.md) is delivered as 174 loose 64x64 PNGs.
+// They live outside assets/ on purpose: if they were on the asset path, a stray
+// Gdx.files.internal("atlas/<sprite>.png") would silently succeed and hand back
+// a Linear-filtered texture -- blurry pixel art, no error. From here that same
+// mistake fails loudly. Pack them into one atlas at build time; these settings
+// are the art's contract, not preferences:
+//   Nearest       - hand-placed pixels on a locked 80-colour ramp; any smoothing
+//                   invents colours that aren't in the palette.
+//   padding 2 +   - keeps neighbouring sprites from bleeding into each other
+//   duplicatePadding  when the page is sampled at a page edge.
+//   no whitespace - a creature's five idle frames are aligned to the full 64x64
+//   stripping       box. Trimming each frame to its own content would shift them
+//                   independently and the cycle would jitter.
+def spriteSrc = file("$rootDir/art-source/atlas")
+def spriteOut = file("$rootDir/assets/sprites")
+
+tasks.register('packAtlas') {
+  description = 'Packs art-source/atlas/ into assets/sprites/sprites.atlas.'
+  inputs.dir(spriteSrc)
+  outputs.dir(spriteOut)
+
+  doLast {
+    def settings = new TexturePacker.Settings()
+    settings.filterMin = TextureFilter.Nearest
+    settings.filterMag = TextureFilter.Nearest
+    settings.paddingX = 2
+    settings.paddingY = 2
+    settings.duplicatePadding = true
+    settings.stripWhitespaceX = false
+    settings.stripWhitespaceY = false
+    TexturePacker.process(settings, spriteSrc.path, spriteOut.path, 'sprites')
+
+    // Check the result with the same parser the game will use. The failure mode
+    // this guards is silent: a wrong setting merges or drops regions and the
+    // game just draws the wrong creature. Expected count comes from the source
+    // set rather than a hardcoded number, so it still holds if the art grows.
+    int expected = spriteSrc.listFiles().count { it.name.endsWith('.png') }
+    def data = new TextureAtlas.TextureAtlasData(
+        new FileHandle(new File(spriteOut, 'sprites.atlas')), new FileHandle(spriteOut), false)
+    if (data.regions.size != expected) {
+      throw new GradleException(
+          "atlas has ${data.regions.size} regions, expected $expected (one per source PNG)")
+    }
+    // Index parsing is what makes findRegions(stem + "_idle") return the five
+    // frames in order, so prove it on a known cycle rather than trusting it.
+    def idle = data.regions.findAll { it.name == 'creature_02_cellar_rat_clubs_idle' }
+    if (idle*.index.sort() != [1, 2, 3, 4, 5]) {
+      throw new GradleException(
+          "creature_02_cellar_rat_clubs_idle has indexes ${idle*.index.sort()}, expected [1..5]")
+    }
+    logger.quiet("packAtlas: ${data.regions.size} regions on ${data.pages.size} page(s)")
+  }
+}
+
+apply plugin: 'jacoco'
+
+test {
+  useJUnitPlatform()
+  finalizedBy jacocoTestReport // always refresh the coverage report after tests
+  // CoverageGateTest reads this file to check that every pure package is in the
+  // gate's includes list below. Gradle cannot see that dependency on its own, so
+  // editing the gate would leave :core:test UP-TO-DATE and the check unrun —
+  // silent in exactly the case it exists for. Declaring it makes the edit
+  // re-run the test.
+  inputs.file('build.gradle').withPathSensitivity(PathSensitivity.RELATIVE)
+  // Same blind spot, same fix: RimMaskTest and HurtMaskTest compare what the
+  // generators produce against the delivered reference frames under
+  // art-reference/, which live outside this module and so are invisible to
+  // Gradle. Without this, changing the reference art leaves :core:test
+  // UP-TO-DATE and the comparison unrun. Declared conditionally because both
+  // tests are @EnabledIf on the directory existing — a checkout without the
+  // art still builds.
+  def referenceArt = rootProject.file('art-reference/sprites')
+  if (referenceArt.isDirectory()) {
+    inputs.dir(referenceArt).withPathSensitivity(PathSensitivity.RELATIVE)
+  }
+  // And again for AudioAssetsTest, which holds the committed sound files under
+  // assets/audio to the Sound contract: a re-render or a stray file there must
+  // re-run it, or the check that nothing unexpected ships goes quiet.
+  def shippedAudio = rootProject.file('assets/audio')
+  if (shippedAudio.isDirectory()) {
+    inputs.dir(shippedAudio).withPathSensitivity(PathSensitivity.RELATIVE)
+  }
+  // And for CoverageGateTest's badge check, which reads the badge script's own
+  // copy of the gated list from outside this module: an edit to that list must
+  // re-run the check, not leave it UP-TO-DATE.
+  inputs.file(rootProject.file('.github/scripts/coverage_badge.py'))
+      .withPathSensitivity(PathSensitivity.RELATIVE)
+  // And for VersionTagTest, which compares two lines of text: gradle.properties
+  // is outside this module, and bumping a @version on the same line leaves the
+  // compiled class byte-identical, so neither edit would otherwise re-run it.
+  inputs.file(rootProject.file('gradle.properties'))
+      .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.file('src/main/java/com/tomer/scoundrel/ScoundrelGame.java')
+      .withPathSensitivity(PathSensitivity.RELATIVE)
+  // And for TestDocGateTest, which reads the test sources for their doc
+  // comments: a comment never reaches the compiled class, so turning a test's
+  // /** */ into a // on the same line would otherwise leave :core:test
+  // UP-TO-DATE and the check unrun.
+  inputs.dir('src/test/java').withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    html.required = true
+    xml.required = true // for any CI/coverage service later
+  }
+}
+
+jacocoTestCoverageVerification {
+  dependsOn test
+  violationRules {
+    // Gate only the pure, unit-testable packages. The GL-bound screens layer and
+    // ScoundrelGame are screenshot-verified, not unit tested, so they are not
+    // gated here — including them would just enforce a meaningless low number.
+    rule {
+      element = 'PACKAGE'
+      includes = [
+        'com.tomer.scoundrel.rules',
+        'com.tomer.scoundrel.model',
+        'com.tomer.scoundrel.runs',
+        'com.tomer.scoundrel.achievements',
+        'com.tomer.scoundrel.tutorial',
+        'com.tomer.scoundrel.audio',
+      ]
+      limit { counter = 'LINE';   value = 'COVEREDRATIO'; minimum = 0.90 }
+      limit { counter = 'BRANCH'; value = 'COVEREDRATIO'; minimum = 0.75 }
+    }
+  }
+}
+check.dependsOn jacocoTestCoverageVerification
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+
+  testImplementation "org.junit.jupiter:junit-jupiter:5.14.4"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+jar {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
