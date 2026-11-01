@@ -1,0 +1,52 @@
+script: "/main/gui/hud.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+fonts {
+  name: "jf-openhuninn"
+  font: "/assets/font/jf-openhuninn.font"
+}
+textures {
+  name: "panel_round"
+  texture: "/assets/ui/panel_round.atlas"
+}
+nodes {
+  position {
+    x: 192.0
+    y: 192.0
+  }
+  size {
+    x: 320.0
+    y: 150.0
+  }
+  type: TYPE_BOX
+  texture: "panel_round/panel_round"
+  id: "complete_panel"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 31.0
+    w: 32.0
+  }
+  alpha: 0.6
+}
+nodes {
+  scale {
+    x: 0.3
+    y: 0.3
+  }
+  size {
+    x: 320.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "1-1, \351\201\216\351\227\234\344\272\206"
+  font: "jf-openhuninn"
+  id: "complete_text"
+  parent: "complete_panel"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,71 @@
+script: "/main/gui/title.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+fonts {
+  name: "jf-openhuninn"
+  font: "/assets/font/jf-openhuninn.font"
+}
+textures {
+  name: "title"
+  texture: "/assets/ui/title.atlas"
+}
+nodes {
+  position {
+    x: 192.0
+    y: 192.0
+  }
+  size {
+    x: 384.0
+    y: 384.0
+  }
+  type: TYPE_BOX
+  texture: "title/title"
+  id: "title_panel"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    z: -0.1
+  }
+  type: TYPE_BOX
+  texture: "title/title"
+  id: "background"
+  parent: "title_panel"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 44.0
+  }
+  size {
+    x: 384.0
+    y: 64.0
+  }
+  type: TYPE_TEXT
+  text: "\345\200\211\345\272\253\347\225\252\n"
+  ""
+  font: "jf-openhuninn"
+  id: "title"
+  parent: "background"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -158.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Copyright (c) 2026 William-Weng"
+  font: "default"
+  id: "license"
+  parent: "background"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
