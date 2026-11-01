@@ -1,0 +1,188 @@
+-- Everything a button press can do, independent of which screen is showing.
+-- Keeps main.lua a router and the screens pure drawing.
+local Skills = require("data.skills")
+local Upgrades = require("data.upgrades")
+local Achievements = require("data.achievements")
+local Systems = require("data.systems")
+local Economy = require("sim.economy")
+local Combat = require("sim.combat")
+local Buffs = require("sim.buffs")
+local Prestige = require("sim.prestige")
+local Save = require("sim.save")
+local Toast = require("ui.toast")
+local fmt = require("core/numbers").fmt
+
+local M = {}
+
+function M.row_count(st, tab)
+  if tab == 1 then return #st.agents end
+  if tab == 2 then return #Skills end
+  if tab == 3 then return #Upgrades.list end
+  if tab == 4 then return #Systems.daemons + 1 end      -- daemons plus ASCEND
+  if tab == 5 then return #Achievements end
+  if tab == 6 then return 8 end                          -- stats: read-only rows
+  return 0
+end
+
+function M.set_tab(st, n)
+  st.tab = n
+  st.msg, st.msgT = nil, 0
+end
+
+function M.move_cursor(st, d)
+  local n = M.row_count(st, st.tab)
+  st.cursor[st.tab] = ((st.cursor[st.tab] - 1 + d) % n) + 1
+  st.confirmAscend = false       -- the second press has to be deliberate
+end
+
+function M.say(st, msg) Toast.say(st, msg) end
+
+-- X on the SKILLS tab: cast the highlighted skill unless it is cooling
+function M.cast_skill(st, i)
+  local sk = Skills[i]
+  if not sk then return end
+  if not st.owned[i] then return M.say(st, "NEED " .. sk.cost .. " CREDITS") end
+  local cd = st.skillCd[i] or 0
+  if cd > 0 then return M.say(st, sk.name .. " · " .. math.ceil(cd) .. "S") end
+  st.skillCd[i] = sk.cd
+  st.flashT = 0.4
+  Buffs.start(st, i)
+  Economy.recalc(st)
+  for _, e in ipairs(sk.effects or {}) do
+    if e[1] == "vulnhp_mul" then
+      -- the flaw opens now: the vuln in front of you loses the same share
+      st.hp = math.max(1, math.floor(st.hp * e[2]))
+      st.hpMax = math.max(1, math.floor(st.hpMax * e[2]))
+    end
+  end
+  M.say(st, sk.name .. " ACTIVE")
+end
+
+-- X does one of two things on the arena: walk through a cleared zone, or bring
+-- the view back to the live one. It never moves the run on by itself.
+function M.advance_or_snap(st)
+  local sel = st.zoneSel or st.zone
+  if sel ~= st.zone then
+    -- X acts on the zone you are looking at: walk there
+    if Combat.travel_to(st, sel) then M.say(st, "ZONE " .. st.zone) end
+  elseif st.cleared then
+    if Combat.advance_zone(st) then M.say(st, "ZONE " .. st.zone) end
+  end
+end
+
+-- L2/R2 walk the zones you have already cleared; X snaps back to the live one
+function M.move_zone(st, d)
+  local cur = st.zoneSel or st.zone
+  local nxt = math.max(1, math.min(st.bestZone or st.zone, cur + d))
+  if nxt == cur then return end
+  st.zoneSel = nxt
+  if nxt ~= st.zone then M.say(st, "ZONE " .. nxt .. " · X TO GO") end
+end
+
+function M.buy_selected(st)
+  local bought = Economy.buy_amount(st, st.sel, st.amount)
+  if bought == 0 then
+    local a = st.agents[st.sel]
+    if not Economy.unlocked(st, st.sel) then
+      M.say(st, "LOCKED · ZONE " .. tostring(a.lock))
+    else
+      M.say(st, "NEED " .. fmt(Economy.next_cost(st, st.sel)) .. " CREDITS")
+    end
+  end
+end
+
+-- A on a list screen. Each tab decides what "select" means.
+function M.activate(st)
+  local c = st.cursor[st.tab] or 1
+  if st.tab == 2 then
+    local sk = Skills[c]
+    if Economy.skill_owned(st, c) then
+      M.say(st, sk.name .. " OWNED")
+    elseif Economy.buy_skill(st, c) then
+      M.say(st, sk.name .. " BOUGHT")
+    else
+      M.say(st, "NEED " .. fmt(sk.cost) .. " CREDITS")
+    end
+
+  elseif st.tab == 3 then
+    local u = Upgrades.list[c]
+    if Economy.tool_owned(st, c) then
+      M.say(st, u[1] .. " OWNED")
+    elseif Economy.buy_tool(st, c) then
+      M.say(st, u[1] .. " BOUGHT")
+    else
+      M.say(st, "NEED " .. fmt(u[2]) .. " CREDITS")
+    end
+
+  elseif st.tab == 4 then
+    if c == #Systems.daemons + 1 then
+      if not Prestige.can_ascend(st) then
+        M.say(st, "LOCKED · ZONE " .. Prestige.unlock_zone(st))
+      elseif not st.confirmAscend then
+        st.confirmAscend = true
+        M.say(st, "PRESS A AGAIN TO ASCEND")
+      else
+        local earned = Prestige.ascend(st)
+        st.confirmAscend = false
+        M.say(st, "ASCENDED · +" .. earned .. " ROOTKITS")
+      end
+    else
+      local d = Systems.daemons[c]
+      if Prestige.daemon_owned(st, c) then
+        M.say(st, d.name .. " ONLINE")
+      elseif Prestige.buy_daemon(st, c) then
+        M.say(st, d.name .. " ONLINE")
+      else
+        M.say(st, d.name .. " · " .. d.cost .. " ROOTKITS")
+      end
+    end
+
+  elseif st.tab == 5 then
+    M.say(st, Achievements[c][1])
+
+  end
+end
+
+-- The menu is an overlay, not a tab: START opens it from anywhere, pauses the
+-- clock and writes a save before it appears.
+M.MENU_ROWS = 2
+
+function M.open_menu(st)
+  st.screen = "menu"
+  st.cursor.menu = st.cursor.menu or 1
+  st.paused = true
+  st.savedOnPause = Save.write(st)
+end
+
+function M.close_menu(st)
+  st.screen = "game"
+  st.paused = false
+end
+
+function M.activate_menu(st)
+  local c = st.cursor.menu or 1
+  if c == 1 then
+    M.close_menu(st)
+  else
+    love.event.quit()
+  end
+end
+
+function M.move_menu(st, d)
+  local n = M.MENU_ROWS
+  st.cursor.menu = ((st.cursor.menu - 1 + d) % n) + 1
+end
+
+-- SELECT cycles the buy amount; it used to be START, which now belongs to the menu
+function M.cycle_amount(st)
+  if st.amount == 1 then st.amount = 10
+  elseif st.amount == 10 then st.amount = 100
+  elseif st.amount == 100 then st.amount = 0      -- 0 = MAX
+  else st.amount = 1 end
+end
+
+function M.probe(st)
+  Combat.probe(st)
+end
+
+return M
