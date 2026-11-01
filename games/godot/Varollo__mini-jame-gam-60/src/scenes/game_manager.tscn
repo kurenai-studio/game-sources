@@ -1,0 +1,249 @@
+[gd_scene format=3 uid="uid://csewq0omhteo0"]
+
+[ext_resource type="Script" uid="uid://bsys2hm0rph5b" path="res://scripts/scene_management/scene_manager_2d.gd" id="1_glms7"]
+[ext_resource type="Script" uid="uid://ckldswr2gb8ny" path="res://scripts/game_manager.gd" id="1_udu3i"]
+[ext_resource type="Script" uid="uid://bkblryqbam6ww" path="res://scripts/camera/camera.gd" id="2_q8mjp"]
+[ext_resource type="Script" uid="uid://ccx2xlnlgjpce" path="res://scripts/scene_management/scene_manager_ui.gd" id="2_udu3i"]
+[ext_resource type="Texture2D" uid="uid://dhn6kp47ud28i" path="res://assets/textures/darkness.png" id="3_frtjd"]
+[ext_resource type="Script" uid="uid://bck3wvkrl66ly" path="res://scripts/entities/entity_manager.gd" id="3_oo155"]
+[ext_resource type="Texture2D" uid="uid://da2o1pdog0ce8" path="res://assets/textures/character_0.png" id="4_eaq8r"]
+[ext_resource type="Script" uid="uid://bref6x7ccu4g2" path="res://scripts/controllers/movement_controller.gd" id="5_jdad8"]
+[ext_resource type="Script" uid="uid://bvdeew2t5b2pv" path="res://scripts/input/input_listener.gd" id="5_k4jhu"]
+[ext_resource type="Script" uid="uid://vk4jeci8nvgq" path="res://scripts/animation/player_animation_controller.gd" id="8_k4jhu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oo155"]
+size = Vector2(16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ternb"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q8mjp"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jdad8"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k4jhu"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frtjd"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0rse5"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aonbx"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lcbjr"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(0, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_30v7y"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5xtl8"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(32, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cjvif"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(0, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ry0e6"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pc0jn"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(32, 48, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c7a3q"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(0, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4vth2"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(16, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yxe1x"]
+atlas = ExtResource("4_eaq8r")
+region = Rect2(32, 16, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jrl6a"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ternb")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q8mjp")
+}],
+"loop": true,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jdad8")
+}],
+"loop": true,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k4jhu")
+}],
+"loop": true,
+"name": &"idle_up",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frtjd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0rse5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aonbx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0rse5")
+}],
+"loop": true,
+"name": &"move_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lcbjr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_30v7y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5xtl8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_30v7y")
+}],
+"loop": true,
+"name": &"move_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cjvif")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ry0e6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pc0jn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ry0e6")
+}],
+"loop": true,
+"name": &"move_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c7a3q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4vth2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yxe1x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4vth2")
+}],
+"loop": true,
+"name": &"move_up",
+"speed": 5.0
+}]
+
+[node name="GameManager" type="Node" unique_id=1524343598]
+script = ExtResource("1_udu3i")
+_first_scene_name = "test_scene"
+
+[node name="World2D" type="Node2D" parent="." unique_id=690129337]
+
+[node name="Camera2D" type="Camera2D" parent="World2D" unique_id=94174219 node_paths=PackedStringArray("follow_target")]
+position_smoothing_enabled = true
+position_smoothing_speed = 16.0
+script = ExtResource("2_q8mjp")
+follow_target = NodePath("../EntityManager/Player")
+
+[node name="Sprite2D" type="Sprite2D" parent="World2D/Camera2D" unique_id=1233994795]
+self_modulate = Color(1, 1, 1, 0.24705882)
+z_index = 100
+z_as_relative = false
+texture = ExtResource("3_frtjd")
+
+[node name="SceneManager2D" type="Node2D" parent="World2D" unique_id=1629222341]
+script = ExtResource("1_glms7")
+
+[node name="EntityManager" type="Node2D" parent="World2D" unique_id=2015186499]
+y_sort_enabled = true
+script = ExtResource("3_oo155")
+
+[node name="Player" type="CharacterBody2D" parent="World2D/EntityManager" unique_id=1789351723]
+z_index = 1
+y_sort_enabled = true
+
+[node name="InputListener" type="Node" parent="World2D/EntityManager/Player" unique_id=2090716287]
+script = ExtResource("5_k4jhu")
+action = "move"
+is_vector = true
+
+[node name="MovementController" type="Node" parent="World2D/EntityManager/Player" unique_id=884219420 node_paths=PackedStringArray("target_to_move")]
+script = ExtResource("5_jdad8")
+target_to_move = NodePath("..")
+move_speed = 0.5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World2D/EntityManager/Player" unique_id=1592694581]
+shape = SubResource("RectangleShape2D_oo155")
+
+[node name="AnimationController" type="AnimatedSprite2D" parent="World2D/EntityManager/Player" unique_id=2031177383]
+sprite_frames = SubResource("SpriteFrames_jrl6a")
+animation = &"idle_down"
+autoplay = "idle_down"
+script = ExtResource("8_k4jhu")
+
+[node name="UI" type="Control" parent="." unique_id=106218557]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SceneManagerUI" type="Control" parent="UI" unique_id=1807990944]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_udu3i")
+
+[connection signal="input_vector_fired" from="World2D/EntityManager/Player/InputListener" to="World2D/EntityManager/Player/MovementController" method="move_by"]
+[connection signal="input_vector_fired" from="World2D/EntityManager/Player/InputListener" to="World2D/EntityManager/Player/AnimationController" method="set_direction"]
+[connection signal="input_vector_released" from="World2D/EntityManager/Player/InputListener" to="World2D/EntityManager/Player/MovementController" method="move_by"]
+[connection signal="input_vector_released" from="World2D/EntityManager/Player/InputListener" to="World2D/EntityManager/Player/AnimationController" method="set_direction"]
