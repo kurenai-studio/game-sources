@@ -1,0 +1,43 @@
+local sliders = {"exposure", "contrast", "saturation", "tint", "time"}
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	msg.post("/postprocessing#quad", "set", {key = "time", value = 0})
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") then
+		if action.pressed then
+			self.slider = nil
+			for _, id in pairs(sliders) do
+				if gui.pick_node(gui.get_node(id.."/bar"), action.x, action.y) then
+					self.slider = id
+				end
+			end
+		elseif action.released then
+			self.slider = nil
+		end
+		if self.slider then
+			local id = self.slider		
+			local screen_position = vmath.vector3(action.screen_x, action.screen_y, 0)
+			local slider_min = gui.get_screen_position(gui.get_node(id.."/min"))
+			local slider_max = gui.get_screen_position(gui.get_node(id.."/max"))
+			if screen_position.x < slider_min.x then
+				screen_position.x = slider_min.x
+			end
+			if screen_position.x > slider_max.x then
+				screen_position.x = slider_max.x
+			end
+			screen_position.y = slider_min.y
+			gui.set_screen_position(gui.get_node(id.."/handle"), screen_position)
+			local value = (screen_position.x - slider_min.x) / (slider_max.x - slider_min.x) * 2.0
+			if id == "time" then
+				value = value * 12
+			end
+			msg.post("/postprocessing#quad", "set", {key = id, value = value})
+
+			gui.set_text(gui.get_node(id.."/value"), string.format("%.2f", value))
+		end
+	end
+end
