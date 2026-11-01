@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚰</text></svg>"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#20a8e2" />
+    <meta
+      name="description"
+      content="🚰 Water Pipe is a casual pipe-rotation puzzle game. Click or tap the pipes to rotate them and connect every piece so the water can flow."
+    />
+    <meta
+      property="og:image"
+      content="https://remarkablegames.org/water-pipe/screenshots/water_pipe.jpeg"
+    />
+
+    <!--
+      manifest.webmanifest provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!--
+      GitHub Corners. See https://github.com/remarkablemark/github-corners
+    -->
+    <% if (process.env.BUNDLE !== 'true') { %>
+    <script
+      src="https://unpkg.com/github-corners/dist/embed.min.js"
+      data-href="https://github.com/remarkablegames/water-pipe"
+      data-target="_blank"
+      async
+      defer
+    ></script>
+    <style>
+      .github-corner > svg {
+        opacity: 0.6;
+        transition: opacity 0.4s;
+      }
+      .github-corner:hover > svg {
+        opacity: 1;
+      }
+    </style>
+    <% } %>
+
+    <title>Water Pipe | remarkablegames</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to play this game.</noscript>
+
+    <script type="module">
+      import kaplay from 'kaplay'
+      kaplay({
+        background: [0, 0, 0, 0],
+      })
+    </script>
+    <script type="module" src="src/index.ts"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script>
+      window['ga-disable-%VITE_GOOGLE_ANALYTICS_ID%'] = %DEV%;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        dataLayer.push(arguments);
+      };
+      gtag('js', new Date());
+      gtag('config', '%VITE_GOOGLE_ANALYTICS_ID%');
+    </script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=%VITE_GOOGLE_ANALYTICS_ID%"
+    ></script>
+  </body>
+</html>
