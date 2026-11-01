@@ -1,0 +1,39 @@
+#!/bin/sh
+# Refuses a commit that carries agent memory written from a linked worktree.
+#
+# This is the structural half of the memory-path trap. `.claude/agent-memory/` is
+# tracked, so an agent working from a worktree writes its memory into that
+# checkout, on that branch, where the next agent will not find it — three hand
+# corrections in phase 09 alone, and no amount of instruction has fixed it.
+#
+# A hook lives in the repository's common git directory, which every worktree
+# shares, so installing it once covers every worktree that exists now and every
+# one created later. That is what makes it survive being forgotten.
+#
+# Install: tools/install-hooks
+
+set -u
+
+STAGED_MEMORY="$(git diff --cached --name-only | grep '^\.claude/agent-memory/' || true)"
+[ -z "$STAGED_MEMORY" ] && exit 0
+
+# Both sides go through `cd ... && pwd`: on Windows --absolute-git-dir answers
+# "C:/..." while the common dir resolves to "/c/...", and comparing the two raw
+# strings marks the main checkout as a worktree.
+GIT_DIR_PATH="$(cd "$(git rev-parse --absolute-git-dir)" && pwd)"
+COMMON_DIR_PATH="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+[ "$GIT_DIR_PATH" = "$COMMON_DIR_PATH" ] && exit 0
+
+CANONICAL="$(cd "$COMMON_DIR_PATH/.." && pwd)/.claude/agent-memory"
+
+echo "pre-commit: agent memory cannot be committed from a linked worktree." >&2
+echo >&2
+echo "  You are in:  $(git rev-parse --show-toplevel)" >&2
+echo "  It lives in: $CANONICAL" >&2
+echo >&2
+echo "These files landed in the wrong checkout:" >&2
+printf '%s\n' "$STAGED_MEMORY" | sed 's/^/  /' >&2
+echo >&2
+echo "Unstage them, write them under the path above instead, and commit them" >&2
+echo "there. 'tools/agent-memory-path <agent>' prints it from anywhere." >&2
+exit 1

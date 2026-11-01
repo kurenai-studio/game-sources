@@ -1,0 +1,68 @@
+{
+  "enemies": [
+    {
+      "id": "enemy-basic",
+      "components": {
+        "motion": { "trajectory": "settle-descent" },
+        "sprite": { "id": "enemy-basic" },
+        "collider": { "radius": 5.5, "fragile": true },
+        "scoreValue": { "points": 100 },
+        "health": { "points": 20 },
+        "weapon": { "pattern": "straight-single", "rate": 3.2, "speed": 70, "firstShotDelay": 1.0 }
+      }
+    },
+    {
+      "id": "enemy-light",
+      "components": {
+        "motion": { "trajectory": "cut-across-left" },
+        "sprite": { "id": "enemy-light" },
+        "collider": { "radius": 4.5, "fragile": true },
+        "scoreValue": { "points": 150 },
+        "weapon": { "pattern": "straight-single", "rate": 2.4, "speed": 130, "firstShotDelay": 0.9 }
+      }
+    },
+    {
+      "id": "enemy-shooter",
+      "components": {
+        "motion": { "trajectory": "descend-hold-descend" },
+        "sprite": { "id": "enemy-shooter" },
+        "collider": { "radius": 6.5, "fragile": true },
+        "scoreValue": { "points": 200 },
+        "health": { "points": 30 },
+        "weapon": { "pattern": "straight-single", "rate": 1.8, "speed": 90, "firstShotDelay": 0.7 }
+      }
+    },
+    {
+      "id": "enemy-rush",
+      "components": {
+        "motion": { "trajectory": "plunge" },
+        "sprite": { "id": "enemy-rush" },
+        "collider": { "radius": 4.0, "fragile": true },
+        "scoreValue": { "points": 250 },
+        "weapon": { "pattern": "straight-single", "rate": 4.0, "speed": 120, "firstShotDelay": 1.4 }
+      }
+    },
+    {
+      "id": "enemy-tank",
+      "components": {
+        "motion": { "trajectory": "grind-down" },
+        "sprite": { "id": "enemy-tank" },
+        "collider": { "radius": 10.5, "fragile": false },
+        "scoreValue": { "points": 500 },
+        "health": { "points": 200 },
+        "weapon": { "pattern": "straight-single", "rate": 4.8, "speed": 60, "firstShotDelay": 1.6 }
+      }
+    },
+    {
+      "id": "enemy-carrier",
+      "components": {
+        "motion": { "trajectory": "descend-and-anchor" },
+        "sprite": { "id": "enemy-carrier" },
+        "collider": { "radius": 15.0, "fragile": false },
+        "scoreValue": { "points": 1000 },
+        "health": { "points": 700 },
+        "spawner": { "enemyId": "enemy-basic", "interval": 3.0, "offsetX": 0, "offsetY": -24 }
+      }
+    }
+  ]
+}

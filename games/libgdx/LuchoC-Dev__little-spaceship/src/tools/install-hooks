@@ -1,0 +1,13 @@
+#!/bin/sh
+# Points this clone's hooks at tools/hooks. Run once per clone.
+#
+# core.hooksPath is stored in the repository's shared config, so one run covers
+# every worktree attached to this clone — including the ones created after it.
+
+set -u
+
+cd "$(git rev-parse --show-toplevel)" || exit 2
+git config core.hooksPath tools/hooks
+echo "core.hooksPath = $(git config core.hooksPath)"
+echo "hooks installed for every worktree of this clone:"
+ls tools/hooks | sed 's/^/  /'
