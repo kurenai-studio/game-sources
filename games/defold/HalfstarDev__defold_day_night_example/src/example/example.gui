@@ -1,0 +1,329 @@
+script: "/example/example.gui_script"
+fonts {
+  name: "font"
+  font: "/example/font.font"
+}
+nodes {
+  position {
+    x: 24.0
+    y: 518.0
+  }
+  type: TYPE_TEMPLATE
+  id: "exposure"
+  inherit_alpha: true
+  template: "/example/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "exposure/slider"
+  parent: "exposure"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "exposure/bar"
+  parent: "exposure/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 150.0
+  }
+  type: TYPE_BOX
+  id: "exposure/handle"
+  parent: "exposure/slider"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "exposure/min"
+  parent: "exposure/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "exposure/max"
+  parent: "exposure/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "exposure/label"
+  parent: "exposure/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "exposure/name"
+  parent: "exposure/label"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "exposure/value"
+  parent: "exposure/label"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 24.0
+    y: 436.0
+  }
+  type: TYPE_TEMPLATE
+  id: "saturation"
+  inherit_alpha: true
+  template: "/example/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "saturation/slider"
+  parent: "saturation"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "saturation/bar"
+  parent: "saturation/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 150.0
+  }
+  type: TYPE_BOX
+  id: "saturation/handle"
+  parent: "saturation/slider"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "saturation/min"
+  parent: "saturation/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "saturation/max"
+  parent: "saturation/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "saturation/label"
+  parent: "saturation/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Saturation"
+  id: "saturation/name"
+  parent: "saturation/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "saturation/value"
+  parent: "saturation/label"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 24.0
+    y: 343.0
+  }
+  type: TYPE_TEMPLATE
+  id: "contrast"
+  inherit_alpha: true
+  template: "/example/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "contrast/slider"
+  parent: "contrast"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "contrast/bar"
+  parent: "contrast/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 150.0
+  }
+  type: TYPE_BOX
+  id: "contrast/handle"
+  parent: "contrast/slider"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "contrast/min"
+  parent: "contrast/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "contrast/max"
+  parent: "contrast/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "contrast/label"
+  parent: "contrast/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Contrast"
+  id: "contrast/name"
+  parent: "contrast/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "contrast/value"
+  parent: "contrast/label"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 24.0
+    y: 257.0
+  }
+  type: TYPE_TEMPLATE
+  id: "tint"
+  inherit_alpha: true
+  template: "/example/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "tint/slider"
+  parent: "tint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "tint/bar"
+  parent: "tint/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  type: TYPE_BOX
+  id: "tint/handle"
+  parent: "tint/slider"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "tint/min"
+  parent: "tint/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "tint/max"
+  parent: "tint/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "tint/label"
+  parent: "tint/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Tint"
+  id: "tint/name"
+  parent: "tint/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "0.00"
+  id: "tint/value"
+  parent: "tint/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 342.0
+    y: 52.0
+  }
+  type: TYPE_TEMPLATE
+  id: "time"
+  inherit_alpha: true
+  template: "/example/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "time/slider"
+  parent: "time"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "time/bar"
+  parent: "time/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  type: TYPE_BOX
+  id: "time/handle"
+  parent: "time/slider"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "time/min"
+  parent: "time/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "time/max"
+  parent: "time/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "time/label"
+  parent: "time/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Time"
+  id: "time/name"
+  parent: "time/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "0.00"
+  id: "time/value"
+  parent: "time/label"
+  overridden_fields: 8
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

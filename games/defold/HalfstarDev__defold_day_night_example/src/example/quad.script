@@ -1,0 +1,25 @@
+local time = require "day_night.time"
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set") then
+		local key = message.key
+		local value = message.value
+		local url = "#model"
+		if key == "exposure" then
+			go.set(url, "sun.x", value)
+		elseif key == "contrast" then
+			go.set(url, "sun.y", value)
+		elseif key == "saturation" then
+			go.set(url, "sun.z", value)
+		elseif key == "tint" then
+			go.set(url, "tint", vmath.lerp(value/2, vmath.vector4(1, 1, 1, 1), vmath.vector4(0.55, 0.65, 1.10, 1)))
+		elseif message.key == "time" then
+			local values = time.get_values(value)
+			go.set(url, "sun.x", values.exposure)
+			go.set(url, "sun.y", values.contrast)
+			go.set(url, "sun.z", values.saturation)
+			local tint = vmath.vector4(values.tint.x, values.tint.y, values.tint.z, 1)
+			go.set(url, "tint", tint)
+		end
+	end
+end

@@ -1,0 +1,1225 @@
+use std::{
+    io::{self, Write},
+    num::NonZeroU32,
+    time::Duration,
+};
+
+use crate::core_game_engine::{
+    Configuration, DelayCurveExt, DelayParameters, ExtDuration, ExtNonNegF64, Game, GameLimits,
+    GameModifier, InGameTime, Stat, TileType,
+};
+use crossterm::{
+    QueueableCommand,
+    cursor::MoveTo,
+    event::{
+        self, Event, KeyCode, KeyEvent,
+        KeyEventKind::{Press, Repeat},
+        KeyModifiers,
+    },
+    style::{Color, PrintStyledContent, Stylize},
+    terminal::{self, Clear, ClearType},
+};
+use either::Either;
+use falling_tetromino_engine::{MiscPceRots, MiscTetGens};
+
+use crate::{
+    Application, GameMetaData, GameSave,
+    fmt_helpers::{
+        BoolAsOnOff, fmt_duration, fmt_hertz, fmt_player_input, generate_timestamp,
+        incremented_game_mode_derivative,
+    },
+    game_modding::{self, Combo},
+    game_mode_blueprints::GameModeBlueprint,
+    game_renderers::{GameRenderer, MiscGameRenderers, ShowStatsHud},
+    game_restoration::{GameRestorationData, RawInputHistory},
+    settings::{CustomModeConfig, GameModeSettings, GameplayPreferences},
+    tui_menus::{
+        Menu, MenuUpdate, heading_line,
+        replay_game::{REPLAY_ANCHOR_INTERVAL, calculate_game_and_replay_anchors},
+    },
+};
+
+impl<W: Write> Application<W> {
+    pub fn run_menu_new_game(&mut self) -> io::Result<MenuUpdate> {
+        let mut selected = 0usize;
+        let mut customization_selected = 0usize;
+
+        let minval_cheese = NonZeroU32::new(10).unwrap();
+        let minval_combo = NonZeroU32::new(10).unwrap();
+
+        let d_time = Duration::from_secs(5);
+        let d_score = 10;
+        let d_pieces = 1;
+        let d_lines = 1;
+
+        let d_fall_delay: ExtDuration = Duration::from_millis(10).into();
+        let mult_fall_delay: ExtNonNegF64 = ExtNonNegF64::new(10.0).unwrap();
+        let minval_fall_delay: ExtDuration = Duration::from_secs_f64(1e-9).into();
+        let maxval_fall_delay: ExtDuration = Duration::from_secs_f64(100.0).into();
+
+        loop {
+            if self.settings.tui_coloring().bg_tui == Color::Reset {
+                self.term.queue(Clear(ClearType::All))?;
+            } else {
+                self.term.queue(MoveTo(0, 0))?.queue(PrintStyledContent({
+                    let (w, h) = terminal::size()?;
+                    " ".repeat(w as usize * h as usize)
+                        .on(self.settings.tui_coloring().bg_tui)
+                }))?;
+            }
+            let w_main = Self::W_MAIN.into();
+            let (x_main, y_main) = Self::viewport_offset();
+            let y_selection = Self::H_MAIN / 5;
+
+            let game_modes = self.available_game_mode_blueprints();
+
+            let game_save_available = if !self.game_saves.slots.is_empty() {
+                1
+            } else {
+                0
+            };
+            let inc_if_mstr_unlckd = if self.settings.game_mode_settings.unlock_master_mode {
+                1
+            } else {
+                0
+            };
+            let inc_if_clsc_unlckd = if self.settings.game_mode_settings.unlock_classic_mode {
+                1
+            } else {
+                0
+            };
+            let opt_idx_classic = self
+                .settings
+                .game_mode_settings
+                .unlock_classic_mode
+                .then_some(2);
+            let idx_cheese = 3 + inc_if_mstr_unlckd + inc_if_clsc_unlckd;
+            let idx_combo = 5 + inc_if_mstr_unlckd + inc_if_clsc_unlckd;
+            let idx_custom = game_modes.len();
+            let opt_idx_game_save =
+                (!self.game_saves.slots.is_empty()).then_some(game_modes.len() + 1);
+
+            // Normal presets + 2 spaces if game_save option available + custom preset.
+            let selection_len = game_modes.len() + game_save_available + 1;
+            // There are four columns for the custom stat selection.
+            let customization_selection_size = 4;
+            selected %= selection_len;
+            customization_selected %= customization_selection_size;
+            // Render menu title.
+            self.term
+                .queue(MoveTo(x_main, y_main + y_selection))?
+                .queue(PrintStyledContent(
+                    format!("{:^w_main$}", "+ Start New Game +")
+                        .bold()
+                        .with(self.settings.tui_coloring().fg_tui)
+                        .on(self.settings.tui_coloring().bg_tui),
+                ))?
+                .queue(MoveTo(x_main, y_main + y_selection + 2))?
+                .queue(PrintStyledContent(
+                    format!("{:^w_main$}", heading_line(&self.settings))
+                        .with(self.settings.tui_coloring().fg_accent)
+                        .on(self.settings.tui_coloring().bg_tui),
+                ))?;
+            // Render normal and special game modes.
+            for (
+                i,
+                GameModeBlueprint {
+                    title,
+                    description,
+                    show_stats_hud: _,
+                    objective_orderdescending: _,
+                    build: _,
+                },
+            ) in game_modes.iter().enumerate()
+            {
+                self.term
+                    .queue(MoveTo(
+                        x_main,
+                        y_main
+                            + y_selection
+                            + 4
+                            + u16::try_from(i).unwrap()
+                            + if i >= 2 + inc_if_mstr_unlckd + inc_if_clsc_unlckd {
+                                1
+                            } else {
+                                0
+                            },
+                    ))?
+                    .queue(PrintStyledContent(
+                        format!(
+                            "{:^w_main$}",
+                            if i == selected {
+                                format!(
+                                    "{} {title}: {description} {}",
+                                    self.settings.tui_symbols().menu_pointers[0],
+                                    self.settings.tui_symbols().menu_pointers[1]
+                                )
+                            } else {
+                                title.to_string()
+                            }
+                        )
+                        .with(self.settings.tui_coloring().fg_tui)
+                        .on(self.settings.tui_coloring().bg_tui),
+                    ))?;
+            }
+            // Render custom mode option.
+            let added_custom_labels = [
+                self.settings
+                    .game_mode_settings
+                    .custom_config
+                    .seed
+                    .is_some()
+                    .then_some("+Seed"),
+                self.settings
+                    .game_mode_settings
+                    .custom_config
+                    .start_board
+                    .is_some()
+                    .then_some("+StartBoard"),
+                self.settings
+                    .game_mode_settings
+                    .custom_config
+                    .revive_on_top_out
+                    .then_some("+NoTopOut"),
+            ];
+            self.term
+                .queue(MoveTo(
+                    x_main,
+                    y_main + y_selection + 3 + 1 + u16::try_from(game_modes.len() + 2).unwrap(),
+                ))?
+                .queue(PrintStyledContent(
+                    format!(
+                        "{:^w_main$}",
+                        if selected == idx_custom {
+                            format!(
+                                "{:<42}",
+                                format!(
+                                    "{} Custom: [Del]=reset {}",
+                                    if customization_selected == 0 {
+                                        self.settings.tui_symbols().menu_pointers[0].clone()
+                                    } else {
+                                        format!(
+                                            "{}|",
+                                            " ".repeat(
+                                                self.settings.tui_symbols().menu_pointers[0]
+                                                    .chars()
+                                                    .count()
+                                                    .saturating_sub(1)
+                                            )
+                                        )
+                                    },
+                                    added_custom_labels
+                                        .into_iter()
+                                        .flatten()
+                                        .collect::<Vec<_>>()
+                                        .join(" ")
+                                ),
+                            )
+                        } else {
+                            "Custom".to_owned()
+                        }
+                    )
+                    .with(self.settings.tui_coloring().fg_tui)
+                    .on(self.settings.tui_coloring().bg_tui),
+                ))?;
+            // Render custom mode stuff.
+            if selected == idx_custom {
+                let stats_strs = [
+                    {
+                        let fall_delay =
+                            match &self.settings.game_mode_settings.custom_config.fall_curve {
+                                Either::Left(params) => params.base_delay(),
+                                Either::Right(table) => table.entries()[0],
+                            };
+                        format!(
+                            "Initial fall delay = {:.9} s (Gravity: {})", /* NOTE: the 9 corresponds to the exponent in minval_fall_delay */
+                            fall_delay.as_secs_ennf64().get() * 1.0,
+                            fmt_hertz(fall_delay.as_hertz())
+                        )
+                    },
+                    {
+                        let is_constant =
+                            match &self.settings.game_mode_settings.custom_config.fall_curve {
+                                Either::Left(params) => params.is_constant(),
+                                Either::Right(table) => table.entries().len() <= 1,
+                            };
+                        format!("Progressive gravity = {}", (!is_constant).on_off())
+                    },
+                    format!(
+                        "Limit = {:?} [→]",
+                        self.settings.game_mode_settings.custom_config.win_condition
+                    ),
+                ];
+                for (j, stat_str) in stats_strs.into_iter().enumerate() {
+                    self.term
+                        .queue(MoveTo(
+                            x_main + 13 + 3 * u16::try_from(j).unwrap(),
+                            y_main
+                                + y_selection
+                                + 3
+                                + u16::try_from(1 + j + 1 + game_modes.len() + 2).unwrap(),
+                        ))?
+                        .queue(PrintStyledContent(
+                            if j + 1 == customization_selected {
+                                format!(
+                                    "{} {stat_str}{}",
+                                    self.settings.tui_symbols().menu_pointers[0],
+                                    if customization_selected != 3
+                                        || self
+                                            .settings
+                                            .game_mode_settings
+                                            .custom_config
+                                            .win_condition
+                                            .is_some()
+                                    {
+                                        " [↓/↑]"
+                                    } else {
+                                        ""
+                                    }
+                                )
+                            } else {
+                                format!("| {stat_str}")
+                            }
+                            .with(self.settings.tui_coloring().fg_tui)
+                            .on(self.settings.tui_coloring().bg_tui),
+                        ))?;
+                }
+            }
+
+            // Render load game save option.
+            if let Some(GameSave {
+                game_meta_data,
+                game_restoration_data: GameRestorationData { input_history, .. },
+                inputs_to_load,
+            }) = &self.game_saves.get()
+            {
+                let load_title = &game_meta_data.title;
+                let load_offset_max = input_history.inputs.len();
+                self.term
+                    .queue(MoveTo(
+                        x_main,
+                        y_main + y_selection + 4 + 1 + u16::try_from(game_modes.len() + 1).unwrap() + if selected == idx_custom { 5 } else { 2 },
+                    ))?
+                    .queue(PrintStyledContent(format!(
+                        "{:^w_main$}",
+                        if Some(selected) == opt_idx_game_save {
+                            if *inputs_to_load == 0 {
+                                format!("{} Load {load_title} from beginning [Del] {}", self.settings.tui_symbols().menu_pointers[0], self.settings.tui_symbols().menu_pointers[1])
+                            } else {
+                                let (load_time, load_input) = input_history.inputs[(inputs_to_load - 1) % input_history.inputs.len()];
+                                let load_time = fmt_duration(load_time);
+                                let load_input = fmt_player_input(load_input, self.settings.tui_symbols().buttons);
+                                format!("{} Load {load_title} from input {inputs_to_load}/{load_offset_max} ({load_input} @ {load_time}) [Del] {}", self.settings.tui_symbols().menu_pointers[0], self.settings.tui_symbols().menu_pointers[1])
+                            }
+                        } else {
+                            format!("Game save ({load_title})")
+                        },
+                    ).with(self.settings.tui_coloring().fg_tui).on(self.settings.tui_coloring().bg_tui)))?;
+            }
+
+            self.term.flush()?;
+            // Wait for new input.
+            let mut start_new_game = false;
+            match event::read()? {
+                // Quit app.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c' | 'C'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: Press | Repeat,
+                    state: _,
+                }) => break Ok(MenuUpdate::Push(Menu::Quit)),
+
+                // Keybinds help menu.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('?'),
+                    kind: Press | Repeat,
+                    ..
+                }) => {
+                    let client_menu_name = "New Game menu";
+                    let legend = vec![
+                        ("Normal keybinds".to_owned(), [
+                            ("Enter e", "Select"),
+                            ("Escape Backspace q", "Exit menu"),
+                            ("Delete d", "Reset configuration of Classic/Combo/Cheese/Custom modes, Delete game save"),
+                            ("↓/↑ j/k", "Navigate down/up, Adjust values of Custom mode"),
+                            ("←/→ h/l", "Load/unload inputs for game save, Adjust values of Classic/Combo/Cheese modes, Navigate Custom mode values"),
+                            ("?", "Open Keybinds overview"),
+                        ].into_iter().map(|(lhs,rhs)| (lhs.to_owned(), rhs.to_owned())).collect()),
+                        ("Special keybinds".to_owned(), [
+                            ("Home/End", "Set graviy to zero/infinite for Custom mode, Jump to first/last input for game save"),
+                            ("Alt+←/→ Alt+h/l", "Toggle easier lock delay for Classic mode, Adjust start layout for Combo mode, Toggle NoTopOut for Custom mode"),
+                            ("Alt+↓/↑ Alt+j/k", "Multiply/divide initial fall delay of Custom mode by 10"),
+                            ("Alt+Enter", "View game save as replay"),
+                            ("Ctrl+U", "Unlock all game modes"),
+                            ("Ctrl+C", "Quit program (respects save preferences)"),
+                            ("Ctrl+Alt+L", "Reload app from savefile (overwrites current data!)"),
+                            ("Ctrl+Alt+S", "Perform savefile store (respects save preferences)"),
+                        ].into_iter().map(|(lhs,rhs)| (lhs.to_owned(), rhs.to_owned())).collect()),
+                    ];
+
+                    break Ok(MenuUpdate::Push(Menu::KeybindsOverview {
+                        client_menu_name,
+                        legend,
+                    }));
+                }
+
+                // Exit menu.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Esc | KeyCode::Char('q' | 'Q') | KeyCode::Backspace,
+                    kind: Press,
+                    ..
+                }) => break Ok(MenuUpdate::Pop),
+
+                // Try select mode.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Enter | KeyCode::Char('e' | 'E'),
+                    kind: Press,
+                    modifiers,
+                    ..
+                }) => {
+                    if modifiers.contains(KeyModifiers::ALT)
+                        && let Some(GameSave {
+                            game_meta_data,
+                            game_restoration_data,
+                            inputs_to_load: _,
+                        }) = &self.game_saves.slots.get(self.game_saves.selected)
+                    {
+                        let replay_length = if let Some((time, _)) =
+                            game_restoration_data.input_history.inputs.last()
+                        {
+                            *time
+                        } else {
+                            Duration::ZERO
+                        };
+                        break Ok(MenuUpdate::Push(Menu::ReplayGame {
+                            game_restoration_data: Box::new(game_restoration_data.clone()),
+                            game_meta_data: game_meta_data.clone(),
+                            replay_length,
+                            game_renderer: Box::new(MiscGameRenderers::from_num(
+                                self.temp_data.renderer_used,
+                            )),
+                            cached_game_and_replay_anchors: Box::new(
+                                calculate_game_and_replay_anchors(
+                                    &mut self.term,
+                                    &self.settings,
+                                    game_restoration_data,
+                                    REPLAY_ANCHOR_INTERVAL,
+                                    replay_length,
+                                )?,
+                            ),
+                        }));
+                    }
+                    start_new_game = true;
+                }
+
+                // Adjust custom mode values..
+                Event::Key(KeyEvent {
+                    code: KeyCode::Up | KeyCode::Char('k' | 'K'),
+                    kind: Press | Repeat,
+                    modifiers,
+                    ..
+                }) => {
+                    if customization_selected > 0 {
+                        match customization_selected {
+                            // Increase Custom mode's Base delay.
+                            1 => {
+                                match &mut self.settings.game_mode_settings.custom_config.fall_curve
+                                {
+                                    Either::Left(params) => {
+                                        // Increase custom fall delay.
+                                        let old_fall_base_delay = params.base_delay();
+
+                                        let new_fall_base_delay = if old_fall_base_delay.is_zero() {
+                                            // Bootstrap from zero to baseline.
+                                            if modifiers.contains(KeyModifiers::ALT) {
+                                                minval_fall_delay
+                                            } else {
+                                                d_fall_delay
+                                            }
+                                        } else if old_fall_base_delay.is_infinite() {
+                                            // Already at max.
+                                            old_fall_base_delay
+                                        } else {
+                                            // Else we can try increasing.
+                                            // Naïvely increase first.
+                                            let new_base_delay =
+                                                if modifiers.contains(KeyModifiers::ALT) {
+                                                    old_fall_base_delay.mul_ennf64(mult_fall_delay)
+                                                } else {
+                                                    old_fall_base_delay + d_fall_delay
+                                                };
+                                            // Manually cap.
+                                            if new_base_delay > maxval_fall_delay {
+                                                ExtDuration::Infinite
+                                            } else {
+                                                new_base_delay
+                                            }
+                                        };
+
+                                        // Adjust lock curve to either be decreasing or infinite as well.
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            if new_fall_base_delay.is_infinite() {
+                                                Some(Either::Left(DelayParameters::constant(
+                                                    ExtDuration::Infinite,
+                                                )))
+                                            } else {
+                                                Some(Either::Left(DelayParameters::standard_lock()))
+                                            };
+
+                                        *params = params
+                                            .with_base_delay(new_fall_base_delay)
+                                            .unwrap_or_else(DelayParameters::standard_fall);
+                                        // Normally lowerbound is 0, can only enter this if config was modified.
+                                    }
+                                    Either::Right(_table) => {
+                                        // Can't toggle progression for custom tables right now, just reset to parameterization.
+                                        self.settings.game_mode_settings.custom_config.fall_curve =
+                                            CustomModeConfig::default().fall_curve;
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            CustomModeConfig::default().lock_curve;
+                                    }
+                                }
+                            }
+
+                            // Toggle progressive gravity.
+                            2 => {
+                                match &mut self.settings.game_mode_settings.custom_config.fall_curve
+                                {
+                                    Either::Left(params) => {
+                                        // Toggle decreasing fall/lock delay.
+                                        if params.is_constant() {
+                                            // Was constant, make decreasing.
+                                            *params = params
+                                                .with_subtrahend(
+                                                    DelayParameters::standard_fall().subtrahend(),
+                                                )
+                                                .with_factor(
+                                                    DelayParameters::standard_fall().factor(),
+                                                )
+                                                .unwrap();
+                                            if let Some(lock_curve) = &mut self
+                                                .settings
+                                                .game_mode_settings
+                                                .custom_config
+                                                .lock_curve
+                                            {
+                                                *lock_curve = Either::Left(
+                                                    DelayParameters::standard_lock()
+                                                        .with_base_delay(
+                                                            lock_curve.retrieve_and_check(0, 1).0,
+                                                        )
+                                                        .unwrap(),
+                                                );
+                                            }
+                                        } else {
+                                            // Was nonconstant, make constant.
+                                            let constant_params =
+                                                DelayParameters::constant(Default::default());
+                                            *params = params
+                                                .with_subtrahend(constant_params.subtrahend())
+                                                .with_factor(constant_params.factor())
+                                                .unwrap();
+                                            if let Some(lock_curve) = &mut self
+                                                .settings
+                                                .game_mode_settings
+                                                .custom_config
+                                                .lock_curve
+                                            {
+                                                *lock_curve = Either::Left(
+                                                    DelayParameters::constant(ExtDuration::ZERO)
+                                                        .with_base_delay(
+                                                            lock_curve.retrieve_and_check(0, 1).0,
+                                                        )
+                                                        .unwrap(),
+                                                );
+                                            }
+                                        };
+                                    }
+                                    Either::Right(_table) => {
+                                        // Can't toggle progression for custom tables right now, just reset to parameterization.
+                                        self.settings.game_mode_settings.custom_config.fall_curve =
+                                            CustomModeConfig::default().fall_curve;
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            CustomModeConfig::default().lock_curve;
+                                    }
+                                }
+                            }
+                            3 => {
+                                match self.settings.game_mode_settings.custom_config.win_condition {
+                                    Some(Stat::TimeElapsed(ref mut t)) => {
+                                        *t += d_time;
+                                    }
+                                    Some(Stat::PiecesLocked(ref mut p)) => {
+                                        *p += d_pieces;
+                                    }
+                                    Some(Stat::LinesCleared(ref mut l)) => {
+                                        *l += d_lines;
+                                    }
+                                    Some(Stat::PointsScored(ref mut s)) => {
+                                        *s += d_score;
+                                    }
+                                    None => {}
+                                };
+                            }
+                            _ => unreachable!(),
+                        }
+                    } else {
+                        selected += selection_len - 1;
+                    }
+                }
+
+                // Move selector down or decrease stat.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Down | KeyCode::Char('j' | 'J'),
+                    kind: Press | Repeat,
+                    modifiers,
+                    ..
+                }) => {
+                    // Selected custom stat; decrease it.
+                    if customization_selected > 0 {
+                        match customization_selected {
+                            // Dencrease Custom mode's Base delay.
+                            1 => {
+                                match &mut self.settings.game_mode_settings.custom_config.fall_curve
+                                {
+                                    Either::Left(params) => {
+                                        // Increase custom fall delay.
+                                        let old_fall_base_delay = params.base_delay();
+
+                                        let new_fall_base_delay = if old_fall_base_delay.is_zero() {
+                                            // Already at zero, leave it.
+                                            old_fall_base_delay
+                                        } else if old_fall_base_delay.is_infinite() {
+                                            // Bootstrap(?) down to upper bound from infinity.
+                                            maxval_fall_delay
+                                        } else {
+                                            // Else we can try decreasing.
+                                            // Naïvely decrease first.
+                                            let new_base_delay =
+                                                if modifiers.contains(KeyModifiers::ALT) {
+                                                    old_fall_base_delay.div_ennf64(mult_fall_delay)
+                                                } else {
+                                                    old_fall_base_delay.saturating_sub(d_fall_delay)
+                                                };
+                                            // Manually cap.
+                                            if new_base_delay < minval_fall_delay {
+                                                ExtDuration::ZERO
+                                            } else {
+                                                new_base_delay
+                                            }
+                                        };
+
+                                        // Adjust lock curve to either be decreasing or infinite as well.
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            if new_fall_base_delay.is_infinite() {
+                                                Some(Either::Left(DelayParameters::constant(
+                                                    ExtDuration::Infinite,
+                                                )))
+                                            } else {
+                                                Configuration::default().lock_delay_curve
+                                            };
+
+                                        *params = params
+                                            .with_base_delay(new_fall_base_delay)
+                                            .unwrap_or_else(DelayParameters::standard_fall);
+                                        // Normally lowerbound is 0, can only enter this if config was modified.
+                                    }
+                                    Either::Right(_table) => {
+                                        // Can't toggle progression for custom tables right now, just reset to parameterization.
+                                        self.settings.game_mode_settings.custom_config.fall_curve =
+                                            CustomModeConfig::default().fall_curve;
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            CustomModeConfig::default().lock_curve;
+                                    }
+                                }
+                            }
+
+                            // Toggle progressive gravity.
+                            2 => {
+                                match &mut self.settings.game_mode_settings.custom_config.fall_curve
+                                {
+                                    Either::Left(params) => {
+                                        // Toggle decreasing fall/lock delay.
+                                        if params.is_constant() {
+                                            // Was constant, make decreasing.
+                                            *params = params
+                                                .with_subtrahend(
+                                                    DelayParameters::standard_fall().subtrahend(),
+                                                )
+                                                .with_factor(
+                                                    DelayParameters::standard_fall().factor(),
+                                                )
+                                                .unwrap();
+                                            if let Some(lock_curve) = &mut self
+                                                .settings
+                                                .game_mode_settings
+                                                .custom_config
+                                                .lock_curve
+                                            {
+                                                *lock_curve = Either::Left(
+                                                    DelayParameters::standard_lock()
+                                                        .with_base_delay(
+                                                            lock_curve.retrieve_and_check(0, 1).0,
+                                                        )
+                                                        .unwrap(),
+                                                );
+                                            }
+                                        } else {
+                                            // Was nonconstant, make constant.
+                                            let constant_params =
+                                                DelayParameters::constant(Default::default());
+                                            *params = params
+                                                .with_subtrahend(constant_params.subtrahend())
+                                                .with_factor(constant_params.factor())
+                                                .unwrap();
+                                            if let Some(lock_curve) = &mut self
+                                                .settings
+                                                .game_mode_settings
+                                                .custom_config
+                                                .lock_curve
+                                            {
+                                                *lock_curve = Either::Left(
+                                                    DelayParameters::constant(ExtDuration::ZERO)
+                                                        .with_base_delay(
+                                                            lock_curve.retrieve_and_check(0, 1).0,
+                                                        )
+                                                        .unwrap(),
+                                                );
+                                            }
+                                        };
+                                    }
+                                    Either::Right(_table) => {
+                                        // Can't toggle progression for custom tables right now, just reset to parameterization.
+                                        self.settings.game_mode_settings.custom_config.fall_curve =
+                                            CustomModeConfig::default().fall_curve;
+                                        self.settings.game_mode_settings.custom_config.lock_curve =
+                                            CustomModeConfig::default().lock_curve;
+                                    }
+                                }
+                            }
+
+                            3 => {
+                                match self.settings.game_mode_settings.custom_config.win_condition {
+                                    Some(Stat::TimeElapsed(ref mut t)) => {
+                                        *t = t.saturating_sub(d_time);
+                                    }
+                                    Some(Stat::PiecesLocked(ref mut p)) => {
+                                        *p = p.saturating_sub(d_pieces);
+                                    }
+                                    Some(Stat::LinesCleared(ref mut l)) => {
+                                        *l = l.saturating_sub(d_lines);
+                                    }
+                                    Some(Stat::PointsScored(ref mut s)) => {
+                                        *s = s.saturating_sub(d_score);
+                                    }
+                                    None => {}
+                                };
+                            }
+                            _ => unreachable!(),
+                        }
+                    // Move gamemode selector
+                    } else {
+                        selected += 1;
+                    }
+                }
+
+                // Move selector left (select stat).
+                Event::Key(KeyEvent {
+                    code: KeyCode::Left | KeyCode::Char('h' | 'H'),
+                    kind: Press | Repeat,
+                    modifiers,
+                    ..
+                }) => {
+                    if selected == idx_custom {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings
+                                .game_mode_settings
+                                .custom_config
+                                .revive_on_top_out ^= true;
+                        } else if customization_selected > 0 {
+                            customization_selected += customization_selection_size - 1
+                        }
+                    } else if Some(selected) == opt_idx_classic {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings.game_mode_settings.classic_easier_lock_delay ^= true;
+                        } else {
+                            self.settings.game_mode_settings.classic_lvl_offset = self
+                                .settings
+                                .game_mode_settings
+                                .classic_lvl_offset
+                                .saturating_sub(1);
+                        }
+                    } else if selected == idx_cheese {
+                        if let Some(limit) = self.settings.game_mode_settings.cheese_config.limit {
+                            self.settings.game_mode_settings.cheese_config.limit =
+                                if limit > minval_cheese {
+                                    NonZeroU32::try_from(limit.get() - 1).ok()
+                                } else {
+                                    None
+                                };
+                        }
+                    } else if selected == idx_combo {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            let new_layout_idx = if let Some(i) =
+                                Combo::LAYOUTS.iter().position(|lay| {
+                                    *lay == self
+                                        .settings
+                                        .game_mode_settings
+                                        .combo_config
+                                        .start_layout
+                                }) {
+                                let layout_cnt = Combo::LAYOUTS.len();
+                                (i + layout_cnt - 1) % layout_cnt
+                            } else {
+                                0
+                            };
+                            self.settings.game_mode_settings.combo_config.start_layout =
+                                Combo::LAYOUTS[new_layout_idx];
+                        } else if let Some(limit) =
+                            self.settings.game_mode_settings.combo_config.limit
+                        {
+                            self.settings.game_mode_settings.combo_config.limit =
+                                if limit > minval_combo {
+                                    NonZeroU32::try_from(limit.get() - 1).ok()
+                                } else {
+                                    None
+                                };
+                        }
+                    } else if Some(selected) == opt_idx_game_save
+                        && let Some(GameSave {
+                            game_restoration_data: GameRestorationData { input_history, .. },
+                            inputs_to_load,
+                            ..
+                        }) = self.game_saves.get_mut()
+                    {
+                        *inputs_to_load += input_history.inputs.len()
+                            * if modifiers.contains(KeyModifiers::ALT) {
+                                20
+                            } else {
+                                1
+                            };
+                        *inputs_to_load %= input_history.inputs.len() + 1;
+                    }
+                }
+
+                // Reload from savefile.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('l' | 'L'),
+                    modifiers,
+                    kind: Press | Repeat,
+                    ..
+                }) if { modifiers.contains(KeyModifiers::CONTROL.union(KeyModifiers::ALT)) } => {
+                    self.temp_data.load_savefile_result = self.savefile_read();
+                }
+
+                // Store to savefile.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('s' | 'S'),
+                    modifiers,
+                    kind: Press | Repeat,
+                    ..
+                }) if { modifiers.contains(KeyModifiers::CONTROL.union(KeyModifiers::ALT)) } => {
+                    self.temp_data.store_savefile_result = self.savefile_write();
+                }
+
+                // Move selector right (select stat).
+                Event::Key(KeyEvent {
+                    code: KeyCode::Right | KeyCode::Char('l' | 'L'),
+                    kind: Press | Repeat,
+                    modifiers,
+                    ..
+                }) => {
+                    // If custom gamemode selected, allow incrementing stat selection.
+                    if selected == idx_custom {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings
+                                .game_mode_settings
+                                .custom_config
+                                .revive_on_top_out ^= true;
+                        // If reached last stat, cycle through stats for limit.
+                        } else if customization_selected == customization_selection_size - 1 {
+                            self.settings.game_mode_settings.custom_config.win_condition =
+                                match self.settings.game_mode_settings.custom_config.win_condition {
+                                    Some(Stat::TimeElapsed(_)) => Some(Stat::PointsScored(200)),
+                                    Some(Stat::PointsScored(_)) => Some(Stat::PiecesLocked(100)),
+                                    Some(Stat::PiecesLocked(_)) => Some(Stat::LinesCleared(40)),
+                                    Some(Stat::LinesCleared(_)) => None,
+                                    None => Some(Stat::TimeElapsed(Duration::from_secs(300))),
+                                };
+                        } else {
+                            customization_selected += 1
+                        }
+                    } else if Some(selected) == opt_idx_classic {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings.game_mode_settings.classic_easier_lock_delay ^= true;
+                        } else {
+                            self.settings.game_mode_settings.classic_lvl_offset =
+                                (self.settings.game_mode_settings.classic_lvl_offset + 1).min(29);
+                        }
+                    } else if selected == idx_cheese {
+                        self.settings.game_mode_settings.cheese_config.limit = if let Some(limit) =
+                            self.settings.game_mode_settings.cheese_config.limit
+                        {
+                            limit.checked_add(1)
+                        } else {
+                            Some(minval_cheese)
+                        };
+                    } else if selected == idx_combo {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            let new_layout_idx = if let Some(i) =
+                                Combo::LAYOUTS.iter().position(|lay| {
+                                    *lay == self
+                                        .settings
+                                        .game_mode_settings
+                                        .combo_config
+                                        .start_layout
+                                }) {
+                                let layout_cnt = Combo::LAYOUTS.len();
+                                (i + 1) % layout_cnt
+                            } else {
+                                0
+                            };
+                            self.settings.game_mode_settings.combo_config.start_layout =
+                                Combo::LAYOUTS[new_layout_idx];
+                        } else {
+                            self.settings.game_mode_settings.combo_config.limit =
+                                if let Some(limit) =
+                                    self.settings.game_mode_settings.combo_config.limit
+                                {
+                                    limit.checked_add(1)
+                                } else {
+                                    Some(minval_combo)
+                                };
+                        }
+                    } else if Some(selected) == opt_idx_game_save
+                        && let Some(GameSave {
+                            game_restoration_data: GameRestorationData { input_history, .. },
+                            inputs_to_load,
+                            ..
+                        }) = self.game_saves.get_mut()
+                    {
+                        *inputs_to_load += if modifiers.contains(KeyModifiers::ALT) {
+                            20
+                        } else {
+                            1
+                        };
+                        *inputs_to_load %= input_history.inputs.len() + 1;
+                    }
+                }
+
+                // Load first input for game save.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    kind: Press | Repeat,
+                    ..
+                }) => {
+                    // If custom gamemode selected, allow setting speed curve to 'zero gravity'.
+                    if selected == idx_custom
+                    /*&& customization_selected == customization_selection_size - 1*/
+                    {
+                        self.settings.game_mode_settings.custom_config.fall_curve =
+                            Either::Left(DelayParameters::constant(ExtDuration::Infinite));
+                        self.settings.game_mode_settings.custom_config.lock_curve = Some(
+                            Either::Left(DelayParameters::constant(ExtDuration::Infinite)),
+                        );
+                    } else if Some(selected) == opt_idx_game_save
+                        && let Some(GameSave { inputs_to_load, .. }) = self.game_saves.get_mut()
+                    {
+                        *inputs_to_load = 0;
+                    }
+                }
+
+                // Load last input for game save.
+                Event::Key(KeyEvent {
+                    code: KeyCode::End,
+                    kind: Press | Repeat,
+                    ..
+                }) => {
+                    // If custom gamemode selected, allow setting speed curve to 'zero gravity'.
+                    if selected == idx_custom
+                    /*&& customization_selected == customization_selection_size - 1*/
+                    {
+                        self.settings.game_mode_settings.custom_config.fall_curve =
+                            Either::Left(DelayParameters::constant(ExtDuration::ZERO));
+                        self.settings.game_mode_settings.custom_config.lock_curve =
+                            Configuration::default().lock_delay_curve;
+                    } else if Some(selected) == opt_idx_game_save
+                        && let Some(GameSave {
+                            game_restoration_data: GameRestorationData { input_history, .. },
+                            inputs_to_load,
+                            ..
+                        }) = self.game_saves.get_mut()
+                    {
+                        *inputs_to_load = input_history.inputs.len();
+                    }
+                }
+
+                // Move selector right (select stat).
+                Event::Key(KeyEvent {
+                    code: KeyCode::Delete | KeyCode::Char('d' | 'D'),
+                    kind: Press | Repeat,
+                    modifiers,
+                    ..
+                }) => {
+                    if selected == idx_custom {
+                        self.settings.game_mode_settings.custom_config =
+                            CustomModeConfig::default();
+                    } else if Some(selected) == opt_idx_classic {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings.game_mode_settings.classic_easier_lock_delay = false;
+                        } else {
+                            self.settings.game_mode_settings.classic_lvl_offset = 0;
+                        }
+                    } else if selected == idx_cheese {
+                        self.settings.game_mode_settings.cheese_config.limit =
+                            GameModeSettings::default().cheese_config.limit;
+                    } else if selected == idx_combo {
+                        if modifiers.contains(KeyModifiers::ALT) {
+                            self.settings.game_mode_settings.combo_config.start_layout =
+                                Combo::LAYOUTS[0];
+                        } else {
+                            self.settings.game_mode_settings.combo_config.limit =
+                                GameModeSettings::default().combo_config.limit;
+                        }
+                    } else if Some(selected) == opt_idx_game_save {
+                        self.game_saves.slots.remove(self.game_saves.selected);
+                        self.game_saves.selected = 0;
+                    }
+                }
+
+                // Secret - This unlocks things.
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('u' | 'U'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: Press | Repeat,
+                    ..
+                }) => {
+                    self.settings.game_mode_settings.unlock_master_mode = true;
+                    self.settings.game_mode_settings.unlock_classic_mode = true;
+                    self.settings.game_mode_settings.unlock_placement_mode = true;
+                    self.settings.game_mode_settings.unlock_ascent_mode = true;
+                }
+
+                // Other event: don't care.
+                _ => {}
+            }
+
+            if start_new_game {
+                let game_menu = self.create_game_menu(selected);
+                self.statistics.new_games_started += 1;
+
+                break Ok(MenuUpdate::Push(game_menu));
+            }
+        }
+    }
+
+    pub fn available_game_mode_blueprints(&self) -> Vec<GameModeBlueprint> {
+        let mut game_modes = vec![
+            GameModeBlueprint::regular(),
+            GameModeBlueprint::swift(),
+            GameModeBlueprint::puzzle(),
+            GameModeBlueprint::cheese(
+                self.settings.game_mode_settings.cheese_config,
+                self.settings.game_mode_settings.cheese_fall_and_lock_delays,
+            ),
+            GameModeBlueprint::survival(self.settings.game_mode_settings.survival_config),
+            GameModeBlueprint::combo(self.settings.game_mode_settings.combo_config),
+        ];
+
+        if self.settings.game_mode_settings.unlock_master_mode {
+            game_modes.insert(2, GameModeBlueprint::master());
+        }
+
+        if self.settings.game_mode_settings.unlock_classic_mode {
+            // ...Do not ask the programmer about what indices to use for `insert` results.
+            game_modes.insert(
+                2,
+                GameModeBlueprint::classic(
+                    self.settings.game_mode_settings.classic_lvl_offset,
+                    self.settings.game_mode_settings.classic_easier_lock_delay,
+                ),
+            );
+        }
+
+        if self.settings.game_mode_settings.unlock_placement_mode {
+            game_modes.push(GameModeBlueprint::placement_practice())
+        }
+
+        if self.settings.game_mode_settings.unlock_ascent_mode {
+            game_modes.push(GameModeBlueprint::ascent())
+        }
+
+        game_modes
+    }
+
+    pub fn create_game_menu(&self, selection: usize) -> Menu {
+        let game_modes = self.available_game_mode_blueprints();
+
+        let GameplayPreferences {
+            rotsys,
+            tetgen,
+            preview,
+            das,
+            arr,
+            dsd,
+            sdr,
+            lcd,
+            are,
+            initsys,
+            dtapfinesse: _,
+        } = *self.settings.gameplay();
+
+        let mut builder = Game::builder();
+
+        builder
+            .rotation_system(rotsys)
+            .tetromino_generator(tetgen)
+            .generate_piece_preview(preview)
+            .delayed_auto_shift(das)
+            .auto_repeat_rate(arr)
+            .delayed_soft_drop(dsd)
+            .soft_drop_rate(sdr)
+            .line_clear_duration(lcd)
+            .spawn_delay(are)
+            .allow_spawn_manipulation(initsys);
+
+        let (game_meta_data, mut game, raw_input_history) = if selection < game_modes.len() {
+            // Build one of the selected game modes.
+            let GameModeBlueprint {
+                title,
+                description: _,
+                show_stats_hud,
+                objective_orderdescending: objective_sort_descending,
+                build,
+            } = &game_modes[selection];
+
+            let preset_game = build(&builder);
+
+            let preset_game_meta_data = GameMetaData {
+                timestamp: generate_timestamp(),
+                title: title.to_owned(),
+                show_stats: *show_stats_hud,
+                objective_orderdescending: *objective_sort_descending,
+            };
+
+            let blank_input_history = RawInputHistory::default();
+
+            (preset_game_meta_data, preset_game, blank_input_history)
+        } else if selection == game_modes.len() + 1
+            && let Some(GameSave {
+                game_meta_data,
+                game_restoration_data,
+                inputs_to_load,
+            }) = &self.game_saves.get()
+        {
+            // Load saved game.
+
+            let restored_game = game_restoration_data.restore(*inputs_to_load);
+
+            let mut restored_game_meta_data = game_meta_data.clone();
+            // Mark restored game as such.
+            restored_game_meta_data.title =
+                incremented_game_mode_derivative(restored_game_meta_data.title.clone());
+
+            let restored_input_history = game_restoration_data
+                .input_history
+                .inputs
+                .iter()
+                .take(*inputs_to_load)
+                .copied()
+                .collect::<Vec<_>>()
+                .into();
+
+            (
+                restored_game_meta_data,
+                restored_game,
+                restored_input_history,
+            )
+        } else {
+            // Build custom game.
+            let n = &self.settings.game_mode_settings;
+
+            builder
+                .fall_delay_curve(n.custom_config.fall_curve.clone())
+                .lock_delay_curve(n.custom_config.lock_curve.clone())
+                .game_limits(match n.custom_config.win_condition {
+                    Some(stat) => GameLimits::single(stat, true),
+                    None => GameLimits::new(),
+                });
+
+            // Optionally load custom seed.
+            if let Some(seed) = n.custom_config.seed {
+                builder.seed(seed);
+            }
+
+            let mut modifiers =
+                Vec::<Box<dyn GameModifier<MiscTetGens, MiscPceRots, TileType>>>::new();
+
+            // Optionally load custom board.
+            if let Some(encoded_board) = &n.custom_config.start_board {
+                modifiers.push(Box::new(game_modding::StartBoard::with_board(
+                    encoded_board.clone(),
+                )));
+            }
+
+            if n.custom_config.revive_on_top_out {
+                modifiers.push(Box::new(game_modding::ReviveTopOut::new()));
+            }
+
+            let new_custom_game = builder.build_modded(modifiers);
+
+            let title = match n.custom_config.win_condition {
+                Some(stat) => match stat {
+                    Stat::TimeElapsed(duration) => format!("Time-{}s", duration.as_secs()),
+                    Stat::PiecesLocked(p) => format!("Pieces-{p}"),
+                    Stat::LinesCleared(l) => format!("Lines-{l}"),
+                    Stat::PointsScored(s) => format!("Score-{s}"),
+                },
+                None => "Limitless".to_owned(),
+            };
+
+            // FIXME: Make customizable?
+            const CUSTOM_SHOW_STATS: ShowStatsHud = ShowStatsHud::all();
+
+            let custom_game_meta_data = GameMetaData {
+                timestamp: generate_timestamp(),
+                title,
+                show_stats: CUSTOM_SHOW_STATS,
+                objective_orderdescending: (Stat::PointsScored(0), false),
+            };
+            let blank_input_history = RawInputHistory::default();
+            (
+                /*success or just fallback?: selection == game_modes.len(),*/
+                custom_game_meta_data,
+                new_custom_game,
+                blank_input_history,
+            )
+        };
+        // FIXME: Unused code: modifier addition.
+        // game.modifiers.push(game_mode_blueprints::game_modifiers::print_fall_delay::modifier());
+        // game.modifiers.push(game_mode_blueprints::game_modifiers::misc_modifiers::print_recency_tet_gen_stats::modifier());
+        // game.modifiers.push(crate::game_modding::Autorevive::modifier());
+        // game.modifiers.push(crate::tetromino_engine::Modifier { descriptor: "always_clear_board".to_owned(), mod_function: Box::new(|_c, _i, s, _m, _f| { s.board = Default::default(); })});
+
+        let mut game_renderer = MiscGameRenderers::from_num(self.temp_data.renderer_used);
+
+        // We do an initial update, which allows a piece to spawn and queue to get generated.
+        // We do this so the renderer does not render a first frame when game is in its raw start state.
+        if game.state().time.is_zero() {
+            match game.update(InGameTime::ZERO, None) {
+                Ok(msgs) => game_renderer.update_feed(msgs, &self.settings),
+                // ?? but i didn't even do anything yet
+                Err(_update_game_error) => {}
+            }
+        }
+        // FIXME: Make this accessible: game.modifiers.push(crate::game_modding::DisplayFinesse::modifier());
+
+        Menu::PlayGame {
+            game: game.into(),
+            raw_input_history,
+            game_meta_data,
+            game_renderer: game_renderer.into(),
+            selection_id_for_game_retry: Some(selection),
+        }
+    }
+}
