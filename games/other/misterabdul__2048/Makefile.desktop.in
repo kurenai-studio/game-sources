@@ -1,0 +1,35 @@
+RAYLIB_PATH = @RAYLIB_PATH@
+
+CC = @CC@
+LIBS = ${RAYLIB_PATH}/src/libraylib.a
+CFLAGS = @CFLAGS@ -I${RAYLIB_PATH}/src -DPLATFORM_DESKTOP
+LDFLAGS = @LDFLAGS@ -L${RAYLIB_PATH}/src
+SPACER := 3
+
+SRCDIR = src
+BINDIR = bin
+OBJDIR = obj
+
+MAIN = 2048
+SRCS = $(wildcard ${SRCDIR}/*.c)
+OBJS = $(patsubst ${SRCDIR}/%.c,${OBJDIR}/%.o,${SRCS})
+
+.PHONY: all clean
+
+all: main
+
+main: ${BINDIR}/${MAIN}
+
+clean:
+	@printf "  %-${SPACER}s %s\n" "RM" "${OBJDIR}/*"
+	@rm -rf ${OBJDIR}/*
+	@printf "  %-${SPACER}s %s\n" "RM" "${BINDIR}/${MAIN}"
+	@rm -rf ${BINDIR}/${MAIN}
+
+${BINDIR}/${MAIN}: ${OBJS}
+	@printf "  %-${SPACER}s %s\n" "LD" "$@"
+	@${CC} -o $@ $^ ${LIBS} ${LDFLAGS}
+
+${OBJDIR}/%.o: ${SRCDIR}/%.c
+	@printf "  %-${SPACER}s %s\n" "CC" "$<"
+	@${CC} -o $@ -c $< ${CFLAGS}
