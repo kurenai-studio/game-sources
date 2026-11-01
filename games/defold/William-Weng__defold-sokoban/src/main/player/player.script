@@ -1,0 +1,162 @@
+-- 載入自訂除錯輸出工具
+-- 之後可使用 dprint.print(...) 在 Console 顯示訊息
+local dprint = require("utility.debug_print")
+local helper = require("utility.msg_helpers")
+
+local ACTIONS = {
+	["UP"] = hash("up"),
+	["DOWN"] = hash("down"),
+	["LEFT"] = hash("left"),
+	["RIGHT"] = hash("right"),
+	["TOUCH"] = hash("touch"),
+}
+
+-- 定義按鍵名稱與移動方向的對照表
+-- key 是 Defold 輸入綁定名稱的 hash，例如 hash("up")
+-- value 是對應的格子位移量 { x, y }
+local DIRECTIONS = {
+	[ACTIONS["UP"]] = { x = 0, y = 1 },     -- 往上移動一格
+	[ACTIONS["DOWN"]] = { x = 0, y = -1 },  -- 往下移動一格
+	[ACTIONS["LEFT"]] = { x = -1, y = 0 },  -- 往左移動一格
+	[ACTIONS["RIGHT"]] = { x = 1, y = 0 },  -- 往右移動一格
+}
+
+-- 調整這個數值來控制敏感度（單位：像素）
+-- 太小容易誤觸，太大滑起來會很吃力。30~50 是手機上較舒適的區間。
+local SWIPE_THRESHOLD = 30 
+
+-- 播放指定動畫的函式
+-- self: 指向物件自身的實例（物件狀態）
+-- animation: 想要播放的動畫名稱或 ID（例如 "run"、"idle"）
+local function play_animation(self, animation)
+
+	-- 檢查：如果想要播放的動畫「不等於」目前正在播放的動畫，才執行切換
+	-- 這樣可以避免每一幀都重複重設同一個動畫，導致畫面卡在第一幀
+	if self.current_animation ~= animation then
+
+		-- 更新狀態：將目前記錄的動畫更新為新的動畫
+		self.current_animation = animation
+
+		-- 執行切換：呼叫引擎的 sprite 元件，開始播放該動畫的翻頁書（Flipbook）動畫
+		sprite.play_flipbook("#sprite", animation)
+	end
+end
+
+-- Script 初始化時呼叫一次
+function init(self)
+
+	-- 向自身所在的 Game Object 要求輸入焦點
+	-- 取得焦點後，這個 Script 才能收到 on_input() 的輸入事件
+	helper.acquire_input_focus()
+	
+	-- 主角動畫
+	play_animation(self, "walk")
+	
+	-- 用來記錄手指按下的起點
+	self.touch_start_pos = nil
+end
+
+local function move_action(self, action_id)
+	-- 從方向對照表中查詢這個 action_id 對應的移動向量。
+	--
+	-- 例如：
+	-- action_id = hash("left")
+	-- direction = { x = -1, y = 0 }
+	local direction = DIRECTIONS[action_id]
+
+	-- 若這個按鍵是上、下、左、右其中之一：
+	if direction then
+
+		-- 傳送移動訊息給 /game Game Object 上 ID 為 game 的 Script 元件。
+		--
+		-- "/game#game"：
+		-- /game  → Game Object 的完整路徑
+		-- #game  → 該 Game Object 上 Script component 的 ID
+		--
+		-- direction 會作為訊息資料一起傳送：
+		-- { x = 0, y = 1 }、{ x = -1, y = 0 } 等。
+		helper.post("/game#game", "try_move", direction)
+
+		-- 回傳 true 表示本 Script 已處理此輸入，
+		-- 事件不會繼續往輸入堆疊中較低層的 Script 傳遞。
+		return true
+	end
+
+	-- 不是方向鍵綁定，表示這個 Script 不處理它。
+	-- 回傳 false，讓其他有輸入焦點的 Script 有機會處理。
+	return false
+end
+
+-- 處理按鍵的事件
+local function on_keyboard_input(self, action_id, action)
+	
+	-- 只處理「剛按下」按鍵的事件。
+	--
+	-- action.pressed == true：這一幀剛按下按鍵
+	-- action.pressed == false：可能是放開按鍵，或持續按住的事件
+	--
+	-- 忽略非剛按下事件，可避免按鍵放開時也觸發移動。
+	if not action.pressed then
+		return false
+	end
+
+	return move_action(self, action_id)
+end
+
+local function on_mouse_input(self, action_id, action)
+		
+		-- 1. 手指剛按下：記錄起點
+		if action.pressed then
+			
+			self.touch_start_pos = vmath.vector3(action.x, action.y, 0)
+			dprint.print(self.touch_start_pos)
+			-- 2. 手指放開：計算滑動向量並轉換成指令
+			
+		elseif action.released and self.touch_start_pos then
+
+			local touch_end_pos = vmath.vector3(action.x, action.y, 0)
+			local swipe_vector = touch_end_pos - self.touch_start_pos
+			local swipe_length = vmath.length(swipe_vector)
+
+			dprint.print(swipe_length)
+			
+			-- 判斷滑動距離是否大於門檻，避免原地輕點被誤判為滑動
+			if swipe_length > SWIPE_THRESHOLD then
+				
+				-- 比較 X 軸與 Y 軸的絕對值，看玩家主要是想「橫著滑」還是「豎著滑」
+				if math.abs(swipe_vector.x) > math.abs(swipe_vector.y) then
+					-- 橫向滑動
+					if swipe_vector.x > 0 then
+						move_action(self, ACTIONS["RIGHT"])
+					else
+						move_action(self, ACTIONS["LEFT"])
+					end
+				else
+					-- 縱向滑動
+					if swipe_vector.y > 0 then
+						move_action(self, ACTIONS["UP"])
+					else
+						move_action(self, ACTIONS["DOWN"])
+					end
+				end
+			end
+
+			-- 清空起點，等待下一次操作
+			self.touch_start_pos = nil
+		end
+end
+
+-- 當玩家有輸入操作時，Defold 會呼叫此函式。
+--
+-- action_id：輸入綁定的名稱 hash，例如 hash("up")
+-- action：本次輸入事件資訊，例如是否剛按下、持續按住、放開等
+function on_input(self, action_id, action)
+
+	dprint.print(action_id)
+	
+	if action_id == hash("touch") then		
+		return on_mouse_input(self, action_id, action)
+	else
+		return on_keyboard_input(self, action_id, action)
+	end
+end
