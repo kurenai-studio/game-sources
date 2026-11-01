@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+
+apply plugin: 'java'
+
+// Совместимость с Java 8 (LWJGL 2 требует Java 8)
+java.sourceCompatibility = 17
+java.targetCompatibility = 17
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  // Только LWJGL 2 зависимости — никакого LWJGL 3!
+  implementation "com.badlogicgames.gdx:gdx:1.14.0"
+  implementation "com.badlogicgames.gdx:gdx-backend-lwjgl:1.12.1"
+  implementation "com.badlogicgames.gdx:gdx-platform:1.12.1:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-tools:1.14.0"
+}

@@ -1,0 +1,95 @@
+{
+  "timeSeconds": "70",
+  "vertices": [
+    {
+      "name": "sphere_money",
+      "x": "515",
+      "y": "295",
+      "energy": "75",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_family",
+      "x": "875",
+      "y": "295",
+      "energy": "30",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_rest",
+      "x": "1235",
+      "y": "295",
+      "energy": "50",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_work",
+      "x": "515",
+      "y": "695",
+      "energy": "75",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_glory",
+      "x": "875",
+      "y": "695",
+      "energy": "75",
+      "emissionPercent": "0.05",
+      "state": "NONE",
+      "isFreeze": false
+    },
+    {
+      "name": "sphere_creation",
+      "x": "1235",
+      "y": "695",
+      "energy": "50",
+      "emissionPercent": "0.05",
+      "state": "TARGET",
+      "isFreeze": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "sphere_money",
+      "to": "sphere_family"
+    },
+    {
+      "from": "sphere_work",
+      "to": "sphere_money"
+    },
+    {
+      "from": "sphere_work",
+      "to": "sphere_glory"
+    },
+    {
+      "from": "sphere_money",
+      "to": "sphere_glory"
+    },
+    {
+      "from": "sphere_family",
+      "to": "sphere_rest"
+    },
+    {
+      "from": "sphere_family",
+      "to": "sphere_rest"
+    },
+    {
+      "from": "sphere_rest",
+      "to": "sphere_creation"
+    }
+  ],
+  "targets": [
+    {
+      "name": "sphere_creation",
+      "energy": "100"
+    }
+  ]
+}
