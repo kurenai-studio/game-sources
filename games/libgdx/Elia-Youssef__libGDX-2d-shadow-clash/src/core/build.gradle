@@ -1,0 +1,18 @@
+// Core module: platform-independent game code. The fight simulation (ClashWorld, Fighter,
+// Projectile, AIController, Move) uses only libGDX math (Rectangle/Vector2/MathUtils) plus
+// java.util, no Gdx.* statics or GL, so it runs headlessly under JUnit. ShadowClashGame /
+// MatchScreen / Assets do the rendering, animation and input. Assets live in the root assets/.
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+    testImplementation 'junit:junit:4.13.2'
+}
+
+test {
+    useJUnit()
+    testLogging {
+        events "passed", "failed", "skipped"
+        showStandardStreams = true
+    }
+}
