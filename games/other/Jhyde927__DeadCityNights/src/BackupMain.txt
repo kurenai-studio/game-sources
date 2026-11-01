@@ -1,0 +1,451 @@
+#include <iostream>
+#include <raylib.h>
+#include <raymath.h>
+
+
+using namespace std;
+
+int main() {
+    const int screenWidth = 1024;
+    const int screenHeight = 1024;
+    const float walkSpeed = 50.0f;
+    const float runSpeed = 100.0f;  // Faster speed for running
+    InitWindow(screenWidth, screenHeight, "PlatformerTest");
+    InitAudioDevice();
+    Vector2 manPosition = {screenWidth / 2, (screenHeight / 2)};
+    Texture2D Man = LoadTexture("assets/Man.png");
+    Texture2D manSheet = LoadTexture("assets/WalkSheet.png");
+    Texture2D RunSheet = LoadTexture("assets/RunSheet.png");
+    Texture2D foreground = LoadTexture("assets/Foreground.png");  //3096
+    Texture2D midground = LoadTexture("assets/Midground.png");    // 3096
+    Texture2D background = LoadTexture("assets/Background.png");
+    Music music = LoadMusicStream("assets/moonbase_normal.ogg");
+    manPosition = Vector2{manPosition.x + 1410, manPosition.y + 188}; //ofset man position to starting location. 
+    const int frameWidth = 64;
+    const int frameHeight = 64;
+    const int walkNumFrames = manSheet.width / frameWidth;
+    const int runNumFrames = RunSheet.width / frameWidth;
+
+    Color customBackgroundColor = {32, 42, 63, 255};  // RGBA(32, 42, 63, 255)
+    int currentFrame = 0;
+    float frameCounter = 0.0f;
+    float frameSpeed = 8.0f;  // frames per second
+    bool isMoving = false;
+    bool facingRight = true;  // Start facing right by default
+    
+    // Set up the camera
+    Camera2D camera = {0};
+    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f + 188};
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
+    float targetZoom = camera.zoom;
+    camera.target = manPosition;
+
+    SetTargetFPS(60);
+    //PlayMusicStream(music);
+
+    while (!WindowShouldClose()) {
+        UpdateMusicStream(music);
+
+       
+        // Handle zoom input
+        
+        if (GetMouseWheelMove() > 0) {
+            targetZoom += .2f;
+        
+        } else if (GetMouseWheelMove() < 0) {
+            targetZoom -= .2f;
+        
+        }
+        camera.zoom = Lerp(camera.zoom, targetZoom, .1);
+        // Apply boundary checks for the zoom level
+        if (camera.zoom > 2.0f) camera.zoom = 2.0f;
+        if (camera.zoom < 1.0f) camera.zoom = 1.0f;
+        if (targetZoom > 2.0f) targetZoom = 2.0f;
+        if (targetZoom < 1.0f) targetZoom = 1.0f;
+
+        isMoving = false;
+        bool isRunning = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);  // Check if shift is held down
+        float currentSpeed = isRunning ? runSpeed : walkSpeed;
+
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
+            manPosition.x += currentSpeed * GetFrameTime();
+            isMoving = true;
+            facingRight = true;
+        }
+
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
+            manPosition.x -= currentSpeed * GetFrameTime();
+            isMoving = true;
+            facingRight = false;
+        }
+
+        // Update the camera to follow the player
+        camera.target = manPosition;
+
+        // Calculate parallax effect offsets
+        float parallaxMidground = camera.target.x * 0.5f;  // Midground moves slower
+        float parallaxBackground = camera.target.x * 0.2f;  // Background moves even slower
+
+        // Calculate centering for the foreground relative to the midground
+        float foregroundXOffset = 1024;
+
+        // Play animation
+        if (isMoving) {
+            frameCounter += GetFrameTime() * frameSpeed;
+            if (frameCounter >= 1) {
+                currentFrame++;
+                frameCounter = 0;
+
+                int numFrames = isRunning ? runNumFrames : walkNumFrames; //if isRunning: numframes = runNumFrames else walkNumFrames
+                if (currentFrame >= numFrames) {
+                    currentFrame = 0;  // loop back to first frame
+                }
+            }
+        } else {
+            currentFrame = 0;
+        }
+
+        Rectangle sourceRec = {currentFrame * frameWidth, 0, frameWidth, frameHeight};
+        if (!facingRight) {
+            sourceRec.width = -frameWidth;
+        }
+
+        BeginDrawing();
+        ClearBackground(customBackgroundColor);
+
+        BeginMode2D(camera);
+
+        // Draw the background (sky)
+        DrawTexturePro(background, {0, 0, static_cast<float>(background.width), static_cast<float>(background.height)},
+                      {parallaxBackground, 0, static_cast<float>(background.width), static_cast<float>(background.height)}, {0, 0}, 0.0f, WHITE);
+
+        // Draw the midground (silhouettes)
+        DrawTexturePro(midground, {0, 0, static_cast<float>(midground.width), static_cast<float>(midground.height)},
+                      {parallaxMidground, 0, static_cast<float>(midground.width), static_cast<float>(midground.height)}, {0, 0}, 0.0f, WHITE);
+
+        // Draw the foreground (main scene), centered relative to the midground
+        DrawTexturePro(foreground, {0, 0, static_cast<float>(foreground.width), static_cast<float>(foreground.height)},
+                      {foregroundXOffset, 0, static_cast<float>(foreground.width), static_cast<float>(foreground.height)}, {0, 0}, 0.0f, WHITE);
+
+        // Draw the correct animation based on whether the player is running or walking
+        if (isMoving) {
+            if (isRunning) {
+                DrawTextureRec(RunSheet, sourceRec, manPosition, WHITE); //run
+            } else {
+                DrawTextureRec(manSheet, sourceRec, manPosition, WHITE); // walk
+            }
+        } else {
+            Rectangle idleSourceRec = {0, 0, Man.width, Man.height}; // idle
+            DrawTextureRec(Man, idleSourceRec, manPosition, WHITE);
+        }
+
+        EndMode2D();
+        EndDrawing();
+    }
+
+    //close window
+    UnloadMusicStream(music);
+    CloseAudioDevice();
+    UnloadTexture(Man);
+    UnloadTexture(manSheet);
+    UnloadTexture(RunSheet);  // Unload the running texture
+    UnloadTexture(foreground);
+    UnloadTexture(midground);
+    UnloadTexture(background);
+    CloseWindow();
+    return 0;
+}
+
+
+
+// void HandleTransition(Player& player, PlayerCar& player_car, GameCalendar& calendar) {
+//     if (firstTransition) {
+//         fadeAlpha = 0.0f;  // Ensure it starts at 0 for the first fade
+//         firstTransition = false;  // Reset flag after first transition
+//     }
+
+
+//     if (transitionState == FADE_IN) {
+//         fadeAlpha -= fadeSpeed;  // Fade in gradually
+//         if (fadeAlpha <= 0.0f) {
+//             fadeAlpha = 0.0f;
+//             transitionState = NONE;  // Fade-in complete
+//         }
+//     } else if (transitionState == FADE_OUT) { //TRANSITION TO FADEOUT TO TRANSITION TO NEW SCENE, transition logic done here. 
+//         fadeAlpha += fadeSpeed;  // Fade out gradually
+//         if (fadeAlpha >= 1.0f) {
+//             fadeAlpha = 1.0f;
+
+//             // Start blackout timer when fully faded out // wait while blacked out for things to happen.
+//             blackoutTimer += GetFrameTime();
+//             if (blackoutTimer >= blackoutTime) {
+//                 blackoutTimer = 0.0f;  // Reset blackout timer
+
+//                 // Transition to the next state
+//                 if (gameState == OUTSIDE) {
+//                     if (move_car && !gotoWork) { //car is moving, go to road
+//                         gameState = ROAD;
+//                         player_car.facingLeft = true; //leaving outside = face left
+//                         if (!reverse_road){
+//                             player_car.position.x = 900;
+//                         }
+                        
+//                     } else if (move_car && gotoWork){ //movecar and gotowork = go to work
+                    
+//                         gameState = WORK;
+//                         //do nothing
+                        
+//                     } 
+//                     else if (gameState == OUTSIDE && player.isDead){ //Die outside to police, got to apartment
+//                         gameState = APARTMENT;
+//                         player.position.x = apartmentX;
+//                         player.currentHealth = player.maxHealth;
+//                         for (NPC& npc : npcs){
+//                             if (npc.police){
+//                                 npc.agro = false; //turn off police agro if killed by police.
+//                                 npc.attacking = false;
+                                 
+//                             }
+//                         }
+//                     }else if (over_apartment) { //over apartment, go to apartment
+//                         gameState = APARTMENT;
+
+//                     }else if (over_lot){
+//                         gameState = LOT;
+//                     }
+
+//                 } else if (gameState == APARTMENT) {
+//                     gameState = OUTSIDE; //go back oustide
+
+
+//                 } else if (gameState == ROAD) {
+//                     //not reverseRoad go to cemetery
+
+//                     if (!reverse_road){
+//                         gameState = CEMETERY;
+//                         player_car.position.x = 3000;
+//                     }else{
+//                         //if reverseRoad go back to outside
+//                         gameState = OUTSIDE;
+//                         player_car.position.x = pc_start_pos.x;
+//                         player.position.x = 1738;
+//                         reverse_road = false;
+//                         leave_cemetery = false;
+//                         move_car = false; //fixed? was a bug where when leaving outside returning to cemetery it would fade out twice. 
+//                     }
+
+
+
+
+//                 } else if (gameState == CEMETERY) {
+//                     reverse_road = true;
+//                     player_car.facingLeft = false;
+//                     move_car = false;
+
+//                     //if not dead go to road
+//                     if (!player.isDead && player.enter_car){
+//                         gameState = ROAD;
+//                         player_car.position.x = 100;
+//                     //if you die in the cemetery, go to apartment
+                    
+//                     }else if (!player.enter_car && over_gate){
+//                         gameState = GRAVEYARD;
+//                         raiseZombies = true; // queue up more zombies
+
+//                     }
+                    
+//                     else if (player.isDead){
+//                         gameState = APARTMENT;
+//                         player.position.x = apartmentX;
+//                         player.isDead = false;
+//                         player.currentHealth = player.maxHealth; //wait untill fade out to reset health
+//                         calendar.AdvanceDay();
+                        
+//                     }
+             
+//                 }else if (gameState == WORK){
+//                     //dont fade in or out. Let it fall through with gameState equaling outside
+//                     gotoWork = false;
+//                     move_car = false;
+//                     hasWorked = true;
+//                     gameState = OUTSIDE;
+//                     player.position.x = pstart_by_car.x;
+//                     addMoney(100);
+                    
+//                 }else if (gameState == LOT){
+//                     gameState = OUTSIDE;
+//                     player.position.x = vacantLotX;
+//                 }else if (gameState == GRAVEYARD){
+//                     gameState = CEMETERY;
+                    
+//                 }
+
+                
+//                 if (!gotoWork){//dont fade in when at work. Fade in later
+//                     transitionState = FADE_IN;  // Start fading back in
+//                 }
+                
+//             }
+//         }
+//     }
+
+//     //Reset player position and health on death
+//     if (player.currentHealth <= 0) {
+        
+//         player.isDead = true;
+//         transitionState = FADE_OUT;
+        
+        
+    
+//     }
+
+//     // Draw the fade mask
+//     if (transitionState != NONE) {
+//         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, fadeAlpha));
+//     }
+// }
+
+
+
+
+
+        if (over_car && !player.enter_car && has_car_key){
+            //player inside idling car
+            SoundManager::getInstance().PlayMusic("CarRun");
+            //PlayPositionalSound(SoundManager::getInstance().GetSound("carRun"), player_car.position, player.position, 800);
+            PlaySound(SoundManager::getInstance().GetSound("CarStart"));
+            PlaySound(SoundManager::getInstance().GetSound("CarDoorOpen"));
+            player.enter_car = true;
+            over_car = false;
+            player_car.currentFrame = 1;
+
+
+
+
+//backup vars
+float apartmentX = 2256;
+int vacantLotX = 2753;
+int vacantExitX = 2762;
+bool over_lot = false;
+bool over_exit = false;
+//cemetery_start 1743, 700
+bool runOnce = true;
+bool quitRequested = false;
+bool canPlaySound = true;
+float playSoundTimer = 0.0;
+bool streetSounds = false;
+bool over_apartment = false;
+bool over_car = false;
+bool over_elevator = false;
+bool over_elevator2 = false;
+bool over_Ebutton = false;
+bool over_Ebutton2 = false;
+bool over_necro = false;
+bool over_gate = false;
+bool over_shotgun = false;
+bool showBadge = false;
+bool show_carUI = false;
+bool leave_apartment = false;
+bool leave_cemetery = false;
+bool sharpen = false;
+bool buttonNecro = false;
+bool lockElevator2 = true;
+bool buttonCemetery = false;
+bool buttonInternet = false;
+bool hasCemeteryKey = false;
+bool canGiveFortune = true;
+bool can_spawn_zombies = true;
+bool visitedOffice = false;
+bool showInternet = false;
+bool borderlessWindow = false;
+bool windowStateChanged = false;
+bool fullscreen = false;
+bool move_ufo = false;
+bool canMoveUfo = true;
+bool globalAgro = false;
+bool firstHobo = true;
+bool can_spawn_robots = true;
+bool spawning_zombies = false;
+bool can_spawn_mibs = true;
+bool firstBlood = false;
+bool drawShovel = false;
+bool drawCrowbar = true;
+bool drawMac10 = true;
+bool drawShotgun = true;
+bool dealerButtonAdded = false;
+bool subwayToPark = false;
+bool carToPark = false;
+bool buttonWork = false;
+bool fading = false;
+bool over_medkit = false;
+bool digSpot = false;
+bool NecroTech = false;
+bool playerOffsetX = 0;
+bool film = false;
+bool start = true;
+bool buttonPark = false;
+bool gotoWork = false;
+bool gotoPark = false;
+bool gotoStreet = false;
+bool gotoNecro = false;
+bool debug = false; ///////////////////////////////////////DEBUG KEYS ON/OFF
+bool hasWorked = false;
+bool buttonSleep = false;
+bool hasSlept = false;
+bool showAPUI = false;
+bool playOwl = false;
+bool can_talk = true;
+bool buyFortune = false;
+bool teller = false;
+bool dealer = false;
+bool menuOpen = false;
+bool controlsMenu = false;
+bool showLiquor = false;
+bool can_sell_drugs = true;
+bool canSpawnCyberZombies = true;
+bool applyShader = false;
+bool drunk = false;
+bool glitch = false;
+bool vignette = true; //start vignette
+bool openMagicDoor = false;
+bool move_car = false;
+bool trainAtStation = false;
+bool reverse_road = false;
+bool has_car_key = false;
+bool overLiquor = false;
+bool overSubway = false;
+bool subwayExit = false;
+bool npcWalk = false;
+bool openDrawer = false;
+bool raiseZombies = false;
+bool spawn_frank = true;
+bool zombieWave2 = false;
+bool zombieWave3 = false;
+bool abductionBeam = false;
+bool raiseParkZombies = false;
+bool show_dbox = true;
+float ufoTimer = 0.0;
+float dboxTime = 10.0;
+float internetTimer = 0.0;
+float inventoryPositionX = 0.0f;
+float inventoryPositionY = 0.0f;
+float inventoryTargetX = 0.0f;
+float inventoryTargetY = 0.0f;
+float passwordTimer = 0.0;
+float DoorframeTimer = 0.0f;
+float astralThreshold = 0.5f;
+float crowbarDialogTimer = 0.0;
+
+
+float badgeTimer = 0.0f;
+float fortuneTimer = 0.0f;
+int remainingZombiesToSpawn = 0;    // Tracks remaining zombies to spawn
+float spawnTimer = 0.0f;            // Timer for spawning
+float nextSpawnDelay = 0.0f;        // Time delay between spawns
+float mibTimer = 3.0f;
+float blackoutTime = 2.0f;  // Time to stay blacked out
+float blackoutTimer = 0.0f; // Timer to keep track of blackout period
+
+float minDistToPlayer = 50;
+float maxDistToPlayer = 200;
