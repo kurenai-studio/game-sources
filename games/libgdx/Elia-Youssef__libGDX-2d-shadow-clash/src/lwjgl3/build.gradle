@@ -1,0 +1,39 @@
+// Desktop launcher module. The 'application' plugin provides the run task a grader invokes as
+// ./gradlew lwjgl3:run. The 'jar' task builds a self-contained runnable fat JAR (all deps +
+// desktop natives + assets) = the JAR deliverable, launchable with `java -jar ShadowClash.jar`.
+
+apply plugin: 'application'
+
+// Bundle the root assets/ folder as resources so Gdx.files.internal(...) resolves both for
+// `gradlew lwjgl3:run` and inside the packaged fat JAR (classpath fallback).
+sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+
+application {
+    mainClass = 'com.micro1.shadowclash.lwjgl3.Lwjgl3Launcher'
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+    // Run from the assets dir so internal file handles resolve on disk during development.
+    workingDir = rootProject.file('assets')
+}
+
+jar {
+    archiveBaseName = appName
+    archiveVersion = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn configurations.runtimeClasspath
+    from { configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) } }
+    manifest {
+        attributes 'Main-Class': application.mainClass
+    }
+    doLast {
+        file(archiveFile).setExecutable(true, false)
+    }
+    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+}
