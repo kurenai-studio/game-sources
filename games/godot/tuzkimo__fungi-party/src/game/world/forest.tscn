@@ -1,0 +1,109 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://game/world/terrain.gd" id="1_terrain"]
+[ext_resource type="Script" path="res://game/world/forest_gen.gd" id="2_trees"]
+[ext_resource type="PackedScene" path="res://game/player/mushroom.tscn" id="3_player"]
+[ext_resource type="Script" path="res://game/world/daynight.gd" id="4_day"]
+[ext_resource type="Script" path="res://game/world/stall.gd" id="5_stall"]
+[ext_resource type="Script" path="res://game/world/door.gd" id="6_door"]
+[ext_resource type="Script" path="res://game/world/start_gate.gd" id="7_gate"]
+[ext_resource type="Script" path="res://game/world/bomb_ring.gd" id="8_bomb"]
+[ext_resource type="Script" path="res://game/world/tent.gd" id="9_tent"]
+[ext_resource type="Script" path="res://game/world/day_loop.gd" id="10_day_loop"]
+[ext_resource type="Script" path="res://game/world/restaurant.gd" id="11_restaurant"]
+[ext_resource type="Script" path="res://game/world/sky_bodies.gd" id="12_sky"]
+[ext_resource type="Script" path="res://game/world/clouds.gd" id="13_clouds"]
+[ext_resource type="Script" path="res://game/world/stars.gd" id="14_stars"]
+[ext_resource type="Script" path="res://game/world/owl_tree.gd" id="15_owl_tree"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+sky_top_color = Color(0.33, 0.5, 0.78, 1)
+sky_horizon_color = Color(0.78, 0.85, 0.92, 1)
+ground_bottom_color = Color(0.3, 0.35, 0.28, 1)
+ground_horizon_color = Color(0.78, 0.85, 0.92, 1)
+sky_curve = 0.45
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("Sky_mat")
+
+[sub_resource type="Environment" id="Env_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.78, 0.86, 1)
+ambient_light_energy = 0.3
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.72, 0.8, 0.88, 1)
+fog_density = 0.0008
+fog_sky_affect = 0.0
+
+[node name="Forest" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -35, 0)
+light_energy = 1.0
+shadow_enabled = true
+directional_shadow_max_distance = 70.0
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("1_terrain")
+
+[node name="ForestGen" type="Node3D" parent="."]
+script = ExtResource("2_trees")
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector3(0, 0.2, 0)
+
+[node name="Stall" type="Node3D" parent="."]
+position = Vector3(7, 0, -11)
+script = ExtResource("5_stall")
+
+[node name="ClassroomDoor" type="Node3D" parent="."]
+position = Vector3(0, 0, -14)
+script = ExtResource("6_door")
+
+[node name="StartGate" type="Node3D" parent="."]
+position = Vector3(-7, 0, -11)
+script = ExtResource("7_gate")
+
+[node name="BombRing" type="Node3D" parent="."]
+position = Vector3(0, 0, 11)
+script = ExtResource("8_bomb")
+
+[node name="Tent" type="Node3D" parent="."]
+position = Vector3(-8, 0, 2)
+script = ExtResource("9_tent")
+
+[node name="Restaurant" type="Node3D" parent="."]
+position = Vector3(8, 0, 2)
+script = ExtResource("11_restaurant")
+
+[node name="OwlTree" type="Node3D" parent="."]
+position = Vector3(-8, 0, 10)
+script = ExtResource("15_owl_tree")
+
+[node name="SkyBodies" type="Node3D" parent="."]
+script = ExtResource("12_sky")
+daynight_path = NodePath("../DayNight")
+
+[node name="Clouds" type="Node3D" parent="."]
+script = ExtResource("13_clouds")
+daynight_path = NodePath("../DayNight")
+
+[node name="Stars" type="Node3D" parent="."]
+script = ExtResource("14_stars")
+daynight_path = NodePath("../DayNight")
+
+[node name="DayNight" type="Node" parent="."]
+script = ExtResource("4_day")
+sun_path = NodePath("../Sun")
+environment_path = NodePath("../WorldEnvironment")
+time_of_day = 0.4
+
+[node name="DayLoop" type="Node" parent="."]
+script = ExtResource("10_day_loop")
+daynight_path = NodePath("../DayNight")
