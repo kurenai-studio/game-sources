@@ -1,0 +1,20 @@
+name: deploy
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Deploy to GitHub Pages
+        uses: remarkablemark/gitploy-action@v1
+        with:
+          directory: public
