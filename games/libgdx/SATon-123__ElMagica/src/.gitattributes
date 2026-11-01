@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.bat text=auto eol=crlf
+*.png binary
+*.wav binary
+*.jar binary
+*.zip binary
+*.ico binary
+*.icns binary
+# Preserve upstream document bytes so recorded SHA-256 hashes survive checkout.
+docs/third-party/** -text
+third-party-sources/** -text

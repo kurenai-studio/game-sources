@@ -1,0 +1,22 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+}
+
+jar {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('combatChecks', JavaExec) {
+  dependsOn testClasses
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'com.elmagica.game.CombatChecks'
+}
+check.dependsOn combatChecks
+test.failOnNoDiscoveredTests = false
