@@ -1,0 +1,148 @@
+using System;
+using System.IO;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using static VoxelTechDemo.UserSettings;
+using static VoxelTechDemo.VoxelRenderer;
+
+namespace VoxelTechDemo;
+public class CustomEffect : Effect{
+    public readonly EffectParameter Texture;
+    readonly EffectParameter FogColor;
+    readonly EffectParameter FogVector;
+    readonly EffectParameter WorldViewProj;
+    private readonly EffectParameter FaceRotations;
+    public readonly EffectParameter AnimationFrame;
+    public readonly EffectParameter CurrentSkyLightLevel;
+
+    private Matrix projectionMatrix;
+    public Matrix viewMatrix;
+    public Matrix viewProj;
+    private Matrix previewMatrix;
+
+    float FogStart;
+    public float FogEnd{
+        set => fogValue = 1.0f / (FogStart - value);
+    }
+    float fogValue;
+    public float timeOfDay = 1;
+
+    public CustomEffect(Game game) : this(new Effect(game.GraphicsDevice, File.ReadAllBytes("Content/CustomEffect.mgfx")), game){ }
+    private CustomEffect(Effect clone, Game game):base(clone){
+        Texture = Parameters["Texture"];
+        FogColor = Parameters["FogColor"];
+        FogVector = Parameters["FogVector"];
+        WorldViewProj = Parameters["WorldViewProj"];
+        AnimationFrame = Parameters["AnimationFrame"];
+        CurrentSkyLightLevel = Parameters["CurrentSkyLightLevel"];
+        FaceRotations = Parameters["Rotations"];
+
+        Texture.SetValue(game.Content.Load<Texture2D>("Textures"));
+        FogStart = RenderDistance*0.6f*ChunkSize;
+        FogEnd = RenderDistance*0.8f*ChunkSize;
+
+        projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(FieldOfView), GraphicsDevice.DisplayMode.AspectRatio, 0.1f, 10000f);
+        previewMatrix = Matrix.CreateLookAt(new Vector3(3, 2, 3), new Vector3(0.5f, 0.5f, 0.5f), Vector3.Up);
+        previewMatrix *= CreateBlockPreviewProj((int)(GraphicsDevice.Viewport.Width * 0.93f), (int)(GraphicsDevice.Viewport.Height * 0.9f), 5);
+        
+        Matrix[] faceRotMatrices = [
+            // x+
+            Matrix.CreateRotationZ(-MathHelper.PiOver2),
+            // x-
+            Matrix.CreateRotationZ(MathHelper.PiOver2)*Matrix.CreateRotationX(MathHelper.Pi),
+            // y+
+            Matrix.Identity,
+            // y-
+            Matrix.CreateRotationX(MathHelper.Pi),
+            // z+
+            Matrix.CreateRotationX(MathHelper.PiOver2)*Matrix.CreateRotationZ(-MathHelper.PiOver2),
+            // z-
+            Matrix.CreateRotationX(-MathHelper.PiOver2)*Matrix.CreateRotationZ(-MathHelper.PiOver2),
+        ];
+        FaceRotations.SetValue(faceRotMatrices);
+    }
+    private Matrix CreateBlockPreviewProj(int x,int y,float scale){
+        float aspectRatio = GraphicsDevice.Viewport.AspectRatio * scale;
+        float translateX = aspectRatio-(float)x / GraphicsDevice.Viewport.Width * (aspectRatio + aspectRatio);
+        float translateY = (float)y / GraphicsDevice.Viewport.Height * (scale + scale) - scale;
+        return Matrix.CreateOrthographicOffCenter(translateX-aspectRatio,aspectRatio+translateX,translateY-scale,scale+translateY,1f, 10f);
+    }
+    public void UpdateProjMatrix(Matrix proj, Player player) {
+        projectionMatrix = proj;
+        UpdateViewMatrix(player);
+    }
+    public void UpdateViewMatrix(Player player) {
+        viewMatrix = Matrix.CreateLookAt(player.camPosition, player.camPosition + player.forward, Vector3.Up);
+        viewProj = viewMatrix * projectionMatrix;
+    }
+    public void DrawBlockPreview() {
+        WorldViewProj.SetValue(previewMatrix);
+        FogVector.SetValue(Vector4.Zero);
+        CurrentTechnique.Passes[0].Apply();
+    }
+    public void UpdateAnimationFrame(TimeSpan totalTime) {
+        AnimationFrame.SetValue((float)Math.Round(totalTime.TotalSeconds * 8 % 15) / 16);
+        if (DayCycle) {
+            timeOfDay = (float)(Math.Sin(totalTime.TotalSeconds * Math.PI / 60) + 1) / 2;
+            CurrentSkyLightLevel.SetValue(1 - timeOfDay);
+        }
+    }
+    public void Apply(Matrix worldMatrix) {
+        WorldViewProj.SetValue(worldMatrix * viewProj);
+        Matrix worldView = worldMatrix * viewMatrix;
+        if (FogEnabled){
+            FogVector.SetValue(new Vector4(worldView.M13,worldView.M23,worldView.M33,worldView.M43+FogStart)*fogValue);
+        }
+        else{
+            FogVector.SetValue(Vector4.Zero);
+        }
+        CurrentTechnique.Passes[0].Apply();
+    }
+    public void ApplyUnderWaterSettings(){
+        GraphicsDevice.Clear(new Color(new Vector3(0.3f, 0.3f, 0.7f) * timeOfDay));
+        FogColor.SetValue(new Vector3(0.3f,0.3f,0.7f) * timeOfDay);
+        FogStart = -RenderDistance*0.2f*ChunkSize;
+        FogEnd = RenderDistance*0.2f*ChunkSize;
+    }
+    public void ApplyNormalSettings(){
+        GraphicsDevice.Clear(Color.CornflowerBlue * timeOfDay);
+        FogColor.SetValue((Color.CornflowerBlue * timeOfDay).ToVector3());
+        FogStart = RenderDistance*0.6f*ChunkSize;
+        FogEnd = RenderDistance*0.8f*ChunkSize;
+    }
+}
+
+public class CloudEffect : Effect {
+    readonly EffectParameter WorldViewProj;
+    readonly EffectParameter FogColor;
+    readonly EffectParameter FogVector;
+
+    public float FogStart;
+    public float FogEnd{
+        set => fogValue = 1.0f / (FogStart - value);
+    }
+    private float fogValue;
+
+    public CloudEffect(Game game) : this(new(game.GraphicsDevice, File.ReadAllBytes("Content/CloudEffect.mgfx")), game) { }
+    private CloudEffect(Effect clone, Game game):base(clone){
+        WorldViewProj = Parameters["WorldViewProj"];
+        FogColor = Parameters["FogColor"];
+        FogVector = Parameters["FogVector"];
+        
+        FogStart = RenderDistance * 0.6f * ChunkSize;
+        FogEnd = RenderDistance * 1f * ChunkSize;
+    }
+    public void Apply(CustomEffect effect, Matrix worldMatrix) {
+        FogColor.SetValue((Color.CornflowerBlue * effect.timeOfDay).ToVector3());
+        worldMatrix = Matrix.CreateScale(new Vector3(CloudRes,1,CloudRes)) * worldMatrix;
+        WorldViewProj.SetValue(worldMatrix * effect.viewProj);
+        Matrix worldView = worldMatrix * effect.viewMatrix;
+        if (FogEnabled) {
+            FogVector.SetValue(new Vector4(worldView.M13,worldView.M23,worldView.M33,worldView.M43+FogStart)*fogValue);
+        }
+        else {
+            FogVector.SetValue(Vector4.Zero);
+        }
+        CurrentTechnique.Passes[0].Apply();
+    }
+}
