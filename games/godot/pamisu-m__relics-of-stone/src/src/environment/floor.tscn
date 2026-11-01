@@ -1,0 +1,66 @@
+[gd_scene load_steps=8 format=3 uid="uid://cqqakjex5toh0"]
+
+[ext_resource type="Script" path="res://src/environment/floor.gd" id="1_dvxn4"]
+[ext_resource type="PackedScene" uid="uid://c5v33e3mtucva" path="res://assets/ruins/Floor_SquareLarge.glb" id="2_47u47"]
+[ext_resource type="Script" path="res://src/framework/sound_player.gd" id="3_antmg"]
+[ext_resource type="AudioStream" uid="uid://byib3w1wqnxea" path="res://assets/audio/stone_push.ogg" id="4_37kjt"]
+[ext_resource type="AudioStream" uid="uid://dtctssvcr1xtn" path="res://assets/audio/space shield.ogg" id="5_nyi5f"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rf36l"]
+size = Vector3(1.982, 0.15, 1.982)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eltb2"]
+size = Vector3(0.2, 1, 0.2)
+
+[node name="Floor" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_dvxn4")
+
+[node name="Floor_SquareLarge" parent="." instance=ExtResource("2_47u47")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.045, 0)
+shape = SubResource("BoxShape3D_rf36l")
+
+[node name="ShapeCastLeft" type="ShapeCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, 0)
+enabled = false
+shape = SubResource("BoxShape3D_eltb2")
+max_results = 5
+collision_mask = 13
+collide_with_areas = true
+
+[node name="ShapeCastRight" type="ShapeCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1, 0)
+enabled = false
+shape = SubResource("BoxShape3D_eltb2")
+max_results = 5
+collision_mask = 13
+collide_with_areas = true
+
+[node name="ShapeCastForward" type="ShapeCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -2)
+enabled = false
+shape = SubResource("BoxShape3D_eltb2")
+max_results = 5
+collision_mask = 13
+collide_with_areas = true
+
+[node name="ShapeCastBackward" type="ShapeCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2)
+enabled = false
+shape = SubResource("BoxShape3D_eltb2")
+max_results = 5
+collision_mask = 13
+collide_with_areas = true
+
+[node name="MoveSound" type="AudioStreamPlayer" parent="."]
+bus = &"Sound"
+script = ExtResource("3_antmg")
+streams = Array[AudioStream]([ExtResource("4_37kjt")])
+
+[node name="PushSound" type="AudioStreamPlayer" parent="."]
+bus = &"Sound"
+script = ExtResource("3_antmg")
+streams = Array[AudioStream]([ExtResource("5_nyi5f")])
