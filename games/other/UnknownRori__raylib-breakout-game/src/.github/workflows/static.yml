@@ -1,0 +1,74 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Get the submodule
+      run: git submodule update --init --depth 1
+
+    - name: Setup emsdk
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        # Make sure to set a version number!
+        version: 3.1.53
+        # This is the name of the cache folder.
+        # The cache folder will be placed in the build directory,
+        #  so make sure it doesn't conflict with anything!
+        actions-cache-folder: 'emsdk-cache'
+        
+    - name: Configure CMake
+      run: emcmake cmake -S . -B web-build -DPLATFORM=Web
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/web-build
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/web-build
+      
+    - name: Create dist folder
+      # Build your program with the given configuration
+      run: mkdir dist
+
+    - name: Copy the build output
+      # Build your program with the given configuration
+      run: cp ./web-build/breakout-game.html ./dist/index.html && cp ./web-build/breakout-game.js ./dist && cp ./web-build/breakout-game.data ./dist && cp ./web-build/breakout-game.wasm ./dist
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        # Upload entire repository
+        path: './dist'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
