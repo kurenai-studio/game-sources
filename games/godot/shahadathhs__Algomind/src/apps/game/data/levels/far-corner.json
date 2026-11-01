@@ -1,0 +1,44 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 0]
+  },
+  "slug": "far-corner",
+  "board": {
+    "walls": [
+      [0, 0],
+      [4, 0],
+      [2, 1],
+      [4, 1],
+      [1, 2],
+      [2, 2]
+    ],
+    "width": 7,
+    "height": 3
+  },
+  "hints": ["The pair works both ways.", "Look at which way you face when you arrive."],
+  "title": "Far corner",
+  "levelId": "5388db47-3eec-4a67-bd69-f93d59083f6a",
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [1, 1],
+      "b": [6, 1]
+    }
+  ],
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 5
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

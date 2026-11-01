@@ -1,0 +1,167 @@
+{
+  "description": "A cell that has a breadcrumb is not fresh: mark here, step back, and the cell ahead is no longer fresh.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [3, 2],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "MARK"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "IF",
+      "when": "FRESH_AHEAD",
+      "then": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "else": [
+        {
+          "op": "TURN_LEFT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 7,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MARK",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "east",
+        "event": "MARKED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_RIGHT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_RIGHT",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 2],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_RIGHT",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 2],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_RIGHT",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_LEFT",
+        "node": [6, 1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 2],
+        "direction": "north",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

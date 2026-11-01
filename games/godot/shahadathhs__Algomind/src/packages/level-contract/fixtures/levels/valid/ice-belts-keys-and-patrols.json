@@ -1,0 +1,57 @@
+{
+  "description": "Ice, a belt, a key and a patrol on one level.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "ice-hall",
+    "levelVersion": 1,
+    "slug": "ice-hall",
+    "title": "Ice hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "ice": [[2, 1]],
+    "belts": [
+      {
+        "cell": [4, 1],
+        "direction": "east"
+      }
+    ],
+    "locks": [
+      {
+        "key": [1, 0],
+        "door": [5, 1]
+      }
+    ],
+    "patrols": [
+      {
+        "pattern": "back_and_forth",
+        "cells": [
+          [5, 0],
+          [5, 1]
+        ]
+      }
+    ]
+  }
+}

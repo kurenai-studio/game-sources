@@ -1,0 +1,31 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [3, 1]
+  },
+  "slug": "first-turn",
+  "board": {
+    "walls": [],
+    "width": 5,
+    "height": 5
+  },
+  "hints": ["A turn changes the direction Move goes in.", "Move up first, then turn right."],
+  "title": "First turn",
+  "levelId": "81e8009b-6d43-42ce-8740-54a61bfad7ef",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 7
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 4],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

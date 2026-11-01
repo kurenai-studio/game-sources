@@ -1,0 +1,51 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 1]
+  },
+  "slug": "two-pairs",
+  "board": {
+    "walls": [
+      [2, 0],
+      [4, 0],
+      [4, 1],
+      [1, 2],
+      [5, 2],
+      [3, 3]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "Each end leads only to the other end of its own pair.",
+    "Arriving on a pair does not send you back."
+  ],
+  "title": "Two pairs",
+  "levelId": "08a77696-dc36-4e6a-a99d-07a250ee2913",
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [5, 1],
+      "b": [2, 3]
+    },
+    {
+      "a": [5, 3],
+      "b": [4, 3]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 8
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

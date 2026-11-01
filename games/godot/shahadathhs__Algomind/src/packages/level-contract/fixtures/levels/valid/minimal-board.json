@@ -1,0 +1,35 @@
+{
+  "description": "Smallest board (3 by 3), no walls, one command, minimum constraints, empty description and hints.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "tiny",
+    "levelVersion": 1,
+    "slug": "tiny",
+    "title": "tiny",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 3,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD"],
+    "constraints": {
+      "maxCommands": 1,
+      "maxSteps": 1
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 1]
+    },
+    "hints": []
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "description": "REPEAT_UNTIL GOAL with a body that only turns runs to the step limit.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "if-level",
+    "levelVersion": 1,
+    "slug": "if-level",
+    "title": "if-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF"
+    ],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 9
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 4]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "GOAL",
+      "body": [
+        {
+          "op": "TURN_LEFT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "STEP_LIMIT",
+    "steps": 9,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "west"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [2, 2],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 2],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [2, 2],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 5,
+        "position": [2, 2],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 6,
+        "position": [2, 2],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 7,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 7,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 8,
+        "position": [2, 2],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 8,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 9,
+        "position": [2, 2],
+        "direction": "west",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

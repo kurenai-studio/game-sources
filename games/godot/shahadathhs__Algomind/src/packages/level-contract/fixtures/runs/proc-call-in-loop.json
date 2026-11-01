@@ -1,0 +1,137 @@
+{
+  "description": "A CALL as an item of a loop of the main program runs the procedure every round.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "proc-level",
+    "levelVersion": 1,
+    "slug": "proc-level",
+    "title": "proc-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 9,
+      "height": 9,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [8, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "REPEAT",
+      "count": 3,
+      "body": [
+        {
+          "op": "CALL",
+          "name": "A"
+        },
+        {
+          "op": "TURN_RIGHT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 6,
+    "finalState": {
+      "position": [1, 8],
+      "direction": "west"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1, 0],
+        "counter": 1,
+        "round": null,
+        "position": [0, 7],
+        "direction": "north",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_RIGHT",
+        "node": [1, 1],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [0, 7],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1, 0],
+        "counter": 1,
+        "round": null,
+        "position": [1, 7],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "TURN_RIGHT",
+        "node": [1, 1],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [1, 7],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1, 0],
+        "counter": 1,
+        "round": null,
+        "position": [1, 8],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_RIGHT",
+        "node": [1, 1],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [1, 8],
+        "direction": "west",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

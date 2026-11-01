@@ -1,0 +1,79 @@
+{
+  "description": "A level that lists the mechanic nested_loops and offers INC: its reference solution is the expanding spiral.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": ["nested_loops"]
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [8, 2]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 8,
+      "maxSteps": 400
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "REPEAT_UNTIL",
+        "until": "GOAL",
+        "body": [
+          {
+            "op": "REPEAT",
+            "count": "N",
+            "body": [
+              {
+                "op": "MOVE_FORWARD"
+              }
+            ]
+          },
+          {
+            "op": "TURN_RIGHT"
+          },
+          {
+            "op": "REPEAT",
+            "count": "N",
+            "body": [
+              {
+                "op": "MOVE_FORWARD"
+              }
+            ]
+          },
+          {
+            "op": "TURN_RIGHT"
+          },
+          {
+            "op": "INC"
+          }
+        ]
+      }
+    ]
+  }
+}

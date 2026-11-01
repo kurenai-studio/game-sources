@@ -1,0 +1,297 @@
+{
+  "description": "The sweep goal: the run succeeds the moment the last floor cell is entered, here at the end of the third row.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": ["nested_loops"]
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 0],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "visit_all"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 200
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "GOAL",
+      "body": [
+        {
+          "op": "REPEAT_UNTIL",
+          "until": "BLOCKED",
+          "body": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ]
+        },
+        {
+          "op": "TURN_RIGHT"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_RIGHT"
+        },
+        {
+          "op": "REPEAT_UNTIL",
+          "until": "BLOCKED",
+          "body": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ]
+        },
+        {
+          "op": "TURN_LEFT"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_LEFT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 18,
+    "finalState": {
+      "position": [4, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [4, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_RIGHT",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 0],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [0, 2],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 1],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_RIGHT",
+        "node": [0, 3],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 7,
+        "op": "MOVE_FORWARD",
+        "node": [0, 4, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [3, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 8,
+        "op": "MOVE_FORWARD",
+        "node": [0, 4, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 9,
+        "op": "MOVE_FORWARD",
+        "node": [0, 4, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [1, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 10,
+        "op": "MOVE_FORWARD",
+        "node": [0, 4, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 11,
+        "op": "TURN_LEFT",
+        "node": [0, 5],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 12,
+        "op": "MOVE_FORWARD",
+        "node": [0, 6],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [0, 2],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 13,
+        "op": "TURN_LEFT",
+        "node": [0, 7],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [0, 2],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 14,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 15,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 16,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 17,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [4, 2],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

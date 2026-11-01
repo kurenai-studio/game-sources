@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 1]
+  },
+  "slug": "run-turn-run",
+  "board": {
+    "walls": [],
+    "width": 7,
+    "height": 7
+  },
+  "hints": [
+    "A loop can sit between other tiles.",
+    "Tap End loop to go back to adding single tiles."
+  ],
+  "title": "Run, turn, run",
+  "levelId": "b359e582-6f23-4a8b-9365-e33df90eaf6c",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 5
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 6],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"]
+}

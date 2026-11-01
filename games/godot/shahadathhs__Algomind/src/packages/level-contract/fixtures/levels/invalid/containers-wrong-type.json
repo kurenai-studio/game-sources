@@ -1,0 +1,50 @@
+{
+  "description": "Objects and arrays replaced by other types. Checks that depend on the board are skipped.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "first-steps",
+    "levelVersion": 1,
+    "slug": "first-steps",
+    "title": "First Steps",
+    "description": "Reach the goal using the available commands.",
+    "difficulty": "easy",
+    "requires": [],
+    "board": "wide",
+    "initialState": 0,
+    "availableCommands": "MOVE_FORWARD",
+    "constraints": null,
+    "goal": [4, 0],
+    "hints": "none"
+  },
+  "expectedIssues": [
+    {
+      "path": "requires",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "initialState",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "availableCommands",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "constraints",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "goal",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "hints",
+      "code": "INVALID_TYPE"
+    }
+  ]
+}

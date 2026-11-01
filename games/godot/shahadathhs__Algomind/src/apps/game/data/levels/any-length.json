@@ -1,0 +1,118 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [1, 1]
+  },
+  "slug": "any-length",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [2, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2]
+    ],
+    "width": 3,
+    "height": 3
+  },
+  "hints": [
+    "The same program has to solve every board. Do not count the cells.",
+    "Run until the wall, whatever the length."
+  ],
+  "title": "Any length",
+  "levelId": "f2830a9e-5c53-49ef-8f06-998bb5853ff0",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 2
+  },
+  "description": "",
+  "extraBoards": [
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [6, 1]
+      },
+      "board": {
+        "walls": [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [4, 0],
+          [5, 0],
+          [6, 0],
+          [0, 2],
+          [1, 2],
+          [2, 2],
+          [3, 2],
+          [4, 2],
+          [5, 2],
+          [6, 2]
+        ],
+        "width": 7,
+        "height": 3
+      },
+      "initialState": {
+        "position": [0, 1],
+        "direction": "east"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [9, 1]
+      },
+      "board": {
+        "walls": [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [4, 0],
+          [5, 0],
+          [6, 0],
+          [7, 0],
+          [8, 0],
+          [9, 0],
+          [0, 2],
+          [1, 2],
+          [2, 2],
+          [3, 2],
+          [4, 2],
+          [5, 2],
+          [6, 2],
+          [7, 2],
+          [8, 2],
+          [9, 2]
+        ],
+        "width": 10,
+        "height": 3
+      },
+      "initialState": {
+        "position": [0, 1],
+        "direction": "east"
+      }
+    }
+  ],
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

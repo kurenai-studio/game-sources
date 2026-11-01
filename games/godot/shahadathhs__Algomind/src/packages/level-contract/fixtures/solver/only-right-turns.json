@@ -1,0 +1,53 @@
+{
+  "description": "Only MOVE_FORWARD and TURN_RIGHT exist, so facing west takes three right turns.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [1, 2]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 4,
+    "steps": 4,
+    "fitsConstraints": true,
+    "program": [
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      }
+    ]
+  }
+}

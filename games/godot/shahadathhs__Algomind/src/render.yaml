@@ -1,0 +1,53 @@
+# Render Blueprint for the Algomind API. Create it with: Render dashboard > New > Blueprint,
+# pick this repo. Secrets are NOT stored here: DATABASE_URL, CORS_ORIGINS and the SUPER_ADMIN_*
+# values are asked for on first deploy; JWT_ACCESS_SECRET is generated. See docs/DEPLOY.md.
+#
+# Live at https://algomind-api.onrender.com (see docs/DEPLOY.md). If Render rejects a key, check
+# the current spec at render.com/docs/blueprint-spec.
+services:
+  - type: web
+    name: algomind-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    # The image's start command applies migrations on every boot (a no-op when the database is
+    # current), so no pre-deploy command is needed and the free plan works.
+    # Keep this at one instance until rate limiting moves out of process memory.
+    plan: free
+    region: singapore # pick one near your players; put the Neon database in the same area
+    healthCheckPath: /v1/health
+    # Only redeploy when the API (or what it depends on) changes.
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/**
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # Render generates the signing key once; rotating it signs everyone out.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      # The first admin (first run only; the first sign-in forces a new password).
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASS
+        sync: false
+      # Not set on purpose: with no value, production creates the starter campaign (4 worlds, 5
+      # chapters, 19 published levels) once, while the database has no levels. Set it to "true" to
+      # add any missing starter level on every start, or "false" to never create them.
+      # After a publish the API calls the web app so the public pages refresh at once. Set both
+      # (the secret equals the web app's REVALIDATE_SECRET); with either unset the web app simply
+      # refreshes on its own schedule.
+      - key: WEB_REVALIDATE_URL
+        sync: false
+      - key: REVALIDATE_SECRET
+        sync: false
+      # Render puts one reverse proxy in front of the service.
+      - key: TRUST_PROXY
+        value: "1"

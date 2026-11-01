@@ -1,0 +1,16 @@
+{
+  "name": "@algomind/design-tokens",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Light and dark theme tokens (the only source of colors) and generators for the Godot palette and web CSS.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5"
+  }
+}

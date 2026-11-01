@@ -1,0 +1,73 @@
+{
+  "description": "Three levels of loops, even with nested_loops listed.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": ["nested_loops"]
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 10]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 400
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "REPEAT",
+        "count": 2,
+        "body": [
+          {
+            "op": "REPEAT",
+            "count": 2,
+            "body": [
+              {
+                "op": "REPEAT",
+                "count": 2,
+                "body": [
+                  {
+                    "op": "MOVE_FORWARD"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[0].body[0].body[0].op",
+      "code": "NESTED_REPEAT"
+    }
+  ]
+}

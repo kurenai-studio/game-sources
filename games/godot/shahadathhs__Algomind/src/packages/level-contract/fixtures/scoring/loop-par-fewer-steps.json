@@ -1,0 +1,30 @@
+{
+  "description": "A result under par on both counts (par from an older, weaker solver) is still three stars and the same points as par.",
+  "rules": {
+    "version": 1,
+    "base": {
+      "easy": 10,
+      "medium": 20,
+      "hard": 30
+    },
+    "parFull": 10,
+    "parNear": 5,
+    "nearSlots": 2,
+    "stepsBonus": 5,
+    "firstClear": 10
+  },
+  "input": {
+    "difficulty": "medium",
+    "par": {
+      "commands": 8,
+      "steps": 12
+    },
+    "slots": 7,
+    "steps": 10
+  },
+  "expected": {
+    "stars": 3,
+    "points": 35,
+    "levelScore": 45
+  }
+}

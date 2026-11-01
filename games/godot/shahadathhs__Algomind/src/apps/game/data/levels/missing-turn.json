@@ -1,0 +1,62 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 0]
+  },
+  "slug": "missing-turn",
+  "board": {
+    "walls": [],
+    "width": 5,
+    "height": 5
+  },
+  "hints": [
+    "Run it. The automaton reaches the wall and cannot go on.",
+    "The route bends, and the program never turns."
+  ],
+  "title": "Missing turn",
+  "levelId": "d6a0517d-e362-489b-a59b-2f032798b41f",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 5
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 4],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "startProgram": [
+    {
+      "op": "REPEAT",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "count": 4
+    },
+    {
+      "op": "REPEAT",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "count": 4
+    }
+  ],
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

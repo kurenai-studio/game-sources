@@ -1,0 +1,44 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "first-parcel",
+  "board": {
+    "walls": [
+      [0, 0],
+      [2, 0],
+      [2, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "Walk onto the crate to pick it up. It rides with the automaton.",
+    "Drop it by walking onto the corner marks. Then the target counts."
+  ],
+  "title": "First parcel",
+  "levelId": "2fecf523-fcda-4e18-a823-e9fd8a2f8c30",
+  "requires": {
+    "mechanics": []
+  },
+  "deliveries": [
+    {
+      "dock": [3, 0],
+      "item": [1, 1]
+    }
+  ],
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 9
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

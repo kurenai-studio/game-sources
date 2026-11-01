@@ -1,0 +1,30 @@
+{
+  "description": "One slot over par is near par: two stars and the smaller bonus; steps above par earn no steps bonus.",
+  "rules": {
+    "version": 1,
+    "base": {
+      "easy": 10,
+      "medium": 20,
+      "hard": 30
+    },
+    "parFull": 10,
+    "parNear": 5,
+    "nearSlots": 2,
+    "stepsBonus": 5,
+    "firstClear": 10
+  },
+  "input": {
+    "difficulty": "easy",
+    "par": {
+      "commands": 5,
+      "steps": 5
+    },
+    "slots": 6,
+    "steps": 6
+  },
+  "expected": {
+    "stars": 2,
+    "points": 15,
+    "levelScore": 25
+  }
+}

@@ -1,0 +1,354 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./depth-tokens.css";
+
+/* Map the generated design tokens (tokens.css) to Tailwind colors. Colors are defined only in
+   packages/design-tokens; never write a hex value here. */
+@theme inline {
+  --color-ground: var(--ground);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-floor: var(--floor);
+  --color-strip: var(--strip);
+  --color-mute: var(--mute);
+  --color-faint: var(--faint);
+  --color-slot: var(--slot);
+  --color-signal: var(--signal);
+  --color-on-signal: var(--on-signal);
+  --color-wall: var(--wall);
+  --color-wall-hatch: var(--wall-hatch);
+  --color-trail: var(--trail);
+  /* Placeholder stack until the final font is chosen (see docs/README_VISUAL_DESIGN.md). */
+  --font-ui: "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", sans-serif;
+}
+
+html {
+  background: var(--ground);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+
+/* The tile: square with the top-right corner chamfered. */
+.tile {
+  --chamfer: 12px;
+  clip-path: polygon(0 0, calc(100% - var(--chamfer)) 0, 100% var(--chamfer), 100% 100%, 0 100%);
+}
+
+/*
+ * The depth look (docs/README_VISUAL_DESIGN.md, section 14) on the public site. `.look-depth` scopes
+ * the tokens in depth-tokens.css, so the admin dashboard keeps the flat look. The ground is a soft
+ * gradient and every tile of the page is a key. The key rules sit in the components layer so a
+ * utility class (flex, w-full) on the same element still wins.
+ */
+.look-depth {
+  min-height: 100vh;
+  background: linear-gradient(var(--ground-top), var(--ground-bottom)) fixed;
+  color: var(--ink);
+}
+
+/*
+ * The bar for a page on its way (components/public/nav-progress.tsx): it creeps toward the end while the
+ * page loads and fills when it arrives. It sits over the scroll bar, which it hides meanwhile.
+ */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 70;
+  height: 4px;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-progress[data-phase="loading"] {
+  opacity: 1;
+  transform: scaleX(0.85);
+  transition:
+    transform 10s cubic-bezier(0.1, 0.6, 0.3, 1),
+    opacity 80ms;
+}
+.nav-progress[data-phase="done"] {
+  opacity: 0;
+  transform: scaleX(1);
+  transition:
+    transform 120ms ease-out,
+    opacity 220ms ease-out 120ms;
+}
+body:has(.nav-progress:not([data-phase="idle"])) .scroll-progress {
+  opacity: 0;
+}
+
+/* A board far below the screen is not drawn until it is near: the levels page holds over a hundred. */
+.deferred {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}
+
+@layer components {
+  .look-depth .key {
+    --lip: 4px;
+    display: inline-flex;
+    vertical-align: top;
+    filter: drop-shadow(0 var(--lip) 0 var(--key-lip, var(--tile-lip)))
+      drop-shadow(0 calc(var(--lip) * 2) 7px color-mix(in srgb, var(--shadow) 30%, transparent));
+    transition:
+      transform 60ms ease-out,
+      filter 60ms ease-out;
+  }
+  .look-depth .key-signal {
+    --key-lip: var(--signal-lip);
+  }
+  .look-depth .key-ink {
+    --key-lip: var(--ink-lip);
+  }
+  .look-depth .key > .tile {
+    flex: 1 1 auto;
+  }
+  /* Pressed: the face sinks onto its lip and the shadow tightens. */
+  .look-depth .key:active {
+    transform: translateY(var(--lip));
+    filter: drop-shadow(0 0 0 var(--key-lip, var(--tile-lip)))
+      drop-shadow(0 calc(var(--lip) / 2) 3px color-mix(in srgb, var(--shadow) 30%, transparent));
+  }
+}
+
+/* Tailwind's preflight resets buttons to the default cursor; interactive controls show a pointer. */
+button:not(:disabled),
+summary,
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* The mobile menu drawer (components/public/mobile-nav.tsx). It is a <details> element, so it works
+   without JavaScript: tapping the menu button or anywhere outside the panel toggles it. The
+   backdrop is a pseudo-element of the <summary>, which is why the summary itself has no clip-path
+   (a clip-path would clip the backdrop). */
+.mobile-nav[open] > summary::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  cursor: default;
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* A clip-path also clips outlines, so a focused tile draws its ring inside the shape. */
+.tile:focus-visible {
+  outline-offset: -7px;
+}
+
+/* The QR code is always dark modules on a light ground so phones can scan it. The ground and ink
+   tokens swap roles in the dark theme, so the pair swaps with them. */
+.qr-tile {
+  background: var(--floor);
+  color: var(--ink);
+}
+.qr-light {
+  fill: var(--floor);
+}
+.qr-dark {
+  fill: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .qr-tile {
+    background: var(--ink);
+    color: var(--ground);
+  }
+  :root:not([data-theme="light"]) .qr-light {
+    fill: var(--ink);
+  }
+  :root:not([data-theme="light"]) .qr-dark {
+    fill: var(--ground);
+  }
+}
+:root[data-theme="dark"] .qr-tile {
+  background: var(--ink);
+  color: var(--ground);
+}
+:root[data-theme="dark"] .qr-light {
+  fill: var(--ink);
+}
+:root[data-theme="dark"] .qr-dark {
+  fill: var(--ground);
+}
+
+/*
+ * Motion on this site is small, quick, and never idle: things rise as the page loads (200 ms, once),
+ * rise again as they scroll into view (tied to the scroll, so it has no length of its own), lift under
+ * a pointer, and a thin bar and the header follow the scroll. The scroll-driven parts need
+ * `animation-timeline`; a browser without it simply shows everything at rest. All of it sits inside
+ * `no-preference`, so reduced motion switches it off, and without JavaScript it still works (it is CSS).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* On load: the first things of a page rise one after the other. */
+  .rise {
+    animation: rise 200ms ease-out both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  /* A pointer lifts what can be opened: a board, a world, a tile. */
+  @media (hover: hover) {
+    .lift {
+      transition:
+        transform 150ms ease-out,
+        filter 150ms ease-out;
+    }
+    .lift:hover,
+    .lift:focus-within {
+      transform: translateY(-4px);
+    }
+    .lift-board:hover svg,
+    .lift-board:focus-within svg {
+      transform: scale(1.03);
+    }
+    .lift-board svg {
+      transition: transform 150ms ease-out;
+    }
+    .look-depth .key:hover:not(:active) {
+      transform: translateY(-2px);
+    }
+    /* Underlined text links get a heavier rule under a pointer. */
+    a.thicken {
+      transition:
+        text-decoration-thickness 120ms ease-out,
+        text-underline-offset 120ms ease-out;
+    }
+    a.thicken:hover,
+    a.thicken:focus-visible {
+      text-decoration-thickness: 4px;
+      text-underline-offset: 4px;
+    }
+    /* Links without a resting underline draw one from the left. */
+    a.sweep {
+      background: linear-gradient(currentColor, currentColor) 0 100% / 0 2px no-repeat;
+      transition: background-size 150ms ease-out;
+    }
+    a.sweep:hover,
+    a.sweep:focus-visible {
+      background-size: 100% 2px;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    /* In view: it rises while the top of it crosses the bottom of the screen. */
+    .view-rise {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+    .view-pop {
+      animation: pop linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+
+  @supports (animation-timeline: scroll()) {
+    /* A thin bar at the top shows how far down the page is. */
+    .scroll-progress {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 60;
+      height: 3px;
+      background: var(--ink);
+      transform-origin: 0 50%;
+      animation: grow linear both;
+      animation-timeline: scroll(root);
+      pointer-events: none;
+    }
+    @keyframes grow {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    /* The header stays at the top and gains its rule once the page has moved. */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .site-header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: var(--ground-top);
+      border-bottom: 2px solid var(--ink);
+      opacity: 0;
+      animation: header-in linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90px;
+    }
+    @keyframes header-in {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* The phone on the landing page drifts up a little slower than the page. */
+    .parallax {
+      animation: drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 700px;
+    }
+    @keyframes drift {
+      to {
+        transform: translateY(-36px);
+      }
+    }
+  }
+}
+
+/*
+ * The older note on motion, kept for what it still says: a pressed tile moves a few pixels, and
+ * reduced motion switches the rest off.
+ */
+/*
+ * Motion on this site is small and happens once: sections slide in as they scroll into view (Reveal, built
+ * on motion), the landing demo plays once (HeroRun), and a pressed tile moves one pixel. Reduced motion
+ * switches all of it off, and without JavaScript every section is simply there.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

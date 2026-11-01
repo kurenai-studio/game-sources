@@ -1,0 +1,68 @@
+{
+  "description": "Two routes of 9 commands exist (above and below the wall: MF TL MF TR MF MF MF TR MF and MF TR MF TL MF MF MF TL MF). Tie-breaking (MOVE_FORWARD, TURN_LEFT, TURN_RIGHT; first discovery wins) picks the one that turns left first.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [[2, 2]]
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 2]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 9,
+    "steps": 9,
+    "fitsConstraints": true,
+    "program": [
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "TURN_LEFT"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      }
+    ]
+  }
+}

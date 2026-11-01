@@ -1,0 +1,136 @@
+{
+  "description": "Two procedures that call each other, each with a base case.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "recursion-hall",
+    "levelVersion": 1,
+    "slug": "recursion-hall",
+    "title": "Recursion hall",
+    "description": "",
+    "difficulty": "medium",
+    "requires": {
+      "mechanics": ["recursion"]
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "IF", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [5, 1]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "CALL",
+          "name": "B",
+          "when": "CLEAR_AHEAD"
+        }
+      ]
+    },
+    {
+      "op": "PROC",
+      "name": "B",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "CALL",
+          "name": "A",
+          "when": "CLEAR_AHEAD"
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "A"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 5,
+    "finalState": {
+      "position": [5, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [2],
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1, 1],
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [1, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1, 1],
+        "counter": 1,
+        "round": null,
+        "position": [5, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

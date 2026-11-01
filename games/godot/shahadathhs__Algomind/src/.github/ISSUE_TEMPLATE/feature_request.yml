@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest something that fits the project's scope.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: I read the "not included" list in docs/README_PROJECT_OVERVIEW.md and this is not on it

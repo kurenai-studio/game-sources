@@ -1,0 +1,53 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 0]
+  },
+  "slug": "hop-and-walk",
+  "board": {
+    "walls": [
+      [2, 0],
+      [4, 0],
+      [3, 1],
+      [1, 2],
+      [2, 2],
+      [5, 2],
+      [4, 3],
+      [5, 3]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "One pair carries you across the wall. The other is a detour.",
+    "Walk to the second pair from where the first one leaves you."
+  ],
+  "title": "Hop and walk",
+  "levelId": "9a98434c-3ea3-40b9-bd58-7796935302ef",
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [3, 2],
+      "b": [0, 3]
+    },
+    {
+      "a": [1, 1],
+      "b": [6, 1]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 8
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 2],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

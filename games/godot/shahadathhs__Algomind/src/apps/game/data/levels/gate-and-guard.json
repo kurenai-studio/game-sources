@@ -1,0 +1,53 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 1]
+  },
+  "slug": "gate-and-guard",
+  "board": {
+    "walls": [
+      [0, 0],
+      [2, 0],
+      [2, 2]
+    ],
+    "width": 6,
+    "height": 3
+  },
+  "hints": [
+    "The guard walks the corridor beyond the gate.",
+    "Open the gate early, then time the last stretch."
+  ],
+  "title": "Gate and guard",
+  "levelId": "844f0f91-971c-4e57-bec9-dd1d9f4863b7",
+  "patrols": [
+    {
+      "cells": [
+        [4, 1],
+        [4, 2]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [2, 1],
+      "switch": [1, 0]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 16
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

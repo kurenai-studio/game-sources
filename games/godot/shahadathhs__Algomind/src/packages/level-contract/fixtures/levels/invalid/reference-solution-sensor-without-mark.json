@@ -1,0 +1,53 @@
+{
+  "description": "A breadcrumb sensor in a level that does not offer MARK.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 10]
+    },
+    "availableCommands": ["MOVE_FORWARD", "IF"],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 400
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "IF",
+        "when": "FRESH_AHEAD",
+        "then": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ],
+        "else": []
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[0].when",
+      "code": "COMMAND_NOT_AVAILABLE"
+    }
+  ]
+}

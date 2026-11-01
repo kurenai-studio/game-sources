@@ -1,0 +1,62 @@
+{
+  "description": "An unknown condition is a program issue, and the simulator stops at it.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "until-level",
+    "levelVersion": 1,
+    "slug": "until-level",
+    "title": "until-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 6,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"],
+    "constraints": {
+      "maxCommands": 10,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [5, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "NEAR",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].until",
+      "code": "INVALID_VALUE"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [0, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

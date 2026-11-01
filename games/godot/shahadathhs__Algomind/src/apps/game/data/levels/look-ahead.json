@@ -1,0 +1,55 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 2]
+  },
+  "slug": "look-ahead",
+  "board": {
+    "walls": [
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [1, 2],
+      [5, 2],
+      [1, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [1, 4],
+      [3, 4],
+      [4, 4],
+      [5, 4],
+      [1, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+      [1, 6]
+    ],
+    "width": 7,
+    "height": 7
+  },
+  "hints": [
+    "If asks a question about the cell ahead. Move when it is clear, turn when it is not.",
+    "Put the whole decision inside Repeat until goal."
+  ],
+  "title": "Look ahead",
+  "levelId": "6e9007b8-ff86-4236-9e3c-bb6a8e29b84a",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 6],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"]
+}

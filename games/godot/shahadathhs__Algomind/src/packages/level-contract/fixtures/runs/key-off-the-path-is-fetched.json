@@ -1,0 +1,195 @@
+{
+  "description": "The key is one row up: the automaton goes round to take it, then back to the door.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "key-corridor",
+    "levelVersion": 1,
+    "slug": "key-corridor",
+    "title": "Key corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "locks": [
+      {
+        "key": [1, 0],
+        "door": [3, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 10,
+    "finalState": {
+      "position": [4, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 0],
+        "direction": "north",
+        "event": "KEY_TAKEN"
+      },
+      {
+        "index": 3,
+        "op": "TURN_RIGHT",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 0],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_RIGHT",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "MOVE_FORWARD",
+        "node": [6],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 7,
+        "op": "TURN_LEFT",
+        "node": [7],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 8,
+        "op": "MOVE_FORWARD",
+        "node": [8],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 9,
+        "op": "MOVE_FORWARD",
+        "node": [9],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

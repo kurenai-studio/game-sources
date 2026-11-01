@@ -1,0 +1,92 @@
+{
+  "description": "An unknown sensor in the reference solution.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "if-level",
+    "levelVersion": 1,
+    "slug": "if-level",
+    "title": "if-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [5, 0],
+        [6, 0],
+        [0, 1],
+        [6, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [6, 2],
+        [0, 3],
+        [2, 3],
+        [6, 3],
+        [0, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4],
+        [5, 4],
+        [6, 4],
+        [0, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6],
+        [5, 6],
+        [6, 6]
+      ]
+    },
+    "initialState": {
+      "position": [1, 5],
+      "direction": "east"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF"
+    ],
+    "constraints": {
+      "maxCommands": 6,
+      "maxSteps": 200
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [3, 3]
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "IF",
+        "when": "CLEAR_BEHIND",
+        "then": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ],
+        "else": []
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[0].when",
+      "code": "INVALID_VALUE"
+    }
+  ]
+}

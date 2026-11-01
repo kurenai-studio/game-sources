@@ -1,0 +1,42 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [0, 2]
+  },
+  "slug": "snake",
+  "board": {
+    "walls": [
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [6, 1]
+    ],
+    "width": 8,
+    "height": 3
+  },
+  "hints": [
+    "One procedure walks one run. Use it again after each turn.",
+    "Turn between the runs, in the same direction both times."
+  ],
+  "title": "Snake",
+  "levelId": "07a6d663-fb00-48f9-94bf-5e15f8d3991c",
+  "requires": {
+    "mechanics": ["recursion"]
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 200,
+    "maxCommands": 8
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "PROC"]
+}

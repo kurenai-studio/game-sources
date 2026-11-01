@@ -1,0 +1,52 @@
+/// A versioned set of scoring rules (see packages/level-contract, scoring.ts). A change creates a
+/// new version and makes it the active one; old versions and the results scored under them stay.
+model PointsRuleSet {
+  id        String   @id @default(uuid())
+  version   Int      @unique
+  rules     Json
+  active    Boolean  @default(false)
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
+/// A verified clear: the player's program was validated and re-run by the server. Stored against the
+/// exact level version, so results from different versions are never compared. Idempotent on the
+/// program: the same program for the same level version is one row.
+model Submission {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  levelVersionId String
+  levelVersion   LevelVersion @relation(fields: [levelVersionId], references: [id])
+  levelSlug      String
+  programHash    String
+  program        Json
+  slots          Int
+  steps          Int
+  stars          Int
+  /// What the result was worth under the rule version that scored it (first-clear bonus included).
+  points         Int
+  ruleVersion    Int
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, levelVersionId, programHash])
+  @@index([userId, levelSlug])
+}
+
+/// Append-only. A player's total is the sum of `delta`. Never updated or deleted by the game or
+/// the dashboard; deleting the account removes it.
+model PointsLedger {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason       String
+  delta        Int
+  levelSlug    String?
+  levelVersion Int?
+  ruleVersion  Int
+  submissionId String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, levelSlug])
+}

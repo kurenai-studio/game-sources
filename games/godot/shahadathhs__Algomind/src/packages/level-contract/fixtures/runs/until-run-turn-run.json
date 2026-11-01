@@ -1,0 +1,158 @@
+{
+  "description": "Run to the wall, turn, run to the next wall: each loop costs no step of its own and the condition is checked before every round.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "until-level",
+    "levelVersion": 1,
+    "slug": "until-level",
+    "title": "until-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 6,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"],
+    "constraints": {
+      "maxCommands": 10,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [5, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 8,
+    "finalState": {
+      "position": [5, 0],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [4, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 5,
+        "position": [5, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_LEFT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 2],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "MOVE_FORWARD",
+        "node": [2, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [5, 1],
+        "direction": "north",
+        "event": "MOVED"
+      },
+      {
+        "index": 7,
+        "op": "MOVE_FORWARD",
+        "node": [2, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [5, 0],
+        "direction": "north",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

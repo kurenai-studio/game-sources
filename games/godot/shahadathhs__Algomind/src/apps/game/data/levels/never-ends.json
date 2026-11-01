@@ -1,0 +1,72 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 2]
+  },
+  "slug": "never-ends",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+      [0, 1],
+      [6, 1],
+      [0, 3],
+      [6, 3],
+      [0, 4],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [4, 4],
+      [5, 4],
+      [6, 4]
+    ],
+    "width": 7,
+    "height": 5
+  },
+  "hints": [
+    "Run it and watch: the automaton only turns on the spot.",
+    "The loop runs until the goal, but nothing moves it there."
+  ],
+  "title": "Never ends",
+  "levelId": "2b3900c1-8ea1-4c7d-99d8-c40a53cceb4d",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 2
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 2],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "startProgram": [
+    {
+      "op": "REPEAT_UNTIL",
+      "body": [
+        {
+          "op": "TURN_LEFT"
+        }
+      ],
+      "until": "GOAL"
+    }
+  ],
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

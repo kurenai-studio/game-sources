@@ -1,0 +1,35 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [3, 2]
+  },
+  "slug": "around-the-wall",
+  "board": {
+    "walls": [
+      [3, 3],
+      [4, 3],
+      [5, 3]
+    ],
+    "width": 6,
+    "height": 6
+  },
+  "hints": ["Go around the wall. The way around is longer than it looks."],
+  "title": "Around the wall",
+  "levelId": "99d503f1-e3fd-46fe-bcd6-68e06a9daafb",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 13
+  },
+  "description": "",
+  "initialState": {
+    "position": [5, 5],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

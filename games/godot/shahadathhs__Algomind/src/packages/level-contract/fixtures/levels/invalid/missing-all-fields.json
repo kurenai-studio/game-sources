@@ -1,0 +1,61 @@
+{
+  "description": "Only schemaVersion is present; every other field is reported as required.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1
+  },
+  "expectedIssues": [
+    {
+      "path": "levelId",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "levelVersion",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "slug",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "title",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "description",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "difficulty",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "requires",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "board",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "initialState",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "availableCommands",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "constraints",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "goal",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "hints",
+      "code": "REQUIRED"
+    }
+  ]
+}

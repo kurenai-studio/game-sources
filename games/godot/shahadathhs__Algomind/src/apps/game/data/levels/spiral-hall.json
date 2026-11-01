@@ -1,0 +1,81 @@
+{
+  "goal": {
+    "type": "visit_all"
+  },
+  "slug": "spiral-hall",
+  "board": {
+    "walls": [
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [6, 1],
+      [7, 1],
+      [8, 1],
+      [9, 1],
+      [9, 2],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [6, 3],
+      [7, 3],
+      [9, 3],
+      [1, 4],
+      [7, 4],
+      [9, 4],
+      [1, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+      [7, 5],
+      [9, 5],
+      [1, 6],
+      [3, 6],
+      [7, 6],
+      [9, 6],
+      [1, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [6, 7],
+      [7, 7],
+      [9, 7],
+      [1, 8],
+      [9, 8],
+      [1, 9],
+      [2, 9],
+      [3, 9],
+      [4, 9],
+      [5, 9],
+      [6, 9],
+      [7, 9],
+      [8, 9],
+      [9, 9]
+    ],
+    "width": 11,
+    "height": 11
+  },
+  "hints": ["The hall bends the same way every time.", "Run until the wall, turn, repeat."],
+  "title": "Spiral hall",
+  "levelId": "f469788e-a63e-452a-bea1-ee6a9106a5d9",
+  "requires": {
+    "mechanics": ["nested_loops"]
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 96,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"]
+}

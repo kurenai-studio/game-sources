@@ -1,0 +1,164 @@
+{
+  "description": "A loop inside a loop: the trace path has three numbers and the round is the inner loop's.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": ["nested_loops"]
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 10]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT",
+      "count": 2,
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "REPEAT",
+          "count": 3,
+          "body": [
+            {
+              "op": "TURN_RIGHT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 8,
+    "finalState": {
+      "position": [4, 4],
+      "direction": "south"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [5, 4],
+        "direction": "north",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [5, 4],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [5, 4],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [5, 4],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [4, 4],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 4],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [4, 4],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 7,
+        "op": "TURN_RIGHT",
+        "node": [0, 1, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [4, 4],
+        "direction": "south",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

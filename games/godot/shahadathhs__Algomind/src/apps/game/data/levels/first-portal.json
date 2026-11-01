@@ -1,0 +1,44 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 0]
+  },
+  "slug": "first-portal",
+  "board": {
+    "walls": [
+      [3, 0],
+      [4, 0],
+      [5, 1]
+    ],
+    "width": 7,
+    "height": 3
+  },
+  "hints": [
+    "Entering one end of a pair puts the automaton on the other end, in the same step.",
+    "It arrives facing the same way. Turn after arriving."
+  ],
+  "title": "First portal",
+  "levelId": "ef1c9cc3-39c2-49f5-83ab-0c29866d4bcc",
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [6, 0],
+      "b": [1, 0]
+    }
+  ],
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

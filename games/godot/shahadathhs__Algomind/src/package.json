@@ -1,0 +1,42 @@
+{
+  "name": "algomind",
+  "private": true,
+  "description": "Algomind: a programming puzzle game (Godot), its API (NestJS), and the web app (Next.js) with the public site and admin dashboard",
+  "packageManager": "pnpm@11.5.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "commit": "cz",
+    "generated": "pnpm --filter @algomind/level-contract build && pnpm --filter @algomind/api generate",
+    "lint": "pnpm generated && oxlint --type-aware . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "tokens": "pnpm --filter @algomind/design-tokens build",
+    "tokens:check": "pnpm --filter @algomind/design-tokens check",
+    "colors:check": "node scripts/check-colors.mjs",
+    "size:check": "node scripts/check-file-size.mjs",
+    "smoke:web": "node scripts/web-smoke.mjs",
+    "smoke:api": "node scripts/api-social-smoke.mjs"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "commitizen": "^4.3.2",
+    "cz-git": "^1.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2004",
+    "playwright-core": "1.64.1",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-git"
+    }
+  }
+}

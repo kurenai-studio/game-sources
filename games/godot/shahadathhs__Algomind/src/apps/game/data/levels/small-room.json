@@ -1,0 +1,33 @@
+{
+  "goal": {
+    "type": "visit_all"
+  },
+  "slug": "small-room",
+  "board": {
+    "walls": [],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "Visit every cell. There is no target to reach.",
+    "Run to the wall, step over, run back. Keep going until every cell is done."
+  ],
+  "title": "Small room",
+  "levelId": "9d6fdda7-0acc-44e1-a6cf-67981d299799",
+  "requires": {
+    "mechanics": ["nested_loops"]
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 22,
+    "maxCommands": 11
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"]
+}

@@ -1,0 +1,97 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 1]
+  },
+  "slug": "wrong-way-round",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+      [6, 1],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [5, 2],
+      [6, 2],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [6, 3],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [4, 4],
+      [5, 4],
+      [6, 4],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+      [6, 5]
+    ],
+    "width": 7,
+    "height": 6
+  },
+  "hints": [
+    "Run it. The automaton gets to the bend and turns the wrong way.",
+    "Which way does the hall bend?"
+  ],
+  "title": "Wrong way round",
+  "levelId": "453fca01-2f7d-486e-a843-5bf354d73e80",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 150,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 5],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "startProgram": [
+    {
+      "op": "REPEAT_UNTIL",
+      "body": [
+        {
+          "op": "IF",
+          "else": [
+            {
+              "op": "TURN_LEFT"
+            }
+          ],
+          "then": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ],
+          "when": "CLEAR_AHEAD"
+        }
+      ],
+      "until": "GOAL"
+    }
+  ],
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

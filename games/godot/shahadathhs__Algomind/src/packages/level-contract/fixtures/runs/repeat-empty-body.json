@@ -1,0 +1,58 @@
+{
+  "description": "An empty body is out of range: LENGTH_OUT_OF_RANGE from the validator, INVALID_INSTRUCTION from the simulator.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 6],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 6]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT",
+      "count": 2,
+      "body": []
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].body",
+      "code": "LENGTH_OUT_OF_RANGE"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [0, 6],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

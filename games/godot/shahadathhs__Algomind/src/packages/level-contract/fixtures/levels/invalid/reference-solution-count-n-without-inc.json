@@ -1,0 +1,52 @@
+{
+  "description": "A REPEAT with count N in a level that does not offer INC.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 10]
+    },
+    "availableCommands": ["MOVE_FORWARD", "REPEAT"],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 400
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "REPEAT",
+        "count": "N",
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[0].count",
+      "code": "COMMAND_NOT_AVAILABLE"
+    }
+  ]
+}

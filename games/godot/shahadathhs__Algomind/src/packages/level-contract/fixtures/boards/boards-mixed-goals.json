@@ -1,0 +1,122 @@
+{
+  "description": "A level's own board reaches a target and an extra board is a sweep: each board checks its own goal.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 200
+    },
+    "hints": [],
+    "extraBoards": [
+      {
+        "board": {
+          "width": 3,
+          "height": 3,
+          "walls": []
+        },
+        "initialState": {
+          "position": [0, 0],
+          "direction": "east"
+        },
+        "goal": {
+          "type": "visit_all"
+        }
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "firstFailure": 1,
+    "steps": 10,
+    "results": [
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 4,
+        "finalState": {
+          "position": [4, 1],
+          "direction": "east"
+        },
+        "blockedCell": null
+      },
+      {
+        "status": "FAILED",
+        "reason": "PROGRAM_ENDED",
+        "steps": 6,
+        "finalState": {
+          "position": [0, 0],
+          "direction": "west"
+        },
+        "blockedCell": null
+      }
+    ]
+  }
+}

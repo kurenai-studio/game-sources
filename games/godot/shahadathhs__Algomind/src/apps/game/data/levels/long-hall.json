@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [11, 1]
+  },
+  "slug": "long-hall",
+  "board": {
+    "walls": [],
+    "width": 12,
+    "height": 3
+  },
+  "hints": [
+    "A procedure can call itself. Give that call a condition, and it stops when the condition is false.",
+    "Move once, then call the procedure again while the way ahead is clear."
+  ],
+  "title": "Long hall",
+  "levelId": "2f31b4be-9476-445a-b003-6fa1f9e72b46",
+  "requires": {
+    "mechanics": ["recursion"]
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 200,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "PROC"]
+}

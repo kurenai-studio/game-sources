@@ -1,0 +1,94 @@
+{
+  "description": "A slide that reaches a teleporter ends there, on the other end.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "portal-hall",
+    "levelVersion": 1,
+    "slug": "portal-hall",
+    "title": "Portal hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "ice": [
+      [1, 1],
+      [2, 1]
+    ],
+    "teleports": [
+      {
+        "a": [3, 1],
+        "b": [5, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 2,
+    "finalState": {
+      "position": [6, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 1],
+        "direction": "east",
+        "event": "TELEPORTED",
+        "path": [
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [5, 1]
+        ]
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [6, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED",
+        "path": [[6, 1]]
+      }
+    ]
+  }
+}

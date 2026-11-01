@@ -1,0 +1,33 @@
+{
+  "name": "@algomind/level-contract",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "The level data contract: JSON Schema, types, validator, reference simulator, solver, and the language-neutral fixture suite.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema/level.v1.schema.json": "./schema/level.v1.schema.json",
+    "./schema/level-authoring.v1.schema.json": "./schema/level-authoring.v1.schema.json",
+    "./fixtures/*": "./fixtures/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "fixtures",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "tsc -p tsconfig.json && node --test \"test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5"
+  }
+}

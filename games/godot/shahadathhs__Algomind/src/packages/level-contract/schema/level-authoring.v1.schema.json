@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://algomind.local/schema/level-authoring.v1.schema.json",
+  "title": "Algomind level (authoring), schema version 1",
+  "description": "The public level plus a required referenceSolution. Never served publicly. Same structural-only scope as the public schema.",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": ["referenceSolution"],
+  "allOf": [
+    {
+      "$ref": "level.v1.schema.json#/$defs/levelBody"
+    }
+  ],
+  "properties": {
+    "referenceSolution": {
+      "$ref": "level.v1.schema.json#/$defs/program"
+    }
+  }
+}

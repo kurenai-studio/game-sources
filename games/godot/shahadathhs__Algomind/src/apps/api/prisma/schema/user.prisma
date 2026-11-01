@@ -1,0 +1,59 @@
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  ADMIN
+  PLAYER
+}
+
+/// One identity model serves the admin and, later, players (see docs/README_ARCHITECTURE.md).
+model User {
+  id                 String         @id @default(uuid())
+  email              String         @unique
+  passwordHash       String
+  role               Role           @default(PLAYER)
+  mustChangePassword Boolean        @default(false)
+  status             UserStatus     @default(ACTIVE)
+  /// The name shown on boards, if the player chose one (never the email). Cleared by an admin.
+  displayName        String?
+  /// The name lowercased, for a case-insensitive unique check.
+  displayNameKey     String?        @unique
+  /// The player chose to appear on leaderboards. Off by default; nothing is public until it is on.
+  leaderboardOptIn   Boolean        @default(false)
+  /// Appear on boards as "Anonymous" instead of the display name.
+  hideName           Boolean        @default(false)
+  /// An admin took this player off every board (moderation). The player is not told which.
+  leaderboardHidden  Boolean        @default(false)
+  /// What other players see and what a report names; never the user id or the email.
+  publicId           String         @unique @default(uuid())
+  lastActiveAt       DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  refreshTokens      RefreshToken[]
+  progress           LevelProgress[]
+  playerSettings     PlayerSettings?
+  submissions        Submission[]
+  pointsLedger       PointsLedger[]
+  dailyResults       DailyResult[]
+  achievements       PlayerAchievement[]
+  shareLinks         ShareLink[]
+}
+
+/// One row per issued refresh token; only the SHA-256 hash is stored. Tokens that descend from one
+/// sign-in share a familyId, so reuse of a rotated token can revoke the whole chain.
+model RefreshToken {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  familyId     String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+}

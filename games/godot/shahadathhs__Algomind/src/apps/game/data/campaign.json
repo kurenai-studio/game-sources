@@ -1,0 +1,838 @@
+{
+  "worlds": [
+    {
+      "id": "basics",
+      "title": "Basics",
+      "summary": "Instructions run in order, one after another.",
+      "chapters": [
+        {
+          "id": "moves",
+          "title": "Moves",
+          "levels": ["first-step", "beside-the-wall"]
+        },
+        {
+          "id": "turns",
+          "title": "Turns",
+          "levels": ["first-turn", "turn-around", "two-corners"]
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "title": "Routes",
+      "summary": "Look at the whole board, then choose a route.",
+      "chapters": [
+        {
+          "id": "detours",
+          "title": "Detours",
+          "levels": ["around-the-wall", "dead-end", "two-ways"]
+        },
+        {
+          "id": "budgets",
+          "title": "Budgets",
+          "levels": ["fewer-turns", "gauntlet"]
+        }
+      ]
+    },
+    {
+      "id": "loops",
+      "title": "Loops",
+      "summary": "Say a pattern once and repeat it.",
+      "chapters": [
+        {
+          "id": "repeat",
+          "title": "Repeat",
+          "levels": ["say-it-once", "run-turn-run", "stairs"]
+        },
+        {
+          "id": "patterns",
+          "title": "Patterns",
+          "levels": ["run-and-climb", "climb-and-run", "final-climb"]
+        }
+      ]
+    },
+    {
+      "id": "until",
+      "title": "Until",
+      "summary": "Run until something stops you.",
+      "chapters": [
+        {
+          "id": "run-to-the-wall",
+          "title": "Run to the wall",
+          "levels": ["to-the-wall", "any-distance", "the-hall"]
+        },
+        {
+          "id": "corridors",
+          "title": "Corridors",
+          "levels": ["steps-to-the-wall", "round-and-in"]
+        }
+      ]
+    },
+    {
+      "id": "decisions",
+      "title": "Decisions",
+      "summary": "Choose by what you sense.",
+      "chapters": [
+        {
+          "id": "look",
+          "title": "Look",
+          "levels": ["look-ahead", "left-hall", "first-door"]
+        },
+        {
+          "id": "both-sides",
+          "title": "Both sides",
+          "levels": ["both-ways", "follow-the-bends"]
+        }
+      ]
+    },
+    {
+      "id": "wall-follower",
+      "title": "Wall follower",
+      "summary": "Keep a hand on the wall.",
+      "chapters": [
+        {
+          "id": "right-hand",
+          "title": "Right hand",
+          "levels": ["small-maze", "square-maze", "big-maze"]
+        },
+        {
+          "id": "other-ways",
+          "title": "Other ways",
+          "levels": ["left-hand", "facing-away"]
+        }
+      ]
+    },
+    {
+      "id": "procedures",
+      "title": "Procedures",
+      "summary": "Name a part and use it again.",
+      "chapters": [
+        {
+          "id": "name-it",
+          "title": "Name it",
+          "levels": ["first-part", "used-again", "part-with-a-loop"]
+        },
+        {
+          "id": "parts",
+          "title": "Parts",
+          "levels": ["loop-inside", "two-parts", "longer-part"]
+        }
+      ]
+    },
+    {
+      "id": "debug",
+      "title": "Debug",
+      "summary": "The program is already on the tape. Find what is wrong with it.",
+      "chapters": [
+        {
+          "id": "counts-and-ends",
+          "title": "Counts and ends",
+          "levels": ["off-by-one", "missing-turn", "never-ends"]
+        },
+        {
+          "id": "branches-and-parts",
+          "title": "Branches and parts",
+          "levels": ["wrong-way-round", "wrong-part"]
+        }
+      ]
+    },
+    {
+      "id": "generalize",
+      "title": "Generalize",
+      "summary": "One program has to solve every board.",
+      "chapters": [
+        {
+          "id": "sizes",
+          "title": "Sizes",
+          "levels": ["any-length", "any-staircase", "any-corner"]
+        },
+        {
+          "id": "shapes",
+          "title": "Shapes",
+          "levels": ["any-bend", "any-maze", "every-board"]
+        }
+      ]
+    },
+    {
+      "id": "counters",
+      "title": "Counters",
+      "summary": "A number that grows with every lap.",
+      "chapters": [
+        {
+          "id": "growing",
+          "title": "Growing",
+          "levels": ["wider-steps", "growing-diagonal", "tall-steps"]
+        },
+        {
+          "id": "spirals",
+          "title": "Spirals",
+          "levels": ["small-spiral", "left-spiral", "big-spiral"]
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "title": "Memory",
+      "summary": "Leave a mark so you never walk in circles.",
+      "chapters": [
+        {
+          "id": "breadcrumbs",
+          "title": "Breadcrumbs",
+          "levels": ["first-loop", "three-mazes", "long-halls"]
+        },
+        {
+          "id": "dead-ends",
+          "title": "Dead ends",
+          "levels": ["many-dead-ends", "large-mazes", "tangle"]
+        }
+      ]
+    },
+    {
+      "id": "sweep",
+      "title": "Sweep",
+      "summary": "Visit every cell, and waste no steps.",
+      "chapters": [
+        {
+          "id": "rooms",
+          "title": "Rooms",
+          "levels": ["small-room", "big-room"]
+        },
+        {
+          "id": "halls",
+          "title": "Halls",
+          "levels": ["comb", "spiral-hall", "maze-sweep"]
+        }
+      ]
+    },
+    {
+      "id": "patrol",
+      "title": "Patrol",
+      "summary": "A guard walks a fixed route. Each action is one step, and the guard moves with it.",
+      "chapters": [
+        {
+          "id": "dodge",
+          "title": "Dodge",
+          "levels": ["first-guard", "cross-the-beat"]
+        },
+        {
+          "id": "rings",
+          "title": "Rings",
+          "levels": ["wait-for-it", "gate-keeper"]
+        },
+        {
+          "id": "two-guards",
+          "title": "Two guards",
+          "levels": ["two-beats", "crossing-paths"]
+        }
+      ]
+    },
+    {
+      "id": "keys",
+      "title": "Keys",
+      "summary": "A door stays shut until the automaton has taken its key. Plan the order.",
+      "chapters": [
+        {
+          "id": "first-keys",
+          "title": "First keys",
+          "levels": ["first-key", "side-room"]
+        },
+        {
+          "id": "two-doors",
+          "title": "Two doors",
+          "levels": ["two-doors", "maze-gate"]
+        },
+        {
+          "id": "guarded",
+          "title": "Guarded",
+          "levels": ["guarded-key", "keys-and-a-guard"]
+        }
+      ]
+    },
+    {
+      "id": "delivery",
+      "title": "Delivery",
+      "summary": "Pick up a crate by walking onto it, then drop it on the corner marks. The target counts only after every delivery.",
+      "chapters": [
+        {
+          "id": "first-parcels",
+          "title": "First parcels",
+          "levels": ["first-parcel", "behind-the-start"]
+        },
+        {
+          "id": "two-parcels",
+          "title": "Two parcels",
+          "levels": ["two-parcels", "full-hands"]
+        },
+        {
+          "id": "in-the-way",
+          "title": "In the way",
+          "levels": ["behind-the-door", "guarded-parcel"]
+        }
+      ]
+    },
+    {
+      "id": "switches",
+      "title": "Switches",
+      "summary": "A switch flips its gate every time it is entered. Count the passes.",
+      "chapters": [
+        {
+          "id": "first-switches",
+          "title": "First switches",
+          "levels": ["first-switch", "twice-over"]
+        },
+        {
+          "id": "two-gates",
+          "title": "Two gates",
+          "levels": ["two-gates", "flip-flop"]
+        },
+        {
+          "id": "in-the-way",
+          "title": "In the way",
+          "levels": ["gate-and-crate", "gate-and-guard"]
+        }
+      ]
+    },
+    {
+      "id": "ice-and-belts",
+      "title": "Ice and belts",
+      "summary": "Ice keeps the automaton sliding and belts carry it on. Work out where each action leaves it.",
+      "chapters": [
+        {
+          "id": "ice",
+          "title": "Ice",
+          "levels": ["first-slide", "three-ice-cells"]
+        },
+        {
+          "id": "belts",
+          "title": "Belts",
+          "levels": ["pushed-aside", "belt-line"]
+        },
+        {
+          "id": "together",
+          "title": "Together",
+          "levels": ["ice-and-belts", "belts-and-a-guard"]
+        }
+      ]
+    },
+    {
+      "id": "teleporters",
+      "title": "Teleporters",
+      "summary": "Entering one end of a pair puts the automaton on the other end, facing the same way. Plan the shortcut.",
+      "chapters": [
+        {
+          "id": "first-pairs",
+          "title": "First pairs",
+          "levels": ["first-portal", "far-corner"]
+        },
+        {
+          "id": "two-pairs",
+          "title": "Two pairs",
+          "levels": ["two-pairs", "hop-and-walk"]
+        },
+        {
+          "id": "with-a-guard",
+          "title": "With a guard",
+          "levels": ["guarded-portal"]
+        }
+      ]
+    },
+    {
+      "id": "recursion",
+      "title": "Recursion",
+      "summary": "A procedure can call itself. Give the call a condition, and it stops when the condition is false.",
+      "chapters": [
+        {
+          "id": "calling-itself",
+          "title": "Calling itself",
+          "levels": ["long-hall", "hall-and-turn"]
+        },
+        {
+          "id": "conditions",
+          "title": "Conditions",
+          "levels": ["right-and-ahead"]
+        },
+        {
+          "id": "after-the-call",
+          "title": "After the call",
+          "levels": ["return-trip", "snake"]
+        }
+      ]
+    },
+    {
+      "id": "capstone",
+      "title": "Capstone",
+      "summary": "Every tool of the earlier worlds, two or more at a time.",
+      "chapters": [
+        {
+          "id": "two-ideas",
+          "title": "Two ideas",
+          "levels": ["frozen-key", "gate-by-belt", "portal-freight"]
+        },
+        {
+          "id": "guarded",
+          "title": "Guarded",
+          "levels": ["key-gate-guard", "slip-and-jump", "belt-freight"]
+        },
+        {
+          "id": "all-together",
+          "title": "All together",
+          "levels": ["four-tools", "everything"]
+        }
+      ]
+    }
+  ],
+  "par": {
+    "first-step": {
+      "commands": 2,
+      "steps": 2
+    },
+    "beside-the-wall": {
+      "commands": 4,
+      "steps": 4
+    },
+    "first-turn": {
+      "commands": 7,
+      "steps": 7
+    },
+    "turn-around": {
+      "commands": 5,
+      "steps": 5
+    },
+    "two-corners": {
+      "commands": 10,
+      "steps": 10
+    },
+    "around-the-wall": {
+      "commands": 10,
+      "steps": 10
+    },
+    "dead-end": {
+      "commands": 14,
+      "steps": 14
+    },
+    "two-ways": {
+      "commands": 14,
+      "steps": 14
+    },
+    "fewer-turns": {
+      "commands": 12,
+      "steps": 12
+    },
+    "gauntlet": {
+      "commands": 19,
+      "steps": 19
+    },
+    "say-it-once": {
+      "commands": 2,
+      "steps": 7
+    },
+    "run-turn-run": {
+      "commands": 5,
+      "steps": 11
+    },
+    "stairs": {
+      "commands": 5,
+      "steps": 19
+    },
+    "run-and-climb": {
+      "commands": 9,
+      "steps": 22
+    },
+    "climb-and-run": {
+      "commands": 10,
+      "steps": 27
+    },
+    "final-climb": {
+      "commands": 12,
+      "steps": 25
+    },
+    "to-the-wall": {
+      "commands": 2,
+      "steps": 8
+    },
+    "any-distance": {
+      "commands": 5,
+      "steps": 13
+    },
+    "the-hall": {
+      "commands": 7,
+      "steps": 14
+    },
+    "steps-to-the-wall": {
+      "commands": 5,
+      "steps": 25
+    },
+    "round-and-in": {
+      "commands": 14,
+      "steps": 40
+    },
+    "look-ahead": {
+      "commands": 4,
+      "steps": 33
+    },
+    "left-hall": {
+      "commands": 4,
+      "steps": 36
+    },
+    "first-door": {
+      "commands": 5,
+      "steps": 11
+    },
+    "both-ways": {
+      "commands": 6,
+      "steps": 41
+    },
+    "follow-the-bends": {
+      "commands": 6,
+      "steps": 37
+    },
+    "small-maze": {
+      "commands": 6,
+      "steps": 52
+    },
+    "square-maze": {
+      "commands": 6,
+      "steps": 56
+    },
+    "big-maze": {
+      "commands": 6,
+      "steps": 97
+    },
+    "left-hand": {
+      "commands": 6,
+      "steps": 55
+    },
+    "facing-away": {
+      "commands": 6,
+      "steps": 57
+    },
+    "first-part": {
+      "commands": 14,
+      "steps": 27
+    },
+    "used-again": {
+      "commands": 16,
+      "steps": 32
+    },
+    "part-with-a-loop": {
+      "commands": 12,
+      "steps": 45
+    },
+    "loop-inside": {
+      "commands": 14,
+      "steps": 37
+    },
+    "two-parts": {
+      "commands": 19,
+      "steps": 54
+    },
+    "longer-part": {
+      "commands": 20,
+      "steps": 54
+    },
+    "off-by-one": {
+      "commands": 2,
+      "steps": 8
+    },
+    "missing-turn": {
+      "commands": 5,
+      "steps": 9
+    },
+    "never-ends": {
+      "commands": 2,
+      "steps": 6
+    },
+    "wrong-way-round": {
+      "commands": 4,
+      "steps": 10
+    },
+    "wrong-part": {
+      "commands": 5,
+      "steps": 7
+    },
+    "any-length": {
+      "commands": 2,
+      "steps": 16
+    },
+    "any-staircase": {
+      "commands": 5,
+      "steps": 45
+    },
+    "any-corner": {
+      "commands": 5,
+      "steps": 28
+    },
+    "any-bend": {
+      "commands": 6,
+      "steps": 34
+    },
+    "any-maze": {
+      "commands": 6,
+      "steps": 115
+    },
+    "every-board": {
+      "commands": 6,
+      "steps": 135
+    },
+    "wider-steps": {
+      "commands": 8,
+      "steps": 27
+    },
+    "growing-diagonal": {
+      "commands": 8,
+      "steps": 28
+    },
+    "tall-steps": {
+      "commands": 8,
+      "steps": 31
+    },
+    "small-spiral": {
+      "commands": 9,
+      "steps": 52
+    },
+    "left-spiral": {
+      "commands": 9,
+      "steps": 67
+    },
+    "big-spiral": {
+      "commands": 9,
+      "steps": 84
+    },
+    "first-loop": {
+      "commands": 21,
+      "steps": 117
+    },
+    "three-mazes": {
+      "commands": 21,
+      "steps": 225
+    },
+    "long-halls": {
+      "commands": 21,
+      "steps": 200
+    },
+    "many-dead-ends": {
+      "commands": 21,
+      "steps": 316
+    },
+    "large-mazes": {
+      "commands": 21,
+      "steps": 239
+    },
+    "tangle": {
+      "commands": 21,
+      "steps": 294
+    },
+    "small-room": {
+      "commands": 11,
+      "steps": 18
+    },
+    "big-room": {
+      "commands": 11,
+      "steps": 107
+    },
+    "comb": {
+      "commands": 11,
+      "steps": 60
+    },
+    "spiral-hall": {
+      "commands": 4,
+      "steps": 80
+    },
+    "maze-sweep": {
+      "commands": 6,
+      "steps": 108
+    },
+    "first-guard": {
+      "commands": 8,
+      "steps": 8
+    },
+    "cross-the-beat": {
+      "commands": 11,
+      "steps": 11
+    },
+    "wait-for-it": {
+      "commands": 7,
+      "steps": 7
+    },
+    "gate-keeper": {
+      "commands": 13,
+      "steps": 13
+    },
+    "two-beats": {
+      "commands": 14,
+      "steps": 14
+    },
+    "crossing-paths": {
+      "commands": 18,
+      "steps": 18
+    },
+    "first-key": {
+      "commands": 10,
+      "steps": 10
+    },
+    "side-room": {
+      "commands": 11,
+      "steps": 11
+    },
+    "two-doors": {
+      "commands": 14,
+      "steps": 14
+    },
+    "maze-gate": {
+      "commands": 15,
+      "steps": 15
+    },
+    "guarded-key": {
+      "commands": 17,
+      "steps": 17
+    },
+    "keys-and-a-guard": {
+      "commands": 16,
+      "steps": 16
+    },
+    "first-parcel": {
+      "commands": 9,
+      "steps": 9
+    },
+    "behind-the-start": {
+      "commands": 10,
+      "steps": 10
+    },
+    "two-parcels": {
+      "commands": 14,
+      "steps": 14
+    },
+    "full-hands": {
+      "commands": 16,
+      "steps": 16
+    },
+    "behind-the-door": {
+      "commands": 15,
+      "steps": 15
+    },
+    "guarded-parcel": {
+      "commands": 15,
+      "steps": 15
+    },
+    "first-switch": {
+      "commands": 10,
+      "steps": 10
+    },
+    "twice-over": {
+      "commands": 10,
+      "steps": 10
+    },
+    "two-gates": {
+      "commands": 14,
+      "steps": 14
+    },
+    "flip-flop": {
+      "commands": 16,
+      "steps": 16
+    },
+    "gate-and-crate": {
+      "commands": 16,
+      "steps": 16
+    },
+    "gate-and-guard": {
+      "commands": 16,
+      "steps": 16
+    },
+    "first-slide": {
+      "commands": 3,
+      "steps": 3
+    },
+    "three-ice-cells": {
+      "commands": 8,
+      "steps": 8
+    },
+    "pushed-aside": {
+      "commands": 10,
+      "steps": 10
+    },
+    "belt-line": {
+      "commands": 8,
+      "steps": 8
+    },
+    "ice-and-belts": {
+      "commands": 13,
+      "steps": 13
+    },
+    "belts-and-a-guard": {
+      "commands": 16,
+      "steps": 16
+    },
+    "first-portal": {
+      "commands": 4,
+      "steps": 4
+    },
+    "far-corner": {
+      "commands": 5,
+      "steps": 5
+    },
+    "two-pairs": {
+      "commands": 8,
+      "steps": 8
+    },
+    "hop-and-walk": {
+      "commands": 8,
+      "steps": 8
+    },
+    "guarded-portal": {
+      "commands": 13,
+      "steps": 13
+    },
+    "long-hall": {
+      "commands": 4,
+      "steps": 11
+    },
+    "hall-and-turn": {
+      "commands": 6,
+      "steps": 13
+    },
+    "right-and-ahead": {
+      "commands": 6,
+      "steps": 17
+    },
+    "return-trip": {
+      "commands": 6,
+      "steps": 15
+    },
+    "snake": {
+      "commands": 8,
+      "steps": 18
+    },
+    "frozen-key": {
+      "commands": 14,
+      "steps": 14
+    },
+    "gate-by-belt": {
+      "commands": 19,
+      "steps": 19
+    },
+    "portal-freight": {
+      "commands": 19,
+      "steps": 19
+    },
+    "key-gate-guard": {
+      "commands": 19,
+      "steps": 19
+    },
+    "slip-and-jump": {
+      "commands": 18,
+      "steps": 18
+    },
+    "belt-freight": {
+      "commands": 19,
+      "steps": 19
+    },
+    "four-tools": {
+      "commands": 18,
+      "steps": 18
+    },
+    "everything": {
+      "commands": 19,
+      "steps": 19
+    }
+  }
+}

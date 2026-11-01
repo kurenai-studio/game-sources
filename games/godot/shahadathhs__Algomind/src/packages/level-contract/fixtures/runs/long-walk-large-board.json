@@ -1,0 +1,371 @@
+{
+  "description": "A 12 by 12 board crossed corner to corner in 23 steps.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 12,
+      "height": 12,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 0],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 30
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [11, 11]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 23,
+    "finalState": {
+      "position": [11, 11],
+      "direction": "south"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [6, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 6,
+        "op": "MOVE_FORWARD",
+        "node": [6],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [7, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 7,
+        "op": "MOVE_FORWARD",
+        "node": [7],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [8, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 8,
+        "op": "MOVE_FORWARD",
+        "node": [8],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [9, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 9,
+        "op": "MOVE_FORWARD",
+        "node": [9],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [10, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 10,
+        "op": "MOVE_FORWARD",
+        "node": [10],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 11,
+        "op": "TURN_RIGHT",
+        "node": [11],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 0],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 12,
+        "op": "MOVE_FORWARD",
+        "node": [12],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 1],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 13,
+        "op": "MOVE_FORWARD",
+        "node": [13],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 2],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 14,
+        "op": "MOVE_FORWARD",
+        "node": [14],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 3],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 15,
+        "op": "MOVE_FORWARD",
+        "node": [15],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 4],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 16,
+        "op": "MOVE_FORWARD",
+        "node": [16],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 5],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 17,
+        "op": "MOVE_FORWARD",
+        "node": [17],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 6],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 18,
+        "op": "MOVE_FORWARD",
+        "node": [18],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 7],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 19,
+        "op": "MOVE_FORWARD",
+        "node": [19],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 8],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 20,
+        "op": "MOVE_FORWARD",
+        "node": [20],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 9],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 21,
+        "op": "MOVE_FORWARD",
+        "node": [21],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 10],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 22,
+        "op": "MOVE_FORWARD",
+        "node": [22],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [11, 11],
+        "direction": "south",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+# Keep the build context small and builds reproducible.
+.git
+.github
+.husky
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+docs
+apps/game
+**/.DS_Store
+.claude

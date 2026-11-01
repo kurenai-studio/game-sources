@@ -1,0 +1,57 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 0]
+  },
+  "slug": "keys-and-a-guard",
+  "board": {
+    "walls": [
+      [2, 0],
+      [4, 0],
+      [2, 2],
+      [4, 2],
+      [6, 2]
+    ],
+    "width": 7,
+    "height": 3
+  },
+  "hints": ["The guard walks near the first key.", "Count steps: a turn is a step too."],
+  "locks": [
+    {
+      "key": [1, 2],
+      "door": [2, 1]
+    },
+    {
+      "key": [3, 1],
+      "door": [4, 1]
+    }
+  ],
+  "title": "Keys and a guard",
+  "levelId": "3a3b0f62-1c38-4ab7-8b31-6c4c8110e490",
+  "patrols": [
+    {
+      "cells": [
+        [0, 0],
+        [1, 0],
+        [1, 1]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 140,
+    "maxCommands": 16
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

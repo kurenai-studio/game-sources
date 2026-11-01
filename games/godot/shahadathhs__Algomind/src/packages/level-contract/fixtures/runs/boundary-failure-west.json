@@ -1,0 +1,63 @@
+{
+  "description": "Moving west from the left edge leaves the board; the blocked cell has x = -1.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [[2, 2]]
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "west"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 2]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "BLOCKED_BY_BOUNDARY",
+    "steps": 1,
+    "finalState": {
+      "position": [0, 2],
+      "direction": "west"
+    },
+    "blockedCell": [-1, 2],
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 2],
+        "direction": "west",
+        "event": "BLOCKED_BY_BOUNDARY"
+      }
+    ]
+  }
+}

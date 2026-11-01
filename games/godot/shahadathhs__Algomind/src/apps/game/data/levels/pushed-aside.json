@@ -1,0 +1,49 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [2, 3]
+  },
+  "slug": "pushed-aside",
+  "belts": [
+    {
+      "cell": [1, 2],
+      "direction": "north"
+    },
+    {
+      "cell": [1, 3],
+      "direction": "north"
+    }
+  ],
+  "board": {
+    "walls": [
+      [4, 0],
+      [2, 2],
+      [5, 2],
+      [5, 3]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "A belt carries the automaton one cell after the action that ends on it.",
+    "A turn in place on a belt is carried too."
+  ],
+  "title": "Pushed aside",
+  "levelId": "2237bc75-4b32-4c03-b519-454d52e9cd51",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 10
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 3],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

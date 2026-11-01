@@ -1,0 +1,86 @@
+{
+  "description": "An else that mixes an IF with an action is reported once and stops the run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [3, 2],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "IF",
+      "when": "CLEAR_AHEAD",
+      "then": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "else": [
+        {
+          "op": "IF",
+          "when": "CLEAR_LEFT",
+          "then": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].else[0].op",
+      "code": "NESTED_IF"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [3, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

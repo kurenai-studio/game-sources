@@ -1,0 +1,50 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 1]
+  },
+  "slug": "guarded-key",
+  "board": {
+    "walls": [
+      [3, 0],
+      [3, 2]
+    ],
+    "width": 7,
+    "height": 3
+  },
+  "hints": ["A guard walks the column past the door.", "Take the key, then time the way through."],
+  "locks": [
+    {
+      "key": [1, 2],
+      "door": [3, 1]
+    }
+  ],
+  "title": "Guarded key",
+  "levelId": "f873d462-f984-4920-a686-ea3fa1eb8d77",
+  "patrols": [
+    {
+      "cells": [
+        [5, 0],
+        [5, 1],
+        [5, 2]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 17
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

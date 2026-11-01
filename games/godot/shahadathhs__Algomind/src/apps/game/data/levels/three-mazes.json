@@ -1,0 +1,137 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 6]
+  },
+  "slug": "three-mazes",
+  "board": {
+    "walls": [
+      [3, 0],
+      [0, 1],
+      [1, 1],
+      [3, 1],
+      [5, 1],
+      [7, 1],
+      [5, 2],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [7, 3],
+      [5, 4],
+      [7, 4],
+      [0, 5],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [5, 5],
+      [7, 5],
+      [1, 6],
+      [7, 6],
+      [1, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [7, 7],
+      [7, 8]
+    ],
+    "width": 9,
+    "height": 9
+  },
+  "hints": [
+    "Dead ends cost steps, not slots.",
+    "The breadcrumb always points back along the way you came."
+  ],
+  "title": "Three mazes",
+  "levelId": "86831fcf-302d-439c-a36d-e60df3cf686c",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 370,
+    "maxCommands": 21
+  },
+  "description": "",
+  "extraBoards": [
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [5, 2]
+      },
+      "board": {
+        "walls": [
+          [0, 1],
+          [2, 1],
+          [3, 1],
+          [4, 1],
+          [5, 1],
+          [1, 3],
+          [2, 3],
+          [3, 3],
+          [4, 3],
+          [5, 3],
+          [6, 3],
+          [3, 4],
+          [0, 5],
+          [1, 5],
+          [3, 5],
+          [4, 5],
+          [5, 5]
+        ],
+        "width": 7,
+        "height": 7
+      },
+      "initialState": {
+        "position": [0, 0],
+        "direction": "east"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [8, 2]
+      },
+      "board": {
+        "walls": [
+          [0, 1],
+          [1, 1],
+          [4, 1],
+          [5, 1],
+          [6, 1],
+          [7, 1],
+          [5, 2],
+          [1, 3],
+          [2, 3],
+          [3, 3],
+          [5, 3],
+          [7, 3],
+          [8, 3],
+          [3, 4],
+          [5, 4],
+          [7, 4],
+          [0, 5],
+          [1, 5],
+          [3, 5],
+          [5, 5],
+          [7, 5],
+          [3, 6]
+        ],
+        "width": 9,
+        "height": 7
+      },
+      "initialState": {
+        "position": [0, 0],
+        "direction": "east"
+      }
+    }
+  ],
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF", "MARK"]
+}

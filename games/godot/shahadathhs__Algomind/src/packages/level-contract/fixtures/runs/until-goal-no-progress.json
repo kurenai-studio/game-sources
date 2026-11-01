@@ -1,0 +1,71 @@
+{
+  "description": "A round in which every IF chooses an empty branch would repeat for ever, so the run stops with STEP_LIMIT.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "if-level",
+    "levelVersion": 1,
+    "slug": "if-level",
+    "title": "if-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [[2, 1]]
+    },
+    "initialState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF"
+    ],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 4]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "GOAL",
+      "body": [
+        {
+          "op": "IF",
+          "when": "CLEAR_AHEAD",
+          "then": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ],
+          "else": []
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "STEP_LIMIT",
+    "steps": 0,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

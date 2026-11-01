@@ -1,0 +1,47 @@
+{
+  "description": "A key is not a pair of integers.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "key-corridor",
+    "levelVersion": 1,
+    "slug": "key-corridor",
+    "title": "Key corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "locks": [
+      {
+        "key": "x",
+        "door": [2, 1]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "locks[0].key",
+      "code": "INVALID_TYPE"
+    }
+  ]
+}

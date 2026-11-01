@@ -1,0 +1,53 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [0, 0]
+  },
+  "slug": "small-maze",
+  "board": {
+    "walls": [
+      [3, 0],
+      [0, 1],
+      [1, 1],
+      [3, 1],
+      [5, 1],
+      [3, 2],
+      [5, 2],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [1, 4],
+      [1, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+      [3, 6]
+    ],
+    "width": 7,
+    "height": 7
+  },
+  "hints": [
+    "Keep a hand on the right wall and walk. It finds the way out of any maze like this.",
+    "The two decisions from the last level are all you need."
+  ],
+  "title": "Small maze",
+  "levelId": "f39be024-3e58-4930-8acb-f3b0aa3ff90d",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 110,
+    "maxCommands": 6
+  },
+  "description": "",
+  "initialState": {
+    "position": [4, 6],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"]
+}

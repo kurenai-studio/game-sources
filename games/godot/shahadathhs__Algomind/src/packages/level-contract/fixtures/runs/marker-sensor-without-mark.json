@@ -1,0 +1,75 @@
+{
+  "description": "A marker sensor is a program issue when MARK is not offered; the simulator still runs it.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [3, 2],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "IF"],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "IF",
+      "when": "FRESH_AHEAD",
+      "then": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "else": []
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].when",
+      "code": "COMMAND_NOT_AVAILABLE"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 1,
+    "finalState": {
+      "position": [4, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 2],
+        "direction": "east",
+        "event": "MOVED"
+      }
+    ]
+  }
+}

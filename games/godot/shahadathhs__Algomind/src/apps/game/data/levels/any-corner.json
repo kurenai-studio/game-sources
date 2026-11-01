@@ -1,0 +1,131 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [2, 0]
+  },
+  "slug": "any-corner",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1]
+    ],
+    "width": 3,
+    "height": 3
+  },
+  "hints": [
+    "Run to the wall, turn, run to the next wall. The lengths do not matter.",
+    "Each board bends the same way."
+  ],
+  "title": "Any corner",
+  "levelId": "52106c16-6898-47c0-9b18-6a05865af418",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 5
+  },
+  "description": "",
+  "extraBoards": [
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [6, 0]
+      },
+      "board": {
+        "walls": [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [4, 0],
+          [5, 0],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [4, 1],
+          [5, 1],
+          [0, 2],
+          [1, 2],
+          [2, 2],
+          [3, 2],
+          [4, 2],
+          [5, 2]
+        ],
+        "width": 7,
+        "height": 4
+      },
+      "initialState": {
+        "position": [0, 3],
+        "direction": "east"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [4, 0]
+      },
+      "board": {
+        "walls": [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [0, 2],
+          [1, 2],
+          [2, 2],
+          [3, 2],
+          [0, 3],
+          [1, 3],
+          [2, 3],
+          [3, 3],
+          [0, 4],
+          [1, 4],
+          [2, 4],
+          [3, 4],
+          [0, 5],
+          [1, 5],
+          [2, 5],
+          [3, 5],
+          [0, 6],
+          [1, 6],
+          [2, 6],
+          [3, 6],
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7]
+        ],
+        "width": 5,
+        "height": 9
+      },
+      "initialState": {
+        "position": [0, 8],
+        "direction": "east"
+      }
+    }
+  ],
+  "initialState": {
+    "position": [0, 2],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

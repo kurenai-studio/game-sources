@@ -1,0 +1,44 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [0, 1]
+  },
+  "slug": "dead-end",
+  "board": {
+    "walls": [
+      [1, 1],
+      [6, 1],
+      [1, 2],
+      [6, 2],
+      [1, 3],
+      [6, 3],
+      [0, 4],
+      [1, 4],
+      [2, 4],
+      [6, 4],
+      [1, 5],
+      [6, 5]
+    ],
+    "width": 7,
+    "height": 7
+  },
+  "hints": ["One way looks open and leads nowhere. Check where it ends."],
+  "title": "Dead end",
+  "levelId": "02d73414-f67f-4586-ac46-78e8da44402f",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 16
+  },
+  "description": "",
+  "initialState": {
+    "position": [4, 6],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

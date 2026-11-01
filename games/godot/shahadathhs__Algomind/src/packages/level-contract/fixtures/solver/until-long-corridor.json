@@ -1,0 +1,75 @@
+{
+  "description": "A straight run of 11 moves is 2 slots with a loop.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "until-level",
+    "levelVersion": 1,
+    "slug": "until-level",
+    "title": "until-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 12,
+      "height": 3,
+      "walls": [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+        [3, 0],
+        [3, 2],
+        [4, 0],
+        [4, 2],
+        [5, 0],
+        [5, 2],
+        [6, 0],
+        [6, 2],
+        [7, 0],
+        [7, 2],
+        [8, 0],
+        [8, 2],
+        [9, 0],
+        [9, 2],
+        [10, 0],
+        [10, 2],
+        [11, 0],
+        [11, 2]
+      ]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"],
+    "constraints": {
+      "maxCommands": 10,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [11, 1]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 2,
+    "steps": 11,
+    "program": [
+      {
+        "op": "REPEAT_UNTIL",
+        "until": "BLOCKED",
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      }
+    ],
+    "fitsConstraints": true
+  }
+}

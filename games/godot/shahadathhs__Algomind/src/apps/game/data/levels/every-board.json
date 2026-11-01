@@ -1,0 +1,171 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [2, 0]
+  },
+  "slug": "every-board",
+  "board": {
+    "walls": [],
+    "width": 3,
+    "height": 3
+  },
+  "hints": [
+    "Rooms, halls, mazes and spirals: the rule is the same.",
+    "Every board has to reach its target with the one program."
+  ],
+  "title": "Every board",
+  "levelId": "52a66067-ae8f-4a54-97ca-6981514b7435",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 170,
+    "maxCommands": 6
+  },
+  "description": "",
+  "extraBoards": [
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [8, 1]
+      },
+      "board": {
+        "walls": [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [4, 0],
+          [5, 0],
+          [6, 0],
+          [7, 0],
+          [8, 0],
+          [0, 2],
+          [1, 2],
+          [2, 2],
+          [3, 2],
+          [4, 2],
+          [5, 2],
+          [6, 2],
+          [7, 2],
+          [8, 2]
+        ],
+        "width": 9,
+        "height": 3
+      },
+      "initialState": {
+        "position": [0, 1],
+        "direction": "east"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [0, 0]
+      },
+      "board": {
+        "walls": [
+          [1, 0],
+          [7, 0],
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [5, 1],
+          [7, 1],
+          [1, 2],
+          [5, 2],
+          [1, 3],
+          [3, 3],
+          [4, 3],
+          [5, 3],
+          [6, 3],
+          [7, 3],
+          [1, 4],
+          [3, 4],
+          [5, 4],
+          [1, 5],
+          [3, 5],
+          [5, 5],
+          [7, 5],
+          [8, 5],
+          [3, 6],
+          [5, 6],
+          [7, 6],
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7],
+          [5, 7],
+          [7, 7]
+        ],
+        "width": 9,
+        "height": 9
+      },
+      "initialState": {
+        "position": [4, 4],
+        "direction": "south"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [5, 2]
+      },
+      "board": {
+        "walls": [
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [4, 1],
+          [5, 1],
+          [6, 1],
+          [1, 2],
+          [6, 2],
+          [1, 3],
+          [3, 3],
+          [4, 3],
+          [5, 3],
+          [6, 3],
+          [1, 4],
+          [3, 4],
+          [4, 4],
+          [5, 4],
+          [6, 4],
+          [1, 5],
+          [3, 5],
+          [4, 5],
+          [5, 5],
+          [6, 5],
+          [1, 6],
+          [3, 6],
+          [4, 6],
+          [5, 6],
+          [6, 6],
+          [1, 7]
+        ],
+        "width": 8,
+        "height": 8
+      },
+      "initialState": {
+        "position": [0, 7],
+        "direction": "north"
+      }
+    }
+  ],
+  "initialState": {
+    "position": [0, 2],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

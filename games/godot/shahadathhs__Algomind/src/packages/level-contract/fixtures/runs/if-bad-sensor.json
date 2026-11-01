@@ -1,0 +1,70 @@
+{
+  "description": "An unknown sensor is a program issue, and the simulator stops at it.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "if-level",
+    "levelVersion": 1,
+    "slug": "if-level",
+    "title": "if-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF"
+    ],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 4]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "IF",
+      "when": "CLEAR_BEHIND",
+      "then": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "else": []
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].when",
+      "code": "INVALID_VALUE"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

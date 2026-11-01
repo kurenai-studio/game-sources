@@ -1,0 +1,45 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 1]
+  },
+  "slug": "wait-for-it",
+  "board": {
+    "walls": [],
+    "width": 6,
+    "height": 3
+  },
+  "hints": [
+    "The guard walks a ring: right, down, left, up.",
+    "A turn is a step too. Turning left then right is a wait of two steps."
+  ],
+  "title": "Wait for it",
+  "levelId": "e6eae044-c1ed-4ca6-826d-c4619242eabc",
+  "patrols": [
+    {
+      "cells": [
+        [2, 0],
+        [3, 0],
+        [3, 1],
+        [2, 1]
+      ],
+      "pattern": "loop"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 7
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

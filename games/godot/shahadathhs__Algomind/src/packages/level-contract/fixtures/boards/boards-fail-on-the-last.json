@@ -1,0 +1,169 @@
+{
+  "description": "The first two boards pass and the last one is blocked: a failure on a later board is reported by its index.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "boards-level",
+    "levelVersion": 1,
+    "slug": "boards-level",
+    "title": "boards-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+        [3, 0],
+        [3, 2],
+        [4, 0],
+        [4, 2]
+      ]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"],
+    "constraints": {
+      "maxCommands": 8,
+      "maxSteps": 200
+    },
+    "hints": [],
+    "extraBoards": [
+      {
+        "board": {
+          "width": 8,
+          "height": 3,
+          "walls": [
+            [0, 0],
+            [0, 2],
+            [1, 0],
+            [1, 2],
+            [2, 0],
+            [2, 2],
+            [3, 0],
+            [3, 2],
+            [4, 0],
+            [4, 2],
+            [5, 0],
+            [5, 2],
+            [6, 0],
+            [6, 2],
+            [7, 0],
+            [7, 2]
+          ]
+        },
+        "initialState": {
+          "position": [0, 1],
+          "direction": "east"
+        },
+        "goal": {
+          "type": "reach_tile",
+          "position": [7, 1]
+        }
+      },
+      {
+        "board": {
+          "width": 12,
+          "height": 3,
+          "walls": [
+            [0, 0],
+            [0, 2],
+            [1, 0],
+            [1, 2],
+            [2, 0],
+            [2, 2],
+            [3, 0],
+            [3, 2],
+            [4, 0],
+            [4, 2],
+            [5, 0],
+            [5, 2],
+            [6, 0],
+            [6, 2],
+            [7, 0],
+            [7, 2],
+            [8, 0],
+            [8, 2],
+            [9, 0],
+            [9, 2],
+            [10, 0],
+            [10, 2],
+            [11, 0],
+            [11, 2],
+            [6, 1]
+          ]
+        },
+        "initialState": {
+          "position": [0, 1],
+          "direction": "east"
+        },
+        "goal": {
+          "type": "reach_tile",
+          "position": [11, 1]
+        }
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "firstFailure": 2,
+    "steps": 16,
+    "results": [
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 4,
+        "finalState": {
+          "position": [4, 1],
+          "direction": "east"
+        },
+        "blockedCell": null
+      },
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 7,
+        "finalState": {
+          "position": [7, 1],
+          "direction": "east"
+        },
+        "blockedCell": null
+      },
+      {
+        "status": "FAILED",
+        "reason": "PROGRAM_ENDED",
+        "steps": 5,
+        "finalState": {
+          "position": [5, 1],
+          "direction": "east"
+        },
+        "blockedCell": null
+      }
+    ]
+  }
+}

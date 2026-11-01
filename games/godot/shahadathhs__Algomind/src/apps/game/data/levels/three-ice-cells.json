@@ -1,0 +1,44 @@
+{
+  "ice": [
+    [2, 1],
+    [3, 1],
+    [4, 1]
+  ],
+  "goal": {
+    "type": "reach_tile",
+    "position": [2, 2]
+  },
+  "slug": "three-ice-cells",
+  "board": {
+    "walls": [
+      [2, 0],
+      [3, 0],
+      [1, 2],
+      [3, 3]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "A slide ends past the ice, on the first cell that is not ice.",
+    "Plan the turn from where the slide stops, not from where it starts."
+  ],
+  "title": "Three ice cells",
+  "levelId": "0ff4565e-c73c-4f60-9ca7-1ae5f151bc69",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 8
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

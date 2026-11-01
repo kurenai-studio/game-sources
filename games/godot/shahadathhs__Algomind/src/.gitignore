@@ -1,0 +1,45 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+.husky/_/
+*.tsbuildinfo
+.next/
+dist/
+coverage/
+next-env.d.ts
+
+# Env and secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Godot
+.godot/
+android/
+*.translation
+export_credentials.cfg
+# Copied from packages/level-contract/fixtures by `make game-fixtures`
+apps/game/tests/contract_fixtures/
+
+# Build output
+build/
+*.apk
+*.apk.idsig
+*.aab
+
+# Logs
+*.log
+
+# Prisma client (generated on build)
+apps/api/src/generated/
+
+# Local agent worktrees (never commit)
+.claude/
+
+# Browser build of the game, fetched or exported for the /play page
+apps/web/public/play-build/
+
+# Level lab output (candidates and contact sheets)
+scripts/level-lab/out/

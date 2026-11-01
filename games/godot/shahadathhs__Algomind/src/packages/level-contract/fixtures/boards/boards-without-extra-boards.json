@@ -1,0 +1,74 @@
+{
+  "description": "A level with no extra boards gives one result, the same as simulate.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "boards-level",
+    "levelVersion": 1,
+    "slug": "boards-level",
+    "title": "boards-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+        [3, 0],
+        [3, 2],
+        [4, 0],
+        [4, 2]
+      ]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"],
+    "constraints": {
+      "maxCommands": 8,
+      "maxSteps": 200
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "firstFailure": null,
+    "steps": 4,
+    "results": [
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 4,
+        "finalState": {
+          "position": [4, 1],
+          "direction": "east"
+        },
+        "blockedCell": null
+      }
+    ]
+  }
+}

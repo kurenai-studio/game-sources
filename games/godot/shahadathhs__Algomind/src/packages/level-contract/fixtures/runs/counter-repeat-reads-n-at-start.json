@@ -1,0 +1,128 @@
+{
+  "description": "A REPEAT with count N reads the counter when it starts: N is 2, so two rounds run even though INC runs inside them.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 11,
+      "height": 11,
+      "walls": []
+    },
+    "initialState": {
+      "position": [5, 5],
+      "direction": "north"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 10]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "INC"
+    },
+    {
+      "op": "REPEAT",
+      "count": "N",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "INC"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 5,
+    "finalState": {
+      "position": [5, 3],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "INC",
+        "node": [0],
+        "call": null,
+        "counter": 2,
+        "round": null,
+        "position": [5, 5],
+        "direction": "north",
+        "event": "COUNTED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1, 0],
+        "call": null,
+        "counter": 2,
+        "round": 1,
+        "position": [5, 4],
+        "direction": "north",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "INC",
+        "node": [1, 1],
+        "call": null,
+        "counter": 3,
+        "round": 1,
+        "position": [5, 4],
+        "direction": "north",
+        "event": "COUNTED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [1, 0],
+        "call": null,
+        "counter": 3,
+        "round": 2,
+        "position": [5, 3],
+        "direction": "north",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "INC",
+        "node": [1, 1],
+        "call": null,
+        "counter": 4,
+        "round": 2,
+        "position": [5, 3],
+        "direction": "north",
+        "event": "COUNTED"
+      }
+    ]
+  }
+}
