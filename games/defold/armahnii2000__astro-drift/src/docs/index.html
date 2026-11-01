@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="An Asteroids-style arcade game implemented across eight game engines for side-by-side comparison.">
+<title>Astro Drift — Eight Engines, One Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+	:root {
+		--bg: #05070d;
+		--bg-elev: #0c111c;
+		--panel: rgba(20, 28, 44, 0.55);
+		--border: rgba(120, 160, 220, 0.16);
+		--border-hover: rgba(120, 160, 240, 0.45);
+		--text: #e6edf7;
+		--muted: #93a4c2;
+		--dim: #6b7c98;
+		--accent: #5fa8ff;
+		--accent-hot: #76d5ff;
+		--green: #4ff5a8;
+		--amber: #ffc060;
+	}
+	* { box-sizing: border-box; }
+	html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+	body { overflow-x: hidden; }
+
+	/* Animated starfield background ----------------------------------------*/
+	.stars-bg, .stars-bg::before, .stars-bg::after {
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+	.stars-bg {
+		background:
+			radial-gradient(ellipse 80% 60% at 20% 0%, rgba(95, 168, 255, 0.10), transparent 60%),
+			radial-gradient(ellipse 60% 40% at 85% 30%, rgba(180, 110, 255, 0.08), transparent 60%),
+			radial-gradient(ellipse 100% 80% at 50% 100%, rgba(45, 120, 200, 0.07), transparent 70%),
+			var(--bg);
+	}
+	.stars-bg::before, .stars-bg::after {
+		content: "";
+		background-image:
+			radial-gradient(1px 1px at 23px 47px, white, transparent),
+			radial-gradient(1px 1px at 90px 130px, rgba(255,255,255,0.7), transparent),
+			radial-gradient(1.5px 1.5px at 195px 80px, white, transparent),
+			radial-gradient(1px 1px at 270px 220px, rgba(255,255,255,0.8), transparent),
+			radial-gradient(1px 1px at 60px 280px, rgba(180, 220, 255, 0.9), transparent),
+			radial-gradient(2px 2px at 350px 60px, white, transparent),
+			radial-gradient(1px 1px at 410px 320px, rgba(255,255,255,0.6), transparent),
+			radial-gradient(1px 1px at 480px 150px, rgba(255,255,255,0.8), transparent);
+		background-repeat: repeat;
+		background-size: 540px 360px;
+		animation: drift 220s linear infinite;
+		opacity: 0.6;
+	}
+	.stars-bg::after {
+		background-size: 800px 560px;
+		animation-duration: 360s;
+		opacity: 0.4;
+	}
+	@keyframes drift {
+		from { transform: translateY(0); }
+		to { transform: translateY(-720px); }
+	}
+
+	.wrap {
+		position: relative;
+		z-index: 1;
+		max-width: 1180px;
+		margin: 0 auto;
+		padding: 64px 24px 100px;
+	}
+
+	/* Hero ----------------------------------------------------------------*/
+	.hero {
+		display: grid;
+		grid-template-columns: 1.1fr 1fr;
+		gap: 56px;
+		align-items: center;
+		margin-bottom: 84px;
+	}
+	@media (max-width: 880px) {
+		.hero { grid-template-columns: 1fr; gap: 32px; }
+	}
+	.eyebrow {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: 2.5px;
+		text-transform: uppercase;
+		color: var(--accent);
+		margin-bottom: 18px;
+	}
+	h1 {
+		font-family: 'Space Grotesk', system-ui, sans-serif;
+		font-size: clamp(44px, 6vw, 72px);
+		font-weight: 700;
+		line-height: 1.0;
+		letter-spacing: -1.5px;
+		margin: 0 0 24px;
+		background: linear-gradient(135deg, #ffffff 0%, #76d5ff 60%, #5fa8ff 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	.lead { font-size: 19px; line-height: 1.55; color: var(--muted); margin: 0 0 28px; max-width: 560px; }
+	.lead strong { color: var(--text); font-weight: 600; }
+	.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+	.btn {
+		display: inline-flex; align-items: center; gap: 8px;
+		padding: 12px 22px;
+		border-radius: 10px;
+		font-family: 'Inter'; font-weight: 600; font-size: 15px;
+		text-decoration: none;
+		transition: all 0.15s ease;
+	}
+	.btn-primary {
+		background: linear-gradient(135deg, var(--accent), var(--accent-hot));
+		color: #07101b;
+		box-shadow: 0 10px 28px -8px rgba(95, 168, 255, 0.55);
+	}
+	.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 36px -8px rgba(95, 168, 255, 0.7); }
+	.btn-ghost {
+		background: var(--panel);
+		color: var(--text);
+		border: 1px solid var(--border);
+		backdrop-filter: blur(20px);
+	}
+	.btn-ghost:hover { border-color: var(--border-hover); background: rgba(30, 40, 60, 0.7); }
+
+	/* Hero video preview --------------------------------------------------*/
+	.hero-preview {
+		position: relative;
+		aspect-ratio: 16 / 9;
+		border-radius: 14px;
+		overflow: hidden;
+		border: 1px solid var(--border);
+		box-shadow: 0 30px 80px -20px rgba(0, 20, 50, 0.7), 0 0 0 1px rgba(255,255,255,0.03) inset;
+		background: #000;
+	}
+	.hero-preview video {
+		width: 100%; height: 100%; object-fit: cover; display: block;
+	}
+	.hero-preview::after {
+		content: "";
+		position: absolute; inset: 0;
+		background: linear-gradient(180deg, transparent 60%, rgba(5,7,13,0.6));
+		pointer-events: none;
+	}
+
+	/* Section heading -----------------------------------------------------*/
+	.section { margin-top: 68px; }
+	.section-head {
+		display: flex; align-items: baseline; justify-content: space-between;
+		margin-bottom: 22px; flex-wrap: wrap; gap: 10px;
+	}
+	.section-head h2 {
+		font-family: 'Space Grotesk';
+		font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+		margin: 0;
+	}
+	.section-head .sub {
+		font-size: 14px; color: var(--dim);
+	}
+
+	/* Controls panel ------------------------------------------------------*/
+	.controls {
+		background: var(--panel);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		padding: 22px 26px;
+		backdrop-filter: blur(20px);
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 8px 28px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 13.5px;
+	}
+	.controls .row { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+	.controls .key {
+		display: inline-flex; align-items: center; justify-content: center;
+		min-width: 28px; height: 24px; padding: 0 7px;
+		background: rgba(40, 56, 88, 0.7);
+		border: 1px solid rgba(120, 160, 220, 0.22);
+		border-bottom-width: 2px;
+		border-radius: 5px;
+		color: var(--text); font-weight: 500; font-size: 12px;
+	}
+
+	/* Cards ---------------------------------------------------------------*/
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+		gap: 18px;
+	}
+	.card {
+		position: relative;
+		background: var(--panel);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		overflow: hidden;
+		backdrop-filter: blur(20px);
+		transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+		display: flex; flex-direction: column;
+		text-decoration: none; color: inherit;
+	}
+	.card:hover {
+		transform: translateY(-3px);
+		border-color: var(--border-hover);
+		box-shadow: 0 16px 50px -16px rgba(0, 10, 30, 0.7);
+	}
+	.card-video {
+		position: relative;
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+		background: linear-gradient(135deg, #0a1020, #050810);
+		border-bottom: 1px solid var(--border);
+	}
+	.card-video video, .card-video .placeholder {
+		width: 100%; height: 100%; object-fit: cover; display: block;
+	}
+	.card-video .placeholder {
+		display: flex; align-items: center; justify-content: center;
+		font-family: 'JetBrains Mono'; font-size: 11px;
+		color: var(--dim); letter-spacing: 2px; text-transform: uppercase;
+		background: repeating-linear-gradient(45deg, #0a1020, #0a1020 8px, #0d1426 8px, #0d1426 16px);
+	}
+	.card-body { padding: 18px 20px 20px; flex: 1; display: flex; flex-direction: column; }
+	.card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 10px; }
+	.card-title {
+		font-family: 'Space Grotesk';
+		font-size: 20px; font-weight: 700; letter-spacing: -0.2px;
+		color: var(--text);
+	}
+	.card .lang {
+		font-family: 'JetBrains Mono';
+		font-size: 11px;
+		color: var(--dim);
+		letter-spacing: 1.5px;
+		text-transform: uppercase;
+		margin: 0 0 10px;
+	}
+	.card .desc { font-size: 14px; color: var(--muted); line-height: 1.55; }
+	.card .desc strong { color: var(--text); font-weight: 500; }
+
+	.badge {
+		font-family: 'JetBrains Mono';
+		font-size: 10px;
+		padding: 3px 9px;
+		border-radius: 5px;
+		font-weight: 500;
+		letter-spacing: 1.2px;
+		white-space: nowrap;
+	}
+	.badge.playable { background: rgba(79, 245, 168, 0.12); color: var(--green); border: 1px solid rgba(79, 245, 168, 0.3); }
+	.badge.video    { background: rgba(255, 192, 96, 0.10); color: var(--amber); border: 1px solid rgba(255, 192, 96, 0.3); }
+	.badge.source   { background: rgba(120, 160, 220, 0.10); color: var(--muted); border: 1px solid rgba(120, 160, 220, 0.22); }
+
+	.card-foot {
+		display: flex; align-items: center; gap: 8px;
+		margin-top: 14px;
+		font-family: 'JetBrains Mono';
+		font-size: 11px;
+		color: var(--dim);
+		letter-spacing: 0.5px;
+	}
+	.card-foot .arrow { margin-left: auto; color: var(--accent); }
+	.card:hover .arrow { color: var(--accent-hot); }
+
+	/* Footer --------------------------------------------------------------*/
+	footer {
+		margin-top: 100px;
+		padding-top: 32px;
+		border-top: 1px solid var(--border);
+		text-align: center;
+		color: var(--dim);
+		font-size: 13px;
+	}
+	footer a { color: var(--muted); text-decoration: none; }
+	footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="stars-bg"></div>
+
+<div class="wrap">
+	<!-- Hero -->
+	<section class="hero">
+		<div>
+			<div class="eyebrow">Multi-Engine Game Study</div>
+			<h1>Eight engines.<br>One game.</h1>
+			<p class="lead">Astro Drift is a single Asteroids-style game implemented across <strong>eight game engines</strong>, side by side. Identical physics constants. Identical controls. Each port layers its own engine-specific twist.</p>
+			<div class="cta-row">
+				<a href="./godot/" class="btn btn-primary">Play the full game →</a>
+				<a href="https://github.com/armahnii2000/astro-drift" class="btn btn-ghost">Source on GitHub ↗</a>
+			</div>
+		</div>
+		<div class="hero-preview">
+			<video src="./videos/godot.webm" autoplay loop muted playsinline></video>
+		</div>
+	</section>
+
+	<!-- Controls -->
+	<section class="section">
+		<div class="section-head">
+			<h2>Controls</h2>
+			<div class="sub">Same in every version. Right hand never leaves the arrow cluster.</div>
+		</div>
+		<div class="controls">
+			<div class="row"><span class="key">←</span><span class="key">→</span><span>rotate</span></div>
+			<div class="row"><span class="key">↑</span><span>thrust</span></div>
+			<div class="row"><span class="key">↓</span><span>brake</span></div>
+			<div class="row"><span class="key">Del</span><span>fire</span></div>
+			<div class="row"><span class="key">Ins</span><span>toggle twist</span></div>
+			<div class="row"><span class="key">End</span><span>restart</span></div>
+			<div class="row"><span class="key">Esc</span><span>quit</span></div>
+		</div>
+	</section>
+
+	<!-- Playable -->
+	<section class="section">
+		<div class="section-head">
+			<h2>Playable in browser</h2>
+			<div class="sub">Real WebAssembly builds. Click any card to launch.</div>
+		</div>
+		<div class="grid">
+			<a class="card" href="./godot/">
+				<div class="card-video"><video src="./videos/godot.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Godot 4</div><span class="badge playable">PLAYABLE</span></div>
+					<div class="lang">GDScript · WebAssembly export</div>
+					<div class="desc">The full game with waves, lives, scoring, and splitting asteroids. <strong>Twist: CRT post-process shader</strong> — phosphor bloom, scanlines, barrel distortion, chromatic aberration. Toggle with <code>Ins</code>.</div>
+					<div class="card-foot">FLAGSHIP <span class="arrow">→ play</span></div>
+				</div>
+			</a>
+			<a class="card" href="./love2d/">
+				<div class="card-video"><video src="./videos/love2d.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Love 2D</div><span class="badge playable">PLAYABLE</span></div>
+					<div class="lang">Lua · love.js Emscripten port</div>
+					<div class="desc"><strong>Twist: authentic 1979 vector-display phosphor</strong>. Every shape drawn three times — wide additive halo + narrow halo + crisp stroke with per-frame brightness flicker. Looks like a real CRT.</div>
+					<div class="card-foot">vector look <span class="arrow">→ play</span></div>
+				</div>
+			</a>
+			<a class="card" href="./pygame/">
+				<div class="card-video"><video src="./videos/pygame.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">PyGame</div><span class="badge playable">PLAYABLE</span></div>
+					<div class="lang">Python · pygbag / Pyodide WASM</div>
+					<div class="desc"><strong>Twist: numpy procedural nebula + AI autopilot</strong>. The backdrop is generated entirely from numpy Gaussians. Hit <code>Ins</code> to hand the ship to a 20-line heuristic AI.</div>
+					<div class="card-foot">python in browser <span class="arrow">→ play</span></div>
+				</div>
+			</a>
+		</div>
+	</section>
+
+	<!-- Video preview ports -->
+	<section class="section">
+		<div class="section-head">
+			<h2>Video preview</h2>
+			<div class="sub">Engines without a maintained browser export — recorded locally.</div>
+		</div>
+		<div class="grid">
+			<a class="card" href="https://github.com/armahnii2000/astro-drift/tree/main/panda3d">
+				<div class="card-video"><video src="./videos/panda3d.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Panda 3D</div><span class="badge video">VIDEO</span></div>
+					<div class="lang">Python · Disney VR engine</div>
+					<div class="desc"><strong>Twist: 2D game reprojected into 3D space</strong>. Ship is a lit box mesh on the XY plane with world-bound wrap, Z-up right-handed coordinates, ambient + directional lighting, and a procedurally-drawn grid.</div>
+					<div class="card-foot">source on github <span class="arrow">↗</span></div>
+				</div>
+			</a>
+			<a class="card" href="https://github.com/armahnii2000/astro-drift/tree/main/defold">
+				<div class="card-video"><video src="./videos/defold.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Defold</div><span class="badge video">VIDEO</span></div>
+					<div class="lang">Lua · King's open-source engine</div>
+					<div class="desc"><strong>Twist: msg.post scoreboard actor</strong>. Flat game-object + collection architecture with hand-authored input bindings and a GUI scene. Built headlessly via bob.jar to a native Windows binary.</div>
+					<div class="card-foot">source on github <span class="arrow">↗</span></div>
+				</div>
+			</a>
+			<a class="card" href="https://github.com/armahnii2000/astro-drift/tree/main/solar2d">
+				<div class="card-video"><video src="./videos/solar2d.webm" autoplay loop muted playsinline></video></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Solar 2D</div><span class="badge video">VIDEO</span></div>
+					<div class="lang">Lua · Corona SDK successor</div>
+					<div class="desc"><strong>Twist: mobile-first content scaling</strong>. Letterbox scaling so the game looks right on any device. Runs in the Solar 2D Simulator with hand-authored <code>config.lua</code> + <code>build.settings</code>.</div>
+					<div class="card-foot">source on github <span class="arrow">↗</span></div>
+				</div>
+			</a>
+			<a class="card" href="https://github.com/armahnii2000/astro-drift/tree/main/unity">
+				<div class="card-video"><div class="placeholder">capture in progress</div></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Unity</div><span class="badge source">SOURCE</span></div>
+					<div class="lang">C# · MonoBehaviour</div>
+					<div class="desc"><strong>Twist: trauma-based camera shake + particle thrust trail</strong>. <code>PlayerController</code>, <code>AsteroidController</code>, <code>GameManager</code>, plus signature Unity affordances: <code>CameraShake</code>, <code>ExplosionEffect</code>, <code>SfxManager</code>.</div>
+					<div class="card-foot">unity 2022.3 lts <span class="arrow">↗</span></div>
+				</div>
+			</a>
+			<a class="card" href="https://github.com/armahnii2000/astro-drift/tree/main/stride">
+				<div class="card-video"><div class="placeholder">capture in progress</div></div>
+				<div class="card-body">
+					<div class="card-title-row"><div class="card-title">Stride</div><span class="badge source">SOURCE</span></div>
+					<div class="lang">C# · .NET 8 · formerly Xenko</div>
+					<div class="desc"><strong>Twist: pure-C# 3D engine</strong>. <code>SyncScript</code>-based player and bullet on the XZ plane. UI overlay via <code>Stride.UI.Canvas</code>. Open in Stride GameStudio.</div>
+					<div class="card-foot">stride 4.2 <span class="arrow">↗</span></div>
+				</div>
+			</a>
+		</div>
+	</section>
+
+	<footer>
+		Built as a portfolio piece for game-development specialist work · <a href="https://github.com/armahnii2000/astro-drift">github.com/armahnii2000/astro-drift</a>
+	</footer>
+</div>
+</body>
+</html>
