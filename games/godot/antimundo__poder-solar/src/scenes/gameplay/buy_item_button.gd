@@ -1,0 +1,57 @@
+extends Button
+
+@export_file("*.tscn") var gameplay_item
+@export var money_cost: int = 100
+@onready var world_items = $"../../World/WorldItems"
+
+var _dialogue_tween: Tween
+
+func _ready() -> void:
+	button_down.connect(_on_button_down)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+	_check_ui($"../../Managers/MoneyManager".money)
+
+func _on_button_down() -> void:
+	var this_item = load(gameplay_item).instantiate()
+	world_items.add_child(this_item)
+	this_item.on_instantiated.connect(_on_item_instantiated)
+	this_item.on_resource_gathered.connect(_on_resource_gathered)
+	this_item.on_sell.connect(_on_sell)
+
+func _on_mouse_entered() -> void:
+	_tween_dialogue(1)
+
+func _on_mouse_exited() -> void:
+	_tween_dialogue(0)
+
+func _on_money_manager_money_change(new_quantity) -> void:
+	_check_ui(new_quantity)
+
+func _on_item_instantiated() -> void:
+	$"../../Managers/MoneyManager".add_money(-money_cost)
+
+func _on_resource_gathered(money: int, energy: int, pollution: int) -> void:
+	$"../../Managers/MoneyManager".add_money(money)
+	$"../../Managers/EnergyManager".add_energy(energy)
+	$"../../Managers/PollutionManager".add_pollution(pollution)
+
+func _on_sell(money: int) -> void:
+	$"../Sell".play()
+	$"../../Managers/MoneyManager".add_money(money)
+
+func _tween_dialogue(opacity: float) -> void:
+	if _dialogue_tween != null:
+		_dialogue_tween.kill()
+	_dialogue_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	_dialogue_tween.tween_property($ComicDialogue, "modulate", Color("ffffff", opacity), .2)
+
+func _check_ui(available_money: int) -> void:
+	$Panel/Label.text = str(money_cost)
+	disabled = available_money < money_cost
+	if disabled:
+		release_focus()
+	if disabled:
+		$Panel/Label.modulate = Color("989898")
+	else:
+		$Panel/Label.modulate = Color("c7fc76")
