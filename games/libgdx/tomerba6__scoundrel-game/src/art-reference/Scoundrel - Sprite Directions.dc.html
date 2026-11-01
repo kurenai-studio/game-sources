@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+@font-face { font-family: "IM Fell English"; src: url("fonts/IMFellEnglish-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Alegreya Sans"; src: url("fonts/AlegreyaSans-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Alegreya Sans"; src: url("fonts/AlegreyaSans-Bold.ttf") format("truetype"); font-weight: 700; font-display: block; }
+body { margin: 0; background: #0b0908; }
+a { color: #d9a441; text-decoration: none; }
+a:hover { color: #e8ddc7; }
+/* pixel-honest idle: whole-pixel steps, never sub-pixel drift */
+@keyframes c5a { 0% { opacity: 1; } 20% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes c5b { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes c5c { 0% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes c5d { 0% { opacity: 0; } 60% { opacity: 1; } 80% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes c5e { 0% { opacity: 0; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fxRim { 0%,99.9% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fr1 { 0%,49.99% { opacity: 1; } 50%,100% { opacity: 0; } }
+@keyframes fr2 { 0%,49.99% { opacity: 0; } 50%,100% { opacity: 1; } }
+@keyframes bobA { 0%,49% { transform: translateY(0); } 50%,100% { transform: translateY(-2px); } }
+@keyframes hitShake { 0% { transform: translate(0,0); } 20% { transform: translate(-8px,4px); } 40% { transform: translate(8px,-4px); } 60% { transform: translate(-4px,0); } 80% { transform: translate(4px,0); } 100% { transform: translate(0,0); } }
+@keyframes hitFlash { 0% { opacity: 0; } 12% { opacity: .85; } 100% { opacity: 0; } }
+/* ── resolve effects: every segment holds, nothing tweens, nothing rotates ── */
+@keyframes fxShake { 0% { transform: translate(0,0); } 20% { transform: translate(-8px,4px); } 40% { transform: translate(8px,-4px); } 60% { transform: translate(-4px,4px); } 80% { transform: translate(4px,0); } 100% { transform: translate(0,0); } }
+@keyframes fxBurst { 0% { transform: scale(.5); opacity: 1; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes fxWhite { 0% { opacity: .8; } 100% { opacity: 0; } }
+@keyframes fxSliceHi { 0% { transform: translate(0,-10px); opacity: 1; } 100% { transform: translate(-24px,-34px); opacity: 0; } }
+@keyframes fxSliceLo { 0% { transform: translate(0,-10px); opacity: 1; } 100% { transform: translate(24px,-18px); opacity: 0; } }
+@keyframes fxSlash { 0% { opacity: 0; transform: translate(28px,-28px); } 40% { opacity: 1; transform: translate(0,0); } 100% { opacity: 0; transform: translate(-28px,28px); } }
+@keyframes fxHide { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fxFly { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx),var(--dy)) scale(var(--fs)); opacity: var(--fo); } }
+@keyframes fxFlyIn { 0% { transform: translate(var(--dx),var(--dy)) scale(.35); } 100% { transform: translate(0,0) scale(1); } }
+@keyframes fxDim { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes fxDied { 0% { opacity: 0; transform: scale(1); } 100% { opacity: 1; transform: scale(1.6); } }
+@keyframes fxSpill { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--sx),22px); opacity: 0; } }
+@keyframes fxLiftCut { 0% { transform: translate(0,0); opacity: 1; } 50% { transform: translate(0,-10px); opacity: 1; } 100% { transform: translate(0,-10px); opacity: 0; } }
+@keyframes fxFlyT { 0% { transform: translate(0,0); } 100% { transform: translate(var(--dx),var(--dy)); } }
+/* the tilt stands in for three DRAWN pour frames — the shipped sprite never rotates */
+@keyframes fxPour { 0% { transform: rotate(0deg); } 100% { transform: rotate(-62deg); } }
+@keyframes fxFill { 0% { width: 70%; } 100% { width: 95%; } }
+</style>
+</helmet>
+
+<div ref="{{ wrapRef }}" style="min-height:100vh;background:#0b0908;padding:20px 20px 48px;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:'Alegreya Sans',sans-serif">
+
+  <div style="width:100%;max-width:1280px;display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap">
+    <div style="color:#e8ddc7;font-size:13px;letter-spacing:.18em;text-transform:uppercase;opacity:.55">Scoundrel — Embergrid</div>
+    <div style="display:flex;gap:20px;align-items:baseline">
+      <a href="Scoundrel — Current UI.dc.html" style="font-size:12px;letter-spacing:.06em">← the build today</a>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:1280px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <sc-for list="{{ dirTabs }}" as="d" hint-placeholder-count="4">
+      <button onClick="{{ d.go }}" style="{{ d.style }}"><span style="white-space:nowrap">{{ d.name }}</span></button>
+    </sc-for>
+    <div style="flex:1"></div>
+  </div>
+
+  <sc-if value="{{ isEffects }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid rgba(232,221,199,.1);padding-top:12px">
+      <div style="font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.16em;color:#d9a441;margin-right:8px">PLAY</div>
+      <sc-for list="{{ fxButtons }}" as="f" hint-placeholder-count="7">
+        <button onClick="{{ f.go }}" style="{{ f.style }}"><span style="white-space:nowrap">{{ f.name }}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isScreens }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid rgba(232,221,199,.1);padding-top:12px">
+      <div style="font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.16em;color:#d9a441;margin-right:8px">SCREEN</div>
+      <sc-for list="{{ screenTabs }}" as="s" hint-placeholder-count="6">
+        <button onClick="{{ s.go }}" style="{{ s.style }}"><span style="white-space:nowrap">{{ s.name }}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showStage }}" hint-placeholder-val="{{ true }}">
+  <div style="{{ stageOuterStyle }}">
+    <div style="{{ stageStyle }}">
+      <canvas ref="{{ bgRef }}" width="{{ bgW }}" height="{{ bgH }}" style="position:absolute;inset:0;width:1280px;height:720px;image-rendering:pixelated"></canvas>
+
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="s-H" viewBox="0 0 64 64"><circle cx="19" cy="20" r="14" fill="currentColor"></circle><circle cx="45" cy="20" r="14" fill="currentColor"></circle><polygon points="5,26 59,26 32,60" fill="currentColor"></polygon></symbol>
+        <symbol id="s-D" viewBox="0 0 64 64"><polygon points="32,2 6,32 58,32" fill="currentColor"></polygon><polygon points="6,32 58,32 32,62" fill="currentColor"></polygon></symbol>
+        <symbol id="s-S" viewBox="0 0 64 64"><polygon points="32,2 4,34 60,34" fill="currentColor"></polygon><circle cx="18" cy="38" r="14" fill="currentColor"></circle><circle cx="46" cy="38" r="14" fill="currentColor"></circle><polygon points="32,42 22,62 42,62" fill="currentColor"></polygon></symbol>
+        <symbol id="s-C" viewBox="0 0 64 64"><circle cx="32" cy="16" r="13" fill="currentColor"></circle><circle cx="18" cy="36" r="13" fill="currentColor"></circle><circle cx="46" cy="36" r="13" fill="currentColor"></circle><polygon points="32,40 22,62 42,62" fill="currentColor"></polygon></symbol>
+      </svg>
+
+      <!-- ══════════ A · EMBERGRID — everything on the pixel grid ══════════ -->
+      <sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;font-family:Silkscreen,ui-monospace,monospace">
+
+          <div style="height:88px;padding:0 24px;display:flex;align-items:center;gap:24px;flex:none">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="position:relative;width:216px;height:24px;background:#0f1410;padding:2px;box-sizing:border-box">
+                <div style="width:100%;height:100%;background:#1e2a1c;position:relative;overflow:hidden">
+                  <div style="{{ hpFillA }}"></div>
+                  <div style="position:absolute;inset:0;background:repeating-linear-gradient(to right,rgba(15,20,16,0) 0 8px,rgba(15,20,16,.8) 8px 10px)"></div>
+                  <div style="position:absolute;left:0;right:0;top:0;height:2px;background:rgba(232,221,199,.14)"></div>
+                  <div style="{{ hpHealStyle }}"></div>
+                </div>
+              </div>
+              <div style="font-size:22px;color:#e8ddc7;letter-spacing:.02em">14</div>
+              <div style="font-size:11px;color:#6b5f4c;letter-spacing:.1em;padding-top:4px">/20 HP</div>
+            </div>
+
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="display:flex;align-items:flex-start">
+                <sc-for list="{{ ticks }}" as="t" hint-placeholder-count="44">
+                  <div style="{{ t.styleA }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:16px;font-size:11px;letter-spacing:.12em;color:#9a8b70">
+                <span>DEPTH 27</span><span style="color:#4a3524">·</span><span>01:47</span>
+              </div>
+            </div>
+
+            <div style="position:relative;background:#0f1410;padding:2px">
+              <div style="background:#d9a441;padding:11px 24px;position:relative">
+                <div style="position:absolute;top:0;left:0;right:2px;height:2px;background:#f2cf7a"></div>
+                <div style="position:absolute;top:0;left:0;bottom:2px;width:2px;background:#f2cf7a"></div>
+                <div style="position:absolute;bottom:0;left:2px;right:0;height:2px;background:#b5651f"></div>
+                <div style="position:absolute;bottom:2px;right:0;top:0;width:2px;background:#b5651f"></div>
+                <div style="position:relative;font-size:15px;letter-spacing:.14em;color:#12161a">AVOID</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:24px">
+            <sc-for list="{{ cardsA }}" as="c" hint-placeholder-count="4">
+              <div style="{{ c.outer }}">
+                <div style="{{ c.plate }}">
+                  <div style="{{ c.bevelLt }}"></div>
+                  <div style="{{ c.bevelDk }}"></div>
+                  <div style="position:relative;height:26px;padding:0 6px;display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <span style="font-size:13px;color:#e8ddc7">{{ c.rank }}</span>
+                      <svg width="12" height="12" shape-rendering="crispEdges" style="color:#e8ddc7"><use href="{{ c.pip }}"></use></svg>
+                    </div>
+                    <span style="{{ c.typeStyle }}">{{ c.type }}</span>
+                  </div>
+                  <div style="{{ c.well }}">
+                    <div style="{{ c.spriteBox }}">
+                      <sc-for list="{{ c.layers }}" as="L" hint-placeholder-count="5">
+                        <div role="img" aria-label="{{ L.alt }}" style="{{ L.style }}"></div>
+                      </sc-for>
+                    </div>
+                    <div style="{{ c.hitStyle }}"></div>
+                  </div>
+                  <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+                    <div style="{{ c.rule }}"></div>
+                    <span style="font-size:38px;line-height:1;color:#e8ddc7;letter-spacing:.02em;text-shadow:0 4px 0 rgba(10,8,6,.7)">{{ c.value }}</span>
+                    <span style="{{ c.assetTag }}">{{ c.asset }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="height:112px;padding:0 24px 16px;display:flex;align-items:center;justify-content:space-between;flex:none">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="background:#0f1410;padding:2px">
+                <div style="width:76px;height:76px;background:#12161a;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 0 rgba(0,0,0,.5),inset 0 -2px 0 rgba(232,221,199,.05)">
+                  <div role="img" aria-label="broadaxe on the rail" style="width:72px;height:72px;background-image:url('sprites/weapon_09_broadaxe.png');background-size:72px 72px;background-repeat:no-repeat;image-rendering:pixelated"></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="font-size:13px;color:#74838f;letter-spacing:.08em">BROADAXE 9</div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <sc-for list="{{ slain }}" as="s" hint-placeholder-count="2">
+                    <div style="width:22px;height:30px;background:#0f1410;padding:2px;box-sizing:border-box">
+                      <div style="width:100%;height:100%;background:#4e2620;color:#a35543;font-size:10px;display:flex;align-items:center;justify-content:center">{{ s.value }}</div>
+                    </div>
+                  </sc-for>
+                  <div style="margin-left:8px;background:#d9a441;color:#12161a;font-size:11px;letter-spacing:.08em;padding:5px 11px">SLAYS &lt; 8</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:30px;height:30px;background:#0f1410;padding:2px;box-sizing:border-box">
+                <div role="img" aria-label="draught held" style="width:26px;height:26px;background-image:url('sprites/potion_05_draught.png');background-size:26px 26px;background-repeat:no-repeat;image-rendering:pixelated"></div>
+              </div>
+              <div style="font-size:11px;letter-spacing:.1em;color:#4a3524">POTION READY</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+
+      <!-- ══════════ SCREENS — title, menus and overlays in the board's grammar ══════════ -->
+      <sc-if value="{{ isScreens }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;font-family:Silkscreen,ui-monospace,monospace">
+
+          <sc-if value="{{ scTitle }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:60px">
+              <div style="background:#0f1410;padding:2px">
+                <div style="width:216px;height:216px;background:#0e050c;position:relative;box-shadow:inset 0 2px 0 rgba(0,0,0,.6),inset 0 -2px 0 rgba(232,221,199,.05)">
+                  <sc-for list="{{ aceFrames }}" as="L" hint-placeholder-count="5">
+                    <div role="img" aria-label="{{ L.alt }}" style="{{ L.style }}"></div>
+                  </sc-for>
+                </div>
+                <div style="text-align:center;font-size:9px;letter-spacing:.2em;color:#6b5f4c;padding:8px 0 4px">WHAT WAITS AT THE BOTTOM</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-start">
+                <div style="font-size:11px;letter-spacing:.3em;color:#d9a441;padding-bottom:16px">FIFTY-TWO CARDS · ONE DESCENT</div>
+                <div style="font-size:52px;line-height:1;color:#e8ddc7;letter-spacing:.02em;text-shadow:0 4px 0 rgba(10,8,6,.75)">SCOUNDREL</div>
+                <div style="width:268px;height:2px;background:#4a3524;margin:22px 0 8px"></div>
+                <div style="font-size:11px;letter-spacing:.1em;color:rgba(232,221,199,.45);padding-bottom:26px">BEST 17 · 38 RUNS FINISHED</div>
+                <div style="display:flex;flex-direction:column;gap:10px;width:268px">
+                  <sc-for list="{{ titleMenu }}" as="b" hint-placeholder-count="4">
+                    <div style="background:#0f1410;padding:2px"><div style="{{ b.plate }}">{{ b.label }}</div></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:10px;letter-spacing:.14em;color:rgba(232,221,199,.28)">DESIGNED BY ZACH GAGE &amp; KURT BIEG — AN UNOFFICIAL IMPLEMENTATION</div>
+          </sc-if>
+
+          <sc-if value="{{ scModes }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+              <div style="height:88px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;flex:none;border-bottom:2px solid rgba(232,221,199,.08)">
+                <div style="display:flex;align-items:baseline;gap:16px">
+                  <div style="font-size:26px;color:#e8ddc7;letter-spacing:.04em">NEW GAME</div>
+                  <div style="font-size:11px;letter-spacing:.12em;color:#9a8b70">CHOOSE YOUR DESCENT</div>
+                </div>
+                <div style="background:#0f1410;padding:2px"><div style="background:#1a1410;box-shadow:inset 2px 2px 0 #2f2620,inset -2px -2px 0 #0a0806;padding:9px 18px;font-size:11px;letter-spacing:.14em;color:rgba(232,221,199,.7)">ESC · BACK</div></div>
+              </div>
+              <div style="flex:1;padding:24px 40px;display:flex;flex-direction:column;gap:14px">
+                <sc-for list="{{ modeRows }}" as="m" hint-placeholder-count="3">
+                  <div style="{{ m.frame }}">
+                    <div style="{{ m.face }}">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
+                        <div style="display:flex;align-items:center;gap:14px">
+                          <div style="{{ m.key }}">{{ m.k }}</div>
+                          <div style="{{ m.name }}">{{ m.title }}</div>
+                          <div style="{{ m.badge }}">{{ m.tag }}</div>
+                        </div>
+                        <div style="{{ m.hp }}">{{ m.start }}</div>
+                      </div>
+                      <div style="font-size:13px;line-height:1.55;color:rgba(232,221,199,.55);padding-top:9px;max-width:900px;text-wrap:pretty">{{ m.description }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ scLedger }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+              <div style="height:88px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;flex:none;border-bottom:2px solid rgba(232,221,199,.08)">
+                <div style="display:flex;align-items:baseline;gap:16px">
+                  <div style="font-size:26px;color:#e8ddc7;letter-spacing:.04em">THE LEDGER</div>
+                  <div style="font-size:11px;letter-spacing:.12em;color:#9a8b70">38 FINISHED RUNS</div>
+                </div>
+                <div style="background:#0f1410;padding:2px"><div style="background:#1a1410;box-shadow:inset 2px 2px 0 #2f2620,inset -2px -2px 0 #0a0806;padding:9px 18px;font-size:11px;letter-spacing:.14em;color:rgba(232,221,199,.7)">ESC · BACK</div></div>
+              </div>
+              <div style="flex:1;padding:20px 40px;display:flex;gap:32px;align-items:flex-start">
+                <div style="flex:1;background:#0f1410;padding:2px">
+                  <div style="background:#141110">
+                    <div style="display:flex;align-items:center;padding:8px 14px;background:#0f1410;font-size:9px;letter-spacing:.18em;color:#d9a441">
+                      <div style="width:40px">RUN</div><div style="width:70px;text-align:right;padding-right:22px">SCORE</div>
+                      <div style="width:96px">OUTCOME</div><div style="width:104px">MODE</div>
+                      <div style="width:74px">DATE</div><div style="width:64px">TIME</div><div style="flex:1;text-align:right">SLAIN</div>
+                    </div>
+                    <sc-for list="{{ ledgerRows }}" as="r" hint-placeholder-count="10">
+                      <div style="{{ r.row }}">
+                        <div style="width:40px;color:#6b5f4c">{{ r.roman }}</div>
+                        <div style="{{ r.scoreStyle }}">{{ r.score }}</div>
+                        <div style="{{ r.outcomeStyle }}">{{ r.outcome }}</div>
+                        <div style="width:104px;color:rgba(232,221,199,.45)">{{ r.mode }}</div>
+                        <div style="width:74px;color:rgba(232,221,199,.45)">{{ r.date }}</div>
+                        <div style="width:64px;color:rgba(232,221,199,.45)">{{ r.time }}</div>
+                        <div style="flex:1;text-align:right;color:rgba(232,221,199,.45)">{{ r.slain }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="width:296px;background:#0f1410;padding:2px;flex:none">
+                  <div style="background:#141110;padding:14px 16px">
+                    <div style="font-size:10px;letter-spacing:.16em;color:#d9a441;padding-bottom:12px">ACROSS ALL RUNS</div>
+                    <sc-for list="{{ totalRows }}" as="t" hint-placeholder-count="8">
+                      <div style="{{ t.row }}">
+                        <div style="font-size:11px;letter-spacing:.06em;color:rgba(232,221,199,.5)">{{ t.name }}</div>
+                        <div style="font-size:13px;color:#e8ddc7">{{ t.value }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ scTrophies }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+              <div style="height:88px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;flex:none;border-bottom:2px solid rgba(232,221,199,.08)">
+                <div style="display:flex;align-items:center;gap:20px">
+                  <div style="font-size:26px;color:#e8ddc7;letter-spacing:.04em">TROPHIES</div>
+                  <div style="background:#0f1410;padding:2px">
+                    <div style="width:160px;height:16px;background:#1e2a1c;position:relative;overflow:hidden">
+                      <div style="position:absolute;left:0;top:0;bottom:0;width:40%;background:linear-gradient(to bottom,#f2cf7a 0 4px,#d9a441 4px 9px,#b5651f 9px 100%)"></div>
+                      <div style="position:absolute;inset:0;background:repeating-linear-gradient(to right,rgba(15,20,16,0) 0 14px,rgba(15,20,16,.8) 14px 16px)"></div>
+                    </div>
+                  </div>
+                  <div style="font-size:11px;letter-spacing:.12em;color:#9a8b70">4 OF 10 EARNED</div>
+                </div>
+                <div style="background:#0f1410;padding:2px"><div style="background:#1a1410;box-shadow:inset 2px 2px 0 #2f2620,inset -2px -2px 0 #0a0806;padding:9px 18px;font-size:11px;letter-spacing:.14em;color:rgba(232,221,199,.7)">ESC · BACK</div></div>
+              </div>
+              <div style="flex:1;padding:20px 40px;display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;align-content:start">
+                <sc-for list="{{ trophyRows }}" as="a" hint-placeholder-count="10">
+                  <div style="{{ a.frame }}">
+                    <div style="{{ a.face }}">
+                      <div style="{{ a.sealWell }}"><div style="{{ a.seal }}"></div></div>
+                      <div style="flex:1;min-width:0">
+                        <div style="{{ a.name }}">{{ a.title }}</div>
+                        <div style="{{ a.desc }}">{{ a.detail }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ scTutorial }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:24px">
+              <sc-for list="{{ plainCards }}" as="c" hint-placeholder-count="4">
+                <div style="{{ c.outer }}">
+                  <div style="{{ c.plate }}">
+                    <div style="{{ c.bevelLt }}"></div>
+                    <div style="{{ c.bevelDk }}"></div>
+                    <div style="position:relative;height:26px;padding:0 6px;display:flex;align-items:center;justify-content:space-between">
+                      <span style="font-size:13px;color:#e8ddc7">{{ c.rank }}</span>
+                      <span style="{{ c.typeStyle }}">{{ c.type }}</span>
+                    </div>
+                    <div style="{{ c.well }}"><div style="{{ c.sprite }}"></div></div>
+                    <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center">
+                      <span style="font-size:38px;line-height:1;color:#e8ddc7;text-shadow:0 4px 0 rgba(10,8,6,.7)">{{ c.value }}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="position:absolute;inset:0;background:repeating-conic-gradient(#0a0806 0% 25%, rgba(0,0,0,0) 0% 50%) 0 0/4px 4px;opacity:.82;pointer-events:none"></div>
+            <div style="position:absolute;left:250px;top:214px;width:184px;height:268px;pointer-events:none">
+              <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#f7f0dc"></div>
+              <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#f7f0dc"></div>
+              <div style="position:absolute;right:0;top:0;width:24px;height:4px;background:#f7f0dc"></div>
+              <div style="position:absolute;right:0;top:0;width:4px;height:24px;background:#f7f0dc"></div>
+              <div style="position:absolute;left:0;bottom:0;width:24px;height:4px;background:#f7f0dc"></div>
+              <div style="position:absolute;left:0;bottom:0;width:4px;height:24px;background:#f7f0dc"></div>
+              <div style="position:absolute;right:0;bottom:0;width:24px;height:4px;background:#f7f0dc"></div>
+              <div style="position:absolute;right:0;bottom:0;width:4px;height:24px;background:#f7f0dc"></div>
+            </div>
+            <div style="position:absolute;left:250px;top:96px;width:420px;background:#0f1410;padding:2px">
+              <div style="background:#161210;padding:16px 18px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px">
+                  <div style="font-size:10px;letter-spacing:.18em;color:#d9a441">STEP 2 OF 7</div>
+                  <div style="display:flex;gap:4px">
+                    <sc-for list="{{ stepDots }}" as="d" hint-placeholder-count="7">
+                      <div style="{{ d.style }}"></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="font-size:14px;line-height:1.6;color:#e8ddc7;text-wrap:pretty">Clubs and spades are monsters. Fought bare-handed you take the monster's full value as damage. Fight this 2.</div>
+              </div>
+            </div>
+            <div style="position:absolute;left:330px;top:190px;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:14px solid #0f1410"></div>
+            <div style="position:absolute;right:40px;bottom:40px;background:#0f1410;padding:2px">
+              <div style="background:#1a1410;box-shadow:inset 2px 2px 0 #2f2620,inset -2px -2px 0 #0a0806;padding:11px 22px;font-size:12px;letter-spacing:.14em;color:rgba(232,221,199,.7)">SKIP TUTORIAL</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ scEnd }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:repeating-conic-gradient(#0a0806 0% 25%, rgba(0,0,0,0) 0% 50%) 0 0/4px 4px;opacity:.72"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="background:#0f1410;padding:2px;width:600px">
+                <div style="background:#161210;padding:30px 34px;display:flex;flex-direction:column;align-items:center">
+                  <div style="font-size:11px;letter-spacing:.3em;color:#d9a441;padding-bottom:14px">THE DUNGEON RAN OUT</div>
+                  <div style="font-size:38px;line-height:1;color:#e8ddc7;letter-spacing:.02em;text-shadow:0 4px 0 rgba(10,8,6,.75)">CLEARED</div>
+                  <div style="display:flex;align-items:stretch;gap:2px;background:#0f1410;padding:2px;margin:22px 0 18px">
+                    <sc-for list="{{ endStats }}" as="s" hint-placeholder-count="3">
+                      <div style="{{ s.cell }}">
+                        <div style="font-size:9px;letter-spacing:.16em;color:#6b5f4c;padding-bottom:6px">{{ s.k }}</div>
+                        <div style="{{ s.vStyle }}">{{ s.v }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="background:#d9a441;color:#12161a;font-size:11px;letter-spacing:.16em;padding:6px 14px;margin-bottom:22px">NEW BEST</div>
+                  <div style="width:100%;height:2px;background:rgba(232,221,199,.08);margin-bottom:16px"></div>
+                  <div style="font-size:10px;letter-spacing:.18em;color:#d9a441;padding-bottom:12px">TROPHIES UNLOCKED</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;width:100%;padding-bottom:26px">
+                    <sc-for list="{{ endUnlocks }}" as="u" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:12px">
+                        <div style="width:22px;height:22px;background:#0f1410;padding:2px;box-sizing:border-box;flex:none"><div style="width:100%;height:100%;background:#d9a441"></div></div>
+                        <div style="font-size:12px;color:#e8ddc7">{{ u.title }}</div>
+                        <div style="font-size:11px;color:rgba(232,221,199,.4)">{{ u.detail }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;gap:10px">
+                    <sc-for list="{{ endMenu }}" as="b" hint-placeholder-count="4">
+                      <div style="background:#0f1410;padding:2px"><div style="{{ b.plate }}">{{ b.label }}</div></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+
+      <!-- ══════════ resolve effects (Embergrid) ══════════ -->
+      <sc-if value="{{ fxStrike }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ fxFlashStyle }}"></div>
+        <sc-for list="{{ strikeStars }}" as="b" hint-placeholder-count="2">
+          <div style="{{ b.wrap }}">
+            <div style="{{ b.bar1 }}"></div>
+            <div style="{{ b.bar2 }}"></div>
+            <div style="{{ b.bar3 }}"></div>
+            <div style="{{ b.bar4 }}"></div>
+          </div>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{ fxCleave }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ sliceHi }}"></div>
+        <div style="{{ sliceLo }}"></div>
+        <div style="{{ slashBar }}"></div>
+      </sc-if>
+
+      <sc-if value="{{ fxDrink }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ flaskTravel }}">
+          <div style="{{ flaskTilt }}">
+            <div style="position:absolute;left:8px;top:0;width:20px;height:4px;background:#9a8b70"></div>
+            <div style="position:absolute;left:12px;top:4px;width:12px;height:12px;background:#4a3c2e"></div>
+            <div style="position:absolute;left:2px;top:16px;width:32px;height:30px;background:#35291f"></div>
+            <div style="position:absolute;left:6px;top:26px;width:24px;height:16px;background:#5d8a4a"></div>
+            <div style="position:absolute;left:6px;top:22px;width:24px;height:4px;background:#374b32"></div>
+            <div style="position:absolute;left:8px;top:20px;width:4px;height:10px;background:#9a8b70"></div>
+          </div>
+        </div>
+        <sc-for list="{{ spillDrops }}" as="d" hint-placeholder-count="3">
+          <div style="{{ d.style }}"></div>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{ fxDeath }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ deathFlash }}"></div>
+        <div style="{{ deathBurst }}"></div>
+        <div style="{{ deathDither }}"></div>
+        <div style="{{ deathScrim }}"></div>
+        <div style="{{ deathText }}">YOU DIED</div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══════════ BESTIARY ══════════ -->
+  <sc-if value="{{ isBestiary }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-direction:column;gap:18px">
+
+      <div style="border:1px solid rgba(232,221,199,.12);background:#0e050c;padding:14px 16px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:12px">
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441">THE DECK, BOTH SUITS</div>
+          <div style="font-size:12.5px;color:rgba(232,221,199,.5)">thirteen drawings, twenty-six creatures. Top row ♣ THE ROT, bottom ♠ THE COLD — same pixels, corruption layer swapped step for step — except the Ace, which is drawn twice.</div>
+        </div>
+        <img src="sprites/contact-sheet.png" alt="all twenty-six creature sprites, rot above and cold below" style="width:100%;image-rendering:pixelated;display:block" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:16px;border-top:1px solid rgba(232,221,199,.12);border-bottom:1px solid rgba(232,221,199,.12);padding:18px 0">
+        <div>
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441;margin-bottom:10px">THE ONE RULE</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty">Threat must be legible from silhouette alone. A player scans four cards in about a second and never reads the number first — so <strong style="color:#e8ddc7;font-weight:400">how much of the 64×64 box the creature fills rises monotonically with its value</strong>. A 2 crouches in the bottom third. An Ace breaks the top guide. Get that right and the art is doing the rules' work.</div>
+        </div>
+        <div>
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441;margin-bottom:10px">MATERIALS, THEN CORRUPTION</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty;margin-bottom:12px">A creature is made of its own materials — fur, flesh, bone, chitin, iron. The suit ramp is <strong style="color:#e8ddc7;font-weight:400">corruption growing on it</strong>, in patches and blooms, never the substance of it. A cellar rat is a rat with rot in its fur, not a green rat. Corruption has to be specified as an <strong style="color:#e8ddc7;font-weight:400">area</strong>, though — a quarter of the body in one or two blooms with crusted edges. Asked for loosely, it comes back as scattered single pixels that read as dirt.</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty;margin-top:12px"><strong style="color:#e8ddc7;font-weight:400">Every ramp shifts hue, not just brightness.</strong> Eight steps each now, shadows running cool and violet, midtones saturated, lights warm — a ramp that only darkens renders as mud, which is what thin colour separation actually looks like. The secondary material stays clamped to its <em style="color:rgba(232,221,199,.85);font-style:normal">dark</em> steps: give flesh its light step next to fur and flesh wins the body, because the lightest hex in the list always does.</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty;margin-top:12px"><strong style="color:#e8ddc7;font-weight:400">But the master palette is only half of it.</strong> What reaches a sprite is the Force colors list, now <strong style="color:#e8ddc7;font-weight:400">14 hexes</strong> — the full eight-step primary, three secondary, three corruption. And the dial that decides how many of those actually get used is <strong style="color:#e8ddc7;font-weight:400">Shading</strong>, not the palette: on Medium the model reaches for about four tones and ignores the rest, which is why the last rat came back flat with ten colours available. Set Shading to the highest option offered. Clubs and spades are mechanically identical, so they share every silhouette and swap only that corruption layer — thirteen drawings, twenty-six creatures, and the swap stays believable.</div>
+          <sc-for list="{{ ramps }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+              <div style="width:96px;font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.1em;color:rgba(232,221,199,.55)">{{ r.name }}</div>
+              <div style="display:flex;gap:2px">
+                <sc-for list="{{ r.colors }}" as="c" hint-placeholder-count="4">
+                  <div style="{{ c.style }}"></div>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px;color:rgba(232,221,199,.4)">{{ r.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div>
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441;margin-bottom:10px">DELIVERY</div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px">
+            <sc-for list="{{ delivery }}" as="s" hint-placeholder-count="6">
+              <div style="color:rgba(232,221,199,.32);font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding-top:2px">{{ s.k }}</div>
+              <div style="color:rgba(232,221,199,.72)">{{ s.v }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <sc-for list="{{ bestiary }}" as="b" hint-placeholder-count="13">
+          <div style="{{ b.tile }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <span style="font-family:Silkscreen,monospace;font-size:16px;color:#e8ddc7">{{ b.rank }}</span>
+                <span style="{{ b.tierStyle }}">{{ b.tier }}</span>
+              </div>
+              <span style="font-family:ui-monospace,monospace;font-size:10px;color:rgba(232,221,199,.3)">{{ b.fillLabel }}</span>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <div style="flex:1;position:relative;background:#131010;border:1px solid rgba(232,221,199,.08);padding:6px">
+                <div style="position:absolute;left:0;bottom:0;width:3px;background:rgba(217,164,65,.55);height:{{ b.fillPx }}"></div>
+                {{ b.imgClubs }}
+                <div style="position:absolute;top:4px;right:5px;font-size:10px;color:#5d8a4a">♣</div>
+              </div>
+              <div style="flex:1;position:relative;background:#131010;border:1px solid rgba(232,221,199,.08);padding:6px">
+                <div style="position:absolute;left:0;bottom:0;width:3px;background:rgba(217,164,65,.55);height:{{ b.fillPx }}"></div>
+                {{ b.imgSpades }}
+                <div style="position:absolute;top:4px;right:5px;font-size:10px;color:#7a8794">♠</div>
+              </div>
+            </div>
+
+            <div style="font-family:Silkscreen,monospace;font-size:12px;letter-spacing:.04em;color:#e8ddc7;margin-bottom:6px">{{ b.name }}</div>
+            <div style="font-size:12.5px;line-height:1.5;color:rgba(232,221,199,.5);text-wrap:pretty;margin-bottom:8px">{{ b.silhouette }}</div>
+            <div style="font-size:12px;line-height:1.5;color:rgba(232,221,199,.38);text-wrap:pretty;margin-bottom:9px;font-style:italic">{{ b.materialNote }}</div>
+            <div style="border-top:1px solid rgba(232,221,199,.07);padding-top:8px;margin-bottom:9px;display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ b.forceRamps }}" as="r" hint-placeholder-count="2">
+                <div>
+                  <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+                    <span style="{{ r.labelStyle }}">{{ r.label }}</span>
+                    <div style="display:flex;gap:1px">
+                      <sc-for list="{{ r.chips }}" as="c" hint-placeholder-count="5">
+                        <div style="{{ c.style }}"></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="font-family:ui-monospace,monospace;font-size:8.5px;letter-spacing:-.02em;color:rgba(232,221,199,.42)">{{ r.hexes }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:ui-monospace,monospace;font-size:10px;color:rgba(232,221,199,.3);border-top:1px solid rgba(232,221,199,.07);padding-top:8px">
+              <span>{{ b.idle }}</span>
+              <span>{{ b.file }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ ARMOURY & APOTHECARY ══════════ -->
+  <sc-if value="{{ isArmoury }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-direction:column;gap:22px">
+      <div style="border-top:1px solid rgba(232,221,199,.12);border-bottom:1px solid rgba(232,221,199,.12);padding:16px 0;font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);max-width:900px;text-wrap:pretty">
+        Diamonds and hearts get one object per value — no recolouring, because a weapon's number is a promise about what it can still kill and the player should learn its shape. Each object ships twice: a <strong style="color:#e8ddc7;font-weight:400">64×64 card portrait</strong> and a <strong style="color:#e8ddc7;font-weight:400">24×24 rail icon</strong> hand-redrawn at that size, never downscaled — the equipped weapon lives in the bottom-left rail all game and a squashed 64 reads as mush there.
+      </div>
+      <sc-for list="{{ objectSets }}" as="g" hint-placeholder-count="2">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+            <div style="font-family:Silkscreen,monospace;font-size:13px;letter-spacing:.16em;color:#d9a441">{{ g.title }}</div>
+            <div style="font-size:13px;color:rgba(232,221,199,.4)">{{ g.note }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(9,1fr);gap:10px">
+            <sc-for list="{{ g.items }}" as="o" hint-placeholder-count="9">
+              <div style="border:1px solid rgba(232,221,199,.1);background:rgba(232,221,199,.02);padding:10px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-family:Silkscreen,monospace;font-size:14px;color:#e8ddc7">{{ o.rank }}</span>
+                  <span style="{{ g.pipStyle }}">{{ g.pip }}</span>
+                </div>
+                <div style="background:#131010;border:1px solid rgba(232,221,199,.07);padding:6px;margin-bottom:8px">
+                  {{ o.img }}
+                </div>
+                <div style="font-family:Silkscreen,monospace;font-size:9.5px;line-height:1.5;letter-spacing:.02em;color:rgba(232,221,199,.75);min-height:28px">{{ o.name }}</div>
+                <div style="border-top:1px solid rgba(232,221,199,.07);margin-top:8px;padding-top:7px">
+                  <div style="display:flex;gap:1px;margin-bottom:3px">
+                    <sc-for list="{{ g.chips }}" as="c" hint-placeholder-count="5">
+                      <div style="{{ c.style }}"></div>
+                    </sc-for>
+                  </div>
+                  <div style="font-family:ui-monospace,monospace;font-size:8.5px;letter-spacing:-.02em;color:rgba(232,221,199,.42);line-height:1.5">{{ g.hexes }}</div>
+                </div>
+                <div style="font-family:ui-monospace,monospace;font-size:9px;color:rgba(232,221,199,.28);margin-top:6px">{{ o.file }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ ANIMATION ══════════ -->
+  <sc-if value="{{ isAnim }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-direction:column;gap:20px">
+
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;border-top:1px solid rgba(232,221,199,.12);border-bottom:1px solid rgba(232,221,199,.12);padding:18px 0">
+        <div>
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441;margin-bottom:10px">ALL THIRTEEN, ANIMATED</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty">All twenty-six cards below are playing <strong style="color:#e8ddc7;font-weight:400">real five-frame cycles</strong> drawn in PixelLab, at 6fps. Fourteen uploads got there: thirteen clubs cycles plus a fourteenth for the ♠ Ace, which is a separate drawing and needed its own. The hurt frame is still generated for all of them — body lifts a pixel, every colour steps two up its own ramp, silhouette rimmed in cream.</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty;margin-top:12px">Every frame that arrives gets measured against frame 1's own tone list and snapped back onto it — the generator drifts 2–300 px per frame, and unsnapped drift reads as flicker. <strong style="color:#e8ddc7;font-weight:400">The spades version is derived, never generated</strong>: the clubs→cold substitution is read pixel-by-pixel off each creature's approved pair, so whatever hex you actually used is what gets swapped. The Debt is the exception: its two suits are <em>separate drawings</em>, so there is no substitution to derive and each suit was animated separately. Its frames are also the only ones taken verbatim — 55–64 tones against the set's usual 15, richer than its neighbours on purpose.</div>
+        </div>
+        <div>
+          <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441;margin-bottom:10px">THE HANDOFF</div>
+          <div style="font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);text-wrap:pretty">One upload per frame, <strong style="color:#e8ddc7;font-weight:400">clubs only</strong>. Frame 1 must be the approved sprite unchanged — it is the authority every other frame is measured against, and so far it has matched to the pixel every time. Frames 2–5 get snapped and the spades set is derived. All twenty-six cards are in. Hurt and death frames are the remaining work.</div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button type="button" style="{{ strikeStyle }}" onClick="{{ onStrike }}">STRIKE ALL</button>
+            <div style="font-size:12.5px;color:rgba(232,221,199,.45);align-self:center">{{ hurtLabel }}</div>
+          </div>
+        </div>
+      </div>
+
+      <sc-for list="{{ animRows }}" as="row" hint-placeholder-count="2">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+            <div style="font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.18em;color:#d9a441">{{ row.title }}</div>
+            <div style="font-size:12.5px;color:rgba(232,221,199,.45)">{{ row.note }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px">
+            <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7">
+              <div style="border:1px solid rgba(232,221,199,.1);background:#0e050c;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div style="{{ c.well }}">
+                  <sc-for list="{{ c.layers }}" as="L" hint-placeholder-count="2">
+                    <div role="img" aria-label="{{ L.alt }}" style="{{ L.style }}"></div>
+                  </sc-for>
+                </div>
+                <div style="font-family:Silkscreen,monospace;font-size:8.5px;letter-spacing:.08em;color:rgba(232,221,199,.5);text-align:center;line-height:1.5">{{ c.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+
+    </div>
+  </sc-if>
+
+  <!-- ══════════ effects spec ══════════ -->
+  <sc-if value="{{ isEffects }}" hint-placeholder-val="{{ false }}">
+    <div style="width:100%;max-width:1280px;display:flex;flex-direction:column;gap:16px;margin-top:6px">
+      <div style="border-top:1px solid rgba(232,221,199,.12);padding-top:16px;font-size:14px;line-height:1.6;color:rgba(232,221,199,.7);max-width:960px;text-wrap:pretty">
+        <strong style="color:#e8ddc7;font-weight:400">Effects run at 12fps, idles at 6fps.</strong> That number is chosen so your tuned <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.5)">Theme</span> durations survive quantisation almost untouched — 0.18s is exactly 2 frames, 0.24s is 3, 0.30s is 4, 0.36s is 4. Two rules follow from the grid and neither is negotiable: <strong style="color:#e8ddc7;font-weight:400">nothing tweens</strong> (every segment holds on a frame, so <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.5)">Interpolation.pow2Out</span> becomes a step table) and <strong style="color:#e8ddc7;font-weight:400">nothing rotates</strong> — the cleaved halves slide apart instead of turning, because a rotated pixel is a blurred pixel.
+      </div>
+      <div style="display:grid;grid-template-columns:150px 200px 1fr 96px;gap:0;font-size:13px">
+        <sc-for list="{{ fxSpec }}" as="r" hint-placeholder-count="8">
+          <div style="{{ r.cellHead }}">{{ r.effect }}</div>
+          <div style="{{ r.cell }}"><span style="font-family:ui-monospace,monospace;font-size:11px;color:rgba(232,221,199,.45)">{{ r.today }}</span></div>
+          <div style="{{ r.cell }}">{{ r.embergrid }}</div>
+          <div style="{{ r.cellNum }}">{{ r.frames }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════ asset brief ══════════ -->
+  <sc-if value="{{ isPlain }}" hint-placeholder-val="{{ true }}">
+  <div style="width:100%;max-width:1280px;display:grid;grid-template-columns:1fr;gap:18px;margin-top:10px">
+    <sc-for list="{{ briefs }}" as="b" hint-placeholder-count="2">
+      <div style="{{ b.card }}">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+          <div style="font-size:18px;color:#e8ddc7;letter-spacing:.04em">{{ b.name }}</div>
+        </div>
+        <div style="font-size:14px;line-height:1.55;color:rgba(232,221,199,.6);text-wrap:pretty;margin-bottom:14px">{{ b.pitch }}</div>
+        <div style="display:flex;gap:3px;margin-bottom:14px">
+          <sc-for list="{{ b.palette }}" as="p" hint-placeholder-count="16">
+            <div style="{{ p.style }}"></div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:5px 16px;font-size:13px">
+          <sc-for list="{{ b.specs }}" as="s" hint-placeholder-count="6">
+            <div style="color:rgba(232,221,199,.35);font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding-top:2px">{{ s.k }}</div>
+            <div style="color:rgba(232,221,199,.75)">{{ s.v }}</div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="width:100%;max-width:1280px;color:rgba(232,221,199,.3);font-size:12.5px;line-height:1.6;text-wrap:pretty">
+    Both land in <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">Theme</span> and <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">CardTiles.build</span> — an atlas-backed Skin replacing the generated pixmaps, the sprite region keyed off <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">card.id()</span>. The state-rebuild model, <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">legalMoves</span>-driven interaction and the Choreographer's flight proxies stay exactly as they are; idle frames tick off one shared animation clock in <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">Backdrop</span>-style <span style="font-family:ui-monospace,monospace;color:rgba(232,221,199,.45)">act()</span>.
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:1200}}">
+const ROOM = [
+  { id: '10C', type: 'MONSTER', value: 10, name: 'Deep Ogre',  asset: 'creature_10_deep_ogre.clubs',  cycle: 5 },
+  { id: '7D',  type: 'WEAPON',  value: 7,  name: 'Broadsword', asset: 'weapon_07_broadsword' },
+  { id: 'QS',  type: 'MONSTER', value: 12, name: 'Widow Queen', asset: 'creature_12_widow_queen.spades', cycle: 5 },
+  { id: '5H',  type: 'POTION',  value: 5,  name: 'Draught',    asset: 'potion_05_draught' },
+];
+
+// Card plates now drawn from the 32-colour ramps: FLESH for monsters, IRON for
+// weapons, ROT for potions — one ramp per role instead of three invented tints.
+const PAL_A = {
+  MONSTER: { plate: '#230d16', lt: '#4f1d1e', dk: '#12060f', well: '#0e050c', type: '#a85338' },
+  WEAPON:  { plate: '#141a24', lt: '#333f4c', dk: '#090c14', well: '#070a10', type: '#8a9ea8' },
+  POTION:  { plate: '#17281a', lt: '#325a31', dk: '#0e1a12', well: '#0a1310', type: '#71b45c' },
+};
+
+// v3 — a creature is made of its OWN materials. The suit ramp is corruption growing
+// ON it, not the substance of it. A cellar rat is a rat with rot in its fur, never a
+// green rat. Six material ramps, two corruption ramps, four accents = 40.
+// v5 — EIGHT steps per material with a full hue rotation across each ramp: shadows cool
+// and violet, midtones saturated, lights warm. Ten ramps, 80 colours. SALLOW was added
+// after the Goblin Cutter came back raw-red: FLESH is butchered meat, not living skin. The master palette
+// is only half the story — what reaches a sprite is the Force colors list, now 14 hexes.
+const FUR    = ['#0a080d','#17111a','#261a22','#3a2a26','#52402c','#6f5738','#8f7248','#b09263'];
+const FLESH  = ['#12060f','#230d16','#37131c','#4f1d1e','#6b2b23','#8a3d2b','#a85338','#c47049'];
+const BONE   = ['#12101c','#221f2c','#383341','#524a4c','#6f6558','#8f8368','#b3a683','#e6dcc0'];
+const CHITIN = ['#08070f','#14101e','#221a30','#332643','#453356','#5b4569','#74597e','#91738f'];
+const IRON   = ['#090c14','#141a24','#212b36','#333f4c','#4a5a66','#667a86','#8a9ea8','#b2c6cd'];
+const WOOD   = ['#100a07','#1e140d','#2f2014','#422e1b','#573c23','#6e4f2e','#8a6539','#a67f4a'];
+const ROT    = ['#0e1a12','#17281a','#234026','#325a31','#43783c','#58964a','#71b45c','#8fcf72'];
+const SALLOW = ['#0f0f14','#1b1e1e','#282f26','#37422c','#485834','#5c6f3c','#748845','#93a457'];
+const COLD   = ['#101a20','#1a2b33','#263f49','#35555f','#487078','#618c92','#80a8ac','#a3c4c6'];
+const ACCENT = ['#d9a441','#f2cf7a','#ffe9b0','#b5651f','#8c2f22','#c2503a','#e8ddc7','#f7f0dc'];
+const MAT = { FUR, FLESH, BONE, CHITIN, IRON, WOOD, SALLOW, ROT, COLD };
+
+// primary material, secondary material, and how the corruption sits on it
+const MATERIALS = {
+  '2':  ['FUR', 'FLESH',  'mangy fur over bare skin; rot in patches on the flank and a bloom at the tail root'],
+  '3':  ['CHITIN', 'FUR', 'leather wing membrane and thin fur; rot crusting the wing joints'],
+  '4':  ['SUIT', 'BONE',  'the only creature that IS the corruption — the suit ramp is its body, bone surfacing through it'],
+  '5':  ['BONE', 'FLESH', 'dry bone with meat still clinging to the ribs; rot in the eye sockets'],
+  '6':  ['SALLOW', 'IRON', 'olive skin warming to red where the torch catches it; a rust-eaten cleaver'],
+  '7':  ['BONE', 'FLESH', 'dead skin the colour of bone; raw meat at the face, rot across the brow and flank'],
+  '8':  ['CHITIN', 'BONE','violet carapace, bone markings, rot pooling in the abdomen and leg joints'],
+  '9':  ['IRON', 'WOOD',  'cold plate over a rotted cloak; corruption seeping through every seam'],
+  '10': ['SALLOW', 'IRON', 'green wet-stone hide and driven iron rings; rot pooling in the gut and shoulders'],
+  'J':  ['BONE', 'FLESH', 'a robe of pale stitched skin, raw at the stitches; rot running every seam'],
+  'Q':  ['CHITIN', 'BONE', 'violet carapace and limbs over a pale silk skirt; rot in the abdomen'],
+  'K':  ['WOOD', 'IRON',  'a horned door of banded planks; rot worked deep into the grain'],
+  'A':  ['FLESH', 'IRON', 'oxblood for ♣, grave-blue for ♠ — the only card drawn twice. Coat capped below its highlight; NO corruption, it is older than rot'],
+};
+
+// What actually goes in Force colors: the full primary ramp, the top two of the
+// secondary, and two steps of corruption. Never the accents.
+const forceList = (rank, suitRamp) => {
+  const [p, s] = MATERIALS[rank];
+  const prim = p === 'SUIT' ? suitRamp : MAT[p];
+  const sec = MAT[s].slice(1, 4);
+  const corr = rank === 'A' ? [] : (p === 'SUIT' ? [] : suitRamp.slice(2, 5));
+  return { prim, sec, corr, pName: p === 'SUIT' ? 'suit' : p.toLowerCase(), sName: s.toLowerCase() };
+};
+
+const SWATCH_A = [
+  ...FUR, ...FLESH, ...BONE, ...CHITIN, ...IRON, ...WOOD, ...ROT, ...COLD,
+  ...ACCENT,                                           // torch, ember, blood, rim light
+];
+
+
+const RAMPS = [
+  { name: 'FUR', colors: FUR, note: 'pelts and mange' },
+  { name: 'FLESH', colors: FLESH, note: 'meat, oxblood — and the monster card plate' },
+  { name: 'BONE', colors: BONE, note: 'skulls, teeth, and every glyph of type' },
+  { name: 'CHITIN', colors: CHITIN, note: 'carapace and wing membrane' },
+  { name: 'IRON', colors: IRON, note: 'blades, plate, the rail' },
+  { name: 'WOOD', colors: WOOD, note: 'hafts, shields, leather' },
+  { name: 'SALLOW', colors: SALLOW, note: 'living skin — goblinoid, sickly, olive. NOT flesh' },
+  { name: '♣ THE ROT', colors: ROT, note: 'CORRUPTION, not substance — patches on a creature, never the creature' },
+  { name: '♠ THE COLD', colors: COLD, note: 'the same, for spades: frost and grave-damp over its own colour' },
+  { name: 'ACCENT', colors: ACCENT, note: 'torch, ember, blood, rim light — added by hand, never given to the model' },
+];
+
+// rank, name, tier, silhouette, fill %, idle frames
+const BESTIARY = [
+  ['2',  'CELLAR RAT',    'vermin', 'Low quadruped, nose down, tail whipping past the right guide. Nothing above the bottom third.', 38, '2f tail flick'],
+  ['3',  'CARRION BAT',   'vermin', 'Hangs from the top guide, wings folded into a narrow wedge. Wide, but almost no mass.', 42, '2f wing twitch'],
+  ['4',  'GRAVE SLIME',   'vermin', 'A limbless dome that spreads wider than it is tall. The only creature with no discernible head.', 45, '2f surface wobble'],
+  ['5',  'BONE CRAWLER',  'fodder', 'Armless torso dragging itself on two hands. Reads as half a person — first thing that used to be human.', 52, '2f drag pull'],
+  ['6',  'GOBLIN CUTTER', 'fodder', 'Small biped carrying a notched blade too big for it. The weapon, not the body, sets the height.', 56, '2f blade bob'],
+  ['7',  'GHOUL',         'fodder', 'Stooped humanoid, arms hanging below the knees, jaw missing. Upright but broken-backed.', 62, '2f sway'],
+  ['8',  'TOMB SPIDER',   'horror', 'Eight legs spanning the full width at half height. Wide and low — the first silhouette that owns its box.', 66, '3f leg cycle'],
+  ['9',  'GAUNT KNIGHT',  'horror', 'First fully upright, shoulders square, closed helm. Stands like a player character would.', 72, '3f breath + plume'],
+  ['10', 'DEEP OGRE',     'horror', 'Head sunk between shoulders that reach both guides. Fills sideways where the knight filled upward.', 78, '3f shoulder roll'],
+  ['J',  'FLAYED PRIEST', 'lord',   'Tall, robed, hem floating clear of the floor. No feet — the first thing that does not walk.', 84, '4f robe drift'],
+  ['Q',  'WIDOW QUEEN',   'lord',   'Crown of eight legs above a trailing web skirt that reaches the bottom guide. Top-heavy and wrong.', 88, '4f skirt sway'],
+  ['K',  'WARDEN',        'lord',   'Horned helm and a greatshield that clips both side guides. The widest thing in the deck.', 94, '4f torch glint'],
+  ['A',  'THE DEBT',      'lord',   'Breaks the top guide — horns leave the box entirely. Nothing else is allowed to. It is what waits at the bottom.', 100, '4f ember breath'],
+];
+
+const TIER_COLOR = { vermin: '#5d8a4a', fodder: '#9a8b70', horror: '#b5651f', lord: '#8c2f22' };
+
+const chipsOf = (arr) => arr.map((c) => ({ style: { width: '15px', height: '15px', background: c, border: '1px solid rgba(0,0,0,.55)' } }));
+
+// Board geometry, fixed by the 1280×720 stage: 4 × 176 cards, 24 gap, centred.
+const F = 1 / 12;                       // one effect frame at 12fps
+const D_CUT = 0.36;                     // the rim flash holds this long before the blade lands
+const SLOT_Y = 220;
+const slotX = (i) => 252 + i * 200;
+const TICKER = [640, 60], RAIL = [96, 646], HPBAR = [140, 44];
+const FX_LIST = [
+  { id: 'deal',   label: 'DEAL IN',    ms: 700 },
+  { id: 'strike', label: 'BAREHANDED', ms: 900 },
+  { id: 'cleave', label: 'WEAPON KILL', ms: 1400 },
+  { id: 'equip',  label: 'EQUIP',      ms: 800 },
+  { id: 'drink',  label: 'POTION',     ms: 1600 },
+  { id: 'avoid',  label: 'AVOID SWEEP', ms: 800 },
+  { id: 'death',  label: 'DEATH',      ms: 3200 },
+];
+
+
+const ANIM = [
+  { file: 'creature_02_cellar_rat',    name: 'CELLAR RAT',    dur: 0.83, cycle: 5 },
+  { file: 'creature_03_carrion_bat',   name: 'CARRION BAT',   dur: 0.83, cycle: 5 },
+  { file: 'creature_04_grave_slime',   name: 'GRAVE SLIME',   dur: 0.83, cycle: 5 },
+  { file: 'creature_05_bone_crawler',  name: 'BONE CRAWLER',  dur: 0.83, cycle: 5 },
+  { file: 'creature_06_goblin_cutter', name: 'GOBLIN CUTTER', dur: 0.83, cycle: 5 },
+  { file: 'creature_07_ghoul',         name: 'GHOUL',         dur: 0.83, cycle: 5 },
+  { file: 'creature_08_tomb_spider',   name: 'TOMB SPIDER',   dur: 0.83, cycle: 5 },
+  { file: 'creature_09_gaunt_knight',  name: 'GAUNT KNIGHT',  dur: 0.83, cycle: 5 },
+  { file: 'creature_10_deep_ogre',     name: 'DEEP OGRE',     dur: 0.83, cycle: 5 },
+  { file: 'creature_11_flayed_priest', name: 'FLAYED PRIEST', dur: 0.83, cycle: 5 },
+  { file: 'creature_12_widow_queen',   name: 'WIDOW QUEEN',   dur: 0.83, cycle: 5 },
+  { file: 'creature_13_warden',        name: 'WARDEN',        dur: 0.83, cycle: 5 },
+  { file: 'creature_14_the_debt',      name: 'THE DEBT',      dur: 0.83, cycle: 5 },
+];
+
+const WEAPONS = ['RUSTED SHIV', 'IRON NAIL', 'HATCHET', 'SHORT SWORD', 'MACE', 'BROADSWORD', 'WAR PICK', 'BROADAXE', 'GREATSWORD'];
+const POTIONS = ['DRAM', 'VIAL', 'PHIAL', 'DRAUGHT', 'FLASK', 'CARAFE', 'DECANTER', 'AMPHORA', 'FLAGON'];
+
+
+// THE RULE, learned the hard way twice: the model fills the body with the LIGHTEST hex
+// you give it and outlines with the darkest. Prose asking for "mostly dark" does nothing.
+// So the lightest hex supplied must BE the body colour you want. The rim highlight
+// (#9a8b70 / #e8ddc7) and the accents (#d9a441 glint, #8c2f22 wound) are never supplied —
+// they are a few pixels each, added by hand after.
+
+// The tail of every Description. Everything the DIALOG already controls — size,
+// transparency, palette, outline, shading, detail, camera, coverage — is deliberately
+// absent: repeating it in prose only fights the dropdowns.
+
+// The model defaults hard to cute for anything animal. It has to be told not to.
+
+// Scattered single pixels of green read as dirt, not disease. Rot has to be an AREA.
+
+// The wrongness lead-in has to suit the creature. Empty armour cannot be "dying",
+// and the Ace is pristine by design.
+
+// Rot is ignored unless it is PLACED. "Two blooms, not speckles" is an instruction
+// about texture; the model needs to be told which body part is rotting.
+
+
+
+// A quadruped seen head-on is an unreadable blob. Profile for beasts, front for anything
+// that stands upright and confronts the player.
+
+// At 32px the model needs parts, not adjectives. Prose stance descriptions produced a blob.
+
+class Component extends DCLogic {
+  state = { dir: 'A', scale: 1, fx: null, fxOn: false };
+  bgRef = React.createRef();
+  wrapRef = React.createRef();
+
+  componentDidMount() {
+    this.startBackdrop();
+    const fit = () => {
+      const el = this.wrapRef.current;
+      if (!el) return;
+      const scale = Math.max(0.3, Math.min(1, (el.clientWidth - 40) / 1280));
+      if (Math.abs(scale - this.state.scale) > 0.001) this.setState({ scale });
+    };
+    fit();
+    this._ro = new ResizeObserver(fit);
+    if (this.wrapRef.current) this._ro.observe(this.wrapRef.current);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); if (this._ro) this._ro.disconnect(); }
+
+  startBackdrop() {
+    let rng = 1337, embers = [], acc = 0, t0 = performance.now(), last = t0;
+    const rand = () => { rng = (rng * 1103515245 + 12345) & 0x7fffffff; return rng / 0x7fffffff; };
+    const range = (lo, hi) => lo + rand() * (hi - lo);
+    const flicker = (s) => 1 + (0.50 * Math.sin(s * 11) + 0.35 * Math.sin(s * 6.3 + 1.7) + 0.15 * Math.sin(s * 2.9 + 4.2)) * 0.18;
+    const smoothstep = (e0, e1, x) => { const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+
+    const draw = (now) => {
+      const canvas = this.bgRef.current;
+      if (!canvas) { last = now; this._raf = requestAnimationFrame(draw); return; }
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, u = W / 1280; // internal units per design px
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const secs = (now - t0) / 1000;
+
+      if (embers.length < 34) acc += dt * 4.5;
+      while (acc >= 1 && embers.length < 34) {
+        acc -= 1;
+        const baseX = rand();
+        embers.push({ baseX, x: baseX, y: rand() * 0.15, vy: range(0.022, 0.042), life: range(6, 9),
+          size: range(0.0025, 0.006), amp: range(0.005, 0.014), freq: range(0.5, 1.3), phase: rand() * 6.28, age: 0, alpha: 0 });
+      }
+      embers = embers.filter((e) => (e.age += dt) < e.life);
+      for (const e of embers) {
+        e.y += e.vy * dt;
+        e.x = e.baseX + e.amp * Math.sin(e.phase + e.freq * e.age);
+        e.alpha = Math.min(Math.min(1, e.age / (e.life * 0.2)), Math.min(1, (e.life - e.age) / (e.life * 0.4))) * 0.45;
+      }
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#100c09'; ctx.fillRect(0, 0, W, H);
+
+      // wall: a cold floor band and a warm ceiling falloff
+      const wall = ctx.createLinearGradient(0, 0, 0, H);
+      wall.addColorStop(0, 'rgba(30,22,16,.9)');
+      wall.addColorStop(0.62, 'rgba(18,14,10,.4)');
+      wall.addColorStop(1, 'rgba(6,5,4,1)');
+      ctx.fillStyle = wall; ctx.fillRect(0, 0, W, H);
+
+      const a = 0.3 * flicker(secs);
+      const g = ctx.createRadialGradient(640 * u, 300 * u, 0, 640 * u, 300 * u, 680 * u);
+      for (let i = 0; i <= 14; i++) { const d = i / 14; g.addColorStop(d, `rgba(217,164,65,${(a * (1 - d) * (1 - d)).toFixed(4)})`); }
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+      ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(1, H / W);
+      const vig = ctx.createRadialGradient(0, 0, 0, 0, 0, (W / 2) * Math.SQRT2);
+      for (let i = 0; i <= 20; i++) { const d = i / 20; vig.addColorStop(d, `rgba(0,0,0,${(smoothstep(0.48, 1, d) * 0.68).toFixed(4)})`); }
+      ctx.fillStyle = vig; ctx.fillRect(-W / 2, -W / 2, W, W); ctx.restore();
+
+      for (const e of embers) {
+        const px = e.x * W, py = H - e.y * H, r = Math.max(1, e.size * W);
+        ctx.fillStyle = `rgba(230,180,85,${e.alpha.toFixed(3)})`;
+        ctx.fillRect(Math.round(px - r / 2), Math.round(py - r / 2), Math.max(1, Math.round(r)), Math.max(1, Math.round(r)));
+      }
+      this._raf = requestAnimationFrame(draw);
+    };
+    this._raf = requestAnimationFrame(draw);
+  }
+
+  // Two-phase so the CSS animations genuinely restart on every press.
+  playFx(kind, ms) {
+    clearTimeout(this._fxT);
+    this.setState({ fx: kind, fxOn: false });
+    requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ fxOn: true })));
+    this._fxT = setTimeout(() => this.setState({ fx: null, fxOn: false }), ms);
+  }
+
+
+  renderVals() {
+    // sprite thumbnails are built here, not as template src holes: a {{ }} in src
+    // fires a fetch for the literal string before any value exists
+    const objImg = (src, alt) => React.createElement('img', {
+      src, alt, style: { display: 'block', width: '100%', height: '72px',
+        objectFit: 'contain', imageRendering: 'pixelated' },
+    });
+    const spriteImg = (src, alt) => React.createElement('img', {
+      src, alt, style: { position: 'relative', display: 'block', width: '100%',
+        height: '78px', objectFit: 'contain', imageRendering: 'pixelated' },
+    });
+    const FX_VIEW = this.state.dir === 'effects';
+    const SCR = this.state.dir === 'screens';
+    const SC = this.state.screen || 'title';
+    const A = this.state.dir === 'A' || FX_VIEW;
+    const k = this.state.scale;
+    const fx = this.state.fx, on = this.state.fxOn;
+
+    // Per-card effect transform: where this card flies, in how many held frames.
+    const cardFx = (i) => {
+      if (!on) return null;
+      const cx = slotX(i) + 88, cy = SLOT_Y + 128;
+      const to = ([tx, ty], fs, fo, name, steps, delay) => ({
+        '--dx': Math.round(tx - cx) + 'px', '--dy': Math.round(ty - cy) + 'px', '--fs': String(fs), '--fo': String(fo),
+        animation: `${name} ${steps * F}s steps(${steps},end) ${delay}s 1 both`,
+      });
+      if (fx === 'strike' && i === 0) return { animation: `fxShake ${5 * F}s steps(1,end) 1 both` };
+      if (fx === 'cleave' && i === 2) return { animation: `fxLiftCut ${2 * F}s steps(1,end) ${D_CUT}s 1 both` };
+      if (fx === 'equip' && i === 1) return to(RAIL, 0.18, 1, 'fxFly', 3, 0);
+      // the card doesn't fly — it shrinks into the flask, which takes over the trip
+      if (fx === 'drink' && i === 3) return { '--dx': '0px', '--dy': '0px', '--fs': '0.3', '--fo': '0', animation: `fxFly ${2 * F}s steps(2,end) 1 both` };
+      if (fx === 'avoid') return to(TICKER, 0.2, 0, 'fxFly', 2, i * F);
+      if (fx === 'deal') return { '--dx': Math.round(TICKER[0] - cx) + 'px', '--dy': Math.round(TICKER[1] - cy) + 'px', animation: `fxFlyIn ${2 * F}s steps(2,end) ${i * F}s 1 both` };
+      if (fx === 'death' && i === 2) return { animation: `fxShake ${5 * F}s steps(1,end) 1 both` };
+      return null;
+    };
+    const tab = (id, name) => ({
+      name, go: () => this.setState({ dir: id }),
+      style: {
+        font: 'inherit', fontSize: '13px', letterSpacing: '.06em', cursor: 'pointer', padding: '8px 18px',
+        border: '1px solid ' + (this.state.dir === id ? '#d9a441' : 'rgba(232,221,199,.16)'),
+        background: this.state.dir === id ? '#d9a441' : 'transparent',
+        color: this.state.dir === id ? '#17130f' : 'rgba(232,221,199,.6)',
+      },
+    });
+
+    return {
+      wrapRef: this.wrapRef, bgRef: this.bgRef,
+      isA: A,
+      isScreens: SCR,
+      showStage: A || SCR,
+      isPlain: A,
+      isEffects: FX_VIEW,
+      isBestiary: this.state.dir === 'bestiary',
+      isArmoury: this.state.dir === 'armoury',
+      isAnim: this.state.dir === 'anim',
+      hurtLabel: this.state.hurt ? 'flash frame — every colour two ramp steps up' : 'fourteen cycles, twenty-six cards, 6fps',
+      strikeStyle: {
+        fontFamily: 'Silkscreen,monospace', fontSize: '10px', letterSpacing: '.14em',
+        color: '#e8ddc7', background: this.state.hurt ? '#8c2f22' : '#2a1218',
+        border: '1px solid rgba(232,221,199,.25)', padding: '9px 16px', cursor: 'pointer',
+      },
+      onStrike: () => {
+        this.setState({ hurt: true });
+        clearTimeout(this._ht);
+        this._ht = setTimeout(() => this.setState({ hurt: false }), 260);
+      },
+      animRows: [
+        { title: '♣ THE ROT', note: 'ranks 2 through Ace — all thirteen creatures on real five-frame cycles', suit: 'clubs' },
+        { title: '♠ THE COLD', note: 'same frames, corruption layer swapped — except the Ace, drawn and animated separately', suit: 'spades' },
+      ].map((row) => ({
+        title: row.title, note: row.note,
+        cells: ANIM.map((a) => {
+          const stem = `${a.file}.${row.suit}`;
+          // a hand-animated creature plays its real cycle; the rest get the generated breath
+          const srcs = Array.from({ length: 5 }, (_, n) => `sprites/anim/${stem}.idle.0${n + 1}.png`);
+          const hurtSrc = `sprites/anim/${stem}.hurt.png`;
+          const names = ['c5a', 'c5b', 'c5c', 'c5d', 'c5e'];
+          return {
+            name: a.name,
+            well: { position: 'relative', width: '96px', height: '96px' },
+            layers: (this.state.hurt ? [hurtSrc] : srcs).map((src, n) => ({
+              alt: n === 0 ? a.name + ' idle' : '',
+              style: {
+                position: 'absolute', inset: 0, width: '96px', height: '96px',
+                backgroundImage: `url("${src}")`, backgroundSize: '96px 96px',
+                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+                animation: this.state.hurt ? 'none'
+                  : srcs.length === 2
+                    ? `${n === 0 ? 'fr1' : 'fr2'} ${a.dur}s steps(1,end) infinite`
+                    : `${names[n]} ${a.dur}s steps(1,end) infinite`,
+                opacity: this.state.hurt || n === 0 ? 1 : 0,
+              },
+            })),
+          };
+        }),
+      })),
+      bgW: 640, bgH: 360,
+      scTitle: SC === 'title', scModes: SC === 'modes', scLedger: SC === 'ledger',
+      scTrophies: SC === 'trophies', scTutorial: SC === 'tutorial', scEnd: SC === 'end',
+
+      screenTabs: [['title','TITLE'],['modes','NEW GAME'],['ledger','THE LEDGER'],['trophies','TROPHIES'],['tutorial','TUTORIAL'],['end','RUN END']].map(([id, name]) => ({
+        name, go: () => this.setState({ screen: id }),
+        style: {
+          font: 'inherit', fontFamily: 'Silkscreen,monospace', fontSize: '10px', letterSpacing: '.1em',
+          cursor: 'pointer', padding: '8px 13px',
+          border: '1px solid ' + (SC === id ? '#d9a441' : 'rgba(232,221,199,.16)'),
+          background: SC === id ? 'rgba(217,164,65,.18)' : 'transparent',
+          color: SC === id ? '#f2cf7a' : 'rgba(232,221,199,.6)',
+        },
+      })),
+
+      // the Ace breathing in the title portrait — the one sprite on a menu screen
+      aceFrames: Array.from({ length: 5 }, (_, n) => ({
+        alt: n === 0 ? 'The Debt' : '',
+        style: {
+          position: 'absolute', left: '12px', top: '12px', width: '192px', height: '192px',
+          backgroundImage: `url("sprites/anim/creature_14_the_debt.clubs.idle.0${n + 1}.png")`,
+          backgroundSize: '192px 192px', backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+          animation: `${['c5a','c5b','c5c','c5d','c5e'][n]} .83s steps(1,end) infinite`,
+          opacity: n === 0 ? 1 : 0,
+        },
+      })),
+
+      titleMenu: [['NEW GAME', true], ['HOW TO PLAY', false], ['THE LEDGER', false], ['TROPHIES', false]].map(([label, primary]) => ({
+        label,
+        plate: primary
+          ? { background: '#d9a441', boxShadow: 'inset 2px 2px 0 #f2cf7a, inset -2px -2px 0 #b5651f',
+              padding: '12px 20px', fontSize: '14px', letterSpacing: '.14em', color: '#12161a', textAlign: 'center' }
+          : { background: '#1a1410', boxShadow: 'inset 2px 2px 0 #2f2620, inset -2px -2px 0 #0a0806',
+              padding: '12px 20px', fontSize: '14px', letterSpacing: '.14em', color: 'rgba(232,221,199,.72)', textAlign: 'center' },
+      })),
+
+      modeRows: [
+        ['1', 'STANDARD', 'trophies count', 'START 20', true, 'The classic dungeon. Scoop a room to skip it now and then — but never twice in a row.'],
+        ['2', 'RELENTLESS', 'no trophies', 'START 20', false, 'No escape: you may never avoid a room. Face every card the dungeon deals.'],
+        ['3', 'FRAIL', 'no trophies', 'START 14', false, 'You begin at 14 health and can never heal past it. Every wound bites deeper.'],
+      ].map(([k, title, tag, start, tracks, description], i) => ({
+        k, title, tag, start, description,
+        frame: { background: i === 0 ? '#d9a441' : '#0f1410', padding: '2px' },
+        face: { background: '#161210', padding: '16px 18px' },
+        key: { width: '24px', height: '24px', background: '#0f1410', color: i === 0 ? '#d9a441' : '#6b5f4c',
+               fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' },
+        name: { fontSize: '17px', letterSpacing: '.06em', color: '#e8ddc7' },
+        badge: { fontSize: '9px', letterSpacing: '.14em', padding: '4px 9px',
+                 background: tracks ? '#d9a441' : '#241d16', color: tracks ? '#12161a' : '#6b5f4c' },
+        hp: { fontSize: '11px', letterSpacing: '.12em', color: '#74838f' },
+      })),
+
+      ledgerRows: [
+        ['I', 17, 'CLEARED', 'Standard', 'Jul 24', '4:12', 12], ['II', 14, 'CLEARED', 'Standard', 'Jul 19', '5:03', 15],
+        ['III', 11, 'CLEARED', 'Relentless', 'Jul 22', '3:48', 18], ['IV', 9, 'CLEARED', 'Standard', 'Jul 11', '6:21', 14],
+        ['V', 4, 'CLEARED', 'Frail', 'Jul 28', '4:55', 16], ['VI', -3, 'DEFEATED', 'Standard', 'Jul 2', '3:07', 11],
+        ['VII', -12, 'DEFEATED', 'Standard', 'Jul 26', '3:19', 9], ['VIII', -28, 'DEFEATED', 'Relentless', 'Jul 15', '2:44', 7],
+        ['IX', -63, 'DEFEATED', 'Standard', 'Jul 30', '2:38', 6], ['X', -104, 'DEFEATED', 'Frail', 'Jul 6', '1:52', 4],
+      ].map(([roman, score, outcome, mode, date, time, slain], i) => ({
+        roman, score, outcome, mode, date, time, slain,
+        row: { display: 'flex', alignItems: 'center', padding: '9px 14px', fontSize: '12px',
+               background: i % 2 ? '#141110' : '#191513' },
+        scoreStyle: { width: '70px', textAlign: 'right', paddingRight: '22px', fontSize: '14px',
+                      color: score < 0 ? '#8c2f22' : '#e8ddc7' },
+        outcomeStyle: { width: '96px', fontSize: '10px', letterSpacing: '.12em',
+                        color: score < 0 ? '#8c2f22' : '#71b45c' },
+      })),
+
+      totalRows: [
+        ['BEST SCORE', '17'], ['WORST', '-104'], ['CLEARED', '5 of 38'], ['MONSTERS SLAIN', '412'],
+        ['POTIONS DRUNK', '96'], ['WEAPONS BROKEN', '71'], ['FASTEST CLEAR', '3:48'], ['TOTAL TIME', '2h 14m'],
+      ].map(([name, value], i) => ({
+        name, value,
+        row: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '20px',
+               padding: '7px 0', borderTop: i ? '2px solid rgba(232,221,199,.06)' : 'none' },
+      })),
+
+      trophyRows: [
+        ['FIRST BLOOD', 'Slay a monster bare-handed', true],
+        ['TEMPERANCE', 'Clear a run without drinking', true],
+        ['ARMOURER', 'Break nine weapons in one run', true],
+        ['SPELUNKER', 'Reach depth 40', true],
+        ['UNTOUCHED', 'Clear a room without losing health', false],
+        ['GIANT-KILLER', 'Kill the Ace bare-handed', false],
+        ['ASCETIC', 'Clear a run with no weapon', false],
+        ['FLEET', 'Clear the dungeon under three minutes', false],
+        ['RELENTLESS', 'Clear a run without avoiding', false],
+        ['THE DEBT PAID', 'Clear every mode', false],
+      ].map(([title, detail, earned]) => ({
+        title, detail,
+        frame: { background: '#0f1410', padding: '2px' },
+        face: { background: earned ? '#191513' : '#131110', padding: '11px 13px',
+                display: 'flex', alignItems: 'center', gap: '13px' },
+        sealWell: { width: '26px', height: '26px', background: '#0f1410', padding: '3px',
+                    boxSizing: 'border-box', flex: 'none' },
+        seal: { width: '100%', height: '100%', background: earned ? '#d9a441' : '#1e1a17' },
+        name: { fontSize: '12px', letterSpacing: '.06em', color: earned ? '#e8ddc7' : '#4a3524' },
+        desc: { fontSize: '11px', paddingTop: '4px', color: earned ? 'rgba(232,221,199,.45)' : '#3a2e26' },
+      })),
+
+      stepDots: Array.from({ length: 7 }, (_, n) => ({
+        style: { width: '6px', height: '6px', background: n === 1 ? '#d9a441' : '#3a2e26' },
+      })),
+
+      endStats: [['SCORE', '17', '#e8ddc7'], ['HEALTH LEFT', '17', '#71b45c'], ['TIME', '4:12', '#e8ddc7']].map(([k, v, col]) => ({
+        k, v,
+        cell: { background: '#141110', padding: '12px 26px', textAlign: 'center', minWidth: '120px' },
+        vStyle: { fontSize: '26px', lineHeight: 1, color: col },
+      })),
+
+      endUnlocks: [
+        { title: 'SPELUNKER', detail: 'reached depth 40' },
+        { title: 'ARMOURER', detail: 'broke nine weapons' },
+      ],
+
+      endMenu: [['NEW GAME', true], ['MAIN MENU', false], ['TROPHIES', false], ['THE LEDGER', false]].map(([label, primary]) => ({
+        label,
+        plate: primary
+          ? { background: '#d9a441', boxShadow: 'inset 2px 2px 0 #f2cf7a, inset -2px -2px 0 #b5651f',
+              padding: '10px 16px', fontSize: '11px', letterSpacing: '.12em', color: '#12161a' }
+          : { background: '#1a1410', boxShadow: 'inset 2px 2px 0 #2f2620, inset -2px -2px 0 #0a0806',
+              padding: '10px 16px', fontSize: '11px', letterSpacing: '.12em', color: 'rgba(232,221,199,.72)' },
+      })),
+
+      plainCards: ROOM.map((c) => {
+        const p = PAL_A[c.type];
+        const stem = c.type === 'MONSTER' ? `sprites/anim/${c.asset}.idle.01.png` : `sprites/${c.asset}.png`;
+        return {
+          rank: c.id.slice(0, -1), type: c.type, value: c.value,
+          outer: { width: '176px', height: '256px', background: '#0a0806', padding: '2px', boxSizing: 'border-box', flex: 'none' },
+          plate: { position: 'relative', width: '100%', height: '100%', background: p.plate,
+                   display: 'flex', flexDirection: 'column', boxSizing: 'border-box' },
+          bevelLt: { position: 'absolute', left: 0, top: 0, right: 0, height: '2px', background: p.lt },
+          bevelDk: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '2px', background: p.dk },
+          typeStyle: { fontSize: '9px', letterSpacing: '.14em', color: p.type },
+          well: { position: 'relative', margin: '0 8px', height: '132px', background: p.well,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' },
+          sprite: { width: '128px', height: '128px', backgroundImage: `url("${stem}")`,
+                    backgroundSize: '128px 128px', backgroundRepeat: 'no-repeat', imageRendering: 'pixelated' },
+        };
+      }),
+
+      dirTabs: [tab('A', 'BOARD'), tab('effects', 'EFFECTS'), tab('bestiary', 'BESTIARY · 13'), tab('armoury', 'ARMOURY & APOTHECARY'), tab('anim', 'ANIMATION · 26'), tab('screens', 'SCREENS · 6')],
+
+      fxButtons: FX_LIST.map((f) => ({
+        name: f.label,
+        go: () => this.playFx(f.id, f.ms),
+        style: {
+          font: 'inherit', fontFamily: 'Silkscreen,monospace', fontSize: '10px', letterSpacing: '.1em',
+          cursor: 'pointer', padding: '8px 13px',
+          border: '1px solid ' + (fx === f.id ? '#d9a441' : 'rgba(232,221,199,.16)'),
+          background: fx === f.id ? 'rgba(217,164,65,.18)' : 'transparent',
+          color: fx === f.id ? '#f2cf7a' : 'rgba(232,221,199,.6)',
+        },
+      })),
+
+      fxStrike: on && fx === 'strike',
+      fxCleave: on && fx === 'cleave',
+      fxDrink: on && fx === 'drink',
+      fxDeath: on && fx === 'death',
+
+      fxFlashStyle: { position: 'absolute', inset: 0, background: '#f2cf7a', opacity: 0, pointerEvents: 'none', animation: `fxWhite ${2 * F}s steps(2,end) 1 both` },
+      strikeStars: [0, 1].map((n) => {
+        const cx = slotX(0) + 88, cy = SLOT_Y + 128;
+        const off = n === 0 ? [-26, -18] : [22, 24];
+        const wrap = {
+          position: 'absolute', left: cx + off[0] - 40 + 'px', top: cy + off[1] - 40 + 'px',
+          width: '80px', height: '80px', pointerEvents: 'none', opacity: 0,
+          animation: `fxBurst ${2 * F}s steps(3,end) ${n * 3 * F}s 1 forwards`,
+        };
+        const bar = (w, h, rot) => ({
+          position: 'absolute', left: (80 - w) / 2 + 'px', top: (80 - h) / 2 + 'px',
+          width: w + 'px', height: h + 'px', background: '#e8ddc7', transform: rot ? 'rotate(45deg)' : 'none',
+        });
+        return { wrap, bar1: bar(80, 8, false), bar2: bar(8, 80, false), bar3: bar(52, 8, true), bar4: bar(8, 52, true) };
+      }),
+
+      sliceHi: {
+        position: 'absolute', left: slotX(2) + 'px', top: SLOT_Y + 'px', width: '176px', height: '256px',
+        background: '#3a1d18', border: '4px solid #0a0806', boxSizing: 'border-box', pointerEvents: 'none',
+        clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+        transform: 'translateY(-10px)', opacity: 0,
+        animation: `fxSliceHi ${3 * F}s steps(3,end) ${D_CUT + 2 * F}s 1 forwards`,
+      },
+      sliceLo: {
+        position: 'absolute', left: slotX(2) + 'px', top: SLOT_Y + 'px', width: '176px', height: '256px',
+        background: '#2c1512', border: '4px solid #0a0806', boxSizing: 'border-box', pointerEvents: 'none',
+        clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+        transform: 'translateY(-10px)', opacity: 0,
+        animation: `fxSliceLo ${3 * F}s steps(3,end) ${D_CUT + 2 * F}s 1 forwards`,
+      },
+      slashBar: {
+        position: 'absolute', left: slotX(2) - 20 + 'px', top: SLOT_Y + 118 + 'px', width: '216px', height: '8px',
+        background: '#e8ddc7', transform: 'rotate(-56deg)', transformOrigin: 'center', pointerEvents: 'none',
+        opacity: 0, animation: `fxSlash ${2 * F}s steps(2,end) ${D_CUT + F}s 1 both`,
+      },
+
+      flaskTravel: {
+        position: 'absolute', left: '922px', top: '324px', width: '36px', height: '48px',
+        pointerEvents: 'none', opacity: 0, '--dx': '-800px', '--dy': '-292px',
+        animation: `fxDim ${F}s steps(1,end) ${F}s both, fxFlyT ${4 * F}s steps(4,end) ${2 * F}s both`,
+      },
+      flaskTilt: {
+        position: 'absolute', inset: 0, transformOrigin: '50% 12%',
+        animation: `fxPour ${2 * F}s steps(2,end) ${6 * F}s both`,
+      },
+      spillDrops: [-2, 4, 10].map((sx, n) => ({
+        style: {
+          position: 'absolute', left: 150 + sx + 'px', top: '46px', width: '5px', height: '5px',
+          background: '#5d8a4a', pointerEvents: 'none', opacity: 0, '--sx': sx * 0.6 + 'px',
+          animation: `fxSpill ${3 * F}s steps(3,end) ${(7 + n) * F}s 1 forwards`,
+        },
+      })),
+      hpHealStyle: {
+        position: 'absolute', inset: 0, background: '#5d8a4a', opacity: 0, pointerEvents: 'none',
+        animation: on && fx === 'drink' ? `fxWhite ${3 * F}s steps(3,end) ${9 * F}s 1 forwards` : 'none',
+      },
+
+      deathFlash: { position: 'absolute', inset: 0, background: '#8c2f22', opacity: 0, pointerEvents: 'none', animation: `fxWhite ${3 * F}s steps(3,end) 1 both` },
+      deathBurst: {
+        position: 'absolute', left: slotX(2) + 88 - 90 + 'px', top: SLOT_Y + 128 - 90 + 'px', width: '180px', height: '180px',
+        background: 'radial-gradient(closest-side,#8c2f22 0 38%,rgba(140,47,34,.55) 38% 62%,rgba(140,47,34,0) 62%)',
+        pointerEvents: 'none', opacity: 0, animation: `fxBurst ${5 * F}s steps(4,end) 1 both`,
+      },
+      deathDither: {
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0,
+        background: 'repeating-conic-gradient(#0a0806 0% 25%, rgba(0,0,0,0) 0% 50%) 0 0/8px 8px',
+        animation: `fxDim ${10 * F}s steps(5,end) ${5 * F}s 1 both`,
+      },
+      deathScrim: {
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0, background: 'rgba(10,8,6,.9)',
+        animation: `fxDim ${8 * F}s steps(4,end) ${11 * F}s 1 both`,
+      },
+      deathText: {
+        position: 'absolute', left: 0, right: 0, top: '300px', textAlign: 'center', pointerEvents: 'none',
+        fontFamily: 'Silkscreen,monospace', fontSize: '38px', letterSpacing: '.14em', color: '#8c2f22',
+        opacity: 0, animation: `fxDied ${14 * F}s steps(4,end) ${15 * F}s 1 both`,
+      },
+
+      fxSpec: [
+        ['Deal in', 'DEAL_DURATION 0.18s · stagger 0.04', 'Cards leave the depth ticker in two whole-pixel hops. Stagger rounds up to one frame — the only timing that changes.', '2f'],
+        ['Avoid sweep', 'SWEEP_DURATION 0.20s', 'Four cards hop up into the ticker together; the returned ticks light with a 1-frame torch flash so you see the dungeon get deeper.', '2f'],
+        ['Barehanded', 'STRIKE_HITS 2 × 0.16s · stagger 0.10', 'The creature drops to its hurt frame for the whole exchange — every colour two steps up its own ramp, silhouette rimmed in cream. Two 8-point impact stars built from four bars — no anti-aliased spikes. Card shakes on the 4px grid; 2-frame bone flash under each hit.', '2f ×2'],
+        ['Weapon kill', 'RIM_FLASH 0.36s + SLICE 0.36s', 'The creature\u2019s outline flashes cream for 0.36s first, the sprite still on the card \u2014 a rim sprite traced from its own alpha edge, not a recolour \u2014 then the blade lands. The card lifts 10px on the first frame — the blow picks it up — then a bone slash bar crosses TR→BL and the halves part and keep rising as they fade. They do not rotate; a turned pixel is a blurred pixel.', '1f lift + 1f + 3f'],
+        ['Equip', 'EQUIP_FLIGHT 0.24s', 'Three hops to the rail, scale stepping 100 → 55 → 18%. Lands as the hand-drawn 16×16 rail icon, not a shrunk 32.', '3f'],
+        ['Potion', 'POTION_FLIGHT 0.30s', 'The card collapses into the flask sprite over two frames, the flask hops to the HP bar in four, then tips and pours — three DRAWN pour frames in the sheet, never a rotation — and three drops fall into the bar as it fills.', '2f + 4f + 3f'],
+        ['HP pulses', 'damage shudder · heal glow', 'Damage: bar jumps ±4px for 2 frames and the number flips dried blood for 3. Heal: fill redraws one segment at a time, herbal, 1 segment per frame.', '2–4f'],
+        ['Death', 'BLOW .4 / DIM .8 / REVEAL 1.2 / SETTLE .5', 'Blow flares red over the killer, board shakes 5 frames. The screen then dies by ordered 4×4 dither over 10 frames — the wipe is pattern, never alpha. YOU DIED grows in four scale steps.', '5/10/14/6f'],
+      ].map(([effect, today, embergrid, frames]) => ({
+        effect, today, embergrid, frames,
+        cellHead: { padding: '11px 14px 11px 0', borderTop: '1px solid rgba(232,221,199,.08)', fontFamily: 'Silkscreen,monospace', fontSize: '11px', letterSpacing: '.06em', color: '#e8ddc7' },
+        cell: { padding: '11px 18px 11px 0', borderTop: '1px solid rgba(232,221,199,.08)', color: 'rgba(232,221,199,.62)', lineHeight: 1.5, textWrap: 'pretty' },
+        cellNum: { padding: '11px 0', borderTop: '1px solid rgba(232,221,199,.08)', textAlign: 'right', fontFamily: 'ui-monospace,monospace', fontSize: '11px', color: '#d9a441' },
+      })),
+
+      ramps: RAMPS.map((r) => ({
+        name: r.name, note: r.note,
+        colors: r.colors.map((c) => ({ style: { width: '18px', height: '18px', background: c, border: '1px solid rgba(0,0,0,.6)' } })),
+      })),
+      delivery: [
+        { k: 'canvas', v: '64×64, transparent, drawn ×2 — 128px on the card' },
+        { k: 'guides', v: 'bottom guide y=63 (feet), top guide y=2; only the Ace may cross' },
+        { k: 'colours', v: 'full 8-step primary + 3 secondary + 3 corruption = 14 hexes per sprite, primary always the lightest. Never outside the 72.' },
+        { k: 'frames', v: 'idle 5 @ 6fps — settled. Hurt is generated in Java at load, not drawn. No death frames: the card dissolve covers it. Whole-pixel offsets only.' },
+        { k: 'naming', v: 'creature_<value>_<name>_<clubs|spades>.png · frames add _idle_1…_idle_5' },
+        { k: 'sheet', v: 'one PNG per frame, clubs only, frame _idle_1 = the approved sprite unchanged' },
+        { k: 'count', v: '14 drawings → 26 creatures → 26 real idle cycles. Complete — nothing outstanding' },
+      ],
+      bestiary: BESTIARY.map(([rank, name, tier, silhouette, fill, idle]) => {
+        const value = { J: 11, Q: 12, K: 13, A: 14 }[rank] || Number(rank);
+        const slug = name.toLowerCase().replace(/ /g, '_');
+        const pad = String(value).padStart(2, '0');
+        return {
+          rank, name, tier, silhouette, idle,
+          fillLabel: 'fills ' + fill + '%',
+          fillPx: Math.round(78 * fill / 100) + 'px',
+          slotClubs: 'be-' + pad + '-c', slotSpades: 'be-' + pad + '-s',
+          materialNote: MATERIALS[rank][2],
+          forceRamps: (() => {
+            const c = forceList(rank, ROT), sp = forceList(rank, COLD);
+            return [
+              { label: c.pName, color: '#e8ddc7', ramp: c.prim },
+              { label: '+ ' + c.sName, color: '#9a8b70', ramp: c.sec },
+              ...(c.corr.length ? [{ label: '♣ rot', color: '#5d8a4a', ramp: c.corr }] : []),
+              ...(sp.corr.length ? [{ label: '♠ cold', color: '#7a8794', ramp: sp.corr }] : []),
+              ...(rank === '4' ? [{ label: '♠ cold', color: '#7a8794', ramp: COLD }] : []),
+            ];
+          })().map((r) => ({
+            label: r.label, hexes: r.ramp.join(' '), chips: chipsOf(r.ramp),
+            labelStyle: { width: '44px', flex: 'none', fontFamily: 'ui-monospace,monospace', fontSize: '9px', letterSpacing: '.02em', color: r.color },
+          })),
+          file: 'creature_' + pad + '_' + slug,
+          imgClubs: spriteImg('sprites/creature_' + pad + '_' + slug + '.clubs.png', name + ', rot'),
+          imgSpades: spriteImg('sprites/creature_' + pad + '_' + slug + '.spades.png', name + ', cold'),
+          tile: { border: '1px solid rgba(232,221,199,.1)', background: 'rgba(232,221,199,.02)', padding: '12px 13px 11px' },
+          tierStyle: { fontFamily: 'ui-monospace,monospace', fontSize: '9.5px', letterSpacing: '.14em', textTransform: 'uppercase', color: TIER_COLOR[tier] },
+        };
+      }),
+objectSets: [
+        {
+          title: 'ARMOURY · DIAMONDS 2–10', note: 'the weapon you carry is the one thing on screen all game', pip: '♦',
+          pipStyle: { fontSize: '11px', color: '#7a8794' },
+          hexes: IRON.join(' '), chips: chipsOf(IRON),
+          items: WEAPONS.map((name, i) => {
+            const v = String(i + 2).padStart(2, '0');
+            const file = 'weapon_' + v + '_' + name.toLowerCase().replace(/ /g, '_');
+            return { rank: i + 2, name, file, img: objImg('sprites/' + file + '.png', name) };
+          }),
+        },
+        {
+          title: 'APOTHECARY · HEARTS 2–10', note: 'vessel size is the heal — a dram at 2, a flagon at 10', pip: '♥',
+          pipStyle: { fontSize: '11px', color: '#5d8a4a' },
+          hexes: ROT.join(' '), chips: chipsOf(ROT),
+          items: POTIONS.map((name, i) => {
+            const v = String(i + 2).padStart(2, '0');
+            const file = 'potion_' + v + '_' + name.toLowerCase();
+            return { rank: i + 2, name, file, img: objImg('sprites/' + file + '.png', name) };
+          }),
+        },
+      ],
+      stageOuterStyle: { position: 'relative', width: 1280 * k + 'px', height: 720 * k + 'px', flex: 'none' },
+      stageStyle: {
+        position: 'absolute', top: 0, left: 0, width: '1280px', height: '720px',
+        transformOrigin: 'top left', transform: `scale(${k})`,
+        background: '#100c09', overflow: 'hidden', boxShadow: '0 24px 70px rgba(0,0,0,.75)',
+      },
+
+      hpFillA: {
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: '70%',
+        background: 'linear-gradient(to bottom,#e8ddc7 0 6px,#9a8b70 6px 14px,#6b5f4c 14px 100%)',
+        animation: on && fx === 'drink' ? `fxFill ${F}s steps(1,end) ${9 * F}s 1 both` : 'none',
+      },
+      ticks: Array.from({ length: 44 }, (_, i) => {
+        const lit = i < 27;
+        return {
+          styleA: { width: '2px', height: lit ? '20px' : '8px', marginTop: lit ? 0 : '12px', marginRight: '2px', background: lit ? '#d9a441' : '#2e2118' },
+        };
+      }),
+      slain: [{ value: 10 }, { value: 8 }],
+
+      cardsA: ROOM.map((c, i) => {
+        const p = PAL_A[c.type];
+        const isTarget = i === 2;
+        // a blow landing — barehanded or with the weapon — puts the creature on its hurt frame
+        const wounded = on && fx === 'strike' && i === 0;
+        const rimFlash = on && fx === 'cleave' && i === 2;
+        return {
+          rank: c.id.slice(0, -1), pip: '#s-' + c.id.slice(-1), value: c.value, type: c.type,
+          asset: c.asset.replace(/\./g, '_') + '.png',
+          layers: (wounded
+            ? [`sprites/anim/${c.asset}.hurt.png`]
+            : c.cycle
+              ? Array.from({ length: c.cycle }, (_, n) => `sprites/anim/${c.asset}.idle.0${n + 1}.png`)
+              : [`sprites/${c.asset}.png`]
+          ).map((src, n, all) => ({
+            alt: n === 0 ? c.name : '',
+            style: {
+              position: 'absolute', inset: 0,
+              backgroundImage: `url("${src}")`, backgroundSize: '128px 128px',
+              backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+              animation: all.length > 1 ? `${['c5a','c5b','c5c','c5d','c5e'][n]} .83s steps(1,end) infinite` : 'none',
+              opacity: all.length > 1 && n > 0 ? 0 : 1,
+            },
+          })).concat(rimFlash ? [{
+            alt: '',
+            style: {
+              position: 'absolute', inset: 0,
+              backgroundImage: `url("sprites/anim/${c.asset}.rim.png")`, backgroundSize: '128px 128px',
+              backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+              animation: `fxRim ${D_CUT}s steps(1,end) 1 both`, opacity: 0,
+            },
+          }] : []),
+          outer: {
+            width: '176px', height: '256px', background: '#0f1410', padding: '2px', boxSizing: 'border-box',
+            ...(cardFx(i) || {}),
+          },
+          plate: { position: 'relative', width: '100%', height: '100%', background: p.plate, display: 'flex', flexDirection: 'column' },
+          bevelLt: { position: 'absolute', top: 0, left: 0, right: '2px', bottom: '2px', borderTop: `2px solid ${p.lt}`, borderLeft: `2px solid ${p.lt}`, pointerEvents: 'none' },
+          bevelDk: { position: 'absolute', top: '2px', left: '2px', right: 0, bottom: 0, borderBottom: `2px solid ${p.dk}`, borderRight: `2px solid ${p.dk}`, pointerEvents: 'none' },
+          typeStyle: { fontSize: '9px', letterSpacing: '.16em', color: p.type },
+          well: {
+            position: 'relative', height: '140px', margin: '0 6px', background: p.well,
+            boxShadow: 'inset 0 2px 0 rgba(0,0,0,.6), inset 0 -2px 0 rgba(232,221,199,.05)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          },
+          spriteBox: {
+            position: 'relative', width: '128px', height: '128px', imageRendering: 'pixelated',
+            animation: c.cycle ? 'none' : 'bobA 1.4s steps(1,end) infinite',
+          },
+          hitStyle: { position: 'absolute', inset: 0, background: '#f2cf7a', opacity: 0, pointerEvents: 'none' },
+          assetTag: {
+            fontSize: '7px', letterSpacing: '.06em', color: 'rgba(232,221,199,.3)',
+            fontFamily: 'ui-monospace,monospace', pointerEvents: 'none', textAlign: 'center',
+          },
+          rule: { position: 'absolute', top: 0, left: '6px', right: '6px', height: '2px', background: 'rgba(0,0,0,.55)' },
+        };
+      }),
+
+
+      briefs: [
+        {
+          tag: 'A', name: 'EMBERGRID',
+          card: { border: '1px solid rgba(217,164,65,.45)', background: 'rgba(217,164,65,.05)', padding: '18px 20px' },
+          pitch: 'Revised: the game renders at 640×360 and scales ×2, with 64×64 sprites. 32×32 could not carry a readable creature — four flat colours in a 23px-tall rat. Type, frames, bars and sprites still share one grid and nothing anti-aliases; the grid is simply fine enough to shade on. UI chrome stays chunky by drawing it in 2px units.',
+          palette: SWATCH_A.map((c) => ({ style: { width: '22px', height: '22px', background: c } })),
+          specs: [
+            { k: 'sprite', v: '64×64, drawn ×2 — 128px on the card' },
+            { k: 'creatures', v: '13 by rank, each in its own materials; clubs/spades swap only the corruption ramp' },
+            { k: 'objects', v: '9 weapons + 9 potions at 64×64; 16×16 rail icons drawn separately' },
+            { k: 'frames', v: 'idle 5 @ 6fps, hurt generated at load — whole-pixel steps only. No death frames: the card dissolve covers it' },
+            { k: 'palette', v: '80 colours: seven eight-step material ramps with full hue rotation, two corruption ramps, eight accents' },
+            { k: 'type', v: 'Silkscreen replaces IM Fell + Alegreya entirely' },
+            { k: 'budget', v: '31 objects + 130 idle frames — drawn, measured, delivered' },
+          ],
+        },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
