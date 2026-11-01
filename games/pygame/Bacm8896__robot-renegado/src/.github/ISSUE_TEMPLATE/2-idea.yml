@@ -1,0 +1,38 @@
+name: "💡 Idea o mejora"
+description: Algo que le añadirías, cambiarías o quitarías al juego.
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: ¿Sobre qué es?
+      options:
+        - Jugabilidad (armas, enemigos, construcción…)
+        - Dificultad o balance
+        - Historia y personajes
+        - Gráficos o sonido
+        - Controles o interfaz
+        - Otra cosa
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Tu idea
+      placeholder: "Un enemigo que se vuelva invisible y solo se vea cerca de las torretas."
+    validations:
+      required: true
+  - type: textarea
+    id: porque
+    attributes:
+      label: ¿Por qué mejoraría el juego?
+      placeholder: "Las oleadas se vuelven repetitivas; obligaría a pensar dónde construir."
+  - type: dropdown
+    id: avance
+    attributes:
+      label: ¿Hasta dónde llegaste jugando?
+      options:
+        - Prólogo
+        - Primer acto
+        - Base Central
+        - Asedio / final
