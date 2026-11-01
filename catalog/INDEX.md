@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
+Generated: 2026-11-01 ~09:36 PT (America/Los_Angeles). Entries: **900**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -228,10 +228,12 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/godot/teeeece__godot_open_target_shooter | https://github.com/teeeece/godot_open_target_shooter | MIT | godot | a | 2026-10-22 |
 | games/godot/themisterdragon__approved | https://github.com/themisterdragon/approved | GPL-3.0 | godot | a | 2026-10-23 |
 | games/godot/thorkellmani__ratbar | https://github.com/thorkellmani/ratbar | MIT | godot | a | 2026-10-23 |
+| games/godot/tsleung__fordline | https://github.com/tsleung/fordline | MIT | godot | a | 2026-11-01 |
 | games/godot/Turkeytray__GodotJam74 | https://github.com/Turkeytray/GodotJam74 | MIT | godot | a | 2026-10-23 |
 | games/godot/urunsiyabend__astro-miner | https://github.com/urunsiyabend/astro-miner | MIT | godot | a | 2026-10-23 |
 | games/godot/Username59138__pixeltd | https://github.com/Username59138/pixeltd | GPL-3.0 | godot | a | 2026-10-23 |
 | games/godot/vikram3__GGJ4-MathGame4Kids | https://github.com/vikram3/GGJ4-MathGame4Kids | MIT | godot | a | 2026-10-23 |
+| games/godot/Wadan3__shadow-survivors | https://github.com/Wadan3/shadow-survivors | MIT | godot | a | 2026-11-01 |
 | games/godot/west-coast-gamers__pompeii-raptor | https://github.com/west-coast-gamers/pompeii-raptor | MIT | godot | a | 2026-10-23 |
 | games/godot/Willowblade__godot-wild-jam-29 | https://github.com/Willowblade/godot-wild-jam-29 | MIT | godot | a | 2026-10-23 |
 | games/godot/Willowblade__godot-wild-jam-34 | https://github.com/Willowblade/godot-wild-jam-34 | MIT | godot | a | 2026-10-23 |
@@ -379,6 +381,7 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/love2d/Ka4ok52__lovetris | https://github.com/Ka4ok52/lovetris | MIT | love2d | b | 2026-10-23 |
 | games/love2d/KaffeDiem__TowerDefence | https://github.com/KaffeDiem/TowerDefence | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/KeaganGilmore__Blind-Tracer | https://github.com/KeaganGilmore/Blind-Tracer | GPL-3.0 | love2d | b | 2026-10-23 |
+| games/love2d/KoJesko__luavectorgame | https://github.com/KoJesko/luavectorgame | MIT | love2d | b | 2026-11-01 |
 | games/love2d/MarvellousSoft__MarvInc | https://github.com/MarvellousSoft/MarvInc | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/meenbeese__love2D-demo | https://github.com/meenbeese/love2D-demo | MIT | love2d | b | 2026-10-23 |
 | games/love2d/Melqui56__Breakout | https://github.com/Melqui56/Breakout | MIT | love2d | e | 2026-10-23 |
@@ -473,7 +476,9 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/other/fogleman__Craft | https://github.com/fogleman/Craft | MIT | other | e | 2026-10-23 |
 | games/other/frederickjjoubert__bevy-ball-game | https://github.com/frederickjjoubert/bevy-ball-game | MIT | other | e | 2026-11-01 |
 | games/other/FunToHard__Space-Shooter | https://github.com/FunToHard/Space-Shooter | MIT | other | e | 2026-11-01 |
+| games/other/GoogolFisch__raylib-minesweeper | https://github.com/GoogolFisch/raylib-minesweeper | MIT | other | e | 2026-11-01 |
 | games/other/IndieCoderMM__platformer-raylib | https://github.com/IndieCoderMM/platformer-raylib | MIT | other | e | 2026-11-01 |
+| games/other/JannikStr__raylib-breakout | https://github.com/JannikStr/raylib-breakout | MIT | other | e | 2026-11-01 |
 | games/other/Jhyde927__DeadCityNights | https://github.com/Jhyde927/DeadCityNights | MIT | other | e | 2026-11-01 |
 | games/other/kasa320__raylib-shooter-c | https://github.com/kasa320/raylib-shooter-c | MIT | other | e | 2026-11-01 |
 | games/other/Leftium__asteroid | https://github.com/Leftium/asteroid | MIT | other | e | 2026-11-01 |
@@ -493,6 +498,7 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/other/wolfdroid__The_Mighty_Gatot_Kaca | https://github.com/wolfdroid/The_Mighty_Gatot_Kaca | MIT | other | e | 2026-11-01 |
 | games/other/ystepanoff__ParaGopher | https://github.com/ystepanoff/ParaGopher | MIT | other | e | 2026-11-01 |
 | games/phaser/about14sheep__meltdown | https://github.com/about14sheep/meltdown | GPL-3.0 | phaser | c | 2026-10-23 |
+| games/phaser/alaasoulaiman__AntWars | https://github.com/alaasoulaiman/AntWars | MIT | phaser | c | 2026-11-01 |
 | games/phaser/anapdh__js-capstoneproject | https://github.com/anapdh/js-capstoneproject | MIT | phaser | c | 2026-10-23 |
 | games/phaser/anjmao__phaser-candy-crush | https://github.com/anjmao/phaser-candy-crush | MIT | phaser | c | 2026-11-01 |
 | games/phaser/Autapomorph__dino | https://github.com/Autapomorph/dino | MIT | phaser | c | 2026-10-22 |
@@ -590,10 +596,12 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/pygame/Dave-YP__cosmic-heat-pygame | https://github.com/Dave-YP/cosmic-heat-pygame | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/dhhruv__Sudoku-Solver | https://github.com/dhhruv/Sudoku-Solver | MIT | pygame | b | 2026-10-23 |
 | games/pygame/estevaofon__angry-birds-python | https://github.com/estevaofon/angry-birds-python | MIT | pygame | b | 2026-10-22 |
+| games/pygame/etokiyra__bounc_ball | https://github.com/etokiyra/bounc_ball | GPL-3.0 | pygame | b | 2026-11-01 |
 | games/pygame/federicocabrera1978-svg__cabrechess | https://github.com/federicocabrera1978-svg/cabrechess | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/FinnKr__PyPong | https://github.com/FinnKr/PyPong | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/firatksee__Pygame-Game2048 | https://github.com/firatksee/Pygame-Game2048 | MIT | pygame | b | 2026-11-01 |
 | games/pygame/Forestf90__Bomberman | https://github.com/Forestf90/Bomberman | GPL-3.0 | pygame | b | 2026-10-23 |
+| games/pygame/Gitodear__Code-Arena-v1.1 | https://github.com/Gitodear/Code-Arena-v1.1 | MIT | pygame | b | 2026-11-01 |
 | games/pygame/gnino8111__asteroids | https://github.com/gnino8111/asteroids | MIT | pygame | b | 2026-10-23 |
 | games/pygame/Goodfly256-2__balance-of-power | https://github.com/Goodfly256-2/balance-of-power | MIT | pygame | b | 2026-11-01 |
 | games/pygame/Gooodgis__dont-touch-my-presents | https://github.com/Gooodgis/dont-touch-my-presents | MIT | pygame | b | 2026-10-22 |
@@ -889,6 +897,8 @@ Generated: 2026-11-01 ~09:27 PT (America/Los_Angeles). Entries: **890**.
 | games/unreal/RLoris__TankPlayground | https://github.com/RLoris/TankPlayground | GPL-3.0 | unreal | e | 2026-11-01 |
 | games/unreal/ScrappyCocco__UETrafficGame | https://github.com/ScrappyCocco/UETrafficGame | MIT | unreal | d | 2026-11-01 |
 | games/unreal/SergioRosello__Unreal-Game | https://github.com/SergioRosello/Unreal-Game | MIT | unreal | d | 2026-11-01 |
+| games/unreal/shijieJoey__Building_Escape | https://github.com/shijieJoey/Building_Escape | MIT | unreal | d | 2026-11-01 |
+| games/unreal/shijieJoey__SimpleShooter | https://github.com/shijieJoey/SimpleShooter | MIT | unreal | d | 2026-11-01 |
 | games/unreal/TheosCreation__UnrealEngineGameLearning | https://github.com/TheosCreation/UnrealEngineGameLearning | MIT | unreal | d | 2026-11-01 |
 | games/unreal/ToucanTechno__Noxia | https://github.com/ToucanTechno/Noxia | GPL-3.0 | unreal | e | 2026-11-01 |
 | games/unreal/VadimDev__Spiky-Project | https://github.com/VadimDev/Spiky-Project | MIT | unreal | d | 2026-11-01 |
