@@ -1,0 +1,69 @@
+-- create press duration variable for timer & pie animation | bool for txt enabling/disabling
+local press_duration = 2
+local enble = false
+
+function init(self)
+	--Get focus
+	msg.post(".", "acquire_input_focus")
+
+	--Get gui box / txt node / inner pie node
+	self.button = gui.get_node("box_btn")
+	self.txt = gui.get_node("t_enable")
+	self.progress_bar = gui.get_node("inner")
+
+	--Disable txt node on init
+	gui.set_enabled(self.txt , enble)
+end
+
+--created progressbar function to handle gui.animate calls (more than once in script)
+local function progressbar(self,degree,speed)
+	--animate pie node with passed in degrees and speed to divide by ( must be 1 or greater )
+	gui.animate(self.progress_bar,"fill_angle", degree, gui.EASING_LINEAR, press_duration/speed, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+end
+
+--created txt_toggle to handle enabling and disabling of txt node
+local function txt_toggle(self)
+	--toggle bool
+	enble = not enble
+
+	--set txt node enabled/disabled
+	gui.set_enabled(self.txt, enble)
+
+	--Animate Pie node to 0 degrees
+	progressbar(self,0,5)
+end 
+
+function on_input(self, action_id, action)
+	-- "xkey" defined in game.input_binding
+	if action_id == hash("xkey") then
+		if action.pressed then
+			--create timer /use press_duration var for delay/false = non-repeat/call txt_toggle function on complete
+			self.t_press = timer.delay(press_duration, false, txt_toggle)
+
+			--Animate Pie node to 360 degreess with speed 1
+			progressbar(self,360,1)
+
+			--send message to this script with state = "name of texture" to change to "Down" // can replace with a local function instead of messages
+			msg.post("#", "press", { state = "buttonDown" })
+
+		elseif action.released then
+
+			--Cancel timer named t_press that was created above
+			timer.cancel(self.t_press)
+
+			--Animate Pie node to 0 degrees with speed 4
+			progressbar(self,0,5)
+
+			--send message to this script with state = "name of texture" to change to "Up" // can replace with a local function instead of messages
+			msg.post("#", "press", { state = "buttonUp" })
+		end
+	end
+end
+
+function on_message(self, message_id, message)
+	--When recieving message "press"
+	if message_id == hash("press") then
+		--Change button node texture to another texture ; state is a string with name of texture defined above
+		gui.play_flipbook(self.button, message.state)
+	end
+end
