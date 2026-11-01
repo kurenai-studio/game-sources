@@ -1,0 +1,16 @@
+// Core module: GL-free game logic (CircuitSalvageWorld + entities) plus the
+// ApplicationAdapter render/input layer. Depends only on libGDX core. Asset-free: the default
+// BitmapFont is loaded from the gdx jar's classpath, not from a project asset.
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
