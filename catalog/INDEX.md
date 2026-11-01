@@ -720,6 +720,7 @@
 | games/unity/llafuente__unity-platformer | https://github.com/llafuente/unity-platformer | MIT | unity | e | 2026-10-22 |
 | games/unity/LuqueDaniel__PongPrototype | https://github.com/LuqueDaniel/PongPrototype | GPL-3.0 | unity | e | 2026-10-23 |
 | games/unity/matthiasbroske__VampireSurvivorsClone | https://github.com/matthiasbroske/VampireSurvivorsClone | MIT | unity | e | 2026-10-23 |
+| games/unity/Metsuryu__UnityPong | https://github.com/Metsuryu/UnityPong | MIT | unity | e | 2026-11-01 |
 | games/unity/microjumper__ArcadeClassics-Pong | https://github.com/microjumper/ArcadeClassics-Pong | MIT | unity | e | 2026-10-23 |
 | games/unity/mjwz5294__Unity-games | https://github.com/mjwz5294/Unity-games | MIT | unity | e | 2026-10-23 |
 | games/unity/Mohammed-Benotmane__Fruit-Ninja-Replica | https://github.com/Mohammed-Benotmane/Fruit-Ninja-Replica | MIT | unity | e | 2026-10-23 |
