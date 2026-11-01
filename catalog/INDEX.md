@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
+Generated: 2026-11-01 ~09:26 PT (America/Los_Angeles). Entries: **889**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -265,6 +265,7 @@ Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
 | games/libgdx/Elia-Youssef__libGDX-2d-shadow-clash | https://github.com/Elia-Youssef/libGDX-2d-shadow-clash | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-circuit-salvage | https://github.com/Elia-Youssef/libGDX-circuit-salvage | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-gladiator-arena | https://github.com/Elia-Youssef/libGDX-gladiator-arena | MIT | libgdx | d | 2026-11-01 |
+| games/libgdx/Elia-Youssef__libGDX-minecart | https://github.com/Elia-Youssef/libGDX-minecart | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-moon-courier | https://github.com/Elia-Youssef/libGDX-moon-courier | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-projectile-aiming | https://github.com/Elia-Youssef/libGDX-projectile-aiming | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/Elia-Youssef__libGDX-shadow-clone-game | https://github.com/Elia-Youssef/libGDX-shadow-clone-game | MIT | libgdx | d | 2026-11-01 |
@@ -458,6 +459,7 @@ Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
 | games/monogame/TheRealVira__Monocraft | https://github.com/TheRealVira/Monocraft | GPL-3.0 | monogame | d | 2026-10-23 |
 | games/other/Ahmet-Can-Urhan__raylib-game | https://github.com/Ahmet-Can-Urhan/raylib-game | MIT | other | e | 2026-11-01 |
 | games/other/AndrewHamel111__raylib-2048 | https://github.com/AndrewHamel111/raylib-2048 | MIT | other | e | 2026-11-01 |
+| games/other/AndrewHamel111__raylib-minesweeper | https://github.com/AndrewHamel111/raylib-minesweeper | MIT | other | e | 2026-11-01 |
 | games/other/andrewrk__tetris | https://github.com/andrewrk/tetris | MIT | other | e | 2026-11-01 |
 | games/other/candrewlee14__tetris-raylib | https://github.com/candrewlee14/tetris-raylib | MIT | other | e | 2026-11-01 |
 | games/other/cristianscheid__space-crusher | https://github.com/cristianscheid/space-crusher | MIT | other | e | 2026-11-01 |
@@ -485,6 +487,7 @@ Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
 | games/other/Ryp__minesweeper-zig | https://github.com/Ryp/minesweeper-zig | MIT | other | e | 2026-11-01 |
 | games/other/setghm__space-invaders | https://github.com/setghm/space-invaders | MIT | other | e | 2026-11-01 |
 | games/other/Sirvoid__Midless | https://github.com/Sirvoid/Midless | MIT | other | e | 2026-10-23 |
+| games/other/starkertyp__raylib_sokoban | https://github.com/starkertyp/raylib_sokoban | MIT | other | e | 2026-11-01 |
 | games/other/unklnik__bitty_knight | https://github.com/unklnik/bitty_knight | MIT | other | e | 2026-11-01 |
 | games/other/UnknownRori__raylib-breakout-game | https://github.com/UnknownRori/raylib-breakout-game | MIT | other | e | 2026-11-01 |
 | games/other/wolfdroid__The_Mighty_Gatot_Kaca | https://github.com/wolfdroid/The_Mighty_Gatot_Kaca | MIT | other | e | 2026-11-01 |
@@ -883,6 +886,7 @@ Generated: 2026-11-01 ~09:25 PT (America/Los_Angeles). Entries: **885**.
 | games/unreal/MaximeRichard__GGJ2017-BEAT | https://github.com/MaximeRichard/GGJ2017-BEAT | GPL-3.0 | unreal | e | 2026-11-01 |
 | games/unreal/NoahWood01__Aghanim-RPG | https://github.com/NoahWood01/Aghanim-RPG | MIT | unreal | d | 2026-11-01 |
 | games/unreal/RLoris__TankPlayground | https://github.com/RLoris/TankPlayground | GPL-3.0 | unreal | e | 2026-11-01 |
+| games/unreal/ScrappyCocco__UETrafficGame | https://github.com/ScrappyCocco/UETrafficGame | MIT | unreal | d | 2026-11-01 |
 | games/unreal/SergioRosello__Unreal-Game | https://github.com/SergioRosello/Unreal-Game | MIT | unreal | d | 2026-11-01 |
 | games/unreal/TheosCreation__UnrealEngineGameLearning | https://github.com/TheosCreation/UnrealEngineGameLearning | MIT | unreal | d | 2026-11-01 |
 | games/unreal/ToucanTechno__Noxia | https://github.com/ToucanTechno/Noxia | GPL-3.0 | unreal | e | 2026-11-01 |
