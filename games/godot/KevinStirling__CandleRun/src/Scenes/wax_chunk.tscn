@@ -1,0 +1,189 @@
+[gd_scene load_steps=16 format=3 uid="uid://bm4uyxw8v1v3s"]
+
+[ext_resource type="Script" path="res://Scripts/wax_chunk.gd" id="1_bhvxn"]
+[ext_resource type="Texture2D" uid="uid://ccm1v4llb3e7b" path="res://Assets/wax_chunk-Sheet.png" id="2_fngpp"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_7ft6p"]
+bounce = 1.0
+absorbent = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wngpq"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ajno"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_asc3b"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uuwlo"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mc1yb"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cj8wn"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k1vv7"]
+atlas = ExtResource("2_fngpp")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_umgf8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wngpq")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6ajno")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_asc3b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uuwlo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mc1yb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cj8wn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k1vv7")
+}],
+"loop": true,
+"name": &"splash",
+"speed": 30.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0hqv1"]
+size = Vector2(32.5623, 43.4164)
+
+[sub_resource type="Animation" id="Animation_heryc"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.1, 0.1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_7u803"]
+resource_name = "shake"
+length = 3.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.6, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, 0.0, -0.174533, 0.174533, -0.174533, 0.174533, -0.174533, 0.174533]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6, 0.8, 1.1, 2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0.1, 0.1), Vector2(0.64, 0.64), Vector2(0.46, 0.46), Vector2(0.85, 0.85), Vector2(0.64, 0.64), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = false
+tracks/2/path = NodePath(".:position")
+tracks/2/interp = 0
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1.3, 1.4, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(-1, 1), Vector2(-1, -1), Vector2(0, -1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_wu4g2"]
+_data = {
+"RESET": SubResource("Animation_heryc"),
+"shake": SubResource("Animation_7u803")
+}
+
+[node name="WaxChunk" type="StaticBody2D"]
+process_priority = -1
+scale = Vector2(0.1, 0.1)
+collision_layer = 0
+collision_mask = 5
+physics_material_override = SubResource("PhysicsMaterial_7ft6p")
+script = ExtResource("1_bhvxn")
+fall_height = 30.0
+fall_time_to_descent = 0.5
+
+[node name="Sprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_umgf8")
+animation = &"splash"
+
+[node name="TriggerArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="TriggerArea"]
+position = Vector2(0.5, 4)
+scale = Vector2(0.276393, 0.276393)
+shape = SubResource("RectangleShape2D_0hqv1")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_wu4g2")
+}
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0.5, 4)
+scale = Vector2(0.276393, 0.276393)
+shape = SubResource("RectangleShape2D_0hqv1")

@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://ceukiy2iabejk"]
+
+[ext_resource type="Texture2D" uid="uid://dhnemk474b0su" path="res://Assets/tile_0392.png" id="1_vrw7k"]
+[ext_resource type="Texture2D" uid="uid://dk35eevihmol2" path="res://Assets/tile_0394.png" id="2_fbn7u"]
+
+[node name="MovementCntrl" type="Node2D"]
+
+[node name="A" type="Sprite2D" parent="."]
+position = Vector2(-8, 0)
+texture = ExtResource("1_vrw7k")
+
+[node name="D" type="Sprite2D" parent="."]
+position = Vector2(8, 0)
+texture = ExtResource("2_fbn7u")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -15.0
+offset_top = -21.0
+offset_right = 28.0
+offset_bottom = 2.0
+scale = Vector2(0.652078, 0.652078)
+text = "MOVE
+"
