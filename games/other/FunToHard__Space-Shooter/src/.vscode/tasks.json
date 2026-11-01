@@ -1,0 +1,148 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug",
+            "type": "shell",
+            "command": "C:/raylib/w64devkit/bin/mingw32-make.exe",
+            "args": [
+                "RAYLIB_PATH=C:/raylib/raylib",
+                "PROJECT_NAME=space-shooter",
+                "OBJS=main.cpp src/Game.cpp src/entities/Bullet.cpp src/entities/Enemy.cpp src/entities/Entity.cpp src/entities/Explosion.cpp src/entities/Player.cpp src/entities/PowerUp.cpp src/systems/AudioManager.cpp src/systems/BulletManager.cpp src/systems/EnemyManager.cpp src/systems/ExplosionManager.cpp src/systems/PowerUpManager.cpp src/systems/ResourceManager.cpp src/utils/GameConfig.cpp",
+                "BUILD_MODE=DEBUG"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build Space Shooter in debug mode with debug symbols"
+        },
+        {
+            "label": "Build Release",
+            "type": "shell",
+            "command": "C:/raylib/w64devkit/bin/mingw32-make.exe",
+            "args": [
+                "RAYLIB_PATH=C:/raylib/raylib",
+                "PROJECT_NAME=space-shooter",
+                "OBJS=main.cpp src/Game.cpp src/entities/Bullet.cpp src/entities/Enemy.cpp src/entities/Entity.cpp src/entities/Explosion.cpp src/entities/Player.cpp src/entities/PowerUp.cpp src/systems/AudioManager.cpp src/systems/BulletManager.cpp src/systems/EnemyManager.cpp src/systems/ExplosionManager.cpp src/systems/PowerUpManager.cpp src/systems/ResourceManager.cpp src/utils/GameConfig.cpp"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build Space Shooter in release mode (optimized)"
+        },
+        {
+            "label": "Run Game",
+            "type": "shell",
+            "command": "${workspaceFolder}/space-shooter.exe",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "dependsOn": "Build Debug",
+            "detail": "Build and run the Space Shooter game",
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Run Game (Release)",
+            "type": "shell",
+            "command": "${workspaceFolder}/space-shooter.exe",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "dependsOn": "Build Release",
+            "detail": "Build release version and run the Space Shooter game"
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "C:/raylib/w64devkit/bin/mingw32-make.exe",
+            "args": [
+                "clean"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "detail": "Clean build artifacts"
+        },
+        {
+            "label": "Rebuild Debug",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Clean",
+                "Build Debug"
+            ],
+            "group": "build",
+            "detail": "Clean and rebuild in debug mode"
+        },
+        {
+            "label": "Rebuild Release",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Clean",
+                "Build Release"
+            ],
+            "group": "build",
+            "detail": "Clean and rebuild in release mode"
+        },
+        {
+            "label": "Build & Run Debug",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Debug",
+                "Run Game"
+            ],
+            "group": "test",
+            "detail": "Build debug version and immediately run the game"
+        },
+        {
+            "label": "Build & Run Release",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Release", 
+                "Run Game (Release)"
+            ],
+            "group": "test",
+            "detail": "Build release version and immediately run the game"
+        }
+    ]
+}
