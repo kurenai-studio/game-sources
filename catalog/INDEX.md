@@ -482,6 +482,7 @@
 | games/phaser/tw365-org__bee-vs-hornets | https://github.com/tw365-org/bee-vs-hornets | MIT | phaser | c | 2026-11-01 |
 | games/phaser/voithos__elemental-one | https://github.com/voithos/elemental-one | MIT | phaser | c | 2026-10-23 |
 | games/phaser/wwwookiee__Phaser-SpaceInvaders | https://github.com/wwwookiee/Phaser-SpaceInvaders | MIT | phaser | c | 2026-10-23 |
+| games/phaser/xnt__bye-bye-alien | https://github.com/xnt/bye-bye-alien | MIT | phaser | c | 2026-11-01 |
 | games/phaser/xrplove__shapeshifter-game | https://github.com/xrplove/shapeshifter-game | MIT | phaser | c |  |
 | games/phaser/yandeu__phaser3-multiplayer-with-physics | https://github.com/yandeu/phaser3-multiplayer-with-physics | MIT | phaser | c | 2026-10-23 |
 | games/phaser/yandeu__phaser3-typescript-platformer-example | https://github.com/yandeu/phaser3-typescript-platformer-example | MIT | phaser | c | 2026-10-23 |
