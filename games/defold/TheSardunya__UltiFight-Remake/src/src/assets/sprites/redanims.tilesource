@@ -1,0 +1,151 @@
+image: "/assets/sprites/redmansheet.png"
+tile_width: 64
+tile_height: 64
+collision_groups: "default"
+animations {
+  id: "LeftBlock"
+  start_tile: 25
+  end_tile: 28
+  fps: 48
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftBlocked"
+  start_tile: 28
+  end_tile: 28
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "LeftBump"
+  start_tile: 33
+  end_tile: 39
+  fps: 20
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftDashFist"
+  start_tile: 81
+  end_tile: 89
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftDefeat"
+  start_tile: 57
+  end_tile: 76
+  fps: 48
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftFist"
+  start_tile: 17
+  end_tile: 22
+  fps: 24
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftFlyKick"
+  start_tile: 41
+  end_tile: 48
+  fps: 20
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftHit"
+  start_tile: 49
+  end_tile: 51
+  fps: 20
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftIdle"
+  start_tile: 1
+  end_tile: 4
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftReverseFlyKick"
+  start_tile: 41
+  end_tile: 48
+  playback: PLAYBACK_ONCE_BACKWARD
+  fps: 36
+  flip_horizontal: 1
+}
+animations {
+  id: "LeftWalk"
+  start_tile: 9
+  end_tile: 14
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 1
+}
+animations {
+  id: "RightBlock"
+  start_tile: 25
+  end_tile: 28
+  fps: 48
+}
+animations {
+  id: "RightBlocked"
+  start_tile: 28
+  end_tile: 28
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "RightBump"
+  start_tile: 33
+  end_tile: 39
+  fps: 20
+}
+animations {
+  id: "RightDashFist"
+  start_tile: 81
+  end_tile: 89
+}
+animations {
+  id: "RightDefeat"
+  start_tile: 57
+  end_tile: 76
+  fps: 48
+}
+animations {
+  id: "RightFist"
+  start_tile: 17
+  end_tile: 22
+  fps: 24
+}
+animations {
+  id: "RightFlyKick"
+  start_tile: 41
+  end_tile: 48
+  fps: 20
+}
+animations {
+  id: "RightHit"
+  start_tile: 49
+  end_tile: 51
+  fps: 20
+}
+animations {
+  id: "RightIdle"
+  start_tile: 1
+  end_tile: 4
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+}
+animations {
+  id: "RightReverseFlyKick"
+  start_tile: 41
+  end_tile: 48
+  playback: PLAYBACK_ONCE_BACKWARD
+  fps: 36
+}
+animations {
+  id: "RightWalk"
+  start_tile: 9
+  end_tile: 14
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+}
+extrude_borders: 2

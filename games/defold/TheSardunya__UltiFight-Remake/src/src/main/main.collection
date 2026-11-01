@@ -1,0 +1,796 @@
+name: "main"
+scale_along_z: 0
+embedded_instances {
+  id: "char1"
+  data: "components {\n"
+  "  id: \"char1.script\"\n"
+  "  component: \"/assets/scripts/char1.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"RightIdle\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/anims.tilesource\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"type: COLLISION_OBJECT_TYPE_KINEMATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"char1\\\"\\n"
+  "mask: \\\"default\\\"\\n"
+  "embedded_collision_shape {\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: 10.0\\n"
+  "      y: 1.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 0\\n"
+  "    count: 3\\n"
+  "    id: \\\"rightHitbox\\\"\\n"
+  "  }\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: -10.0\\n"
+  "      y: 1.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 3\\n"
+  "    count: 3\\n"
+  "    id: \\\"leftHitbox\\\"\\n"
+  "  }\\n"
+  "  data: 10.0\\n"
+  "  data: 28.0\\n"
+  "  data: 10.0\\n"
+  "  data: 10.0\\n"
+  "  data: 28.0\\n"
+  "  data: 10.0\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 226.0
+    y: 149.0
+  }
+}
+embedded_instances {
+  id: "BG"
+  data: "components {\n"
+  "  id: \"inputHandler\"\n"
+  "  component: \"/assets/scripts/inputHandler.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"bg\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: 717.0\n"
+  "    y: 407.0\n"
+  "    z: -0.5\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: 0.75\n"
+  "    y: 0.75\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    x: 3.0
+    y: -2.0
+  }
+}
+embedded_instances {
+  id: "ground"
+  children: "ground1"
+  children: "ground10"
+  children: "ground11"
+  children: "ground12"
+  children: "ground13"
+  children: "ground14"
+  children: "ground15"
+  children: "ground16"
+  children: "ground17"
+  children: "ground18"
+  children: "ground19"
+  children: "ground2"
+  children: "ground20"
+  children: "ground21"
+  children: "ground22"
+  children: "ground3"
+  children: "ground4"
+  children: "ground5"
+  children: "ground6"
+  children: "ground7"
+  children: "ground8"
+  children: "ground9"
+  data: "components {\n"
+  "  id: \"solid\"\n"
+  "  component: \"/assets/scripts/solid.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: 38.0\n"
+  "    y: 70.0\n"
+  "  }\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"type: COLLISION_OBJECT_TYPE_STATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"default\\\"\\n"
+  "mask: \\\"default\\\"\\n"
+  "mask: \\\"char1\\\"\\n"
+  "mask: \\\"char2\\\"\\n"
+  "embedded_collision_shape {\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: 800.0\\n"
+  "      y: 60.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 0\\n"
+  "    count: 3\\n"
+  "    id: \\\"groundBox\\\"\\n"
+  "  }\\n"
+  "  data: 960.0\\n"
+  "  data: 68.0\\n"
+  "  data: 10.0\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: -6.0
+    y: -6.0
+    z: 0.5
+  }
+}
+embedded_instances {
+  id: "ground1"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 102.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground2"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 166.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground3"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 230.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground4"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 294.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground5"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 358.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground6"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 422.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground7"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 486.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground8"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 550.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground9"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 614.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground10"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 678.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground11"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 742.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground12"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 806.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground13"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 870.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground14"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 934.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground15"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 998.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground16"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1062.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground17"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1126.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground18"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1190.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground19"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1254.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground20"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1318.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground21"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1382.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "ground22"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"grassplat\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 64.0\\n"
+  "  y: 128.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/spriteatlas.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1446.0
+    y: 70.0
+  }
+}
+embedded_instances {
+  id: "char2"
+  data: "components {\n"
+  "  id: \"char2.script\"\n"
+  "  component: \"/assets/scripts/char2.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"LeftIdle\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/sprites/redanims.tilesource\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"type: COLLISION_OBJECT_TYPE_KINEMATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"char2\\\"\\n"
+  "mask: \\\"default\\\"\\n"
+  "embedded_collision_shape {\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: -10.0\\n"
+  "      y: 1.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 0\\n"
+  "    count: 3\\n"
+  "    id: \\\"leftHitbox\\\"\\n"
+  "  }\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: 10.0\\n"
+  "      y: 1.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 3\\n"
+  "    count: 3\\n"
+  "    id: \\\"rightHitbox\\\"\\n"
+  "  }\\n"
+  "  data: 10.0\\n"
+  "  data: 28.0\\n"
+  "  data: 10.0\\n"
+  "  data: 10.0\\n"
+  "  data: 28.0\\n"
+  "  data: 10.0\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1198.0
+    y: 149.0
+  }
+}
+embedded_instances {
+  id: "vfxCreator2"
+  data: "components {\n"
+  "  id: \"impact\"\n"
+  "  component: \"/impact.factory\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"stickmanTrailL\"\n"
+  "  component: \"/stickmanTrailL.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"stickmanTrailR\"\n"
+  "  component: \"/stickmanTrailR.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"redmanTrailL\"\n"
+  "  component: \"/redmanTrailL.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"redmanTrailR\"\n"
+  "  component: \"/redmanTrailR.particlefx\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "vfxCreator1"
+  data: "components {\n"
+  "  id: \"impact\"\n"
+  "  component: \"/impact.factory\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"stickmanTrailL\"\n"
+  "  component: \"/stickmanTrailL.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"stickmanTrailR\"\n"
+  "  component: \"/stickmanTrailR.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"redmanTrailL\"\n"
+  "  component: \"/redmanTrailL.particlefx\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"redmanTrailR\"\n"
+  "  component: \"/redmanTrailR.particlefx\"\n"
+  "}\n"
+  ""
+}

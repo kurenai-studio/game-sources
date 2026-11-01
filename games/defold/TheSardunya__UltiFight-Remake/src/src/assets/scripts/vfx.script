@@ -1,0 +1,12 @@
+function init(self)
+	self.currentframe = getCurrentFrame()
+end
+
+
+
+function update(self, dt)
+	self.currentframe = getCurrentFrame()
+	if self.currentframe == go.get("#sprite", "frame_count") then
+		go.delete(go.get_id())
+	end
+end
