@@ -1,0 +1,33 @@
+# Godot cache and import data. Godot keeps export credentials in .godot/export_credentials.cfg.
+.godot/
+export_credentials.cfg
+
+# Build output
+build/
+*.apk
+*.aab
+*.idsig
+
+# Signing keys never go in the repo: keystores, key and certificate files, and their password files
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pk8
+*.pem
+*.key
+keystore.properties
+
+# Android Gradle build template. Not used in v1; ignored so generated files and signing configs stay out.
+android/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Artist review captures from Phase 1. Working files only; the final screenshots in docs/design/ are committed.
+docs/design/review/

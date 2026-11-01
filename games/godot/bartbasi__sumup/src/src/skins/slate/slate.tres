@@ -1,0 +1,320 @@
+[gd_resource type="Resource" script_class="SkinData" format=3]
+
+[ext_resource type="Script" path="res://src/skins/skin.gd" id="1_50nm4"]
+
+[resource]
+script = ExtResource("1_50nm4")
+id = &"slate"
+display_name = "Slate"
+palette = Dictionary[StringName, Color]({
+&"accent": Color(0.98039216, 0.3647059, 0.21176471, 1),
+&"accent_pressed": Color(0.88235295, 0.3019608, 0.15686275, 1),
+&"badge": Color(0.98039216, 0.3647059, 0.21176471, 1),
+&"badge_ink": Color(0.05490196, 0.05882353, 0.07058824, 1),
+&"bg": Color(0.043137256, 0.047058824, 0.05490196, 1),
+&"chain": Color(0.9607843, 0.9490196, 0.9137255, 1),
+&"chain_edge": Color(0.05490196, 0.05882353, 0.07058824, 1),
+&"disabled_ink": Color(0.49019608, 0.5019608, 0.52156866, 1),
+&"ink": Color(0.9607843, 0.9490196, 0.9137255, 1),
+&"ink_dark": Color(0.05490196, 0.05882353, 0.07058824, 1),
+&"ink_muted": Color(0.6313726, 0.64705884, 0.67058825, 1),
+&"joinable": Color(0.9607843, 0.9490196, 0.9137255, 1),
+&"line": Color(0.21176471, 0.21960784, 0.23137255, 1),
+&"scrim": Color(0.043137256, 0.047058824, 0.05490196, 0.81960785),
+&"surface": Color(0.09411765, 0.101960786, 0.10980392, 1),
+&"surface_raised": Color(0.12941177, 0.13725491, 0.14901961, 1),
+&"target": Color(0.98039216, 0.3647059, 0.21176471, 1)
+})
+tile_fill = PackedColorArray(0.06666667, 0.3647059, 0.10980392, 1, 0.11764706, 0.19607843, 0.49019608, 1, 0.49803922, 0.12156863, 0.14901961, 1, 0.08235294, 0.39607844, 0.38039216, 1, 0.30980393, 0.12156863, 0.42352942, 1, 0.43137255, 0.29411766, 0.05882353, 1, 0.9607843, 0.61960787, 0.2, 1, 0.28627452, 0.9647059, 0.9843137, 1, 0.96862745, 0.2901961, 0.84705883, 1, 0.7607843, 0.9882353, 0.26666668, 1, 0.5686275, 0.5686275, 0.9647059, 1, 0.9764706, 0.79607844, 0.23921569, 1, 0.22352941, 0.76862746, 0.972549, 1, 0.96862745, 0.36862746, 0.654902, 1, 0.28235295, 0.98039216, 0.7058824, 1, 0.6862745, 0.5137255, 0.9647059, 1, 0.9607843, 0.9490196, 0.9137255, 1)
+tile_ink = PackedColorArray(0.58431375, 0.94509804, 0.59607846, 1, 0.7882353, 0.84313726, 0.9764706, 1, 0.9764706, 0.7921569, 0.78431374, 1, 0.34509805, 0.9529412, 0.91764706, 1, 0.8980392, 0.8, 0.9764706, 1, 0.9764706, 0.8156863, 0.5921569, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1, 0.05490196, 0.05882353, 0.07058824, 1)
+tile_cycle = PackedInt32Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+tile_tier = PackedInt32Array(1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3)
+beyond_tier = 3
+text_pairs = Array[Dictionary]([{
+"bg": "bg",
+"fg": "ink",
+"min": 4.5,
+"name": "Score and HUD numbers on the background",
+"over": ""
+}, {
+"bg": "bg",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels, secondary numbers, toggle OFF",
+"over": ""
+}, {
+"bg": "bg",
+"fg": "accent",
+"min": 4.5,
+"name": "Signal label, for example OUT OF MOVES",
+"over": ""
+}, {
+"bg": "bg",
+"fg": "disabled_ink",
+"min": 4.5,
+"name": "Booster name and cost, disabled",
+"over": ""
+}, {
+"bg": "ink",
+"fg": "ink_dark",
+"min": 4.5,
+"name": "Paper fill: active booster, selected chip, toggle ON",
+"over": ""
+}, {
+"bg": "badge",
+"fg": "badge_ink",
+"min": 4.5,
+"name": "Badges and the targeting hint bar",
+"over": ""
+}, {
+"bg": "accent",
+"fg": "ink_dark",
+"min": 4.5,
+"name": "Primary button",
+"over": ""
+}, {
+"bg": "accent_pressed",
+"fg": "ink_dark",
+"min": 4.5,
+"name": "Primary button, pressed",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "ink",
+"min": 4.5,
+"name": "Text on surface: sheets, chips, pressed rows",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels on surface",
+"over": ""
+}, {
+"bg": "surface_raised",
+"fg": "ink",
+"min": 4.5,
+"name": "Text on raised surface: pressed chips and buttons",
+"over": ""
+}, {
+"bg": "surface_raised",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels on raised surface",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "accent",
+"min": 4.5,
+"name": "Free cost and its star, pressed column",
+"over": ""
+}])
+system_font_names = PackedStringArray("Roboto", "Segoe UI", "sans-serif")
+type_roles = Dictionary[StringName, Dictionary]({
+&"body": {
+"case": "none",
+"size": 44,
+"tracking": 0,
+"weight": 500
+},
+&"display": {
+"case": "none",
+"size": 184,
+"tracking": -4,
+"weight": 700
+},
+&"heading": {
+"case": "upper",
+"size": 30,
+"tracking": 4,
+"weight": 700
+},
+&"label": {
+"case": "upper",
+"size": 30,
+"tracking": 4,
+"weight": 600
+},
+&"reading": {
+"case": "none",
+"size": 42,
+"tracking": 0,
+"weight": 400
+},
+&"tile": {
+"case": "none",
+"tracking": -1,
+"weight": 700
+},
+&"title": {
+"case": "none",
+"size": 72,
+"tracking": -1,
+"weight": 700
+}
+})
+tile_number_scale = PackedFloat32Array(0.4, 0.4, 0.33, 0.31)
+numbers = Dictionary[StringName, float]({
+&"bar_height": 192.0,
+&"board_gap": 10.0,
+&"board_margin": 44.0,
+&"board_padding": 0.0,
+&"button_height": 160.0,
+&"chain_ring": 6.0,
+&"chain_width": 8.0,
+&"display_fit_min": 76.0,
+&"flash_cut": 0.05,
+&"focus_gap": 4.0,
+&"focus_width": 4.0,
+&"frame_inset": 0.03,
+&"hairline": 2.0,
+&"hint_height": 112.0,
+&"hud_height": 350.0,
+&"icon_booster": 66.0,
+&"icon_hud": 72.0,
+&"icon_stroke": 2.0,
+&"joinable_node_stroke": 3.0,
+&"joinable_ring": 2.0,
+&"label_fit": 0.78,
+&"line_edge": 3.0,
+&"node_size": 24.0,
+&"notice_height": 112.0,
+&"notice_strike": 2.0,
+&"notice_tile_scale": 0.5,
+&"number_inset": 0.11,
+&"number_plate": 6.0,
+&"preview_scale": 0.59,
+&"radius_button": 4.0,
+&"radius_card": 0.0,
+&"radius_chip": 4.0,
+&"reading_line_spacing": 14.0,
+&"row_height": 148.0,
+&"scroll_bar": 4.0,
+&"selected_frame": 4.0,
+&"space_l": 64.0,
+&"space_m": 40.0,
+&"space_s": 20.0,
+&"space_xl": 104.0,
+&"space_xs": 8.0,
+&"special_from": 32768.0,
+&"special_inset": 0.06,
+&"star_icon": 36.0,
+&"strip_height": 192.0,
+&"target_bracket": 0.3,
+&"target_ring": 6.0,
+&"tile_radius": 0.032,
+&"toggle_h": 64.0,
+&"toggle_knob": 44.0,
+&"toggle_knob_inset": 10.0,
+&"toggle_w": 132.0,
+&"touch_min": 160.0
+})
+motion = Dictionary[StringName, Dictionary]({
+&"button_press": {
+"duration": 0.04,
+"ease": 2,
+"trans": 0
+},
+&"button_release": {
+"duration": 0.1,
+"ease": 1,
+"trans": 3
+},
+&"chain_add": {
+"duration": 0.06,
+"ease": 2,
+"trans": 0
+},
+&"chain_remove": {
+"duration": 0.06,
+"ease": 2,
+"trans": 0
+},
+&"clear": {
+"duration": 0.14,
+"ease": 0,
+"trans": 5
+},
+&"clear_notice": {
+"duration": 0.12,
+"ease": 1,
+"hold": 1.6,
+"out": 0.12,
+"trans": 5
+},
+&"dialog_in": {
+"duration": 0.24,
+"ease": 1,
+"from_alpha": 0.0,
+"from_offset": 32.0,
+"trans": 5
+},
+&"dialog_out": {
+"duration": 0.12,
+"ease": 0,
+"trans": 3
+},
+&"fall": {
+"duration": 0.16,
+"ease": 1,
+"trans": 3
+},
+&"joinable_in": {
+"duration": 0.06,
+"ease": 2,
+"trans": 0
+},
+&"merge_pop": {
+"duration": 0.16,
+"ease": 1,
+"flash": 1.0,
+"trans": 5
+},
+&"merge_travel": {
+"duration": 0.12,
+"ease": 0,
+"trans": 3
+},
+&"press": {
+"duration": 0.04,
+"ease": 2,
+"trans": 0
+},
+&"score_count": {
+"duration": 0.24,
+"ease": 1,
+"trans": 3
+},
+&"screen_fade": {
+"duration": 0.12,
+"ease": 2,
+"trans": 0
+},
+&"skin_switch": {
+"duration": 0.16,
+"ease": 2,
+"trans": 0
+},
+&"spawn": {
+"duration": 0.14,
+"ease": 1,
+"from_scale_y": 0.0,
+"stagger": 0.0,
+"trans": 5
+},
+&"star_convert": {
+"duration": 0.16,
+"ease": 2,
+"trans": 0
+},
+&"star_earn": {
+"duration": 0.16,
+"ease": 2,
+"trans": 0
+},
+&"target_pulse": {
+"duration": 0.0,
+"ease": 2,
+"trans": 0
+}
+})
