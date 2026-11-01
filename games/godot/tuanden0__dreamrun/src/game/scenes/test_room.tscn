@@ -1,0 +1,421 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/environment/silhouette_layer.gd" id="2_layer"]
+[ext_resource type="Shader" path="res://shaders/film_post.gdshader" id="3_shader"]
+[ext_resource type="Shader" path="res://shaders/fog.gdshader" id="4_fog"]
+[ext_resource type="Script" path="res://scripts/environment/light_shaft.gd" id="5_shaft"]
+[ext_resource type="Shader" path="res://shaders/depth_blur.gdshader" id="6_blur"]
+[ext_resource type="Script" path="res://scripts/environment/solid_prop.gd" id="7_prop"]
+[ext_resource type="Script" path="res://scripts/interactables/crate.gd" id="8_crate"]
+[ext_resource type="Script" path="res://scripts/interactables/lever.gd" id="9_lever"]
+[ext_resource type="Script" path="res://scripts/interactables/pressure_plate.gd" id="10_plate"]
+[ext_resource type="Script" path="res://scripts/interactables/door.gd" id="11_door"]
+[ext_resource type="Script" path="res://scripts/interactables/rope.gd" id="12_rope"]
+[ext_resource type="Script" path="res://scripts/interactables/ledge.gd" id="13_ledge"]
+[ext_resource type="Script" path="res://scripts/monster/monster.gd" id="14_monster"]
+[ext_resource type="Script" path="res://scripts/level/trigger.gd" id="15_trigger"]
+[ext_resource type="Script" path="res://scripts/level/checkpoint.gd" id="16_checkpoint"]
+[ext_resource type="Script" path="res://scripts/level/checkpoint_manager.gd" id="17_manager"]
+
+[ext_resource type="Script" path="res://scripts/traps/drop_trap.gd" id="18_drop"]
+[ext_resource type="Script" path="res://scripts/traps/shock_trap.gd" id="19_shock"]
+
+[ext_resource type="Script" path="res://scripts/monster/boss.gd" id="20_boss"]
+[ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="21_pause"]
+[ext_resource type="Script" path="res://scripts/traps/fire_trap.gd" id="22_fire"]
+
+[sub_resource type="Gradient" id="Gradient_light"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_light"]
+gradient = SubResource("Gradient_light")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="FastNoiseLite" id="Noise_fog"]
+noise_type = 5
+frequency = 0.008
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_fog"]
+width = 512
+height = 512
+seamless = true
+noise = SubResource("Noise_fog")
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0, 0.55, 0.72, 1)
+colors = PackedColorArray(0.05, 0.05, 0.07, 1, 0.12, 0.12, 0.15, 1, 0.56, 0.58, 0.63, 1, 0.22, 0.22, 0.25, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 4
+height = 512
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 0.9, 1, 1, 1, 0.35, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_glow"]
+gradient = SubResource("Gradient_glow")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_band"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.6, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_band"]
+gradient = SubResource("Gradient_band")
+width = 4
+height = 128
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur_far"]
+shader = ExtResource("6_blur")
+shader_parameter/blur_lod = 3.0
+shader_parameter/radius_px = 6.0
+shader_parameter/compensate = Vector3(1, 1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur_mid"]
+shader = ExtResource("6_blur")
+shader_parameter/blur_lod = 1.5
+shader_parameter/radius_px = 3.0
+shader_parameter/compensate = Vector3(1, 1, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fog"]
+shader = ExtResource("4_fog")
+shader_parameter/noise = SubResource("NoiseTexture2D_fog")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_post"]
+shader = ExtResource("3_shader")
+
+[node name="TestRoom" type="Node2D"]
+
+[node name="Darkness" type="CanvasModulate" parent="."]
+color = Color(0.55, 0.55, 0.6, 1)
+
+[node name="SkyLayer" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.03, 1)
+
+[node name="Sky" type="Sprite2D" parent="SkyLayer"]
+position = Vector2(0, -450)
+scale = Vector2(2000, 3.4)
+texture = SubResource("GradientTexture2D_sky")
+
+[node name="Glow" type="Sprite2D" parent="SkyLayer"]
+position = Vector2(250, -230)
+scale = Vector2(7, 7)
+texture = SubResource("GradientTexture2D_glow")
+
+[node name="FarLayer" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.2, 1)
+script = ExtResource("2_layer")
+count = 18
+branches_per_tree = 2
+branch_depth = 1
+color = Color(0.5, 0.5, 0.55, 1)
+height_range = Vector2(220, 420)
+width_range = Vector2(10, 26)
+base_y = 160.0
+shape_seed = 11
+
+[node name="FarBlurCopy" type="BackBufferCopy" parent="."]
+copy_mode = 2
+
+[node name="FarBlur" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_blur_far")
+offset_left = -4000.0
+offset_top = -2500.0
+offset_right = 4000.0
+offset_bottom = 2500.0
+mouse_filter = 2
+
+[node name="FogBandFar" type="Sprite2D" parent="."]
+modulate = Color(0.85, 0.87, 0.95, 0.7)
+position = Vector2(0, -60)
+scale = Vector2(2000, 2.6)
+texture = SubResource("GradientTexture2D_band")
+
+[node name="MidLayer" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.5, 1)
+script = ExtResource("2_layer")
+count = 14
+color = Color(0.28, 0.28, 0.32, 1)
+height_range = Vector2(300, 560)
+width_range = Vector2(16, 40)
+base_y = 140.0
+shape_seed = 22
+
+[node name="MidBlurCopy" type="BackBufferCopy" parent="."]
+copy_mode = 2
+
+[node name="MidBlur" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_blur_mid")
+offset_left = -4000.0
+offset_top = -2500.0
+offset_right = 4000.0
+offset_bottom = 2500.0
+mouse_filter = 2
+
+[node name="FogBandMid" type="Sprite2D" parent="."]
+modulate = Color(0.85, 0.87, 0.95, 0.5)
+position = Vector2(0, -30)
+scale = Vector2(2000, 1.8)
+texture = SubResource("GradientTexture2D_band")
+
+[node name="NearLayer" type="Parallax2D" parent="."]
+scroll_scale = Vector2(1.25, 1.0)
+script = ExtResource("2_layer")
+span = 3000.0
+count = 6
+color = Color(0.03, 0.03, 0.04, 1)
+height_range = Vector2(380, 640)
+width_range = Vector2(34, 70)
+base_y = 150.0
+shape_seed = 33
+
+[node name="Floor" type="StaticBody2D" parent="."]
+script = ExtResource("7_prop")
+kind = 0
+size = Vector2(6000, 700)
+shape_seed = 5
+casts_shadow = false
+
+[node name="Step" type="StaticBody2D" parent="."]
+position = Vector2(-300, 0)
+script = ExtResource("7_prop")
+kind = 3
+size = Vector2(130, 70)
+shape_seed = 12
+
+[node name="Platform" type="StaticBody2D" parent="."]
+position = Vector2(700, -150)
+script = ExtResource("7_prop")
+size = Vector2(240, 26)
+shape_seed = 21
+
+[node name="Pillar" type="StaticBody2D" parent="."]
+position = Vector2(1000, 0)
+script = ExtResource("7_prop")
+kind = 2
+size = Vector2(60, 300)
+shape_seed = 31
+solid = false
+
+[node name="Crate" type="RigidBody2D" parent="."]
+position = Vector2(250, -28)
+script = ExtResource("8_crate")
+
+[node name="PlateA" type="Area2D" parent="."]
+position = Vector2(700, 0)
+script = ExtResource("10_plate")
+
+[node name="DoorA" type="StaticBody2D" parent="."]
+position = Vector2(900, -110)
+script = ExtResource("11_door")
+size = Vector2(44, 220)
+shape_seed = 41
+
+[node name="LeverB" type="Area2D" parent="."]
+position = Vector2(1250, 0)
+script = ExtResource("9_lever")
+
+[node name="DoorB" type="StaticBody2D" parent="."]
+position = Vector2(1450, -110)
+script = ExtResource("11_door")
+size = Vector2(44, 220)
+shape_seed = 52
+
+[node name="Rope" type="Node2D" parent="."]
+position = Vector2(-600, -400)
+script = ExtResource("12_rope")
+
+[node name="LedgeA" type="Area2D" parent="."]
+position = Vector2(570, -120)
+script = ExtResource("13_ledge")
+
+[node name="Monster" type="Node2D" parent="."]
+position = Vector2(700, 0)
+script = ExtResource("14_monster")
+stop_x = 3200.0
+
+[node name="ChaseTrigger" type="Area2D" parent="."]
+position = Vector2(1600, 0)
+script = ExtResource("15_trigger")
+
+[node name="CheckpointA" type="Area2D" parent="."]
+position = Vector2(1330, 0)
+script = ExtResource("16_checkpoint")
+
+[node name="CheckpointB" type="Area2D" parent="."]
+position = Vector2(1700, 0)
+script = ExtResource("16_checkpoint")
+
+[node name="PlateT" type="Area2D" parent="."]
+position = Vector2(2250, 0)
+script = ExtResource("10_plate")
+
+[node name="DropTrapA" type="Node2D" parent="."]
+position = Vector2(1900, 0)
+script = ExtResource("18_drop")
+
+[node name="CrateT" type="RigidBody2D" parent="."]
+position = Vector2(2150, -28)
+script = ExtResource("8_crate")
+
+[node name="LeverT" type="Area2D" parent="."]
+position = Vector2(2800, 0)
+script = ExtResource("9_lever")
+
+[node name="ShockTrapA" type="Node2D" parent="."]
+position = Vector2(2450, 0)
+script = ExtResource("19_shock")
+
+[node name="Boss" type="Node2D" parent="."]
+position = Vector2(-2300, 0)
+script = ExtResource("20_boss")
+arena_left = -2500.0
+arena_right = -1900.0
+
+[node name="BossTrigger" type="Area2D" parent="."]
+position = Vector2(-1550, 0)
+script = ExtResource("15_trigger")
+
+[node name="CheckpointC" type="Area2D" parent="."]
+position = Vector2(-1480, 0)
+script = ExtResource("16_checkpoint")
+
+[node name="CheckpointD" type="Area2D" parent="."]
+position = Vector2(-2640, 0)
+script = ExtResource("16_checkpoint")
+
+[node name="LeverBR" type="Area2D" parent="."]
+position = Vector2(-1730, 0)
+script = ExtResource("9_lever")
+
+[node name="ShockTrapB" type="Node2D" parent="."]
+position = Vector2(-1960, 0)
+script = ExtResource("19_shock")
+stun_time = 4.0
+rearm_after = 8.0
+
+[node name="LeverBL" type="Area2D" parent="."]
+position = Vector2(-2670, 0)
+script = ExtResource("9_lever")
+
+[node name="DropTrapB" type="Node2D" parent="."]
+position = Vector2(-2440, 0)
+script = ExtResource("18_drop")
+rearm_after = 8.0
+
+[node name="FireTrapA" type="Node2D" parent="."]
+position = Vector2(2650, 0)
+script = ExtResource("22_fire")
+
+[node name="LeverF" type="Area2D" parent="."]
+position = Vector2(2930, 0)
+script = ExtResource("9_lever")
+
+[node name="Checkpoints" type="Node" parent="."]
+script = ExtResource("17_manager")
+player_path = NodePath("../Player")
+
+[node name="StaticLight" type="PointLight2D" parent="."]
+position = Vector2(850, -220)
+energy = 0.9
+shadow_enabled = true
+shadow_filter = 2
+shadow_filter_smooth = 8.0
+texture = SubResource("GradientTexture2D_light")
+texture_scale = 2.5
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(0, -2)
+
+[node name="Camera" type="Camera2D" parent="Player"]
+position = Vector2(0, -70)
+zoom = Vector2(1.5, 1.5)
+position_smoothing_enabled = true
+
+[node name="Lantern" type="PointLight2D" parent="Player"]
+position = Vector2(0, -60)
+energy = 0.8
+shadow_enabled = true
+shadow_filter = 2
+shadow_filter_smooth = 8.0
+texture = SubResource("GradientTexture2D_light")
+texture_scale = 2.6
+
+[node name="ForeLayer" type="Parallax2D" parent="."]
+scroll_scale = Vector2(1.6, 1)
+script = ExtResource("2_layer")
+span = 4000.0
+count = 3
+color = Color(0.01, 0.01, 0.015, 0.92)
+height_range = Vector2(900, 1200)
+width_range = Vector2(70, 120)
+base_y = 300.0
+shape_seed = 44
+soft_edges = true
+
+[node name="ShaftA" type="PointLight2D" parent="."]
+position = Vector2(620, -520)
+energy = 0.35
+shadow_enabled = true
+shadow_filter = 2
+shadow_filter_smooth = 8.0
+script = ExtResource("5_shaft")
+
+[node name="ShaftB" type="PointLight2D" parent="."]
+position = Vector2(1250, -480)
+energy = 0.3
+shadow_enabled = true
+shadow_filter = 2
+shadow_filter_smooth = 8.0
+script = ExtResource("5_shaft")
+length = 560.0
+width = 300.0
+
+[node name="Fog" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="FogOverlay" type="ColorRect" parent="Fog"]
+material = SubResource("ShaderMaterial_fog")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="PauseMenu" parent="." instance=ExtResource("21_pause")]
+
+[node name="PostProcess" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="FilmGrainVignette" type="ColorRect" parent="PostProcess"]
+material = SubResource("ShaderMaterial_post")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[connection signal="pressed_changed" from="PlateA" to="DoorA" method="set_open"]
+[connection signal="toggled" from="LeverB" to="DoorB" method="set_open"]
+[connection signal="triggered" from="ChaseTrigger" to="Monster" method="start"]
+[connection signal="pressed_changed" from="PlateT" to="DropTrapA" method="trigger"]
+[connection signal="toggled" from="LeverT" to="ShockTrapA" method="trigger"]
+[connection signal="triggered" from="BossTrigger" to="Boss" method="start"]
+[connection signal="toggled" from="LeverBR" to="ShockTrapB" method="trigger"]
+[connection signal="toggled" from="LeverBL" to="DropTrapB" method="trigger"]
+[connection signal="toggled" from="LeverF" to="FireTrapA" method="trigger"]
