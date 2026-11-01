@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://f7by3v8882e3"]
+
+[ext_resource type="Script" uid="uid://hgenydrbtyw4" path="res://src/state/state_machine.gd" id="1_gqrqb"]
+[ext_resource type="Script" uid="uid://c4uquqyj8wo8a" path="res://src/state/mob/mob_state_idle.gd" id="2_ou04i"]
+[ext_resource type="Script" uid="uid://c1mirxic58bmw" path="res://src/state/mob/mob_state_moving.gd" id="3_4nh0b"]
+
+[node name="StateMachine" type="Node" unique_id=1637558999]
+script = ExtResource("1_gqrqb")
+metadata/_custom_type_script = "uid://hgenydrbtyw4"
+
+[node name="MobStateIdle" type="Node" parent="." unique_id=969259990]
+script = ExtResource("2_ou04i")
+metadata/_custom_type_script = "uid://c4uquqyj8wo8a"
+
+[node name="MobStateMoving" type="Node" parent="." unique_id=108122131]
+script = ExtResource("3_4nh0b")
+metadata/_custom_type_script = "uid://c1mirxic58bmw"

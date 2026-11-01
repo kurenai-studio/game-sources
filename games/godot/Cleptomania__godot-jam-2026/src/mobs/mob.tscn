@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c7opjy4qaa3kr"]
+
+[ext_resource type="Script" uid="uid://d0nic6aakdg37" path="res://src/mobs/mob.gd" id="1_cxx3d"]
+[ext_resource type="PackedScene" uid="uid://f7by3v8882e3" path="res://mobs/mob_state_machine.tscn" id="2_fgbma"]
+
+[node name="Mob" type="CharacterBody2D" unique_id=362528563]
+script = ExtResource("1_cxx3d")
+
+[node name="StateMachine" parent="." unique_id=1637558999 instance=ExtResource("2_fgbma")]
