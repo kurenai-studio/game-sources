@@ -1,0 +1,11 @@
+local PLAYER_URL = '/sagwa/sagwa#sagwa'
+
+function update(self, dt)
+	local target_position = go.get_position(PLAYER_URL)
+	local camera_position = go.get_position()
+
+	camera_position.x = math.floor(target_position.x + 0.5)
+	camera_position.y = math.floor(target_position.y + 0.5)
+
+	go.set_position(camera_position)
+end
