@@ -1,0 +1,170 @@
+[gd_scene format=3 uid="uid://dlqsb8wqqhyqo"]
+
+[ext_resource type="Script" uid="uid://biwv81k3pm5o8" path="res://scripts/doors.gd" id="1_5v6d3"]
+[ext_resource type="Texture2D" uid="uid://6mxdc36lnbs3" path="res://art/misc/Door/Door_hold.png" id="2_ctrmn"]
+[ext_resource type="Texture2D" uid="uid://b7uumqt5ub3om" path="res://art/misc/Door/Door.png" id="3_6xqom"]
+[ext_resource type="Texture2D" uid="uid://cbk68y24fsena" path="res://art/misc/Door/Close_sign.png" id="4_78wek"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vkn5a"]
+size = Vector2(18, 32)
+
+[sub_resource type="Animation" id="Animation_ctrmn"]
+resource_name = "Open"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Door:position:y")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(0.6, 1),
+"update": 0,
+"values": [-14.0, -42.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sign:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(0.6, 1),
+"update": 0,
+"values": [-20.0, -48.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Collision/CollisionShape2D:position:y")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(0.6, 1),
+"update": 0,
+"values": [-16.0, -54.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Collision/CollisionShape2D:disabled")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.69, 0.7),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+
+[sub_resource type="Animation" id="Animation_6xqom"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Door:position:y")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [-14.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sign:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [-20.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Collision/CollisionShape2D:position:y")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [-16.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Collision/CollisionShape2D:disabled")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_6xqom"]
+_data = {
+&"Open": SubResource("Animation_ctrmn"),
+&"RESET": SubResource("Animation_6xqom")
+}
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h18h7"]
+size = Vector2(10, 12)
+
+[node name="Doors" type="Node2D" unique_id=434340596]
+z_index = -1
+script = ExtResource("1_5v6d3")
+
+[node name="Collision" type="StaticBody2D" parent="." unique_id=1632220879]
+visible = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Collision" unique_id=853040752]
+position = Vector2(0, -16)
+shape = SubResource("RectangleShape2D_vkn5a")
+
+[node name="DoorHold" type="Sprite2D" parent="." unique_id=20008271]
+z_index = 1
+position = Vector2(0, -30)
+texture = ExtResource("2_ctrmn")
+
+[node name="Door" type="Sprite2D" parent="." unique_id=875069684]
+z_index = -10
+position = Vector2(0, -14)
+texture = ExtResource("3_6xqom")
+
+[node name="Sign" type="Sprite2D" parent="." unique_id=1772782516]
+z_index = -9
+position = Vector2(0, -20)
+texture = ExtResource("4_78wek")
+
+[node name="Anim" type="AnimationPlayer" parent="." unique_id=391212689]
+libraries/ = SubResource("AnimationLibrary_6xqom")
+
+[node name="Stuck" type="Area2D" parent="." unique_id=1452965879]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stuck" unique_id=626200989]
+shape = SubResource("RectangleShape2D_h18h7")
+
+[node name="Stop_monitoring" type="Timer" parent="." unique_id=2019589228]
+wait_time = 0.5
+
+[node name="Tp_pos" type="Marker2D" parent="." unique_id=698999099]
+position = Vector2(-14, -12)
+
+[node name="Tp_pos2" type="Marker2D" parent="." unique_id=1798057914]
+position = Vector2(14, -12)
+
+[connection signal="animation_finished" from="Anim" to="." method="_on_animation_player_animation_finished"]
+[connection signal="body_entered" from="Stuck" to="." method="_on_stuck_body_entered"]
+[connection signal="timeout" from="Stop_monitoring" to="." method="_on_stop_monitoring_timeout"]

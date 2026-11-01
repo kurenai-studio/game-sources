@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://24awp6djh3i1"]
+
+[ext_resource type="Texture2D" uid="uid://d35rnsiek7acx" path="res://art/misc/gun_crosshair.png" id="1_efmwq"]
+[ext_resource type="Script" uid="uid://css5n4w6u8ky7" path="res://scripts/gui.gd" id="1_mfius"]
+[ext_resource type="Script" uid="uid://dl6mcy7l1osla" path="res://scripts/cursor.gd" id="3_ynd5l"]
+[ext_resource type="Texture2D" uid="uid://6rjgi7v78onx" path="res://art/UI/blue_crosshair.png" id="4_b8iy7"]
+[ext_resource type="Shader" uid="uid://ctsa8yq8nygct" path="res://shaders/chromatic_ab.gdshader" id="5_jqlde"]
+
+[sub_resource type="Animation" id="Animation_ynd5l"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate:s")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_b8iy7"]
+resource_name = "Shoot"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1.3, 1.3), Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate:s")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [1.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_jqlde"]
+_data = {
+&"RESET": SubResource("Animation_ynd5l"),
+&"Shoot": SubResource("Animation_b8iy7")
+}
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_b8iy7"]
+shader = ExtResource("5_jqlde")
+shader_parameter/aberration_x = 4.7499999933364734e-08
+shader_parameter/aberration_y = 4.7499999933364734e-08
+shader_parameter/desaturation = 0.0
+
+[node name="GUI" type="CanvasLayer" unique_id=310219774]
+script = ExtResource("1_mfius")
+
+[node name="RedCursor" type="Sprite2D" parent="." unique_id=1765548287]
+texture = ExtResource("1_efmwq")
+script = ExtResource("3_ynd5l")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="RedCursor" unique_id=1124074021]
+libraries/ = SubResource("AnimationLibrary_jqlde")
+
+[node name="BlueCursor" type="Sprite2D" parent="." unique_id=418695041]
+texture = ExtResource("4_b8iy7")
+script = ExtResource("3_ynd5l")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=67214409]
+material = SubResource("ShaderMaterial_b8iy7")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect2" type="ColorRect" parent="." unique_id=793893808]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.361492, 0.31538093, 0.38320687, 1)

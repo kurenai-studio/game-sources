@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://cbv15oqqtv3bg"]
+
+[ext_resource type="Script" uid="uid://cxbtsm8sbdlgj" path="res://scripts/moving_block.gd" id="1_836u2"]
+[ext_resource type="Texture2D" uid="uid://bfjfydj83jvvg" path="res://art/misc/platform.png" id="2_sy65f"]
+[ext_resource type="AudioStream" uid="uid://dm7xagno6m3b5" path="res://sounds/wosh_2.mp3" id="3_sy65f"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g4v7s"]
+size = Vector2(30, 3)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yl38g"]
+atlas = ExtResource("2_sy65f")
+region = Rect2(64, 0, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sy65f"]
+atlas = ExtResource("2_sy65f")
+region = Rect2(32, 0, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pdaj3"]
+atlas = ExtResource("2_sy65f")
+region = Rect2(0, 0, 32, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fg72o"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yl38g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sy65f")
+}],
+"loop": 1,
+"name": &"Anim",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pdaj3")
+}],
+"loop": 1,
+"name": &"Idle",
+"speed": 5.0
+}]
+
+[node name="Moving_block" type="Node2D" unique_id=1392415192]
+script = ExtResource("1_836u2")
+
+[node name="Moving_block" type="AnimatableBody2D" parent="." unique_id=627276287]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Collision" type="CollisionShape2D" parent="Moving_block" unique_id=2026281387]
+visible = false
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_g4v7s")
+one_way_collision = true
+one_way_collision_margin = 5.0
+
+[node name="Icon" type="AnimatedSprite2D" parent="Moving_block" unique_id=1749353674]
+sprite_frames = SubResource("SpriteFrames_fg72o")
+animation = &"Anim"
+autoplay = "Idle"
+flip_v = true
+
+[node name="Stop_anim" type="Timer" parent="." unique_id=1572210677]
+wait_time = 0.6
+one_shot = true
+
+[node name="Woosh" type="AudioStreamPlayer" parent="." unique_id=1130486578]
+stream = ExtResource("3_sy65f")
+volume_db = -10.0
+bus = &"sfx"
+
+[node name="Audio" type="Timer" parent="." unique_id=1884211899]
+wait_time = 0.1
+one_shot = true
+
+[connection signal="timeout" from="Stop_anim" to="." method="_on_stop_anim_timeout"]
+[connection signal="timeout" from="Audio" to="." method="_on_audio_timeout"]
