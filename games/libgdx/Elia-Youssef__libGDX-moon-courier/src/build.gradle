@@ -1,0 +1,38 @@
+// Root build script. Moon Courier is a small top-down lunar-delivery arcade prototype (control a
+// spacecraft, collect one cargo crate, dodge moon obstacles for a fuel penalty, deliver to the pad
+// before fuel runs out) with four screens: Main Menu, Gameplay, Victory, Game Over. Built on libGDX
+// 1.14.2, Java 17, lwjgl3 desktop backend, asset-free (ShapeRenderer + Pixmap + the default
+// BitmapFont only). Two modules: core (GL-free MissionWorld logic + the Game / Screen render+input
+// layer) and lwjgl3 (desktop launcher).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'MoonCourier'
+        gdxVersion = '1.14.2'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 17
+    }
+}

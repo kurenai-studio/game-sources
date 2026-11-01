@@ -1,0 +1,32 @@
+# Space Shooter Game
+
+The game was entirely written in C using SDL2.
+
+![spaceinvaders-preview](https://github.com/setghm/space-invaders/assets/53455269/7e9bbf92-8e59-4167-b1a1-9dce1d7c044b)
+
+## Build the game
+
+Enter these commands in the project directory to build an executable file of the game.
+
+```Bash
+mkdir cmake-build-debug
+cd cmake-build-debug
+cmake ..
+cmake --build .
+```
+
+Compile the game with a recent version of **GCC** or with **clang** to avoid issues. 
+
+## Tools used
+
+These are the tools I used to create my game assets.
+
+* Sprites
+    * [Krita](https://krita.org/)
+* FX and music
+    * [LMMS](https://lmms.io/)
+
+Use my assets in your own projects for free!
+
+* [Get the sprites](https://opengameart.org/content/space-ships-sprites)
+* [Get the sounds and music](https://opengameart.org/content/space-ships-sounds-and-bg-music)

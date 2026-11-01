@@ -1,0 +1,28 @@
+// Desktop launcher module. The 'application' plugin provides the run task a grader invokes as
+// ./gradlew lwjgl3:run.
+
+apply plugin: 'application'
+
+application {
+    mainClass = 'com.micro1.mooncourier.lwjgl3.Lwjgl3Launcher'
+    applicationName = appName
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+    // Relative --capture paths resolve from the project root.
+    setWorkingDir(rootProject.projectDir)
+}
+
+tasks.named('distZip') {
+    archiveFileName = "${appName}.zip"
+}
+
+tasks.named('distTar') {
+    archiveFileName = "${appName}.tar"
+}
