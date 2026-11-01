@@ -1,0 +1,24 @@
+"""全局配置：窗口、颜色、数值。改这里就能调整游戏难度。"""
+WIDTH, HEIGHT = 480, 720
+FPS = 60
+TITLE = "太空射击 Space Shooter"
+
+BG = (8, 10, 24)
+WHITE = (240, 240, 250)
+CYAN = (90, 220, 255)
+YELLOW = (255, 220, 90)
+RED = (255, 90, 90)
+ORANGE = (255, 150, 60)
+PURPLE = (190, 120, 255)
+GREEN = (110, 240, 150)
+GREY = (120, 130, 150)
+
+PLAYER_SPEED = 300          # 像素/秒
+PLAYER_HP = 5
+PLAYER_FIRE_INTERVAL = 0.16
+PLAYER_INVINCIBLE = 1.2
+
+BULLET_SPEED = 620
+ENEMY_BULLET_SPEED = 240
+
+POWERUP_CHANCE = 0.12       # 敌人掉落道具的概率
