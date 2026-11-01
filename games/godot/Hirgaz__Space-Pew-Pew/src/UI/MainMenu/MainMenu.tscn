@@ -1,0 +1,361 @@
+[gd_scene format=3 uid="uid://bugy62uxcxi52"]
+
+[ext_resource type="Script" uid="uid://ol2p7ehj8lia" path="res://UI/MainMenu/MainMenu.gd" id="1_8fkdr"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrqxn"]
+bg_color = Color(0.6, 0.6, 0.6, 0.0627451)
+
+[node name="MainMenu" type="Control" unique_id=1527603676]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -360.0
+offset_right = 576.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_8fkdr")
+
+[node name="BG" type="Panel" parent="." unique_id=1000761208]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wrqxn")
+
+[node name="Panel" type="Panel" parent="BG" unique_id=1530355509]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.12
+anchor_top = 0.12
+anchor_right = 0.88
+anchor_bottom = 0.88
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel" unique_id=1927385659]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer" unique_id=651769605]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1592612005]
+auto_translate_mode = 2
+layout_mode = 2
+theme_type_variation = &"LabelHeader"
+text = "Space Pew Pew"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1820907435]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ContinueButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1266524517]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Continue playing"
+focus_neighbor_bottom = NodePath("../RestartButton")
+focus_next = NodePath("../RestartButton")
+text = "Continue"
+
+[node name="RestartButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=2037127962]
+layout_mode = 2
+tooltip_text = "Restart the game"
+focus_neighbor_bottom = NodePath("../MusicVolumeControl/MusicVolumeEnabled")
+focus_next = NodePath("../MusicVolumeControl/MusicVolumeEnabled")
+focus_previous = NodePath("../QuitVBoxContainer/QuitButton")
+text = "Restart"
+
+[node name="HSeparator2" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1708992440]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="MusicVolumeControl" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=235303299]
+layout_mode = 2
+
+[node name="MusicVolumeEnabled" type="CheckBox" parent="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl" unique_id=679817313]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../RestartButton")
+focus_neighbor_right = NodePath("../MusicVolumeSlider")
+focus_neighbor_bottom = NodePath("../../VoiceVolumeControl/VoiceVolumeEnabled")
+focus_next = NodePath("../MusicVolumeSlider")
+focus_previous = NodePath("../../RestartButton")
+button_pressed = true
+
+[node name="MusicVolumeText" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl" unique_id=780667592]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl" unique_id=1898127791]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+focus_neighbor_left = NodePath("../MusicVolumeEnabled")
+focus_neighbor_top = NodePath("../../RestartButton")
+focus_neighbor_bottom = NodePath("../../VoiceVolumeControl/VoiceVolumeSlider")
+focus_next = NodePath("../../VoiceVolumeControl/VoiceVolumeEnabled")
+focus_previous = NodePath("../MusicVolumeEnabled")
+value = 100.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="MusicVolumeDisplay" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl" unique_id=1655170080]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="VoiceVolumeControl" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1632786920]
+layout_mode = 2
+
+[node name="VoiceVolumeEnabled" type="CheckBox" parent="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl" unique_id=553677340]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../MusicVolumeControl/MusicVolumeEnabled")
+focus_neighbor_right = NodePath("../VoiceVolumeSlider")
+focus_neighbor_bottom = NodePath("../../EffectsVolumeControl/EffectsVolumeEnabled")
+focus_next = NodePath("../VoiceVolumeSlider")
+focus_previous = NodePath("../../MusicVolumeControl/MusicVolumeSlider")
+button_pressed = true
+
+[node name="VoiceVolumeText" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl" unique_id=1868270217]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Voice"
+
+[node name="VoiceVolumeSlider" type="HSlider" parent="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl" unique_id=879532636]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+focus_neighbor_left = NodePath("../VoiceVolumeEnabled")
+focus_neighbor_top = NodePath("../../MusicVolumeControl/MusicVolumeSlider")
+focus_neighbor_bottom = NodePath("../../EffectsVolumeControl/EffectsVolumeSlider")
+focus_next = NodePath("../../EffectsVolumeControl/EffectsVolumeEnabled")
+focus_previous = NodePath("../VoiceVolumeEnabled")
+value = 100.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="VoiceVolumeDisplay" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl" unique_id=815289060]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="EffectsVolumeControl" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=981290848]
+layout_mode = 2
+
+[node name="EffectsVolumeEnabled" type="CheckBox" parent="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl" unique_id=1502267188]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../VoiceVolumeControl/VoiceVolumeEnabled")
+focus_neighbor_right = NodePath("../EffectsVolumeSlider")
+focus_neighbor_bottom = NodePath("../../UIVolumeControl/UIVolumeEnabled")
+focus_next = NodePath("../EffectsVolumeSlider")
+focus_previous = NodePath("../../VoiceVolumeControl/VoiceVolumeSlider")
+button_pressed = true
+
+[node name="EffectsVolumeText" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl" unique_id=1908793416]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Effects"
+
+[node name="EffectsVolumeSlider" type="HSlider" parent="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl" unique_id=851933522]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+focus_neighbor_left = NodePath("../EffectsVolumeEnabled")
+focus_neighbor_top = NodePath("../../VoiceVolumeControl/VoiceVolumeSlider")
+focus_neighbor_bottom = NodePath("../../UIVolumeControl/UIVolumeSlider")
+focus_next = NodePath("../../UIVolumeControl/UIVolumeEnabled")
+focus_previous = NodePath("../EffectsVolumeEnabled")
+value = 100.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="EffectsVolumeDisplay" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl" unique_id=451320259]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="UIVolumeControl" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=154898793]
+layout_mode = 2
+
+[node name="UIVolumeEnabled" type="CheckBox" parent="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl" unique_id=834683376]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../EffectsVolumeControl/EffectsVolumeEnabled")
+focus_neighbor_right = NodePath("../UIVolumeSlider")
+focus_neighbor_bottom = NodePath("../../MainVolumeControl/MainVolumeEnabled")
+focus_next = NodePath("../UIVolumeSlider")
+focus_previous = NodePath("../../EffectsVolumeControl/EffectsVolumeSlider")
+button_pressed = true
+
+[node name="UIVolumeText" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl" unique_id=1174308957]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "UI"
+
+[node name="UIVolumeSlider" type="HSlider" parent="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl" unique_id=1608269332]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+focus_neighbor_left = NodePath("../UIVolumeEnabled")
+focus_neighbor_top = NodePath("../../EffectsVolumeControl/EffectsVolumeSlider")
+focus_neighbor_bottom = NodePath("../../MainVolumeControl/MainVolumeSlider")
+focus_next = NodePath("../../MainVolumeControl/MainVolumeEnabled")
+focus_previous = NodePath("../UIVolumeEnabled")
+value = 100.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="UIVolumeDisplay" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl" unique_id=120607081]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="HSeparator3" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1276921040]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="MainVolumeControl" type="HBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=373612606]
+layout_mode = 2
+
+[node name="MainVolumeEnabled" type="CheckBox" parent="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl" unique_id=1744811443]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_top = NodePath("../../UIVolumeControl/UIVolumeEnabled")
+focus_neighbor_right = NodePath("../MainVolumeSlider")
+focus_neighbor_bottom = NodePath("../../CreditsButton")
+focus_next = NodePath("../MainVolumeSlider")
+focus_previous = NodePath("../../UIVolumeControl/UIVolumeSlider")
+button_pressed = true
+
+[node name="MainVolumeText" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl" unique_id=1156019465]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Main"
+
+[node name="MainVolumeSlider" type="HSlider" parent="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl" unique_id=253840523]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+focus_neighbor_left = NodePath("../MainVolumeEnabled")
+focus_neighbor_top = NodePath("../../UIVolumeControl/UIVolumeSlider")
+focus_neighbor_bottom = NodePath("../../CreditsButton")
+focus_next = NodePath("../../CreditsButton")
+focus_previous = NodePath("../MainVolumeEnabled")
+value = 100.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="MainVolumeDisplay" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl" unique_id=1742732415]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="HSeparator4" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=911752656]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CreditsButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1197279068]
+layout_mode = 2
+tooltip_text = "Open the credits menu"
+focus_neighbor_top = NodePath("../MainVolumeControl/MainVolumeEnabled")
+focus_neighbor_bottom = NodePath("../HelpButton")
+focus_next = NodePath("../HelpButton")
+focus_previous = NodePath("../MainVolumeControl/MainVolumeSlider")
+text = "Credits"
+
+[node name="HelpButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=123683880]
+layout_mode = 2
+tooltip_text = "Open the instructions and controls menu"
+focus_neighbor_top = NodePath("../CreditsButton")
+focus_neighbor_bottom = NodePath("../QuitVBoxContainer/QuitButton")
+focus_next = NodePath("../QuitVBoxContainer/QuitButton")
+focus_previous = NodePath("../CreditsButton")
+text = "Help"
+
+[node name="QuitVBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=1337544642]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 2
+
+[node name="HSeparator5" type="HSeparator" parent="BG/Panel/MarginContainer/VBoxContainer/QuitVBoxContainer" unique_id=698229107]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="QuitButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer/QuitVBoxContainer" unique_id=745307560]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Quit the game"
+focus_neighbor_top = NodePath("../../HelpButton")
+focus_next = NodePath("../../RestartButton")
+focus_previous = NodePath("../../HelpButton")
+text = "Quit"
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/ContinueButton" to="." method="_on_continue_button_pressed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/RestartButton" to="." method="_on_restart_button_pressed"]
+[connection signal="toggled" from="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl/MusicVolumeEnabled" to="." method="_on_music_volume_enabled_toggled"]
+[connection signal="value_changed" from="BG/Panel/MarginContainer/VBoxContainer/MusicVolumeControl/MusicVolumeSlider" to="." method="_on_music_volume_slider_value_changed"]
+[connection signal="toggled" from="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl/VoiceVolumeEnabled" to="." method="_on_voice_volume_enabled_toggled"]
+[connection signal="value_changed" from="BG/Panel/MarginContainer/VBoxContainer/VoiceVolumeControl/VoiceVolumeSlider" to="." method="_on_voice_volume_slider_value_changed"]
+[connection signal="toggled" from="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl/EffectsVolumeEnabled" to="." method="_on_effects_volume_enabled_toggled"]
+[connection signal="value_changed" from="BG/Panel/MarginContainer/VBoxContainer/EffectsVolumeControl/EffectsVolumeSlider" to="." method="_on_effects_volume_slider_value_changed"]
+[connection signal="toggled" from="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl/UIVolumeEnabled" to="." method="_on_ui_volume_enabled_toggled"]
+[connection signal="value_changed" from="BG/Panel/MarginContainer/VBoxContainer/UIVolumeControl/UIVolumeSlider" to="." method="_on_ui_volume_slider_value_changed"]
+[connection signal="toggled" from="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl/MainVolumeEnabled" to="." method="_on_main_volume_enabled_toggled"]
+[connection signal="value_changed" from="BG/Panel/MarginContainer/VBoxContainer/MainVolumeControl/MainVolumeSlider" to="." method="_on_main_volume_slider_value_changed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/CreditsButton" to="." method="_on_credits_button_pressed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/HelpButton" to="." method="_on_help_button_pressed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/QuitVBoxContainer/QuitButton" to="." method="_on_quit_button_pressed"]

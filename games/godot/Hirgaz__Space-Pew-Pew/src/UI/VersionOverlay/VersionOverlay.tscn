@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://c2nk5rmeipgr2"]
+
+[ext_resource type="Script" uid="uid://c2igprgjrvig3" path="res://UI/VersionOverlay/VersionLabel.gd" id="1_0uuw3"]
+
+[node name="VersionOverlay" type="Control" unique_id=61656663]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1739849930]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -166.0
+offset_top = -27.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="VersionLabel" type="RichTextLabel" parent="MarginContainer" unique_id=1111998156]
+layout_mode = 2
+bbcode_enabled = true
+text = "v: "
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+script = ExtResource("1_0uuw3")
+
+[connection signal="meta_clicked" from="MarginContainer/VersionLabel" to="MarginContainer/VersionLabel" method="_on_meta_clicked"]

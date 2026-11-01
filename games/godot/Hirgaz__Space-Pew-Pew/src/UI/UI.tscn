@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://c80n1scsjner4"]
+
+[ext_resource type="Script" uid="uid://lxg52782mjku" path="res://UI/UI.gd" id="1_ddrgo"]
+[ext_resource type="PackedScene" uid="uid://bau4fu1mpu7pp" path="res://UI/Background/Background.tscn" id="2_d050y"]
+[ext_resource type="PackedScene" uid="uid://bf3y2jmqc0hgk" path="res://UI/PlayerOverlay/HealthOverlay/HealthOverlay.tscn" id="3_d050y"]
+[ext_resource type="PackedScene" uid="uid://bugy62uxcxi52" path="res://UI/MainMenu/MainMenu.tscn" id="4_byuxr"]
+[ext_resource type="PackedScene" uid="uid://yxg1n6jbh50y" path="res://UI/PlayerOverlay/HelpOverlay/HelpOverlay.tscn" id="4_d050y"]
+[ext_resource type="PackedScene" uid="uid://jgl7q1qs2evg" path="res://UI/GameOverMenu/GameOverMenu.tscn" id="4_e707p"]
+[ext_resource type="PackedScene" uid="uid://bb1j8gc71nsxn" path="res://UI/HelpMenu/HelpMenu.tscn" id="4_f1fl4"]
+[ext_resource type="PackedScene" uid="uid://m3mbkkkty30" path="res://UI/CreditsMenu/CreditsMenu.tscn" id="4_jqf55"]
+[ext_resource type="PackedScene" uid="uid://c2nk5rmeipgr2" path="res://UI/VersionOverlay/VersionOverlay.tscn" id="9_qgmx8"]
+
+[node name="UI" type="Node" unique_id=719229417]
+process_mode = 3
+script = ExtResource("1_ddrgo")
+
+[node name="BGCanvasLayer" type="CanvasLayer" parent="." unique_id=1836844092]
+layer = -1
+
+[node name="Background" parent="BGCanvasLayer" unique_id=1548257909 instance=ExtResource("2_d050y")]
+offset_top = -360.0
+offset_bottom = 360.0
+
+[node name="OverlayCanvasLayer" type="CanvasLayer" parent="." unique_id=424939280]
+
+[node name="PlayerOverlay" type="Control" parent="OverlayCanvasLayer" unique_id=226089750]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -360.0
+offset_right = 576.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HealthOverlay" parent="OverlayCanvasLayer/PlayerOverlay" unique_id=1945925229 instance=ExtResource("3_d050y")]
+layout_mode = 1
+
+[node name="HelpOverlay" parent="OverlayCanvasLayer/PlayerOverlay" unique_id=776700071 instance=ExtResource("4_d050y")]
+layout_mode = 1
+
+[node name="MenuCanvasLayer" type="CanvasLayer" parent="." unique_id=1867001434]
+
+[node name="MainMenu" parent="MenuCanvasLayer" unique_id=1231314691 instance=ExtResource("4_byuxr")]
+visible = false
+
+[node name="CreditsMenu" parent="MenuCanvasLayer" unique_id=363485823 instance=ExtResource("4_jqf55")]
+visible = false
+
+[node name="HelpMenu" parent="MenuCanvasLayer" unique_id=1732615463 instance=ExtResource("4_f1fl4")]
+visible = false
+
+[node name="GameOverMenu" parent="MenuCanvasLayer" unique_id=6943274 instance=ExtResource("4_e707p")]
+visible = false
+
+[node name="VersionCanvasLayer" type="CanvasLayer" parent="." unique_id=2096120928]
+
+[node name="VersionOverlay" parent="VersionCanvasLayer" unique_id=61656663 instance=ExtResource("9_qgmx8")]
+
+[connection signal="help_pressed" from="OverlayCanvasLayer/PlayerOverlay/HelpOverlay" to="." method="_on_help_overlay_help_pressed"]
+[connection signal="continue_pressed" from="MenuCanvasLayer/MainMenu" to="." method="_on_main_menu_continue_pressed"]
+[connection signal="credits_pressed" from="MenuCanvasLayer/MainMenu" to="." method="_on_main_menu_credits_pressed"]
+[connection signal="help_pressed" from="MenuCanvasLayer/MainMenu" to="." method="_on_main_menu_help_pressed"]
+[connection signal="quit_pressed" from="MenuCanvasLayer/MainMenu" to="." method="_on_main_menu_quit_pressed"]
+[connection signal="restart_pressed" from="MenuCanvasLayer/MainMenu" to="." method="_on_main_menu_restart_pressed"]
+[connection signal="close_pressed" from="MenuCanvasLayer/CreditsMenu" to="." method="_on_credits_menu_close_pressed"]
+[connection signal="close_pressed" from="MenuCanvasLayer/HelpMenu" to="." method="_on_help_menu_close_pressed"]
+[connection signal="quit_pressed" from="MenuCanvasLayer/GameOverMenu" to="." method="_on_game_over_menu_quit_pressed"]
+[connection signal="restart_pressed" from="MenuCanvasLayer/GameOverMenu" to="." method="_on_game_over_menu_restart_pressed"]

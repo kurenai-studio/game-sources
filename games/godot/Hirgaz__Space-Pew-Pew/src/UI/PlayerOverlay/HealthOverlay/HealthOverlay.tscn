@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://bf3y2jmqc0hgk"]
+
+[ext_resource type="Script" uid="uid://begd4ah748oxf" path="res://UI/PlayerOverlay/HealthOverlay/HealthOverlay.gd" id="1_5pl0f"]
+[ext_resource type="Texture2D" uid="uid://jr8cse33r852" path="res://Player/PlayerShipOrange.png" id="1_p887o"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_18yuf"]
+bg_color = Color(0.336608, 0.336608, 0.336608, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="HealthOverlay" type="Control" unique_id=333617445]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5pl0f")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=402016640]
+layout_mode = 1
+anchors_preset = -1
+offset_right = 176.0
+offset_bottom = 96.0
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+
+[node name="Panel" type="Panel" parent="MarginContainer" unique_id=558135015]
+custom_minimum_size = Vector2(160, 80)
+layout_mode = 2
+theme_type_variation = &"PanelOverlay"
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/Panel" unique_id=1011218507]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HealthHolder" type="HBoxContainer" parent="MarginContainer/Panel/MarginContainer" unique_id=2110521526]
+layout_mode = 2
+
+[node name="HealthCounter" type="Label" parent="MarginContainer/Panel/MarginContainer/HealthHolder" unique_id=1543437558]
+unique_name_in_owner = true
+auto_translate_mode = 2
+custom_minimum_size = Vector2(65, 0)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = "99x"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Control" type="Control" parent="MarginContainer/Panel/MarginContainer/HealthHolder" unique_id=2145642981]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HealthSingle" type="Control" parent="MarginContainer/Panel/MarginContainer/HealthHolder" unique_id=2005046935]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Panel" type="Panel" parent="MarginContainer/Panel/MarginContainer/HealthHolder/HealthSingle" unique_id=1536407332]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_18yuf")
+
+[node name="HealthHolder" type="Control" parent="MarginContainer/Panel/MarginContainer/HealthHolder/HealthSingle/Panel" unique_id=1980271143]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+rotation = 0.7853982
+pivot_offset = Vector2(30, 30)
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/Panel/MarginContainer/HealthHolder/HealthSingle/Panel/HealthHolder" unique_id=762131089]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -56.0
+offset_top = -40.0
+offset_right = 56.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(56, 37.5)
+texture = ExtResource("1_p887o")
