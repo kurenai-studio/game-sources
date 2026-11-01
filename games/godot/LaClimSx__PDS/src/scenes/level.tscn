@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://de2w83gncyih3"]
+
+[ext_resource type="PackedScene" uid="uid://b2qmulxjiaky" path="res://scenes/person.tscn" id="1_2q6dc"]
+[ext_resource type="Theme" uid="uid://dswlx0k1a324t" path="res://assets/theme.tres" id="1_mx8sn"]
+[ext_resource type="Script" uid="uid://dpau3lqabweyd" path="res://scripts/level.gd" id="1_w7c3h"]
+[ext_resource type="Texture2D" uid="uid://cy486nu351s0s" path="res://assets/art/help_icon.png" id="3_w8frs"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dnsif"]
+bg_color = Color(1.2513996e-06, 0.5703757, 0.6795612, 1)
+
+[node name="Level" type="Control" unique_id=1153732440]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_mx8sn")
+script = ExtResource("1_w7c3h")
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1538312828]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dnsif")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer" unique_id=585180960]
+layout_mode = 2
+theme_override_constants/separation = 100
+alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/HBoxContainer" unique_id=1529071435]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 100
+theme_override_constants/margin_top = 400
+theme_override_constants/margin_bottom = 400
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/HBoxContainer/MarginContainer" unique_id=1003043316]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="Stopwatch" type="Label" parent="PanelContainer/HBoxContainer/MarginContainer/PanelContainer" unique_id=188592079]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 48
+text = "00:14.5s"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/HBoxContainer" unique_id=1446626616]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 10
+
+[node name="LiarLabel" type="Label" parent="PanelContainer/HBoxContainer/VBoxContainer" unique_id=1720406180]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 48
+text = "Find the X liar"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="PanelContainer/HBoxContainer/VBoxContainer" unique_id=1456320327]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 2
+
+[node name="Person" parent="PanelContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=1970352386 instance=ExtResource("1_2q6dc")]
+layout_mode = 2
+text = "My right neighbor is lying"
+
+[node name="Person2" parent="PanelContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=955561553 instance=ExtResource("1_2q6dc")]
+layout_mode = 2
+color = 1
+is_liar = true
+text = "My bottom-left neighbor is lying"
+
+[node name="Person3" parent="PanelContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=301645523 instance=ExtResource("1_2q6dc")]
+layout_mode = 2
+color = 2
+text = "Everyone in this column tells the truth"
+
+[node name="Person4" parent="PanelContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=1899548976 instance=ExtResource("1_2q6dc")]
+layout_mode = 2
+text = "My top neighbor is lying"
+
+[node name="ValidateButton" type="Button" parent="PanelContainer/HBoxContainer/VBoxContainer" unique_id=778961792]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Validate"
+
+[node name="MarginContainer2" type="MarginContainer" parent="PanelContainer/HBoxContainer" unique_id=1258875020]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_top = 400
+theme_override_constants/margin_right = 100
+theme_override_constants/margin_bottom = 400
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/HBoxContainer/MarginContainer2" unique_id=83800399]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="HintButton" type="Button" parent="PanelContainer/HBoxContainer/MarginContainer2/PanelContainer" unique_id=612600384]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/h_separation = 10
+theme_override_font_sizes/font_size = 48
+text = "Hint"
+icon = ExtResource("3_w8frs")
+
+[connection signal="pressed" from="PanelContainer/HBoxContainer/VBoxContainer/ValidateButton" to="." method="_on_validate_button_pressed"]
+[connection signal="pressed" from="PanelContainer/HBoxContainer/MarginContainer2/PanelContainer/HintButton" to="." method="_on_hint_button_pressed"]
