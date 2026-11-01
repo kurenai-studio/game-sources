@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "python-game-suite"
+version = "1.1.0"
+description = "A collection of classic terminal and GUI games implemented in Python."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Onehand Coding", email = "Onehand.coding433@gmail.com" },
+]
+dependencies = [
+    "pygame>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4",
+    "pytest-mock>=3.14",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+run-games = "python_game_suite.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
