@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cmathr2hqide5"]
+
+[ext_resource type="PackedScene" uid="uid://cdag1xqssypo" path="res://scenes/player.tscn" id="1_uwrxv"]
+[ext_resource type="Texture2D" uid="uid://xmobrxl1vqug" path="res://assets/background.png" id="2_yqjtg"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_dtx53"]
+distance = -3.0
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_1bkr4"]
+normal = Vector2(0, 1)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_632h5"]
+normal = Vector2(1, 0)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_slfft"]
+normal = Vector2(-1, 0)
+
+[node name="game" type="Node2D" unique_id=478730700]
+
+[node name="player" parent="." unique_id=1994481336 instance=ExtResource("1_uwrxv")]
+position = Vector2(-1, -2)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1826825139]
+position = Vector2(0, -12)
+zoom = Vector2(3, 3)
+
+[node name="world bounds" type="StaticBody2D" parent="." unique_id=1923552224]
+
+[node name="floor" type="CollisionShape2D" parent="world bounds" unique_id=452999991]
+position = Vector2(1, 86)
+shape = SubResource("WorldBoundaryShape2D_dtx53")
+
+[node name="ceiling" type="CollisionShape2D" parent="world bounds" unique_id=878050783]
+position = Vector2(0, -116)
+shape = SubResource("WorldBoundaryShape2D_1bkr4")
+
+[node name="wall1" type="CollisionShape2D" parent="world bounds" unique_id=1399466539]
+position = Vector2(-219, -6)
+shape = SubResource("WorldBoundaryShape2D_632h5")
+
+[node name="wall2" type="CollisionShape2D" parent="world bounds" unique_id=315534201]
+position = Vector2(219, -5)
+shape = SubResource("WorldBoundaryShape2D_slfft")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2068157853]
+z_index = -3
+position = Vector2(0, -10.999999)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_yqjtg")
