@@ -1,0 +1,13 @@
+name: Static analysis and coverage
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    uses: przemek83/workflows/.github/workflows/static-analysis-and-coverage-cpp.yml@main
+    secrets: inherit
+    with:
+      dependencies: "libgl1-mesa-dev libxcursor-dev"

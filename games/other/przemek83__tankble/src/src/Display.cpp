@@ -1,0 +1,17 @@
+#include "Display.h"
+
+#include "Utils.h"
+
+int Display::getCenterX() const { return utils::getMidpoint(width_); }
+int Display::getCenterY() const { return utils::getMidpoint(height_); }
+
+int Display::getWidth() const { return width_; }
+void Display::setWidth(int width) { width_ = width; }
+int Display::getHeight() const { return height_; }
+void Display::setHeight(int height) { height_ = height; }
+
+void Display::drawScaledSquareBitmap(ResourceType resourceType, int x, int y,
+                                     int size) const
+{
+    drawScaledBitmap(resourceType, x, y, size, size);
+}
