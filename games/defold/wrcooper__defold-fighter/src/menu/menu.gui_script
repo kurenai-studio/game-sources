@@ -1,0 +1,149 @@
+local characters = require "modules.characters"
+local state = require "modules.state"
+local settings = require "main.settings"
+
+local MODES = { { id = "1p", label = "1P VS CPU" }, { id = "cpu", label = "CPU VS CPU" } }
+local OPPONENTS = { "kenji", "vera", "random" }
+local LEVELS = { "easy", "normal", "hard" }
+
+local ROWS = { "row_mode", "row_p1", "row_p2", "row_level", "row_volume", "row_start", "row_quit" }
+local ROW_VOLUME, ROW_START, ROW_QUIT = 5, 6, 7
+
+local GOLD = vmath.vector4(1, 0.82, 0.3, 1)
+local WHITE = vmath.vector4(1, 1, 1, 1)
+local DIM = vmath.vector4(0.75, 0.7, 0.85, 1)
+
+local function index_of(list, value, key)
+	for i, v in ipairs(list) do
+		if (key and v[key] or v) == value then return i end
+	end
+	return 1
+end
+
+local function name_of(id)
+	return id == "random" and "RANDOM" or characters[id].name
+end
+
+local function refresh(self)
+	local cpu_vs_cpu = MODES[self.mode].id == "cpu"
+	local labels = {
+		"MODE        " .. MODES[self.mode].label,
+		(cpu_vs_cpu and "CPU 1       " or "FIGHTER     ") .. name_of(characters.list[self.p1]),
+		(cpu_vs_cpu and "CPU 2       " or "OPPONENT    ") .. name_of(OPPONENTS[self.p2]),
+		"CPU LEVEL   " .. LEVELS[self.level]:upper(),
+		"VOLUME      " .. settings.volume_label(),
+		"FIGHT!",
+		"QUIT",
+	}
+	for i, id in ipairs(ROWS) do
+		local n = gui.get_node(id)
+		local text = labels[i]
+		if i == self.row then
+			if i < ROW_START then text = "< " .. text .. " >" end
+			gui.set_color(n, GOLD)
+			gui.set_scale(n, vmath.vector3(1.1, 1.1, 1))
+		else
+			gui.set_color(n, i >= ROW_START and WHITE or DIM)
+			gui.set_scale(n, vmath.vector3(1, 1, 1))
+		end
+		gui.set_text(n, text)
+	end
+	gui.set_text(gui.get_node("label_p1"), cpu_vs_cpu and "CPU 1" or "PLAYER 1")
+	gui.set_text(gui.get_node("label_p2"), cpu_vs_cpu and "CPU 2" or "CPU")
+	local random = OPPONENTS[self.p2] == "random"
+	gui.set_color(gui.get_node("preview_p2"), random and vmath.vector4(0, 0, 0, 0.85) or WHITE)
+	self.preview_frame = nil
+end
+
+local function play(name)
+	msg.post("#sfx_" .. name, "play_sound")
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.mode = index_of(MODES, state.mode, "id")
+	self.p1 = index_of(characters.list, state.p1)
+	self.p2 = index_of(OPPONENTS, state.p2)
+	self.level = index_of(LEVELS, state.level)
+	self.row = ROW_START
+	-- a browser tab can't be closed by the game, so there's no QUIT on HTML5
+	self.row_count = #ROWS
+	if sys.get_sys_info().system_name == "HTML5" then
+		self.row_count = ROW_QUIT - 1
+		gui.set_enabled(gui.get_node("row_quit"), false)
+	end
+	self.t = 0
+	refresh(self)
+end
+
+function update(self, dt)
+	-- idle animation on the fighter previews
+	self.t = self.t + dt
+	local frame = math.floor(self.t * 60 / 9) % 4
+	if frame ~= self.preview_frame then
+		self.preview_frame = frame
+		local p2 = OPPONENTS[self.p2]
+		if p2 == "random" then p2 = characters.list[math.floor(self.t * 2) % #characters.list + 1] end
+		gui.play_flipbook(gui.get_node("preview_p1"), characters.list[self.p1] .. "_idle_" .. frame)
+		gui.play_flipbook(gui.get_node("preview_p2"), p2 .. "_idle_" .. frame)
+	end
+end
+
+local function change(self, dir)
+	local r = self.row
+	if r == 1 then
+		self.mode = (self.mode - 1 + dir) % #MODES + 1
+	elseif r == 2 then
+		self.p1 = (self.p1 - 1 + dir) % #characters.list + 1
+	elseif r == 3 then
+		self.p2 = (self.p2 - 1 + dir) % #OPPONENTS + 1
+	elseif r == 4 then
+		self.level = (self.level - 1 + dir) % #LEVELS + 1
+	elseif r == ROW_VOLUME then
+		-- clamps at 0 and max instead of wrapping; the sound plays at the new volume
+		if not settings.change_volume(dir) then return end
+	else
+		return
+	end
+	play("select")
+	refresh(self)
+end
+
+local function start(self)
+	local p2 = OPPONENTS[self.p2]
+	if p2 == "random" then p2 = characters.list[math.random(#characters.list)] end
+	play("confirm")
+	msg.post("main:/loader#loader", "start_fight", {
+		mode = MODES[self.mode].id,
+		p1 = characters.list[self.p1],
+		p2 = p2,
+		p2_choice = OPPONENTS[self.p2],
+		level = LEVELS[self.level],
+	})
+end
+
+function on_input(self, action_id, action)
+	if not (action.pressed or action.repeated) then return end
+	if action_id == hash("up") then
+		self.row = (self.row - 2) % self.row_count + 1
+		play("select")
+		refresh(self)
+	elseif action_id == hash("down") then
+		self.row = self.row % self.row_count + 1
+		play("select")
+		refresh(self)
+	elseif action_id == hash("left") then
+		change(self, -1)
+	elseif action_id == hash("right") then
+		change(self, 1)
+	elseif action_id == hash("confirm") or action_id == hash("punch") then
+		if not action.pressed then return end
+		if self.row == ROW_QUIT then
+			msg.post("main:/loader#loader", "quit")
+		elseif self.row == ROW_START then
+			start(self)
+		else
+			change(self, 1)
+		end
+	end
+end

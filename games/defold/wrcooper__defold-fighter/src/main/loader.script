@@ -1,0 +1,54 @@
+-- Bootstrap script: switches between the menu and fight scenes, which are
+-- loaded through collection proxies. Other scripts talk to it with
+--   msg.post("main:/loader#loader", "show_menu")
+--   msg.post("main:/loader#loader", "start_fight", { mode=, p1=, p2=, level= })
+--   msg.post("main:/loader#loader", "quit")
+local state = require "modules.state"
+local settings = require "main.settings"
+
+local function show(self, proxy)
+	self.next = proxy
+	if self.current then
+		msg.post(self.current, "disable")
+		msg.post(self.current, "final")
+		msg.post(self.current, "unload")
+	else
+		msg.post(proxy, "async_load")
+	end
+end
+
+function init(self)
+	-- proxied collections only get input if the proxy's owner has focus
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	settings.load()
+	self.current = nil
+	-- demo mode: launch with --config=fighter.autoplay=1 to go straight to CPU vs CPU
+	if sys.get_config_int("fighter.autoplay", 0) == 1 then
+		state.mode = "cpu"
+		state.p2_choice = "random"
+		show(self, msg.url("#fight"))
+	else
+		show(self, msg.url("#menu"))
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_fight") then
+		for k, v in pairs(message) do state[k] = v end
+		show(self, msg.url("#fight"))
+	elseif message_id == hash("show_menu") then
+		show(self, msg.url("#menu"))
+	elseif message_id == hash("quit") then
+		sys.exit(0)
+	elseif message_id == hash("proxy_loaded") then
+		self.current = sender
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+	elseif message_id == hash("proxy_unloaded") then
+		self.current = nil
+		if self.next then
+			msg.post(self.next, "async_load")
+		end
+	end
+end

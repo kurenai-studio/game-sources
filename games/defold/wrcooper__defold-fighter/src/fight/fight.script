@@ -1,0 +1,404 @@
+-- Fight scene controller. Runs the match simulation (modules/match.lua) at a
+-- fixed 60 Hz, feeds it keyboard/gamepad or AI input, and turns its state and
+-- events into sprites, effects, sounds and HUD messages.
+local config = require "modules.config"
+local characters = require "modules.characters"
+local state = require "modules.state"
+local settings = require "main.settings"
+local Match = require "modules.match"
+local AI = require "modules.ai"
+
+local STEP = 1 / 60
+local SCALE = vmath.vector3(config.SCALE, config.SCALE, 1)
+local ACTIONS = {
+	[hash("left")] = "left", [hash("right")] = "right", [hash("up")] = "up", [hash("down")] = "down",
+	[hash("punch")] = "punch", [hash("kick")] = "kick", [hash("special")] = "special",
+}
+local CONFIRM, BACK, QUIT, HITBOXES = hash("confirm"), hash("back"), hash("quit"), hash("hitboxes")
+local LEFT, RIGHT = hash("left"), hash("right")
+local WHITE = vmath.vector4(1, 1, 1, 1)
+local MIRROR_TINT = vmath.vector4(0.55, 0.75, 1.0, 1)  -- tells player 2 apart in mirror matches
+
+-- Hitbox viewer (H toggles it). Boxes are sprites, not "draw_line" debug lines,
+-- because the release engine (which the HTML5 build uses) doesn't draw debug lines.
+local BOX_KEY = {
+	{ name = "hurt", color = vmath.vector4(0.2, 1, 0.35, 1) },
+	{ name = "hit", color = vmath.vector4(1, 0.2, 0.2, 1) },
+	{ name = "push", color = vmath.vector4(1, 0.9, 0.2, 1) },
+	{ name = "invulnerable", color = vmath.vector4(0.65, 0.65, 0.75, 1) },
+}
+local HURT_COLOR, HIT_COLOR, PUSH_COLOR, INVULN_COLOR =
+	BOX_KEY[1].color, BOX_KEY[2].color, BOX_KEY[3].color, BOX_KEY[4].color
+local BOX_LINE = 2      -- outline thickness
+local BOX_FILL = 0.2    -- fill opacity of hurt/hit boxes
+local BOX_Z = 0.6
+local PIXEL_SIZE = 4    -- the "pixel" atlas image is 4x4
+
+local FX = {
+	hit = { prefix = "spark_", frames = 4, dur = 3 },
+	block = { prefix = "bspark_", frames = 4, dur = 3 },
+	dust = { prefix = "dust_", frames = 3, dur = 5 },
+}
+
+-- Pause-screen move list: move name, then its input, in two columns. The HUD
+-- font is monospaced, so padding with spaces lines the columns up.
+local SPECIAL_NAME = { kenji = "FIREBALL", vera = "COMET KNEE" }
+
+local function moves_help(char_id)
+	local rows = {
+		{ "PUNCH", "[J]", "LOW JAB", "[Down]+[J]" },
+		{ "KICK", "[K]", "SWEEP", "[Down]+[K]" },
+		{ SPECIAL_NAME[char_id], "[L]", "JUMP KICK", "[K] in the air" },
+		{ "BLOCK", "hold [Back]", "LOW BLOCK", "hold [Down]+[Back]" },
+	}
+	local lines = {}
+	for _, r in ipairs(rows) do
+		lines[#lines + 1] = string.format("%-12s%-15s%-12s%s", r[1], r[2], r[3], r[4])
+	end
+	lines[#lines + 1] = ""
+	lines[#lines + 1] = "[Back] means away from your opponent."
+	lines[#lines + 1] = "Combo: land a PUNCH, then press [L] right away."
+	return table.concat(lines, "\n")
+end
+
+local function sfx(name, gain)
+	msg.post("#sfx_" .. name, "play_sound", { gain = gain or 1 })
+end
+
+local function spawn_fx(self, kind, x, y, flip)
+	local def = FX[kind]
+	local id = factory.create("#fx_factory", vmath.vector3(x, y, 0.5), nil, nil, SCALE)
+	local url = msg.url(nil, id, "sprite")
+	sprite.play_flipbook(url, def.prefix .. 0)
+	if flip then sprite.set_hflip(url, true) end
+	self.fx[#self.fx + 1] = { id = id, url = url, def = def, t = 0, frame = 0 }
+end
+
+local function clear_visuals(self)
+	for _, e in ipairs(self.fx) do go.delete(e.id) end
+	for _, p in pairs(self.projectiles) do go.delete(p.id) end
+	self.fx, self.projectiles = {}, {}
+end
+
+local function new_match(self)
+	clear_visuals(self)
+	if state.p2_choice == "random" then
+		state.p2 = characters.list[math.random(#characters.list)]
+	end
+	self.match = Match.new(state.p1, state.p2)
+	self.ai = {}
+	if state.mode == "cpu" then self.ai[1] = AI.new(1, state.level) end
+	self.ai[2] = AI.new(2, state.level)
+	self.held, self.pressed = {}, {}
+	self.acc = 0
+	self.shake = 0
+	self.flash = { 0, 0 }
+	self.paused = false
+	self.status = nil
+	for _, v in ipairs(self.views) do v.anim, v.flip = nil, nil end
+	local c1, c2 = characters[state.p1], characters[state.p2]
+	msg.post("#hud", "setup", {
+		name1 = c1.name .. (self.ai[1] and " (CPU)" or ""),
+		name2 = c2.name .. " (CPU)",
+		moves_title = c1.name .. "'S MOVES",
+		moves = moves_help(state.p1),
+	})
+	msg.post("#hud", "sub", { text = "" })
+	msg.post("#hud", "pause", { on = false })
+	-- not named "volume": posting a message with that id crashes Defold 1.14 natively (AI Failure Log F-19)
+	msg.post("#hud", "volume_label", { label = settings.volume_label() })
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	math.randomseed(os.time())
+	math.random(); math.random()
+	self.views = {}
+	for i = 1, 2 do
+		self.views[i] = {
+			go = "/p" .. i,
+			sprite = msg.url(nil, "/p" .. i, "sprite"),
+			shadow = "/shadow" .. i,
+		}
+	end
+	self.fx, self.projectiles = {}, {}
+	self.offset = vmath.vector3()
+	self.box_pool, self.box_used = {}, 0
+	self.show_boxes = sys.get_config_int("fighter.hitboxes", 0) == 1
+	new_match(self)
+	msg.post("#hud", "boxes", { on = self.show_boxes, key = BOX_KEY })
+end
+
+local function player_input(self)
+	local inp = {}
+	for _, a in pairs(ACTIONS) do
+		if a == "punch" or a == "kick" or a == "special" then
+			inp[a] = self.pressed[a]
+		else
+			inp[a] = self.held[a]
+		end
+	end
+	return inp
+end
+
+local function handle_events(self, events)
+	local m = self.match
+	for _, e in ipairs(events) do
+		local t = e.type
+		if t == "sfx" then
+			sfx(e.name)
+		elseif t == "spark" then
+			spawn_fx(self, e.kind, e.x, config.GROUND_Y + e.y, math.random() < 0.5)
+		elseif t == "dust" then
+			spawn_fx(self, "dust", e.x, config.GROUND_Y + 20, false)
+		elseif t == "shake" then
+			self.shake = math.max(self.shake, e.amount)
+		elseif t == "flash" then
+			self.flash[e.index] = 8
+		elseif t == "combo" then
+			msg.post("#hud", "combo", { index = e.index, hits = e.hits })
+		elseif t == "announce" then
+			msg.post("#hud", "announce", { text = e.text, seconds = e.frames / 60 })
+		elseif t == "projectile_spawn" then
+			local p = e.projectile
+			local id = factory.create("#fireball_factory", vmath.vector3(p.x, config.GROUND_Y + p.y, 0.4), nil, nil, SCALE)
+			local url = msg.url(nil, id, "sprite")
+			if p.dir < 0 then sprite.set_hflip(url, true) end
+			self.projectiles[p.id] = { id = id, url = url, p = p, frame = 0 }
+		elseif t == "projectile_end" then
+			local v = self.projectiles[e.projectile.id]
+			if v then
+				go.delete(v.id)
+				self.projectiles[e.projectile.id] = nil
+			end
+		elseif t == "match_over" then
+			local w = m.fighters[e.winner]
+			local text
+			if not self.ai[1] then
+				text = e.winner == 1 and "YOU WIN!" or "YOU LOSE"
+			else
+				text = w.c.name .. " WINS!"
+			end
+			msg.post("#hud", "announce", { text = text, seconds = 1000 })
+			msg.post("#hud", "sub", { text = "[Enter] Rematch     [Esc] Main menu" })
+		end
+	end
+end
+
+local function step_fx(self)
+	local keep = {}
+	for _, e in ipairs(self.fx) do
+		e.t = e.t + 1
+		local frame = math.floor(e.t / e.def.dur)
+		if frame >= e.def.frames then
+			go.delete(e.id)
+		else
+			if frame ~= e.frame then
+				e.frame = frame
+				sprite.play_flipbook(e.url, e.def.prefix .. frame)
+			end
+			keep[#keep + 1] = e
+		end
+	end
+	self.fx = keep
+	for _, v in pairs(self.projectiles) do
+		local frame = math.floor(v.p.t / 4) % 4
+		if frame ~= v.frame then
+			v.frame = frame
+			sprite.play_flipbook(v.url, "fireball_" .. frame)
+		end
+	end
+	if self.shake > 0 then self.shake = math.max(0, self.shake - 0.5) end
+	for i = 1, 2 do
+		if self.flash[i] > 0 then self.flash[i] = self.flash[i] - 1 end
+	end
+end
+
+local function render(self)
+	local m = self.match
+	local sx, sy = 0, 0
+	if self.shake > 0 then
+		sx = (math.random() * 2 - 1) * self.shake
+		sy = (math.random() * 2 - 1) * self.shake
+	end
+	go.set_position(vmath.vector3(640 + sx, 360 + sy, -0.5), "/background")
+	self.offset = vmath.vector3(sx, sy, 0)
+
+	for i, f in ipairs(m.fighters) do
+		local v = self.views[i]
+		local jitter = 0
+		if m.hitstop > 0 and (f.state == "hitstun" or f.state == "blockstun" or f.state == "knockdown" or f.state == "ko") then
+			jitter = (m.hitstop % 2 == 0) and 3 or -3
+		end
+		local z = f.state == "attack" and 0.2 or 0.1
+		go.set_position(vmath.vector3(f.x + sx + jitter, config.GROUND_Y + f.y + sy, z), v.go)
+
+		local name = f:frame_name()
+		if name ~= v.anim then
+			v.anim = name
+			sprite.play_flipbook(v.sprite, name)
+		end
+		local flip = f.facing < 0
+		if flip ~= v.flip then
+			v.flip = flip
+			sprite.set_hflip(v.sprite, flip)
+		end
+		local tint = (i == 2 and state.p1 == state.p2) and MIRROR_TINT or WHITE
+		if self.flash[i] > 0 then
+			tint = vmath.vector4(1, 0.55, 0.5, 1)
+		elseif f.state == "attack" and f.move.id == "special" and f.fr_i <= 2 then
+			tint = vmath.vector4(1, 1, 0.75, 1)
+		end
+		go.set(v.sprite, "tint", tint)
+
+		local h = math.min(1, f.y / 250)
+		local s = config.SCALE * (1 - h * 0.5)
+		go.set_position(vmath.vector3(f.x + sx, config.GROUND_Y - 2 + sy, -0.1), v.shadow)
+		go.set_scale(vmath.vector3(s, s, 1), v.shadow)
+	end
+
+	for _, v in pairs(self.projectiles) do
+		go.set_position(vmath.vector3(v.p.x + sx, config.GROUND_Y + v.p.y + sy, 0.4), v.id)
+	end
+
+	local f1, f2 = m.fighters[1], m.fighters[2]
+	local status = {
+		h1 = f1.health / config.MAX_HEALTH, h2 = f2.health / config.MAX_HEALTH,
+		w1 = f1.wins, w2 = f2.wins, timer = m:seconds_left(),
+	}
+	local old = self.status
+	if not old or old.h1 ~= status.h1 or old.h2 ~= status.h2 or old.w1 ~= status.w1
+		or old.w2 ~= status.w2 or old.timer ~= status.timer then
+		self.status = status
+		msg.post("#hud", "status", status)
+	end
+end
+
+-- one solid rectangle from the sprite pool (bottom-left corner x, y)
+local function box_rect(self, x, y, w, h, color)
+	self.box_used = self.box_used + 1
+	local r = self.box_pool[self.box_used]
+	if not r then
+		local id = factory.create("#box_factory")
+		r = { id = id, sprite = msg.url(nil, id, "sprite"), visible = true }
+		self.box_pool[self.box_used] = r
+	elseif not r.visible then
+		r.visible = true
+		msg.post(r.sprite, "enable")
+	end
+	go.set_position(vmath.vector3(x + w / 2, y + h / 2, BOX_Z), r.id)
+	go.set_scale(vmath.vector3(w / PIXEL_SIZE, h / PIXEL_SIZE, 1), r.id)
+	go.set(r.sprite, "tint", color)
+end
+
+-- box is {x0, y0, x1, y1} in simulation space (y measured up from the ground)
+local function draw_box(self, b, color, fill)
+	local ox, oy = self.offset.x, self.offset.y + config.GROUND_Y
+	local x0, y0, x1, y1 = b[1] + ox, b[2] + oy, b[3] + ox, b[4] + oy
+	local w, h, t = x1 - x0, y1 - y0, BOX_LINE
+	if fill then box_rect(self, x0, y0, w, h, vmath.vector4(color.x, color.y, color.z, BOX_FILL)) end
+	box_rect(self, x0, y0, w, t, color)
+	box_rect(self, x0, y1 - t, w, t, color)
+	box_rect(self, x0, y0, t, h, color)
+	box_rect(self, x1 - t, y0, t, h, color)
+end
+
+local function draw_boxes(self)
+	local m = self.match
+	self.box_used = 0
+	if self.show_boxes then
+		for _, f in ipairs(m.fighters) do
+			draw_box(self, { f.x - config.PUSH_HALF_WIDTH, f.y, f.x + config.PUSH_HALF_WIDTH, f.y + config.PUSH_HEIGHT }, PUSH_COLOR)
+			draw_box(self, f:hurtbox(), f:is_invulnerable() and INVULN_COLOR or HURT_COLOR, true)
+			local hb = f:hitbox()
+			if hb then draw_box(self, hb, HIT_COLOR, true) end
+		end
+		for _, p in ipairs(m.projectiles) do
+			if not p.dead then draw_box(self, m:projectile_box(p), HIT_COLOR, true) end
+		end
+	end
+	for i = self.box_used + 1, #self.box_pool do
+		local r = self.box_pool[i]
+		if r.visible then
+			r.visible = false
+			msg.post(r.sprite, "disable")
+		end
+	end
+end
+
+local function step_match(self, dt)
+	local m = self.match
+	local speed = m.slowmo > 0 and 0.35 or 1
+	self.acc = self.acc + math.min(dt, 0.1) * speed
+	while self.acc >= STEP do
+		self.acc = self.acc - STEP
+		local inputs = {}
+		for i = 1, 2 do
+			inputs[i] = self.ai[i] and self.ai[i]:update(m) or player_input(self)
+		end
+		self.pressed = {}
+		m:step(inputs)
+		handle_events(self, m:pop_events())
+		step_fx(self)
+	end
+end
+
+function update(self, dt)
+	if not self.paused then
+		step_match(self, dt)
+		render(self)
+	end
+	draw_boxes(self)  -- also while paused, so the viewer can be toggled on a frozen frame
+end
+
+function on_input(self, action_id, action)
+	if not action_id then return end
+	local m = self.match
+
+	if action_id == HITBOXES then
+		if action.pressed then
+			self.show_boxes = not self.show_boxes
+			msg.post("#hud", "boxes", { on = self.show_boxes, key = BOX_KEY })
+		end
+		return
+	end
+
+	if m.phase == "match_over" then
+		if m.phase_t > 45 and action.pressed then
+			if action_id == CONFIRM or action_id == hash("punch") then
+				new_match(self)
+			elseif action_id == BACK or action_id == QUIT then
+				msg.post("main:/loader#loader", "show_menu")
+			end
+		end
+		return
+	end
+
+	if action.pressed and (action_id == BACK or (self.paused and action_id == CONFIRM)) then
+		self.paused = not self.paused
+		msg.post("#hud", "pause", { on = self.paused })
+		self.held = {}
+		return
+	end
+	if self.paused then
+		if action.pressed and action_id == QUIT then
+			msg.post("main:/loader#loader", "show_menu")
+		elseif (action.pressed or action.repeated) and (action_id == LEFT or action_id == RIGHT) then
+			if settings.change_volume(action_id == LEFT and -1 or 1) then
+				sfx("select")
+				msg.post("#hud", "volume_label", { label = settings.volume_label() })
+			end
+		end
+		return
+	end
+
+	local a = ACTIONS[action_id]
+	if a then
+		if action.pressed then
+			self.held[a] = true
+			self.pressed[a] = true
+		elseif action.released then
+			self.held[a] = false
+		end
+	end
+end
