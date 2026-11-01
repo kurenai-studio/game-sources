@@ -1,0 +1,43 @@
+[gd_scene load_steps=5 format=3 uid="uid://og67x4c3geta"]
+
+[ext_resource type="Script" path="res://Scripts/moving_platform.gd" id="1_0excb"]
+[ext_resource type="Texture2D" uid="uid://dgv3w2cbked8y" path="res://Assets/tile_0005.png" id="2_a7jjq"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mlgj8"]
+size = Vector2(89, 18)
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_ae1wf"]
+polygon = PackedVector2Array(-45, -9, 45, -9, 45, 9, -45, 9)
+
+[node name="MovingPlatform" type="AnimatableBody2D"]
+script = ExtResource("1_0excb")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0.5, 0)
+shape = SubResource("RectangleShape2D_mlgj8")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_a7jjq")
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
+position = Vector2(18, 0)
+texture = ExtResource("2_a7jjq")
+
+[node name="Sprite2D3" type="Sprite2D" parent="."]
+position = Vector2(-18, 0)
+texture = ExtResource("2_a7jjq")
+
+[node name="Sprite2D4" type="Sprite2D" parent="."]
+position = Vector2(36, 0)
+texture = ExtResource("2_a7jjq")
+
+[node name="Sprite2D5" type="Sprite2D" parent="."]
+position = Vector2(-36, 0)
+texture = ExtResource("2_a7jjq")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_ae1wf")
