@@ -1,0 +1,55 @@
+name: "content"
+scale_along_z: 0
+embedded_instances {
+  id: "scene"
+  children: "cart"
+  children: "ferris"
+  children: "floor"
+  children: "toys"
+  children: "track"
+  data: "components {\n"
+  "  id: \"manage_animations\"\n"
+  "  component: \"/assets/littlecoaster/manage_animations.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "cart"
+  data: "components {\n"
+  "  id: \"cart\"\n"
+  "  component: \"/assets/littlecoaster/models/cart.model\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "floor"
+  data: "components {\n"
+  "  id: \"floormat\"\n"
+  "  component: \"/assets/littlecoaster/models/floormat.model\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "toys"
+  data: "components {\n"
+  "  id: \"toys\"\n"
+  "  component: \"/assets/littlecoaster/models/toys.model\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "track"
+  data: "components {\n"
+  "  id: \"track\"\n"
+  "  component: \"/assets/littlecoaster/models/track.model\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "ferris"
+  data: "components {\n"
+  "  id: \"ferriswheel\"\n"
+  "  component: \"/assets/littlecoaster/models/ferriswheel.model\"\n"
+  "}\n"
+  ""
+}

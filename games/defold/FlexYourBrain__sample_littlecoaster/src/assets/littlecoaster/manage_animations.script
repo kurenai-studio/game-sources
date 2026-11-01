@@ -1,0 +1,26 @@
+
+local cart = "/cart#cart"
+local ferris = "/ferris#ferriswheel"
+
+local function play_animations(bool)
+
+	if bool then
+		go.animate(cart, "cursor", go.PLAYBACK_LOOP_FORWARD, 1, go.EASING_LINEAR, 6.7)
+		go.animate(ferris, "cursor", go.PLAYBACK_LOOP_FORWARD, 1, go.EASING_LINEAR, 6.7)
+	else
+		go.animate(cart, "cursor", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0)
+		go.animate(ferris, "cursor", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0)
+	end
+
+end
+
+function init(self)
+	model.play_anim(cart, "coaster", go.PLAYBACK_NONE)
+	model.play_anim(ferris, "ferriswheel", go.PLAYBACK_NONE)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("play_animations") then
+		play_animations(message.bool)
+	end
+end

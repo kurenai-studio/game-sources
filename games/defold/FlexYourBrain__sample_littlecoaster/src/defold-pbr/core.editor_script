@@ -1,0 +1,190 @@
+local M = {}
+
+local function ends_with(str, ending)
+    return ending == "" or str:sub(-#ending) == ending
+end
+
+function starts_with(str, start)
+    return string.sub(str,1,string.len(start)) == start
+end
+
+local function trim_leading_slash(str)
+    if starts_with(str, "/") then
+        return string.sub(str, 2)
+    end
+    return str
+end
+
+local function get_base_file_name(str)
+    local last_slash = string.find(str, "/[^/]*$")
+    return string.sub(str, last_slash + 1)
+end
+
+local function get_base_directory(str)
+    local last_slash = string.find(str, "/[^/]*$")
+    return trim_leading_slash(string.sub(str, 1, last_slash))
+end
+
+local function strip_ext(str)
+    local last_ext = string.find(str, "[.][^.]*$")
+    return string.sub(str, 1, last_ext-1)
+end
+
+local function get_platform_plugin_file(the_file)
+    return "build/plugins/defold-pbr/plugins/" .. the_file
+end
+
+local function get_platform_exe()
+    local platform_to_binary = {}
+    platform_to_binary["arm64-macos"]  = "pbr-utils-arm64-macos"
+    platform_to_binary["x86_64-macos"] = "pbr-utils-x86_64-macos"
+    platform_to_binary["x86_64-win32"] = "pbr-utils-windows.exe"
+    platform_to_binary["x86_64-linux"] = "pbr-utils-linux"
+    return get_platform_plugin_file(platform_to_binary[editor.platform])
+end
+
+local function get_platform_is_osx()
+    return editor.platform == "x86_64-macos" or editor.platform == "arm64-macos"
+end
+
+local function get_platform_python()
+    if get_platform_is_osx() then
+        return get_platform_plugin_file("osx-python.sh")
+    end
+    return "python"
+end
+
+local function win32_adjust_path(path)
+    return path:gsub("/","\\")
+end
+
+local function get_platform_mkdir_cmd(directory)
+    if editor.platform == "x86_64-win32" then
+        local adjusted_path = win32_adjust_path(directory)
+        return {
+            action = "shell",
+            command = {"cmd.exe", "/c", "if not exist", adjusted_path, "mkdir", adjusted_path}
+        }
+    else
+        return {
+            action = "shell",
+            command = { "mkdir", "-p", directory }
+        }
+    end
+end
+
+local function get_platform_tool_prereq_cmd()
+    if get_platform_is_osx() then
+        return {
+            action = "shell",
+            command = { "chmod", "+x", get_platform_exe() }
+        }
+    end
+end
+
+local function get_platform_tool_cmd(input_path, directory)
+    local tools_path = get_platform_exe()
+    if editor.platform == "x86_64-win32" then
+        return {
+            action = "shell",
+            command = {
+                "cmd.exe", "/c",
+                win32_adjust_path(tools_path),
+                win32_adjust_path(input_path),
+                win32_adjust_path(directory),
+                "--generate", "irradiance",
+                "--generate", "prefilter",
+                "--meta-data", "--verbose"
+            }
+        }
+    else
+        return {
+            action = "shell",
+            command = {
+                tools_path, input_path, directory,
+                "--generate", "irradiance",
+                "--generate", "prefilter",
+                "--meta-data", "--verbose"
+            }
+        }
+    end
+end
+
+local function get_platform_content_prereq_cmd()
+    if get_platform_is_osx() then
+        return {
+            action = "shell",
+            command = { "chmod", "+x", get_platform_plugin_file("osx-python.sh") }
+        }
+    end
+end
+
+local function get_platform_content_tool_cmd(input_path, input_base)
+    return {
+        action = "shell",
+        command = { get_platform_python(), get_platform_plugin_file("blender-content-pipeline-master/blender_to_defold.py"), "--gltf-to-defold", input_path, "--relative-path", input_base }
+    }
+end
+
+local CMD_CREATE_ENV_ASSETS = {
+    label     = "Defold PBR - Create Environment Assets",
+    locations = {"Assets"},
+    query     = {
+        selection = {
+            type        = "resource",
+            cardinality = "one"
+        }
+    },
+    active = function(opts)
+        return ends_with(editor.get(opts.selection, "path"), ".hdr")
+    end,
+    run = function(opts)
+        local input_path = trim_leading_slash(editor.get(opts.selection, "path"))
+        local directory = get_base_directory(input_path) .. strip_ext(get_base_file_name(input_path))
+        local prereq_cmd = get_platform_tool_prereq_cmd()
+
+        if prereq_cmd then
+            return {
+                prereq_cmd,
+                get_platform_mkdir_cmd(directory),
+                get_platform_tool_cmd(input_path, directory)
+            }
+        else
+            return {
+                get_platform_mkdir_cmd(directory),
+                get_platform_tool_cmd(input_path, directory)
+            }
+        end
+    end
+}
+
+local CMD_CONVERT_GLTF_CONTENT = {
+    label = "Defold PBR - Extract GLTF content",
+    locations = {"Assets"},
+    query     = {
+        selection = {
+            type        = "resource",
+            cardinality = "one"
+        }
+    },
+    active = function(opts)
+        return ends_with(editor.get(opts.selection, "path"), ".glb")
+    end,
+    run = function(opts)
+        local input_path = trim_leading_slash(editor.get(opts.selection, "path"))
+        local input_base = get_base_directory(input_path)
+        return {
+            get_platform_content_prereq_cmd(),
+            get_platform_content_tool_cmd(input_path, input_base)
+        }
+    end
+}
+
+function M.get_commands()
+    return {
+        CMD_CREATE_ENV_ASSETS,
+        CMD_CONVERT_GLTF_CONTENT
+    }
+end
+
+return M

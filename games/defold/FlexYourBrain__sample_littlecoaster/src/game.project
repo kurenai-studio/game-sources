@@ -1,0 +1,51 @@
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /main/render/main.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 1280
+height = 720
+samples = 8
+high_dpi = 1
+
+[android]
+input_method = HiddenInputField
+package = com.defold.example.basic3d
+
+[project]
+title = LittleCoaster
+custom_resources = defold-pbr/assets, assets/environment-maps
+dependencies#0 = https://github.com/Jhonnyg/vantage/archive/refs/heads/master.zip
+dependencies#1 = https://github.com/andsve/dirtylarry/archive/master.zip
+
+[physics]
+type = 3D
+
+[osx]
+bundle_identifier = com.defold.example.basic3d
+
+[ios]
+bundle_identifier = com.defold.example.basic3d
+
+[input]
+game_binding = /input/scene_input.input_bindingc
+
+[render]
+clear_color_red = 0.25
+clear_color_green = 0.25
+clear_color_blue = 0.25
+
+[library]
+include_dirs = defold-pbr
+
+[shader]
+output_spirv = 1
+
+[html5]
+cssfile = /builtins/manifests/web/dark_theme.css
+show_fullscreen_button = 0
+show_made_with_defold = 0
+

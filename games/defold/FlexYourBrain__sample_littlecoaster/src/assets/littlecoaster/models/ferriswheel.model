@@ -1,0 +1,41 @@
+mesh: "/assets/littlecoaster/models/ferriswheel.glb"
+skeleton: "/assets/littlecoaster/models/ferriswheel.glb"
+animations: "/assets/littlecoaster/models/ferriswheel.glb"
+name: "cart"
+materials {
+  name: "default"
+  material: "/assets/littlecoaster/PBR.material"
+  textures {
+    sampler: "tex_brdflut"
+    texture: "/defold-pbr/textures/blank_1x1.png"
+  }
+  textures {
+    sampler: "tex_diffuse_irradiance"
+    texture: "/defold-pbr/textures/blank_cube.cubemap"
+  }
+  textures {
+    sampler: "tex_emissive"
+    texture: "/defold-pbr/textures/blank_1x1.png"
+  }
+  textures {
+    sampler: "tex_occlusion"
+    texture: "/assets/littlecoaster/textures/ferriswheel_AO.png"
+  }
+  textures {
+    sampler: "tex_prefiltered_reflection"
+    texture: "/defold-pbr/textures/blank_cube.cubemap"
+  }
+  textures {
+    sampler: "tex_albedo"
+    texture: "/assets/littlecoaster/textures/ferriswheel_BaseColor.png"
+  }
+  textures {
+    sampler: "tex_metallic_roughness"
+    texture: "/assets/littlecoaster/textures/ferriswheel_Metal_Roughness.png"
+  }
+  textures {
+    sampler: "tex_normal"
+    texture: "/assets/littlecoaster/textures/ferriswheel_Normal.png"
+  }
+}
+create_go_bones: false

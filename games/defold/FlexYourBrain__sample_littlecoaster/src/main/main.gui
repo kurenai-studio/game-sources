@@ -1,0 +1,235 @@
+script: "/main/main.gui_script"
+textures {
+  name: "icons"
+  texture: "/assets/littlecoaster/icons.atlas"
+}
+nodes {
+  position {
+    x: -365.442
+    y: 714.0
+  }
+  size {
+    x: 320.0
+    y: 640.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "debug-left-pane"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  pivot: PIVOT_NW
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  alpha: 0.35
+}
+nodes {
+  position {
+    x: 148.366
+    y: -620.168
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+    z: 0.2
+  }
+  type: TYPE_TEMPLATE
+  id: "light_0"
+  parent: "debug-left-pane"
+  inherit_alpha: true
+  template: "/dirtylarry/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_0/larrysafearea"
+  parent: "light_0"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_0/larryslider"
+  parent: "light_0/larrysafearea"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_0/larrycursor"
+  parent: "light_0/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "light_0/larryvalue"
+  parent: "light_0/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "light_0/larrylabel"
+  parent: "light_0/larryslider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 148.366
+    y: -596.978
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+    z: 0.2
+  }
+  type: TYPE_TEMPLATE
+  id: "light_1"
+  parent: "debug-left-pane"
+  inherit_alpha: true
+  template: "/dirtylarry/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_1/larrysafearea"
+  parent: "light_1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_1/larryslider"
+  parent: "light_1/larrysafearea"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "light_1/larrycursor"
+  parent: "light_1/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "light_1/larryvalue"
+  parent: "light_1/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "light_1/larrylabel"
+  parent: "light_1/larryslider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 148.366
+    y: -574.09
+  }
+  scale {
+    x: 0.4
+    y: 0.4
+    z: 0.2
+  }
+  type: TYPE_TEMPLATE
+  id: "camera_exposure"
+  parent: "debug-left-pane"
+  inherit_alpha: true
+  template: "/dirtylarry/slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "camera_exposure/larrysafearea"
+  parent: "camera_exposure"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "camera_exposure/larryslider"
+  parent: "camera_exposure/larrysafearea"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "camera_exposure/larrycursor"
+  parent: "camera_exposure/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "camera_exposure/larryvalue"
+  parent: "camera_exposure/larryslider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "camera_exposure/larrylabel"
+  parent: "camera_exposure/larryslider"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -1051.194
+    y: 544.423
+  }
+  type: TYPE_TEMPLATE
+  id: "template"
+  template: "/dirtylarry/radio_label.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "template/larryradio"
+  parent: "template"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "template/larrylabel"
+  parent: "template"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 50.452
+    y: 697.641
+  }
+  scale {
+    x: 0.48
+    y: 0.48
+    z: 0.48
+  }
+  type: TYPE_TEMPLATE
+  id: "settings"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  size {
+    x: 175.0
+    y: 70.0
+  }
+  type: TYPE_BOX
+  id: "settings/larrybutton"
+  parent: "settings"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "settings\n"
+  ""
+  id: "settings/larrylabel"
+  parent: "settings/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 1219.0
+    y: 659.0
+  }
+  type: TYPE_BOX
+  texture: "icons/play_icon"
+  id: "play"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
