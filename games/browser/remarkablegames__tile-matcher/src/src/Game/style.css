@@ -1,0 +1,25 @@
+/* ensure tag works in IE 9-11 */
+main {
+  display: block;
+}
+
+/* https://css-tricks.com/centering-css-complete-guide/#center-horizontally-and-vertically */
+#root {
+  height: 100%;
+  position: relative;
+}
+
+.center {
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.heading {
+  font-size: 1.95em;
+}
+
+.text-center {
+  text-align: center;
+}
