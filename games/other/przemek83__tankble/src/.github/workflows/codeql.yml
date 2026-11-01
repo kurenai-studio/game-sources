@@ -1,0 +1,21 @@
+name: "CodeQL analysis"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '25 19 * * 2'
+
+permissions:
+  security-events: write
+  packages: read
+  actions: read
+  contents: read
+
+jobs:
+  analyze:
+    uses: przemek83/workflows/.github/workflows/codeql-cpp.yml@main
+    with:
+      dependencies-linux: "libgl1-mesa-dev libxcursor-dev"
