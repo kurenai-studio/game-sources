@@ -1,0 +1,22 @@
+#version 140
+
+uniform vx_uniforms
+{
+    mat4 mtx_worldview;
+    mat4 mtx_proj;
+};
+
+in vec4 position;
+in vec2 texcoord0;
+out vec4 var_position;
+out vec2 var_texcoord0;
+
+void main()
+{
+    vec4 p = mtx_worldview * vec4(position.xyz, 1.0);
+    var_position = p;
+    var_texcoord0 = texcoord0;
+
+    gl_Position = mtx_proj * p;
+}
+
