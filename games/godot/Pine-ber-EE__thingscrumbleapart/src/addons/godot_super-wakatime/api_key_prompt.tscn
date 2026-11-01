@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://bv3rxl15k7bj6"]
+
+[sub_resource type="Theme" id="Theme_1xn0x"]
+
+[node name="ApiKeyPrompt" type="Node2D" unique_id=47907630]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1322613418]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 346.0
+offset_bottom = 96.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = SubResource("Theme_1xn0x")
+
+[node name="HBoxContainerTop" type="HBoxContainer" parent="VBoxContainer" unique_id=1681135189]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/HBoxContainerTop" unique_id=1565816654]
+custom_minimum_size = Vector2(200, 25)
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 0
+placeholder_text = "Provide Your Wakatime API Key"
+expand_to_text_length = true
+secret = true
+
+[node name="ShowButton" type="Button" parent="VBoxContainer/HBoxContainerTop" unique_id=1779375964]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 4
+text = "Show"
+
+[node name="HBoxContainerBottom" type="HBoxContainer" parent="VBoxContainer" unique_id=2068317376]
+layout_mode = 2
+
+[node name="SubmitButton" type="Button" parent="VBoxContainer/HBoxContainerBottom" unique_id=880630100]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 0
+text = "Submit"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=156069562]
