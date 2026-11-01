@@ -1,0 +1,64 @@
+[project]
+name = "alchemy-game"
+version = "0.1.7"
+description = "An alchemical match-four puzzle game built with Pygame"
+readme = "README.md"
+authors = [
+    { name = "Andrew Davidson", email = "drace.davidson@gmail.com" }
+]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = ["pygame-ce>=2.5.8,<3"]
+keywords = ["game", "puzzle", "match-four", "pygame", "alchemy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: MacOS X",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Games/Entertainment :: Puzzle Games",
+]
+
+[project.urls]
+Homepage = "https://github.com/wulfalpha/alchemy"
+Repository = "https://github.com/wulfalpha/alchemy"
+Issues = "https://github.com/wulfalpha/alchemy/issues"
+Changelog = "https://github.com/wulfalpha/alchemy/blob/main/CHANGELOG.md"
+
+[project.scripts]
+alchemy = "alchemy:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "alchemy"
+
+[dependency-groups]
+build = [
+    "pyinstaller==6.22.3",
+]
+dev = [
+    "pytest>=9.2.0,<10",
+    "ruff>=0.17.3,<0.18",
+]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Explicit, so a new ruff release cannot widen the rule set under CI.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests keep compact one-line setup; conftest sets SDL drivers before importing.
+"tests/**" = ["E402", "E702", "E731"]
