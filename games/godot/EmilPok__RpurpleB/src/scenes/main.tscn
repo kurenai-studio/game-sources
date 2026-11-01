@@ -1,0 +1,239 @@
+[gd_scene format=3 uid="uid://dhu7d5mfju5tc"]
+
+[ext_resource type="Script" uid="uid://wktkettro3js" path="res://scripts/main.gd" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://24awp6djh3i1" path="res://scenes/gui.tscn" id="2_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://d7u0mhs8jn2t" path="res://scenes/character_1.tscn" id="3_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://b2lbuxbsgi1no" path="res://scenes/character_2.tscn" id="4_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://tf0x6voo2kg0" path="res://scenes/change_player.tscn" id="5_tbgi4"]
+[ext_resource type="Shader" uid="uid://c5q8p30mm0d7g" path="res://shaders/circle.gdshader" id="6_tefeu"]
+[ext_resource type="Texture2D" uid="uid://bre6vrhb3j252" path="res://art/UI/X_button.png" id="7_o6xl0"]
+[ext_resource type="Texture2D" uid="uid://mbtgvgidjatt" path="res://art/UI/help.png" id="7_ya4ey"]
+[ext_resource type="Script" uid="uid://b5wp5ax83mxm7" path="res://scripts/UI/back_button.gd" id="8_tipki"]
+[ext_resource type="AudioStream" uid="uid://vi100fckokfr" path="res://sounds/music/level_background_music.mp3" id="9_85g3d"]
+[ext_resource type="AudioStream" uid="uid://jyrukq6io31m" path="res://sounds/click.mp3" id="10_choun"]
+[ext_resource type="Texture2D" uid="uid://dma2v4w5si1vi" path="res://art/UI/TIP.png" id="12_eb6dy"]
+
+[sub_resource type="Animation" id="Animation_tipki"]
+resource_name = "End_transition"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Circle_trans/Transition_Background:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(0.57434916, 1),
+"update": 0,
+"values": [Vector2(-360, 0), Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_tefeu"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Circle_trans/ColorRect:material:shader_parameter/_Progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Circle_trans/Black_screen:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_o6xl0"]
+resource_name = "circle"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Circle_trans/ColorRect:material:shader_parameter/_Progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(0.5, 1),
+"update": 0,
+"values": [0.0, 0.999999977648]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Circle_trans/Black_screen:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.44, 0.45),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_tipki"]
+_data = {
+&"End_transition": SubResource("Animation_tipki"),
+&"RESET": SubResource("Animation_tefeu"),
+&"circle": SubResource("Animation_o6xl0")
+}
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o6xl0"]
+shader = ExtResource("6_tefeu")
+shader_parameter/_CirclePosition = Vector2(0.5, 0.5)
+shader_parameter/_Progress = 0.0
+shader_parameter/_Smoothness = 0.0999999977648
+shader_parameter/_Background = Color(0, 0, 0, 1)
+
+[sub_resource type="Animation" id="Animation_eb6dy"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Circle_trans/Tip:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-26, 151.5)]
+}
+
+[sub_resource type="Animation" id="Animation_trceg"]
+resource_name = "slide"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Circle_trans/Tip:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(0.3, 1),
+"update": 0,
+"values": [Vector2(-26, 151.5), Vector2(26, 151.5)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_a8y0u"]
+_data = {
+&"RESET": SubResource("Animation_eb6dy"),
+&"slide": SubResource("Animation_trceg")
+}
+
+[node name="Main" type="Node2D" unique_id=1172100023]
+script = ExtResource("1_o5qli")
+Amount_of_levels = 3
+
+[node name="Character_1" parent="." unique_id=1347863031 node_paths=PackedStringArray("GUI") instance=ExtResource("3_jyhfs")]
+position = Vector2(-15, 0)
+GUI = NodePath("../GUI")
+
+[node name="Character_2" parent="." unique_id=1518678440 instance=ExtResource("4_tbgi4")]
+position = Vector2(16, 1)
+
+[node name="Change_Player" parent="." unique_id=350997356 node_paths=PackedStringArray("player_1", "player_2") instance=ExtResource("5_tbgi4")]
+player_1 = NodePath("../Character_1")
+player_2 = NodePath("../Character_2")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=851738091]
+libraries/ = SubResource("AnimationLibrary_tipki")
+
+[node name="Circle_trans" type="CanvasLayer" parent="." unique_id=1578152919]
+
+[node name="Back_button" type="TextureButton" parent="Circle_trans" unique_id=684727155]
+z_index = -1
+offset_left = 7.0
+offset_top = 3.0
+offset_right = 22.0
+offset_bottom = 18.0
+focus_mode = 0
+texture_normal = ExtResource("7_o6xl0")
+script = ExtResource("8_tipki")
+
+[node name="Help" type="TextureButton" parent="Circle_trans" unique_id=1266546397]
+visible = false
+z_index = -1
+offset_left = 30.279999
+offset_top = 3.0
+offset_right = 46.28
+offset_bottom = 19.0
+focus_mode = 0
+disabled = true
+texture_normal = ExtResource("7_ya4ey")
+script = ExtResource("8_tipki")
+help = true
+
+[node name="ColorRect" type="ColorRect" parent="Circle_trans" unique_id=242601296]
+material = SubResource("ShaderMaterial_o6xl0")
+offset_right = 320.0
+offset_bottom = 180.0
+mouse_filter = 2
+
+[node name="Black_screen" type="ColorRect" parent="Circle_trans" unique_id=646299022]
+visible = false
+offset_right = 320.0
+offset_bottom = 180.0
+color = Color(0, 0, 0, 1)
+
+[node name="Transition_Background" type="ColorRect" parent="Circle_trans" unique_id=1507161774]
+z_index = 1000
+custom_minimum_size = Vector2(320, 180)
+offset_left = -360.0
+offset_right = -39.999756
+offset_bottom = 600.0
+color = Color(0.007843138, 0.53333336, 0.81960785, 1)
+
+[node name="Tip" type="Sprite2D" parent="Circle_trans" unique_id=2021165320]
+position = Vector2(-26, 151.5)
+texture = ExtResource("12_eb6dy")
+
+[node name="Move_allow" type="Timer" parent="." unique_id=1638547810]
+wait_time = 0.05
+one_shot = true
+
+[node name="GUI" parent="." unique_id=310219774 node_paths=PackedStringArray("character1", "character2") instance=ExtResource("2_0wfyh")]
+character1 = NodePath("../Character_1")
+character2 = NodePath("../Character_2")
+
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=1707471709]
+stream = ExtResource("9_85g3d")
+volume_db = -10.0
+autoplay = true
+bus = &"Music"
+
+[node name="click" type="AudioStreamPlayer" parent="." unique_id=1436602847]
+stream = ExtResource("10_choun")
+volume_db = -10.0
+bus = &"sfx"
+
+[node name="AnimationPlayer2" type="AnimationPlayer" parent="." unique_id=619016517]
+libraries/ = SubResource("AnimationLibrary_a8y0u")
+
+[node name="Button_anim" type="Timer" parent="." unique_id=641246378]
+wait_time = 0.3
+one_shot = true
+
+[connection signal="button_down" from="Circle_trans/Back_button" to="Circle_trans/Back_button" method="_on_texture_button_button_down"]
+[connection signal="mouse_entered" from="Circle_trans/Back_button" to="Circle_trans/Back_button" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="Circle_trans/Back_button" to="Circle_trans/Back_button" method="_on_mouse_exited"]
+[connection signal="pressed" from="Circle_trans/Back_button" to="Circle_trans/Back_button" method="_on_texture_button_pressed"]
+[connection signal="button_down" from="Circle_trans/Help" to="Circle_trans/Help" method="_on_texture_button_button_down"]
+[connection signal="mouse_entered" from="Circle_trans/Help" to="Circle_trans/Help" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="Circle_trans/Help" to="Circle_trans/Help" method="_on_mouse_exited"]
+[connection signal="pressed" from="Circle_trans/Help" to="Circle_trans/Help" method="_on_texture_button_pressed"]
+[connection signal="timeout" from="Move_allow" to="." method="_on_move_allow_timeout"]
+[connection signal="timeout" from="Button_anim" to="." method="_on_button_anim_timeout"]

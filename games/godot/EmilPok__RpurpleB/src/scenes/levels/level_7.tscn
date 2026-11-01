@@ -1,0 +1,263 @@
+[gd_scene format=4 uid="uid://bq51pp12n6dwl"]
+
+[ext_resource type="TileSet" uid="uid://b8gubqbjc0uns" path="res://art/tiles.tres" id="1_hq5i0"]
+[ext_resource type="PackedScene" uid="uid://cvaoho4dwuilx" path="res://scenes/end_button.tscn" id="2_u1w5x"]
+[ext_resource type="PackedScene" uid="uid://dra4hwim6nip" path="res://scenes/button.tscn" id="3_posk4"]
+[ext_resource type="PackedScene" uid="uid://cbv15oqqtv3bg" path="res://scenes/moving_block.tscn" id="4_sjq8i"]
+[ext_resource type="Texture2D" uid="uid://bulvg5a4w4gmi" path="res://art/misc/arrow.png" id="5_q0wsq"]
+[ext_resource type="Script" uid="uid://cqyvq8b32bpq0" path="res://scripts/died.gd" id="6_ivh0c"]
+[ext_resource type="Texture2D" uid="uid://8ly85tjeh4fo" path="res://art/misc/chalk.png" id="7_u1w5x"]
+[ext_resource type="Texture2D" uid="uid://dwuhxek3ooenw" path="res://art/UI/tutorial/decor1.png" id="8_posk4"]
+[ext_resource type="Texture2D" uid="uid://tm35yq1u3wq" path="res://art/misc/standing_chalk.png" id="9_sjq8i"]
+[ext_resource type="Texture2D" uid="uid://c5gk05d5ooo2k" path="res://art/misc/bullet_wall.png" id="10_q0wsq"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7x7cx"]
+size = Vector2(484, 20)
+
+[node name="level_7" type="Node2D" unique_id=1588086396]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=960983968]
+position = Vector2(160, 90)
+
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1619359490]
+position = Vector2(0, -1)
+tile_map_data = PackedByteArray("AAAFAAoAAAAFAAAAAAAFAAsAAAAFAAEAAAACAAsAAAAEAAEAAAADAAsAAAAEAAEAAAADAAoAAAAEAAAAAAAEAAoAAAAEAAAAAAACAAoAAAAEAAAAAAAEAAsAAAAEAAEAAAD//wYAAAAEAAIAAAD//wcAAAAEAAAAAAAAAAYAAAAEAAIAAAAAAAcAAAAFAAAAAAD//wMAAAAEAAIAAAAAAAMAAAAEAAIAAAAAAAEAAAAEAAEAAAAAAAIAAAAEAAEAAAABAAEAAAAFAAEAAAABAAIAAAAFAAEAAAAAAAAAAAAEAAEAAAABAAAAAAAFAAEAAAAAAP//AAAEAAEAAAABAP//AAAFAAEAAAD/////AAAEAAEAAAD//wAAAAAEAAEAAAD//wEAAAAEAAEAAAD//wIAAAAEAAEAAAAAAAgAAAAFAAEAAAAAAAkAAAAFAAEAAAAAAAoAAAAFAAEAAAAAAAsAAAAFAAEAAAD//wgAAAAEAAEAAAD//wkAAAAEAAEAAAD//woAAAAEAAEAAAD//wsAAAAEAAEAAAABAAoAAAADAAAAAAABAAsAAAADAAEAAAACAAAAAAADAAEAAAACAAEAAAADAAEAAAADAAAAAAAFAAEAAAADAAEAAAAFAAEAAAACAP//AAADAAEAAAADAP//AAAFAAEAAAARAAAAAAADAAEAAAARAP//AAADAAAAAAARAAEAAAADAAIAAAASAAEAAAAEAAIAAAATAAEAAAAEAAIAAAAUAAEAAAAFAAIAAAASAP//AAAEAAAAAAASAAAAAAAEAAEAAAATAAAAAAAEAAEAAAAUAAAAAAAFAAEAAAATAP//AAAEAAAAAAAUAP//AAAFAAAAAAAPAAMAAQAFAAAAAAAOAAMAAQAEAAAAAAANAAMAAQAEAAAAAAAMAAMAAQAEAAAAAAABAAMAAAAFAAIAAAADAAIAAAAFAAEAAAACAAIAAAADAAEAAAAPAAQAAQAFAAIAAAAOAAQAAQAAAAAAAAANAAQAAQAEAAEAAAAKAAQAAQAEAAIAAAAUAAIAAAAEAAAAAAAUAAMAAAAEAAEAAAAUAAQAAAAEAAEAAAATAAIAAAADAAAAAAATAAMAAAADAAEAAAATAAQAAAADAAEAAAATAAUAAAADAAEAAAAUAAUAAAAEAAEAAAATAAYAAAADAAEAAAAUAAYAAAAEAAEAAAATAAcAAAADAAEAAAAUAAcAAAAEAAEAAAATAAgAAAADAAEAAAAUAAgAAAAEAAEAAAATAAkAAAADAAEAAAAUAAkAAAAEAAEAAAATAAoAAAADAAEAAAAUAAoAAAAEAAEAAAATAAsAAAADAAEAAAAUAAsAAAAEAAEAAAATAAwAAAADAAEAAAAUAAwAAAAEAAEAAAAQAAoAAQADAAMAAAARAAoAAQAEAAMAAAASAAoAAQAFAAMAAAAQAAsAAQADAAQAAAAQAAwAAQADAAUAAAARAAsAAQAEAAQAAAASAAsAAQAFAAQAAAASAAwAAQAFAAUAAAARAAwAAQAEAAUAAAAGAAcAAAADAAEAAAAGAAgAAAADAAEAAAAGAAkAAAADAAEAAAAGAAoAAAADAAEAAAAGAAsAAAADAAEAAAAHAAcAAAAFAAEAAAAHAAgAAAAFAAEAAAAHAAkAAAAAAAEAAAAHAAoAAAAEAAEAAAAHAAsAAAAEAAEAAAAOAAUAAQAFAAEAAAAOAAYAAQAFAAEAAAANAAUAAQAEAAEAAAANAAYAAQAEAAEAAAAMAAYAAQABAAAAAAAMAAcAAQADAAEAAAAMAAgAAQADAAIAAAANAAcAAQAEAAEAAAANAAgAAQAEAAIAAAAOAAcAAQAFAAEAAAAOAAgAAQAFAAIAAAAIAAoAAAAFAAEAAAAIAAsAAAAFAAEAAAAEAAAAAAADAAIAAAAEAP//AAADAAEAAAAJAP//AAAFAAEAAAAJAAAAAAAFAAIAAAAIAAAAAAAEAAIAAAAHAAAAAAAEAAIAAAAGAAAAAAAEAAIAAAAFAAAAAAAEAAIAAAAIAP//AAAEAAEAAAAHAP//AAAEAAEAAAAGAP//AAAEAAEAAAAFAP//AAAEAAEAAAALAAMAAQAAAAEAAAAKAAMAAQAEAAEAAAAIAAkAAAAFAAAAAAACAAQAAAAEAAAAAAACAAUAAAAAAAAAAAADAAUAAAAFAAIAAAADAAQAAAAFAAAAAAACAAYAAAAFAAIAAAABAAYAAAAEAAIAAAABAAQAAAAEAAAAAAAAAAQAAAAEAAAAAAD//wQAAAAEAAAAAAABAAUAAAAEAAEAAAAAAAUAAAAEAAEAAAD//wUAAAAEAAEAAAADAAMAAAAFAAIAAAACAAMAAAADAAIAAAAJAAQAAQADAAIAAAAJAAMAAQADAAEAAAALAAYAAQADAAIAAAALAAUAAQADAAEAAAALAAQAAQABAAAAAAAMAAQAAQAEAAEAAAAMAAUAAQAEAAEAAAA=")
+tile_set = ExtResource("1_hq5i0")
+
+[node name="TileMapLayer2" type="TileMapLayer" parent="." unique_id=1999215310]
+position = Vector2(0, 19)
+tile_map_data = PackedByteArray("AAAKAAAAAQADAAIAAAAQAP//AQAFAAIAAAAQAP7/AQAFAAEAAAAKAP//AQADAAEAAAAKAP7/AQADAAEAAAAPAP//AQAEAAIAAAAOAP//AQAEAAIAAAANAP//AQAEAAIAAAAMAP//AQAEAAIAAAALAP//AQAAAAAAAAALAP7/AQAEAAEAAAAMAP7/AQAEAAEAAAANAP7/AQAEAAEAAAAPAP7/AQAEAAEAAAAOAP7/AQAEAAEAAAALAAAAAQAFAAIAAAA=")
+tile_set = ExtResource("1_hq5i0")
+
+[node name="TileMapLayer3" type="TileMapLayer" parent="." unique_id=1031249813]
+z_index = -1
+position = Vector2(0, 12)
+tile_map_data = PackedByteArray("AAALAAIAAQAFAAAAAAAJAAIAAQADAAAAAAAKAAIAAQAEAAAAAAA=")
+tile_set = ExtResource("1_hq5i0")
+
+[node name="End_buttons" parent="." unique_id=213298147 node_paths=PackedStringArray("other_button") instance=ExtResource("2_u1w5x")]
+position = Vector2(280, 151)
+other_button = NodePath("../End_buttons2")
+
+[node name="End_buttons2" parent="." unique_id=1193811406 node_paths=PackedStringArray("other_button") instance=ExtResource("2_u1w5x")]
+position = Vector2(204, 39)
+is_red = true
+other_button = NodePath("../End_buttons")
+
+[node name="Character_1_pos" type="Marker2D" parent="." unique_id=112681352]
+position = Vector2(40, 159)
+
+[node name="Character_2_pos" type="Marker2D" parent="." unique_id=1323345115]
+position = Vector2(70, 159)
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1078840310]
+z_index = -20
+offset_left = -26.0
+offset_top = -7.0
+offset_right = 346.0
+offset_bottom = 253.0
+mouse_filter = 2
+color = Color(0.7921569, 0.6431373, 0.8627451, 1)
+
+[node name="Button2" parent="." unique_id=1079946355 node_paths=PackedStringArray("object") instance=ExtResource("3_posk4")]
+position = Vector2(289, 39)
+rotation = -3.1415925
+object = NodePath("../Moving_block3")
+
+[node name="Button" parent="." unique_id=1683397573 node_paths=PackedStringArray("object", "second_object") instance=ExtResource("3_posk4")]
+position = Vector2(72, 37)
+rotation = 1.5707964
+object = NodePath("../Moving_block")
+second_object = NodePath("../Moving_block2")
+
+[node name="Moving_block2" parent="." unique_id=1392415192 instance=ExtResource("4_sjq8i")]
+position = Vector2(237, 171)
+end_point_pos = Vector2(-62, 0)
+horizontal = true
+
+[node name="Moving_block3" parent="." unique_id=833281625 instance=ExtResource("4_sjq8i")]
+position = Vector2(74, 112)
+end_point_pos = Vector2(0, 22)
+flipped = true
+
+[node name="Moving_block4" parent="." unique_id=1201841283 instance=ExtResource("4_sjq8i")]
+z_index = -2
+position = Vector2(64, 62)
+end_point_pos = Vector2(0, 22)
+flipped = true
+
+[node name="Moving_block5" parent="." unique_id=546706653 instance=ExtResource("4_sjq8i")]
+z_index = -2
+position = Vector2(192, 140)
+end_point_pos = Vector2(0, 22)
+flipped = true
+
+[node name="Moving_block" parent="." unique_id=1456130394 instance=ExtResource("4_sjq8i")]
+position = Vector2(274, 70)
+end_point_pos = Vector2(0, 60)
+flipped = true
+
+[node name="Inv" type="TileMapLayer" parent="." unique_id=1337355367]
+visible = false
+tile_map_data = PackedByteArray("AAD//wMAAAAEAAIAAAD//wQAAAAEAAIAAAD//wUAAAAEAAIAAAD//wYAAAAEAAIAAAD//wcAAAAEAAIAAAD//wgAAAAEAAIAAAAUAAkAAAAEAAIAAAAUAAgAAAAEAAIAAAAUAAcAAAAEAAIAAAAUAAYAAAAEAAIAAAAUAAUAAAAEAAIAAAAUAAQAAAAEAAIAAAAUAAMAAAAEAAIAAAAUAAIAAAAEAAIAAAAUAAEAAAAEAAIAAAA=")
+tile_set = ExtResource("1_hq5i0")
+
+[node name="Arrows" type="Node2D" parent="." unique_id=683102169]
+position = Vector2(156, -14)
+
+[node name="Arrow3" type="Sprite2D" parent="Arrows" unique_id=1560844633]
+z_index = -2
+position = Vector2(118, 102)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow2" type="Sprite2D" parent="Arrows" unique_id=1324299342]
+z_index = -2
+position = Vector2(118, 90)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow9" type="Sprite2D" parent="Arrows" unique_id=1721019691]
+z_index = -2
+position = Vector2(118, 126)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow11" type="Sprite2D" parent="Arrows" unique_id=328249976]
+z_index = -2
+position = Vector2(118, 138)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow7" type="Sprite2D" parent="Arrows" unique_id=1918641881]
+z_index = -2
+position = Vector2(118, 114)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrows2" type="Node2D" parent="." unique_id=2037036860]
+position = Vector2(-44, 30)
+
+[node name="Arrow3" type="Sprite2D" parent="Arrows2" unique_id=870379309]
+z_index = -2
+position = Vector2(118, 102)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow4" type="Sprite2D" parent="Arrows2" unique_id=1024636460]
+z_index = -2
+position = Vector2(118, 96)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow2" type="Sprite2D" parent="Arrows2" unique_id=913280603]
+z_index = -2
+position = Vector2(118, 90)
+rotation = 3.1415927
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrows3" type="Node2D" parent="." unique_id=743849836]
+position = Vector2(38, 31)
+
+[node name="Arrow4" type="Sprite2D" parent="Arrows3" unique_id=640523550]
+z_index = -2
+position = Vector2(180.00002, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow6" type="Sprite2D" parent="Arrows3" unique_id=1306897064]
+z_index = -2
+position = Vector2(168, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow8" type="Sprite2D" parent="Arrows3" unique_id=1616414914]
+z_index = -2
+position = Vector2(156, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrows4" type="Node2D" parent="." unique_id=565495191]
+position = Vector2(-81, -102)
+
+[node name="Arrow10" type="Sprite2D" parent="Arrows4" unique_id=995881786]
+z_index = -2
+position = Vector2(204, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow12" type="Sprite2D" parent="Arrows4" unique_id=1555415576]
+z_index = -2
+position = Vector2(220, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow14" type="Sprite2D" parent="Arrows4" unique_id=1543775674]
+z_index = -2
+position = Vector2(236, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow6" type="Sprite2D" parent="Arrows4" unique_id=762266997]
+z_index = -2
+position = Vector2(172, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Arrow8" type="Sprite2D" parent="Arrows4" unique_id=911590093]
+z_index = -2
+position = Vector2(156, 139.5)
+rotation = -1.5707964
+texture = ExtResource("5_q0wsq")
+
+[node name="Died" type="Area2D" parent="." unique_id=12501893]
+position = Vector2(0, 11)
+collision_layer = 0
+collision_mask = 24
+script = ExtResource("6_ivh0c")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Died" unique_id=84064599]
+position = Vector2(162, 216)
+shape = SubResource("RectangleShape2D_7x7cx")
+
+[node name="Chalk3" type="Sprite2D" parent="." unique_id=706863464]
+position = Vector2(55, 155)
+texture = ExtResource("7_u1w5x")
+
+[node name="Decor2" type="Sprite2D" parent="." unique_id=1920920428]
+position = Vector2(33, 127)
+texture = ExtResource("8_posk4")
+flip_h = true
+
+[node name="Decor3" type="Sprite2D" parent="." unique_id=925744436]
+position = Vector2(97, 74)
+texture = ExtResource("8_posk4")
+
+[node name="Decor4" type="Sprite2D" parent="." unique_id=2002347284]
+position = Vector2(157, 126)
+texture = ExtResource("8_posk4")
+
+[node name="Decor5" type="Sprite2D" parent="." unique_id=1930269584]
+position = Vector2(246, 33)
+texture = ExtResource("8_posk4")
+flip_h = true
+
+[node name="StandingChalk" type="Sprite2D" parent="." unique_id=2133577235]
+position = Vector2(130, 139)
+texture = ExtResource("9_sjq8i")
+
+[node name="BulletWall" type="Sprite2D" parent="." unique_id=1384241408]
+position = Vector2(175, 40)
+texture = ExtResource("10_q0wsq")
+
+[node name="BulletWall2" type="Sprite2D" parent="." unique_id=719861119]
+position = Vector2(109, 40)
+texture = ExtResource("10_q0wsq")
+flip_v = true
+
+[node name="TileMapLayer4" type="TileMapLayer" parent="." unique_id=242061628]
+position = Vector2(0, 14)
+tile_map_data = PackedByteArray("AAAGAAYAAAADAAAAAAAHAAYAAAAFAAAAAAA=")
+tile_set = ExtResource("1_hq5i0")
+
+[connection signal="body_entered" from="Died" to="Died" method="_on_body_entered"]

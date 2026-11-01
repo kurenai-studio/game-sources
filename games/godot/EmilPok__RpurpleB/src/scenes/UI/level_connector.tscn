@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://dugp7x1de6feb"]
+
+[ext_resource type="Script" uid="uid://cf8528ag0v6wy" path="res://scripts/UI/level_connector.gd" id="1_cucjf"]
+[ext_resource type="Texture2D" uid="uid://barg8tnci4xeg" path="res://art/UI/level_design/cables.png" id="2_1p1o0"]
+
+[sub_resource type="Animation" id="Animation_8ej5n"]
+resource_name = "connect"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Cable:size")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.13333334, 0.6),
+"transitions": PackedFloat32Array(2.4622905, 0.07694659),
+"update": 0,
+"values": [Vector2(6, 8), Vector2(6, 25)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_g3fea"]
+_data = {
+&"connect": SubResource("Animation_8ej5n")
+}
+
+[node name="LevelConnector" type="Node2D" unique_id=2004685137]
+z_index = 10
+script = ExtResource("1_cucjf")
+
+[node name="Cable" type="NinePatchRect" parent="." unique_id=1602067742]
+offset_right = 6.0
+offset_bottom = 8.0
+texture = ExtResource("2_1p1o0")
+patch_margin_top = 4
+patch_margin_bottom = 4
+axis_stretch_vertical = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1112084240]
+libraries/ = SubResource("AnimationLibrary_g3fea")

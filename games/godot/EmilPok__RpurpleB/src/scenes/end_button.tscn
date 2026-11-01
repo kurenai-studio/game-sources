@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cvaoho4dwuilx"]
+
+[ext_resource type="Script" uid="uid://bqgmp4r5rw8db" path="res://scripts/end_button.gd" id="1_jmw10"]
+[ext_resource type="Texture2D" uid="uid://bs2ttefu75b7b" path="res://art/misc/Buttons/button_red.png" id="2_f866a"]
+[ext_resource type="AudioStream" uid="uid://ceqnats2lu5iy" path="res://sounds/Pressed.wav" id="3_vmwti"]
+[ext_resource type="AudioStream" uid="uid://clc773qv5aqo2" path="res://sounds/Unpressed.wav" id="4_tjie5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rfjtf"]
+size = Vector2(12, 3)
+
+[node name="End_buttons" type="Area2D" unique_id=213298147]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_jmw10")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1296958781]
+visible = false
+position = Vector2(0, 5.5)
+shape = SubResource("RectangleShape2D_rfjtf")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=811901557]
+texture = ExtResource("2_f866a")
+hframes = 2
+
+[node name="Pressed" type="AudioStreamPlayer" parent="." unique_id=2044853917]
+stream = ExtResource("3_vmwti")
+volume_db = -10.0
+bus = &"sfx"
+
+[node name="Unpressed" type="AudioStreamPlayer" parent="." unique_id=903574990]
+stream = ExtResource("4_tjie5")
+bus = &"sfx"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]
