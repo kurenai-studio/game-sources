@@ -1,0 +1,419 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "AvoidanceSystems.h"
+
+float AvoidanceSystems::GetEffortCoefficientForEntityPair(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, const AvoidanceGroupingComponent* sourceGroupingComponent, const AvoidanceGroupingComponent* foundGroupingComponent, bool sourceHasObstacles, bool inSameAvoidanceGroup)
+{
+	ARGUS_TRACE(AvoidanceSystems::GetEffortCoefficientForEntityPair);
+
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return 0.0f;
+	}
+
+	const TaskComponent* foundEntityTaskComponent = foundEntity.GetComponent<TaskComponent>();
+	if (!foundEntityTaskComponent)
+	{
+		return 1.0f;
+	}
+
+	float effortCoefficient = 0.5f;
+	if (ShouldReturnCarrierEffortCoefficient(settings, sourceEntityComponents, foundEntity, foundEntityTaskComponent, effortCoefficient) ||
+		ShouldReturnTargetEffortCoefficient(settings, sourceEntityComponents, foundEntity, inSameAvoidanceGroup, effortCoefficient) || 
+		ShouldReturnMovabilityEffortCoefficient(settings, sourceEntityComponents, foundEntity, effortCoefficient) ||
+		ShouldReturnEnemyEffortCoefficient(settings, sourceEntityComponents, foundEntity, effortCoefficient) ||
+		ShouldReturnCombatEffortCoefficient(settings, sourceEntityComponents, foundEntityTaskComponent, inSameAvoidanceGroup, effortCoefficient) ||
+		ShouldReturnConstructionEffortCoefficient(settings, sourceEntityComponents, foundEntityTaskComponent, inSameAvoidanceGroup, effortCoefficient) ||
+		ShouldReturnResourceExtractionEffortCoefficient(settings, sourceEntityComponents, foundEntityTaskComponent, inSameAvoidanceGroup, effortCoefficient) ||
+		ShouldReturnObstacleEffortCoefficient(settings, sourceEntityComponents, foundEntity, sourceHasObstacles, effortCoefficient) ||
+		ShouldReturnStaticFlockingEffortCoefficient(settings, sourceEntityComponents, foundEntity, effortCoefficient) ||
+		ShouldReturnAvoidancePriorityEffortCoefficient(settings, sourceGroupingComponent, foundGroupingComponent, effortCoefficient) ||
+		ShouldReturnMovementTaskEffortCoefficient(settings, sourceEntityComponents, foundEntity, foundEntityTaskComponent, inSameAvoidanceGroup, effortCoefficient))
+	{
+		return effortCoefficient;
+	}
+
+	if (inSameAvoidanceGroup)
+	{
+		return GetEffortCoefficientForAvoidanceGroupPair(settings, sourceEntityComponents, foundEntity, sourceGroupingComponent, foundGroupingComponent);
+	}
+
+	return 0.5f;
+}
+
+float AvoidanceSystems::GetEffortCoefficientForAvoidanceGroupPair(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, const AvoidanceGroupingComponent* sourceGroupComponent, const AvoidanceGroupingComponent* foundGroupComponent)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, 1.0f);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return 0.0f;
+	}
+
+	ARGUS_RETURN_ON_NULL_VALUE(sourceGroupComponent, ArgusECSLog, 1.0f);
+	ARGUS_RETURN_ON_NULL_VALUE(foundGroupComponent, ArgusECSLog, 0.0f);
+
+	if (sourceGroupComponent->m_groupId != foundGroupComponent->m_groupId || sourceGroupComponent->m_groupId == ArgusECSConstants::k_maxEntities)
+	{
+		return 0.5f;
+	}
+
+	const TransformComponent* foundTransformComponent = foundEntity.GetComponent<TransformComponent>();
+	if (!foundTransformComponent)
+	{
+		ARGUS_ERROR_NULL(ArgusECSLog, foundTransformComponent);
+		return 0.0f;
+	}
+
+	const float squaredDistance = FVector::DistSquared2D(sourceEntityComponents.m_transformComponent->m_location, foundTransformComponent->m_location);
+	if (squaredDistance > FMath::Square(sourceEntityComponents.m_transformComponent->m_radius * 2.0f))
+	{
+		return 0.0f;
+	}
+
+	return settings->m_sameAvoidanceGroupBase;
+}
+
+bool AvoidanceSystems::ShouldReturnEnemyEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	const IdentityComponent* foundEntityIdentityComponent = foundEntity.GetComponent<IdentityComponent>();
+	const IdentityComponent* sourceEntityIdentityComponent = sourceEntityComponents.m_entity.GetComponent<IdentityComponent>();
+	if (!foundEntityIdentityComponent || !sourceEntityIdentityComponent)
+	{
+		return false;
+	}
+
+	if (const ArgusEntity foundTeamCommanderEntity = ArgusEntity::GetTeamEntity(foundEntityIdentityComponent->m_team))
+	{
+		if (const TeamCommanderComponent* foundCommanderComponent = foundTeamCommanderEntity.GetComponent<TeamCommanderComponent>())
+		{
+			if (TeamUtils::IsInTeamMask(sourceEntityIdentityComponent->m_team, foundCommanderComponent->m_enemies))
+			{
+				coefficient = sourceEntityComponents.m_taskComponent->IsExecutingMoveTask() ? 1.0f : 0.0f;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnMovabilityEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!foundEntity.IsMoveable())
+	{
+		coefficient = 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnCombatEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, const TaskComponent* foundEntityTaskComponent, bool inSameAvoidanceGroup, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(foundEntityTaskComponent, ArgusECSLog);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_taskComponent->m_combatState == ECombatState::Attacking && foundEntityTaskComponent->m_combatState != ECombatState::Attacking)
+	{
+		coefficient = inSameAvoidanceGroup ? settings->m_sameAvoidanceGroupIsAttacking : 0.0f;
+		return true;
+	}
+	if (sourceEntityComponents.m_taskComponent->m_combatState != ECombatState::Attacking && foundEntityTaskComponent->m_combatState == ECombatState::Attacking)
+	{
+		coefficient = inSameAvoidanceGroup ? (1.0f - settings->m_sameAvoidanceGroupIsAttacking) : 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnConstructionEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, const TaskComponent* foundEntityTaskComponent, bool inSameAvoidanceGroup, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(foundEntityTaskComponent, ArgusECSLog);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_taskComponent->m_constructionState == EConstructionState::ConstructingOther && foundEntityTaskComponent->m_constructionState != EConstructionState::ConstructingOther)
+	{
+		coefficient = inSameAvoidanceGroup ? settings->m_sameAvoidanceGroupIsConstructing : 0.0f;
+		return true;
+	}
+	if (sourceEntityComponents.m_taskComponent->m_constructionState != EConstructionState::ConstructingOther && foundEntityTaskComponent->m_constructionState == EConstructionState::ConstructingOther)
+	{
+		coefficient = inSameAvoidanceGroup ? (1.0f - settings->m_sameAvoidanceGroupIsConstructing) : 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnCarrierEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, const TaskComponent* foundEntityTaskComponent, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(foundEntityTaskComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!sourceEntityComponents.m_entity.IsOnSameTeamAsOtherEntity(foundEntity))
+	{
+		return false;
+	}
+
+	const TargetingComponent* foundEntityTargetingComponent = foundEntity.GetComponent<TargetingComponent>();
+	const PassengerComponent* sourceEntityPassengerComponent = sourceEntityComponents.m_entity.GetComponent<PassengerComponent>();
+	const CarrierComponent* sourceEntityCarrierComponent = sourceEntityComponents.m_entity.GetComponent<CarrierComponent>();
+	const PassengerComponent* foundEntityPassengerComponent = foundEntity.GetComponent<PassengerComponent>();
+	const CarrierComponent* foundEntityCarrierComponent = foundEntity.GetComponent<CarrierComponent>();
+	if (sourceEntityPassengerComponent &&
+		foundEntityCarrierComponent &&
+		sourceEntityComponents.m_targetingComponent->HasEntityTarget() &&
+		sourceEntityComponents.m_targetingComponent->m_targetEntityId == foundEntity.GetId() &&
+		sourceEntityComponents.m_taskComponent->m_movementState == EMovementState::MoveToEntity)
+	{
+		coefficient = 0.0f;
+		return true;
+	}
+
+	if (foundEntityTargetingComponent &&
+		sourceEntityCarrierComponent &&
+		foundEntityPassengerComponent &&
+		foundEntityTargetingComponent->HasEntityTarget() &&
+		foundEntityTargetingComponent->m_targetEntityId == sourceEntityComponents.m_entity.GetId() &&
+		foundEntityTaskComponent->m_movementState == EMovementState::MoveToEntity)
+	{
+		coefficient = 0.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnTargetEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, bool inSameAvoidanceGroup, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_targetingComponent->HasEntityTarget() &&
+		sourceEntityComponents.m_targetingComponent->m_targetEntityId == foundEntity.GetId() &&
+		(sourceEntityComponents.m_taskComponent->m_movementState == EMovementState::MoveToEntity || sourceEntityComponents.m_taskComponent->m_movementState == EMovementState::InRangeOfTargetEntity))
+	{
+		coefficient = 0.0f;
+		return true;
+	}
+
+	const TargetingComponent* foundEntityTargetingComponent = foundEntity.GetComponent<TargetingComponent>();
+	const TaskComponent* foundEntityTaskComponent = foundEntity.GetComponent<TaskComponent>();
+	if (!foundEntityTargetingComponent || !foundEntityTaskComponent)
+	{
+		return false;
+	}
+
+	if (foundEntityTargetingComponent->HasEntityTarget() &&
+		foundEntityTargetingComponent->m_targetEntityId == sourceEntityComponents.m_entity.GetId() &&
+		(foundEntityTaskComponent->m_movementState == EMovementState::MoveToEntity || foundEntityTaskComponent->m_movementState == EMovementState::InRangeOfTargetEntity))
+	{
+		coefficient = (inSameAvoidanceGroup || !sourceEntityComponents.m_taskComponent->IsExecutingMoveTask()) ? 0.0f : 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnAvoidancePriorityEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const AvoidanceGroupingComponent* sourceEntityAvoidanceGroupingComponent, const AvoidanceGroupingComponent* foundEntityAvoidanceGroupingComponent, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	if (sourceEntityAvoidanceGroupingComponent && foundEntityAvoidanceGroupingComponent)
+	{
+		if (sourceEntityAvoidanceGroupingComponent->m_avoidancePriority > foundEntityAvoidanceGroupingComponent->m_avoidancePriority)
+		{
+			coefficient = 0.0f;
+			return true;
+		}
+
+		if (sourceEntityAvoidanceGroupingComponent->m_avoidancePriority < foundEntityAvoidanceGroupingComponent->m_avoidancePriority)
+		{
+			coefficient = 1.0f;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnMovementTaskEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, const TaskComponent* foundEntityTaskComponent, bool inSameAvoidanceGroup, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(foundEntityTaskComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_taskComponent->IsExecutingMoveTask() && (!foundEntityTaskComponent->IsExecutingMoveTask()))
+	{
+		coefficient = inSameAvoidanceGroup ? 1.0f : 0.0f;
+		return true;
+	}
+
+	if (!sourceEntityComponents.m_taskComponent->IsExecutingMoveTask() && foundEntityTaskComponent->IsExecutingMoveTask())
+	{
+		coefficient = inSameAvoidanceGroup ? 0.0f : 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnResourceExtractionEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, const TaskComponent* foundEntityTaskComponent, bool inSameAvoidanceGroup, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL_BOOL(foundEntityTaskComponent, ArgusECSLog);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_taskComponent->m_resourceExtractionState == EResourceExtractionState::Extracting && foundEntityTaskComponent->m_resourceExtractionState != EResourceExtractionState::Extracting)
+	{
+		coefficient = inSameAvoidanceGroup ? 0.33f : 0.0f;
+		return true;
+	}
+	if (sourceEntityComponents.m_taskComponent->m_resourceExtractionState != EResourceExtractionState::Extracting && foundEntityTaskComponent->m_resourceExtractionState == EResourceExtractionState::Extracting)
+	{
+		coefficient = inSameAvoidanceGroup ? 0.67f : 1.0f;
+		return true;
+	}
+
+	return false;
+}
+
+bool AvoidanceSystems::ShouldReturnStaticFlockingEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	const FlockingComponent* sourceEntityFlockingComponent = sourceEntityComponents.m_entity.GetComponent<FlockingComponent>();
+	const FlockingComponent* foundEntityFlockingComponent = foundEntity.GetComponent<FlockingComponent>();
+	if (!sourceEntityFlockingComponent || !foundEntityFlockingComponent)
+	{
+		return false;
+	}
+
+	if (!sourceEntityComponents.m_entity.IsOnSameTeamAsOtherEntity(foundEntity))
+	{
+		return false;
+	}
+
+	TaskComponent* foundTaskComponent = foundEntity.GetComponent<TaskComponent>();
+	TargetingComponent* foundTargetingComponent = foundEntity.GetComponent<TargetingComponent>();
+	TransformComponent* foundTransformComponent = foundEntity.GetComponent<TransformComponent>();
+	if (!foundTaskComponent || !foundTargetingComponent || !foundTransformComponent)
+	{
+		return false;
+	}
+
+	if (sourceEntityComponents.m_taskComponent->IsExecutingMoveTask() || foundTaskComponent->IsExecutingMoveTask())
+	{
+		return false;
+	}
+
+	if (!sourceEntityComponents.m_targetingComponent->HasSameTarget(foundTargetingComponent))
+	{
+		return false;
+	}
+
+	if (sourceEntityFlockingComponent->m_flockingState == EFlockingState::Stable && foundEntityFlockingComponent->m_flockingState == EFlockingState::Stable)
+	{
+		return false;
+	}
+
+	if (sourceEntityFlockingComponent->m_flockingState == EFlockingState::Stable)
+	{
+		coefficient = 0.0f;
+		return true;
+	}
+
+	if (foundEntityFlockingComponent->m_flockingState == EFlockingState::Stable)
+	{
+		coefficient = 1.0f;
+		return true;
+	}
+
+	const float sourceDistSquared = FVector::DistSquared2D(sourceEntityComponents.m_transformComponent->m_location, sourceEntityComponents.m_entity.GetCurrentTargetLocation());
+	const float targetDistSquared = FVector::DistSquared2D(foundTransformComponent->m_location, foundEntity.GetCurrentTargetLocation());
+	coefficient = sourceDistSquared > targetDistSquared ? 1.0f : 0.0f;
+	return true;
+}
+
+bool AvoidanceSystems::ShouldReturnObstacleEffortCoefficient(const EffortCoefficientSettingsComponent* settings, const TransformSystemsArgs& sourceEntityComponents, ArgusEntity foundEntity, bool sourceHasObstacles, float& coefficient)
+{
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(foundEntity, ArgusECSLog, false);
+	if (!sourceEntityComponents.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	if (!sourceEntityComponents.m_entity.IsOnSameTeamAsOtherEntity(foundEntity))
+	{
+		return false;
+	}
+
+	const NearbyObstaclesComponent* foundNearbyObstacles = foundEntity.GetComponent<NearbyObstaclesComponent>();
+	if (!foundNearbyObstacles)
+	{
+		return false;
+	}
+
+	const bool foundHasObstacles = foundNearbyObstacles->m_obstacleIndicies.AnyObstacleInidiciesInAvoidanceRange();
+	if (sourceHasObstacles)
+	{
+		if (foundHasObstacles)
+		{
+			coefficient = settings->m_sameTeamBothObstacle;
+		}
+		else
+		{
+			coefficient = settings->m_sameTeamHasObstacle;
+		}
+		return true;
+	}
+
+	if (foundHasObstacles)
+	{
+		coefficient = settings->m_sameTeamOtherHasObstacle;
+		return true;
+	}
+
+	return false;
+}

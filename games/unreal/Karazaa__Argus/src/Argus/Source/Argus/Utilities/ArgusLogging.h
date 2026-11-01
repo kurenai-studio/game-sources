@@ -1,0 +1,93 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusMacros.h"
+#include "CoreMinimal.h"
+#include "HAL/IConsoleManager.h"
+#include "Logging/LogVerbosity.h"
+
+#define ARGUS_LOG(CategoryName, Verbosity, Format, ...) \
+ArgusLogging::EnsureOnErrorIfNeeded(ELogVerbosity::Verbosity); \
+do \
+{ \
+	UE_LOG(CategoryName, Verbosity, Format, ##__VA_ARGS__); \
+	ArgusLogging::ShowEditorNotification(FString::Printf(Format, ##__VA_ARGS__), FString{}, ELogVerbosity::Verbosity); \
+} \
+while (0);
+
+#define ARGUS_ERROR_NULL(CategoryName, VariableName) \
+ARGUS_LOG(CategoryName, Error, TEXT("[%s] The variable, %s, is null!"), ARGUS_FUNCNAME, ARGUS_NAMEOF(VariableName));
+
+#define ARGUS_ERROR_ENTITY_DNE(CategoryName, VariableName) \
+ARGUS_LOG(CategoryName, Error, TEXT("[%s] The entity, %s, does not exist!"), ARGUS_FUNCNAME, ARGUS_NAMEOF(VariableName));
+
+#define ARGUS_RETURN_ON_NULL(VariableName, CategoryName) \
+if (UNLIKELY(!VariableName)) \
+{ \
+	ARGUS_ERROR_NULL(CategoryName, VariableName); \
+	return;\
+}
+
+#define ARGUS_RETURN_ON_NULL_POINTER(VariableName, CategoryName) \
+if (UNLIKELY(!VariableName)) \
+{ \
+	ARGUS_ERROR_NULL(CategoryName, VariableName); \
+	return nullptr;\
+}
+
+#define ARGUS_RETURN_ON_NULL_BOOL(VariableName, CategoryName) \
+if (UNLIKELY(!VariableName)) \
+{ \
+	ARGUS_ERROR_NULL(CategoryName, VariableName); \
+	return false;\
+}
+
+#define ARGUS_RETURN_ON_NULL_VALUE(VariableName, CategoryName, Value) \
+if (UNLIKELY(!VariableName)) \
+{ \
+	ARGUS_ERROR_NULL(CategoryName, VariableName); \
+	return Value;\
+}
+
+#define ARGUS_RETURN_ON_NULL_INVOKE(VariableName, CategoryName, Callback, ...) \
+if (UNLIKELY(!VariableName)) \
+{ \
+	ARGUS_ERROR_NULL(CategoryName, VariableName); \
+	if (Callback) \
+	{ \
+		Callback(__VA_ARGS__); \
+	} \
+	return;\
+}
+
+#define ARGUS_RETURN_ON_INVALID_ENTITY(VariableName, CategoryName) \
+if (UNLIKELY(!ArgusEntity::DoesEntityExist(VariableName.GetId()))) \
+{ \
+	ARGUS_ERROR_ENTITY_DNE(CategoryName, VariableName); \
+	return;\
+}
+
+#define ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(VariableName, CategoryName, Value) \
+if (UNLIKELY(!ArgusEntity::DoesEntityExist(VariableName.GetId()))) \
+{ \
+	ARGUS_ERROR_ENTITY_DNE(CategoryName, VariableName); \
+	return Value;\
+}
+
+DECLARE_LOG_CATEGORY_EXTERN(ArgusECSLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusInputLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusMemoryLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusPersistenceLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusStaticDataLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusTestingLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusUILog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusUnrealObjectsLog, Display, All);
+DECLARE_LOG_CATEGORY_EXTERN(ArgusUtilitiesLog, Display, All);
+
+namespace ArgusLogging
+{
+	void EnsureOnErrorIfNeeded(ELogVerbosity::Type logVerbosity);
+	void ShowEditorNotification(const FString& text, const FString& subText = FString{}, ELogVerbosity::Type logVerbosity = ELogVerbosity::Error, float durationSeconds = 5.0f);
+	void LogInvalidComponentReferences(const WIDECHAR* functionName, const WIDECHAR* objectName);
+}

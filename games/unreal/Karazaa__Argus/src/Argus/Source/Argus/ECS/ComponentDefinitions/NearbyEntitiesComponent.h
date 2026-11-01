@@ -1,0 +1,58 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusMacros.h"
+#include "ComponentDependencies/ArgusEntityKDTree.h"
+
+struct NearbyEntitiesComponent
+{
+	ARGUS_COMPONENT_SHARED
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	ArgusEntityKDTreeRangeOutput m_nearbyEntities;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	ArgusEntityKDTreeRangeOutput m_nearbyFlyingEntities;
+
+	const ArgusEntityKDTreeRangeOutput& GetNearbyEntities(bool shouldGetFlying) const
+	{
+		return shouldGetFlying ? m_nearbyFlyingEntities : m_nearbyEntities;
+	}
+
+	bool HasConstructionTargetsInSightRange() const
+	{
+		return m_nearbyEntities.HasConstructionTargetInSightRange() || m_nearbyFlyingEntities.HasCombatTargetInSightRange();
+	}
+
+	bool HasCombatTargetsInSightRange() const
+	{
+		return m_nearbyEntities.HasCombatTargetInSightRange() || m_nearbyFlyingEntities.HasCombatTargetInSightRange();
+	}
+
+	template <typename Function>
+	void IterateSeenEntityIds(bool iterateGrounded, bool iterateFlying, Function&& perEntityIdFunction) const
+	{
+		if (iterateGrounded)
+		{
+			for (int32 i = 0; i < m_nearbyEntities.GetEntityIdsInSightRange().Num(); ++i)
+			{
+				if (perEntityIdFunction(m_nearbyEntities.GetEntityIdsInSightRange()[i]))
+				{
+					return;
+				}
+			}
+		}
+
+		if (iterateFlying)
+		{
+			for (int32 i = 0; i < m_nearbyFlyingEntities.GetEntityIdsInSightRange().Num(); ++i)
+			{
+				if (perEntityIdFunction(m_nearbyFlyingEntities.GetEntityIdsInSightRange()[i]))
+				{
+					return;
+				}
+			}
+		}
+	}
+};
