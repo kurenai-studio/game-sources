@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://cthwt6mebib8f"]
+
+[ext_resource type="Script" uid="uid://beorbfswfngkd" path="res://Characters/player.gd" id="1_1ju47"]
+[ext_resource type="Texture2D" uid="uid://dncoxrcsvbeqt" path="res://Assets/SpaceShooter_Assets/player_sheet.png" id="1_t8hoq"]
+[ext_resource type="PackedScene" uid="uid://cts8sd75wsx1a" path="res://Characters/Bullet.tscn" id="2_ynroq"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uqb1s"]
+radius = 43.011627
+
+[node name="Player" type="Area2D" unique_id=1299031923]
+script = ExtResource("1_1ju47")
+bullet_scene = ExtResource("2_ynroq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1915749654]
+position = Vector2(-1, 3)
+shape = SubResource("CircleShape2D_uqb1s")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1526356531]
+texture = ExtResource("1_t8hoq")
+hframes = 3
+frame = 1
