@@ -1,0 +1,206 @@
+name: PR check
+
+# Verifies the pull request as an object — the half of the contract that cannot
+# exist before the pull request does.
+#
+# tools/pre-pr-check runs on a branch, before anything is opened, which is the
+# whole point of it. It therefore cannot know which issue the pull request will
+# close, what it targets, or whether it was opened as a draft. Those were checked
+# by the coordinator reading, until phase 11b showed what that costs: pull request
+# #120's description still described behaviour a later round had deleted, and a
+# human caught it. A pasted block of text is a claim, not evidence.
+#
+# THE LIMIT, set by the project owner on 28/08/2026: this workflow verifies only
+# facts checkable without reading prose. Base, issue, draft, file names, a
+# script's exit code. It never judges whether a description is well written or
+# faithful — that is `reviewer`'s work, and a script pretending to do it hands
+# out false confidence, which is worse than not checking.
+#
+# It does not build. ci.yml does, on the same pull request, and ci.yml is also
+# the only place the real TeaVM compile runs — `./gradlew build` reports
+# compileTeavmJava NO-SOURCE and produces no dist (issue #123).
+
+on:
+  pull_request:
+    branches: ['**']
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # pre-pr-check needs the merge base, so the full history is required.
+          fetch-depth: 0
+
+      - name: Verify the pull request
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BODY: ${{ github.event.pull_request.body }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          ACTION: ${{ github.event.action }}
+        run: |
+          set -u
+          FAILURES=0
+          fail() { FAILURES=$((FAILURES + 1)); echo "FAIL $1"; }
+          pass() { echo "pass $1"; }
+          detail() { printf '       %s\n' "$1"; }
+
+          echo "pr-check: '$HEAD_REF' into '$BASE' (event: $ACTION)"
+          echo
+
+          # 1. Where a pull request may point. The four-level regime decided on
+          #    26/08/2026: main <- dev <- phase branch <- one sub-branch per task.
+          case "$BASE" in
+            phase/*) pass "base: $BASE" ;;
+            dev)
+              case "$HEAD_REF" in
+                phase/*|docs/*) pass "base: dev, from $HEAD_REF" ;;
+                *) fail "only a phase branch or a docs branch opens against dev; this is '$HEAD_REF'" ;;
+              esac ;;
+            main)
+              case "$HEAD_REF" in
+                dev) pass "base: main, from dev — the project owner merges this one" ;;
+                *) fail "main only ever receives a pull request from dev; this is '$HEAD_REF'" ;;
+              esac ;;
+            *) fail "base '$BASE' is not a phase branch, dev or main" ;;
+          esac
+
+          # 2. Exactly one issue, or the branch is one of the three categories
+          #    that aggregate rather than close. The coordinator's bookkeeping —
+          #    opening a phase, closing it, correcting a document — closes no issue
+          #    and carries no fragment. A phase branch closes its tasks' issues as
+          #    each sub-branch merges. A release does the same one level up.
+          #    Everything else closes exactly one, including a defect found while
+          #    the phase runs.
+          git fetch --quiet origin "$BASE"
+          CHANGED="$(git diff --name-only "origin/$BASE...HEAD")"
+          NON_DOCS="$(printf '%s\n' "$CHANGED" | grep -vE '^docs/' | grep -c . || true)"
+          ISSUES="$(printf '%s' "$BODY" | grep -oiE '\b(close[sd]?|fixe?[sd]?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u || true)"
+          ISSUE_COUNT="$(printf '%s\n' "$ISSUES" | grep -c . || true)"
+
+          IS_PHASE=0
+          case "$HEAD_REF" in phase/*) IS_PHASE=1 ;; esac
+
+          # A release is dev into main, and it aggregates exactly the way a phase
+          # branch does, one level up: it carries the phases already merged into
+          # dev, whose issues were closed as each of them merged, so it closes none
+          # of its own. Rule 1 has already established that this base/head pair is
+          # legal and unambiguous, which is the whole of what identifies it — no
+          # prose is read, per the limit set on 28/08/2026.
+          #
+          # Added on 31/08/2026 for issue #177, after the first dev -> main release
+          # since this workflow existed (#176) went red on a false negative: the
+          # aggregation exemption below had been written with only the lower branch
+          # levels in view. Phase 10d found four instances of one rule stated from a
+          # single point of view and its reviewer pass found two more; this was the
+          # seventh.
+          IS_RELEASE=0
+          if [ "$BASE" = "main" ] && [ "$HEAD_REF" = "dev" ]; then IS_RELEASE=1; fi
+
+          if [ "$IS_RELEASE" -eq 1 ]; then
+            pass "release: dev into main, so it closes no issue of its own"
+            detail "the issues it carries were closed as each phase merged into dev"
+          elif [ "$IS_PHASE" -eq 1 ]; then
+            # A phase branch aggregates a whole phase: its tasks' issues are closed
+            # as each sub-branch merges, so the phase pull request closes none of
+            # its own and carries one fragment per task. A named category, not an
+            # escape hatch — see the risks in the 10d plan.
+            FRAGMENTS="$(./tools/status-fragments "origin/$BASE")"
+            MISPLACED="$(./tools/status-fragments --misplaced "origin/$BASE")"
+            FRAGMENT_COUNT="$(printf '%s\n' "$FRAGMENTS" | grep -c . || true)"
+            if [ "$FRAGMENT_COUNT" -gt 0 ]; then
+              pass "phase branch: $FRAGMENT_COUNT status fragment(s), one per task"
+            else
+              fail "a phase branch with no status fragment at all"
+            fi
+          elif [ "$ISSUE_COUNT" -eq 1 ]; then
+            pass "closes issue #$ISSUES"
+          elif [ "$ISSUE_COUNT" -eq 0 ]; then
+            if [ "$NON_DOCS" -eq 0 ]; then
+              pass "closes no issue, and the diff is documentation only"
+            else
+              fail "this pull request changes $NON_DOCS file(s) outside docs/ and closes no issue"
+              detail "every pull request against a phase branch closes exactly one issue;"
+              detail "the three exemptions are a phase branch, a release (dev into main),"
+              detail "and the coordinator's documentation-only pull requests"
+            fi
+          else
+            fail "$ISSUE_COUNT issues closed; a pull request closes exactly one"
+            printf '%s\n' "$ISSUES" | while IFS= read -r I; do [ -n "$I" ] && detail "#$I"; done
+          fi
+
+          # 3. The status fragment, and its name. pre-pr-check can only check that
+          #    one exists — it runs before the pull request and cannot see the issue.
+          #    This is the half that can.
+          # One source of truth, shared with tools/pre-pr-check.
+          FRAGMENTS="$(./tools/status-fragments "origin/$BASE")"
+          MISPLACED="$(./tools/status-fragments --misplaced "origin/$BASE")"
+          FRAGMENT_COUNT="$(printf '%s\n' "$FRAGMENTS" | grep -c . || true)"
+          if [ "$IS_RELEASE" -eq 1 ]; then
+            # Checked rather than assumed, per issue #177's own request. A release
+            # closes no issue, so the block below was already skipped; saying so is
+            # the difference between a rule that holds and one that happens to.
+            # Every fragment in its diff belongs to a phase already merged and
+            # already reviewed on its own pull request.
+            pass "release: $FRAGMENT_COUNT fragment(s), all from phases already merged"
+          elif [ "$ISSUE_COUNT" -eq 1 ] && [ "$IS_PHASE" -eq 0 ]; then
+            if [ "$FRAGMENT_COUNT" -eq 1 ]; then
+              case "$(basename "$FRAGMENTS")" in
+                "$ISSUES"-*.md) pass "status fragment: $FRAGMENTS" ;;
+                *) fail "the status fragment is named for a different issue than the one closed"
+                   detail "closes #$ISSUES, fragment is $FRAGMENTS"
+                   detail "name it docs/plan/<phase>/status/$ISSUES-<slug>.md" ;;
+              esac
+            elif [ "$FRAGMENT_COUNT" -eq 0 ]; then
+              fail "this pull request closes #$ISSUES and records nothing in the phase status"
+              detail "add docs/plan/<phase>/status/$ISSUES-<slug>.md"
+            else
+              fail "$FRAGMENT_COUNT status fragments; a task writes exactly one"
+            fi
+          fi
+
+          if [ -n "$MISPLACED" ]; then
+            fail "a status fragment sits in another phase's directory"
+            printf '%s\n' "$MISPLACED" | while IFS= read -r F; do [ -n "$F" ] && detail "$F"; done
+            detail "the base branch names the phase; the fragment belongs under its own status/"
+          fi
+
+          # 4. Draft when opened. The review happens before it is marked ready, so
+          #    nothing merges on the author's own say-so. Only checkable on `opened`:
+          #    afterwards, being ready is the normal end state.
+          if [ "$ACTION" = "opened" ]; then
+            if [ "$IS_DRAFT" = "true" ]; then
+              pass "opened as a draft"
+            else
+              fail "opened ready rather than as a draft"
+            fi
+          else
+            pass "draft state not checked on '$ACTION'; it is only meaningful at opening"
+          fi
+
+          echo
+          if [ "$FAILURES" -eq 0 ]; then
+            echo "pr-check: PASS"
+          else
+            echo "pr-check: FAIL — $FAILURES check(s) failed."
+            exit 1
+          fi
+
+      - name: Run pre-pr-check, rather than trust what was pasted
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        # --no-build because ci.yml compiles, tests and builds the web target for
+        # this same pull request. Running Gradle twice per push buys nothing.
+        #
+        # --branch because a pull-request checkout is detached: without it the
+        # script reads the branch as "HEAD" and fails its own naming check. Found
+        # by this workflow failing on the pull request that introduced it.
+        run: ./tools/pre-pr-check --base "origin/$BASE" --branch "$HEAD_REF" --no-build

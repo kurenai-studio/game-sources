@@ -1,0 +1,47 @@
+#!/bin/sh
+# Decides whether one commit subject is acceptable. The single source of truth.
+#
+# Two callers ask this question — tools/hooks/commit-msg as a subject is written,
+# and tools/pre-pr-check over a branch's history — and they used to answer it with
+# two separate lists. The lists drifted, which is what a copied rule does: the hook
+# exempted `Revert "…"` and the gate did not, so `git revert` produced a commit
+# that was welcomed at write time and rejected at the pull-request gate, with an
+# error that gave no hint the two disagreed. Found auditing phase 10d; see issue
+# #154 and docs/plan/10d-enforced-workflow/status/154-one-subject-rule.md.
+#
+# Usage: tools/commit-subject-ok "<subject>"
+#   exit 0  acceptable
+#   exit 1  not acceptable, with the reason on stdout
+#
+# It does not decide the aborted-commit case (an empty or all-comment message):
+# that never reaches history, so it is the hook's business and no gate's.
+
+set -u
+
+SUBJECT="${1-}"
+
+# Git's own wording, in both cases unavoidable and both times legitimate.
+# `Revert "…"` matters here specifically: CLAUDE.md forbids rebasing and
+# force-pushing, so reverting is the sanctioned way to undo something, and an
+# agent should not have to rewrite git's subject to be allowed to do it.
+#
+# `fixup!` and `squash!` are deliberately NOT exempt. They exist for interactive
+# rebase, which this repository forbids and this environment does not support, so
+# exempting them would only widen a hole nothing can legitimately come through.
+case "$SUBJECT" in
+  "Merge "*|"Revert \""*) exit 0 ;;
+esac
+
+TYPES='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+
+if ! printf '%s' "$SUBJECT" | grep -Eq "^($TYPES)(\([a-z0-9._-]+\))?: .+"; then
+  echo "not a conventional subject: type(scope): description, scope lowercase and only a-z 0-9 . _ -"
+  exit 1
+fi
+
+if [ "${#SUBJECT}" -gt 71 ]; then
+  echo "subject is ${#SUBJECT} characters; the limit is 71"
+  exit 1
+fi
+
+exit 0
