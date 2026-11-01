@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2048 — Python / Pygame by Daniel Soleimany</title>
+  <meta name="description" content="Classic 2048 puzzle — desktop Python + Pygame edition, with a playable web demo." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Clear+Sans:wght@400;700&family=Outfit:wght@500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <span class="logo">2048</span>
+      <span class="tag">Python · Pygame</span>
+    </div>
+    <nav>
+      <a href="https://github.com/danielsolo707/pygame-2048" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/danielsolo707/pygame-2048#run-locally" target="_blank" rel="noopener">Run desktop</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Python · Pygame · open source</p>
+        <h1>Slide. Merge. Reach <em>2048</em>.</h1>
+        <p class="lead">
+          A clean implementation of the classic number puzzle.
+          Logic is pure Python (unit-tested); the desktop app uses Pygame.
+          Play the browser demo below — no install needed.
+        </p>
+        <ul class="features">
+          <li>Score + best score tracking</li>
+          <li>Win / game-over states</li>
+          <li>Arrow keys &amp; WASD</li>
+          <li>Desktop version with local high score</li>
+        </ul>
+        <div class="cta-row">
+          <a class="btn primary" href="#play">Play in browser</a>
+          <a class="btn ghost" href="https://github.com/danielsolo707/pygame-2048" target="_blank" rel="noopener">View source</a>
+        </div>
+      </div>
+
+      <div class="game-panel" id="play">
+        <div class="score-bar">
+          <div class="title-block">
+            <h2>2048</h2>
+            <p class="hint">Arrows / WASD · R restart</p>
+          </div>
+          <div class="scores">
+            <div class="score-box">
+              <span class="label">Score</span>
+              <span id="score">0</span>
+            </div>
+            <div class="score-box">
+              <span class="label">Best</span>
+              <span id="best">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="2048 game board"></div>
+          <div id="overlay" class="overlay hidden">
+            <p id="overlay-title">Game over</p>
+            <p id="overlay-sub">Press R to restart</p>
+          </div>
+        </div>
+        <div class="mobile-pad" aria-label="Touch controls">
+          <button type="button" data-dir="up">↑</button>
+          <div class="mid">
+            <button type="button" data-dir="left">←</button>
+            <button type="button" data-dir="down">↓</button>
+            <button type="button" data-dir="right">→</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="about">
+      <h2>About this project</h2>
+      <p>
+        This started as a single-file Pygame 2048 clone.
+        Its board logic is separated from the UI so it can be tested
+        without a display, and this site ships a matching browser demo for visitors.
+      </p>
+      <div class="cards">
+        <article>
+          <h3>Desktop (Python)</h3>
+          <p><code>python main.py</code> after installing requirements. Score persists in a local file.</p>
+        </article>
+        <article>
+          <h3>Logic tests</h3>
+          <p>Merge rules, win/lose detection, and scoring covered by <code>pytest</code>.</p>
+        </article>
+        <article>
+          <h3>Open source</h3>
+          <p>MIT licensed. Fork it, break it, make a bigger board — have fun.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built by <a href="https://github.com/danielsolo707">Daniel Soleimany</a></p>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>
