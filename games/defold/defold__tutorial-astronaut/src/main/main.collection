@@ -1,0 +1,39 @@
+name: "main"
+instances {
+  id: "character"
+  prototype: "/main/character.go"
+  position {
+    x: 320.0
+    y: 190.0
+    z: 1.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "level"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/assets/tiles/level.tilemap\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "camera"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 20.0\\n"
+  "orthographic_projection: 1\\n"
+  "orthographic_zoom: 2.0\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 320.0
+    y: 190.0
+    z: 10.0
+  }
+}
