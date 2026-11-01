@@ -1,0 +1,9 @@
+function update(self, dt)
+	local p = go.get_position()
+	p.x = p.x - 1
+	go.set_position(p)
+	--izbrisi ako ne se gleda
+	if p.x < -100 then
+	go.delete()
+	end
+end

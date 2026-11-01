@@ -1,0 +1,19 @@
+function init(self)
+    self.speed = 2 -- brzina na platforma
+end
+
+function update(self, dt)
+    local pos = go.get_position()
+    if pos.x < -100 then
+        msg.post("platformi/platform_build#platform_build", "delete_spawn", { id = go.get_id() })
+    end
+    pos.x = pos.x - self.speed
+    go.set_position(pos)
+end
+
+function on_message(self, message_id, message, sender)
+		if message_id == hash("start_animation") then
+        pos = go.get_position()
+        go.animate(go.get_id(), "position.y", go.PLAYBACK_LOOP_PINGPONG, pos.y + 24, go.EASING_INOUTSINE, 0.75, message.delay)
+        end
+end
