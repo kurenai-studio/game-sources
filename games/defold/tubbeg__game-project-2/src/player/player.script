@@ -1,0 +1,101 @@
+
+local function launchBullet(self)
+	local p = go.get_position()
+	local id = factory.create("#factory", p)
+	if self.closest_enemy_pos then
+		local enemy_pos = self.closest_enemy_pos - go.get_position()
+		print("clamped pos", enemy_pos.x, enemy_pos.y)
+		local v = vmath.vector3()
+		v.x = enemy_pos.x
+		v.y = enemy_pos.y
+		msg.post(id,"new-velocity", {velocity=v})
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.vel = vmath.vector3()
+	self.xp = 0
+	self.level = 1
+	self.closest_enemy_pos = nil
+	timer.delay(0.5, true, function() launchBullet(self) end)
+end
+
+function final(self)
+end
+
+local function update_pos(self, dt)
+	local pos = go.get_position()
+	pos = pos + self.vel * dt
+	go.set_position(pos)
+
+	self.vel.x = 0
+	self.vel.y = 0
+end
+
+function update(self, dt)
+	update_pos(self, dt)
+end
+
+function fixed_update(self, dt)
+end
+
+local function handleBoundsCollision(message)
+	if message.other_group == hash("bounds_y") then
+		if message.enter then
+			msg.post("cam", "stop-follow-y")
+		else 
+			msg.post("cam", "resume-follow-y")
+		end
+	end
+	if message.other_group == hash("bounds_x") then
+		if message.enter then
+			msg.post("cam", "stop-follow-x")
+		else 
+			msg.post("cam", "resume-follow-x")
+		end
+	end
+end
+
+
+local function set_closest_pos(self, message)
+	if not self.closest_enemy_pos then
+		self.closest_enemy_pos = message.enemy_pos
+	else
+		local pos = go.get_position()
+		local next_delta = pos - message.enemy_pos
+		local curr_delta = pos - self.closest_enemy_pos
+		if vmath.length(next_delta) < vmath.length(curr_delta) then
+			--print(vmath.length(next_delta), "new length")
+			self.closest_enemy_pos = message.enemy_pos
+		end
+	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		handleBoundsCollision(message)
+	end
+	if message_id == hash("get-player-pos") then
+		msg.post(sender, "player-pos", {player_pos=go.get_position()})
+	end
+	if message_id == hash("enemy-data") then
+		set_closest_pos(self,message)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("up") then
+		self.vel.y = 150
+	elseif action_id == hash("down") then
+		self.vel.y = -150
+	elseif action_id == hash("left") then
+		self.vel.x = -150
+	elseif action_id == hash("right") then
+		self.vel.x = 150
+	end
+end
+
+function on_reload(self)
+end

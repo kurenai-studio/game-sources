@@ -1,0 +1,139 @@
+name: "main"
+instances {
+  id: "player"
+  prototype: "/player/player.go"
+  position {
+    x: 388.0
+    y: 119.0
+  }
+  scale3 {
+    x: 2.0
+    y: 2.0
+    z: 2.0
+  }
+}
+instances {
+  id: "enemySpawn"
+  prototype: "/enemySpawn/enemySpawn.go"
+}
+instances {
+  id: "cam"
+  prototype: "/cam/cam.go"
+  position {
+    z: 311.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "main"
+  children: "board"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/main/main.script\"\n"
+  "}\n"
+  ""
+  position {
+    x: 692.0
+    y: 360.0
+  }
+}
+embedded_instances {
+  id: "board"
+  data: "embedded_components {\n"
+  "  id: \"background\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"background\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 2000.0\\n"
+  "  y: 2000.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/main/main.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: -0.5\n"
+  "  }\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject2\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"type: COLLISION_OBJECT_TYPE_TRIGGER\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"bounds_y\\\"\\n"
+  "mask: \\\"heroes\\\"\\n"
+  "embedded_collision_shape {\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      y: -834.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 0\\n"
+  "    count: 3\\n"
+  "  }\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      y: 831.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 3\\n"
+  "    count: 3\\n"
+  "  }\\n"
+  "  data: 1000.40027\\n"
+  "  data: 307.58392\\n"
+  "  data: 10.0\\n"
+  "  data: 1000.40027\\n"
+  "  data: 273.53314\\n"
+  "  data: 10.0\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject1\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"type: COLLISION_OBJECT_TYPE_TRIGGER\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"bounds_x\\\"\\n"
+  "mask: \\\"heroes\\\"\\n"
+  "embedded_collision_shape {\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: -814.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 0\\n"
+  "    count: 3\\n"
+  "  }\\n"
+  "  shapes {\\n"
+  "    shape_type: TYPE_BOX\\n"
+  "    position {\\n"
+  "      x: 812.0\\n"
+  "    }\\n"
+  "    rotation {\\n"
+  "    }\\n"
+  "    index: 3\\n"
+  "    count: 3\\n"
+  "  }\\n"
+  "  data: 275.62262\\n"
+  "  data: 998.655\\n"
+  "  data: 10.0\\n"
+  "  data: 305.52835\\n"
+  "  data: 998.655\\n"
+  "  data: 10.0\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}

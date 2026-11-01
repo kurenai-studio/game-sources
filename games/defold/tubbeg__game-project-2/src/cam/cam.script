@@ -1,0 +1,77 @@
+function init(self)
+	self.follow_y = true
+	self.follow_x = true
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	msg.post("player", "get-player-pos")
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+local function update_cam_pos(self,message)
+	-- it's quite easy to get the player pos without
+	-- messaging, but I think decoupling is preferable.
+	-- There's less risk of things crashing in the future.
+	local current_pos = go.get_position()
+	local p = vmath.vector3()
+	if self.follow_x then
+		p.x = message.player_pos.x
+	else
+		p.x = current_pos.x
+	end
+	if self.follow_y then
+		p.y = message.player_pos.y
+	else
+		p.y = current_pos.y
+	end
+	p.z = current_pos.z
+	go.set_position(p)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("player-pos") then update_cam_pos(self,message) end
+	if message_id == hash("stop-follow-y") then
+		self.follow_y = false
+	end
+	if message_id == hash("resume-follow-y") then
+		self.follow_y = true
+	end
+	if message_id == hash("stop-follow-x") then
+		self.follow_x = false
+	end
+	if message_id == hash("resume-follow-x") then
+		self.follow_x = true
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
