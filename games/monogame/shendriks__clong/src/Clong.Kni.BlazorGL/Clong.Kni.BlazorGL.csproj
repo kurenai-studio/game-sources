@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <ProjectGuid>{6e71ece2-4905-458c-b40e-467acfb2720d}</ProjectGuid>
+        <DefineConstants>$(DefineConstants);BLAZORGL</DefineConstants>
+        <KniPlatform>BlazorGL</KniPlatform>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
+        <!--<InvariantGlobalization>true</InvariantGlobalization>-->
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Pages\Index.razor.cs"/>
+        <Compile Include="Program.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="nkast.Xna.Framework" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Content" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Graphics" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Audio" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Media" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Input" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Xna.Framework.Game" Version="4.3.9001"/>
+        <PackageReference Include="nkast.Kni.Platform.Blazor.GL" Version="4.3.9001"/>
+        <!-- The next line will break deployment via Github Actions -->
+        <!--    <PackageReference Include="nkast.Xna.Framework.Content.Pipeline.Builder" Version="4.3.9001" />-->
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.14" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <KniContentReference Include="..\Clong.Kni.Adapter\Content\Content.mgcb">
+            <Link>Content\Clong.KniContent.mgcb</Link>
+        </KniContentReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Clong.Kni.Adapter\Clong.Kni.Adapter.csproj"/>
+    </ItemGroup>
+
+</Project>
