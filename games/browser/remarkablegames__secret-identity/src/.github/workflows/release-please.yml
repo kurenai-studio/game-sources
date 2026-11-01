@@ -1,0 +1,40 @@
+name: release-please
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - name: Release Please
+        uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          release-type: node
+
+  deploy:
+    needs: release
+    runs-on: ubuntu-latest
+    if: ${{ needs.release.outputs.release_created }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup butler
+        uses: remarkablegames/setup-butler@v3
+
+      - name: Upload to itch.io
+        run: butler push public ${{ github.repository }}:html5 --userversion $(jq -r .version package.json)
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}

@@ -1,0 +1,60 @@
+{
+  "name": "secret-identity",
+  "private": true,
+  "version": "1.4.6",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "clean": "rm -rf .wrangler dist",
+    "client": "vite --open",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:tsc": "tsc --noEmit",
+    "prepare": "husky",
+    "preview": "vite preview",
+    "server": "wrangler pages dev functions",
+    "start": "run-p client server"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "4.0.95",
+    "ai": "7.0.31",
+    "clsx": "2.1.1",
+    "howler": "2.2.4",
+    "preact": "10.29.8",
+    "workers-ai-provider": "4.0.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261025.1",
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "@eslint/compat": "2.1.1",
+    "@eslint/eslintrc": "3.3.7",
+    "@eslint/js": "10.0.1",
+    "@preact/preset-vite": "2.10.6",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/howler": "2.2.13",
+    "@typescript-eslint/eslint-plugin": "8.72.0",
+    "@typescript-eslint/parser": "8.72.0",
+    "eslint": "10.13.0",
+    "eslint-plugin-prettier": "5.5.7",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "eslint-plugin-tsdoc": "0.5.4",
+    "globals": "17.13.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "npm-run-all": "4.1.5",
+    "postcss": "8.5.31",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "wrangler": "4.152.0"
+  },
+  "overrides": {
+    "workers-ai-provider": {
+      "ai": "$ai"
+    }
+  }
+}
