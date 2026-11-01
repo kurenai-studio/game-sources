@@ -1,0 +1,110 @@
+script: "/assets/gui/options.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 46.0
+    y: 27.0
+  }
+  size {
+    x: 65.0
+    y: 35.0
+  }
+  color {
+    x: 0.611
+    y: 0.487
+    z: 0.365
+  }
+  type: TYPE_BOX
+  id: "io"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -2.0
+  }
+  size {
+    x: 40.0
+    y: 30.0
+  }
+  type: TYPE_TEXT
+  text: "outline\n"
+  "(Off)"
+  font: "default"
+  id: "text"
+  line_break: true
+  parent: "io"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 128.0
+    y: 27.0
+  }
+  size {
+    x: 65.0
+    y: 35.0
+  }
+  color {
+    x: 0.611
+    y: 0.487
+    z: 0.365
+  }
+  type: TYPE_BOX
+  id: "OutlineColor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -2.0
+  }
+  size {
+    x: 40.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "outline\n"
+  "Color"
+  font: "default"
+  id: "text1"
+  parent: "OutlineColor"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 210.0
+    y: 27.0
+  }
+  size {
+    x: 65.0
+    y: 35.0
+  }
+  color {
+    x: 0.611
+    y: 0.487
+    z: 0.365
+  }
+  type: TYPE_BOX
+  id: "Fluid"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 40.0
+    y: 20.0
+  }
+  type: TYPE_TEXT
+  text: "Fluid\n"
+  "Color"
+  font: "default"
+  id: "text2"
+  parent: "Fluid"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
