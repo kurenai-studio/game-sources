@@ -1,0 +1,35 @@
+name: "main"
+scale_along_z: 0
+embedded_instances {
+  id: "main"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/main/main.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "camera"
+  data: "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 2.5
+  }
+}
+embedded_instances {
+  id: "ball"
+  data: "components {\n"
+  "  id: \"ball\"\n"
+  "  component: \"/assets/models/ball.model\"\n"
+  "}\n"
+  ""
+}
