@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://soeiixihtjvm"]
+
+[ext_resource type="Script" uid="uid://cui463x2lj2ld" path="res://my_guy.gd" id="1_qaocm"]
+[ext_resource type="Texture2D" uid="uid://dctstafvtjedc" path="res://assets/sprites/ship.png" id="1_vtd2v"]
+
+[node name="myGuy" type="CharacterBody2D" unique_id=1796476442]
+script = ExtResource("1_qaocm")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=158196936]
+texture_filter = 1
+rotation = 1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("1_vtd2v")
+
+[node name="CollisionShape2D" type="CollisionPolygon2D" parent="." unique_id=1483987517]
+rotation = 1.5707964
+scale = Vector2(0.67, 0.67)
+polygon = PackedVector2Array(-48, 50, -1, 9, 48, 49, 0, -47.761192)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1901232894]

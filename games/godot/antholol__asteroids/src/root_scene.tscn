@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://dac42bmbutb2j"]
+
+[ext_resource type="Script" uid="uid://f7vy8k21q6ck" path="res://root_scene.gd" id="1_s87u8"]
+[ext_resource type="PackedScene" uid="uid://soeiixihtjvm" path="res://my_guy.tscn" id="2_c77vg"]
+[ext_resource type="Texture2D" uid="uid://b5dplj4owveu5" path="res://assets/sprites/starSmall.png" id="3_iqet6"]
+
+[sub_resource type="Curve" id="Curve_t2jh2"]
+_limits = [-360.0, 360.0, 0.0, 1.0]
+_data = [Vector2(0, -360), 0.0, 719.99994, 0, 1, Vector2(1, 360), 719.99994, 0.0, 1, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_iqet6"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.11640212, 1), 0.0, 0.0, 0, 0, Vector2(0.24074075, 0), 0.0, 0.0, 0, 0, Vector2(0.38359788, 1), 0.0, 0.0, 0, 0, Vector2(0.52380955, 0), 0.0, 0.0, 0, 0, Vector2(0.5899471, 1), 0.0, 0.0, 0, 0, Vector2(0.7698412, 0), 0.0, 0.0, 0, 0, Vector2(0.8597883, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 1.4, 0.0, 0, 0]
+point_count = 9
+
+[sub_resource type="Curve" id="Curve_bbjqm"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.26455027, 0), 0.0, 0.0, 0, 0, Vector2(0.49999997, 1), 0.0, 0.0, 0, 0, Vector2(0.7698412, 0), 0.0, 0.0, 0, 0, Vector2(1, 0), 1.4, 0.0, 0, 0]
+point_count = 5
+
+[node name="rootScene" type="Node2D" unique_id=554554413]
+script = ExtResource("1_s87u8")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=476181159]
+layer = -1
+
+[node name="bg" type="ColorRect" parent="CanvasLayer" unique_id=1879998104]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.00062740414, 0, 0.022964265, 1)
+
+[node name="myGuy" parent="." unique_id=1796476442 instance=ExtResource("2_c77vg")]
+position = Vector2(579, 324)
+motion_mode = 1
+
+[node name="starbg5" type="CPUParticles2D" parent="." unique_id=823192393]
+texture_filter = 1
+position = Vector2(576, 324)
+amount = 50
+texture = ExtResource("3_iqet6")
+lifetime = 3.0
+preprocess = 5.0
+explosiveness = 0.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 10000)
+gravity = Vector2(0, 0)
+angle_curve = SubResource("Curve_t2jh2")
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_iqet6")
+
+[node name="starbg4" type="CPUParticles2D" parent="." unique_id=1742218481]
+texture_filter = 1
+position = Vector2(576, 324)
+amount = 500
+texture = ExtResource("3_iqet6")
+lifetime = 3.0
+preprocess = 5.0
+explosiveness = 0.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 10000)
+gravity = Vector2(0, 0)
+angle_curve = SubResource("Curve_t2jh2")
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_bbjqm")
+color = Color(1, 0, 0.3647059, 1)
+
+[node name="starbg3" type="CPUParticles2D" parent="." unique_id=1866796867]
+texture_filter = 1
+position = Vector2(1728, 972)
+amount = 300
+texture = ExtResource("3_iqet6")
+lifetime = 3.0
+preprocess = 5.0
+explosiveness = 0.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 10000)
+gravity = Vector2(0, 0)
+angle_curve = SubResource("Curve_t2jh2")
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_bbjqm")
+color = Color(1, 0.5411765, 0.21568628, 1)
+
+[node name="starbg2" type="CPUParticles2D" parent="." unique_id=1766501323]
+texture_filter = 1
+position = Vector2(1152, 648)
+amount = 100
+texture = ExtResource("3_iqet6")
+lifetime = 10.0
+preprocess = 5.0
+explosiveness = 0.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 10000)
+gravity = Vector2(0, 0)
+angle_curve = SubResource("Curve_t2jh2")
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_bbjqm")
+color = Color(0.3882353, 0.3882353, 1, 1)
+
+[node name="starbg" type="CPUParticles2D" parent="." unique_id=1697181493]
+texture_filter = 1
+position = Vector2(576, 324)
+amount = 9100
+texture = ExtResource("3_iqet6")
+lifetime = 3.0
+preprocess = 5.0
+explosiveness = 0.1
+randomness = 0.5
+emission_shape = 3
+emission_rect_extents = Vector2(10000, 10000)
+gravity = Vector2(0, 0)
+angle_curve = SubResource("Curve_t2jh2")
+scale_amount_max = 3.0
+scale_amount_curve = SubResource("Curve_bbjqm")
+color = Color(1, 1, 0, 1)
