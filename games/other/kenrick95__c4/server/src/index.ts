@@ -1,0 +1,112 @@
+import { MESSAGE_TYPE, type PlayerId, parseMessage } from '@kenrick95/c4'
+import { applyMiddleware, createStore } from 'redux'
+import { type ThunkMiddleware, thunk } from 'redux-thunk'
+import type WebSocket from 'ws'
+import { WebSocketServer } from 'ws'
+
+import {
+  connectMatch,
+  hungUp,
+  move,
+  newMatch,
+  newPlayerConnection,
+  renewLastSeen,
+} from './actions'
+import { reducer } from './reducer'
+import type { ActionTypes, MatchId, State } from './types'
+
+const port = parseInt(process.env.PORT || '') || 8080
+const wss = new WebSocketServer({ port: port })
+console.log(`[server] Started listening on ws://localhost:${port}`)
+
+function configureStore() {
+  const middleware = applyMiddleware(
+    thunk as ThunkMiddleware<State, ActionTypes>,
+  )
+  return createStore(reducer, middleware)
+}
+export const store = configureStore()
+
+function alivenessLoop() {
+  const state = store.getState()
+  const now = Date.now()
+  for (const player of Object.values(state.players)) {
+    if (now - player.lastSeen >= 60000) {
+      player.ws.terminate()
+    }
+
+    player.ws.ping()
+  }
+}
+
+wss.on('connection', (ws: WebSocket) => {
+  let playerId: null | PlayerId = null
+  let matchId: null | MatchId = null
+
+  ws.on('pong', () => {
+    if (!playerId) {
+      return
+    }
+    store.dispatch(renewLastSeen(playerId))
+  })
+
+  ws.on('message', (message: string) => {
+    const parsedMessage = parseMessage(message)
+    switch (parsedMessage.type) {
+      case MESSAGE_TYPE.NEW_PLAYER_CONNECTION_REQUEST: {
+        playerId = store.dispatch(
+          newPlayerConnection(ws, parsedMessage.payload.playerName),
+        )
+        break
+      }
+      case MESSAGE_TYPE.NEW_MATCH_REQUEST:
+        {
+          if (!playerId) {
+            return
+          }
+          matchId = store.dispatch(newMatch(playerId))
+        }
+        break
+      case MESSAGE_TYPE.CONNECT_MATCH_REQUEST:
+        {
+          if (!playerId) {
+            return
+          }
+          matchId = store.dispatch(
+            connectMatch(playerId, parsedMessage.payload.matchId),
+          )
+        }
+        break
+      case MESSAGE_TYPE.MOVE_MAIN:
+        {
+          if (!playerId) {
+            return
+          }
+          store.dispatch(move(playerId, matchId, parsedMessage.payload.column))
+        }
+        break
+      case MESSAGE_TYPE.HUNG_UP:
+        {
+          if (!playerId) {
+            return
+          }
+          store.dispatch(hungUp(playerId))
+        }
+        break
+    }
+  })
+  ws.on('close', () => {
+    if (!playerId) {
+      return
+    }
+    store.dispatch(hungUp(playerId))
+  })
+})
+setInterval(alivenessLoop, 30000)
+
+if (import.meta.hot) {
+  import.meta.hot.on('vite:beforeFullReload', () => {
+    console.log('Closing server before reloading')
+    wss.close()
+  })
+}
