@@ -1,0 +1,33 @@
+package com.devcariri.submax.phases;
+
+public class Slot {
+
+	public Slot(){
+
+	}
+	private int x;
+	private int y;
+	
+	public Slot(int x, int y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	public int getX() {
+		return x;
+	}
+
+	public void setX(int x) {
+		this.x = x;
+	}
+
+	public int getY() {
+		return y;
+	}
+
+	public void setY(int y) {
+		this.y = y;
+	}
+	
+	
+}
