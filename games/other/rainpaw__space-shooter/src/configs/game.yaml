@@ -1,0 +1,48 @@
+# Game Configuration
+
+game:
+  title: "Space Shooter"
+  width: 800
+  height: 600
+  fps: 60
+
+player:
+  speed: 300
+  health: 100
+  fire_rate: 0.15
+  bullet_speed: 500
+  bullet_damage: 10
+
+enemies:
+  spawn_interval: 2.0
+  types:
+    - name: "basic"
+      health: 20
+      speed: 100
+      score: 10
+      spawn_weight: 40
+    - name: "fast"
+      health: 10
+      speed: 200
+      score: 15
+      spawn_weight: 30
+    - name: "tank"
+      health: 50
+      speed: 50
+      score: 25
+      spawn_weight: 20
+    - name: "shooter"
+      health: 30
+      speed: 80
+      score: 20
+      spawn_weight: 10
+
+difficulty:
+  increase_rate: 0.033
+  max_multiplier: 5.0
+  spawn_rate_min: 0.5
+
+particles:
+  explosion_count: 20
+  trail_frequency: 3
+  max_particles: 500

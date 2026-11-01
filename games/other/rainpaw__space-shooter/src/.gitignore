@@ -1,0 +1,48 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Build output
+bin/
+dist/
+build/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug files
+debug
+*.pprof
+
+# Game specific
+space-shooter
+space-shooter.exe
+highscores.json
+game.log
+
+# Assets that shouldn't be tracked (if generated)
+assets/generated/
+
+# WASM build outputs (keep web/index.html but ignore generated files)
+web/game.wasm
+web/wasm_exec.js
