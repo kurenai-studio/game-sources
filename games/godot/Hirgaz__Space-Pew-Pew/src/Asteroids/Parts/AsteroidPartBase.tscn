@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://cxjm16o7y84i7"]
+
+[ext_resource type="Script" uid="uid://dxdyqw5ed54gc" path="res://Asteroids/Parts/AsteroidPart.gd" id="1_jqs2i"]
+
+[node name="Asteroid" type="RigidBody2D" unique_id=1536589901]
+collision_layer = 4
+collision_mask = 0
+gravity_scale = 0.0
+script = ExtResource("1_jqs2i")
+
+[node name="DespawnTimer" type="Timer" parent="." unique_id=2094937098]
+one_shot = true
+
+[connection signal="timeout" from="DespawnTimer" to="." method="_on_despawn_timer_timeout"]

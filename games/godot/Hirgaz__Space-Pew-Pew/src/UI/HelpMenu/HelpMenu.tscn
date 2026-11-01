@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://bb1j8gc71nsxn"]
+
+[ext_resource type="Script" uid="uid://5fsyxp0bca7q" path="res://UI/HelpMenu/HelpMenu.gd" id="1_t0fis"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wrqxn"]
+bg_color = Color(0.6, 0.6, 0.6, 0.0627451)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t0fis"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ucktt"]
+
+[node name="HelpMenu" type="Control" unique_id=2046608082]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -360.0
+offset_right = 576.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_t0fis")
+
+[node name="BG" type="Panel" parent="." unique_id=1106535300]
+custom_minimum_size = Vector2(1152, 720)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wrqxn")
+
+[node name="Panel" type="Panel" parent="BG" unique_id=874493899]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.9
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel" unique_id=1752187853]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer" unique_id=26056358]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=489777524]
+layout_mode = 2
+theme_type_variation = &"LabelHeader"
+text = "Help"
+horizontal_alignment = 1
+
+[node name="TabContainer" type="TabContainer" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=2141776017]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="How To Play" type="VBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=892427297]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_tab_index = 0
+
+[node name="InstructionsLabel" type="RichTextLabel" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/How To Play" unique_id=1375789299]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/normal = SubResource("StyleBoxEmpty_t0fis")
+text = "TBA"
+fit_content = true
+scroll_active = false
+
+[node name="Controls" type="VBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer" unique_id=1178846342]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Controls" unique_id=1421367111]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Controls/MarginContainer" unique_id=1750319182]
+layout_mode = 2
+
+[node name="ControlsTree" type="Tree" parent="BG/Panel/MarginContainer/VBoxContainer/TabContainer/Controls/MarginContainer/VBoxContainer" unique_id=472917687]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ucktt")
+columns = 3
+hide_root = true
+
+[node name="CloseButton" type="Button" parent="BG/Panel/MarginContainer/VBoxContainer" unique_id=728260390]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close"
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
+[connection signal="pressed" from="BG/Panel/MarginContainer/VBoxContainer/CloseButton" to="." method="_on_close_button_pressed"]

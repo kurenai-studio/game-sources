@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://4x6qtfbcuhhy"]
+
+[ext_resource type="PackedScene" uid="uid://oklj0tuhhc4r" path="res://Asteroids/AsteroidBase.tscn" id="1_biap0"]
+[ext_resource type="Texture2D" uid="uid://c5w1g2k6dult5" path="res://Asteroids/AsteroidBrownBig4.png" id="2_vbeyx"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r6vhm"]
+radius = 51.0098
+
+[node name="Asteroid" unique_id=1794128258 instance=ExtResource("1_biap0")]
+
+[node name="AsteroidBrownBig4" type="Sprite2D" parent="." index="0" unique_id=1882673743]
+texture = ExtResource("2_vbeyx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." index="1" unique_id=1702430688]
+position = Vector2(0, 1)
+shape = SubResource("CircleShape2D_r6vhm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Detector" parent_id_path=PackedInt32Array(766184054) index="0" unique_id=1000194327]
+position = Vector2(0, 1)
+shape = SubResource("CircleShape2D_r6vhm")

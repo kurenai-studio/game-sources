@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://oklj0tuhhc4r"]
+
+[ext_resource type="Script" uid="uid://cx7k20qpuvogw" path="res://Asteroids/Asteroid.gd" id="1_pr47t"]
+[ext_resource type="PackedScene" uid="uid://dm2m6eqv7q018" path="res://Asteroids/Parts/AsteroidPart1.tscn" id="2_p526l"]
+[ext_resource type="PackedScene" uid="uid://8fhvfo460k1s" path="res://Asteroids/Parts/AsteroidPart2.tscn" id="3_lg3jb"]
+[ext_resource type="PackedScene" uid="uid://bvraov6oysd7n" path="res://Asteroids/Parts/AsteroidPart3.tscn" id="4_3kuvu"]
+[ext_resource type="PackedScene" uid="uid://dx3gd1i6plnfc" path="res://Asteroids/Parts/AsteroidPart4.tscn" id="5_54gkc"]
+
+[node name="Asteroid" type="RigidBody2D" unique_id=446568906]
+collision_layer = 4
+collision_mask = 0
+gravity_scale = 0.0
+script = ExtResource("1_pr47t")
+part_scenes = Array[PackedScene]([ExtResource("2_p526l"), ExtResource("3_lg3jb"), ExtResource("4_3kuvu"), ExtResource("5_54gkc")])
+
+[node name="Detector" type="Area2D" parent="." unique_id=766184054]
+collision_layer = 0
+collision_mask = 8
+
+[connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
