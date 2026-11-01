@@ -1,0 +1,100 @@
+<title>Flow Screens 480×270</title>
+
+<div class="wrap">
+  <p class="eyebrow">little-spaceship &middot; phase 06 &middot; visual direction</p>
+  <h1>Every screen in the flow</h1>
+  <p class="lede">
+    The six screens of <b>02-mvp-functional-spec.md</b>, drawn at <b>480&times;270</b> from the same
+    palette and the same two bitmap fonts as the game itself. They share one frame, fixed in
+    <b>04-hud-layout.md</b>: the title at <b>40,32</b>, ten-pixel lines, sixteen pixels between
+    entries, <b>W4</b> and a marker for the selected one, and a <b>24 px</b> safe area so nothing
+    sits against the letterbox. What is not here is as deliberate as what is &mdash; no difficulty
+    selector, no continue, no locked modes.
+  </p>
+
+  <div class="bench">
+    <div class="stage">
+      <div class="screen">
+        <div class="screen-inner" id="inner">
+          <canvas id="stack" width="960" height="540"></canvas>
+          <canvas id="overlay" width="960" height="540"></canvas>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <span id="scene-label">Main menu</span>
+        <span id="scale-note" class="scale-ok">integer scale &times;2</span>
+      </div>
+      <p class="caption" id="scene-note"></p>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="group" role="radiogroup" aria-label="Screen">
+          <span>Screen</span>
+          <div class="opts" id="scene-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="View">
+          <span>View</span>
+          <div class="opts" id="view-opts"></div>
+        </div>
+        <div class="group">
+          <span>Overlay</span>
+          <div class="opts" id="toggle-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="Zoom">
+          <span>Zoom</span>
+          <div class="opts" id="zoom-opts"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2>The flow</h2>
+    <ol class="flow" id="flow"></ol>
+  </section>
+
+  <section>
+    <h2>Decisions these screens make</h2>
+    <div class="notes">
+      <div class="note">
+        <span class="rule">Selection</span>
+        <h3>Colour and a marker</h3>
+        <p>The selected entry is <b>W4</b> <i>and</i> carries a <b>&gt;</b> twelve pixels to its
+        left. R4 applies to menus too: a player who cannot separate amber from white still sees
+        which line is live.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Type</span>
+        <h3>Two fonts, no third</h3>
+        <p><b>font-title</b> sets the screen title and the totals. Everything else is
+        <b>font-mini</b> at a fixed six-pixel advance, which is why no column ever shifts as a
+        number changes.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Ground</span>
+        <h3>The city keeps burning</h3>
+        <p>Menu, victory and defeat sit over the level&rsquo;s own parallax, checkered down so it
+        reads as depth rather than content. The pause panel does the same to the frozen playfield.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Absence</span>
+        <h3>What is not drawn</h3>
+        <p>No difficulty selector, no checkpoints, no profiles, no continue, no shop, no locked
+        modes and no second ship. Every one of them is an explicit MVP exclusion, and drawing a
+        greyed-out version would promise something the build does not have.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the checks say</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <p class="foot">
+    Generated from <code>docs/design/mockups/src/</code> by <code>build.py</code>, and verified by
+    <code>check.js</code>. The ship on the selection screen is drawn at &times;3 inside the
+    framebuffer, which is still an integer factor of a logical pixel.
+  </p>
+</div>

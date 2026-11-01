@@ -1,0 +1,2021 @@
+<title>Flow Screens 480×270</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* One visual world on purpose: the page is a dark room around a dark screen. A light ground would
+   let the eye adapt to it, and the contrast this page exists to judge would read differently. */
+:root{
+  --ground:#0B0E14; --panel:#161B26; --panel-2:#242C3B; --line:#3B475C;
+  --muted:#5C6B85; --text:#C9D6E8; --strong:#FFFFFF;
+  --accent:#2FBFD4; --accent-soft:#9DF2FA; --warn:#FFC94A; --ok:#34A75C; --bad:#E5822C;
+  --mono:"Martian Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --s1:.5rem; --s2:1rem; --s3:1.5rem; --s4:2.5rem; --s5:4rem;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:var(--sans); font-size:15px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:var(--s4) var(--s3) var(--s5)}
+.eyebrow{
+  font-family:var(--mono); font-size:.6rem; font-weight:600; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 var(--s2)
+}
+h1{
+  font-family:var(--mono); font-weight:700; font-size:clamp(1.5rem,3.6vw,2.2rem);
+  line-height:1.2; letter-spacing:-.01em; color:var(--strong); margin:0 0 var(--s2);
+  text-wrap:balance
+}
+.lede{max-width:64ch; color:var(--text); margin:0 0 var(--s4); font-size:1.02rem}
+.lede b{color:var(--strong); font-weight:500}
+h2{
+  font-family:var(--mono); font-size:.72rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 var(--s2);
+  padding-bottom:var(--s1); border-bottom:1px solid var(--line)
+}
+h3{font-family:var(--mono); font-size:.8rem; font-weight:600; color:var(--strong); margin:0 0 .35rem}
+p{margin:0 0 var(--s2)} p:last-child{margin-bottom:0}
+a{color:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.bench{display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:var(--s3); align-items:start}
+@media(max-width:900px){.bench{grid-template-columns:minmax(0,1fr)}}
+
+.stage{
+  background:var(--panel); border:1px solid var(--line); padding:var(--s2);
+  display:flex; flex-direction:column; gap:var(--s2); min-width:0
+}
+.screen{position:relative; overflow-x:auto; overflow-y:hidden; background:var(--ground); padding:var(--s2)}
+.screen-inner{position:relative; width:max-content; margin:0 auto; line-height:0}
+canvas{display:block; image-rendering:pixelated; image-rendering:crisp-edges}
+#overlay{position:absolute; inset:0; pointer-events:none}
+.squint #stack{filter:blur(3px)}
+.stage-foot{
+  display:flex; flex-wrap:wrap; gap:var(--s2); justify-content:space-between;
+  font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted)
+}
+.scale-ok{color:var(--ok)} .scale-bad{color:var(--bad)}
+.caption{font-size:.9rem; color:var(--muted); margin:0; max-width:70ch}
+
+.panel{background:var(--panel); border:1px solid var(--line); padding:var(--s2)}
+.panel + .panel{margin-top:var(--s2)}
+.group{margin-bottom:var(--s3)} .group:last-child{margin-bottom:0}
+.group > span{
+  display:block; font-family:var(--mono); font-size:.58rem; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:.55rem
+}
+.opts{display:flex; flex-direction:column; gap:2px}
+.opt{
+  display:flex; align-items:baseline; gap:.5rem; width:100%; text-align:left; cursor:pointer;
+  background:transparent; border:1px solid transparent; color:var(--text);
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; padding:.4rem .55rem
+}
+.opt:hover{background:var(--panel-2)}
+.opt[aria-pressed="true"],.opt[aria-checked="true"]{
+  background:var(--panel-2); border-color:var(--accent); color:var(--strong)
+}
+.opt .mark{color:var(--accent); width:.9em; flex:none}
+.opt small{font-family:var(--sans); font-size:.72rem; color:var(--muted); letter-spacing:0}
+
+.checks{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.55rem}
+.checks li{display:flex; gap:.6rem; align-items:baseline; font-size:.9rem}
+.checks .flag{
+  font-family:var(--mono); font-size:.58rem; font-weight:700; letter-spacing:.12em;
+  padding:.1rem .35rem; flex:none; border:1px solid currentColor
+}
+.checks .pass{color:var(--ok)} .checks .fail{color:var(--bad)}
+
+.legend{display:flex; flex-wrap:wrap; gap:var(--s2); font-family:var(--mono); font-size:.62rem;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.legend i{display:inline-block; width:9px; height:9px; margin-right:.4rem; vertical-align:-1px}
+
+.notes{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--s3)}
+.note{border-left:2px solid var(--line); padding-left:var(--s2)}
+.note .rule{font-family:var(--mono); font-size:.58rem; letter-spacing:.16em; color:var(--accent);
+  text-transform:uppercase; display:block; margin-bottom:.2rem}
+.note p{font-size:.9rem; color:var(--muted)}
+
+.ramp{display:flex; flex-wrap:wrap; gap:1px; margin-bottom:1.2rem}
+.ramp b{width:26px; height:26px; display:block; position:relative}
+.ramp b span{position:absolute; inset:auto 0 -14px; font-family:var(--mono); font-size:.45rem;
+  color:var(--muted); text-align:center; letter-spacing:.04em}
+.swatches{margin-bottom:var(--s3)}
+.swatches:last-child{margin-bottom:0}
+.swatches > span{display:block; font-family:var(--mono); font-size:.58rem; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:.55rem}
+
+section{margin-top:var(--s5)}
+.foot{margin-top:var(--s5); padding-top:var(--s2); border-top:1px solid var(--line);
+  font-size:.82rem; color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+.flow{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:.4rem 1.1rem;
+  counter-reset:step}
+.flow li{counter-increment:step; display:flex; align-items:baseline; gap:.5rem; font-size:.92rem}
+.flow li::before{content:counter(step,decimal-leading-zero); font-family:var(--mono);
+  font-size:.58rem; letter-spacing:.1em; color:var(--accent)}
+.link{background:none; border:0; padding:0; cursor:pointer; color:var(--text);
+  font:inherit; border-bottom:1px solid var(--line)}
+.link:hover{color:var(--strong); border-bottom-color:var(--accent)}
+.flow li span{color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">little-spaceship &middot; phase 06 &middot; visual direction</p>
+  <h1>Every screen in the flow</h1>
+  <p class="lede">
+    The six screens of <b>02-mvp-functional-spec.md</b>, drawn at <b>480&times;270</b> from the same
+    palette and the same two bitmap fonts as the game itself. They share one frame, fixed in
+    <b>04-hud-layout.md</b>: the title at <b>40,32</b>, ten-pixel lines, sixteen pixels between
+    entries, <b>W4</b> and a marker for the selected one, and a <b>24 px</b> safe area so nothing
+    sits against the letterbox. What is not here is as deliberate as what is &mdash; no difficulty
+    selector, no continue, no locked modes.
+  </p>
+
+  <div class="bench">
+    <div class="stage">
+      <div class="screen">
+        <div class="screen-inner" id="inner">
+          <canvas id="stack" width="960" height="540"></canvas>
+          <canvas id="overlay" width="960" height="540"></canvas>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <span id="scene-label">Main menu</span>
+        <span id="scale-note" class="scale-ok">integer scale &times;2</span>
+      </div>
+      <p class="caption" id="scene-note"></p>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="group" role="radiogroup" aria-label="Screen">
+          <span>Screen</span>
+          <div class="opts" id="scene-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="View">
+          <span>View</span>
+          <div class="opts" id="view-opts"></div>
+        </div>
+        <div class="group">
+          <span>Overlay</span>
+          <div class="opts" id="toggle-opts"></div>
+        </div>
+        <div class="group" role="radiogroup" aria-label="Zoom">
+          <span>Zoom</span>
+          <div class="opts" id="zoom-opts"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2>The flow</h2>
+    <ol class="flow" id="flow"></ol>
+  </section>
+
+  <section>
+    <h2>Decisions these screens make</h2>
+    <div class="notes">
+      <div class="note">
+        <span class="rule">Selection</span>
+        <h3>Colour and a marker</h3>
+        <p>The selected entry is <b>W4</b> <i>and</i> carries a <b>&gt;</b> twelve pixels to its
+        left. R4 applies to menus too: a player who cannot separate amber from white still sees
+        which line is live.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Type</span>
+        <h3>Two fonts, no third</h3>
+        <p><b>font-title</b> sets the screen title and the totals. Everything else is
+        <b>font-mini</b> at a fixed six-pixel advance, which is why no column ever shifts as a
+        number changes.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Ground</span>
+        <h3>The city keeps burning</h3>
+        <p>Menu, victory and defeat sit over the level&rsquo;s own parallax, checkered down so it
+        reads as depth rather than content. The pause panel does the same to the frozen playfield.</p>
+      </div>
+      <div class="note">
+        <span class="rule">Absence</span>
+        <h3>What is not drawn</h3>
+        <p>No difficulty selector, no checkpoints, no profiles, no continue, no shop, no locked
+        modes and no second ship. Every one of them is an explicit MVP exclusion, and drawing a
+        greyed-out version would promise something the build does not have.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the checks say</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <p class="foot">
+    Generated from <code>docs/design/mockups/src/</code> by <code>build.py</code>, and verified by
+    <code>check.js</code>. The ship on the selection screen is drawn at &times;3 inside the
+    framebuffer, which is still an integer factor of a logical pixel.
+  </p>
+</div>
+
+<script>
+// ls32, in the order of docs/design/palette/ls32.hex. Index is the framebuffer value.
+const PALETTE = [
+  '#0B0E14', '#161B26', '#242C3B', '#3B475C', '#5C6B85', '#0E1730', '#1A2C55', '#2A4680',
+  '#10333A', '#1C5C63', '#43231A', '#8A4020', '#1B4A34', '#201530', '#382050', '#58347A',
+  '#2E1A16', '#5E3028', '#8D9CB5', '#C9D6E8', '#FFFFFF', '#2FBFD4', '#9DF2FA', '#E5822C',
+  '#FFC94A', '#FFF6D9', '#34A75C', '#7FE08A', '#8E5CB8', '#8C0F4B', '#FF3D8A', '#FFD9EA'
+];
+
+const NAMES = [
+  'N0', 'N1', 'N2', 'N3', 'N4', 'B1', 'B2', 'B3', 'T1', 'T2', 'W1', 'W2', 'G1', 'V1', 'V2', 'V3',
+  'M1', 'M2', 'N5', 'N6', 'N7', 'C1', 'C2', 'W3', 'W4', 'F1', 'G2', 'G3', 'V4', 'H1', 'H2', 'H3'
+];
+
+// 'outline' is shared by both sets; everything else belongs to exactly one.
+const OUTLINE = 'outline', BACKGROUND = 'background', GAMEPLAY = 'gameplay', HOSTILE = 'hostile';
+const CLASSES = [
+  OUTLINE, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND,
+  BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND, BACKGROUND,
+  BACKGROUND, BACKGROUND, GAMEPLAY, GAMEPLAY, GAMEPLAY, GAMEPLAY, GAMEPLAY, GAMEPLAY,
+  GAMEPLAY, GAMEPLAY, GAMEPLAY, GAMEPLAY, GAMEPLAY, HOSTILE, HOSTILE, HOSTILE
+];
+
+const CHARS = {
+  '.': -1, 'k': 0, '1': 1, '2': 2, '3': 3, '4': 4, 'b': 5, 'B': 6, 'N': 7, 't': 8, 'T': 9,
+  'e': 10, 'E': 11, 'n': 12, 'a': 13, 'A': 14, 'p': 15, 'm': 16, 'M': 17,
+  's': 18, 'l': 19, 'w': 20, 'c': 21, 'C': 22, 'o': 23, 'O': 24, 'f': 25, 'g': 26, 'G': 27, 'v': 28,
+  'h': 29, 'H': 30, 'X': 31
+};
+
+// font-mini, 5x7 as specified in docs/design/03-typography.md. One bitmask per row, bit 4 leftmost.
+// Rows 0-6 are the glyph box; rows 7-8, present only where they are needed, are the descender.
+// Coverage is ASCII 32-126 and the key order below IS the sheet order: cell index = code - 32.
+const FONT5 = {
+  ' ': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+  '!': [0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04],
+  '"': [0x0A, 0x0A, 0x0A, 0x00, 0x00, 0x00, 0x00],
+  '#': [0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A],
+  '$': [0x04, 0x0F, 0x14, 0x0E, 0x05, 0x1E, 0x04],
+  '%': [0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03],
+  '&': [0x08, 0x14, 0x14, 0x08, 0x15, 0x12, 0x0D],
+  "'": [0x04, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00],
+  '(': [0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02],
+  ')': [0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08],
+  '*': [0x00, 0x0A, 0x04, 0x1F, 0x04, 0x0A, 0x00],
+  '+': [0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00],
+  ',': [0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x04, 0x08],
+  '-': [0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00],
+  '.': [0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C],
+  '/': [0x01, 0x01, 0x02, 0x04, 0x08, 0x10, 0x10],
+  '0': [0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E],
+  '1': [0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E],
+  '2': [0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F],
+  '3': [0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E],
+  '4': [0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02],
+  '5': [0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E],
+  '6': [0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E],
+  '7': [0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08],
+  '8': [0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E],
+  '9': [0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C],
+  ':': [0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x0C, 0x00],
+  ';': [0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x0C, 0x00, 0x04, 0x08],
+  '<': [0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02],
+  '=': [0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00],
+  '>': [0x10, 0x08, 0x04, 0x02, 0x04, 0x08, 0x10],
+  '?': [0x0E, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04],
+  '@': [0x0E, 0x11, 0x17, 0x15, 0x17, 0x10, 0x0E],
+  'A': [0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+  'B': [0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E],
+  'C': [0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E],
+  'D': [0x1E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1E],
+  'E': [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F],
+  'F': [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10],
+  'G': [0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0F],
+  'H': [0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+  'I': [0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x1F],
+  'J': [0x07, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C],
+  'K': [0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11],
+  'L': [0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F],
+  'M': [0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11],
+  'N': [0x11, 0x19, 0x15, 0x13, 0x11, 0x11, 0x11],
+  'O': [0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+  'P': [0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10],
+  'Q': [0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D],
+  'R': [0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11],
+  'S': [0x0F, 0x10, 0x10, 0x0E, 0x01, 0x01, 0x1E],
+  'T': [0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04],
+  'U': [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+  'V': [0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04],
+  'W': [0x11, 0x11, 0x11, 0x15, 0x15, 0x1B, 0x11],
+  'X': [0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11],
+  'Y': [0x11, 0x11, 0x0A, 0x04, 0x04, 0x04, 0x04],
+  'Z': [0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F],
+  '[': [0x0E, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0E],
+  '\\': [0x10, 0x10, 0x08, 0x04, 0x02, 0x01, 0x01],
+  ']': [0x0E, 0x02, 0x02, 0x02, 0x02, 0x02, 0x0E],
+  '^': [0x04, 0x0A, 0x11, 0x00, 0x00, 0x00, 0x00],
+  '_': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F],
+  '`': [0x08, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00],
+  'a': [0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F],
+  'b': [0x10, 0x10, 0x1E, 0x11, 0x11, 0x11, 0x1E],
+  'c': [0x00, 0x00, 0x0E, 0x10, 0x10, 0x11, 0x0E],
+  'd': [0x01, 0x01, 0x0F, 0x11, 0x11, 0x11, 0x0F],
+  'e': [0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E],
+  'f': [0x06, 0x08, 0x1C, 0x08, 0x08, 0x08, 0x08],
+  'g': [0x00, 0x00, 0x0F, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x0E],
+  'h': [0x10, 0x10, 0x1E, 0x11, 0x11, 0x11, 0x11],
+  'i': [0x04, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E],
+  'j': [0x02, 0x00, 0x06, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C],
+  'k': [0x10, 0x10, 0x12, 0x14, 0x18, 0x14, 0x12],
+  'l': [0x0C, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E],
+  'm': [0x00, 0x00, 0x1A, 0x15, 0x15, 0x15, 0x15],
+  'n': [0x00, 0x00, 0x1E, 0x11, 0x11, 0x11, 0x11],
+  'o': [0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E],
+  'p': [0x00, 0x00, 0x1E, 0x11, 0x11, 0x11, 0x1E, 0x10, 0x10],
+  'q': [0x00, 0x00, 0x0F, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x01],
+  'r': [0x00, 0x00, 0x16, 0x19, 0x10, 0x10, 0x10],
+  's': [0x00, 0x00, 0x0F, 0x10, 0x0E, 0x01, 0x1E],
+  't': [0x08, 0x08, 0x1C, 0x08, 0x08, 0x09, 0x06],
+  'u': [0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x0F],
+  'v': [0x00, 0x00, 0x11, 0x11, 0x11, 0x0A, 0x04],
+  'w': [0x00, 0x00, 0x11, 0x15, 0x15, 0x15, 0x0A],
+  'x': [0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11],
+  'y': [0x00, 0x00, 0x11, 0x11, 0x11, 0x11, 0x0F, 0x01, 0x0E],
+  'z': [0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F],
+  '{': [0x06, 0x08, 0x08, 0x10, 0x08, 0x08, 0x06],
+  '|': [0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04],
+  '}': [0x0C, 0x02, 0x02, 0x01, 0x02, 0x02, 0x0C],
+  '~': [0x00, 0x00, 0x08, 0x15, 0x02, 0x00, 0x00]
+};
+
+// font-title, 7x11, bit 6 leftmost. Uppercase, digits and the punctuation the screens need. It is
+// hand-drawn and not font-mini doubled: a 2 px stem where font-mini has 1 px is what makes it a
+// heavier face rather than a magnified one. Its sheet uses the same ASCII 32-126 grid as font-mini
+// so one loader serves both fonts; the cells it does not cover are left empty on purpose.
+const FONT7 = {
+  ' ': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+  '!': [0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x00, 0x1C, 0x1C],
+  ',': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x1C, 0x18],
+  '-': [0x00, 0x00, 0x00, 0x00, 0x00, 0x3E, 0x00, 0x00, 0x00, 0x00, 0x00],
+  '.': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x1C],
+  '0': [0x3E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  '1': [0x1C, 0x3C, 0x7C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x7F],
+  '2': [0x3E, 0x63, 0x03, 0x03, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x60, 0x7F],
+  '3': [0x7F, 0x06, 0x0C, 0x18, 0x3C, 0x06, 0x03, 0x03, 0x63, 0x63, 0x3E],
+  '4': [0x06, 0x0E, 0x1E, 0x36, 0x66, 0x66, 0x7F, 0x06, 0x06, 0x06, 0x06],
+  '5': [0x7F, 0x60, 0x60, 0x60, 0x7E, 0x03, 0x03, 0x03, 0x63, 0x63, 0x3E],
+  '6': [0x1E, 0x30, 0x60, 0x60, 0x7E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  '7': [0x7F, 0x03, 0x06, 0x0C, 0x18, 0x18, 0x30, 0x30, 0x30, 0x30, 0x30],
+  '8': [0x3E, 0x63, 0x63, 0x63, 0x3E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  '9': [0x3E, 0x63, 0x63, 0x63, 0x63, 0x3F, 0x03, 0x03, 0x06, 0x1C, 0x30],
+  ':': [0x00, 0x00, 0x1C, 0x1C, 0x00, 0x00, 0x00, 0x1C, 0x1C, 0x00, 0x00],
+  '?': [0x3E, 0x63, 0x63, 0x03, 0x06, 0x0C, 0x1C, 0x1C, 0x00, 0x1C, 0x1C],
+  'A': [0x1C, 0x36, 0x63, 0x63, 0x63, 0x63, 0x7F, 0x63, 0x63, 0x63, 0x63],
+  'B': [0x7E, 0x63, 0x63, 0x63, 0x63, 0x7E, 0x63, 0x63, 0x63, 0x63, 0x7E],
+  'C': [0x3E, 0x63, 0x63, 0x60, 0x60, 0x60, 0x60, 0x60, 0x63, 0x63, 0x3E],
+  'D': [0x7C, 0x66, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x66, 0x7C],
+  'E': [0x7F, 0x60, 0x60, 0x60, 0x60, 0x7E, 0x60, 0x60, 0x60, 0x60, 0x7F],
+  'F': [0x7F, 0x60, 0x60, 0x60, 0x60, 0x7E, 0x60, 0x60, 0x60, 0x60, 0x60],
+  'G': [0x3E, 0x63, 0x63, 0x60, 0x60, 0x6F, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  'H': [0x63, 0x63, 0x63, 0x63, 0x63, 0x7F, 0x63, 0x63, 0x63, 0x63, 0x63],
+  'I': [0x7F, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x7F],
+  'J': [0x1F, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x66, 0x66, 0x3C],
+  'K': [0x63, 0x66, 0x6C, 0x78, 0x70, 0x70, 0x78, 0x6C, 0x66, 0x63, 0x63],
+  'L': [0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7F],
+  'M': [0x63, 0x77, 0x7F, 0x6B, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63],
+  'N': [0x63, 0x73, 0x7B, 0x7B, 0x6F, 0x67, 0x63, 0x63, 0x63, 0x63, 0x63],
+  'O': [0x3E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  'P': [0x7E, 0x63, 0x63, 0x63, 0x63, 0x7E, 0x60, 0x60, 0x60, 0x60, 0x60],
+  'Q': [0x3E, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x6B, 0x67, 0x3E, 0x03],
+  'R': [0x7E, 0x63, 0x63, 0x63, 0x63, 0x7E, 0x6C, 0x66, 0x63, 0x63, 0x63],
+  'S': [0x3E, 0x63, 0x60, 0x60, 0x30, 0x1C, 0x06, 0x03, 0x03, 0x63, 0x3E],
+  'T': [0x7F, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C],
+  'U': [0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x3E],
+  'V': [0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x36, 0x36, 0x1C, 0x1C],
+  'W': [0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x6B, 0x6B, 0x7F, 0x77, 0x22],
+  'X': [0x63, 0x63, 0x36, 0x36, 0x1C, 0x1C, 0x1C, 0x36, 0x36, 0x63, 0x63],
+  'Y': [0x63, 0x63, 0x36, 0x36, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C],
+  'Z': [0x7F, 0x03, 0x06, 0x0C, 0x0C, 0x18, 0x18, 0x30, 0x60, 0x60, 0x7F]
+};
+
+// Sprites at the exact sizes of docs/design/02-sprite-sizes.md. Some are still block silhouettes
+// standing in for art that has not been drawn; those are marked. What has to be right in every
+// case is the footprint.
+//
+// Every sprite here is symmetric about its centre column, so wide ones are authored as half rows
+// and mirrored by sym(). A hand-typed 23-wide row is a width error waiting to happen and the half
+// is half the chances; more importantly the mirror cannot drift, which is what actually goes wrong
+// when a big sprite is typed out in full.
+function sym(rows) {
+  return rows.map(half => half + half.slice(0, half.length - 1).split('').reverse().join(''));
+}
+
+const SPRITES = {
+  'enemy-basic': { w: 13, h: 13, r: 5.5, art: sym([
+    '....kkk',
+    '...klll',
+    '..kslll',
+    '.ksvvvv',
+    'ksvvvvv',
+    'ksvvvvv',
+    'ksvvvvv',
+    'ksvvvvv',
+    'ksvvvvv',
+    '.ksvvvv',
+    '..kvvvv',
+    '...ksOO',
+    '....kkk'
+  ]) },
+  // The fork. Its prongs are 3 px, which is the widest rule 3 in 02-sprite-sizes.md allows outside
+  // the circle, and they carry the two muzzles: this is the enemy whose shot is "simple but
+  // different", and two muzzles say that before it fires.
+  'enemy-light': { w: 11, h: 13, r: 4.5, art: sym([
+    '....kk',
+    '...kll',
+    '..kslv',
+    '.ksvvv',
+    'ksvvvv',
+    'ksvvvv',
+    'ksvvvv',
+    'ksvvvv',
+    'ksvvvv',
+    'kvvvkk',
+    'kvk...',
+    'kOk...',
+    'kkk...'
+  ]) },
+  // The anvil. A wide lit plate over a narrow neck and one fat barrel: the only archetype whose
+  // widest point is its top row, and the only one with a single large muzzle. That muzzle is the
+  // whole reason it is not a bigger basic -- it is the one that fires fast, and it is drawn as a
+  // gun rather than as a face.
+  'enemy-shooter': { w: 15, h: 15, r: 6.5, art: sym([
+    '..kkkkkk',
+    '.kllllll',
+    'ksvvvvvv',
+    'ksvvvvvv',
+    'kkkkkvvv',
+    '....kvvv',
+    '....ksvv',
+    '....ksvv',
+    '....ksvv',
+    '....kvvv',
+    '....kkvv',
+    '.....kso',
+    '.....kOO',
+    '......kO',
+    '......kk'
+  ]) },
+  // The needle. Vertical everywhere except one barb, tip downward because it kills by arriving.
+  // Nothing else in the set is 3 px wide over two thirds of its height, which is what separates it
+  // from the fork at a glance: the fork is wide and split, this is thin and whole.
+  'enemy-rush': { w: 9, h: 15, r: 4.0, art: sym([
+    '...kk',
+    '..kll',
+    '..ksl',
+    '.kksv',
+    'kksvv',
+    '.kkvv',
+    '..ksv',
+    '..ksv',
+    '..ksv',
+    '..ksv',
+    '..ksv',
+    '..kvv',
+    '...kO',
+    '...ko',
+    '....k'
+  ]) },
+  // The bunker. Redrawn from the 21/08 version, which validated clean but read friendly: a domed
+  // outline and a big ringed eye are what a mascot is made of. What replaces them is a chamfer
+  // instead of a dome, a flat 23 px waist, two stubby legs, and a horizontal gun slit where the
+  // eye was. A slit is a mouth-height band rather than a face, and it is 7 px of W4 -- more warm
+  // pixels than any other archetype, which is the reading "this one hits hard" wants.
+  //
+  // It is also where the one-violet constraint was tested, because it is the first sprite wide
+  // enough for a flat hull to show. It holds: V4 is the mass, N5 the rim and the armour plate, N6
+  // only the top-lit crest, and the interior shadow is N0, which at 23 px reads as a panel joint
+  // rather than as a hole in the shading.
+  'enemy-tank': { w: 23, h: 23, r: 10.5, art: sym([
+    '.....kkkkkkk',
+    '....klllllll',
+    '...klsvvvvvv',
+    '..klsvvvvvvv',
+    '.klsvvvvvvvv',
+    'klsvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvkkssssss',
+    'ksvvkksoOOOO',
+    'ksvvkkssssss',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'ksvvvvvvvvvv',
+    'kkkkkkvvvvvv',
+    '......kvvkkk',
+    '......kvvk..',
+    '......kvvk..',
+    '......kkkk..'
+  ]) },
+  // The wing, and the only archetype with no warm pixel anywhere: it never shoots, it opens a bay
+  // and lets basics out, so the thing to look at is the bay. Its 4 px wingtips are the case
+  // 02-sprite-sizes.md sets out -- drawn N0/V4/V4/N0, half of them outline, which is what makes a
+  // wing read dark when the gameplay set has no dark colour. The collider covers the central 31 px
+  // exactly, so everything the player can damage is inside the hull edge.
+  //
+  // Two of these arrive together in the strong encounter, so its interior is deliberately quiet:
+  // one nacelle each side, one dorsal ridge, one bay. Detail here doubles on screen.
+  'enemy-carrier': { w: 39, h: 31, r: 15.0, art: sym([
+    '.............kkkkkkk',
+    '...........kllllllll',
+    '.........klsvvvvvvvv',
+    '.......klsvvvvvvvvvv',
+    '.....klsvvvvvvvvvvvv',
+    '....klsvvvvvvvvvvvvv',
+    '....ksvvvvvvvvvvvvvv',
+    '....ksvvvvvvvvvvvvvv',
+    '....kllllkvvvvvvvssl',
+    '....ksssskvvvvvvvssl',
+    '....ksssskvvvvvvvssl',
+    '....ksssskvvvvvvvssl',
+    'kkkkksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkvvksssskvvvvvvvssl',
+    'kkkkksssskvvvvvvvssl',
+    '....kkkkkkvvvvvvvssl',
+    '....ksvvvvvvvvvvvvvv',
+    '....ksvvvvvvvvvvvvvv',
+    '.....ksvvvvvvvllllll',
+    '.....ksvvvvvvvkkkkkk',
+    '......ksvvvvvvkkkkkk',
+    '.......ksvvvvvkkkkkk',
+    '........ksvvvvkkkkkk',
+    '.........ksvvvkkkkkk',
+    '..........ksvvkkkkkk',
+    '...........kkkkkkkkk'
+  ]) },
+  // The boss, as three sprites drawn once and placed five times: the right-hand pod and arm are the
+  // left-hand ones mirrored by the renderer, as 06-boss-presentation.md requires. All three are
+  // generated from band widths rather than typed, because 47x87 is 4089 characters and a hand-typed
+  // one is a transcription error with a 50% chance of being noticed.
+  //
+  // The core is the only enemy in the game carrying F1 at rest, and that single pixel cluster is
+  // what makes the boss's centre the place the eye returns to. It never charges: the tell lives on
+  // the pods and the arms, so a bright core always means "aim here" and never means "something is
+  // about to happen".
+  'boss-core': { w: 47, h: 87, r: 18.0, art: sym([
+    '..................kkkkkk',
+    '..................ksvvvv',
+    '..................ksvvvv',
+    '..................ksvvvv',
+    '................kkllllll',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '................ksvvvvvv',
+    '...........kkkkkllllllll',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '.......kkkklllllllllllll',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '...kkkklllllllllllllllll',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvssss',
+    '...ksvvvvvvvvssvvvssssss',
+    'kkklllllllllllllsssskkkk',
+    'ksvvvvvvvvvvvssssskkkooo',
+    'ksvvvvvvvvvvvsssskkooooo',
+    'ksvvvvvvvvvvvssskooooOOO',
+    'ksvvvvvvvvvvvsskkooOOOOO',
+    'ksvvvvvvvvvvvsskooOOOOOO',
+    'ksvvvvvvvvvvsskkooOOOOff',
+    'ksvvvvvvvvvvsskooOOOOfff',
+    'ksvvvvvvvvvvsskooOOOffff',
+    'ksvvvvvvvvvvsskooOOOffff',
+    'ksvvvvvvvvvvsskooOOOffff',
+    'ksvvvvvvvvvvsskooOOOOfff',
+    'ksvvvvvvvvvvsskkooOOOOff',
+    'ksvvvvvvvvvvvsskooOOOOOO',
+    'ksvvvvvvvvvvvsskkooOOOOO',
+    'ksvvvvvvvvvvvssskooooOOO',
+    'ksvvvvvvvvvvvsssskkooooo',
+    'ksvvvvvvvvvvvssssskkkooo',
+    'ksvvvvvvvvvvvssvsssskkkk',
+    'ksvvvvvvvvvvvssvvvssssss',
+    'ksvvvvvvvvvvvssvvvvvssss',
+    'ksvvvvvvvvvvvssvvvvvvvvv',
+    'ksvvvvvvvvvvvssvvvvvvvvv',
+    'kkkvvvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...ksvvvvvvvvssvvvvvvvvv',
+    '...kkkkvvvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......ksvvvvssvvvvvvvvv',
+    '.......kkkkvvssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........ksssvvvvvvvvv',
+    '...........kkkkvvvvvvvvv',
+    '...............ksvvvvvvv',
+    '...............ksvvvvvvv',
+    '...............ksvvvvvvv',
+    '...............ksvvvvvvv',
+    '...............ksvvvvvvv',
+    '...............kkkvvvvvv',
+    '..................ksvvvv',
+    '..................ksvvvv',
+    '..................ksvvvv',
+    '..................ksvvvv',
+    '..................kkkkkk'
+  ]) },
+  // The pod charges on the spread pattern. Its iris is W3/W4 with no F1, which is what keeps it a
+  // step below the core when both are lit, and its rim is a full N5 ring so beat 1 of the tell has
+  // something to light without touching the silhouette.
+  'boss-pod': { w: 25, h: 25, r: 12.0, art: sym([
+    '........kkkkk',
+    '......kklllll',
+    '....kklllllll',
+    '...kvvvvvvvvv',
+    '..kvvvvvvvsss',
+    '.kvvvvvvsssss',
+    'kvvvvvsssskkk',
+    'kvvvvvsskkooo',
+    'kvvvvsskkoooo',
+    'kvvvvsskooooo',
+    'kvvvsskoooooo',
+    'kvvvsskooookk',
+    'kvvvsskooookk',
+    'kvvvsskooookk',
+    'kvvvsskoooooo',
+    'kvvvvsskooooo',
+    'kvvvvsskkoooo',
+    'kvvvvvsskkooo',
+    'kvvvvvsssskkk',
+    '.kvvvvvvsssss',
+    '..kvvvvvvvsss',
+    '...kvvvvvvvvv',
+    '....kkvvvvvvv',
+    '......kkvvvvv',
+    '........kkkkk'
+  ]) },
+  // The arm charges on the sweep pattern. Its emitter is at the bottom, away from the core, so the
+  // two tells are separated by position as well as by which part moves: pods light high and inner,
+  // arms light low and outer, and that is the dodge direction.
+  'boss-arm': { w: 31, h: 45, r: 14.0, art: sym([
+    '.........kkkkkkk',
+    '.........kllllll',
+    '......kkklllllll',
+    '......ksvvvvvvvv',
+    '......ksvvvvvvvv',
+    '......ksvvvvvvvv',
+    '...kkkllllllllll',
+    '...ksvvvvvvvvvvv',
+    '...ksvvvvvvvvvvv',
+    '...ksvvvvvvvvvvv',
+    'kkklllllllllllll',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'ksvvvvvvvssvvvvv',
+    'kkkvvvvvvssvvvvv',
+    '...ksvvvvssvvvvv',
+    '...ksvvvvssvvvvv',
+    '...ksvvvvssvvvvv',
+    '...ksvvvvssvvvvv',
+    '...ksvvvvssvvvvv',
+    '...kkkvvvvvvvvvv',
+    '......ksvvvvvvvv',
+    '......ksvvvvvvvv',
+    '......ksvvvooooo',
+    '......ksvvvooooo',
+    '......kkkvvookkk',
+    '.........ksookkk',
+    '.........ksookkk',
+    '.........ksookkk',
+    '.........kkookkk',
+    '...........koooo',
+    '...........koooo',
+    '...........ksvvv',
+    '...........kkkkk'
+  ]) },
+  'shot-p1': { w: 3, h: 9, r: 1.5, art: [
+    'kck', 'kCk', 'kCk', 'kCk', 'kCk', 'kCk', 'kCk', 'kck', '.k.'
+  ] },
+  'shot-p2': { w: 5, h: 11, r: 2.0, art: [
+    '..k..', '.kCk.', '.kCk.', 'kCwCk', 'kCwCk', 'kCwCk', 'kCwCk', 'kCwCk', '.kCk.', '.kCk.', '..k..'
+  ] },
+  'shot-e-small': { w: 5, h: 5, r: 2.0, art: [
+    '.hhh.', 'hHHHh', 'hHXHh', 'hHHHh', '.hhh.'
+  ] },
+  'shot-e-heavy': { w: 7, h: 7, r: 3.0, art: [
+    '..hhh..', '.hHHHh.', 'hHHXHHh', 'hHXXXHh', 'hHHXHHh', '.hHHHh.', '..hhh..'
+  ] },
+  'shot-e-bolt': { w: 5, h: 11, r: 2.0, art: [
+    '..h..', '.hHh.', '.hXh.', '.hXh.', '.hXh.', '.hXh.', '.hXh.', '.hXh.', '.hHh.', '.hHh.', '..h..'
+  ] },
+  // The player ship, in four frames plus a separate exhaust. Cyan is its only accent anywhere -- the
+  // wing lights were W3 in the first pass and are C1 now, because the archetype redraw made warm
+  // pixels mean "this is where an enemy hurts you". Warm on the player and warm on the enemy in the
+  // same frame is the one confusion the palette cannot resolve, since both sets share the ramp.
+  //
+  // The frame budget in 02-sprite-sizes.md asked for two idle frames and two thrust frames. It gets
+  // one of each plus a two-frame exhaust drawn under the hull, which is the same animation for half
+  // the pixels: what actually moves when a ship idles is its flame.
+  'ship-basic': { w: 15, h: 17, r: 3.0, art: [
+    '.......k.......',
+    '......klk......',
+    '......klk......',
+    '.....klllk.....',
+    '.....klslk.....',
+    '....klssslk....',
+    '....klssslk....',
+    '...kklssslkk...',
+    '...klssssslk...',
+    '.klklssssslklk.',
+    '.kcklssssslkck.',
+    '.klklssssslklk.',
+    '..kklssssslkk..',
+    '...klssssslk...',
+    '....klcCclk....',
+    '.....kcCck.....',
+    '......kCk......'
+  ] },
+  // Banking left, transition and held. The right-hand pair are these mirrored at draw time. What
+  // changes between them is only the wing profile and which wing light is visible -- the fuselage
+  // never moves, so the 6 px hitbox stays under the same pixels in every frame.
+  'ship-bank': { w: 15, h: 17, r: 3.0, art: [
+    '.......k.......',
+    '......klk......',
+    '......klk......',
+    '.....klllk.....',
+    '.....klslk.....',
+    '....klssslk....',
+    '....klssslk....',
+    '...kklssslkk...',
+    '...klssssslk...',
+    '.kkklssssslkk..',
+    '.kcklssssslkck.',
+    '.kkklssssslkck.',
+    '..kklssssslkkk.',
+    '...klssssslk...',
+    '....klcCclk....',
+    '.....kcCck.....',
+    '......kCk......'
+  ] },
+  'ship-tilt': { w: 15, h: 17, r: 3.0, art: [
+    '.......k.......',
+    '......klk......',
+    '......klk......',
+    '.....klllk.....',
+    '.....klslk.....',
+    '....klssslk....',
+    '....klssslk....',
+    '...kklssslkk...',
+    '...klssssslk...',
+    '..kklssssslkk..',
+    '..kcklsssssllk.',
+    '..kkklssssslkck',
+    '...kklssssslkck',
+    '....klssssslkkk',
+    '....klcCclk....',
+    '.....kcCck.....',
+    '......kCk......'
+  ] },
+  // One frame, flooded N7, held for the impact. It keeps the N0 outline: a shape that is white to
+  // its own edge has no edge left, and R5 does not have an exception for one frame.
+  'ship-hit': { w: 15, h: 17, r: 3.0, art: [
+    '.......k.......',
+    '......kwk......',
+    '......kwk......',
+    '.....kwwwk.....',
+    '.....kwwwk.....',
+    '....kwwwwwk....',
+    '....kwwwwwk....',
+    '...kkwwwwwkk...',
+    '...kwwwwwwwk...',
+    '.kwkwwwwwwwkwk.',
+    '.kwkwwwwwwwkwk.',
+    '.kwkwwwwwwwkwk.',
+    '..kkwwwwwwwkk..',
+    '...kwwwwwwwk...',
+    '....kwwwwwk....',
+    '.....kwwwk.....',
+    '......kwk......'
+  ] },
+  // The exhaust, drawn under the hull and animated on its own two-frame loop.
+  'fx-thrust-a': { w: 5, h: 7, art: [
+    '.kCk.',
+    'kCcCk',
+    'kCcCk',
+    'kCcCk',
+    '.kCk.',
+    '.kck.',
+    '..k..'
+  ] },
+  'fx-thrust-b': { w: 5, h: 7, art: [
+    '.kCk.',
+    'kCcCk',
+    'kCcCk',
+    '.kCk.',
+    '.kck.',
+    '.kck.',
+    '..k..'
+  ] },
+  // R11 of 05-legibility-rules.md requires every enemy shot to be telegraphed at least two ticks
+  // before the projectile exists. This is what is drawn on the shooter during those ticks, at its
+  // muzzle. It is warm, never magenta: the player must never have to tell the warning apart from
+  // the thing it warns about.
+  'fx-muzzle': { w: 5, h: 5, art: [
+    '..k..',
+    '.kOk.',
+    'kOfOk',
+    '.kOk.',
+    '..k..'
+  ] },
+  // The attachment, one per side. No collider of its own, so it is drawn small and quiet and its
+  // cyan core is what says it belongs to the player rather than to whatever it is flying past.
+  'module-satellite': { w: 7, h: 9, art: [
+    '..kkk..',
+    '.klllk.',
+    'klssslk',
+    'klssslk',
+    'klsCslk',
+    'klssslk',
+    'klssslk',
+    '.kcCck.',
+    '..kCk..'
+  ] },
+  // One capsule, five glyphs, and a sixth shell one step larger for the attachment. The player
+  // learns a green octagon once; after that he only reads the five pixels in the middle, and they
+  // are the same five the HUD shows for the state the pickup grants.
+  'pickup-weapon': { w: 11, h: 11, r: 6.0, art: [
+    '...kkkkk...',
+    '..kgggggk..',
+    '.kgGGGGGgk.',
+    'kgg....wggk',
+    'kgg..w.wggk',
+    'kggw.w.wggk',
+    'kggw.w.wggk',
+    'kggw.w.wggk',
+    '.kgggggggk.',
+    '..kgggggk..',
+    '...kkkkk...'
+  ] },
+  'pickup-shield': { w: 11, h: 11, r: 6.0, art: [
+    '...kkkkk...',
+    '..kgggggk..',
+    '.kgGGGGGgk.',
+    'kgg.www.ggk',
+    'kggw...wggk',
+    'kggw...wggk',
+    'kgg.w.w.ggk',
+    'kgg..w..ggk',
+    '.kgggggggk.',
+    '..kgggggk..',
+    '...kkkkk...'
+  ] },
+  'pickup-life': { w: 11, h: 11, r: 6.0, art: [
+    '...kkkkk...',
+    '..kgggggk..',
+    '.kgGGGGGgk.',
+    'kgg..w..ggk',
+    'kgg..w..ggk',
+    'kggwwwwwggk',
+    'kgg..w..ggk',
+    'kgg..w..ggk',
+    '.kgggggggk.',
+    '..kgggggk..',
+    '...kkkkk...'
+  ] },
+  'pickup-bomb': { w: 11, h: 11, r: 6.0, art: [
+    '...kkkkk...',
+    '..kgggggk..',
+    '.kgGGGGGgk.',
+    'kgg.www.ggk',
+    'kggwwwwwggk',
+    'kggwwwwwggk',
+    'kggwwwwwggk',
+    'kgg.www.ggk',
+    '.kgggggggk.',
+    '..kgggggk..',
+    '...kkkkk...'
+  ] },
+  'pickup-invuln': { w: 11, h: 11, r: 6.0, art: [
+    '...kkkkk...',
+    '..kgggggk..',
+    '.kgGGGGGgk.',
+    'kggw...wggk',
+    'kgg.w.w.ggk',
+    'kgg..w..ggk',
+    'kgg.w.w.ggk',
+    'kggw...wggk',
+    '.kgggggggk.',
+    '..kgggggk..',
+    '...kkkkk...'
+  ] },
+  'pickup-module': { w: 13, h: 13, r: 7.0, art: [
+    '....kkkkk....',
+    '..kgggggggk..',
+    '.kgGGGGGGGgk.',
+    'kgggggggggggk',
+    'kggg..w..gggk',
+    'kgggw.w.wgggk',
+    'kgggw.w.wgggk',
+    'kgggw.w.wgggk',
+    'kggg..w..gggk',
+    'kgggggggggggk',
+    '.kgggggggggk.',
+    '..kgggggggk..',
+    '....kkkkk....'
+  ] },
+  // The destructible structure. Human metal, like the player ship and the HUD plates, because it is
+  // neither alien nor hostile and the ramp is what says so. Its warm panels are the only thing that
+  // will still be warm once it is burning.
+  'structure-tower': { w: 31, h: 39, r: 15.0, art: sym([
+    '..........kkkkkk',
+    '..........klllll',
+    '..........kssssl',
+    '..........kssssl',
+    '........kkllllll',
+    '........kssssool',
+    '........kssssool',
+    '........kssssssl',
+    '.....kkkllllllll',
+    '.....ksssssssssl',
+    '.....ksskssssssl',
+    '.....ksskssssool',
+    '.....ksskssssool',
+    '.....ksskssssssl',
+    '.....ksskssssssl',
+    '.....ksskssssool',
+    '.....ksskssssool',
+    '.....ksskssssssl',
+    '.....ksskssssssl',
+    '.....ksskssssool',
+    '.....ksskssssool',
+    '.....ksskssssssl',
+    '.....ksskssssssl',
+    '.....ksskssssool',
+    '.....ksskssssool',
+    '.....ksskssssssl',
+    '...kklllllllllll',
+    '...ksssssssssssl',
+    '...ksssssssssssl',
+    'kkklllllllllllll',
+    'ksssssssssssssol',
+    'kssssssssssssool',
+    'kssssssssssssool',
+    'kssssssssssssssl',
+    'kssoossssssssssl',
+    'kssoossssssssssl',
+    'kssssssssssssssl',
+    'kssssssssssssssl',
+    'kkkkkkkkkkkkkkkk'
+  ]) },
+  'icon-life': { w: 9, h: 9, art: [
+    '....k....',
+    '...klk...',
+    '..klllk..',
+    '..klslk..',
+    '.klssslk.',
+    '.klssslk.',
+    'kklssslkk',
+    '.k.kck.k.',
+    '....C....'
+  ] },
+  'icon-bomb': { w: 9, h: 9, art: [
+    '...kkk...',
+    '.kklllkk.',
+    '.klOOOlk.',
+    'klOOfOOlk',
+    'klOfffOlk',
+    'klOOfOOlk',
+    '.klOOOlk.',
+    '.kklllkk.',
+    '...kkk...'
+  ] },
+  'icon-shield': { w: 13, h: 13, art: [
+    '..kkkkkkkkk..',
+    '.klllllllllk.',
+    'klccccccccclk',
+    'klcclllllcclk',
+    'klcclwwwlcclk',
+    'klcclllllcclk',
+    'klccccccccclk',
+    '.klccccccclk.',
+    '..klccccclk..',
+    '...klccclk...',
+    '....klclk....',
+    '.....klk.....',
+    '......k......'
+  ] },
+  'icon-invuln': { w: 13, h: 13, art: [
+    '......k......',
+    '......O......',
+    '..k...O...k..',
+    '...O..O..O...',
+    '....O.O.O....',
+    '.....OOO.....',
+    'kOOOOOfOOOOOk',
+    '.....OOO.....',
+    '....O.O.O....',
+    '...O..O..O...',
+    '..k...O...k..',
+    '......O......',
+    '......k......'
+  ] },
+  'icon-module': { w: 17, h: 17, art: [
+    '....k.......k....',
+    '...klk.....klk...',
+    '...klk.....klk...',
+    '..klslk...klslk..',
+    '..klslk...klslk..',
+    '..klslk...klslk..',
+    '..klslk...klslk..',
+    '..klslk...klslk..',
+    '..klolk...klolk..',
+    '..klslk...klslk..',
+    '..klslk...klslk..',
+    '..kkslkk.kkslkk..',
+    '..k.k.k...k.k.k..',
+    '...kOk.....kOk...',
+    '...kfk.....kfk...',
+    '....O.......O....',
+    '.................'
+  ] }
+};
+
+// Sprites whose collider is meant to match what the player aims at. The player ship and every
+// projectile are excluded because their radius is deliberately far smaller than their art -- rule 4
+// of 02-sprite-sizes.md applies generosity in one direction only, and measuring them here would
+// only report the generosity back as an error.
+// Only the enemies. The boss and the structure are both absent, for the same reason and not because
+// they were awkward: neither is covered by the collider it is given, and no drawing fixes that. A
+// 39 px tall sprite on a 15.0 radius has its outermost row 4 px past the circle whatever shape it
+// is, and the boss's five circles were never meant to tile 119x87. Both are written up -- the boss
+// in 06-boss-presentation.md, the structure in 02-sprite-sizes.md -- because they are collider
+// decisions and belong to whoever owns the collider.
+const AIMED_AT = ['enemy-'];
+
+// How far a sprite may hang past its own collider. The original wording, "85% of opaque pixels fall
+// within the radius", cannot be met by anything elongated: enemy-rush is 15 px tall against a 4 px
+// radius and tops out near 53% however it is drawn. What the rule was protecting is not the
+// fraction, it is that no *mass* sits outside the circle -- shoot it and nothing happens.
+//
+// So it is measured as a depth, on the hull rather than on the outline: no hull pixel sits more
+// than three pixels past the radius. Outline is exempt on purpose -- 02-sprite-sizes.md argues that
+// a 4 px wing drawn half in N0 reads as a strut, and that argument is only true if the black is
+// allowed to be the part that sticks out. A per-row count was tried alongside it and dropped: on
+// anything much taller than it is wide the top and bottom rows lie entirely outside the circle, so
+// the count reported the sprite's proportions rather than a mistake in it.
+const MAX_DEPTH = 3;
+
+function overhang(s) {
+  const cx = (s.w - 1) / 2, cy = (s.h - 1) / 2;
+  let deepest = 0, deepRow = -1;
+  s.art.forEach((line, y) => {
+    [...line].forEach((ch, x) => {
+      if (ch === '.' || ch === 'k') return;
+      const past = Math.hypot(x - cx, y - cy) - s.r;
+      if (past > deepest) { deepest = past; deepRow = y; }
+    });
+  });
+  return { deepest, deepRow };
+}
+
+// Every sprite must match the size it declares, and every character must be a palette colour.
+// A silhouette that lies about its footprint is the exact failure this mock exists to catch.
+function validateSprites() {
+  const problems = [];
+  for (const [id, s] of Object.entries(SPRITES)) {
+    if (s.r !== undefined && AIMED_AT.some(p => id.startsWith(p))) {
+      const { deepest, deepRow } = overhang(s);
+      if (deepest > MAX_DEPTH) {
+        problems.push(id + ': row ' + deepRow + ' has hull ' + deepest.toFixed(1)
+          + ' px past the collider, over the ' + MAX_DEPTH + ' px limit');
+      }
+    }
+    if (s.art.length !== s.h) {
+      problems.push(id + ': declares height ' + s.h + ' and has ' + s.art.length + ' rows');
+    }
+    s.art.forEach((row, y) => {
+      if (row.length !== s.w) {
+        problems.push(id + ': row ' + y + ' declares width ' + s.w + ' and is ' + row.length);
+      }
+      for (const ch of row) {
+        if (CHARS[ch] === undefined) problems.push(id + ': unknown character "' + ch + '"');
+      }
+    });
+    if (s.w % 2 === 0 || s.h % 2 === 0) {
+      problems.push(id + ': ' + s.w + 'x' + s.h + ' has an even dimension, breaking the odd rule');
+    }
+  }
+  return problems;
+}
+
+const W = 480, H = 270;
+const PLAY_X0 = 136, PLAY_X1 = 343;          // 208 px of playfield, centred
+const LEFT_RULE = 135, RIGHT_RULE = 344;
+
+// The framebuffer holds palette indices, not colours. That is what lets the page prove no pixel
+// escaped ls32 and colour every pixel by the set it belongs to.
+class Fb {
+  // Defaults to the whole screen; the reference sheet asks for one the size of a single sprite.
+  constructor(w, h) {
+    this.w = w || W; this.h = h || H;
+    this.d = new Int16Array(this.w * this.h).fill(0);
+  }
+  px(x, y, c) {
+    if (c < 0 || x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    this.d[y * this.w + x] = c;
+  }
+  at(x, y) { return this.d[y * this.w + x]; }
+  rect(x, y, w, h, c) {
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.px(x + i, y + j, c);
+  }
+  frame(x, y, w, h, c) {
+    for (let i = 0; i < w; i++) { this.px(x + i, y, c); this.px(x + i, y + h - 1, c); }
+    for (let j = 0; j < h; j++) { this.px(x, y + j, c); this.px(x + w - 1, y + j, c); }
+  }
+  // step 2 gives a 50 % checker, which is the only dithering the direction allows, and only in
+  // background layers where it does not move.
+  dither(x, y, w, h, c, step) {
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) if ((i + j) % step === 0) this.px(x + i, y + j, c);
+    }
+  }
+  blit(id, cx, cy, mode) {
+    const s = SPRITES[id];
+    const x0 = cx - ((s.w - 1) >> 1), y0 = cy - ((s.h - 1) >> 1);
+    for (let j = 0; j < s.h; j++) {
+      for (let i = 0; i < s.w; i++) {
+        const ch = s.art[j][i];
+        const c = CHARS[ch];
+        if (c < 0) continue;
+        if (mode === 'hollow') { if (ch !== 'k') continue; this.px(x0 + i, y0 + j, 3); }
+        // The blink is a batch tint in the real renderer; an indexed framebuffer has no alpha, so
+        // the mock stands in for it with a checker. What it communicates is the same.
+        else if (mode === 'dither' && (i + j) % 2 === 0) continue;
+        else this.px(x0 + i, y0 + j, c);
+      }
+    }
+  }
+  text5(str, x, y, c) {
+    let cx = x;
+    for (const ch of str) {
+      const g = FONT5[ch] || FONT5[' '];
+      // g is 7 rows, or 9 when the glyph descends. Reading its length is what keeps the two cases
+      // from needing two code paths, here and in the real loader.
+      for (let j = 0; j < g.length; j++) {
+        for (let i = 0; i < 5; i++) if (g[j] & (1 << (4 - i))) this.px(cx + i, y + j, c);
+      }
+      cx += 6;
+    }
+  }
+  text7(str, x, y, c) {
+    let cx = x;
+    for (const ch of str.toUpperCase()) {
+      const g = FONT7[ch];
+      if (g) {
+        for (let j = 0; j < 11; j++) {
+          for (let i = 0; i < 7; i++) if (g[j] & (1 << (6 - i))) this.px(cx + i, y + j, c);
+        }
+      }
+      cx += 8;
+    }
+  }
+  ellipse(cx, cy, rx, ry, c) {
+    for (let j = -ry; j <= ry; j++) {
+      for (let i = -rx; i <= rx; i++) {
+        if ((i * i) / (rx * rx) + (j * j) / (ry * ry) <= 1) this.px(cx + i, cy + j, c);
+      }
+    }
+  }
+}
+
+// Seeded so the city is the same city every time the page loads. Same reason the core has an Rng.
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+}
+
+// A city seen from above: blocks, streets, rooftops and fires. Background-legal colours only, and
+// no detail that competes with the playfield - that is R7 and R8 doing their job.
+function drawCity(fb, scroll) {
+  fb.rect(PLAY_X0, 0, 208, H, 1);
+  const r = rng(0x5EED);
+  const blocks = [];
+  for (let i = 0; i < 46; i++) {
+    blocks.push({
+      x: PLAY_X0 + 4 + Math.floor(r() * 190),
+      y: Math.floor(r() * 640),
+      w: 14 + Math.floor(r() * 34),
+      h: 16 + Math.floor(r() * 40),
+      lit: r() < 0.30,
+      fire: r() < 0.22
+    });
+  }
+  // Streets first, so the blocks sit on top of them.
+  for (let y = -(scroll % 46); y < H; y += 46) fb.rect(PLAY_X0, y, 208, 3, 2);
+  for (let x = PLAY_X0 + 18; x < PLAY_X1; x += 52) fb.rect(x, 0, 3, H, 2);
+
+  for (const b of blocks) {
+    const y = ((b.y - scroll) % 640 + 640) % 640 - 60;
+    if (y > H || y + b.h < 0) continue;
+    fb.rect(b.x, y, b.w, b.h, 2);
+    fb.frame(b.x, y, b.w, b.h, 3);
+    // Rooftop detail: skylights and vents, never brighter than N4.
+    for (let j = 3; j < b.h - 3; j += 5) {
+      for (let i = 3; i < b.w - 3; i += 6) fb.rect(b.x + i, y + j, 3, 2, b.lit ? 9 : 8);
+    }
+    if (b.fire) {
+      fb.ellipse(b.x + (b.w >> 1), y + (b.h >> 1), 5, 4, 10);
+      fb.ellipse(b.x + (b.w >> 1), y + (b.h >> 1), 3, 2, 11);
+      fb.dither(b.x + (b.w >> 1) - 7, y + (b.h >> 1) - 6, 14, 12, 10, 3);
+    }
+  }
+  // Smoke drifting over the city, the closest and plainest layer.
+  const r2 = rng(0xC0FFEE);
+  for (let i = 0; i < 9; i++) {
+    const x = PLAY_X0 + 6 + Math.floor(r2() * 190);
+    const y = ((Math.floor(r2() * 500) - scroll * 1.6) % 500 + 500) % 500 - 90;
+    fb.dither(x, y, 26 + Math.floor(r2() * 20), 16, 3, 3);
+  }
+}
+
+function drawHud(fb, st) {
+  fb.rect(0, 0, LEFT_RULE, H, 2);
+  fb.rect(RIGHT_RULE + 1, 0, W - RIGHT_RULE - 1, H, 2);
+  const ruleColour = st.hitFlash ? 20 : 3;
+  fb.rect(LEFT_RULE, 0, 1, H, ruleColour);
+  fb.rect(RIGHT_RULE, 0, 1, H, ruleColour);
+
+  fb.text5('LIVES', 12, 14, 4);
+  for (let i = 0; i < 5; i++) fb.blit('icon-life', 12 + i * 12 + 4, 24 + 4, i < st.lives ? 'full' : 'hollow');
+
+  fb.text5('BOMBS', 12, 44, 4);
+  for (let i = 0; i < 3; i++) fb.blit('icon-bomb', 12 + i * 12 + 4, 54 + 4, i < st.bombs ? 'full' : 'hollow');
+
+  fb.text5('POWER', 12, 74, 4);
+  for (let i = 0; i < 4; i++) {
+    const x = 12 + i * 15;
+    if (i < st.power) { fb.rect(x, 84, 13, 7, 21); fb.rect(x, 84, 13, 1, 22); fb.frame(x, 84, 13, 7, 0); }
+    else { fb.rect(x, 84, 13, 7, 2); fb.frame(x, 84, 13, 7, 3); }
+  }
+
+  fb.text5('STATE', 12, 104, 4);
+  if (st.shield) fb.blit('icon-shield', 12 + 6, 114 + 6, 'full');
+  if (st.invulnPickup > 0) {
+    fb.blit('icon-invuln', 28 + 6, 114 + 6, 'full');
+    fb.rect(28, 128, 13, 1, 2);
+    fb.rect(28, 128, Math.round(13 * st.invulnPickup), 1, 25);
+  }
+
+  if (st.module) {
+    fb.text5('MODULE', 12, 146, 4);
+    fb.blit('icon-module', 12 + 8, 156 + 8, 'full');
+    fb.text5(st.module, 34, 161, 20);
+  }
+
+  fb.text5('SCORE', 362, 14, 4);
+  fb.text7(String(st.score).padStart(7, '0'), 412, 24, 20);
+
+  if (st.boss) {
+    fb.text5('BOSS', 362, 44, 4);
+    fb.frame(347, 20, 8, 230, 0);
+    fb.rect(348, 21, 6, 228, 2);
+    const rows = Math.round(228 * st.bossHp);
+    fb.rect(348, 21, 6, rows, 24);
+    fb.rect(353, 21, 1, rows, 23);
+  }
+}
+
+// The carrier and the boss are drawn from primitives rather than character art: at 39x31 and
+// 119x87 a hand-typed grid is a transcription error waiting to happen, and what matters here is
+// the footprint. Both keep the outline every gameplay sprite must carry.
+function drawCarrier(fb, cx, cy) {
+  fb.ellipse(cx, cy, 16, 16, 0);
+  fb.ellipse(cx, cy, 15, 15, 28);
+  fb.rect(cx - 20, cy - 3, 7, 5, 0);
+  fb.rect(cx + 14, cy - 3, 7, 5, 0);
+  fb.rect(cx - 19, cy - 2, 5, 3, 18);
+  fb.rect(cx + 15, cy - 2, 5, 3, 18);
+  fb.ellipse(cx, cy - 1, 9, 8, 19);
+  fb.ellipse(cx, cy - 1, 5, 5, 24);
+  fb.ellipse(cx, cy - 1, 2, 2, 25);
+  fb.rect(cx - 9, cy + 12, 3, 4, 0);
+  fb.rect(cx + 7, cy + 12, 3, 4, 0);
+  fb.rect(cx - 8, cy + 13, 1, 3, 24);
+  fb.rect(cx + 8, cy + 13, 1, 3, 24);
+}
+
+function drawBoss(fb, cx, cy) {
+  fb.ellipse(cx - 44, cy + 20, 16, 15, 0);
+  fb.ellipse(cx + 44, cy + 20, 16, 15, 0);
+  fb.ellipse(cx - 44, cy + 20, 15, 14, 28);
+  fb.ellipse(cx + 44, cy + 20, 15, 14, 28);
+  fb.ellipse(cx - 34, cy - 6, 14, 13, 0);
+  fb.ellipse(cx + 34, cy - 6, 14, 13, 0);
+  fb.ellipse(cx - 34, cy - 6, 13, 12, 28);
+  fb.ellipse(cx + 34, cy - 6, 13, 12, 28);
+  fb.ellipse(cx, cy - 2, 60, 39, 0);
+  fb.ellipse(cx, cy - 2, 59, 38, 28);
+  fb.ellipse(cx, cy - 4, 42, 24, 18);
+  fb.ellipse(cx, cy - 8, 20, 17, 0);
+  fb.ellipse(cx, cy - 8, 19, 16, 19);
+  fb.ellipse(cx, cy - 8, 13, 11, 24);
+  fb.ellipse(cx, cy - 8, 7, 6, 25);
+  for (const s of [-1, 1]) {
+    fb.rect(cx + s * 34 - 2, cy + 6, 4, 8, 0);
+    fb.rect(cx + s * 34 - 1, cy + 7, 2, 7, 24);
+    fb.rect(cx + s * 44 - 2, cy + 33, 4, 6, 0);
+    fb.rect(cx + s * 44 - 1, cy + 34, 2, 5, 24);
+  }
+}
+
+// One concrete moment of level 1 rather than a neutral arrangement: the pressure escalation, a
+// tank and a carrier on screen at once, the player at weapon level 2 with a shield and missiles.
+const SCENES = {
+  escalation: {
+    label: 'Pressure escalation',
+    note: 'Two archetypes the player must prioritise between, mid-density enemy fire, a guaranteed drop falling.',
+    hud: { lives: 3, bombs: 2, power: 2, shield: true, invulnPickup: 0, module: 'MISSILES', score: 12500, boss: false, bossHp: 1, hitFlash: false },
+    player: { x: 240, y: 208, state: 'normal' },
+    enemies: [
+      ['enemy-tank', 196, 58], ['enemy-basic', 158, 44], ['enemy-basic', 178, 30],
+      ['enemy-basic', 138, 30], ['enemy-light', 306, 72], ['enemy-light', 326, 52],
+      ['enemy-rush', 274, 118], ['enemy-shooter', 240, 22]
+    ],
+    carrier: [312, 150],
+    shots: [['shot-p1', 233, 178], ['shot-p1', 247, 178], ['shot-p1', 233, 148], ['shot-p1', 247, 148]],
+    fire: [
+      ['shot-e-small', 200, 96], ['shot-e-small', 210, 110], ['shot-e-small', 190, 110],
+      ['shot-e-small', 168, 78], ['shot-e-small', 300, 104], ['shot-e-small', 318, 88],
+      ['shot-e-heavy', 240, 132], ['shot-e-heavy', 196, 148], ['shot-e-bolt', 262, 92],
+      ['shot-e-bolt', 288, 138], ['shot-e-small', 152, 128], ['shot-e-small', 160, 162],
+      ['shot-e-small', 330, 128], ['shot-e-heavy', 276, 176], ['shot-e-small', 214, 186]
+    ],
+    pickups: [['pickup-weapon', 172, 140]]
+  },
+  boss: {
+    label: 'Boss fight',
+    note: 'The bar appears in the right margin. The boss is 119 px of the 208 px playfield, and the gaps between its parts are where the player lives.',
+    hud: { lives: 2, bombs: 1, power: 4, shield: false, invulnPickup: 0, module: 'MISSILES', score: 48300, boss: true, bossHp: 0.62, hitFlash: false },
+    player: { x: 228, y: 218, state: 'normal' },
+    enemies: [],
+    boss: [240, 62],
+    shots: [['shot-p2', 228, 186], ['shot-p1', 216, 178], ['shot-p1', 240, 178], ['shot-p2', 228, 152]],
+    fire: [
+      ['shot-e-heavy', 190, 130], ['shot-e-heavy', 240, 140], ['shot-e-heavy', 290, 130],
+      ['shot-e-small', 168, 152], ['shot-e-small', 196, 166], ['shot-e-small', 224, 174],
+      ['shot-e-small', 256, 174], ['shot-e-small', 284, 166], ['shot-e-small', 312, 152],
+      ['shot-e-bolt', 152, 118], ['shot-e-bolt', 328, 118], ['shot-e-small', 206, 196],
+      ['shot-e-small', 274, 196], ['shot-e-small', 240, 202]
+    ],
+    pickups: []
+  },
+  hit: {
+    label: 'Just took a hit',
+    note: 'Respawn invulnerability on the ship, the playfield rules flashing, one life gone and the shield with it.',
+    hud: { lives: 2, bombs: 2, power: 2, shield: false, invulnPickup: 0.7, module: null, score: 12500, boss: false, bossHp: 1, hitFlash: true },
+    player: { x: 240, y: 208, state: 'blink' },
+    enemies: [
+      ['enemy-tank', 196, 58], ['enemy-basic', 158, 44], ['enemy-basic', 178, 30],
+      ['enemy-light', 306, 72], ['enemy-rush', 274, 118]
+    ],
+    shots: [],
+    fire: [
+      ['shot-e-small', 200, 96], ['shot-e-small', 210, 110], ['shot-e-heavy', 240, 132],
+      ['shot-e-bolt', 262, 92], ['shot-e-small', 152, 128], ['shot-e-small', 330, 128]
+    ],
+    pickups: []
+  }
+};
+
+function renderScene(key, scroll) {
+  const sc = SCENES[key];
+  const fb = new Fb();
+  drawCity(fb, scroll);
+  for (const [id, x, y] of sc.pickups) fb.blit(id, x, y, 'full');
+  if (sc.carrier) drawCarrier(fb, sc.carrier[0], sc.carrier[1]);
+  if (sc.boss) drawBoss(fb, sc.boss[0], sc.boss[1]);
+  for (const [id, x, y] of sc.enemies) fb.blit(id, x, y, 'full');
+  for (const [id, x, y] of sc.shots) fb.blit(id, x, y, 'full');
+  fb.blit('ship-basic', sc.player.x, sc.player.y, sc.player.state === 'blink' ? 'dither' : 'full');
+  for (const [id, x, y] of sc.fire) fb.blit(id, x, y, 'full');
+  drawHud(fb, sc.hud);
+  return fb;
+}
+
+// Every collider in the scene, for the hitbox overlay. It is drawn over the scaled canvas rather
+// than into the framebuffer: it is instrumentation, not art, and it must not pretend to be pixels.
+function colliders(key) {
+  const sc = SCENES[key], out = [];
+  for (const [id, x, y] of sc.enemies) out.push({ x, y, r: SPRITES[id].r, kind: 'enemy' });
+  for (const [id, x, y] of sc.shots) out.push({ x, y, r: SPRITES[id].r, kind: 'player' });
+  for (const [id, x, y] of sc.fire) out.push({ x, y, r: SPRITES[id].r, kind: 'hostile' });
+  for (const [id, x, y] of sc.pickups) out.push({ x, y, r: SPRITES[id].r, kind: 'pickup' });
+  if (sc.carrier) out.push({ x: sc.carrier[0], y: sc.carrier[1], r: 15, kind: 'enemy' });
+  if (sc.boss) {
+    const [bx, by] = sc.boss;
+    out.push({ x: bx, y: by, r: 18, kind: 'enemy' });
+    out.push({ x: bx - 34, y: by - 6, r: 12, kind: 'enemy' });
+    out.push({ x: bx + 34, y: by - 6, r: 12, kind: 'enemy' });
+    out.push({ x: bx - 44, y: by + 18, r: 14, kind: 'enemy' });
+    out.push({ x: bx + 44, y: by + 18, r: 14, kind: 'enemy' });
+  }
+  out.push({ x: sc.player.x, y: sc.player.y, r: SPRITES['ship-basic'].r, kind: 'player' });
+  return out;
+}
+
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+}
+function toLinear(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function toSrgb(c) {
+  c = Math.max(0, Math.min(1, c));
+  return Math.round(255 * (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055));
+}
+function lightness(rgb) {
+  const y = 0.2126 * toLinear(rgb[0]) + 0.7152 * toLinear(rgb[1]) + 0.0722 * toLinear(rgb[2]);
+  return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+}
+
+const RGB = PALETTE.map(hexToRgb);
+const LSTAR = RGB.map(lightness);
+
+const DICHROMAT = {
+  // Standard LMS projections, applied in linear light so the result is a plausible simulation
+  // rather than a hue rotation that happens to look different.
+  protan: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  deuter: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]]
+};
+
+const SET_VIEW = { outline: [11, 14, 20], background: [40, 52, 74], gameplay: [201, 214, 232], hostile: [255, 61, 138] };
+
+function paletteFor(mode) {
+  if (mode === 'sets') return CLASSES.map(k => SET_VIEW[k]);
+  if (mode === 'grey') {
+    return RGB.map(rgb => {
+      const y = 0.2126 * toLinear(rgb[0]) + 0.7152 * toLinear(rgb[1]) + 0.0722 * toLinear(rgb[2]);
+      const v = toSrgb(y);
+      return [v, v, v];
+    });
+  }
+  if (mode === 'protan' || mode === 'deuter') {
+    const m = DICHROMAT[mode];
+    return RGB.map(rgb => {
+      const [r, g, b] = rgb.map(toLinear);
+      return [
+        toSrgb(m[0][0] * r + m[0][1] * g + m[0][2] * b),
+        toSrgb(m[1][0] * r + m[1][1] * g + m[1][2] * b),
+        toSrgb(m[2][0] * r + m[2][1] * g + m[2][2] * b)
+      ];
+    });
+  }
+  return RGB;
+}
+
+// The phase's acceptance criterion is that enemy bullets are distinguishable from every background
+// in the level, checked on the real thing. This is that check, run against the scene the page
+// draws rather than against the palette in the abstract.
+function audit(sceneKey) {
+  const findings = [];
+
+  const city = new Fb();
+  drawCity(city, 0);
+  const cityColours = new Set();
+  for (let y = 0; y < H; y++) {
+    for (let x = PLAY_X0; x <= PLAY_X1; x++) cityColours.add(city.at(x, y));
+  }
+  for (const c of cityColours) {
+    if (CLASSES[c] === GAMEPLAY || CLASSES[c] === HOSTILE) {
+      findings.push({ ok: false, text: 'the background uses ' + NAMES[c] + ', which is ' + CLASSES[c] + '-only' });
+    }
+  }
+
+  const brightestBackground = Math.max(...[...cityColours].map(c => LSTAR[c]));
+  const bulletBody = LSTAR[30], bulletCore = LSTAR[31];
+  findings.push({
+    ok: bulletBody - brightestBackground >= 10,
+    text: 'enemy bullet body sits ' + (bulletBody - brightestBackground).toFixed(1) +
+      ' points of L* above the brightest background pixel in this scene (' +
+      NAMES[[...cityColours].reduce((a, b) => LSTAR[a] > LSTAR[b] ? a : b)] + ')'
+  });
+  findings.push({
+    ok: bulletCore - brightestBackground >= 10,
+    text: 'enemy bullet core sits ' + (bulletCore - brightestBackground).toFixed(1) + ' points above it'
+  });
+
+  for (const [id, s] of Object.entries(SPRITES)) {
+    const hostile = id.startsWith('shot-e');
+    for (const row of s.art) {
+      for (const ch of row) {
+        const c = CHARS[ch];
+        if (c < 0 || CLASSES[c] === OUTLINE) continue;
+        if (hostile && CLASSES[c] !== HOSTILE) {
+          findings.push({ ok: false, text: id + ' is enemy fire and uses ' + NAMES[c] });
+        }
+        if (!hostile && CLASSES[c] !== GAMEPLAY) {
+          findings.push({ ok: false, text: id + ' is a gameplay sprite and uses ' + NAMES[c] });
+        }
+      }
+    }
+  }
+
+  const fb = renderScene(sceneKey, 0);
+  const counts = { outline: 0, background: 0, gameplay: 0, hostile: 0 };
+  for (let y = 0; y < H; y++) {
+    for (let x = PLAY_X0; x <= PLAY_X1; x++) counts[CLASSES[fb.at(x, y)]]++;
+  }
+  const total = 208 * H;
+  findings.push({
+    ok: counts.hostile / total < 0.06,
+    text: 'enemy fire covers ' + (100 * counts.hostile / total).toFixed(2) +
+      '% of the playfield - intermediate density, not bullet hell'
+  });
+
+  if (!findings.some(f => !f.ok)) findings.unshift({ ok: true, text: 'no rule was broken by this scene' });
+  return { findings, counts, brightestBackground };
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { validateSprites, audit, renderScene, SCENES, SPRITES, PALETTE, LSTAR, NAMES, CLASSES };
+}
+
+// The five screens of the flow in 02-mvp-functional-spec.md, laid out on the full 480x270 with the
+// shared frame fixed in 04-hud-layout.md: title at 40,32, 10 px lines, 16 px between entries,
+// W4 for the selected entry with a marker 12 px to its left, and a 24 px safe area.
+const SAFE = 24, TITLE_X = 40, TITLE_Y = 32;
+
+function w5(str) { return str.length * 6; }
+function w7(str) { return str.length * 8; }
+
+// An indexed framebuffer has no alpha, so "the parallax at 30 %" is a checker that keeps three
+// pixels in ten. It communicates the same thing and stays inside the palette.
+function dim(fb, keep) {
+  for (let y = 0; y < fb.h; y++) {
+    for (let x = 0; x < fb.w; x++) {
+      if ((x * 7 + y * 3) % 10 >= keep) fb.px(x, y, 1);
+    }
+  }
+}
+
+function screenFrame(fb, title) {
+  fb.rect(0, 0, fb.w, fb.h, 1);
+  fb.text7(title, TITLE_X, TITLE_Y, 20);
+  fb.rect(TITLE_X, TITLE_Y + 15, w7(title), 1, 3);
+}
+
+// One entry of a menu. Selected entries carry both the colour and the marker, so the choice is
+// never communicated by hue alone - R4 applies to the menus too.
+function entry(fb, label, x, y, mode) {
+  const colour = mode === 'selected' ? 24 : mode === 'disabled' ? 3 : 20;
+  if (mode === 'selected') fb.text5('>', x - 12, y, 24);
+  fb.text5(label, x, y, colour);
+}
+
+function plate(fb, x, y, w, h) {
+  fb.rect(x, y, w, h, 2);
+  fb.frame(x, y, w, h, 3);
+}
+
+function slider(fb, x, y, value) {
+  fb.rect(x, y + 3, 80, 3, 2);
+  fb.rect(x, y + 3, Math.round(80 * value), 3, 21);
+  fb.rect(x + Math.round(80 * value) - 2, y, 5, 9, 19);
+  fb.frame(x + Math.round(80 * value) - 2, y, 5, 9, 0);
+}
+
+function statBar(fb, x, y, label, filled, total) {
+  fb.text5(label, x, y, 4);
+  for (let i = 0; i < total; i++) {
+    const bx = x + 60 + i * 8;
+    if (i < filled) { fb.rect(bx, y, 6, 7, 21); fb.rect(bx, y, 6, 1, 22); }
+    else { fb.rect(bx, y, 6, 7, 2); fb.frame(bx, y, 6, 7, 3); }
+  }
+}
+
+const SCREENS = {
+  menu: {
+    label: 'Main menu',
+    note: 'Play, Options, Quit. No locked modes and no "coming soon" - the spec excludes them, so they are not drawn.',
+    draw(fb) {
+      drawCity(fb, 180);
+      dim(fb, 3);
+      fb.text7('LITTLE SPACESHIP', TITLE_X, TITLE_Y, 20);
+      fb.rect(TITLE_X, TITLE_Y + 15, w7('LITTLE SPACESHIP'), 1, 3);
+      fb.text5('AN EXPERIMENTAL SHIP AGAINST THE FIRST WAVE', TITLE_X, TITLE_Y + 22, 4);
+      entry(fb, 'PLAY', 56, 120, 'selected');
+      entry(fb, 'OPTIONS', 56, 136, 'normal');
+      entry(fb, 'QUIT', 56, 152, 'normal');
+      fb.text5('MVP BUILD', TITLE_X, 236, 3);
+    }
+  },
+  ship: {
+    label: 'Ship selection',
+    note: 'One selectable ship and its characteristics. The empty slot is optional in the spec and kept, because it says the system grows without promising anything.',
+    draw(fb) {
+      screenFrame(fb, 'SELECT SHIP');
+      plate(fb, 40, 70, 120, 130);
+      // Drawn at x3 inside the framebuffer, which is still an integer factor of a logical pixel.
+      const s = SPRITES['ship-basic'];
+      for (let j = 0; j < s.h; j++) {
+        for (let i = 0; i < s.w; i++) {
+          const c = CHARS[s.art[j][i]];
+          if (c < 0) continue;
+          fb.rect(78 + i * 3, 96 + j * 3, 3, 3, c);
+        }
+      }
+      fb.text5('PROTOTYPE X-1', 40, 210, 20);
+      fb.text5('SUSTAINED SHOT, BOMB, SLOW MODE', 40, 224, 4);
+      statBar(fb, 180, 80, 'SPEED', 3, 5);
+      statBar(fb, 180, 96, 'FIRE', 3, 5);
+      statBar(fb, 180, 112, 'BOMBS', 2, 5);
+      statBar(fb, 180, 128, 'LIVES', 3, 5);
+      fb.text5('THE ONLY SHIP THAT ANSWERED', 180, 152, 4);
+      fb.text5('THE LAUNCH ORDER IN TIME.', 180, 164, 4);
+      plate(fb, 380, 70, 60, 60);
+      fb.text5('EMPTY', 392, 96, 3);
+      entry(fb, 'LAUNCH', 192, 210, 'selected');
+      entry(fb, 'BACK', 192, 226, 'normal');
+    }
+  },
+  options: {
+    label: 'Options',
+    note: 'Three volumes and the mouse switch. No key remapping and no difficulty: both are explicit MVP exclusions.',
+    draw(fb) {
+      screenFrame(fb, 'OPTIONS');
+      const rows = [['MASTER VOLUME', 0.8], ['MUSIC VOLUME', 0.6], ['EFFECTS VOLUME', 0.9]];
+      rows.forEach(([label, value], i) => {
+        const y = 80 + i * 24;
+        fb.text5(label, 56, y + 1, i === 0 ? 24 : 20);
+        if (i === 0) fb.text5('>', 44, y + 1, 24);
+        slider(fb, 220, y - 1, value);
+        fb.text5(String(Math.round(value * 100)), 316, y + 1, 4);
+      });
+      fb.text5('MOUSE CONTROL', 56, 160, 20);
+      plate(fb, 220, 156, 60, 12);
+      fb.text5('ON', 238, 159, 22);
+      entry(fb, 'CREDITS AND LICENCES', 56, 190, 'normal');
+      entry(fb, 'BACK', 56, 214, 'normal');
+    }
+  },
+  pause: {
+    label: 'Pause',
+    note: 'A panel over a frozen playfield. The spec asks for a simple symbol or button, not a full menu, so it is two entries.',
+    draw(fb) {
+      const scene = renderScene('escalation', 0);
+      fb.d.set(scene.d);
+      dim(fb, 4);
+      plate(fb, 160, 92, 160, 86);
+      fb.text7('PAUSED', 160 + ((160 - w7('PAUSED')) >> 1), 108, 20);
+      entry(fb, 'RESUME', 196, 140, 'selected');
+      entry(fb, 'QUIT TO MENU', 196, 156, 'normal');
+    }
+  },
+  victory: {
+    label: 'Victory',
+    note: 'The bonus for remaining lives and bombs from 10-mvp-initial-values.md, shown as the arithmetic it is.',
+    draw(fb) {
+      drawCity(fb, 420);
+      dim(fb, 2);
+      fb.text7('VICTORY', TITLE_X, TITLE_Y, 24);
+      fb.rect(TITLE_X, TITLE_Y + 15, w7('VICTORY'), 1, 3);
+      fb.text5('THE ATTACK ZONE IS CLEAR. THE INVASION IS NOT.', TITLE_X, TITLE_Y + 22, 4);
+      const rows = [['SCORE', '0048300'], ['LIVES BONUS  2', '0002000'], ['BOMBS BONUS  1', '0000300']];
+      rows.forEach(([label, value], i) => {
+        fb.text5(label, 56, 100 + i * 16, 4);
+        fb.text5(value, 240, 100 + i * 16, 20);
+      });
+      fb.rect(56, 150, 240, 1, 3);
+      fb.text5('TOTAL', 56, 160, 20);
+      fb.text7('0050600', 240, 156, 24);
+      entry(fb, 'CONTINUE', 56, 210, 'selected');
+    }
+  },
+  defeat: {
+    label: 'Defeat',
+    note: 'Retry and menu, and nothing else. There are no checkpoints in the MVP, so there is nothing else to offer.',
+    draw(fb) {
+      drawCity(fb, 60);
+      dim(fb, 2);
+      fb.text7('GAME OVER', TITLE_X, TITLE_Y, 23);
+      fb.rect(TITLE_X, TITLE_Y + 15, w7('GAME OVER'), 1, 3);
+      fb.text5('THE SHIP WAS LOST OVER THE CITY.', TITLE_X, TITLE_Y + 22, 4);
+      fb.text5('SCORE', 56, 110, 4);
+      fb.text7('0012500', 140, 106, 20);
+      entry(fb, 'RETRY', 56, 170, 'selected');
+      entry(fb, 'QUIT TO MENU', 56, 186, 'normal');
+    }
+  }
+};
+
+function renderScreen(key) {
+  const fb = new Fb();
+  SCREENS[key].draw(fb);
+  return fb;
+}
+
+// The reference sheet needs each sprite on its own, at its own size, plus the two that are drawn
+// from primitives and the flat-black silhouettes of R16.
+function spriteFb(id) {
+  const s = SPRITES[id];
+  const fb = new Fb(s.w, s.h);
+  fb.blit(id, (s.w - 1) >> 1, (s.h - 1) >> 1, 'full');
+  return fb;
+}
+
+// R16: filled with flat black on a plain ground, so only the outline of the shape is left to
+// judge. Two archetypes that are hard to tell apart here are hard to tell apart in play.
+function silhouetteFb(id) {
+  const s = SPRITES[id];
+  const fb = new Fb(s.w, s.h);
+  fb.rect(0, 0, s.w, s.h, 4);
+  for (let j = 0; j < s.h; j++) {
+    for (let i = 0; i < s.w; i++) if (CHARS[s.art[j][i]] >= 0) fb.px(i, j, 0);
+  }
+  return fb;
+}
+
+// Filled with N1 rather than the default N0 first: these two draw their own outline in N0, and the
+// silhouette below has to be able to tell the outline from the void around it.
+function proceduralFb(kind) {
+  const fb = kind === 'carrier' ? new Fb(39, 31) : new Fb(119, 87);
+  fb.rect(0, 0, fb.w, fb.h, 1);
+  if (kind === 'carrier') drawCarrier(fb, 19, 15); else drawBoss(fb, 59, 43);
+  return fb;
+}
+
+function proceduralSilhouette(kind) {
+  const src = proceduralFb(kind);
+  const fb = new Fb(src.w, src.h);
+  for (let i = 0; i < src.d.length; i++) fb.d[i] = src.d[i] === 1 ? 4 : 0;
+  return fb;
+}
+
+// The sheet layout both fonts ship in: 16 columns of ASCII 32-126, cell index = code - 32. Cells
+// font-title does not cover stay empty, which is what lets one loader index either sheet.
+const SHEET_COLUMNS = 16;
+const SHEET_CELL = {
+  mini: { cw: 6, ch: 10 },
+  title: { cw: 8, ch: 13 }
+};
+
+function fontSheetFb(which) {
+  const font = which === 'title' ? FONT7 : FONT5;
+  const cell = which === 'title' ? SHEET_CELL.title : SHEET_CELL.mini;
+  const rows = Math.ceil(95 / SHEET_COLUMNS);
+  const fb = new Fb(SHEET_COLUMNS * cell.cw, rows * cell.ch);
+  for (let code = 32; code <= 126; code++) {
+    const ch = String.fromCharCode(code);
+    if (!(ch in font)) continue;
+    const i = code - 32;
+    const x = (i % SHEET_COLUMNS) * cell.cw, y = Math.floor(i / SHEET_COLUMNS) * cell.ch;
+    if (which === 'title') fb.text7(ch, x, y, 20); else fb.text5(ch, x, y, 20);
+  }
+  return fb;
+}
+
+// Shared interface pieces. Everything here only defines functions, so the engine still loads in
+// node without a DOM - which is what lets check.js run the pages' interface code at all.
+
+function mkButton(label, hint, active, role, onClick) {
+  const b = document.createElement('button');
+  b.className = 'opt';
+  b.type = 'button';
+  if (role === 'radio') { b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(active)); }
+  else b.setAttribute('aria-pressed', String(active));
+  b.innerHTML = '<span class="mark">' + (active ? '&gt;' : '') + '</span><span>' + label +
+    (hint ? ' <small>' + hint + '</small>' : '') + '</span>';
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function renderOptions(container, items, isActive, onPick, role) {
+  container.textContent = '';
+  for (const [key, label, hint] of items) {
+    container.appendChild(mkButton(label, hint, isActive(key), role, () => onPick(key)));
+  }
+}
+
+const VIEW_OPTS = [
+  ['normal', 'Normal', ''],
+  ['grey', 'Greyscale', 'R3, the value gap'],
+  ['deuter', 'Deuteranopia', 'R4'],
+  ['protan', 'Protanopia', 'R4'],
+  ['sets', 'Set map', 'R1, the two sets']
+];
+
+// Rasterises a framebuffer of any size onto a canvas at an integer factor, smoothing off. The
+// intermediate canvas exists so the browser never resamples: it copies whole pixels or nothing.
+function blitTo(canvas, fb, view, zoom) {
+  const colours = paletteFor(view);
+  const src = document.createElement('canvas');
+  src.width = fb.w; src.height = fb.h;
+  const sctx = src.getContext('2d');
+  const image = sctx.createImageData(fb.w, fb.h);
+  const data = image.data;
+  for (let i = 0; i < fb.w * fb.h; i++) {
+    const c = colours[fb.d[i]];
+    data[i * 4] = c[0]; data[i * 4 + 1] = c[1]; data[i * 4 + 2] = c[2]; data[i * 4 + 3] = 255;
+  }
+  sctx.putImageData(image, 0, 0);
+  canvas.width = fb.w * zoom; canvas.height = fb.h * zoom;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+}
+
+// The project forbids fractional scaling, so the page says out loud whether what you are looking
+// at is actually an integer multiple or something the browser resampled.
+function reportScale(canvas, note, zoom) {
+  const shown = canvas.getBoundingClientRect().width;
+  const exact = Math.abs(shown - canvas.width) < 0.5;
+  note.textContent = exact ? 'integer scale ×' + zoom
+    : 'browser is scaling this fractionally — ' + Math.round(shown) + ' px shown for ' + canvas.width;
+  note.className = exact ? 'scale-ok' : 'scale-bad';
+}
+
+function checksInto(list, rows) {
+  list.textContent = '';
+  for (const f of rows) {
+    const li = document.createElement('li');
+    const flag = document.createElement('span');
+    flag.className = 'flag ' + (f.ok ? 'pass' : 'fail');
+    flag.textContent = f.ok ? 'PASS' : 'FAIL';
+    const text = document.createElement('span');
+    text.textContent = f.text;
+    li.append(flag, text);
+    list.appendChild(li);
+  }
+}
+
+function zoomOptions() { return [[1, '×1', '480 × 270'], [2, '×2', '960 × 540'], [3, '×3', '1440 × 810']]; }
+</script>
+<script>
+const stack = document.getElementById('stack');
+const overlay = document.getElementById('overlay');
+const inner = document.getElementById('inner');
+const octx = overlay.getContext('2d');
+
+const state = { screen: 'menu', view: 'normal', zoom: 2, guides: false, squint: false };
+
+const SCREEN_OPTS = [
+  ['menu', 'Main menu', 'play, options, quit'],
+  ['ship', 'Ship selection', 'one ship, its stats'],
+  ['options', 'Options', 'volumes and the mouse'],
+  ['pause', 'Pause', 'over a frozen playfield'],
+  ['victory', 'Victory', 'the end-of-level bonus'],
+  ['defeat', 'Defeat', 'retry or menu']
+];
+const TOGGLES = [['guides', 'Safe area', '24 px from every edge'], ['squint', 'Squint', 'does the hierarchy hold']];
+
+// The flow the spec describes, so the screens are read as a sequence rather than as six pictures.
+const FLOW = [
+  ['Main menu', 'menu'],
+  ['Ship selection', 'ship'],
+  ['Level 1', null],
+  ['Pause, at any point', 'pause'],
+  ['Victory, with a life left', 'victory'],
+  ['Defeat, with none', 'defeat']
+];
+
+function draw() {
+  renderOptions(document.getElementById('scene-opts'), SCREEN_OPTS,
+    k => state.screen === k, k => { state.screen = k; draw(); }, 'radio');
+  renderOptions(document.getElementById('view-opts'), VIEW_OPTS,
+    k => state.view === k, k => { state.view = k; draw(); }, 'radio');
+  renderOptions(document.getElementById('toggle-opts'), TOGGLES,
+    k => state[k], k => { state[k] = !state[k]; draw(); }, 'toggle');
+  renderOptions(document.getElementById('zoom-opts'), zoomOptions(),
+    z => state.zoom === z, z => { state.zoom = z; draw(); }, 'radio');
+
+  const sc = SCREENS[state.screen];
+  document.getElementById('scene-label').textContent = sc.label;
+  document.getElementById('scene-note').textContent = sc.note;
+  inner.classList.toggle('squint', state.squint);
+
+  blitTo(stack, renderScreen(state.screen), state.view, state.zoom);
+  overlay.width = stack.width; overlay.height = stack.height;
+  paintGuides();
+  reportScale(stack, document.getElementById('scale-note'), state.zoom);
+  checksInto(document.getElementById('checks'), screenChecks());
+}
+
+function paintGuides() {
+  octx.clearRect(0, 0, overlay.width, overlay.height);
+  if (!state.guides) return;
+  const z = state.zoom;
+  octx.lineWidth = Math.max(1, z * 0.5);
+  octx.setLineDash([z * 2, z * 2]);
+  octx.strokeStyle = 'rgba(255,201,74,.6)';
+  octx.strokeRect(SAFE * z + .5, SAFE * z + .5, (480 - SAFE * 2) * z, (270 - SAFE * 2) * z);
+  octx.setLineDash([]);
+  octx.strokeStyle = 'rgba(47,191,212,.7)';
+  octx.beginPath();
+  octx.moveTo(TITLE_X * z + .5, 0);
+  octx.lineTo(TITLE_X * z + .5, overlay.height);
+  octx.moveTo(0, TITLE_Y * z + .5);
+  octx.lineTo(overlay.width, TITLE_Y * z + .5);
+  octx.stroke();
+}
+
+// The screens have no bullets to measure, so what is worth checking is that they stayed inside the
+// palette and inside the safe area, and that nothing the spec excludes crept back in.
+function screenChecks() {
+  const rows = [];
+  const fb = renderScreen(state.screen);
+
+  let outside = 0;
+  for (let y = 0; y < 270; y++) {
+    for (let x = 0; x < 480; x++) {
+      const inSafe = x >= SAFE && x < 480 - SAFE && y >= SAFE && y < 270 - SAFE;
+      if (!inSafe && ![0, 1, 2, 3].includes(fb.at(x, y))) outside++;
+    }
+  }
+  rows.push({ ok: outside === 0, text: outside === 0
+    ? 'nothing but ground and framing sits outside the 24 px safe area'
+    : outside + ' px of content sit outside the safe area' });
+
+  const used = new Set();
+  for (let i = 0; i < fb.d.length; i++) used.add(fb.d[i]);
+  const bad = [...used].filter(c => c < 0 || c >= PALETTE.length);
+  rows.push({ ok: bad.length === 0, text: bad.length === 0
+    ? 'every pixel is one of the 32 colours of ls32'
+    : bad.length + ' pixels are outside the palette' });
+
+  const reserved = [...used].filter(c => CLASSES[c] === HOSTILE);
+  rows.push({ ok: reserved.length === 0, text: reserved.length === 0
+    ? 'the reserved hue band does not appear - there is no enemy fire on a menu'
+    : 'the screen uses ' + reserved.map(c => NAMES[c]).join(', ') + ', which belong to enemy fire' });
+
+  rows.push({ ok: true, text: 'colours in use: ' + [...used].sort((a, b) => a - b).map(c => NAMES[c]).join(' ') });
+  return rows;
+}
+
+function buildFlow() {
+  const list = document.getElementById('flow');
+  list.innerHTML = FLOW.map(([label, key]) => '<li>' + (key
+    ? '<button class="link" type="button" data-screen="' + key + '">' + label + '</button>'
+    : '<span>' + label + '</span>') + '</li>').join('');
+  for (const b of list.children) {
+    const button = b.children && b.children[0];
+    if (button && button.dataset && button.dataset.screen) {
+      button.addEventListener('click', () => { state.screen = button.dataset.screen; draw(); });
+    }
+  }
+}
+
+buildFlow();
+draw();
+addEventListener('resize', () => reportScale(stack, document.getElementById('scale-note'), state.zoom));
+</script>

@@ -1,0 +1,89 @@
+<title>ls32 Reference Sheet</title>
+
+<div class="wrap">
+  <p class="eyebrow">little-spaceship &middot; phase 06 &middot; visual direction</p>
+  <h1>The sheet you keep open while drawing</h1>
+  <p class="lede">
+    Not a validation of the direction &mdash; that is what the combat screen is for. This is the
+    working reference: the <b>32 colours</b> with the measurements that make them a system, every
+    sprite at the size it must be drawn at with its collider on top, the six silhouettes in flat
+    black, and both bitmap fonts glyph by glyph. Everything is generated from the same source the
+    game will be drawn from, so this sheet cannot drift away from
+    <b>02-sprite-sizes.md</b>.
+  </p>
+
+  <div class="panel controls" id="controls">
+    <div class="group" role="radiogroup" aria-label="View">
+      <span>View</span>
+      <div class="opts" id="view-opts"></div>
+    </div>
+    <div class="group">
+      <span>Overlay</span>
+      <div class="opts" id="toggle-opts"></div>
+    </div>
+    <div class="group" role="radiogroup" aria-label="Zoom">
+      <span>Zoom</span>
+      <div class="opts" id="zoom-opts"></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Sizes and colliders</h2>
+    <p class="caption">
+      Sprite dimensions are exact and every one of them is odd, so a centred sprite has its axis of
+      symmetry on one pixel column. Radii are what the code collides with: <b>Collider</b> is a
+      circle with no offset, so the visual mass belongs at the centre and anything outside the
+      circle has to read as secondary.
+    </p>
+    <div id="sheet"></div>
+  </section>
+
+  <section>
+    <h2>Silhouettes</h2>
+    <p class="caption">
+      R16, filled with flat black. If two archetypes are hard to tell apart here, they are hard to
+      tell apart in play &mdash; where they are smaller, moving, and surrounded by things trying to
+      kill you.
+    </p>
+    <div class="strip" id="silhouettes"></div>
+  </section>
+
+  <section>
+    <h2>The palette</h2>
+    <p class="caption">
+      Two disjoint sets and a reserved band. <b>L*</b> is CIE lightness: backgrounds stop at 44.9
+      and gameplay starts at 48.1, which is the gap that makes a bullet impossible to lose against
+      any legal background.
+    </p>
+    <div id="palette"></div>
+  </section>
+
+  <section>
+    <h2>Ramps</h2>
+    <p class="caption">
+      Shading moves along a ramp; it does not invent colour. A sprite that needs a tone between two
+      of these is a sprite that needs to be simplified, not a palette that needs a new entry.
+    </p>
+    <div id="ramps"></div>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <p class="caption">
+      Both fonts are drawn for this project, white on transparent, tinted at draw time. Fixed
+      advance in both, which is why every number is tabular for free.
+    </p>
+    <div class="fonts" id="fonts"></div>
+  </section>
+
+  <section>
+    <h2>What the checks say</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <p class="foot">
+    Generated from <code>docs/design/mockups/src/</code> by <code>build.py</code>, verified by
+    <code>check.js</code>. Silhouettes stand in for art that has not been drawn: what is exact here
+    is the footprint, the palette and the metrics.
+  </p>
+</div>

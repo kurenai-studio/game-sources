@@ -1,0 +1,11 @@
+- [Memory-path hook verification](project_memory-path-hook-verification.md) — issue #61 fix holds: tried subdir, `-a`, mixed-file, `--amend`, fresh worktree; none got past it.
+- [Rule-vs-reproducibility classification](project_rule-vs-reproducibility-classification.md) — 11a baseline: the roadmap's "bulk asserts reproducibility" was true of 5 replay files, not the 289-test suite.
+- [Auditing rule coverage per branch](feedback_auditing-rule-coverage-per-branch.md) — check every clause of the quoted rule against tests, not "does this file look thorough".
+- [Boss replay aiming geometry](project_boss-replay-geometry.md) — how to aim a scripted shot at one boss part without clipping its neighbour's collider.
+- [Boss stage runs before COLLISION/DAMAGE](project_boss-stage-ordering.md) — BossStatus.hp lags a tick behind an actual kill; read it after the run settles, not right on the kill tick.
+- [Verifying dead conjuncts](feedback_verifying-dead-conjuncts.md) — delete one operand of an `&&`, run the full suite; if nothing reds, it's shadowed by an earlier guard, not independently testable.
+- [Amend targets HEAD, not the commit you mean](project_amend-targets-head-not-the-commit-you-mean.md) — fixing an earlier commit's subject needs reset+amend+cherry-pick, not `--amend` from a later HEAD.
+- [Architecture tests have no fixture seam](project_architecture-test-narrowing-has-no-fixture-seam.md) — prove a narrowing by planting-and-reverting on a real `core/src/main` file, not a fixture test.
+- [TeaVM's Node runner is hand-written](project_teavm-node-runner-is-hand-written.md) — generateJavaScript never emits a run.cjs; check git ls-files before trusting a leftover one.
+- [Rng parity task wiring](project_rng-parity-task-wiring.md) — how `:rngparity`/`rngParityCheck` (#52) is built, and how to confirm a TeaVM subproject stays out of `./gradlew build`.
+- [Game module test harness](project_game-module-test-harness.md) — JDK proxies for Gdx.input/Graphics, no LWJGL; check an interface with `javap` before assuming it's proxy-safe.

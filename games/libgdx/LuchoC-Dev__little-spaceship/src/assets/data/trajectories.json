@@ -1,0 +1,187 @@
+{
+  "trajectories": [
+    {
+      "id": "descend-and-turn-left",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -45, "duration": 3.0 },
+        { "vx": -55, "vy": 0, "duration": 6.0 }
+      ]
+    },
+    { "id": "descend-and-turn-right", "mirrorOf": "descend-and-turn-left" },
+
+    {
+      "id": "sweep-wait-drop",
+      "type": "path",
+      "segments": [
+        { "vx": -60, "vy": -22, "duration": 2.0 },
+        { "wait": 2.5 },
+        { "vx": 0, "vy": -90, "duration": 5.0 }
+      ]
+    },
+
+    {
+      "id": "stair-descent",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -50, "duration": 1.2 },
+        { "vx": -45, "vy": 0, "duration": 0.8 },
+        { "vx": 0, "vy": -45, "duration": 0.8 }
+      ],
+      "loopStart": 1,
+      "loopCount": 4
+    },
+
+    {
+      "id": "descend-and-oscillate",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -55, "duration": 2.0 },
+        { "vx": 60, "vy": 0, "duration": 0.5 },
+        { "vx": -60, "vy": 0, "duration": 1.0 },
+        { "vx": 60, "vy": 0, "duration": 1.0 }
+      ],
+      "loopStart": 2,
+      "loopCount": 3
+    },
+
+    { "id": "cross-left", "vx": -45, "vy": -45 },
+    { "id": "cross-right", "mirrorOf": "cross-left" },
+
+    {
+      "id": "slide-left-then-descend",
+      "type": "path",
+      "segments": [
+        { "vx": -40, "vy": -30, "duration": 2.5 },
+        { "vx": 0, "vy": -55, "duration": 8.0 }
+      ]
+    },
+    { "id": "slide-right-then-descend", "mirrorOf": "slide-left-then-descend" },
+
+    {
+      "id": "dive-and-retreat",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -95, "duration": 2.2 },
+        { "wait": 0.8 },
+        { "vx": 0, "vy": 70, "duration": 6.0 }
+      ]
+    },
+
+    {
+      "id": "hold-the-line-and-exit",
+      "type": "path",
+      "waypoints": [
+        { "x": 104, "y": 270 },
+        { "x": 104, "y": 190, "speed": 45 },
+        { "wait": 2.5 },
+        { "x": 208, "y": 190, "speed": 70 }
+      ]
+    },
+
+    {
+      "id": "sweep-the-width-and-drop",
+      "type": "path",
+      "waypoints": [
+        { "x": 20.8, "y": 270 },
+        { "x": 20.8, "y": 214, "speed": 60 },
+        { "x": 187.2, "y": 214, "speed": 55 },
+        { "x": 187.2, "y": 0, "speed": 80 }
+      ]
+    }
+,
+
+    { "id": "settle-descent", "vx": 0, "vy": -20 },
+    {
+      "id": "descend-and-step-left",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -32, "duration": 2.5 },
+        { "vx": -38, "vy": 0, "duration": 1.2 },
+        { "vx": 0, "vy": -32, "duration": 8.0 }
+      ]
+    },
+    { "id": "descend-and-step-right", "mirrorOf": "descend-and-step-left" },
+
+    { "id": "cut-across-left", "vx": -48, "vy": -46 },
+    { "id": "cut-across-right", "mirrorOf": "cut-across-left" },
+    { "id": "dive-across-left", "type": "arc", "vx": -34, "vy": -55, "ay": -22 },
+    { "id": "dive-across-right", "mirrorOf": "dive-across-left" },
+
+    {
+      "id": "descend-hold-descend",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -40, "duration": 2.0 },
+        { "wait": 3.0 },
+        { "vx": 0, "vy": -45, "duration": 8.0 }
+      ]
+    },
+    {
+      "id": "advance-the-firing-line",
+      "type": "path",
+      "waypoints": [
+        { "x": 104, "y": 270 },
+        { "x": 104, "y": 210, "speed": 50 },
+        { "wait": 2.5 },
+        { "x": 104, "y": 160, "speed": 40 },
+        { "wait": 2.5 },
+        { "x": 0, "y": 160, "speed": 70 }
+      ]
+    },
+
+    { "id": "plunge", "vx": 0, "vy": -130 },
+    { "id": "plunge-harder", "speedOf": "plunge", "multiplier": 1.35 },
+    {
+      "id": "plunge-and-cut-left",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -120, "duration": 1.6 },
+        { "vx": -105, "vy": -10, "duration": 3.0 }
+      ]
+    },
+    { "id": "plunge-and-cut-right", "mirrorOf": "plunge-and-cut-left" },
+    {
+      "id": "strike-and-withdraw",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -115, "duration": 2.0 },
+        { "wait": 0.6 },
+        { "vx": 0, "vy": 85, "duration": 5.0 }
+      ]
+    },
+
+    { "id": "grind-down", "vx": 0, "vy": -11 },
+    {
+      "id": "grind-and-wheel-left",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -14, "duration": 4.0 },
+        { "vx": -26, "vy": -4, "duration": 9.0 }
+      ]
+    },
+    { "id": "grind-and-wheel-right", "mirrorOf": "grind-and-wheel-left" },
+
+    {
+      "id": "descend-and-anchor",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -38, "duration": 2.2 },
+        { "wait": 14.0 },
+        { "vx": 0, "vy": -30, "duration": 10.0 }
+      ]
+    },
+    {
+      "id": "anchor-and-traverse-left",
+      "type": "path",
+      "segments": [
+        { "vx": 0, "vy": -34, "duration": 2.4 },
+        { "wait": 6.0 },
+        { "vx": -22, "vy": 0, "duration": 5.0 },
+        { "wait": 4.0 },
+        { "vx": 0, "vy": -28, "duration": 10.0 }
+      ]
+    },
+    { "id": "anchor-and-traverse-right", "mirrorOf": "anchor-and-traverse-left" }
+  ]
+}
