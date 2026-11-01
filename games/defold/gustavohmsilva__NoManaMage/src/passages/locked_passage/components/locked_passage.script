@@ -1,0 +1,29 @@
+go.property('sprite', hash(''))
+go.property('destination', hash(''))
+go.property('destiny_position', vmath.vector3())
+require 'modules.positions'
+
+function init(self)
+	msg.post('#sprite', 'play_animation', {id = self.sprite})
+end
+
+function on_message(self, message_id, message, sender)
+	if 
+		message_id == hash('contact_point_response') 
+	and 
+		message.other_group == hash('mage') 
+	then
+		if mage_has_key then
+			msg.post('game:/level_selector#loader', self.destination)
+			mage_has_key = false
+			mage_spawn_position = self.destiny_position
+		else
+			label.set_text('#label', 'It seems that this\npassage is locked!')
+			timer.delay(
+				2,
+				false,
+				(function() label.set_text('#label', '') end)
+			)
+		end
+	end
+end

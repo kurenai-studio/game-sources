@@ -1,0 +1,34 @@
+[bootstrap]
+main_collection = /gui/_game/game.collectionc
+render = /builtins/render/default.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 320
+height = 200
+fullscreen = 0
+
+[android]
+input_method = HiddenInputField
+
+[project]
+title = NoManaMage
+version = 0.1
+dependencies = https://github.com/subsoap/defos/archive/master.zip
+
+[graphics]
+default_texture_min_filter = nearest
+default_texture_mag_filter = nearest
+
+[tilemap]
+max_tile_count = 9999999
+
+[physics]
+gravity_y = 0.0
+debug = 0
+
+[collection_proxy]
+max_count = 16
+
