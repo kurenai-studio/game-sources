@@ -1,0 +1,41 @@
+[project]
+title = RiveGame
+dependencies#0 = https://github.com/defold/extension-rive/archive/refs/tags/4.0.0.zip
+
+[bootstrap]
+main_collection = /game/game.collectionc
+render = /render/rive.renderc
+
+[input]
+game_binding = /input/game.input_bindingc
+use_accelerometer = 0
+repeat_delay = 0.0
+repeat_interval = 0.0
+
+[display]
+width = 640
+height = 1136
+high_dpi = 0
+samples = 4
+
+[physics]
+scale = 0.02
+
+[graphics]
+default_texture_min_filter = linear
+default_texture_mag_filter = linear
+max_draw_calls = 8000
+
+[script]
+shared_state = 1
+
+[particle_fx]
+max_count = 1024
+max_particle_count = 2048
+
+[render]
+clear_color_red = 0.106
+clear_color_green = 0.133
+clear_color_blue = 0.196
+clear_color_alpha = 1.0
+

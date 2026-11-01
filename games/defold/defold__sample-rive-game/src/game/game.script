@@ -1,0 +1,64 @@
+local SECTION_HEIGHT = 609
+local SPEED = 300
+
+local DW = sys.get_config_number("display.width")
+local DH = sys.get_config_number("display.height")
+
+local FLOWERS = { "factories#flower1", "factories#flower2" }
+
+local function random_from_table(t)
+	return t[math.random(1, #t)]
+end
+
+local function animate(id, to, speed, playback, cb)
+	assert(id)
+	assert(to)
+	assert(speed)
+	assert(playback)
+	local pos = go.get_position(id)
+	local distance = to - pos.y
+	local duration = distance / speed
+	go.animate(id, "position.y", playback, to, go.EASING_LINEAR, duration, 0, cb)
+end
+
+local function animate_once(id, to, speed, cb)
+	animate(id, to, speed, go.PLAYBACK_ONCE_FORWARD, cb)
+end
+
+local function animate_loop(id, to, speed, cb)
+	animate(id, to, speed, go.PLAYBACK_LOOP_FORWARD, cb)
+end
+
+local function spawn_flower()
+	local x = (DW / 2) + math.random(-DW/2, DW/2) * 0.5
+	local pos = vmath.vector3(x, -100, 0.1)
+	local id = factory.create(random_from_table(FLOWERS), pos)
+	local to = DH + 100
+	animate_once(id, to, SPEED, function()
+		go.delete(id)
+	end)
+end
+
+local start_spawn_timer
+start_spawn_timer = function()
+	timer.delay(math.random(3,5), false, function()
+		spawn_flower()
+		start_spawn_timer()
+	end)
+end
+function init(self)
+	math.randomseed(socket.gettime()) math.random() math.random()
+	
+	-- position sections and start moving them
+	for i=1,5 do
+		local id = "/section" .. i
+		local pos = go.get_position(id)
+		pos.y = DH - SECTION_HEIGHT * i
+		go.set_position(pos, id)
+
+		local to = pos.y + SECTION_HEIGHT * 2
+		animate_loop(id, to, SPEED)
+	end
+
+	start_spawn_timer()
+end
