@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bye Bye Alien</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      #game {
+        position: relative;
+      }
+      footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        color: #999;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 4px 8px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.6);
+        pointer-events: auto;
+        z-index: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
+      }
+      footer a {
+        color: #888;
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: #aaa;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game">
+      <footer>
+        <p>Built with <a href="https://phaser.io" target="_blank">
+          Phaser</a> && ❤️ by <a href="https://x.com/xnt" target="_blank" rel="noopener">
+          Vicente Plata</a>. <a href="https://github.com/xnt/bye-bye-alien/" target="_blank" rel="noopener">
+          Read the source or contribute</a>.
+        </p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
