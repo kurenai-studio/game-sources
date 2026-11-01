@@ -1,0 +1,32 @@
+name: "🐞 Algo falla"
+description: Un error, un cierre inesperado o algo que no funciona como debería.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: que_paso
+    attributes:
+      label: ¿Qué pasó?
+      placeholder: "Al construir una torreta junto al muro, el juego se cerró."
+    validations:
+      required: true
+  - type: textarea
+    id: donde
+    attributes:
+      label: ¿Dónde estabas y qué hiciste justo antes?
+      placeholder: "Sub-acto 1.2, oleada 3. Pulsé ESPACIO y luego 3."
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas que pasara?
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas, video o mensaje de error
+      description: Puedes arrastrar imágenes aquí. Si apareció texto en la consola, pégalo.
+  - type: dropdown
+    id: version
+    attributes:
+      label: ¿Cómo lo jugaste?
+      options:
+        - Ejecutable (.exe de itch.io)
+        - Desde el código (python main.py)
