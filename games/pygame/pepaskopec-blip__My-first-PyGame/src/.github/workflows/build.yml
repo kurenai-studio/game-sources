@@ -1,0 +1,60 @@
+name: Build Multiplatform Executables
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            asset_name: dist/SpaceEvader-Windows.exe
+            command: pyinstaller --noconsole --onefile --add-data "*.png;." --add-data "*.jpg;." --name "SpaceEvader-Windows" main.py
+
+          - os: macos-latest
+            asset_name: dist/SpaceEvader-macOS.zip
+            command: |
+              pyinstaller --noconsole --collect-all pygame --add-data "*.png:." --add-data "*.jpg:." --name "SpaceEvader-macOS" main.py
+              cd dist && ditto -c -k --keepParent SpaceEvader-macOS.app SpaceEvader-macOS.zip
+
+          - os: ubuntu-latest
+            asset_name: dist/SpaceEvader-Linux.tar.gz
+            command: |
+              pyinstaller --noconsole --onefile --add-data "*.png:." --add-data "*.jpg:." --name "SpaceEvader-Linux" main.py
+              cd dist && tar -czvf SpaceEvader-Linux.tar.gz SpaceEvader-Linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pygame pyinstaller
+
+      - name: Build Executable
+        run: ${{ matrix.command }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: ${{ matrix.asset_name }}
+
+      - name: Upload Asset to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
