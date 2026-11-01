@@ -1,0 +1,58 @@
+name: Windows Release
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      BUILD_TYPE: Release
+      SDL2_VERSION: 2.0.20
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: "Download SDL2 sources"
+      shell: powershell
+      run: Invoke-WebRequest -Uri "https://libsdl.org/release/SDL2-devel-${{env.SDL2_VERSION}}-mingw.tar.gz" `
+        -OutFile ${{github.workspace}}/Client/SDL2-devel-${{env.SDL2_VERSION}}-mingw.tar.gz
+    - name: "Unzip SDL2 sources"
+      shell: cmd
+      run: |
+        cd ${{github.workspace}}/Client
+        7z x SDL2-devel-${{env.SDL2_VERSION}}-mingw.tar.gz -so | 7z x -aoa -si -ttar -o"extern"
+        del SDL2-devel-${{env.SDL2_VERSION}}-mingw.tar.gz
+
+    - name: "Download SDL2 runtime binaries"
+      shell: powershell
+      run: Invoke-WebRequest -Uri "https://www.libsdl.org/release/SDL2-${{env.SDL2_VERSION}}-win32-x64.zip" `
+        -OutFile ${{github.workspace}}/Client/extern/SDL2-${{env.SDL2_VERSION}}/SDL2-${{env.SDL2_VERSION}}-win32-x64.zip
+    - name: "Unzip SDL2 runtime binaries archive"
+      shell: cmd
+      run: |
+        cd ${{github.workspace}}/Client/extern/SDL2-${{env.SDL2_VERSION}}
+        7z x -y SDL2-${{env.SDL2_VERSION}}-win32-x64.zip
+        del SDL2-${{env.SDL2_VERSION}}-win32-x64.zip
+
+    - name: "Build Client app"
+      run: |
+        cmake -G "MinGW Makefiles" -S Client -B ${{github.workspace}}/Client/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} 
+        cmake --build ${{github.workspace}}/Client/build
+
+    - name: "Build Server app"
+      run: |
+        cmake -G "MinGW Makefiles" -S Server -B ${{github.workspace}}/Server/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/Server/build
+
+    - name: "Upload build as Artifact"
+      uses: actions/upload-artifact@v2.3.1
+      if: success()
+      with:
+        name: checkers-online-windows-${{github.sha}}
+        path: |
+          ${{github.workspace}}/Client/build
+          ${{github.workspace}}/Server/build
