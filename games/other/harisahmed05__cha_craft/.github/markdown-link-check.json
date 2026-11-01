@@ -1,0 +1,14 @@
+{
+  "ignorePatterns": [],
+  "replacementPatterns": [],
+  "httpHeaders": [
+    {
+      "urls": ["https://api.github.com/"],
+      "headers": { "Accept": "application/vnd.github+json" }
+    }
+  ],
+  "timeout": "10s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackFiles": []
+}
