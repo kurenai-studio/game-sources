@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:22 PT (America/Los_Angeles). Entries: **883**.
+Generated: 2026-11-01 ~09:24 PT (America/Los_Angeles). Entries: **884**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -204,6 +204,7 @@ Generated: 2026-11-01 ~09:22 PT (America/Los_Angeles). Entries: **883**.
 | games/godot/olsenw__GodotJam3 | https://github.com/olsenw/GodotJam3 | MIT | godot | a | 2026-10-23 |
 | games/godot/openfw-game__OpenLiberty | https://github.com/openfw-game/OpenLiberty | MIT | godot | a | 2026-10-23 |
 | games/godot/phopps__godot-wild-jam | https://github.com/phopps/godot-wild-jam | MIT | godot | a | 2026-10-23 |
+| games/godot/Pine-ber-EE__thingscrumbleapart | https://github.com/Pine-ber-EE/thingscrumbleapart | MIT | godot | a | 2026-11-01 |
 | games/godot/Piralein__ocean-king | https://github.com/Piralein/ocean-king | MIT | godot | a | 2026-10-23 |
 | games/godot/projectcerulean__cerulean | https://github.com/projectcerulean/cerulean | GPL-3.0 | godot | a | 2026-10-23 |
 | games/godot/ProjectMakersDE__horizOn-Example-Godot | https://github.com/ProjectMakersDE/horizOn-Example-Godot | MIT | godot | a | 2026-10-23 |
