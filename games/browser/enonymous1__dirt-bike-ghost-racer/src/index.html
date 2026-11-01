@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dirt Bike Ghost Racer — HTML5 Canvas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>DIRT BIKE GHOST RACER</h1>
+      <p class="subtitle">A vanilla JavaScript / Canvas motocross time-trial game, inspired by classic NES motocross games</p>
+    </header>
+
+    <!-- HUD: kept in the DOM so it stays crisp when the canvas scales. -->
+    <section class="hud" aria-label="Race HUD">
+      <div class="hud-item">
+        <span class="hud-label">Lap Time</span>
+        <span class="hud-value" id="hud-time">0:00.00</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Speed</span>
+        <span class="hud-value" id="hud-speed">0 mph</span>
+      </div>
+      <div class="hud-item temp-item">
+        <span class="hud-label">TEMP</span>
+        <div class="temp-bar" aria-label="Engine temperature">
+          <div class="temp-fill" id="temp-fill"></div>
+        </div>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Lane</span>
+        <span class="hud-value" id="hud-lane">3</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Ghost</span>
+        <span class="hud-value" id="hud-ghost">—</span>
+      </div>
+    </section>
+
+    <div class="game-wrap">
+      <canvas id="game" width="800" height="600"></canvas>
+      <p class="state-note" id="state-note">Press Enter to start</p>
+    </div>
+
+    <section class="controls">
+      <h2>Controls</h2>
+      <ul>
+        <li><strong>↑ / ↓</strong> — Change lane (4 lanes)</li>
+        <li><strong>← / → on ground</strong> — Wheelie</li>
+        <li><strong>← / → in air</strong> — Pitch bike: Left = nose up, shorter jump; Right = nose down, longer jump</li>
+        <li><strong>Z</strong> — Standard acceleration (slow heat build-up)</li>
+        <li><strong>X</strong> — Turbo acceleration (fast, but heats up rapidly)</li>
+        <li><strong>After a crash</strong> — Mash <strong>Z / X</strong> to run back to your bike faster</li>
+        <li><strong>Enter / R</strong> — Start / restart</li>
+        <li><strong>E</strong> — Open the custom track editor (from the title screen)</li>
+        <li><strong>Ghost race</strong> — Use <strong>Race Ghost</strong> in the Ghost panel below to race a translucent ghost on its original track</li>
+      </ul>
+      <p class="tip">
+        Land with your bike angle matching the ground or you will crash.
+        Blue chevrons are Cool Zones — ride over them to drop your temperature instantly.
+        Mud slows you down, it does not crash you.
+      </p>
+    </section>
+
+    <!-- Custom track editor. All of its controls are wired up in game.js;
+         the canvas itself is also clickable while the editor is open. -->
+    <section class="editor" id="track-editor" aria-label="Custom track editor">
+      <h2>Custom Track Editor</h2>
+      <p class="tip">
+        Press <strong>E</strong> (or <strong>Edit Track</strong>) to open the editor, then click the
+        track on the canvas to place an obstacle, or use the form below.
+        Scroll the editor with <strong>← / →</strong>, the scroll buttons, or the mouse wheel.
+        Right-click an obstacle on the canvas to delete it. Press <strong>Esc</strong> to go back to the title.
+      </p>
+      <div class="editor-row">
+        <label>Obstacle
+          <select id="editor-type">
+            <option value="SMALL_RAMP">Small Ramp</option>
+            <option value="LARGE_RAMP">Large Ramp (plateau)</option>
+            <option value="MUD">Mud Puddle</option>
+            <option value="COOL">Cool Zone</option>
+          </select>
+        </label>
+        <label>Lane
+          <select id="editor-lane">
+            <option value="auto">Auto (from click)</option>
+            <option value="0">Lane 1 (back)</option>
+            <option value="1">Lane 2</option>
+            <option value="2">Lane 3</option>
+            <option value="3" selected>Lane 4 (front)</option>
+          </select>
+        </label>
+        <label>Position (px)
+          <input type="number" id="editor-x" value="1000" min="100" max="11100" step="10" />
+        </label>
+        <button type="button" id="add-obstacle">Add obstacle</button>
+      </div>
+      <div class="editor-row">
+        <button type="button" id="edit-track">Edit Track</button>
+        <button type="button" id="scroll-left">◀ Scroll</button>
+        <button type="button" id="scroll-right">Scroll ▶</button>
+        <button type="button" id="race-custom" class="go">Race Custom Track</button>
+        <button type="button" id="race-random">Race Random Track</button>
+        <button type="button" id="example-track">Load Example Track</button>
+        <button type="button" id="clear-track">Clear Custom Track</button>
+      </div>
+      <label class="editor-check">
+        <input type="checkbox" id="use-custom" />
+        Use this custom track when pressing Enter to start
+      </label>
+      <div class="editor-row">
+        <button type="button" id="save-track">Save in Browser</button>
+        <button type="button" id="export-track">Export to JSON below</button>
+        <button type="button" id="import-track">Import JSON below</button>
+      </div>
+      <textarea id="track-json" rows="5" placeholder='Paste a track JSON here to import, e.g. [{"x":1000,"lane":3,"type":"SMALL_RAMP"}]'></textarea>
+      <p class="editor-status" id="editor-status">No custom track yet. Add an obstacle to start one.</p>
+      <ul class="obstacle-list" id="obstacle-list"></ul>
+    </section>
+
+    <!-- Ghost races. A ghost is a recorded run + the exact track it ran on,
+         so it always lines up even if your next random track would not. -->
+    <section class="editor" id="ghost-panel" aria-label="Ghost races">
+      <h2>Ghost Races — Shareable Ghosts</h2>
+      <p class="tip">
+        Every race you finish is recorded (20 samples per second). Your fastest run is
+        kept as your best ghost. To race a ghost, use <strong>Race Ghost</strong> — it loads
+        that ghost's original track, so ramps and mud line up exactly. Export your best
+        ghost, send the JSON to a friend, and they can import it and race you.
+        If you beat a ghost, your run becomes the new best ghost.
+      </p>
+      <div class="editor-row">
+        <label>Opponent
+          <select id="ghost-opponent">
+            <option value="none">No ghost</option>
+            <option value="best">My best ghost</option>
+            <option value="rival">Imported ghost (friend)</option>
+          </select>
+        </label>
+        <label>Your name (for shared ghosts)
+          <input type="text" id="ghost-author" value="Player" maxlength="24" />
+        </label>
+        <button type="button" id="race-ghost" class="go">Race Ghost</button>
+        <button type="button" id="clear-rival">Clear Imported Ghost</button>
+      </div>
+      <div class="editor-row">
+        <button type="button" id="export-ghost">Export Selected Ghost to JSON below</button>
+        <button type="button" id="import-ghost">Import Ghost JSON below</button>
+      </div>
+      <textarea id="ghost-json" rows="5" placeholder='Paste a ghost JSON here to import it, then press Import Ghost JSON.'></textarea>
+      <p class="editor-status" id="ghost-status">No ghost yet. Finish a race to record your first one.</p>
+      <p class="tip" id="ghost-info">Best: — &nbsp;•&nbsp; Imported: —</p>
+    </section>
+
+    <!-- Optional touch controls. They feed the same key state as the keyboard. -->
+    <section class="touch" aria-label="Touch controls">
+      <button type="button" data-key="ArrowUp">▲ Lane</button>
+      <button type="button" data-key="ArrowDown">▼ Lane</button>
+      <button type="button" data-key="ArrowLeft">◀ Pitch / Wheelie</button>
+      <button type="button" data-key="ArrowRight">Pitch / Wheelie ▶</button>
+      <button type="button" data-key="KeyZ" class="go">Z</button>
+      <button type="button" data-key="KeyX" class="turbo">X Turbo</button>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
