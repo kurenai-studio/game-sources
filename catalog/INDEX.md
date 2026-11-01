@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~09:20 PT (America/Los_Angeles). Entries: **881**.
+Generated: 2026-11-01 ~09:22 PT (America/Los_Angeles). Entries: **883**.
 
 | path | upstream | license | engine | by | collected_at |
 | --- | --- | --- | --- | --- | --- |
@@ -385,6 +385,7 @@ Generated: 2026-11-01 ~09:20 PT (America/Los_Angeles). Entries: **881**.
 | games/love2d/NechiGames__meteor-storm | https://github.com/NechiGames/meteor-storm | MIT | love2d | b | 2026-11-01 |
 | games/love2d/nguyenquan-2510__Lua-Click-Game | https://github.com/nguyenquan-2510/Lua-Click-Game | GPL-3.0 | love2d | b | 2026-11-01 |
 | games/love2d/Nightwolf-47__KleleAtoms | https://github.com/Nightwolf-47/KleleAtoms | MIT | love2d | b | 2026-10-23 |
+| games/love2d/ninefournine__neon-courier | https://github.com/ninefournine/neon-courier | MIT | love2d | b | 2026-11-01 |
 | games/love2d/noooway__love2d_arkanoid_tutorial | https://github.com/noooway/love2d_arkanoid_tutorial | MIT | love2d | b | 2026-10-22 |
 | games/love2d/notexplosive__monster-mash | https://github.com/notexplosive/monster-mash | MIT | love2d | b | 2026-10-23 |
 | games/love2d/omar-polo__sn4k3 | https://github.com/omar-polo/sn4k3 | MIT | love2d | b | 2026-11-01 |
@@ -580,6 +581,7 @@ Generated: 2026-11-01 ~09:20 PT (America/Los_Angeles). Entries: **881**.
 | games/pygame/codingchili__py-race | https://github.com/codingchili/py-race | MIT | pygame | b | 2026-10-23 |
 | games/pygame/Corey56__RingLeader | https://github.com/Corey56/RingLeader | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/crkellen__pygameClicker | https://github.com/crkellen/pygameClicker | GPL-3.0 | pygame | b | 2026-10-23 |
+| games/pygame/danielsolo707__pygame-2048 | https://github.com/danielsolo707/pygame-2048 | MIT | pygame | b | 2026-11-01 |
 | games/pygame/Dave-YP__cosmic-heat-pygame | https://github.com/Dave-YP/cosmic-heat-pygame | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/dhhruv__Sudoku-Solver | https://github.com/dhhruv/Sudoku-Solver | MIT | pygame | b | 2026-10-23 |
 | games/pygame/estevaofon__angry-birds-python | https://github.com/estevaofon/angry-birds-python | MIT | pygame | b | 2026-10-22 |
