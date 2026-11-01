@@ -1,0 +1,119 @@
+# Code Arena — Farm Bot Programming Game
+
+A small Pygame game where you **write Python code to control a farming robot**. Type your bot's logic into the built-in code editor, press **Run**, and watch the farmer move around the field and harvest crops one step at a time.
+
+It's a playground for practising loops, conditions and simple algorithms (grid traversal, search) with instant visual feedback.
+
+## Features
+
+- 🌱 **8 × 8 farm** with randomly placed carrots, tomatoes, corn and pumpkins
+- 🧑‍🌾 **Animated farmer** with a hoe swing on every harvest
+- 📝 **Built-in code editor**: syntax highlighting, line numbers, cursor movement, auto-indent, paste (Ctrl+V), mouse-wheel scrolling
+- ▶️ **Run / Stop / New Farm** controls; the bot runs at a watchable 8 actions per second
+- 🖨️ **Output panel**: `print()` output and error messages with line numbers
+- 🛡️ **Restricted script environment**: no imports, no file access, no access to the game's internals
+
+## Requirements
+
+- Python 3.9+
+- [pygame](https://www.pygame.org/) 2.6+
+
+## Getting Started
+
+```bash
+git clone https://github.com/Gitodear/Code_Arena.git
+cd Code_Arena
+python -m venv venv
+# Windows: venv\Scripts\activate    macOS/Linux: source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+> Run `main.py` from the project folder so Python can find the `game` package.
+
+## Controls
+
+| Action | Key / Button |
+|---|---|
+| Run your code (on a fresh farm) | **F5** or **Run** |
+| Stop the bot | **Esc** or **Stop** |
+| Generate a new farm | **New Farm** |
+| Paste code | **Ctrl+V** |
+| Move the cursor | Arrow keys, Home, End, mouse click |
+| Scroll the editor | Mouse wheel |
+
+## Bot API
+
+Your code gets an `api` object:
+
+| Method | Description |
+|---|---|
+| `api.move(dx, dy)` | Move one cell. `dx` and `dy` must each be `-1`, `0` or `1`. Waits for the next game tick. |
+| `api.harvest()` | Harvest the crop on the current cell (does nothing if it's empty). |
+| `api.can_harvest()` | `True` if there is a crop on the current cell. |
+| `api.get_pos()` | Current position as `(x, y)`; `(0, 0)` is the top-left cell. |
+| `api.get_world_size()` | Width/height of the farm (8). |
+| `api.crops_left()` | Number of crops still on the farm. |
+| `print(...)` | Writes to the Output panel. |
+
+Available built-ins: `range`, `len`, `int`, `float`, `str`, `bool`, `abs`, `min`, `max`, `sum`, `sorted`, `enumerate`, `list`, `dict`, `tuple`, `set`, `zip`, `reversed`, `round`, `any`, `all`, `isinstance`.
+
+### Example: sweep the whole farm
+
+```python
+size = api.get_world_size()
+direction = 1
+
+for row in range(size):
+    for step in range(size):
+        if api.can_harvest():
+            api.harvest()
+        if step < size - 1:
+            api.move(direction, 0)
+    if row < size - 1:
+        api.move(0, 1)
+    direction = -direction
+
+print("Done!", api.crops_left(), "crops left")
+```
+
+**Challenge ideas:** harvest everything in fewer moves than the sweep, or write a bot that always walks to the nearest crop next.
+
+## Project Structure
+
+```
+Code_Arena/
+├── main.py              # Window, game loop, UI layout
+├── requirements.txt
+├── LICENSE
+└── game/
+    ├── __init__.py
+    ├── api.py           # GameAPI (thread bridge) + PlayerAPI (what scripts can use)
+    ├── runtime.py       # Validates and runs player code in a background thread
+    ├── world.py         # Farm grid and crops
+    ├── player.py        # Farmer position and movement
+    ├── editor.py        # In-game code editor
+    ├── button.py        # Simple UI button
+    └── render_farm.py   # Drawing soil, crops and the farmer
+```
+
+## How It Works
+
+- The player's script runs in a **background thread**, so the window stays responsive while your code runs.
+- Every action (`move`, `harvest`) is handed to the **main game loop**, which applies one action per tick (8 per second). The script waits until its action has been applied, so even `while True:` loops play out at a watchable speed.
+- **Stop** works instantly, even for loops that never call the API, because the runtime checks for a stop request on every line of player code.
+- Before running, the code is checked: `import`, `global`/`nonlocal` and any `_private` / `__dunder__` names are rejected, and only a small set of built-ins is provided.
+
+> ⚠️ The restricted environment is a guard rail for a learning game, not a security sandbox. Only run code you trust.
+
+## Troubleshooting
+
+**`ModuleNotFoundError: No module named 'pygame'`** - activate your virtual environment and run `pip install -r requirements.txt`.
+
+**`ModuleNotFoundError: No module named 'game'`** - run `python main.py` from inside the project folder, not from a parent folder.
+
+**Editor font looks different on another computer** - the game uses Consolas (Windows), Menlo (macOS) or DejaVu Sans Mono (Linux), whichever is installed.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
