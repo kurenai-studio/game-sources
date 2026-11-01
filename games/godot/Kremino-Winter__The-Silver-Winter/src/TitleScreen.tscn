@@ -1,0 +1,116 @@
+[gd_scene load_steps=7 format=3 uid="uid://br8uksegmude2"]
+
+[ext_resource type="Script" uid="uid://b3tljj780vg2d" path="res://title_screen.gd" id="1_fnlyl"]
+[ext_resource type="Texture2D" uid="uid://bopmpmwiko87q" path="res://close.png" id="2_pkhjh"]
+[ext_resource type="Texture2D" uid="uid://blupm5xotagnw" path="res://Background paint finished.png" id="3_1xr1c"]
+[ext_resource type="AudioStream" uid="uid://bgn7gxvvmmlv1" path="res://back.wav" id="4_tu0on"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tu0on"]
+size = Vector2(47, 27)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2k3je"]
+size = Vector2(10.5, 88)
+
+[node name="Node" type="Node"]
+script = ExtResource("1_fnlyl")
+
+[node name="Button" type="Button" parent="."]
+texture_filter = 1
+offset_left = -102.0
+offset_top = -21.0
+offset_right = 106.0
+offset_bottom = 21.0
+text = "New Game"
+
+[node name="control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+metadata/_edit_use_anchors_ = true
+
+[node name="ResolutionList" type="OptionButton" parent="control"]
+z_index = 2
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.425
+anchor_top = -2.45
+anchor_right = 0.09499969
+anchor_bottom = -2.125
+offset_top = 167.0
+offset_right = 32.0
+offset_bottom = 187.0
+
+[node name="ApplyButton" type="Button" parent="control"]
+z_index = 2
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.425
+anchor_top = -1.6
+anchor_right = 1.118421
+anchor_bottom = -1.025
+offset_top = 167.0
+offset_right = 8.0
+offset_bottom = 175.0
+scale = Vector2(0.76, 0.84000003)
+text = "Apply"
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="control"]
+z_index = 2
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -2.1
+anchor_top = -3.0166667
+anchor_right = 2.15
+anchor_bottom = -3.0166667
+offset_top = 167.0
+offset_right = 40.0
+offset_bottom = 190.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.16854045, 0.17207643, 0.15009439, 0)
+text = "Please set your resolution"
+metadata/_edit_use_anchors_ = true
+
+[node name="CloseButton" type="Button" parent="control"]
+z_index = 2
+texture_filter = 1
+layout_mode = 0
+offset_left = -104.0
+offset_top = 42.0
+offset_right = 62.66327
+offset_bottom = 208.66327
+scale = Vector2(0.12000243, 0.12000243)
+icon = ExtResource("2_pkhjh")
+expand_icon = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="BackgroundPaintFinished" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+position = Vector2(-1, 1)
+texture = ExtResource("3_1xr1c")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="BackgroundPaintFinished"]
+
+[node name="horizontal log" type="CollisionShape2D" parent="BackgroundPaintFinished/StaticBody2D"]
+position = Vector2(285.5, 119.5)
+shape = SubResource("RectangleShape2D_tu0on")
+
+[node name="second static body" type="StaticBody2D" parent="BackgroundPaintFinished"]
+
+[node name="vertical log" type="CollisionShape2D" parent="BackgroundPaintFinished/second static body"]
+position = Vector2(314.25, 89)
+shape = SubResource("RectangleShape2D_2k3je")
+
+[node name="apply_sound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_tu0on")
+volume_db = -15.0
+
+[node name="new_game_sound" type="AudioStreamPlayer2D" parent="."]
+
+[connection signal="pressed" from="Button" to="." method="_on_new_game"]
