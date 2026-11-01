@@ -1,0 +1,23 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+using UnrealBuildTool;
+
+public class Argus : ModuleRules
+{
+	public Argus(ReadOnlyTargetRules Target) : base(Target)
+	{
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+	
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "EnhancedInput", "ImGui", "InputCore", "NavigationSystem", "Navmesh", "RHI", "RenderCore", "SourceControl", "UMG" });
+
+        PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+
+        // Editor only modules
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd" });
+        }
+
+        PublicIncludePaths.AddRange(new string[] { "Argus/ECS/", "Argus/FunctionalTesting/", "Argus/Memory/", "Argus/Persistence/", "Argus/StaticData/", "Argus/UI/", "Argus/UnrealObjects/", "Argus/Utilities/", });
+    }
+}

@@ -1,0 +1,26 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusMacros.h"
+#include "CoreMinimal.h"
+#include "Engine/DataAsset.h"
+#include "ArgusStaticRecord.generated.h"
+
+UCLASS()
+class UArgusStaticRecord : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(VisibleAnywhere, NonPIEDuplicateTransient)
+	uint32 m_id;
+
+	virtual void OnAsyncLoaded() const {}
+	virtual void ResetSoftPtrLoadStores() {}
+
+#if WITH_EDITOR
+	virtual void PreSave(FObjectPreSaveContext SaveContext) override;
+	ARGUS_API bool SaveRecord() const;
+#endif //WITH_EDITOR
+};

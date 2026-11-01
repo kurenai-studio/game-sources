@@ -1,0 +1,151 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusContainerAllocator.h"
+#include "ArgusKDTree.h"
+
+class ArgusEntity;
+
+struct ArgusEntityKDTreeNode
+{
+	FVector					m_worldSpaceLocation = FVector::ZeroVector;
+	ArgusEntityKDTreeNode*	m_leftChild = nullptr;
+	ArgusEntityKDTreeNode*	m_rightChild = nullptr;
+	float					m_radius = 0.0f;
+	uint16					m_entityId = ArgusECSConstants::k_maxEntities;
+
+	ArgusEntityKDTreeNode() {};
+
+	void	Reset();
+	FVector GetLocation() const { return m_worldSpaceLocation; }
+	void	Populate(const FVector& worldSpaceLocation);
+	bool	ShouldSkipNode() const;
+	bool	ShouldSkipNode(TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilter) const;
+	bool	PassesRangeCheck(const FVector& targetLocation, float rangeSquared, float& nodeRangeSquared) const;
+	float   GetValueForDimension(uint16 dimension) const;
+	float	GetRadius() const { return m_radius; }
+
+	void Populate(ArgusEntity entityToRepresent);
+};
+
+struct ArgusEntityKDTreeQueryRangeThresholds
+{
+	ArgusEntityKDTreeQueryRangeThresholds(float groupExitRangeThreshold, float avoidanceRangeThreshold, float sourceRadius, uint16 seenByEntityId) :
+		m_groupExitRangeThresholdSquared(FMath::Square(groupExitRangeThreshold + sourceRadius)),
+		m_avoidanceRangeThresholdSquared(FMath::Square(avoidanceRangeThreshold + sourceRadius)),
+		m_seenByEntityId(seenByEntityId){}
+
+	float m_groupExitRangeThresholdSquared = 0.0f;
+	float m_avoidanceRangeThresholdSquared = 0.0f;
+	uint16 m_seenByEntityId = ArgusECSConstants::k_maxEntities;
+};
+
+class ArgusEntityKDTreeRangeOutput
+{
+public:
+	void Add(const ArgusEntityKDTreeNode* nodeToAdd, const ArgusEntityKDTreeQueryRangeThresholds& thresholds, float distFromTargetSquared);
+	void ConsolidateInArray(TArray<uint16>& allEntityIds);
+	void ResetAll();
+	bool FoundAny() const;
+	bool HasConstructionTargetInSightRange() const { return m_hasConstructionTargetInSightRange; }
+	bool HasCombatTargetInSightRange() const { return m_hasCombatTargetInSightRange; }
+	const TArray<uint16, ArgusContainerAllocator<20u> >& GetEntityIdsInSightRange() const { return m_entityIdsWithinSightRange; }
+	const TArray<uint16, ArgusContainerAllocator<10u> >& GetEntityIdsInGroupExitRange() const { return m_entityIdsWithinGroupExitRange; }
+	const TArray<uint16, ArgusContainerAllocator<10u> >& GetEntityIdsInAvoidanceRange() const { return m_entityIdsWithinAvoidanceRange; }
+
+private:
+	TArray<uint16, ArgusContainerAllocator<20u> > m_entityIdsWithinSightRange;
+	TArray<uint16, ArgusContainerAllocator<10u> > m_entityIdsWithinGroupExitRange;
+	TArray<uint16, ArgusContainerAllocator<10u> > m_entityIdsWithinAvoidanceRange;
+	bool m_hasConstructionTargetInSightRange = false;
+	bool m_hasCombatTargetInSightRange = false;
+};
+
+class ArgusEntityKDTree : public ArgusKDTree<	ArgusEntityKDTreeNode, ArgusEntityKDTreeRangeOutput, 
+												ArgusEntityKDTreeQueryRangeThresholds, ArgusECSConstants::k_maxEntities>
+{
+public:
+	static void ErrorOnInvalidArgusEntity(const WIDECHAR* functionName);
+
+	void SeedTreeWithAverageEntityLocation(bool forFlyingEntities);
+	void InsertAllArgusEntitiesIntoKDTree(bool forFlyingEntities);
+	void RebuildKDTreeForAllArgusEntities();
+	void InsertArgusEntityIntoKDTree(ArgusEntity entityToRepresent);
+	bool RemoveArgusEntityFromKDTree(ArgusEntity entityToRemove);
+
+	uint16 FindArgusEntityIdClosestToLocation(const FVector& location) const;
+	uint16 FindArgusEntityIdClosestToLocation(const FVector& location, ArgusEntity entityToIgnore) const;
+	uint16 FindArgusEntityIdClosestToLocation(const FVector& location, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilter) const;
+	uint16 FindOtherArgusEntityIdClosestToArgusEntity(ArgusEntity entityToSearchAround, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilterOverride = nullptr) const;
+
+	const TArray<uint16, ArgusContainerAllocator<20u> >& FindArgusEntityIdsWithinRangeOfLocation(const FVector& location, const float range, ArgusEntity entityToIgnore);
+	const TArray<uint16, ArgusContainerAllocator<20u> >& FindArgusEntityIdsWithinRangeOfLocation(const FVector2D& location, const float range, ArgusEntity entityToIgnore);
+	bool FindArgusEntityIdsWithinRangeOfLocation(TArray<uint16>& outNearbyArgusEntityIds, const FVector& location, const float range);
+	bool FindArgusEntityIdsWithinRangeOfLocation(TArray<uint16>& outNearbyArgusEntityIds, const FVector& location, const float range, ArgusEntity entityToIgnore);
+	bool FindArgusEntityIdsWithinRangeOfLocation(ArgusEntityKDTreeRangeOutput& output, const ArgusEntityKDTreeQueryRangeThresholds& thresholds, const FVector& location, const float range, ArgusEntity entityToIgnore) const;
+	bool FindArgusEntityIdsWithinRangeOfLocation(TArray<uint16>& outNearbyArgusEntityIds, const FVector& location, const float range, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilterOverride);
+	bool FindArgusEntityIdsWithinRangeOfLocation(ArgusEntityKDTreeRangeOutput& output, const ArgusEntityKDTreeQueryRangeThresholds& thresholds, const FVector& location, const float range, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilterOverride) const;
+	bool FindOtherArgusEntityIdsWithinRangeOfArgusEntity(TArray<uint16>& outNearbyArgusEntityIds, ArgusEntity entityToSearchAround, const float range, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilterOverride = nullptr);
+	bool FindOtherArgusEntityIdsWithinRangeOfArgusEntity(ArgusEntityKDTreeRangeOutput& output, const ArgusEntityKDTreeQueryRangeThresholds& thresholds, ArgusEntity entityToSearchAround, const float range, const TFunction<bool(const ArgusEntityKDTreeNode*)> queryFilterOverride = nullptr) const;
+
+	template <typename Array>
+	const TArray<uint16, ArgusContainerAllocator<20u> >& FindArgusEntityIdsWithinConvexPoly(const Array& convexPolygonPoints, uint16 entityIdToIgnore)
+	{
+		m_queryScratchData.ResetAll();
+
+		if (!m_rootNode)
+		{
+			return m_queryScratchData.GetEntityIdsInSightRange();
+		}
+
+		if (convexPolygonPoints.Num() < 3)
+		{
+			ARGUS_LOG(ArgusUtilitiesLog, Error, TEXT("[%s] Number of points in %s is less than three. You can't have a polygon with fewer than three points."), ARGUS_FUNCNAME, ARGUS_NAMEOF(convexPolygonPoints));
+			return m_queryScratchData.GetEntityIdsInSightRange();
+		}
+
+		FindNodesWithinConvexPolyRecursive(m_queryScratchData, ArgusEntityKDTreeQueryRangeThresholds(0.0f, 0.0f, 0.0f, ArgusECSConstants::k_maxEntities), m_rootNode, convexPolygonPoints, GetArgusEntityQueryPredicate(entityIdToIgnore), 0u);
+
+		return m_queryScratchData.GetEntityIdsInSightRange();
+	}
+
+	template <typename Array>
+	bool FindArgusEntityIdsWithinConvexPoly(TArray<uint16>& outNearbyArgusEntityIds, const Array& convexPolygonPoints)
+	{
+		if (!m_rootNode)
+		{
+			return false;
+		}
+
+		if (convexPolygonPoints.Num() < 3)
+		{
+			ARGUS_LOG(ArgusUtilitiesLog, Error, TEXT("[%s] Number of points in %s is less than three. You can't have a polygon with fewer than three points."), ARGUS_FUNCNAME, ARGUS_NAMEOF(convexPolygonPoints));
+			return false;
+		}
+
+		m_queryScratchData.ResetAll();
+		FindNodesWithinConvexPolyRecursive(m_queryScratchData, ArgusEntityKDTreeQueryRangeThresholds(0.0f, 0.0f, 0.0f, ArgusECSConstants::k_maxEntities), m_rootNode, convexPolygonPoints, nullptr, 0u);
+		m_queryScratchData.ConsolidateInArray(outNearbyArgusEntityIds);
+
+		return outNearbyArgusEntityIds.Num() > 0;
+	}
+
+	bool DoesArgusEntityExistInKDTree(ArgusEntity entityToRepresent) const;
+
+	void RequestInsertArgusEntityIntoKDTree(ArgusEntity entityToInsert);
+	void RequestRemoveArgusEntityIntoKDTree(ArgusEntity entityToRemove);
+	void ProcessDeferredStateChanges();
+
+protected:
+	bool SearchForEntityIdRecursive(const ArgusEntityKDTreeNode* node, uint16 entityId) const;
+	bool SearchForEntityIdRecursive(ArgusEntityKDTreeNode* node, uint16 entityId, ArgusEntityKDTreeNode*& ouputNode, ArgusEntityKDTreeNode*& ouputParentNode);
+	void RebuildSubTreeForArgusEntitiesRecursive(ArgusEntityKDTreeNode*& node, bool forceReInsertChildren);
+	void ClearNodeWithReInsert(ArgusEntityKDTreeNode*& node);
+	const TFunction<bool(const ArgusEntityKDTreeNode*)> GetArgusEntityQueryPredicate(uint16 entityIdToIgnore) const;
+
+private:
+	ArgusEntityKDTreeRangeOutput m_queryScratchData;
+	TArray<uint16> m_entityIdsToInsert;
+	TArray<uint16> m_entityIdsToRemove;
+};

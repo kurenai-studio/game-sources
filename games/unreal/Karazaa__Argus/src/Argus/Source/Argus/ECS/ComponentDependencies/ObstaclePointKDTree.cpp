@@ -1,0 +1,187 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "ObstaclePointKDTree.h"
+#include "ArgusEntity.h"
+#include "ArgusMath.h"
+
+void ObstaclePointKDTreeNode::Reset()
+{
+	m_location = FVector2D::ZeroVector;
+	m_indicies.m_obstacleIndex = -1;
+	m_indicies.m_obstaclePointIndex = -1;
+	m_leftChild = nullptr;
+	m_rightChild = nullptr;
+}
+
+void ObstaclePointKDTreeNode::Populate(const FVector& worldSpaceLocation)
+{
+	m_location = FVector2D(worldSpaceLocation);
+}
+
+bool ObstaclePointKDTreeNode::ShouldSkipNode() const
+{
+	return m_indicies.m_obstacleIndex < 0 || m_indicies.m_obstaclePointIndex < 0;
+}
+
+bool ObstaclePointKDTreeNode::ShouldSkipNode(TFunction<bool(const ObstaclePointKDTreeNode*)> queryFilter) const
+{
+	return m_indicies.m_obstacleIndex < 0 || m_indicies.m_obstaclePointIndex < 0;
+}
+
+bool ObstaclePointKDTreeNode::PassesRangeCheck(const FVector& targetLocation, float rangeSquared, float& nodeRangeSquared) const
+{
+	if (ShouldSkipNode())
+	{
+		return false;
+	}
+
+	ArgusEntity singletonEntity = ArgusEntity::GetSingletonEntity();
+	ARGUS_RETURN_ON_INVALID_ENTITY_VALUE(singletonEntity, ArgusECSLog, false);
+	const SpatialPartitioningComponent* spatialPartitioningComponent = singletonEntity.GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL_BOOL(spatialPartitioningComponent, ArgusECSLog);
+
+	nodeRangeSquared = FVector::DistSquared2D(GetLocation(), targetLocation);
+	bool output = nodeRangeSquared < rangeSquared;
+
+	const FObstaclePoint& next = spatialPartitioningComponent->GetObstalcesContainer().m_obstacleArrays[m_indicies.m_obstacleIndex].GetNext(m_indicies.m_obstaclePointIndex);
+
+	const FVector2D targetLocation2D = FVector2D(targetLocation);
+	const FVector2D location2D = FVector2D(m_location);
+
+	if ((next.m_point - location2D).Dot(targetLocation2D - location2D) < 0.0f)
+	{
+		return output;
+	}
+
+	if ((location2D - next.m_point).Dot(targetLocation2D - next.m_point) < 0.0f)
+	{
+		return output;
+	}
+
+	const float amountLeftOfLine = ArgusMath::AmountLeftOf(location2D, next.m_point, targetLocation2D);
+	nodeRangeSquared = FMath::Square(ArgusMath::SafeDivide(amountLeftOfLine, FVector2D::Distance(location2D, next.m_point)));
+
+	output |= (nodeRangeSquared < rangeSquared);
+
+	return output;
+}
+
+float ObstaclePointKDTreeNode::GetValueForDimension(uint16 dimension) const
+{
+	FVector location = GetLocation();
+	switch (dimension)
+	{
+		case 0:
+			return location.X;
+		case 1:
+			return location.Y;
+		case 2:
+			return location.Z;
+		default:
+			return 0.0f;
+	}
+}
+
+void ObstaclePointKDTreeRangeOutput::Add(const ObstaclePointKDTreeNode* nodeToAdd, const ObstaclePointKDTreeQueryRangeThresholds& thresholds, float distFromTargetSquared)
+{
+	if (!nodeToAdd)
+	{
+		return;
+	}
+
+	if (distFromTargetSquared <= thresholds.m_avoidanceRangeThresholdSquared)
+	{
+		m_obstacleIndiciesInAvoidanceRange.Add(nodeToAdd->m_indicies);
+	}
+	else
+	{
+		m_obstacleIndiciesInSightRange.Add(nodeToAdd->m_indicies);
+	}
+}
+
+void ObstaclePointKDTreeRangeOutput::ResetAll()
+{
+	m_obstacleIndiciesInAvoidanceRange.Reset();
+	m_obstacleIndiciesInSightRange.Reset();
+}
+
+void ObstaclePointKDTreeRangeOutput::PopulateArrayWithObstacleIndiciesInSightRange(TArray<ObstacleIndicies, ArgusContainerAllocator<0u> >& arrayToPopulate) const
+{
+	arrayToPopulate.Reserve(GetNumObstacleInidciesInSightRange());
+	IterateObstacleIndiciesInSightRange([&arrayToPopulate](ObstacleIndicies indicies)
+	{
+		arrayToPopulate.Add(indicies);
+	});
+}
+
+void ObstaclePointKDTree::InsertObstaclesIntoKDTree(const FObstaclesContainer& obstacles)
+{
+	ARGUS_MEMORY_TRACE(ArgusKDTree);
+	ARGUS_TRACE(ArgusKDTree::InsertObstaclesIntoKDTree);
+
+	for (int32 i = 0; i < obstacles.m_obstacleArrays.Num(); ++i)
+	{
+		for (int32 j = 0; j < obstacles.m_obstacleArrays[i].m_obstaclePoints.Num(); ++j)
+		{
+			ObstaclePointKDTreeNode* nodeToInsert = m_nodePool.Take();
+			nodeToInsert->m_location = obstacles.m_obstacleArrays[i].m_obstaclePoints[j].m_point;
+			nodeToInsert->m_indicies.m_obstacleIndex = i;
+			nodeToInsert->m_indicies.m_obstaclePointIndex = j;
+
+			if (!m_rootNode)
+			{
+				m_rootNode = nodeToInsert;
+			}
+			else
+			{
+				InsertNodeIntoKDTreeRecursive(m_rootNode, nodeToInsert, 0u);
+			}
+		}
+	}
+}
+
+bool ObstaclePointKDTree::FindObstacleIndiciesWithinRangeOfLocation(TArray<ObstacleIndicies>& obstacleIndicies, const FVector& location, const float range)
+{
+	ARGUS_TRACE(ObstaclePointKDTree::FindObstacleIndiciesWithinRangeOfLocation);
+
+	if (!m_rootNode)
+	{
+		return false;
+	}
+
+	if (range <= 0.0f)
+	{
+		ARGUS_LOG(ArgusUtilitiesLog, Error, TEXT("[%s] Searching range is less than or equal to 0."), ARGUS_FUNCNAME);
+		return false;
+	}
+
+	m_queryScratchData.ResetAll();
+	FindNodesWithinRangeOfLocationRecursive(m_queryScratchData, ObstaclePointKDTreeQueryRangeThresholds(), m_rootNode, location, FMath::Square(range), nullptr, 0u);
+	obstacleIndicies.Reserve(m_queryScratchData.GetNumObstacleInidciesInSightRange());
+	m_queryScratchData.IterateObstacleIndiciesInSightRange([&obstacleIndicies](ObstacleIndicies indicies)
+	{
+		obstacleIndicies.Add(indicies);
+	});
+
+	return obstacleIndicies.Num() > 0;
+}
+
+bool ObstaclePointKDTree::FindObstacleIndiciesWithinRangeOfLocation(ObstaclePointKDTreeRangeOutput& obstacleIndicies, ObstaclePointKDTreeQueryRangeThresholds& thresholds, const FVector& location, const float range) const
+{
+	ARGUS_TRACE(ObstaclePointKDTree::FindObstacleIndiciesWithinRangeOfLocation);
+
+	if (!m_rootNode)
+	{
+		return false;
+	}
+
+	if (range <= 0.0f)
+	{
+		ARGUS_LOG(ArgusUtilitiesLog, Error, TEXT("[%s] Searching range is less than or equal to 0."), ARGUS_FUNCNAME);
+		return false;
+	}
+
+	FindNodesWithinRangeOfLocationRecursive(obstacleIndicies, thresholds, m_rootNode, location, FMath::Square(range), nullptr, 0u);
+
+	return obstacleIndicies.AnyObstacleIndiciesInSightRange();
+}

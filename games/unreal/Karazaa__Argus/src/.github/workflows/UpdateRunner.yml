@@ -1,0 +1,66 @@
+name: Update Runner
+
+on:
+  push:
+    branches: main
+  workflow_call:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  git-checkout-main:
+    runs-on: self-hosted
+    steps:
+      - name: git-checkout-main
+        shell: powershell
+        run: git -C ${{ secrets.PATH_TO_REPO }} checkout main
+
+  git-reset-hard:
+    runs-on: self-hosted
+    needs:
+      - git-checkout-main
+    steps:
+      - name: git-reset-hard
+        shell: powershell
+        run: git -C ${{ secrets.PATH_TO_REPO }} reset --hard
+
+  git-pull:
+    runs-on: self-hosted
+    needs:
+      - git-reset-hard
+    steps:
+      - name: git-pull
+        shell: powershell
+        run: git -C ${{ secrets.PATH_TO_REPO }} pull
+
+  generate-project-files:
+    runs-on: self-hosted
+    needs:
+      - git-pull
+    steps: 
+      - name: generate-project-files
+        shell: powershell
+        run: |
+             $command = "& `"${{ secrets.PATH_TO_GENERATE_PROJ_FILES }}`""
+             Invoke-Expression $command
+
+  build-development-editor:
+    runs-on: self-hosted
+    needs:
+      - generate-project-files
+    steps:
+      - name: Build Development Editor
+        uses: OrchidIsle/UE5-Build-Project@latest
+        with:
+          RUNUAT_PATH: ${{ secrets.PATH_TO_RUN_UAT }}
+          UPROJECT_PATH: ${{ secrets.PATH_TO_UPROJECT }}
+          BUILD_CONFIG: Development
+          PLATFORM: Win64
+          CLEAN: false
+          COOK: false
+          STAGE: false
+          PACKAGE: false
+          ARCHIVE: false
+          NULLRHI: true
+          EDITOR: true

@@ -1,0 +1,101 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusECSConstants.h"
+#include "CoreMinimal.h"
+#include "ResourceSet.generated.h"
+
+class FArchive;
+
+UENUM(BlueprintType)
+enum class EResourceType : uint8
+{
+	ResourceA,
+	ResourceB,
+	ResourceC,
+	Count UMETA(Hidden)
+};
+
+USTRUCT(BlueprintType)
+struct FResourceSet
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	int32 m_resourceQuantities[static_cast<uint8>(EResourceType::Count)] = { 0, 0, 0 };
+
+	FResourceSet operator-() const;
+	FResourceSet operator-(const FResourceSet& right) const;
+	bool operator==(const FResourceSet& right) const;
+	FResourceSet& operator+=(const FResourceSet& right);
+
+	void Reset();
+	bool HasResourceType(EResourceType type) const;
+	bool CanAffordResourceChange(const FResourceSet& otherResourceSetRepresentingChange) const;
+	FResourceSet GetResourceChangeConstraints(const FResourceSet& otherResourceSetRepresentingChange) const;
+	void ApplyResourceChange(const FResourceSet& otherResourceSetRepresentingChange);
+	bool IsEntirelyAtCap(const FResourceSet& capacityResourceSet) const;
+	bool IsChangeConstrained(const FResourceSet& constraintResourceSet) const;
+	FResourceSet MaskResourceSet(const FResourceSet& maskSet) const;
+	FResourceSet CalculateResourceChangeAffordable(const FResourceSet& otherResourceSetRepresentingChange, const FResourceSet* maximumResources = nullptr) const;
+	bool DoesCostLessThan(const FResourceSet& other) const;
+	bool IsEmpty() const;
+	void Serialize(FArchive& archive);
+
+#if !UE_BUILD_SHIPPING
+	void DrawImGuiDebug() const;
+#endif // !UE_BUILD_SHIPPING
+
+	friend bool operator>(const FResourceSet& left, const FResourceSet& right)
+	{
+		for (uint8 i = 0u; i < static_cast<uint8>(EResourceType::Count); ++i)
+		{
+			if (left.m_resourceQuantities[i] > right.m_resourceQuantities[i])
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	friend bool operator>=(const FResourceSet& left, const FResourceSet& right)
+	{
+		for (uint8 i = 0u; i < static_cast<uint8>(EResourceType::Count); ++i)
+		{
+			if (left.m_resourceQuantities[i] >= right.m_resourceQuantities[i])
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	friend bool operator<(const FResourceSet& left, const FResourceSet& right)
+	{
+		for (uint8 i = 0u; i < static_cast<uint8>(EResourceType::Count); ++i)
+		{
+			if (left.m_resourceQuantities[i] >= right.m_resourceQuantities[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	friend bool operator<=(const FResourceSet& left, const FResourceSet& right)
+	{
+		for (uint8 i = 0u; i < static_cast<uint8>(EResourceType::Count); ++i)
+		{
+			if (left.m_resourceQuantities[i] > right.m_resourceQuantities[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+};

@@ -1,0 +1,29 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "SystemArgumentDefinitions/NavigationSystemsArgs.h"
+#include <optional>
+
+class NavigationSystems
+{
+public:
+	static void RunSystems(UWorld* worldPointer);
+
+	static void NavigateFromEntityToEntity(UWorld* worldPointer, ArgusEntity targetEntity, const NavigationSystemsArgs& components);
+	static void NavigateFromEntityToLocation(UWorld* worldPointer, std::optional<FVector> targetLocation, const NavigationSystemsArgs& components);
+	static void StartNavigatingToQueuedWaypoint(TaskComponent* taskComponent, TargetingComponent* targetingComponent, NavigationComponent* navigationComponent);
+
+private:
+	static void ClearAvoidanceGroupsForUpcomingPathing(const NavigationSystemsArgs& components);
+	static void ProcessNavigationTaskCommands(UWorld* worldPointer, const NavigationSystemsArgs& components);
+	static void RecalculateMoveToEntityPaths(UWorld* worldPointer, const NavigationSystemsArgs& components);
+	static void ChangeTasksOnNavigatingToEntity(ArgusEntity targetEntity, const NavigationSystemsArgs& components);
+	static void ChangeTasksOnNavigatingToLocation(const NavigationSystemsArgs& components);
+	static void GeneratePathPointsForGroundedEntity(UWorld* worldPointer, std::optional<FVector> targetLocation, const NavigationSystemsArgs& components);
+	static void GeneratePathPointsForFlyingEntity(UWorld* worldPointer, std::optional<FVector> targetLocation, const NavigationSystemsArgs& components);
+
+#if !UE_BUILD_SHIPPING
+	static void DrawNavigationDebugPerEntity(const UWorld* worldPointer, const NavigationSystemsArgs& components);
+#endif //!UE_BUILD_SHIPPING
+};

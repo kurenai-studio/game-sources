@@ -1,0 +1,312 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "ArgusGameModeBase.h"
+#include "ArgusActor.h"
+#include "ArgusActorPool.h"
+#include "ArgusEntityTemplate.h"
+#include "ArgusGameInstance.h"
+#include "ArgusGameStateBase.h"
+#include "ArgusIterators.h"
+#include "ArgusPlayerController.h"
+#include "ArgusSaveManager.h"
+#include "ArgusStaticData.h"
+#include "ArgusSystemsManager.h"
+#include "EngineUtils.h"
+#include "Misc/App.h"
+#include "RecordDefinitions/ArgusActorRecord.h"
+#include "RecordDefinitions/TeamAlignmentRecord.h"
+#include "RecordDefinitions/TeamColorRecord.h"
+
+AArgusGameModeBase::AArgusGameModeBase()
+{
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickGroup = ETickingGroup::TG_PrePhysics;
+
+	ARGUS_LOG(ArgusUnrealObjectsLog, Display, TEXT("[%s] Constructing Argus game mode base."), ARGUS_FUNCNAME);
+	GameStateClass = AArgusGameStateBase::StaticClass();
+}
+
+AArgusGameModeBase::~AArgusGameModeBase()
+{
+	m_argusSystemsThread.Stop();
+}
+
+void AArgusGameModeBase::StartPlay()
+{
+	ArgusStaticData::ResetLoadedPointerArrays();
+	ArgusEntity::FlushAllEntities();
+
+	m_argusActorPool = NewObject<UArgusActorPool>(this, FName(TEXT("ArgusActorPool")));
+	m_saveManager = NewObject<UArgusSaveManager>(this, FName(TEXT("SaveManager")));
+	if (m_saveManager)
+	{
+		m_saveManager->Initialize(this);
+	}
+
+	UWorld* worldPointer = GetWorld();
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusUnrealObjectsLog);
+	ArgusSystemsManager::Initialize(worldPointer, m_singletonEntityTemplate.Get(), m_teamEntityTemplate.Get(), m_teamAlignmentRecord);
+
+	Super::StartPlay();
+	ARGUS_LOG(ArgusUnrealObjectsLog, Display, TEXT("[%s] Argus game mode base starting play."), ARGUS_FUNCNAME);
+
+	for (AArgusPlayerController* argusPlayerController : TActorRange<AArgusPlayerController>(GetWorld()))
+	{
+		m_activePlayerController = argusPlayerController;
+		break;
+	}
+
+	if (m_activePlayerController)
+	{
+		m_activePlayerController->InitializeUIWidgets();
+	}
+
+	ArgusSystemsManager::OnStartPlay(worldPointer, m_activePlayerController->GetPlayerTeam());
+	m_argusSystemsThread.Init();
+	m_argusSystemsThread.StartThread();
+}
+
+void AArgusGameModeBase::Tick(float deltaTime)
+{
+	ARGUS_TRACE(AArgusGameModeBase::Tick);
+
+	Super::Tick(deltaTime);
+
+	if (m_saveManager)
+	{
+		if (m_saveManager->HasLoadRequest())
+		{
+			m_saveManager->ExecuteLoadRequest();
+			return;
+		}
+		
+		if (m_saveManager->IsLoading())
+		{
+			return;
+		}
+	}
+
+	const float unscaledDeltaTime = FApp::GetDeltaTime();
+
+	UWorld* worldPointer = GetWorld();
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusUnrealObjectsLog);
+	ARGUS_RETURN_ON_NULL(m_activePlayerController, ArgusUnrealObjectsLog);
+
+	// Tick the systems thread. Logic here should be relatively resilient to mid execution ECS changes
+	m_argusSystemsThread.TickThread(deltaTime);
+
+	// Update camera and process player input
+	m_activePlayerController->ProcessArgusPlayerInput(unscaledDeltaTime);
+
+	// Run all ECS systems.
+	ArgusSystemsManager::RunSystems(worldPointer, deltaTime);
+
+	// Take/Release/Update ArgusActors based on ECS state.
+	ManageActorStateForEntities(worldPointer, deltaTime);
+
+	// Now wait on m_argusSystemsThread to finish its tick if necessary to execute worker thread dependent systems.
+	FPlatformProcess::ConditionalSleep([this]() -> bool
+	{
+		return !m_argusSystemsThread.IsTicking() || m_argusSystemsThread.IsShutdown();
+	});
+
+	ArgusSystemsManager::RunPostThreadSystems(worldPointer, deltaTime);
+
+	m_activePlayerController->CleanUpArgusPlayerInput();
+
+#if !UE_BUILD_SHIPPING
+	if (m_saveManager)
+	{
+		m_saveManager->DrawDebugger();
+	}
+#endif //!UE_BUILD_SHIPPING
+}
+
+void AArgusGameModeBase::ManageActorStateForEntities(UWorld* worldPointer, float deltaTime)
+{
+	ARGUS_TRACE(AArgusGameModeBase::ManageActorStateForEntities);
+	ARGUS_RETURN_ON_NULL(m_argusActorPool, ArgusUnrealObjectsLog);
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusUnrealObjectsLog);
+	const UArgusGameInstance* gameInstance = worldPointer->GetGameInstance<UArgusGameInstance>();
+	ARGUS_RETURN_ON_NULL(gameInstance, ArgusUnrealObjectsLog);
+	ARGUS_RETURN_ON_NULL(m_activePlayerController, ArgusUnrealObjectsLog);
+
+	ArgusIterators::IterateEntities([this, gameInstance, deltaTime](ArgusEntity entity) 
+	{
+		if (const LODComponent* lodComponent = entity.GetComponent<LODComponent>())
+		{
+			if (lodComponent->m_bIsInViewFrustrum)
+			{
+				ManageActorStateInViewFrustrum(entity, lodComponent, gameInstance, deltaTime);
+			}
+			else
+			{
+				ManageActorStateOutOfViewFrustrum(entity, lodComponent);
+			}
+		}
+		else
+		{
+			ManageActorStateInViewFrustrum(entity, nullptr, gameInstance, deltaTime);
+		}
+	});
+
+	m_argusActorPool->ProcessPreLoadRequests(worldPointer);
+}
+
+void AArgusGameModeBase::ManageActorStateInViewFrustrum(ArgusEntity entity, const LODComponent* lodComponent, const UArgusGameInstance* gameInstance, float deltaTime)
+{
+	ARGUS_TRACE(AArgusGameModeBase::ManageActorStateInViewFrustrum);
+
+	ARGUS_RETURN_ON_NULL(gameInstance, ArgusUnrealObjectsLog);
+	TaskComponent* taskComponent = entity.GetComponent<TaskComponent>();
+	if (!taskComponent || taskComponent->m_spawnedFromArgusActorRecordId == 0u)
+	{
+		return;
+	}
+
+	if (taskComponent->m_baseState == EBaseState::SpawnedWaitingForActorTake)
+	{
+		SpawnActorForEntity(entity);
+		taskComponent->m_baseState = EBaseState::Alive;
+	}
+	else if (taskComponent->m_baseState == EBaseState::DestroyedWaitingForActorRelease)
+	{
+		DespawnActorForEntity(entity);
+		entity.Destroy();
+	}
+	else if (lodComponent && lodComponent->DidInViewFrustrumStatusChange())
+	{
+		SpawnActorForEntity(entity);
+	}
+
+	if (AArgusActor* argusActor = gameInstance->GetArgusActorFromArgusEntity(entity))
+	{
+		argusActor->Update(deltaTime);
+	}
+}
+
+void AArgusGameModeBase::ManageActorStateOutOfViewFrustrum(ArgusEntity entity, const LODComponent* lodComponent)
+{
+	ARGUS_TRACE(AArgusGameModeBase::ManageActorStateOutOfViewFrustrum);
+
+	TaskComponent* taskComponent = entity.GetComponent<TaskComponent>();
+	ARGUS_RETURN_ON_NULL(taskComponent, ArgusUnrealObjectsLog);
+
+	if (taskComponent->m_baseState == EBaseState::DestroyedWaitingForActorRelease)
+	{
+		DespawnActorForEntity(entity);
+		entity.Destroy();
+	}
+	else if (lodComponent && lodComponent->DidInViewFrustrumStatusChange())
+	{
+		DespawnActorForEntity(entity);
+	}
+}
+
+void AArgusGameModeBase::SpawnActorForEntity(ArgusEntity spawnedEntity)
+{
+	ARGUS_RETURN_ON_NULL(m_argusActorPool, ArgusUnrealObjectsLog);
+
+	UWorld* worldPointer = GetWorld();
+	if (!worldPointer || !spawnedEntity)
+	{
+		return;
+	}
+
+	TaskComponent* taskComponent = spawnedEntity.GetComponent<TaskComponent>();
+	if (!taskComponent)
+	{
+		return;
+	}
+
+	const UArgusActorRecord* actorRecord = ArgusStaticData::GetRecord<UArgusActorRecord>(taskComponent->m_spawnedFromArgusActorRecordId);
+	if (!actorRecord)
+	{
+		return;
+	}
+
+	AArgusActor* spawnedActor = m_argusActorPool->Take(worldPointer, actorRecord->m_argusActorClass.LoadAndStorePtr());
+	if (!spawnedActor)
+	{
+		return;
+	}
+
+	spawnedActor->SetEntity(spawnedEntity);
+}
+
+void AArgusGameModeBase::DespawnActorForEntity(ArgusEntity spawnedEntity)
+{
+	ARGUS_RETURN_ON_NULL(m_argusActorPool, ArgusUnrealObjectsLog);
+
+	UWorld* worldPointer = GetWorld();
+	if (!worldPointer || !spawnedEntity)
+	{
+		return;
+	}
+	
+	const UArgusGameInstance* gameInstance = worldPointer->GetGameInstance<UArgusGameInstance>();
+	if (!gameInstance)
+	{
+		return;
+	}
+
+	if (AArgusActor* argusActor = gameInstance->GetArgusActorFromArgusEntity(spawnedEntity))
+	{
+		m_argusActorPool->Release(argusActor);
+	}
+}
+
+FColor AArgusGameModeBase::GetTeamColor(ETeam team)
+{
+	if (!m_teamColorMap.Contains(team))
+	{
+		ARGUS_LOG
+		(
+			ArgusUnrealObjectsLog, 
+			Error, 
+			TEXT("[%s] Trying to retrieve color for %s, but the %s does not have an entry in %s."), 
+			ARGUS_FUNCNAME, 
+			ARGUS_NAMEOF(ETeam), 
+			ARGUS_NAMEOF(team),
+			ARGUS_NAMEOF(m_teamColorMap)
+		);
+		return FColor::Red;
+	}
+
+	TObjectPtr<UTeamColorRecord>* pointerToTeamColorRecordObjectPointer = &m_teamColorMap[team];
+	if (!(*pointerToTeamColorRecordObjectPointer))
+	{
+		ARGUS_LOG
+		(
+			ArgusUnrealObjectsLog, 
+			Error, 
+			TEXT("[%s] Trying to retrieve color for %s, but the entry in %s does not have a %s defined."), 
+			ARGUS_FUNCNAME, 
+			ARGUS_NAMEOF(ETeam), 
+			ARGUS_NAMEOF(m_teamColorMap), 
+			ARGUS_NAMEOF(UTeamColorRecord)
+		);
+		return FColor::Red;
+	}
+	
+	return (*pointerToTeamColorRecordObjectPointer)->m_teamColor;
+}
+
+void AArgusGameModeBase::OnLoadStart()
+{
+	ARGUS_TRACE(AArgusGameModeBase::OnLoadStart)
+
+	ArgusIterators::IterateEntities([this](ArgusEntity entity)
+	{
+		DespawnActorForEntity(entity);
+		entity.Destroy();
+	});
+}
+
+void AArgusGameModeBase::OnLoadComplete()
+{
+	ARGUS_TRACE(AArgusGameModeBase::OnLoadComplete)
+	ArgusSystemsManager::InitializePostLoad(GetWorld(), m_singletonEntityTemplate.Get(), m_teamEntityTemplate.Get());
+	ARGUS_RETURN_ON_NULL(m_activePlayerController, ArgusUnrealObjectsLog);
+	m_activePlayerController->ReInitializeUIWidgetsPostLoad();
+}

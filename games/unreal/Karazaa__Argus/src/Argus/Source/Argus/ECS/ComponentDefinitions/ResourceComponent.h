@@ -1,0 +1,34 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusMacros.h"
+#include "ComponentDependencies/ResourceSet.h"
+#include "CoreMinimal.h"
+
+#include "ResourceComponent.generated.h"
+
+class UResourceSetRecord;
+
+UENUM()
+enum class EResourceComponentOwnerType
+{
+	TeamPool,
+	Carrier,
+	Source,
+	Sink
+};
+
+struct ResourceComponent
+{
+	ARGUS_COMPONENT_SHARED
+
+	ARGUS_OBSERVABLE_PROPERTY(FResourceSet, m_currentResources)
+
+	ARGUS_COMP_STATIC_DATA(UResourceSetRecord)
+	uint32 m_resourceCapacityRecordId = 0u;
+
+	EResourceComponentOwnerType m_resourceComponentOwnerType = EResourceComponentOwnerType::TeamPool;
+
+	float m_bufferRegionRadius = 150.0f;
+};

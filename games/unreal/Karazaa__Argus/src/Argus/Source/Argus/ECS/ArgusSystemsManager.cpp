@@ -1,0 +1,348 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "ArgusSystemsManager.h"
+#include "ArgusEntityTemplate.h"
+#include "ArgusLogging.h"
+#include "ArgusStaticData.h"
+#include "Engine/World.h"
+#include "RecordDefinitions/HeadlessEntityRecord.h"
+#include "RecordDefinitions/TeamAlignmentRecord.h"
+#include "RecordDefinitions/WorldCellRecord.h"
+#include "Systems/AbilitySystems.h"
+#include "Systems/AvoidanceSystems.h"
+#include "Systems/CombatSystems.h"
+#include "Systems/ConstructionSystems.h"
+#include "Systems/DecalSystems.h"
+#include "Systems/FlockingSystems.h"
+#include "Systems/FogOfWarSystems.h"
+#include "Systems/NavigationSystems.h"
+#include "Systems/ResourceSystems.h"
+#include "Systems/SpatialPartitioningSystems.h"
+#include "Systems/SpawningSystems.h"
+#include "Systems/TaskSystems.h"
+#include "Systems/TeamCommanderSystems.h"
+#include "Systems/TimerSystems.h"
+#include "Systems/TransformSystems.h"
+#include "Systems/TriggerSystems.h"
+#include "Systems/WorldCellSystems.h"
+#include "UObject/Package.h"
+
+#if !UE_BUILD_SHIPPING
+#include "ArgusECSDebugger.h"
+#include "ArgusMemoryDebugger.h"
+#endif //!UE_BUILD_SHIPPING
+
+void ArgusSystemsManager::Initialize(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate, const UArgusEntityTemplate* teamEntityTemplate, const UTeamAlignmentRecord* teamAlignmentRecord)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+
+	PopulateSingletonComponents(worldPointer, singletonEntityTemplate);
+	PopulateTeamComponents(teamEntityTemplate, teamAlignmentRecord);
+	PopulateHeadlessEntities();
+#if !UE_BUILD_SHIPPING
+	PopulateTestEntities();
+#endif // !UE_BUILD_SHIPPING
+}
+
+void ArgusSystemsManager::InitializePostLoad(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate, const UArgusEntityTemplate* teamEntityTemplate)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(singletonEntityTemplate, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(teamEntityTemplate, ArgusECSLog);
+
+	singletonEntityTemplate->ReinitializeComponentsForEntityPostLoad(ArgusEntity::GetSingletonEntity());
+	for (uint8 i = 1u; i <= NUM_TEAMS; ++i)
+	{
+		ArgusEntity teamEntity = ArgusEntity::RetrieveEntity(ArgusECSConstants::k_singletonEntityId - i);
+		if (!teamEntity)
+		{
+			continue;
+		}
+		
+		teamEntityTemplate->ReinitializeComponentsForEntityPostLoad(teamEntity);
+	}
+
+	FogOfWarSystems::InitializeSystemsPostLoad();
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = ArgusEntity::GetSingletonEntity().GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+	InputInterfaceComponent* inputInterfaceComponent = ArgusEntity::GetSingletonEntity().GetComponent<InputInterfaceComponent>();
+	ARGUS_RETURN_ON_NULL(inputInterfaceComponent, ArgusECSLog);
+
+	spatialPartitioningComponent->m_argusEntityKDTree.SeedTreeWithAverageEntityLocation(false);
+	spatialPartitioningComponent->m_argusEntityKDTree.InsertAllArgusEntitiesIntoKDTree(false);
+	spatialPartitioningComponent->m_flyingArgusEntityKDTree.SeedTreeWithAverageEntityLocation(true);
+	spatialPartitioningComponent->m_flyingArgusEntityKDTree.InsertAllArgusEntitiesIntoKDTree(true);
+	SpatialPartitioningSystems::InitializeAvoidanceObstacles(spatialPartitioningComponent, worldPointer);
+
+	SpatialPartitioningSystems::RunSystems();
+
+	inputInterfaceComponent->m_selectedActorsDisplayState = ESelectedActorsDisplayState::ChangedThisFrame;
+}
+
+void ArgusSystemsManager::OnStartPlay(UWorld* worldPointer, ETeam activePlayerTeam)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+
+	SetInitialSingletonState(worldPointer, activePlayerTeam);
+	SpatialPartitioningSystems::RunSystems();
+	InitializeTeamComponents();
+}
+
+void ArgusSystemsManager::RunSystems(UWorld* worldPointer, float deltaTime)
+{
+	ARGUS_TRACE(ArgusSystemsManager::RunSystems);
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+
+	UpdateSingletonComponents(worldPointer);
+	TimerSystems::RunSystems(deltaTime);
+	TaskSystems::RunSystems(deltaTime);
+	TeamCommanderSystems::RunSystems(ETeamCommanderUpdateMethod::DeferredPerTeam, deltaTime);
+	AbilitySystems::RunSystems(deltaTime);
+	TriggerSystems::RunSystems(deltaTime);
+	CombatSystems::RunSystems(deltaTime);
+	NavigationSystems::RunSystems(worldPointer);
+	AvoidanceSystems::RunSystems(worldPointer, deltaTime);
+	ResourceSystems::RunSystems(deltaTime);
+	ConstructionSystems::RunSystems(deltaTime);
+	TransformSystems::RunSystems(worldPointer, deltaTime);
+	FlockingSystems::RunSystems(deltaTime);
+	SpawningSystems::RunSystems(deltaTime);
+	DecalSystems::RunSystems(worldPointer, deltaTime);
+	WorldCellSystems::RunSystems(deltaTime);
+
+#if !UE_BUILD_SHIPPING
+	ArgusECSDebugger::DrawECSDebugger();
+	ArgusMemoryDebugger::DrawMemoryDebugger();
+#endif //!UE_BUILD_SHIPPING
+}
+
+void ArgusSystemsManager::RunPostThreadSystems(UWorld* worldPointer, float deltaTime)
+{
+	ARGUS_TRACE(ArgusSystemsManager::RunPostThreadSystems);
+	FogOfWarSystems::RunSystems();
+	SpatialPartitioningSystems::RunSystems();
+	IncrementFrameCounter();
+}
+
+void ArgusSystemsManager::PopulateSingletonComponents(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+
+	ArgusEntity singletonEntity = ArgusEntity::k_emptyEntity;
+	if (singletonEntityTemplate)
+	{
+		singletonEntity = singletonEntityTemplate->MakeEntity(ArgusECSConstants::k_singletonEntityId);
+	}
+	else
+	{
+		singletonEntity = ArgusEntity::CreateEntity(ArgusECSConstants::k_singletonEntityId);
+	}
+
+	if (!singletonEntity)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] There is no singleton %s when it should have already been made."), ARGUS_FUNCNAME, ARGUS_NAMEOF(ArgusEntity));
+		return;
+	}
+
+	AssetLoadingComponent* assetLoadingComponent = singletonEntity.GetOrAddComponent<AssetLoadingComponent>();
+	FogOfWarComponent* fogOfWarComponent = singletonEntity.GetOrAddComponent<FogOfWarComponent>();
+	InputInterfaceComponent* inputInterfaceComponent = singletonEntity.GetOrAddComponent<InputInterfaceComponent>();
+	ReticleComponent* reticleComponent = singletonEntity.GetOrAddComponent<ReticleComponent>();
+	SpatialPartitioningComponent* spatialPartitioningComponent = singletonEntity.GetOrAddComponent<SpatialPartitioningComponent>();
+
+	ARGUS_RETURN_ON_NULL(assetLoadingComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(fogOfWarComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(inputInterfaceComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(reticleComponent, ArgusECSLog);
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+}
+
+void ArgusSystemsManager::SetInitialSingletonState(UWorld* worldPointer, ETeam activePlayerTeam)
+{
+	ArgusEntity singletonEntity = ArgusEntity::GetSingletonEntity();
+	if (!singletonEntity)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] There is no singleton %s when it should have already been made."), ARGUS_FUNCNAME, ARGUS_NAMEOF(ArgusEntity));
+		return;
+	}
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = singletonEntity.GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+
+	spatialPartitioningComponent->m_argusEntityKDTree.SeedTreeWithAverageEntityLocation(false);
+	spatialPartitioningComponent->m_argusEntityKDTree.InsertAllArgusEntitiesIntoKDTree(false);
+	spatialPartitioningComponent->m_flyingArgusEntityKDTree.SeedTreeWithAverageEntityLocation(true);
+	spatialPartitioningComponent->m_flyingArgusEntityKDTree.InsertAllArgusEntitiesIntoKDTree(true);
+	SpatialPartitioningSystems::InitializeAvoidanceObstacles(spatialPartitioningComponent, worldPointer);
+
+	InputInterfaceComponent* inputInterfaceComponent = singletonEntity.GetComponent<InputInterfaceComponent>();
+	ARGUS_RETURN_ON_NULL(inputInterfaceComponent, ArgusECSLog);
+
+	inputInterfaceComponent->m_activePlayerTeam = activePlayerTeam;
+	inputInterfaceComponent->m_controlGroups.SetNumZeroed(inputInterfaceComponent->m_numControlGroups);
+	inputInterfaceComponent->m_selectedActorsDisplayState = ESelectedActorsDisplayState::ChangedThisFrame;
+	FogOfWarSystems::InitializeSystems();
+
+	const DecalSystemsSettingsComponent* decalSystemsSettings = DecalSystemsSettingsComponent::Get();
+	ARGUS_RETURN_ON_NULL(decalSystemsSettings, ArgusECSLog);
+
+	ArgusStaticData::AsyncPreLoadRecord<UMaterialRecord>(decalSystemsSettings->m_moveToLocationDecalMaterial.GetId());
+	ArgusStaticData::AsyncPreLoadRecord<UMaterialRecord>(decalSystemsSettings->m_attackMoveToLocationDecalMaterial.GetId());
+}
+
+void ArgusSystemsManager::PopulateTeamComponents(const UArgusEntityTemplate* teamEntityTemplate, const UTeamAlignmentRecord* teamAlignmentRecord)
+{
+	for (uint8 i = 1u; i <= NUM_TEAMS; ++i)
+	{
+		if (ArgusEntity::DoesEntityExist(ArgusECSConstants::k_singletonEntityId - i))
+		{
+			continue;
+		}
+
+		ArgusEntity teamEntity = ArgusEntity::k_emptyEntity;
+		if (teamEntityTemplate)
+		{
+			teamEntity = teamEntityTemplate->MakeEntity(ArgusECSConstants::k_singletonEntityId - i);
+		}
+		else
+		{
+			teamEntity = ArgusEntity::CreateEntity(ArgusECSConstants::k_singletonEntityId - i);
+		}
+
+		ResourceComponent* teamResourceComponent = teamEntity.GetOrAddComponent<ResourceComponent>();
+		TeamCommanderComponent* teamCommanderComponent = teamEntity.GetOrAddComponent<TeamCommanderComponent>();
+		ARGUS_RETURN_ON_NULL(teamResourceComponent, ArgusECSLog);
+		ARGUS_RETURN_ON_NULL(teamCommanderComponent, ArgusECSLog);
+
+		teamCommanderComponent->m_teamToCommand = static_cast<ETeam>(1u << (i - 1u));
+		if (teamAlignmentRecord)
+		{
+			teamCommanderComponent->m_enemies = teamAlignmentRecord->GetEnemyMaskForTeam(teamCommanderComponent->m_teamToCommand);
+			teamCommanderComponent->m_allies = teamAlignmentRecord->GetAllyMaskForTeam(teamCommanderComponent->m_teamToCommand);
+		}
+	}
+}
+
+void ArgusSystemsManager::InitializeTeamComponents()
+{
+	for (uint8 i = 1u; i <= NUM_TEAMS; ++i)
+	{
+		ArgusEntity teamEntity = ArgusEntity::RetrieveEntity(ArgusECSConstants::k_singletonEntityId - i);
+		TeamCommanderComponent* teamCommanderComponent = teamEntity.GetOrAddComponent<TeamCommanderComponent>();
+		ARGUS_RETURN_ON_NULL(teamCommanderComponent, ArgusECSLog);
+
+		TeamCommanderSystems::InitializeRevealedAreas(teamCommanderComponent);
+	}
+
+	TeamCommanderSystems::PerformInitialUpdate();
+}
+
+void ArgusSystemsManager::PopulateHeadlessEntities()
+{
+	ARGUS_TRACE(ArgusSystemsManager::PopulateHeadlessEntities);
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = ArgusEntity::GetSingletonEntity().GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+
+	const UWorldCellRecord* worldCellRecord = ArgusStaticData::GetRecord<UWorldCellRecord>(spatialPartitioningComponent->m_initialWorldCell.GetId());
+	ARGUS_RETURN_ON_NULL(worldCellRecord, ArgusECSLog);
+
+	for (int32 i = 0; i < worldCellRecord->m_headlessEntities.Num(); ++i)
+	{
+		const UHeadlessEntityRecord* headlessEntityRecord = ArgusStaticData::GetRecord<UHeadlessEntityRecord>(worldCellRecord->m_headlessEntities[i].GetId());
+		if (!headlessEntityRecord)
+		{
+			continue;
+		}
+
+		UArgusEntityTemplate* headlessEntityTemplate = headlessEntityRecord->m_entityTemplate.LoadAndStorePtr();
+		if (!headlessEntityTemplate)
+		{
+			continue;
+		}
+
+		ArgusEntity headlessEntity = headlessEntityTemplate->MakeEntity();
+		TransformComponent* transformComponent = headlessEntity.GetOrAddComponent<TransformComponent>();
+		if (!transformComponent)
+		{
+			continue;
+		}
+
+		transformComponent->m_location = headlessEntityRecord->m_initialLocation;
+	}
+}
+
+void ArgusSystemsManager::UpdateSingletonComponents(UWorld* worldPointer)
+{
+	ARGUS_TRACE(ArgusSystemsManager::UpdateSingletonComponents);
+
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+
+	ArgusEntity singletonEntity = ArgusEntity::GetSingletonEntity();
+	WorldReferenceComponent* worldReferenceComponent = singletonEntity.GetComponent<WorldReferenceComponent>();
+	ARGUS_RETURN_ON_NULL(worldReferenceComponent, ArgusECSLog);
+
+	worldReferenceComponent->m_worldPointer = worldPointer;
+	if (worldReferenceComponent->m_persistentWorldSoftObjectPath.IsNull())
+	{
+		const UPackage* package = worldReferenceComponent->m_worldPointer->GetPackage();
+		ARGUS_RETURN_ON_NULL(package, ArgusECSLog);
+
+		FString pathName = worldReferenceComponent->m_worldPointer->GetPathName();
+#if WITH_EDITOR
+		pathName = UWorld::RemovePIEPrefix(pathName);
+#endif // WITH_EDITOR
+
+		worldReferenceComponent->m_persistentWorldSoftObjectPath = FSoftObjectPath(pathName);
+	}
+}
+
+void ArgusSystemsManager::IncrementFrameCounter()
+{
+	WorldReferenceComponent* worldReferenceComponent = ArgusEntity::GetSingletonEntity().GetComponent<WorldReferenceComponent>();
+	ARGUS_RETURN_ON_NULL(worldReferenceComponent, ArgusECSLog);
+
+	worldReferenceComponent->IncrementFrameCounter();
+}
+
+#if !UE_BUILD_SHIPPING
+void ArgusSystemsManager::PopulateTestEntities()
+{
+	//// Test Circle Trigger
+	//ArgusEntity circleTriggerEntity = ArgusEntity::CreateEntity();
+	//RelativeCircleComponent* relativeCircleComponent = circleTriggerEntity.GetOrAddComponent<RelativeCircleComponent>();
+	//TransformComponent* circleTransformComponent = circleTriggerEntity.GetOrAddComponent<TransformComponent>();
+	//FacingComponent* circleFacingComponent = circleTriggerEntity.GetOrAddComponent<FacingComponent>();
+	//TriggerComponent* circleTriggerComponent = circleTriggerEntity.GetOrAddComponent<TriggerComponent>();
+	//ARGUS_RETURN_ON_NULL(relativeCircleComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(circleTransformComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(circleFacingComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(circleTriggerComponent, ArgusECSLog);
+
+	//relativeCircleComponent->m_radius = 300.0f;
+	//relativeCircleComponent->m_relativeCenter = FVector2D(300.0f, 0.0f);
+	//circleTransformComponent->m_radius = 1.0f;
+	//circleFacingComponent->m_smoothedFacing.Reset(1.57f);
+	//circleTriggerComponent->m_triggerPlanarOverlaps = EFlightCapability::BothGroundedAndFlying;
+
+	//// Test Polygon Trigger
+	//ArgusEntity polyTriggerEntity = ArgusEntity::CreateEntity();
+	//RelativePolygonComponent* relativePolygonComponent = polyTriggerEntity.GetOrAddComponent<RelativePolygonComponent>();
+	//TransformComponent* polyTransformComponent = polyTriggerEntity.GetOrAddComponent<TransformComponent>();
+	//FacingComponent* polyFacingComponent = polyTriggerEntity.GetOrAddComponent<FacingComponent>();
+	//TriggerComponent* polyTriggerComponent = polyTriggerEntity.GetOrAddComponent<TriggerComponent>();
+	//ARGUS_RETURN_ON_NULL(relativePolygonComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(polyTransformComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(polyFacingComponent, ArgusECSLog);
+	//ARGUS_RETURN_ON_NULL(polyTriggerComponent, ArgusECSLog);
+
+	//relativePolygonComponent->m_relativeUnrealVerticies.Add(FVector2D(0.0f, -300.0f));
+	//relativePolygonComponent->m_relativeUnrealVerticies.Add(FVector2D(200.0f, -300.0f));
+	//relativePolygonComponent->m_relativeUnrealVerticies.Add(FVector2D(200.0f, 300.0f));
+	//relativePolygonComponent->m_relativeUnrealVerticies.Add(FVector2D(0.0f, 300.0f));
+	//polyTransformComponent->m_radius = 1.0f;
+	//polyFacingComponent->m_smoothedFacing.Reset(-0.75f);
+	//polyTriggerComponent->m_triggerPlanarOverlaps = EFlightCapability::BothGroundedAndFlying;
+}
+#endif // !UE_BUILD_SHIPPING

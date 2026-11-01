@@ -1,0 +1,31 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "Commandlets/Commandlet.h"
+#include "ArgusCommandlet.generated.h"
+
+class UDataAsset;
+class UWorld;
+
+UCLASS()
+class ARGUSCOMMANDLETS_API UArgusCommandlet : public UCommandlet 
+{
+	GENERATED_BODY()
+
+public:
+	UArgusCommandlet();
+
+	int32 Main(const FString& parameters) final;
+
+protected:
+	virtual void OnStart() {}
+	virtual int32 DoWork() { return 0; }
+	virtual void OnFinish() {}
+
+	UWorld* LoadWorld(const FString& worldLongPackageName);
+	bool SaveDataAsset(const UDataAsset* dataAssetToSave) const;
+
+private:
+	TObjectPtr<UWorld> m_currentlyLoadedWorld = nullptr;
+};

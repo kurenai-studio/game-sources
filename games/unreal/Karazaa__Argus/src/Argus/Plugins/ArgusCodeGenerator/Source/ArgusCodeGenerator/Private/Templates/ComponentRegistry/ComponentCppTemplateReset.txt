@@ -1,0 +1,7 @@
+	bool didAllocate#####s = false;
+	if (!s_#####s)
+	{
+		didAllocate#####s = true;
+		s_#####s = ArgusMemorySource::Reallocate<#####>(s_#####s, 0, ArgusECSConstants::k_maxEntities);
+	}
+	s_is#####Active.Reset();
