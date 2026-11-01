@@ -1,0 +1,15 @@
+export type MusicTrackId =
+  | 'bridge1'
+  | 'bridge2'
+  // | 'bridge3'
+  | 'chorus1'
+  | 'chorus2'
+  | 'chorus3'
+  | 'chorus4'
+  | 'chorus5'
+  // | 'intro1'
+  | 'intro2'
+  | 'outro1'
+  // | 'outro2'
+  | 'verse1'
+  | 'verse2';

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" class="h-full w-full">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="🏃 Endless Runner game where the player has to dodge obstacles and keep moving forward."
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+
+    <!--
+      manifest.webmanifest provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Endless Runner | remarkablegames</title>
+  </head>
+  <body
+    class="h-full w-full font-['Trebuchet_MS','Avenir_Next',sans-serif] text-slate-50 select-none [background:radial-gradient(circle_at_top,rgba(57,145,214,0.26),transparent_34%),linear-gradient(180deg,#090d13_0%,#020305_100%)]"
+  >
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div
+      id="spinner"
+      role="progressbar"
+      aria-label="Loading"
+      class="pointer-events-none fixed inset-0 m-auto h-28 w-28 animate-spin rounded-full border-4 border-neutral-300 border-t-blue-500"
+    ></div>
+    <canvas class="h-full w-full outline-none"></canvas>
+    <div
+      class="pointer-events-none fixed inset-0 z-2 grid grid-rows-[auto_1fr]"
+    >
+      <div id="ui-overlay" class="contents"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script>
+      window['ga-disable-%VITE_GOOGLE_ANALYTICS_ID%'] = %DEV%;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        dataLayer.push(arguments);
+      };
+      gtag('js', new Date());
+      gtag('config', '%VITE_GOOGLE_ANALYTICS_ID%');
+    </script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=%VITE_GOOGLE_ANALYTICS_ID%"
+    ></script>
+  </body>
+</html>
