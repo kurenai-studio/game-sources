@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools==78.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gridquest-python"
+version = "1.0.0"
+description = "A polished Pygame maze escape game with seeded generation and a BFS hunter."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{name = "Bhuvan M"}]
+dependencies = ["pygame==2.6.1"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Games/Entertainment :: Arcade",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.5", "ruff==0.11.2"]
+
+[project.scripts]
+gridquest = "gridquest.app:main"
+
+[project.urls]
+Repository = "https://github.com/BhuvanM17/gridquest-python"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E402"] # SDL environment variables must be set before importing pygame.
