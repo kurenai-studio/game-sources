@@ -1,0 +1,50 @@
+{
+  "description": "A straight run of 6 moves is 2 slots with REPEAT.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 6],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 2,
+    "steps": 6,
+    "program": [
+      {
+        "op": "REPEAT",
+        "count": 6,
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      }
+    ],
+    "fitsConstraints": true
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "description": "Unknown fields inside nested objects are reported with their full path.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "first-steps",
+    "levelVersion": 1,
+    "slug": "first-steps",
+    "title": "First Steps",
+    "description": "Reach the goal using the available commands.",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": [],
+      "extra": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [
+        [1, 1],
+        [1, 2],
+        [3, 3]
+      ],
+      "theme": "x"
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north",
+      "speed": 2
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 30,
+      "timeLimit": 5
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0],
+      "radius": 1
+    },
+    "hints": ["Look for a route around the wall.", "A turn changes the direction of the next move."]
+  },
+  "expectedIssues": [
+    {
+      "path": "board.theme",
+      "code": "UNKNOWN_FIELD"
+    },
+    {
+      "path": "constraints.timeLimit",
+      "code": "UNKNOWN_FIELD"
+    },
+    {
+      "path": "goal.radius",
+      "code": "UNKNOWN_FIELD"
+    },
+    {
+      "path": "initialState.speed",
+      "code": "UNKNOWN_FIELD"
+    },
+    {
+      "path": "requires.extra",
+      "code": "UNKNOWN_FIELD"
+    }
+  ]
+}

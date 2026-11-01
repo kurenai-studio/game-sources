@@ -1,0 +1,56 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 3]
+  },
+  "slug": "crossing-paths",
+  "board": {
+    "walls": [
+      [3, 0],
+      [3, 1],
+      [3, 2]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "The guard in the ring moves every step, even while the automaton turns.",
+    "Count steps, not cells."
+  ],
+  "title": "Crossing paths",
+  "levelId": "c36c3764-d805-42ed-9a71-cecfd77dbfcb",
+  "patrols": [
+    {
+      "cells": [
+        [1, 0],
+        [1, 1]
+      ],
+      "pattern": "back_and_forth"
+    },
+    {
+      "cells": [
+        [4, 2],
+        [5, 2],
+        [5, 3],
+        [4, 3]
+      ],
+      "pattern": "loop"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 160,
+    "maxCommands": 18
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

@@ -1,0 +1,70 @@
+{
+  "description": "A name outside A, B, C is a program issue.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "proc-level",
+    "levelVersion": 1,
+    "slug": "proc-level",
+    "title": "proc-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 9,
+      "height": 9,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [8, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "Z",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "Z"
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].name",
+      "code": "INVALID_VALUE"
+    },
+    {
+      "path": "program[1].name",
+      "code": "INVALID_VALUE"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

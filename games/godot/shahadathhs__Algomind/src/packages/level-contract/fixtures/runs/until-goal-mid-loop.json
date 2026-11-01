@@ -1,0 +1,104 @@
+{
+  "description": "Entering the goal inside the loop ends the run at once.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "until-level",
+    "levelVersion": 1,
+    "slug": "until-level",
+    "title": "until-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 6,
+      "height": 3,
+      "walls": [
+        [0, 0],
+        [0, 2],
+        [1, 0],
+        [1, 2],
+        [2, 0],
+        [2, 2],
+        [3, 0],
+        [3, 2],
+        [4, 0],
+        [4, 2],
+        [5, 0],
+        [5, 2]
+      ]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"],
+    "constraints": {
+      "maxCommands": 10,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [3, 1]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 3,
+    "finalState": {
+      "position": [3, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

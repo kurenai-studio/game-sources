@@ -1,0 +1,323 @@
+# One pipeline. Pull requests and pushes run the quality gates. Pushes to main continue
+# through the API deploy, an APK build, and the rolling "latest" release. A version bump
+# (make release v=X.Y.Z) publishes Algomind vX.Y.Z; v* tags also produce releases.
+# Secrets and variables: docs/CI.md.
+name: CI/CD
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cicd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality gates (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # version comes from the root package.json packageManager
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Design tokens are up to date
+        run: pnpm tokens:check
+      - name: No hand-written colors
+        run: pnpm colors:check
+      - name: Source file sizes
+        run: pnpm size:check
+      - name: Lint and format check
+        run: pnpm lint
+      - name: Type-check
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+
+  api:
+    name: API (build and migrations on a clean database)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: algomind
+          POSTGRES_DB: algomind
+          # A throwaway container on the runner's own network: no password to leak.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U algomind -d algomind"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://algomind@localhost:5432/algomind
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply migrations to an empty database
+        run: pnpm --filter @algomind/api migrate
+      - name: Build
+        run: pnpm --filter @algomind/api build
+
+  web:
+    name: Web (production build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm --filter @algomind/web build
+
+  game:
+    name: Game (lint, load, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - name: Lint GDScript (gdlint and gdformat)
+        run: make game-lint
+      # Headless Godot in Docker: the same commands as local development.
+      - name: Load the project
+        run: make game-docker-check
+      - name: Run the game tests
+        run: make game-docker-test
+
+  docker:
+    name: Containers (build and smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create .env with a generated database password
+        run: make env
+      - name: Build and start the database, API, and web
+        run: docker compose --profile app up -d --build --wait
+      - name: API is ready and talks to the database
+        run: curl -fsS http://localhost:8000/v1/health/ready
+      - name: Web serves the landing page
+        run: curl -fsS http://localhost:3000/ >/dev/null
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose --profile app logs
+      - name: Stop
+        if: always()
+        run: docker compose --profile app down -v
+
+  deploy-api:
+    name: Deploy API (Render)
+    needs: [quality, api, web, game, docker]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the deploy and wait for it to go live
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK_URL is not set: the API was not deployed (docs/CI.md)."
+            exit 0
+          fi
+          SERVICE_ID=$(echo "$HOOK_URL" | sed -E 's|.*/deploy/(srv-[A-Za-z0-9]+).*|\1|')
+          DEPLOY_ID=$(curl -sS -X POST "$HOOK_URL" | jq -r '.deploy.id // empty')
+          if [ -z "$DEPLOY_ID" ]; then
+            echo "::warning::Render did not return a deploy id; continuing without waiting."
+            exit 0
+          fi
+          echo "Deploy ${DEPLOY_ID} started on ${SERVICE_ID}."
+          if [ -z "$API_KEY" ]; then
+            echo "::warning::RENDER_API_KEY is not set: cannot verify the deploy (docs/CI.md)."
+            exit 0
+          fi
+          # Poll until the deploy is live (about 10 minutes).
+          for _ in $(seq 1 40); do
+            STATUS=$(curl -sS -H "Authorization: Bearer $API_KEY" \
+              "https://api.render.com/v1/services/${SERVICE_ID}/deploys/${DEPLOY_ID}" \
+              | jq -r '.status // empty')
+            echo "status: ${STATUS:-unknown}"
+            case "$STATUS" in
+              live) exit 0 ;;
+              build_failed|pre_deploy_failed|update_failed|deploy_failed|canceled|deactivated)
+                echo "::error::Render deploy ${DEPLOY_ID} reported '${STATUS}'."
+                exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::Timed out waiting for the Render deploy."
+          exit 1
+
+  apk:
+    name: Build APK
+    needs: [quality, api, web, game, docker, deploy-api]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    outputs:
+      is-release: ${{ steps.ver.outputs.is-release }}
+      version: ${{ steps.ver.outputs.version }}
+    env:
+      # Repository variable, for example https://algomind-api.onrender.com/v1 (optional).
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      # Repository secret: base64 of a fixed debug keystore (optional, see docs/CI.md).
+      ANDROID_DEBUG_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # A main push becomes a versioned release when the VERSION file names a version that
+      # has no release yet (the bump script wrote it); otherwise the build is a rolling build.
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "is-release=true" >> "$GITHUB_OUTPUT"
+          else
+            FILE_VERSION=$(cat VERSION)
+            if gh release view "v${FILE_VERSION}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              VERSION="${FILE_VERSION}-${GITHUB_SHA::7}"
+              echo "is-release=false" >> "$GITHUB_OUTPUT"
+            else
+              VERSION="${FILE_VERSION}"
+              echo "is-release=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Set version and server URL
+        run: |
+          # Each build gets a higher version code, so a newer APK installs over an older one.
+          sed -i "s|^version/code=.*|version/code=${GITHUB_RUN_NUMBER}|" apps/game/export_presets.cfg
+          sed -i "s|^version/name=.*|version/name=\"${VERSION}\"|" apps/game/export_presets.cfg
+
+          if [ -n "${API_BASE_URL}" ]; then
+            case "${API_BASE_URL}" in
+              https://*/v1) ;;
+              *) echo "API_BASE_URL must be https://.../v1 (got: ${API_BASE_URL})" >&2; exit 1 ;;
+            esac
+            sed -i "s|^network/api_base_url=.*|network/api_base_url=\"${API_BASE_URL}\"|" apps/game/project.godot
+          else
+            echo "::warning::API_BASE_URL is not set: this APK is offline-only until an API URL is configured."
+          fi
+          if [ -z "${ANDROID_DEBUG_KEYSTORE_BASE64}" ]; then
+            echo "::warning::ANDROID_DEBUG_KEYSTORE_BASE64 is not set: this APK is signed with a one-off key and cannot be installed over a previous build."
+          fi
+
+      # Fail fast with a clear message instead of deep inside the Docker build.
+      - name: Check the signing key
+        if: env.ANDROID_DEBUG_KEYSTORE_BASE64 != ''
+        run: |
+          printf '%s\n' "$ANDROID_DEBUG_KEYSTORE_BASE64" | grep -v '^[[:space:]]*$' | tail -n 1 \
+            | tr -d '\r ' | base64 -d > "$RUNNER_TEMP/check.ks" 2>/dev/null || {
+            echo "::error::ANDROID_DEBUG_KEYSTORE_BASE64 is not valid base64. Re-create it: make -s android-key | gh secret set ANDROID_DEBUG_KEYSTORE_BASE64"
+            exit 1
+          }
+          keytool -list -keystore "$RUNNER_TEMP/check.ks" -storepass android >/dev/null 2>&1 || {
+            echo "::error::ANDROID_DEBUG_KEYSTORE_BASE64 decodes but is not a valid keystore. Re-create it: make -s android-key | gh secret set ANDROID_DEBUG_KEYSTORE_BASE64"
+            exit 1
+          }
+          rm -f "$RUNNER_TEMP/check.ks"
+
+      - name: Build the APK
+        run: make game-apk
+
+      - name: Name the file
+        run: mv apps/game/build/algomind-debug.apk "apps/game/build/algomind-${VERSION}.apk"
+
+      - name: Checksum
+        run: cd apps/game/build && sha256sum "algomind-${VERSION}.apk" > "algomind-${VERSION}.apk.sha256"
+
+      # The browser build for the site's /play page. It is always offline-only (the game ignores
+      # the API URL on the web); the site fetches it at build time (apps/web/scripts/fetch-play-build.mjs).
+      - name: Export the browser build
+        run: |
+          make game-web
+          # The page is the site's own, so Godot's default HTML shell is left out.
+          tar -czf "apps/game/build/algomind-web-${VERSION}.tar.gz" --exclude=./algomind.html --exclude='*.import' -C apps/game/build/web .
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: algomind-apk
+          path: |
+            apps/game/build/algomind-*.apk
+            apps/game/build/algomind-*.apk.sha256
+            apps/game/build/algomind-web-*.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Release
+    needs: [apk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: algomind-apk
+
+      # Rolling dev channel: refreshed on every main push. Never claims the "latest" flag;
+      # that belongs to versioned releases.
+      - name: Refresh the rolling latest build
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes || true
+          gh release create latest algomind-*.apk algomind-*.apk.sha256 algomind-web-*.tar.gz --repo "${GITHUB_REPOSITORY}" \
+            --title "Latest build (main@${GITHUB_SHA::7})" \
+            --notes "Automatic build of commit ${GITHUB_SHA}. This is a rolling dev channel, not a versioned release; expect rough edges. Get versioned releases from the releases page." \
+            --latest=false
+
+      # The public site's download page reads the latest release, so it needs a rebuild to show
+      # a new one. Optional: skipped when the secret is unset.
+      - name: Rebuild the site (Vercel deploy hook)
+        if: github.ref == 'refs/heads/main'
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::notice::VERCEL_DEPLOY_HOOK is not set: the site will pick up this release on its next deploy (docs/CI.md)."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK_URL" >/dev/null
+          echo "Site rebuild requested."
+
+      # Fires when the VERSION file names a version without a release yet (the bump script
+      # wrote it), or when a v* tag was pushed.
+      - name: Create the versioned release
+        if: needs.apk.outputs.is-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.apk.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" algomind-*.apk algomind-*.apk.sha256 algomind-web-*.tar.gz \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Algomind v${VERSION}" \
+            --generate-notes --latest

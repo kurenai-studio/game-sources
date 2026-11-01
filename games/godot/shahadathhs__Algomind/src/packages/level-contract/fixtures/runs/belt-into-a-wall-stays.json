@@ -1,0 +1,145 @@
+{
+  "description": "A belt whose next cell is blocked does not move the automaton and does not fail the run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "ice-hall",
+    "levelVersion": 1,
+    "slug": "ice-hall",
+    "title": "Ice hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": [[1, 0]]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "belts": [
+      {
+        "cell": [1, 1],
+        "direction": "north"
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 6,
+    "finalState": {
+      "position": [6, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[1, 1]]
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[2, 1]]
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[3, 1]]
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[4, 1]]
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[5, 1]]
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [6, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED",
+        "path": [[6, 1]]
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [0, 2]
+  },
+  "slug": "beside-the-wall",
+  "board": {
+    "walls": [
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [1, 3],
+      [2, 3],
+      [3, 3]
+    ],
+    "width": 5,
+    "height": 5
+  },
+  "hints": ["The walls on both sides are not in your way. Keep moving."],
+  "title": "Beside the wall",
+  "levelId": "da338a06-af93-48e9-b9c6-f9ec8b08d0e7",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 4
+  },
+  "description": "",
+  "initialState": {
+    "position": [4, 2],
+    "direction": "west"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

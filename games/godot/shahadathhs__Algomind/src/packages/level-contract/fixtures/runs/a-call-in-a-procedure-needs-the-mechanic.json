@@ -1,0 +1,76 @@
+{
+  "description": "Without the mechanic recursion a CALL inside a procedure is reported once and stops the run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "recursion-hall",
+    "levelVersion": 1,
+    "slug": "recursion-hall",
+    "title": "Recursion hall",
+    "description": "",
+    "difficulty": "medium",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "IF", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "PROC",
+      "name": "B",
+      "body": [
+        {
+          "op": "CALL",
+          "name": "A"
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "B"
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[1].body[0].op",
+      "code": "CALL_NOT_ALLOWED"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "description": "A PROC inside a procedure body is reported once and stops the run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "proc-level",
+    "levelVersion": 1,
+    "slug": "proc-level",
+    "title": "proc-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 9,
+      "height": 9,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [8, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "PROC",
+          "name": "B",
+          "body": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "A"
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program[0].body[0].op",
+      "code": "NESTED_PROC"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "INVALID_INSTRUCTION",
+    "steps": 0,
+    "finalState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": []
+  }
+}

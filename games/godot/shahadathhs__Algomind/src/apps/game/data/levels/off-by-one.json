@@ -1,0 +1,69 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [8, 1]
+  },
+  "slug": "off-by-one",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+      [7, 0],
+      [8, 0],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [5, 2],
+      [6, 2],
+      [7, 2],
+      [8, 2]
+    ],
+    "width": 9,
+    "height": 3
+  },
+  "hints": ["Run it and see where the automaton stops.", "The loop runs one round too few."],
+  "title": "Off by one",
+  "levelId": "555bb04e-bcfe-4698-9a64-decf4afe7e56",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 2
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "startProgram": [
+    {
+      "op": "REPEAT",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "count": 7
+    }
+  ],
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

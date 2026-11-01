@@ -1,0 +1,62 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [0, 3]
+  },
+  "slug": "small-spiral",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [6, 1],
+      [0, 2],
+      [1, 2],
+      [3, 2],
+      [6, 2],
+      [1, 3],
+      [3, 3],
+      [6, 3],
+      [1, 4],
+      [3, 4],
+      [4, 4],
+      [6, 4],
+      [1, 5],
+      [6, 5],
+      [1, 6],
+      [2, 6],
+      [3, 6],
+      [4, 6],
+      [5, 6],
+      [6, 6]
+    ],
+    "width": 8,
+    "height": 8
+  },
+  "hints": [
+    "Each lap is wider than the last. Count up twice per lap.",
+    "Walk N cells, turn, walk N cells, turn, then count up."
+  ],
+  "title": "Small spiral",
+  "levelId": "2bcd6b15-ac39-4e3b-978e-3342f45c61bf",
+  "requires": {
+    "mechanics": ["nested_loops"]
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 110,
+    "maxCommands": 9
+  },
+  "description": "",
+  "initialState": {
+    "position": [4, 3],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT", "REPEAT_UNTIL", "INC"]
+}

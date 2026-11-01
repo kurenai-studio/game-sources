@@ -1,0 +1,51 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "gate-and-crate",
+  "board": {
+    "walls": [
+      [2, 0],
+      [3, 0],
+      [2, 2],
+      [3, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "The switch lies on the way there and on the way back.",
+    "Each pass flips the gate. Count the passes."
+  ],
+  "title": "Gate and crate",
+  "levelId": "d67c224a-5379-40f1-92f6-6eaa6edf7152",
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [2, 1],
+      "switch": [1, 1]
+    }
+  ],
+  "deliveries": [
+    {
+      "dock": [1, 0],
+      "item": [3, 1]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 16
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

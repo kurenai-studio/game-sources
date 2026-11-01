@@ -1,0 +1,101 @@
+{
+  "description": "A slide ends in front of a wall without a failure.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "ice-hall",
+    "levelVersion": 1,
+    "slug": "ice-hall",
+    "title": "Ice hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": [[3, 1]]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [2, 0]
+    },
+    "hints": [],
+    "ice": [
+      [1, 1],
+      [2, 1]
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 3,
+    "finalState": {
+      "position": [2, 0],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "SLID",
+        "path": [
+          [1, 1],
+          [2, 1]
+        ]
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "north",
+        "event": "TURNED",
+        "path": []
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "north",
+        "event": "GOAL_REACHED",
+        "path": [[2, 0]]
+      }
+    ]
+  }
+}

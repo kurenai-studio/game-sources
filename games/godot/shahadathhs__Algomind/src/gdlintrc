@@ -1,0 +1,4 @@
+# gdlint config (gdtoolkit). Game code follows Godot's official style guide;
+# the one deliberate deviation: palette tokens are SCREAMING_CASE static vars
+# (they are runtime light/dark picks, so they cannot be const).
+class-variable-name: (_?[a-z][a-z0-9]*(_[a-z0-9]+)*)|(_?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)

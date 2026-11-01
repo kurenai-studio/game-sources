@@ -1,0 +1,187 @@
+{
+  "description": "A level that offers MARK: its reference solution is the Tremaux search.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 9,
+      "height": 9,
+      "walls": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [5, 0],
+        [6, 0],
+        [7, 0],
+        [8, 0],
+        [0, 1],
+        [8, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [5, 2],
+        [6, 2],
+        [8, 2],
+        [0, 3],
+        [2, 3],
+        [6, 3],
+        [8, 3],
+        [0, 4],
+        [2, 4],
+        [4, 4],
+        [6, 4],
+        [8, 4],
+        [0, 5],
+        [2, 5],
+        [4, 5],
+        [8, 5],
+        [0, 6],
+        [2, 6],
+        [4, 6],
+        [5, 6],
+        [6, 6],
+        [7, 6],
+        [8, 6],
+        [0, 7],
+        [4, 7],
+        [5, 7],
+        [6, 7],
+        [7, 7],
+        [8, 7],
+        [0, 8],
+        [1, 8],
+        [2, 8],
+        [3, 8],
+        [4, 8],
+        [5, 8],
+        [6, 8],
+        [7, 8],
+        [8, 8]
+      ]
+    },
+    "initialState": {
+      "position": [1, 1],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [3, 5]
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF", "MARK"],
+    "constraints": {
+      "maxCommands": 24,
+      "maxSteps": 600
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "REPEAT_UNTIL",
+        "until": "GOAL",
+        "body": [
+          {
+            "op": "MARK"
+          },
+          {
+            "op": "IF",
+            "when": "FRESH_AHEAD",
+            "then": [
+              {
+                "op": "MOVE_FORWARD"
+              }
+            ],
+            "else": [
+              {
+                "op": "IF",
+                "when": "FRESH_RIGHT",
+                "then": [
+                  {
+                    "op": "TURN_RIGHT"
+                  },
+                  {
+                    "op": "MOVE_FORWARD"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "IF",
+                    "when": "FRESH_LEFT",
+                    "then": [
+                      {
+                        "op": "TURN_LEFT"
+                      },
+                      {
+                        "op": "MOVE_FORWARD"
+                      }
+                    ],
+                    "else": [
+                      {
+                        "op": "IF",
+                        "when": "BACK_AHEAD",
+                        "then": [
+                          {
+                            "op": "MOVE_FORWARD"
+                          }
+                        ],
+                        "else": [
+                          {
+                            "op": "IF",
+                            "when": "BACK_RIGHT",
+                            "then": [
+                              {
+                                "op": "TURN_RIGHT"
+                              },
+                              {
+                                "op": "MOVE_FORWARD"
+                              }
+                            ],
+                            "else": [
+                              {
+                                "op": "IF",
+                                "when": "BACK_LEFT",
+                                "then": [
+                                  {
+                                    "op": "TURN_LEFT"
+                                  },
+                                  {
+                                    "op": "MOVE_FORWARD"
+                                  }
+                                ],
+                                "else": [
+                                  {
+                                    "op": "TURN_RIGHT"
+                                  },
+                                  {
+                                    "op": "TURN_RIGHT"
+                                  },
+                                  {
+                                    "op": "MOVE_FORWARD"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

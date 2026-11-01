@@ -1,0 +1,25 @@
+/// The capabilities registry: which mechanics each released app version supports. Exactly one
+/// row can be the minimum supported version (a partial unique index in the migration).
+model ClientVersion {
+  id                 String   @id @default(uuid())
+  version            String   @unique
+  supportedMechanics String[]
+  isMinimum          Boolean  @default(false)
+  releasedAt         DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+/// Who did what, when. userId is not a foreign key so the record outlives an account.
+model AuditEvent {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([createdAt])
+}

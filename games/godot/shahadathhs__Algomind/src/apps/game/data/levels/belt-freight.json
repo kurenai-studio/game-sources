@@ -1,0 +1,59 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 0]
+  },
+  "slug": "belt-freight",
+  "belts": [
+    {
+      "cell": [1, 0],
+      "direction": "west"
+    }
+  ],
+  "board": {
+    "walls": [
+      [7, 0],
+      [7, 1],
+      [7, 4]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "The belt carries you off the way to the dock.",
+    "The guard crosses the cells below the crate."
+  ],
+  "title": "Belt freight",
+  "levelId": "0d61a1be-6378-453b-81ca-68030575bb66",
+  "patrols": [
+    {
+      "cells": [
+        [2, 1],
+        [3, 1]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "deliveries": [
+    {
+      "dock": [2, 0],
+      "item": [3, 0]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 19
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

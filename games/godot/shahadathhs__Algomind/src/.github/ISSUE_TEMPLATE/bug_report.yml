@@ -1,0 +1,42 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Game (Godot client)
+        - API
+        - Web (public site or dashboard)
+        - Level contract / simulator
+        - CI / tooling / docs
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen instead? Include exact steps to reproduce.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Device or OS, app or browser version, and where the build came from.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Screenshots of UI bugs are required; describe what is wrong in each.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Checks
+      options:
+        - label: This is a bug, not a feature request
+        - label: I checked that this is not already reported

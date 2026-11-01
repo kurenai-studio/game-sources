@@ -1,0 +1,78 @@
+{
+  "description": "Reference solution with an unknown op, a command the level does not offer, a malformed node, and an extra field.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "first-steps",
+    "levelVersion": 1,
+    "slug": "first-steps",
+    "title": "First Steps",
+    "description": "Reach the goal using the available commands.",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [
+        [1, 1],
+        [1, 2],
+        [3, 3]
+      ]
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 30
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0]
+    },
+    "hints": [
+      "Look for a route around the wall.",
+      "A turn changes the direction of the next move."
+    ],
+    "referenceSolution": [
+      {
+        "op": "JUMP"
+      },
+      {
+        "op": "TURN_RIGHT"
+      },
+      {},
+      "MOVE_FORWARD",
+      {
+        "op": "MOVE_FORWARD",
+        "times": 2
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[0].op",
+      "code": "UNKNOWN_COMMAND"
+    },
+    {
+      "path": "referenceSolution[1].op",
+      "code": "COMMAND_NOT_AVAILABLE"
+    },
+    {
+      "path": "referenceSolution[2].op",
+      "code": "REQUIRED"
+    },
+    {
+      "path": "referenceSolution[3]",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "referenceSolution[4].times",
+      "code": "UNKNOWN_FIELD"
+    }
+  ]
+}

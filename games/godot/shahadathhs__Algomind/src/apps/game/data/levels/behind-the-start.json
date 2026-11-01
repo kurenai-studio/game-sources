@@ -1,0 +1,43 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "behind-the-start",
+  "board": {
+    "walls": [
+      [3, 0],
+      [3, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "Reaching the target with the crate undelivered ends the run.",
+    "The crate is behind the automaton."
+  ],
+  "title": "Behind the start",
+  "levelId": "262068ac-037d-4d94-9019-1887b6621d29",
+  "requires": {
+    "mechanics": []
+  },
+  "deliveries": [
+    {
+      "dock": [3, 1],
+      "item": [0, 0]
+    }
+  ],
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 10
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

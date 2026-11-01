@@ -1,0 +1,87 @@
+/// The level chosen for one UTC day by an admin. A day with no row falls back to a deterministic
+/// rotation over the daily pool, so a day is never empty while the pool has levels.
+model DailyChallenge {
+  id        String   @id @default(uuid())
+  /// The UTC date, YYYY-MM-DD.
+  date      String   @unique
+  levelSlug String
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
+/// A player's best result for one day's challenge: fewest slots, then fewest steps. One row per
+/// player and day; it only ever improves.
+model DailyResult {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         String
+  levelSlug    String
+  levelVersion Int
+  slots        Int
+  steps        Int
+  stars        Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date, slots, steps])
+}
+
+/// A badge the dashboard defines. `rule` is data: { type, value } (see achievements-rules.ts).
+model Achievement {
+  id          String              @id @default(uuid())
+  slug        String              @unique
+  title       String
+  description String
+  rule        Json
+  active      Boolean             @default(true)
+  position    Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  earned      PlayerAchievement[]
+}
+
+model PlayerAchievement {
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now())
+
+  @@id([userId, achievementId])
+}
+
+/// A share link: a random code that leads to a public page with a spoiler-free result card. It
+/// holds the result and the level, never the player's id or name; the user id is kept only so a
+/// deleted account removes its links.
+model ShareLink {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "level" or "daily".
+  kind      String
+  levelSlug String
+  date      String?
+  slots     Int
+  steps     Int
+  par       Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind, levelSlug, date])
+}
+
+/// A player's report of a leaderboard name. An admin dismisses it or hides the player.
+model Report {
+  id           String    @id @default(uuid())
+  reporterId   String
+  /// The reported player's public id (not a foreign key: a deleted account closes the report).
+  targetPublic String
+  reason       String
+  status       String    @default("OPEN")
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  @@unique([reporterId, targetPublic])
+  @@index([status, createdAt])
+}

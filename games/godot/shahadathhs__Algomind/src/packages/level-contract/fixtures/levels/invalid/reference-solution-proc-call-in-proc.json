@@ -1,0 +1,62 @@
+{
+  "description": "A CALL inside a procedure body.",
+  "mode": "authoring",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "proc-level",
+    "levelVersion": 1,
+    "slug": "proc-level",
+    "title": "proc-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 11,
+      "height": 9,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 8],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [10, 0]
+    },
+    "hints": [],
+    "referenceSolution": [
+      {
+        "op": "PROC",
+        "name": "A",
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      },
+      {
+        "op": "PROC",
+        "name": "B",
+        "body": [
+          {
+            "op": "CALL",
+            "name": "A"
+          }
+        ]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "referenceSolution[1].body[0].op",
+      "code": "CALL_NOT_ALLOWED"
+    }
+  ]
+}

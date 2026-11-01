@@ -1,0 +1,61 @@
+{
+  "ice": [
+    [4, 0],
+    [5, 0],
+    [6, 0]
+  ],
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 1]
+  },
+  "slug": "slip-and-jump",
+  "board": {
+    "walls": [
+      [5, 1],
+      [7, 1],
+      [0, 3],
+      [4, 3],
+      [1, 4],
+      [5, 4]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "Ice slides, a pair of teleporters jumps, and a guard watches the end.",
+    "A slide that ends on a teleporter goes on through it."
+  ],
+  "title": "Slip and jump",
+  "levelId": "ee778223-f6b9-48ed-bf21-3217f25526b4",
+  "patrols": [
+    {
+      "cells": [
+        [2, 2],
+        [2, 3]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [6, 4],
+      "b": [6, 2]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 18
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 2],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

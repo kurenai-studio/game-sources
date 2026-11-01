@@ -1,0 +1,14 @@
+/// How to reach the developer, shown on the public contact page and edited in the dashboard. One
+/// row (id "contact"). An empty string means the field is not shown.
+model SiteContact {
+  id          String   @id @default("contact")
+  displayName String
+  email       String   @default("")
+  github      String   @default("")
+  website     String   @default("")
+  issues      String   @default("")
+  note        String   @default("")
+  updatedAt   DateTime @updatedAt
+  /// The admin who last changed it; not a foreign key, so it outlives the account.
+  updatedBy   String?
+}

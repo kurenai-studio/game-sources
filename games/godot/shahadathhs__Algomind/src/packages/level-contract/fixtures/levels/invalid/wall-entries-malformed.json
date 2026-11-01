@@ -1,0 +1,57 @@
+{
+  "description": "Wall entries that are not integer pairs.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "first-steps",
+    "levelVersion": 1,
+    "slug": "first-steps",
+    "title": "First Steps",
+    "description": "Reach the goal using the available commands.",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [[1], [1, "a"], [1.5, 2], "x", [1, 1, 1]]
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 30
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0]
+    },
+    "hints": ["Look for a route around the wall.", "A turn changes the direction of the next move."]
+  },
+  "expectedIssues": [
+    {
+      "path": "board.walls[0]",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.walls[1]",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.walls[2]",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.walls[3]",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.walls[4]",
+      "code": "INVALID_TYPE"
+    }
+  ]
+}

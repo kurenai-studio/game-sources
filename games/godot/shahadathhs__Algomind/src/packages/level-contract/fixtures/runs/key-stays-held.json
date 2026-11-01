@@ -1,0 +1,139 @@
+{
+  "description": "The automaton takes the key, turns back and walks through a door in a different part of the board.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "key-corridor",
+    "levelVersion": 1,
+    "slug": "key-corridor",
+    "title": "Key corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "locks": [
+      {
+        "key": [1, 1],
+        "door": [0, 2]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 6,
+    "finalState": {
+      "position": [0, 2],
+      "direction": "south"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "KEY_TAKEN"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_LEFT",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_LEFT",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 2],
+        "direction": "south",
+        "event": "MOVED"
+      }
+    ]
+  }
+}

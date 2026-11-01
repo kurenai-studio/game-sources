@@ -1,0 +1,228 @@
+{
+  "description": "Walls are not cells to visit: the 14 floor cells around a wall at (2,1) are swept by a program that goes round it.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": [[2, 1]]
+    },
+    "initialState": {
+      "position": [0, 0],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "visit_all"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 200
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 12,
+    "finalState": {
+      "position": [4, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [4, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_RIGHT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 0],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_RIGHT",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 7,
+        "op": "MOVE_FORWARD",
+        "node": [4, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [3, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 8,
+        "op": "TURN_LEFT",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 9,
+        "op": "MOVE_FORWARD",
+        "node": [6],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "south",
+        "event": "MOVED"
+      },
+      {
+        "index": 10,
+        "op": "TURN_LEFT",
+        "node": [7],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 11,
+        "op": "MOVE_FORWARD",
+        "node": [8],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 2],
+        "direction": "east",
+        "event": "MOVED"
+      }
+    ]
+  }
+}

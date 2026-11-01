@@ -1,0 +1,86 @@
+enum LevelStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VersionState {
+  DRAFT
+  PUBLISHED
+  SUPERSEDED
+}
+
+/// The stable identity and placement of a level. Content lives in LevelVersion rows; placement
+/// (chapter and order) lives here so reordering never needs a republish.
+model Level {
+  id                        String         @id @default(uuid())
+  slug                      String         @unique
+  /// Mirrors the newest content (the draft when one exists), for lists and search.
+  title                     String
+  difficulty                String
+  status                    LevelStatus    @default(DRAFT)
+  chapterId                 String?
+  chapter                   Chapter?       @relation(fields: [chapterId], references: [id], onDelete: Restrict)
+  orderInChapter            Int            @default(0)
+  /// Eligible for the daily challenge. A pool level is published but not in the campaign, so a
+  /// player does not meet it before its day.
+  dailyPool                 Boolean        @default(false)
+  currentPublishedVersionId String?        @unique
+  currentPublishedVersion   LevelVersion?  @relation("CurrentPublished", fields: [currentPublishedVersionId], references: [id], onDelete: SetNull)
+  /// User ids; deliberately not foreign keys, so attribution outlives an account.
+  createdBy                 String?
+  updatedBy                 String?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  versions                  LevelVersion[] @relation("LevelVersions")
+
+  @@index([chapterId, orderInChapter])
+  @@index([status])
+}
+
+/// One content version of a level. A DRAFT row is the working copy (at most one per level, a
+/// partial unique index in the migration); PUBLISHED and SUPERSEDED rows are immutable (a trigger
+/// in the migration enforces it). Content is the public level JSON; the reference solution is
+/// stored separately and never served publicly.
+model LevelVersion {
+  id                String           @id @default(uuid())
+  levelId           String
+  level             Level            @relation("LevelVersions", fields: [levelId], references: [id], onDelete: Cascade)
+  versionNumber     Int
+  schemaVersion     Int              @default(1)
+  state             VersionState     @default(DRAFT)
+  content           Json
+  referenceSolution Json
+  /// { commands, steps } from the solver; null while the draft is invalid or unsolved.
+  par               Json?
+  contentHash       String
+  validationSummary Json?
+  createdBy         String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @default(now()) @updatedAt
+  publishedAt       DateTime?
+  publishedFor      Level?           @relation("CurrentPublished")
+  playtests         PlaytestRecord[]
+  submissions       Submission[]
+
+  @@unique([levelId, versionNumber])
+  @@index([levelId, state])
+}
+
+/// A tester's result for the exact content identified by contentHash.
+model PlaytestRecord {
+  id                  String       @id @default(uuid())
+  levelVersionId      String
+  levelVersion        LevelVersion @relation(fields: [levelVersionId], references: [id], onDelete: Cascade)
+  contentHash         String
+  testerName          String
+  solved              Boolean
+  commandsUsed        Int?
+  perceivedDifficulty String?
+  notes               String       @default("")
+  createdBy           String?
+  createdAt           DateTime     @default(now())
+
+  @@index([levelVersionId])
+  @@index([contentHash])
+}

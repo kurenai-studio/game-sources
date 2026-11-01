@@ -1,0 +1,122 @@
+{
+  "description": "A wall the whole width of the board is crossed through a pair.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "portal-hall",
+    "levelVersion": 1,
+    "slug": "portal-hall",
+    "title": "Portal hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": [
+        [3, 0],
+        [3, 1],
+        [3, 2]
+      ]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "teleports": [
+      {
+        "a": [2, 1],
+        "b": [4, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 4,
+    "finalState": {
+      "position": [6, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[1, 1]]
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "TELEPORTED",
+        "path": [
+          [2, 1],
+          [4, 1]
+        ]
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[5, 1]]
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [6, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED",
+        "path": [[6, 1]]
+      }
+    ]
+  }
+}

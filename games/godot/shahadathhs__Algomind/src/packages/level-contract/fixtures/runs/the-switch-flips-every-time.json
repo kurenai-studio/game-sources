@@ -1,0 +1,181 @@
+{
+  "description": "The switch is on the way and is entered twice: the second time shuts the gate again.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "switch-corridor",
+    "levelVersion": 1,
+    "slug": "switch-corridor",
+    "title": "Switch corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "switches": [
+      {
+        "switch": [1, 1],
+        "gate": [3, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "BLOCKED_BY_GATE",
+    "steps": 9,
+    "finalState": {
+      "position": [2, 1],
+      "direction": "east"
+    },
+    "blockedCell": [3, 1],
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "SWITCHED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_LEFT",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_LEFT",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_LEFT",
+        "node": [5],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "MOVE_FORWARD",
+        "node": [6],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "SWITCHED"
+      },
+      {
+        "index": 7,
+        "op": "MOVE_FORWARD",
+        "node": [7],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 8,
+        "op": "MOVE_FORWARD",
+        "node": [8],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "BLOCKED_BY_GATE"
+      }
+    ]
+  }
+}

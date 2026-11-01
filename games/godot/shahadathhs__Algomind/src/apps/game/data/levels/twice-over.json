@@ -1,0 +1,44 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "twice-over",
+  "board": {
+    "walls": [
+      [1, 0],
+      [1, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "The gate starts open, and the switch lies on the only way in.",
+    "The switch flips every time it is entered. Enter it twice."
+  ],
+  "title": "Twice over",
+  "levelId": "4a3010c8-b535-474c-8299-fd505f066e59",
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [2, 1],
+      "open": true,
+      "switch": [1, 1]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 10
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

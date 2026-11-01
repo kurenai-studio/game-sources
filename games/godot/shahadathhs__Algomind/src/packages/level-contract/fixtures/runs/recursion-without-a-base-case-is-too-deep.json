@@ -1,0 +1,330 @@
+{
+  "description": "A procedure that always calls itself ends the run at the depth limit, not at the step limit.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "recursion-hall",
+    "levelVersion": 1,
+    "slug": "recursion-hall",
+    "title": "Recursion hall",
+    "description": "",
+    "difficulty": "medium",
+    "requires": {
+      "mechanics": ["recursion"]
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "IF", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "TURN_LEFT"
+        },
+        {
+          "op": "CALL",
+          "name": "A"
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "A"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "TOO_DEEP",
+    "steps": 24,
+    "finalState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 6,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 7,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 8,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 9,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 10,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 11,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 12,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 13,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 14,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 15,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 16,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 17,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 18,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 19,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 20,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 21,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "west",
+        "event": "TURNED"
+      },
+      {
+        "index": 22,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 23,
+        "op": "TURN_LEFT",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [0, 1],
+        "direction": "east",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

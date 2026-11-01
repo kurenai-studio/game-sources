@@ -1,0 +1,81 @@
+{
+  "description": "Scalar fields with the wrong JSON type.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": 7,
+    "levelVersion": "1",
+    "slug": null,
+    "title": [],
+    "description": {},
+    "difficulty": 3,
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": "5",
+      "height": 5.5,
+      "walls": [
+        [1, 1],
+        [1, 2],
+        [3, 3]
+      ]
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": true,
+      "maxSteps": null
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0]
+    },
+    "hints": ["Look for a route around the wall.", "A turn changes the direction of the next move."]
+  },
+  "expectedIssues": [
+    {
+      "path": "levelId",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "levelVersion",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "slug",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "title",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "description",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "difficulty",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.width",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "board.height",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "constraints.maxCommands",
+      "code": "INVALID_TYPE"
+    },
+    {
+      "path": "constraints.maxSteps",
+      "code": "INVALID_TYPE"
+    }
+  ]
+}

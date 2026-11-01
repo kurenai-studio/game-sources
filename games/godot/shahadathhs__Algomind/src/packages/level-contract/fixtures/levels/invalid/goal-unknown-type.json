@@ -1,0 +1,53 @@
+{
+  "description": "An unknown goal type.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 0],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "collect_all"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 400
+    },
+    "hints": []
+  },
+  "expectedIssues": [
+    {
+      "path": "goal.type",
+      "code": "INVALID_VALUE"
+    },
+    {
+      "path": "goal.position",
+      "code": "REQUIRED"
+    }
+  ]
+}

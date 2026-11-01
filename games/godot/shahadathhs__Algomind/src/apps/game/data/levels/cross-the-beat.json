@@ -1,0 +1,41 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 1]
+  },
+  "slug": "cross-the-beat",
+  "board": {
+    "walls": [],
+    "width": 7,
+    "height": 3
+  },
+  "hints": ["The guard crosses the whole column and comes back.", "Take the way past its ends."],
+  "title": "Cross the beat",
+  "levelId": "7529b51a-642c-47d6-8934-13fe271900a1",
+  "patrols": [
+    {
+      "cells": [
+        [3, 0],
+        [3, 1],
+        [3, 2]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 11
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

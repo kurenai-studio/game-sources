@@ -1,0 +1,86 @@
+{
+  "description": "Entering the goal inside a loop ends the run at once: the rest of the body and the remaining rounds do not run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 2],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [2, 2]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT",
+      "count": 5,
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_LEFT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 2,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 2],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [2, 2],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

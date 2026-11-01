@@ -1,0 +1,51 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "behind-the-door",
+  "board": {
+    "walls": [
+      [0, 0],
+      [2, 0],
+      [0, 2],
+      [2, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "The crate lies behind the door, and the key is off the straight way.",
+    "Take the key, open the door, then drop the crate on the corner marks before the target."
+  ],
+  "locks": [
+    {
+      "key": [1, 0],
+      "door": [2, 1]
+    }
+  ],
+  "title": "Behind the door",
+  "levelId": "ce76f789-0c2d-4881-b581-97a43e237210",
+  "requires": {
+    "mechanics": []
+  },
+  "deliveries": [
+    {
+      "dock": [3, 0],
+      "item": [3, 1]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 15
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

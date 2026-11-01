@@ -1,0 +1,83 @@
+{
+  "description": "FRESH is a floor cell with no breadcrumb: a wall ahead is not fresh, the open cell to the left is.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 5,
+      "walls": [[4, 2]]
+    },
+    "initialState": {
+      "position": [3, 2],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 100
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "IF",
+      "when": "FRESH_AHEAD",
+      "then": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "else": [
+        {
+          "op": "TURN_LEFT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 1,
+    "finalState": {
+      "position": [3, 2],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "TURN_LEFT",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 2],
+        "direction": "north",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

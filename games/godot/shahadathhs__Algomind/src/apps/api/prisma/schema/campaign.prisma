@@ -1,0 +1,26 @@
+/// A world teaches one idea; it holds chapters in order (docs/README_ARCHITECTURE.md, section 6).
+model World {
+  id          String    @id @default(uuid())
+  title       String
+  description String    @default("")
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  chapters    Chapter[]
+
+  @@index([order])
+}
+
+/// A small group of levels inside a world. Deleting is only allowed while it has no levels.
+model Chapter {
+  id        String   @id @default(uuid())
+  worldId   String
+  world     World    @relation(fields: [worldId], references: [id], onDelete: Restrict)
+  title     String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  levels    Level[]
+
+  @@index([worldId, order])
+}

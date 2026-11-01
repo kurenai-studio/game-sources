@@ -1,0 +1,100 @@
+{
+  "description": "The switch is never entered: the shut gate ends the run.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "switch-corridor",
+    "levelVersion": 1,
+    "slug": "switch-corridor",
+    "title": "Switch corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "switches": [
+      {
+        "switch": [1, 0],
+        "gate": [3, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "BLOCKED_BY_GATE",
+    "steps": 3,
+    "finalState": {
+      "position": [2, 1],
+      "direction": "east"
+    },
+    "blockedCell": [3, 1],
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "BLOCKED_BY_GATE"
+      }
+    ]
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "description": "A loop costs 1 plus its body: a body of 5 is 6 slots against a limit of 5. The simulator still runs it (here it walks off the board).",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 6],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 5,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT",
+      "count": 2,
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_RIGHT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [
+    {
+      "path": "program",
+      "code": "TOO_MANY_COMMANDS"
+    }
+  ],
+  "expected": {
+    "status": "FAILED",
+    "reason": "BLOCKED_BY_BOUNDARY",
+    "steps": 6,
+    "finalState": {
+      "position": [4, 6],
+      "direction": "south"
+    },
+    "blockedCell": [4, 7],
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [2, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 2],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [3, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 3],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_RIGHT",
+        "node": [0, 4],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [4, 6],
+        "direction": "south",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [4, 6],
+        "direction": "south",
+        "event": "BLOCKED_BY_BOUNDARY"
+      }
+    ]
+  }
+}

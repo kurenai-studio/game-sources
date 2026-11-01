@@ -1,0 +1,30 @@
+{
+  "description": "Par slots with more steps than par: full par bonus, no steps bonus.",
+  "rules": {
+    "version": 1,
+    "base": {
+      "easy": 10,
+      "medium": 20,
+      "hard": 30
+    },
+    "parFull": 10,
+    "parNear": 5,
+    "nearSlots": 2,
+    "stepsBonus": 5,
+    "firstClear": 10
+  },
+  "input": {
+    "difficulty": "hard",
+    "par": {
+      "commands": 6,
+      "steps": 14
+    },
+    "slots": 6,
+    "steps": 20
+  },
+  "expected": {
+    "stars": 3,
+    "points": 40,
+    "levelScore": 50
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "description": "The shortest program is 2 slots but the limit is 1: fitsConstraints is false.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 6],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 1,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [0, 0]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 2,
+    "steps": 6,
+    "program": [
+      {
+        "op": "REPEAT",
+        "count": 6,
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      }
+    ],
+    "fitsConstraints": false
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [3, 3]
+  },
+  "slug": "wrong-part",
+  "board": {
+    "walls": [],
+    "width": 5,
+    "height": 7
+  },
+  "hints": [
+    "Part A is one step of the stairs. Which part does the program call?",
+    "The program calls the part that only moves forward."
+  ],
+  "title": "Wrong part",
+  "levelId": "3e3d5f45-0ccc-45ce-8ebd-178f996e1341",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 12
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 6],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "startProgram": [
+    {
+      "op": "PROC",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_RIGHT"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_LEFT"
+        }
+      ],
+      "name": "A"
+    },
+    {
+      "op": "PROC",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ],
+      "name": "B"
+    },
+    {
+      "op": "REPEAT",
+      "body": [
+        {
+          "op": "CALL",
+          "name": "B"
+        }
+      ],
+      "count": 3
+    }
+  ],
+  "schemaVersion": 1,
+  "availableCommands": [
+    "MOVE_FORWARD",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "REPEAT",
+    "REPEAT_UNTIL",
+    "IF",
+    "PROC"
+  ]
+}

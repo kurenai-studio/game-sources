@@ -1,0 +1,58 @@
+{
+  "ice": [
+    [3, 0],
+    [4, 0],
+    [5, 0],
+    [6, 0]
+  ],
+  "goal": {
+    "type": "reach_tile",
+    "position": [1, 0]
+  },
+  "slug": "ice-and-belts",
+  "belts": [
+    {
+      "cell": [1, 1],
+      "direction": "south"
+    },
+    {
+      "cell": [4, 1],
+      "direction": "east"
+    },
+    {
+      "cell": [5, 1],
+      "direction": "east"
+    }
+  ],
+  "board": {
+    "walls": [
+      [0, 1],
+      [6, 1],
+      [2, 2]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "A belt does not start a slide. Only a move onto ice does.",
+    "The top row is ice, and the belts below carry you toward it."
+  ],
+  "title": "Ice and belts",
+  "levelId": "0e8d4f7a-79ff-4d8a-84fb-0e916f978f68",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 13
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 2],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

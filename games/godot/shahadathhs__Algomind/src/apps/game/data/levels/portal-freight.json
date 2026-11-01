@@ -1,0 +1,51 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 0]
+  },
+  "slug": "portal-freight",
+  "board": {
+    "walls": [
+      [1, 0],
+      [7, 0],
+      [7, 1],
+      [2, 2]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "Deliver the crate to its dock before the target counts.",
+    "The pair of teleporters saves a long walk. Use it once."
+  ],
+  "title": "Portal freight",
+  "levelId": "7506d826-2814-4692-949f-836c3527c550",
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [3, 4],
+      "b": [6, 1]
+    }
+  ],
+  "deliveries": [
+    {
+      "dock": [3, 2],
+      "item": [1, 4]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 19
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

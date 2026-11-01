@@ -1,0 +1,118 @@
+{
+  "description": "The automaton arrives on a teleporter and stays: it is not sent back.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "portal-hall",
+    "levelVersion": 1,
+    "slug": "portal-hall",
+    "title": "Portal hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "teleports": [
+      {
+        "a": [1, 1],
+        "b": [2, 0]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "TURN_RIGHT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 4,
+    "finalState": {
+      "position": [2, 2],
+      "direction": "south"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "TELEPORTED",
+        "path": [
+          [1, 1],
+          [2, 0]
+        ]
+      },
+      {
+        "index": 1,
+        "op": "TURN_RIGHT",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "south",
+        "event": "TURNED",
+        "path": []
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "south",
+        "event": "MOVED",
+        "path": [[2, 1]]
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 2],
+        "direction": "south",
+        "event": "MOVED",
+        "path": [[2, 2]]
+      }
+    ]
+  }
+}

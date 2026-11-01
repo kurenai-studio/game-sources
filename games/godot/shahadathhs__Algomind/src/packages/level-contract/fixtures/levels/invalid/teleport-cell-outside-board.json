@@ -1,0 +1,47 @@
+{
+  "description": "An end lies outside the board.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "portal-hall",
+    "levelVersion": 1,
+    "slug": "portal-hall",
+    "title": "Portal hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 1]
+    },
+    "hints": [],
+    "teleports": [
+      {
+        "a": [1, 5],
+        "b": [5, 2]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "teleports[0].a",
+      "code": "OUTSIDE_BOARD"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [10, 0]
+  },
+  "slug": "return-trip",
+  "board": {
+    "walls": [
+      [0, 0],
+      [0, 2]
+    ],
+    "width": 12,
+    "height": 3
+  },
+  "hints": [
+    "What comes after the call runs when the call is over, once for each level.",
+    "The deepest level finishes first, then the one above it."
+  ],
+  "title": "Return trip",
+  "levelId": "4385ba9f-aff4-48bb-8e36-509dda3b80c4",
+  "requires": {
+    "mechanics": ["recursion"]
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 200,
+    "maxCommands": 6
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "PROC"]
+}

@@ -1,0 +1,54 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [7, 1]
+  },
+  "slug": "gate-by-belt",
+  "belts": [
+    {
+      "cell": [5, 2],
+      "direction": "south"
+    }
+  ],
+  "board": {
+    "walls": [
+      [5, 0],
+      [1, 1],
+      [6, 1],
+      [0, 2],
+      [0, 3],
+      [2, 3],
+      [6, 4]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "The belt carries you after each action, and the gate waits for its switch.",
+    "Find where the belt leaves you before you step on it."
+  ],
+  "title": "Gate by belt",
+  "levelId": "977d1cd4-542d-4d84-9820-826b7eeb2606",
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [7, 3],
+      "switch": [4, 4]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 19
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

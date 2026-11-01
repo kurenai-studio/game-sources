@@ -1,0 +1,658 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://algomind.local/schema/level.v1.schema.json",
+  "title": "Algomind level (public), schema version 1",
+  "description": "Structural rules only. Rules that need several fields at once (coordinates inside the board, duplicate walls, start or goal on a wall, goal equals start, duplicate commands and mechanics) are enforced by the validator, not by this schema. See README.md.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/$defs/levelBody"
+    }
+  ],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "levelBody": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "levelId",
+        "levelVersion",
+        "slug",
+        "title",
+        "description",
+        "difficulty",
+        "requires",
+        "board",
+        "initialState",
+        "availableCommands",
+        "constraints",
+        "goal",
+        "hints"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "levelId": {
+          "$ref": "#/$defs/id"
+        },
+        "levelVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "slug": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 280
+        },
+        "difficulty": {
+          "enum": ["easy", "medium", "hard"]
+        },
+        "requires": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mechanics"],
+          "properties": {
+            "mechanics": {
+              "type": "array",
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9_]*$"
+              }
+            }
+          }
+        },
+        "board": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height", "walls"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 12
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 12
+            },
+            "walls": {
+              "type": "array",
+              "maxItems": 100,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/position"
+              }
+            }
+          }
+        },
+        "initialState": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["position", "direction"],
+          "properties": {
+            "position": {
+              "$ref": "#/$defs/position"
+            },
+            "direction": {
+              "$ref": "#/$defs/direction"
+            }
+          }
+        },
+        "availableCommands": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/commandName"
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxCommands", "maxSteps"],
+          "properties": {
+            "maxCommands": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "maxSteps": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            }
+          }
+        },
+        "goal": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "position"],
+              "properties": {
+                "type": {
+                  "const": "reach_tile"
+                },
+                "position": {
+                  "$ref": "#/$defs/position"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "const": "visit_all"
+                }
+              }
+            }
+          ]
+        },
+        "hints": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          }
+        },
+        "extraBoards": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["board", "initialState", "goal"],
+            "properties": {
+              "board": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["width", "height", "walls"],
+                "properties": {
+                  "width": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 12
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 12
+                  },
+                  "walls": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "uniqueItems": true,
+                    "items": {
+                      "$ref": "#/$defs/position"
+                    }
+                  }
+                }
+              },
+              "initialState": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["position", "direction"],
+                "properties": {
+                  "position": {
+                    "$ref": "#/$defs/position"
+                  },
+                  "direction": {
+                    "$ref": "#/$defs/direction"
+                  }
+                }
+              },
+              "goal": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["type", "position"],
+                    "properties": {
+                      "type": {
+                        "const": "reach_tile"
+                      },
+                      "position": {
+                        "$ref": "#/$defs/position"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["type"],
+                    "properties": {
+                      "type": {
+                        "const": "visit_all"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "startProgram": {
+          "$ref": "#/$defs/program"
+        },
+        "patrols": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/patrol"
+          }
+        },
+        "locks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/lock"
+          }
+        },
+        "deliveries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/delivery"
+          }
+        },
+        "switches": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/switch"
+          }
+        },
+        "teleports": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/teleport"
+          }
+        },
+        "ice": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 30,
+          "items": {
+            "$ref": "#/$defs/position"
+          }
+        },
+        "belts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/belt"
+          }
+        }
+      }
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "position": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "direction": {
+      "enum": ["north", "east", "south", "west"]
+    },
+    "commandName": {
+      "enum": [
+        "MOVE_FORWARD",
+        "TURN_LEFT",
+        "TURN_RIGHT",
+        "INC",
+        "MARK",
+        "REPEAT",
+        "REPEAT_UNTIL",
+        "IF",
+        "PROC"
+      ]
+    },
+    "instruction": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/primitiveInstruction"
+        },
+        {
+          "$ref": "#/$defs/ifInstruction"
+        },
+        {
+          "$ref": "#/$defs/repeatInstruction"
+        },
+        {
+          "$ref": "#/$defs/repeatUntilInstruction"
+        },
+        {
+          "$ref": "#/$defs/callInstruction"
+        },
+        {
+          "$ref": "#/$defs/procInstruction"
+        }
+      ]
+    },
+    "program": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/instruction"
+      }
+    },
+    "primitiveName": {
+      "enum": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "INC", "MARK"]
+    },
+    "primitiveInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op"],
+      "properties": {
+        "op": {
+          "$ref": "#/$defs/primitiveName"
+        }
+      }
+    },
+    "repeatInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "count", "body"],
+      "properties": {
+        "op": {
+          "const": "REPEAT"
+        },
+        "count": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 11
+            },
+            {
+              "const": "N"
+            }
+          ]
+        },
+        "body": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/bodyInstruction"
+          }
+        }
+      }
+    },
+    "repeatUntilInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "until", "body"],
+      "properties": {
+        "op": {
+          "const": "REPEAT_UNTIL"
+        },
+        "until": {
+          "enum": ["BLOCKED", "GOAL"]
+        },
+        "body": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/bodyInstruction"
+          }
+        }
+      }
+    },
+    "bodyInstruction": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/primitiveInstruction"
+        },
+        {
+          "$ref": "#/$defs/ifInstruction"
+        },
+        {
+          "$ref": "#/$defs/callInstruction"
+        },
+        {
+          "$ref": "#/$defs/repeatInstruction"
+        },
+        {
+          "$ref": "#/$defs/repeatUntilInstruction"
+        }
+      ]
+    },
+    "ifInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "when", "then", "else"],
+      "properties": {
+        "op": {
+          "const": "IF"
+        },
+        "when": {
+          "enum": [
+            "CLEAR_AHEAD",
+            "CLEAR_LEFT",
+            "CLEAR_RIGHT",
+            "FRESH_AHEAD",
+            "FRESH_LEFT",
+            "FRESH_RIGHT",
+            "BACK_AHEAD",
+            "BACK_LEFT",
+            "BACK_RIGHT"
+          ]
+        },
+        "then": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/primitiveInstruction"
+          }
+        },
+        "else": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/primitiveInstruction"
+              }
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "$ref": "#/$defs/ifInstruction"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "callInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "name"],
+      "properties": {
+        "op": {
+          "const": "CALL"
+        },
+        "name": {
+          "enum": ["A", "B", "C"]
+        },
+        "when": {
+          "enum": [
+            "CLEAR_AHEAD",
+            "CLEAR_LEFT",
+            "CLEAR_RIGHT",
+            "FRESH_AHEAD",
+            "FRESH_LEFT",
+            "FRESH_RIGHT",
+            "BACK_AHEAD",
+            "BACK_LEFT",
+            "BACK_RIGHT"
+          ]
+        }
+      }
+    },
+    "procInstruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "name", "body"],
+      "properties": {
+        "op": {
+          "const": "PROC"
+        },
+        "name": {
+          "enum": ["A", "B", "C"]
+        },
+        "body": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/primitiveInstruction"
+              },
+              {
+                "$ref": "#/$defs/ifInstruction"
+              },
+              {
+                "$ref": "#/$defs/repeatInstruction"
+              },
+              {
+                "$ref": "#/$defs/repeatUntilInstruction"
+              },
+              {
+                "$ref": "#/$defs/callInstruction"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "teleport": {
+      "type": "object",
+      "required": ["a", "b"],
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/position"
+        },
+        "b": {
+          "$ref": "#/$defs/position"
+        }
+      }
+    },
+    "belt": {
+      "type": "object",
+      "required": ["cell", "direction"],
+      "additionalProperties": false,
+      "properties": {
+        "cell": {
+          "$ref": "#/$defs/position"
+        },
+        "direction": {
+          "$ref": "#/$defs/direction"
+        }
+      }
+    },
+    "switch": {
+      "type": "object",
+      "required": ["switch", "gate"],
+      "additionalProperties": false,
+      "properties": {
+        "switch": {
+          "$ref": "#/$defs/position"
+        },
+        "gate": {
+          "$ref": "#/$defs/position"
+        },
+        "open": {
+          "type": "boolean"
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "required": ["item", "dock"],
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "$ref": "#/$defs/position"
+        },
+        "dock": {
+          "$ref": "#/$defs/position"
+        }
+      }
+    },
+    "lock": {
+      "type": "object",
+      "required": ["key", "door"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/position"
+        },
+        "door": {
+          "$ref": "#/$defs/position"
+        }
+      }
+    },
+    "patrol": {
+      "type": "object",
+      "required": ["pattern", "cells"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "enum": ["back_and_forth", "loop"]
+        },
+        "cells": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/position"
+          }
+        }
+      }
+    }
+  }
+}

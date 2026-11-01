@@ -1,0 +1,85 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [7, 1]
+  },
+  "slug": "steps-to-the-wall",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+      [7, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [7, 2],
+      [0, 3],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [6, 3],
+      [7, 3],
+      [0, 4],
+      [1, 4],
+      [2, 4],
+      [5, 4],
+      [6, 4],
+      [7, 4],
+      [0, 5],
+      [1, 5],
+      [4, 5],
+      [5, 5],
+      [6, 5],
+      [7, 5],
+      [0, 6],
+      [3, 6],
+      [4, 6],
+      [5, 6],
+      [6, 6],
+      [7, 6],
+      [2, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [6, 7],
+      [7, 7]
+    ],
+    "width": 8,
+    "height": 8
+  },
+  "hints": [
+    "The same four tiles climb every step. Put them inside one loop.",
+    "The loop ends by itself at the top of the stairs."
+  ],
+  "title": "Steps to the wall",
+  "levelId": "29b1c057-aefb-46a9-8d4d-358a665d6a84",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 5
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 7],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"]
+}

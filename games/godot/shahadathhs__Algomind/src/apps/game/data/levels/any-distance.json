@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 0]
+  },
+  "slug": "any-distance",
+  "board": {
+    "walls": [],
+    "width": 6,
+    "height": 8
+  },
+  "hints": [
+    "A loop ends when the way ahead is blocked. Then the program goes on to the next tile.",
+    "Run to the wall, turn, then run to the next wall."
+  ],
+  "title": "Any distance",
+  "levelId": "3566a6b3-8d03-4cc2-b24a-f05a172c5c0a",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 5
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 7],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"]
+}

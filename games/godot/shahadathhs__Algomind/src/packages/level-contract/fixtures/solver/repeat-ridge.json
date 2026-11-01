@@ -1,0 +1,96 @@
+{
+  "description": "Up one flight of stairs, turn, down the other side: 11 slots against 22 without a loop.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 4,
+      "walls": [
+        [0, 0],
+        [1, 0],
+        [5, 0],
+        [6, 0],
+        [0, 1],
+        [3, 1],
+        [6, 1],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [1, 3],
+        [2, 3],
+        [3, 3],
+        [4, 3],
+        [5, 3]
+      ]
+    },
+    "initialState": {
+      "position": [0, 3],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 3]
+    },
+    "hints": []
+  },
+  "expected": {
+    "commands": 11,
+    "steps": 24,
+    "program": [
+      {
+        "op": "TURN_RIGHT"
+      },
+      {
+        "op": "REPEAT",
+        "count": 3,
+        "body": [
+          {
+            "op": "TURN_LEFT"
+          },
+          {
+            "op": "MOVE_FORWARD"
+          },
+          {
+            "op": "TURN_RIGHT"
+          },
+          {
+            "op": "MOVE_FORWARD"
+          }
+        ]
+      },
+      {
+        "op": "REPEAT",
+        "count": 3,
+        "body": [
+          {
+            "op": "MOVE_FORWARD"
+          },
+          {
+            "op": "TURN_RIGHT"
+          },
+          {
+            "op": "MOVE_FORWARD"
+          },
+          {
+            "op": "TURN_LEFT"
+          }
+        ]
+      }
+    ],
+    "fitsConstraints": true
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 3]
+  },
+  "slug": "guarded-portal",
+  "board": {
+    "walls": [
+      [4, 0],
+      [3, 1],
+      [3, 2],
+      [5, 3]
+    ],
+    "width": 7,
+    "height": 4
+  },
+  "hints": [
+    "The guard walks beside the goal.",
+    "Arriving on a cell the guard reaches in the same step is a hit."
+  ],
+  "title": "Guarded portal",
+  "levelId": "0b2ea60d-3b3a-48b6-ae0a-677012a81261",
+  "patrols": [
+    {
+      "cells": [
+        [5, 2],
+        [6, 2]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [0, 1],
+      "b": [5, 0]
+    },
+    {
+      "a": [2, 1],
+      "b": [0, 2]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 13
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

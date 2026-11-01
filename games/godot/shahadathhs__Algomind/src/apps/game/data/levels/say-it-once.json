@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [2, 1]
+  },
+  "slug": "say-it-once",
+  "board": {
+    "walls": [],
+    "width": 5,
+    "height": 9
+  },
+  "hints": [
+    "Repeat runs the tiles inside it again and again.",
+    "Put Move inside the loop, then set the rounds with plus and minus."
+  ],
+  "title": "Say it once",
+  "levelId": "d6f03c13-ef60-4f02-8417-74a3df457d63",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 2
+  },
+  "description": "",
+  "initialState": {
+    "position": [2, 8],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"]
+}

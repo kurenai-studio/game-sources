@@ -1,0 +1,117 @@
+{
+  "description": "The recursion ends when the way is blocked; the program then goes on after the CALL.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "recursion-hall",
+    "levelVersion": 1,
+    "slug": "recursion-hall",
+    "title": "Recursion hall",
+    "description": "",
+    "difficulty": "medium",
+    "requires": {
+      "mechanics": ["recursion"]
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": [[3, 1]]
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "IF", "PROC"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [2, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "PROC",
+      "name": "A",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "CALL",
+          "name": "A",
+          "when": "CLEAR_AHEAD"
+        }
+      ]
+    },
+    {
+      "op": "CALL",
+      "name": "A"
+    },
+    {
+      "op": "TURN_LEFT"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 4,
+    "finalState": {
+      "position": [2, 0],
+      "direction": "north"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [1],
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": [0, 1],
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_LEFT",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 0],
+        "direction": "north",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

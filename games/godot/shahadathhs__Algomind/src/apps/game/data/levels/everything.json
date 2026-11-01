@@ -1,0 +1,64 @@
+{
+  "ice": [
+    [3, 1],
+    [3, 2],
+    [3, 3]
+  ],
+  "goal": {
+    "type": "reach_tile",
+    "position": [6, 0]
+  },
+  "slug": "everything",
+  "board": {
+    "walls": [
+      [3, 0],
+      [1, 1],
+      [6, 4]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "Crate, switch, ice and guard together.",
+    "The ice is in the way of the gate. The guard waits at the top."
+  ],
+  "title": "Everything",
+  "levelId": "cdb6848f-7a00-47a5-be7d-8438c7f581aa",
+  "patrols": [
+    {
+      "cells": [
+        [4, 0],
+        [4, 1]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [4, 2],
+      "switch": [1, 2]
+    }
+  ],
+  "deliveries": [
+    {
+      "dock": [1, 0],
+      "item": [0, 0]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 19
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 3],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

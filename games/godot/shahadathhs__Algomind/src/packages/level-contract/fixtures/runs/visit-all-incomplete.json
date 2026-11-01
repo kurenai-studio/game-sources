@@ -1,0 +1,110 @@
+{
+  "description": "A program that leaves a cell unvisited ends without the goal.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "fx-level",
+    "levelVersion": 1,
+    "slug": "fx-level",
+    "title": "fx-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 0],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "visit_all"
+    },
+    "availableCommands": [
+      "MOVE_FORWARD",
+      "TURN_LEFT",
+      "TURN_RIGHT",
+      "REPEAT",
+      "REPEAT_UNTIL",
+      "IF",
+      "INC",
+      "MARK"
+    ],
+    "constraints": {
+      "maxCommands": 30,
+      "maxSteps": 200
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "BLOCKED",
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 4,
+    "finalState": {
+      "position": [4, 0],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 3,
+        "position": [3, 0],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 4,
+        "position": [4, 0],
+        "direction": "east",
+        "event": "MOVED"
+      }
+    ]
+  }
+}

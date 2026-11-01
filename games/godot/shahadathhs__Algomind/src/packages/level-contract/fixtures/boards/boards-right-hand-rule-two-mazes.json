@@ -1,0 +1,193 @@
+{
+  "description": "The right-hand rule solves two different mazes with one program.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "boards-level",
+    "levelVersion": 1,
+    "slug": "boards-level",
+    "title": "boards-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+        [3, 0],
+        [4, 0],
+        [5, 0],
+        [6, 0],
+        [0, 1],
+        [6, 1],
+        [0, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [6, 2],
+        [0, 3],
+        [2, 3],
+        [6, 3],
+        [0, 4],
+        [2, 4],
+        [3, 4],
+        [4, 4],
+        [5, 4],
+        [6, 4],
+        [0, 5],
+        [0, 6],
+        [1, 6],
+        [2, 6],
+        [3, 6],
+        [4, 6],
+        [5, 6],
+        [6, 6]
+      ]
+    },
+    "initialState": {
+      "position": [1, 5],
+      "direction": "east"
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [3, 3]
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"],
+    "constraints": {
+      "maxCommands": 6,
+      "maxSteps": 400
+    },
+    "hints": [],
+    "extraBoards": [
+      {
+        "board": {
+          "width": 9,
+          "height": 9,
+          "walls": [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+            [3, 0],
+            [4, 0],
+            [5, 0],
+            [6, 0],
+            [7, 0],
+            [8, 0],
+            [0, 1],
+            [8, 1],
+            [0, 2],
+            [2, 2],
+            [3, 2],
+            [4, 2],
+            [5, 2],
+            [6, 2],
+            [8, 2],
+            [0, 3],
+            [2, 3],
+            [6, 3],
+            [8, 3],
+            [0, 4],
+            [2, 4],
+            [4, 4],
+            [6, 4],
+            [8, 4],
+            [0, 5],
+            [2, 5],
+            [4, 5],
+            [8, 5],
+            [0, 6],
+            [2, 6],
+            [3, 6],
+            [4, 6],
+            [5, 6],
+            [6, 6],
+            [7, 6],
+            [8, 6],
+            [0, 7],
+            [0, 8],
+            [1, 8],
+            [2, 8],
+            [3, 8],
+            [4, 8],
+            [5, 8],
+            [6, 8],
+            [7, 8],
+            [8, 8]
+          ]
+        },
+        "initialState": {
+          "position": [1, 7],
+          "direction": "east"
+        },
+        "goal": {
+          "type": "reach_tile",
+          "position": [5, 4]
+        }
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "REPEAT_UNTIL",
+      "until": "GOAL",
+      "body": [
+        {
+          "op": "IF",
+          "when": "CLEAR_RIGHT",
+          "then": [
+            {
+              "op": "TURN_RIGHT"
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "IF",
+          "when": "CLEAR_AHEAD",
+          "then": [
+            {
+              "op": "MOVE_FORWARD"
+            }
+          ],
+          "else": [
+            {
+              "op": "TURN_LEFT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "firstFailure": null,
+    "steps": 68,
+    "results": [
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 28,
+        "finalState": {
+          "position": [3, 3],
+          "direction": "west"
+        },
+        "blockedCell": null
+      },
+      {
+        "status": "SUCCEEDED",
+        "reason": "GOAL_REACHED",
+        "steps": 40,
+        "finalState": {
+          "position": [5, 4],
+          "direction": "north"
+        },
+        "blockedCell": null
+      }
+    ]
+  }
+}

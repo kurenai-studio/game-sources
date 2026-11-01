@@ -1,0 +1,33 @@
+{
+  "goal": {
+    "type": "visit_all"
+  },
+  "slug": "big-room",
+  "board": {
+    "walls": [],
+    "width": 11,
+    "height": 8
+  },
+  "hints": [
+    "Every row is the same move. Only the number of rows changes.",
+    "A tight step limit means no wandering."
+  ],
+  "title": "Big room",
+  "levelId": "d18f4f21-d41c-415d-a8cb-3d416625a2af",
+  "requires": {
+    "mechanics": ["nested_loops"]
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 129,
+    "maxCommands": 11
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 7],
+    "direction": "north"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF"]
+}

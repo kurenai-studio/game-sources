@@ -1,0 +1,103 @@
+{
+  "description": "A belt carries the automaton one cell after the step that ends on it.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "ice-hall",
+    "levelVersion": 1,
+    "slug": "ice-hall",
+    "title": "Ice hall",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 1]
+    },
+    "hints": [],
+    "belts": [
+      {
+        "cell": [2, 1],
+        "direction": "east"
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 3,
+    "finalState": {
+      "position": [4, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "MOVED",
+        "path": [[1, 1]]
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "SLID",
+        "path": [
+          [2, 1],
+          [3, 1]
+        ]
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED",
+        "path": [[4, 1]]
+      }
+    ]
+  }
+}

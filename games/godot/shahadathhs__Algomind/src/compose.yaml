@@ -1,0 +1,97 @@
+# Local services. `docker compose up -d db` starts only PostgreSQL (the usual dev setup:
+# the API and web run on the host with hot reload). Profiles add the rest:
+#   docker compose --profile app up --build     API + web + db, all in containers
+#   docker compose --profile tools run --rm godot ...   headless Godot (check, test, export)
+services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      # Bound to localhost only: the local database is never reachable from the network.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-algomind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run make env to create .env with a generated password}
+      POSTGRES_DB: ${POSTGRES_DB:-algomind}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "8000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-algomind}:${POSTGRES_PASSWORD:?Run make env}@db:5432/${POSTGRES_DB:-algomind}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Empty values count as unset: development falls back to a fixed local signing key.
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
+      SUPER_ADMIN_PASS: ${SUPER_ADMIN_PASS:-}
+      ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-900}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-7}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      # Empty counts as unset: on outside production, off in production.
+      SEED_STARTER_CAMPAIGN: ${SEED_STARTER_CAMPAIGN:-}
+      WEB_REVALIDATE_URL: ${WEB_REVALIDATE_URL:-}
+      CONTACT_NAME: ${CONTACT_NAME:-}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+      CONTACT_GITHUB: ${CONTACT_GITHUB:-}
+      CONTACT_WEBSITE: ${CONTACT_WEBSITE:-}
+      CONTACT_ISSUES: ${CONTACT_ISSUES:-}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    # Start the site only once the API answers: the levels page caches a failed load for a minute.
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://api:8000/v1
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+
+  godot:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: docker/godot.Dockerfile
+      args:
+        GODOT_VERSION: ${GODOT_VERSION:-4.7.2}
+    image: algomind-godot:${GODOT_VERSION:-4.7.2}
+    platform: linux/amd64
+    working_dir: /project
+    environment:
+      # Optional: a fixed debug key for signing (CI sets it; see docs/CI.md).
+      ANDROID_DEBUG_KEYSTORE_BASE64: ${ANDROID_DEBUG_KEYSTORE_BASE64:-}
+      # Where Godot finds the debug key. docker/android-setup.sh creates it there if missing.
+      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/.android/debug.keystore
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+    volumes:
+      - ./apps/game:/project
+      # Persist editor settings and the debug keystore between runs.
+      - godot-config:/root/.config/godot
+      - android-keys:/root/.android
+      - ./docker/android-setup.sh:/usr/local/bin/android-setup:ro
+
+volumes:
+  pgdata:
+  godot-config:
+  android-keys:

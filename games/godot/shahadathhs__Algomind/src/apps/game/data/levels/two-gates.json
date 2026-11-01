@@ -1,0 +1,51 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [4, 1]
+  },
+  "slug": "two-gates",
+  "board": {
+    "walls": [
+      [0, 0],
+      [2, 0],
+      [4, 0],
+      [0, 2],
+      [2, 2],
+      [4, 2]
+    ],
+    "width": 5,
+    "height": 3
+  },
+  "hints": [
+    "Each switch works its own gate.",
+    "One switch lies on the way and flips its gate as you pass."
+  ],
+  "title": "Two gates",
+  "levelId": "1b9350f1-7f93-4c0c-918d-42ed47b8fefe",
+  "requires": {
+    "mechanics": []
+  },
+  "switches": [
+    {
+      "gate": [3, 1],
+      "switch": [1, 0]
+    },
+    {
+      "gate": [2, 1],
+      "switch": [1, 1]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 14
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

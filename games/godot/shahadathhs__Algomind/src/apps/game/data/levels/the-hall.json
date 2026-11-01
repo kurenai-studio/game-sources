@@ -1,0 +1,77 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [10, 1]
+  },
+  "slug": "the-hall",
+  "board": {
+    "walls": [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0],
+      [5, 0],
+      [6, 0],
+      [7, 0],
+      [8, 0],
+      [9, 0],
+      [10, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [5, 1],
+      [6, 1],
+      [7, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [5, 2],
+      [6, 2],
+      [7, 2],
+      [9, 2],
+      [10, 2],
+      [9, 3],
+      [10, 3],
+      [0, 4],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [4, 4],
+      [5, 4],
+      [6, 4],
+      [7, 4],
+      [8, 4],
+      [9, 4],
+      [10, 4]
+    ],
+    "width": 11,
+    "height": 5
+  },
+  "hints": [
+    "Each loop ends at a wall. Turn there and start the next loop.",
+    "A loop can hold more than a move. Look at the last stretch."
+  ],
+  "title": "The hall",
+  "levelId": "cdee714a-b20c-4421-a29b-a71362ba36ef",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 7
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 3],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"]
+}

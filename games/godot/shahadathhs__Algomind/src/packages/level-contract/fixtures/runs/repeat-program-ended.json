@@ -1,0 +1,130 @@
+{
+  "description": "A loop that finishes without reaching the goal ends the program: 2 rounds of 3 primitives is 6 steps.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "run-level",
+    "levelVersion": 1,
+    "slug": "run-level",
+    "title": "run-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 7,
+      "height": 7,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 6],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [6, 0]
+    },
+    "hints": []
+  },
+  "program": [
+    {
+      "op": "REPEAT",
+      "count": 2,
+      "body": [
+        {
+          "op": "MOVE_FORWARD"
+        },
+        {
+          "op": "TURN_LEFT"
+        },
+        {
+          "op": "TURN_RIGHT"
+        }
+      ]
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "FAILED",
+    "reason": "PROGRAM_ENDED",
+    "steps": 6,
+    "finalState": {
+      "position": [2, 6],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 1,
+        "op": "TURN_LEFT",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 6],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 2,
+        "op": "TURN_RIGHT",
+        "node": [0, 2],
+        "call": null,
+        "counter": 1,
+        "round": 1,
+        "position": [1, 6],
+        "direction": "east",
+        "event": "TURNED"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [0, 0],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 6],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "TURN_LEFT",
+        "node": [0, 1],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 6],
+        "direction": "north",
+        "event": "TURNED"
+      },
+      {
+        "index": 5,
+        "op": "TURN_RIGHT",
+        "node": [0, 2],
+        "call": null,
+        "counter": 1,
+        "round": 2,
+        "position": [2, 6],
+        "direction": "east",
+        "event": "TURNED"
+      }
+    ]
+  }
+}

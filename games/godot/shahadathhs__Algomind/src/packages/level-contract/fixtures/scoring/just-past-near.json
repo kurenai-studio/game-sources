@@ -1,0 +1,30 @@
+{
+  "description": "One slot past the near limit earns one star and no par bonus; the steps bonus still applies.",
+  "rules": {
+    "version": 1,
+    "base": {
+      "easy": 10,
+      "medium": 20,
+      "hard": 30
+    },
+    "parFull": 10,
+    "parNear": 5,
+    "nearSlots": 2,
+    "stepsBonus": 5,
+    "firstClear": 10
+  },
+  "input": {
+    "difficulty": "easy",
+    "par": {
+      "commands": 5,
+      "steps": 5
+    },
+    "slots": 8,
+    "steps": 5
+  },
+  "expected": {
+    "stars": 1,
+    "points": 15,
+    "levelScore": 25
+  }
+}

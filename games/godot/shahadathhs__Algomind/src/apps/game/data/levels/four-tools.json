@@ -1,0 +1,67 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [7, 4]
+  },
+  "slug": "four-tools",
+  "belts": [
+    {
+      "cell": [3, 2],
+      "direction": "north"
+    }
+  ],
+  "board": {
+    "walls": [
+      [1, 1],
+      [4, 1],
+      [7, 1],
+      [7, 2],
+      [2, 3]
+    ],
+    "width": 8,
+    "height": 5
+  },
+  "hints": [
+    "A key, a belt, a pair of teleporters and a guard share this board.",
+    "Take the key first, then work out the belt."
+  ],
+  "locks": [
+    {
+      "key": [6, 1],
+      "door": [1, 0]
+    }
+  ],
+  "title": "Four tools",
+  "levelId": "8d30ca5c-1062-46cb-a4fa-44f72406cc3d",
+  "patrols": [
+    {
+      "cells": [
+        [6, 3],
+        [6, 4]
+      ],
+      "pattern": "back_and_forth"
+    }
+  ],
+  "requires": {
+    "mechanics": []
+  },
+  "teleports": [
+    {
+      "a": [4, 3],
+      "b": [4, 4]
+    }
+  ],
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 18
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

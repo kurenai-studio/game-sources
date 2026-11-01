@@ -1,0 +1,46 @@
+{
+  "description": "A level that visits every cell cannot have keys and doors.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "key-corridor",
+    "levelVersion": 1,
+    "slug": "key-corridor",
+    "title": "Key corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "visit_all"
+    },
+    "hints": [],
+    "locks": [
+      {
+        "key": [1, 0],
+        "door": [2, 1]
+      }
+    ]
+  },
+  "expectedIssues": [
+    {
+      "path": "locks",
+      "code": "LOCKS_WITH_SWEEP"
+    }
+  ]
+}

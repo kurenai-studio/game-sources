@@ -1,0 +1,5 @@
+{
+  "*.{js,mjs,cjs,ts,tsx}": ["oxlint --fix", "prettier --write"],
+  "*.{json,md,yaml,yml,css}": ["prettier --write"],
+  "*.gd": ["uvx --from gdtoolkit==4.5.0 gdformat", "uvx --from gdtoolkit==4.5.0 gdlint"]
+}

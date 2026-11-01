@@ -1,0 +1,53 @@
+{
+  "description": "A debug level: a start program that does not solve the level, within the limit and the commands.",
+  "mode": "public",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "first-steps",
+    "levelVersion": 1,
+    "slug": "first-steps",
+    "title": "First Steps",
+    "description": "Reach the goal using the available commands.",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": [
+        [1, 1],
+        [1, 2],
+        [3, 3]
+      ]
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 12,
+      "maxSteps": 30
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0]
+    },
+    "hints": [
+      "Look for a route around the wall.",
+      "A turn changes the direction of the next move."
+    ],
+    "startProgram": [
+      {
+        "op": "MOVE_FORWARD"
+      },
+      {
+        "op": "TURN_LEFT"
+      },
+      {
+        "op": "MOVE_FORWARD"
+      }
+    ]
+  }
+}

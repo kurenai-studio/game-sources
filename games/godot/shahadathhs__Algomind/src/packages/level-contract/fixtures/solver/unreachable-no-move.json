@@ -1,0 +1,35 @@
+{
+  "description": "No MOVE_FORWARD in the command set: the automaton can never leave its cell.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "solver-level",
+    "levelVersion": 1,
+    "slug": "solver-level",
+    "title": "solver-level",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 5,
+      "height": 5,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 4],
+      "direction": "north"
+    },
+    "availableCommands": ["TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 100
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [4, 0]
+    },
+    "hints": []
+  },
+  "expected": null
+}

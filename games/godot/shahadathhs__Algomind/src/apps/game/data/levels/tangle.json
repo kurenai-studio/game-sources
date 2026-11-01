@@ -1,0 +1,167 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [7, 7]
+  },
+  "slug": "tangle",
+  "board": {
+    "walls": [
+      [5, 0],
+      [9, 0],
+      [0, 1],
+      [2, 1],
+      [3, 1],
+      [5, 1],
+      [7, 1],
+      [9, 1],
+      [3, 2],
+      [0, 3],
+      [1, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3],
+      [6, 3],
+      [7, 3],
+      [8, 3],
+      [9, 3],
+      [9, 4],
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+      [6, 5],
+      [7, 5],
+      [8, 5],
+      [9, 5],
+      [7, 6],
+      [1, 7],
+      [2, 7],
+      [3, 7],
+      [4, 7],
+      [5, 7],
+      [9, 7],
+      [10, 7],
+      [1, 8],
+      [5, 8],
+      [9, 8],
+      [1, 9],
+      [2, 9],
+      [3, 9],
+      [5, 9],
+      [7, 9],
+      [5, 10]
+    ],
+    "width": 11,
+    "height": 11
+  },
+  "hints": ["The goal can be anywhere in the maze.", "The search reaches every cell it can."],
+  "title": "Tangle",
+  "levelId": "10d55071-4358-457d-a45d-c89890caef85",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "hard",
+  "constraints": {
+    "maxSteps": 460,
+    "maxCommands": 21
+  },
+  "description": "",
+  "extraBoards": [
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [5, 4]
+      },
+      "board": {
+        "walls": [
+          [3, 0],
+          [0, 1],
+          [1, 1],
+          [3, 1],
+          [5, 1],
+          [6, 1],
+          [7, 1],
+          [7, 2],
+          [1, 3],
+          [2, 3],
+          [3, 3],
+          [4, 3],
+          [7, 3],
+          [1, 4],
+          [7, 4],
+          [1, 5],
+          [3, 5],
+          [4, 5],
+          [5, 5],
+          [6, 5],
+          [7, 5],
+          [1, 6],
+          [7, 6],
+          [1, 7],
+          [3, 7],
+          [4, 7],
+          [5, 7],
+          [7, 7],
+          [3, 8]
+        ],
+        "width": 9,
+        "height": 9
+      },
+      "initialState": {
+        "position": [0, 0],
+        "direction": "east"
+      }
+    },
+    {
+      "goal": {
+        "type": "reach_tile",
+        "position": [6, 3]
+      },
+      "board": {
+        "walls": [
+          [1, 0],
+          [1, 1],
+          [2, 1],
+          [3, 1],
+          [5, 1],
+          [6, 1],
+          [7, 1],
+          [10, 1],
+          [7, 2],
+          [0, 3],
+          [1, 3],
+          [2, 3],
+          [4, 3],
+          [5, 3],
+          [7, 3],
+          [8, 3],
+          [9, 3],
+          [5, 4],
+          [9, 4],
+          [1, 5],
+          [2, 5],
+          [3, 5],
+          [5, 5],
+          [6, 5],
+          [7, 5],
+          [9, 5],
+          [3, 6]
+        ],
+        "width": 11,
+        "height": 7
+      },
+      "initialState": {
+        "position": [0, 0],
+        "direction": "south"
+      }
+    }
+  ],
+  "initialState": {
+    "position": [0, 0],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL", "IF", "MARK"]
+}

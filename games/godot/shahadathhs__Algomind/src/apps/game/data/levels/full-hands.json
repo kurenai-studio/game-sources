@@ -1,0 +1,47 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [5, 1]
+  },
+  "slug": "full-hands",
+  "board": {
+    "walls": [
+      [2, 0],
+      [2, 2]
+    ],
+    "width": 6,
+    "height": 3
+  },
+  "hints": [
+    "A crate walked over while carrying another stays where it lies.",
+    "Deliver one, then come back for the other."
+  ],
+  "title": "Full hands",
+  "levelId": "5aa40cb1-ac3e-4746-be9f-aac188ff840d",
+  "requires": {
+    "mechanics": []
+  },
+  "deliveries": [
+    {
+      "dock": [4, 2],
+      "item": [1, 1]
+    },
+    {
+      "dock": [4, 0],
+      "item": [3, 1]
+    }
+  ],
+  "difficulty": "medium",
+  "constraints": {
+    "maxSteps": 120,
+    "maxCommands": 16
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"]
+}

@@ -1,0 +1,129 @@
+{
+  "description": "Two locks: the first key opens the first door, whose room holds the second key.",
+  "level": {
+    "schemaVersion": 1,
+    "levelId": "key-corridor",
+    "levelVersion": 1,
+    "slug": "key-corridor",
+    "title": "Key corridor",
+    "description": "",
+    "difficulty": "easy",
+    "requires": {
+      "mechanics": []
+    },
+    "board": {
+      "width": 6,
+      "height": 3,
+      "walls": []
+    },
+    "initialState": {
+      "position": [0, 1],
+      "direction": "east"
+    },
+    "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT"],
+    "constraints": {
+      "maxCommands": 20,
+      "maxSteps": 40
+    },
+    "goal": {
+      "type": "reach_tile",
+      "position": [5, 1]
+    },
+    "hints": [],
+    "locks": [
+      {
+        "key": [1, 1],
+        "door": [2, 1]
+      },
+      {
+        "key": [3, 1],
+        "door": [4, 1]
+      }
+    ]
+  },
+  "program": [
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    },
+    {
+      "op": "MOVE_FORWARD"
+    }
+  ],
+  "programIssues": [],
+  "expected": {
+    "status": "SUCCEEDED",
+    "reason": "GOAL_REACHED",
+    "steps": 5,
+    "finalState": {
+      "position": [5, 1],
+      "direction": "east"
+    },
+    "blockedCell": null,
+    "trace": [
+      {
+        "index": 0,
+        "op": "MOVE_FORWARD",
+        "node": [0],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [1, 1],
+        "direction": "east",
+        "event": "KEY_TAKEN"
+      },
+      {
+        "index": 1,
+        "op": "MOVE_FORWARD",
+        "node": [1],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [2, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 2,
+        "op": "MOVE_FORWARD",
+        "node": [2],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [3, 1],
+        "direction": "east",
+        "event": "KEY_TAKEN"
+      },
+      {
+        "index": 3,
+        "op": "MOVE_FORWARD",
+        "node": [3],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [4, 1],
+        "direction": "east",
+        "event": "MOVED"
+      },
+      {
+        "index": 4,
+        "op": "MOVE_FORWARD",
+        "node": [4],
+        "call": null,
+        "counter": 1,
+        "round": null,
+        "position": [5, 1],
+        "direction": "east",
+        "event": "GOAL_REACHED"
+      }
+    ]
+  }
+}

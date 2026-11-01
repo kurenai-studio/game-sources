@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "node", "promise", "react", "nextjs"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "typescript/no-explicit-any": "off",
+    "unicorn/no-thenable": "off",
+    "react/react-in-jsx-scope": "off",
+    "nextjs/no-html-link-for-pages": "off",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": false
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "node_modules",
+    ".next",
+    "dist",
+    "coverage",
+    "next-env.d.ts",
+    "pnpm-lock.yaml",
+    "apps/api/src/generated",
+    "apps/api/dist",
+    ".claude",
+    "apps/api/.agents",
+    "apps/api/.windsurf"
+  ],
+  "overrides": [
+    {
+      "files": ["packages/design-tokens/test/**/*.mjs", "packages/level-contract/test/**/*.mjs"],
+      "rules": {
+        "typescript/no-floating-promises": "off",
+        "typescript/require-array-sort-compare": "off",
+        "typescript/restrict-template-expressions": "off"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [8, 1]
+  },
+  "slug": "to-the-wall",
+  "board": {
+    "walls": [],
+    "width": 9,
+    "height": 3
+  },
+  "hints": [
+    "Repeat until runs its tiles again and again, and stops when a wall is straight ahead.",
+    "Put Move inside it. You do not need to count the cells."
+  ],
+  "title": "To the wall",
+  "levelId": "8830904a-ef34-463c-9728-b8dfab03b40f",
+  "requires": {
+    "mechanics": []
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 100,
+    "maxCommands": 2
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "REPEAT_UNTIL"]
+}

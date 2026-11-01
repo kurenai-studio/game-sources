@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "type": "reach_tile",
+    "position": [11, 0]
+  },
+  "slug": "hall-and-turn",
+  "board": {
+    "walls": [],
+    "width": 12,
+    "height": 3
+  },
+  "hints": [
+    "The same procedure can be called twice, with a turn between.",
+    "The call inside it stops at the wall."
+  ],
+  "title": "Hall and turn",
+  "levelId": "d2fc912b-b1ac-41d5-86fd-308a6c7951db",
+  "requires": {
+    "mechanics": ["recursion"]
+  },
+  "difficulty": "easy",
+  "constraints": {
+    "maxSteps": 200,
+    "maxCommands": 6
+  },
+  "description": "",
+  "initialState": {
+    "position": [0, 1],
+    "direction": "east"
+  },
+  "levelVersion": 1,
+  "schemaVersion": 1,
+  "availableCommands": ["MOVE_FORWARD", "TURN_LEFT", "TURN_RIGHT", "PROC"]
+}
