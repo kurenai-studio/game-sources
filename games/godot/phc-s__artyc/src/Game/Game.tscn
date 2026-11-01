@@ -1,0 +1,248 @@
+[gd_scene format=3 uid="uid://tbuwa17hohx"]
+
+[ext_resource type="Script" uid="uid://cdw5mm8q2ne6v" path="res://Game/Script/Boot.gd" id="1_oscxy"]
+[ext_resource type="Texture2D" uid="uid://c7p1pmhgjki0w" path="res://Menu/Asset/Background.svg" id="4_gp3ee"]
+[ext_resource type="Texture2D" uid="uid://bo45lt3c4jmq2" path="res://Game/Asset/Map.png" id="5_r0byk"]
+[ext_resource type="Script" uid="uid://conpe2jm5l4q6" path="res://Game/Script/Drive.gd" id="6_hmm1m"]
+[ext_resource type="Texture2D" uid="uid://dkisxmutt8oy8" path="res://Game/Asset/UI/Clock.png" id="6_q6w4l"]
+[ext_resource type="FontFile" uid="uid://c4cpr8t0hja8t" path="res://System/Font/LibreCaslonCondensed-VariableFont_wght.ttf" id="7_eqev2"]
+[ext_resource type="Texture2D" uid="uid://rn5gdgxyrh0d" path="res://Game/Asset/Automobile/Agile/Agile (White).png" id="7_oscxy"]
+[ext_resource type="Texture2D" uid="uid://b1l5rs2pv14iv" path="res://System/UI/Vector.svg" id="8_oscxy"]
+[ext_resource type="Script" uid="uid://bp7y45yulu32u" path="res://Game/Script/Camera.gd" id="8_vl8r5"]
+[ext_resource type="Script" uid="uid://cqopl55ab6oag" path="res://System/Script/Joystick.gd" id="9_gp3ee"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4jxoi"]
+size = Vector2(190.00409, 828.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r5d8u"]
+size = Vector2(54, 21.5)
+
+[node name="Game" type="Node2D" unique_id=45322456]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1641529847]
+
+[node name="CONTROL" type="Control" parent="CanvasLayer" unique_id=1513963725 node_paths=PackedStringArray("BG")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_oscxy")
+BG = NodePath("BG_BLACK")
+
+[node name="VBC" type="VBoxContainer" parent="CanvasLayer/CONTROL" unique_id=1960564557]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MIDDLEGAME" type="Control" parent="CanvasLayer/CONTROL/VBC" unique_id=1411613718]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SVC" type="SubViewportContainer" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME" unique_id=647158489]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+stretch = true
+
+[node name="GAME_WORLD" type="SubViewport" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC" unique_id=71983833]
+handle_input_locally = false
+size = Vector2i(1080, 1318)
+render_target_update_mode = 4
+
+[node name="MAP" type="StaticBody2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD" unique_id=258351659]
+position = Vector2(4, 325)
+
+[node name="MAP" type="Sprite2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=632742474]
+position = Vector2(469, 145)
+texture = ExtResource("5_r0byk")
+
+[node name="WEST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1378095489]
+position = Vector2(-85, 105.25)
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="SOUTHWEST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=261011063]
+position = Vector2(-57.00001, 549)
+rotation = -0.40046722
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="SOUTHWEST_SHAPE_2" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1286919879]
+position = Vector2(263, 723)
+rotation = -1.4052309
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="SOUTH_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=6650336]
+position = Vector2(475, 704)
+rotation = -1.5667729
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="NORTH_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1362824104]
+position = Vector2(429, -418)
+rotation = -1.5667729
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="SOUTHEAST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=186436856]
+position = Vector2(829, 629.00006)
+rotation = -2.07552
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="SOUTHEAST_SHAPE_2" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=164345862]
+position = Vector2(1031.9999, 352.99997)
+rotation = -3.015381
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="EAST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1790584715]
+position = Vector2(1028.0001, 89)
+rotation = -3.163294
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="NORTHEAST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1119585306]
+position = Vector2(948, -208)
+rotation = -3.706793
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="NORTHEAST_SHAPE_2" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=1648583713]
+position = Vector2(796.00006, -306)
+rotation = -4.2195206
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="NORTHWEST_SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/MAP" unique_id=491754358]
+position = Vector2(42.99994, -341.99997)
+rotation = -2.3870194
+shape = SubResource("RectangleShape2D_4jxoi")
+
+[node name="PLAYER_VEHICLE2" type="RigidBody2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD" unique_id=278329667 node_paths=PackedStringArray("speed_label")]
+position = Vector2(336, 81)
+gravity_scale = 0.0
+script = ExtResource("6_hmm1m")
+speed_label = NodePath("../../../GAME_UI/MPH")
+
+[node name="COMMUTE" type="Sprite2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/PLAYER_VEHICLE2" unique_id=1939067743]
+position = Vector2(2, 3)
+texture = ExtResource("7_oscxy")
+
+[node name="CAMERA" type="Camera2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/PLAYER_VEHICLE2/COMMUTE" unique_id=548368296]
+position = Vector2(-2, -3)
+zoom = Vector2(5, 5)
+script = ExtResource("8_vl8r5")
+car_path = NodePath("../..")
+
+[node name="SHAPE" type="CollisionShape2D" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/SVC/GAME_WORLD/PLAYER_VEHICLE2" unique_id=2020403324]
+position = Vector2(2, 2.75)
+shape = SubResource("RectangleShape2D_r5d8u")
+
+[node name="GAME_UI" type="Control" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME" unique_id=2082744503]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BG_BLACK" type="TextureRect" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/GAME_UI" unique_id=7696251]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -182.0
+offset_top = -219.0
+offset_right = -67.0
+offset_bottom = -180.68884
+grow_horizontal = 0
+grow_vertical = 0
+scale = Vector2(1, 3.073339)
+texture = ExtResource("6_q6w4l")
+expand_mode = 1
+
+[node name="MPH" type="RichTextLabel" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/GAME_UI" unique_id=975900433]
+texture_filter = 1
+clip_contents = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -213.0
+offset_top = -224.0
+offset_right = -80.0
+offset_bottom = -98.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_fonts/normal_font = ExtResource("7_eqev2")
+theme_override_font_sizes/normal_font_size = 96
+text = "23"
+horizontal_alignment = 2
+
+[node name="VECTOR" type="TextureRect" parent="CanvasLayer/CONTROL/VBC/MIDDLEGAME/GAME_UI" unique_id=1078721818]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.14400001
+anchor_top = -0.13900001
+anchor_right = 1.1400001
+anchor_bottom = 1.1
+offset_left = -0.31999207
+offset_top = -251.94398
+offset_right = 1.1999512
+offset_bottom = 69.599976
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("8_oscxy")
+expand_mode = 1
+
+[node name="GAMEPAD" type="Control" parent="CanvasLayer/CONTROL/VBC" unique_id=1845997712]
+custom_minimum_size = Vector2(0, 600)
+layout_mode = 2
+
+[node name="HBC" type="HBoxContainer" parent="CanvasLayer/CONTROL/VBC/GAMEPAD" unique_id=1696574470]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LEFT_J" type="Control" parent="CanvasLayer/CONTROL/VBC/GAMEPAD/HBC" unique_id=600138163]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("9_gp3ee")
+
+[node name="RIGHT_J" type="Control" parent="CanvasLayer/CONTROL/VBC/GAMEPAD/HBC" unique_id=789382233]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("9_gp3ee")
+action_negative = "down"
+action_positive = "up"
+is_vertical_axis = true
+
+[node name="BG_BLACK" type="TextureRect" parent="CanvasLayer/CONTROL" unique_id=414294807]
+visible = false
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1150.5718
+offset_top = -683.21387
+offset_right = -995.5718
+offset_bottom = -605.21387
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(14.640327, 18.726004)
+texture = ExtResource("4_gp3ee")
+expand_mode = 1
