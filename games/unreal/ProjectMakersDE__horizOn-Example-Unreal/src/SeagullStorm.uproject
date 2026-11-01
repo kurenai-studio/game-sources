@@ -1,0 +1,41 @@
+{
+    "FileVersion": 3,
+    "EngineAssociation": "5.8",
+    "Category": "",
+    "Description": "Seagull Storm - horizOn SDK Example Game",
+    "Modules": [
+        {
+            "Name": "SeagullStorm",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ],
+    "Plugins": [
+        {
+            "Name": "Paper2D",
+            "Enabled": true
+        },
+        {
+            "Name": "HorizonSDK",
+            "Enabled": true
+        },
+        {
+            "Name": "PythonScriptPlugin",
+            "Enabled": true,
+            "TargetAllowList": [
+                "Editor"
+            ]
+        },
+        {
+            "Name": "EditorScriptingUtilities",
+            "Enabled": true,
+            "TargetAllowList": [
+                "Editor"
+            ]
+        },
+        {
+            "Name": "EnhancedInput",
+            "Enabled": true
+        }
+    ]
+}

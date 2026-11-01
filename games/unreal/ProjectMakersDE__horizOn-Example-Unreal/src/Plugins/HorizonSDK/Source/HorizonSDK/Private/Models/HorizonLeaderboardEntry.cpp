@@ -1,0 +1,22 @@
+// Copyright (c) 2026 ProjectMakers. Licensed under the MIT License.
+
+#include "Models/HorizonLeaderboardEntry.h"
+#include "Dom/JsonObject.h"
+
+FHorizonLeaderboardEntry FHorizonLeaderboardEntry::FromJson(const TSharedPtr<FJsonObject>& JsonObject)
+{
+    FHorizonLeaderboardEntry Entry;
+    if (JsonObject.IsValid())
+    {
+        Entry.Position = static_cast<int32>(JsonObject->GetNumberField(TEXT("position")));
+        Entry.Username = JsonObject->GetStringField(TEXT("username"));
+        Entry.Score = static_cast<int64>(JsonObject->GetNumberField(TEXT("score")));
+
+        const TSharedPtr<FJsonObject>* ProfileObject = nullptr;
+        if (JsonObject->TryGetObjectField(TEXT("profile"), ProfileObject) && ProfileObject)
+        {
+            Entry.Profile = FHorizonPlayerProfile::FromJson(*ProfileObject);
+        }
+    }
+    return Entry;
+}
