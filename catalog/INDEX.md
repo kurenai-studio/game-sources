@@ -1,6 +1,6 @@
 # Game Sources Catalog INDEX
 
-Generated: 2026-11-01 ~08:25 PT (America/Los_Angeles). Entries: **854**.
+Generated: 2026-11-01 ~08:25 PT (America/Los_Angeles). Entries: **855**.
 
 | path | upstream | license | engine | by | collected_at |
 |------|----------|---------|--------|----|--------------|
@@ -858,4 +858,4 @@ Generated: 2026-11-01 ~08:25 PT (America/Los_Angeles). Entries: **854**.
 | games/unreal/TheosCreation__UnrealEngineGameLearning | https://github.com/TheosCreation/UnrealEngineGameLearning | MIT | unreal | d | 2026-11-01 |
 | games/unreal/ToucanTechno__Noxia | https://github.com/ToucanTechno/Noxia | GPL-3.0 | unreal | e | 2026-11-01 |
 | games/unreal/VadimDev__Spiky-Project | https://github.com/VadimDev/Spiky-Project | MIT | unreal | d | 2026-11-01 |
-
+| games/phaser/BorisKozo__tanks2 | https://github.com/BorisKozo/tanks2 | MIT | phaser | c | 2026-11-01 |
