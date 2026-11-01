@@ -1,0 +1,44 @@
+name: tetris
+
+services:
+  highscores:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tetris-highscores:local
+    container_name: tetris-highscores
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:5090
+      Highscores__FilePath: /data/highscores.json
+      Highscores__ReplayDirectory: /data/replays
+      Logging__File__Path: /data/logs/server.log
+      Discord__WebhookUrl: ${DISCORD_WEBHOOK_URL:-}
+      Discord__GameUrl: ${DISCORD_GAME_URL:-}
+      Discord__AnnounceTopRanks: ${DISCORD_ANNOUNCE_TOP_RANKS:-0}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./data:/data
+    ports:
+      - "${HIGHSCORES_PORT:-5090}:5090"
+    networks:
+      - highscores
+
+  cloudflared:
+    profiles:
+      - tunnel
+    image: cloudflare/cloudflared:latest
+    container_name: tetris-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - highscores
+    networks:
+      - highscores
+
+networks:
+  highscores:
+    name: tetris-highscores
