@@ -1,0 +1,387 @@
+[gd_resource type="Resource" script_class="SkinData" format=3]
+
+[ext_resource type="Script" path="res://src/skins/skin.gd" id="1_qjmce"]
+
+[resource]
+script = ExtResource("1_qjmce")
+id = &"nova"
+display_name = "Nova"
+palette = Dictionary[StringName, Color]({
+&"accent": Color(0.28627452, 0.91764706, 0.9490196, 1),
+&"accent_pressed": Color(0.09019608, 0.8156863, 0.84705883, 1),
+&"accent_violet": Color(0.57254905, 0.39215687, 0.9372549, 1),
+&"badge": Color(0.28627452, 0.91764706, 0.9490196, 1),
+&"badge_ink": Color(0.023529412, 0.047058824, 0.1254902, 1),
+&"bg": Color(0.015686275, 0.03137255, 0.09803922, 1),
+&"bg_glow": Color(0.09411765, 0.09803922, 0.25882354, 1),
+&"chain": Color(1, 1, 1, 1),
+&"disabled_ink": Color(0.5176471, 0.54901963, 0.62352943, 1),
+&"ink": Color(0.96862745, 0.9764706, 1, 1),
+&"ink_dark": Color(0.023529412, 0.047058824, 0.1254902, 1),
+&"ink_muted": Color(0.67058825, 0.7176471, 0.8352941, 1),
+&"joinable": Color(1, 1, 1, 1),
+&"line": Color(0.32156864, 0.38431373, 0.54901963, 1),
+&"scrim": Color(0.015686275, 0.03137255, 0.09803922, 0.85882354),
+&"star": Color(1, 1, 1, 1),
+&"surface": Color(0.0627451, 0.08627451, 0.18431373, 1),
+&"surface_raised": Color(0.12156863, 0.14901961, 0.27450982, 1),
+&"target": Color(0.28627452, 0.91764706, 0.9490196, 1)
+})
+tile_fill = PackedColorArray(0.8156863, 0.11372549, 0.12941177, 1, 0.99607843, 0.827451, 0.24705882, 1, 0.09803922, 0.34117648, 0.8235294, 1, 0.16470589, 0.9411765, 0.8352941, 1, 0.7921569, 0.07450981, 0.7019608, 1, 0.99215686, 0.6509804, 0.4117647, 1, 0.4117647, 0.22745098, 0.83137256, 1, 0.60784316, 0.95686275, 0.38039216, 1, 0.827451, 0.11372549, 0.29411766, 1, 0.49411765, 0.8117647, 0.99215686, 1, 0.5686275, 0.16078432, 0.78431374, 1, 0.96862745, 0.8784314, 0.30980393, 1, 0.050980393, 0.4862745, 0.34901962, 1, 0.99215686, 0.5529412, 0.77254903, 1, 0.039215688, 0.39607844, 0.6784314, 1, 0.99607843, 0.7372549, 0.44705883, 1, 0.98039216, 0.9882353, 1, 1)
+tile_ink = PackedColorArray(0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.96862745, 0.9764706, 1, 1, 0.023529412, 0.047058824, 0.1254902, 1, 0.023529412, 0.047058824, 0.1254902, 1)
+tile_cycle = PackedInt32Array(0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+tile_tier = PackedInt32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3)
+beyond_tier = 3
+text_pairs = Array[Dictionary]([{
+"bg": "bg_glow",
+"fg": "ink",
+"min": 4.5,
+"name": "Score on the lightest part of the backdrop",
+"over": ""
+}, {
+"bg": "bg_glow",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels on the lightest part of the backdrop",
+"over": ""
+}, {
+"bg": "bg",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels on the darkest part of the backdrop",
+"over": ""
+}, {
+"bg": "bg_glow",
+"fg": "accent",
+"min": 4.5,
+"name": "Booster cost, targeting",
+"over": ""
+}, {
+"bg": "bg_glow",
+"fg": "disabled_ink",
+"min": 4.5,
+"name": "Booster cost, disabled",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "disabled_ink",
+"min": 4.5,
+"name": "Disabled button or chip on a sheet",
+"over": ""
+}, {
+"bg": "badge",
+"fg": "badge_ink",
+"min": 4.5,
+"name": "Badges: suggested, new best, clear notice",
+"over": ""
+}, {
+"bg": "accent",
+"fg": "ink_dark",
+"min": 4.5,
+"name": "Primary button and selected chip",
+"over": ""
+}, {
+"bg": "accent_pressed",
+"fg": "ink_dark",
+"min": 4.5,
+"name": "Primary button, pressed",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "ink",
+"min": 4.5,
+"name": "Sheet and card text",
+"over": ""
+}, {
+"bg": "surface",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Sheet and card labels",
+"over": ""
+}, {
+"bg": "surface_raised",
+"fg": "ink",
+"min": 4.5,
+"name": "Rows and chips on a sheet",
+"over": ""
+}, {
+"bg": "surface_raised",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels on rows and chips",
+"over": ""
+}, {
+"bg": "scrim",
+"fg": "ink",
+"min": 4.5,
+"name": "Text over the scrim, worst case over a white hole tile",
+"over": "tile:131072"
+}, {
+"bg": "scrim",
+"fg": "ink_muted",
+"min": 4.5,
+"name": "Labels over the scrim, worst case over a white hole tile",
+"over": "tile:131072"
+}])
+font_path = "res://src/design/fonts/Outfit[wght].ttf"
+system_font_names = PackedStringArray("Roboto", "Segoe UI", "sans-serif")
+type_roles = Dictionary[StringName, Dictionary]({
+&"body": {
+"case": "none",
+"size": 44,
+"tracking": 0,
+"weight": 400
+},
+&"display": {
+"case": "none",
+"size": 148,
+"tracking": 0,
+"weight": 300
+},
+&"heading": {
+"case": "none",
+"size": 50,
+"tracking": 0,
+"weight": 300
+},
+&"label": {
+"case": "lower",
+"size": 32,
+"tracking": 3,
+"weight": 400
+},
+&"reading": {
+"case": "none",
+"size": 42,
+"tracking": 0,
+"weight": 400
+},
+&"tile": {
+"case": "none",
+"tracking": 0,
+"weight": 600
+},
+&"title": {
+"case": "none",
+"size": 68,
+"tracking": 0,
+"weight": 300
+}
+})
+tile_number_scale = PackedFloat32Array(0.46, 0.42, 0.37, 0.315)
+numbers = Dictionary[StringName, float]({
+&"backdrop_glow_radius": 0.95,
+&"backdrop_glow_x": 0.5,
+&"backdrop_glow_y": 0.26,
+&"bar_height": 254.0,
+&"beam_glow_alpha": 0.28,
+&"beam_glow_width": 44.0,
+&"board_gap": 22.0,
+&"board_margin": 44.0,
+&"board_padding": 0.0,
+&"button_height": 160.0,
+&"chain_glow": 1.4,
+&"chain_ring": 8.0,
+&"chain_width": 12.0,
+&"dark_rim_from": 131072.0,
+&"disabled_icon_alpha": 0.6,
+&"disabled_ring_alpha": 0.35,
+&"disabled_ring_dashes": 16.0,
+&"display_fit_min": 80.0,
+&"focus_gap": 6.0,
+&"glow_alpha_high": 0.55,
+&"glow_alpha_low": 0.1,
+&"glow_spread_high": 1.55,
+&"glow_spread_low": 1.12,
+&"hairline": 2.0,
+&"hint_height": 64.0,
+&"hud_height": 200.0,
+&"hud_ring": 96.0,
+&"icon_booster": 80.0,
+&"icon_fit": 0.86,
+&"icon_glow_alpha": 0.4,
+&"icon_hud": 72.0,
+&"icon_spark": 1.0,
+&"icon_stroke": 1.5,
+&"joinable_glow": 1.25,
+&"joinable_orbit": 0.05,
+&"joinable_ring": 3.0,
+&"label_fit": 0.82,
+&"notice_height": 80.0,
+&"notice_strike": 2.0,
+&"notice_tile_scale": 0.6,
+&"orb_scale": 0.89,
+&"orbit_breath": 0.05,
+&"orbit_dash_fill": 0.55,
+&"orbit_dashes": 24.0,
+&"orbit_offset": 0.1,
+&"orbit_turn": 0.08,
+&"preview_scale": 0.54,
+&"radius_button": 72.0,
+&"radius_card": 64.0,
+&"radius_chip": 72.0,
+&"ray_alpha": 0.6,
+&"ray_count": 12.0,
+&"ray_inner": 1.08,
+&"ray_lighten": 0.35,
+&"ray_outer": 1.24,
+&"ray_width": 3.0,
+&"reading_line_spacing": 12.0,
+&"rim_lighten": 0.35,
+&"rim_width": 4.0,
+&"ring_button": 136.0,
+&"ring_glow_alpha": 0.75,
+&"ring_glow_spread": 1.45,
+&"ring_width": 3.0,
+&"row_height": 144.0,
+&"scroll_bar": 4.0,
+&"space_l": 72.0,
+&"space_m": 44.0,
+&"space_s": 28.0,
+&"space_xl": 112.0,
+&"space_xs": 12.0,
+&"spawn_bloom": 0.6,
+&"special_from": 32768.0,
+&"star_alpha_max": 0.35,
+&"star_alpha_min": 0.08,
+&"star_clearance": 24.0,
+&"star_count": 70.0,
+&"star_icon": 32.0,
+&"star_seed": 20261010.0,
+&"star_size_max": 3.5,
+&"star_size_min": 1.5,
+&"target_glow": 1.5,
+&"target_ring": 4.0,
+&"tile_radius": 0.5,
+&"toggle_glow_alpha": 0.6,
+&"toggle_glow_spread": 1.9,
+&"toggle_h": 64.0,
+&"toggle_knob": 40.0,
+&"toggle_w": 124.0,
+&"touch_min": 160.0
+})
+motion = Dictionary[StringName, Dictionary]({
+&"button_press": {
+"duration": 0.1,
+"ease": 1,
+"press_scale": 0.96,
+"trans": 1
+},
+&"button_release": {
+"duration": 0.24,
+"ease": 1,
+"trans": 1
+},
+&"chain_add": {
+"duration": 0.16,
+"ease": 1,
+"trans": 1
+},
+&"chain_remove": {
+"duration": 0.16,
+"ease": 1,
+"trans": 1
+},
+&"clear": {
+"duration": 0.36,
+"ease": 0,
+"spark_reach": 0.7,
+"spark_size": 8.0,
+"sparks": 8.0,
+"to_scale": 0.4,
+"trans": 1
+},
+&"clear_notice": {
+"duration": 0.4,
+"ease": 1,
+"from_alpha": 0.0,
+"from_offset": 16.0,
+"hold": 1.8,
+"out": 0.3,
+"trans": 1
+},
+&"dialog_in": {
+"duration": 0.44,
+"ease": 1,
+"from_alpha": 0.0,
+"from_scale": 0.96,
+"trans": 1
+},
+&"dialog_out": {
+"duration": 0.28,
+"ease": 0,
+"trans": 1
+},
+&"fall": {
+"duration": 0.26,
+"ease": 1,
+"trans": 7
+},
+&"joinable_in": {
+"duration": 0.2,
+"ease": 1,
+"trans": 1
+},
+&"merge_pop": {
+"duration": 0.4,
+"ease": 1,
+"peak_glow": 1.8,
+"trans": 1
+},
+&"merge_travel": {
+"duration": 0.24,
+"ease": 2,
+"trans": 7
+},
+&"press": {
+"duration": 0.1,
+"ease": 1,
+"trans": 1
+},
+&"score_count": {
+"duration": 0.6,
+"ease": 1,
+"trans": 1
+},
+&"screen_fade": {
+"duration": 0.36,
+"ease": 2,
+"trans": 1
+},
+&"skin_switch": {
+"duration": 0.4,
+"ease": 2,
+"trans": 1
+},
+&"spawn": {
+"duration": 0.34,
+"ease": 1,
+"from_alpha": 0.0,
+"from_scale": 0.55,
+"stagger": 0.04,
+"trans": 1
+},
+&"star_convert": {
+"duration": 0.4,
+"ease": 1,
+"empty": 0.4,
+"from_offset": 8.0,
+"peak_glow": 2.0,
+"trans": 1
+},
+&"star_earn": {
+"delay": 0.1,
+"duration": 0.44,
+"ease": 2,
+"from_alpha": 0.0,
+"peak_glow": 1.8,
+"stagger": 0.08,
+"trans": 1
+},
+&"target_pulse": {
+"alpha_low": 0.45,
+"duration": 1.6,
+"ease": 2,
+"trans": 1
+}
+})
