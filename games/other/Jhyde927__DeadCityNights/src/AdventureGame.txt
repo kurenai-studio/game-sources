@@ -1,0 +1,1284 @@
+Adventure Game in C++
+
+Apartment, gas station, cemetery, liquor store, library, arcade,
+
+Need to implement UI of some kind. An inventory.
+
+Inventory stutter when moving. Solved draw inventory outside of beginMode2d(camera) endMode2d()
+
+NPCs. Edit the man animation to look different. Make a different struct called NPC. The color of the NPC should be blue grey to blend in with the background and make the player character stand out
+from the crowd, literally. Maybe we don't need a struct nah we do.
+
+I've decided it's going to be a class saved in a separate file. NPC.h as a header file. and NPC.cpp as the code that runs the animation and updates and renders the NPC.
+It will use one big sprite sheet. The sheet will be laid out like a grid. each row of the grid will be a different animation. then we can iterate the grid and grid[0][0] would be idle
+then grid[1][0] would be walk and so on.
+
+Laptop computer instead of typewriter. Clicking it brings up an interface. Check your emails.
+
+antiques shop interior
+gas station interior
+cemetery interior
+
+Homeless sprite
+business man sprite x
+woman sprite x
+
+
+zombie NPC x
+revolver x
+aim animation x
+shoot animation x
+sound x
+
+Shotgun x 
+interiors art
+homeless NPC
+
+drug dealer NPC
+
+owl hoot sound on road
+reload animation x
+footsteps <- just came to me,  works perfect x
+
+UI above player car. destinations. Cemetery, work, ect. x
+UI showing money x
+UI calendar showing day month year x
+
+NPCs Interaction. Standing next to a NPC and clicking on them will make them stop moving and a dialog box appears above their head. Randomized speech will be displayed. Certain NPCs can sell you drugs. 
+
+Police? Police will beat you up if you click on them more than once. First they say "move along". Then they beat you up and you wake up back at the apartment the next day. 
+
+work:
+	the car moves forward out of the screen, fade to black. Fade back in car is back at it's spot and you are 100 dollars richer. 
+
+Tavern:
+	Take the road to the tavern. Meet story characters of some kind. Buy a drink and we will apply a drunk shader. What's the story? People at the tavern tell rumors of a ghost at the Cemetery. 
+
+Draw a 1980s style phone next to the laptop
+
+Game turns to a zombie apocalypse on the year 2000. Guns are allowed on the street. Zombies chase NPCs and turn them into more zombies.
+
+What is the game about in the mean time. A fetch quest for a special NPC. Hidden drug dealer interaction. The dealer NPC will sell you drugs for 500 dollars. DMT. Apply a water shader to the entire screen. Make it wavy plus a warped CRT effect. 
+
+River City Nights. Rad City Blues. Zombie City Blues. Zed City Blues. Zed City Nights. City Nights 
+
+if player gets more than 1000 pixels away from the apartment in any direction, the player can then sleep again. Or if they travel the road they can sleep. You can't just go sleep to work to sleep to work. You would need to walk around or travel to reset it. This will not be explained to the player. x
+
+interactable NPCs. Just try to make them stop when clicked on. Need a hit box. they already have a hitbox. Make sure you can't click on zombies and talk to them. if interactingtexture(hitbox, mousepos)
+
+test if you can click on zombies
+
+Added shaders. Drunk shader, Glow shader, and glitch shader. Glow shader runs when you take drugs and lasts until you sleep. Glitch shader runs when zombies are spawning for dramatic effect. Drunk shader will run when you drink. Drunk shader overrides glow shader. 
+
+Need to add liquor store. Replace antiques store. You can buy whiskey. Maybe just a buy menu, no interior. 
+
+Police man x
+
+Need something new to work on. Another NPC? Another layer to the parallax?, Liquor store interior. Empty lot. x
+
+another NPC:
+	Another female. woman2 
+	Homeless man. x
+
+added empty lot. along with hobo NPC. Hobo will have some useful information for the player. Will warn the player of the coming zombie appacolypse. gives the player the shovel? shotgun? 
+
+The Shovel:
+	Can be used at certain locations to dig. Will have to telegraph dig spots. Hobo lends you a shovel that you use to dig up the shotgun. Need another item. Health pot. mana? pain killers. 
+
+	were do you get pain killers? dealer?
+
+	make the shotgun an item just like the shovel. it's in the vacant lot. draw it first. 
+
+	The hobo mentions he dropped his shovel in the cemetery. You can access the cemetery without a gun. Should we delay spawning 
+	zombies until you have talked to the hobo? and don't draw the shovel until then also. 
+
+telegraph vacant lot location with a street light and a dialog box that pops up when over lot. 
+Dialog boxes now pop up when player is over car, apartment, and vacant lot. 
+
+You can now interact with NPCs by pressing up while next to them. Most of the game can be played with just the keyboard. just not the apartment. 
+
+interactive tutorial to start the game. "Arrow keys or A, D to move" "Up or W to enter area"
+
+what do you dig up in the vacant lot? The shotgun? pills? shot gun would make sense. You would need to get the shovel with just the pistol. It's a bit more challenging but very doable. Once you have the shotgun all the zombies are gone. We need another reason to go back to the cemetery. Dig up the key to the cemetery in the vacant lot with the shovel got from the cemetery.
+
+we are running out of space in the inventory all ready. Need to space things out more. Maybe the hobo isn't there at the beginning of the game. Maybe an old lady looking for her lost cat, fluffy. The cat is in the tree. You need to talk to the cat and convince him to come down from the tree. Maybe you need to find some food at the gas station to get him down. Cat nip can be bought at the gas station. which requires you to go to work to get the money. which requires you to sleep to advance the day. Only once the day has been advanced say 2 days then the hobo shows up in his spot.
+
+There is a portal in the graveyard that is summoning zombies. It needs to be closed some how. 
+
+Fortune teller NPC. will give vague phrases about the future, based on a over complicated way of calculating which phrase. 
+if the fortune teller says one thing, then the next thing is twice as likely to happen ect ect..get chatGPT to handle the details. 
+
+
+"A shovel lost is a path revealed; seek it where the forgotten dwell." by ChatGPT
+
+Old lady NPC
+
+inside the cemetery is more graves. We show a layer of graves in front of the player. It slightly obscures the view. 
+
+Dig up the cemetery key and use it on the door. Need dialog box above door in cemetery. "Locked\nNeeds key
+
+use the same background for inner cemetery. Just put another layer in front. like the vacant lot its the cemetery from the opposite direction. So show the inside of the fence looking out. So just trees. what's inside cemetery interior? More zombies. ghosts. Skeletons. animated skele walk
+
+taking drugs reveals secret path to new area. -chatGPT o1 preview
+
+"NecroTech." company name found on id badge on a dead zombie. 
+
+dead zombie body stays and is clickable. click or up key the dead zombie for id badge
+
+Need a reason to back to apartment. Use computer to look up NecroTech? 
+
+Fixed hobo glitch by setting riseTimer to 0 for non zombies. It was playing rise animation for NPCs when there was no such animation.
+
+One you have the ID card, you can search "NecroTech" on the "internet" on your laptop in the apartment. This gives you an address, and adds another destination to the destinations menu on the car. It's NecroTech HQ. There are army guys with guns protecting the place. Break in and kill the CEO to win the game. 
+
+Add a ghost to the cemetery
+
+Add skip dialog 
+
+move background (stars) on cemetery to the left 1024
+
+make limited ammo for shotgun. global shells x
+
+use ambient modular synth from you tube as the soundtrack. Bleak minimal just like the rest of the game. 
+
+Ghost won't attack unless provoked. 
+
+If you don't attack the ghost he gives a mission to find something for him. 
+
+shotgun shells icon. digspot with shotgun shells. 
+
+fortune teller is fucked. remove and start over. 
+fixed fortune teller. She just displays a random fortune for 100 dollars. Leave it for now. 
+
+Drugs allow you to see hidden door somewhere outside. Draw this hidden door. 
+
+Hidden door leads to another parallax background image.Use existing art, bus stop drawing. or draw something new. Like what?
+Outer space with planets in the background, parallax clouds roll by. What is the point of this new area? Maybe you can help the ghost character by visiting the astral plane and recovering a lost relic of some kind. What relic? A pocket watch, ring, amulet, 
+Pocket watch seems like it fits. He lost his watch and is doomed to haunt the graveyard until it is returned. Maybe he comes back to life if you return the watch. 
+
+What enemies could be in the astral plane. Maybe you will be running on top of clouds with a space scene in the background with ghosts attacking you. Maybe a skeleton NPC just because of Halloween. Animate a skeleton walking then. 
+
+Implemented the astral plane. You access it by taking drugs and opening the magic door. I just drew parallax layers of clouds in the same color pallet. Consider a more technicolor palette. Drug shader effect stays on when in the astral realm. Consider a different shader, maybe the same glow shader with different parameters. 
+
+The plan was, the ghost asks you to find his lost relic. He speaks in riddles and rhymes. Something about a door and an altered mind. Giving the hint that you need to take drug to find his lost relic. It's a bit obtuse. His lost relic is an old pocket watch. Why would you find a pocket watch in the astral realm. You need to fight a boss? A witch. A giant steam punk clockwork automaton. A giant spider. A disembodied head. A scare crow. 
+
+Guns work on the astral plane. Need mini ghosts or spirits of some kind. Flying enemies. Diver bomb the player and are only able to be hit when diving down to player level. Crows? that circle. Just like rad city crows. Needs to be evil spirits or something that fits with the astral realm. 
+
+what else. Implemented reverse road car headlights/break lights. light_scale = -1.0 // Negative scale to flip horizontally 
+
+Had chatGPT come up with rhymes that the ghost says. I got a list of a million of them. Need to turn off ghost agro when leaving the area. Moved ghost to graveyard instead of cemetery. To spread things out more. 
+
+Added notes to github, so there is a record of this madness. 
+
+Added my own original background track. It's only 3:30 minutes long. Not long enough. gets repetative. Need another music track for when zombies are spawning, new song while in astral realm. Slow down play back when on drugs? Maybe add echo effect. Just have 2 different tracks. One for sober, one for drugged. Play the song in reverse and see how it sounds. 
+
+Make your own mixer. Tracks can be playing without being heard? So we can fade from one to another and have it be lined up. 
+Add seek function to sound manager.
+
+added shovel pickup sound effect. 
+
+bug on cemetery near shovel pickup. bullets get stopped by an invisible barrier some how. ** ghost is blocking bullets from beyond the grave.Ghost was set to active while outside of graveyard. **set ghost.isactive to false before setting it true when rendering graveyard. I think NPCs outside are set to active outside of outside? Doesn't seem to effect things. They don't stop bullets because they are not zombies or ghosts. What happens if you want pedestrian NPCs to get hit by bullets. I don't want that.  
+ 
+leaving outside by car, car speed is still set to fast after return from cemetery
+
+Gotta try a new song. current one is too...I don't know what. The beat gets in the way lets say. 
+
+Needs to be like a ambient synth wave. Or like a solo acoustic guitar. and it plays a little riff every time you interact. Since we are also playing street noise it has to be minimal I think. take another stab at a super ambient no melody background swells. 
+
+it takes all day to write a song. 
+
+Astral Traders: Merchants who sell unique items or artifacts not available elsewhere.
+
+Verticality. The player can some how move to higher platforms. floating platforms on the astral plane. Player takes doors that teleport the player to a higher platform. jump pads. jetpack. ability to fly. Maybe flight with very low gravity. 
+"Press space bar to fly". flying animation. 
+
+added another cloud layer. 
+
+Added physics to player. Velocity, acceleration/deceleration, jump, gravity, isOnFloor ect. 
+
+Do we just not allow jumping unless it's the astral plane? Or do we leave a weak jump and then a strong jump when in astral. 
+I think weak jump, more player input is better even if it doesn't do anything. 
+
+If the player jumps and shoots at the same time he dives like the matrix. Dodge roll? invincibility frames as a way to slide by zombies without being hit. There is not enough combat to justify a mechanic like this. Are we making a platformer or an adventure game? Leave the jump for now and see what happens.
+
+need sound when taking pills x
+
+when you receive the cemetery key, raiseZombies = true x
+
+Need another enemy. Flying enemy? crows wont work. They are too dark. outline them. red eyes. act like swarm
+
+make the health bar green. Health bar looks too much like a platform. give it a texture? like a thermometer semi transparent
+
+ghost in graveyard needs to stay on the left side. narrow it's destination range. 
+
+Enemies on platforms. ghosts can fly? ghost should be able to track the player on the y axis as well. astral ghost start agro?
+
+Added enemy bats. seems lame. Redo sprite. Needs better behavior. whats the point of bats if they only move left and right.  
+
+wait...\n\n your not like the others
+
+Need ranged enemy. slow projectile, enemy people. cultists, private contractors. Men in black. 
+
+added MiB. They show up after you get the cemetery key. What could they do? if you click on them you die and wake up back at the apartment. Maybe they follow you up to say 150 pixels then stop. if closer they stay stopped. otherwise follow
+
+Maybe the mib will show up on the astral plane, they will carry guns as well.
+
+need a check so that fortune tellers dialog is prioritized. Teller var. if !teller
+
+Solved long standing bug with NPC speech. You can now skip dialog by clicking or pressing up. solves a host of other issues. If you click the npc a second time it stops the talk timer. It was that easy, just needed to not look at it for a while to see. 
+
+revisit platforming later maybe you will find fixes for some of those bugs. 
+
+I wonder if I could take my bat sprite and add a shader to just that draw call, then do some funky shader stuff to turn the bat into an astral bat. Shimmering semi transparent wraith like apparition.  
+
+added outline shader to player. Maybe it's better this way all the time? 
+
+continue with shaders on other sprites. ghost could glow, bats could be astral bats, could we do blood with shaders?
+
+we could active outline shader when on drugs. or a glitch shader on the player or something else. 
+
+bullets could glow. add shader to street lights?
+
+After dying, going to the cemetery doesn't work on the first try. It fades out then fades back to street. 
+
+Policeman is broken. fixed by setting destination to position when attacking. Needed same fix for zombie. how was it working before? we will never know. If you just walk away from police, they get stuck mid animation and don't attack. How to solve this. The player is stopped by the police if they touch them. This gives time for the attack to happen. Like a stun lock, but you should be able to run out of it. How can we call player from npc. in main track player and police NPC positions. if they intersect stop the player for 1 second. 
+
+Try more shaders. outline shader on bats. 
+
+experiment with gravity on the astral plane. slightly less. 
+
+Added rainbow outline shader. We draw an outline around the sprite and replace the inner pixels with a rainbow color. Try a black outline. Looks ok. A larger bat could be cool. Need a plan for the astral plane. You can visit it any time unless we don't draw the dealer until later in the game. Maybe you need to have the revolver first before we show the dealer. Need a boss of the astral plane. It should be an archetype. Death, a grim reaper. an evil wizard, a witch. an Angel of death. The astral plane should be it's own game. There should be a reason to leave and come back. Ghost is asking to find his lost relic. a pocket watch doesn't make sense being in the astral plane. 
+
+Maybe the player needs to take drugs while standing next to the ghost in the cemetery to make a magic door appear. Freeing the ghost. 
+
+There is a friendly NPC in the astral realm. He sells astral wares, He also sells a potion. which is another drug you can take.
+He also sells an old pocket watch, that belongs to the ghost in the graveyard. He sits on top of a platforming puzzle, half way up. Maybe he sells an item needed to fight what ever the boss would be at the very top of the platforms. 
+
+While climbing the platforms we show different planets as the player gets higher. 
+
+Cemetery gate needs dialog box saying "Locked"
+
+Revisit foreground. Made the foreground even wider 1600 * 4. 6400 x 1024. Now I just need to draw in a bunch of new buildings and move the left and right barrier. could make the cemetery or graveyard wider. maybe there is an old haunted house next to the cemetery further to the right. or some old insane lady lives there and gives you an item or something. She's secretly a witch and spawns a bunch of skeletons to attack you. She temporarily turns you into a frog. The camera zooms way in on a frog sprite with jump animation and everything. A big mansion house could look cool in these colors. 
+
+There is a dig spot on the far left of the street. 
+
+Added an animated UFO that floats above the cemetery after you have the badge. Reused old picture of UFO that seems to fit the style and colors. Need to add light cone beneath the UFO that turns on when your underneath it. Go from there. use draw texture pro to stretch the light cone to fit say 64x256. Made light bar. A bar of light 32 by 256. 
+
+UFOs to controversial? Fuck em, it's a piece of art. I'll make what I want. 
+
+When and where to UFOs show up? Need another location that isn't the cemetery. Library? police station, tavern, park?
+
+a park would make sense. An NPC asks you to meet them in the park. they have some information on the zombies. 
+
+You can enter an apartment in the building down the street. Draw building lobby? press a buzzer for the apartment. Elevator. I wish some one else could write the story.
+
+If you walked all the way to the left when outside. A UFO drops down from the sky, then shoots off at incredible speed.
+
+UFO needs a sound effect.
+
+Added a low hum with positional audio. Consider positional audio for player_car. When car drives away it's sound could fade out.
+
+apply drunk shader to ufo. Too subtle. rainbow outline shader looks cool, could transition from shader to shader. 
+
+You meet the boss NPC in the park. He warns you to stay out of it. He then disappears and zombies spawn. He's a necromancer CEO of NecroTech. Maybe there are pedestrians in the park who can get attacked by zombies. Start by putting NPCs in park. 
+
+MiB talk to you at park if you have the cemetery key. 
+
+Tried using vignette shader colored red to indicate taking damage. I could not pass player to shadercontrol.h it would break everything for some reason. but I can update the shader from main anyway. SetShaderValue(shaders.vignetteShader, ect) Since we store shaders in a struct that is shared with main. Still won't work. Just use a texture. Draw a semi transparent Red vignette the size of the screen 1024x1024. show it when hitTimer > 0;
+
+if within 15 attack, if within 10 stop. 
+
+
+for each zombie, iterate NPCs in park, return the closest NPC, hasTarget = true, destination = NPC.position
+
+Don't spawn zombies if you don't have the revolver. It could be pretty tragic if someone missed the gun and got killed by zombies. 
+
+Draw trees in the park foreground, possibly mid ground trees?
+
+If you talk to the MiB in the park, he say's "we are watching you", then vanishes, then zombies raise from the ground and start attacking the pedestrians. He only shows up if you have the cemetery key. Zombie/pedestrian behavior is till a little buggy. NPCs now seem to set a new destination when they are hit, so it looks like they try to run away. I think I'll keep it like that for now but it might look better if they just stand there and take it. 
+
+Zombie/pedestrian interaction uses pointers. We iterate 2 vectors and set a pointer from zombie in one vector to NPC in another. So zombie can call take damage on NPC. First time I've needed pointers so far. 
+
+Need dramatic version of the music for zombie attacks. 
+
+Game is getting too big to keep in my head. What happens in the game so far. You start under the street light outside your apartment. You can either go to the apartment and get your keys and the gun, or you can talk to the homeless guy, but you need to do both for zombies to spawn in the cemetery. If you visit the cemetery before this, it is empty. Once getting to the cemetery, zombies ambush you once you get out of your car. You can then walk left to find the shovel where zombies again attack. You can go right and find nothing but another zombie attack. the gate says locked. So you go back to main street. There are NPCs to interact with on main street like the dealer, the fortune teller, the liquor store also. At some point you need to go back to the hobo and talk to him again. He says zombies are gathering in the cemetery before invading the city and you need to stop them. He gives you the key to the cemetery gate, and tells you where to dig up the shotgun. You then return to the cemetery where you are ambushed again. You then can enter the graveyard. You can go left and talk to the ghost who says a cryptic rhyme about setting him free. You can go right and get ambushed by zombies. The first zombie you kill drops a dead body with a ID card. You can pick up the ID card and it says it belongs to some one who works for a company named necrotech. You again return to the hobo who says necrotech was his old employer and you should use your computer to look up necrotech, once you do a new destination is on the car menu. That is how far that story ark goes. The ghost story arc is you talk to the ghost you says you need an altered mind. You talk to the dealer and buy drugs. You take the drugs on main street and find a magic door. This leads to the astral realm. There are platforms and astral bats to fight on the astral plane. Platforms lead up to a really high big platform where a boss fight will take place. I forgot to mention if you walk to the far left when on main street a UFO drops down out of the sky, and shines a beam of light onto the player. Once you have the cemetery key the UFO appears in the cemetery for no reason right now. And that is about it. 
+
+So you could continue the Necrotech ark, or make a boss for the astral plane, or remove the UFO from the cemetery. 
+
+Not sure I like the necrotech idea, but you can always change it. 
+
+fixed hobo moving while trying to talk. refactored some code and it seemed to fix it, also fixed zombies bugging out when out of range of player. 
+
+Implement full screen feature. Involves drawing everything to a separate texture then resizing said texture. We could use this for shaders as well I think. If we are drawing to a separate texture anyway, why not apply shaders to it. 
+
+implemented multi pass rendering. BeginTextureMode(targetTexture) saves whatever is drawn under it to a target texture2D. We can then add shaders to the whole scene and save it to yet another texture before we draw that texture to the screen while applying more shaders. There are 4 passes. targetTexture, vignetteTexture, finalTexture, then draw to screen where more individual shaders are applied. Looking at it now, I see I can add vignette texture to the starting targetTexture to save a step. But I might need another pass in the future so I can just replace vignette with whatever that is. 
+
+Added old film shader. Could be used for a cut scene. Adds film grain, horizontal line glitches, sepia tone, and something else. It's added to the finalTexture pass, and only runs if film is true. film grain is cool looking. Maybe an underground area we could apply film grain because it looks good on black. implies darkness. Subway station? 
+
+Ghost is broken. Does not follow player once attacked. in graveyard. x
+
+zombie npc attack still buggy. x
+
+put rainbow outline shader on magic door. x
+
+if you die in astral gravity is not set back to normal on respawn. x
+
+background street light look muddied. from copying the image so may times? Just remove for now. x
+
+fixed full screen, add UI to renderTexture before drawing to screen that way their positions are baked into the image. x
+
+Add trees to the park. x
+
+Astral boss. x 2 ghosts are the boss of astral until I can think of something. 
+
+fix zombies, zombies occasionally flip left and right really fast for some reason. 
+
+if a NPC is killed by a zombie. Spawn a zombie at that position. Needed to wait for death animation before raising zombie. 
+
+NPCs should interact with each other some how. We would need more than one Dbox. We could make a dialog box class. It has a position, a std::string of what it says, font size, timer? This would be very complicated to deconstruct what I have now for something new. 
+
+multiple calls to draw dialog box would do what. make it jump between 2 positions each frame? show_dbox is global. test calling it twice. it would just draw it at the last position you call. 
+
+click on inventory to switch weapons? x inventory item select code is getting out of hand. 
+
+Added mac10 to the top of the astral plane. You needed a reward for getting to the top of the platforms, so this will do for now.
+Doesn't make much sense to find a gun on the astral plane. You can get the mac10 at the very beginning of the game. good.
+
+zombie spawn delay is too short. x
+
+drugs ware off when exiting astral. x
+
+fix car tires. 
+
+fix midground buildings x
+
+upkey on mac10 in astral not working. x 
+
+fall through platform gravity is borked. x Just had to apply gravity last. And flush excess velocity when landing on a platform, it kept it's downward velocity from falling, needed to reset to 0 when jumping and landing on platform. needs to only run once to prevent jumps being inconsistent. Platforming is very simple but more or less working. 
+
+if health < 100 show health bar else show_healthbar = false x
+
+flying saucer didn't show. if (position.x < 64 && gameState == OUTSIDE) x
+
+if you were to make a save feature, what would you need to save? player.position, hasGun, hasShotgun, hasMac10, hasCemeteryKey, hasPills, hasWhiskey, basically save the state of the player class, gameState, money, date, it would be a nightmare basically.
+
+tried to refactor dialogBox. Reverted back to what I had. I tried making a dialog box class, got it all working and realized it was 10 times more complicated than doing it all in one function like I had been. Just clean up the offsets. 
+
+Need another NPC. dude with a gun. special forces, mercenaries, private contractors, pirates, 
+
+added highlight shader to NPCs. Draw a white outline around the NPCs if they are interacting. Looks a bit odd, because "interacting" is on a 5 second timer. So the highlight turns on and off while talking to the hobo for example. A solution may be to just draw the highlight when the players position is closer than 20 pixels or something. That would mean NPC would become highlighted while walking past. Maybe if interacting, turn on highlight, but don't turn it off until the player is a certain distance away? Clicking on the NPC would initiate highlight, can't think of a better way than distance to player to turn it off. Do it then. Need another boolean. highLight turns on when interacting and turns off when 30 pixels away. x
+
+Implemented. Works way better this way. Possibly don't need interacting timer. Maybe player could have a member variable interacting as well. To prevent interacting with multiple NPCs at once. 
+
+abandoned underground subway station. Filled with mutated rat people with guns. murder your way through tunnels until you find the king of the rats. He's an NPC that you talk to about something or other. There are rats with dynamite that blow themselves up. 
+
+Added subway level. How to incorporate it into the game? Maybe once you trigger zombies in the park, they are triggered everywhere. the subway then becomes another place to fight enemies. Still needs a reason for the first half of the game. You can take the subway to yet another area. or to the park. ditch the car? subway costs money? Just hook it up to the park for now. Need a subway station in the park. 
+
+We have one subway station that you can exit into different areas. enter subway, pick destination, animate train with player on it, camera follows train. fadeout. fade back in to the same subway with character outside of train. train menu displays different destinations, exiting station takes you to park or whatever the destination was.
+
+Need boolean again. exitToPark, exitToOutside, 
+
+You have a limited time to catch the train. If you miss it you have to wait for another one. The menu pops up automatically when you stand near the door of the train car.
+
+some how make the player board the train. stand by train door. UI comes up. Hit park, player.position = train.position, trainTimer = maxtime so train leaves immediatly FADEOUT as the train is moving. 
+
+ghost is too transparent. x
+
+change Car UI to look like the rest of the UI x
+
+change train timing, it's too long of a wait. 17 seconds. 7500 start change to 5500
+
+you can drive to the park, then take the subway, and it will bring you to the park and the car will be gone. Need to resolve this somehow. If you take the car to the park, exitToSubay or whatever = true, but then we don't draw the car, we would need yet another boolean. carToPark
+
+The car magically teleports home if you take the car to the park and the subway back. 
+
+Need something new to work on. Boss fight in astral. Just put a ghost there for now and have it agro some how when play gets close. 
+
+it should say up to exit above exit in the lot. 
+
+bat are bugging out. flying erratically. Are they comparing against themselves?
+
+Make a Main Menu. raygui? or text that highlights when hovered. or both. rayGUI can probably do that, color text. 
+
+				PLAY - exits menu
+				FULLSCREEN
+				QUIT 
+
+implement pause using enum state
+
+move up to exit position to center in Lot
+
+fix car wheels
+
+UFO in cemetery makes sounds on main street. 
+
+
+in lot, up to exit position needs to be set when player is over exit. 
+
+
+
+New plan:
+
+	Test the game. x
+	Fix the bugs. x
+	Make a release. x
+	Post about it.  x
+
+1/10/2025
+New new plan. Where was I. Pick up where you last left off. Necro Tech. Finish drawing NT headquarters. Take the road to hq?
+It supposed to be an office building in the city. Maybe you need to take the subway there, but that makes no sense. It's already set up to take the car to nt hq so go with that for now. Draw a barbed wire fence that blocks off the rest of the area except for the entrance to the building. Once in the building then what? 
+
+Entering Necro Tech HQ, you are met by security guards. It then turns into the lobby scene from the Matrix. Maybe You are just met by zombies. The zombies have already taken over the lower levels of the building. Once you visit Necro Tech is when zombies start invading other areas of the game. like outside and the subway.
+
+The interior of the building is a bunch of platforms and elevators. There are scientists being chased around by zombies, and security guards with guns. Security is hostile towards everyone, like half-life. 
+
+Platforms and elevators would be a pretty big job. Maybe just corridors and elevators. Would we render each corridor with an elevator at the end that transitions to the next. Lobby, Level 1, level 2, penthouse. Cause if we do platforms we would need to deal with zombies on platforms and gravity. Elevator scene between each level. 
+
+Maybe just outside, lobby, elevator, penthouse boss battle. 
+
+Necro tech hq oustide, the camera is locked zoomed way out. To give you a sense of scale for how big the building is. That means the image needs to be wide enough for the camera. Will need to start with just a 1024 square image then adjust once it's halfway implemented. 1024 x 4. 4096
+
+Is there a secret third option? 
+
+renderHeadquarters(GameResources& resources, player, player_car, shaders){
+	drawBackground
+	outside security? 
+}
+
+new new new plan:
+	Make astral plane better, boss or another enemy, turrets? slow moving projectiles. 
+
+
+changing player_car texture doesn't change it in game. Maybe because we are rendering it at a lower resolution. The up res doesn't work. it can't be this because we changed the color and it didn't change in game. Do I need to push to github or something for changes to stick. 
+
+
+Puzzles:
+
+	moveable boxes. pressure pads. shootable switches. lasers. timing puzzle with moving lasers.
+
+necrotech lobby is guarded by a laser grid. The lasers blink on and off in a pattern and possibly move. The player must navigate the lasers to enter the building. 
+
+enemy robots, AI controls necrotech. 
+
+The necrotech building goes off screen it's so tall. we don't need to zoom out. Just get it in game, fuck the resolution.
+
+render the same background as street just change the foreground. 
+
+ok, necro tech hq is implemented. Now what. There needs to be something that happens to justify this screen's existence. 
+
+You are met by 2 robots. They banter back and forth with each other on whether to let you inside. They decide they will kill you instead and shoot you with lasers. What do the robots look like? Humanoid? tank tracks, floating, a floating eyeball drone. We could use ufo code to make it wobble. draw it then. 
+
+forgot to get NPC by reference, was stuck for like 2 hours. for (NPC& robot : robots) forgot the &.
+
+robot can patrol around what next. if agro he chases player up to a point then shoots. add bob to robots
+
+if you interact with the door to the building robots get agro. 
+
+worldToScreen(mousePosition) needed to be calculated inside beginMode2d() to get the proper coordinates based on the camera.
+I was getting the worldMousePosition before setting up the camera, but it just happens to work for the first 9 scenes, but not the new one. Strange but we caught a bug that could have caused future issues. 
+
+in handleRobot make robot stop 100 pixels away from player when chasing. Then draw shoot animation/bullet? bullets can look different? We should use existing bullet code just add a way to change the appearance. x
+
+robots shoot lasers, only lasers hurt player, laser is a member var of bullet class. eventually we may need to have bullets hit player as well as lasers. just make another member variable enemy_bullet. then check if laser || enemy_bullet. 
+
+Next make the robot able to talk. HandleNPCInteraction -> if robot: talk timer = ...ect...
+
+could we implement a password interface? 
+
+clamp robot to door area.
+
+2 more robots spawn in when you kill the first? Maybe too difficult. -implement robot spawn in, it's own "rise" animation. 
+
+implemented password interface where you need to type in the password: 666. Where could we hint the password? in the apartment, in the red book. on the laptop when you lookup necrotech. When you click on the book. it brings up another interface. theres a crudely drawn picture of a women. it says RIP. To give some background to the character implying he has a dead wife. That's why the cemetery is there. The ghost in the cemetery is your dead wife? 
+
+Game decision at the end: Use necro tech's technology to bring you dead wife back to life, or don't and destroy the infernal machine.  
+
+if you kill the robot and don't put in the password, you can't get into the building. What is another way in? The badge can get you in somehow? If you click the badge it tells you the password. Yeah but what if you kill the robot. You can enter the password on the door. if (not passwordValidated) draw PasswordInterface
+
+NecroTech Interior:
+	Lobby:
+		find references for pixel art office building lobbies. Pillars, fire extinguisher, elevators, front desk. 
+		Very tall ceilings, a desk with pillars on either side. There is a robot if front of the desk.
+		interaction = 1. Another interface? Nah just dialog where it becomes obvious it's a trap. then a big fight begins. Like lobby scene in matrix. zombies and robots start spawning in. robots vs zombies vs player. A three way battle. 
+
+		civilians? A 4 way battle. normal NPCs are in the lobby when all this goes down. Maybe it works like an arena.
+
+		Draw the lobby x
+		NPCs in the lobby? just business men and women. x
+		robots in the lobby x
+		zombies in the lobby
+
+		once all the first robot is dead spawn zombies as well. 
+
+
+
+		robot sound effects
+
+		bullets colliding with unactive robots somehow. Bug I overlooked. NPCs are still active when not being rendered.
+		they just aren't being updated, but can still interact with bullets. Added a temporary solution where we assert that 
+		robots are inactive when outside of proper scene. Need to do this for all NPC vectors.  
+
+
+
+
+	Elevator:
+		Old school elevator level. Like battle toads. Double Dragon ect...
+
+		or.. elevator is a cutscene. first implement interactive elevator. 
+
+
+	penthouse:
+		Top floor Where the CEO hangs out. 
+
+
+	fortune tell gives a full tarot card reading. Make a mini game that can be built seperateley. It can be a stand alone randomized tarot dealer machine. It deals out in the usual way and click on the card shows it's definition. Why has no one done this yet?
+
+	what triggers lobby robots? Another conversation? Front desk robot, interacting with elevators. Lobby NPCs have different speech. They are all assholes. Need to animate elevator. elevator struct rendered in lobby replacing one of the background elevators. Needs to be telegraphed that it's usable. 
+
+	There is a MiB in the lobby. talk to him to trigger the fight. Many MiBs? MiBs with guns? 
+
+	Park mib doesn't disappear he pulls a gun and starts shooting. Need mib death animation, shooting, aiming?
+
+	Maybe it's just mibs in the lobby. mib flocking? How can you make only lobby mibs interact differently? mib.speech
+	what do they say? getem' boys. something about walking into their trap. "You fool\n" "You should have\n never come here" 
+	then agro = true, spawn mibs behind player, gonna need mib flocking. start by making the lobby full of mibs. 
+
+	...spawnMiBs();
+
+	leaving graveyard retuned to apartment not cemetery. Must have been dying, maybe health was zero but didn't trigger death cause i took pills? remains a mystery. 
+
+	first aid kit in lobby. contains pills. 
+
+	refactored NPC repulsion force into one general purpose flocking function. It takes the player and the vector of NPCs and applies a repulsion force if the NPCs get too close. This works for bats, ghosts, robots, and MiBs. Enemy NPCs only flock if agro = true. 
+
+	Is there a better way to keep enemies seperated? because now it looks kinda dumb when they run into each other. They could attack then retreat. Fire once then retreat and let the other guys shoot. or Lessen the repulsion force. Maybe less would look better. We just don't want them to overlap completely with the same animation. 
+
+	how do other games handle it?
+
+	Maybe civilians getting killed in the lobby is too much. At least one person thinks so. I'm making art. It's a piece of art. It doesn't have to please every one. 
+
+	Struct Elevator{
+		Vec2 position,
+		texture2d animation,
+		float frameTimer, 
+		bool open,
+
+	}
+
+
+	if lobby mibs don't follow player
+
+	Bats in astral realm are missing. They were never set to active when created, we jerry rigged it before. Wait..should they be active on spawn? that means there is invisible bats on every scene. We need to do the assert like we did for robots and mibs. assert that they are inactive when not in the right scene.
+
+	leaving park, we must not set goto park back to false, oh if you take subway back from the park, gotopark doesnt get set to false. is my guess
+
+	Mibs are broken for some reason. They shoot once then freeze, is it flocking problem? Not sure what the problem was. I think hasTarget was not being set to true when mibs were agro. It seems fixed now, but who knows. I thought it was working before and it just broke itself. 
+
+	Transfer vector<NPC>(npcs) to outsideNPCs
+	transfer zombies to cemetery zombies/graveyard zombies
+
+	All this just to stop them from being active. Why can't we just spawn them inactive and turn on when player enters scene?
+	what if the player leaves the scene and comes back. So we need a way to switch it off. Maybe it could live in the scene transition code. HandleOutsideTransition could set all NPCs to inactive when the player leaves. and when entering say Necrotech, all the robots get actived. I would need to do these checks for all scenes. Or I could do what I have now where we check every frame. If I just would have thought of this contingency before would have been ideal but here we are. I say we leave it as is. It can be a weekend project to optimize the code. Because we are literally iterating every vector every frame. or maybe the refactor chatGPT did stopped that but I have too look at it some more. 
+
+	No it definitely iterates all NPC vectors every frame. Can't be good. x Solved by using std::map and only updated NPC activity when changing scene. 
+
+	exiting park to subway then back to park leads you to outside. gotopark needs to be false only after leaving by train
+	maybe this is fixed?
+
+	what now. Just refactored NPC group activity code. what now. Elevator scene? penthouse scene, some one needs to get thrown out of a window. Had a flash. A fancy office with a floor to ceiling window. end of game the evil CEO gets thrown out the window somehow and we play a cut scene of him falling. 
+
+	"Your loyalty ensures eternal employment." -ChatGPT
+
+	In lobby, after robots die, spawn zombies. x
+
+	RenderOffice(resources, player, camera, ect, ect)
+
+	office worker NPCs + zombies. Maybe just business people, until I feel like drawing it. 
+
+	ROBOT SOUND EFFECTS - update sound manager to handle robot voices as well as human voices. x
+
+	necrotech front door password timer. 
+
+	created office worker NPC, the art is way better than the other NPCs. Consider redoing the normal NPCs. 
+
+	NPCs should run away from zombies. IF they are touched by a zombie they should stop though. How would I do that?
+	I would need a raycast or something. 
+
+	Find the closest zombie and move the opposite direction of it. x
+
+	Park NPCs need the run away logic. abstract it away? x
+
+	redid NPC art. People seem to like it. ray liked it. x
+
+	An alarm sound plays when zombies are spawning in the lobby and in the office. Needs to be not annoying. x
+
+	policeman zombie interaction? police could use there gun to shoot zombies, or club them if they are close. 
+
+	mibs hostile to zombies? maybe not. 
+
+	fortune teller gives you the password x
+
+	NPC flocking? only if targeted? fixed NPC runaway behavior, fixed flip flopping x
+
+	expand lobby to 4096 x
+
+	it should say uptoEnter on car in cemetery x
+
+	ghost in astral don't agro x
+
+	make another magic door at the top of astral for an exit. x
+
+	zombies were still targeting npcs from beyond the grave. So NPCs would continue to avoid dead zombies. Just needed to check if zombie is also active in findClosestNPC()
+
+	game isn't bloody enough. Could we add blood spatter? particles? you would need to make a particle class. and an emitter. 
+	A lot of work for not much payoff. I want the office to get bloody. when you kill a zombie leave a corps every time?
+	blood gets spattered on the walls when zombies are killed. make a blood spatter sprite. It wouldn't work for outside unless we do it on the ground. Maybe a very limited particle system. just a dot that we apply force to.
+
+	implemented particles. Particles.h has a particle struct and a class Emitter. in Particles.cpp we spawn and update the particles based on the emitters position. Complete with different functions for explosion or blood spray particles. 
+
+	could we do smoke? a city turned to rubble with pillars of smoke everywhere. and that's when rad city begins. this is a prequel to that game. 
+
+	another dig spot in the graveyard would make sense. <- what do you dig up? 
+
+	particles get messed up after a while for some reason. turn down the speed some more
+
+	CarUI was being rendered behind uptoenter text. x
+
+	write a song on guitar as a background track, another one for astral realm, and another one for battle music, the battle music could be part of the original track just more intense. take your time and do a good job.  
+
+	The astral realm is kinda secret. You could end up not having the mac 10 at the end game. We should have it buried in the graveyard. telegraph it with text if you have too.
+
+	over cemetery game doesn't show text, either does car. fixed?
+
+	friendly ghost tells you there is a machine gun buried over there. x 
+
+	Particle Monster? 
+
+	There should be more to do in the apartment. mini game? 
+
+	whats next. Penthouse office. Necromancer CEO, draw it.
+
+	Need to draw the environment first. It has to keep the same color scheme. 
+
+	what else I don't feel like drawing right now. more office stuff? Maybe a key for the elevator held by a NPC you need to talk to. He can explain the situation. He should show up after you kill all the zombies in the office. spawns by the elevator2. elevator2 is not accessible until you talk to this NPC. Just a random office worker. Frank. Frank says he just works here. He didn't know about the experiments with the undead. Frank could have a red tie or something to make him stand out. Maybe frank is covered in blood. 
+
+	Frank is in the game. 
+
+	Since we have security cameras everywhere, maybe we should do the bank of monitors in the CEO's office. instead of a floor to ceiling window with the city in the background which could be cool because we could do some parallax. or both...
+
+	make an over ebotton2. so elevators don't both open on ebutton. x done now what. 
+
+	chatGPT suggests a melee weapon. maybe a crowbar like rad city. existing weapon animation management is a nightmare to add too. review code and see if it's even possible. 
+
+	hmm maybe I could make it a weapon you always have, by pressing V when your not aiming, you swing the crowbar. that way it doesn't interfere with existing weapon code. You would need to find the crowbar somewhere.
+
+	Destructible boxes. barrels. can we make them have weight? could you carry them?
+
+	made header only file box.h I think I should try to keep things header only as much as possible going forward. Simplifies things and better than just having a struct in main cluttering things up. 
+
+	the box has 5 health points and takes 5 hits to make it fully disappear. Maybe is should explode on the third hit revealing an item. or maybe it should stay fully broken and not disappear.
+
+	Once destroyed the box should spawn a box of ammo. Need to make box of ammo. 
+
+	make the player bleed. 
+
+	made pickup.h a pickup can be shells, 9mm ammo, or pills, or money? randomized 
+
+	refactored game resources. I had gameresources.h but no gameresources.cpp. I was doing it in main. If I had just made a cpp file for it I could have been sharing resources whereever instead of passing it through functions. So I went ahead and made a gameresources.cpp and added a extern GameResources resources to gr.h That way if I want access to game resources I can just include it at the top of the file. We could probably do this same thing for the player/camera/ camera.h? player_car ect. 
+
+	refactored player the same way. Made an extern Player plaer inside player.h then made the class in player.cpp and include in main then we dont need to pass it to all the functions. cleaned up most of the player and gameresources redundant function calls. 
+
+	player is stronger with the crowbar. Make enemy faster. spawn in faster and walk faster.  
+
+	if you pick up pills when your inventory is full, hasPills is set to true and it isn't added to inventory, so you can no longer pickup pills. cant get full inventory with out cheating. Maybe make it 12 just in case. 
+
+	lock player movement when entering scene some how. 
+
+	up to enter rendered in front of car UI in cemetery. again fixed?
+
+	click on the badge to see the password somehow. x
+ 
+
+	dont change scenes if zombies are spawning. couldn't reproduce bug where badge doesn't show up in graveyard. x
+
+	heal sound effect
+
+	when fading out, dont update player movement x
+
+	increase size of inventory to 12, needs to move to the left about 128
+
+	make park bigger?
+
+	boxes on the right hand side of cemetery, draw a prop as well?
+
+	boxes are kept in one big vector. they are assigned the scene they will appear in on initiation. On rendering all boxes we only draw the ones assigned to the current scene. 
+
+	NPCs could be kept in one big vector like we do boxes. NPCs would have a member var called scene. they would be assigned to a certain scene. like outside, office and so one. there would be no need to iterate through muliple vectors to get the closest zombie. Huge job though. You could have it both ways while you work on the new way. 
+
+	for (NPC& npc : npcs){             
+		if (npc.scene == gameState){
+			if (npc.isActive){
+				npc.update();
+				npc.render();
+				npc.clickNPC();
+
+				if (npc.interacting){
+					phrase = npc.speech;
+				}
+			}
+
+	this would work for regular NPCs. Just need to initiate the NPCs differently. come back to it. 
+
+	put something else at the top of astral. 
+	Item for the ghost? the 2 evil ghosts at the top of astral stole the friendly ghost's item. And the item is a rusty pocket watch. Pocket watch makes sense. It's old school, has sentimental value, Could be a magic watch that lets you slow time. teleport? freeze time. click the watch and enemies stop moving for a few seconds. 
+
+	you can beat the game without ever picking up the revolver. drops should give more ammo and you should start with less. make 
+
+	limit revolver ammo x
+	Huge refactor. Made everything global instead of passing things around like a fool. 
+
+	added cyber zombie with grenade launcher. Needs a secondary attack if you get too close. Can use death2 for attack2 animation. That way no where is safe far away you get grenaded close up he'll bash you. 
+
+	Header only animation player class. tried and failed. try again later. 
+
+	revolver bullet pickup x
+
+	pickups should give more ammo x
+
+	Sharpen shader. x good but not great
+
+
+	laboratory level. -should be dark like the rest of the game. 
+
+	grenade launcher thump sound effect. x 
+
+	astral ghosts should be on either side of the player when jumping up to the platform. x could be too hard. 
+
+	outline shader in astral is too thin. shader needs edit x
+
+	cyberzombies have 200 health. Need more health
+
+	add cocaine or speed type drug to game. Activate sharpen shader when tweeking. 
+
+	implemented lab level. Maybe the tanks can break when hit by cyber zombie grenades and spawn more zombies. 
+
+	How should entering the lab level work? what happens? You take the elevator up to the lab. It starts out quiet. Just scientist walking around the tanks. once you get to the console on the left. the alarm sounds and cyber zombies start spawning. First 1 then 2 then 3. If a grenade lands next to a tank the tank cracks open and a zombie jumps out. How would we even do that? Just iterate tanks and check for collisions with grenade. for every grenade check every tank. 
+
+	start with putting cyber zombies in the lab and trigger them. Needs to be more dramatic.
+
+	office workers pants are too dark. 
+
+	you can still switch to the shotgun even if you don't have. which deselects the revolver, which isn't good. How did I not notice this before. 
+
+	If you have the pocket watch you can't talk to the ghost. x don't show last message, it was bad anyway. fixed x
+
+	Astral realm is too hard if you don't have the mac10. maybe thats good. Ammo situation seems good too. 
+
+	You should have to talk to a scientist before zombies invade the lab. What should he talk about? 
+	"what are you doing in here?" "let me see your security badge" ""
+
+
+	Dialogue:
+
+	"Ah... a visitor. You stand in the presence of progress, of perfection! My children—no, my masterpieces—are nearly complete! Flesh and steel, mindless yet obedient. What use is a fragile human body when it can be upgraded? Enhanced! You wouldn’t understand, but soon... soon you will see."
+
+	make frank grant access to elevator 2 x
+
+	if you die while zombies are still spawning, glitch shader continues to play. We need to clean up the scene if we leave it. x
+
+	ghost dialog is broken x
+
+	clicking the crowbar icon swings crowbar x
+
+	you can fill your inventory with liquor. Make it so you can only carry one at a time. x
+
+	20:00 minutes to complete everything in the game. x
+
+	at subtle screen shake on grenade explosions.
+
+	move traffic is behind boxes x
+
+	put a stash of 3 boxes in the graveyard far left.  x
+
+	"The hands of fate now spin anew",
+	A relic lost returns with you.
+	By silver light and whispered spell,
+	You break the curse—I rise, farewell!"
+
+	make a choice to destroy the zombies in the tanks. There is a button on the center console to destroy specimens. Animate tank explosion. maybe do the same thing in CEO office but trigger self destruct. 
+
+	put glitch shader on it's own render texture. -> Tried but glitch shader doesn't work when applied to renderTexture for some reason. 
+
+	a reward for making it through. 
+
+	body armor? x armor is a yellow bar that is drawn over the top of the green healthbar. we could use a texture,
+	but what kind of texture. Metal, iron, get a better sound effect. 
+
+	put blood emitter on player already. x
+
+	boxes are ahead of train in subway x
+
+	vest sound effect. (zipper) x
+
+	21 minutes. How can we make it longer? Finish the UFO story line. Make a UFO interior. Maybe they give you a laser gun. Make an alien NPC. shit writes it's self. A naked grey alien? jump suite. with a bubble helmet. They beam you up. then there is a slow fade in. You are frozen, you can't move. the aliens are walking back and forth. They instigate the conversation. instead of you walking up to them they walk up to you and dialog comes up. Still need to press up to advanced the dialog. what's the dialog. "We have been monitoring your activity" "We approve of your motives" " Take this weapon that could be useful to your endeavors." alien speech audio clip plays. Then they beam you down. This all takes place in the cemetery after you have the badge. So you would be back tracking to get to it. Super secret. Tell know one about this part of the game either.
+
+	draw a grey alien.
+
+	draw UFO interior. 
+
+	beam up technology. 
+
+	renderUFO(){
+		parallax background. 
+
+		for (NPC& alien : aliens){
+			alien.update();
+			alien.render();
+			alien.ClickNPC();
+
+			if (alien.interacting){
+				phrase = alien.speech;
+			}
+		}
+	}
+
+	whats first. renderUFO. scratch that we need a placeholder background. what color? Pink? Green. Everything in the game is dark blue. This area will be green. take the laboratory background and make it green. Ha reuse the earth spin sprite yet again. 
+
+	UFO interior implemented. I hate it. Redo the art. 
+
+	What item or piece of information do the aliens give you? A laser gun. That's a lot of work for a secret no one is going to find. A Teleporter. Drop the teleport in one scene then press a button to instantly travel back to that scene. Maybe it just brings to back to the apartment if you press a button. Fast travel in other words. Town portal?
+
+	New alien voice and voice for hobo. Found a good gibberish clip, cut it into six pieces for the hobo, and then pitched up the 6 clips to be the alien voice. 
+
+
+	tanks in lab now can explode and spawn a zombie. 
+
+	another elevator in lab. it would be elevator 1. 
+
+
+	UFO doesn't move when outside when you visit it in the cemetery first. - there is only one UFO. when it moves to the cemetery it is no longer on main street. Not sure how to fix that other than 2 UFOs. If you pick up the cemetery key before seeing the UFO on the left. it won't be there anymore. Maybe it makes sense that way. because if you see it first in the cemetery you can get abducted. then if you saw it again on main street after being abducted, and it just flies away. that wouldn't make sense. so I guess the answer to my conundrum is to do nothing. 
+
+	alien drugs?
+
+	Needs more characters. 
+
+	Lots of things get triggered by the cemetery key. queue zombies, open graveyard, move ufo to cemetery, where else could be trigger things. The badge opens up necrotech. On password accepted we could make zombies invade mains street. 
+
+	It would be a cool thing to die on say the office, get sent back to the apartment, then step out side and see zombies in the street. Just make it possible for zombies to be on main street. 
+
+	maybe magic door one should dissapear when you go through it into astral. then the only way out is up. maybe. 
+	when you exit astral you should wake up in your apartment. 
+
+	if you die in the lobby, office, or lab next time you enter main street zombies are spawning. Maybe we should stop rendering the drug dealer and teller. if (zombies.size() > 0) dont render dealer. means if you left a zombie alive in the park dealer wont show up. If dealer dies and you never bought the pill you loose access to astral. and thats ok? All these things we can comeback to once the game is more or less finished. 
+
+	If zombies invade main street what about the hobo? Maybe he is there with a gun fighting the zombies. what gun? a mac10 would look coolest. shot gun would make more sense. shotgun is easier to control maybe. cause how would you get input for automatic fire? if he's got a zombie in sight he just unloads the clip? fires until it's dead, but what if there are many zombies. with shotgun just check if a zombie is close enough and if you have shells fire else reload. He should hip fire the shotgun. maybe its a pump. maybe it's a 44 magnum. that one shots zombies. 
+
+	made zombie speed 35 instead of 25. lessened time between spawns by a second for most encounters.
+
+	added pause menu button. 
+
+	added controller support. Except for the apartment and car UI where you need to use the mouse. Consider moving mouse with right stick? Right stick is zoom in/out right now. maybe car UI has controller button shortcuts for destinations. 
+
+	drawCarUI(){
+		draw UI
+		if (isgamepadbuttonpressed(, 0, A)){
+
+		}
+	}
+
+	the mouse seems to start at the bottom left of the screen when you enter car, make it start in the middle. 
+
+	maybe left and right bumper should scroll through inventory instead of d pad. That frees up the d-pad for other things. Then crowbar would have to be a face button i guess. not A , not Y, X is reload, i guess it has to be B
+
+	then what is the d-pad for? quickly switch weapons, map revolver to left shotgun to up, mac10 to right, and down for a future gun. I'm sold
+
+	change inv scroll to bumpers x
+
+	crowbar swings when exiting apartment with controller. x
+
+	you shouldn't be able to swing the crowbar when moving x -isMoving was being set to false at all times. It is now only false if there is no input. 
+
+
+	change min dist to player var in park x
+
+
+	Hide cursor is not working for all areas. park and graveyard still shows cursor when uning controller, cant reproduce. 
+
+	robot in necrotech wasn't turned off? strange, I swung the crowbar and hit a invisible robot while inside the office, this agrod it so it was agro when I came back outside. 
+
+	map weapons to d pad again, changed show inventory button to d pad down. 
+
+	We were not updating position audio on zombies except for in the park and subway. fixed we now update positional sounds everywhere zombies spawn x
+
+	refactored mount boolean to a struct in globals.h called globalState. so now for say show_dbox. you would need to say
+	globalState.show_dbox = true; and going forward all global vars will be added to this struct. As to not pollute main with a bunch of garbage up front. 
+
+	800 insertions. took 2 hours. 
+
+	what is next? Add another enemy. Add a laser gun you get from the aliens. what would be different about this gun to justify it's existence? A ray gun. shoots a beam. hold down fire to charge it up. release to fire. otherwise it's a pea shooter that does like no damage. but charge it and it will 1 shot zombies. The noisy cricket. 
+
+	halfway implemented ray gun. Make it so it can penetrate zombies up to a point. Give the bullet health. 
+
+	draw a progress bar by the players raygun that reflects the charge up time. 
+
+	needs better sound, bigger sound for bigger projectile. still needs better sound. 
+
+	you can leave by car while zombies are spawning in cemetery, and the zombies will show up on main street. can't get into car while zombies are spawning but you can once they are done and there is still zombies left. Maybe you can take zombies back with you and that's ok. everyone on main street could die and the game would just keep going. hobo would be unaffected. Once again the solution is to do nothing. 
+
+	raygun only penetrates 3 zombies max no matter how much health I give the bullet. It must be running take damage every frame. I set it to 1000 health and it still had 3 zom penetration. how many frames is the bullet over the zombie? must be less than 1000. so I don't know. -fixed by tracking which NPC is hit by bullet. One takeDamage call per bullet. Now raygun can lay waste to a line of 10 zombies, may need to dial it back, maybe make it charge faster. but less damage. 
+
+	once you kill the CEO or whatever you need to make your way out of the building that's still crawling with the undead. 
+
+	It's gonna take more testing of the end game. Need to make an ending before moving forward honestly. 
+
+	controller button for raygun
+
+	if I'm holding left trigger to aim, and hit the d-pad to switch weapons it doesn't work. Need to release aim to switch weapons which was not intentional. Controller can only take in 1 input at a time? HandleInput function isn't called while aiming so you can't put weapon switching code in handleInput, so it remains in shootLogic()
+
+	was using C++14, upgraded to C++17 so i can use clamp. Raylib already has clamp you fool. Well I'm using C++17 anyway. 
+
+	Raygun makes the office fight trivial. If you know how to use it. and were diligent enough to find the UFO.
+
+	Need a fight that lasts more than 30 seconds. The last boss should have multiple phases. 
+
+	Ideas are drying up again. Another NPC? A reason to visit the subway and park. Maybe there is a NPC in the park that gives you a mission where you need to go to the subway for some reason. We running out of room for items. Maybe you need to give somebody some pain pills? An old lady? in the park. Lost her cat? She lost her meds and need some pain pills. why go to the subway? Maybe after you kill the CEO the town is overrun with zombies, the subway has been abandoned and there are tunnels you need to traverse. Necrotech is using a portal to hell to summons zombies. The portal is held open by a relic. The relic is held underground underneath necrotech building. you can only get there by way of the subway tunnels. 
+
+	Tried to refactor spawnNPCs(). It's too spaghetti. instead of a isZombie flag, we now have a NPCType that gets set on creation. type = NPCType::ZOMBIE, tried to use this instead of isZombie and hobo, police ect... Would need to deconstruct zombie AI code and I don't want to touch it. So now it remains half implemented, we could use this NPCType class enum in the future if we need it so I guess I'll leave it. 
+
+	reverted back to not use NPCType enum class. The game is almost finished the time for big refactors is over. Work with what you have because at least you know how it works. 
+
+	we you reload you face right. or you face toward the mouse
+
+	swing crowbar is buggy with the controller. raised deadzone to .5 and it seems better. however you sometimes swing the crowbar the opposite way you are facing. Like 1 in 10 times. 
+
+	The reward for doing a quest for what ever NPC is in the park is armor vest. 
+
+	digging up the mac 10 in the graveyard is lame. 
+
+	make showBadge false when exiting scene, like in handleTransition so it works for every scene. 
+
+	take the business people out of the lobby. maybe. Maybe less people. Maybe it's just full of mibs. Like 20 mibs. first like 3 then 10 more spawn. Have 1 business man and woman as fodder. for now just spawn in more mibs and take out some b people. x
+
+	enable health bar on main street. x
+
+	when leaving the apartment don't set show inventory to false. x
+
+	whats something you wanted to add but thought it was too much. first person views of building interiors. What else. 
+
+	put another elevator in the lab. on the far left. It starts locked. 
+
+	renderPenthouse() x
+
+
+
+	handlePenthouseTransition() x
+
+	how to switch to penthouse: handle lab transition, if elevator0.isoccupied TransitionState = FADE_OUT
+
+	redo the penthouse background. clamp it like the lot. camera stops before player. just start with the lot and edit it. 
+
+	Made a foreground with a cutout for a window. then draw midground buildings then background sky. Used art I made like a year ago that I never intended on using for a game. 
+
+	Need dialog for CEO. and a boss fight of some kind. He should summon zombies and had invincibility frames. He could phase in and out of existence. a mech suite? some kind of abomination of science. 
+
+	put CEO in office x
+
+	mouse cursor isn't locked to screen when in fullscreen. it's clamped to the left side but not the right. 
+	if (mousePos.x > screenWidth){
+		mousePos.x = screenWidth
+	}
+
+	fix mouse clamp problems. Having menu open when full screen needed to be handled differently for some reason. SO now the mouse is clamped from 0 to 1024-24, unless menu is open then it's Clamp(mouseX, 400, winWidth+winWidth/2).
+
+	CEO dialog:
+
+		2. Corporate-Speak with a Sinister Twist:
+
+		“Control the workforce, control the world. You call them zombies—I call them compliant citizens. No sick days. No insubordination. Better than human. Optimized for maximum compliance.”
+
+		2. Sinister corporate pride:
+
+		“They’re not undead. They’re streamlined, purpose-driven, and utterly obedient. Optimized for maximum compliance.”
+
+		“Control the workforce, and you unlock total systemic synergy. I’ve leveraged undead integration to streamline operations, eliminate downtime, and scale compliance across all sectors. They’re not zombies—they’re high-efficiency, behaviorally-optimized assets.”
+
+		“We’re revolutionizing human capital. One corpse at a time.”
+
+	mib on main street can be shot and killed. refactoring bullet collisions caused it. We check all mibs, maybe remove mibs from the enemies vector. yep just omit the mib on main street, but what if we want him to turn agro later in the game?
+	We would have to add him to the vector while the game is running? if (mainMib agro) enemies.push_back(mibs); Added a add group to enemies vector function, because we do this twice. Once for main street mib and once for CEO. We could do this with friendly ghost. 
+
+	armor not removed from inventory when it's depleted for some reason. we were doing if (!armor) where armor is a float. 
+	change to if (armor <= 0) RemoveFromInventory("vest"); x
+
+	We turned off glitch shader everywhere. It should still play the first time you see zombies at least. can_glitch = true;
+	it should also play in the lab when zombies first spawn. and the park. def park not sure about the lab. 
+
+	CEO is in office and can talk. now what? give him dialog, that triggers a fight. once you kill him, he turns into a demon. 
+	A flying devil. A gigantic beast who floats in the air flapping its wings. or a giant grim reaper, or a lich. First instinct said demon. draw a demon.
+
+	step one. just get the ceo to be able to shoot his gun at the player. 
+
+	what could the player spend money on? ammo, health, whisky, fortune, dealer, maybe make some things more expensive? subway costs money? 
+
+	CEO is set active from begining making him absorb bullets somehow. maybe we need to check the scene when doing bullet collision
+
+	make the CEO agro and shoot. x 
+
+	ceo could start outside of enemies. then add the vector once combat is triggered. that way the play can't skip the dialog. x 
+
+	glitch plays in office x
+	
+	add CEO dialog
+
+	create a final form for ceo with patterned behavior. e.g. charge 3 times then run away. repeat. make enum BossState
+	Need to draw it first. Just start with a red circle or something. 
+
+	for (NPC& boss : bosses){
+		if boss.isBoss{
+			switch (BossState){
+				case IDLE:
+					go idle
+					if timer <= 0;
+						BossState = CHARGING
+
+				case CHARGING:
+					charge
+
+				case FLYAWAY:
+					move away
+
+		}
+	}
+
+	Boss charges and does like 50 damage. Player can doge roll to dodge it. Maybe an attack the travels along the ground so the player can jump it. should he shoot fireballs? 
+
+	Maybe there are 2 ways into necrotech. the password. or kill the robot. then more robots show up, kill them then the door opens. mibs are agro when you enter. 
+
+	raygun was printed outside of the left, we must be drawing it inside mode2d
+
+	workers in office and tanks in lab don't spawn zombies. fixed, copy and pasted errs. 
+
+	the only gun that can hit the boss, is the rocket launcher. You find it in the lab. it seeks enemies. maybe like a plasma cannon or something 
+
+	if fireballs get below 700 - 32, blowup. x
+
+	if fireball lifetime is up, blowup. x
+
+	after crowbar tutorial text, if you have the gun show gun tutorial text?
+
+	when traveling by train to the park, it fades in on you outside the play area before jumping to starting position. 
+
+	if you buy whiskey with a full inventory, hasWhiskey gets set to true, so you can't buy any more. maybe inventory could exist off screen. No because the array is fixed, anything added when it's full gets lost. Make the badge disappear after talking to hobo about it. get rid of the liquor store. 
+
+	if zombies get out of bounds, they become inactive. fixes office situation. x below 1000 they take damage until they die
+
+	on first encounter with zombies text should say: Right click to aim\n\nLeft click to fire. x
+
+	draw the car in the park at all times. x
+
+	trigger zombies when cEO dies. x
+
+	trigger robots after zombies. or mibs. when all zombies die. 
+
+	we should give more armor after the lab fight? put some armor outside the elevator in penthouse. 
+
+	shortened subway wait time to 5 seconds from 10. 
+
+	subway gets abandoned when zombies invade main street? or another zombie/NPC killing spree in the subway. just don't draw NPCs if that one boolean is true. x test this. 
+
+	don't allow buying more than one drug at a time. to prevent inventory filling up. I think we already do this. You can hit p to get pills multiple times. In debug mode. 
+
+	lock the penthouse door until after lab fight. x until during the lab fight, you could escape to the penthouse.
+	this is commented out for the time being while we work on boss stuff.  
+
+	shooting boss while he is invincible should play a sound. x test this. sounds weird. 
+
+	CEO dialog needs doing. 
+
+	We need an ending. you kill the boss then what? It's an open world game. You go back to exploring the city. The hobo needs to say one last thing. 
+
+
+	Hobo:
+		We thought you were dead! You've been gone for a week. 
+
+		Well the world hasn't ended, so you must have accomplished your mission. 
+
+		A flying demon you say? Tanks of mutated zombie clones? A scientist gone mad with power? 
+
+		It sounds like you have had an adventure my friend. 
+
+		congrats! Thanks for Playing! 
+
+
+
+
+	dialog: We are saved! until the next company does the same thing. 
+
+	got rid of cheesy password hint the hobo gave and replaced it with the good ending. I need another thing the hobo can say if it's the bad ending because zombies invaded the city. so it should be if (interactions == 3 && bossDefeated && !spawnOutsideZombies)
+
+
+	Two endings:
+		The good ending is where you make it through all of necrotech without dying. zombies never invade main street.
+
+		The bad ending is where you die on the lobby through the penthouse, zombies invade the city. It's not game over, you can still beat the boss to get the bad ending. 
+
+
+	I died on the lobby. went back and 4 more robots spawned. This shouldn't happen. Also when I died a second time to the robots zombies showed up on main street again. This should not happen. x
+
+	on death we should give the player some ammo, so you still have a chance. x
+
+	was going to spawn mibs in boss fight but decided against it. What group of mibs would we use? lobby mibs or mibs. It might make the fight too difficult as well. 
+
+	last play test I ran out of ammo big time. I was even breaking boxes. Maybe we should give ammo at the end of astral realm. 
+	we give ammo if you die in necrotech. So you have ammo to deal with invading zombies. 
+
+	CEO still needs dialog. 
+
+	I thought shotgun spread was fucked because we added y movement to bullets. but I tested it and it works great. 
+
+	play tested all the way through no problems. That's a first. Usually playing through will give me an idea of what to work on, but when nothing goes wrong I'm out of ideas. take a break. It's in a state with an ending already. 
+
+	something needs to happen when the boss dies. Like a self destruct sequence. *
+
+	find music. 
+
+	if zombies invade, Hobo should be on the street with a shotgun. shooting zombies along side you. and he can die. x
+
+	The hobo needs to not be in the lot if he is on the street. He can't talk on the street, ensure we don't increment interactions when not in lot. 
+
+	the reload animation could be better. add offsets to the bullet spawn locations to simulate spread. or add spread logic to NPCFireBullet()
+
+	show inventory at all times. x
+
+	use old film shader instead of glitch. glitch is too glitchy, film shader gives it a horror vibe. Maybe even increase graininess. 
+
+	made particle explosion for raygun projectile, but it looks dumb without inertia. maybe spawnBlood the same way to make it look like it fizzles out.
+
+	something needs to happen when the boss dies. Like a self destruct sequence. *How could we accomplish this? the console in the penthouse...the player engages it? once necrotech explodes we can remove it from the car UI. maybe once the boss fight is done the elevator is locked so you go to the console and engage the self destruct sequence. then the elevator is open and you leave. zombies are in necroteche exterior upon leaving. robots are fighting zombies. 
+
+	put zombies in necrotech after boss fight. x
+
+	console dialog. x
+
+	Alarm sound in penthouse x
+
+	Alarm continues outside building. while fight is happening. x
+
+	we meet frank on the street after the boss fight. He has dialog and tells how he escaped the building just before it blew up. just append frank to npcs vector, he's bloody office worker, he could follow the player so you are sure to see him. x
+
+	something happens when you return to the astral realm a second time. something else is at the top. A different boss that also shoots fireballs. 
+
+	if you die in necrotech hobo is on street along with zombies, you then return to necrotech and beat the boss. is hobo dialog queued up right? Him being outside doesn't allow him to speak so it shouldn't touch dialog code. It's hard to test because you have to play the entire game for everything to be queued up correctly. 
+
+	when loading penthouse as first scene for testing purposes the elevators position doesn't get set. maybe set elevator1's position in renderPenthouse every frame. instead of setting in only on the transition. x
+
+	get a better reload sound. 
+
+	main menu button moves to the center of the screen on full screen. this will not stand. x still messed up. 
+
+	separate inventory for weapons. solves the inventory filling up issue. How would we do that? Another fixed array with the same rectangles. Where? at the top of main just like the inventory. instead of inventory[12], Guns[4] this can't be done tonight. Mull it over. 
+
+	we don't show healthbar in lot. x
+
+	we don't show HUD when zombies invade mainstreet. x
+
+	remove whisky, it just causes problems for not much reward. just make it so you can't buy it. 
+
+	went to park to subway back to street, when I left by car to the cemetery, I ended up in the park. gottopark needs to be set back to false, or one of those bools. x fixed. We may have repeating code for traveling by subway, it's a clusterfuck.
+	semi fixed when I connected cemetery to park, fixed a lot of errors. still a clusterfuck.  
+
+	I'm pretty sure it showed the shovel tutorial when I exited car in cemetery. x fixed and updated release
+
+	make a new NPC. What kind of NPC? an enemy? A boss of the astral realm. Maybe Death is the boss of astral. A grim reaper who has a fireball like attack. so we can reuse fireball code for a different looking projectile. The sprite would need to fit into 64x64, unless we could use drawtexturepro to stretch it to a larger size. Maybe try this with the demon first. 
+
+	Tried it with boss demon. works great just to scale the sprite when drawing. hit boxes are still small. but that's ok. I scaled the demon by 1.5. so 96x96 with origin set to 48, 32. moving the sprite down by 16 pixels so he hovers just above the ground. Try to make it play the attack animation when he throws fireball. and spawn the fireball exactly at this hand. 
+	Can't be done. attacking must be getting set to false some where or the animation is being set to walk. 
+
+	I was going to make another NPC. Another person on the street? A story character of some kind. An old lady that lost her cat. she could be hunched over with a cane. and a funny walk animation as she shuffles along. Then do we make a cat NPC? Maybe the cat can be in one of like 3 different places. or maybe it's just in the subway. To give a reason for the subway. Where the vest is now in the subway is a cat NPC that patrols around. and you then pick it up and it goes into your inventory? maybe it's an item. 
+
+	make a second inventory just for weapons. This would free up more room in the inventory proper. weaponInventory[4].
+	Where would we put it? top left? you can keep the functionality you have now. Just implement it separately and remove functionality once the new way is done. Where to start. Create a c style array called weaponInventory at the top of main. 
+	weaponInventorySize = 4; 
+
+	for (int i = 0; i < inventorysize; i++){
+		if (weaponInventory[i] == "Shotgun"){
+			draw shotgun icon. 
+		}
+	}
+
+	void addWeapon(type){
+		weaponInventory[i] = type
+	}
+
+	Added weapons inventory. Makes room for another item, but what. 
+
+	58 total npcs. 
+
+	connect park to cemetery x
+
+	connect cemetery to park x
+
+	lobby should go agro when you die in necrotech. 
+
+	test hobo on mainstreet again record it, it might look better now that we have proper blood. 
+
+	Make controller support for selecting menu buttons. Not just virtual cursor, make it hit up and down to scroll through menu buttons. would need: currentSelectedButton, buttons array? Look at inventory navigation and see how we do it there. 
+
+	currentButton = 0             switch(currentButton)
+									case 0: highlight button0 break;
+									case 1: highlight button1 break;
+	0 play 
+	1 controls
+	2 fullscreen
+	3 quit
+
+	seems like a very big job, have to handle manual highlighting, and timers and such for menu navigation with stick. How many people are going to play it with a controller besides you?
+
+	Hobo should move toward player and stop at a distance when outside. Only if he doesn't have a target. not doable.  
+
+	raygun bullets were getting recycled and we still drawing raygun projectiles.
+
+	outline shaders comes on after dying in the office some how. -not sure how this happens, does it happen when debug keys are off? we would need to play the whole game again. and remember to die on the office. We could hard code outline to be false if outside. Any reason not to do this? Do it then
+
+	The only feedback I have gotten was from my little brother. No one cares. You can stop now. 
+
+	when frank give you ammo, i think it sets the amount of shotgun bullets to 30 not adds 30. x
+
+	boss death timer should be 1.5 second like zombie. maybe longer.  x set to 2.0 seconds. maybe it should stay. 
+
+	having pills next to drugs in the inventory and take the pills the drugs also get taken, and hasdrugs doenn't get set back to zero. x just needed to break after removing from inventory. I think. Test this. 
+
+	we dont show crosshair on main street. Now we do x
+
+	cyber zombies explode on death. Looks sick. x Robots also explode on death, along with a yellow particle explosion. 
+
+	Boss should explode? He's full of fireballs so why not. Seemed like there were 4 explosions and one was underneath the ground. It was only for a second so I could have been tripping. 
+
+	why is player blood white?
+
+	friendly ghost should make a noise when he disappears.
+
+	fixed subway exit to park. I think. It's still a clusterfuck. 
+
+	Where would be a better place to find the mac10? Outside necrotech. means you must do the graveyard with just a shotgun. that's fine. Where does it come from? an NPC gives it to you? digging it up in the graveyard makes more sense. I would need to make another area just for it. another place you could drive to. or take the subway to. hospital? instead of waking up at your apartment when you die you wake up at the hospital, and you find the mac10 there? 
+
+	you wake up in the hospital on the second floor and need to take an elevator down to the street? is the hospital on main street? replace the liquor store with the hospital. You can enter it from the beginning of the game and find pills there.
+
+	clicking the weapons inventory icon will switch to that weapon. x
+
+	Put the game on steam.
+
+	frank has an empty dialog box above his head after you talk to him. Frank now says "..." instead of nothing. So there isn't a empty dialog box anymore. 
+
+	can still hear the UFO when outside after it appears in cemetery. x
+
+	The speed of the car is variable. it shoudn't be, maybe x
+
+	NPCs could react to gunfire. next time you talk to them, they could say wow that was crazy or something. 
+
+	leaving necro tech the robot should be hostile. x
+
+	franks dialog didn't switch to the new interaction x it's still fucky. but now you need to see all of franks dialog before the elevator unlocks ensuring you get ammo, and see dialog. 
+
+
+
