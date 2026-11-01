@@ -1,0 +1,328 @@
+# SPDX-License-Identifier: MIT
+#
+# Cha Craft - Release
+#
+# Builds the project for Linux, macOS, and Windows and publishes a GitHub
+# Release for any semver tag matching vX.Y.Z (e.g. v1.0.0). Each release
+# contains a per-OS zip (binary + short README) and a SHA256SUMS file.
+#
+# To cut a release:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  # Allow manual dry-runs from the Actions tab while iterating. Safe to leave.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never run two releases against the same tag concurrently - one of them
+# would write a partial release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+            artifact: release-assets-linux
+          - os: macos-latest
+            label: macos-x86_64
+            artifact: release-assets-macos
+          - os: windows-latest
+            label: windows-x86_64
+            artifact: release-assets-windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 so ${{ github.ref_name }} resolves correctly for
+          # tag pushes and so the version-drift check (below) can see the tag.
+          fetch-depth: 0
+
+      # Surface a warning if the pushed tag's version doesn't match the
+      # VERSION declared in CMakeLists.txt. Non-fatal so test tags work.
+      - name: Check tag vs CMake VERSION
+        shell: bash
+        run: |
+          set -e
+          TAG="${GITHUB_REF_NAME}"          # e.g. v1.0.0
+          TAG_VER="${TAG#v}"                # 1.0.0
+          CMAKE_VER="$(grep -oE 'VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1 | awk '{print $2}')"
+          echo "Tag version:    $TAG_VER"
+          echo "CMakeLists.txt:  $CMAKE_VER"
+          if [ -n "$CMAKE_VER" ] && [ "$TAG_VER" != "$CMAKE_VER" ]; then
+            echo "::warning::Tag $TAG_VER != CMakeLists.txt VERSION $CMAKE_VER (continuing anyway)"
+          fi
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install Linux build deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            git \
+            libasound2-dev \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libglfw3-dev \
+            pkg-config \
+            zip
+
+      - name: Install macOS build deps
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake
+
+      - name: Install Windows build deps
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          choco install -y ninja
+
+      - name: Configure (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCHACRAFT_FETCH_RAYLIB=ON
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >
+          cmake -S . -B build -G "Ninja"
+          -DCMAKE_BUILD_TYPE=Release
+          -DCHACRAFT_FETCH_RAYLIB=ON
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cmake --build build -j --config Release
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cmake --build build -j
+
+      # Catch dynamic linking against raylib before we ship. We want
+      # released binaries to be self-contained (no libraylib.so.NNN
+      # runtime dependency) so users don't get "error while loading
+      # shared libraries" on distros with a different raylib version.
+      - name: Assert no libraylib runtime dependency
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -e
+          if ldd build/cha_craft | grep -q 'libraylib'; then
+            echo "::error::Binary has a libraylib.so.* runtime dependency."
+            echo "::error::Switch BUILD_SHARED_LIBS OFF in CMakeLists.txt."
+            ldd build/cha_craft | grep raylib || true
+            exit 1
+          fi
+          echo "OK: no libraylib dependency"
+
+      - name: Stage release files
+        shell: bash
+        run: |
+          set -e
+          mkdir -p staging
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp build/cha_craft.exe staging/
+          else
+            cp build/cha_craft staging/
+          fi
+          cat > staging/README.txt <<README
+          Cha Craft — The Tea Lounge
+          ==========================
+
+          Version:       ${GITHUB_REF_NAME}
+          Platform:      ${{ runner.os }} (${{ matrix.label }})
+          Engine:        raylib (fetched from source at build time)
+          License:       MIT (see LICENSE in the source repository)
+
+          A cozy barista simulation built with C++17 and raylib.
+
+          Run the binary directly. On Linux/macOS you may need to ensure
+          the raylib shared library is discoverable (it is statically
+          linked into the binary in most configurations; if linked
+          dynamically, install raylib or place libraylib.so next to the
+          binary).
+
+          Source & issues: https://github.com/harisahmed05/cha_craft
+          README
+          ls -la staging
+
+      - name: Upload release assets artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: staging/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: publish release
+    needs: build
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create the GitHub Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version from tag
+        id: ver
+        shell: bash
+        run: |
+          echo "tag=${GITHUB_REF_NAME}"          >> "$GITHUB_OUTPUT"   # v1.0.0
+          echo "version=${GITHUB_REF_NAME#v}"    >> "$GITHUB_OUTPUT"   # 1.0.0
+
+      - name: Download per-OS staged assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-assets-*
+          path: assets
+          # Default (false): each artifact is extracted into a subdirectory
+          # named after the artifact. actions/upload-artifact@v4 with
+          # `path: staging/` zips the *contents* of staging/ (the dir
+          # prefix is stripped), so the extracted layout is:
+          #   assets/release-assets-<os>/cha_craft[.exe]
+          #   assets/release-assets-<os>/README.txt
+          # which is exactly the layout the repackage step below expects.
+          merge-multiple: false
+
+      - name: Repackage per-OS assets into zip archives
+        run: |
+          set -e
+          VERSION="${{ steps.ver.outputs.version }}"
+          for os in linux macos windows; do
+            src="assets/release-assets-${os}"
+            if [ ! -d "$src" ]; then
+              echo "::error::Missing artifact directory $src"
+              ls -la assets/ || true
+              exit 1
+            fi
+            mkdir -p "assets/${os}"
+            # Copy binary + README into a clean <os>/ directory.
+            cp -r "$src/." "assets/${os}/"
+            rm -f "cha_craft-${VERSION}-${os}-x86_64.zip"
+            ( cd assets && zip -r "../cha_craft-${VERSION}-${os}-x86_64.zip" "${os}" > /dev/null )
+          done
+          ls -la cha_craft-*.zip
+
+      - name: Generate SHA256SUMS
+        run: |
+          set -e
+          sha256sum cha_craft-*.zip > SHA256SUMS.txt
+          # Self-verify.
+          sha256sum -c SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            cha_craft-${{ steps.ver.outputs.version }}-linux-x86_64.zip
+            cha_craft-${{ steps.ver.outputs.version }}-macos-x86_64.zip
+            cha_craft-${{ steps.ver.outputs.version }}-windows-x86_64.zip
+            SHA256SUMS.txt
+
+  # After the release is published, point README.md's Downloads section at
+  # this tag. Runs after both `build` (so we know the tag exists) and
+  # `release` (so the asset URLs actually resolve). Pushes a single commit
+  # back to main; release.yml does NOT re-trigger because it only listens
+  # for tag pushes. CI.yml will validate the new README via lint-links.
+  bump-readme:
+    name: bump README downloads
+    needs: [build, release]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Need write access on the working tree to commit back.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version from tag
+        id: ver
+        run: |
+          echo "tag=${GITHUB_REF_NAME}"          >> "$GITHUB_OUTPUT"   # v1.0.1
+          echo "version=${GITHUB_REF_NAME#v}"    >> "$GITHUB_OUTPUT"   # 1.0.1
+
+      - name: Skip if README already references this tag
+        id: check
+        run: |
+          if grep -q "releases/download/${{ steps.ver.outputs.tag }}/" README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "README already references ${{ steps.ver.outputs.tag }}; skipping bump."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Rewrite README download links
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          # 1) Update all four asset URLs: .../releases/download/<oldtag>/...
+          #    The previous tag appears as the path segment right after
+          #    `releases/download/`. Use a precise regex so we never
+          #    accidentally rewrite anything else.
+          sed -i -E "s|(releases/download/)[^/]+|\1${TAG}|g" README.md
+          # 2) Update the "(vX.Y.Z)" mention in the Downloads header.
+          #    The text reads "for the latest release (vX.Y.Z):", so the
+          #    version sits inside parentheses that follow the literal
+          #    phrase "latest release ". Allow pre-release suffixes like
+          #    -rc1 (anything until the closing paren).
+          sed -i -E "s|(latest release \()(v[^)]+)(\))|\1${TAG}\3|g" README.md
+          # Show what changed for the log.
+          git --no-pager diff -- README.md
+
+      - name: Commit and push README bump
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: bump README downloads to ${{ steps.ver.outputs.tag }}"
+          git push origin HEAD:main
