@@ -1,0 +1,36 @@
+* {
+  box-sizing: border-box;
+}
+
+h1 {
+  font-family: arial;
+  color: rgb(11, 86, 117);
+}
+
+body {
+  background-repeat: no-repeat;
+  font-family: arial;
+  margin: 0;
+  padding: none;
+  background-color: Black;
+  color: White;
+}
+
+footer {
+  font-family: arial;
+  font-size: 12px;
+  padding-left: 10px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+#canvas {
+  image-rendering: pixelated;
+  padding-right: 0;
+  display: block;
+  border: 0px none;
+  width: 100%
+  visibility: hidden;
+}
