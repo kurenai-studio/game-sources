@@ -1,0 +1,9 @@
+Node search(Node root, int value) {
+    Node cur = root;
+    while (cur != null) {
+        if (value == cur.value) return cur;  @@found,visit
+        if (value < cur.value) cur = cur.left;  @@go_left
+        else cur = cur.right;  @@go_right
+    }
+    return null;
+}

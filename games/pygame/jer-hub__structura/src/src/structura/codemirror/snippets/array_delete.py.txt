@@ -1,0 +1,7 @@
+# Delete at index i is O(n): later cells shift left.
+def delete(a, i):
+    removed = a[i]  @@remove
+    for k in range(i, len(a) - 1):
+        a[k] = a[k + 1]  @@shift
+    a.pop()
+    return removed

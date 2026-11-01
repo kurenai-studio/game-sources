@@ -1,0 +1,9 @@
+Node delete(Node head, int position) {
+    if (position == 0) return head.next;  @@unlink_head
+    Node cur = head;
+    for (int k = 0; k < position - 1; k++) {
+        cur = cur.next;  @@walk
+    }
+    cur.next = cur.next.next;  @@unlink
+    return head;
+}

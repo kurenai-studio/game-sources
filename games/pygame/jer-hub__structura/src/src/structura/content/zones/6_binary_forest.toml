@@ -1,0 +1,188 @@
+[zone]
+id = "z5"
+name = "The Binary Forest"
+order = 6
+structure = "bst"
+color = [90, 215, 120]
+map_pos = [0.62, 0.18]
+requires = ["nexus_alpha"]
+intro = "The trees here grow by a rule: smaller to the left, larger to the right. The Corruption has made them grow wild."
+
+[lesson]
+initial = [8]
+
+[[lesson.beat]]
+say = "In a binary search tree, at every node, smaller values live in the left subtree and larger values in the right subtree."
+
+[[lesson.beat]]
+say = "To insert, compare from the root down, going left or right, until you reach an empty spot."
+do = ["insert 3", "insert 10", "insert 6"]
+code = "bst_insert"
+
+[[lesson.beat]]
+say = "Searching follows the same path. In a balanced tree, each comparison discards half of what's left: O(log n)."
+do = ["search 6"]
+code = "bst_search"
+
+[[lesson.beat]]
+say = "Deleting a node with two children: replace it with its in-order successor, the smallest value in its right subtree."
+do = ["insert 9", "insert 14", "delete 10"]
+code = "bst_delete"
+
+[[lesson.beat]]
+say = "Rotations restructure a tree without breaking the ordering. They're how trees stay balanced."
+do = ["rotate_right 8"]
+code = "bst_rotate"
+
+[[puzzle]]
+id = "z5_p1"
+title = "Plant the Seeds"
+type = "build"
+stage = "guided"
+brief = "Insert the Tray values in order. Click the empty spot where each one lands."
+tray = [8, 3, 10, 1, 6]
+ops = ["insert"]
+goal = { kind = "script" }
+code = "bst_insert"
+hints = ["Start at the root. Smaller goes left, larger goes right.", "Next: {next}."]
+intro = "These seeds will only grow in exactly the right spot."
+
+[[puzzle]]
+id = "z5_p2"
+title = "Find the Hidden Artifact"
+type = "trace"
+stage = "guided"
+brief = "Search for 6: click the nodes in the order a BST search compares them."
+initial = [8, 3, 10, 1, 6, 14, 4, 7, 13]
+ops = ["visit"]
+goal = { kind = "search", value = 6 }
+code = "bst_search"
+hints = ["Every search starts at the root.", "Compare {target} with the node: smaller means left, larger means right."]
+
+[[puzzle]]
+id = "z5_p3"
+title = "Prune the Leaf"
+type = "repair"
+stage = "guided"
+brief = "Node 7 is corrupted. Delete it."
+initial = [8, 3, 10, 1, 6, 14, 4, 7, 13]
+ops = ["delete"]
+goal = { kind = "script", script = ["delete 7"] }
+code = "bst_delete"
+hints = ["How many children does the corrupted node have?", "A leaf can simply be removed: select it and press Delete."]
+
+[[puzzle]]
+id = "z5_p10"
+title = "Splice the Branch"
+type = "repair"
+stage = "guided"
+brief = "Node 10 is corrupted. Delete it, and keep its branch attached to the tree."
+initial = [8, 3, 10, 1, 6, 14, 4, 7, 13]
+ops = ["delete"]
+goal = { kind = "script", script = ["delete 10"] }
+code = "bst_delete"
+hints = ["How many children does the corrupted node have?", "With one child, the parent links straight to that child: select the node and press Delete."]
+
+[[puzzle]]
+id = "z5_p4"
+title = "Heart of the Tree"
+type = "repair"
+stage = "challenge"
+brief = "Node 3 is corrupted. Delete it without breaking the ordering."
+initial = [8, 3, 10, 1, 6, 14, 4, 7, 13]
+ops = ["delete"]
+goal = { kind = "script", script = ["delete 3"] }
+code = "bst_delete"
+hints = ["A node with two children needs a replacement that keeps everything ordered.", "Use the in-order successor: go right once, then left as far as you can."]
+outro = "The successor was the smallest value bigger than the node. Nothing else could take its place without breaking the rule."
+
+[[puzzle]]
+id = "z5_p5"
+title = "Read the Rings"
+type = "trace"
+stage = "challenge"
+brief = "Visit the nodes in in-order (left subtree, node, right subtree)."
+initial = [50, 30, 70, 20, 40, 60, 80]
+ops = ["visit"]
+goal = { kind = "traverse", order = "inorder" }
+code = "bst_inorder"
+hints = ["In-order always goes as far left as it can first.", "On a BST, in-order reads the values in sorted order."]
+
+[[puzzle]]
+id = "z5_p6"
+title = "Root First"
+type = "trace"
+stage = "challenge"
+brief = "Visit the nodes in pre-order (node, left subtree, right subtree)."
+initial = [50, 30, 70, 20, 40, 60, 80]
+ops = ["visit"]
+goal = { kind = "traverse", order = "preorder" }
+code = "bst_preorder"
+hints = ["Pre-order visits a node before either of its subtrees.", "Finish the whole left subtree before you cross to the right."]
+
+[[puzzle]]
+id = "z5_p11"
+title = "Fallen Leaves"
+type = "trace"
+stage = "challenge"
+brief = "Visit the nodes in post-order (left subtree, right subtree, node)."
+initial = [50, 30, 70, 20, 40, 60, 80]
+ops = ["visit"]
+goal = { kind = "traverse", order = "postorder" }
+code = "bst_postorder"
+hints = ["Post-order visits a node only after both of its subtrees.", "The root is always the last node post-order visits."]
+
+[[puzzle]]
+id = "z5_p9"
+title = "Predict the Canopy"
+type = "trace"
+stage = "challenge"
+brief = "Into an empty tree, insert 5, 2, 8, 1, 9. What is the pre-order traversal?"
+ops = []
+goal = { kind = "quiz", script = ["insert 5", "insert 2", "insert 8", "insert 1", "insert 9"], ask = "preorder" }
+code = "bst_preorder"
+hints = ["Sketch the tree first.", "Pre-order: node, then the left subtree, then the right subtree."]
+
+[[puzzle]]
+id = "z5_p7"
+title = "Lopsided Sapling"
+type = "optimize"
+stage = "challenge"
+brief = "This tree leans all the way to the right. Rebalance it with rotations."
+initial = [1, 2, 3]
+ops = ["rotate_left", "rotate_right"]
+goal = { kind = "balanced" }
+code = "bst_rotate"
+hints = ["A left rotation lifts a node's right child into its place.", "Rotate at the root."]
+
+[[puzzle]]
+id = "z5_p8"
+title = "Zig-Zag"
+type = "optimize"
+stage = "challenge"
+brief = "This tree bends left, then right. One rotation won't fix it. Rebalance it."
+initial = [30, 10, 20]
+ops = ["rotate_left", "rotate_right"]
+goal = { kind = "balanced" }
+code = "bst_rotate"
+hints = ["First straighten the bend so it leans one way only.", "Rotate the lower node first, then the root."]
+outro = "That was a double rotation: the left-right case in AVL trees."
+
+[[puzzle]]
+id = "z5_boss"
+title = "The Unbalanced Colossus"
+type = "optimize"
+stage = "boss"
+brief = "The Colossus grew in a straight line. Rebalance it so no node's subtrees differ in height by more than one."
+initial = [10, 20, 30, 40, 50, 60, 70]
+ops = ["rotate_left", "rotate_right"]
+goal = { kind = "balanced" }
+code = "bst_rotate"
+hints = ["Fix the lowest unbalanced node first, then work upward.", "Look for a node whose right side is two or more levels taller than its left."]
+intro = "The ground shakes. A tree as tall as a tower, leaning right over the forest..."
+outro = "The Colossus stands balanced and still. The Binary Forest is restored."
+
+[[puzzle.disruption]]
+after = 2
+do = ["insert 80", "insert 90"]
+say = "The Colossus grows two new branches!"

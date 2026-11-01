@@ -1,0 +1,101 @@
+[zone]
+id = "z3"
+name = "The Stack Towers"
+order = 3
+structure = "stack"
+color = [185, 125, 255]
+map_pos = [0.50, 0.75]
+requires = ["z2"]
+intro = "Towers of glowing blocks. You can only ever touch the top one."
+
+[lesson]
+initial = []
+
+[[lesson.beat]]
+say = "A stack is a tower. You can only add or remove at the top."
+
+[[lesson.beat]]
+say = "push puts a value on top."
+do = ["push 4", "push 7"]
+code = "stack"
+
+[[lesson.beat]]
+say = "pop removes the top value: the one pushed most recently. Last In, First Out (LIFO)."
+do = ["pop"]
+code = "stack"
+
+[[lesson.beat]]
+say = "Undo buttons, the browser's Back button and function calls all work like stacks. Both operations are O(1)."
+
+[[puzzle]]
+id = "z3_p1"
+title = "Stack the Blocks"
+type = "build"
+stage = "guided"
+brief = "Push every Tray value onto the tower."
+tray = [1, 2, 3]
+ops = ["push"]
+goal = { kind = "target", state = [1, 2, 3] }
+code = "stack"
+hints = ["Press Push to place the next Tray value on top.", "Next: {next}."]
+
+[[puzzle]]
+id = "z3_p2"
+title = "Top of the Tower"
+type = "trace"
+stage = "guided"
+brief = "Starting from an empty stack: push 4, push 9, pop, push 2. What's on top now?"
+ops = []
+goal = { kind = "quiz", script = ["push 4", "push 9", "pop", "push 2"], ask = "top" }
+code = "stack"
+hints = ["Draw the tower on paper and apply each operation in turn.", "pop takes away the most recent push."]
+
+[[puzzle]]
+id = "z3_p3"
+title = "Mirror Spell"
+type = "build"
+stage = "challenge"
+brief = "Make the values come out of the tower (the Output) in the order 3, 2, 1."
+tray = [1, 2, 3]
+ops = ["push", "pop"]
+goal = { kind = "target", output = [3, 2, 1] }
+code = "stack"
+hints = ["What does a stack do to the order of whatever passes through it?", "Push everything first, then pop."]
+outro = "A stack reverses whatever passes through it. Remember that trick."
+
+[[puzzle]]
+id = "z3_p4"
+title = "What Falls Out"
+type = "trace"
+stage = "challenge"
+brief = "From an empty stack: push 5, push 6, pop, push 7, pop, pop. In what order did values come out?"
+ops = []
+goal = { kind = "quiz", script = ["push 5", "push 6", "pop", "push 7", "pop", "pop"], ask = "output" }
+code = "stack"
+hints = ["Track the tower after every line.", "Each pop outputs whatever is on top at that moment."]
+
+[[puzzle]]
+id = "z3_p5"
+title = "The Juggler"
+type = "build"
+stage = "challenge"
+brief = "Make the Output read 2, 1, 4, 3."
+tray = [1, 2, 3, 4]
+ops = ["push", "pop"]
+goal = { kind = "target", output = [2, 1, 4, 3] }
+code = "stack"
+hints = ["You can pop before the Tray is empty.", "Reverse the first pair, then reverse the second pair."]
+
+[[puzzle]]
+id = "z3_boss"
+title = "Tower of Echoes"
+type = "build"
+stage = "boss"
+brief = "Make the Output read 3, 2, 4, 5, 1. The Tray order can't change."
+tray = [1, 2, 3, 4, 5]
+ops = ["push", "pop"]
+goal = { kind = "target", output = [3, 2, 4, 5, 1] }
+code = "stack"
+hints = ["Work backwards: the first value in the Output must be on top of the tower when you first pop. What has to be under it?", "A value that comes out last can sit at the bottom the whole time."]
+intro = "The tower hums. Every block you place echoes back in a different order..."
+outro = "The echoes fall silent. You've mastered LIFO."

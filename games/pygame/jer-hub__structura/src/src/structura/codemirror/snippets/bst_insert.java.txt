@@ -1,0 +1,9 @@
+Node insert(Node root, int value) {
+    if (root == null) return new Node(value);  @@place
+    if (value < root.value) {  @@go_left
+        root.left = insert(root.left, value);
+    } else {  @@go_right
+        root.right = insert(root.right, value);
+    }
+    return root;
+}

@@ -1,0 +1,9 @@
+void levelOrder(Node root) {
+    Queue<Node> queue = new ArrayDeque<>(List.of(root));
+    while (!queue.isEmpty()) {
+        Node node = queue.poll();
+        visit(node.value);  @@visit
+        if (node.left != null) queue.add(node.left);
+        if (node.right != null) queue.add(node.right);
+    }
+}

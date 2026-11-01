@@ -1,0 +1,10 @@
+from collections import deque
+queue = deque()
+
+def enqueue(value):
+    queue.append(value)  @@enqueue
+
+def dequeue():
+    value = queue.popleft()  @@dequeue
+    front = queue[0] if queue else None  @@new_front
+    return value

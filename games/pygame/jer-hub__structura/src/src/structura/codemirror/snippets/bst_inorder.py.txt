@@ -1,0 +1,6 @@
+def walk(node):  # inorder
+    if node is None:
+        return
+    walk(node.left)
+    visit(node.value)  @@visit
+    walk(node.right)

@@ -1,0 +1,11 @@
+def rotate_left(x):
+    y = x.right
+    x.right = y.left
+    y.left = x  @@rotate_left
+    return y  # y takes x's place
+
+def rotate_right(x):
+    y = x.left
+    x.left = y.right
+    y.right = x  @@rotate_right
+    return y

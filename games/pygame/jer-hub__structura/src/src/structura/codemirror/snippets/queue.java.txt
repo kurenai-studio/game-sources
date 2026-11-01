@@ -1,0 +1,11 @@
+Queue<Integer> queue = new ArrayDeque<>();
+
+void enqueue(int value) {
+    queue.offer(value);  @@enqueue
+}
+
+int dequeue() {
+    int value = queue.poll();  @@dequeue
+    Integer front = queue.peek();  @@new_front
+    return value;
+}

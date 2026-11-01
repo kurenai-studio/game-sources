@@ -1,0 +1,16 @@
+def delete(root, value):
+    if value < root.value:  @@go_left
+        root.left = delete(root.left, value)
+    elif value > root.value:  @@go_right
+        root.right = delete(root.right, value)
+    else:  @@found
+        if root.left is None and root.right is None:
+            return None  @@remove_leaf
+        if root.left is None or root.right is None:
+            return root.left or root.right  @@splice
+        succ = root.right
+        while succ.left is not None:
+            succ = succ.left  @@find_successor,find_predecessor
+        root.value = succ.value  @@replace
+        root.right = delete(root.right, succ.value)
+    return root

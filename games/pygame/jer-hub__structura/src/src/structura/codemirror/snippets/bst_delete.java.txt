@@ -1,0 +1,14 @@
+Node delete(Node root, int value) {
+    if (value < root.value) root.left = delete(root.left, value);  @@go_left
+    else if (value > root.value) root.right = delete(root.right, value);  @@go_right
+    else {  @@found
+        if (root.left == null && root.right == null) return null;  @@remove_leaf
+        if (root.left == null) return root.right;  @@splice
+        if (root.right == null) return root.left;
+        Node succ = root.right;
+        while (succ.left != null) succ = succ.left;  @@find_successor,find_predecessor
+        root.value = succ.value;  @@replace
+        root.right = delete(root.right, succ.value);
+    }
+    return root;
+}

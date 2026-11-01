@@ -1,0 +1,7 @@
+def insert_after(head, position, value):
+    cur = head
+    for _ in range(position):
+        cur = cur.next  @@walk
+    node = Node(value)  @@new_node
+    node.next = cur.next  @@link_next
+    cur.next = node  @@relink

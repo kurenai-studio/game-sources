@@ -1,0 +1,7 @@
+class Node { int value; Node next; Node(int v) { value = v; } }
+
+Node insertHead(Node head, int value) {
+    Node node = new Node(value);  @@new_node
+    node.next = head;  @@link_next
+    return node; // new head  @@set_head
+}
