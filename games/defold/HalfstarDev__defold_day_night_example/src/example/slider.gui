@@ -1,0 +1,123 @@
+fonts {
+  name: "font"
+  font: "/example/font.font"
+}
+nodes {
+  type: TYPE_BOX
+  id: "slider"
+  pivot: PIVOT_W
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 300.0
+    y: 32.0
+  }
+  type: TYPE_BOX
+  id: "bar"
+  pivot: PIVOT_W
+  parent: "slider"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 288.0
+  }
+  size {
+    x: 24.0
+    y: 32.0
+  }
+  color {
+    y: 0.0
+  }
+  type: TYPE_BOX
+  id: "handle"
+  parent: "slider"
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 12.0
+  }
+  type: TYPE_BOX
+  id: "min"
+  parent: "slider"
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 288.0
+  }
+  type: TYPE_BOX
+  id: "max"
+  parent: "slider"
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 32.0
+  }
+  size {
+    x: 300.0
+    y: 32.0
+  }
+  color {
+    x: 0.101960786
+    y: 0.101960786
+    z: 0.101960786
+  }
+  type: TYPE_BOX
+  id: "label"
+  pivot: PIVOT_W
+  parent: "slider"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 8.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  size {
+    x: 160.0
+    y: 32.0
+  }
+  type: TYPE_TEXT
+  text: "Exposure"
+  font: "font"
+  id: "name"
+  pivot: PIVOT_W
+  parent: "label"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 168.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  size {
+    x: 160.0
+    y: 32.0
+  }
+  type: TYPE_TEXT
+  text: "1.00"
+  font: "font"
+  id: "value"
+  pivot: PIVOT_W
+  parent: "label"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
