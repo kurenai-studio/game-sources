@@ -1,0 +1,146 @@
+require 'modules.positions'
+require 'modules.smath'
+require 'modules.hud_cache'
+go.property('on_death', hash(''))
+
+function init(self)
+	msg.post('.', 'acquire_input_focus')
+	msg.post('/mage_cam', 'acquire_camera_focus')
+	msg.post('#teleport_zone', 'disable')
+	-- All personalized functions for the game object
+	self.custom = {
+		unique = true,
+		const_speed = 960,
+		val_move = vmath.vector3(),
+		active_teleportation = false,
+		fn_input_move = function(self, act_id, act)
+			if act_id == hash('move_up') and act.released then
+				self.custom.val_move.y = 1
+			elseif act_id == hash('move_down') and act.released then
+				self.custom.val_move.y = -1
+			elseif act_id == hash('move_left') and act.released then
+				self.custom.val_move.x = -1
+			elseif act_id == hash('move_right') and act.released then
+				self.custom.val_move.x = 1
+			end	
+		end,
+		fn_input_teleport = function(self, act_id, act)
+			if act_id == hash('teleport') then
+				if act.pressed then
+					msg.post('#teleport_zone', 'enable')
+					self.custom.active_teleportation = true
+				elseif act.released then
+					msg.post('#teleport_zone', 'disable')
+					self.custom.active_teleportation = false
+				end
+			end	
+		end,
+		fn_message_teleport_command = function(self, msg_id, msg)
+			if msg_id == hash('teleport_trigger') then
+				local mage_position = go.get_world_position('mage')
+				local teleport_destination = go.get_world_position('mouse_pointer')
+				if     smath.distance_from(mage_position, teleport_destination) < 66 
+				and    mage_mana > 0
+				and    self.custom.active_teleportation
+				then
+					go.set_position(teleport_destination)
+					mage_mana = mage_mana - 1
+					table.insert(
+						messages, 
+						1, 
+						{
+							'You just teleported! Hope you did it well...',
+							hash('general_message')
+						}
+					)
+				elseif smath.distance_from(mage_position, teleport_destination) >= 66 
+				and    mage_mana > 0
+				and    self.custom.active_teleportation
+				then
+					table.insert(
+						messages, 
+						1, 
+						{
+							'Mate! You can\'t go that far...',
+							hash('general_message')
+						}
+					)
+				end
+
+			end
+		end,
+		fn_message_on_death = function(self, msg_id, message)
+			if msg_id == hash('Killed') and self.custom.unique then
+				print('entrou')
+				if mage_life > 0 and self.custom.unique then
+					mage_life = mage_life - 1
+					self.custom.unique = false
+					msg.post('game:/level_selector#loader', self.on_death)
+					table.insert(
+						messages, 
+						1, 
+						{
+							'Right before Dying, you took a life potion!',
+							message.icon
+						}
+					)
+				elseif mage_life <= 0 and self.custom.unique then
+					self.custom.unique = false
+					msg.post('game:/level_selector#loader', 'load_game_over')
+				end
+			end
+		end,
+		fn_update_move = function(self, dt)
+			if self.custom.val_move ~= vmath.vector3() then
+				sound.play('#step_on_stone')
+			end
+			go.set_position(
+				go.get_position() + self.custom.val_move * self.custom.const_speed * dt
+			)
+			
+		end,
+		fn_message_wall_collision = function(self, msg_id, msg)
+			if msg_id == hash("contact_point_response") then
+				go.set_position(go.get_position() + msg.normal * msg.distance)
+			end
+		end
+	}
+	-- Dconstruct everything that has to be clean to original values
+	self.deconstruct = {
+		fn_update_reset_movement = function(self, dt) 
+			self.custom.val_move = vmath.vector3() 
+		end
+	}
+	if mage_spawn_position ~= vmath.vector3() then
+		go.set_position(mage_spawn_position)
+	end
+end
+
+function update(self, dt)
+	for fn_name, fn in pairs(self.custom) do
+		if string.find(fn_name, 'fn_update') then 
+			fn(self, dt) 
+		end
+	end
+	for fn_name, fn in pairs(self.deconstruct) do
+		if string.find(fn_name, 'fn_update') then 
+			fn(self, dt) 
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	for fn_name, fn in pairs(self.custom) do
+		if string.find(fn_name, 'fn_message') then 
+			fn(self, message_id, message) 
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	for fn_name, fn in pairs(self.custom) do
+		if string.find(fn_name, 'fn_input') then 
+			fn(self, action_id, action) 
+		end
+	end
+end

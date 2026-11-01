@@ -1,0 +1,56 @@
+image: "/mage/images/Dungeon_Character_2.png"
+tile_width: 16
+tile_height: 16
+tile_margin: 0
+tile_spacing: 0
+collision: ""
+material_tag: "tile"
+collision_groups: "default"
+animations {
+  id: "dungeon_guide"
+  start_tile: 7
+  end_tile: 7
+  playback: PLAYBACK_NONE
+  fps: 1
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "dungeon_guide_looking_left"
+  start_tile: 7
+  end_tile: 7
+  playback: PLAYBACK_NONE
+  fps: 1
+  flip_horizontal: 1
+  flip_vertical: 0
+}
+animations {
+  id: "mage"
+  start_tile: 1
+  end_tile: 1
+  playback: PLAYBACK_NONE
+  fps: 1
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "skeleton"
+  start_tile: 12
+  end_tile: 12
+  playback: PLAYBACK_NONE
+  fps: 1
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "teleport_pointer"
+  start_tile: 8
+  end_tile: 8
+  playback: PLAYBACK_NONE
+  fps: 1
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+extrude_borders: 2
+inner_padding: 0
+sprite_trim_mode: SPRITE_TRIM_MODE_OFF
