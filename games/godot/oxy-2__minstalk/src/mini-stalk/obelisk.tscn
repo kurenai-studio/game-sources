@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://cw56tp6hgryo5"]
+
+[ext_resource type="Script" uid="uid://dxbuctxcvk5s5" path="res://obelisk.gd" id="1_g4ijs"]
+[ext_resource type="Texture2D" uid="uid://bhdw24em4oyr4" path="res://assets/art/enemies/obelisk/obelisk1.png" id="2_3q7uk"]
+[ext_resource type="Texture2D" uid="uid://bl11auhytrog0" path="res://assets/art/enemies/obelisk/obelisk2.png" id="3_kjonp"]
+[ext_resource type="Texture2D" uid="uid://w5tuo6x6daic" path="res://assets/art/enemies/obelisk/obelisk3.png" id="4_goq18"]
+[ext_resource type="Texture2D" uid="uid://bxtrbs74ny0jc" path="res://assets/art/enemies/obelisk/obelisk4.png" id="5_8ii3l"]
+[ext_resource type="Texture2D" uid="uid://dw7nuxjj5cqst" path="res://assets/art/enemies/obelisk/obelisk5.png" id="6_uxa0q"]
+[ext_resource type="PackedScene" uid="uid://c8akm00rifle1" path="res://akm.tscn" id="7_akm"]
+[ext_resource type="AudioStream" uid="uid://cblro7t02vl46" path="res://assets/sounds/input/akm.mp3" id="8_kjonp"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_n4y1h"]
+radius = 15.0
+height = 66.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s17id"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_3q7uk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_kjonp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_goq18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_8ii3l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_uxa0q")
+}],
+"loop": 1,
+"name": &"walk",
+"speed": 5.0
+}]
+
+[node name="obelisk" type="Node2D" unique_id=1409942290]
+
+[node name="obelisk" type="CharacterBody2D" parent="." unique_id=2005471926]
+script = ExtResource("1_g4ijs")
+obeliskspeed = 80.0
+
+[node name="obeliskhitbox" type="CollisionShape2D" parent="obelisk" unique_id=130432315]
+shape = SubResource("CapsuleShape2D_n4y1h")
+
+[node name="obelisksprite" type="AnimatedSprite2D" parent="obelisk" unique_id=1272557272]
+position = Vector2(1, 0)
+sprite_frames = SubResource("SpriteFrames_s17id")
+animation = &"walk"
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="obelisk" unique_id=1004870257]
+rect = Rect2(-40, -40, 80, 80)
+
+[node name="akm" parent="obelisk" unique_id=248630439 instance=ExtResource("7_akm")]
+position = Vector2(8, 0)
+enemyinterval = 0.25
+turnspeed = 6.0
+maxfiredist = 0.0
+shoot_audio = ExtResource("8_kjonp")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="obelisk/akm" unique_id=1514010117]
+volume_db = -15.0

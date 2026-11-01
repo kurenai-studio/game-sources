@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://cmvlvm00yf8wk"]
+
+[ext_resource type="Texture2D" uid="uid://c1c0wy4vg3yd0" path="res://tree1.png" id="1_oh278"]
+[ext_resource type="Texture2D" uid="uid://bw2lfd1gpwd2" path="res://tree2.png" id="2_exq3w"]
+[ext_resource type="Texture2D" uid="uid://bevav4uhpi7yc" path="res://tree3.png" id="3_facwl"]
+[ext_resource type="Texture2D" uid="uid://c6ji55l5y4gv0" path="res://tree4.png" id="4_26iaa"]
+[ext_resource type="Texture2D" uid="uid://7hsxxpwj4jtc" path="res://tree5.png" id="5_b4km7"]
+[ext_resource type="Texture2D" uid="uid://c57nye5b7nl27" path="res://tree6.png" id="6_nyqb0"]
+[ext_resource type="Texture2D" uid="uid://offqbp64ef6w" path="res://tree7.png" id="7_qkkce"]
+[ext_resource type="Texture2D" uid="uid://d0moc66gllqg1" path="res://tree8.png" id="8_wgurx"]
+[ext_resource type="Texture2D" uid="uid://cep02uk3wuxgn" path="res://tree9.png" id="9_y5c8i"]
+[ext_resource type="Texture2D" uid="uid://b0onn1tmpxt7p" path="res://tree10.png" id="10_rpqg8"]
+[ext_resource type="Texture2D" uid="uid://2bupx7ow122l" path="res://tree11.png" id="11_v2m3v"]
+[ext_resource type="Texture2D" uid="uid://tvgijgbn0p" path="res://tree12.png" id="12_56rbo"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kqwvt"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_oh278")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_exq3w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_facwl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_26iaa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_b4km7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_nyqb0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_qkkce")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_wgurx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_y5c8i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_rpqg8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_v2m3v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_56rbo")
+}],
+"loop": 1,
+"name": &"Tree moving",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=573957780]
+sprite_frames = SubResource("SpriteFrames_kqwvt")
+animation = &"Tree moving"
+frame_progress = 0.24118206
+speed_scale = 0.5

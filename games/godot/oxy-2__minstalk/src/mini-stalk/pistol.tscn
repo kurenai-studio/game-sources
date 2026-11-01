@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://c8pistol0gun1"]
+
+[ext_resource type="Script" uid="uid://b8gunlog1c0a" path="res://gunlogic.gd" id="1_gun"]
+[ext_resource type="Texture2D" uid="uid://m1576fakatid" path="res://assets/art/Weapons/Makarov/PM Makarov.png" id="2_mak"]
+
+[node name="pistol" type="Node2D" unique_id=2065343289]
+script = ExtResource("1_gun")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=657823790]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_mak")
+
+[node name="Muzzle" type="Marker2D" parent="." unique_id=1710748906]
+position = Vector2(12, -1)

@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dhp6pwun6xukq"]
+
+[ext_resource type="Texture2D" uid="uid://dgpm1tnoctcfs" path="res://assets/art/font/statuses/bleed/blood_particle.png" id="1_44s4y"]
+[ext_resource type="Script" uid="uid://dnki6atdfdj6k" path="res://blood.gd" id="2_6b75d"]
+
+[node name="Blood" type="CPUParticles2D" unique_id=1526798408]
+amount = 32
+texture = ExtResource("1_44s4y")
+lifetime = 0.3
+explosiveness = 1.0
+randomness = 1.0
+lifetime_randomness = 0.37
+gravity = Vector2(0, 0)
+initial_velocity_min = 183.1
+initial_velocity_max = 500.0
+angular_velocity_min = -40.56
+angular_velocity_max = -40.56
+script = ExtResource("2_6b75d")
+
+[node name="Timer" type="Timer" parent="." unique_id=77197429]
+wait_time = 1.5
