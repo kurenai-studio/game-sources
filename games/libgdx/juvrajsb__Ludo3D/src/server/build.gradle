@@ -1,0 +1,27 @@
+sourceSets {
+  main.java.srcDirs = [ "src/main/java" ]
+  main.resources.srcDirs = [ "src/main/resources" ]
+}
+
+dependencies {
+  implementation project(":core")
+}
+
+application {
+  mainClass = 'ludo.server.ServerLauncher'
+}
+
+jar {
+  dependsOn(":core:jar")
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  manifest {
+    attributes 'Main-Class': application.mainClass
+  }
+  from {
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+
+tasks.withType(JavaExec) {
+  standardInput = System.in
+}

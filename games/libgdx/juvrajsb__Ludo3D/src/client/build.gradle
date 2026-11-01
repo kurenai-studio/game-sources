@@ -1,0 +1,55 @@
+apply plugin: 'java-library'
+
+sourceSets {
+  main.java.srcDirs = [ "src/main/java" ]
+  main.resources.srcDirs = [ "src/main/resources" ]
+}
+
+dependencies {
+  api project(":core")
+
+  implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+  implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+}
+
+apply plugin: 'application'
+application {
+  mainClass = 'ludo.client.LudoGame'
+}
+
+jar {
+  from {
+    sourceSets.main.output.classesDirs
+  }
+
+  from("src/main/resources") {
+    include "**/*"
+  }
+
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+  manifest {
+    attributes 'Main-Class': 'ludo.client.LudoGame'
+  }
+}
+
+task fatJar(type: Jar) {
+  archiveClassifier = 'fat'
+
+  from sourceSets.main.output.classesDirs
+
+  from("src/main/resources") {
+    include "**/*"
+  }
+
+  from {
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+  manifest {
+    attributes 'Main-Class': 'ludo.client.LudoGame'
+  }
+}
