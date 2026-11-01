@@ -1,0 +1,41 @@
+name: Auto Increment Version on Release Branch
+
+on:
+  create:
+    branches:
+      - "release/*"
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract version from branch name
+        id: extract
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          VERSION="${BRANCH_NAME#release/}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ steps.extract.outputs.version }} --no-git-tag-version
+          cat package.json
+
+      - name: Commit and push version change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.extract.outputs.version }}"
+          git push origin HEAD:${GITHUB_REF_NAME}
