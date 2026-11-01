@@ -1,0 +1,8 @@
+	if (UNLIKELY(s_is#####Active.Num() == 0))
+	{
+		s_is#####Active.SetNum(ArgusECSConstants::k_maxEntities, false);
+	}
+	else
+	{
+		s_is#####Active[entityId] = false;
+	}

@@ -1,0 +1,74 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ComponentDependencies/EntityCategory.h"
+#include "ComponentDependencies/ResourceSet.h"
+
+#include "TeamCommanderPriorities.generated.h"
+
+class FArchive;
+
+UENUM()
+enum class ETeamCommanderDirective : uint8
+{
+	StartConstruction,
+	ContinueConstruction,
+	ExtractResources,
+	SpawnUnit,
+	Scout,
+
+	Count
+};
+
+struct TeamCommanderPriority
+{
+	float m_weight = 0.0f;
+	ETeamCommanderDirective m_directive = ETeamCommanderDirective::Scout;
+	FEntityCategory m_entityCategory;
+	FResourceSet m_minAssociatedResourceCost;
+
+#if !UE_BUILD_SHIPPING
+	void DrawImGuiDebug() const;
+#endif // !UE_BUILD_SHIPPING
+};
+
+struct ResourceSourceExtractionData
+{
+	uint16 m_resourceSourceEntityId = ArgusECSConstants::k_maxEntities;
+	uint16 m_resourceSinkEntityId = ArgusECSConstants::k_maxEntities;
+	uint16 m_resourceExtractorEntityId = ArgusECSConstants::k_maxEntities;
+
+	bool HasSourceEntityId(uint16 entityId) const { return m_resourceSourceEntityId == entityId; }
+	void SetSourceEntityId(uint16 entityId) { m_resourceSourceEntityId = entityId; }
+
+#if !UE_BUILD_SHIPPING
+	void DrawImGuiDebug() const;
+#endif // !UE_BUILD_SHIPPING
+};
+FArchive& operator<<(FArchive& archive, ResourceSourceExtractionData& controlGroup);
+
+struct ConstructionData
+{
+	uint16 m_beingConstructedEntityId = ArgusECSConstants::k_maxEntities;
+	uint16 m_constructingOtherEntityId = ArgusECSConstants::k_maxEntities;
+
+#if !UE_BUILD_SHIPPING
+	void DrawImGuiDebug() const;
+#endif // !UE_BUILD_SHIPPING
+};
+
+FORCEINLINE static bool operator<(const TeamCommanderPriority& A, const TeamCommanderPriority& B)
+{
+	if (A.m_weight < B.m_weight)
+	{
+		return false;
+	}
+
+	if (A.m_weight == B.m_weight)
+	{
+		return A.m_directive < B.m_directive;
+	}
+
+	return true;
+}

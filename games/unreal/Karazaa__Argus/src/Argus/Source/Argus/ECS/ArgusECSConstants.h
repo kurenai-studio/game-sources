@@ -1,0 +1,53 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/Class.h"
+
+namespace ArgusECSConstants
+{
+	static constexpr uint16	k_maxEntities = 15000u;
+
+	// This represents k_maxEntities / 32 rounded up. This is needed to define the number of int32 bit banks needed to represent whether or not a component is present on the entity.
+	static constexpr uint16	k_numBitBuckets = 469u;
+	static constexpr uint16	k_singletonEntityId = k_maxEntities - 1u;
+	static constexpr uint32	k_singletonEntityTemplateRecordId = 1u;
+
+	static constexpr uint16 k_avoidanceObstaclePreAllocatedAmount = 500u;
+	static constexpr float k_avoidanceObstacleQueryRadiusMultiplier = 1.5f;
+	static constexpr float k_avoidanceObstacleCutoffBias = 0.99f;
+
+	static constexpr float k_navigationAgentDefaultHeight = 100.0f;
+	static constexpr float k_avoidanceEpsilonValue = 0.00001f;
+
+	static constexpr int32 k_maxDetourWalls = 1028;
+	static constexpr int32 k_maxDetourPolys = 1028;
+
+	static constexpr float k_lowestPossibleAltitude = -1000.0f;
+	static constexpr float k_flightTransitionAltitudeThreshold = 1.0f;
+
+	static constexpr float k_minimumMarqueeSelectDistance = 25.0f;
+	static constexpr float k_connectedDecalLineHeightAdjustment = 1.0f;
+
+	static constexpr float k_resourceSinkBufferDistanceAdjustment = 5.0f;
+
+	static constexpr int32 k_numEntityAbilities = 4;
+	static constexpr uint32 k_persistentWorldTranslationRecordId = 1u;
+
+#if !UE_BUILD_SHIPPING
+	static constexpr float k_debugDrawLineWidth = 3.0f;
+	static constexpr float k_debugDrawHeightAdjustment = 5.0f;
+#endif //!UE_BUILD_SHIPPING
+}
+
+// Unreal complains like a dumbass if UENUM is in a namespace. Big dumb.
+UENUM()
+enum class UEntityPriority : uint16
+{
+	HighestPriority = 0,
+	HighPriority = 1000u,
+	MediumPriority = 3000u,
+	LowPriority = 6000u,
+	LowestPriority = 10000u,
+};

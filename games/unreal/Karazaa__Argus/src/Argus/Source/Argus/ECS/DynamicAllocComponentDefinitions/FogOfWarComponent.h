@@ -1,0 +1,71 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusContainerAllocator.h"
+#include "ArgusMacros.h"
+#include "ComponentDependencies/TextureRegionsUpdateData.h"
+#include "CoreMinimal.h"
+#include "Engine/Texture2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "RHITypes.h"
+#include "Tasks/Task.h"
+
+struct FogOfWarComponent
+{
+	ARGUS_DYNAMIC_COMPONENT_SHARED;
+
+	ARGUS_COMP_PROPERTY(Transient) ARGUS_COMP_TRANSIENT
+	TObjectPtr<UTexture2D> m_fogOfWarTexture = nullptr;
+
+	// The purpose for this texture is to function as a simple way to pass floats calculated on the CPU to the GPU so that
+	// our FogOfWar material can do a gaussian blur of arbitrary dimension.
+	ARGUS_COMP_PROPERTY(Transient) ARGUS_COMP_TRANSIENT
+	TObjectPtr<UTexture2D> m_gaussianWeightsTexture = nullptr;
+
+	ARGUS_COMP_PROPERTY(Transient) ARGUS_COMP_TRANSIENT
+	TObjectPtr<UMaterialInstanceDynamic> m_dynamicMaterialInstance = nullptr;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	FUpdateTextureRegion2D m_textureRegion;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	TextureRegionsUpdateData m_textureRegionsUpdateData;
+
+	ARGUS_COMP_NO_DATA
+	TArray<uint8, ArgusContainerAllocator<0u> > m_textureData;
+
+	ARGUS_COMP_NO_DATA
+	TArray<uint8, ArgusContainerAllocator<0u> > m_smoothedTextureData;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	TArray<float, ArgusContainerAllocator<0u> > m_intermediarySmoothingData;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	TArray<float, ArgusContainerAllocator<0u> > m_gaussianFilter;
+
+	ARGUS_COMP_NO_DATA ARGUS_COMP_TRANSIENT
+	TArray<UE::Tasks::FTask, ArgusContainerAllocator<0u> > m_asyncTasks;
+
+	uint8 m_gaussianDimension = 5u;
+	uint8 m_revealedOnceAlpha = 100u;
+	uint16 m_textureSize = 1024u;
+
+	float m_smoothingDecayConstant = 5.0f;
+	bool m_shouldUseSmoothing = true;
+	uint8 m_triangleRasterizeModulo = 4u;
+	uint8 m_numberSmoothingChunks = 4u;
+	float m_visionObstacleAdjustDistance = 100.0f;
+	uint8 m_ditherAlpha = 100u;
+	bool m_shouldUseDitherAlpha = false;
+
+	uint32 GetTotalPixels() const
+	{
+		return static_cast<uint32>(m_textureSize) * static_cast<uint32>(m_textureSize);
+	}
+
+	uint8 GetRevealedOnceAlpha() const
+	{
+		return m_shouldUseDitherAlpha ? m_ditherAlpha : m_revealedOnceAlpha;
+	}
+};

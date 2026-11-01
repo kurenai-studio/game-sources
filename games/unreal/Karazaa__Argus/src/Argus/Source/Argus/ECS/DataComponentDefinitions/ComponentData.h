@@ -1,0 +1,19 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ArgusEntity.h"
+#include "Engine/DataAsset.h"
+#include "ComponentData.generated.h"
+
+UCLASS(abstract)
+class UComponentData : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	virtual void InstantiateComponentForEntity(ArgusEntity entity) const {};
+	virtual void ReinitializeComponentForEntityPostLoad(ArgusEntity entity) const {};
+	virtual void OnComponentDataLoaded() const {};
+	virtual bool MatchesType(const UComponentData* other) const { return false; }
+};

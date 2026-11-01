@@ -1,0 +1,684 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#include "TransformSystems.h"
+#include "ArgusIterators.h"
+#include "ArgusMath.h"
+#include "NavigationSystem.h"
+#include "Systems/AvoidanceSystems.h"
+#include "Systems/CarrierSystems.h"
+#include "Systems/DecalSystems.h"
+#include "Systems/NavigationSystems.h"
+#include "Systems/TargetingSystems.h"
+
+#if !UE_BUILD_SHIPPING
+#include "DrawDebugHelpers.h"
+#endif //!UE_BUILD_SHIPPING
+
+bool TransformSystems::RunSystems(UWorld* worldPointer, float deltaTime)
+{
+	ARGUS_TRACE(TransformSystems::RunSystems);
+
+	bool didMovementUpdateThisFrame = false;
+
+	ArgusIterators::IterateSystemsArgs<TransformSystemsArgs>([worldPointer, deltaTime, &didMovementUpdateThisFrame](TransformSystemsArgs& components)
+	{
+		components.m_transformComponent->m_movedThisFrame = false;
+
+		if ((components.m_entity.IsKillable() && !components.m_entity.IsAlive()) || components.m_entity.IsPassenger())
+		{
+			return;
+		}
+
+		if (components.m_taskComponent->m_constructionState == EConstructionState::BeingConstructed)
+		{
+			return;
+		}
+
+		components.m_transformComponent->m_movedThisFrame = ProcessMovementTaskCommands(worldPointer, deltaTime, components);
+		didMovementUpdateThisFrame |= components.m_transformComponent->m_movedThisFrame;
+
+		// Carriers should update their passengers locations to match their location after doing an update.
+		if (components.m_transformComponent->m_movedThisFrame && components.m_entity.IsCarryingPassengers())
+		{
+			UpdatePassengerLocations(components);
+		}
+
+		if (components.m_entity.IsSelected() && components.m_taskComponent->m_flightState != EFlightState::Grounded)
+		{
+			ShowTraceForFlyingEntity(worldPointer, components);
+		}
+	});
+
+	return didMovementUpdateThisFrame;
+}
+
+void TransformSystems::MoveAlongNavigationPath(UWorld* worldPointer, float deltaTime, const TransformSystemsArgs& components)
+{
+	ARGUS_TRACE(TransformSystems::MoveAlongNavigationPath);
+
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	components.m_velocityComponent->m_currentVelocity = components.m_velocityComponent->m_proposedAvoidanceVelocity;
+
+	const FVector velocity = FVector((components.m_velocityComponent->m_currentVelocity * deltaTime), 0.0f);
+	FVector moverLocation = components.m_transformComponent->m_location + velocity;
+
+	bool isAtEndOfNavigationPath = false;
+	ArgusEntity groupLeader = AvoidanceSystems::GetAvoidanceGroupLeader(components.m_entity);
+	if (groupLeader == components.m_entity)
+	{
+		isAtEndOfNavigationPath = UpdateGroupIndex(components, velocity);
+	}
+	else
+	{
+		isAtEndOfNavigationPath = IsGroupNearCompletion(groupLeader, velocity);
+	}
+
+	if (!isAtEndOfNavigationPath)
+	{
+		if (NavigationComponent* groupLeaderNavigationComponent = groupLeader.GetComponent<NavigationComponent>())
+		{
+			UpdateIndividualSegmentIndex(components.m_navigationComponent, moverLocation, groupLeaderNavigationComponent->m_navigationPoints);
+		}
+		else
+		{
+			UpdateIndividualSegmentIndex(components.m_navigationComponent, moverLocation, components.m_navigationComponent->m_navigationPoints);
+		}	
+	}
+
+	if (components.m_taskComponent->m_flightState == EFlightState::Grounded)
+	{
+		moverLocation = ProjectLocationOntoNavigationData(worldPointer, components.m_transformComponent->m_radius, moverLocation);
+	}
+	components.m_transformComponent->m_location = moverLocation;
+	
+	bool isWithinRangeOfTargetEntity = false;
+	if (components.m_taskComponent->m_movementState == EMovementState::MoveToEntity)
+	{
+		isWithinRangeOfTargetEntity = components.m_entity.IsInRangeOfTargetEntity();
+	}
+
+	if (isWithinRangeOfTargetEntity)
+	{
+		OnWithinRangeOfTargetEntity(components);
+	}
+	else if (isAtEndOfNavigationPath)
+	{
+		OnCompleteNavigationPath(components);
+	}
+}
+
+FVector TransformSystems::ProjectLocationOntoNavigationData(UWorld* worldPointer, float navAgentRadius, const FVector& location)
+{
+	if (!worldPointer)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] Passed in %s was invalid."), ARGUS_FUNCNAME, ARGUS_NAMEOF(UWorld*))
+			return location;
+	}
+
+	UNavigationSystemV1* unrealNavigationSystem = UNavigationSystemV1::GetCurrent(worldPointer);
+	if (!unrealNavigationSystem)
+	{
+		return location;
+	}
+
+	FNavLocation projectedLocation;
+	const FVector agentExtents = FVector(navAgentRadius, navAgentRadius, ArgusECSConstants::k_navigationAgentDefaultHeight / 2.0f);
+	if (unrealNavigationSystem->ProjectPointToNavigation(location, projectedLocation, agentExtents, unrealNavigationSystem->MainNavData))
+	{
+		return projectedLocation.Location;
+	}
+
+	return location;
+}
+
+float TransformSystems::GetDesiredSpeed(const TaskComponent* taskComponent, const VelocityComponent* velocityComponent)
+{
+	ARGUS_RETURN_ON_NULL_VALUE(taskComponent, ArgusECSLog, 0.0f);
+	ARGUS_RETURN_ON_NULL_VALUE(velocityComponent, ArgusECSLog, 0.0f);
+
+	return taskComponent->m_flightState == EFlightState::Flying ? velocityComponent->m_desiredFlightSpeedUnitsPerSecond : velocityComponent->m_desiredSpeedUnitsPerSecond;
+}
+
+float TransformSystems::GetDesiredSpeed(ArgusEntity entity)
+{
+	const TaskComponent* taskComponent = entity.GetComponent<TaskComponent>();
+	const VelocityComponent* velocityComponent = entity.GetComponent<VelocityComponent>();
+
+	if (!taskComponent || !velocityComponent)
+	{
+		return 0.0f;
+	}
+
+	return GetDesiredSpeed(taskComponent, velocityComponent);
+}
+
+bool TransformSystems::ProcessMovementTaskCommands(UWorld* worldPointer, float deltaTime, const TransformSystemsArgs& components)
+{
+	ARGUS_TRACE(TransformSystems::ProcessMovementTaskCommands);
+
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	switch (components.m_taskComponent->m_flightState)
+	{
+		case EFlightState::ProcessTakeOffCommand:
+			ProcessTakeOffCommand(worldPointer, deltaTime, components);
+			return true;
+
+		case EFlightState::ProcessLandCommand:
+			ProcessLandCommand(worldPointer, deltaTime, components);
+			return true;
+
+		case EFlightState::TakingOff:
+			PerformTakeOff(deltaTime, components);
+			return true;
+
+		case EFlightState::Landing:
+			PerformLanding(deltaTime, components);
+			return true;
+
+		case EFlightState::Flying:
+			break;
+
+		case EFlightState::Grounded:
+			break;
+
+		default:
+			break;
+	}
+
+	components.m_velocityComponent->m_currentVelocity = components.m_velocityComponent->m_proposedAvoidanceVelocity;
+
+	bool movedThisFrame = false;
+	switch (components.m_taskComponent->m_movementState)
+	{
+		case EMovementState::MoveToLocation:
+			if (CheckFlockCompletedNavigation(components))
+			{
+				OnCompleteNavigationPath(components);
+			}
+			else
+			{
+				MoveAlongNavigationPath(worldPointer, deltaTime, components);
+			}
+			FaceVelocity(components);
+			movedThisFrame = true;
+			break;
+
+		case EMovementState::MoveToEntity:
+			if (CheckFlockCompletedNavigation(components))
+			{
+				OnWithinRangeOfTargetEntity(components);
+			}
+			else
+			{
+				MoveAlongNavigationPath(worldPointer, deltaTime, components);
+			}
+			FaceVelocity(components);
+			movedThisFrame = true;
+			break;
+
+		case EMovementState::InRangeOfTargetEntity:
+			FaceTargetEntity(components);
+			if (!components.m_velocityComponent->m_currentVelocity.IsNearlyZero())
+			{
+				components.m_transformComponent->m_location += (FVector(components.m_velocityComponent->m_currentVelocity, 0.0f) * deltaTime);
+				movedThisFrame = true;
+			}
+			break;
+
+		case EMovementState::AwaitingFinish:
+			OnCompleteNavigationPath(components);
+			movedThisFrame = true;
+			break;
+
+		case EMovementState::None:
+			if (!components.m_velocityComponent->m_currentVelocity.IsNearlyZero())
+			{
+				components.m_transformComponent->m_location += (FVector(components.m_velocityComponent->m_currentVelocity, 0.0f) * deltaTime);
+				FaceVelocity(components);
+				movedThisFrame = true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	components.m_facingComponent->m_smoothedFacing.SmoothChase(components.m_facingComponent->m_targetFacing, deltaTime);
+
+	return movedThisFrame;
+}
+
+void TransformSystems::ProcessTakeOffCommand(UWorld* worldPointer, float deltaTime, const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+	FlightTransitionComponent* flightTransitionComponent = components.m_entity.GetComponent<FlightTransitionComponent>();
+	ARGUS_RETURN_ON_NULL(flightTransitionComponent, ArgusECSLog);
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = ArgusEntity::GetSingletonEntity().GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+
+	components.m_taskComponent->Set_m_flightState(EFlightState::TakingOff);
+	flightTransitionComponent->m_smoothedTransitionAltitude.Reset(components.m_transformComponent->m_location.Z);
+
+	if (!spatialPartitioningComponent->m_flyingArgusEntityKDTree.DoesArgusEntityExistInKDTree(components.m_entity))
+	{
+		spatialPartitioningComponent->m_flyingArgusEntityKDTree.RequestInsertArgusEntityIntoKDTree(components.m_entity);
+		spatialPartitioningComponent->m_argusEntityKDTree.RequestRemoveArgusEntityIntoKDTree(components.m_entity);
+	}
+}
+
+void TransformSystems::ProcessLandCommand(UWorld* worldPointer, float deltaTime, const TransformSystemsArgs& components)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+	FlightTransitionComponent* flightTransitionComponent = components.m_entity.GetComponent<FlightTransitionComponent>();
+	ARGUS_RETURN_ON_NULL(flightTransitionComponent, ArgusECSLog);
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = ArgusEntity::GetSingletonEntity().GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+
+	components.m_taskComponent->Set_m_flightState(EFlightState::Landing);
+
+	FHitResult hitResult;
+	const FVector startLocation = components.m_transformComponent->m_location;
+	FVector endLocation = startLocation;
+	endLocation.Z = ArgusECSConstants::k_lowestPossibleAltitude;
+	if (worldPointer->LineTraceSingleByChannel(hitResult, startLocation, endLocation, ECC_RETICLE))
+	{
+		flightTransitionComponent->m_targetTransitionAltitude = ProjectLocationOntoNavigationData(worldPointer, components.m_transformComponent->m_radius, hitResult.Location).Z;
+	}
+	else
+	{
+		flightTransitionComponent->m_targetTransitionAltitude = components.m_transformComponent->m_location.Z;
+	}
+	flightTransitionComponent->m_smoothedTransitionAltitude.Reset(components.m_transformComponent->m_location.Z);
+
+	if (!spatialPartitioningComponent->m_argusEntityKDTree.DoesArgusEntityExistInKDTree(components.m_entity))
+	{
+		spatialPartitioningComponent->m_argusEntityKDTree.RequestInsertArgusEntityIntoKDTree(components.m_entity);
+		spatialPartitioningComponent->m_flyingArgusEntityKDTree.RequestRemoveArgusEntityIntoKDTree(components.m_entity);
+	}
+}
+
+void TransformSystems::PerformTakeOff(float deltaTime, const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+	FlightTransitionComponent* flightTransitionComponent = components.m_entity.GetComponent<FlightTransitionComponent>();
+	ARGUS_RETURN_ON_NULL(flightTransitionComponent, ArgusECSLog);
+
+	SpatialPartitioningComponent* spatialPartitioningComponent = ArgusEntity::GetSingletonEntity().GetComponent<SpatialPartitioningComponent>();
+	ARGUS_RETURN_ON_NULL(spatialPartitioningComponent, ArgusECSLog);
+
+	flightTransitionComponent->m_smoothedTransitionAltitude.SmoothChase(spatialPartitioningComponent->m_flyingPlaneHeight, deltaTime);
+	float newAltitude = flightTransitionComponent->m_smoothedTransitionAltitude.GetValue();
+
+	if (FMath::IsNearlyEqual(newAltitude, spatialPartitioningComponent->m_flyingPlaneHeight, ArgusECSConstants::k_flightTransitionAltitudeThreshold))
+	{
+		components.m_taskComponent->Set_m_flightState(EFlightState::Flying);
+		newAltitude = spatialPartitioningComponent->m_flyingPlaneHeight;
+
+	}
+
+	components.m_transformComponent->m_location.Z = newAltitude;
+}
+
+void TransformSystems::PerformLanding(float deltaTime, const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+	FlightTransitionComponent* flightTransitionComponent = components.m_entity.GetComponent<FlightTransitionComponent>();
+	ARGUS_RETURN_ON_NULL(flightTransitionComponent, ArgusECSLog);
+
+	flightTransitionComponent->m_smoothedTransitionAltitude.SmoothChase(flightTransitionComponent->m_targetTransitionAltitude, deltaTime);
+	float newAltitude = flightTransitionComponent->m_smoothedTransitionAltitude.GetValue();
+
+	if (FMath::IsNearlyEqual(newAltitude, flightTransitionComponent->m_targetTransitionAltitude, ArgusECSConstants::k_flightTransitionAltitudeThreshold))
+	{
+		components.m_taskComponent->Set_m_flightState(EFlightState::Grounded);
+		newAltitude = flightTransitionComponent->m_targetTransitionAltitude;
+		QueuePostFlightTransitionAbility(components.m_entity, flightTransitionComponent);
+	}
+
+	components.m_transformComponent->m_location.Z = newAltitude;
+}
+
+void TransformSystems::QueuePostFlightTransitionAbility(ArgusEntity entity, FlightTransitionComponent* flightTransitionComponent)
+{
+	ARGUS_RETURN_ON_NULL(flightTransitionComponent, ArgusECSLog);
+	AbilityComponent* abilityComponent = entity.GetComponent<AbilityComponent>();
+	ARGUS_RETURN_ON_NULL(abilityComponent, ArgusECSLog);
+
+	if (flightTransitionComponent->m_onTransitionCompleteAbilityId == 0u)
+	{
+		return;
+	}
+
+	abilityComponent->m_queuedAbilityIds.Add(flightTransitionComponent->m_onTransitionCompleteAbilityId);
+	flightTransitionComponent->m_onTransitionCompleteAbilityId = 0u;
+}
+
+void TransformSystems::FaceTargetEntity(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	if (!components.m_targetingComponent->HasEntityTarget())
+	{
+		return;
+	}
+
+	ArgusEntity targetEntity = ArgusEntity::RetrieveEntity(components.m_targetingComponent->m_targetEntityId);
+	const TransformComponent* targetEntityTransformComponent = targetEntity.GetComponent<TransformComponent>();
+	ARGUS_RETURN_ON_NULL(targetEntityTransformComponent, ArgusECSLog);
+
+	FaceTowardsLocationXY(components.m_facingComponent, targetEntityTransformComponent->m_location - components.m_transformComponent->m_location);
+}
+
+void TransformSystems::FaceVelocity(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	const float desiredSpeed = GetDesiredSpeed(components.m_taskComponent, components.m_velocityComponent);
+	if (components.m_velocityComponent->m_currentVelocity.SquaredLength() > (desiredSpeed * 0.8f))
+	{
+		FaceTowardsLocationXY(components.m_facingComponent, FVector(components.m_velocityComponent->m_currentVelocity, 0.0f));
+	}	
+}
+
+void TransformSystems::FaceTowardsLocationXY(FacingComponent* facingComponent, FVector vectorFromTransformToTarget)
+{
+	vectorFromTransformToTarget.Z = 0.0f;
+	if (vectorFromTransformToTarget.Equals(FVector::ZeroVector))
+	{
+		return;
+	}
+
+	if (!facingComponent)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] Passed in an invalid %s."), ARGUS_FUNCNAME, ARGUS_NAMEOF(TransformComponent*));
+		return;
+	}
+
+	vectorFromTransformToTarget = ArgusMath::ToCartesianVector(vectorFromTransformToTarget).GetSafeNormal();
+	const FVector currentDirection = ArgusMath::ToCartesianVector(ArgusMath::GetDirectionFromYaw(facingComponent->m_targetFacing));
+	const FVector crossProduct = currentDirection.Cross(vectorFromTransformToTarget);
+	const float angleDifference = FMath::Acos(vectorFromTransformToTarget.Dot(currentDirection));
+
+	facingComponent->m_targetFacing += (angleDifference * FMath::Sign(crossProduct.Z));
+
+	const float currentAngleDifference = facingComponent->m_targetFacing - facingComponent->GetCurrentFacing();
+	if (FMath::Abs(currentAngleDifference) > UE_PI)
+	{
+		facingComponent->m_targetFacing -= (FMath::Sign(currentAngleDifference) * UE_TWO_PI);
+	}
+}
+
+bool TransformSystems::CheckFlockCompletedNavigation(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return false;
+	}
+
+	const FlockingComponent* flockingComponent = components.m_entity.GetComponent<FlockingComponent>();
+	ArgusEntity groupLeaderEntity = AvoidanceSystems::GetAvoidanceGroupLeader(components.m_entity);
+	if (!flockingComponent || !groupLeaderEntity)
+	{
+		return false;
+	}
+
+	const AvoidanceGroupingComponent* groupLeaderGroupComponent = groupLeaderEntity.GetComponent<AvoidanceGroupingComponent>();
+	if (!groupLeaderGroupComponent)
+	{
+		return false;
+	}
+
+	return flockingComponent->m_flockingState == EFlockingState::Stable && groupLeaderGroupComponent->m_numberOfIdleEntities > 0;
+}
+
+void TransformSystems::OnWithinRangeOfTargetEntity(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	if (!components.m_targetingComponent->HasEntityTarget())
+	{
+		return;
+	}
+
+	ArgusEntity targetEntity = ArgusEntity::RetrieveEntity(components.m_targetingComponent->m_targetEntityId);
+	if (CarrierSystems::CanEntityCarryOtherEntity(targetEntity, components.m_entity))
+	{
+		PassengerComponent* passengerComponent = components.m_entity.GetComponent<PassengerComponent>();
+		CarrierComponent* targetCarrierComponent = targetEntity.GetComponent<CarrierComponent>();
+		ARGUS_RETURN_ON_NULL(passengerComponent, ArgusECSLog);
+		ARGUS_RETURN_ON_NULL(targetCarrierComponent, ArgusECSLog);
+		passengerComponent->Set_m_carrierEntityId(targetEntity.GetId());
+		targetCarrierComponent->m_passengerEntityIds.Add(components.m_entity.GetId());
+		components.m_targetingComponent->m_targetEntityId = ArgusECSConstants::k_maxEntities;
+		components.m_taskComponent->m_movementState = EMovementState::None;
+		components.m_velocityComponent->m_currentVelocity = FVector2D::ZeroVector;
+		return;
+	}
+
+	components.m_taskComponent->m_movementState = EMovementState::InRangeOfTargetEntity;
+	components.m_navigationComponent->m_currentNavAgentToUse.Empty();
+	components.m_velocityComponent->m_currentVelocity = FVector2D::ZeroVector;
+}
+
+bool TransformSystems::ShouldAdvanceSegment(const FVector& evaluationPoint, const FVector& segmentStart, const FVector& segmentEnd)
+{
+	const GlobalSettingsComponent* settings = GlobalSettingsComponent::Get();
+	ARGUS_RETURN_ON_NULL_BOOL(settings, ArgusECSLog);
+
+	const FVector segment = segmentEnd - segmentStart;
+	const FVector actual = evaluationPoint - segmentStart;
+	const float segmentLength = segment.Length();
+
+	bool isAtEndOfNavigationPath = false;
+	const float projectionDistance = FMath::Abs(actual.Dot(segment) / segmentLength);
+	const float scaledSegmentDistance = (segmentLength - settings->m_progressNavPathDistThreshold);
+
+	return projectionDistance >= scaledSegmentDistance;
+}
+
+bool TransformSystems::UpdateGroupIndex(const TransformSystemsArgs& components, const FVector& velocity)
+{
+	const AvoidanceGroupingComponent* groupingComponent = components.m_entity.GetComponent<AvoidanceGroupingComponent>();
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME) || !groupingComponent)
+	{
+		return false;
+	}
+
+	// If we are the solo entity in the group, we should reset the group last index to be based on individual index.
+	if (groupingComponent->m_entityIdsInGroup.Num() == 1)
+	{
+		components.m_navigationComponent->m_groupLastPointIndex = components.m_navigationComponent->m_lastPointIndex;
+	}
+
+	const int32 numNavigationPoints = components.m_navigationComponent->m_navigationPoints.Num();
+	const int32 lastPointIndex = components.m_navigationComponent->m_groupLastPointIndex;
+	if (numNavigationPoints == 0 || lastPointIndex >= numNavigationPoints - 1)
+	{
+		ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] %s exceeded %s putting pathfinding in an invalid state."), ARGUS_FUNCNAME, ARGUS_NAMEOF(lastPointIndex), ARGUS_NAMEOF(numNavigationPoints));
+		return false;
+	}
+
+	const FVector evaluationPoint = groupingComponent->m_groupAverageLocation + velocity;
+	const FVector sourceLocation = components.m_navigationComponent->m_navigationPoints[lastPointIndex];
+	const FVector targetLocation = components.m_navigationComponent->m_navigationPoints[lastPointIndex + 1];
+	if (ShouldAdvanceSegment(evaluationPoint, sourceLocation, targetLocation))
+	{
+		if (lastPointIndex == (numNavigationPoints - 2))
+		{
+			return true;
+		}
+
+		components.m_navigationComponent->m_groupLastPointIndex++;
+	}
+
+	return false;
+}
+
+bool TransformSystems::IsGroupNearCompletion(ArgusEntity groupLeader, const FVector& velocity)
+{
+	if (!groupLeader)
+	{
+		return false;
+	}
+
+	const NavigationComponent* groupLeaderNavigationComponent = groupLeader.GetComponent<NavigationComponent>();
+	const AvoidanceGroupingComponent* groupLeaderGroupComponent = groupLeader.GetComponent<AvoidanceGroupingComponent>();
+	if (!groupLeaderNavigationComponent || !groupLeaderGroupComponent)
+	{
+		return false;
+	}
+
+	const int32 numNavigationPoints = groupLeaderNavigationComponent->m_navigationPoints.Num();
+	const int32 lastPointIndex = groupLeaderNavigationComponent->m_groupLastPointIndex;
+	if (numNavigationPoints == 0 || lastPointIndex >= numNavigationPoints - 1)
+	{
+		// TODO JAMES: We need to account for the self target case where the MoveToEntity command is moving towards the group leader.
+		// ARGUS_LOG(ArgusECSLog, Error, TEXT("[%s] %s exceeded %s putting pathfinding in an invalid state."), ARGUS_FUNCNAME, ARGUS_NAMEOF(lastPointIndex), ARGUS_NAMEOF(numNavigationPoints));
+		return false;
+	}
+
+	const FVector evaluationPoint = groupLeaderGroupComponent->m_groupAverageLocation + velocity;
+	const FVector sourceLocation = groupLeaderNavigationComponent->m_navigationPoints[lastPointIndex];
+	const FVector targetLocation = groupLeaderNavigationComponent->m_navigationPoints[lastPointIndex + 1];
+	if (ShouldAdvanceSegment(evaluationPoint, sourceLocation, targetLocation) && (lastPointIndex == (numNavigationPoints - 2)))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void TransformSystems::UpdateIndividualSegmentIndex(NavigationComponent* navigationComponent, const FVector& moverLocation, const TArray<FVector, ArgusContainerAllocator<15u> >& navigationPoints)
+{
+	ARGUS_RETURN_ON_NULL(navigationComponent, ArgusECSLog);
+
+	const int32 lastPointIndex = navigationComponent->m_lastPointIndex;
+	const int32 numNavigationPoints = navigationPoints.Num();
+	if (numNavigationPoints == 0 || !navigationPoints.IsValidIndex(lastPointIndex + 1))
+	{
+		return;
+	}
+
+	const FVector sourceLocation = navigationPoints[lastPointIndex];
+	FVector targetLocation = navigationPoints[lastPointIndex + 1];
+	if (ShouldAdvanceSegment(moverLocation, sourceLocation, targetLocation))
+	{
+		navigationComponent->m_lastPointIndex++;
+	}
+}
+
+void TransformSystems::OnCompleteNavigationPath(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	AvoidanceSystems::IterateEntitiesInAvoidanceGroup(components.m_entity, TransformSystems::CompleteNavigationPathPerGroupEntity);
+}
+
+void TransformSystems::CompleteNavigationPathPerGroupEntity(ArgusEntity entity)
+{
+	TransformSystemsArgs components;
+	if (!components.PopulateArguments(entity))
+	{
+		return;
+	}
+
+	DecalSystems::ClearMoveToLocationDecalPerEntity(components.m_entity, false);
+
+	if (components.m_taskComponent->m_combatState == ECombatState::OnAttackMove)
+	{
+		components.m_taskComponent->m_combatState = ECombatState::None;
+	}
+
+	if (components.m_navigationComponent->m_queuedWaypoints.IsEmpty())
+	{
+		components.m_taskComponent->m_movementState = EMovementState::None;
+		components.m_navigationComponent->ResetPath();
+		components.m_navigationComponent->m_currentNavAgentToUse.Empty();
+		components.m_velocityComponent->m_currentVelocity = FVector2D::ZeroVector;
+	}
+	else
+	{
+		NavigationSystems::StartNavigatingToQueuedWaypoint(components.m_taskComponent, components.m_targetingComponent, components.m_navigationComponent);
+	}
+}
+
+void TransformSystems::UpdatePassengerLocations(const TransformSystemsArgs& components)
+{
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	const CarrierComponent* carrierComponent = components.m_entity.GetComponent<CarrierComponent>();
+	if (!carrierComponent)
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < carrierComponent->m_passengerEntityIds.Num(); ++i)
+	{
+		ArgusEntity passenger = ArgusEntity::RetrieveEntity(carrierComponent->m_passengerEntityIds[i]);
+		if (!passenger)
+		{
+			return;
+		}
+
+		if (TransformComponent* passengerTransformComponent = passenger.GetComponent<TransformComponent>())
+		{
+			passengerTransformComponent->m_location = components.m_transformComponent->m_location;
+		}
+		if (FacingComponent* passengerFacingComponent = passenger.GetComponent<FacingComponent>())
+		{
+			passengerFacingComponent->m_targetFacing = components.m_facingComponent->m_targetFacing;
+			passengerFacingComponent->m_smoothedFacing.Reset(components.m_facingComponent->m_smoothedFacing.GetValue());
+		}
+	}
+}
+
+void TransformSystems::ShowTraceForFlyingEntity(UWorld* worldPointer, const TransformSystemsArgs& components)
+{
+	ARGUS_RETURN_ON_NULL(worldPointer, ArgusECSLog);
+	if (!components.AreComponentsValidCheck(ARGUS_FUNCNAME))
+	{
+		return;
+	}
+
+	FVector locationWithoutHeight = components.m_transformComponent->m_location;
+	locationWithoutHeight.Z = 0.0f;
+	DrawDebugLine(worldPointer, components.m_transformComponent->m_location, locationWithoutHeight, FColor::Green);
+}

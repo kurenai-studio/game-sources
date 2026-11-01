@@ -1,0 +1,34 @@
+// Copyright Karazaa. This is a part of an RTS project called Argus.
+
+#pragma once
+
+#include "ComponentDependencies/ResourceSet.h"
+#include "ComponentDefinitions/IdentityComponent.h"
+#include "CoreMinimal.h"
+
+class UArgusEntityTemplate;
+class UTeamAlignmentRecord;
+class UWorld;
+
+class ArgusSystemsManager
+{
+public:
+	static void Initialize(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate, const UArgusEntityTemplate* teamEntityTemplate, const UTeamAlignmentRecord* teamAlignmentRecord);
+	static void InitializePostLoad(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate, const UArgusEntityTemplate* teamEntityTemplate);
+	static void OnStartPlay(UWorld* worldPointer, ETeam activePlayerTeam);
+	static void RunSystems(UWorld* worldPointer, float deltaTime);
+	static void RunPostThreadSystems(UWorld* worldPointer, float deltaTime);
+
+private:
+	static void PopulateSingletonComponents(UWorld* worldPointer, const UArgusEntityTemplate* singletonEntityTemplate);
+	static void SetInitialSingletonState(UWorld* worldPointer, ETeam activePlayerTeam);
+	static void PopulateTeamComponents(const UArgusEntityTemplate* teamEntityTemplate, const UTeamAlignmentRecord* teamAlignmentRecord);
+	static void InitializeTeamComponents();
+	static void PopulateHeadlessEntities();
+	static void UpdateSingletonComponents(UWorld* worldPointer);
+	static void IncrementFrameCounter();
+
+#if !UE_BUILD_SHIPPING
+	static void PopulateTestEntities();
+#endif // !UE_BUILD_SHIPPING
+};

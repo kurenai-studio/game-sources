@@ -1,0 +1,24 @@
+
+#pragma region #####
+class #####;
+
+USTRUCT(BlueprintType)
+struct FSoftObjectLoadStore_#####
+{
+	GENERATED_BODY()
+
+public:
+	#####* LoadAndStorePtr() const;
+	bool AsyncPreLoadAndStorePtr(TFunction<void(#####*)> callback = nullptr) const;
+	void SetHardPtr(#####* pointer);
+	void ResetHardPtr();
+	operator bool() const { return m_hardPtr || !m_softPtr.IsNull(); }
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<#####> m_softPtr = nullptr;
+
+	UPROPERTY(Transient)
+	mutable TObjectPtr<#####> m_hardPtr = nullptr;
+};
+#pragma endregion

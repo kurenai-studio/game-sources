@@ -1,0 +1,15 @@
+name: Compile All BP
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  run-commandlet:
+    runs-on: self-hosted
+    steps:
+      - name: Compiling All Blueprints
+        shell: powershell
+        run: ${{ secrets.PATH_TO_EDITOR_CMD }} "${{ secrets.PATH_TO_UPROJECT }}" -run=CompileAllBlueprints -Unattended -NoLogTimes
