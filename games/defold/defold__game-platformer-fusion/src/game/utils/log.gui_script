@@ -1,0 +1,44 @@
+local log = require("game.utils.log")
+local settings = require("game.settings")
+
+-------------------------------
+-- Defold lifecycle functions:
+-------------------------------
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("#", "toggle_log")
+end
+
+function update(self, dt)
+	if not settings.LOCAL_PLATFORMER and settings.FUSION_AVAILABLE then
+		while true do
+			local message = fusion.pop_log_event()
+			if not message then
+				break
+			end
+			log.buffer(message)
+		end
+	end
+
+	local text = ""
+	for s in log.latest(100) do
+		text = s .. "\n" .. text
+	end
+	gui.set_text(gui.get_node("log"), text)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("toggle_log") then
+		local node = gui.get_node("log")
+		gui.set_enabled(node, not gui.is_enabled(node))
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("toggle_log") then
+		if action.pressed then
+			msg.post("#", "toggle_log")
+		end
+	end
+end

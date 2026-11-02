@@ -1,0 +1,128 @@
+local log = require("game.utils.log")
+local wait = require("game.utils.wait")
+local context = require("game.context")
+local settings = require("game.settings")
+
+math.randomseed(socket.gettime() + sys.get_config_int("project.instance_index", 1))
+
+---@class StartConnectFlowMessage
+---@field username string|nil
+---@field roomname string|nil
+
+---Connects to Photon and waits for a confirmed connection.
+---@param username string|nil
+local function connect(username)
+	username = username or ("user" .. math.random(999999))
+	log("connect username: '%s'", username)
+	fusion.on_event(function(self, event_id, event)
+		if event_id == fusion.EVENT_MAP_CHANGE then
+			-- The master creates the map, but every peer must wait for a locally
+			-- valid map id before instantiating the Defold gameplay collection.
+			log("EVENT_MAP_CHANGE")
+			for map_id in pairs(event) do
+				if fusion.map_is_valid(map_id) then
+					context.map = map_id
+					return
+				end
+			end
+		end
+	end)
+
+	fusion.connect(username)
+	wait.until_true(function()
+		return fusion.is_connected()
+	end)
+end
+
+---Joins the named room, creating it when it does not exist.
+---@param name string|nil
+local function join_room(name)
+	if not name or #name == 0 then
+		name = "defaultroom"
+	end
+	log("join_room name: '%s'", name)
+	local room_options = {
+		is_visible = true,
+		is_open = true,
+		max_players = 10,
+	}
+	local join_options = {}
+	fusion.join_or_create_room(name, room_options, join_options)
+	wait.until_true(function()
+		return fusion.is_in_room()
+	end)
+end
+
+---Starts Fusion simulation after the Photon room has been joined.
+local function start_fusion()
+	log("start fusion")
+	fusion.start()
+	wait.until_true(function()
+		return fusion.is_started()
+	end)
+end
+
+---Creates or receives the Fusion map before loading the Defold game collection.
+local function start_game()
+	local url = "#game"
+	if settings.LOCAL_PLATFORMER then
+		context.map = 1
+	elseif not context.map then
+		if fusion.is_master_client() then
+			-- Only the master may initiate the shared map. Other peers complete
+			-- this branch after EVENT_MAP_CHANGE fills context.map.
+			local map_id = fusion.map_change("foobar")
+			log("start_game %d", map_id)
+			context.map = map_id
+		else
+			wait.until_true(function()
+				return context.map ~= nil
+			end)
+		end
+	end
+
+	collectionfactory.create(url)
+end
+
+---Runs the asynchronous online startup stages in one coroutine.
+---@param message StartConnectFlowMessage
+local function start_connect_flow(message)
+	if not settings.LOCAL_PLATFORMER and not settings.FUSION_AVAILABLE then
+		log("Fusion multiplayer is unavailable in this native build; use an HTML5 build")
+		return
+	end
+	if not settings.LOCAL_PLATFORMER and not settings.has_fusion_app_id() then
+		log("Fusion multiplayer cannot start: fusion.app_id is missing")
+		return
+	end
+
+	coroutine.wrap(function()
+		if settings.LOCAL_PLATFORMER then
+			log("starting local platformer without Fusion")
+		else
+			fusion.init_from_settings()
+			msg.post("debug", "start")
+			fusion.enable_debug(true)
+			connect(message.username)
+			join_room(message.roomname)
+			start_fusion()
+		end
+		start_game()
+	end)()
+end
+
+-------------------------------
+-- Defold lifecycle functions:
+-------------------------------
+
+function init(self)
+	sys.set_error_handler(function(source, message, traceback)
+		log("ERROR: (%s) %s %s", source, message, traceback)
+	end)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_connect_flow") then
+		start_connect_flow(message)
+	end
+end
