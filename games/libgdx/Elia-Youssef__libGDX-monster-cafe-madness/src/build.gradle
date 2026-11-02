@@ -1,0 +1,41 @@
+// Monster Cafe Madness - root build. libGDX 1.14.0, Java 17 source/target, lwjgl3 desktop backend.
+allprojects {
+    apply plugin: 'java'
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Java 17 source + target compatibility, set via --release so it cannot pull in a newer API.
+        // Built on JDK 21; produces Java 17 (class-file major version 61) bytecode.
+        options.release = 17
+    }
+}
+
+// Convenience: a single deliverable ZIP of the buildable source project (source + wrapper + assets),
+// excluding the regenerable build/ and .gradle/ output. Produced under build/deliverables/.
+tasks.register('sourceZip', Zip) {
+    archiveFileName = 'Monster-Cafe-Madness.zip'
+    destinationDirectory = layout.buildDirectory.dir('deliverables')
+
+    from(rootProject.projectDir) {
+        include 'settings.gradle'
+        include 'build.gradle'
+        include 'gradle.properties'
+        include 'gradlew'
+        include 'gradlew.bat'
+        include 'gradle/wrapper/**'
+        include 'assets/**'
+        include 'core/build.gradle'
+        include 'core/src/**'
+        include 'lwjgl3/build.gradle'
+        include 'lwjgl3/src/**'
+    }
+}
+
+tasks.named('assemble') {
+    dependsOn tasks.named('sourceZip')
+}
