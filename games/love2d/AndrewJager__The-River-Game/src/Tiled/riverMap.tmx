@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.2.1" orientation="orthogonal" renderorder="right-down" width="29" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="3" nextobjectid="31">
+ <layer id="1" name="Tile Layer 1" width="29" height="20">
+  <data encoding="csv"/>
+ </layer>
+ <objectgroup id="2" name="Object Layer 1">
+  <object id="1" type="static" x="-1" y="607" width="4000" height="65">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+   </properties>
+  </object>
+  <object id="2" name="Deck" type="dynamic" x="175.054" y="340.477" width="433" height="45">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boat"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="4" type="dynamic" x="497.833" y="551.833" width="157.048" height="51.9674">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+   </properties>
+  </object>
+  <object id="5" name="boatGod" type="kinematic" x="366.667" y="2.16667" width="55" height="31.6667">
+   <properties>
+    <property name="LockRot" type="bool" value="true"/>
+    <property name="color" type="color" value="#ff154bff"/>
+   </properties>
+  </object>
+  <object id="7" name="ProwWall" type="dynamic" x="599.856" y="282.174" width="9.66667" height="22.3333">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boatWall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="8" name="Prow" type="dynamic" x="561.978" y="387.786" width="93.3334" height="47.3333" rotation="-90">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boatWall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="9" name="Platform" type="dynamic" x="410.667" y="250" width="77.3333" height="18.6667">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boat"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="10" name="Platform2" type="dynamic" x="468.667" y="221.333" width="20.3333" height="47.6667">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boatWall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="11" name="rockerL" type="kinematic" x="94.5" y="3.16665" width="30" height="30">
+   <properties>
+    <property name="LockRot" type="bool" value="true"/>
+    <property name="color" type="color" value="#ff154bff"/>
+   </properties>
+  </object>
+  <object id="12" name="rockerR" type="kinematic" x="644" y="3" width="30" height="30">
+   <properties>
+    <property name="LockRot" type="bool" value="true"/>
+    <property name="color" type="color" value="#ff154bff"/>
+   </properties>
+  </object>
+  <object id="13" name="prowZone" type="dynamic" x="562.167" y="193.5" width="49" height="111">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#50ff1d00"/>
+    <property name="data" value="prowZone"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="14" name="backZone" type="dynamic" x="161.833" y="217.167" width="54" height="94.9997">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#50ff1d00"/>
+    <property name="data" value="backZone"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="15" name="lightZone" type="dynamic" x="408.5" y="216.167" width="57.3333" height="35">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#50ff1d00"/>
+    <property name="data" value="lightZone"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="16" name="belowZone" type="dynamic" x="379.5" y="271" width="109" height="68">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#50ff1d00"/>
+    <property name="data" value="belowZone"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="17" name="catTarC" type="dynamic" x="364" y="525" width="23" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value="catTar"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="19" name="catTarD" type="dynamic" x="631.5" y="511" width="23" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value="catTar"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="20" name="catTarA" type="dynamic" x="-133.5" y="513" width="23" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value="catTar"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="21" name="catTarE" type="dynamic" x="919.5" y="515" width="23" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value="catTar"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="22" name="catTarB" type="dynamic" x="129.5" y="509" width="23" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value="catTar"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="23" name="targetGod" type="kinematic" x="434.167" y="494" width="63" height="20">
+   <properties>
+    <property name="LockRot" type="bool" value="true"/>
+    <property name="color" type="color" value="#9400ff11"/>
+    <property name="data" value=""/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="24" name="Dock" type="static" x="-162.5" y="360.167" width="251" height="21">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff581504"/>
+    <property name="data" value="boat"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="25" name="leg" type="static" x="22.816" y="380.057" width="189" height="21" rotation="118.777">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff581504"/>
+    <property name="data" value="boat"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="26" name="leg" type="static" x="72.8333" y="381.834" width="189" height="21" rotation="118.777">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff581504"/>
+    <property name="data" value="dock"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="27" name="wall" type="static" x="-46.9262" y="365.178" width="357" height="21" rotation="-90">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff581504"/>
+    <property name="data" value="wall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="28" name="dockZone" type="static" x="-23.3335" y="286.5" width="134.667" height="72.333">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#50ff1d00"/>
+    <property name="data" value="dockZone"/>
+    <property name="isTrigger" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="29" name="DeckBack" type="dynamic" x="160.5" y="299.5" width="55.6667" height="85.6667">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boatWall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="30" name="DeckBackWall" type="dynamic" x="162.166" y="286.167" width="9.66667" height="22.3333">
+   <properties>
+    <property name="LockRot" type="bool" value="false"/>
+    <property name="color" type="color" value="#ff30ff22"/>
+    <property name="data" value="boatWall"/>
+    <property name="isTrigger" type="bool" value="false"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
