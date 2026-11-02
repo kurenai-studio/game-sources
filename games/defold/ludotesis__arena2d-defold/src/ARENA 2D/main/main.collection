@@ -1,0 +1,122 @@
+name: "main"
+instances {
+  id: "jugador"
+  prototype: "/go/jugador.go"
+  position {
+    x: 129.0
+    y: 80.0
+    z: 0.5
+  }
+}
+instances {
+  id: "samurai"
+  prototype: "/go/samurai.go"
+  position {
+    x: 212.43236
+    y: 78.92559
+    z: 0.5
+  }
+}
+instances {
+  id: "kunai"
+  prototype: "/go/kunai.go"
+  position {
+    x: 176.48125
+    y: 117.679855
+  }
+  component_properties {
+    id: "kunai"
+    properties {
+      id: "velocidad"
+      value: "10.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "kunai1"
+  prototype: "/go/kunai.go"
+  position {
+    x: 176.48125
+    y: 46.67985
+  }
+  component_properties {
+    id: "kunai"
+    properties {
+      id: "velocidad"
+      value: "10.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "kunai2"
+  prototype: "/go/kunai.go"
+  position {
+    x: 176.48125
+    y: 77.679855
+  }
+  component_properties {
+    id: "kunai"
+    properties {
+      id: "velocidad"
+      value: "20.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "Camara"
+  data: "components {\n"
+  "  id: \"camara\"\n"
+  "  component: \"/scripts/camara.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 1000.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "orthographic_projection: 1\\n"
+  "orthographic_mode: ORTHO_MODE_AUTO_FIT\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 128.0
+    y: 72.0
+    z: 1.0
+  }
+}
+embedded_instances {
+  id: "GUI"
+  data: "components {\n"
+  "  id: \"HUD\"\n"
+  "  component: \"/ui/HUD.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "Mapa"
+  data: "components {\n"
+  "  id: \"mapa\"\n"
+  "  component: \"/mapa/mapa.tilemap\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collisionobject\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"collision_shape: \\\"/mapa/mapa.tilemap\\\"\\n"
+  "type: COLLISION_OBJECT_TYPE_STATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"mapa\\\"\\n"
+  "mask: \\\"default\\\"\\n"
+  "mask: \\\"armas\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
