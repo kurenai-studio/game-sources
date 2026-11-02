@@ -1,0 +1,50 @@
+go.property("velocity", vmath.vector3(0, -100, 0))
+
+function init(self)
+	self.alive = true
+
+	msg.post("#yellow", "disable")
+	msg.post("#green", "disable")
+	msg.post("#blue", "disable")
+	local state = math.random(3)
+	if state == 1 then
+		self.enemy_form = "yellow"
+		msg.post("#yellow", "enable")
+		msg.post("#yellow_sound", "play_sound")
+	elseif state == 2 then
+		self.enemy_form = "green"
+		msg.post("#green", "enable")
+		msg.post("#green_sound", "play_sound")
+	elseif state == 3 then
+		self.enemy_form = "blue"
+		msg.post("#blue", "enable")
+		msg.post("#blue_sound", "play_sound")
+	end
+
+	self.points = self.velocity.y^2
+end
+
+
+function update(self, dt)
+	local p = go.get_position() + self.velocity * dt
+	go.set_position(p)
+
+	if go.get_position().y < 0 then
+		msg.post("main#script", "out_of_bounds")
+		msg.post("/spawner#spawner", "remove", { enemy_id = go.get_id() })
+		go.delete()
+	end
+
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("animation_done") and not self.alive then
+		go.delete()
+	elseif message_id == hash("collision_response") and self.alive then
+		msg.post("player/player#script", "collision", { form = self.enemy_form, points = self.points })
+		msg.post("/spawner#spawner", "remove", { enemy_id = go.get_id() })
+		msg.post("#" .. self.enemy_form, "play_animation", {id = hash(self.enemy_form .. "_fade")})
+		self.velocity.y = -30
+		self.alive = false
+	end
+end
