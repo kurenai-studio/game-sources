@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Layer Shift</title>
+  <style>
+    @font-face { font-family: 'Poppins'; font-weight: 400; src: url('fonts/Poppins-Regular.woff2') format('woff2'); }
+    @font-face { font-family: 'Poppins'; font-weight: 500; src: url('fonts/Poppins-Medium.woff2') format('woff2'); }
+    @font-face { font-family: 'Poppins'; font-weight: 700; src: url('fonts/Poppins-Bold.woff2') format('woff2'); }
+    @font-face { font-family: 'PrinterMono'; font-weight: 700; src: url('fonts/DejaVuSansMono-Bold.woff2') format('woff2'); }
+    html, body { margin: 0; height: 100%; background: #06080d; overflow: hidden; touch-action: none; }
+    #game { width: 100%; height: 100%; }
+    canvas { display: block; }
+    /* warm the fonts so they are ready before the first Phaser text is drawn */
+    .warm { position: absolute; left: -9999px; }
+  </style>
+</head>
+<body>
+  <div class="warm" style="font-family:Poppins;font-weight:400">a</div>
+  <div class="warm" style="font-family:Poppins;font-weight:500">a</div>
+  <div class="warm" style="font-family:Poppins;font-weight:700">a</div>
+  <div class="warm" style="font-family:PrinterMono;font-weight:700">a</div>
+  <div id="game"></div>
+  <script src="main.js"></script>
+</body>
+</html>
