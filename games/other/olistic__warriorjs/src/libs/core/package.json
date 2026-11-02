@@ -1,0 +1,53 @@
+{
+  "name": "@warriorjs/core",
+  "version": "0.14.0",
+  "description": "WarriorJS core",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/libs/core",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "keywords": [
+    "warriorjs",
+    "warriorjs-core",
+    "warrior",
+    "epic",
+    "battle",
+    "game",
+    "learn",
+    "polish",
+    "refine",
+    "test",
+    "js",
+    "javascript",
+    "nodejs",
+    "ai",
+    "artificial-intelligence",
+    "skills"
+  ],
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@warriorjs/spatial": "workspace:^",
+    "esbuild": "^0.27.3",
+    "tiny-invariant": "^1.3.3"
+  }
+}
