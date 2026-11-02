@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Simple Level Maker</title>
+
+	<style>
+		body {
+			background-color: #C5C5C5;
+			font-family: mono;
+			font-size: 20px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		
+		canvas {
+			border:1px solid #0000FF;
+			background-color: #000000;
+		}
+	</style>
+
+</head>
+
+<body>
+	<table width="644">
+		<tr>
+		<td width="100"><select id="slot1" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot2" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot3" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot4" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot5" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot6" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot7" onchange="doStuff()"><select></td>
+		</tr>
+		<tr>
+		<td width="100"><select id="slot8" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot9" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot10" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot11" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot12" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot13" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot14" onchange="doStuff()"><select></td>
+		</tr>
+		<tr>
+		<td width="100"><select id="slot15" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot16" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot17" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot18" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot19" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot20" onchange="doStuff()"><select></td>
+		<td width="100"><select id="slot21" onchange="doStuff()"><select></td>
+		</tr>
+		<tr>
+			<td colspan="7"><canvas id="demo" width="640" height="480"></canvas></td>
+		</tr>
+		<th colspan="7">Output:</th>
+		<tr>
+			<td colspan="7"><textarea name="out" id="out" rows="28" cols="87"></textarea></td>
+		</tr>
+	</table>
+
+	<p id="result"></p>
+</body>
+
+<script>
+var options = [
+	["Square", 0, "#000000", 1],
+	["Square", 1, "#00FF00", 1],
+	["Square", 2, "#0000FF", 1],
+	["Square", 3, "#FF00FF", 1],
+	["Square", 4, "#FF0000", 1],
+	["Circle", 0, "#000000", 2],
+	["Circle", 1, "#00FF00", 2],
+	["Circle", 2, "#0000FF", 2],
+	["Circle", 3, "#FF00FF", 2],
+	["Circle", 4, "#FF0000", 2]
+];
+
+var loc = [
+	[160,60],[210,60],[260,60],[310,60],[360,60],[410,60],[460,60],
+	[160,120],[210,120],[260,120],[310,120],[360,120],[410,120],[460,120],
+	[160,180],[210,180],[260,180],[310,180],[360,180],[410,180],[460,180],
+];
+
+var slots = [
+	document.getElementById("slot1"),
+	document.getElementById("slot2"),
+	document.getElementById("slot3"),
+	document.getElementById("slot4"),
+	document.getElementById("slot5"),
+	document.getElementById("slot6"),
+	document.getElementById("slot7"),
+	document.getElementById("slot8"),
+	document.getElementById("slot9"),
+	document.getElementById("slot10"),
+	document.getElementById("slot11"),
+	document.getElementById("slot12"),
+	document.getElementById("slot13"),
+	document.getElementById("slot14"),
+	document.getElementById("slot15"),
+	document.getElementById("slot16"),
+	document.getElementById("slot17"),
+	document.getElementById("slot18"),
+	document.getElementById("slot19"),
+	document.getElementById("slot20"),
+	document.getElementById("slot21")
+];
+
+function makeList(list){
+	var opt = "";
+	
+  for(var i = 0; i < options.length; i++) {
+		opt = options[i][0] + " " + options[i][1];
+		
+		var el = document.createElement("option");
+		el.textContent = opt;
+		el.value = opt;
+		
+		list.appendChild(el);
+  }
+}
+
+function draw(slot, shape, colour) {
+	if (colour == "#000000") {
+		return;
+	}
+	
+	const canvas = document.getElementById("demo");
+	const ctx = canvas.getContext("2d");
+
+	if (shape == "Square"){	
+		ctx.fillStyle = colour;
+		ctx.fillRect(loc[slot][0]-16,loc[slot][1]-16, 32, 32);
+	} else if (shape == "Circle") {
+		ctx.beginPath();
+		ctx.arc(loc[slot][0],loc[slot][1], 16, 0, 2 * Math.PI);
+		ctx.fillStyle = colour;
+		ctx.fill();
+	}
+}
+
+function doStuff(){
+	document.getElementById("out").value = "";
+	
+	const canvas = document.getElementById("demo");
+	const ctx = canvas.getContext("2d");
+	ctx.clearRect(0,0, 640,480);
+	
+	var sel = 0;
+	var slot = 0;
+	var row = 1;
+	var shape = ""
+	var colour = "";
+	var result = "";
+	
+	// Start Lua script output
+	result = "local enemies = {\n\t";
+	
+	for (var i = 0; i < slots.length; i++) {
+		sel = slots[i].selectedIndex; // Index value of option user selected
+		slot = i;
+		shape = options[sel][0];
+		colour = options[sel][2];	
+		
+		// Draw demo
+		draw(slot, shape, colour);
+		
+		// Format level Lua script
+		if (i > 6){
+			row = 2;
+		}
+		if (i > 13){
+			row = 3;
+		}
+		
+		result += "{row = " + row + ", shape = " + options[sel][3] + ", health = " + options[sel][1] + "},\n\t";
+	}
+
+	result = result.slice(0,result.length-1); // lop off the last tab
+	result += "}\n\nreturn enemies";
+	
+  document.getElementById("out").value = result;
+}
+
+// Run on load:
+
+for (var i = 0; i < slots.length; i++) {
+	makeList(slots[i]);
+}
+
+doStuff();
+
+</script>
+</html>
