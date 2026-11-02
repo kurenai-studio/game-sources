@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <!-- Same roll-forward as the game: the test host should run on any
+         newer runtime too, not demand exactly 9.0. -->
+    <RollForward>Major</RollForward>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Referencing the game executable directly: an exe still produces a
+         referencable assembly, so the tests reach the real types with no
+         restructuring of the game project. -->
+    <ProjectReference Include="..\..\Breakout.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The shipped level files, linked in so LevelFilesTests parses the
+         real boards — the same CopyToOutputDirectory trick the game csproj
+         uses to get them next to its binary. -->
+    <None Include="..\..\Content\Levels\*.txt" Link="Levels\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

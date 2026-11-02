@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREAKOUT — A MonoGame Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0a10;
+    --bg-raise:  #11111a;
+    --bg-panel:  #15151f;
+    --line:      #23232f;
+    --ink:       #d6d6e0;
+    --ink-dim:   #8b8b9e;
+    --ink-faint: #55556a;
+    --tier1: #5ea7ff;  /* blue   */
+    --tier2: #57d476;  /* green  */
+    --tier3: #ffcd42;  /* yellow */
+    --tier4: #ff8a30;  /* orange */
+    --tier5: #ff4d4d;  /* red    */
+    --engine: #478cbf;
+    --paddle: #e2e2ec;
+    --code-bg: #0d0d15;
+    --sidebar-w: 280px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    font-size: 16.5px;
+    line-height: 1.65;
+  }
+  /* faint scanlines over everything — kept extremely subtle */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);
+    z-index: 999;
+  }
+
+  ::selection { background: var(--tier3); color: #1a1405; }
+
+  a { color: var(--tier1); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- sidebar ---------- */
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--bg-raise);
+    border-right: 1px solid var(--line);
+    padding: 28px 0 20px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  .toc .logo {
+    font-family: "Press Start 2P", monospace;
+    font-size: 13px;
+    color: var(--paddle);
+    padding: 0 24px 6px;
+    letter-spacing: 1px;
+  }
+  .toc .logo span { color: var(--tier5); }
+  .toc .tagline {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    padding: 0 24px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .toc ol { list-style: none; margin: 14px 0; padding: 0; }
+  .toc li a {
+    display: flex; gap: 10px; align-items: baseline;
+    padding: 7px 24px;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    border-left: 3px solid transparent;
+  }
+  .toc li a .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; color: var(--ink-faint);
+    min-width: 20px;
+  }
+  .toc li a:hover { color: var(--ink); text-decoration: none; background: rgba(255,255,255,.02); }
+  .toc li a.active {
+    color: var(--paddle);
+    border-left-color: var(--tier3);
+    background: rgba(255,205,66,.05);
+  }
+  .toc li a.active .num { color: var(--tier3); }
+  .toc .keys {
+    margin: 18px 24px 0; padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; color: var(--ink-faint); line-height: 2;
+  }
+  .toc .keys b { color: var(--ink-dim); font-weight: 500; }
+
+  /* ---------- main column ---------- */
+  main { margin-left: var(--sidebar-w); padding: 0 56px 120px; max-width: 1020px; }
+
+  /* ---------- hero ---------- */
+  header.hero {
+    padding: 64px 0 36px;
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .hero h1 {
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(26px, 3.4vw, 40px);
+    line-height: 1.45;
+    margin: 0 0 18px;
+    color: var(--paddle);
+    text-shadow: 4px 4px 0 rgba(94,167,255,.22);
+  }
+  .hero h1 em { font-style: normal; color: var(--tier5); }
+  .hero p.lede { color: var(--ink-dim); font-size: 17px; margin: 0 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink-dim);
+    background: var(--bg-raise);
+  }
+  .chip.hot { color: var(--tier3); border-color: rgba(255,205,66,.35); }
+  .demo-frame {
+    border: 1px solid var(--line);
+    background: var(--bg-raise);
+    border-radius: 6px;
+    padding: 10px 10px 6px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  }
+  .demo-frame canvas { display: block; width: 100%; image-rendering: pixelated; border-radius: 3px; }
+  .demo-frame .bar {
+    display: flex; justify-content: space-between;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px; color: var(--ink-faint);
+    padding: 6px 2px 2px;
+  }
+
+  /* brick-row divider used between sections */
+  .brickrow { display: flex; gap: 3px; margin: 70px 0 0; }
+  .brickrow i { height: 8px; flex: 1; border-radius: 1px; opacity: .8; }
+
+  /* ---------- sections ---------- */
+  section { padding-top: 34px; }
+  .kicker {
+    font-family: "Press Start 2P", monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  section h2 {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700;
+    font-size: 30px;
+    margin: 0 0 6px;
+    color: var(--paddle);
+  }
+  section h3 {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 20px;
+    margin: 34px 0 8px;
+    color: var(--ink);
+  }
+  .files {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px; color: var(--ink-faint);
+    margin-bottom: 22px;
+  }
+  .files code { color: var(--ink-dim); background: var(--bg-raise); padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); }
+  p code, li code, td code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: .86em;
+    background: var(--bg-raise);
+    border: 1px solid var(--line);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #cfd6ff;
+  }
+  strong { color: var(--paddle); }
+
+  /* ---------- callout boxes ---------- */
+  .box { border: 1px solid var(--line); border-left-width: 4px; border-radius: 4px; padding: 14px 18px; margin: 20px 0; background: var(--bg-raise); }
+  .box .tag { font-family: "Press Start 2P", monospace; font-size: 9px; letter-spacing: 1.5px; display: block; margin-bottom: 8px; }
+  .box p { margin: 6px 0; font-size: 15.5px; }
+  .box.engine { border-left-color: var(--engine); }
+  .box.engine .tag { color: var(--engine); }
+  .box.gotcha { border-left-color: var(--tier5); }
+  .box.gotcha .tag { color: var(--tier5); }
+  .box.why    { border-left-color: var(--tier3); }
+  .box.why .tag { color: var(--tier3); }
+  .box.try    { border-left-color: var(--tier2); }
+  .box.try .tag { color: var(--tier2); }
+
+  /* ---------- code blocks ---------- */
+  .code { margin: 22px 0; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: var(--code-bg); }
+  .code .head {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-raise);
+    border-bottom: 1px solid var(--line);
+    padding: 7px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+  }
+  .code .head .fn { color: var(--tier3); }
+  .code .head .note { color: var(--ink-faint); }
+  .code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
+  .code code { font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.6; color: #b8bdd4; }
+  .tok-k { color: #6fa8ff; }                 /* keyword  */
+  .tok-t { color: #5fd4c0; }                 /* type     */
+  .tok-s { color: #e8c98a; }                 /* string   */
+  .tok-c { color: #596078; font-style: italic; } /* comment */
+  .tok-n { color: #d99fff; }                 /* number   */
+
+  /* ---------- tables ---------- */
+  table { border-collapse: collapse; width: 100%; margin: 22px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 14px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--bg-raise); font-family: "Chakra Petch", sans-serif; font-size: 13.5px; letter-spacing: .4px; color: var(--ink-dim); text-transform: uppercase; }
+  td { background: rgba(255,255,255,.012); }
+
+  /* ---------- file tree ---------- */
+  .tree { font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.9; white-space: pre; color: var(--ink-dim); background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px; padding: 18px 22px; margin: 22px 0; overflow-x: auto; }
+  .tree b { color: var(--tier1); font-weight: 500; }
+  .tree i { color: var(--ink-faint); font-style: normal; }
+
+  footer { margin-top: 90px; border-top: 1px solid var(--line); padding-top: 24px; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+  @media (max-width: 980px) {
+    nav.toc { display: none; }
+    main { margin-left: 0; padding: 0 22px 80px; }
+    header.hero { grid-template-columns: 1fr; padding-top: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<nav class="toc" aria-label="Table of contents">
+  <div class="logo">BREAK<span>OUT</span></div>
+  <div class="tagline">a MonoGame field guide<br>one small game, fully explained</div>
+  <ol id="tocList">
+    <li><a href="#loop"><span class="num">01</span>The Loop Owns Nothing But You</a></li>
+    <li><a href="#timestep"><span class="num">02</span>Fixed Timestep &amp; Delta</a></li>
+    <li><a href="#spritebatch"><span class="num">03</span>SpriteBatch &amp; the 1×1 Pixel</a></li>
+    <li><a href="#content"><span class="num">04</span>Two Ways to Load a Thing</a></li>
+    <li><a href="#input"><span class="num">05</span>Input Is a Snapshot</a></li>
+    <li><a href="#collision"><span class="num">06</span>Collision &amp; the Aiming Paddle</a></li>
+    <li><a href="#states"><span class="num">07</span>States Without Scenes</a></li>
+    <li><a href="#virtual"><span class="num">08</span>The Virtual Screen</a></li>
+    <li><a href="#juice"><span class="num">09</span>Juice: Shake, Sparks, Square Waves</a></li>
+    <li><a href="#production"><span class="num">10</span>Production Habits</a></li>
+    <li><a href="#history"><span class="num">11</span>Two Manuals, Three Games</a></li>
+    <li><a href="#procgen"><span class="num">12</span>Boards from a Seed</a></li>
+    <li><a href="#replay"><span class="num">13</span>The Run Is a Pure Function</a></li>
+    <li><a href="#crt"><span class="num">14</span>Shading the Whole Frame</a></li>
+    <li><a href="#testing"><span class="num">15</span>The Testable Half of a Game</a></li>
+    <li><a href="#map"><span class="num">A</span>Project Map</a></li>
+    <li><a href="#glossary"><span class="num">B</span>Engine Concepts → MonoGame</a></li>
+    <li><a href="#next"><span class="num">C</span>Where to Go Next</a></li>
+  </ol>
+  <div class="keys">
+    <b>run</b> dotnet run<br>
+    <b>move</b> mouse / ← → / A D<br>
+    <b>launch</b> space / click<br>
+    <b>fullscreen</b> F11 &nbsp; <b>debug</b> F3
+  </div>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div>
+    <h1>BREAK<em>OUT</em><br>field guide</h1>
+    <p class="lede">Everything this codebase teaches about MonoGame, in reading order —
+    no prior game-engine experience assumed. Each section names the files to open
+    next to it. The code is the textbook; this is the margin notes.</p>
+    <div class="chips">
+      <span class="chip hot">MonoGame 3.8</span>
+      <span class="chip">DesktopGL</span>
+      <span class="chip">C# / .NET</span>
+      <span class="chip">800 × 480 virtual</span>
+      <span class="chip">60 Hz fixed step</span>
+      <span class="chip">zero asset files</span>
+      <span class="chip">6 ways to play</span>
+      <span class="chip">deterministic replays</span>
+    </div>
+  </div>
+  <div class="demo-frame">
+    <canvas id="demo" width="320" height="192" aria-label="Decorative self-playing Breakout animation"></canvas>
+    <div class="bar"><span>attract mode — the doc plays itself</span><span id="demoScore">0000</span></div>
+  </div>
+</header>
+
+<div class="brickrow"><i style="background:var(--tier5)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier1)"></i></div>
+
+<!-- ============================================================ 01 -->
+<section id="loop">
+  <div class="kicker" style="color:var(--tier1)">01 / FOUNDATION</div>
+  <h2>The Loop Owns Nothing But You</h2>
+  <p class="files">open: <code>Program.cs</code> · <code>BreakoutGame.cs</code></p>
+
+  <p>The single most important thing to understand about MonoGame:
+  <strong>it is a library, not an engine.</strong> An engine owns a world — a scene
+  tree, an editor, objects that update and draw themselves — and calls your scripts
+  when it feels like it. MonoGame is a library with a heartbeat: <em>your</em>
+  executable starts, <em>you</em> construct one <code>Game</code> object, and
+  <code>Run()</code> pumps a loop until you call <code>Exit()</code>. Nothing exists
+  unless your code creates it; nothing appears on screen unless your code drew it
+  <em>this frame</em>.</p>
+
+  <div class="code"><div class="head"><span class="fn">Program.cs</span><span class="note">the entire entry point</span></div>
+<pre><code>using var game = new Breakout.BreakoutGame();
+game.Run();</code></pre></div>
+
+  <p>The <code>using var</code> guarantees the window and GL context are torn down when
+  <code>Main</code> exits — cleanup an engine would do invisibly, written out in plain
+  sight.</p>
+
+  <h3>The four lifecycle overrides</h3>
+  <table>
+    <tr><th>Override</th><th>Runs</th><th>Your job inside it</th></tr>
+    <tr><td><code>Initialize()</code></td><td>once, after the graphics device exists</td><td>non-content setup — and <code>base.Initialize()</code> is what calls <code>LoadContent()</code></td></tr>
+    <tr><td><code>LoadContent()</code></td><td>once</td><td>create the <code>SpriteBatch</code>, load fonts / textures / sounds</td></tr>
+    <tr><td><code>Update(GameTime)</code></td><td>every tick (60 Hz here, §02)</td><td>read input, advance the simulation</td></tr>
+    <tr><td><code>Draw(GameTime)</code></td><td>every frame</td><td>redraw the entire world from scratch — nothing persists on screen between frames</td></tr>
+  </table>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>The <code>base.*</code> calls do real work. Delete <code>base.Initialize()</code> and
+  <code>LoadContent()</code> silently never runs. These are not the polite-but-optional
+  <code>super</code> calls of many frameworks — here <code>base</code> is load-bearing.</p></div>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p><code>BreakoutGame</code> is deliberately thin — it owns the window, the loop, the
+  SpriteBatch and the virtual screen, then delegates to <code>GameStateManager</code>.
+  It is also the only class nothing else references: the application shell knows about
+  gameplay, gameplay never knows about the shell. Search the repo for
+  <code>BreakoutGame</code> — it appears only in <code>Program.cs</code>. That property
+  is worth defending in any codebase.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier2)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier2)"></i></div>
+
+<!-- ============================================================ 02 -->
+<section id="timestep">
+  <div class="kicker" style="color:var(--tier2)">02 / TIME</div>
+  <h2>Fixed Timestep &amp; Delta — Why Both</h2>
+  <p class="files">open: <code>BreakoutGame.cs</code> (constructor, Update)</p>
+
+  <p>With <code>IsFixedTimeStep = true</code> (the default, stated explicitly in the
+  constructor on purpose), MonoGame calls <code>Update()</code> on a fixed 60 Hz clock:
+  the simulation ticks at a steady, predictable rate no matter how fast the machine
+  renders, which is what keeps physics deterministic — the ball takes the same path on
+  every PC. So why does every movement line still multiply by delta?</p>
+
+  <div class="code"><div class="head"><span class="fn">BreakoutGame.cs</span><span class="note">extracting delta from GameTime</span></div>
+<pre><code>float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+_states.Update(dt, _input);</code></pre></div>
+
+  <p>Two reasons. First, when a frame runs long, MonoGame runs <em>catch-up</em> Updates,
+  and <code>ElapsedGameTime</code> stays honest about real elapsed time. Second,
+  <code>position += velocity * dt</code> keeps working if the tick rate ever changes —
+  hardcoding per-tick speeds couples gameplay to the clock, and "the ball moves 5 px
+  per Update" becomes a bug the day the game runs at 144 Hz.</p>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p><code>ElapsedGameTime</code> is a <code>TimeSpan</code>, not a float. The cast
+  <code>(float)…TotalSeconds</code> is the idiom; forget it and the compiler reminds you,
+  use <code>.Seconds</code> (an int!) and it silently breaks.</p></div>
+
+  <div class="box engine"><span class="tag">WORTH KNOWING</span>
+  <p>Many frameworks hand you a bare <code>delta</code> float. MonoGame hands you a
+  <code>GameTime</code> object carrying both <code>ElapsedGameTime</code> (your delta)
+  and <code>TotalGameTime</code> (time since launch — handy for pulsing effects, see
+  <code>PowerUp.Draw</code> which tracks its own age instead).</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier3)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier3)"></i></div>
+
+<!-- ============================================================ 03 -->
+<section id="spritebatch">
+  <div class="kicker" style="color:var(--tier3)">03 / RENDERING</div>
+  <h2>SpriteBatch &amp; the 1×1 Pixel Trick</h2>
+  <p class="files">open: <code>Source/Systems/SpriteBatchExtensions.cs</code> · any <code>Draw</code> method</p>
+
+  <p>All 2D drawing goes through <code>SpriteBatch</code>: call <code>Begin()</code>,
+  queue textured quads, call <code>End()</code>, and the batch submits them to the GPU
+  efficiently. There is no retained canvas — and there is also no
+  <code>draw_rect</code>. MonoGame draws <em>textures</em>, full stop. The universal
+  workaround: a one-pixel white texture, stretched and tinted.</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/SpriteBatchExtensions.cs</span><span class="note">the whole trick</span></div>
+<pre><code>_pixel = new Texture2D(device, 1, 1);
+_pixel.SetData(new[] { Color.White });
+
+public static void DrawRect(this SpriteBatch spriteBatch, Rectangle rect, Color color)
+    => spriteBatch.Draw(_pixel, rect, color);</code></pre></div>
+
+  <p>The GPU does not care that the source texture is one pixel — sampling it at any
+  size yields flat white, and the tint color does the rest. Every paddle, brick, ball,
+  particle and letterbox bar in this game is that one texture. The whole game ships with
+  <strong>zero image files</strong>.</p>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p><code>SpriteBatch.Begin()</code> defaults to linear filtering. Scale anything up and
+  it smears. This project passes <code>samplerState: SamplerState.PointClamp</code> at
+  both Begin sites (world pass and present pass) — that's the "crisp pixels" switch.</p></div>
+
+  <div class="box engine"><span class="tag">MENTAL MODEL</span>
+  <p>In a scene-graph engine, a rectangle node persists in a tree and draws itself
+  forever. Here, if <code>Draw</code> doesn't issue the call this frame, the thing does
+  not exist on screen. Drawing is a verb, never a noun.</p></div>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>Premultiplied alpha: <code>Color.Black * 0.65f</code> (the game-over dim layer) and
+  <code>p.Color * life</code> (particle fade) multiply RGB and A together, which is what
+  SpriteBatch's default blend state expects. Setting only the alpha channel by hand is
+  the classic "why does my fade look wrong" bug.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier1)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier1)"></i></div>
+
+<!-- ============================================================ 04 -->
+<section id="content">
+  <div class="kicker" style="color:var(--tier4)">04 / ASSETS</div>
+  <h2>Two Ways to Load a Thing</h2>
+  <p class="files">open: <code>Content/Content.mgcb</code> · <code>Content/Fonts/Hud.spritefont</code> · <code>Source/Systems/LevelLoader.cs</code> · <code>Breakout.csproj</code></p>
+
+  <p>This project deliberately demonstrates both asset routes, because choosing between
+  them is a real decision you'll make on every MonoGame project.</p>
+
+  <h3>Route 1 — the Content Pipeline (the font)</h3>
+  <p>The pipeline compiles assets at build time into <code>.xnb</code> binaries: textures
+  into GPU formats, fonts into rasterized glyph atlases. <code>Content.mgcb</code> is its
+  plain-text manifest (the MGCB Editor is just a GUI over it). Asset names are
+  <strong>path-without-extension</strong> relative to <code>Content/</code>:</p>
+
+  <div class="code"><div class="head"><span class="fn">BreakoutGame.cs</span><span class="note">loading a compiled asset</span></div>
+<pre><code>_font = Content.Load&lt;SpriteFont&gt;("Fonts/Hud");</code></pre></div>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>There is no "just draw text" in MonoGame. <code>Hud.spritefont</code> is an XML
+  description (font family, size, character range) that the pipeline bakes into a glyph
+  atlas. No SpriteFont, no <code>DrawString</code>.</p></div>
+
+  <h3>Route 2 — runtime loading (the levels)</h3>
+  <p>The level grid gains nothing from being compiled, and keeping it plain text means
+  editing a level requires no rebuild. So it bypasses the pipeline entirely:</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/LevelLoader.cs</span><span class="note">platform-safe runtime file access</span></div>
+<pre><code>using Stream stream = TitleContainer.OpenStream("Content/Levels/level01.txt");
+using var reader = new StreamReader(stream);</code></pre></div>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>The pipeline only copies what it builds. Runtime-loaded files need their own
+  <code>CopyToOutputDirectory</code> entry in the <code>.csproj</code> — without it the
+  game works on your machine right up until you wonder why a fresh clone crashes.</p></div>
+
+  <div class="box engine"><span class="tag">MENTAL MODEL</span>
+  <p>Every big engine has an asset import step; most hide it behind drag-and-drop and a
+  cache folder you never open. The Content Pipeline is that step made visible and put
+  under your control — and <code>TitleContainer</code> is the escape hatch for files
+  you want raw.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier5)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier5)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier5)"></i></div>
+
+<!-- ============================================================ 05 -->
+<section id="input">
+  <div class="kicker" style="color:var(--tier5)">05 / INPUT</div>
+  <h2>Input Is a Snapshot, Not an Event</h2>
+  <p class="files">open: <code>Source/Systems/InputHelper.cs</code></p>
+
+  <p>MonoGame has no input events, no signals, no action map.
+  <code>Keyboard.GetState()</code> returns a snapshot of which keys are down
+  <em>right now</em>, and that's all you get. "Is the key down" is trivial.
+  "Was it <em>just pressed</em>" requires memory:</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/InputHelper.cs</span><span class="note">the current/previous pattern</span></div>
+<pre><code>public void Update(VirtualScreen virtualScreen)
+{
+    _previousKeyboard = _keyboard;
+    _previousMouse = _mouse;
+    _previousGamePad = _gamePad;
+    _keyboard = Keyboard.GetState();
+    _mouse = Mouse.GetState();
+    _gamePad = GamePad.GetState(PlayerIndex.One);
+    // ...
+}
+
+// the heart of WasActionJustPressed, for each key bound to the action:
+if (_keyboard.IsKeyDown(keys[i]) && _previousKeyboard.IsKeyUp(keys[i]))
+    return true;</code></pre></div>
+
+  <p>Down now + up last frame = pressed this frame. That two-line comparison is
+  exactly what any engine's built-in "just pressed" query does internally. Every
+  polling-based codebase grows this wrapper; the discipline is calling
+  <code>Update()</code> exactly once per tick, before anyone reads input.</p>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p><code>MouseX</code> returns <em>virtual</em> coordinates (§08 transform applied) so
+  gameplay never learns the window size exists — but <code>MouseMoved</code> compares
+  <em>raw</em> window positions, because the virtual transform rounds to ints and that
+  rounding could register phantom movement. Two coordinate spaces, each used where it's
+  correct.</p></div>
+
+  <div class="box engine"><span class="tag">WORTH KNOWING</span>
+  <p>There is also no <em>action map</em> — no built-in layer that turns "the jump
+  action" into "Space or W or gamepad A". This project builds one on top of this same
+  helper: <code>ActionMap</code> is a dictionary from <code>GameAction</code> to
+  <code>Keys[]</code>, and gameplay only ever asks <code>IsActionDown</code> /
+  <code>WasActionJustPressed</code> — no gameplay file names a key. It began as an
+  Appendix C exercise; its commit shows how little the whole layer costs.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier2)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier5)"></i><i style="background:var(--tier1)"></i></div>
+
+<!-- ============================================================ 06 -->
+<section id="collision">
+  <div class="kicker" style="color:var(--tier1)">06 / SIMULATION</div>
+  <h2>AABB Collision &amp; the Paddle That Aims</h2>
+  <p class="files">open: <code>Source/Systems/CollisionHelper.cs</code> · <code>Source/States/PlayingState.cs</code> · <code>Source/Entities/Ball.cs</code></p>
+
+  <p>No physics engine, no collider components, no collision events — just
+  <code>Rectangle.Intersect</code> and arithmetic. The interesting question in Breakout
+  is never <em>whether</em> the ball hit a brick, but <em>which side</em> it hit,
+  because that decides which velocity component flips.</p>
+
+  <h3>Minimal penetration</h3>
+  <div class="code"><div class="head"><span class="fn">Source/Systems/CollisionHelper.cs</span><span class="note">the shallower overlap axis is the impact axis</span></div>
+<pre><code>Rectangle overlap = Rectangle.Intersect(moving, target);
+if (overlap.IsEmpty)
+    return HitSide.None;
+
+if (overlap.Width &lt; overlap.Height)
+    return moving.Center.X &lt; target.Center.X ? HitSide.Left : HitSide.Right;
+
+return moving.Center.Y &lt; target.Center.Y ? HitSide.Top : HitSide.Bottom;</code></pre></div>
+
+  <p>If the overlap rectangle is wider than it is tall, the ball came in vertically, and
+  vice versa. Relative centers disambiguate which of the two sides. After detection,
+  <code>CollisionHelper.ReflectAndSeparate</code> pushes the ball out by the overlap and
+  <em>sets</em> the velocity sign (rather than negating it) — setting is idempotent if a
+  collision ever resolves twice. It lives in the helper, not in a playing state, because
+  all three rule sets share it: how a ball leaves a brick is physics, not rules.</p>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>This discrete test is only safe because the numbers say so: max ball speed 560 px/s
+  ÷ 60 Hz ≈ 9 px per tick, against 20 px bricks — tunneling is impossible. Crank the
+  speed past ~1200 px/s and you'd need a swept test. Professional code isn't code
+  without simplifications; it's code whose simplifications are <em>justified and
+  written down</em>.</p></div>
+
+  <h3>The aiming paddle — the game-feel heart</h3>
+  <div class="code"><div class="head"><span class="fn">Source/Entities/Ball.cs</span><span class="note">where you hit decides where it goes</span></div>
+<pre><code>float offset = (Position.X - p.Center.X) / (p.Width / 2f);
+offset = MathHelper.Clamp(offset, -1f, 1f);
+
+float angle = offset * MaxBounceAngle;   // 60° from vertical at the edge
+Velocity = new Vector2(MathF.Sin(angle), -MathF.Cos(angle)) * Speed;</code></pre></div>
+
+  <p>The exit angle ignores the incoming angle entirely — it's a pure function of where
+  the ball struck the paddle. Center: straight up. Edge: 60°. This single mapping turns
+  the paddle from a wall into an aiming device, and it's <em>the</em> knob of the whole
+  genre. Also note the two anti-stick guards: paddle bounce only triggers while the ball
+  descends, and brick resolution handles one brick per tick.</p>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Change <code>MaxBounceAngle</code> to <code>MathHelper.Pi / 6f</code> (30°) and play
+  a round. Then try 75°. Feel how the game changes from "passive" to "twitchy" with one
+  constant — that's game feel living in a single number.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier4)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier4)"></i></div>
+
+<!-- ============================================================ 07 -->
+<section id="states">
+  <div class="kicker" style="color:var(--tier3)">07 / ARCHITECTURE</div>
+  <h2>States Without Scenes</h2>
+  <p class="files">open: <code>Source/States/*.cs</code> · <code>Source/GameSession.cs</code></p>
+
+  <p>Ready → Playing → LifeLost → GameOver, with Pause and LevelCleared joining the
+  loop where needed. Engines ship a scene system or a state machine node for exactly
+  this; MonoGame ships neither, so you write the pattern yourself — about 30 lines —
+  and in exchange you see exactly what a "screen change" is: <em>swapping which object
+  gets the Update and Draw calls.</em> Two refinements worth tracing: PauseState keeps
+  the state it interrupted and swaps it back without re-running Enter(), and the
+  FreezesEffects flag lets pause stop even the particles every other state animates.</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/States/GameStateManager.cs</span><span class="note">a scene changer is just a field assignment</span></div>
+<pre><code>public void ChangeState(GameState next)
+{
+    _current = next;
+    next.Enter();
+}
+
+public void Update(float dt, InputHelper input)
+{
+    if (!_current.FreezesEffects)
+        Session.UpdateEffects(dt); // effects run in (almost) every state
+    _current.Update(dt, input);
+}</code></pre></div>
+
+  <h3>The crucial split: data vs. behavior</h3>
+  <p><code>GameSession</code> owns the world — paddle, balls, bricks, score, lives,
+  level index, particles. States are <em>modes of operating on</em> that world. That's why the ball
+  sits frozen mid-air on the game-over screen and the HUD stays visible during the
+  life-lost flash: switching states never copies, rebuilds, or hides the world.
+  "New game" is one line: <code>Session = new GameSession(mode)</code>.</p>
+
+  <h3>Rule sets are states too</h3>
+  <p>The payoff of that split arrived with <strong>Classic 1976 mode</strong> — the
+  original arcade rules, reconstructed from Atari's operation manual, living alongside
+  the modern game. No <code>if (classicMode)</code> sprinkled through gameplay: the
+  entities stay shared and dumb, and a "mode" is simply which state objects drive them —
+  <code>ClassicReadyState</code>/<code>ClassicPlayingState</code> instead of
+  <code>ReadyState</code>/<code>PlayingState</code>, chosen in one place
+  (<code>GameStateManager.CreateServeState</code>). Read the two playing states side by
+  side: discrete four-step speeds vs. a continuous ramp, four fixed paddle exits vs.
+  continuous aiming, one-brick-per-trip vs. chew-through — the diff between two files
+  <em>is</em> thirty years of design history. The pattern got its stress test when
+  <strong>Super Breakout (1978)</strong> arrived as <em>three</em> rule sets at once:
+  the physics the sequel's games share live in one abstract
+  <code>SuperPlayingState</code>, and each variant (Double, Cavity, Progressive) is a
+  subclass small enough to read in a sitting — what varies hangs off five virtual
+  hooks. <code>TitleState</code> is the other
+  lesson: the first state that exists <em>before</em> a session does, which is exactly
+  what forced <code>StartNewGame</code> to take parameters (mode, starting level)
+  instead of assuming them.</p>
+
+  <div class="box engine"><span class="tag">MENTAL MODEL</span>
+  <p>Engine scene switching usually <em>destroys</em> the old scene — which is why
+  carrying a score across screens pushes you toward global singletons. Here persistence
+  is the default and you opt out by constructing fresh, which is the less bug-prone
+  direction.</p></div>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>Notice what this project deliberately does <em>not</em> have: no ECS, no DI
+  container, no event bus. Breakout doesn't need architecture; it needs clarity.
+  Knowing how much structure a game does <em>not</em> need is a professional skill.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier1)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier2)"></i></div>
+
+<!-- ============================================================ 08 -->
+<section id="virtual">
+  <div class="kicker" style="color:var(--tier2)">08 / PRODUCTION RENDERING</div>
+  <h2>The Virtual Screen</h2>
+  <p class="files">open: <code>Source/Systems/VirtualScreen.cs</code> · <code>BreakoutGame.cs</code> (Draw, OnClientSizeChanged, ToggleFullscreen)</p>
+
+  <p>The single most instructive piece of "real project" infrastructure. Gameplay
+  thinks in 800×480 forever; the window can be anything. The trick is a two-pass draw:</p>
+
+  <div class="code"><div class="head"><span class="fn">BreakoutGame.cs</span><span class="note">render to target, then present scaled</span></div>
+<pre><code>// Pass 1: the whole game, into the 800x480 render target.
+_virtualScreen.BeginDraw();          // SetRenderTarget(target)
+GraphicsDevice.Clear(ClearColor);
+_spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+                   transformMatrix: _states.Session.Shake.TransformMatrix);
+_states.Draw(_spriteBatch);
+_spriteBatch.End();
+
+// Pass 2: the render target onto the real back buffer, letterboxed.
+_virtualScreen.Present(_spriteBatch); // SetRenderTarget(null) + draw scaled</code></pre></div>
+
+  <p>A <code>RenderTarget2D</code> is a texture you can draw <em>into</em>; passing
+  <code>null</code> to <code>SetRenderTarget</code> means "the actual back buffer".
+  <code>DestinationBounds</code> scales by the smaller axis ratio (so the image always
+  fits) and centers — the leftover area is the black letterbox bars.</p>
+
+  <h3>The inverse problem: the mouse</h3>
+  <p>The OS reports the mouse in window pixels; the game thinks in virtual pixels. Every
+  scaled-rendering setup must apply the inverse transform —
+  <code>VirtualScreen.WindowToVirtual</code> — exactly once, in one place
+  (<code>InputHelper.Update</code>). Forget this and your paddle drifts away from the
+  cursor the moment someone resizes the window.</p>
+
+  <div class="box engine"><span class="tag">MENTAL MODEL</span>
+  <p>In most engines this whole section is one project setting with a name like
+  "stretch mode: keep aspect". Building it by hand once means that setting will never
+  be magic again — and you'll know exactly why mouse coordinates go wrong whenever
+  scaled rendering is misconfigured, in any engine.</p></div>
+
+  <div class="box gotcha"><span class="tag">GOTCHA ×2</span>
+  <p><b>1.</b> DesktopGL does <em>not</em> resize the back buffer when the user resizes
+  the window — <code>OnClientSizeChanged</code> does it manually, with a re-entrancy
+  guard because <code>ApplyChanges()</code> re-fires the event.
+  <b>2.</b> Fullscreen here is <em>borderless</em> (<code>HardwareModeSwitch = false</code>):
+  instant, flicker-free, alt-tab friendly. Exclusive mode only earns its pain when you
+  need every millisecond of latency.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier5)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier5)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier5)"></i></div>
+
+<!-- ============================================================ 09 -->
+<section id="juice">
+  <div class="kicker" style="color:var(--tier5)">09 / GAME FEEL</div>
+  <h2>Juice: Shake, Sparks, Square Waves</h2>
+  <p class="files">open: <code>Source/Systems/ScreenShake.cs</code> · <code>ParticleSystem.cs</code> · <code>AudioBank.cs</code> · <code>MusicPlayer.cs</code></p>
+
+  <h3>Trauma-based screen shake</h3>
+  <p>Impacts add <em>trauma</em> (0–1, capped); displayed intensity is
+  <strong>trauma²</strong>; trauma decays linearly. The squaring is the magic: small
+  hits barely register, big hits kick, and stacked hits compose naturally. The shake is
+  applied as a translation matrix in <code>SpriteBatch.Begin</code> — the world draws
+  shifted, the world's data never moves.</p>
+
+  <h3>Particles without garbage</h3>
+  <div class="code"><div class="head"><span class="fn">Source/Systems/ParticleSystem.cs</span><span class="note">structs: read, modify, write back</span></div>
+<pre><code>for (int i = 0; i &lt; _particles.Count; i++)
+{
+    Particle p = _particles[i];   // List&lt;T&gt; indexer returns a COPY of a struct
+    p.Velocity.Y += Gravity * dt;
+    p.Position += p.Velocity * dt;
+    p.Age += dt;
+    _particles[i] = p;            // ...so write it back
+}</code></pre></div>
+
+  <p>Particles are structs so emitting hundreds allocates nothing the GC must chase.
+  The copy-mutate-writeback dance is the price; C# won't let you mutate a struct inside
+  a list in place, and knowing <em>why</em> (the indexer returns a copy) inoculates you
+  against a whole family of "my changes don't stick" bugs.</p>
+
+  <h3>SFX from raw PCM</h3>
+  <p><code>SoundEffect</code> happily accepts a byte buffer of 16-bit PCM — so
+  <code>AudioBank</code> synthesizes every sound at startup: square waves with a 2 ms
+  attack (kills the click) and linear decay, frequency sweeps for the life-lost fall,
+  the power-up rise and the short zip that announces an arcade speed-ladder step. The normal route is .wav files through the pipeline; this is the
+  "asset-free retro" route, and it teaches what a sound <em>is</em>.</p>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p><code>SoundEffect</code> is for fire-and-forget polyphonic SFX. Music is a different
+  API entirely: <code>Song</code> + <code>MediaPlayer</code>, streamed, one at a time.
+  Loading music as a SoundEffect decompresses the whole file into RAM. Don't mix them up.</p></div>
+
+  <h3>Music is nothing but the handle</h3>
+  <p><code>MusicPlayer</code> pushes the PCM trick one step further: eight bars of
+  Am–F–C–G — square bass, 25%-duty arpeggio, noise hats, mixed by literal addition into
+  one 16-second buffer — played through a <code>SoundEffectInstance</code>. That's the
+  half of the audio API the SFX never needed: <code>Play()</code> returns no handle, so a
+  fired SFX can't be stopped or re-volumed; <code>CreateInstance()</code> returns the
+  handle you keep — <code>IsLooped</code>, <code>Pause()</code>, and a <em>live</em>
+  <code>Volume</code>, which is how the pause screen <em>ducks</em> the track instead of
+  stopping it. (A real three-minute track would still be <code>Song</code> +
+  <code>MediaPlayer</code> — whole-file PCM in RAM only works because the loop is
+  seconds, not minutes.)</p>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Press <b>F3</b> in game and watch the particle count while you break a brick. Then
+  open <code>PlayingState.HandleBrickCollision</code> and raise the emit count from 18
+  to 200 — watch the count spike and the FPS not care. That's the struct pool earning
+  its keep.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--paddle)"></i><i style="background:var(--tier1)"></i><i style="background:var(--paddle)"></i><i style="background:var(--tier1)"></i><i style="background:var(--paddle)"></i></div>
+
+<!-- ============================================================ 10 -->
+<section id="production">
+  <div class="kicker" style="color:var(--tier1)">10 / HABITS</div>
+  <h2>Production Habits Hiding in Small Diffs</h2>
+  <p class="files">open: <code>GameSession.DrawHud</code> · <code>ScreenShake.Update</code> · <code>BreakoutGame.Update</code> · <code>Source/Screen.cs</code></p>
+
+  <table>
+    <tr><th>Habit</th><th>Where</th><th>The lesson</th></tr>
+    <tr>
+      <td><strong>GC awareness</strong></td>
+      <td><code>GameSession.DrawHud</code></td>
+      <td><code>$"SCORE {Score}"</code> allocates a string. At 60 fps that's garbage the
+      collector must sweep — so the HUD caches and rebuilds only when the value changes.
+      Contrast: <code>DebugOverlay</code> allocates every frame <em>on purpose</em> and
+      says why (debug tool, off by default). Same operation, two judgment calls.</td>
+    </tr>
+    <tr>
+      <td><strong>Pure getters</strong></td>
+      <td><code>ScreenShake</code></td>
+      <td>The RNG rolls once per tick in <code>Update()</code>; <code>TransformMatrix</code>
+      just reads stored state. A getter returning different values on consecutive reads
+      means two consumers in one frame silently disagree — a real bug class, not style
+      pedantry.</td>
+    </tr>
+    <tr>
+      <td><strong>Focus pause</strong></td>
+      <td><code>BreakoutGame.Update</code></td>
+      <td>MonoGame keeps calling <code>Update</code> when the window is unfocused —
+      pausing is your job. The <code>IsActive</code> early-out means nobody loses a
+      ball while alt-tabbed. <code>base.Update</code> still runs for framework
+      housekeeping.</td>
+    </tr>
+    <tr>
+      <td><strong>Dependency direction</strong></td>
+      <td><code>Source/Screen.cs</code></td>
+      <td>Screen constants used to live on the Game class, so a <code>Brick</code>
+      depended on the application shell to learn the screen width. Now they're plain
+      constants in their own type, and the shell is the only class nothing references.</td>
+    </tr>
+    <tr>
+      <td><strong>Graceful degradation</strong></td>
+      <td><code>AudioBank.Initialize</code></td>
+      <td>No audio device? Catch <code>NoAudioHardwareException</code>, leave the
+      properties null, and play through <code>?.Play()</code> or a null-tolerant
+      <code>PlayVaried</code> (which rolls its pitch <em>before</em> the null check, so
+      the simulation's RNG draws never depend on hardware). The game runs
+      silent instead of crashing. <code>MusicPlayer.Initialize</code> makes the same
+      promise: a null instance turns every music call into a no-op.</td>
+    </tr>
+    <tr>
+      <td><strong>Honest naming</strong></td>
+      <td><code>BreakoutGame.cs</code></td>
+      <td>The template's <code>Game1</code> is a placeholder, not a name. (Stardew
+      Valley famously shipped with it — nothing breaks; it's still the first thing
+      professionals rename.)</td>
+    </tr>
+  </table>
+
+  <div class="box why"><span class="tag">STILL OPEN — ON PURPOSE</span>
+  <p>Two known smells are left as discussion pieces: the <em>static</em>
+  <code>AudioBank</code>/<code>SpriteBatchExtensions</code> (convenient at this scale;
+  the alternative is passing them as dependencies — ask to see the comparison) and
+  <code>LevelLoader</code>'s total trust in well-formed files (production code would
+  validate and report line numbers). Knowing a tradeoff exists beats pretending the code
+  is finished.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier4)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier3)"></i></div>
+
+<!-- ============================================================ 11 -->
+<section id="history">
+  <div class="kicker" style="color:var(--tier4)">11 / DESIGN HISTORY</div>
+  <h2>Two Manuals, Three Games</h2>
+  <p class="files">open: <code>Source/Systems/ClassicRules.cs</code> · <code>SuperRules.cs</code> · <code>ClassicWall.cs</code> · <code>SuperWall.cs</code> · the three playing states</p>
+
+  <p>The arcade modes are not "retro flavored" — they are <strong>reconstructions</strong>.
+  Classic plays the rules in Atari's 1976 Breakout operation manual; Double, Cavity and
+  Progressive play the sequel's 1978 manual (TM-118). Each manual became one rules file
+  and one wall file, written so the code reads like the document it came from — and the
+  diff between the three playing states is two years of design history in a split view:</p>
+
+  <table>
+    <tr><th></th><th>Breakout 1976</th><th>Super Breakout 1978</th><th>Modern (house rules)</th></tr>
+    <tr><td><strong>Ball speeds</strong></td>
+      <td>4 discrete steps: 4th hit, 12th hit, instant max on orange/red</td>
+      <td>5 discrete steps: 4th/8th/12th paddle return, instant max on a 5/7 brick</td>
+      <td>continuous ramp, +8&nbsp;px/s per brick</td></tr>
+    <tr><td><strong>Paddle rebound</strong></td>
+      <td>4 fixed exits by struck quarter, tightening as speed rises</td>
+      <td>the same 4-exit law, one rung longer</td>
+      <td>continuous angle from hit position (§06)</td></tr>
+    <tr><td><strong>Brick law</strong></td>
+      <td>one brick per trip — a dis-armed ball rebounds, the brick survives</td>
+      <td>pass-through — an unreturned ball sails through; after a kill it <em>bores</em> for four rows (the ball draws translucent while immaterial)</td>
+      <td>chew through everything; multi-hit tiers</td></tr>
+    <tr><td><strong>Half-paddle penalty</strong></td>
+      <td>on breaking out behind the wall, for the rest of the volley</td>
+      <td>on touching the top boundary, until the next serve</td>
+      <td>only as the debris hazard's timed shrink</td></tr>
+    <tr><td><strong>Serve</strong></td>
+      <td colspan="2">materializes mid-screen, already falling <em>at</em> you</td>
+      <td>launched off the paddle, aimed cone</td></tr>
+    <tr><td><strong>Scoring</strong></td>
+      <td>by row, 1/1/3/3/5/5/7/7 — exactly two walls, 896 maximum</td>
+      <td>row (or zone) value × balls in play; endless walls</td>
+      <td>tier × 10; power-ups, multiball</td></tr>
+  </table>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/ClassicRules.cs</span><span class="note">four exits, and never a vertical ball</span></div>
+<pre><code>float degrees = MathF.Abs(offset) &lt; 0.5f
+    ? InnerAngles[speedLevel]   // inner quarters: steep
+    : OuterAngles[speedLevel];  // outer quarters: wide
+
+// A dead-center hit still exits at the inner angle — to the right, by
+// convention. Math.Sign would return 0 and make the ball vertical,
+// which the original hardware never allowed.
+float side = offset &gt;= 0f ? 1f : -1f;</code></pre></div>
+
+  <p>That second half is the 1976 manual's strangest law: <strong>the ball is never allowed
+  to travel exactly perpendicular</strong> to the paddle, the bricks, or any boundary. The
+  reason is mechanical, not aesthetic — a vertical ball over a gap bounces forever without
+  the player, and the game plays itself. Forty-nine years later the same law protects this
+  codebase from the same softlock.</p>
+
+  <div class="box engine"><span class="tag">METHOD</span>
+  <p>The manuals state <em>laws</em>, but rarely <em>numbers</em>: the rebound figure is a
+  diagram with no angles, and "hit" is never defined for the speed-up counters. Every
+  reconstructed value is flagged as such in the rules files, with the chosen reading
+  defended ("we count destroyed bricks"; the 1978 file counts paddle returns — both
+  defensible) and the price of certainty written down (cycle-exact values would need the
+  TTL schematic). That is the transferable habit: <strong>name your sources, flag your
+  guesses, record what a better answer would cost.</strong></p></div>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>The sequel's premise is "more balls": Double serves two for one credit, Cavity frees
+  captives into play, and scores multiply by balls in the playfield — but only the
+  <em>served</em> ball costs a serve when lost. Watch <code>SuperPlayingState</code>
+  identify the life-bearer by reference (<code>ball == _serveBall</code>): no flag on the
+  Ball class, because "which ball matters" is 1978 law, not a property of balls.</p></div>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Play one serve of Classic, then one of Modern. The 1976 paddle <em>routes</em> (four
+  exits, pick a lane); the modern paddle <em>aims</em> (continuous angle). Then open
+  <code>ClassicPlayingState</code> and <code>PlayingState</code> side by side — every
+  feel difference you just noticed is a visible diff.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier2)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier2)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier2)"></i></div>
+
+<!-- ============================================================ 12 -->
+<section id="procgen">
+  <div class="kicker" style="color:var(--tier2)">12 / GENERATION</div>
+  <h2>Boards from a Seed</h2>
+  <p class="files">open: <code>Source/Systems/BoardGenerator.cs</code> · <code>LevelLoader.cs</code> · <code>GameSession.cs</code> (GenerateBoard)</p>
+
+  <p>The level select's <code>RANDOM</code> slot plays endless generated boards — and the
+  generator never touches a <code>Brick</code>. It emits the same plain-text grid the
+  <code>.txt</code> levels use, and <code>LevelLoader.Parse</code> cannot tell (and never
+  learns) whether its text came from a file or from code. <strong>The format is the
+  contract</strong>; a generator is just another producer of it. The output is even legal
+  to paste into a level file if a generated board turns out to be a keeper.</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/BoardGenerator.cs</span><span class="note">difficulty as four small curves</span></div>
+<pre><code>int rows = Math.Min(5 + boardNumber / 2, 8);
+int tierCap = Math.Min(2 + boardNumber / 2, 5);
+int tierBudget = 35 + boardNumber * 10;
+float unbreakableDensity = Math.Min(0.012f * boardNumber, 0.10f);</code></pre></div>
+
+  <p>Three decisions carry the design. <strong>A budget, not a fill chance:</strong> the
+  generator spends hit-points brick by brick, which bounds the board's total work — "how
+  long does a board take" scales predictably even though every layout differs.
+  <strong>Mirroring:</strong> only the left half plus the center column is generated; the
+  right half is a reflection. Humans forgive randomness far more readily when it has
+  structure — and symmetry halves the space the generator can get wrong.
+  <strong>Unbreakables last:</strong> they fill leftover holes <em>after</em> the budget
+  is spent, so they are obstacles to route around, never a substitute for bricks to clear —
+  no board can generate unwinnable.</p>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>Random placement stalls once the grid fills: the spend loop pairs its budget with a
+  stall counter instead of trusting luck. Every loop fed by randomness needs an exit that
+  does not depend on the dice — <code>while (tierBudget &gt; 0)</code> alone is a hang
+  waiting for the right seed.</p></div>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>All randomness comes from the <em>caller's</em> <code>Random</code> — in play, the
+  session's seeded stream (§13). That one parameter is what makes generated runs
+  replayable: the replay re-seeds the same stream, so it re-rolls the same boards. The
+  tests pin exactly the properties everything else relies on: determinism, the format
+  contract, mirroring, and winnability, swept across 50 seeds × 15 boards.</p></div>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Set <code>unbreakableDensity</code>'s cap to <code>0.5f</code> and play a few RANDOM
+  boards — feel how obstacles stop being seasoning and start being the dish. Then run
+  <code>dotnet test</code>: the winnability sweep still passes, and knowing <em>why</em>
+  (unbreakables only fill leftover holes) is the lesson.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier3)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier3)"></i></div>
+
+<!-- ============================================================ 13 -->
+<section id="replay">
+  <div class="kicker" style="color:var(--tier3)">13 / DETERMINISM</div>
+  <h2>The Run Is a Pure Function</h2>
+  <p class="files">open: <code>Source/Systems/Replay.cs</code> · <code>InputSnapshot.cs</code> · <code>Source/States/GameStateManager.cs</code> · <code>GameSession.cs</code> (Seed, Rng)</p>
+
+  <p><code>Replay.cs</code> is twenty-odd lines, and stores <em>nothing about the world</em>:
+  no ball positions, no scores, no events. A replay is a mode, a start level, an RNG seed,
+  and one input frame per simulation tick — because given those, the run is a pure
+  function. Press <code>R</code> on the game-over screen and the game does not rewind;
+  it <strong>re-simulates</strong>, feeding the recorded frames through the very states
+  that consumed them live.</p>
+
+  <p>Three habits make that possible, each cheap on its own: the fixed timestep (§02), so
+  tick N means the same amount of time in every run; <strong>one named Random</strong> —
+  <code>new Random()</code> was always going to be "random from some seed", and
+  <em>naming</em> that seed is the one-line change that turns random into reproducible;
+  and all per-tick gameplay input behind one snapshot type:</p>
+
+  <div class="code"><div class="head"><span class="fn">Source/Systems/InputSnapshot.cs</span><span class="note">the whole replay format is "keep these in a list"</span></div>
+<pre><code>// Only the actions the simulation reads are recorded. Everything else —
+// Pause, the menus, the shell shortcuts — deliberately stays live during
+// playback: the viewer can still pause, rebind, or quit the *movie*
+// without those presses ever having been part of the *run*.
+private static readonly GameAction[] RecordedActions =
+{
+    GameAction.MoveLeft, GameAction.MoveRight, GameAction.Launch,
+    GameAction.P1MoveLeft, GameAction.P1MoveRight,
+    GameAction.P2MoveLeft, GameAction.P2MoveRight,
+};</code></pre></div>
+
+  <p>The alignment rule is one flag: <code>GameState.IsSimulation</code>. The recorder
+  keeps one frame per simulation tick; the player feeds one back per simulation tick; the
+  two streams stay aligned exactly because both sides agree on which ticks <em>count</em>.
+  Pause is the instructive case — its ticks are not simulation, so the recorder's pauses
+  vanish from the movie and the viewer can pause the movie at will, both for free, from
+  one bit.</p>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>Almost for free. The pause-<em>entry</em> tick is the trap: the state transitions
+  and returns <em>without simulating</em>, but the manager has already spent that tick on
+  the tape — recorded a frame the run never simulated, or consumed one that never ran.
+  One tick of drift, compounding forever after. <code>GameStateManager.Update</code> ends
+  by <strong>un-spending</strong> such a tick (pop the frame / rewind the index); the
+  commit that added it tells the debugging story. Off-by-one is the native bug class of
+  every tape format.</p></div>
+
+  <div class="box why"><span class="tag">THE INVARIANT</span>
+  <p>Everything stochastic in a run draws from <code>Session.Rng</code> — launch angles,
+  drop rolls, SFX pitch, screen shake, generated boards — so the seed reproduces all of
+  it. The corollary with teeth: <strong>RNG consumption must never depend on output
+  devices.</strong> <code>AudioBank.PlayVaried</code> rolls its pitch <em>before</em> its
+  null check, so a machine with no sound card consumes the identical stream. Determinism
+  is less a feature than a discipline about who may roll dice, and when.</p></div>
+
+  <div class="box engine"><span class="tag">WORTH KNOWING</span>
+  <p>This same machinery — seed + inputs, re-simulate — is how arcade attract modes,
+  fighting-game replays, RTS lockstep netcode and desync bug reports all work. "Record
+  causes, re-derive effects" scales from these 26 lines to shipped engines unchanged.</p></div>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Move <code>GameAction.Launch</code> out of <code>RecordedActions</code> and run the
+  tests: <code>InputSnapshotTests</code> fails naming Launch. Ignore it and watch a
+  replay anyway — the movie stalls at the serve while the tape drains, and nothing lines
+  up after. A contract test failing <em>by name</em> beats a desync you notice minutes
+  later.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier5)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier5)"></i><i style="background:var(--tier4)"></i><i style="background:var(--tier5)"></i></div>
+
+<!-- ============================================================ 14 -->
+<section id="crt">
+  <div class="kicker" style="color:var(--tier5)">14 / POST-PROCESS</div>
+  <h2>Shading the Whole Frame</h2>
+  <p class="files">open: <code>Content/Shaders/Crt.fx</code> · <code>Source/Systems/VirtualScreen.cs</code> (SetCrtEffect, Present)</p>
+
+  <p>A post-process wants exactly one thing: a moment when the whole frame is a single
+  texture. The virtual screen (§08) created that moment — the present draw — so the CRT
+  pass costs <em>one</em> <code>Effect</code> on <em>one</em> draw call, shading every
+  pixel of the frame. <code>F9</code> toggles it, because any effect that changes the
+  entire image must be the player's choice.</p>
+
+  <p><code>Crt.fx</code> is the Content Pipeline's other major asset type: HLSL source in,
+  compiled platform blob out, at <em>build</em> time. For DesktopGL the source is
+  translated to GLSL by MojoShader — but the first step runs Direct3D's shader compiler,
+  which is Windows-only, which is why effect builds on Linux run it under Wine (the CI
+  workflow shows the exact recipe). At runtime, <code>Content.Load&lt;Effect&gt;</code>
+  just uploads the blob.</p>
+
+  <div class="code"><div class="head"><span class="fn">Content/Shaders/Crt.fx</span><span class="note">mask and scanlines, branchless</span></div>
+<pre><code>// Past the curved edge there is no image — mask to black. step() instead
+// of an if/discard: branchless is the native dialect of pixel shaders.
+float inside = step(abs(centered.x), 1.0) * step(abs(centered.y), 1.0);
+
+// Scanlines: cos(pi * row) alternates sign every virtual row. Using
+// VIRTUAL rows keeps the lines locked to game pixels at any window size.
+float wave = 0.5 + 0.5 * cos(uv.y * VirtualSize.y * 3.14159265);
+color.rgb *= 1.0 - ScanlineStrength * (1.0 - wave);</code></pre></div>
+
+  <p>The curvature is the classic cheap barrel: push each sample point <em>outward</em> in
+  proportion to its squared distance from center, and the image bows <em>inward</em> at
+  the edges — curved glass. The vignette rides the same <code>r²</code>: corners sit
+  furthest from the electron gun, so they get both the bend and the dimming.</p>
+
+  <div class="box why"><span class="tag">DESIGN NOTE</span>
+  <p>The technique compiles a <em>pixel shader only</em> — SpriteBatch's own vertex shader
+  stays bound, which is exactly what a SpriteBatch post-process wants. And the tuning
+  parameters are set once in <code>SetCrtEffect</code>, not per frame: Effect parameters
+  persist on the object, so you never re-send what never changes.</p></div>
+
+  <div class="box gotcha"><span class="tag">GOTCHA</span>
+  <p>Post-process strength is resolution-relative. At the default window size the game
+  presents at exactly 1×, where the scanline period is a single physical pixel — a value
+  that looks like gentle phosphor at 2× reads as a dark comb at 1×. This repo's strength
+  was halved for exactly that reason; tune yours at the size players actually use.</p></div>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Set <code>Curvature</code> to <code>0.4f</code> in <code>SetCrtEffect</code> for a
+  fishbowl, then <code>0f</code> for flat glass with scanlines only. One uniform each —
+  that immediacy is why post-processing is the highest juice-per-line system in the
+  repo.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--engine)"></i><i style="background:var(--tier1)"></i><i style="background:var(--engine)"></i><i style="background:var(--tier1)"></i><i style="background:var(--engine)"></i></div>
+
+<!-- ============================================================ 15 -->
+<section id="testing">
+  <div class="kicker" style="color:var(--engine)">15 / TESTING</div>
+  <h2>The Testable Half of a Game</h2>
+  <p class="files">open: <code>Tests/Breakout.Tests/</code> · <code>Source/Systems/HighScores.cs</code> (InsertScore)</p>
+
+  <p>88 tests, zero graphics. The suite never boots the game loop, never draws a frame —
+  and that is the strategy, not a limitation: <strong>the line between unit-testable and
+  play-testable runs exactly along the pure/impure divide.</strong> Rules, walls, the
+  generator, the parser, collision response, ranking, the replay contract: pure functions,
+  tested hard. States, rendering, game feel: play-tested, on purpose.</p>
+
+  <table>
+    <tr><th>What</th><th>Pinned by</th><th>The failure it catches</th></tr>
+    <tr><td>the 1976/1978 rule tables</td><td><code>ClassicRulesTests</code> · <code>SuperRulesTests</code></td><td>a typo'd manual threshold shipping silently; a ball allowed to fly vertical</td></tr>
+    <tr><td>the manual-sourced walls</td><td><code>ClassicWallTests</code> · <code>SuperWallTests</code></td><td>448 not being 448; a brick standing inside a cavity; Progressive mispricing a zone</td></tr>
+    <tr><td>the board generator</td><td><code>BoardGeneratorTests</code></td><td>a seed that desyncs replays; an unwinnable board</td></tr>
+    <tr><td>the shipped levels</td><td><code>LevelFilesTests</code></td><td>a stray character in <code>level03.txt</code> nobody plays far enough to meet</td></tr>
+    <tr><td>collision response</td><td><code>CollisionHelperTests</code></td><td>the sign error you'd otherwise meet once an hour in play</td></tr>
+    <tr><td>aiming &amp; speed math</td><td><code>BallTests</code></td><td>the game-feel knobs drifting</td></tr>
+    <tr><td>the replay contract</td><td><code>InputSnapshotTests</code></td><td>a new action landing on the wrong side of recorded-vs-live (§13)</td></tr>
+    <tr><td>high-score ranking</td><td><code>HighScoresTests</code></td><td>an equal score outranking the incumbent</td></tr>
+  </table>
+
+  <div class="code"><div class="head"><span class="fn">Tests/Breakout.Tests/ClassicRulesTests.cs</span><span class="note">table-driven: the manual's thresholds as data (abridged)</span></div>
+<pre><code>[Theory]
+[InlineData(0, false, 0, 0)]   // fresh serve: slowest speed
+[InlineData(4, false, 0, 1)]   // the manual's 4th-hit speed-up
+[InlineData(12, false, 1, 2)]  // the 12th-hit speed-up
+[InlineData(0, true, 0, 3)]    // orange/red brick: instant top speed
+public void SpeedLevel_FollowsTheManualThresholds(
+    int bricks, bool highRow, int current, int expected)
+    =&gt; Assert.Equal(expected, ClassicRules.SpeedLevel(bricks, highRow, current));</code></pre></div>
+
+  <div class="box why"><span class="tag">THE SEAM LESSON</span>
+  <p><code>HighScores.Record</code> touches a real file under ApplicationData — a test
+  must never do that (it would corrupt your actual scores, and CI machines shouldn't
+  write profile data at all). So the pure ranking core exists as its own method,
+  <code>InsertScore</code>, and the tests exercise that. When code is hard to test, the
+  professional move is usually a <em>seam</em> — split the decision from the disk — not
+  a mocking framework.</p></div>
+
+  <div class="box gotcha"><span class="tag">WHAT'S DELIBERATELY UNTESTED</span>
+  <p>States, draw code, feel. They change for <em>design</em> reasons, and a test that
+  breaks on every design change teaches a team to delete tests. Play-testing is testing
+  too — with the right oracle for the job: a human who can feel that the paddle went
+  mushy. The skill is knowing which oracle each behavior needs.</p></div>
+
+  <div class="box engine"><span class="tag">WORTH KNOWING</span>
+  <p>CI runs the suite on Windows <em>and</em> Ubuntu, plus a <code>dotnet format</code>
+  gate — the README badge is green because checks run, not because someone says so. A
+  learning repo earns trust the same way a shipping one does.</p></div>
+
+  <div class="box try"><span class="tag">TRY IT</span>
+  <p>Change a 7 to an 8 in <code>ClassicWall.RowScores</code> and run
+  <code>dotnet test</code>. Two tests fail, naming the wall and the law (448 and the row
+  pricing) — that's a transcription error caught at the cost of a keystroke, which is
+  the entire argument for pinning manual-sourced numbers.</p></div>
+</section>
+
+<div class="brickrow"><i style="background:var(--tier2)"></i><i style="background:var(--tier5)"></i><i style="background:var(--tier3)"></i><i style="background:var(--tier1)"></i><i style="background:var(--tier4)"></i></div>
+
+<!-- ============================================================ A -->
+<section id="map">
+  <div class="kicker" style="color:var(--tier3)">APPENDIX A</div>
+  <h2>Project Map</h2>
+
+  <div class="tree">Breakout/
+├── Program.cs                  <i>entry point — two lines</i>
+├── <b>BreakoutGame.cs</b>             <i>application shell: window, loop, two-pass draw</i>
+├── Breakout.csproj             <i>note the Levels CopyToOutputDirectory entry; &lt;Version&gt; drives releases</i>
+├── .github/workflows/          <i>CI on every push (build.yml) · v* tag → Release with playable builds (release.yml)</i>
+├── Content/
+│   ├── Content.mgcb            <i>pipeline manifest (plain text)</i>
+│   ├── Fonts/Hud.spritefont    <i>XML font description → glyph atlas</i>
+│   ├── Shaders/Crt.fx          <i>HLSL → compiled Effect: scanlines, curvature, vignette</i>
+│   └── Levels/level0*.txt      <i>3 boards, 13-col grids: . empty · 1-5 tier · X unbreakable</i>
+├── Source/
+    ├── Screen.cs               <i>virtual resolution constants (800×480)</i>
+    ├── GameMode.cs             <i>Modern / Co-op / Classic / 3× Super — which states drive the session</i>
+    ├── GameSession.cs          <i>the world: entities, score, lives, level/wall index</i>
+    ├── Entities/
+    │   ├── Paddle.cs           <i>per-paddle actions + court slice (co-op), width lerp</i>
+    │   ├── Ball.cs             <i>velocity, speed ramp, aiming bounce, trail, Split()</i>
+    │   ├── Brick.cs            <i>tier or row scoring; drop-in entrance; X = unbreakable</i>
+    │   └── PowerUp.cs          <i>falling pickup: wide (pink) · multiball (cyan) · debris hazard</i>
+    ├── Systems/
+    │   ├── InputHelper.cs      <i>current/previous snapshots (kbd+pad), virtual mouse, FirstNewKey</i>
+    │   ├── GameAction.cs       <i>every input, named by intent (incl. P1/P2 pairs)</i>
+    │   ├── ActionMap.cs        <i>action → keys + buttons dictionaries, rebindable at runtime</i>
+    │   ├── InputSnapshot.cs    <i>one tick of gameplay input as bitmasks — the replay format</i>
+    │   ├── Replay.cs           <i>a finished run: mode + level + seed + frames</i>
+    │   ├── CollisionHelper.cs  <i>minimal-penetration AABB side detection + reflection</i>
+    │   ├── LevelLoader.cs      <i>TitleContainer runtime loading; Parse() takes any TextReader</i>
+    │   ├── BoardGenerator.cs   <i>emits LevelLoader's grid format with difficulty knobs</i>
+    │   ├── ClassicWall.cs      <i>the 1976 8×14 wall: 1/3/5/7 row scoring, 448 pts</i>
+    │   ├── ClassicRules.cs     <i>the 1976 numbers: 4 speeds, 4 paddle exits, serve</i>
+    │   ├── SuperWall.cs        <i>the 1978 playfields: Double/Cavity walls, Progressive conveyor</i>
+    │   ├── SuperRules.cs       <i>the 1978 numbers: 5 speeds, pass-through rule, multipliers</i>
+    │   ├── HighScores.cs       <i>top five per named table, JSON under ApplicationData</i>
+    │   ├── VirtualScreen.cs    <i>RenderTarget2D, letterbox, integer scaling, CRT pass, mouse transform</i>
+    │   ├── ParticleSystem.cs   <i>struct pool, premultiplied fade</i>
+    │   ├── ScreenShake.cs      <i>trauma² shake as a transform matrix</i>
+    │   ├── AudioBank.cs        <i>synthesized square-wave PCM, pitch-varied playback</i>
+    │   ├── MusicPlayer.cs      <i>synthesized chip-tune loop on a SoundEffectInstance</i>
+    │   ├── SpriteBatchExtensions.cs <i>1×1 pixel DrawRect + drop-shadowed text</i>
+    │   ├── DebugOverlay.cs     <i>F3: fps, ball count + top speed, live counts</i>
+    │   └── ScreenshotRig.cs    <i>--screenshot CLI: capture one settled frame, exit</i>
+    └── States/
+        ├── GameState.cs        <i>abstract base: Enter/Update/Draw/FreezesEffects/CapturesAllInput</i>
+        ├── GameStateManager.cs <i>current-state holder, resume, mode-aware new game, replay record/play</i>
+        ├── TitleState.cs       <i>menu before a session exists: mode + level select</i>
+        ├── ReadyState.cs       <i>back to one attached ball, waiting for launch</i>
+        ├── PlayingState.cs     <i>the modern simulation — start here</i>
+        ├── ClassicReadyState.cs <i>the hostile 1976 serve: ball materializes mid-screen</i>
+        ├── ClassicPlayingState.cs <i>the 1976 rules: discrete speeds, breakout shrink</i>
+        ├── SuperReadyState.cs  <i>one 1978 serve for all three variants</i>
+        ├── SuperPlayingState.cs <i>abstract: the physics all three 1978 games share</i>
+        ├── SuperDoublePlayingState.cs <i>two stacked paddles, two balls, ×2 points</i>
+        ├── SuperCavityPlayingState.cs <i>captive balls escape by physics, ×2/×3 points</i>
+        ├── SuperProgressivePlayingState.cs <i>the wall scrolls at you; value = position</i>
+        ├── PauseState.cs       <i>P: world dimmed, nothing updates — not even effects</i>
+        ├── RebindState.cs      <i>B from pause: poll any-key, ActionMap.Rebind</i>
+        ├── LifeLostState.cs    <i>frozen beat + flash, then back to Ready</i>
+        ├── LevelClearedState.cs <i>banner + beat, then the next board loads</i>
+        └── GameOverState.cs    <i>win/lose overlay, Enter restarts</i>
+└── Tests/Breakout.Tests/       <i>xUnit: the pure logic — rule tables, generator, collision, ranking</i></div>
+</section>
+
+<!-- ============================================================ B -->
+<section id="glossary">
+  <div class="kicker" style="color:var(--engine)">APPENDIX B</div>
+  <h2>Engine Concepts → MonoGame</h2>
+  <p>If you've used any game engine, this table maps concepts you already have onto
+  what this codebase does instead. If MonoGame is your first framework, read it as a
+  one-page summary of everything above.</p>
+
+  <table>
+    <tr><th>The engine concept</th><th>You build/use instead</th><th>In this repo</th></tr>
+    <tr><td>per-frame update callback</td><td><code>Update(GameTime)</code> on a fixed 60 Hz step</td><td><code>BreakoutGame.Update</code></td></tr>
+    <tr><td>nodes / sprites that draw themselves</td><td>explicit <code>Draw()</code> every frame via SpriteBatch</td><td>every entity's <code>Draw</code></td></tr>
+    <tr><td>a "ready" / scene-load hook</td><td><code>Initialize()</code> / <code>LoadContent()</code></td><td><code>BreakoutGame.LoadContent</code></td></tr>
+    <tr><td>"was this just pressed?" input query</td><td>current vs. previous state snapshots</td><td><code>InputHelper</code></td></tr>
+    <tr><td>input action map / key rebinding</td><td>two dictionaries: action → keys, action → gamepad buttons</td><td><code>ActionMap</code>, <code>GameAction</code>, <code>RebindState</code></td></tr>
+    <tr><td>built-in save-data API</td><td>JSON file under <code>Environment.SpecialFolder.ApplicationData</code> (TitleContainer is read-only)</td><td><code>HighScores</code></td></tr>
+    <tr><td>asset import system</td><td>Content Pipeline → <code>.xnb</code> → <code>Content.Load&lt;T&gt;</code></td><td><code>Content.mgcb</code>, the font</td></tr>
+    <tr><td>raw access to bundled files</td><td><code>TitleContainer.OpenStream</code></td><td><code>LevelLoader</code></td></tr>
+    <tr><td>scene / screen switching</td><td>hand-rolled state machine</td><td><code>GameStateManager</code></td></tr>
+    <tr><td>global singleton for cross-scene data</td><td>a session object that outlives states</td><td><code>GameSession</code></td></tr>
+    <tr><td>resolution stretch / scale setting</td><td><code>RenderTarget2D</code> + letterbox + mouse inverse transform</td><td><code>VirtualScreen</code></td></tr>
+    <tr><td>"draw a rectangle" primitive</td><td>1×1 white texture, stretched and tinted</td><td><code>SpriteBatchExtensions</code></td></tr>
+    <tr><td>one audio player for everything</td><td><code>SoundEffect</code> (SFX) vs <code>Song</code>+<code>MediaPlayer</code> (music) vs <code>SoundEffectInstance</code> (the controllable handle)</td><td><code>AudioBank</code> · <code>MusicPlayer</code></td></tr>
+    <tr><td>project display settings</td><td><code>GraphicsDeviceManager</code> preferences + <code>ApplyChanges()</code></td><td><code>BreakoutGame</code> ctor</td></tr>
+    <tr><td>built-in particle system</td><td>a list of structs and forty lines</td><td><code>ParticleSystem</code></td></tr>
+    <tr><td>built-in tween / animation player</td><td>a timer, an easing function, an offset applied at draw time</td><td><code>Brick.UpdateAnimations</code> (cubic ease-out drop-in, exponential scroll-slide) · <code>Paddle</code>'s width lerp</td></tr>
+    <tr><td>procedural generation helpers</td><td>a seeded <code>Random</code> plus a data format both sides agree on</td><td><code>BoardGenerator</code> → <code>LevelLoader.Parse</code></td></tr>
+    <tr><td>built-in pause / time scale</td><td>a state that updates nothing</td><td><code>PauseState</code></td></tr>
+    <tr><td>engine pauses the unfocused game</td><td>check <code>IsActive</code> yourself, auto-enter pause</td><td><code>GameStateManager.NotifyFocusLost</code></td></tr>
+    <tr><td>post-processing stack</td><td>one <code>Effect</code> on the draw that presents the render target</td><td><code>Content/Shaders/Crt.fx</code> · <code>VirtualScreen.Present</code></td></tr>
+    <tr><td>built-in replay / demo recording</td><td>seed the <code>Random</code>, keep one input frame per fixed tick, feed them back</td><td><code>Replay</code> · <code>InputSnapshot</code> · <code>GameStateManager</code></td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ C -->
+<section id="next">
+  <div class="kicker" style="color:var(--tier2)">APPENDIX C</div>
+  <h2>Where to Go Next</h2>
+  <p>The original seven exercises that lived here — second level, pause state,
+  multiball, pitch variation, integer scaling, ball trail, action map — are now
+  <em>implemented in the codebase, one commit each</em>. That makes the git history a
+  second study guide: <code>git log --oneline</code> is the index, and each diff shows
+  exactly how much (or little) one real feature costs. Read the multiball commit in
+  particular to watch a single-to-many assumption ripple through every consumer.
+  From the round below, <strong>music</strong> has since joined them (the asset-free
+  variant: a synthesized chip-tune loop on a looping <code>SoundEffectInstance</code>,
+  <code>MusicPlayer.cs</code>), and so has the <strong>title screen</strong> — with mode
+  select on top of level select, because it arrived together with <strong>Classic 1976
+  mode</strong>: the original arcade rule set, reconstructed from Atari's operation
+  manual, running as a parallel pair of states (see §07 and
+  <code>ClassicPlayingState.cs</code>).</p>
+
+  <p>The second round is now implemented too, one commit each (2026-06-10): brick
+  entrance (tween without a tween library), gamepad support (one more dictionary,
+  zero gameplay changes — the action layer's promise, kept), the rebinding screen
+  (poll <code>GetPressedKeys()</code> diffs; note the <code>CapturesAllInput</code>
+  flag that keeps Esc from quitting mid-bind), high scores (read-only
+  <code>TitleContainer</code> vs. a real writable path under
+  <code>ApplicationData</code>), and local co-op (the paddle's turn for the multiball
+  treatment: <code>Session.Paddle</code> → <code>Session.Paddles</code>).</p>
+
+  <p>From the third round, the <strong>Super Breakout variants</strong> are now
+  implemented (2026-06-10): Double, Cavity and Progressive, reconstructed from the
+  sequel's operation manual (TM-118) the way Classic was from the 1976 one. The
+  stress test paid off — the three games share one abstract
+  <code>SuperPlayingState</code> (five-speed ladder, the pass-through rule, shrink on
+  top contact, score × balls in play) and differ only in a subclass each. Two
+  entity "assumptions" fell on the way, both worth reading: <code>Brick</code> lost
+  "bricks never move" (Progressive scrolls the wall and re-prices it by screen zone),
+  and <code>Paddle</code>'s row became constructor data (Double stacks two on one
+  set of controls, one of them one-sided — an effect of the plain rule "a rising
+  ball never meets a paddle"). §11 lays the three rule sets side by side.</p>
+
+  <p>The rest of the round is now implemented too, one commit each (2026-06-10),
+  closing the appendix. <strong>Falling debris</strong> rode the PowerUp pipeline with
+  the sign flipped — the spawn/fall/catch machinery never knew it was carrying prizes,
+  so the hazard is one enum member, one switch arm, and an inverted look (dark center,
+  ember edge, tumbling silhouette). The <strong>replay system</strong> is the
+  determinism lesson made executable: name the <code>Random</code> seed, keep one
+  <code>InputSnapshot</code> per fixed 60&nbsp;Hz tick, and a whole run becomes a pure
+  function you can re-run from the game-over screen (<code>R</code>) — note in
+  <code>GameStateManager</code> how little machinery "playback" really is, and how
+  pause stays live on both sides because its ticks were never part of the run
+  (§13 walks the whole contract, off-by-one trap included).
+  <strong>Procedural boards</strong> (the <code>RANDOM</code> slot in level select)
+  cash in the level format a second time: <code>LevelLoader</code> split into
+  Load/Parse, and <code>BoardGenerator</code> is just another producer of the text the
+  parser already reads — drawing from the seeded session stream, so replays re-roll
+  identical boards (§12 has the design). And the <strong>CRT shader</strong> opens the
+  pipeline's other asset type: <code>Crt.fx</code> compiles at build time (on Linux, via
+  Wine — see the CI workflow) and applies at the single draw where the whole frame is
+  one texture, <code>VirtualScreen.Present</code>. <code>F9</code> toggles it; §14 reads
+  the shader line by line.</p>
+
+  <p style="margin-top:34px">When you've read everything: delete a system —
+  the shake, the particles, the speed ramp — run the game, and feel what's missing.
+  Then put it back. That's the fastest way to convert <em>read</em> knowledge into
+  <em>owned</em> knowledge.</p>
+</section>
+
+<footer>
+  <span>BREAKOUT — MonoGame learning project · built &amp; documented 2026</span>
+  <span>dotnet run · P pause · M music · F9 CRT · F11 fullscreen · F10 pixel-perfect · F3 debug · Esc quit</span>
+</footer>
+
+</main>
+
+<script>
+/* ---------- tiny C# syntax highlighter (good enough for known excerpts) ---------- */
+(function () {
+  const KW = /\b(using|namespace|public|private|protected|internal|static|readonly|const|sealed|abstract|override|virtual|class|struct|enum|interface|void|var|new|return|if|else|for|foreach|while|switch|case|break|continue|in|out|ref|null|true|false|this|base|get|set|is|not)\b/;
+  const RX = new RegExp(
+    '(//[^\\n]*)' +                                   // 1 comment
+    '|(\\$?"(?:[^"\\\\]|\\\\.)*")' +                  // 2 string
+    '|' + KW.source +                                 // 3 keyword
+    '|\\b([A-Z][A-Za-z0-9_]*)\\b' +                   // 4 Type-ish
+    '|\\b(\\d+(?:\\.\\d+)?f?)\\b',                    // 5 number
+    'g');
+  document.querySelectorAll('.code code').forEach(el => {
+    const esc = el.textContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    el.innerHTML = esc.replace(RX, (m, c, s, k, t, n) =>
+      c ? `<span class="tok-c">${c}</span>` :
+      s ? `<span class="tok-s">${s}</span>` :
+      k ? `<span class="tok-k">${k}</span>` :
+      t ? `<span class="tok-t">${t}</span>` :
+          `<span class="tok-n">${n}</span>`);
+  });
+})();
+
+/* ---------- TOC scroll-spy ---------- */
+(function () {
+  const links = [...document.querySelectorAll('#tocList a')];
+  const byId = Object.fromEntries(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      byId[e.target.id]?.classList.add('active');
+    });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  document.querySelectorAll('main section').forEach(s => observer.observe(s));
+})();
+
+/* ---------- attract mode: the doc plays itself ---------- */
+(function () {
+  const canvas = document.getElementById('demo');
+  if (!canvas || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const TIERS = ['#5ea7ff', '#57d476', '#ffcd42', '#ff8a30', '#ff4d4d'];
+  const scoreEl = document.getElementById('demoScore');
+
+  let bricks, ball, paddle, score = 0, shake = 0;
+  const COLS = 10, ROWS = 4, BW = W / COLS, BH = 10;
+
+  function reset() {
+    bricks = [];
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        bricks.push({ x: c * BW + 1, y: 22 + r * (BH + 2), alive: true, color: TIERS[(ROWS - 1 - r) % 5] });
+    ball = { x: W / 2, y: H - 40, vx: 70 * (Math.random() > .5 ? 1 : -1), vy: -95 };
+    paddle = { x: W / 2, w: 44 };
+  }
+  reset();
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 1 / 20);
+    last = now;
+
+    // paddle AI eases toward the ball
+    paddle.x += (ball.x - paddle.x) * Math.min(1, dt * 4.5);
+    paddle.x = Math.max(paddle.w / 2, Math.min(W - paddle.w / 2, paddle.x));
+
+    ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+    if (ball.x < 3)     { ball.x = 3;     ball.vx =  Math.abs(ball.vx); }
+    if (ball.x > W - 3) { ball.x = W - 3; ball.vx = -Math.abs(ball.vx); }
+    if (ball.y < 3)     { ball.y = 3;     ball.vy =  Math.abs(ball.vy); }
+    if (ball.y > H - 14 && ball.vy > 0 && Math.abs(ball.x - paddle.x) < paddle.w / 2 + 3) {
+      const off = (ball.x - paddle.x) / (paddle.w / 2);
+      const ang = off * 1.0;
+      const sp = Math.hypot(ball.vx, ball.vy) + 2;
+      ball.vx = Math.sin(ang) * sp; ball.vy = -Math.cos(ang) * sp;
+      ball.y = H - 14;
+    }
+    if (ball.y > H + 10) reset();
+
+    for (const b of bricks) {
+      if (!b.alive) continue;
+      if (ball.x > b.x - 2 && ball.x < b.x + BW - 2 && ball.y > b.y - 2 && ball.y < b.y + BH + 2) {
+        b.alive = false; ball.vy *= -1; shake = 2.2;
+        score = (score + 10) % 10000;
+        scoreEl.textContent = String(score).padStart(4, '0');
+        break;
+      }
+    }
+    if (bricks.every(b => !b.alive)) reset();
+
+    shake = Math.max(0, shake - dt * 9);
+    const sx = (Math.random() * 2 - 1) * shake, sy = (Math.random() * 2 - 1) * shake;
+
+    ctx.fillStyle = '#0a0a10'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(sx, sy);
+    for (const b of bricks) if (b.alive) { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, BW - 2, BH); }
+    ctx.fillStyle = '#e2e2ec';
+    ctx.fillRect(paddle.x - paddle.w / 2, H - 10, paddle.w, 5);
+    ctx.fillRect(ball.x - 3, ball.y - 3, 6, 6);
+    ctx.restore();
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
