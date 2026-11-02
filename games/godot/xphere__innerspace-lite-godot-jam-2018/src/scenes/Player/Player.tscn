@@ -1,0 +1,116 @@
+[gd_scene load_steps=11 format=2]
+
+[ext_resource path="res://scenes/Player/Player.gd" type="Script" id=1]
+[ext_resource path="res://images/sprites.png" type="Texture" id=2]
+[ext_resource path="res://scenes/Player/Shield.tscn" type="PackedScene" id=3]
+[ext_resource path="res://scenes/Player/Turret.gd" type="Script" id=4]
+[ext_resource path="res://audio/shot.wav" type="AudioStream" id=5]
+[ext_resource path="res://scenes/Player/Temperature.gd" type="Script" id=6]
+[ext_resource path="res://scenes/Player/Health.gd" type="Script" id=7]
+[ext_resource path="res://scenes/Player/LifeDrain.gd" type="Script" id=8]
+
+
+[sub_resource type="RectangleShape2D" id=1]
+
+custom_solver_bias = 0.0
+extents = Vector2( 1.5, 1 )
+
+[sub_resource type="AudioStreamRandomPitch" id=2]
+
+audio_stream = ExtResource( 5 )
+random_pitch = 1.2
+
+[node name="Player" type="Node2D" index="0"]
+
+script = ExtResource( 1 )
+
+[node name="Sprite" type="Sprite" parent="." index="0"]
+
+texture = ExtResource( 2 )
+region_enabled = true
+region_rect = Rect2( 1, 1, 3, 3 )
+_sections_unfolded = [ "Offset", "Region" ]
+
+[node name="Left Shield" parent="." index="1" instance=ExtResource( 3 )]
+
+position = Vector2( -4, 0 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Right Shield" parent="." index="2" instance=ExtResource( 3 )]
+
+position = Vector2( 4, 0 )
+rotation = 3.14159
+_sections_unfolded = [ "Transform" ]
+
+[node name="Player" type="Area2D" parent="." index="3"]
+
+position = Vector2( 0, -0.5 )
+input_pickable = true
+gravity_vec = Vector2( 0, 1 )
+gravity = 98.0
+linear_damp = 0.1
+angular_damp = 1.0
+collision_mask = 2
+audio_bus_override = false
+audio_bus_name = "Master"
+_sections_unfolded = [ "Transform" ]
+
+[node name="Collision" type="CollisionShape2D" parent="Player" index="0"]
+
+shape = SubResource( 1 )
+
+[node name="Turret" type="Node2D" parent="." index="4"]
+
+position = Vector2( 0, -2 )
+script = ExtResource( 4 )
+_sections_unfolded = [ "Transform" ]
+
+[node name="Timer" type="Timer" parent="Turret" index="0"]
+
+process_mode = 1
+wait_time = 0.2
+one_shot = false
+autostart = true
+
+[node name="Audio" type="AudioStreamPlayer2D" parent="Turret" index="1"]
+
+stream = SubResource( 2 )
+volume_db = -10.0
+pitch_scale = 1.0
+autoplay = false
+max_distance = 2000.0
+attenuation = 1.0
+bus = "Master"
+area_mask = 1
+
+[node name="Temperature" type="Node2D" parent="." index="5"]
+
+script = ExtResource( 6 )
+
+[node name="Health" type="Node2D" parent="." index="6"]
+
+script = ExtResource( 7 )
+
+[node name="LifeDrain" type="Timer" parent="." index="7"]
+
+process_mode = 1
+wait_time = 0.1
+one_shot = false
+autostart = false
+script = ExtResource( 8 )
+
+[connection signal="area_entered" from="Left Shield/Shield" to="." method="_on_Shield_area_entered"]
+
+[connection signal="area_entered" from="Right Shield/Shield" to="." method="_on_Shield_area_entered"]
+
+[connection signal="area_entered" from="Player" to="." method="_on_Player_area_entered"]
+
+[connection signal="alarm" from="Temperature" to="LifeDrain" method="_on_Temperature_alarm"]
+
+[connection signal="end_alarm" from="Temperature" to="LifeDrain" method="_on_Temperature_end_alarm"]
+
+[connection signal="timeout" from="LifeDrain" to="LifeDrain" method="_on_LifeDrain_timeout"]
+
+
+[editable path="Left Shield"]
+[editable path="Right Shield"]
