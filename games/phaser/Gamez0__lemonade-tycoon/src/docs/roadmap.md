@@ -1,0 +1,154 @@
+# 출시까지의 로드맵
+
+2026-09-29 기준. 목표는 고전 PC Lemonade Tycoon의 밀도와 분위기를 살린 **Steam에 제출할 수 있는 PC 게임 완성**다. 현재 GitHub Pages는 개발/테스트 프리뷰로 유지한다. 초기 데스크톱 대상은 Windows x64로 가정하며 패키징 기술은 프로토타입 후 선택한다. 실제 Steam 공개·판매는 별도 결정이다. 모바일 스토어, 클라우드 동기화, 결제, 멀티플레이는 필수 범위에 넣지 않는다.
+
+일정은 날짜 대신 완료 조건으로 관리한다. M2 → M3 → M4 → M5 → M6 → M7(알파/기능 동결) → M8(베타) → M9(RC) → M10(Steam 제출 준비) 순서로 수용한다. 독립적인 조사와 설계는 앞당길 수 있지만 앞 단계의 미해결 결함을 완료로 숨기지 않는다. 아래 콘텐츠 수/테스트 인원은 초기 목표이며 실제 검증 결과에 따라 근거와 함께 조정한다.
+
+**2026-10-13 사용자 범위 확인:** 현재 위임 범위는 Steam 계정이나 실제 업로드 없이도 준비할 수 있는 게임 완성, 검증된 Windows 배포물, 스토어 자료와 제출 절차까지다. 계정·AppID·DepotID 준비, Steam 비공개 설치/업데이트와 Valve 심사는 후속 출시 운영으로 남긴다. 계정이 없다는 이유로 개발을 중단하거나 현재 준비 범위를 미달로 판정하지 않는다. 사람·물리 환경·배포 권리의 미확인 사항은 계속 명시한다.
+
+## M1 — Playable MVP · 완료
+
+#84–86: 순수 시뮬레이션, 구매/레시피/가격 설정, 판매, 정산, 다음 날, 재시작과 회계 검증. 현재 한 장소의 전체 루프가 기준선이다. [게임 설계](game-design.md)는 이 MVP의 기준이며 향후 기능 전체의 명세가 아니다.
+
+## M2 — Classic PC experience MVP · 진행 중
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/2) · [수용 이슈 #97](https://github.com/Gamez0/lemonade-tycoon/issues/97)
+
+- 목표: 원작 Windows PC판의 준비/판매/결과 구성, 조밀한 녹색 패널, 실제 탭, 구매 흐름, 동네 도로와 날씨 표현을 일관되게 구현한다. 현대적인 카드형 대시보드로 바꾸지 않는다.
+- 구현/조사 #92–96과 후속 PR #102/#104는 병합되었다. [원작 조사](research/m2-original-study.md), [판매/날씨 조사](research/m2-selling-weather-study.md), [자체 감사](research/m2-acceptance-audit.md), [비교 보드](research/m2-reference-board.html)를 근거로 삼는다.
+- 완료 조건: 같은 크기의 준비/판매/결과 비교, 데스크톱 및 좁은 화면의 조작·날씨 가독성, 3일 루프 및 예외 경로 검증, 사용자 시각적 수용. CI 통과만으로 닫지 않는다.
+- 사용자 피드백에 따라 레시피를 피처(한 통) 생산으로 전환했다. 얼음 설정에 따른 생산량과 다음 날 녹는 얼음을 반영한다. 정확한 원작 생산 시간·수치를 검증했다고 주장하지 않는다.
+- 사용자 시각 피드백(2026-09-30): 원작에 더 가까운 글꼴, 글자 크기/폭/행간, 패널·탭·장면의 세부 인상을 같은 크기 화면으로 다시 비교한다. 제목/숫자/본문/버튼을 각각 검토하고 차이를 기록한다. 원작과 충분히 닮았다는 사용자 확인 전에는 M2를 닫지 않는다.
+- 원작의 7개 상위 탭은 Results, Rent, Upgrades, Staff, Marketing, Recipe, Supplies다. M2에서 현재 동작하는 4개 탭만 보이는 것은 기능 범위의 차이이며, 최종 UI에 7개를 채우는 작업은 아래 M5/M6에 명시한다. 기능 없는 탭을 장식으로 먼저 추가하지 않는다.
+
+## M3 — Living street and customer queues · 구현 및 자체 검증 완료
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/3) · [추적 이슈 #100](https://github.com/Gamez0/lemonade-tycoon/issues/100)
+
+- 목표: 여러 보행자/방문자, 매대 대기열, 서비스 시간, 오래 기다리다 떠나는 손님. 사용자가 직접 M3로 지정한 범위다.
+- 원작 동작을 관찰한 뒤 유입/서비스/인내심 규칙을 명시한다. 보행자와 구매자, 가격 거절, 재고 부족, 대기 포기를 구분한다.
+- [연속 영업 장면 관찰과 결정적 규칙](research/m3-street-observation.md)을 기준으로 구현하고, 다중 인물 화면 캡처와 단위·브라우저 검증을 마쳤다. 2026-09-30 사용자 지시에 따라 M2의 시각 검토가 열린 상태에서도 M3 기능·검증을 진행했으며, M2를 완료한 것으로 표시하지 않는다.
+- 완료 조건: 겹침 없는 이동/줄 정렬, 여러 손님의 독립된 생애주기, 이중 결제 없는 결정적 회계, 속도 변경/SKIP/영업 종료/마지막 손님/다음 날/재시작 검증. 관련 구형 이슈 #16의 원래 조건도 비교한다.
+
+## M4 — Reliable saves and recovery · 진행 중
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/4) · [추적 이슈 #105](https://github.com/Gamez0/lemonade-tycoon/issues/105)
+
+**목표:** 일일 자동 저장과 이어하기, 저장 내보내기/가져오기, 버전 및 손상 복구.
+
+**완료 조건:** 저장 시점과 판매 중 종료 정책을 명시한다. 새로고침·재접속·손상 데이터·이전 버전·초기화 취소를 검증하고 현금/재고/날짜/누적 장부가 일치한다. 브라우저 저장의 한계와 백업 방법을 안내한다.
+
+**선행 단계:** M3. **기존 맥락:** #11.
+
+**PC/Steam 완료 조건:** 데스크톱에서도 재사용할 저장 포맷과 저장소 경계를 정의한다. Windows 사용자 데이터 경로에 저장하고 설치 폴더/업데이트와 분리한다. 웹 저장은 내보내기/가져오기로 이전하며 앱 종료·강제 종료·손상 복구를 검증한다. M7 패키지에서 같은 저장 검증을 다시 수행한다.
+
+## M5 — Locations and business progression · 구현·자체 검증 완료
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/5) · [추적 이슈 #106](https://github.com/Gamez0/lemonade-tycoon/issues/106)
+
+**목표:** 동네를 시작으로 성격이 다른 장소 2곳을 추가하는 것을 초기 콘텐츠 목표로 삼는다. 해금 조건, 임대료, 유동 인구, 구매력, 인내심과 평판의 역할을 설계한다.
+
+**원작 탭 대응:** Rent 탭을 추가해 장소 탐색, 장소별 설명·인기/만족도·비용 비교, 임대/이동 조작을 제공한다. 원작처럼 좌측 탭 선택 중에도 우측 장소 장면과 설명을 유지한다. 현재 장소의 무료 임대 표시는 실제 선택·계약 흐름으로 대체한다.
+
+**완료 조건:** 최소 3개 장소에서 서로 다른 가격/레시피/대기열 전략이 유효하다. 이동 비용과 효과를 사전에 알 수 있고 목표 달성 후에도 계속 플레이할 수 있다. 파산/재시작 경로와 저장 호환성을 검증한다.
+
+세 장소·Rent 예약·원자적 임대/이동 결제·장소별 피드백·v3 저장 변환을 구현했다.
+[M5 자체 검토](reviews/m5-locations.md)에 30일/4 seed 회계·복구 검사와 3,600일
+가격/레시피 비교를 기록했다. 단위 32/32, 웹 15/15 및 실제 Windows 패키지의
+저장/유료 장소 강제 종료 replay/15개 탭·창 크기 검사가 통과했다. 이는 M2 시각
+수용 또는 유보된 환경 검증을 대체하지 않으며 M8 사용자 밸런스 검증은 별도로 남는다.
+
+**선행 단계:** M4 구현·자동 검증. 2026-10-08 사용자 승인으로 인터넷 물리 단절·DPI·깨끗한 Windows/no Node 검증을 출시 전 필수 확인으로 유보하고 M5 착수를 허용한다. M4 전체 완료나 Steam 준비 완료로 표시하지 않는다. **기존 맥락:** #34, #58, #59, #60, #75.
+
+## M6 — Upgrades staff and advertising · 구현·검증 진행
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/6) · [추적 이슈 #107](https://github.com/Gamez0/lemonade-tycoon/issues/107)
+
+**목표:** 설비 업그레이드, 직원 고용, 광고를 비용과 효과가 분명한 경영 선택으로 구현한다. 각 시스템은 최소 2가지 유효한 선택 또는 단계로 시작한다.
+
+**원작 탭 대응:** Upgrades는 설비 목록·효과·가격·구매, Staff는 지원자/역할·급여·고용/해고, Marketing은 광고 선택과 가격 설정을 담당한다. 현재 Price 탭은 Marketing 화면에 합치고 기존 가격 조절 기능은 보존한다. M6 종료 시 Results, Rent, Upgrades, Staff, Marketing, Recipe, Supplies의 7개 탭이 모두 실제로 작동해야 한다. 원작 스크린샷에 보이는 구성과 게임 규칙은 별도로 조사하고, 확인되지 않은 수치/효과를 원작과 동일하다고 표기하지 않는다.
+
+**완료 조건:** 구매·해고·광고 변경·자금 부족·일일 비용 정산·저장 복원을 검증한다. 투자 효과가 대기열/유입/수익에 실제 반영되고 한 가지 선택만 항상 이기지 않는다. 기본 피처 생산·얼음 녹음 규칙은 선행 구현했다. 냉장고·제빙기의 얼음 보존/공급 효과와 비용은 업그레이드 구현 때 검증한다.
+
+**선행 단계:** M5. **기존 맥락:** #74, #73, #35, #72, #32.
+
+## M7 — Feature complete PC alpha · 구현, 수용 검증 대기
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/7) · [추적 이슈 #108](https://github.com/Gamez0/lemonade-tycoon/issues/108)
+
+**목표:** 초보 안내, 전체 장소의 일관된 고전풍 미술, 효과음/음악 및 음량 설정, 날씨/뉴스 피드백, 도움말과 종료까지의 플레이 흐름을 완성한다.
+
+**완료 조건:** 신규 플레이어가 설명 없이 구매→가격/레시피→판매→결과→다음 날을 수행한다. 날씨는 장식뿐 아니라 명시된 규칙과 일치한다. 한국어/영어 지원 범위를 확정하고 제공 언어의 누락을 없앤다. 게임용 아트/음원의 출처·라이선스를 기록하며 임시 자산을 제거한다. 이 단계 종료 후 신규 기능을 동결한다.
+
+**선행 단계:** M6. **기존 맥락:** #3, #26, #25, #29, #37.
+
+**PC/Steam 완료 조건:** 음악 #113을 포함한 콘텐츠 완성과 함께 Windows x64 데스크톱 실행 파일을 만든다. 패키징 방식은 프로토타입으로 선택하고, Node/개발 서버 없이 깨끗한 PC에서 실행·오프라인 플레이·저장·정상 종료를 검증한다. 창/전체 화면, 해상도/DPI, 포커스 복귀와 사용자 데이터 경로를 확인한다. 패키징 조사는 M4부터 가능하며 M7 종료 시 기능 동결한다.
+
+## M8 — Playtested PC beta · 자동 검증, 사람 검증 대기
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/8) · [추적 이슈 #109](https://github.com/Gamez0/lemonade-tycoon/issues/109)
+
+**목표:** 여러 플레이어의 반복 플레이를 통해 경제, 진행 속도, 가독성과 조작성을 조정하고 지원 환경을 확정한다.
+
+**완료 조건:** 초기 목표 5명 이상의 플레이테스트에서 첫 3일과 장소 해금까지 관찰하고 막힌 지점을 기록·수정한다. 대표 진행을 30일 이상 시뮬레이션하고 돈/재고 불변식과 저장 호환성을 검증한다. 데스크톱 Chrome/Edge/Firefox 및 모바일 Safari/Chrome에서 핵심 루프를 확인한다. 키보드, 작은 화면, 소리 끔, 모션 감소를 점검하고 성능 예산과 실제 측정치를 기록한다.
+
+**선행 단계:** M7. **기존 맥락:** M3–M7 tracking issues.
+
+**PC/Steam 완료 조건:** Windows 데스크톱 패키지가 필수 테스트 대상이다. 최소 사양 후보와 해상도/DPI 조합을 정해 설치·실행·업데이트·저장 유지·재설치·장시간 플레이·Alt-Tab·음악 복귀를 검증한다. 웹/모바일 검증은 보조 프리뷰 회귀 검사다. macOS/Linux/Steam Deck/컨트롤러 지원은 별도 범위이며 검증 전에 지원한다고 표시하지 않는다.
+
+## M9 — PC release candidate · 후보 자료 준비
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/9) · [추적 이슈 #110](https://github.com/Gamez0/lemonade-tycoon/issues/110)
+
+**목표 및 완료 조건:** 버전이 고정된 Windows 배포물, 파일 목록/체크섬, 의존 런타임과 라이선스, 저장 마이그레이션, 오류 로그/진단 안내, 이전 버전 복구 절차를 준비한다. 깨끗한 PC에서 전체 루프와 업데이트 후 저장을 검증한다. 게임 배포물에서 원작 연구 이미지와 개발 페이지를 제외한다. 스토어용 자체 명칭·캡슐/라이브러리 이미지·실제 스크린샷·플레이 영상·설명·지원 언어/사양·크레딧 초안을 완성한다.
+
+**출시 품질 기준:** 진행 불가·데이터 손실(P0/P1) 결함은 0개이며 알려진 나머지 문제와 변경 이력을 기록한다. 현재 커밋의 CI와 지원 환경 수동 검증을 통과한다.
+
+**선행 단계:** M8. 음악 검증: #113. 문서 맥락: #38, #43.
+
+## M10 — Steam submission preparation · 개발측 준비, 후속 플랫폼 검증 별도
+
+[마일스톤](https://github.com/Gamez0/lemonade-tycoon/milestone/10) · [추적 이슈 #111](https://github.com/Gamez0/lemonade-tycoon/issues/111)
+
+**현재 준비 범위의 완료 조건:** 게임의 승인된 기능과 출시 품질 수정, 정확한 소스의 녹색 CI, 해시 검증된 Windows 배포물과 저장/업데이트 회귀 검사, 스토어 설명·실제 게임 화면·영상·음악 자료, 크레딧/권리 목록, SteamPipe 템플릿·실행 옵션·업로드/롤백 절차를 준비한다. 계정이나 실제 ID를 요구하지 않는 인수인계 묶음으로 제공하고 미확인 수용 사항을 함께 기록한다.
+
+**후속 출시 운영:** 사용자가 준비된 뒤 AppID·파트너 계정·권한을 확인하고 별도 지시에 따라 비공개 업로드→Steam 설치→실행→업데이트→저장 유지와 Valve 심사를 수행한다. 실제 플랫폼 검증과 배포 권리 확인 전에는 Steam 검증/심사 통과나 판매 승인으로 표현하지 않는다. 공개·판매·비용 결제는 별도 결정이다.
+
+**선행 단계:** M9. 음악 검증: #113.
+
+## 범위와 품질 관리
+
+- 각 단계 착수 시 설계 결정을 기록하고 작은 구현 이슈로 나눈다. 모든 중간 단계는 플레이 가능해야 한다. 기존 이슈는 맥락으로 연결하며 완료 조건을 비교하기 전 자동 종료하지 않는다.
+- 날씨 변화 주기와 더 자세한 피처 생산 시간·폐기 표현은 원작에 있다는 이유만으로 전부 복원하지 않는다. 현재 배치 생산·얼음 녹음과 버전 2 저장 마이그레이션을 기준으로 M6 설비 효과를 설계한다.
+- M7 이후 새 기능은 다음 버전으로 보낸다. 진행 불가/데이터 손실은 출시 차단 결함이며 나머지는 영향과 우회 방법을 기록한다. 기능 추가가 필요하면 로드맵/완료 조건을 먼저 갱신한다.
+- 구현 PR은 변경 이유, 관련 이슈, 검증과 한계를 포함한다. 자체 리뷰와 수정 후 **현재 커밋의 녹색 CI**를 확인하고 병합한다. 수동 검증과 사용자 시각적 수용을 자동 테스트 결과로 대체하지 않는다.
+- 사용자 소유의 부모 작업 트리와 PR #83은 별개다. 레거시 리팩터링 #41/#47/#57/#61은 실제 출시 경로를 막을 때만 이 로드맵에 편입한다.
+- M10 다음의 실제 공개/판매와 출시 후 초기 7일 안정화는 별도 결정 시 계획한다. 이 문서는 백그라운드 작업이나 자동 일정을 생성하지 않는다.
+
+## Steam 준비 판정과 참고 자료
+
+- 음악 제작/통합은 [#113](https://github.com/Gamez0/lemonade-tycoon/issues/113)으로 추적하며 M7 필수, M8 청취 검증, M9 최종 음원/크레딧 검증을 유지한다.
+- Steam 업적/Cloud/Overlay 등은 필요성과 비용을 설계 단계에서 판단한다. 이를 모두 필수 기능으로 가정하지 않으며 실제 구현·검증한 기능만 스토어에 표기한다.
+- 로컬 출시 후보와 제출 자료가 준비된 상태, 실제 Steam 비공개 브랜치 검증 상태, Valve 심사 결과를 별도로 기록한다. 계정/AppID 또는 배포 권한이 없으면 해당 외부 검증은 미완료로 남긴다.
+- 원작을 참고했다는 사실만으로 판매 가능/불가능을 이 문서에서 단정하지 않는다. 실제 배포 전 명칭·미술·음악·코드 등 배포 권한을 확인하고 필요한 교체/허락을 추적한다. 현재 작업은 고전풍 게임 완성과 제출 준비이며, 자동으로 공개나 판매를 진행하지 않는다.
+- 공식 근거 (2026-09-29 확인): [빌드와 스토어 심사](https://partner.steamgames.com/doc/store/review_process), [SteamPipe 업로드/빌드 구성](https://partner.steamgames.com/doc/sdk/uploading), [온보딩 및 배포 콘텐츠 권리 조건](https://partner.steamgames.com/doc/gettingstarted/onboarding). 착수 시 최신 요구 사항을 다시 확인한다.
+
+## 2026-10-08 M10 continuation
+
+The user authorized runnable development through M10. M6 management and M7 help/audio are implemented; M8 automated checks and M9/M10 candidate materials are in [the review](reviews/m6-m10-development.md). Overall M7/M8/M9/M10 acceptance remains open: music/visual listening, five human testers, physical offline/DPI/clean Windows, final trailer/rights/support specs and actual Steam partner/install/update verification. Deferred gates do not stop independent preparation and are not marked passed.
+
+## 2026-10-09 delivery ownership
+
+2026-10-13 GitHub 감사에서 M5/M6 개발 작업과 계정 없는 M10 등록 전 준비를
+종료했다. 실제 Steam #172–174는 M11 후속 운영으로 분리했다. M2/M4/M7–M9의
+사람·물리 환경·권리 수용은 계속 열려 있다. 이후 사용자의 원작 비교·고객
+모델 요청에 따라 M2 화면 차이와 M3 구매→대기→맛 평가 보완 작업을 추가한다.
+기능 작업의 종료를 원작 충실도나 출시 품질 전체의 완료로 표현하지 않는다.
+조사·구현 근거: [alpha13 직접 플레이 비교](research/alpha13-play-comparison.md).
+
+The user delegates delivery of a sellable game to the agent, including implementation,
+tests, merges, GitHub feature evaluation/adoption, CI/CD and milestone management.
+Routine completion includes self-review, current-head passing CI and main integration;
+do not leave implementation PRs open merely because milestone acceptance is pending.
+Keep those gates visible until actual evidence exists. Request only genuinely missing
+external access or decisions outside existing authorization, with concrete prepared work.
