@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "bobiki"
+version = "0.1.0"
+description = ""
+authors = ["Mariusz Smenżyk <mariusz@bravelab.io>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pygame = "^2.6.1"
+watchdog = "^6.0.0"
+
+[tool.poetry.scripts]
+bobiki = "bobiki.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
