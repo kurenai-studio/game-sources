@@ -1,0 +1,22 @@
+{
+  "name": "game-off-2026",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/smoke.mjs && node test/stuck-shift.mjs",
+    "build": "node build.mjs",
+    "play": "node test/play.mjs",
+    "single": "node build-single.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1"
+  },
+  "type": "module"
+}
