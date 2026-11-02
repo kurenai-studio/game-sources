@@ -1,0 +1,87 @@
+import { UPGRADES, STAFF, ADS } from "../content/management";
+import { ITEMS, ITEM_KEYS } from "../content/catalog";
+import { icon } from "./icons";
+import { staffPortrait } from "./staff-art";
+import { standPreview } from "./stand-art";
+import { equipmentArt } from "./equipment-art";
+import { LOCATIONS, LOCATION_IDS } from "../content/locations";
+
+const recipeRow = (item: "lemon" | "sugar" | "ice") => `<div class="recipe-row"><label for="${item}">${icon(item)}<span>${ITEMS[item].name}</span></label><div class="spinner"><button type="button" data-adjust="${item}" data-direction="-1" aria-label="Decrease ${item}">−</button><input id="${item}" type="number" min="0" max="${item === "sugar" ? 10 : item === "ice" ? 7 : 20}" step="1" value="${item === "sugar" ? 3 : item === "ice" ? 2 : 6}"><button type="button" data-adjust="${item}" data-direction="1" aria-label="Increase ${item}">+</button></div></div>`;
+
+export const markup = `
+<header class="masthead"><h1>${icon("lemon")} Willow Lane Lemonade</h1><span class="edition">Willow Lane</span></header>
+<section class="resource-bar" aria-label="Supplies and cash">
+ ${ITEM_KEYS.map((item) => `<span><span class="sr-only">${ITEMS[item].name}: </span>${icon(item)}<strong id="inventory-${item}">0</strong></span>`).join("")}
+ <strong id="cash" aria-label="Cash on hand"></strong>
+</section>
+<div class="control-row">
+ <nav class="toolbar" aria-label="Business screens">
+ ${(["results", "rent", "upgrades", "staff", "marketing", "recipe", "supplies"] as const).map((page) => `<button data-page="${page}" aria-pressed="${page === "recipe"}" aria-controls="${page === "results" ? "results" : `${page}-page`}">${page === "staff" ? staffPortrait("server") : icon(page)}${page[0].toUpperCase() + page.slice(1)}</button>`).join("")}
+ </nav>
+ <section class="forecast" aria-label="Forecast">
+  <div class="forecast-weather"><strong class="date-line" id="career-date"><span class="date-part">Year <span id="year">1</span></span> / <span class="date-part">Month <span id="month">1</span></span> / <span class="date-part">Day <span id="day">01</span></span></strong><span class="label" id="weather-label">Weather forecast</span><div class="weather-reading"><span id="weather-art"></span><strong id="weather"></strong></div><span id="weather-advice" class="weather-advice"></span></div>
+  <div class="forecast-news"><p id="forecast-news"></p><div class="day-clock">${icon("clock")}<span id="world-status"></span></div><span id="progress-text"></span><progress id="day-progress" max="1" value="0" aria-label="Day progress"></progress></div>
+ </section>
+</div>
+<main class="layout">
+ <section class="management-column" aria-label="Business controls">
+  <section class="daily-strip" aria-label="Today's performance"><h2>Performance</h2><div><span>Cups sold</span><strong id="sold">0</strong></div><div><span>Revenue</span><strong id="revenue">$0.00</strong></div><div><span>Profit</span><strong id="profit">$0.00</strong></div><div class="reactions" aria-label="Customer reactions"><span title="Customers served">${icon("happy")}<strong id="reaction-bought">0</strong><small>Served</small></span><span title="Left because of the price">${icon("expensive")}<strong id="reaction-price">0</strong><small>Price</small></span><span title="Passersby who did not buy">${icon("passing")}<strong id="reaction-passed">0</strong><small>Passed</small></span><span title="Could not buy: empty stock">${icon("empty")}<strong id="reaction-sold-out">0</strong><small>Empty</small></span><span title="Left after waiting">${icon("clock")}<strong id="reaction-abandoned">0</strong><small>Wait</small></span></div><p id="feedback" class="live-news" aria-live="off"></p></section>
+  <section class="panel" aria-labelledby="panel-title">
+   <h2 id="panel-title">Recipe</h2>
+   <div id="preparation">
+    <div id="rent-page" class="control-page" hidden>
+     <div class="location-list" aria-label="Locations">${LOCATION_IDS.map(id => `<button data-location="${id}" aria-pressed="false"><img id="thumbnail-${id}" alt="" hidden><span>${LOCATIONS[id].name}<small id="location-state-${id}"></small></span></button>`).join("")}</div>
+     <div class="catalog-navigation"><button id="rent-previous" aria-label="Previous location">&#9664;</button><span id="rent-position" aria-live="polite">1 / ${LOCATION_IDS.length}</span><button id="rent-next" aria-label="Next location">&#9654;</button></div>
+     <p id="rent-description" class="hint"></p><dl id="rent-details" class="rent-details"></dl>
+     <p id="rent-unlock" class="hint"></p><p id="rent-reservation" class="hint" role="status"></p>
+     <div class="purchase-actions"><button id="cancel-rent">CANCEL RESERVATION</button><button id="confirm-rent">CONFIRM LOCATION</button></div>
+    </div>
+    <div id="upgrades-page" class="control-page" hidden><div id="upgrades-catalog" class="management-catalog" aria-label="Upgrade catalogue">${Object.entries(UPGRADES).map(([id, item]) => `<article class="management-card"><div class="catalog-picture" ${id === "stand" ? 'id="upgrade-art-stand" data-level="0"' : ""}>${id === "stand" ? standPreview(0) : equipmentArt(id as Exclude<keyof typeof UPGRADES, "stand">)}</div><h3 id="upgrade-title-${id}">${item.name}</h3><p id="upgrade-effect-${id}"></p><button data-upgrade="${id}">BUY</button></article>`).join("")}</div><div class="catalog-navigation"><button data-catalog="upgrades" data-catalog-step="-1" aria-label="Previous upgrade">◀</button><span id="upgrades-position" aria-live="polite">1 / ${Object.keys(UPGRADES).length}</span><button data-catalog="upgrades" data-catalog-step="1" aria-label="Next upgrade">▶</button></div></div>
+    <div id="staff-page" class="control-page" hidden><p class="hint">One employee at a time. Wages charged at opening.</p><div id="staff-catalog" class="management-catalog" aria-label="Staff catalogue">${Object.entries(STAFF).map(([id, item]) => `<article class="management-card"><div class="catalog-picture">${staffPortrait(id as keyof typeof STAFF)}</div><h3>${item.name}</h3><p>${item.speed ? "Service 2 ticks faster" : item.patience ? "Customers wait 12 ticks longer" : "Run the stand yourself"}<br><strong>$${(item.wage / 100).toFixed(2)}/day</strong></p><button data-staff="${id}">${id === "none" ? "WORK ALONE" : "HIRE"}</button></article>`).join("")}</div><div class="catalog-navigation"><button data-catalog="staff" data-catalog-step="-1" aria-label="Previous employee">◀</button><span id="staff-position" aria-live="polite">1 / 3</span><button data-catalog="staff" data-catalog-step="1" aria-label="Next employee">▶</button></div></div>
+    <div id="recipe-page" class="control-page"><p class="intro">Mix lemons and sugar once per pitcher.<br>Add ice to each sold cup.</p>
+     <fieldset id="recipe-controls"><legend class="sr-only">Pitcher recipe</legend>
+      <div class="recipe-group"><h3>Per pitcher</h3>${(["lemon", "sugar"] as const).map(recipeRow).join("")}<div class="recipe-yield">${icon("recipe")}<strong id="pitcher-yield"></strong></div></div>
+      <div class="recipe-group"><h3 id="ice-basis">Per sold cup</h3>${recipeRow("ice")}</div>
+     </fieldset><p class="hint" id="recipe-hint"></p></div>
+    <div id="marketing-page" class="control-page" hidden><p class="intro">Set your price for a cup of lemonade.<br>Charge too much and customers will walk away.</p><fieldset id="price-controls"><legend>Price per cup</legend><label>${icon("price")}Selling price ($)<input id="price" type="number" min="0.25" max="5" step="0.01" value="1.50"></label></fieldset><p id="management-bill" class="hint"></p><div class="advertising-options">${Object.entries(ADS).map(([id, item]) => `<button data-advertising="${id}">${icon(id === "none" ? "wordOfMouth" : id === "radio" ? "radio" : "marketing")}<strong>${item.name}</strong><span><small>$${(item.cost / 100).toFixed(2)}/day</small><small>+${Math.round((item.traffic - 1) * 100)}% visitors</small></span></button>`).join("")}</div><p class="hint">Compare your selling price with the ingredient cost below.</p></div>
+    <div id="supplies-page" class="control-page" hidden><p class="intro">Choose your supplies, then BUY to confirm.<br>Leftovers stay in stock for tomorrow.</p><fieldset id="supply-controls"><legend class="sr-only">Buy supplies</legend>
+     <nav class="supply-tabs" aria-label="Supply categories">${ITEM_KEYS.map((item) => `<button data-supply="${item}" aria-pressed="${item === "lemon"}">${icon(item)}<span>${ITEMS[item].name}</span><small id="stock-${item}"></small></button>`).join("")}</nav>
+     <div id="supplies"></div><p id="order-summary" class="hint"></p><div class="order-total"><span>Order total</span><strong id="order-total"></strong></div><div class="purchase-actions"><button id="cancel-order">CANCEL</button><button id="buy-order">BUY</button></div>
+    </fieldset></div>
+   </div>
+   <div id="selling" hidden><dl class="settings-table"><dt>Location</dt><dd id="setting-location"></dd><dt>Rent / moving</dt><dd id="setting-rent"></dd><dt>Cup price</dt><dd id="setting-price"></dd><dt>Pitcher / ice per cup</dt><dd class="setting-recipe">${(["lemon", "sugar", "ice"] as const).map((item) => `<span>${icon(item)}<b id="setting-${item}"></b></span>`).join("")}</dd><dt>Equipment</dt><dd id="setting-equipment"></dd><dt>Staff / ads</dt><dd id="setting-management"></dd><dt>Pitchers made</dt><dd id="setting-pitchers"></dd><dt>In pitcher</dt><dd id="pitcher-cups"></dd><dt>Ready to serve</dt><dd id="setting-capacity"></dd></dl><p class="hint">Empty pitchers refill automatically. Recipe and price stay fixed today.</p></div>
+   <div id="results" hidden><nav class="report-tabs" aria-label="Reports"><button data-report="daily" aria-pressed="true">${icon("calendar")}Daily</button><button data-report="ledger" aria-pressed="false">${icon("results")}Profit &amp; loss</button><button data-report="graph" aria-pressed="false">${icon("graph")}Profit graph</button><button data-report="balance" aria-pressed="false">${icon("balance")}Balance sheet</button></nav><label id="report-day-picker" class="report-day-picker" hidden>Completed day <select id="report-day" aria-label="Completed report day"></select></label><p class="intro" id="result-intro"></p><div id="profit-graph" hidden></div><div class="report-content"><dl id="result-values"></dl><aside id="report-commentary"><span id="report-face"></span><strong id="report-verdict"></strong><p id="report-response"></p></aside></div><p class="hint">Profit: sales minus ingredients and operating costs. Cash: sales minus purchases, equipment and operating costs.</p></div>
+   <div id="day-actions"><div class="cost-line"><span>Next pitcher / cup</span><strong id="unit-cost"></strong></div><div class="capacity"><span>Ready to serve</span><strong id="capacity"></strong></div><p id="supply-warning" class="hint" role="status" hidden></p><button id="open" class="primary">Start day <span>▶</span></button></div>
+   <button id="next" class="primary" hidden><span id="next-day-label">Prepare next day</span><span>▶</span></button>
+   <p id="business-warning" class="hint" role="status" hidden></p><p id="message" role="status" aria-live="polite"></p>
+  </section>
+ </section>
+ <section class="world-column" aria-label="Willow Lane stand">
+  <div class="world-frame"><div class="scene-window"><div id="game-container"></div><div id="scene-controls" hidden><button id="speed" class="scene-speed"><span aria-hidden="true">▶▶</span> <span id="speed-label">Speed: 1×</span></button><button id="skip" class="scene-skip" title="Finish the remaining visits now">SKIP</button></div><span id="closed-sign" hidden>DAY COMPLETE</span></div>
+   <div class="location-heading"><h2 id="location-name">The Neighborhood</h2><span id="location-rent" class="rent-tag">Rent: FREE</span></div>
+   <p id="location-description" class="location-description"></p>
+   <div class="location-ratings"><div><div class="rating-line"><label for="reputation-meter">Popularity</label><strong id="reputation"></strong></div><meter id="reputation-meter" min="0" max="100" value="50">50%</meter></div><div><div class="rating-line"><label for="satisfaction-meter">Satisfaction</label><strong id="location-satisfaction"></strong></div><meter id="satisfaction-meter" min="0" max="100" value="50">50%</meter></div></div>
+  </div>
+ </section>
+</main>
+<footer><button id="help-open" class="text-button">Help / Sound</button><span id="goal"></span><button id="restart" class="text-button">New business</button><button id="export-save" class="text-button">Export save</button><button id="import-save" class="text-button">Import save</button><input id="save-file" class="sr-only" type="file" accept=".json,application/json"><a href="./legacy.html">Legacy game</a><small id="save-status" role="status">Saved on this device</small></footer>
+<dialog id="help-dialog" aria-labelledby="help-title"><div class="help-heading"><h2 id="help-title">Willow Lane · Help and settings</h2><button id="help-close">CLOSE</button></div>
+<fieldset id="display-settings" hidden><legend>Display</legend>
+<label>Screen mode <select id="display-mode"><option value="windowed">Windowed</option><option value="fullscreen">Fullscreen</option></select></label>
+<label>Window size <select id="display-size"></select></label>
+<p class="hint" id="display-info"></p><button id="display-apply">APPLY DISPLAY</button><p id="display-status" role="status"></p></fieldset>
+<p>1. Supplies: select ingredient bundles and press BUY. Start with lemons, sugar, ice and cups.</p>
+<p>2. Recipe: start with 6 lemons / 3 sugar per pitcher. Keep the drink concentrated as well as balanced: extra ice dilutes it and increases cups per pitcher. Use enough ice to cool the drink; the recipe panel shows the minimum for today.</p>
+<p>3. Marketing: enter your price directly. Try $1.75 first. Ads bring more visitors, but charge every day. Extra traffic needs enough stock and fast service.</p>
+<p>4. START DAY prepares the first pitcher and sells automatically. Empty pitchers refill immediately while supplies last. Speed and SKIP change waiting time, not the outcome. Results separates ingredient costs from supply cash purchases.</p>
+<p>5. NEXT DAY keeps leftover lemons, sugar and paper cups. Leftover ice melts; a level 1 refrigerator keeps half (rounded down), and level 2 keeps all. Earn Park after 3 days/$45 sales/55% rating; Downtown after 7 days/$120/65%. Rent and wages charge at opening.</p>
+<p>Ice makers produce free ice at opening, within the storage limit. No electricity or production fee. Bought ice still costs money; free ice is used first and adds no ingredient expense.</p>
+<p>Equipment is permanent. A server speeds service; a host extends patience. Owner only dismisses staff. Ice makers produce up to 60/120 free ice at opening. Choose affordable investments.</p>
+<p>Customers decide whether to buy from your price, their budget and your existing reputation. Ads attract visitors. Today's recipe is tasted after purchase: too little ice on a hot day tastes warm; extra ice can make it watery unless you add balanced lemon and sugar. Lemon/sugar balance affects sourness and sweetness. Taste changes satisfaction and future reputation. Daily satisfaction also includes customers lost to price, waiting or empty stock. Downtown has more office workers, who wait less than neighbors or students. Operating costs are rent, moving, wages and ads.</p>
+<p>Saves are automatic before opening and after results. Closing during sales replays the paid opening without another fee. Export a backup before updating. New business requires a second confirmation.</p>
+<p>Keyboard: Tab / Shift+Tab to move, Enter or Space to activate, Escape closes this help. All feedback is available with sound muted. English is the initial supported language.</p>
+<label>Music <input id="music-volume" type="range" min="0" max="100" value="25"></label>
+<label>Effects <input id="effects-volume" type="range" min="0" max="100" value="35"></label>
+<label><input id="mute-audio" type="checkbox"> Mute all sound</label>
+<p>Original code-generated music and effects. Art drawn for this project. Oswald font: SIL Open Font License. Phaser: MIT. Electron and Chromium license notices accompany the Windows package.</p>
+<button id="fullscreen">Toggle fullscreen</button><button id="export-diagnostics" hidden>Export diagnostics</button><button id="quit-game" hidden>Save and quit</button></dialog>`;

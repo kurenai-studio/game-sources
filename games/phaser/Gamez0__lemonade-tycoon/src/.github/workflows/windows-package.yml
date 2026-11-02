@@ -1,0 +1,72 @@
+name: Windows package saves
+on:
+    workflow_call:
+    workflow_dispatch:
+permissions:
+    contents: read
+jobs:
+    packaged-saves:
+        runs-on: windows-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 22
+                  cache: npm
+            - run: npm ci
+            - run: npm test
+            - run: npm run test:release
+            - run: npm run desktop:package:win
+            - name: Audit shipped archive and license notices
+              run: node scripts/audit-package.cjs "release/Lemonade Tycoon-win32-x64"
+            - name: Test packaged save and recovery
+              shell: pwsh
+              run: |
+                  $env:LEMONADE_DESKTOP_EXE = Join-Path $env:GITHUB_WORKSPACE 'release/Lemonade Tycoon-win32-x64/Lemonade Tycoon.exe'
+                  $env:LEMONADE_PERF_ENFORCE = '1'
+                  foreach ($suite in @('test:desktop:menu', 'test:desktop', 'test:desktop:ui', 'test:desktop:rent', 'test:desktop:dpi', 'test:desktop:locations', 'test:desktop:stands', 'test:desktop:management', 'test:desktop:taste', 'test:desktop:audio', 'test:desktop:display', 'test:desktop:campaign', 'test:desktop:long-save', 'test:desktop:performance')) {
+                      npm run $suite
+                      if ($LASTEXITCODE -ne 0) {
+                          throw "Windows package suite $suite failed with exit code $LASTEXITCODE"
+                      }
+                  }
+            - uses: actions/upload-artifact@v7
+              if: always()
+              with:
+                  name: windows-ui-${{ github.event.pull_request.head.sha || github.sha }}
+                  path: |
+                      test-results/desktop-display/
+                      test-results/desktop-start-menu/
+                      test-results/desktop-ui/
+                      test-results/desktop-rent/
+                      test-results/desktop-stands/
+                      test-results/desktop-taste/
+                      test-results/desktop-dpi/
+                      test-results/desktop-campaign/
+                      test-results/desktop-long-save/
+                      test-results/desktop-performance/
+                  if-no-files-found: ignore
+                  retention-days: 7
+            - name: Record package source
+              shell: pwsh
+              run: |
+                  $info = Get-Content 'release/Lemonade Tycoon-win32-x64/build-info.json' -Raw | ConvertFrom-Json -AsHashtable
+                  $info.commit = '${{ github.sha }}'
+                  $info.source_commit = '${{ github.event.pull_request.head.sha || github.sha }}'
+                  $info.run = '${{ github.run_id }}'
+                  $info | ConvertTo-Json | Set-Content 'release/Lemonade Tycoon-win32-x64/build-info.json'
+            - name: Inventory and verify prototype files
+              run: |
+                  node scripts/release-manifest.cjs "release/Lemonade Tycoon-win32-x64"
+                  node scripts/release-manifest.cjs "release/Lemonade Tycoon-win32-x64" --verify
+            - name: Verify distributable ZIP against every package checksum
+              shell: pwsh
+              run: ./scripts/release-zip.ps1 -PackageRoot 'release/Lemonade Tycoon-win32-x64'
+            - uses: actions/upload-artifact@v7
+              with:
+                  name: windows-prototype-${{ github.event.pull_request.head.sha || github.sha }}
+                  path: release/bundles/
+                  compression-level: 0
+                  if-no-files-found: error
+                  retention-days: 3

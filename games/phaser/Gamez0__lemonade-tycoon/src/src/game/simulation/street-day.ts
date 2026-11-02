@@ -1,0 +1,114 @@
+import { drawVisitor, settleVisitor, dayTraffic, capacity, isPurchaseFirst } from "./game";
+import type { CustomerEvent, State, Visitor } from "./game";
+import { CUSTOMERS } from "../content/catalog";
+import { STAFF } from "../content/management";
+import { profilePatience } from "../content/customer-profiles";
+
+export interface StreetRules {
+    readonly arrivalEvery: number;
+    readonly serviceTicks: number;
+    readonly patienceTicks: number;
+}
+export interface WaitingVisitor {
+    readonly visitor: Visitor;
+    readonly joinedAt: number;
+}
+export interface Service {
+    readonly visitor: Visitor;
+    readonly doneAt: number;
+}
+export interface WalkingVisitor {
+    readonly visitor: Visitor;
+    readonly kind: CustomerEvent["kind"];
+    readonly startedAt: number;
+    readonly until: number;
+    readonly satisfaction: CustomerEvent["satisfaction"];
+    readonly tasteComplaints: CustomerEvent["tasteComplaints"];
+}
+export interface StreetDay {
+    readonly game: State;
+    readonly tick: number;
+    readonly arrived: number;
+    readonly waiting: readonly WaitingVisitor[];
+    readonly serving: Service | null;
+    readonly walking: readonly WalkingVisitor[];
+    readonly rules: StreetRules;
+}
+
+export const DEFAULT_STREET_RULES: StreetRules = { arrivalEvery: 5, serviceTicks: 8, patienceTicks: 18 };
+export const visitorPatienceTicks = (day: StreetDay, visitor: Visitor): number => {
+    if (!isPurchaseFirst(day.game)) return day.rules.patienceTicks;
+    const staffPatience = STAFF[day.game.management.staff].patience;
+    const basePatience = Math.max(1, day.rules.patienceTicks - staffPatience);
+    if (day.game.business?.customerModel === "eleven-profiles-v1") return profilePatience(basePatience, visitor.profile, staffPatience);
+    return Math.max(1, Math.round(basePatience * CUSTOMERS[visitor.profile].patience) + staffPatience);
+};
+
+export function beginStreetDay(game: State, rules: StreetRules = game.business ?? DEFAULT_STREET_RULES): StreetDay {
+    if (game.phase !== "selling") throw new Error("Open the stand before starting the street.");
+    if ([rules.arrivalEvery, rules.serviceTicks, rules.patienceTicks].some(n => !Number.isSafeInteger(n) || n < 1))
+        throw new Error("Street timing must use positive whole ticks.");
+    return { game, tick: 0, arrived: 0, waiting: [], serving: null, walking: [], rules };
+}
+
+/** One fixed 100 ms business tick. Rendering and animation never change its decisions. */
+export function tickStreet(day: StreetDay): { day: StreetDay; events: CustomerEvent[] } {
+    const tick = day.tick + 1;
+    let game = day.game;
+    let arrived = day.arrived;
+    let waiting = [...day.waiting];
+    let serving = day.serving;
+    const walking = day.walking.filter(person => person.until > tick);
+    const events: CustomerEvent[] = [];
+    const settle = (visitor: Visitor, outcome?: "abandoned") => {
+        const result = settleVisitor(game, visitor, outcome);
+        game = result.state;
+        events.push(result.event);
+        walking.push({ visitor, kind: result.event.kind, startedAt: tick, until: tick + 22,
+            satisfaction: result.event.satisfaction, tasteComplaints: result.event.tasteComplaints });
+    };
+
+    if (game.phase === "selling") {
+        if (arrived < dayTraffic(game) && (tick - 1) % day.rules.arrivalEvery === 0) {
+            const draw = drawVisitor(game, arrived + 1);
+            game = draw.state;
+            arrived++;
+            if (draw.visitor.intent === "buy" && capacity(game) > 0) waiting.push({ visitor: draw.visitor, joinedAt: tick });
+            else settle(draw.visitor);
+        }
+        const patient: WaitingVisitor[] = [];
+        for (const person of waiting) {
+            if (capacity(game) === 0) settle(person.visitor);
+            else if (tick - person.joinedAt >= visitorPatienceTicks(day, person.visitor)) settle(person.visitor, "abandoned");
+            else patient.push(person);
+        }
+        waiting = patient;
+        if (serving && tick >= serving.doneAt) {
+            settle(serving.visitor);
+            serving = null;
+        }
+        if (capacity(game) === 0 && waiting.length) {
+            for (const person of waiting) settle(person.visitor);
+            waiting = [];
+        }
+        if (!serving && waiting.length && game.phase === "selling") {
+            const first = waiting.shift()!;
+            serving = { visitor: first.visitor, doneAt: tick + day.rules.serviceTicks };
+        }
+    }
+    return { day: { ...day, game, tick, arrived, waiting, serving, walking }, events };
+}
+
+export function finishStreetDay(day: StreetDay): { day: StreetDay; events: CustomerEvent[] } {
+    const events: CustomerEvent[] = [];
+    let current = day;
+    // Bounded by traffic and rule durations; this guard catches a broken close condition.
+    const limit = (dayTraffic(day.game) + 1) * (day.rules.arrivalEvery + day.rules.serviceTicks + day.rules.patienceTicks + 8);
+    for (let i = 0; i < limit && current.game.phase === "selling"; i++) {
+        const next = tickStreet(current);
+        current = next.day;
+        events.push(...next.events);
+    }
+    if (current.game.phase !== "results") throw new Error("The street day did not finish.");
+    return { day: { ...current, walking: [] }, events };
+}

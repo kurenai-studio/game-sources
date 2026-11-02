@@ -1,0 +1,305 @@
+const { selectLocation } = require('./helpers/rent-navigation.cjs');
+const { _electron: electron } = require("playwright");
+const { expect } = require("@playwright/test");
+const { profileArgs, verifyProfile } = require('./helpers/desktop-profile.cjs');
+const fs = require("fs"),
+    path = require("path"),
+    os = require("os"),
+    assert = require("assert/strict");
+const executable = process.env.LEMONADE_DESKTOP_EXE;
+const scale = Number(process.env.LEMONADE_UI_SCALE || 1);
+if (![1, 1.25, 1.5, 1.75, 2].includes(scale)) throw new Error('Supported UI scales: 1, 1.25, 1.5, 1.75, 2.');
+if (process.platform !== "win32" || !executable || !fs.existsSync(executable))
+    throw new Error("Set LEMONADE_DESKTOP_EXE to the Windows package executable.");
+const base = fs.mkdtempSync(path.join(os.tmpdir(), "lemonade-ui-"));
+const env = { ...process.env, LOCALAPPDATA: base, APPDATA: path.join(base, "Roaming") };
+delete env.ELECTRON_RUN_AS_NODE;
+const save = path.join(base, "Lemonade Tycoon/save.json");
+const out = path.resolve(process.env.LEMONADE_UI_EVIDENCE_ROOT || "test-results/desktop-ui");
+fs.mkdirSync(out, { recursive: true });
+const results = [];
+let app;
+async function launch(exe) {
+    app = await electron.launch({ executablePath: path.resolve(exe), env, args: profileArgs(base, [`--force-device-scale-factor=${scale}`]) });
+    const page = await app.firstWindow();
+    await verifyProfile(app, base);
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 30000 });
+    return page;
+}
+async function close() {
+    const done = app.waitForEvent("close");
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close());
+    await done;
+    app = null;
+}
+async function fit(page, name) {
+    const geometry = await page.evaluate(() => {
+        const box = (el) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const panel = document.querySelector(".panel");
+        const panelBox = panel.getBoundingClientRect();
+        const panelStyle = getComputedStyle(panel);
+        const zoom = panelBox.width / panel.offsetWidth;
+        const canvas = document.querySelector("canvas");
+        const canvasBox = canvas.getBoundingClientRect();
+        const imageScale = Math.min(canvasBox.width / canvas.width, canvasBox.height / canvas.height);
+        const imageWidth = canvas.width * imageScale, imageHeight = canvas.height * imageScale;
+        return {
+            width: innerWidth,
+            devicePixelRatio,
+            height: innerHeight,
+            scrollWidth: document.documentElement.scrollWidth,
+            scrollHeight: document.documentElement.scrollHeight,
+            app: box(document.querySelector("#app")),
+            scene: box(document.querySelector("#game-container")),
+            canvas: box(document.querySelector("canvas")),
+            canvasPixels: { width: canvas.width, height: canvas.height },
+            canvasFit: getComputedStyle(canvas).objectFit,
+            mapGaps: { horizontal: canvasBox.width - imageWidth, vertical: canvasBox.height - imageHeight },
+            map: { x: canvasBox.x + (canvasBox.width - imageWidth) / 2,
+                y: canvasBox.y + (canvasBox.height - imageHeight) / 2,
+                right: canvasBox.x + (canvasBox.width + imageWidth) / 2,
+                bottom: canvasBox.y + (canvasBox.height + imageHeight) / 2 },
+            panel: box(panel),
+            panelContentBottom: panelBox.bottom - (parseFloat(panelStyle.paddingBottom) + parseFloat(panelStyle.borderBottomWidth)) * zoom,
+            next: document.querySelector("#next").getClientRects().length ? box(document.querySelector("#next")) : null,
+            report: box(document.querySelector("#results")),
+            reportVisible: document.querySelector('#results').getClientRects().length > 0,
+            reportScroll: { height: document.querySelector('#results').scrollHeight,
+                client: document.querySelector('#results').clientHeight },
+            selling: document.querySelector('#selling').getClientRects().length ? box(document.querySelector('#selling')) : null,
+            open: document.querySelector('#open').getClientRects().length ? box(document.querySelector('#open')) : null,
+            controls: [...document.querySelectorAll("button,input:not([type=file])")]
+                .filter((x) => {
+                    if (!x.getClientRects().length || getComputedStyle(x).visibility === "hidden") return false;
+                    const catalogue = x.closest('.management-catalog, .location-list');
+                    if (!catalogue) return true;
+                    const a = x.getBoundingClientRect(), b = catalogue.getBoundingClientRect();
+                    return a.right > b.x && a.x < b.right;
+                })
+                .map((x) => ({ name: x.id || x.textContent.trim(), ...box(x) })),
+        };
+    });
+    results.push({ name, ...geometry });
+    assert.ok(Math.abs(geometry.devicePixelRatio - scale) < .01, `Requested scale ${scale}, actual ${geometry.devicePixelRatio}`);
+    assert.ok(geometry.scrollWidth <= geometry.width + 1, JSON.stringify(geometry));
+    assert.ok(geometry.scrollHeight <= geometry.height + 1, JSON.stringify(geometry));
+    assert.ok(Math.abs(geometry.app.width - geometry.width) < 2);
+    assert.ok(Math.abs(geometry.app.height - geometry.height) < 2);
+    assert.ok(Math.abs(geometry.canvas.width - geometry.scene.width) < 3);
+    assert.ok(Math.abs(geometry.canvas.height - geometry.scene.height) < 3);
+    assert.deepEqual(geometry.canvasPixels, { width: 1280, height: 1024 });
+    assert.equal(geometry.canvasFit, 'contain');
+    assert.ok(geometry.mapGaps.horizontal <= 1 && geometry.mapGaps.vertical <= 1,
+        `${name}: unused map viewport area: ${JSON.stringify(geometry.mapGaps)}`);
+    assert.ok(geometry.map.x >= geometry.scene.x - 1 && geometry.map.y >= geometry.scene.y - 1 &&
+        geometry.map.right <= geometry.scene.right + 1 && geometry.map.bottom <= geometry.scene.bottom + 1,
+        `${name}: full map image leaves scene bounds`);
+    for (const box of geometry.controls) {
+        assert.ok(
+            box.x >= -1 && box.y >= -1 && box.right <= geometry.width + 1 && box.bottom <= geometry.height + 1,
+            `${name}: ${JSON.stringify(box)}`,
+        );
+    }
+    if (geometry.reportVisible) {
+        assert.ok(geometry.reportScroll.height <= geometry.reportScroll.client + 1,
+            `${name}: full results should fit without scrolling: ${JSON.stringify(geometry.reportScroll)}`);
+    }
+    if (geometry.next) {
+        assert.ok(geometry.next.bottom <= geometry.panelContentBottom + 1,
+            `${name}: next-day button exceeds panel content (bottom ${geometry.next.bottom}, limit ${geometry.panelContentBottom})`);
+        assert.ok(geometry.report.bottom <= geometry.next.y + 1,
+            `${name}: report overlaps next-day button: ${JSON.stringify(geometry)}`);
+    }
+    if (geometry.selling) assert.ok(geometry.selling.bottom <= geometry.panelContentBottom + 1,
+        `${name}: selling settings exceed panel content`);
+    if (geometry.open) assert.ok(geometry.open.bottom <= geometry.panelContentBottom + 1,
+        `${name}: opening button exceeds panel padding`);
+}
+(async () => {
+    try {
+        let page,
+            before = null;
+        if (process.env.LEMONADE_BASELINE_EXE) {
+            page = await launch(process.env.LEMONADE_BASELINE_EXE);
+            await page.locator("[data-page=price]").click();
+            before = await page.locator("#price").evaluate((x) => getComputedStyle(x).appearance);
+            assert.equal(before, "auto");
+            await close();
+        }
+        page = await launch(executable);
+        await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setMinimumSize(0, 0));
+        assert.equal(await app.evaluate(({ Menu }) => Menu.getApplicationMenu()), null);
+        await expect(page.locator(".masthead")).toBeHidden();
+        for (const [width, height] of [
+            [1100, 850],
+            [800, 600],
+            [1280, 720],
+            [683, 465],
+            [512, 350],
+        ]) {
+            await app.evaluate(
+                ({ BrowserWindow }, { width, height }) =>
+                    BrowserWindow.getAllWindows()[0].setContentSize(width, height),
+                { width, height },
+            );
+            for (const tab of ["recipe", "marketing", "supplies", "results", "rent", "upgrades", "staff"]) {
+                await page.locator(`[data-page=${tab}]`).click();
+                await page.waitForTimeout(200);
+                await fit(page, `${width}x${height} ${tab}`);
+                if (tab === 'upgrades' || tab === 'staff') {
+                    for (let card = 0; card < 3; card++) {
+                        await page.locator(`[data-catalog="${tab}"][data-catalog-step="1"]`).click();
+                        await page.waitForTimeout(100);
+                        await fit(page, `${width}x${height} ${tab} card ${card + 1}`);
+                    }
+                }
+                if (tab === 'rent') {
+                    for (const id of require('../.test-build/content/locations.js').LOCATION_IDS) {
+                        await selectLocation(page, id);
+                        await fit(page, `${width}x${height} rent ${id}`);
+                    }
+                }
+            }
+        }
+        const mapImage = await page.locator('canvas').evaluate(canvas => canvas.toDataURL('image/png'));
+        fs.writeFileSync(path.join(out, 'map-source.png'), Buffer.from(mapImage.split(',')[1], 'base64'));
+        await page.locator("[data-page=marketing]").click();
+        assert.equal(await page.locator("#price").evaluate((x) => getComputedStyle(x).appearance), "textfield");
+        await page.locator("#price").fill("2.25");
+        await page.locator("#price").press("Tab");
+        await expect.poll(() => JSON.parse(fs.readFileSync(save)).state.plan.price).toBe(225);
+        await page.screenshot({ path: path.join(out, "price-fixed.png") });
+        await close();
+        page = await launch(executable);
+        await page.locator("[data-page=marketing]").click();
+        await expect(page.locator("#price")).toHaveValue("2.25");
+        await page.locator("[data-page=supplies]").click();
+        for (const item of ["lemon", "sugar", "ice", "cup"]) {
+            await page.locator(`[data-supply=${item}]`).click();
+            await page.locator('[data-bundle="0"][data-delta="1"]').click();
+        }
+        await page.locator("#buy-order").click();
+        await page.locator("#open").click();
+        await expect.poll(() => JSON.parse(fs.readFileSync(save, 'utf8')).state.pitcherCups).toBe(12);
+        await expect(page.locator('#setting-pitchers')).toHaveText('1');
+        await fit(page, "selling default");
+        await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(800, 600));
+        await page.waitForTimeout(200);
+        await fit(page, "selling 800x600");
+        await app.evaluate(({ BrowserWindow }) => {
+            const window = BrowserWindow.getAllWindows()[0]; window.setMinimumSize(0, 0); window.setContentSize(1097, 554);
+        });
+        await page.waitForTimeout(200);
+        await fit(page, 'selling 1097x554 full map');
+        await page.screenshot({ path: path.join(out, 'selling-175-client.png') });
+        for (const [width, height] of [[683, 465], [512, 350]]) {
+            await app.evaluate(({ BrowserWindow }, { width, height }) =>
+                BrowserWindow.getAllWindows()[0].setContentSize(width, height), { width, height });
+            await page.waitForTimeout(100);
+            await fit(page, `${width}x${height} selling small native client`);
+        }
+        await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(800, 600));
+        await page.waitForTimeout(200);
+        await page.locator("#skip").click();
+        await expect(page.locator("#app")).toHaveAttribute("data-phase", "preparation");
+        await fit(page, "results 800x600");
+        await page.screenshot({ path: path.join(out, "results-small.png") });
+        for (const mode of ['maximized', 'fullscreen']) {
+            await app.evaluate(({ BrowserWindow }, mode) => {
+                const window = BrowserWindow.getAllWindows()[0];
+                if (mode === 'maximized') window.maximize();
+                else window.setFullScreen(true);
+            }, mode);
+            await page.waitForTimeout(250);
+            await fit(page, `results ${mode}`);
+        }
+        await app.evaluate(({ BrowserWindow }) => {
+            const window = BrowserWindow.getAllWindows()[0]; window.setFullScreen(false); window.unmaximize();
+        });
+        await page.waitForTimeout(200);
+        // 1920x1080 at175% leaves roughly1097x554 client pixels after title/task bars.
+        // Forced renderer DPI models layout; the player's actual monitor remains distinct.
+        await app.evaluate(({ BrowserWindow }) => {
+            const window = BrowserWindow.getAllWindows()[0];
+            window.setMinimumSize(0, 0);
+            window.setContentSize(1097, 554);
+        });
+        await page.waitForTimeout(200);
+        await fit(page, "results 1097x554 daily");
+        await page.locator('[data-report="graph"]').click();
+        await fit(page, "results 1097x554 graph");
+        await expect(page.locator('#profit-graph svg')).toBeVisible();
+        await page.screenshot({ path: path.join(out, "profit-graph-175-client.png") });
+        await page.locator('[data-report="balance"]').click();
+        await fit(page, "results 1097x554 balance sheet");
+        await expect(page.locator('#result-values dd').last()).toBeInViewport();
+        await page.screenshot({ path: path.join(out, "balance-sheet-175-client.png") });
+        await page.locator('[data-report="ledger"]').click();
+        await fit(page, "results 1097x554 ledger");
+        await expect(page.locator('#result-values dd').last()).toBeInViewport();
+        await page.screenshot({ path: path.join(out, "results-175-client.png") });
+        await page.locator('[data-page=recipe]').click();
+        await expect(page.locator('#app')).toHaveAttribute('data-phase', 'preparation');
+        await expect(page.locator('#day')).toHaveText('02');
+        for (const [width, height] of [[1100, 850], [800, 600], [1097, 554], [1099, 555], [683, 465], [512, 350]]) {
+            await app.evaluate(({ BrowserWindow }, { width, height }) =>
+                BrowserWindow.getAllWindows()[0].setContentSize(width, height), { width, height });
+            for (const tab of ['results', 'recipe', 'marketing', 'supplies', 'rent', 'upgrades', 'staff']) {
+                await page.locator(`[data-page="${tab}"]`).click();
+                await page.waitForTimeout(100);
+                await fit(page, `${width}x${height} preparation with history ${tab}`);
+                if (tab === 'results') {
+                    for (const report of ['daily', 'ledger', 'graph', 'balance']) {
+                        await page.locator(`[data-report="${report}"]`).click();
+                        await fit(page, `${width}x${height} preparation with history ${report}`);
+                        if (report === 'graph') await expect(page.locator('#profit-graph svg')).toBeVisible();
+                        else await expect(page.locator('#result-values dd').last()).toBeInViewport();
+                    }
+                }
+            }
+        }
+        await page.locator('[data-page="marketing"]').click();
+        await page.locator('#price').fill('5.01'); await page.locator('#price').press('Tab');
+        await expect(page.locator('#message')).toContainText('Check price');
+        await fit(page, 'invalid price feedback');
+        await page.locator('[data-page="results"]').click();
+        await expect(page.locator('#message')).toBeEmpty();
+        await fit(page, 'report after invalid price');
+        await page.locator('#open').click();
+        await expect(page.locator('#message')).toContainText('Check price');
+        await expect(page.locator('#price')).toBeVisible();
+        await page.locator('#price').fill('2.25'); await page.locator('#price').press('Tab');
+        await page.locator('[data-page="supplies"]').click();
+        await page.locator('[data-supply="ice"]').click();
+        const beforeFailedOrder = fs.readFileSync(save, 'utf8');
+        for (let i = 0; i < 4; i++) await page.locator('[data-bundle="2"][data-delta="1"]').click();
+        await page.locator('#buy-order').click();
+        await expect(page.locator('#message')).toContainText('Order quantity');
+        assert.equal(fs.readFileSync(save, 'utf8'), beforeFailedOrder);
+        await fit(page, 'oversized order feedback');
+        await page.locator('#cancel-order').click();
+        await page.locator('[data-page="results"]').click();
+        await page.locator('#open').click();
+        await expect(page.locator('#supplies-page')).toBeVisible();
+        await expect(page.locator('#message')).toContainText('Buy enough supplies');
+        await fit(page, 'opening shortage redirects from report to supplies');
+        await close();
+        fs.writeFileSync(
+            path.join(out, "ui-results.json"),
+            JSON.stringify({ status: 'PASS', requestedScale: scale, scope: 'Forced renderer scale; physical Windows DPI acceptance remains separate.', beforeSpinner: before, afterSpinner: "textfield", pricePersisted: 225, results }, null, 2),
+        );
+        console.log(
+            "UI checks passed: fresh/established business tabs, selling/results small, daily/ledger no-scroll containment, opening/next-day buttons, map, price typing/relaunch",
+        );
+    } finally {
+        if (app) await app.close();
+    }
+})().catch((e) => {
+    fs.writeFileSync(path.join(out, 'ui-results.json'), JSON.stringify({ status: 'FAIL', requestedScale: scale,
+        scope: 'Forced renderer scale; physical Windows DPI acceptance remains separate.', error: e.message, results }, null, 2));
+    console.error(e);
+    process.exitCode = 1;
+});
