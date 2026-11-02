@@ -1,0 +1,21 @@
+// GOAL RUSH — Prisma schema (SQLite).
+// The Hall of Fame: one row per submitted run.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Score {
+  id        Int      @id @default(autoincrement())
+  initials  String
+  credits   Int
+  spins     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([credits])
+}

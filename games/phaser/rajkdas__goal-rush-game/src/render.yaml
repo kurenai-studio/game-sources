@@ -1,0 +1,29 @@
+# GOAL RUSH — Render Blueprint for a one-click FREE deploy.
+#
+# Render reads this file when you create a "Blueprint" from your GitHub repo:
+#   dashboard.render.com → New + → Blueprint → pick this repo → Apply
+#
+# Free-tier behavior (this is normal, not a bug):
+#   • The service sleeps after 15 min without visitors; the first request
+#     afterwards takes ~1 minute to wake up.
+#   • The disk is ephemeral — the SQLite leaderboard is recreated and seeded
+#     with demo scores at every boot (see scripts/seed-demo.mjs).
+
+services:
+  - type: web
+    name: goal-rush
+    runtime: node
+    plan: free
+    region: singapore # closest free region to India; oregon/frankfurt also fine
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:cloud
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        value: file:/tmp/goalrush.db
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
