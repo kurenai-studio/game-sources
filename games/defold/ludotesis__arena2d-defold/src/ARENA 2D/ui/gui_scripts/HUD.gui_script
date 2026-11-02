@@ -1,0 +1,49 @@
+function init(self)
+	self.text_hp = gui.get_node("vidas")
+	self.text_mp = gui.get_node("mana")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("take_damage") then
+		print(message.vidas)
+		gui.set_text(self.text_hp, "HP "..message.vidas)
+		gui.animate(self.text_hp, gui.PROP_COLOR, vmath.vector4(1, 0, 0, 1), gui.EASING_INOUTQUAD, 0.1, 0 , nil , gui.PLAYBACK_ONCE_PINGPONG)
+	end
+
+	if message_id == hash("iniciar_ui") then
+		print("UI INICIADA")
+		
+		gui.set_text(self.text_hp, "HP "..message.vidas)
+		gui.set_text(self.text_mp, "MP "..message.mana)
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

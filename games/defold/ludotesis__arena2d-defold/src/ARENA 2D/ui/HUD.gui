@@ -1,0 +1,39 @@
+script: "/ui/gui_scripts/HUD.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 134.0
+    y: 131.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "hp \n"
+  ""
+  font: "default"
+  id: "vidas"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 229.0
+    y: 131.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "hp \n"
+  ""
+  font: "default"
+  id: "mana"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

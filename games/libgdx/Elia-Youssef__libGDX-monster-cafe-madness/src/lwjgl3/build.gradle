@@ -1,0 +1,39 @@
+// lwjgl3: desktop launcher module (the run target). `./gradlew lwjgl3:run` launches the game.
+apply plugin: 'application'
+
+application {
+    mainClass = 'com.micro1.monstercafe.lwjgl3.Lwjgl3Launcher'
+}
+
+// The project-root assets/ folder is added as a resource dir so Gdx.files.internal(...) (classpath-relative
+// on the LWJGL3 backend) finds backgrounds/ characters/ food/ ui/ both under `run` and inside the packaged
+// jar below. Subfolder structure is preserved exactly as supplied.
+sourceSets.main.resources.srcDirs += [rootProject.file('assets').path]
+
+// Keep the run task usable from any working directory, and let a runtime crash surface as a non-zero exit.
+run {
+    setWorkingDir(rootProject.projectDir)
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+// Runnable fat JAR (convenience; the prompt only requires the buildable project). Bundles core's classes
+// plus every runtime dependency (libGDX + lwjgl3 + natives) so `java -jar monster-cafe-madness.jar` runs
+// standalone. Runs from rootProject.projectDir (same as `run`) so Gdx.files.internal("...") resolves.
+jar {
+    dependsOn configurations.runtimeClasspath
+    archiveFileName = 'monster-cafe-madness.jar'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'com.micro1.monstercafe.lwjgl3.Lwjgl3Launcher'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    // Strip signature files pulled in from signed dependency jars; otherwise a fat jar fails at launch.
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
