@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "duck-attack"
+version = "0.0.2"
+description = "A small Pygame game similar to Moorhuhn."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Steffen Mueller" }]
+requires-python = ">=3.12"
+dependencies = [
+    # pygame-ce is a drop-in fork of pygame (still `import pygame`) with
+    # wheels for current Python versions.
+    "pygame-ce>=2.5.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+    "ruff>=0.17",
+]
+# Building the Windows/macOS apps (see packaging/).
+package = [
+    "pyinstaller>=6.16",
+    # Lets PyInstaller convert packaging/icon.png to .ico/.icns.
+    "pillow>=11",
+]
+
+[project.scripts]
+duck-attack = "duck_attack.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+duck_attack = ["assets/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
