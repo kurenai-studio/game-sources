@@ -1,0 +1,83 @@
+require "scripts/modules/vectors"
+require "scripts/modules/myMath"
+
+local ballVelocity
+go.property("speed", 60)
+
+-- Constants
+local ACTION_COLLSION = hash("contact_point_response")
+local HASH_WALL_GROUP = hash("wall")
+local HASH_PLATFORM_GROUP = hash("platform")
+local HASH_BLOCK_GROUP = hash("block")
+local BALL_COLLIDER_URL = "#ballCollision"
+
+local dirLeftTop
+local dirRightTop
+local dirLeftBottom
+local dirRightBottom
+
+function init(self)
+	dirLeftTop = vmath.vector3(-1, 1, 0)
+	dirRightTop = vmath.vector3(1, 1, 0)
+	dirLeftBottom = vmath.vector3(-1, -1, 0)
+	dirRightBottom = vmath.vector3(1, -1, 0)
+
+	math.randomseed(os.time())
+	local rndNumber = math.random(1, 2)
+	
+	if rndNumber == 1 then
+		ballVelocity = vmath.vector3(dirLeftTop)
+	elseif rndNumber == 2 then
+		ballVelocity = vmath.vector3(dirRightTop)
+	end
+end
+
+function update(self, dt)
+	local p = go.get_position()
+	local move_amount = ballVelocity * self.speed * dt
+	p = p + move_amount
+	go.set_position(p)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == ACTION_COLLSION then
+		if message.group == HASH_WALL_GROUP or message.group == HASH_PLATFORM_GROUP or message.group == HASH_BLOCK_GROUP then
+			-- Destroy block
+			if message.group == HASH_BLOCK_GROUP then
+				go.delete(message.other_id)
+			end
+			
+			-- Change direction
+			if vectorsSameDirection(ballVelocity, dirLeftTop) then
+				if round(message.normal.x) == 1 then
+					ballVelocity = vmath.vector3(dirRightTop)
+				end
+				if round(message.normal.y) == -1 then
+					ballVelocity = vmath.vector3(dirLeftBottom)
+				end
+			elseif vectorsSameDirection(ballVelocity, dirRightTop) then
+				if round(message.normal.x) == -1 then
+					ballVelocity = vmath.vector3(dirLeftTop)
+				end
+				if round(message.normal.y) == -1 then
+					ballVelocity = vmath.vector3(dirRightBottom)
+				end
+			elseif vectorsSameDirection(ballVelocity, dirLeftBottom) then
+				if round(message.normal.x) == 1 then
+					ballVelocity = vmath.vector3(dirRightBottom)
+				end
+				if round(message.normal.y) == 1 then
+					ballVelocity = vmath.vector3(dirLeftTop)
+				end
+			elseif vectorsSameDirection(ballVelocity, dirRightBottom) then
+				if round(message.normal.x) == -1 then
+					ballVelocity = vmath.vector3(dirLeftBottom)
+				end
+				if round(message.normal.y) == 1 then
+					ballVelocity = vmath.vector3(dirRightTop)
+				end
+			end
+		end
+	end
+end
+

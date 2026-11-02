@@ -1,0 +1,11 @@
+function init(self)
+	local width, height = window.get_size()
+	local scale = 3;
+
+	local newWidth = width * scale
+	local newHeight = height * scale
+
+	local newSize = { width = newWidth, height = newHeight }
+	
+	msg.post("@render:", "resize", newSize )
+end
