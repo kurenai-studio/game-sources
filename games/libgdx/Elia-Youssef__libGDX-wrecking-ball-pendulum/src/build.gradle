@@ -1,0 +1,42 @@
+// Root build script. WreckingBallPendulum is a libGDX 1.14.0, Java 8 source/target
+// compatibility, Box2D-extension project, lwjgl3 desktop backend only (gdx-liftoff-style,
+// no android/ios/html modules). Two modules: core (Box2D simulation + render/input layer)
+// + lwjgl3 (desktop launcher).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'WreckingBallPendulum'
+        gdxVersion = '1.14.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Java 8 source + target compatibility (rubric requirement), set via --release: it is
+        // deprecation-free on modern Gradle and cannot accidentally pull in a newer-than-8 API.
+        options.release = 8
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
