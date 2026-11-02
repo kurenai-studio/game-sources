@@ -1,0 +1,666 @@
+﻿"""State machine. Each state implements enter/handle/update/draw/exit."""
+from __future__ import annotations
+
+import math
+import random
+
+import pygame
+
+from ape_escape.core import constants as C
+from ape_escape.core.input import InputSnapshot
+
+
+class State:
+    def __init__(self, game) -> None:
+        self.game = game
+
+    def enter(self) -> None: ...
+    def exit(self) -> None: ...
+    def handle(self, snapshot: InputSnapshot) -> None: ...
+    def update(self, dt: float) -> None: ...
+    def draw(self, surf: pygame.Surface) -> None: ...
+
+    @property
+    def settings(self):
+        """The game's Settings, or in-memory defaults for harnesses without one."""
+        s = getattr(self.game, "settings", None)
+        if s is None:
+            from ape_escape.data.settings import Settings
+
+            s = Settings()
+            self.game.settings = s
+        return s
+
+    @property
+    def reduced_motion(self) -> bool:
+        return bool(self.settings.reduced_motion)
+
+
+class GameplayState(State):
+    """Base for every playable scene. Esc / P opens the pause menu.
+
+    Subclasses call ``handle_pause`` first in ``handle`` and skip their own
+    input and ``update`` while ``paused`` is True, then call ``draw_pause``
+    at the end of ``draw``. They implement ``restart`` and may override
+    ``on_pause_changed`` / ``on_settings_changed``.
+    """
+
+    def __init__(self, game) -> None:
+        super().__init__(game)
+        self.paused = False
+        self._pause_menu = None
+
+    @property
+    def pause_menu(self):
+        if self._pause_menu is None:
+            from ape_escape.core.pause import PauseMenu
+
+            self._pause_menu = PauseMenu(self.settings)
+        return self._pause_menu
+
+    def set_paused(self, paused: bool) -> None:
+        if paused == self.paused:
+            return
+        self.paused = paused
+        if paused:
+            self.pause_menu.reset()
+        self.on_pause_changed(paused)
+
+    def handle_pause(self, snapshot: InputSnapshot) -> bool:
+        """Route input to the pause menu. Returns True if the frame was consumed."""
+        from ape_escape.core import pause as PM
+
+        if not self.paused:
+            if snapshot.pause:
+                self.set_paused(True)
+                return True
+            return False
+
+        action = self.pause_menu.handle(snapshot)
+        if action == PM.RESUME:
+            self.set_paused(False)
+        elif action == PM.RESTART:
+            self.restart()
+        elif action == PM.QUIT_TO_TITLE:
+            self.game.change_state(TitleState(self.game))
+        elif action == PM.SETTINGS_CHANGED:
+            self.on_settings_changed()
+        return True
+
+    def draw_pause(self, surf: pygame.Surface) -> None:
+        if self.paused:
+            self.pause_menu.draw(surf)
+
+    def restart(self) -> None: ...
+    def on_pause_changed(self, paused: bool) -> None: ...
+    def on_settings_changed(self) -> None: ...
+
+
+# ---------------------------------------------------------------------------
+# Title
+# ---------------------------------------------------------------------------
+
+class TitleState(State):
+    def __init__(self, game) -> None:
+        super().__init__(game)
+        self.font_big = pygame.font.SysFont("arial", 72, bold=True)
+        self.font_med = pygame.font.SysFont("arial", 28)
+        self.font_small = pygame.font.SysFont("arial", 20)
+        self.t = 0.0
+
+    def handle(self, snapshot: InputSnapshot) -> None:
+        if snapshot.confirm or snapshot.start:
+            self.game.change_state(LevelState(self.game))
+        if snapshot.quit:
+            self.game.running = False
+
+    def update(self, dt: float) -> None:
+        self.t += dt
+
+    def draw(self, surf: pygame.Surface) -> None:
+        w, h = surf.get_size()
+        for y in range(h):
+            t = y / h
+            pygame.draw.line(surf, (
+                int(18 * (1 - t) + 10 * t),
+                int(64 * (1 - t) + 40 * t),
+                int(38 * (1 - t) + 22 * t),
+            ), (0, y), (w, y))
+
+        # Animated vine (held still under reduced motion)
+        still = self.reduced_motion
+        sway = 0.0 if still else 6.0
+        vx = w // 2
+        for i in range(8):
+            vy = 80 + i * 28 + int(math.sin(self.t * 1.8 + i * 0.5) * sway)
+            prev_vy = 80 + (i - 1) * 28 + int(math.sin(self.t * 1.8 + (i - 1) * 0.5) * sway)
+            if i > 0:
+                pygame.draw.line(surf, (50, 100, 30), (vx, prev_vy), (vx, vy), 3)
+            pygame.draw.circle(surf, (60, 130, 40), (vx, vy), 4)
+
+        bob = 0 if still else int(math.sin(self.t * 2.0) * 4)
+        title = self.font_big.render("APE ADVENTURE", True, (250, 210, 90))
+        shadow = self.font_big.render("APE ADVENTURE", True, (50, 25, 8))
+        tr = title.get_rect(center=(w // 2, h // 2 - 60 + bob))
+        surf.blit(shadow, tr.move(3, 3))
+        surf.blit(title, tr)
+
+        sub = self.font_med.render("Tangle Jungle — Vertical Slice", True, (180, 230, 150))
+        surf.blit(sub, sub.get_rect(center=(w // 2, tr.bottom + 18)))
+
+        if still or int(self.t * 2) % 2 == 0:
+            prompt = self.font_small.render("Press ENTER or SPACE to play", True, (220, 220, 180))
+            surf.blit(prompt, prompt.get_rect(center=(w // 2, h // 2 + 80)))
+
+        hints = [
+            "Arrows / WASD — Move    Space / Z — Jump (hold for higher)",
+            "Shift — Run    X — Roll attack",
+            "Esc or P in a level: pause menu and settings",
+        ]
+        for i, hint in enumerate(hints):
+            txt = self.font_small.render(hint, True, (140, 180, 120))
+            surf.blit(txt, txt.get_rect(center=(w // 2, h - 80 + i * 26)))
+
+
+# ---------------------------------------------------------------------------
+# Level
+# ---------------------------------------------------------------------------
+
+def world_levels():
+    """The ordered level list for World 1 (the vertical slice)."""
+    from ape_escape.levels.world_data import ALL_WORLDS
+
+    return ALL_WORLDS[0].levels
+
+
+class LevelState(GameplayState):
+    def __init__(self, game, level_index: int = 0) -> None:
+        super().__init__(game)
+        self.level_index = level_index
+        self.level = None
+        self.player = None
+        self.camera = None
+        self.renderer = None
+        self.hud = None
+        self.audio = None
+        self.respawn_timer = 0.0
+        self.banana_count = 0
+        self.aape_collected: set[str] = set()
+        self.level_timer = 0.0
+
+    def enter(self) -> None:
+        from ape_escape.entities.player import Player
+        from ape_escape.core.camera import Camera
+        from ape_escape.render.renderer import Renderer
+        from ape_escape.render.hud import Hud
+        from ape_escape.audio.audio import AudioManager
+
+        self.level = self._load_level()
+        sp = self.level.spawn_point
+        self.player = Player(sp.x, sp.y)
+        self.camera = Camera(self.level.bounds)
+        self.camera.snap_to(pygame.Vector2(sp.x + 14, sp.y + 22))
+        self.renderer = Renderer(self.game.screen)
+        self.hud = Hud()
+        self.audio = AudioManager()
+        self.on_settings_changed()
+        from ape_escape.render.particles import ParticleSystem
+        self.particles = ParticleSystem()
+        # Juice state
+        self._shake_timer:     float = 0.0
+        self._shake_intensity: float = 0.0
+        self._shake_x:         int   = 0
+        self._shake_y:         int   = 0
+        self._hit_pause_timer: float = 0.0
+        self._run_dust_timer:  float = 0.0
+
+    def _load_level(self):
+        """Load this state's authored level from its .tmx, falling back to the
+        hardcoded test playground if the map is missing or fails to parse."""
+        from pathlib import Path
+
+        from ape_escape.levels.level import build_test_level
+
+        entry = world_levels()[self.level_index]
+        levels_dir = Path(__file__).resolve().parent.parent / "levels"
+        tmx_path = levels_dir / entry.tmx_path
+        try:
+            from ape_escape.levels.tilemap import load_tmx
+
+            return load_tmx(tmx_path, level_id=entry.id, music_key=entry.music_key)
+        except Exception as exc:  # missing map, parse error, bad pytmx — stay playable
+            print(f"[level] could not load {tmx_path} ({exc}); using test playground")
+            return build_test_level()
+
+    def exit(self) -> None:
+        if self.audio:
+            self.audio.shutdown()
+
+    # --- Pause menu hooks -------------------------------------------------
+
+    def restart(self) -> None:
+        self.game.change_state(LevelState(self.game, self.level_index))
+
+    def on_pause_changed(self, paused: bool) -> None:
+        if self.audio:
+            self.audio.set_ducked(paused)
+        if not paused and self.player:
+            # Drop any input held when the menu opened.
+            self.player.handle(InputSnapshot())
+
+    def on_settings_changed(self) -> None:
+        s = self.settings
+        if self.audio:
+            self.audio.set_volumes(s.music_volume, s.sfx_volume)
+        if self.hud:
+            self.hud.reduced_motion = s.reduced_motion
+        if s.reduced_motion:
+            self._shake_timer = 0.0
+            self._shake_x = self._shake_y = 0
+
+    # ----------------------------------------------------------------------
+
+    def handle(self, snapshot: InputSnapshot) -> None:
+        if self.handle_pause(snapshot):
+            return
+        if self.player and not self.player.dead:
+            self.player.handle(snapshot)
+
+    def update(self, dt: float) -> None:
+        if self.paused:
+            return
+
+        # --- Screen shake: update offset every frame regardless of pause/freeze ---
+        if self._shake_timer > 0:
+            self._shake_timer = max(0.0, self._shake_timer - dt)
+            fade = self._shake_timer / max(0.001, self._shake_timer + dt)  # decay
+            mag = int(self._shake_intensity * (0.3 + 0.7 * fade))
+            self._shake_x = random.randint(-mag, mag)
+            self._shake_y = random.randint(-mag, mag)
+        else:
+            self._shake_x = 0
+            self._shake_y = 0
+
+        # --- Hit-pause: freeze world updates for a short window ---
+        if self._hit_pause_timer > 0:
+            self._hit_pause_timer = max(0.0, self._hit_pause_timer - dt)
+            return
+
+        self.level_timer += dt
+
+        # Respawn delay
+        if self.respawn_timer > 0:
+            self.respawn_timer -= dt
+            if self.respawn_timer <= 0:
+                self._respawn()
+            return
+
+        prev_on_ground = self.player.on_ground
+        prev_state = self.player.state
+        prev_vy = self.player.velocity.y
+
+        self.player.update(dt, self.level)
+
+        # SFX + particle triggers on state transitions
+        foot_x = self.player.pos.x + self.player.rect.width * 0.5
+        foot_y = self.player.pos.y + self.player.rect.height
+
+        if not prev_on_ground and self.player.on_ground:
+            self.audio.play("land")
+            self.particles.emit("dust", foot_x, foot_y, count=6)
+
+        if prev_state != "jump" and self.player.state == "jump":
+            self.audio.play("jump")
+            self.particles.emit("leaf", foot_x, foot_y, count=4)
+
+        if prev_state != "roll" and self.player.state == "roll":
+            self.audio.play("roll")
+            self.particles.emit("dust", foot_x, foot_y, count=5)
+
+        # Run dust trail
+        if self.player.state == "run":
+            self._run_dust_timer -= dt
+            if self._run_dust_timer <= 0:
+                self.particles.emit("dust", foot_x, foot_y, count=2)
+                self._run_dust_timer = 0.10
+
+        self.particles.update(dt)
+
+        # Update all level entities
+        alive_entities = []
+        for ent in self.level.entities:
+            ent.update(dt, self.level)
+            if getattr(ent, "alive", True):
+                alive_entities.append(ent)
+        self.level.entities = alive_entities
+
+        # Collision checks
+        self._check_vines()
+        self._update_boss_links()
+        self._check_enemy_collisions()
+        self._check_collectible_collisions()
+        self._check_goal_totem()
+
+        # Pit death
+        if self.player.pos.y > self.level.bounds.height + 60:
+            self._trigger_death()
+
+        # Camera
+        self.audio.poll_music()
+        centre = pygame.Vector2(
+            self.player.pos.x + self.player.rect.width * 0.5,
+            self.player.pos.y + self.player.rect.height * 0.5,
+        )
+        self.camera.follow(centre, dt, self.player.facing)
+
+        # HUD update
+        self.hud.update(dt, self.banana_count, self.aape_collected, self.player.health)
+
+    # ------------------------------------------------------------------
+    # Juice helpers
+    # ------------------------------------------------------------------
+
+    def _trigger_shake(self, intensity: float, duration: float) -> None:
+        """Start (or strengthen) a screen-shake effect. Off under reduced motion."""
+        if self.reduced_motion:
+            return
+        if intensity >= self._shake_intensity or self._shake_timer <= 0:
+            self._shake_intensity = intensity
+            self._shake_timer = duration
+
+    def _trigger_hit_pause(self, duration: float = 0.055) -> None:
+        """Freeze game updates for *duration* seconds (a few frames)."""
+        self._hit_pause_timer = max(self._hit_pause_timer, duration)
+
+    # ------------------------------------------------------------------
+
+    def _check_vines(self) -> None:
+        """Grab a vine when the player's grip passes close to one in mid-air."""
+        from ape_escape.entities.props.vine import Vine
+
+        p = self.player
+        if p.dead or p.vine is not None:
+            return
+        grip = p.grip_point()
+        for ent in self.level.entities:
+            if isinstance(ent, Vine) and p.can_grab(ent):
+                radius = ent.grab_check(grip)
+                if radius is not None:
+                    p.attach_to_vine(ent, radius)
+                    self.audio.play("land")
+                    self.particles.emit("leaf", grip.x, grip.y, count=5)
+                    return
+
+    def _update_boss_links(self) -> None:
+        """Feed the boss the player's position, juice his wall crashes, and
+        reveal a boss-locked goal totem once no boss is left standing."""
+        from ape_escape.entities.enemies.king_saurus import KingSaurus
+        from ape_escape.entities.collectibles.goal_totem import GoalTotem
+
+        boss_alive = False
+        for ent in self.level.entities:
+            if isinstance(ent, KingSaurus):
+                boss_alive = True
+                ent.target_x = self.player.rect.centerx
+                if ent.crashed:
+                    ent.crashed = False
+                    self.audio.play("stomp_enemy")
+                    self._trigger_shake(6.0, 0.30)
+                    self.particles.emit("dust", float(ent.rect.centerx), float(ent.rect.bottom), count=10)
+        if boss_alive:
+            return
+        for ent in self.level.entities:
+            if isinstance(ent, GoalTotem) and ent.locked:
+                ent.locked = False
+                self.audio.play("extra_life")
+                self.particles.emit("sparkle", float(ent.rect.centerx), float(ent.rect.centery), count=16)
+
+    def _check_enemy_collisions(self) -> None:
+        from ape_escape.entities.enemies.enemy import Enemy
+
+        pr = self.player.rect
+        for ent in self.level.entities:
+            if not isinstance(ent, Enemy):
+                continue
+            if getattr(ent, "_dying", False):
+                continue
+            if not pr.colliderect(ent.rect):
+                continue
+
+            # Stomp: player falling and landing on top half of enemy
+            stomping = (
+                self.player.velocity.y > 80
+                and pr.bottom <= ent.rect.centery + 12
+            )
+            rolling = self.player.rolling_timer > 0
+
+            if stomping:
+                if ent.on_stomp():
+                    self._enemy_hit_fx(ent)
+                self.player.velocity.y = ent.STOMP_BOUNCE  # bounce up
+                continue
+            if rolling and ent.on_roll():
+                self._enemy_hit_fx(ent)
+                continue
+            if not ent.harmful:
+                continue
+            if self.player.invuln_timer <= 0:
+                self.player.health -= 1
+                self.player.invuln_timer = C.PLAYER_INVULN_AFTER_HIT
+                self.audio.play("player_hurt")
+                self._trigger_hit_pause(0.07)
+                self._trigger_shake(5.0, 0.35)
+                # Knock back
+                kb_dir = 1 if self.player.pos.x < ent.rect.centerx else -1
+                self.player.velocity.x = -kb_dir * 180
+                self.player.velocity.y = -250
+                if self.player.health <= 0:
+                    self._trigger_death(play_hurt_sound=False)
+
+    def _enemy_hit_fx(self, ent) -> None:
+        self.audio.play("stomp_enemy")
+        self._trigger_hit_pause(0.055)
+        self._trigger_shake(3.0, 0.18)
+        self.particles.emit("puff", float(ent.rect.centerx), float(ent.rect.centery), count=7)
+
+    def _check_collectible_collisions(self) -> None:
+        from ape_escape.entities.collectibles.banana import Banana
+        from ape_escape.entities.collectibles.aape_letter import AapeLetter
+
+        pr = self.player.rect
+        for ent in self.level.entities:
+            if isinstance(ent, Banana) and not ent.collected and pr.colliderect(ent.rect):
+                ent.collected = True
+                self.banana_count += 1
+                self.audio.play("collect_banana")
+                self.particles.emit("sparkle", float(ent.rect.centerx), float(ent.rect.centery), count=6)
+                if self.banana_count % 100 == 0:
+                    self.player.health = min(self.player.health + 1, C.PLAYER_MAX_HEALTH)
+                    self.audio.play("extra_life")
+
+            elif isinstance(ent, AapeLetter) and not ent.collected and pr.colliderect(ent.rect):
+                ent.collected = True
+                self.aape_collected.add(ent.letter)
+                self.audio.play("collect_letter")
+                self.particles.emit("sparkle", float(ent.rect.centerx), float(ent.rect.centery), count=12)
+                if len(self.aape_collected) == 4:
+                    self.player.health = min(self.player.health + 1, C.PLAYER_MAX_HEALTH)
+                    self.audio.play("extra_life")
+
+    def _check_goal_totem(self) -> None:
+        from ape_escape.entities.collectibles.goal_totem import GoalTotem
+
+        for ent in self.level.entities:
+            if isinstance(ent, GoalTotem) and not ent.touched and not ent.locked:
+                if self.player.rect.colliderect(ent.rect):
+                    ent.touched = True
+                    self.audio.play("goal_totem")
+                    # Persist the clear — get back "new record" flags
+                    rec_flags = self.game.save.record_clear(
+                        self.level.level_id,
+                        self.level_timer,
+                        self.banana_count,
+                        self.aape_collected,
+                    )
+                    results = {
+                        "level_id": self.level.level_id,
+                        "bananas": self.banana_count,
+                        "total_bananas": self.level.total_bananas,
+                        "aape": self.aape_collected,
+                        "time": self.level_timer,
+                        "aape_complete": len(self.aape_collected) == 4,
+                        "new_time": rec_flags["new_time"],
+                        "new_bananas": rec_flags["new_bananas"],
+                        "best_time": self.game.save.best_time(self.level.level_id),
+                        "level_index": self.level_index,
+                    }
+                    self.game.change_state(ResultsState(self.game, results))
+
+    def _trigger_death(self, play_hurt_sound: bool = True) -> None:
+        if self.player.dead:
+            return
+        self.player.dead = True
+        self.player.health = 0
+        self.player.reset_posture()
+        self.player.velocity = pygame.Vector2(0, 0)
+        self.player.rolling_timer = 0.0
+        self.player.jump_buffer_timer = 0.0
+        self.player.roll_buffer_timer = 0.0
+        self.player.coyote_timer = 0.0
+        if play_hurt_sound:
+            self.audio.play("player_hurt")
+        self._trigger_shake(7.0, 0.50)
+        self.respawn_timer = 1.2
+
+    def _respawn(self) -> None:
+        sp = self.level.spawn_point
+        self.player.reset_posture()
+        self.player.pos = pygame.Vector2(sp)
+        self.player.rect.topleft = (int(sp.x), int(sp.y))
+        self.player.velocity = pygame.Vector2(0, 0)
+        self.player.health = C.PLAYER_MAX_HEALTH
+        self.player.on_ground = False
+        self.player.dead = False
+        self.player.state = "idle"
+        self.player.rolling_timer = 0.0
+        self.player.jump_buffer_timer = 0.0
+        self.player.roll_buffer_timer = 0.0
+        self.player.coyote_timer = 0.0
+        self.player.run_buildup = 0.0
+        self.player.invuln_timer = 1.5
+        self.player.handle(InputSnapshot())
+        self.camera.snap_to(pygame.Vector2(sp.x + 14, sp.y + 22))
+
+    def draw(self, surf: pygame.Surface) -> None:
+        self.renderer.draw_frame(
+            self.level, self.camera,
+            [self.player] + self.level.entities,
+            particles=self.particles,
+            shake=(self._shake_x, self._shake_y),
+        )
+        self.hud.draw(surf)
+        self.draw_pause(surf)
+
+
+# ---------------------------------------------------------------------------
+# Results
+# ---------------------------------------------------------------------------
+
+class ResultsState(State):
+    def __init__(self, game, results: dict) -> None:
+        super().__init__(game)
+        self.results = results
+        self.t = 0.0
+        self.font_big = pygame.font.SysFont("arial", 52, bold=True)
+        self.font_med = pygame.font.SysFont("arial", 28)
+        self.font_small = pygame.font.SysFont("arial", 20)
+
+    @property
+    def next_level_index(self) -> int | None:
+        """Index of the level that follows, or None after the world's last level."""
+        nxt = self.results.get("level_index", 0) + 1
+        return nxt if nxt < len(world_levels()) else None
+
+    def handle(self, snapshot: InputSnapshot) -> None:
+        if snapshot.confirm or snapshot.start:
+            nxt = self.next_level_index
+            if nxt is None:
+                self.game.change_state(TitleState(self.game))
+            else:
+                self.game.change_state(LevelState(self.game, nxt))
+
+    def update(self, dt: float) -> None:
+        self.t += dt
+
+    def draw(self, surf: pygame.Surface) -> None:
+        w, h = surf.get_size()
+
+        # Dark overlay with jungle tint
+        surf.fill((12, 34, 20))
+        for y in range(h):
+            t = y / h
+            pygame.draw.line(surf, (
+                int(12 + 8 * t), int(34 + 20 * t), int(20 + 10 * t)
+            ), (0, y), (w, y))
+
+        # Title
+        still = self.reduced_motion
+        bob = 0 if still else int(math.sin(self.t * 2.0) * 3)
+        world_clear = self.next_level_index is None
+        title = self.font_big.render("WORLD CLEAR!" if world_clear else "LEVEL CLEAR!", True, (250, 210, 90))
+        surf.blit(title, title.get_rect(center=(w // 2, 80 + bob)))
+
+        r = self.results
+        mins = int(r["time"]) // 60
+        secs = int(r["time"]) % 60
+        aape_display = "COMPLETE!" if r["aape_complete"] else f"{len(r['aape'])} / 4"
+        lines = [
+            (f"Time:     {mins:02d}:{secs:02d}", (200, 230, 200), r.get("new_time", False)),
+            (f"Bananas:  {r['bananas']} / {r['total_bananas']}", (255, 220, 70), r.get("new_bananas", False)),
+            (f"AAPE:     {aape_display}", (250, 200, 60) if r["aape_complete"] else (160, 130, 60), False),
+        ]
+
+        font_nr = pygame.font.SysFont("arial", 16, bold=True)
+        for i, (line, col, is_new) in enumerate(lines):
+            txt = self.font_med.render(line, True, col)
+            rect = txt.get_rect(center=(w // 2, 180 + i * 52))
+            surf.blit(txt, rect)
+            if is_new:
+                badge = font_nr.render("★ NEW BEST", True, (255, 230, 80))
+                surf.blit(badge, badge.get_rect(midleft=(rect.right + 12, rect.centery)))
+
+        # AAPE letter display
+        letter_chars = ("A", "A", "P", "E")
+        letter_keys = ("A1", "A2", "P", "E")
+        lx = w // 2 - 80
+        for key, char in zip(letter_keys, letter_chars):
+            collected = key in r["aape"]
+            col = (250, 200, 60) if collected else (60, 50, 30)
+            pts = [(lx + 20, 340), (lx + 36, 356), (lx + 20, 372), (lx + 4, 356)]
+            pygame.draw.polygon(surf, col, pts)
+            pygame.draw.polygon(surf, (200, 160, 40) if collected else (80, 65, 35), pts, 2)
+            lbl = self.font_small.render(char, True, (40, 20, 8) if collected else (100, 80, 40))
+            surf.blit(lbl, lbl.get_rect(center=(lx + 20, 356)))
+            lx += 44
+
+        if still or int(self.t * 2) % 2 == 0:
+            if world_clear:
+                msg = "Tangle Jungle cleared! Press ENTER to return to title"
+            else:
+                nxt = world_levels()[self.next_level_index]
+                msg = f"Press ENTER for {nxt.id} {nxt.name}"
+            prompt = self.font_small.render(msg, True, (180, 220, 160))
+            surf.blit(prompt, prompt.get_rect(center=(w // 2, h - 60)))
+
+
+# ---------------------------------------------------------------------------
+# Placeholder states for later phases
+# ---------------------------------------------------------------------------
+
+class WorldMapState(State):
+    """World node map — Phase 1.3."""
+
+
+class PauseState(State):
+    """Unused placeholder. The pause menu is an overlay owned by GameplayState
+    (see core/pause.py), so gameplay keeps its world state while paused."""
