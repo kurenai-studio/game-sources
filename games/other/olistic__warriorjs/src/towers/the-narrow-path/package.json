@@ -1,0 +1,40 @@
+{
+  "name": "@warriorjs/tower-the-narrow-path",
+  "version": "0.13.0",
+  "description": "The Narrow Path",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/towers/the-narrow-path",
+  "keywords": [
+    "warriorjs-tower"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@warriorjs/abilities": "workspace:^",
+    "@warriorjs/core": "workspace:^",
+    "@warriorjs/spatial": "workspace:^",
+    "@warriorjs/units": "workspace:^"
+  }
+}

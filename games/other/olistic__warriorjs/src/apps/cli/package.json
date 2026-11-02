@@ -1,0 +1,69 @@
+{
+  "name": "@warriorjs/cli",
+  "version": "0.14.0",
+  "description": "WarriorJS command line",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/apps/cli",
+  "type": "module",
+  "keywords": [
+    "warriorjs",
+    "warriorjs-cli",
+    "warrior",
+    "epic",
+    "battle",
+    "game",
+    "learn",
+    "polish",
+    "refine",
+    "test",
+    "js",
+    "javascript",
+    "nodejs",
+    "ai",
+    "artificial-intelligence",
+    "skills"
+  ],
+  "bin": {
+    "warriorjs": "./bin/warriorjs.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "dist/cli.js",
+  "exports": {
+    ".": {
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
+    }
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "ink-testing-library": "^4.0.0",
+    "memfs": "^4.56.11"
+  },
+  "dependencies": {
+    "@warriorjs/abilities": "workspace:^",
+    "@warriorjs/core": "workspace:^",
+    "@warriorjs/scoring": "workspace:^",
+    "@warriorjs/tower-the-narrow-path": "workspace:^",
+    "citty": "^0.2.1",
+    "find-up": "^7.0.0",
+    "globby": "^14.0.0",
+    "ink": "^6.8.0",
+    "ink-link": "^5.0.0",
+    "react": "^19.2.4"
+  }
+}
