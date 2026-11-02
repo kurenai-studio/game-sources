@@ -1,0 +1,62 @@
+<style>
+	body {
+		background-color: #ffd;
+	}
+</style>
+<div>
+	<input type="number" id="m" min="1" max="20" step="1" value="6">
+	<input type="number" id="n" min="1" max="20" step="1" value="6">
+	<input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5">
+</div>
+<canvas></canvas>
+<canvas id="x"></canvas>
+<canvas></canvas>
+<canvas></canvas>
+<script src="../docs/nonogram.js"></script>
+<script>
+function $(selector) {
+  return document.querySelector(selector)
+}
+function $$(selector) {
+  return document.querySelectorAll(selector)
+}
+var canvases = $$('canvas')
+function newCustomNonogram() {
+  new nonogram.Editor(
+    parseInt($('#m').value),
+    parseInt($('#n').value),
+    canvases[0],
+    {
+      threshold: parseFloat($('#threshold').value),
+      onHintChange: function (row, column) {
+        new nonogram.Game(row, column, 'x', {
+          theme: {
+            boldMeshGap: 0,
+          },
+          onSuccess: function () {
+            console.log('success')
+          },
+          onAnimationEnd: function () {
+            console.log('animation end')
+          }
+        })
+        new nonogram.Solver(row, column, canvases[2], {
+          delay: 200,
+          onSuccess: function (time) {
+            console.log(time)
+          },
+        }).solve()
+        new nonogram.Solver(row.slice(0, 5), column, canvases[3], {
+          onError: function (err) {
+            console.log(err.message)
+          },
+        }).solve()
+      },
+    }
+  )
+}
+$('#m').addEventListener('change', newCustomNonogram)
+$('#n').addEventListener('change', newCustomNonogram)
+$('#threshold').addEventListener('change', newCustomNonogram)
+newCustomNonogram()
+</script>
