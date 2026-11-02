@@ -1,0 +1,231 @@
+[gd_scene load_steps=11 format=1]
+
+[ext_resource path="res://Defendiloj/Pistoloj/Lasero/Lasero.gd" type="Script" id=1]
+[ext_resource path="res://Defendiloj/Pistoloj/Lasero/lasero_elektajxo.png" type="Texture" id=2]
+[ext_resource path="res://Defendiloj/Pistoloj/Lasero/lasero.png" type="Texture" id=3]
+[ext_resource path="res://Defendiloj/Pistoloj/Lasero/lasero_enreta.png" type="Texture" id=4]
+[ext_resource path="res://Defendiloj/Pistoloj/Kanono/gamo.png" type="Texture" id=5]
+[ext_resource path="res://Tiparoj/jomhuria.fnt" type="BitmapFont" id=6]
+[ext_resource path="res://Defendiloj/Pistoloj/Lasero/fajro.ogg" type="AudioStream" id=7]
+
+[sub_resource type="CircleShape2D" id=1]
+
+custom_solver_bias = 0.0
+radius = 1774.55
+
+[sub_resource type="RectangleShape2D" id=2]
+
+custom_solver_bias = 0.0
+extents = Vector2( 129.202, 139.615 )
+
+[sub_resource type="GDScript" id=3]
+
+script/source = "extends Area2D
+
+var tipo = \"Lasero\""
+
+[node name="Lasero" type="Node2D"]
+
+transform/rot = -90.0
+script/script = ExtResource( 1 )
+
+[node name="Elektumo" type="Sprite" parent="."]
+
+texture = ExtResource( 2 )
+
+[node name="Lasero" type="Node2D" parent="."]
+
+[node name="Sprite" type="Sprite" parent="Lasero"]
+
+texture = ExtResource( 3 )
+
+[node name="Laserradiujo" type="Node2D" parent="Lasero"]
+
+transform/pos = Vector2( 0, -230 )
+
+[node name="Enreta" type="Sprite" parent="Lasero"]
+
+texture = ExtResource( 4 )
+
+[node name="Area2D" type="Area2D" parent="."]
+
+transform/rot = 8.14222e-13
+input/pickable = true
+shapes/0/shape = SubResource( 1 )
+shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
+shapes/0/trigger = true
+gravity_vec = Vector2( 0, 0 )
+gravity = 0.0
+linear_damp = 0.1
+angular_damp = 1.0
+collision/layers = 2
+collision/mask = 7
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+
+shape = SubResource( 1 )
+trigger = true
+_update_shape_index = 0
+
+[node name="Limo" type="Sprite" parent="Area2D"]
+
+visibility/behind_parent = true
+transform/scale = Vector2( 4, 4 )
+texture = ExtResource( 5 )
+
+[node name="Reta" type="Area2D" parent="."]
+
+input/pickable = true
+shapes/0/shape = SubResource( 2 )
+shapes/0/transform = Matrix32( 1, 0, 0, 0.924594, 0, 15.032 )
+shapes/0/trigger = false
+gravity_vec = Vector2( 0, 0 )
+gravity = 0.0
+linear_damp = 0.1
+angular_damp = 1.0
+collision/layers = 2
+collision/mask = 1024
+script/script = SubResource( 3 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Reta"]
+
+transform/pos = Vector2( 0, 15.032 )
+transform/scale = Vector2( 1, 0.924594 )
+shape = SubResource( 2 )
+trigger = false
+_update_shape_index = 0
+
+[node name="Fiksata" type="Node2D" parent="."]
+
+[node name="Nivelo" type="Label" parent="."]
+
+anchor/right = 1
+anchor/bottom = 1
+rect/rotation = 90.0
+rect/scale = Vector2( 1.8, 1.8 )
+focus/ignore_mouse = true
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 0
+margin/left = -128.0
+margin/top = 144.0
+margin/right = 45.0
+margin/bottom = -224.0
+custom_fonts/font = ExtResource( 6 )
+text = "999"
+align = 1
+valign = 1
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="Strategio" type="Node2D" parent="."]
+
+editor/display_folded = true
+transform/pos = Vector2( -833.333, 433.333 )
+transform/rot = 90.0
+transform/scale = Vector2( 2, 2 )
+
+[node name="Nova" type="Button" parent="Strategio"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = -8.0
+margin/top = -84.0
+margin/right = 459.0
+margin/bottom = 76.0
+custom_fonts/font = ExtResource( 6 )
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+text = "Nova"
+flat = false
+
+[node name="MalNova" type="Button" parent="Strategio"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = -8.0
+margin/top = 116.0
+margin/right = 459.0
+margin/bottom = 276.0
+custom_fonts/font = ExtResource( 6 )
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+text = "MalNova"
+flat = false
+
+[node name="Forta" type="Button" parent="Strategio"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = -8.0
+margin/top = 545.0
+margin/right = 459.0
+margin/bottom = 705.0
+custom_fonts/font = ExtResource( 6 )
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+text = "Forta"
+flat = false
+
+[node name="MalForta" type="Button" parent="Strategio"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = -8.0
+margin/top = 745.0
+margin/right = 459.0
+margin/bottom = 905.0
+custom_fonts/font = ExtResource( 6 )
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+text = "MalForta"
+flat = false
+
+[node name="LongFrapeti" type="Timer" parent="."]
+
+process_mode = 1
+wait_time = 0.3
+one_shot = true
+autostart = false
+
+[node name="Fajro" type="StreamPlayer" parent="."]
+
+stream/stream = ExtResource( 7 )
+stream/play = false
+stream/loop = false
+stream/volume_db = -8.14
+stream/autoplay = false
+stream/paused = false
+stream/loop_restart_time = 0.0
+stream/buffering_ms = 500
+
+[connection signal="body_enter" from="Area2D" to="." method="_on_Area2D_body_enter"]
+
+[connection signal="body_exit" from="Area2D" to="." method="_on_Area2D_body_exit"]
+
+[connection signal="input_event" from="Reta" to="." method="_on_Reta_input_event"]
+
+[connection signal="button_up" from="Strategio/Nova" to="." method="_on_Nova_button_up"]
+
+[connection signal="button_up" from="Strategio/MalNova" to="." method="_on_MalNova_button_up"]
+
+[connection signal="button_up" from="Strategio/Forta" to="." method="_on_Forta_button_up"]
+
+[connection signal="button_up" from="Strategio/MalForta" to="." method="_on_MalForta_button_up"]
+
+[connection signal="timeout" from="LongFrapeti" to="." method="_on_LongFrapeti_timeout"]
+
+

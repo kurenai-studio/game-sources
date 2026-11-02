@@ -1,0 +1,152 @@
+[gd_scene load_steps=7 format=1]
+
+[ext_resource path="res://Malamikoj/Malamiko.gd" type="Script" id=1]
+[ext_resource path="res://Malamikoj/malamiko_1.png" type="Texture" id=2]
+[ext_resource path="res://Malamikoj/partiklo.png" type="Texture" id=3]
+
+[sub_resource type="ConvexPolygonShape2D" id=1]
+
+custom_solver_bias = 0.0
+points = Vector2Array( 110.417, -31.25, 70.8333, 97.9167, -66.6667, 97.9167, -106.25, -29.1667, 2.08333, -110.417 )
+
+[sub_resource type="GDScript" id=2]
+
+script/source = "extends KinematicBody2D
+
+var tipo = 1"
+
+[sub_resource type="CircleShape2D" id=3]
+
+custom_solver_bias = 0.0
+radius = 400.78
+
+[node name="Malamiko_1_" type="Node2D"]
+
+transform/scale = Vector2( 0.4, 0.4 )
+script/script = ExtResource( 1 )
+
+[node name="Malamiko" type="KinematicBody2D" parent="."]
+
+transform/rot = -4.07111e-13
+input/pickable = false
+shapes/0/shape = SubResource( 1 )
+shapes/0/transform = Matrix32( 1.2, 7.10542e-15, -7.10542e-15, 1.2, 0, 0 )
+shapes/0/trigger = false
+collision/layers = 4
+collision/mask = 4097
+collision/margin = 0.08
+script/script = SubResource( 2 )
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Malamiko"]
+
+transform/rot = -3.39259e-13
+transform/scale = Vector2( 1.2, 1.2 )
+build_mode = 0
+polygon = Vector2Array( 2.08333, -110.417, -106.25, -29.1667, -66.6667, 97.9167, 70.8333, 97.9167, 110.417, -31.25 )
+shape_range = Vector2( 0, 0 )
+trigger = false
+
+[node name="Sprite" type="Sprite" parent="Malamiko"]
+
+transform/rot = -3.39259e-13
+transform/scale = Vector2( 1.2, 1.2 )
+texture = ExtResource( 2 )
+
+[node name="Area2D" type="Area2D" parent="Malamiko"]
+
+transform/rot = 8.14222e-13
+input/pickable = true
+shapes/0/shape = SubResource( 3 )
+shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
+shapes/0/trigger = false
+gravity_vec = Vector2( 0, 0 )
+gravity = 0.0
+linear_damp = 0.1
+angular_damp = 1.0
+collision/layers = 4
+collision/mask = 2051
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Malamiko/Area2D"]
+
+shape = SubResource( 3 )
+trigger = false
+_update_shape_index = 0
+
+[node name="Vivo_P" type="Polygon2D" parent="Malamiko"]
+
+transform/pos = Vector2( 2.27374e-13, 32.4999 )
+transform/rot = 8.14222e-13
+polygon = Vector2Array( -166.667, 166.667, -166.667, 133.333, 166.667, 133.333, 166.667, 166.667 )
+uv = Vector2Array(  )
+color = Color( 1, 0.4, 0, 1 )
+vertex_colors = ColorArray(  )
+offset = Vector2( 0, 0 )
+texture/texture = null
+texture/offset = Vector2( 0, 0 )
+texture/scale = Vector2( 1, 1 )
+texture/rotation = 0.0
+invert/enable = false
+invert/border = 100.0
+
+[node name="Efekto" type="Tween" parent="Malamiko"]
+
+playback/process_mode = 1
+playback/active = false
+playback/repeat = false
+playback/speed = 1.0
+
+[node name="Partiklo" type="Particles2D" parent="Malamiko"]
+
+transform/pos = Vector2( -50, 177.5 )
+transform/rot = -3.39259e-13
+config/amount = 16
+config/lifetime = 0.25
+config/process_mode = 1
+config/half_extents = Vector2( 2, 1 )
+config/texture = ExtResource( 3 )
+params/direction = 0.0
+params/spread = 16.36
+params/linear_velocity = 900.0
+params/spin_velocity = 0.0
+params/orbit_velocity = 0.0
+params/gravity_direction = 0.0
+params/gravity_strength = 0.0
+params/radial_accel = 0.0
+params/tangential_accel = 0.0
+params/damping = 0.0
+params/initial_angle = 0.0
+params/initial_size = 1.5
+params/final_size = 0.0
+params/hue_variation = 0.0
+params/anim_speed_scale = 1.0
+params/anim_initial_pos = 0.0
+
+[node name="Partiklo2" type="Particles2D" parent="Malamiko"]
+
+transform/pos = Vector2( 50, 177.5 )
+transform/rot = -3.39259e-13
+config/amount = 16
+config/lifetime = 0.25
+config/process_mode = 1
+config/half_extents = Vector2( 2, 1 )
+config/texture = ExtResource( 3 )
+params/direction = 0.0
+params/spread = 16.36
+params/linear_velocity = 900.0
+params/spin_velocity = 0.0
+params/orbit_velocity = 0.0
+params/gravity_direction = 0.0
+params/gravity_strength = 0.0
+params/radial_accel = 0.0
+params/tangential_accel = 0.0
+params/damping = 0.0
+params/initial_angle = 0.0
+params/initial_size = 1.5
+params/final_size = 0.0
+params/hue_variation = 0.0
+params/anim_speed_scale = 1.0
+params/anim_initial_pos = 0.0
+
+[connection signal="tween_complete" from="Malamiko/Efekto" to="." method="_on_Efekto_tween_complete"]
+
+
