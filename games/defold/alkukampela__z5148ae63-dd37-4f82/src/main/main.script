@@ -1,0 +1,46 @@
+local function get_topscore(self, score)
+	if score > self.topscore then
+		self.topscore = score
+	end
+	return self.topscore
+end
+
+local function update_score(self, amount) 
+	if self.stopped == false then
+		self.score = self.score + amount
+		msg.post("ui#gui", "set_score", { score = self.score})
+	end
+end
+
+local function do_game_over_things(self)
+	self.stopped = true
+	
+	msg.post("/main#game_over_sound", "play_sound")
+	msg.post("ui#gui", "game_over", { score = self.score, 
+										topscore = get_topscore(self, self.score)
+									})
+	msg.post("spawner#spawner", "stop")
+	msg.post("spawner#spawner", "remove_all_enemies")
+	msg.post("spawner#humppa", "stop_sound")
+end
+
+function init(self)
+	self.score = 0
+	self.topscore = 0
+	self.stopped = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("out_of_bounds") then
+		do_game_over_things(self)
+	elseif message_id == hash("wrong_collision") then
+		do_game_over_things(self)
+	elseif message_id == hash("add_score") then
+		update_score(self, message.points)
+	elseif message_id == hash("new_game") then
+		self.stopped = false
+		self.score = 0
+		msg.post("ui#gui", "set_score", { score = self.score })
+		msg.post("spawner#spawner", "start")
+	end
+end
