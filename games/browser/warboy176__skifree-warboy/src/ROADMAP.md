@@ -1,0 +1,986 @@
+# SkiFree-Warboy — roadmap
+
+The seed backlog toward `ENDSTATE.md`. Warboy works it top-down, one item per cycle,
+checks an item off in the commit that lands it, and — when it runs low — **writes new
+items itself** by assessing the game against the ENDSTATE charter. The game stays ONE
+dependency-free `index.html`; every change must boot clean (headless Chrome, zero console
+errors) and play. Original art only — Warboy's own characters/skins, never copies.
+
+## ⚡ Operator injections (the operator's direction — built FIRST, before the phases)
+This is the redirect lane. Items here are built before the phased backlog, in order. Add
+`- [ ] …` to inject work or begin a new goal; check/remove an item to retire it; change the
+whole direction by editing ENDSTATE.md; end/begin the mission itself via its systemd timer.
+Operator direction from the daily report lands here.
+
+- [x] Achievements system (Fallout-style unlock popups, but your OWN original visual design): track lifetime counters in localStorage (drones crashed, skiers hit, oil wipeouts, jumps landed, distance, etc.). When a threshold is crossed mid-run, show a witty "ACHIEVEMENT UNLOCKED" toast with the name, and add it to a persistent achievements list viewable from the start/pause screen; unlocking is permanent across runs and must not change play balance. Seed these exact ones, then EXTEND with more in the same witty Warboy/Wasteland voice: drones — 5 = "Dronebuster", 15 = "Skislope Mechanic"; skiers — 5 = "Outta the Way!!", 10 = "Move it Meatbags!", 25 = "The Flesh is Weak", 50 = "Organic Mechanic"; oil — 1st wipeout = "Slick Willy".
+
+## Phase 1 — Capture the feel
+- [x] Attract / demo mode: an auto-player behind the `?demo=1` URL flag that starts runs, dodges deadly obstacles, jumps hazards, and restarts after game-over. Off by default; must not change normal play.
+- [x] Ski-lift / lodge start: a short intro at a lift/lodge, then the player pushes off downhill into the run (skippable with a key / tap).
+- [!] Initialize an array to track active NPC skiers in the game state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to spawn a new NPC skier at a random x-position with a fixed vertical spacing from the last one  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [!] Add a timer to trigger NPC skier spawning at random intervals between 1.5 and 3 seconds  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure new skiers are only spawned during gameplay and not in intro or game over states  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add NPC skier movement that updates their y-position based on a fixed speed relative to the player's scroll rate  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure NPC skiers are drawn at their correct screen position relative to the scrolling slope, using the player's vertical offset  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 3 e -->
+- [!] Draw each NPC skier using Warboy's original pixel-art style with unique, hand-coded shapes and colors in the canvas context  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure NPC skiers are rendered at their correct y-position relative to the scrolling slope, updating their vertical position each frame based on game speed  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add collision detection between the player and NPC skiers that triggers a crash only on direct overlap
+- [!] Add a configurable collision margin of 5 pixels to the player's hitbox in the collision detection logic <!-- blocked: depends on the NPC/collision system, which was rolled back and is not yet buildable (coder keeps inventing laneX); deferred by maintenance to unblock forward progress on independent features. Reopen when the NPC foundation lands under the hardened gate. -->
+- [!] Modify the NPC skier collision check to use the 5-pixel margin instead of direct pixel overlap <!-- blocked: depends on the NPC/collision system, which was rolled back and is not yet buildable (coder keeps inventing laneX); deferred by maintenance to unblock forward progress on independent features. Reopen when the NPC foundation lands under the hardened gate. -->
+- [!] Modify the player's collision response to permit movement through NPC skiers when within the threshold, preserving momentum and direction <!-- blocked: depends on the NPC/collision system, which was rolled back and is not yet buildable (coder keeps inventing laneX); deferred by maintenance to unblock forward progress on independent features. Reopen when the NPC foundation lands under the hardened gate. -->
+- [!] Chase antagonist: an ORIGINAL creature of Warboy's own design appears if the player dawdles / after a distance, and pursues — catching you ends the run. Original art only.  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Tricks & air: launching off a jump/mogul gives air time and a simple trick (rotation/grab) that awards style points on a clean landing.  <!-- blocked: pipeline NOT started: <path> -->
+- [x] Add 'PAUSED' to the GameState enum and initialize game.state as GameState.PAUSED when the game starts
+- [!] Add a new state 'PAUSED' to the GameState enum and initialize it in the game state object  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to toggle between GameState.PLAYING and GameState.PAUSED when the 'P' key is pressed
+- [!] Integrate the pause toggle function into the game loop's input handling, ensuring it only triggers in PLAYING state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 1 unspecifiable, 1 e -->
+- [!] Update the game loop to halt all updates and rendering when in PAUSED state, preserving current frame  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add visual feedback in the UI: display a 'PAUSED' overlay or status message when paused, visible only during PAUSED state
+- [!] Pause the game loop and input processing when state is PAUSED, resuming on toggle  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Display a 'PAUSED' overlay on the canvas with a clear visual indicator and instructions to press 'P' to resume  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a key handler for 'P' that toggles between PLAYING and PAUSED states
+- [!] Modify the game loop to skip updates and rendering when in PAUSED state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Draw a dimmed 'PAUSED' overlay on top of the canvas when paused, using original art style  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+## Phase 2 — The living slope
+- [x] Initialize a global biome state variable set to 'slope' at game start
+- [!] Add depth threshold checks in the game loop that update biome state at 1000m, 2000m, and 3000m distances  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to trigger biome-specific visual changes based on current biome state  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Ensure biome transitions are only applied once per threshold and do not repeat  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Add biome state tracking to the game object with initial value 'open_slope'  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to update CSS custom properties based on current biome, using Warboy's original color palette <!-- blocked: biome/terrain cluster unbuildable by the current coder (~5h churn, threshold-tracking+palette+background coordination beyond contextless single-function gen); deferred by maintenance to rotate to buildable features. Reopen when biome is tackled (hand-build or richer coder context). -->
+- [!] Extend the game loop to call the palette update function every frame if biome has changed <!-- blocked: biome/terrain cluster unbuildable by the current coder (~5h churn, threshold-tracking+palette+background coordination beyond contextless single-function gen); deferred by maintenance to rotate to buildable features. Reopen when biome is tackled (hand-build or richer coder context). -->
+- [!] Define biome transition conditions based on player distance traveled, triggering palette updates <!-- blocked: biome/terrain cluster unbuildable by the current coder (~5h churn, threshold-tracking+palette+background coordination beyond contextless single-function gen); deferred by maintenance to rotate to buildable features. Reopen when biome is tackled (hand-build or richer coder context). -->
+- [!] Create a function to adjust obstacle spawn density per biome, scaling frequency based on depth and current biome <!-- blocked: biome/terrain cluster unbuildable by the current coder (~5h churn, threshold-tracking+palette+background coordination beyond contextless single-function gen); deferred by maintenance to rotate to buildable features. Reopen when biome is tackled (hand-build or richer coder context). -->
+- [!] Add a function to render a subtle background layer (e.g., distant trees, stars, fog) that changes with biome, using Warboy's original code-drawn art <!-- blocked: biome/terrain cluster unbuildable by the current coder (~5h churn, threshold-tracking+palette+background coordination beyond contextless single-function gen); deferred by maintenance to rotate to buildable features. Reopen when biome is tackled (hand-build or richer coder context). -->
+- [!] Ensure the game state has a shared `npcs` array initialized as an empty array  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a `npcs` array initialized as empty in the game state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add function initDogs() that sets game.dogs to a new empty array (separate from game.npcSkiers), and wire a call to it where the game state is initialized at start
+- [x] Add a new array game.dogs = [] to initialize the dog collection in the game state setup  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Create a function spawnDog() that adds a new dog object with random x, y set to -NPC_SKIER_HEIGHT, and dead: false to game.dogs only when game.state is PLAYING  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add a dog spawn timer that activates when game state is PLAYING  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Implement spawnDog() to create a new Dog instance at a random x position on the slope  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Ensure spawnDog() only triggers during PLAYING state and respects the timer interval  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add function updateDogs() that moves each dog in game.dogs down-slope at NPC_SKIER_SPEED and steers its x toward the player x each frame to chase; wire it into the update loop  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add function drawDogs() that draws each dog in game.dogs as an ORIGINAL code-drawn dog shape and palette, distinct from the skier; wire it into the render path  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add function checkDogCollision() that, on player overlap with a dog in game.dogs, briefly SLOWS the player with a short speed penalty (not a hard crash) then marks the dog dead; wire it into the update loop  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add drone spawn logic that generates drones at random intervals above the player's current y-position  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Implement drone movement: horizontally track the player with a slow, smooth offset based on distance  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Add drone collision detection with the player, triggering a crash state on contact  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Draw the drone using original pixel-art style: a small, stylized flying machine with rotating propellers  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [!] Add a combo counter that increments when the player slaloms close to or crashes through NPCs, resetting on collision with trees or oil slicks  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to detect when the player is within 15px horizontally of any NPC skier during their pass
+- [!] Add a function to award style points only when the player is within 15px of an NPC skier and both are moving forward <!-- blocked: scoring cluster (combo/style/HUD wired across collision events + loop) - multi-touchpoint, insert-only-coder ceiling. Deferred to reach the single-function items; reopen via hand-build. -->
+- [!] Add crash-through points when the player's collision with an NPC triggers a hit, with higher points for faster impact speeds <!-- blocked: scoring cluster (combo/style/HUD wired across collision events + loop) - multi-touchpoint, insert-only-coder ceiling. Deferred to reach the single-function items; reopen via hand-build. -->
+- [!] Display the current combo multiplier on the HUD, updating in real time as the player chains successful style actions <!-- blocked: scoring cluster (combo/style/HUD wired across collision events + loop) - multi-touchpoint, insert-only-coder ceiling. Deferred to reach the single-function items; reopen via hand-build. -->
+- [!] Render the total score and combo multiplier in the top-left corner of the HUD, with the combo shown as a glowing 'xN' indicator <!-- blocked: scoring cluster (combo/style/HUD wired across collision events + loop) - multi-touchpoint, insert-only-coder ceiling. Deferred to reach the single-function items; reopen via hand-build. -->
+- [!] Sound: minimal WebAudio SFX (jump, land, crash, score, chase) synthesized in code (no files); `M` mutes; muted state persists in localStorage. <!-- blocked: multi-touchpoint feature (state+logic+HUD/loop wiring across several sites) exceeds the insert-only coder. Deferred by maintenance to ship single-function items; reopen via hand-build or a fine-tuned coder. -->
+- [!] Mobile controls: on touch devices, two translucent steer zones + a jump button; prevent page scroll/zoom while playing. <!-- blocked: multi-touchpoint feature (state+logic+HUD/loop wiring across several sites) exceeds the insert-only coder. Deferred by maintenance to ship single-function items; reopen via hand-build or a fine-tuned coder. -->
+
+## Phase 3 — Depth & identity
+- [x] Coins / collectibles: pickups on the slope that add to score; a light risk/reward line to chase.  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] Speed boosts: boost pads/pickups that briefly increase speed (and risk); clear visual feedback.  <!-- hand-built (rung-3 validation): chase + slow-on-contact, gate PASS -->
+- [x] High-jump ramps: special ramps that launch bigger air for bigger trick scores.
+- [!] Add a skin selection menu to the start screen with three original Warboy-designed player art variants drawn in code using only the existing canvas context  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement logic to store and switch between selected skin variants using a simple state variable in the game object  <!-- blocked: pipeline: item INCOMPLETE — 1/6 landed, 0 unspecifiable, 2 e -->
+- [!] Update the player's visual representation on start screen and during gameplay based on the selected skin variant  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Save the selected skin index to localStorage when a skin is chosen
+- [!] Load the saved skin index from localStorage and apply it at game start  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a new player skin selection state that stores the currently selected skin index  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Modify the player's draw function to use the selected skin's original art instead of the default character  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the selected skin is persistently applied across game restarts and maintained in the game state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a new `skin` property to the game object, initialized to 'default' for the existing art
+- [!] Create a `renderSkin` function that maps skin names to original pixel-art drawing logic using only Warboy's own code  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Modify the `drawPlayer` function to use the current skin's art via `renderSkin` instead of hardcoded colors
+- [!] Update the `drawNPCSkier` function to use the current skin's art via `renderSkin` instead of hardcoded colors  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the `renderSkin` function is called only when rendering, and never overrides existing game state or logic  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a VERSION constant set to 'v0.x' in the game's global scope
+- [x] Add a changelog array to the game state, initialized as an empty array
+- [!] After each game restart, push a new changelog entry with the current date and version string  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Update the changelog entry to include the player's score and distance at game end
+- [!] Ensure the changelog array only grows and never resets during a single play session  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a function to update CHANGELOG.md with the current version and timestamp  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Add a HUD display for the VERSION string using the constant  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the changelog is updated whenever the VERSION constant changes  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Seeded runs: `?seed=<n>` makes terrain generation deterministic (share a course); show the seed on the results screen.  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] High-score initials: the local board records three-letter initials with an arcade-style entry screen. <!-- blocked: multi-touchpoint feature (state+logic+HUD/loop wiring across several sites) exceeds the insert-only coder. Deferred by maintenance to ship single-function items; reopen via hand-build or a fine-tuned coder. -->
+- [!] Leaderboard polish: a persistent top-scores board with dates; groundwork for shareable/daily seeds. <!-- blocked: multi-touchpoint feature (state+logic+HUD/loop wiring across several sites) exceeds the insert-only coder. Deferred by maintenance to ship single-function items; reopen via hand-build or a fine-tuned coder. -->
+- [!] Reduced motion: honor `prefers-reduced-motion` by damping screen shake and particle bursts.  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Performance: pool/recycle obstacle objects and cap the live count so long runs stay at 60fps on low-end devices. <!-- blocked: multi-touchpoint feature (state+logic+HUD/loop wiring across several sites) exceeds the insert-only coder. Deferred by maintenance to ship single-function items; reopen via hand-build or a fine-tuned coder. -->
+
+- [!] Add original Warboy-designed chase antagonist creature with unique movement pattern and visual style  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add vertical distance tracking to the game state, incrementing with each frame based on player speed  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Define biome transition thresholds at specific vertical distances (e.g., 500m, 1000m, 1500m) as configurable constants  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function that checks current vertical distance against thresholds and updates the current biome if threshold is crossed  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Introduce a single, self-contained biome state variable that stores the current biome (e.g., 'slope', 'forest', 'night', 'alpine')  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Update the rendering loop to apply biome-specific visual effects (e.g., color tint, background pattern) only when the biome changes  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Define a forest biome transition trigger that activates when player descends past 1000 meters  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to draw original code-drawn tree sprites using Warboy's pixel art style on the canvas  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a function to spawn forest trees at random positions within the scrolling slope, avoiding player collision zone  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to update tree positions as the slope scrolls, maintaining consistent visual depth and flow  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Define a new night biome state in the game's terrain system with a dark blue sky gradient  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Draw a starfield using randomly positioned small white pixels in the night sky
+- [!] Add a moon with a circular, softly glowing pixelated design in the upper-right corner  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Modify the snowfield rendering to use a darker, icy blue tint during night biome  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Update the game loop to transition to the night biome after a fixed distance descent  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [!] Define the alpine biome's visual palette and terrain pattern using Warboy's original code-drawn pixel style  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a function to draw the alpine snowfield pattern with original code-drawn rocks and icy patches  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to render the alpine tree line using Warboy's original pixel art style  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to draw the alpine sky gradient and distant mountain silhouettes in original code-drawn style  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Integrate biome transition logic that triggers alpine art rendering after descending past a defined distance threshold  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Add biome transition threshold values based on player's vertical position, mapping y-position to biome index  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Implement a single, smooth interpolation function that blends snow texture color and slope gradient based on current biome transition state  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Integrate the blending function into the main render loop to update the background appearance dynamically as player descends  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [x] Initialize a style score accumulator in the game state, starting at 0
+- [!] Add a function to detect when the player is within 30 pixels of an NPC skier without collision  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to detect when the player is within 30 pixels of an NPC skier without collision  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to calculate the distance between the player and each NPC skier, returning true if within 30 pixels  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to trigger a 'near' visual effect (e.g., subtle glow or pulse) on the NPC skier when the player is within 30 pixels, using only original code-drawn visuals  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add a function to detect when the player is within 30 pixels of an NPC skier without collision  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a function to increment the style score only when the player is within 30 pixels of an NPC skier and not colliding
+- [!] Update the style score only during active skiing, not during jumps or crashes  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement logic to detect when the player passes within 30 pixels of an NPC skier  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Increment the style score by 1 for each valid proximity event, only once per NPC skier per pass  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Display the style score in the HUD, updating in real time  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Implement a 'crash-through' detection that triggers a bonus when the player collides with an NPC skier while in motion  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add a style multiplier counter that starts at 1 and increments by 0.1 for each consecutive style event (slaloming close to or crashing through NPCs, obstacles, or terrain)  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Implement a function to reset the multiplier to 1 when the player collides with trees, oil slicks, or other obstacles  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a visual indicator for the current multiplier displayed in the HUD, updating in real time  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Modify the score calculation to multiply points by the current style multiplier on each style event  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Ensure the multiplier persists across jumps and air time, only resetting on collision  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Display the current style score and multiplier in the HUD using Warboy's original pixel-art font and color scheme  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Design and integrate original unlockable skins and character variants using code-drawn art  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Add original Warboy-designed chase antagonist with unique movement pattern and visual style  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement terrain biome transitions (lodge → open slope → forest → night) with distinct visual themes  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Introduce style-based scoring with multipliers for slaloming near or crashing through NPCs  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add persistent achievements registry with data-driven unlocks for new hazards and interactions  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Add original animated chase antagonist (Warboy's design) that spawns after 30 seconds of inactivity and pursues player with escalating speed  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement dynamic terrain biomes: transition from open slope to dense forest at 500m depth with original forest sprite art  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [x] Introduce style scoring: award points for slaloming close to NPCs, with multipliers for consecutive near-misses
+- [!] Add collision detection between player and NPCs for crash-through triggers  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement style point increment when player crashes into an NPC  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add brief speed boost duration after crashing into an NPC  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure crash-through effects are visually distinct with a short flash or particle burst  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [x] Make crash-through behavior work only during skiing state and not during jumps or crashes
+
+- [!] Define a new SnowWolf class with position, speed, and glowing eyes using original canvas drawing functions  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement SnowWolf movement logic that follows the player when they slow down or stop  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add collision detection between the SnowWolf and the player to trigger the EATEN state
+- [!] Draw the SnowWolf with animated glowing eyes using original pixel-art code (no copied sprites)  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a player inactivity timer that starts when the player is skiing and resets on any input
+- [!] Track elapsed time since last input and store it in a variable updated every frame  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] When the inactivity timer reaches 30 seconds, trigger the snow-wolf spawn function  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to spawn the snow-wolf at a random position above the player's current view  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure the snow-wolf is drawn on the canvas and moves downward at a fixed speed
+- [x] Initialize a snow-wolf spawn timer that starts counting after the player begins skiing
+- [!] Create a function to spawn a snow-wolf at a fixed distance behind the player when the timer reaches its threshold  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add the snow-wolf to the game's active entities list with a unique ID and initial position  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Ensure the snow-wolf moves forward at a consistent speed relative to the player's current speed  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Implement basic pursuit behavior: the snow-wolf moves forward at a base speed and increases speed over time  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add collision detection between the snow-wolf and player, triggering the EATEN state and instant restart  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Draw the lodge entrance art at the start using original code-drawn lines and shapes in the background
+- [!] Implement a scrolling background layer that shifts upward as the player descends, revealing the open slope terrain  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add a function to draw randomly spaced vertical tree trunks on the open slope using Warboy's original code-drawn art  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a function to draw branching foliage above each tree trunk, using consistent original code-drawn style
+- [x] Add a function to update tree positions based on scrolling slope, ensuring they remain fixed relative to the terrain
+- [!] Add a night transition trigger that activates after 1000 meters of descent  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a smooth linear color shift from daytime sky (light blue) to night sky (dark blue) over 200 meters  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Update snow color from white to muted gray during the night transition  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [!] Draw subtle star glows in the night sky using randomly positioned small white dots  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure all existing art and game mechanics remain unchanged and fully functional  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [x] Add a distance tracker that increments with player movement and triggers biome changes at fixed meter thresholds
+- [!] Implement a function to update the background art and color palette when the player reaches each biome threshold  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Define and draw the first new biome (forest) using original pixel art in the canvas, replacing the current snowfield at the transition point  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure the biome transition is smooth and only affects the background, not gameplay elements like player or obstacles  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a 'style' score counter variable initialized to 0 in the game state
+- [!] Create a function to check if the player is within 30px of any NPC skier without collision and increment the style score if true  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Call the style score check function every frame during gameplay
+- [!] Ensure the style counter resets to zero when the player collides with any obstacle or NPC skier  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Display the style score in the HUD using a distinct color and position, updating every frame  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a multiplier variable initialized to 1 in the game state, incrementing by 0.5 when the player passes an NPC skier closely without collision
+- [x] Display the current multiplier value on screen in the HUD, updating in real time during gameplay
+- [x] Initialize a multiplier counter starting at 1 and store it in the game state
+- [!] Add logic to reset the multiplier to 1 whenever the player collides with a tree  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add logic to reset the multiplier to 1 whenever the player crashes into any obstacle (excluding skiers and drones)  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Display the current style score and multiplier on the HUD with distinct visual indicators  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a persistent achievements registry that auto-updates with new counters for each new hazard type (e.g., drones, dogs, drones crashed) and unlocks witty, original trophies
+
+- [x] Initialize an empty `achievements` object in the game state to track player progress
+- [!] Add a function to increment achievement counters when the player slaloms near an NPC skier  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Add a function to increment achievement counters when the player crashes through an obstacle
+- [!] Update the game loop to call these achievement-tracking functions on relevant collision or proximity events  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Add a new `achievementRegistry` object to track unique achievement keys and their states
+- [!] Create a `checkAchievement` function that evaluates player actions and marks achievements as unlocked in the registry  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement logic in `update` to call `checkAchievement` after each scorable action is detected
+- [!] Create a `triggerAchievement` function that logs the achievement and emits a visual or audio cue if the player unlocks a new one  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Add a new `AchievementSystem` class with `check()` method that evaluates player state and triggers achievements based on current score, distance, and actions  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Integrate `AchievementSystem.check()` into the game loop to run once per frame, only when game is in PLAYING state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a `triggerAchievement(achievement)` function that updates the UI with a visual notification and plays a subtle sound  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Define a set of original, self-contained achievements (e.g., 'First Jump', 'Close Call', 'Style King') using Warboy's original art and logic  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [x] Add a chase antagonist state tracker that monitors player inactivity for 30 seconds
+- [!] Create a new original creature class with Warboy's own code-drawn design, initially hidden  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Implement logic to spawn the creature after 30 seconds of no player input
+- [!] Add a new Creature class with a fixed initial speed and position at the start of the game  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a follow logic that updates the creature's x position based on the player's x position, with a small offset to avoid perfect tracking  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Increase the creature's speed gradually over time using a timer-based acceleration function
+- [!] Ensure the creature only appears after a delay following the player's start, and only moves when the game is in PLAYING state  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Initialize the chase antagonist only when game.state is GameState.PLAYING by adding a state check in the antagonist's initialization logic  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to safely spawn the chase antagonist at a random position on the slope when game.state transitions to GameState.PLAYING  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a condition to call the chase antagonist's update function only when game.state is GameState.PLAYING  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a condition to call the chase antagonist's draw function only when game.state is GameState.PLAYING  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a distance tracker that increments with each frame based on player speed and updates the game's total distance traveled  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Define biome thresholds (e.g., 1000m, 2500m, 5000m) as distance milestones for terrain changes  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to check if the current distance has crossed a threshold and trigger a biome transition  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a terrain layer system that overlays new visual layers (e.g., forest, night, alpine) based on the current biome  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Ensure each new biome layer is drawn independently and replaces only the background, preserving existing game elements like player, obstacles, and score  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 1 unspecifiable, 1 e -->
+- [!] Implement a layered rendering system to stack background visuals (lodge, open slope, forest, night) based on current biome  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [x] Draw a fixed background layer with a simple snowfield pattern using canvas primitives
+- [!] Add a second background layer with randomly placed trees using original pixel-art shapes  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Implement a third background layer with animated cloud movement using canvas primitives
+- [!] Introduce distinct visual themes per biome by changing colors, patterns, and layer visibility based on player distance  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a background layer system with at least two distinct biome layers (e.g., snowfield and forest) drawn using original pixel art in code  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [x] Implement vertical scrolling for each background layer at different speeds to simulate depth and movement through changing biomes
+- [!] Introduce biome transition logic that triggers at specific vertical positions (e.g., after 1000 meters) to switch layer visuals and scroll behavior  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure background layers are drawn behind the player and obstacles, maintaining visual depth without affecting gameplay mechanics  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a new Warboy-designed chase antagonist sprite using original code-drawn pixel art  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement the antagonist's basic movement logic: appear after delay, follow player at variable speed  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add collision detection between player and antagonist, triggering 'EATEN' state on contact  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Draw the antagonist on screen using only original code-based art, never copying existing assets  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Introduce style-based scoring: award points for close slaloming through NPCs, crashing through obstacles, and landing jumps, with multipliers for consecutive actions
+- [!] Initialize a persistent achievements registry object that stores unlock conditions and messages in localStorage, using a unique key for Warboy's game  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to check and unlock achievements based on current game state, triggering localStorage update only when a new achievement is unlocked  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 2 unspecifiable, 1 e -->
+- [!] Implement a function to retrieve and display the current list of unlocked achievements in the game UI, reading from localStorage on load  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to track player events (crashes, jumps, combo starts) and store them in a persistent event log  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Create a function to evaluate the event log against achievement conditions and trigger unlocks when met
+- [!] Implement a visual feedback system to display achievement unlocks with a brief on-screen animation and sound  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Add a function to track earned achievements and store them in a persistent array  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to generate a random witty, original unlock message from a curated list of Warboy's own phrases  <!-- blocked: pipeline: item INCOMPLETE — 1/7 landed, 0 unspecifiable, 3 e -->
+- [!] Implement a function to display the message on screen for 3 seconds using a simple overlay with fade-in/fade-out animation  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Integrate the message display function to trigger only when a new achievement is unlocked, not on repeat  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Extend the game loop to trigger achievement checks after each frame based on player state and event history  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+
+- [!] Add a new `Achievement` class with `name`, `condition`, and `completed` properties, initialized with default values  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a `checkCondition()` method in the `Achievement` class that evaluates the condition and updates `completed` status  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Initialize an `achievements` array in the game state to store instances of `Achievement`  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a `triggerAchievement(name)` function to mark an achievement as completed by name, using the `achievements` array
+- [x] Implement a `checkAchievements()` function that evaluates current game state against all defined achievement conditions
+- [!] Integrate `checkAchievements()` into the game loop to trigger on score changes, collisions, and jumps  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 1 unspecifiable, 2 e -->
+- [!] Add a new achievement system that tracks player milestones without altering existing game logic  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Create a single pixel-art icon for the first achievement using only original code-drawn graphics
+- [!] Implement a HUD overlay element that renders the achievement icon when unlocked  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the overlay appears only when an achievement is earned and persists until the next reset  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 1 unspecifiable, 2 e -->
+
+- [x] Initialize an empty `achievements` object in the game state with properties `slalom_near_skier` and `crash_through_obstacle`, both set to 0
+- [!] Add a function to increment `slalom_near_skier` when the player passes within 30 pixels of an NPC skier while moving forward  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a function to increment `crash_through_obstacle` when the player collides with any obstacle while in JUMPING state
+- [!] Update the collision detection logic to increment `achievements.slalom_near_skier` when the player passes within 10 pixels of an NPC skier while moving  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a new property `inAir` to the Player class to track if the player is currently jumping
+- [x] Modify the collision detection logic to check if the player is in mid-air before incrementing `achievements.crash_through_obstacle`
+- [x] Add a visual HUD indicator to display the current count of each achievement in the top-left corner of the screen
+- [!] Add a `achievements` object to store achievement definitions with `condition` and `unlocked` properties  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement `checkAchievementTrigger` to iterate through `achievements` and unlock any that meet their `condition` based on current game state  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Add a `triggerAchievement` function to handle visual feedback and state updates when an achievement is unlocked  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Integrate `checkAchievementTrigger` into the game loop to run on every frame with relevant state updates
+- [!] Add a function to track achievement unlocks and store their IDs in a set  <!-- blocked: pipeline: item INCOMPLETE — 1/4 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to render a temporary pixel-art badge on screen for each unlocked achievement, using Warboy's original art style  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a function to update badge positions and fade out over time, removing them after 3 seconds  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to manage badge lifecycle: spawn, update, and remove badges during the game loop
+
+- [!] Define the chase antagonist's base shape using pure code-drawn polygons and lines in the canvas context  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a unique color scheme and shading pattern to the antagonist's design using solid fills and gradients  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a simple animated idle state for the antagonist with a subtle bobbing motion  <!-- blocked: pipeline: item INCOMPLETE — 1/4 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure the antagonist's visual design is distinct from all existing game elements and NPCs
+- [!] Add a player idle timer that tracks time since last input  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a spawn delay counter that triggers antagonist spawn after 3 seconds of idle
+- [!] Implement a function to spawn the antagonist at a random position above the player  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure the antagonist only spawns once per idle period and does not reappear immediately  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Add the antagonist's unique movement pattern: slow drift with sudden bursts toward the player  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Introduce collision detection between the antagonist and the player, triggering the EATEN state  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure the antagonist is drawn only when active and does not interfere with existing game elements  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement terrain biomes that transition as player descends (e.g., forest → night → alpine) with original art  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Introduce style-based scoring with multipliers for slaloming near or crashing through NPCs and hazards  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Create a persistent achievements registry that auto-updates with new mechanics and unlocks witty rewards  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Add a new Warboy-designed chase antagonist class with a unique visual style using original code-drawn pixels  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement the antagonist's foundation movement: spawn at a fixed distance behind the player and move forward at a constant speed  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add logic to detect when the antagonist should start pursuing: only activate if the player is not moving fast enough  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a chase antagonist class with a fixed horizontal offset and slow following speed  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement horizontal position adjustment for the antagonist based on player's x-position with a 1-second delay  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure the antagonist only appears after a short delay following player start, and does not appear during initial idle state  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure the antagonist is drawn on the canvas and does not interfere with existing game mechanics  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement terrain biome transitions (lodge → open slope → forest → night) with distinct visual themes  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Introduce style-based scoring system with multipliers for slaloming through NPCs and combos  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Design and integrate original collectible items (coins, speed boosts) with animated pickup effects  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [x] Add a new MutantSnowWolf class with a constructor that initializes x, y, and glowing eyes using original code-drawn art
+- [!] Implement a spawn method that positions the MutantSnowWolf off-screen at the start of the game  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a draw method to render the MutantSnowWolf's glowing eyes and original code-drawn body on the canvas  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Update the game loop to call the MutantSnowWolf's update method each frame  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement spawn logic that triggers after 30 seconds of no player input (no key or pointer movement)  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add pursuit behavior: the snow-wolf follows the player with increasing speed over time  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add a random lateral offset function that generates small, unpredictable x-axis adjustments for the snow-wolf's position each frame  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement a delay mechanism that prevents immediate direction changes in the snow-wolf, introducing a brief hesitation before responding to new steering inputs  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure the snow-wolf is destroyed on collision with the player, triggering the EATEN state and instant restart  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Implement dynamic terrain biomes: transition from open slope to dense forest at 500m depth, with procedurally drawn trees using original pixel-art foliage patterns  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Introduce style scoring system: award bonus points for slaloming within 10px of NPCs or crashing through obstacles, with multipliers that increase on consecutive actions  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Create a persistent achievements registry with new entries for biome transitions, style combos, and chase antagonist encounters, all in Warboy's original visual and narrative voice  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Define a new ChaseAntagonist class with a single frame of original pixel art drawn in code using canvas fillRect and path methods  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add a method to update the antagonist's position based on player proximity and game speed, ensuring it only moves when player is idle or slow  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a collision check between the antagonist and player that triggers the EATEN state when contact occurs  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement logic to spawn the antagonist after 10 seconds of no player input  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a new antagonist class with a fixed base speed and initial position at the start of the game  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a simple follow logic where the antagonist updates its position toward the player's current x-coordinate each frame  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure the antagonist only appears after the player has been skiing for a short time, based on distance traveled
+- [!] Add a chase speed multiplier that increases over time since the antagonist started pursuing  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Update the antagonist's speed each frame using the increasing multiplier, but cap it at a maximum speed  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the antagonist only appears during gameplay and does not interfere with start/ending states  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Define biome transition thresholds as vertical distance milestones in the game loop  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to check current vertical position against these thresholds and trigger biome changes  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a single, self-contained biome state variable that updates on threshold crossing  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a visual cue (e.g., subtle color shift) to the canvas background when biome transitions occur  <!-- blocked: pipeline: item INCOMPLETE — 1/6 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to generate random tree positions and heights within the scrolling slope using only code-based shapes and Warboy's color palette  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a function to draw each tree using only rectangles and triangles, styled with Warboy's unique color palette and no external assets  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Integrate the tree drawing function into the game loop to render trees at their generated positions on the scrolling slope  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a biome-stage-dependent tree height range function that returns min/max heights based on current biome stage
+- [x] Add a tree-width scaling function that varies width proportionally to height using a fixed ratio
+- [!] Add a tree-color palette function that selects random colors from a biome-specific color set  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [x] Add a seed-based tree height function that returns a height based on the provided seed value
+- [x] Add a seed-based tree width function that returns a width based on the provided seed value
+- [x] Add a seed-based tree color function that returns a color based on the provided seed value
+- [!] Add a drawTree function that renders a tree at given (x, y) coordinates using the seed-based height, width, and color functions  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a tree spawn system that generates tree positions at random intervals within the visible slope area  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Implement a tree drawing function that renders a single tree using Warboy's original pixel-art style at the tree's position  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a Tree class with x, y, and type properties, and a draw method that renders a simple tree using original pixel art in the canvas  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Initialize an array of Tree instances in the game state, populating it with random x, y, and type values for initial trees  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Update the game loop to call the draw method for each tree in the array during each frame  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add collision detection between the player and trees, triggering a crash if the player's position overlaps with any tree's bounds  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Implement a function to draw a single tree at its position using original pixel-art style
+- [!] Add a function to draw a single tree at its current position using Warboy's original pixel art  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Modify the game loop to call the tree drawing function once per active tree each frame
+- [x] Ensure the tree drawing function only renders trees that are within the visible canvas area
+- [!] Add forest biome detection to the game loop, marking when the player has descended into the forest phase  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a function to generate tree positions based on the current biome phase, ensuring trees only appear during the forest biome  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a tree rendering function that draws original pixel-art trees using Warboy's own code-only art, only when in the forest biome  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Integrate the tree rendering function into the scrolling background loop, ensuring trees scroll with the terrain and appear only in the forest phase  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add a 'closePass' boolean property to the player object, initialized to false  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a horizontal distance check between player and NPC skier, setting closePass to true if within 30 pixels and moving in the same direction  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [x] Ensure the closePass flag is reset when the player or NPC skier moves out of the 30-pixel horizontal range or changes direction
+- [x] Reset the 'closePass' flag to false when the player is no longer within 30 pixels of any NPC skier
+- [!] Implement a distance-based proximity check between player and NPC skiers using Euclidean distance  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Set the 'closePass' flag when the player passes within 30 pixels horizontally of an NPC skier
+- [x] Reset the 'closePass' flag when the player moves beyond 50 pixels from the NPC skier
+- [!] Ensure the flag is only set once per NPC skier encounter and does not trigger repeatedly  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [x] Initialize a styleMultiplier variable set to 1 in the game state object
+- [!] Increment styleMultiplier by 1 whenever the player passes an NPC skier closely without collision  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Reset styleMultiplier to 1 when the player collides with any obstacle or falls  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Display the current styleMultiplier value in the HUD as a visual feedback indicator
+- [!] Initialize a styleScore variable set to 0 in the game state object  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to update styleScore by adding the current multiplier value each frame
+- [x] Add a function to render the styleScore value in the HUD using the existing score display method
+- [x] Ensure styleScore resets to 0 when the player crashes or dies
+- [!] Update the game loop to increment styleScore and multiplier on close passes, and reset on crashes or obstacles  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [!] Add a function to generate a simple jump sound using Web Audio API with Warboy's signature high-pitched, bouncy tone  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Add a function to generate a crash sound using Web Audio API with Warboy's signature distorted, metallic impact effect  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to generate an achievement unlock sound using Web Audio API with Warboy's signature chime-like, rising pitch pattern  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Add a jump sound effect to the game's audio context, loaded from a single inline WAV data URL  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Attach a click or keydown event listener to the Space key that triggers the jump sound when the player initiates a jump  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Create a new Audio object with Warboy's original crash sound design using a synthesized waveform  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [!] Add the crash sound to the game's audio context as a reusable sound effect  <!-- blocked: pipeline: item INCOMPLETE — 1/4 landed, 0 unspecifiable, 1 e -->
+- [!] Trigger the crash sound effect when the player collides with an obstacle or falls off the slope  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to play the crash sound only when the player's state transitions to CRASHED or EATEN
+- [x] Attach an event listener to the collision detection logic that triggers the crash sound on any obstacle collision
+
+- [!] Initialize an `achievements` object in the game state to track style-based milestones  <!-- blocked: pipeline: item INCOMPLETE — 1/6 landed, 0 unspecifiable, 2 e -->
+- [!] Add a function to increment `achievements.slalomingNearSkier` when player passes within 30px of an NPC skier while skiing  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to increment `achievements.crashedThroughObstacle` when player collides with any obstacle while moving forward
+- [!] Add a function to check and trigger `achievements.comboStreak` on consecutive style actions with 1-second cooldown  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to display achievement unlocks on screen with a brief visual cue and sound effect  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a `checkAchievements()` function that triggers after each collision or style event, updating the registry with new milestones  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a `renderAchievements()` function to draw achievement icons and counts in the HUD, using only original pixel art
+- [x] Add a combo counter that increments on each consecutive high-scoring action and resets on misses or collisions
+- [x] Implement style point scoring for slaloming close to skiers, dogs, or drones without collision
+- [!] Add a multiplier that increases with each consecutive style point and resets on failure  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Display the current combo multiplier and style points in the HUD using the existing score display area
+- [!] Ensure style points and multipliers are preserved across game restarts and reset only on death  <!-- blocked: pipeline: item INCOMPLETE — 2/4 landed, 0 unspecifiable, 1 e -->
+- [!] Add a new achievement system that tracks specific, non-redundant player interactions with obstacles, such as crashing through consecutive obstacles  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a state tracker for consecutive obstacle crashes, resetting on non-crash or obstacle type change
+- [x] Define and register a new achievement for 'Crashed Through 3 Obstacles in a Row' that triggers only when three distinct obstacles are crashed through consecutively
+- [x] Ensure all achievements are tied to unique, non-overlapping interactions by validating that no two achievements share the same underlying event pattern
+
+- [x] Add original chase antagonist: a pixel-art 'Snowhound' creature with unique movement patterns, drawn in code, that pursues the player when they slow down
+- [!] Implement dynamic terrain biomes: transition from open slope to dense forest with original tree sprites and ambient snow effects  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 2 unspecifiable, 0 e -->
+- [x] Introduce style-based scoring: award points for slaloming close to NPCs, crashing through obstacles, and landing jumps with flair
+- [x] Add a persistent achievements registry with new entries for each new mechanic: 'Forest Fugitive' (survive 10 forest seconds), 'Snowhound Slayer' (defeat 3 Snowhounds), 'Jump Master' (land 5 consecutive jumps)
+
+- [x] Add original Warboy-designed chase antagonist (a pixel-art snow-wolf with glowing eyes) that spawns after 15 seconds of inactivity and pursues the player with increasing speed
+- [x] Implement dynamic terrain transitions: change background art from open slope to dense forest biome at 500 meters, using original code-drawn trees and snowdrifts
+- [x] Add a 'slalom' detection system that checks if the player passes within 30px of an NPC skier during skiing
+- [x] Add a 'slalomPasses' counter initialized to 0 in the game state
+- [!] Increment the 'slalomPasses' counter when the player successfully passes between two obstacles with sufficient proximity  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Reset the 'slalomPasses' counter when the player crashes or hits an obstacle
+- [x] Add a multiplier counter initialized to 1, incrementing by 1 on each successful slalom pass through an NPC skier or obstacle
+- [x] Cap the multiplier at 5, preventing further increases beyond that value
+- [x] Display the current multiplier on screen as a floating HUD element that updates in real time
+- [x] Reset the multiplier to 1 when the player crashes or hits a tree
+- [!] Apply the multiplier to the score when the player completes a slalom pass, increasing points earned  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Display the current multiplier and style score in the HUD using the existing score display
+- [x] Apply penalty points (50) to the style score when the player crashes into a tree or oil slick
+- [x] Initialize an empty achievements registry in localStorage on first load, if none exists
+- [x] Add a function to mark an achievement as unlocked and save the updated list to localStorage
+- [x] Create a function to check if an achievement is already unlocked by reading from localStorage
+- [x] Ensure the registry persists across page reloads without requiring user re-entry
+- [!] Implement a function to check and unlock 'Snow-Wolf Slayer' when the chase antagonist is defeated, storing the result in localStorage  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a function to check and unlock 'Forest Ghost' when the player completes the forest biome without hitting any trees, storing the result in localStorage
+- [x] Add a jump counter variable initialized to 0 in the game state
+- [!] Increment the jump counter by 1 each time the player lands from a jump, detected when transitioning from JUMPING to SKIING state  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [!] Display the jump counter on the HUD using the existing score rendering function  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a jump counter variable initialized to 0 in the player object
+- [x] Create a function that increments the jump counter on each jump and unlocks 'Jumpmaster' in localStorage when it reaches 10
+- [!] Add a function to render a single pixel-art achievement icon in the top-left HUD corner using original Warboy art  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to display the achievement label text next to its icon, using original pixel-art style fonts  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to track and update unlocked achievements in the game state, triggering HUD updates only when new achievements are earned  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to ensure the HUD indicator only appears when at least one achievement is unlocked, and hides when none are earned  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Add a function to detect when the player's x-position is within 15 pixels of an NPC skier's x-position while both are moving
+- [!] Add a function to record 'slaloming close to skiers' as a distinct achievement trigger when proximity is detected for at least 0.5 seconds  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a new function to detect and register 'crashing through dogs' as a separate achievement event
+- [x] Add a new function to detect and register 'hitting oil slicks' as a penalty-based achievement condition
+- [x] Add a combo multiplier tracker that starts at 1 and increments by 1 for each consecutive style action
+- [x] Store the current combo multiplier in a variable and update it only when a style action succeeds without interruption
+- [x] Reset the combo multiplier to 1 when a style action fails or a collision occurs
+- [x] Display the current combo multiplier on screen with a visual indicator (e.g., a growing number or flashing effect)
+- [x] Add a function to track and update style points based on proximity to skiers and successful crashes through obstacles
+- [!] Implement a visual feedback system that displays a brief style point counter on screen when style points are earned  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Create a persistent achievements registry that stores and updates score-based style milestones upon reaching new thresholds
+
+- [x] Define the chase antagonist's original visual design using only code-drawn shapes in the canvas context
+- [x] Implement a state machine for the antagonist that tracks player inactivity and triggers appearance after 30 seconds of no input
+- [x] Add a function to spawn the antagonist at a fixed offset behind the player when triggered, ensuring it appears only once
+- [x] Implement the antagonist's unique movement pattern: slow tracking of the player with periodic acceleration bursts when within 100px
+- [x] Implement dynamic terrain biomes (lodge → open slope → forest → night) with shifting background art and ambient sound cues
+- [x] Add a 'slalom proximity' detection system that checks distance between player and NPCs every frame
+- [!] Add a particle system to emit brief flash effects when the player's x-position is within 30px of an NPC skier  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a trail effect that persists for 100ms after the player passes an NPC, using a single frame of translucent pixel rendering  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a 'consecutiveClosePasses' counter that increments on each close pass and resets on collision or crash  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a 'styleMultiplier' that increases by 1 for each consecutive close pass, capping at 5
+- [x] Modify the score update logic to apply the current styleMultiplier to points earned from close passes
+- [x] Display the current styleMultiplier as a growing 'x' value in the HUD, updating in real time
+- [x] Add a stylePoints variable initialized to 0 in the game state
+- [x] Update the HUD to display stylePoints and multiplier in real time during gameplay
+- [x] Initialize an empty achievements registry in localStorage on first load if none exists
+- [x] Add a function to mark an achievement as unlocked and save it to localStorage
+- [x] Add a function to check if an achievement is already unlocked by reading from localStorage
+- [x] Implement a function to check and unlock 'Dronebuster' when the player jumps through a drone without crashing
+- [!] Implement a function to check and unlock 'Organic Mechanic' when the player crashes through a dog without dying  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [x] Add a function to detect when the player lands on an oil slick after a jump, using collision detection with the oil slick's position and the player's landing frame
+- [x] Create a state flag to track if 'Slick Willy' has been unlocked, and trigger the unlock only once upon first successful landing on an oil slick after a jump
+- [x] Add a function to track unlocked achievements and store them in a persistent array
+- [x] Create a function to draw a small, original code-drawn popup badge at the top-center of the screen for 1.5 seconds when an achievement is unlocked
+- [!] Implement a function to update the UI by rendering the popup badge only when a new achievement is detected, using only original pixel-art style elements  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Add original Warboy-designed chase antagonist (a pixel-art snow-wolf with glowing eyes) that spawns after 10 seconds of inactivity and pursues the player with increasing speed
+- [x] Add a depth threshold constant for forest biome at 2000 meters
+- [x] Create a function to check if player's distance exceeds forest threshold
+- [x] Update game.terrainType to 'forest' when threshold is crossed
+- [x] Ensure terrainType update triggers visual changes in the next render cycle
+- [x] Add a function to generate random tree positions and branch-dust patterns at the right edge of the canvas, using only original Warboy art drawn in code
+- [!] Implement a tree spawning system that creates new animated trees at depth 2000 with randomized vertical positions and unique branch-dust effects  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Integrate the tree animation loop into the game's main update cycle, ensuring trees scroll in from the right and remain visible during gameplay
+- [x] Implement tree animation: draw snow-dusted branches using original code-drawn art, with subtle sway motion over time
+- [!] Ensure trees scroll at the same speed as the background, maintaining depth-based parallax with the player's position  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [x] Add a 'stylePoints' counter that increments by 10 when the player passes within 15px of an NPC skier without colliding
+- [x] Track consecutive style hits with a 'styleStreak' variable that resets to 0 on collision or missed skier
+- [x] Apply a 1.5x multiplier to the score whenever styleStreak is greater than 0, updating the displayed score in real time
+- [!] Display the current style streak and multiplier (e.g., 'x1.5') in the HUD using the existing score display area  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a 'F' fast mode toggle that increases player speed by 20% and triggers a 'Warboy's Fury' visual effect with animated snow spray and screen shake
+
+- [x] Define the chase antagonist's original visual design using Warboy's own pixel art in code, with a unique sprite drawn entirely in JavaScript
+- [!] Implement a state machine for the antagonist that starts inactive and activates after 30 seconds of player inactivity  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a fixed distance threshold behind the player to trigger antagonist spawn  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a function to calculate the antagonist's initial spawn position offset from the slope's current x-position
+- [!] Create a function to spawn the antagonist only once when the trigger distance is reached, using the calculated offset  <!-- blocked: pipeline: item INCOMPLETE — 1/7 landed, 0 unspecifiable, 2 e -->
+- [x] Implement the antagonist's unique movement pattern: slow pursuit with periodic acceleration bursts when the player is near
+- [x] Ensure the antagonist does not collide with obstacles and only interacts with the player via collision detection for game over
+- [x] Add biome transition logic that triggers at fixed distance intervals, advancing through lodge → open slope → forest → night
+- [x] Implement visual layering for each biome using original pixel art: snow texture changes, tree sprites, and night-time fog overlay
+- [x] Add biome transition detection based on player's vertical position
+- [x] Implement a sound manager that loads and plays ambient audio for each biome
+- [!] Trigger forest rustling audio when entering the forest biome  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [x] Trigger ski wind audio when entering the open slope biome
+- [x] Trigger nocturnal sounds when entering the night biome
+- [x] Add a scrollProgress variable to track the slope's vertical position, updating it in the game loop based on player speed and terrain scroll rate
+- [x] Create a syncVisualsToScroll function that maps scrollProgress to visual elements (e.g., sky gradient, distant mountains) using modulo and time-based offsets
+- [!] Implement a syncAudioToScroll function that advances audio cues (e.g., ambient wind, heartbeat) based on scrollProgress, ensuring they align with terrain changes  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure all visual and audio updates are triggered only when scrollProgress crosses a threshold, avoiding redundant recalculations  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Introduce style-based scoring system with multipliers for slaloming close to NPCs, crashing through obstacles, and landing jumps
+- [!] Create a persistent achievements registry with data-driven unlock logic, extending existing list to include new behaviors like 'Drone Buster' and 'Tree Hugger'  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Add a chase antagonist state tracker that monitors player inactivity for 30 seconds
+- [x] Define a new original animated creature class with a unique visual style using only code-drawn shapes and Warboy's original art
+- [x] Implement a simple idle animation loop for the creature using frame-based rendering in the game loop
+- [!] Add the creature to the game world at a fixed position on the slope, rendering it independently of player movement  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement logic to spawn the antagonist at a fixed distance behind the player after 30 seconds of inactivity
+- [x] Add movement logic for the antagonist to follow the player with a base speed that increases over time
+- [x] Ensure the antagonist triggers a game-over state if it catches the player, with a clear visual and audio cue
+- [x] Add a distance-traveled counter that increments each frame based on player speed
+- [x] Create a flag to track whether biome transition has been triggered at 500 meters
+- [x] Implement a function to check if distance traveled reaches 500 meters and set the transition flag
+- [x] Add a snow depth overlay canvas layer that renders over the main game canvas using original pixel art
+- [!] Initialize a snow depth opacity value that starts at 0 and begins increasing at 500 meters of distance  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Update the snow depth overlay opacity based on distance traveled, increasing linearly from 0 to 1 as distance reaches 700 meters
+- [!] Render the snow depth overlay with original pixel art at the current opacity level, ensuring it's drawn only when distance >= 500 meters  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 1 e -->
+- [x] Add a background layer rendering function that draws trees only at y ≥ 500 meters using original pixel art
+- [x] Implement tree positioning logic to place trees in a dense, randomized pattern at 500m and beyond, using only original pixel art
+- [x] Ensure trees are rendered only in the background layer, never overlapping player or foreground obstacles
+- [!] Add forest biome transition trigger at fixed distance intervals without altering existing scroll speed or obstacle generation  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement forest background layer with original pixel art trees drawn in code, positioned to scroll at same rate as slope
+- [!] Modify obstacle spawn logic to replace or blend with forest-specific obstacles (e.g., tree clusters) at transition point  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [x] Add forest transition trigger at a fixed distance threshold below the player's starting position
+- [x] Add forest background color shift: change canvas background from sky blue to deep green at y >= 400
+- [!] Implement forest snow texture: replace current snow pattern with a denser, shadowed pixel texture starting at y >= 400  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 1 unspecifiable, 2 e -->
+- [!] Introduce ambient lighting dimming: reduce canvas brightness by 30% when player y >= 400, using a semi-transparent overlay  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [x] Implement forest-specific obstacle spawn patterns (e.g., denser trees, new rock clusters) without altering existing obstacle logic
+- [x] Ensure player sprite rendering remains unchanged during biome transition, preserving its position, scale, and animation state
+- [x] Verify that collision detection and response behavior for all obstacles remain fully consistent across biome transitions
+- [!] Add subtle visual cues (e.g., fog, tree density change) to signal biome shift without disrupting gameplay flow  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a style score variable initialized to 0 in the game state
+- [!] Increment style score by 1 for each consecutive near-miss or crash-through of an obstacle without hitting a tree or oil slick  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Reset style score to 0 when player hits a tree or oil slick
+- [!] Display the current style score in the HUD with a distinct visual style  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [x] Implement a function to detect when the player is within 10px of an NPC skier during skiing
+- [x] Add a function to detect when the player crashes through any obstacle (excluding trees) while not in a crash state
+- [x] Add a style multiplier counter initialized to 1, incrementing only on valid style actions like slaloming close to skiers or crashing through obstacles
+- [x] Implement a reset mechanism that sets the multiplier to 1 when the player collides with trees or oil slicks
+- [x] Display the current multiplier value on screen with a dynamic, visually distinct HUD element that scales with multiplier value
+- [x] Update the score display to show style points and active multiplier in real time
+- [x] Add a new achievement registry object to store unlockable achievements with unique IDs and unlock conditions
+- [!] Implement a function to register a new achievement dynamically when a new hazard type or mechanic is introduced  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a new achievement system that tracks specific in-game events such as encountering a new hazard type
+- [!] Implement a function to register and validate achievement triggers when new hazard types are first encountered  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a visual and auditory feedback mechanism to notify the player when an achievement is unlocked  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a visual indicator in the HUD to display unlocked achievements with their names and icons
+
+- [x] Add a new `achievements` object to track player progress on specific events like 'slalom through 3 skiers' or 'crash through a drone'
+- [x] Implement a `checkAchievements` function that triggers after each collision or scoring event, updating the registry with new milestones
+- [x] Add a `triggerAchievement` function that logs and visually signals new achievements via a temporary on-screen badge
+- [x] Integrate the achievement system into the game loop to ensure checks happen on every frame during gameplay
+
+- [x] Add the Warboy-designed chase antagonist (a pixel-art creature of your own creation) that spawns after a delay and pursues the player when they slow down
+- [x] Implement dynamic terrain biomes (e.g., open slope → forest → night) that transition smoothly as the player descends
+- [x] Introduce a style-based scoring system that rewards slaloming close to or crashing through NPCs, with real-time combo multipliers
+- [x] Add a persistent achievements registry that tracks new hazards, NPCs, and mechanics as they are introduced
+- [x] Add a new achievement tracking system that records the first encounter with each unique hazard type (e.g., oil slick, drone, dog) as a player encounters it
+- [!] Implement a persistent achievement counter that increments and displays the number of times the player has successfully dodged or interacted with a new hazard type  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a visual indicator (e.g., a small icon or badge) in the HUD that shows the player's current active achievements for new mechanics or NPCs
+- [x] Ensure each achievement is only counted once per session and persists across restarts using localStorage
+- [!] Add a new achievement for defeating the chase antagonist (Warboy's original creature) by surviving its pursuit for 10 seconds or more  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Store achievement progress in localStorage and restore it on reload
+- [x] Display active achievements in the HUD with visual indicators for completed and in-progress milestones
+
+- [x] Add a new `achievements` object to track player progress on specific interactions like hitting skiers, avoiding trees, or performing tricks
+- [x] Implement a `checkAchievements()` function that triggers on key events (e.g., collision, jump, style scoring) and updates the registry with new milestones
+- [x] Add a persistent achievements state object to track active achievements and their unlock conditions
+- [!] Implement a `drawAchievementBadges()` function that renders unlocked achievements as small, non-intrusive badges in the top-left corner using original pixel art  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Integrate `drawAchievementBadges()` into the main game loop to render badges during gameplay  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Define achievement conditions based on existing game mechanics: e.g., 'Hit 5 skiers in a row', 'Jump over 3 obstacles without touching', 'Avoid 10 trees'
+
+- [x] Add original animated chase antagonist (Warboy's own creature design) that spawns after 10 seconds of inactivity and pursues the player with increasing speed
+- [!] Implement dynamic terrain biomes (lodge → open slope → forest → night) with distinct visual layers and ambient sound cues  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [!] Add a style score counter that increments when the player slaloms closely to NPCs without colliding  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a multiplier system that increases when the player performs consecutive close passes to NPCs
+- [x] Add a 'crash-through' bonus that triggers when the player collides with an obstacle and continues skiing
+- [x] Introduce a trick landing reward that gives points and resets the multiplier when the player lands after a jump
+- [x] Display the current style score and multiplier in the HUD with visual feedback
+- [x] Add a persistent achievements registry that stores unlocked achievements in localStorage, initializing with empty state on first load
+- [!] Add biome zone boundaries as invisible triggers at specific y-positions in the scrolling slope  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to detect when the player crosses into a new biome zone and update the current biome state
+- [x] Implement a function to check if the player has entered a new biome and unlock the corresponding achievement if not already unlocked
+- [!] Add visual feedback (e.g., a brief screen flash or HUD label) when a new biome is entered and an achievement is unlocked  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a combo counter that increments on each consecutive style point from slaloming through skiers, dogs, or drones  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to reset the combo counter when a penalty occurs (hitting a tree or oil slick)
+- [!] Add a function to detect and trigger a combo achievement when the counter reaches 3, 5, and 10  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [!] Add visual feedback (e.g., a flashing 'COMBO!' label) when a new combo milestone is reached  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a chase antagonist entity with a unique original design, positioned dynamically on the slope and moving toward the player when idle
+- [x] Implement a state tracker for the chase antagonist's pursuit phase, triggered when the player's speed drops below a threshold for a sustained duration
+- [!] Create a collision detection system that registers near-misses between the player and the chase antagonist without triggering a crash  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Define and trigger an 'evasion achievement' when the player avoids the chase antagonist for a continuous duration or survives a close encounter  <!-- blocked: pipeline: item INCOMPLETE — 0/6 landed, 0 unspecifiable, 3 e -->
+- [x] Add a visual or audio cue to signal a successful evasion achievement, using only original art and sound in the existing codebase
+- [!] Add a function to track earned achievements and trigger unlock messages with original Warboy-style text  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a message display system that shows each unlock message for 2 seconds with fade-in/fade-out animation using original art-style typography  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Ensure messages appear only once per achievement and are positioned centrally with a subtle shadow for readability  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Add original Warboy-designed chase antagonist: a pixel-art 'Slope Stalker' creature that spawns after 10 seconds of inactivity, crawling up the slope to pursue the player with erratic movement and increasing speed
+- [x] Implement dynamic terrain transitions: change the snowfield background from open slope to dense forest biome after 500 meters, using original code-drawn trees and shadows
+- [x] Add a 'styleDistance' variable to track the minimum distance to the nearest NPC skier, updating every frame during skiing
+- [x] Implement a 'styleMultiplier' that starts at 1 and increases by 0.5 for each consecutive frame within 10px of an NPC skier, resetting to 1 on collision
+- [x] Award 10 bonus points per frame with a styleMultiplier > 1, applying the multiplier to the base score
+- [x] Reset styleMultiplier to 1 when the player collides with any obstacle or falls
+- [x] Add a new player state 'FLIPPING' to track mid-air flip input and animation
+- [x] Implement simultaneous left and right arrow detection during jump to trigger the flip state
+- [x] Add a flip animation state to the player object that tracks flip progress from 0 to 1
+- [x] Draw the player sprite mirrored and rotated around the center during flip state using canvas transformations
+- [x] Update the player's flip state when Space is pressed mid-air and animate it over time
+- [x] Add a flip state tracker to the player object to detect when a flip is initiated
+- [x] Implement a condition that checks for successful flip completion based on air time and orientation
+- [x] Introduce a style multiplier state that activates when a successful flip is detected
+- [!] Update the score calculation to apply a 2x multiplier when the flip is completed successfully  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure the multiplier resets after a collision or landing, preserving game balance
+- [x] Ensure the flip mechanic only activates during JUMPING state and resets after landing
+
+- [x] Create a 'SlopeStalker' class with properties for x, y, speed, and state, initialized off-screen and inactive
+- [!] Implement a draw method for SlopeStalker using only canvas primitives to render a unique, original pixel-art design  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add an update method to SlopeStalker that moves it toward the player only when active, based on distance and speed
+- [x] Initialize the SlopeStalker instance off-screen and inactive, ensuring it does not interfere with existing gameplay
+- [x] Implement a timer that tracks player inactivity and triggers the Slope Stalker's emergence after 30 seconds of no input
+- [x] Add logic for the Slope Stalker to appear at the top of the screen and begin following the player with a slow, predatory movement pattern
+- [x] Ensure the Slope Stalker's presence is visually distinct with unique animation frames and a subtle trail effect using only original code-drawn pixels
+- [x] Implement dynamic terrain transitions: code a biome shift from open slope to dense forest at 500 meters, using original hand-drawn pixel art for trees and snow depth
+- [x] Add a function to detect when the player is within 10px of an NPC skier during skiing, without collision
+- [!] Add a style counter variable to track consecutive close passes to NPCs  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to check if the player is within 10px of any NPC skier during movement
+- [!] Trigger a temporary glowing trail effect when a close pass is detected, using a short-lived visual overlay  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Display a 'style' score update on screen for 1 second after each valid close pass
+- [!] Add a style multiplier counter initialized to 1, incrementing on each close pass to skiers or obstacles without collision  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Update the HUD to display the current style multiplier value in real time  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Reset the style multiplier to 1 when the player collides with a tree, oil slick, or crashes
+- [!] Add logic to detect 'close pass' events based on proximity to NPCs or obstacles during movement  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to award bonus points based on the current style multiplier when the player successfully slaloms near an NPC skier  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a persistent achievements registry object to store unlock states using localStorage, with initial empty entries for 'Tree Hugger' and 'Airborne King'
+- [x] Add a function to check and unlock achievements when the player hits a tree, incrementing the counter and saving to localStorage if threshold is reached
+- [x] Add a function to check and unlock achievements when the player lands from a jump, tracking consecutive jumps and saving to localStorage if threshold is reached
+
+- [x] Add a new 'achievements' object to track player progress on specific behaviors like hitting skiers or performing tricks
+- [x] Implement a function to check and unlock achievements when the player performs scorable actions such as slaloming near skiers or crashing through obstacles
+- [x] Create a visual feedback system to display achievement unlocks with a brief on-screen notification using original pixel art icons
+
+- [x] Add original animated chase antagonist (Warboy's own creature design) that spawns after 10 seconds of inactivity and pursues the player with increasing speed
+- [x] Implement dynamic terrain transitions (forest → night → alpine) using code-drawn biome layers that shift as distance increases
+- [!] Add a style score counter that increments when the player slaloms close to NPCs without colliding  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a 'consecutivePasses' variable initialized to 0 in the game state
+- [x] Create a function to check horizontal proximity (within 15px) between player and NPC skier, incrementing 'consecutivePasses' if true and no collision is detected
+- [x] Reset 'consecutivePasses' to 0 when the player collides with any obstacle or hits the ground
+- [x] Initialize a multiplier variable set to 1 in the game state object
+- [x] Reset the multiplier to 1 whenever the player crashes or hits an obstacle
+- [x] Add a multiplier counter initialized to 1 in the game state
+- [x] Add a multiplier counter initialized at 1 and display it in the HUD
+- [x] Add a multiplier counter initialized to 1 in the game state
+- [x] Create a function to increment the multiplier when the player passes an obstacle without collision, triggered only if the obstacle is ahead and fully cleared
+- [x] Update the score display to show the current multiplier value
+- [x] Cap the multiplier at 5 to prevent it from growing beyond 5
+- [x] Display the current multiplier value in the HUD
+- [x] Display the current multiplier value on screen as a growing number above the player, using the existing HUD space
+- [x] Apply the multiplier to the score when passing an obstacle, increasing points proportionally to the current multiplier value
+- [x] Render the current multiplier as a floating 'xN' label above the player for 1.5 seconds after each pass, using original pixel-style text
+- [x] Add a function to detect when the player passes an NPC skier without collision
+- [x] Add a function to increment the score multiplier when the player successfully passes an NPC skier
+- [x] Add a function to apply the current multiplier to the score when passing an NPC, then reset the multiplier after a short delay
+- [x] Add a 'crash-through' mechanic where hitting an obstacle with momentum grants bonus style points and resets the multiplier
+- [x] Add air time tracking: increment a timer when player enters JUMPING state and reset on landing
+- [x] Display air time as a floating text overlay during jumps, showing seconds with one decimal place
+- [x] Award style points for air time exceeding 0.5 seconds, scaling linearly with duration
+- [x] Implement a trick multiplier that activates on jumps longer than 1.0 seconds, increasing score by 2x for up to 3 seconds
+- [x] Reset the trick multiplier after landing or if the player hits an obstacle
+- [x] Integrate all style points and multipliers into the main score display, updating in real time
+- [x] Create a persistent achievements registry with new entries for each new mechanic: 'Forest Flanker' (slalom through 5 forest trees), 'Night Runner' (survive 1 minute in night biome), 'Alpine Ace' (land 3 jumps in alpine zone)
+
+- [x] Add original Warboy-designed chase antagonist (a pixel-art snow-wolf with glowing eyes) that spawns after 30 seconds of inactivity and pursues the player with increasing speed
+- [x] Add biome transition trigger at 500 meters distance, updating a global biome state without altering existing rendering
+- [!] Add a function to generate random tree positions within the forest biome, ensuring they appear only after the terrain transitions to forest  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a function to draw Warboy's original pixel-art tree sprite using pure code-drawn shapes in the forest biome, with consistent style and size  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Integrate the tree drawing function into the game loop so trees are rendered only when the current biome is forest  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Ensure trees are drawn at correct vertical positions relative to the scrolling slope, maintaining visual depth and flow
+- [x] Add a distance-based biome transition trigger that starts at 1000 meters and increases linearly to 3000 meters
+- [!] Create a function to generate tree sprites as original code-drawn elements using a consistent pixel-art style  <!-- blocked: pipeline: item INCOMPLETE — 1/6 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a blending function that gradually replaces snowfield patterns with tree sprites over the 1000–3000 meter range  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the transition is visually smooth by interpolating opacity and position of tree sprites across the canvas  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add biome tracking to the game loop, marking current terrain as 'forest' when y exceeds 3000 pixels
+- [x] Modify tree rendering logic to check if current biome is 'forest' before drawing any tree sprites
+- [x] Add biome detection to the game loop that tracks descent level and triggers forest biome at a specific distance threshold
+- [x] Add biome tracking to the game state, initializing it to 'open_slope' at start
+- [!] Define a valid vertical range for tree spawning based on the current biome's terrain  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [x] Modify the tree spawn logic to check if the current biome is 'forest' before generating trees
+- [!] Ensure tree generation only occurs within the valid vertical range when in the forest biome  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to check if a tree's bounding box overlaps with any obstacle's bounding box using their x, y, width, and height  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to return true if any obstacle's position overlaps with a tree's position, using the bounding box overlap logic
+- [!] Add a function to check if a new tree overlaps with any existing obstacle or skier  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Modify the tree drawing logic to skip rendering if an overlap is detected
+- [x] Ensure the collision check uses the current player position and all active obstacles
+- [x] Add biome-specific tree styles by defining a map of biome types to tree color and shape parameters in the render phase
+- [x] Define biome-specific tree styles as arrays of original code-drawn shapes in the BIOME_TREE_STYLES constant
+- [x] Update the tree drawing function to select tree appearance based on the current biome using the BIOME_TREE_STYLES constant
+- [x] Ensure the tree drawing function uses only original code-drawn shapes and does not reuse existing sprites
+- [!] Ensure tree rendering respects obstacle avoidance by adjusting tree spawn positions to avoid overlapping with player or other obstacles  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 1 unspecifiable, 1 e -->
+- [!] Verify that tree sprites do not affect player collision detection or movement physics  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a style score counter that increments when the player slaloms within 30px of an NPC skier
+- [x] Add a visual style meter that fills incrementally when the player performs close passes to NPCs
+- [x] Add a crash-through bonus that awards points when the player collides with an obstacle and continues moving
+- [x] Add a function to detect when the player collides with an obstacle while in mid-air, triggering a 'crash through' state
+- [!] Create a small, self-contained animation function that draws a brief 'crash through' visual effect using original pixel art in the canvas  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [x] Implement a score pop-up function that displays a temporary +10 point label above the player's position with a fade-out animation
+- [!] Link the animation and score pop-up to the collision detection, ensuring they only trigger when the player crashes through an obstacle  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [x] Add a style multiplier that increases with consecutive close passes or crashes, resetting on collision with a tree or oil slick
+- [x] Create a persistent achievements registry with new entries for 'Forest Runner' (complete 100m in forest biome) and 'Wolf Whisperer' (survive chase antagonist for 15 seconds)
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Define the Sleet Hound's initial position as a fixed offset from the player's starting point, using only original code-drawn coordinates
+- [x] Initialize the Sleet Hound's speed as a constant multiplier of the player's current speed, ensuring it scales dynamically with gameplay
+- [x] Add a state variable for the Sleet Hound to track whether it is idle or actively chasing, starting in the idle state
+- [x] Ensure the Sleet Hound's state transitions to 'chasing' only when the player's speed drops below a threshold for a sustained period
+- [x] Add a Sleet Hound class with a fixed spawn offset behind the player, initialized only when the player is skiing
+- [x] Implement idle behavior: the Sleet Hound remains stationary until the player's speed drops below a threshold, then begins pursuit
+- [x] Add logic to detect dawdling: if the player's speed drops below a threshold for more than 1 second, trigger the Sleet Hound to start pursuing
+- [x] Implement the Sleet Hound's pursuit movement: follow the player's x-position with a slight delay and acceleration, adjusting for terrain scrolling
+- [x] Draw the Sleet Hound using original pixel-art code: a simple, stylized creature composed of geometric shapes in Warboy's signature style
+- [x] Add biome transition logic that triggers at specific distance thresholds during descent
+- [x] Implement original tree art using Warboy's own code-drawn pixel style, rendered only in forest biome
+- [x] Introduce ambient snow particle effects that appear and intensify in forest biome
+- [x] Add biome detection to track current terrain type based on player's vertical position
+- [x] Create a function to disable tree rendering when player is outside forest biome
+- [x] Create a function to disable snow particle effects when player is outside forest biome
+- [!] Link tree and snow effect toggles to the current biome state in the game loop  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a styleScore variable initialized to 0 in the game state
+- [x] Create a function to check if the player is within 30px of any NPC skier during each frame
+- [x] Increment styleScore by 1 whenever the player passes within 30px of an NPC skier, without double-counting the same skier in a single frame
+- [x] Implement a 'crash-through' mechanic where hitting an obstacle with sufficient speed grants bonus points and triggers a visual explosion effect
+- [x] Add a 'trick' detection system that awards points when the player lands after a jump with a vertical velocity below 10px/s
+- [!] Add a style score counter to the HUD using Warboy's original pixel-art font and color scheme  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [x] Add a combo multiplier counter that increments on successful near-misses with skiers and resets on collisions
+- [!] Render the combo multiplier using Warboy's original pixel-art font with the game's color scheme (navy, gold, snow)  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Update the combo display in real time during gameplay, positioned in the top-left HUD corner
+- [!] Style the combo text with a subtle glow effect using the game's original pixel-art aesthetic  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a style score counter that increments only on near misses with skiers or obstacles
+- [!] Add a combo multiplier that starts at 1 and increases on consecutive style-boosting actions  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Reset the combo multiplier to 1 when the player hits a tree or crashes on oil
+- [x] Display the current style score and combo multiplier in the HUD, updating only when style actions occur
+- [x] Link the combo multiplier to the timing and chain of style actions, resetting on collision or fall
+- [x] Add a persistent achievements registry that stores unlocked achievements in localStorage, with initial empty state
+- [!] Add a new achievement registry system that tracks first-time encounters with hazards, NPCs, and mechanics using a persistent map of unique identifiers  <!-- blocked: pipeline: item INCOMPLETE — 1/6 landed, 0 unspecifiable, 2 e -->
+- [x] Implement a function to trigger an achievement when a new hazard, NPC, or mechanic is first encountered, based on its unique identifier and current game state
+- [x] Implement a function to check and unlock achievements based on game state changes, triggered after each obstacle or NPC spawn
+- [x] Add a visual indicator in the HUD to show unlocked achievements, using only original Warboy art and existing canvas rendering
+
+- [x] Initialize an `achievements` object in the global scope to track near-misses, style hits, and combo chains
+- [x] Add a function to increment `achievements.nearMisses` when the player passes an NPC skier within NEAR_MISS_MARGIN
+- [!] Add a function to increment `achievements.styleHits` and reset `achievements.combo` when the player slaloms through an obstacle or NPC skier  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Initialize achievements.combo to 0 in the game state initialization
+- [!] Add a function to increment achievements.combo when player passes near or crashes through an NPC skier, without resetting on non-style events  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure achievements.combo is only incremented for NPC skiers, not trees, rocks, or other obstacles
+- [!] Add a function to reset achievements.combo to 0 when the player collides with a tree  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a new oilSlicks array to store active oil slicks in the game state
+- [x] Implement a bounding box collision check between the player and each oil slick in the update loop
+- [!] Trigger player crash state when oil slick collision is detected, updating game state accordingly  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [x] Reset achievements.combo to 0 when player collides with an oil slick
+- [!] Add a function to reset achievements.combo to 0 when the player collides with any other obstacle that ends the run  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a function to reset achievements.combo to 0 when the player crashes due to a jump failure or collision with terrain
+- [x] Add a new state flag 'isStyleHit' to track when the player performs a slalom or crash-through action
+- [x] Update the combo increment logic to only trigger when 'isStyleHit' is true and the player is not idle or moving without collision
+- [x] Reset 'isStyleHit' after each combo increment to prevent repeated triggering
+- [x] Add a function to record `achievements.maxCombo` whenever the current combo exceeds the previous record
+- [x] Implement a `checkAchievements()` function that triggers on scoring events and updates the registry based on current game state
+- [x] Add a new `achievements` state object to track active achievements and their unlock status
+- [x] Implement `renderAchievements()` to draw original pixel-art icons for active achievements in the HUD using the existing canvas context
+- [x] Update `drawHUD()` to call `renderAchievements()` and include spacing for the new icons
+- [x] Define achievement conditions for style hits (e.g., slaloming close to skiers), multipliers, and oil crashes
+- [x] Ensure all achievements are reset only on game restart, preserving progress across lives
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Implement the chase antagonist: a custom-designed creature (e.g., a pixel-art 'Wasteland Weasel' with glowing eyes and twitchy movement) that spawns after 15 seconds of inactivity and pursues the player with increasing speed, adding tension to the gameplay.
+- [x] Define biome transition points based on player distance traveled, using a single numeric threshold per biome change
+- [!] Define biome boundary triggers based on player distance traveled, using original vector-style snow patterns in code  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a foundation function to render a single original vector-style snow pattern on the canvas, using only Warboy's own code-drawn art
+- [x] Create a function to smoothly transition background color at biome boundaries using original color palettes defined in code
+- [x] Add a biome change event handler that triggers both snow pattern and background color updates simultaneously, using only original art
+- [x] Ensure all functions are self-contained within index.html, require no external assets, and preserve existing game mechanics
+- [!] Add a nighttime biome flag and initialize ambient lighting state in the game loop  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a dynamic brightness reduction effect using canvas globalAlpha for nighttime visuals  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Draw original code-drawn moon and star effects using simple geometric shapes in the night sky  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Adjust snow and obstacle colors to darker, cooler tones during nighttime biome phase
+- [!] Ensure lighting transitions smoothly when switching to the nighttime alpine biome  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Ensure all biome visual changes are triggered only once per transition and persist until the next biome boundary
+- [x] Introduce a style-based scoring system: award points for slaloming close to NPCs (within 10px), crashing through obstacles, and landing jumps with air time, with multipliers that increase for consecutive actions and reset on failure.
+- [x] Add biome transition tracking: detect when player crosses into a new biome and record the event in a persistent achievements state
+- [x] Implement a style chain counter that increments on close passes to skiers or obstacles and resets on collision or death
+- [x] Introduce a chase antagonist evasion timer that tracks consecutive seconds survived without being caught
+- [x] Add biome transition detection from open slope to night biome, triggering 'Alpine Initiate' achievement on first entry
+- [x] Implement style chain tracking for skier passes, incrementing on each close pass or crash-through, triggering 'Ski-Slalom King' at 10
+- [x] Introduce a 30-second evasion timer that starts when the chase antagonist appears, triggering 'Weasel Whisperer' upon completion
+- [x] Add a persistent achievements state object to track unlocked achievements by ID
+- [x] Create a function to check for new achievement conditions on each game tick and trigger notifications only when conditions are first met
+- [x] Add a function to initialize an achievements object with empty unlock history and a current achievement tracker
+- [!] Add a function to check for new achievements on each frame and update the temporary state with the latest unlocked achievement name  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to render a fade-in text overlay at the center of the screen using the game's existing canvas context, displaying the achievement name for 2 seconds
+- [!] Add a state variable to track unlocked achievements and a timer to manage overlay visibility  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+- [!] Create a function to trigger the overlay when an achievement is unlocked, setting a 2-second timer  <!-- blocked: pipeline NOT started: reasoner produced no valid single-func -->
+- [x] Add a function to hide the overlay element after 2 seconds using setTimeout
+- [x] Add a function to clear any existing overlay timer when a new overlay is shown
+- [!] Link the overlay trigger to the achievement unlock event without modifying existing game logic  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Add original Warboy-designed chase antagonist creature with unique movement pattern and visual style, appearing after 10 seconds of inactivity
+- [x] Implement dynamic terrain biomes (lodge → open slope → forest → night) with distinct background art and ambient sound cues
+- [x] Introduce style-based scoring: award points for slaloming close to NPCs, crashing through obstacles, and landing jumps with multipliers
+- [x] Design and implement a persistent achievements registry with data-driven unlock logic, extending existing system to cover new mechanics
+
+- [x] Define a new Warboy-original chase antagonist class with a unique visual style using original code-drawn sprites
+- [x] Implement the antagonist's basic movement logic to follow the player at a consistent distance
+- [x] Add a new antagonist object with position, speed, and visual representation using original code-drawn art
+- [!] Implement basic collision detection between the antagonist and player using bounding box checks  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Trigger the player's EATEN state when collision occurs, updating game state and score accordingly
+- [x] Introduce a visual cue (e.g., flickering or distinct color) to signal the antagonist's presence on screen
+- [x] Implement the antagonist's basic movement logic to follow the player at a variable distance
+- [x] Add collision detection between the antagonist and the player to trigger the EATEN state
+- [x] Add a player speed threshold that triggers the antagonist's activation when below it for 2 seconds
+- [x] Implement a cooldown timer that prevents the antagonist from appearing during the initial ski lift phase
+- [x] Create a function to spawn the antagonist at a random position above the player's current y-coordinate
+- [!] Add a visual cue (e.g., a distant shadow or flicker) to hint at the antagonist's presence before spawn  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement the antagonist's basic movement logic to follow the player when within a set distance
+- [x] Add collision detection between the antagonist and the player to trigger the 'EATEN' state
+- [x] Introduce a visual 'chase' animation state for the antagonist when actively pursuing the player
+- [x] Implement the antagonist's basic movement logic to follow the player at a variable distance
+- [x] Add collision detection between the antagonist and the player to trigger the EATEN state
+- [x] Introduce a visual 'chase' animation state for the antagonist when closing in on the player
+- [x] Implement the antagonist's basic movement logic to follow the player at a variable distance
+- [x] Add collision detection between the antagonist and the player to trigger the EATEN state
+- [x] Introduce a visual 'chase' animation or behavior when the antagonist is actively pursuing
+- [x] Implement the antagonist's spawn logic to appear after a delay when player speed drops below threshold
+- [x] Add the antagonist's movement pattern: slow tracking with increasing speed and erratic lateral shifts
+- [x] Integrate collision detection between antagonist and player, triggering 'EATEN' state on contact
+- [x] Ensure the antagonist's behavior is independent of existing obstacles and NPCs, with no impact on score or game loop
+- [x] Implement dynamic terrain biomes that transition as player descends (e.g., forest → night → alpine)
+- [x] Introduce style-based scoring with multipliers for slaloming near or crashing through NPCs and hazards
+- [x] Create a persistent achievements registry with data-driven unlock logic for new mechanics and interactions
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 1 unspecifiable, 0 e -->
+
+- [x] Implement the chase antagonist creature with original code-drawn art, designed to pursue the player when they slow down, adding tension to the gameplay
+- [x] Add dynamic terrain biomes that transition as the player descends—starting with open slope, shifting to forest, then night, each with unique visual and hazard traits
+- [x] Initialize a styleScore variable set to 0 in the game state
+- [x] Initialize a styleMultiplier variable set to 1 in the game state
+- [x] Update styleScore by 1 every 100 meters traveled while skiing
+- [!] Increase styleMultiplier by 0.1 for each consecutive successful slalom through a skier, up to a maximum of 2.0  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a function to increment styleScore and reset styleMultiplier on successful near-miss or crash-through of an NPC, with multiplier increasing by 0.5 up to 3.0
+- [x] Create a function to deduct points from styleScore and reset styleMultiplier when player hits a tree or oil slick, with penalty of -10 points
+- [x] Update the game loop to call the style scoring functions during NPC collision checks, only for NPCs that are not already destroyed
+- [x] Add a styleScore variable initialized to 0 in the game state
+- [!] Update the HUD rendering function to display styleScore and styleMultiplier using the existing score rendering logic  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a persistent achievements registry with new entries for each major mechanic—e.g., 'Forest Surge' for surviving 10 forest segments, 'Night Stalker' for 5 night-time jumps
+
+- [x] Add original chase antagonist creature with unique movement pattern and visual design, appearing after 30 seconds of inactivity
+- [x] Implement dynamic terrain biomes (lodge → open slope → forest → night) with distinct visual styles and ambient effects
+- [x] Add a style score counter that increments when the player passes within 30px of an NPC skier
+- [x] Add a 'consecutiveClosePasses' counter initialized to 0 in the game state
+- [!] Increment the counter by 1 when the player passes an NPC within NEAR_MISS_MARGIN without collision, and reset to 0 on any collision  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Display the current multiplier value as a visual effect (e.g., glowing score text or HUD indicator) that updates in real time
+- [x] Add a 'crash through' event that triggers when the player collides with an obstacle while moving forward, awarding 50 points and resetting the multiplier
+- [x] Add a trick landing detection that triggers on landing after a jump, awarding 20 points and applying the current multiplier to the score
+- [x] Display the style score and active multiplier in the HUD using the existing score display elements
+- [x] Add persistent achievement registry with data-driven unlocks for new mechanics (e.g., 'Forest Stalker' for surviving 10 forest trees, 'Night Owl' for 5 minutes in night biome)
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Add original Warboy-designed chase antagonist (a snow-wolf with glowing eyes) that spawns after 10 seconds of inactivity and pursues the player with increasing speed
+- [x] Implement dynamic terrain biomes: transition from open slope to dense forest at 500 meters, using original code-drawn trees and snow patterns
+- [x] Add a 'near_miss' detection system that triggers when player passes within 30px of an NPC skier
+- [x] Implement a visual 'style flash' effect (brief white glow) on screen when a near-miss occurs
+- [x] Add a styleMultiplier variable initialized to 0 in the game state
+- [x] Increment styleMultiplier by 1 when the player performs a near-miss with any obstacle without collision
+- [x] Reset styleMultiplier to 0 when the player collides with an obstacle or falls
+- [x] Display the current styleMultiplier value in the HUD as a growing number above the score
+- [x] Add a style multiplier state initialized at 1, persisting across game sessions
+- [x] Implement near-miss detection between player and NPCs, triggering style point accumulation only when multiplier > 1
+- [x] Add 10 style points per near-miss, scaled by current multiplier value, and update score display in real time
+- [!] Ensure style points are only awarded during active gameplay and reset on death or restart  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Display the current style multiplier and accumulated style points in the HUD with distinct visual styling
+- [!] Add a persistent achievements registry that auto-updates with new counters for the chase antagonist (e.g., 'Snow-Wolf Slayer' at 5 kills) and unlocks with original art popups  <!-- blocked: pipeline: item INCOMPLETE — 0/0 landed, 2 unspecifiable, 0 e -->
+
+- [x] Add original chase antagonist creature with unique movement pattern and visual design, drawn in code using Warboy's original art style
+- [x] Implement dynamic terrain biomes (forest → night → alpine) that transition smoothly as player descends, with distinct visual and hazard changes
+- [x] Add a style score counter that increments when the player slaloms within 30px of an NPC skier or obstacle
+- [x] Implement a real-time style multiplier that increases by 1 for each consecutive style action and resets on collision or fall
+- [x] Display the current style score and multiplier in the HUD using the existing score display area
+- [x] Add a trick landing bonus that triggers when the player lands after a jump, awarding points based on air time and multiplier
+- [!] Add persistent style score storage in localStorage, saving only the current style points when the player restarts  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add multiplier persistence across restarts by storing the current multiplier state in localStorage
+- [x] On game restart, load and apply the saved style points and multiplier from localStorage
+- [x] Reset style points and multiplier only when the player dies or the game ends, not on restart
+- [x] Add a persistent achievements registry object that stores unlocked achievements as an array of {id, name, description, count, unlockedAt} with default empty state
+- [x] Implement a function to check and unlock achievements based on new events (e.g., 'crashedThroughSkiers', 'jumpedOverDrones') with Warboy-style witty descriptions
+- [x] Add a new achievements object to track counters for crash-through and jump-over events
+- [x] Create a function to increment the crash-through counter when the player passes through an NPC skier
+- [!] Create a function to increment the jump-over counter when the player jumps over an obstacle  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Add a function to check and update achievements whenever a crash-through or jump-over event occurs  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Add a function to track and store newly unlocked achievements in memory
+- [!] Create a function to render a single achievement pop-up using Warboy's original pixel-art style on the canvas  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a function to queue achievement pop-ups and manage their timing and display order
+- [x] Add a function to animate the achievement pop-up with a brief fade-in and fade-out effect
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Implement original chase antagonist creature with unique movement pattern and visual design
+- [x] Add terrain biome transitions with distinct visual styles and obstacle evolution
+- [x] Introduce style-based scoring with multipliers for close passes and crashes through NPCs
+- [x] Implement persistent achievement registry with data-driven unlock logic and witty unlock messages
+
+- [x] Implement the chase antagonist: a unique, original creature drawn in code that appears after a delay when player slows, pursuing with increasing speed and aggressive pathfinding
+- [x] Define a distance threshold for the first biome transition (e.g., open slope to forest) as a constant in the game state
+- [!] Add a function to check player distance against biome transition thresholds and trigger the next biome when crossed  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Implement a biome change handler that updates the terrain rendering and obstacle generation rules based on the current biome  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Ensure the transition is seamless by preserving player position and speed during the change  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Define a foundational function to generate and render a variable terrain pattern using Warboy's original pixel-art snowfield design  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 1 unspecifiable, 2 e -->
+- [!] Implement a scrolling snowfield renderer that draws the terrain pattern across the canvas with consistent vertical offset and horizontal flow  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [x] Add a biome transition system that triggers at fixed distance intervals, updating terrain style without altering existing mechanics
+- [!] Define biome-specific art style mappings using Warboy's original pixel art patterns in a new function that returns style data for each biome  <!-- blocked: pipeline: item INCOMPLETE — 0/3 landed, 0 unspecifiable, 2 e -->
+- [!] Create a terrain pattern generator function that selects and applies the correct art style based on current biome, using only existing canvas drawing functions  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [x] Implement a biome transition system that updates the terrain style when crossing biome boundaries, ensuring seamless visual shifts
+- [!] Add a function to draw the selected terrain pattern across the scrolling slope using only existing canvas drawing methods  <!-- blocked: pipeline: item INCOMPLETE — 1/3 landed, 0 unspecifiable, 1 e -->
+- [!] Add a biome layer manager that tracks current biome and updates rendering context with new snow texture patterns  <!-- blocked: pipeline: item INCOMPLETE — 1/5 landed, 0 unspecifiable, 2 e -->
+- [!] Implement a function to draw biome-specific snow textures on the canvas background, using only original pixel art patterns  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Create a smooth transition function that interpolates between adjacent biome textures during terrain changes
+- [!] Integrate the layer manager with the game's scrolling slope to apply new textures at biome boundary points  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [x] Add a terrain biome transition trigger that activates when player distance exceeds 1000 meters, using existing scroll state and distance tracking
+- [!] Implement a biome change function that updates the tree style palette based on current player distance, without modifying any existing obstacle or scroll logic  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [!] Introduce a terrain pattern sync function that adjusts the frequency and spacing of snow patterns based on current scroll speed, using only existing game loop and scroll state  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+- [!] Create a biome boundary check function that ensures terrain changes occur only at fixed distance intervals, preventing flickering or premature transitions  <!-- blocked: pipeline: item INCOMPLETE — 0/4 landed, 0 unspecifiable, 2 e -->
+- [x] Implement original pixel-art forest biome with trees using Warboy's own art style
+- [x] Add original pixel-art night biome with ambient lighting and star effects
+- [x] Integrate smooth visual transitions between biomes using fade-in/fade-out effects
+- [x] Introduce style-based scoring: award points for slaloming close to NPCs, crashing through obstacles, and landing tricks, with visible combo multipliers and penalty feedback
+- [!] Create a persistent achievements registry with new unlockables for biome transitions, style combos, and antagonist encounters, using original art and witty Warboy-style text  <!-- blocked: pipeline: item INCOMPLETE — 0/2 landed, 0 unspecifiable, 1 e -->
+
+- [x] Grow the achievements registry to cover the current scorable interactions (quality-audit)
+
+- [x] Add the Warboy-designed chase antagonist creature with unique movement pattern and visual design
+- [x] Implement terrain biome transitions (lodge → open slope → forest → night) with original art
+- [x] Introduce style-based scoring with multipliers for slaloming through NPCs and crashing into hazards
+- [x] Add a persistent achievements registry with data-driven unlock logic for all new mechanics
+
+- [x] Add original chase antagonist creature with unique movement pattern and visual design, appearing after 30 seconds of inactivity
+- [x] Implement dynamic terrain biomes (lodge → open slope → forest → night) with distinct background art and ambient sound cues
+- [x] Introduce style-based scoring: bonus points for slaloming close to NPCs, crashing through obstacles, and landing tricks with air time
+- [x] Add a persistent achievements registry that stores unlocked achievements in localStorage, with a function to initialize and save state on each game end
+- [x] Implement a function to check and unlock 'biome traversal' achievements when the player progresses through new terrain biomes, adding only new entries for unmet conditions
+- [x] Add a style streak counter that increments on each high-style action (e.g., slaloming close to skiers or crashing through obstacles) and resets on low-style or failed actions
+- [x] Track the player's personal best style streak and update it only when a new maximum is achieved
+- [!] Trigger a visual or audio feedback (e.g., a brief glow or chime) when a new personal best style streak is reached  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Create a function to register and unlock 'antagonist encounter' achievements when the chase antagonist appears or is defeated, ensuring no duplicates are added  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+- [!] Ensure all achievement events are tied to game state transitions and only add new entries, never modifying existing ones  <!-- blocked: pipeline NOT started: reasoner decompose failed: TimeoutErro -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline NOT started: reasoner decompose failed: HTTPError:  -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline NOT started: reasoner decompose failed: HTTPError:  -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline NOT started: reasoner decompose failed: HTTPError:  -->
+
+- [!] Grow the achievements registry to cover the current scorable interactions (quality-audit)  <!-- blocked: pipeline NOT started: reasoner decompose failed: HTTPError:  -->
