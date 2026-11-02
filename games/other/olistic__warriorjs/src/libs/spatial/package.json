@@ -1,0 +1,30 @@
+{
+  "name": "@warriorjs/spatial",
+  "version": "0.7.0",
+  "description": "WarriorJS directioning",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/libs/spatial",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  }
+}

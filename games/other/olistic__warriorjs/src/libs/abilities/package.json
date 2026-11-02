@@ -1,0 +1,34 @@
+{
+  "name": "@warriorjs/abilities",
+  "version": "0.13.0",
+  "description": "WarriorJS base abilities",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/libs/abilities",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@warriorjs/core": "workspace:^",
+    "@warriorjs/spatial": "workspace:^"
+  }
+}

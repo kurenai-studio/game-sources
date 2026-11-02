@@ -1,0 +1,33 @@
+{
+  "name": "@warriorjs/effects",
+  "version": "0.12.2",
+  "description": "WarriorJS base effects",
+  "author": "Matias Olivera <hi@matiasolivera.com>",
+  "license": "MIT",
+  "homepage": "https://warrior.js.org",
+  "repository": "https://github.com/olistic/warriorjs/tree/master/libs/effects",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@warriorjs/core": "workspace:^"
+  }
+}
