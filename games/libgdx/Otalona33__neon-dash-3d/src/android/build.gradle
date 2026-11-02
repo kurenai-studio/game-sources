@@ -1,0 +1,61 @@
+plugins { id 'com.android.application' }
+
+configurations { natives }
+def nativeLibsDir = "$buildDir/generated/jniLibs"
+
+android {
+    namespace 'com.otalona.neondash'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.otalona.neondash'
+        minSdk 23
+        targetSdk 35
+        versionCode 5
+        versionName '1.3.0'
+    }
+
+    sourceSets {
+        main { jniLibs.srcDirs = [nativeLibsDir] }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-android:${rootProject.ext.gdxVersion}"
+
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-platform:${rootProject.ext.gdxVersion}:natives-x86_64"
+}
+
+tasks.register('copyAndroidNatives') {
+    inputs.files(configurations.natives)
+    outputs.dir(nativeLibsDir)
+
+    doLast {
+        def abiByArtifact = [
+            'natives-armeabi-v7a.jar': 'armeabi-v7a',
+            'natives-arm64-v8a.jar': 'arm64-v8a',
+            'natives-x86.jar': 'x86',
+            'natives-x86_64.jar': 'x86_64'
+        ]
+        configurations.natives.files.each { nativeJar ->
+            def abi = abiByArtifact.find { suffix, ignored -> nativeJar.name.endsWith(suffix) }?.value
+            if (abi == null) throw new GradleException("Unsupported libGDX native artifact: ${nativeJar.name}")
+            copy {
+                from zipTree(nativeJar)
+                include '*.so'
+                into file("${nativeLibsDir}/${abi}")
+            }
+        }
+    }
+}
+
+tasks.named('preBuild').configure { dependsOn 'copyAndroidNatives' }
