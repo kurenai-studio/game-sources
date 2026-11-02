@@ -1,0 +1,25 @@
+local settings	= require("defrend.render.settings")
+local uniforms	= require("defrend.render.uniforms")
+local msgs		= require("defrend.messages")
+local queue		= require("defrend.scripts.configurators.queue")
+
+go.property("sunlight_enabled", true)
+
+local function do_init(self)
+	settings.directional_light.enabled		= self.sunlight_enabled
+end
+
+function init(self)
+	do_init(self)
+	queue.init_pending_directional_lights()
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgs.REFRESH then
+		do_init(self)
+	end
+end
+
+function on_reload(self)
+	do_init(self)
+end

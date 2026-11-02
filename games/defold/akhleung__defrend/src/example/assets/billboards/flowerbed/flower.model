@@ -1,0 +1,19 @@
+mesh: "/builtins/assets/gltf/quad.gltf"
+name: "grass"
+materials {
+  name: "default"
+  material: "/defrend/materials/geometry/billboard_sprite/billboard.material"
+  textures {
+    sampler: "albedo_map"
+    texture: "/example/assets/billboards/flowerbed/flower.png"
+  }
+  textures {
+    sampler: "normal_map"
+    texture: "/example/assets/flat.png"
+  }
+  textures {
+    sampler: "spec_glow_map"
+    texture: "/defrend/assets/textures/black.png"
+  }
+}
+create_go_bones: false

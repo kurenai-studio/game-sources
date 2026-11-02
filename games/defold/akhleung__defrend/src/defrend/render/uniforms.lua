@@ -1,0 +1,196 @@
+---@diagnostic disable: inject-field
+local settings = require "defrend.render.settings"
+
+local M = {
+	geometry			= { uniforms = render.constant_buffer() },
+	directional_light	= { uniforms = render.constant_buffer() },
+	point_light			= { uniforms = render.constant_buffer() },
+	spot_light			= { uniforms = render.constant_buffer() },
+	ambient_and_fog		= { uniforms = render.constant_buffer() },
+	ssao				= { uniforms = render.constant_buffer() },
+	ssao_blur			= { uniforms = render.constant_buffer() },
+	outline				= { uniforms = render.constant_buffer() },
+	glow				= { uniforms = render.constant_buffer() },
+	bloom				= { uniforms = render.constant_buffer() },
+	box_blur			= { uniforms = render.constant_buffer() },
+	gaussian_blur		= { uniforms = render.constant_buffer() },
+	dual_kawase_blur	= { uniforms = render.constant_buffer() },
+	dilate				= { uniforms = render.constant_buffer() },
+	dof_coc				= { uniforms = render.constant_buffer() },
+	dof_blur			= { uniforms = render.constant_buffer() },
+	gamma				= { uniforms = render.constant_buffer() },
+	kuwahara_blur		= { uniforms = render.constant_buffer() },
+	fxaa				= { uniforms = render.constant_buffer() },
+}
+
+local light = settings.ambient_and_fog
+local fog_params = vmath.vector4()
+local light_vol_attn = vmath.vector4()
+
+function M.ambient_and_fog.init()
+	fog_params.x = light.fog_near
+	fog_params.y = light.fog_far
+	M.ambient_and_fog.uniforms.fog_params			= fog_params
+	M.ambient_and_fog.uniforms.fog_color			= light.fog_color
+	M.ambient_and_fog.uniforms.ambient_color		= light.ambient_color
+end
+
+local point_light = settings.point_light
+function M.point_light.init()
+	light_vol_attn.x = point_light.attenuation
+
+	-- shadow mapping params will be set by the `point_light_with_shadows` controller script
+
+	M.geometry.uniforms.light_vol_attn		= light_vol_attn
+	M.point_light.uniforms.light_vol_attn	= light_vol_attn
+end
+
+local spot_light = settings.spot_light
+function M.spot_light.init()
+	light_vol_attn.y = spot_light.range_attenuation
+	light_vol_attn.z = spot_light.spread_attenuation
+
+	-- shadow mapping params will be set by the `spot_light_with_shadows` controller script
+
+	M.geometry.uniforms.light_vol_attn		= light_vol_attn
+	M.spot_light.uniforms.light_vol_attn	= light_vol_attn
+end
+
+local ssao = settings.ssao
+local ssao_params1	= vmath.vector4()
+local ssao_params2	= vmath.vector4()
+local ssao_params3	= vmath.vector4()
+local ssao_blur_params = vmath.vector4()
+function M.ssao.init()
+	ssao_params1.x = ssao.samples
+	ssao_params1.y = ssao.intensity
+	ssao_params1.z = ssao.bias_angle
+	ssao_params1.w = ssao.bias_dist
+	ssao_params2.x = ssao.min_distance
+	ssao_params2.y = ssao.max_distance
+	ssao_params2.z = ssao.attenuation
+	ssao_params2.w = ssao.radius
+	ssao_params3.x = ssao.granularity
+	ssao_params3.y = ssao.hash_factor
+	M.ssao.uniforms.params1 = ssao_params1
+	M.ssao.uniforms.params2 = ssao_params2
+	M.ssao.uniforms.params3 = ssao_params3
+
+	ssao_blur_params.x = ssao.blur_radius
+	ssao_blur_params.y = ssao.blur_depth_threshold
+	ssao_blur_params.z = ssao.blur_normal_threshold
+	M.ssao_blur.uniforms.params = ssao_blur_params
+end
+
+local outline = settings.outline
+local outline_params1 = vmath.vector4()
+local outline_params2 = vmath.vector4()
+local outline_params3 = vmath.vector4()
+function M.outline.init()
+	outline_params1.x = outline.depth_threshold
+	outline_params1.y = outline.normal_threshold
+	outline_params1.z = outline.normal_smoothing
+
+	outline_params2.x = outline.max_thickness
+	outline_params2.y = outline.min_thickness
+	outline_params2.z = outline.max_distance
+	outline_params2.w = outline.min_distance
+
+	outline_params3.x = outline.grazing_fresnel_power
+	outline_params3.y = outline.grazing_angle_mask_power
+	outline_params3.z = outline.grazing_angle_modulation_factor
+
+	M.outline.uniforms.params1			= outline_params1
+	M.outline.uniforms.params2			= outline_params2
+	M.outline.uniforms.params3			= outline_params3
+	M.outline.uniforms.outline_color	= outline.outline_color
+end
+
+local glow = settings.glow
+local glow_params = vmath.vector4()
+function M.glow.init()
+	glow_params.x = glow.separation
+	glow_params.y = glow.bloom
+	M.glow.uniforms.params = glow_params
+end
+
+local bloom = settings.bloom
+local bloom_params = vmath.vector4()
+function M.bloom.init()
+	bloom_params.x = bloom.threshold
+	bloom_params.y = bloom.radius
+	bloom_params.z = bloom.separation
+	bloom_params.w = bloom.strength
+	M.bloom.uniforms.params = bloom_params
+end
+
+local box_blur = settings.box_blur
+local box_blur_params = vmath.vector4()
+function M.box_blur.init()
+	box_blur_params.x = box_blur.radius
+	box_blur_params.y = box_blur.separation
+	M.box_blur.uniforms.params = box_blur_params
+end
+
+local gaussian = settings.gaussian_blur
+local gaussian_params = vmath.vector4()
+function M.gaussian_blur.init()
+	gaussian_params.x = gaussian.separation
+	M.gaussian_blur.uniforms.params = gaussian_params
+end
+
+local kawase = settings.dual_kawase_blur
+local kawase_params = vmath.vector4()
+function M.dual_kawase_blur.init()
+	kawase_params.x = kawase.separation
+	kawase_params.y = kawase.bloom
+	M.dual_kawase_blur.uniforms.params = kawase_params
+end
+
+local dilate = settings.dilate
+local dilate_params = vmath.vector4()
+function M.dilate.init()
+	dilate_params.x = dilate.min_threshold
+	dilate_params.y = dilate.max_threshold
+	dilate_params.z = dilate.radius
+	dilate_params.w = dilate.separation
+	M.dilate.uniforms.params = dilate_params
+end
+
+local dof = settings.dof
+local dof_coc_params = vmath.vector4()
+local dof_blur_params = vmath.vector4()
+function M.dof_coc.init()
+	dof_coc_params.x = dof.focal_depth
+	dof_coc_params.y = dof.blur_start
+	dof_coc_params.z = dof.blur_full
+	dof_blur_params.x = dof.blur_samples
+	dof_blur_params.y = dof.blur_radius
+	dof_blur_params.z = dof.coc_threshold
+	dof_blur_params.w = dof.coc_visualization
+	M.dof_coc.uniforms.params = dof_coc_params
+	M.dof_blur.uniforms.params = dof_blur_params
+end
+
+local gamma = settings.gamma
+local gamma_params = vmath.vector4()
+function M.gamma.init()
+	gamma_params.x = gamma.gamma
+	M.gamma.uniforms.params = gamma_params
+end
+
+local kuwahara_blur = settings.kuwahara_blur
+local kuwahara_blur_params = vmath.vector4()
+function M.kuwahara_blur.init()
+	kuwahara_blur_params.x = kuwahara_blur.samples
+	M.kuwahara_blur.uniforms.params = kuwahara_blur_params
+end
+
+local fxaa = settings.fxaa
+local fxaa_params = vmath.vector4()
+function M.fxaa.init()
+	fxaa_params.x = fxaa.iterations
+	M.fxaa.uniforms.params = fxaa_params
+end
+
+return M

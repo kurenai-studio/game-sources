@@ -1,0 +1,152 @@
+local M = {
+	resolution_x = 0,
+	resolution_y = 0,
+	scene_camera_url = nil,
+	scene_camera_inv = vmath.matrix4(),
+	geometry = {
+		models_enabled = true,
+		sprites_enabled = true,
+		billboards_enabled = true,
+		particles_enabled = true,
+		decals_enabled = true,
+		skybox_enabled = true,
+	},
+	ambient_and_fog = {
+		fog_near = 800,
+		fog_far = 1001,
+		fog_color = vmath.vector4(0),
+		ambient_color = vmath.vector4(0.75, 0.75, 0.75, 1.0),
+	},
+	directional_light = {
+		enabled = true,
+	},
+	point_light = {
+		enabled = true,
+		-- light settings
+		attenuation = 1,
+		-- shadow settings
+		shadows_enabled = true,
+		poisson_samples = 4,
+		poisson_scale = 3,
+		hash_factor = 7879,
+		hash_scale = 3,
+		soft_penumbras = true,
+		shadow_bias_near = 0.1,
+		shadow_bias_far = 0.5,
+	},
+	spot_light = {
+		enabled = true,
+		-- light settings
+		range_attenuation = 5,
+		spread_attenuation = 1,
+		-- shadow settings
+		shadows_enabled = true,
+		pcf_samples = 8,
+		poisson_samples = 4,
+		poisson_scale = 5,
+		hash_factor = 7879,
+		hash_scale = 5,
+		soft_penumbras = true,
+		shadow_bias_near = 0.1,
+		shadow_bias_far = 0.5,
+	},
+	ssao = {
+		enabled = true,
+		downsample = false,
+		samples = 16,
+		intensity = 1.5,
+		bias_angle = 0.1,
+		bias_dist = 0.5,
+		min_distance = 1.0,
+		max_distance = 4.0,
+		attenuation = 1.0,
+		radius = 2.0,
+		granularity = 200,
+		hash_factor = 100,
+		blur = true,
+		blur_radius = 4,
+		blur_depth_threshold = 0.2,
+		blur_normal_threshold = 0.85,
+		blur_compares_normals = false,
+	},
+	outline = {
+		enabled = false,
+		outline_color = vmath.vector4(0, 0, 0, 0.5),
+		-- outline
+		depth_threshold		= 0.025,
+		normal_threshold	= 0.5,
+		normal_smoothing	= 0.25,
+		-- thickness
+		min_thickness	= 0.5,
+		max_thickness	= 1.3,
+		min_distance	= 2.0,
+		max_distance	= 75.0,
+		-- grazing prevention
+		grazing_fresnel_power			= 5.0,
+		grazing_angle_mask_power		= 1.0,
+		grazing_angle_modulation_factor	= 50.0,
+	},
+	glow = {
+		enabled = true,
+		iterations = 3,
+		separation = 2.0,
+		bloom = 1.0,
+	},
+	bloom = {
+		enabled = false,
+		threshold = 0.9,
+		radius = 1,
+		separation = 2,
+		strength = 0.5,
+	},
+	box_blur = {
+		radius = 1,
+		separation = 1.0,
+	},
+	gaussian_blur = {
+		enabled = false,
+		downsamples = 1,
+		separation = 1.0,
+	},
+	dual_kawase_blur = {
+		enabled = false,
+		iterations = 1,
+		separation = 1.0,
+		bloom = 1.0,
+	},
+	kuwahara_blur = {
+		enabled = false,
+		samples = 1,
+	},
+	dilate = {
+		enabled = false,
+		min_threshold = 0.1,
+		max_threshold = 0.3,
+		radius = 1,
+		separation = 1,
+	},
+	dof = {
+		enabled = false,
+		focal_depth = 200,
+		blur_start = 30,
+		blur_full = 40,
+		blur_samples = 16,
+		blur_radius = 2,
+		downsamples = 2,
+		coc_threshold = 0.005,
+		coc_visualization = 0,
+	},
+	gamma = {
+		enabled = false,
+		gamma = 2.2,
+	},
+	fxaa = {
+		enabled = true,
+		iterations = 3,
+	},
+	visualize = {
+		option = nil,
+	},
+}
+
+return M

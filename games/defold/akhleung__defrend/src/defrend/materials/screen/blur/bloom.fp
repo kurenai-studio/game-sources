@@ -1,0 +1,34 @@
+#version 420
+
+in vec2 var_texcoord0;
+
+uniform sampler2D color_sampler;
+
+uniform bloom_fp {
+	vec4 params;
+};
+
+vec2	resolution	= textureSize(color_sampler, 0);
+float	threshold	= params.x;
+int		radius		= int(params.y);
+float	separation	= params.z;
+float	strength	= params.w;
+
+layout(location = 0) out vec4 fragColor;
+
+void main() {
+	vec4 result = vec4(0);
+	int count = 0;
+	for (int i = -radius; i <= radius; ++i) {
+		for (int j = -radius; j <= radius; ++j) {
+			vec4 color = texture(color_sampler, (gl_FragCoord.xy + (vec2(i, j) * separation)) / resolution);
+			float value = dot(color.rgb, vec3(0.21, 0.72, 0.07));
+			result += value < threshold ? vec4(0) : color;
+			++count;
+		}
+	}
+	result /= count;
+	result = mix(vec4(0), result, strength);
+	fragColor = texture(color_sampler, var_texcoord0);
+	fragColor.rgb += result.rgb;
+}

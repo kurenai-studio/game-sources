@@ -1,0 +1,33 @@
+components {
+  id: "rotate"
+  component: "/example/main/rotate.script"
+  properties {
+    id: "reverse"
+    value: "true"
+    type: PROPERTY_TYPE_BOOLEAN
+  }
+}
+embedded_components {
+  id: "model"
+  type: "model"
+  data: "mesh: \"/builtins/assets/gltf/cube.gltf\"\n"
+  "name: \"{{NAME}}\"\n"
+  "materials {\n"
+  "  name: \"default\"\n"
+  "  material: \"/defrend/materials/geometry/decal/decal.material\"\n"
+  "  textures {\n"
+  "    sampler: \"albedo_map\"\n"
+  "    texture: \"/example/assets/images/broken-ice-base.png\"\n"
+  "  }\n"
+  "  textures {\n"
+  "    sampler: \"normal_map\"\n"
+  "    texture: \"/example/assets/images/broken-ice-normal.png\"\n"
+  "  }\n"
+  "  textures {\n"
+  "    sampler: \"spec_glow_map\"\n"
+  "    texture: \"/example/assets/images/broken-ice-spec-glow.png\"\n"
+  "  }\n"
+  "}\n"
+  "create_go_bones: false\n"
+  ""
+}

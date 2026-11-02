@@ -1,0 +1,37 @@
+local settings	= require("defrend.render.settings").spot_light
+local uniforms	= require("defrend.render.uniforms").spot_light
+local msgs		= require("defrend.messages")
+
+go.property("enabled", true)
+
+go.property("range_attenuation_power", 1)
+go.property("spread_attenuation_power", 1)
+
+local function do_init(self)
+	settings.enabled = self.enabled
+
+	settings.range_attenuation = self.range_attenuation_power
+	settings.spread_attenuation = self.spread_attenuation_power
+
+	uniforms.init()
+end
+
+function init(self)
+	do_init(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgs.REFRESH then
+		do_init(self)
+	end
+end
+
+function on_reload(self)
+	do_init(self)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end

@@ -1,0 +1,11 @@
+mesh: "/builtins/assets/gltf/cube.gltf"
+name: "skybox"
+materials {
+  name: "default"
+  material: "/defrend/materials/geometry/skybox/skybox.material"
+  textures {
+    sampler: "cubemap"
+    texture: "/example/assets/skybox.cubemap"
+  }
+}
+create_go_bones: false

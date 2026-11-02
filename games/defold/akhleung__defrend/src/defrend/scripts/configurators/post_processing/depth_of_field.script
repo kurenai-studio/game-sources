@@ -1,0 +1,57 @@
+local settings	= require "defrend.render.settings"
+local uniforms	= require "defrend.render.uniforms"
+
+go.property("enabled", false)
+go.property("focal_depth", 100)
+go.property("blur_start", 30)
+go.property("blur_full", 40)
+go.property("blur_samples", 16)
+go.property("blur_radius", 2)
+go.property("downsampling_passes", 2)
+go.property("focused_CoC_threshold", 0.005)
+go.property("visualize_original_CoCs", false)
+go.property("visualize_dilated_CoCs", false)
+go.property("visualize_corrected_CoCs", false)
+
+local function do_init(self)
+	settings.dof.enabled		= self.enabled
+	settings.dof.focal_depth	= self.focal_depth
+	settings.dof.blur_start		= self.blur_start
+	settings.dof.blur_full		= self.blur_full
+	settings.dof.blur_samples	= self.blur_samples
+	settings.dof.blur_radius	= self.blur_radius
+	settings.dof.coc_threshold	= self.focused_CoC_threshold
+	if self.visualize_original_CoCs then
+		settings.dof.coc_visualization = 1.0
+	elseif self.visualize_dilated_CoCs then
+		settings.dof.coc_visualization = 2.0
+	elseif self.visualize_corrected_CoCs then
+		settings.dof.coc_visualization = 3.0
+	else
+		settings.dof.coc_visualization = 0.0
+	end
+	uniforms.dof_coc.init()
+end
+
+function init(self)
+	settings.dof.downsamples = self.downsampling_passes
+	do_init(self)
+end
+
+local MSG_REFRESH = hash("refresh")
+local MSG_REFOCUS = hash("refocus")
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_REFOCUS then
+		local focal_depth = message.focal_depth
+		if focal_depth then
+			self.focal_depth = focal_depth
+		end
+		settings.dof.focal_depth = self.focal_depth
+	elseif message_id == MSG_REFRESH then
+		do_init(self)
+	end
+end
+
+function on_reload(self)
+	do_init(self)
+end

@@ -1,0 +1,33 @@
+local settings	= require("defrend.render.settings").point_light
+local uniforms	= require("defrend.render.uniforms").point_light
+local msgs		= require("defrend.messages")
+
+go.property("enabled", true)
+go.property("attenuation_power", 1)
+
+local function do_init(self)
+	settings.enabled		= self.enabled
+	settings.attenuation	= self.attenuation_power
+
+	uniforms.init()
+end
+
+function init(self)
+	do_init(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == msgs.REFRESH then
+		do_init(self)
+	end
+end
+
+function on_reload(self)
+	do_init(self)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end

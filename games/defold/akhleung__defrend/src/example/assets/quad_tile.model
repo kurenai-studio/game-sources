@@ -1,0 +1,19 @@
+mesh: "/builtins/assets/gltf/quad.gltf"
+name: "quad_2x2_tile"
+materials {
+  name: "default"
+  material: "/defrend/materials/geometry/model/model.material"
+  textures {
+    sampler: "albedo_map"
+    texture: "/example/assets/images/brown.png"
+  }
+  textures {
+    sampler: "normal_map"
+    texture: "/defrend/assets/textures/flat.png"
+  }
+  textures {
+    sampler: "spec_glow_map"
+    texture: "/defrend/assets/textures/black.png"
+  }
+}
+create_go_bones: false

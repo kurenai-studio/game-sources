@@ -1,0 +1,24 @@
+go.property("mtl_shadow", resource.material("/defrend/materials/geometry/billboard_sprite/particle.material"))
+go.property("mtl_shadowless", resource.material("/defrend/materials/geometry/billboard_sprite/shadowless_particle.material"))
+
+function init(self)
+	self.shadow = true
+	particlefx.play("#dust")
+	particlefx.set_constant("#dust", "emitter", "spec_glow_dith", vmath.vector4(0, 0, 1, 0))
+
+	timer.delay(5, true, function (self, handle, time_elapsed)
+		if self.shadow then
+			particlefx.stop("#dust")
+			---@diagnostic disable-next-line: assign-type-mismatch
+			go.set("#dust", "material", self.mtl_shadowless, { keys = { "emitter" } })
+			particlefx.play("#dust")
+		else
+			particlefx.stop("#dust")
+			---@diagnostic disable-next-line: assign-type-mismatch
+			go.set("#dust", "material", self.mtl_shadow, { keys = { "emitter" } })
+			particlefx.play("#dust")
+		end
+		self.shadow = not self.shadow
+		particlefx.set_constant("#dust", "emitter", "spec_glow_dith", vmath.vector4(0, 0, 1, 0))
+	end)
+end

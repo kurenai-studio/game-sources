@@ -1,0 +1,53 @@
+local settings = require "defrend.render.settings"
+
+go.property("g_buffer_albedo", false)
+go.property("g_buffer_normals", false)
+go.property("g_buffer_specular", false)
+go.property("g_buffer_emissive", false)
+go.property("g_buffer_depth", false)
+go.property("light_volume_diffuse_reflectance", false)
+go.property("light_volume_specular_reflectance", false)
+go.property("shadow_atlas_directional", false)
+go.property("shadow_atlas_point_light", false)
+go.property("ssao", false)
+
+local function do_init(self)
+	if self.g_buffer_albedo then
+		settings.visualize.option = "g_albedo"
+	elseif self.g_buffer_normals then
+		settings.visualize.option = "g_normals"
+	elseif self.g_buffer_specular then
+		settings.visualize.option = "g_specular"
+	elseif self.g_buffer_emissive then
+		settings.visualize.option = "g_emissive"
+	elseif self.g_buffer_depth then
+		settings.visualize.option = "g_depth"
+	elseif self.light_volume_diffuse_reflectance then
+		settings.visualize.option = "reflectance_diffuse"
+	elseif self.light_volume_specular_reflectance then
+		settings.visualize.option = "reflectance_specular"
+	elseif self.shadow_atlas_directional then
+		settings.visualize.option = "shadow_atlas_directional"
+	elseif self.shadow_atlas_point_light then
+		settings.visualize.option = "shadow_atlas_point_light"
+	elseif self.ssao then
+		settings.visualize.option = "ssao"
+	else
+		settings.visualize.option = nil
+	end
+end
+
+function init(self)
+	do_init(self)
+end
+
+local MSG_REFRESH = hash("refresh")
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_REFRESH then
+		do_init(self)
+	end
+end
+
+function on_reload(self)
+	do_init(self)
+end

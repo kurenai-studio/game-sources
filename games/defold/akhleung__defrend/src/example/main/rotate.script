@@ -1,0 +1,22 @@
+go.property("period", 16)
+go.property("reverse", false)
+
+local embiggen
+local ensmallen
+
+function init(self)
+	local direction = go.PLAYBACK_LOOP_FORWARD
+	if self.reverse then
+		direction = go.PLAYBACK_LOOP_BACKWARD
+	end
+	go.animate(".", "euler.y", direction, 360, go.EASING_LINEAR, self.period)
+	-- embiggen()
+end
+
+embiggen = function ()
+	go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, 1.2, go.EASING_INOUTBACK, .25, 3, ensmallen)
+end
+
+ensmallen = function ()
+	go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, 1, go.EASING_INOUTBACK, .25, 3, embiggen)
+end

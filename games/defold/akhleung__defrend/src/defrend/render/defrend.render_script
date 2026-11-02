@@ -1,0 +1,439 @@
+local settings				= require("defrend.render.settings")
+local visualizations		= require("defrend.render.visualizations")
+local render_targets		= require("defrend.render.resources.render_targets")
+local clear_options			= require("defrend.render.resources.clear_options")
+local draw_options			= require("defrend.render.resources.draw_options")
+local predicates			= require("defrend.render.resources.predicates")
+local post_processors		= require("defrend.render.post_processors")
+local lights				= require("defrend.render.lights")
+local msgs					= require("defrend.messages")
+
+local render_directional_shadows
+local render_point_light_shadows
+local render_spot_light_shadows
+local render_gui
+
+local shadow_options
+local geometry_options
+local directional_light_options
+local point_light_options
+local spot_light_options
+local ssao_options
+local resolve_lighting_options
+
+local g_buffer
+
+local screen_camera
+local gui_camera
+
+local DIRECTIONAL_LIGHTS = lights.directional_lights
+local POINT_LIGHTS = lights.point_lights
+local SPOT_LIGHTS = lights.spot_lights
+
+function init(self)
+	settings.resolution_x = render.get_window_width()
+	settings.resolution_y = render.get_window_height()
+
+	render_targets.init()
+	clear_options.init()
+	predicates.init()
+	draw_options.init()
+	post_processors.init()
+
+	self.valid = render.get_window_width() > 0 and render.get_window_height() > 0
+
+	geometry_options			= draw_options.geometry_options
+	shadow_options				= draw_options.shadow_options
+	directional_light_options	= draw_options.directional_light_options
+	point_light_options			= draw_options.point_light_options
+	spot_light_options			= draw_options.spot_light_options
+	ssao_options				= draw_options.ssao_options
+	ssao_blur_options			= draw_options.ssao_blur_options
+	resolve_lighting_options	= draw_options.resolve_lighting_options
+
+	g_buffer = render_targets.get_g_buffer()
+
+	local identity = vmath.matrix4()
+	local screen_proj = vmath.matrix4_orthographic(-.5, .5, -.5, .5, -1, 1)
+	screen_camera = {
+		view = identity,
+		proj = screen_proj,
+		viewproj = screen_proj * identity,
+	}
+
+	local gui_proj = vmath.matrix4_orthographic(0, render.get_window_width(), 0, render.get_window_height(), -1, 1)
+	gui_camera = {
+		view = identity,
+		proj = gui_proj,
+		viewproj = gui_proj * identity,
+	}
+end
+
+local frustum_corner_ndc	= vmath.vector4(1.0)
+local frustum_corner		= vmath.vector4()
+local frustum_terms			= vmath.vector4()
+
+local cull = { use_frustum = true }
+local ssao_blur_h_options = { constants = render.constant_buffer() }
+local ssao_blur_v_options = { constants = render.constant_buffer() }
+ssao_blur_h_options.constants.delta = vmath.vector4(1, 0, 0, 0) ---@diagnostic disable-line: inject-field
+ssao_blur_v_options.constants.delta = vmath.vector4(0, 1, 0, 0) ---@diagnostic disable-line: inject-field
+
+function update(self)
+
+	if not self.valid then return end
+
+	local rx, ry = settings.resolution_x, settings.resolution_y
+	local cam = settings.scene_camera_url
+
+	render.set_depth_func(graphics.COMPARE_FUNC_LESS)
+	render.set_depth_mask(true)
+	render.enable_state(graphics.STATE_DEPTH_TEST)
+	render.enable_state(graphics.STATE_CULL_FACE)
+	render.disable_state(graphics.STATE_BLEND)
+
+	render_directional_shadows()
+	render_point_light_shadows()
+	render_spot_light_shadows()
+
+	render.set_render_target(g_buffer)
+	render.set_stencil_mask(0xff)
+	render.clear(clear_options.clear_color_options)
+	render.set_viewport(0, 0, rx, ry)
+	-- setup camera view and projection --
+	render.set_camera(cam, cull)
+	render.enable_state(graphics.STATE_CULL_FACE)
+	render.set_cull_face(graphics.FACE_TYPE_BACK)
+
+	-- render models into g-buffer --
+	if settings.geometry.models_enabled then
+		render.enable_material("model_material")
+		render.draw(predicates.model, geometry_options)
+	end
+
+	-- render sprites, billboards, and particles into g-buffer --
+	if settings.geometry.sprites_enabled then
+		render.enable_material("sprite_material")
+		render.draw(predicates.sprite, geometry_options)
+	end
+	if settings.geometry.billboards_enabled then
+		render.enable_material("billboard_material")
+		render.draw(predicates.billboard, geometry_options)
+	end
+	if settings.geometry.particles_enabled then
+		render.enable_material("particle_material")
+		render.draw(predicates.particle, geometry_options)
+		render.enable_material("shadowless_particle_material")
+		render.draw(predicates.shadowless_particle, geometry_options)
+	end
+
+	-- copy depth buffer to avoid feedback loop when rendering decals into g-buffer --
+	render.disable_state(graphics.STATE_CULL_FACE)
+	render.set_render_target(render_targets.get_post_target())
+	render.set_depth_mask(false)
+	render.disable_state(graphics.STATE_DEPTH_TEST)
+	render.set_camera()
+	render.set_view(screen_camera.view)
+	render.set_projection(screen_camera.proj)
+	render.enable_material("depth_buffer_copy_material")
+	render.enable_texture("depth_buffer", g_buffer, render_targets.G_BUFFER_DEPTH)
+	render.draw(predicates.screen)
+	render.disable_texture("depth_buffer")
+	-- render decals into g-buffer --
+	-- The usual back-face culling will prevent decals from rendering when the camera is inside a projector box. But
+	-- front-face culling requires depth testing to be disabled, since the back faces of the projector box will be
+	-- occluded by the receiving surface. For now, we'll use back-face culling; projector boxes should be made as
+	-- small and thin as possible, and hug the receiving surface as closely as possible. At some point it may be
+	-- necessary to use collision triggers to detect when the camera is inside a projector, and mark it so that it can
+	-- be rendered separately.
+	render_targets.ping_pong()
+	render.set_render_target(g_buffer)
+	render.enable_state(graphics.STATE_DEPTH_TEST)
+	render.enable_state(graphics.STATE_CULL_FACE)
+	render.set_camera(cam, cull)
+	if settings.geometry.decals_enabled then
+		render.enable_material("decal_material")
+		render.enable_texture("depth_buffer", render_targets.get_post_source(), render_targets.POST_COLOR)
+		render.draw(predicates.decal, geometry_options)
+		render.disable_texture("depth_buffer")
+	end
+
+	-- render the skybox --
+	render.set_depth_func(graphics.COMPARE_FUNC_LEQUAL)
+	render.set_cull_face(graphics.FACE_TYPE_FRONT)
+	render.set_camera(cam) -- call this again without a 2nd arg to disable frustum culling for the skybox
+	if settings.geometry.skybox_enabled then
+		render.enable_material("skybox_material")
+		render.draw(predicates.skybox)
+	end
+
+	render.draw_debug3d()
+
+	-- render light volumes into the light reflectance buffer --
+	-- Depth testing is useless here because we're rendering the lights into an empty buffer. On a positive note, we
+	-- can cull front faces, which will allow the camera to move inside light volumes without causing them to be
+	-- culled. If overdraw becomes a big problem, it may be an acceptable tradeoff to render the whole scene into this
+	-- buffer first.
+	render.set_camera(cam, cull)
+	render.set_render_target(render_targets.get_post_spare())
+	render.clear(clear_options.clear_color_options)
+	render.enable_state(graphics.STATE_BLEND)
+	render.set_blend_func(graphics.BLEND_FACTOR_ONE, graphics.BLEND_FACTOR_ONE)
+	render.enable_texture("depth_buffer", g_buffer, render_targets.G_BUFFER_DEPTH)
+	render.enable_texture("normal_sampler", g_buffer, render_targets.G_BUFFER_NORMAL)
+	if settings.point_light.enabled then
+		render.enable_material("point_light_material")
+		render.draw(predicates.point_light, geometry_options)
+		render.enable_material("point_light_with_shadows_material")
+		render.draw(predicates.point_light_with_shadows, point_light_options)
+	end
+	if settings.spot_light.enabled then
+		render.enable_material("spot_light_material")
+		render.draw(predicates.spot_light, geometry_options)
+		render.enable_material("spot_light_with_shadows_material")
+		render.draw(predicates.spot_light_with_shadows, spot_light_options)
+	end
+	render.disable_state(graphics.STATE_DEPTH_TEST)
+	render.set_cull_face(graphics.FACE_TYPE_BACK)
+	render.set_camera()
+	render.set_view(screen_camera.view)
+	render.set_projection(screen_camera.proj)
+	if settings.directional_light.enabled then
+		for light, _ in pairs(DIRECTIONAL_LIGHTS) do
+			light.uniforms.frustum_corner = frustum_corner
+			light.uniforms.frustum_terms = frustum_terms
+			directional_light_options.constants = light.uniforms
+			render.enable_texture("shadow_atlas", light.attachment, graphics.BUFFER_TYPE_DEPTH_BIT)
+			render.enable_material("directional_light_with_shadows_material")
+			render.draw(predicates.screen, directional_light_options)
+		end
+		render.disable_texture("shadow_atlas")
+	end
+	render.disable_texture("depth_buffer")
+	render.disable_texture("normal_sampler")
+
+	render.disable_state(graphics.STATE_BLEND)
+
+	render.set_render_target(render_targets.get_post_target())
+	render.clear(clear_options.clear_ssao_options)
+	if settings.ssao.enabled then
+		render.enable_material("ssao_material")
+		render.enable_texture("depth_buffer", g_buffer, render_targets.G_BUFFER_DEPTH)
+		render.enable_texture("normal_sampler", g_buffer, render_targets.G_BUFFER_NORMAL)
+		render.draw(predicates.screen, ssao_options)
+		render.disable_texture("depth_buffer")
+		render.disable_texture("normal_sampler")
+		if settings.ssao.blur then
+			render_targets.ping_pong()
+			ssao_blur_h_options.constants.params = ssao_blur_options.constants.params ---@diagnostic disable-line: inject-field
+			ssao_blur_h_options.constants.frustum_terms = ssao_blur_options.constants.frustum_terms ---@diagnostic disable-line: inject-field
+			render.set_render_target(render_targets.get_post_target())
+			local compare_normals = settings.ssao.blur_compares_normals
+			if compare_normals then
+				render.enable_material("ssao_blur_material")
+				render.enable_texture("normal_sampler", g_buffer, render_targets.G_BUFFER_NORMAL)
+			else
+				render.enable_material("ssao_blur_depth_only_material")
+			end
+			render.enable_texture("color_sampler", render_targets.get_post_source(), render_targets.POST_COLOR)
+			render.enable_texture("depth_buffer", g_buffer, render_targets.G_BUFFER_DEPTH)
+			render.draw(predicates.screen, ssao_blur_h_options)
+			render.disable_texture("color_sampler")
+			render_targets.ping_pong()
+			ssao_blur_v_options.constants.params = ssao_blur_options.constants.params ---@diagnostic disable-line: inject-field
+			ssao_blur_v_options.constants.frustum_terms = ssao_blur_options.constants.frustum_terms ---@diagnostic disable-line: inject-field
+			render.set_render_target(render_targets.get_post_target())
+			render.enable_texture("color_sampler", render_targets.get_post_source(), render_targets.POST_COLOR)
+			render.draw(predicates.screen, ssao_blur_v_options)
+			if compare_normals then
+				render.disable_texture("normal_sampler")
+			end
+			render.disable_texture("color_sampler")
+			render.disable_texture("depth_buffer")
+		end
+	end
+
+	-- resolve all the lighting and shadows with the g-buffer to produce a fully-lit non-post-processed render
+	render_targets.ping_pong()
+	render.set_render_target(render_targets.get_post_target())
+	render.enable_material("apply_lighting_material")
+	render.enable_texture("depth_buffer", g_buffer, render_targets.G_BUFFER_DEPTH)
+	render.enable_texture("albedo_sampler", g_buffer, render_targets.G_BUFFER_ALBEDO)
+	render.enable_texture("normal_sampler", g_buffer, render_targets.G_BUFFER_NORMAL)
+	render.enable_texture("ssao_sampler", render_targets.get_post_source(), render_targets.POST_COLOR)
+	render.enable_texture("light_sampler", render_targets.get_post_spare(), render_targets.POST_COLOR)
+	render.draw(predicates.screen, resolve_lighting_options)
+	render.disable_texture("depth_buffer")
+	render.disable_texture("albedo_sampler")
+	render.disable_texture("normal_sampler")
+	render.disable_texture("ssao_sampler")
+	render.disable_texture("light_sampler")
+
+	-- if a debugging visualization is enabled, then draw the relevant intermediate render target and return
+	if settings.visualize.option then
+		visualizations.update()
+		render.disable_material()
+		render_gui()
+		return
+	end
+
+	-- render all the post-processors
+	post_processors.update()
+	render_targets.ping_pong()
+	render.set_render_target(render.RENDER_TARGET_DEFAULT)
+	render.enable_material("copy_material")
+	render.enable_texture("input_sampler", render_targets.get_post_source(), render_targets.POST_COLOR)
+	render.draw(predicates.screen)
+	render.disable_texture("input_sampler")
+
+	render.disable_material()
+	render_gui()
+end
+
+local outline_options	= draw_options.outline_options
+local dof_coc_options	= draw_options.dof_coc_options
+local dof_blur_options	= draw_options.dof_blur_options
+local function update_camera_uniforms()
+	local cam		= settings.scene_camera_url
+	local near		= camera.get_near_z(cam)
+	local proj		= camera.get_projection(cam)
+	local proj_inv	= vmath.inv(proj)
+
+	frustum_corner		= proj_inv * frustum_corner_ndc
+	frustum_corner		= frustum_corner / frustum_corner.w
+	frustum_corner.w	= -near
+	frustum_terms.x		= frustum_corner.z * frustum_corner.w * 2
+	frustum_terms.y		= frustum_corner.z + frustum_corner.w
+	frustum_terms.z		= frustum_corner.z - frustum_corner.w
+
+	geometry_options.constants.frustum_corner			= frustum_corner
+	geometry_options.constants.frustum_terms			= frustum_terms
+	point_light_options.constants.frustum_corner		= frustum_corner
+	point_light_options.constants.frustum_terms			= frustum_terms
+	spot_light_options.constants.frustum_corner			= frustum_corner
+	spot_light_options.constants.frustum_terms			= frustum_terms
+	ssao_options.constants.frustum_corner				= frustum_corner
+	ssao_options.constants.frustum_terms				= frustum_terms
+	ssao_blur_options.constants.frustum_terms			= frustum_terms
+	resolve_lighting_options.constants.frustum_corner	= frustum_corner
+	resolve_lighting_options.constants.frustum_terms	= frustum_terms
+	outline_options.constants.frustum_corner			= frustum_corner
+	outline_options.constants.frustum_terms				= frustum_terms
+	dof_coc_options.constants.frustum_terms				= frustum_terms
+	dof_blur_options.constants.frustum_terms			= frustum_terms
+end
+
+function on_message(self, message_id, message)
+	if message_id == msgs.SET_VIEW_PROJ then
+		update_camera_uniforms()
+	elseif message_id == msgs.WINDOW_RESIZED then
+		settings.resolution_x = render.get_window_width()
+		settings.resolution_y = render.get_window_height()
+		gui_camera.proj = vmath.matrix4_orthographic(0, settings.resolution_x, 0, settings.resolution_y, -1, 1)
+		self.valid = settings.resolution_x > 0 and settings.resolution_y > 0
+		render_targets.set_resolution(settings.resolution_x, settings.resolution_y)
+	end
+end
+
+local function draw_shadow_casters(model_material, particle_material)
+	render.enable_state(graphics.STATE_CULL_FACE)
+	if settings.geometry.models_enabled then
+		render.set_cull_face(graphics.FACE_TYPE_BACK)
+		render.enable_material(model_material)
+		render.draw(predicates.model, shadow_options)
+	end
+	if settings.geometry.particles_enabled then
+		render.disable_state(graphics.STATE_CULL_FACE)
+		render.enable_material(particle_material)
+		render.draw(predicates.particle, shadow_options)
+	end
+end
+
+render_directional_shadows = function ()
+	local cam_view = camera.get_view(settings.scene_camera_url)
+	local cam_view_inv = vmath.inv(cam_view)
+	for light in pairs(DIRECTIONAL_LIGHTS) do
+		light:update(cam_view, cam_view_inv)
+		render.set_render_target(light.render_target)
+		render.clear(clear_options.clear_shadow_options)
+		local partitions = light.partitions
+		local atlas_resolution = light.atlas_resolution
+		local map_resolution = light.map_resolution
+		local mtx_views = light.mtx_views
+		local mtx_projs = light.mtx_projs
+		local mtx_frustums = light.mtx_frustums
+		for i = 1, #partitions do
+			render.set_view(mtx_views[i])
+			render.set_projection(mtx_projs[i])
+			local partition = partitions[i]
+			local x_offset = partition.x * atlas_resolution
+			local y_offset = partition.y * atlas_resolution
+			render.set_viewport(x_offset, y_offset, map_resolution, map_resolution)
+			shadow_options.frustum = mtx_frustums[i]
+			draw_shadow_casters("shadow_material", "particle_shadow_material")
+		end
+	end
+end
+
+local CUBE_FACES = {
+    graphics.CUBEMAP_FACE_POSITIVE_X,
+    graphics.CUBEMAP_FACE_NEGATIVE_X,
+    graphics.CUBEMAP_FACE_POSITIVE_Y,
+    graphics.CUBEMAP_FACE_NEGATIVE_Y,
+    graphics.CUBEMAP_FACE_POSITIVE_Z,
+    graphics.CUBEMAP_FACE_NEGATIVE_Z,
+}
+local cubemap_options = {}
+local radius = vmath.vector4()
+render_point_light_shadows = function ()
+	if settings.geometry.models_enabled then
+		render.enable_state(graphics.STATE_CULL_FACE)
+		render.set_cull_face(graphics.FACE_TYPE_BACK)
+	end
+	for light in pairs(POINT_LIGHTS) do
+		local shadow_map = light.render_target
+		local resolution = light.shadow_map_resolution
+		local mtx_proj = light.mtx_proj
+		local mtx_views = light.mtx_views
+		radius.x = light.radius
+		shadow_options.constants.radius = radius
+		render.set_viewport(0, 0, resolution, resolution)
+		for face_index = 1, 6 do
+			cubemap_options.face = CUBE_FACES[face_index]
+			render.set_render_target(shadow_map, cubemap_options)
+			render.clear(clear_options.clear_shadow_options)
+			if settings.point_light.shadows_enabled then
+				render.set_view(mtx_views[face_index])
+				render.set_projection(mtx_proj)
+				shadow_options.frustum = mtx_proj * mtx_views[face_index]
+				draw_shadow_casters("cubemap_model_shadow_material", "cubemap_particle_shadow_material")
+			end
+		end
+	end
+end
+
+render_spot_light_shadows = function ()
+	for light in pairs(SPOT_LIGHTS) do
+		render.set_render_target(light.render_target)
+		render.clear(clear_options.clear_shadow_options)
+		if settings.spot_light.shadows_enabled then
+			render.set_view(light.mtx_view)
+			render.set_projection(light.mtx_proj)
+			render.set_viewport(0, 0, light.shadow_map_resolution, light.shadow_map_resolution)
+			shadow_options.frustum = light.mtx_light
+			draw_shadow_casters("shadow_material", "particle_shadow_material")
+		end
+	end
+end
+
+render_gui = function ()
+	geometry_options.frustum = gui_camera.viewproj
+	render.set_view(gui_camera.view)
+	render.set_projection(gui_camera.proj)
+	render.enable_state(graphics.STATE_STENCIL_TEST)
+	render.disable_state(graphics.STATE_CULL_FACE)
+	render.draw(predicates.debug_text, geometry_options)
+	render.draw(predicates.gui, geometry_options)
+	render.draw(predicates.text, geometry_options)
+	render.disable_state(graphics.STATE_STENCIL_TEST)
+end
