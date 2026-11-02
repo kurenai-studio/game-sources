@@ -1,0 +1,61 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+/dist
+
+# env & secrets (protocol R3 — never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials*
+secret*
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.idea/
+.vscode/
+*.swp
+
+# logs & temp
+*.log
+*.tmp
+dev.out.log
+server.log
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# local database (each host recreates it via prisma db push)
+/db/
+
+# deploy platforms
+.vercel
+
+# misc workspace cruft
+.claude
+.z-ai-config
+local-*
