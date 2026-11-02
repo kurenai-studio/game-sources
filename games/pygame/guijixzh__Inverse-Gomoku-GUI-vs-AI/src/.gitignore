@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# 测试 / 工具缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 运行输出(对局、训练、KataGo)
+checkpoints/
+records/
+afg_save/
+gtp_logs/
+*.log
+
+# 宣传视频素材与脚本(不随仓库分发)
+vedio/
+
+# 棋谱:仅保留示例
+*.afg
+!data/samples/*.afg
+
+# 二进制:仅 models/ 与 data/eval_pool.npz 入库
+*.pth
+*.bin
+*.npz
+*.dll
+*.so
+*.dylib
+!models/**/*.pth
+!models/**/*.bin
+!data/*.npz
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本机启动器覆盖配置
+run_gui.local.bat
+
+# 本机引擎路径覆盖(KataGo 可执行/权重/配置)
+config/engines.local.json
+
+# 临时验证脚本
+.scratch/
+
+# Cython 构建产物(用 setup_fast.py 重新生成)
+*.pyd
+*.so
+src/antifive/_fast.c
