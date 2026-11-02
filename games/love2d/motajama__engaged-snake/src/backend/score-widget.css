@@ -1,0 +1,68 @@
+.engagedsnake-score-widget {
+    --esw-bg: #07131d;
+    --esw-border: #5ba0c8;
+    --esw-text: #eef7ff;
+    --esw-muted: #9ab6c7;
+    --esw-accent: #f0c95a;
+    --esw-row-bg: rgba(255, 255, 255, 0.06);
+    --esw-font: system-ui, sans-serif;
+    --esw-score-font: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    width: min(100%, 320px);
+    padding: 14px;
+    background: var(--esw-bg);
+    border: 1px solid var(--esw-border);
+    color: var(--esw-text);
+    font-family: var(--esw-font);
+}
+
+.engagedsnake-score-widget__title {
+    margin: 0 0 10px;
+    color: var(--esw-accent);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.engagedsnake-score-widget__list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.engagedsnake-score-widget__row {
+    display: grid;
+    grid-template-columns: 2ch minmax(0, 1fr) max-content 1.4ch;
+    gap: 8px;
+    align-items: baseline;
+    padding: 7px 8px;
+    background: var(--esw-row-bg);
+    font-family: var(--esw-score-font);
+    font-variant-numeric: tabular-nums;
+}
+
+.engagedsnake-score-widget__rank,
+.engagedsnake-score-widget__score {
+    color: var(--esw-muted);
+    text-align: right;
+}
+
+.engagedsnake-score-widget__player {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.engagedsnake-score-widget__victory {
+    color: var(--esw-accent);
+    text-align: center;
+}
+
+.engagedsnake-score-widget__notice {
+    margin: 0;
+    color: var(--esw-muted);
+    font-size: 0.92rem;
+}
