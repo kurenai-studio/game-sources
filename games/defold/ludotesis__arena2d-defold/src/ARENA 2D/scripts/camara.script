@@ -1,0 +1,15 @@
+go.property("objetivo", msg.url("/jugador"))
+
+function init(self)
+	msg.post("@render:", "clear_color", { color = vmath.vector4(1.0, 0.678, 0.365, 1.0) })
+end
+
+function late_update(self, dt)
+
+	local posicion_objetivo = go.get_position(self.objetivo)
+	local posicion_camara = go.get_position()
+	
+	posicion_objetivo.z = posicion_camara.z
+
+	go.set_position(posicion_objetivo)
+end
