@@ -1,0 +1,166 @@
+name: Release
+
+# Pushing a version tag (v1.0.0, v1.1.0, …) builds self-contained,
+# playable builds for every desktop platform and attaches them to a
+# GitHub Release — a player downloads an archive, unpacks, and plays.
+# No .NET SDK or runtime needed on their machine.
+on:
+  push:
+    tags: ["v*"]
+
+# `gh release create` below writes to the repo, which the default
+# read-only GITHUB_TOKEN cannot do.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # One Linux runner cross-publishes all four targets. This works because
+    # (a) self-contained publishing is a NuGet operation — the per-platform
+    # native libraries (SDL, OpenAL) ship inside MonoGame's package and the
+    # RID picks which set lands in the output; and (b) DesktopGL .xnb content
+    # is platform-agnostic, so content built once here runs everywhere.
+    # A Linux host is also the only place the Linux/macOS archives can be
+    # given a correct executable bit — a zip/tar made on Windows would
+    # produce a binary that won't run after unpacking.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # The game targets net9.0, but the MGCB content tools ship for net8.0,
+      # so the build machine needs both runtimes (same as build.yml).
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      # The HUD spritefont is rasterized from Arial at build time — Linux
+      # needs the MS core fonts package (same recipe as build.yml).
+      - name: Install Microsoft core fonts
+        run: |
+          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          sudo apt-get update
+          sudo apt-get install -y ttf-mscorefonts-installer
+          sudo fc-cache -f
+
+      # Effect (.fx) compilation runs Direct3D's shader compiler, which is
+      # Windows-only — on Linux MGCB invokes it through Wine (same recipe
+      # as build.yml).
+      - name: Set up Wine for effect compilation
+        run: |
+          sudo apt-get install -y wine64 p7zip-full
+          wget -qO- https://monogame.net/downloads/net9_mgfxc_wine_setup.sh | bash
+          echo "MGFXC_WINE_PATH=$HOME/.winemonogame" >> $GITHUB_ENV
+
+      # A release that doesn't match its own version number is worse than a
+      # failed build — catch a tag/csproj mismatch before publishing anything.
+      - name: Check the tag matches the csproj <Version>
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          grep -q "<Version>$VERSION</Version>" Breakout.csproj \
+            || { echo "Tag $GITHUB_REF_NAME does not match <Version> in Breakout.csproj"; exit 1; }
+
+      # The gate: no green tests, no release.
+      - name: Test
+        run: dotnet test Tests/Breakout.Tests --configuration Release
+
+      # Self-contained publish per runtime, exactly as the MonoGame packaging
+      # guide recommends. Deliberately NOT single-file: MonoGame warns against
+      # it (it is a self-extracting archive with slower startup and native-
+      # library quirks), and the Content folder must sit beside the executable
+      # anyway — so a plain folder per platform is both safer and no bulkier.
+      - name: Publish all platforms
+        run: |
+          for rid in win-x64 linux-x64 osx-x64 osx-arm64; do
+            dotnet publish Breakout.csproj --configuration Release \
+              --runtime $rid --self-contained --output publish/$rid
+          done
+
+      # macOS wants an .icns icon inside the app bundle. Apple's icon tools
+      # only run on macOS, but the format is open: resize the existing
+      # window icon (Icon.bmp, 256×256) to the standard sizes and let
+      # png2icns pack them. PNG32: forces RGBA output — png2icns rejects
+      # palette-format PNGs.
+      - name: Build the macOS icon
+        run: |
+          sudo apt-get install -y icnsutils imagemagick
+          for size in 16 32 128 256; do
+            convert Icon.bmp -resize ${size}x${size} PNG32:icon_${size}.png
+          done
+          png2icns Breakout.icns icon_16.png icon_32.png icon_128.png icon_256.png
+
+      # Windows and Linux unpack to a plain named folder. macOS gets a real
+      # .app bundle per architecture, laid out the way the MonoGame packaging
+      # guide shows: the publish output in Contents/MacOS, the content in
+      # Contents/Resources (MonoGame's TitleContainer looks for ../Resources
+      # next to the executable on macOS, so both the .xnb assets and the
+      # runtime-loaded level files resolve there).
+      #
+      # Why two bundles instead of the guide's single universal app: its lipo
+      # step merges only the apphost, but a self-contained .NET publish is
+      # arch-specific throughout — the runtime's native dylibs AND ~100
+      # precompiled managed assemblies differ between osx-x64 and osx-arm64
+      # (verified by diffing the two publish folders), and managed PE files
+      # cannot be lipo'd. .NET does not support universal binaries; one app
+      # per architecture is the correct shape.
+      #
+      # tar.gz (not zip) for the unix targets because it reliably preserves
+      # the executable bit.
+      - name: Package
+        run: |
+          mkdir dist
+
+          name="Breakout-$GITHUB_REF_NAME-win-x64"
+          cp -r publish/win-x64 "$name"
+          zip -qr "dist/$name.zip" "$name"
+
+          name="Breakout-$GITHUB_REF_NAME-linux-x64"
+          cp -r publish/linux-x64 "$name"
+          chmod +x "$name/Breakout"
+          tar czf "dist/$name.tar.gz" "$name"
+
+          for rid in osx-x64 osx-arm64; do
+            app="staging-$rid/Breakout.app"
+            mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+            cp -r publish/$rid/. "$app/Contents/MacOS/"
+            mv "$app/Contents/MacOS/Content" "$app/Contents/Resources/Content"
+            cp Breakout.icns "$app/Contents/Resources/Breakout.icns"
+            chmod +x "$app/Contents/MacOS/Breakout"
+            cat > "$app/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>Breakout</string>
+            <key>CFBundleIdentifier</key>
+            <string>io.github.blugart-dev.Breakout</string>
+            <key>CFBundleName</key>
+            <string>Breakout</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleIconFile</key>
+            <string>Breakout</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${GITHUB_REF_NAME#v}</string>
+            <key>CFBundleVersion</key>
+            <string>${GITHUB_REF_NAME#v}</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.15</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+            tar czf "dist/Breakout-$GITHUB_REF_NAME-$rid.tar.gz" -C "staging-$rid" Breakout.app
+          done
+
+          ls -l dist
+
+      - name: Create the GitHub Release with builds attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Breakout $GITHUB_REF_NAME" --generate-notes

@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      # The game targets net9.0, but the MGCB content tools ship for net8.0,
+      # so the build machine needs both runtimes.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      # The HUD spritefont is rasterized from Arial at build time. Windows
+      # ships Arial; Linux needs the MS core fonts package (same setup the
+      # README's Linux note describes).
+      - name: Install Microsoft core fonts (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          sudo apt-get update
+          sudo apt-get install -y ttf-mscorefonts-installer
+          sudo fc-cache -f
+
+      # Effect (.fx) compilation runs Direct3D's shader compiler, which is
+      # Windows-only — on Linux MGCB invokes it through Wine. MonoGame ships
+      # a setup script that builds the Wine prefix; MGFXC_WINE_PATH is how
+      # MGCB finds it, and GITHUB_ENV carries it into the build step.
+      - name: Set up Wine for effect compilation (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y wine64 p7zip-full
+          wget -qO- https://monogame.net/downloads/net9_mgfxc_wine_setup.sh | bash
+          echo "MGFXC_WINE_PATH=$HOME/.winemonogame" >> $GITHUB_ENV
+
+      - name: Build (content pipeline runs as part of the build)
+        run: dotnet build --configuration Release
+
+      - name: Test (the pure game logic — rules, generator, collision, ranking)
+        run: dotnet test Tests/Breakout.Tests --configuration Release
+
+      - name: Verify formatting
+        if: runner.os == 'Linux'
+        run: |
+          dotnet format --verify-no-changes
+          dotnet format Tests/Breakout.Tests/Breakout.Tests.csproj --verify-no-changes
