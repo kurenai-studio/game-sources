@@ -1,0 +1,1 @@
+Game is located at: BeeGameMaster\BeeGameMaster\bin\Debug\netcoreapp3.1\BeeGameMaster.exe
