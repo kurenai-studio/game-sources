@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pong 3D — Arena de neón</title>
+    <meta
+      name="description"
+      content="Pong reinventado en tres dimensiones: física continua, cuatro niveles de IA y una arena de neón. Juega en el navegador, sin instalar nada."
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#04050c" />
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070a16'/%3E%3Crect x='5' y='9' width='3' height='13' rx='1.5' fill='%2322d3ee'/%3E%3Crect x='24' y='11' width='3' height='13' rx='1.5' fill='%23f43f5e'/%3E%3Ccircle cx='16' cy='16' r='3.6' fill='%23f8fafc'/%3E%3C/svg%3E"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pong 3D" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Pong 3D — Arena de neón" />
+    <meta
+      property="og:description"
+      content="Pong reinventado en tres dimensiones: física continua, cuatro niveles de IA y una arena de neón."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Pong 3D — Arena de neón" />
+    <meta
+      name="twitter:description"
+      content="Pong reinventado en tres dimensiones: física continua, cuatro niveles de IA y una arena de neón."
+    />
+
+    <!-- The design system ships with the module graph (`src/main.ts` imports
+         `src/ui/styles.css`). These few rules only cover the no-JavaScript
+         fallback, which never gets that far. -->
+    <style>
+      html {
+        background: #04050c;
+        color-scheme: dark;
+      }
+      .noscript {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 2rem;
+        text-align: center;
+        color: #e9eefb;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
+    <script src="https://www.naindev.com/assets/js/ecosystem-bar.js" defer></script>
+    <script type="module" crossorigin src="./assets/index-DPlTl5-Z.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/three-VyZVLEh4.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-R5_LA-PB.css">
+  </head>
+  <body>
+    <nain-ecosystem-bar current-project="PongArcade" collapsed="true"></nain-ecosystem-bar>
+    <div id="app"></div>
+
+    <noscript>
+      <div class="noscript">
+        <h1>Pong 3D necesita JavaScript</h1>
+        <p>
+          Este juego se ejecuta por completo en tu navegador. Activa JavaScript y vuelve a cargar la
+          página para jugar.
+        </p>
+      </div>
+    </noscript>
+
+  </body>
+</html>
