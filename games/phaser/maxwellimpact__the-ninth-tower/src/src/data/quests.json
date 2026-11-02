@@ -1,0 +1,3756 @@
+{
+ "errands": {
+  "biscuit": {
+   "title": "BISCUIT'S GONE AGAIN",
+   "giver": "tam",
+   "region": "vale",
+   "offer": [
+    "MY DOG BISCUIT CHASED A SQUIRREL INTO THE WOODS UP NORTH. THAT WAS THIS MORNING.",
+    "HE ALWAYS COMES BACK FOR SUPPER. HE DIDN'T COME BACK FOR SUPPER."
+   ],
+   "accept": "I'LL LOOK FOR HIM.",
+   "thanks": [
+    "BISCUIT CAME TROTTING IN FOR SUPPER LIKE NOTHING HAPPENED. YOU DAFT MUTT.",
+    "THANK YOU, TRULY. TAKE THIS - MY WIFE'S OLD RING. SHE'D WANT IT WORN."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "SEARCH THE NORTH WOODS FOR BISCUIT",
+     "at": [
+      11,
+      14
+     ],
+     "r": 7,
+     "units": [
+      [
+       "hexling",
+       9,
+       13
+      ],
+      [
+       "hexling",
+       13,
+       13
+      ],
+      [
+       "hexling",
+       11,
+       11
+      ]
+     ],
+     "prop": {
+      "kind": "dog",
+      "x": 11,
+      "y": 14
+     }
+    },
+    {
+     "type": "find",
+     "text": "BISCUIT IS SAFE. CALL HIM OVER",
+     "x": 11,
+     "y": 14,
+     "kind": "dog",
+     "say": "WOOF! (BISCUIT TROTS OFF HOME.)"
+    },
+    {
+     "type": "talk",
+     "text": "TELL OLD TAM BISCUIT IS HOME",
+     "npc": "tam"
+    }
+   ],
+   "reward": {
+    "gold": 60,
+    "xp": 140,
+    "gear": {
+     "slot": "trinket",
+     "rarity": "fine"
+    }
+   }
+  },
+  "delivery": {
+   "title": "MARLA'S DELIVERY",
+   "giver": "piet",
+   "region": "vale",
+   "offer": [
+    "MARLA WANTS THIS CART OF GOODS DOWN AT HOBB'S FARM BY THE SOUTH ROAD.",
+    "TROUBLE IS, GOBLINS LIKE CARTS. AND I LIKE NOT BEING STABBED. WALK WITH ME?"
+   ],
+   "accept": "LEAD THE WAY.",
+   "thanks": [
+    "THE SEED SACKS! AND NOT A GOBLIN BITE ON THEM.",
+    "HERE'S YOUR CUT. MARLA SAYS YOU'RE ALRIGHT, WHICH FROM MARLA IS PRACTICALLY A HUG."
+   ],
+   "steps": [
+    {
+     "type": "escort",
+     "text": "KEEP THE CART SAFE ON THE SOUTH ROAD",
+     "startLine": "STAY CLOSE. GOBLINS SMELL SEED SACKS A MILE OFF.",
+     "ambushLine": "THAT'S THEM! KEEP THEM OFF THE SACKS! AND ME!",
+     "path": [
+      [
+       16,
+       33
+      ],
+      [
+       20,
+       37
+      ],
+      [
+       20,
+       44
+      ],
+      [
+       21,
+       50
+      ],
+      [
+       22,
+       53
+      ],
+      [
+       23,
+       57
+      ],
+      [
+       23,
+       60
+      ],
+      [
+       25,
+       63
+      ]
+     ],
+     "stay": true,
+     "hp": 120,
+     "ambush": [
+      {
+       "at": 2,
+       "units": [
+        [
+         "goblin",
+         24,
+         44
+        ],
+        [
+         "goblin",
+         16,
+         46
+        ],
+        [
+         "archer",
+         25,
+         47
+        ]
+       ]
+      },
+      {
+       "at": 5,
+       "units": [
+        [
+         "goblin",
+         28,
+         56
+        ],
+        [
+         "goblin",
+         20,
+         58
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "HAND THE GOODS TO HOBB",
+     "npc": "hobb"
+    }
+   ],
+   "reward": {
+    "gold": 90,
+    "xp": 180,
+    "potions": {
+     "potion": 2
+    }
+   }
+  },
+  "goblinCull": {
+   "title": "THIN THE GOBLINS",
+   "giver": "board",
+   "region": "vale",
+   "offer": [
+    "NOTICE: GOBLINS ARE RAIDING THE VALE ROADS. THE TAVERN PAYS FOR EVERY SIX DRIVEN OFF - ARCHERS COUNT. - BRUNO"
+   ],
+   "accept": "TAKE THE NOTICE.",
+   "thanks": [
+    "SIX? THAT'S SIX FEWER GOBLINS DRINKING FROM MY RAIN BARREL. HERE."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "DEFEAT GOBLINS",
+     "kind": [
+      "goblin",
+      "archer"
+     ],
+     "count": 6
+    },
+    {
+     "type": "talk",
+     "text": "COLLECT THE BOUNTY FROM BRUNO",
+     "npc": "bruno"
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 160,
+    "gear": {
+     "rarity": "rare"
+    }
+   }
+  },
+  "moonherb": {
+   "title": "HERBS FOR THE SICK",
+   "giver": "ada",
+   "region": "vale",
+   "offer": [
+    "HALF THE HAMLET HAS CURSE-COUGH. MOONHERB TEA HELPS, BUT MY KNEES DON'T BEND FOR PICKING ANY MORE.",
+    "FOUR SPRIGS WOULD DO IT. THEY GROW IN THE MEADOWS - LOOK FOR THE LITTLE BUBBLE MARKS."
+   ],
+   "accept": "I'LL PICK SOME.",
+   "thanks": [
+    "LOVELY AND FRESH. THE KETTLE'S ALREADY ON.",
+    "TAKE A COUPLE OF MY POTIONS. I BREW THEM STRONGER THAN MARLA, DON'T TELL HER."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "PICK MOONHERB",
+     "mat": "herb",
+     "count": 4
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE MOONHERB TO WIDOW ADA",
+     "npc": "ada",
+     "take": {
+      "herb": 4
+     }
+    }
+   ],
+   "reward": {
+    "gold": 40,
+    "xp": 100,
+    "potions": {
+     "potion": 2
+    }
+   }
+  },
+  "lostRing": {
+   "title": "A RING IN THE REEDS",
+   "giver": "ada",
+   "region": "vale",
+   "requires": "moonherb",
+   "offer": [
+    "YOU'VE A KIND FACE. I DROPPED MY WEDDING BAND IN THE LAKE SHALLOWS YEARS AGO, SOUTH SHORE.",
+    "THE CURSE MAKES THINGS GLINT AT NIGHT. MAYBE IT GLINTS NOW."
+   ],
+   "accept": "I'LL WADE IN.",
+   "thanks": [
+    "OH. OH, IT IS. FORTY YEARS, AND IT STILL FITS.",
+    "...NO - YOU KEEP IT. IT'S DONE ITS JOB FOR ME. LET IT KEEP YOU STANDING."
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "SEARCH THE LAKE'S SOUTH SHORE",
+     "x": 9,
+     "y": 41,
+     "kind": "glint",
+     "say": "A TARNISHED SILVER BAND, STILL WARM SOMEHOW."
+    },
+    {
+     "type": "talk",
+     "text": "RETURN THE RING TO WIDOW ADA",
+     "npc": "ada"
+    }
+   ],
+   "reward": {
+    "gold": 30,
+    "xp": 120,
+    "item": "widows_band",
+    "sp": 1
+   }
+  },
+  "bells": {
+   "title": "THE THREE BELLS",
+   "giver": "oswin",
+   "region": "vale",
+   "offer": [
+    "HALT. OR DON'T - I CAN'T STOP YOU. I'M A GHOST. SIR OSWIN, LAST WARDEN OF THESE WALLS.",
+    "THE OLD BELLS SANG THE KEEP TO SLEEP: LOW, THEN HIGH, THEN THE MIDDLE ONE. RING THEM SO, AND I CAN REST."
+   ],
+   "accept": "LOW, HIGH, MIDDLE.",
+   "thanks": [
+    "AHH. THERE IT IS. I'D FORGOTTEN HOW THAT SOUNDED.",
+    "TAKE WHAT I KNEW OF FIGHTING. I'VE NO MORE USE FOR IT."
+   ],
+   "steps": [
+    {
+     "type": "bells",
+     "text": "RING THE BELLS: LOW, HIGH, MIDDLE",
+     "bells": [
+      [
+       38,
+       19,
+       "high"
+      ],
+      [
+       50,
+       19,
+       "low"
+      ],
+      [
+       44,
+       19,
+       "mid"
+      ]
+     ],
+     "order": [
+      "low",
+      "high",
+      "mid"
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "TELL SIR OSWIN",
+     "npc": "oswin"
+    }
+   ],
+   "reward": {
+    "xp": 150,
+    "sp": 1
+   }
+  },
+  "ambush": {
+   "title": "TROUBLE ON THE EAST ROAD",
+   "giver": "quill",
+   "region": "meadow",
+   "trigger": [
+    104,
+    33,
+    9
+   ],
+   "offer": [
+    "HELP! GOBLINS! THEY WANT MY INKWELLS. WHAT DOES A GOBLIN DO WITH AN INKWELL?!"
+   ],
+   "accept": "HOLD ON!",
+   "thanks": [
+    "YOU SAVED MY STOCK AND, LESS IMPORTANTLY, ME.",
+    "A TRAVELLING SCRIBE PAYS IN GOLD AND GOSSIP. HERE'S THE GOLD."
+   ],
+   "steps": [
+    {
+     "type": "defend",
+     "text": "DRIVE OFF THE GOBLINS HOUNDING QUILL",
+     "npc": "quill",
+     "hp": 160,
+     "units": [
+      [
+       "goblin",
+       108,
+       31
+      ],
+      [
+       "goblin",
+       109,
+       35
+      ],
+      [
+       "archer",
+       111,
+       33
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CHECK ON QUILL",
+     "npc": "quill"
+    }
+   ],
+   "reward": {
+    "gold": 110,
+    "xp": 160,
+    "gear": {
+     "rarity": "fine"
+    }
+   }
+  },
+  "lantern": {
+   "title": "THE LAMPLIGHTER'S LANTERN",
+   "giver": "wick",
+   "region": "vale",
+   "offer": [
+    "THE STONE'S DOWN AND THE LIGHTS CAN COME BACK. EXCEPT MINE.",
+    "MY LANTERN OF EMBERS. I DROPPED IT UP ON THE NORTH-EAST HEIGHTS THE NIGHT THE CURSE FELL, AND THE WISPS TOOK A LIKING TO IT."
+   ],
+   "accept": "I'LL FETCH IT.",
+   "thanks": [
+    "THERE SHE IS. NEVER QUITE GOES OUT, THAT ONE.",
+    "KEEP IT. CAVES ARE DARK AND YOU'RE YOUNG. IT BURNS BRIGHTEST WHERE IT'S DARKEST."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "CLIMB THE NORTH-EAST HEIGHTS",
+     "at": [
+      70,
+      8
+     ],
+     "r": 6,
+     "units": [
+      [
+       "hexling",
+       67,
+       7
+      ],
+      [
+       "hexling",
+       73,
+       9
+      ],
+      [
+       "goblin",
+       70,
+       11
+      ]
+     ],
+     "prop": {
+      "kind": "glint",
+      "x": 70,
+      "y": 8
+     }
+    },
+    {
+     "type": "find",
+     "text": "TAKE THE LANTERN",
+     "x": 70,
+     "y": 8,
+     "kind": "glint",
+     "say": "A BRASS LANTERN, STILL WARM. EMBERS STIR INSIDE."
+    },
+    {
+     "type": "talk",
+     "text": "RETURN THE LANTERN TO OLD WICK",
+     "npc": "wick"
+    }
+   ],
+   "reward": {
+    "xp": 160,
+    "gold": 40,
+    "relic": "lantern"
+   }
+  },
+  "snagtooth": {
+   "title": "BOUNTY: SNAGTOOTH",
+   "giver": "board",
+   "region": "meadow",
+   "requires": "goblinCull",
+   "offer": [
+    "BOUNTY: SNAGTOOTH, GOBLIN CHIEF. SPINS. THROWS BOMBS. BITES. LAST SEEN CAMPED EAST OF THE OLD WATCHTOWER ROAD.",
+    "REWARD: 150 GOLD AND HIS RING, IF YOU CAN GET IT OFF HIM."
+   ],
+   "accept": "HUNT HIM DOWN.",
+   "thanks": [
+    "SNAGTOOTH? GONE? I'M PINNING THAT NOTICE UP AGAIN JUST TO TEAR IT DOWN."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND SNAGTOOTH'S CAMP EAST OF THE WATCHTOWER ROAD",
+     "at": [
+      178,
+      30
+     ],
+     "r": 8,
+     "units": [
+      [
+       "snagtooth",
+       178,
+       30
+      ],
+      [
+       "goblin",
+       175,
+       28
+      ],
+      [
+       "archer",
+       181,
+       33
+      ],
+      [
+       "goblin",
+       176,
+       33
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM BRUNO",
+     "npc": "bruno"
+    }
+   ],
+   "reward": {
+    "gold": 150,
+    "xp": 260,
+    "item": "thornring"
+   }
+  },
+  "lostPell": {
+   "title": "LOST IN THE FOG",
+   "giver": "mag",
+   "region": "marsh",
+   "offer": [
+    "MY BOY PELL WENT LOOKING FOR GLOWCAPS IN THE HOLLOW UNDER THE ROCKS. THE ONE WITH THE CAVE MOUTH.",
+    "IT'S BLACK AS PITCH IN THERE. TAKE A LIGHT IF YOU HAVE ONE. PLEASE."
+   ],
+   "accept": "I'LL BRING HIM BACK.",
+   "thanks": [
+    "PELL! YOU STUPID, WONDERFUL CHILD.",
+    "I'VE NOTHING MUCH. BUT YOU'VE GOT SHARPER EYES THAN ME NOW - SOMETHING IN YOU WOKE UP IN THAT DARK. I'M SURE OF IT."
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "FIND PELL IN THE DROWNED HOLLOW",
+     "x": 212,
+     "y": 21,
+     "kind": "glint",
+     "say": "PELL: I KNEW SOMEONE WOULD COME. I'LL FOLLOW YOUR LIGHT OUT."
+    },
+    {
+     "type": "talk",
+     "text": "BRING PELL HOME TO MAG",
+     "npc": "mag"
+    }
+   ],
+   "reward": {
+    "gold": 80,
+    "xp": 310,
+    "sp": 1
+   }
+  },
+  "leechCull": {
+   "title": "LEECH SEASON",
+   "giver": "silt",
+   "region": "marsh",
+   "offer": [
+    "THE LEECHES ARE BOLD THIS YEAR. THEY CRAWL INTO BOOTS. INTO BEDS. INTO SOUP.",
+    "CLEAR OUT FIVE SWARMS AND I'LL BREW YOU SOMETHING WORTH HAVING."
+   ],
+   "accept": "FIVE SWARMS.",
+   "thanks": [
+    "THE SOUP THANKS YOU. I THANK YOU. HERE - STRONG STUFF."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "CLEAR LEECH SWARMS",
+     "kind": "leeches",
+     "count": 5
+    },
+    {
+     "type": "talk",
+     "text": "TELL BROTHER SILT",
+     "npc": "silt"
+    }
+   ],
+   "reward": {
+    "gold": 60,
+    "xp": 280,
+    "potions": {
+     "potion": 2,
+     "elixir": 1
+    }
+   }
+  },
+  "bogmossBalm": {
+   "title": "BALM FOR THE CAMP",
+   "giver": "silt",
+   "region": "marsh",
+   "requires": "leechCull",
+   "offer": [
+    "LEECH BITES FESTER. BOGMOSS DRAWS THE POISON OUT. FIVE CLUMPS WOULD SEE THE CAMP THROUGH THE MONTH."
+   ],
+   "accept": "I'LL GATHER IT.",
+   "thanks": [
+    "PERFECT. THE CAMP WILL SLEEP EASIER. AND SO, FRANKLY, WILL I."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "GATHER BOGMOSS",
+     "mat": "bogmoss",
+     "count": 5
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE BOGMOSS TO SILT",
+     "npc": "silt",
+     "take": {
+      "bogmoss": 5
+     }
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 250,
+    "gear": {
+     "rarity": "fine"
+    }
+   }
+  },
+  "croakers": {
+   "title": "THE CROAKING",
+   "giver": "fenwick",
+   "region": "marsh",
+   "offer": [
+    "NO FISH FOR A MONTH. YOU KNOW WHY? CROAKERS. BIG AS CARTS. THEY EAT THE FISH, THEN EYE ME LIKE I'M DESSERT.",
+    "THREE OF THEM. SEND THEM OFF AND THE POND'S YOURS TO ENJOY."
+   ],
+   "accept": "THREE CROAKERS.",
+   "thanks": [
+    "LISTEN TO THAT. QUIET. BEAUTIFUL QUIET. TAKE THIS - I FOUND IT IN A FISH. DON'T ASK."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "DEFEAT CROAKERS",
+     "kind": "croaker",
+     "count": 3
+    },
+    {
+     "type": "talk",
+     "text": "TELL FENWICK",
+     "npc": "fenwick"
+    }
+   ],
+   "reward": {
+    "gold": 90,
+    "xp": 340,
+    "gear": {
+     "rarity": "rare"
+    }
+   }
+  },
+  "drownedBell": {
+   "title": "THE DROWNED BELL",
+   "giver": "cora",
+   "region": "marsh",
+   "requires": "lostPell",
+   "offer": [
+    "I RANG THE ABBEY BELL FOR SIXTY YEARS. WHEN THE FEN ROSE, THE CLAPPER FELL INTO THE DEEP WATER EAST OF THE RUINS.",
+    "FIND IT, AND THE BELL MAY SING ONCE MORE - FOR ME, AT LEAST. YOU'LL NEED TO SWIM."
+   ],
+   "accept": "I'LL DIVE FOR IT.",
+   "thanks": [
+    "THE CLAPPER. THANK YOU, CHILD. LISTEN...",
+    "...THERE. GO WITH THAT SOUND IN YOUR EARS. AND THIS, WHICH NO GHOST NEEDS."
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "DIVE FOR THE BELL CLAPPER IN THE POOL EAST OF THE ABBEY",
+     "x": 186,
+     "y": 99,
+     "kind": "glint",
+     "say": "A BRONZE CLAPPER, GREEN WITH AGE."
+    },
+    {
+     "type": "talk",
+     "text": "RETURN THE CLAPPER TO SISTER CORA",
+     "npc": "cora"
+    }
+   ],
+   "reward": {
+    "gold": 60,
+    "xp": 310,
+    "gear": {
+     "rarity": "rare"
+    },
+    "sp": 1
+   }
+  },
+  "snapjaw": {
+   "title": "BOUNTY: OLD SNAPJAW",
+   "giver": "fenboard",
+   "region": "marsh",
+   "offer": [
+    "BOUNTY: OLD SNAPJAW. A TURTLE THE SIZE OF A HUT. SPINS IN ITS SHELL; ONLY THE BELLY BRUISES. FLIP IT.",
+    "LAST SEEN SUNNING ON THE WEST SHORE OF THE FEN."
+   ],
+   "accept": "FLIP THAT TURTLE.",
+   "thanks": [
+    "SNAPJAW'S GONE? THE WHOLE CAMP OWES YOU A DRINK. WE'VE NO DRINK. HAVE GOLD."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND OLD SNAPJAW ON THE WEST SHORE",
+     "at": [
+      14,
+      112
+     ],
+     "r": 8,
+     "units": [
+      [
+       "snapjaw",
+       14,
+       112
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM MAG",
+     "npc": "mag"
+    }
+   ],
+   "reward": {
+    "gold": 180,
+    "xp": 450,
+    "gear": {
+     "rarity": "rare",
+     "slot": "weapon"
+    },
+    "mats": {
+     "silver": 3
+    }
+   }
+  },
+  "thePit": {
+   "title": "THE PIT",
+   "giver": "grub",
+   "region": "marsh",
+   "offer": [
+    "OI. YOU. YOU LOOK LIKE YOU HIT THINGS.",
+    "THE PIT'S GOT A BEAST IN A CAGE. WIN THREE BOUTS AND HE'S YOURS. LOSE AND... WELL. YOU WON'T NEED HIM."
+   ],
+   "accept": "I'LL FIGHT.",
+   "thanks": [
+    "BAH! FINE! TAKE YOUR BEAST. NOBODY BETS ON THE BEAST ANYWAY."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "BOUT ONE: STEP INTO THE PIT",
+     "at": [
+      60,
+      104
+     ],
+     "r": 4,
+     "announce": "BOUT ONE!",
+     "units": [
+      [
+       "goblin",
+       57,
+       102
+      ],
+      [
+       "goblin",
+       63,
+       102
+      ],
+      [
+       "goblin",
+       60,
+       100
+      ]
+     ],
+     "prop": {
+      "kind": "cage",
+      "x": 60,
+      "y": 98
+     }
+    },
+    {
+     "type": "spawn",
+     "text": "BOUT TWO",
+     "at": [
+      60,
+      104
+     ],
+     "r": 7,
+     "delay": 2.5,
+     "announce": "BOUT TWO!",
+     "units": [
+      [
+       "goblin",
+       57,
+       101
+      ],
+      [
+       "goblin",
+       63,
+       101
+      ],
+      [
+       "archer",
+       60,
+       99
+      ],
+      [
+       "leeches",
+       60,
+       106
+      ]
+     ]
+    },
+    {
+     "type": "spawn",
+     "text": "BOUT THREE",
+     "at": [
+      60,
+      104
+     ],
+     "r": 7,
+     "delay": 2.5,
+     "announce": "FINAL BOUT!",
+     "units": [
+      [
+       "knight",
+       60,
+       100
+      ],
+      [
+       "hexling",
+       56,
+       103
+      ],
+      [
+       "hexling",
+       64,
+       103
+      ]
+     ]
+    },
+    {
+     "type": "find",
+     "text": "OPEN KESH'S CAGE",
+     "x": 60,
+     "y": 98,
+     "kind": "cage",
+     "say": "THE LOCK SNAPS. THE BEAST STEPS OUT, BLINKING."
+    }
+   ],
+   "reward": {
+    "xp": 420,
+    "gold": 60,
+    "recruit": "kesh"
+   }
+  },
+  "hawkTrail": {
+   "title": "THE HAWK'S TRAIL",
+   "giver": "kestrel",
+   "region": "gloam",
+   "trigger": [
+    24,
+    138,
+    3
+   ],
+   "offer": [
+    "A HAWK CIRCLES LOW, SCREECHING. IT DIPS TOWARD THE DARK TREES NORTH-WEST OF THE CAMP, THEN BACK TO YOU.",
+    "IT WANTS YOU TO FOLLOW."
+   ],
+   "accept": "FOLLOW THE HAWK.",
+   "steps": [
+    {
+     "type": "follow",
+     "text": "FOLLOW THE HAWK INTO THE GLOAMWOOD",
+     "path": [
+      [
+       21,
+       137
+      ],
+      [
+       18,
+       135
+      ],
+      [
+       15,
+       132
+      ]
+     ],
+     "r": 3
+    },
+    {
+     "type": "spawn",
+     "text": "DRIVE OFF THE GOBLINS",
+     "at": [
+      15,
+      131
+     ],
+     "r": 5,
+     "units": [
+      [
+       "goblin",
+       17,
+       129
+      ],
+      [
+       "archer",
+       12,
+       130
+      ],
+      [
+       "goblin",
+       18,
+       133
+      ]
+     ],
+     "prop": {
+      "kind": "net",
+      "x": 15,
+      "y": 131
+     }
+    },
+    {
+     "type": "find",
+     "text": "CUT WREN FREE",
+     "x": 15,
+     "y": 131,
+     "kind": "net",
+     "say": "THE NET PARTS. A RANGER ROLLS OUT, BOW ALREADY IN HAND."
+    }
+   ],
+   "reward": {
+    "xp": 360,
+    "recruit": "wren"
+   }
+  },
+  "pitChampion": {
+   "title": "THE CHAMPION'S BOUT",
+   "giver": "grub",
+   "region": "marsh",
+   "requires": "thePit",
+   "offer": [
+    "YOU AGAIN. YOU STOLE MY BEAST AND MY CROWD.",
+    "FINE. ONE MORE BOUT. AGAINST GUTCRUSHER, MY CHAMPION. WIN, AND HIS AXE IS YOURS. YOUR BEAST LOOKS LIKE HE'D LIKE IT."
+   ],
+   "accept": "BRING HIM OUT.",
+   "thanks": [
+    "GUTCRUSHER! GET UP! ...HE'S NOT GETTING UP.",
+    "TAKE THE BLOODFANG AXE. AND YOUR BEAST. AND GET OUT OF MY PIT."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "BEAT GUTCRUSHER IN THE PIT",
+     "at": [
+      60,
+      104
+     ],
+     "r": 6,
+     "announce": "THE CHAMPION'S BOUT!",
+     "units": [
+      [
+       "pitchamp",
+       60,
+       100
+      ],
+      [
+       "goblin",
+       56,
+       102
+      ],
+      [
+       "goblin",
+       64,
+       102
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM YOUR PRIZE FROM GRUB",
+     "npc": "grub"
+    }
+   ],
+   "reward": {
+    "xp": 360,
+    "gold": 120,
+    "item": "bloodfang_axe"
+   }
+  },
+  "scoutAmbush": {
+   "title": "HOUNDS ON THE ROAD",
+   "giver": "tansy",
+   "region": "gloam",
+   "trigger": [
+    45,
+    160,
+    8
+   ],
+   "offer": [
+    "HEY! YOU! THESE HOUNDS HAVE BEEN CIRCLING ME SINCE DAWN. THEY'RE NOT EVEN REAL DOGS!",
+    "GIVE ME A HAND AND I'LL SHOW YOU THE SAFE WAY TO CAMP."
+   ],
+   "accept": "HOLD ON, TANSY!",
+   "thanks": [
+    "THAT'S THE LAST TIME I SCOUT ALONE. PROBABLY.",
+    "TAKE THIS. I NICKED IT OFF A GOBLIN WHO DIDN'T NEED IT ANY MORE."
+   ],
+   "steps": [
+    {
+     "type": "defend",
+     "text": "DRIVE OFF THE HOUNDS CIRCLING TANSY",
+     "npc": "tansy",
+     "units": [
+      [
+       "hound",
+       48,
+       161
+      ],
+      [
+       "hound",
+       48,
+       165
+      ],
+      [
+       "hound",
+       44,
+       166
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CHECK ON TANSY",
+     "npc": "tansy"
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 400,
+    "gear": {
+     "rarity": "fine"
+    }
+   }
+  },
+  "lightsInTrees": {
+   "title": "THE WAILING IN THE WOOD",
+   "giver": "brisk",
+   "region": "gloam",
+   "offer": [
+    "THE BANSHEES ARE GETTING BOLD. ONE SCREAMED A HUNTER RIGHT OUT OF HIS BOOTS LAST NIGHT. HE'S STILL LOOKING FOR THEM.",
+    "PUT THREE OF THEM TO REST. AND IF ONE STARTS TO WAIL - GET A TREE BETWEEN YOU AND HER."
+   ],
+   "accept": "THREE BANSHEES.",
+   "thanks": [
+    "QUIET. I'D FORGOTTEN WHAT THAT SOUNDED LIKE.",
+    "HERE. HUNTER'S PAY, AND A HUNTER'S THANKS."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "SILENCE WAILING BANSHEES",
+     "kind": "banshee",
+     "count": 3
+    },
+    {
+     "type": "talk",
+     "text": "REPORT TO HUNTMASTER BRISK",
+     "npc": "brisk"
+    }
+   ],
+   "reward": {
+    "gold": 90,
+    "xp": 500,
+    "potions": {
+     "elixir": 1,
+     "potion": 2
+    }
+   }
+  },
+  "mabBounty": {
+   "title": "BOUNTY: QUEEN MAB",
+   "giver": "brisk",
+   "region": "gloam",
+   "requires": "lightsInTrees",
+   "offer": [
+    "BIGGEST SPIDER YOU'VE EVER SEEN. BIGGER. SHE NESTS IN THE HOLLOW SOUTHWEST OF THE MIRROR POOL, AND HER BROOD GETS BIGGER EVERY MOON.",
+    "SMASH HER EGGS BEFORE THEY HATCH. AND DON'T STAND FAR OFF - SHE'LL REEL YOU IN ON A LINE."
+   ],
+   "accept": "HUNT THE QUEEN.",
+   "thanks": [
+    "QUEEN MAB, DEAD. I'LL DRINK TO THAT. I'LL DRINK TO IT TWICE.",
+    "HER SILK'S THE FINEST THERE IS. TAKE IT - AND THE PURSE."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND QUEEN MAB'S NEST, SOUTHWEST OF THE MIRROR POOL",
+     "at": [
+      20,
+      196
+     ],
+     "r": 7,
+     "units": [
+      [
+       "mab",
+       20,
+       196
+      ],
+      [
+       "spider",
+       16,
+       194
+      ],
+      [
+       "spider",
+       24,
+       198
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM BRISK",
+     "npc": "brisk"
+    }
+   ],
+   "reward": {
+    "gold": 220,
+    "xp": 810,
+    "mats": {
+     "silk": 4
+    },
+    "item": "nightsilk_coat"
+   }
+  },
+  "ghostcapStew": {
+   "title": "GHOSTCAP STEW",
+   "giver": "fennel",
+   "region": "gloam",
+   "offer": [
+    "THE HUNTERS ARE SICK OF SQUIRREL. I AM SICK OF SQUIRREL. THE SQUIRRELS ARE, ADMITTEDLY, ALSO SICK OF IT.",
+    "BRING ME FIVE GHOSTCAPS - THE PALE ONES THAT GLOW - AND I'LL COOK US ALL SOMETHING DECENT."
+   ],
+   "accept": "FIVE GHOSTCAPS.",
+   "thanks": [
+    "THEY GLOW EVEN IN THE POT. DON'T WORRY ABOUT IT.",
+    "HERE - SOME OF MY TONICS. THEY TASTE OF MUSHROOM. EVERYTHING TASTES OF MUSHROOM NOW."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "PICK GHOSTCAPS",
+     "mat": "ghostcap",
+     "count": 5
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE GHOSTCAPS TO FENNEL",
+     "npc": "fennel",
+     "take": {
+      "ghostcap": 5
+     }
+    }
+   ],
+   "reward": {
+    "gold": 50,
+    "xp": 320,
+    "potions": {
+     "potion": 2,
+     "elixir": 1
+    }
+   }
+  },
+  "rootAndBranch": {
+   "title": "ROOT AND BRANCH",
+   "giver": "hew",
+   "region": "gloam",
+   "offer": [
+    "ROOTLINGS. STUMPS THAT THROW THORNS. THEY'VE GOT MY FAVOURITE AXE STUCK IN ONE OF THEM.",
+    "FELL FOUR OF THEM. FIRE HELPS. EVERYTHING ABOUT ROOTLINGS GOES BETTER WITH FIRE."
+   ],
+   "accept": "FOUR ROOTLINGS.",
+   "thanks": [
+    "THERE SHE IS. MY AXE. I'M NOT CRYING, IT'S THE SMOKE.",
+    "GOOD WOOD, ROOTLING HEARTWOOD. TAKE SOME. AND THIS - FOUND IT IN THE LAST ONE."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "FELL ROOTLINGS",
+     "kind": "rootling",
+     "count": 4
+    },
+    {
+     "type": "talk",
+     "text": "RETURN TO HEW",
+     "npc": "hew"
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 430,
+    "mats": {
+     "heartwood": 3
+    },
+    "gear": {
+     "rarity": "fine"
+    }
+   }
+  },
+  "guidingLight": {
+   "title": "A LIGHT THAT DOESN'T LIE",
+   "giver": "glimmer",
+   "region": "gloam",
+   "trigger": [
+    21,
+    168,
+    4
+   ],
+   "offer": [
+    "A SMALL GREEN LIGHT DRIFTS UP FROM THE REEDS OF THE MIRROR POOL. IT DOESN'T CALL YOUR NAME. IT JUST WAITS.",
+    "IT BOBS TOWARD THE DARK TREES TO THE SOUTH, AND BACK. AND AGAIN."
+   ],
+   "accept": "FOLLOW THE LIGHT.",
+   "thanks": [
+    "A LOCKET? FROM THE POOL'S LIGHT? THEN IT WAS ONE OF THE HONEST ONES.",
+    "THE GIRL IN THE PORTRAIT WAS A RANGER. SHE WENT LOOKING FOR THE HUNTSMAN, YEARS AGO. KEEP IT. SHE'D WANT IT WORN BY SOMEONE STILL HUNTING."
+   ],
+   "steps": [
+    {
+     "type": "follow",
+     "text": "FOLLOW THE LITTLE LIGHT SOUTH",
+     "path": [
+      [
+       20,
+       175
+      ],
+      [
+       17,
+       182
+      ],
+      [
+       11,
+       189
+      ],
+      [
+       8,
+       196
+      ]
+     ],
+     "r": 3
+    },
+    {
+     "type": "find",
+     "text": "SEARCH WHERE THE LIGHT WENT OUT",
+     "x": 8,
+     "y": 198,
+     "kind": "glint",
+     "say": "A SILVER LOCKET IN THE MOSS. INSIDE, A PORTRAIT OF A YOUNG RANGER."
+    },
+    {
+     "type": "talk",
+     "text": "SHOW THE LOCKET TO MOTHER MOSS",
+     "npc": "moss"
+    }
+   ],
+   "reward": {
+    "gold": 60,
+    "xp": 500,
+    "sp": 1,
+    "gear": {
+     "rarity": "fine",
+     "slot": "head"
+    }
+   }
+  },
+  "excessiveOptimism": {
+   "title": "EXCESSIVE OPTIMISM",
+   "giver": "oake",
+   "region": "cinder",
+   "offer": [
+    "AH, HELLO! I'M BROTHER OAKE. THE MONASTERY GAVE THESE MINERS UP FOR LOST. I DISAGREED. LOUDLY. THEN QUIETLY. THEN I JUST STAYED.",
+    "THEIR BURNS NEED COOL SPRING WATER, AND THE IMPS KEEP RAIDING US. HELP ME? IT'LL ALL WORK OUT. I'M ALMOST SURE."
+   ],
+   "accept": "WE'LL HELP.",
+   "thanks": [
+    "LOOK AT THEM. SITTING UP, COMPLAINING ABOUT MY COOKING. MIRACULOUS.",
+    "THE ABBOT WAS WRONG ABOUT THEM. I THINK HE MIGHT BE WRONG ABOUT YOU, TOO - HE CALLED YOU 'HOPELESS ADVENTURERS'. MIND IF I COME ALONG?"
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "FILL A FLASK AT THE HOT SPRINGS",
+     "x": 131,
+     "y": 160,
+     "kind": "glint",
+     "say": "THE SPRING WATER IS COOL HERE, WHERE IT BUBBLES UP. YOU FILL OAKE'S FLASK."
+    },
+    {
+     "type": "spawn",
+     "text": "BRING THE WATER BACK TO THE MINERS' CAMP",
+     "at": [
+      117,
+      188
+     ],
+     "r": 6,
+     "units": [
+      [
+       "imp",
+       112,
+       184
+      ],
+      [
+       "imp",
+       122,
+       184
+      ],
+      [
+       "beetle",
+       117,
+       182
+      ],
+      [
+       "imp",
+       117,
+       194
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "GIVE THE WATER TO BROTHER OAKE",
+     "npc": "oake"
+    }
+   ],
+   "reward": {
+    "xp": 700,
+    "recruit": "oake"
+   }
+  },
+  "drakeBounty": {
+   "title": "BOUNTY: THE CINDER DRAKE",
+   "giver": "emberboard",
+   "region": "cinder",
+   "offer": [
+    "BOUNTY: A YOUNG CINDER DRAKE NESTING IN THE CRAGS NORTH-WEST OF EMBERWATCH. IT HAS EATEN THREE GOATS, A CART AND, REGRETTABLY, THE CART'S DRIVER.",
+    "WATCH FOR ITS THROAT GLOWING - THAT'S THE BREATH. WHEN IT TAKES WING, GET OUT FROM UNDER ITS SHADOW."
+   ],
+   "accept": "HUNT THE DRAKE.",
+   "thanks": [
+    "THE DRAKE'S DEAD? PIN THAT TOOTH UP OVER THE BAR. NO - YOU KEEP IT. YOU EARNED IT."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE CINDER DRAKE IN THE NORTH-WEST CRAGS",
+     "at": [
+      111,
+      135
+     ],
+     "r": 7,
+     "units": [
+      [
+       "drake",
+       111,
+       134
+      ],
+      [
+       "imp",
+       107,
+       137
+      ],
+      [
+       "imp",
+       115,
+       137
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM QUARTERMASTER COAL",
+     "npc": "coal"
+    }
+   ],
+   "reward": {
+    "gold": 240,
+    "xp": 1060,
+    "item": "gnasher"
+   }
+  },
+  "smokestack": {
+   "title": "BOUNTY: OLD SMOKESTACK",
+   "giver": "emberboard",
+   "region": "cinder",
+   "requires": "drakeBounty",
+   "offer": [
+    "BOUNTY: OLD SMOKESTACK, A BASALT BRUTE THE SIZE OF A CHAPEL, ROAMING THE OBSIDIAN FIELDS EAST OF THE MONASTERY ROAD.",
+    "ITS ROCK HIDE TURNS SWORDS. STORM CRACKS IT. SO DOES HITTING IT VERY, VERY OFTEN."
+   ],
+   "accept": "BREAK THE BRUTE.",
+   "thanks": [
+    "SMOKESTACK? DOWN? I'D SHAKE YOUR HAND BUT IT LOOKS SORE.",
+    "SOME RANGER LEFT THIS QUIVER HERE YEARS AGO. IT'S BEEN SMOULDERING EVER SINCE. FEELS LIKE IT WANTS TO GO WITH YOU."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND OLD SMOKESTACK IN THE OBSIDIAN FIELDS",
+     "at": [
+      186,
+      150
+     ],
+     "r": 7,
+     "units": [
+      [
+       "brute",
+       186,
+       150
+      ],
+      [
+       "beetle",
+       184,
+       153
+      ],
+      [
+       "beetle",
+       189,
+       152
+      ]
+     ],
+     "elite": 0,
+     "name": "OLD SMOKESTACK"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM QUARTERMASTER COAL",
+     "npc": "coal"
+    }
+   ],
+   "reward": {
+    "gold": 260,
+    "xp": 1100,
+    "item": "quiver_of_embers"
+   }
+  },
+  "brimstoneHaul": {
+   "title": "BRIMSTONE RUN",
+   "giver": "coal",
+   "region": "cinder",
+   "offer": [
+    "I'M OUT OF BRIMSTONE, WHICH MEANS I'M ABOUT TO BE OUT OF SALVE, WHICH MEANS A LOT OF COOKED VISITORS.",
+    "SIX LUMPS OF BRIMSTONE. THE YELLOW-CRUSTED VENTS. HIT THEM."
+   ],
+   "accept": "SIX LUMPS.",
+   "thanks": [
+    "THAT SMELL MEANS PROFIT. AND SAFETY. MOSTLY PROFIT. HERE - SALVE, FRESH."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "CHIP BRIMSTONE FROM THE VENTS",
+     "mat": "brimstone",
+     "count": 6
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE BRIMSTONE TO COAL",
+     "npc": "coal",
+     "take": {
+      "brimstone": 6
+     }
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 480,
+    "potions": {
+     "salve": 3
+    }
+   }
+  },
+  "caravan": {
+   "title": "THE MONASTERY RUN",
+   "giver": "coal",
+   "region": "cinder",
+   "requires": "brimstoneHaul",
+   "offer": [
+    "THE MONKS ARE OUT OF EVERYTHING. I'VE LOADED A CART. THE SALAMANDERS HAVE OPINIONS ABOUT CARTS.",
+    "WALK IT TO THE MONASTERY STEPS. KEEP IT IN ONE PIECE."
+   ],
+   "accept": "WE'LL WALK IT.",
+   "thanks": [
+    "SUPPLIES! AND IN ONE PIECE. THE HEARTHSTONE MAY BE COLD, BUT THIS HELPS. BLESS YOU. YES, ALL OF YOU. HOLD STILL."
+   ],
+   "steps": [
+    {
+     "type": "escort",
+     "text": "KEEP THE CART SAFE ON THE MONASTERY ROAD",
+     "startLine": "MIND THE CART. IMPS LOVE A SLOW TARGET.",
+     "ambushLine": "BEHIND ME! NO - IN FRONT OF ME!",
+     "path": [
+      [
+       146,
+       150
+      ],
+      [
+       152,
+       150
+      ],
+      [
+       158,
+       150
+      ],
+      [
+       164,
+       150
+      ],
+      [
+       170,
+       149
+      ]
+     ],
+     "hp": 140,
+     "ambush": [
+      {
+       "at": 1,
+       "units": [
+        [
+         "salamander",
+         152,
+         154
+        ],
+        [
+         "imp",
+         156,
+         146
+        ]
+       ]
+      },
+      {
+       "at": 3,
+       "units": [
+        [
+         "salamander",
+         166,
+         153
+        ],
+        [
+         "beetle",
+         162,
+         146
+        ],
+        [
+         "imp",
+         168,
+         146
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "REPORT TO ABBOT IGNATIUS",
+     "npc": "ignatius"
+    }
+   ],
+   "reward": {
+    "gold": 110,
+    "xp": 660,
+    "sp": 1,
+    "gear": {
+     "rarity": "fine"
+    }
+   }
+  },
+  "monkTrial": {
+   "title": "SALAMANDERS ON HOLY GROUND",
+   "giver": "ignatius",
+   "region": "cinder",
+   "offer": [
+    "SALAMANDERS HAVE BEEN CLIMBING OUR CRAG, TRYING THE GATE, SPITTING IN THE FONT. IT IS VERY HARD TO PRAY THROUGH.",
+    "DRIVE OFF FOUR OF THEM. SISTER EMBER WILL TEACH YOU OUR WAYS IF YOU WISH."
+   ],
+   "accept": "FOUR SALAMANDERS.",
+   "thanks": [
+    "PEACE, AT LAST. YOU HAVE OUR GRATITUDE, AND OUR SECOND-BEST VESTMENTS. THE BEST ONES ARE LOCKED IN THE VAULT. LONG STORY."
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "text": "DRIVE OFF SALAMANDER WARRIORS",
+     "kind": "salamander",
+     "count": 4
+    },
+    {
+     "type": "talk",
+     "text": "RETURN TO ABBOT IGNATIUS",
+     "npc": "ignatius"
+    }
+   ],
+   "reward": {
+    "gold": 90,
+    "xp": 620,
+    "potions": {
+     "elixir": 1,
+     "salve": 2
+    },
+    "gear": {
+     "rarity": "fine",
+     "slot": "body"
+    }
+   }
+  },
+  "waterWheel": {
+   "title": "THE WATER WHEEL",
+   "giver": "gizmo",
+   "region": "vale",
+   "wards": 2,
+   "offer": [
+    "AH! YOU! YOU LOOK LIKE SOMEONE WHO WALKS FAR AWAY AND COMES BACK. PERFECT. BRIGHTWATER'S MILL WHEEL HAS SEIZED - NO FLOUR, NO BREAD, VERY GRUMPY TOWN.",
+    "I NEED TWO PARTS. A HEARTWOOD AXLE PIN FROM THE OLD WOODCUTTERS' STUMP IN GLOAMWOOD, AND A BRASS COG FROM THE DWARVES' SCRAP HEAP BY THE FORGE GATE IN CINDERREACH. GO! QUICKLY! WITH STYLE!"
+   ],
+   "accept": "TWO PARTS. GOT IT.",
+   "thanks": [
+    "HEARTWOOD AND BRASS! NOW WATCH - A LITTLE TAP HERE... A BIGGER TAP THERE...",
+    "...THE MILL TURNS! TAKE THESE GOGGLES - THEY SEE WHAT'S HIDDEN. AND TAKE ME, TOO. YOU'LL NEED A TINKERER WHERE YOU'RE GOING."
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "FIND A HEARTWOOD AXLE PIN AT THE WOODCUTTERS' STUMP (GLOAMWOOD)",
+     "x": 66,
+     "y": 142,
+     "kind": "glint",
+     "say": "A PIN OF DARK HEARTWOOD, HARD AS IRON, WEDGED IN AN OLD STUMP."
+    },
+    {
+     "type": "find",
+     "text": "FIND A BRASS COG IN THE SCRAP BY THE FORGE GATE (CINDERREACH)",
+     "x": 182,
+     "y": 189,
+     "kind": "glint",
+     "say": "A BIG BRASS COG, STILL TOOTHED, UNDER A HEAP OF DWARVEN SLAG."
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE PARTS TO GIZMO AT THE MILL",
+     "npc": "gizmo"
+    }
+   ],
+   "reward": {
+    "xp": 350,
+    "item": "clockwork_goggles",
+    "recruit": "gizmo"
+   }
+  },
+  "flicker": {
+   "title": "BOUNTY: FLICKER",
+   "giver": "emberboard",
+   "region": "cinder",
+   "offer": [
+    "BOUNTY: AN IMP CALLED FLICKER HAS BEEN SETTING FIRE TO THINGS AROUND THE HOT SPRINGS. MOSTLY TENTS. ONCE, A DWARF.",
+    "IT NEVER STANDS STILL AND IT NEVER STOPS GIGGLING. BRING SOMETHING FAST - OR SOMETHING COLD."
+   ],
+   "accept": "CATCH THE IMP.",
+   "thanks": [
+    "FLICKER'S OUT? THE SPRINGS'LL BE QUIET FOR ONCE. IT DROPPED THIS - A LITTLE CIRCLET, STILL WARM. SUITS A WIZARD, I RECKON."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND FLICKER NEAR THE HOT SPRINGS",
+     "at": [
+      126,
+      168
+     ],
+     "r": 7,
+     "units": [
+      [
+       "imp",
+       126,
+       168
+      ],
+      [
+       "imp",
+       123,
+       170
+      ],
+      [
+       "imp",
+       129,
+       170
+      ]
+     ],
+     "elite": 0,
+     "name": "FLICKER"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM QUARTERMASTER COAL",
+     "npc": "coal"
+    }
+   ],
+   "reward": {
+    "gold": 200,
+    "xp": 920,
+    "item": "ember_circlet"
+   }
+  },
+  "lamplighter": {
+   "title": "BOUNTY: THE LAMPLIGHTER",
+   "giver": "fenboard",
+   "region": "marsh",
+   "offer": [
+    "BOUNTY: A HEXED THING WITH A LANTERN WALKS THE FEN AT DUSK. TRAVELLERS FOLLOW ITS LIGHT AND WALK STRAIGHT INTO THE DEEP WATER.",
+    "LOCALS CALL IT THE LAMPLIGHTER. DON'T FOLLOW THE LIGHT. HIT IT."
+   ],
+   "accept": "PUT OUT THE LIGHT.",
+   "thanks": [
+    "THE LAMPLIGHTER'S GONE? AND IT LEFT ITS LANTERN... FUNNY. THE FLAME'S GONE GOLD NOW, NOT GREEN. FEELS ALMOST HOLY. SOMEONE WITH A PRAYER IN THEM MIGHT CARRY IT."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE LAMPLIGHTER IN THE EASTERN FEN",
+     "at": [
+      86,
+      108
+     ],
+     "r": 7,
+     "units": [
+      [
+       "witchling",
+       86,
+       108
+      ],
+      [
+       "wisp",
+       83,
+       110
+      ],
+      [
+       "wisp",
+       89,
+       110
+      ]
+     ],
+     "elite": 0,
+     "name": "THE LAMPLIGHTER"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM MAG",
+     "npc": "mag"
+    }
+   ],
+   "reward": {
+    "gold": 180,
+    "xp": 530,
+    "item": "lantern_of_the_faithful"
+   }
+  },
+  "hermitRiddle": {
+   "title": "THE HERMIT'S RIDDLE",
+   "giver": "hermit",
+   "region": "gloam",
+   "offer": [
+    "YOU WANT SOMETHING ELSE. EVERYONE DOES. VERY WELL: THE ORB ON MY SHELF ECHOES EVERY THIRD SPELL. IT IS YOURS IF YOU CAN WAKE MY STONES.",
+    "THE EYE OPENS FIRST, FOR NOTHING HAPPENS UNSEEN. THEN THE SUN, SO THE EYE HAS SOMETHING TO SEE. THE MOON FOLLOWS THE SUN, AS IT ALWAYS DOES. THE STAR COMES LAST - IT WAITS FOR DARK."
+   ],
+   "accept": "EYE, SUN, MOON, STAR.",
+   "thanks": [
+    "HM. THEY WOKE FOR YOU. THEY NEVER WAKE FOR ME. TAKE THE ORB BEFORE I CHANGE MY MIND - I CHANGE IT OFTEN."
+   ],
+   "steps": [
+    {
+     "type": "bells",
+     "art": "rune",
+     "text": "WAKE THE RUNE STONES IN THE HERMIT'S ORDER",
+     "bells": [
+      [
+       84,
+       145,
+       "moon"
+      ],
+      [
+       88,
+       145,
+       "star"
+      ],
+      [
+       84,
+       147,
+       "sun"
+      ],
+      [
+       88,
+       147,
+       "eye"
+      ]
+     ],
+     "order": [
+      "eye",
+      "sun",
+      "moon",
+      "star"
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "TELL THE HERMIT",
+     "npc": "hermit"
+    }
+   ],
+   "reward": {
+    "xp": 720,
+    "item": "orb_of_echoes"
+   }
+  },
+  "belfry": {
+   "title": "THE SILENT BELFRY",
+   "giver": "tolly",
+   "region": "gloam",
+   "offer": [
+    "BROTHER TOLLY, BELL-RINGER. FORMERLY. THE BELFRY WENT QUIET WHEN THE HEX CAME, AND I WENT... THIS.",
+    "THE OLD HYMN IS CARVED IN THE CHAPEL TO THE WEST - I CAN NEVER REMEMBER IT. READ IT, THEN RING IT FOR ME? I'D LIKE TO HEAR IT ONCE MORE."
+   ],
+   "accept": "I'LL READ THE HYMN.",
+   "thanks": [
+    "...OH. OH, THAT'S IT. THAT'S THE ONE.",
+    "TAKE THIS LITTLE BELL. IT RINGS WHEN YOU'RE READY TO DO SOMETHING BRAVE. YOU'LL FIND YOU'RE READY SOONER."
+   ],
+   "steps": [
+    {
+     "type": "bells",
+     "text": "RING THE BELFRY'S HYMN (THE CHAPEL SIGN HAS IT)",
+     "bells": [
+      [
+       24,
+       171,
+       "high"
+      ],
+      [
+       26,
+       171,
+       "deep"
+      ],
+      [
+       28,
+       171,
+       "low"
+      ],
+      [
+       30,
+       171,
+       "mid"
+      ]
+     ],
+     "order": [
+      "low",
+      "high",
+      "deep",
+      "mid"
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "TELL BROTHER TOLLY",
+     "npc": "tolly"
+    }
+   ],
+   "reward": {
+    "xp": 540,
+    "item": "echo_bell"
+   }
+  },
+  "signalFires": {
+   "title": "THE SIGNAL FIRES",
+   "giver": "vey",
+   "region": "cinder",
+   "offer": [
+    "THE BEACONS ON THE THREE HIGH POINTS WENT OUT WHEN THE HEX CAME. WITHOUT THEM THE CARAVANS DON'T KNOW WE'RE HERE, AND NOTHING COMES UP THE ROAD.",
+    "RELIGHT THEM: THE RIDGE NORTH OF HERE, THE BLUFF OVER THE LAVA RIVER, AND THE EAST RISE BY THE OBSIDIAN. BRING SALVE. BRING TWO."
+   ],
+   "accept": "THREE BEACONS.",
+   "thanks": [
+    "I SAW THEM FROM THE WALL. ALL THREE. FIRST TIME IN A YEAR SOMEONE CHEERED UP THERE.",
+    "HERE - THE OLD WATCH-CAPTAIN'S EMBER HEART. KEEPS THE HEAT OFF. I'VE BEEN SAVING IT FOR SOMEONE WHO'D GO OUT THERE AND COME BACK."
+   ],
+   "steps": [
+    {
+     "type": "find",
+     "text": "LIGHT THE RIDGE BEACON (NORTH)",
+     "x": 147,
+     "y": 134,
+     "kind": "beacon",
+     "say": "THE BEACON ROARS ALIGHT!"
+    },
+    {
+     "type": "find",
+     "text": "LIGHT THE BLUFF BEACON (OVER THE LAVA RIVER)",
+     "x": 150,
+     "y": 180,
+     "kind": "beacon",
+     "say": "THE BEACON ROARS ALIGHT!"
+    },
+    {
+     "type": "find",
+     "text": "LIGHT THE EAST RISE BEACON (BY THE OBSIDIAN)",
+     "x": 185,
+     "y": 159,
+     "kind": "beacon",
+     "say": "THE BEACON ROARS ALIGHT!"
+    },
+    {
+     "type": "talk",
+     "text": "REPORT TO CAPTAIN VEY AT EMBERWATCH",
+     "npc": "vey"
+    }
+   ],
+   "reward": {
+    "xp": 920,
+    "gold": 120,
+    "item": "ember_heart"
+   }
+  },
+  "mastersTools": {
+   "title": "THE MASTER'S HOURGLASS",
+   "giver": "tamsin",
+   "region": "cinder",
+   "offer": [
+    "THE FORGEMASTER KEPT AN HOURGLASS ON HIS BENCH. HE SAID A SMITH WHO WATCHES THE SAND NEVER RUSHES A WELD. WHEN THE HEX TOOK HIM, HE THREW IT ON THE SLAG HEAP.",
+    "I WANT TO MEND IT. I NEED SCALE FOR THE FRAME, BRIMSTONE FOR THE GLASS, AND THE HOURGLASS ITSELF - OUT EAST, ON THE HEAP BY THE OLD ORE CARTS."
+   ],
+   "accept": "SCALE, BRIMSTONE, HOURGLASS.",
+   "thanks": [
+    "THERE. LISTEN - YOU CAN HEAR THE SAND. IT SOUNDS LIKE HIM, BEFORE.",
+    "TAKE IT. A CHARM NOW, NOT A TOOL. IT'LL MAKE YOU QUICKER AT WHATEVER YOU DO. HE'D WANT IT USED."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "BRING DRAKE SCALE",
+     "mat": "scale",
+     "count": 3
+    },
+    {
+     "type": "gather",
+     "text": "BRING BRIMSTONE",
+     "mat": "brimstone",
+     "count": 4
+    },
+    {
+     "type": "find",
+     "text": "FIND THE FORGEMASTER'S HOURGLASS ON THE SLAG HEAP (EAST)",
+     "x": 186,
+     "y": 190,
+     "kind": "glint",
+     "say": "A BRASS HOURGLASS, CRACKED, THE SAND STILL TRICKLING."
+    },
+    {
+     "type": "talk",
+     "text": "BRING IT ALL TO TAMSIN",
+     "npc": "tamsin",
+     "take": {
+      "scale": 3,
+      "brimstone": 4
+     }
+    }
+   ],
+   "reward": {
+    "xp": 920,
+    "item": "hourglass_charm"
+   }
+  },
+  "secondWind": {
+   "title": "A SECOND WIND",
+   "giver": "brew",
+   "region": "vale",
+   "offer": [
+    "I'M WORKING ON SOMETHING. A PHIAL THAT MAKES EVERY POTION KINDER - YOU DRINK, AND IT REMEMBERS TO HELP A LITTLE MORE.",
+    "I NEED MOONHERB, SLIME GEL AND BOGMOSS. THE GOOD STUFF, FROM OUT THERE, NOT THE SAD BUNCHES MARLA SELLS."
+   ],
+   "accept": "HERBS, GEL, BOGMOSS.",
+   "thanks": [
+    "IT WORKED! IT ONLY EXPLODED TWICE! THE PHIAL'S YOURS - KEEP IT CORKED, OR DON'T, BUT DON'T BLAME ME."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "PICK MOONHERB",
+     "mat": "herb",
+     "count": 6
+    },
+    {
+     "type": "gather",
+     "text": "COLLECT SLIME GEL",
+     "mat": "gel",
+     "count": 4
+    },
+    {
+     "type": "gather",
+     "text": "GATHER BOGMOSS",
+     "mat": "bogmoss",
+     "count": 3
+    },
+    {
+     "type": "talk",
+     "text": "BRING IT ALL TO BREW",
+     "npc": "brew",
+     "take": {
+      "herb": 6,
+      "gel": 4,
+      "bogmoss": 3
+     }
+    }
+   ],
+   "reward": {
+    "xp": 300,
+    "item": "phial_second_wind"
+   }
+  },
+  "tonicRun": {
+   "title": "A COLD SPOON",
+   "giver": "hale",
+   "region": "frost",
+   "offer": [
+    "HALF OF RIMEWATCH IS RUNNING ON MY TONIC AND I'M DOWN TO THE DREGS.",
+    "SIX PIECES OF RIMEGLASS. THE PALE CRYSTALS THAT GROW OUT OF THE SNOW. CHIP THEM, BRING THEM, AND I'LL KEEP YOU WARM."
+   ],
+   "accept": "SIX PIECES.",
+   "thanks": [
+    "LOOK AT THAT. ENOUGH FOR A WEEK OF NOT FREEZING. HERE - TONIC, AND A LITTLE SOMETHING FOR THE ROAD."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "CHIP RIMEGLASS FROM THE CRYSTALS IN THE SNOW",
+     "mat": "rimeglass",
+     "count": 6
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE RIMEGLASS TO MOTHER HALE",
+     "npc": "hale",
+     "take": {
+      "rimeglass": 6
+     }
+    }
+   ],
+   "reward": {
+    "gold": 70,
+    "xp": 730,
+    "potions": {
+     "tonic": 3
+    }
+   }
+  },
+  "lostTrapper": {
+   "title": "THE TRAPPER'S SLED",
+   "giver": "kaari",
+   "region": "frost",
+   "offer": [
+    "OLD TOVE WENT OUT TO CHECK HIS LINES IN THE NORTH-WEST WOODS TWO DAYS AGO. HIS DOGS CAME BACK. HE DIDN'T.",
+    "FIND HIS SLED. IF THE WOLVES HAVE HIM... BRING BACK WHAT YOU CAN."
+   ],
+   "accept": "WE'LL FIND HIM.",
+   "thanks": [
+    "TOVE LIMPED IN AN HOUR AGO. THE WOLVES HAD HIM TREED UNTIL YOU DREW THEM OFF, AND HE'S STILL GRUMBLING. HE SENDS THIS - HIS LUCKY TASSEL. HE SAYS IT KEPT HIM WARM UP THAT TREE, AND NOW IT'S YOURS."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND OLD TOVE'S SLED IN THE NORTH-WEST WOODS",
+     "at": [
+      11,
+      228
+     ],
+     "r": 7,
+     "units": [
+      [
+       "frostwolf",
+       9,
+       227
+      ],
+      [
+       "frostwolf",
+       14,
+       229
+      ],
+      [
+       "frostwolf",
+       11,
+       232
+      ],
+      [
+       "frostwolf",
+       7,
+       231
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "TELL WARDEN KAARI WHAT YOU FOUND",
+     "npc": "kaari"
+    }
+   ],
+   "reward": {
+    "gold": 90,
+    "xp": 900,
+    "item": "frostfur_tassel"
+   }
+  },
+  "greymaw": {
+   "title": "BOUNTY: GREYMAW",
+   "giver": "rimeboard",
+   "region": "frost",
+   "offer": [
+    "BOUNTY: GREYMAW. A WOLF THE SIZE OF A PONY LEADING A PACK IN THE PINEWOOD NORTH-EAST OF RIMEWATCH. IT TOOK THE WARDEN'S GOAT. AND THE WARDEN'S OTHER GOAT.",
+    "IT NEVER COMES STRAIGHT AT YOU. IT CIRCLES. WATCH YOUR BACKS."
+   ],
+   "accept": "HUNT GREYMAW.",
+   "thanks": [
+    "GREYMAW? THE PACK WILL SCATTER WITHOUT HIM. KEEP THE SKULL - IT MAKES A FINE HELMET, IF YOU DON'T MIND IT LOOKING AT YOU."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND GREYMAW IN THE NORTH-EAST PINEWOOD",
+     "at": [
+      94,
+      216
+     ],
+     "r": 7,
+     "units": [
+      [
+       "frostwolf",
+       94,
+       216
+      ],
+      [
+       "frostwolf",
+       91,
+       219
+      ],
+      [
+       "frostwolf",
+       97,
+       219
+      ],
+      [
+       "frostwolf",
+       94,
+       221
+      ]
+     ],
+     "elite": 0,
+     "name": "GREYMAW"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM WARDEN KAARI",
+     "npc": "kaari"
+    }
+   ],
+   "reward": {
+    "gold": 220,
+    "xp": 1290,
+    "item": "wolfskull_helm"
+   }
+  },
+  "trollBounty": {
+   "title": "BOUNTY: THE AVALANCHE TROLL",
+   "giver": "rimeboard",
+   "region": "frost",
+   "offer": [
+    "BOUNTY: A TROLL IN THE GULLY EAST OF RIMEWATCH. WHEN IT POUNDS THE GROUND, THE ICICLES COME DOWN. WHEN YOU HIT IT, IT HEALS.",
+    "FIRE STOPS THE HEALING. BRING FIRE. BRING A LOT OF FIRE."
+   ],
+   "accept": "HUNT THE TROLL.",
+   "thanks": [
+    "THE GULLY'S QUIET. FIRST TIME IN MONTHS. ITS HIDE'S YOURS - IT STILL KNITS ITSELF BACK TOGETHER. DON'T ASK ME HOW I KNOW."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE AVALANCHE TROLL IN THE EAST GULLY",
+     "at": [
+      100,
+      226
+     ],
+     "r": 7,
+     "units": [
+      [
+       "troll",
+       100,
+       225
+      ],
+      [
+       "frostwolf",
+       96,
+       228
+      ],
+      [
+       "frostwolf",
+       104,
+       228
+      ]
+     ]
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM WARDEN KAARI",
+     "npc": "kaari"
+    }
+   ],
+   "reward": {
+    "gold": 260,
+    "xp": 1460,
+    "item": "troll_hide_mantle"
+   }
+  },
+  "sledKing": {
+   "title": "BOUNTY: THE SLED KING",
+   "giver": "rimeboard",
+   "region": "frost",
+   "requires": "greymaw",
+   "offer": [
+    "BOUNTY: A SNOW GOBLIN WHO CALLS HIMSELF THE SLED KING HAS BEEN BOMBING ANYONE WHO SETS FOOT ON THE GLASSWATER ICE. HE HAS A CROWN. IT'S A BUCKET.",
+    "DON'T CHASE HIM. HIT HIM WHEN HE TURNS."
+   ],
+   "accept": "DETHRONE HIM.",
+   "thanks": [
+    "THE SLED KING'S DOWN? THE FISHERS CAN GO BACK OUT. HERE - HIS HOARD. MOSTLY STOLEN. ALL YOURS."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE SLED KING ON THE GLASSWATER ICE",
+     "at": [
+      22,
+      246
+     ],
+     "r": 8,
+     "units": [
+      [
+       "raider",
+       22,
+       246
+      ],
+      [
+       "raider",
+       17,
+       250
+      ],
+      [
+       "raider",
+       25,
+       255
+      ]
+     ],
+     "elite": 0,
+     "name": "THE SLED KING"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM WARDEN KAARI",
+     "npc": "kaari"
+    }
+   ],
+   "reward": {
+    "gold": 240,
+    "xp": 1340,
+    "gear": {
+     "rarity": "rare"
+    }
+   }
+  },
+  "voidmother": {
+   "title": "BOUNTY: THE VOID MOTHER",
+   "giver": "basinboard",
+   "region": "basin",
+   "offer": [
+    "BOUNTY: SOMETHING IN THE NORTH OF THE BASIN KEEPS MAKING VOIDLINGS. MAREK CALLS IT THE VOID MOTHER. MAREK DOES NOT GO NORTH.",
+    "THE LITTLE ONES GO FOR WHOEVER'S HURT WORST. KEEP EACH OTHER UP."
+   ],
+   "accept": "HUNT HER.",
+   "thanks": [
+    "NO MORE OF THOSE LITTLE HORRORS POPPING UP BEHIND ME. HERE - STARMETAL. I'VE BEEN SAVING IT FOR A HERO. YOU'LL DO."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE VOID MOTHER IN THE NORTH OF THE BASIN",
+     "at": [
+      140,
+      232
+     ],
+     "r": 7,
+     "units": [
+      [
+       "voidling",
+       140,
+       232
+      ],
+      [
+       "voidling",
+       137,
+       235
+      ],
+      [
+       "voidling",
+       143,
+       235
+      ],
+      [
+       "voidling",
+       140,
+       236
+      ]
+     ],
+     "elite": 0,
+     "name": "THE VOID MOTHER"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM OLD MAREK",
+     "npc": "marek"
+    }
+   ],
+   "reward": {
+    "gold": 300,
+    "xp": 1680,
+    "mats": {
+     "starmetal": 3
+    }
+   }
+  },
+  "colossus": {
+   "title": "BOUNTY: THE COLOSSUS",
+   "giver": "basinboard",
+   "region": "basin",
+   "offer": [
+    "BOUNTY: A GARGOYLE THE SIZE OF A BARN, EAST OF THE CAUSEWAY. IT ONLY MOVES WHEN YOU'RE NOT LOOKING. SO DON'T STOP LOOKING.",
+    "...BUT YOU'LL HAVE TO STOP LOOKING EVENTUALLY. THAT'S THE PROBLEM."
+   ],
+   "accept": "FACE THE COLOSSUS.",
+   "thanks": [
+    "THE COLOSSUS? IN PIECES? I'LL SLEEP TONIGHT. FIRST TIME IN A WHILE. TAKE THIS - IT CAME OFF THE LAST FOOL WHO TRIED."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE COLOSSUS EAST OF THE CAUSEWAY",
+     "at": [
+      178,
+      280
+     ],
+     "r": 7,
+     "units": [
+      [
+       "gargoyle",
+       178,
+       280
+      ],
+      [
+       "gargoyle",
+       175,
+       283
+      ],
+      [
+       "gargoyle",
+       181,
+       283
+      ]
+     ],
+     "elite": 0,
+     "name": "THE COLOSSUS"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM OLD MAREK",
+     "npc": "marek"
+    }
+   ],
+   "reward": {
+    "gold": 320,
+    "xp": 1780,
+    "gear": {
+     "rarity": "rare"
+    },
+    "mats": {
+     "starmetal": 2
+    }
+   }
+  },
+  "glassking": {
+   "title": "BOUNTY: THE GLASS KING",
+   "giver": "basinboard",
+   "region": "basin",
+   "requires": "voidmother",
+   "offer": [
+    "BOUNTY: ONE OF MALGRIM'S MIRRORS HAS STARTED WALKING ABOUT ON ITS OWN, NEAR THE TOWER. IT LOOKS LIKE WHOEVER FOUND IT LAST.",
+    "IT WILL LOOK LIKE YOU. TRY NOT TO TAKE IT PERSONALLY."
+   ],
+   "accept": "BREAK THE GLASS KING.",
+   "thanks": [
+    "YOU FOUGHT YOURSELF AND WON. THAT'S MORE THAN MOST OF US MANAGE. HERE. YOU'VE EARNED A GOOD SLEEP AND SOMETHING BETTER TO SWING."
+   ],
+   "steps": [
+    {
+     "type": "spawn",
+     "text": "FIND THE GLASS KING BY THE TOWER",
+     "at": [
+      140,
+      266
+     ],
+     "r": 6,
+     "units": [
+      [
+       "mirror",
+       140,
+       266
+      ],
+      [
+       "voidling",
+       137,
+       268
+      ],
+      [
+       "voidling",
+       143,
+       268
+      ]
+     ],
+     "elite": 0,
+     "name": "THE GLASS KING"
+    },
+    {
+     "type": "talk",
+     "text": "CLAIM THE BOUNTY FROM OLD MAREK",
+     "npc": "marek"
+    }
+   ],
+   "reward": {
+    "gold": 360,
+    "xp": 1920,
+    "gear": {
+     "rarity": "rare",
+     "slot": "weapon"
+    },
+    "mats": {
+     "starmetal": 3
+    }
+   }
+  },
+  "shatteredMirror": {
+   "title": "THE SHATTERED MIRROR",
+   "giver": "marek",
+   "region": "basin",
+   "offer": [
+    "MALGRIM'S MIRRORS. THE ONES THAT WALK ABOUT WEARING YOUR FACE. BREAK THEM AND THEY LEAVE A SHARD BEHIND THAT DOESN'T LIE.",
+    "BRING ME THREE. THERE'S A GLASSWRIGHT'S TRICK TO IT - I'LL MAKE SOMETHING THAT SHOWS ONLY THE TRUTH. A WITCH WOULD KNOW WHAT TO DO WITH IT."
+   ],
+   "accept": "THREE SHARDS.",
+   "thanks": [
+    "THREE TRUE SHARDS. HOLD STILL WHILE I... THERE. A MIRROR THAT SHOWS ONLY WHAT'S REALLY THERE. IT WANTS A WITCH'S HAND, I THINK. ONE WHO KNOWS COLD. YOU'LL KNOW WHO WHEN YOU MEET HER."
+   ],
+   "steps": [
+    {
+     "type": "gather",
+     "text": "BREAK MALGRIM'S MIRRORS FOR THEIR SHARDS",
+     "mat": "mirrorshard",
+     "count": 3
+    },
+    {
+     "type": "talk",
+     "text": "BRING THE SHARDS TO OLD MAREK",
+     "npc": "marek",
+     "take": {
+      "mirrorshard": 3
+     }
+    }
+   ],
+   "reward": {
+    "gold": 300,
+    "xp": 1680,
+    "item": "mirror_truths"
+   }
+  }
+ },
+ "npcs": [
+  {
+   "id": "tam",
+   "name": "OLD TAM",
+   "x": 18,
+   "y": 33,
+   "look": "tam",
+   "lines": [
+    "NICE DAY FOR IT. FOR WHAT, I COULDN'T SAY."
+   ],
+   "voice": {
+    "pitch": 150,
+    "wave": "triangle",
+    "speed": 0.8
+   },
+   "errands": [
+    "biscuit"
+   ]
+  },
+  {
+   "id": "ada",
+   "name": "WIDOW ADA",
+   "x": 11,
+   "y": 33,
+   "look": "ada",
+   "lines": [
+    "MIND THE HERBS, DEAR."
+   ],
+   "voice": {
+    "pitch": 360,
+    "wave": "triangle",
+    "speed": 0.85
+   },
+   "errands": [
+    "moonherb",
+    "lostRing"
+   ]
+  },
+  {
+   "id": "piet",
+   "name": "PIET",
+   "x": 16,
+   "y": 32,
+   "look": "piet",
+   "lines": [
+    "I PUSH CARTS. IT'S A LIVING."
+   ],
+   "voice": {
+    "pitch": 260,
+    "wave": "square",
+    "duty": 0.5
+   },
+   "errands": [
+    "delivery"
+   ]
+  },
+  {
+   "id": "hobb",
+   "name": "FARMER HOBB",
+   "x": 29,
+   "y": 63,
+   "look": "hobb",
+   "lines": [
+    "THE FEN STARTS PAST MY FENCE. I DON'T GO PAST MY FENCE."
+   ],
+   "voice": {
+    "pitch": 170,
+    "wave": "square",
+    "duty": 0.5
+   }
+  },
+  {
+   "id": "oswin",
+   "name": "SIR OSWIN",
+   "x": 44,
+   "y": 23,
+   "look": "oswin",
+   "ghost": true,
+   "lines": [
+    "THE WALLS REMEMBER. I REMEMBER LESS EACH YEAR."
+   ],
+   "voice": {
+    "pitch": 120,
+    "wave": "sine",
+    "speed": 0.7
+   },
+   "errands": [
+    "bells"
+   ],
+   "later": [
+    {
+     "when": "done:bells",
+     "lines": [
+      "...STILL HERE. IT TURNS OUT RESTING TAKES PRACTICE. THE BELLS HELP."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "quill",
+   "name": "QUILL",
+   "x": 106,
+   "y": 33,
+   "look": "quill",
+   "lines": [
+    "NEED ANYTHING WRITTEN? I DO SIGNS, LETTERS AND THREATENING NOTES."
+   ],
+   "voice": {
+    "pitch": 300,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "hidden": true
+  },
+  {
+   "id": "board",
+   "name": "RUMOUR BOARD",
+   "x": 246,
+   "y": 19,
+   "look": "board",
+   "lines": [
+    "PINNED NOTICES. MOST ARE ABOUT A MISSING CHEESE."
+   ],
+   "errands": [
+    "goblinCull",
+    "snagtooth"
+   ]
+  },
+  {
+   "id": "greta",
+   "name": "GRETA THE SMITH",
+   "x": 27,
+   "y": 32,
+   "look": "greta",
+   "requires": "smithRank",
+   "service": "smith",
+   "lines": [
+    "BACK AT THE ANVIL. FEELS LIKE BREATHING AGAIN.",
+    "BRING ORE AND I'LL MAKE THAT KIT SING."
+   ],
+   "voice": {
+    "pitch": 220,
+    "wave": "square",
+    "duty": 0.5
+   }
+  },
+  {
+   "id": "wick",
+   "name": "OLD WICK",
+   "x": 24,
+   "y": 35,
+   "look": "wick",
+   "requires": "wardBroken",
+   "lines": [
+    "EVERY LAMP IN BRIGHTWATER, LIT BY THESE HANDS. WELL. SOON."
+   ],
+   "voice": {
+    "pitch": 200,
+    "wave": "triangle",
+    "speed": 0.8
+   },
+   "errands": [
+    "lantern"
+   ],
+   "later": [
+    {
+     "when": "done:lantern",
+     "lines": [
+      "EVERY LAMP IN BRIGHTWATER, LIT BY THESE HANDS. AND THIS TIME I MEAN IT."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "orla",
+   "name": "MADAME ORLA",
+   "x": 9,
+   "y": 30,
+   "look": "orla",
+   "requires": "enchanter",
+   "service": "enchanter",
+   "lines": [
+    "GEMS REMEMBER. I SIMPLY ASK THEM NICELY.",
+    "SET A STONE, REMOVE A STONE - REMOVING IS FREE. I'M NOT A MONSTER."
+   ],
+   "voice": {
+    "pitch": 440,
+    "wave": "sine",
+    "speed": 0.9
+   }
+  },
+  {
+   "id": "mag",
+   "name": "MAG",
+   "x": 28,
+   "y": 60,
+   "look": "ada",
+   "lines": [
+    "THE CAMP'S NOT MUCH. BUT IT'S DRY. MOSTLY."
+   ],
+   "voice": {
+    "pitch": 340,
+    "wave": "triangle",
+    "speed": 0.9
+   },
+   "errands": [
+    "lostPell"
+   ],
+   "later": [
+    {
+     "when": "done:lostPell",
+     "lines": [
+      "THE CAMP'S NOT MUCH. BUT IT'S DRY. MOSTLY. AND PELL'S UNDER ORDERS TO STAY OUT OF HOLES. HE'S FOUND THREE ALREADY."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "silt",
+   "name": "BROTHER SILT",
+   "x": 34,
+   "y": 61,
+   "look": "wick",
+   "lines": [
+    "BLESSINGS, MUD AND ALL."
+   ],
+   "voice": {
+    "pitch": 180,
+    "wave": "triangle",
+    "speed": 0.85
+   },
+   "errands": [
+    "leechCull",
+    "bogmossBalm"
+   ]
+  },
+  {
+   "id": "fenwick",
+   "name": "FENWICK",
+   "x": 60,
+   "y": 71,
+   "look": "piet",
+   "lines": [
+    "SHH. YOU'LL SCARE THE NOTHING I'M CATCHING."
+   ],
+   "voice": {
+    "pitch": 250,
+    "wave": "square",
+    "duty": 0.5
+   },
+   "errands": [
+    "croakers"
+   ],
+   "later": [
+    {
+     "when": "done:croakers",
+     "lines": [
+      "QUIET POND. THE FISH ARE BACK. I STILL CATCH NOTHING, BUT NOW IT'S MY OWN FAULT."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cora",
+   "name": "SISTER CORA",
+   "x": 168,
+   "y": 98,
+   "look": "ada",
+   "ghost": true,
+   "lines": [
+    "THE BELLS DROWNED. I DID NOT. NOT QUITE.",
+    "THEY SAY SMUGGLERS KEEP A DEN ON THE LITTLE ISLE IN THE BIG POOL WEST OF HERE. ONLY A SWIMMER COULD REACH IT."
+   ],
+   "voice": {
+    "pitch": 300,
+    "wave": "sine",
+    "speed": 0.7
+   },
+   "errands": [
+    "drownedBell"
+   ],
+   "later": [
+    {
+     "when": "done:drownedBell",
+     "lines": [
+      "THE BELL RANG. I HEARD IT. I THINK THE SISTERS DID TOO, WHEREVER THEY ARE.",
+      "THEY SAY SMUGGLERS KEEP A DEN ON THE LITTLE ISLE IN THE BIG POOL WEST OF HERE. ONLY A SWIMMER COULD REACH IT."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fenboard",
+   "name": "CAMP BOARD",
+   "x": 31,
+   "y": 58,
+   "look": "board",
+   "lines": [
+    "A NOTICE: 'LOST: ONE BOOT. LEFT. THE LEECHES HAVE THE RIGHT ONE.'"
+   ],
+   "errands": [
+    "snapjaw",
+    "lamplighter"
+   ]
+  },
+  {
+   "id": "grub",
+   "name": "GRUB THE PITBOSS",
+   "x": 59,
+   "y": 112,
+   "look": "goblin",
+   "lines": [
+    "NO BETTING ON CREDIT."
+   ],
+   "voice": {
+    "pitch": 280,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "errands": [
+    "thePit",
+    "pitChampion"
+   ],
+   "later": [
+    {
+     "when": "done:pitChampion",
+     "lines": [
+      "NO BETTING ON CREDIT. NO BETTING ON YOU, EITHER. NOBODY WILL TAKE THE ODDS."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "kestrel",
+   "name": "KESTREL",
+   "x": 24,
+   "y": 138,
+   "look": "hawk",
+   "hidden": true,
+   "lines": [
+    "SKREE!"
+   ],
+   "voice": {
+    "pitch": 900,
+    "wave": "square",
+    "duty": 0.125
+   }
+  },
+  {
+   "id": "iren",
+   "name": "MASTER IREN",
+   "x": 27,
+   "y": 35,
+   "look": "iren",
+   "requires": "wardBroken",
+   "trainer": "blade",
+   "voice": {
+    "pitch": 220,
+    "wave": "square",
+    "duty": 0.25
+   },
+   "lines": [
+    "THE STONE'S DOWN, SO I CAN PRACTISE IN THE OPEN AGAIN. GOOD.",
+    "I TEACH THE BLADE: SWEEP THEM OFF THEIR FEET, TURN THEIR BLOWS, MAKE EVERY CUT COUNT."
+   ]
+  },
+  {
+   "id": "margo",
+   "name": "SLY MARGO",
+   "x": 80,
+   "y": 85,
+   "look": "margo",
+   "trainer": "shadow",
+   "voice": {
+    "pitch": 340,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "lines": [
+    "WELL WELL. NOBODY SWIMS OUT HERE UNLESS THEY MEAN TO.",
+    "WE SMUGGLERS KNOW THE SHADOW ARTS. FOR A PRICE, SO WILL YOU."
+   ]
+  },
+  {
+   "id": "bard",
+   "name": "TILLY THE BARD",
+   "x": 24,
+   "y": 31,
+   "look": "bard",
+   "requires": "bard",
+   "voice": {
+    "pitch": 520,
+    "wave": "square",
+    "duty": 0.25
+   },
+   "lines": [
+    "TEN OF US HOME AND COUNTING! I'VE ADDED A NEW VERSE TO THE VALE'S SONG. LISTEN - YOU CAN HEAR THE HARP NOW.",
+    "THEY SAY THE KING WAS A FINE SINGER BEFORE HE WAS A FROG. HONESTLY HE STILL IS. VERY RESONANT.",
+    "ONE OLD BALLAD SAYS YOUR PIP WAS MALGRIM'S OWN APPRENTICE ONCE. THE NINTH. HE DOESN'T LIKE TO TALK ABOUT IT.",
+    "BRING MORE FOLK HOME AND I'LL FIND THE CARTOGRAPHER. SHE OWES ME A SONG."
+   ],
+   "later": [
+    {
+     "when": "kingRestored",
+     "lines": [
+      "TEN OF US HOME AND COUNTING! I'VE ADDED A NEW VERSE TO THE VALE'S SONG. LISTEN - YOU CAN HEAR THE HARP NOW.",
+      "THE KING SINGS WITH ME SOME EVENINGS NOW. STILL VERY RESONANT. HE STILL CROAKS ON THE HIGH NOTES, AND WE DON'T MENTION IT.",
+      "ONE OLD BALLAD SAYS YOUR PIP WAS MALGRIM'S OWN APPRENTICE ONCE. THE NINTH. HE DOESN'T LIKE TO TALK ABOUT IT.",
+      "I'VE WRITTEN A WHOLE NEW SONG ABOUT THE TOWER COMING DOWN. IT'S MOSTLY ABOUT YOU. SOME OF IT EVEN RHYMES."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "rosie",
+   "name": "RIBBIT ROSIE",
+   "x": 94,
+   "y": 94,
+   "look": "ada",
+   "minigame": "FrogRace",
+   "voice": {
+    "pitch": 460,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "lines": [
+    "STEP UP, STEP UP! THE FINEST RACING FROGS IN ALL MISTFEN! ALSO THE ONLY RACING FROGS IN ALL MISTFEN.",
+    "PICK A FROG, PLACE YOUR BET, AND TAP WHEN THE NEEDLE'S IN THE GOLD. A GOOD TAP IS A GOOD HOP!"
+   ]
+  },
+  {
+   "id": "brisk",
+   "name": "HUNTMASTER BRISK",
+   "x": 28,
+   "y": 139,
+   "look": "brisk",
+   "voice": {
+    "pitch": 200,
+    "wave": "square",
+    "duty": 0.25
+   },
+   "lines": [
+    "KEEP YOUR VOICE DOWN IN THESE WOODS. THINGS LISTEN.",
+    "WE HUNT WHAT HUNTS US. IT'S A LIVING."
+   ],
+   "errands": [
+    "lightsInTrees",
+    "mabBounty"
+   ],
+   "later": [
+    {
+     "when": "ward_gloam",
+     "lines": [
+      "THE WOOD'S QUIETER SINCE THE HUNT ENDED. I KEEP MY VOICE DOWN ANYWAY. HABIT.",
+      "WE HUNT WHAT HUNTS US. THERE'S LESS OF IT NOW. I'M ALMOST BORED."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "rowan",
+   "name": "ROWAN THE TRACKER",
+   "x": 34,
+   "y": 139,
+   "look": "rowan",
+   "trainer": "ranger",
+   "voice": {
+    "pitch": 300,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "lines": [
+    "A BOW IN EVERY HAND, THAT'S MY MOTTO. EVEN THE SWORD-SWINGERS.",
+    "I TEACH THE RANGER'S CRAFT: A QUICK SHOT, A SNARE ON THE TRAIL, LIGHT FEET."
+   ]
+  },
+  {
+   "id": "fennel",
+   "name": "FENNEL THE COOK",
+   "x": 27,
+   "y": 144,
+   "look": "fennel",
+   "voice": {
+    "pitch": 160,
+    "wave": "triangle",
+    "speed": 0.9
+   },
+   "lines": [
+    "STEW'S ON. STEW'S ALWAYS ON. NOBODY ASKS WHAT'S IN IT."
+   ],
+   "errands": [
+    "ghostcapStew"
+   ]
+  },
+  {
+   "id": "hew",
+   "name": "HEW THE WOODCUTTER",
+   "x": 35,
+   "y": 144,
+   "look": "hew",
+   "voice": {
+    "pitch": 130,
+    "wave": "square",
+    "duty": 0.5
+   },
+   "lines": [
+    "THE TREES HERE FIGHT BACK. I RESPECT THAT. I STILL CUT THEM."
+   ],
+   "errands": [
+    "rootAndBranch"
+   ]
+  },
+  {
+   "id": "tansy",
+   "name": "TANSY THE SCOUT",
+   "x": 46,
+   "y": 163,
+   "look": "tansy",
+   "hidden": true,
+   "voice": {
+    "pitch": 380,
+    "wave": "square",
+    "duty": 0.125
+   },
+   "lines": [
+    "THANKS FOR THE HELP BACK THERE. I OWE YOU A ROUND OF FENNEL'S STEW. ...SORRY."
+   ]
+  },
+  {
+   "id": "moss",
+   "name": "MOTHER MOSS",
+   "x": 24,
+   "y": 162,
+   "look": "moss",
+   "voice": {
+    "pitch": 240,
+    "wave": "triangle",
+    "speed": 0.8
+   },
+   "lines": [
+    "THE POOL SHOWS YOU AS YOU ARE. MOST PEOPLE DON'T CARE FOR IT.",
+    "THE LIGHTS IN THE TREES ARE MOSTLY LIARS. MOSTLY."
+   ]
+  },
+  {
+   "id": "glimmer",
+   "name": "A SMALL LIGHT",
+   "x": 21,
+   "y": 170,
+   "look": "wisplight",
+   "hidden": true,
+   "lines": [
+    "...!"
+   ],
+   "voice": {
+    "pitch": 1100,
+    "wave": "sine"
+   }
+  },
+  {
+   "id": "coal",
+   "name": "QUARTERMASTER COAL",
+   "x": 137,
+   "y": 148,
+   "look": "coal",
+   "voice": {
+    "pitch": 140,
+    "wave": "square",
+    "duty": 0.5
+   },
+   "vendor": {
+    "item": "salve",
+    "price": 60,
+    "gift": 2,
+    "giftLine": "NEW HERE? THE HEAT WILL KILL YOU SLOWER THAN THE IMPS, BUT IT WILL. TAKE TWO SALVES ON THE HOUSE."
+   },
+   "lines": [
+    "EMBER SALVE. KEEPS THE HEAT OFF FIVE MINUTES. SIXTY GOLD.",
+    "MADE FROM BRIMSTONE AND SLIME. DON'T THINK ABOUT IT."
+   ],
+   "errands": [
+    "brimstoneHaul",
+    "caravan"
+   ]
+  },
+  {
+   "id": "emberboard",
+   "name": "BOUNTY BOARD",
+   "x": 143,
+   "y": 148,
+   "look": "board",
+   "lines": [
+    "NOTICES, MOSTLY SCORCHED."
+   ],
+   "errands": [
+    "drakeBounty",
+    "smokestack",
+    "flicker"
+   ]
+  },
+  {
+   "id": "ignatius",
+   "name": "ABBOT IGNATIUS",
+   "x": 172,
+   "y": 136,
+   "look": "ignatius",
+   "voice": {
+    "pitch": 170,
+    "wave": "triangle",
+    "speed": 0.85
+   },
+   "lines": [
+    "THE HEARTHSTONE BURNS COLD NOW. WE PRAY. IT DOES NOT ANSWER.",
+    "WE GAVE UP ON THE MINERS. I AM NOT PROUD OF IT."
+   ],
+   "errands": [
+    "monkTrial"
+   ],
+   "later": [
+    {
+     "when": "joined:oake",
+     "lines": [
+      "THE HEARTHSTONE BURNS COLD NOW. WE PRAY. IT DOES NOT ANSWER.",
+      "BROTHER OAKE WAS RIGHT ABOUT THE MINERS AND I WAS WRONG. I HAVE TOLD HIM SO. IN WRITING. I HEAR HE FRAMED IT."
+     ]
+    },
+    {
+     "when": "ward_cinder",
+     "lines": [
+      "THE HEARTHSTONE BURNS AGAIN. WE PRAYED FOR A YEAR, AND IN THE END IT WAS A STRANGER WITH A SWORD WHO ANSWERED. THE LIGHT MOVES IN STRANGE WAYS.",
+      "WE GAVE UP ON THE MINERS. I AM NOT PROUD OF IT."
+     ]
+    },
+    {
+     "when": [
+      "ward_cinder",
+      "joined:oake"
+     ],
+     "lines": [
+      "THE HEARTHSTONE BURNS AGAIN. WE PRAYED FOR A YEAR, AND IN THE END IT WAS A STRANGER WITH A SWORD WHO ANSWERED. THE LIGHT MOVES IN STRANGE WAYS.",
+      "BROTHER OAKE WAS RIGHT ABOUT THE MINERS AND I WAS WRONG. I HAVE TOLD HIM SO. IN WRITING. I HEAR HE FRAMED IT."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ember",
+   "name": "SISTER EMBER",
+   "x": 169,
+   "y": 140,
+   "look": "ember",
+   "trainer": "cleric",
+   "voice": {
+    "pitch": 320,
+    "wave": "triangle"
+   },
+   "lines": [
+    "HEALING IS JUST STUBBORNNESS WITH GOOD MANNERS.",
+    "I TEACH THE CLERIC WAY: MEND THE HURT, WARD THE BRAVE, AND LET KINDNESS LAND."
+   ]
+  },
+  {
+   "id": "rook",
+   "name": "ROOK THE PROSPECTOR",
+   "x": 132,
+   "y": 167,
+   "look": "rook",
+   "voice": {
+    "pitch": 190,
+    "wave": "square",
+    "duty": 0.25
+   },
+   "lines": [
+    "THE SPRINGS ARE THE ONLY PLACE OUT HERE YOU CAN THINK.",
+    "BRIMSTONE'S EVERYWHERE IF YOU KNOW WHERE TO HIT."
+   ]
+  },
+  {
+   "id": "oake",
+   "name": "BROTHER OAKE",
+   "x": 118,
+   "y": 187,
+   "look": "oake",
+   "voice": {
+    "pitch": 210,
+    "wave": "triangle",
+    "speed": 0.95
+   },
+   "lines": [
+    "EVERYTHING WILL BE FINE. PROBABLY. ALMOST CERTAINLY. LARGELY."
+   ],
+   "errands": [
+    "excessiveOptimism"
+   ],
+   "recruitOf": "oake"
+  },
+  {
+   "id": "dusty",
+   "name": "DUSTY",
+   "x": 115,
+   "y": 190,
+   "look": "dusty",
+   "voice": {
+    "pitch": 150,
+    "wave": "square",
+    "duty": 0.5
+   },
+   "lines": [
+    "THE MONKS SAID WE WERE TOO FAR GONE. BROTHER OAKE SAID 'NONSENSE' AND STAYED."
+   ],
+   "later": [
+    {
+     "when": "joined:oake",
+     "lines": [
+      "BROTHER OAKE WENT OFF WITH YOU LOT. LEFT US A NOTE: 'BACK SOON. PROBABLY. ALMOST CERTAINLY.' WE'RE FINE. HE WAS RIGHT ABOUT THAT TOO."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gizmo",
+   "name": "GIZMO",
+   "x": 12,
+   "y": 21,
+   "look": "gizmo",
+   "wards": 2,
+   "voice": {
+    "pitch": 420,
+    "wave": "square",
+    "duty": 0.125,
+    "speed": 1.15
+   },
+   "lines": [
+    "THE MILL WHEEL'S SEIZED. TWO PARTS SHORT. TWO! OF THE GOOD ONES!"
+   ],
+   "errands": [
+    "waterWheel"
+   ],
+   "recruitOf": "gizmo"
+  },
+  {
+   "id": "hermit",
+   "name": "THE HERMIT",
+   "x": 86,
+   "y": 145,
+   "look": "hermit",
+   "trainer": "arcane",
+   "voice": {
+    "pitch": 150,
+    "wave": "triangle",
+    "speed": 0.85
+   },
+   "lines": [
+    "SO. THE WALL LET YOU IN. IT IS VERY PARTICULAR ABOUT THAT.",
+    "I TEACH THE ARCANE. NOT FOR FREE. NOTHING IS FREE. NOT EVEN SILENCE, AND I PAID A GREAT DEAL FOR THIS ONE."
+   ],
+   "errands": [
+    "hermitRiddle"
+   ]
+  },
+  {
+   "id": "tolly",
+   "name": "BROTHER TOLLY",
+   "x": 27,
+   "y": 174,
+   "look": "tolly",
+   "ghost": true,
+   "voice": {
+    "pitch": 180,
+    "wave": "sine",
+    "speed": 0.9
+   },
+   "lines": [
+    "THE BELLS HAVE NOT RUNG SINCE THE HEX. I CAN'T RING THEM. MY HANDS GO STRAIGHT THROUGH THE ROPES."
+   ],
+   "errands": [
+    "belfry"
+   ],
+   "later": [
+    {
+     "when": "done:belfry",
+     "lines": [
+      "THE BELFRY SINGS AGAIN. I CAN'T PULL THE ROPES, BUT I CAN LISTEN. IT'S ENOUGH. IT'S MORE THAN ENOUGH."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vey",
+   "name": "CAPTAIN VEY",
+   "x": 134,
+   "y": 149,
+   "look": "vey",
+   "voice": {
+    "pitch": 170,
+    "wave": "square",
+    "duty": 0.25,
+    "speed": 1.0
+   },
+   "lines": [
+    "EMBERWATCH STANDS. NOT WELL. BUT IT STANDS.",
+    "IF YOU SEE A BEACON BURNING, THAT MEANS WE'RE STILL HERE. IF YOU DON'T... DON'T ASK."
+   ],
+   "errands": [
+    "signalFires"
+   ],
+   "later": [
+    {
+     "when": "done:signalFires",
+     "lines": [
+      "EMBERWATCH STANDS. AND NOW EVERYONE CAN SEE IT STANDING.",
+      "THE CARAVANS ARE COMING UP THE ROAD AGAIN. SLOWLY. WITH A GREAT DEAL OF COMPLAINING."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tamsin",
+   "name": "TAMSIN",
+   "x": 174,
+   "y": 190,
+   "look": "tamsin",
+   "voice": {
+    "pitch": 380,
+    "wave": "square",
+    "duty": 0.125,
+    "speed": 1.15
+   },
+   "lines": [
+    "I WAS THE FORGEMASTER'S APPRENTICE. BEFORE HE WAS... THAT.",
+    "EVERYTHING HE MADE STILL KEEPS PERFECT TIME. EXCEPT HIM."
+   ],
+   "errands": [
+    "mastersTools"
+   ],
+   "later": [
+    {
+     "when": "ward_cinder",
+     "lines": [
+      "THE FORGEMASTER'S GONE. I WENT DOWN TO HIS BENCH AFTERWARDS AND SAT THERE A WHILE.",
+      "HE KEPT PERFECT TIME, ONCE. I'LL KEEP IT FOR HIM NOW."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "halloway",
+   "name": "MASTER HALLOWAY",
+   "x": 31,
+   "y": 34,
+   "look": "halloway",
+   "hall": true,
+   "wards": 3,
+   "voice": {
+    "pitch": 140,
+    "wave": "square",
+    "duty": 0.25,
+    "speed": 0.95
+   },
+   "lines": [
+    "THE TRAINERS' HALL IS OPEN AGAIN, NOW THREE STONES ARE DOWN.",
+    "ANY DISCIPLINE YOU'VE LEARNED OF, I CAN TEACH. I CAN UNTEACH, TOO. AND I SELL BOOKS. HEAVY ONES."
+   ]
+  },
+  {
+   "id": "brew",
+   "name": "BREW THE ALCHEMIST",
+   "x": 9,
+   "y": 34,
+   "look": "brew",
+   "wards": 4,
+   "voice": {
+    "pitch": 300,
+    "wave": "triangle",
+    "speed": 1.1
+   },
+   "shop": [
+    {
+     "item": "potion",
+     "price": 30
+    },
+    {
+     "item": "elixir",
+     "price": 70
+    },
+    {
+     "item": "antidote",
+     "price": 25
+    },
+    {
+     "item": "salve",
+     "price": 35
+    }
+   ],
+   "lines": [
+    "POTIONS! ELIXIRS! THINGS THAT FIZZ!",
+    "FOUR STONES DOWN AND THE HERBS GROW STRAIGHT AGAIN. BUSINESS IS BOOMING. SOMETIMES LITERALLY."
+   ],
+   "errands": [
+    "secondWind"
+   ]
+  },
+  {
+   "id": "workbench",
+   "name": "GIZMO'S WORKBENCH",
+   "x": 14,
+   "y": 22,
+   "look": "board",
+   "needsHero": "gizmo",
+   "voice": {
+    "pitch": 420,
+    "wave": "square",
+    "duty": 0.125,
+    "speed": 1.15
+   },
+   "shop": [
+    {
+     "gear": "traveler_compass",
+     "price": 400
+    }
+   ],
+   "lines": [
+    "A NOTE IN GIZMO'S HAND: 'FOR SALE! ASK NO QUESTIONS! LEAVE GOLD IN THE TIN!'"
+   ]
+  },
+  {
+   "id": "inka",
+   "name": "INKA THE CARTOGRAPHER",
+   "x": 17,
+   "y": 36,
+   "look": "inka",
+   "folk": 20,
+   "cartographer": true,
+   "voice": {
+    "pitch": 260,
+    "wave": "triangle",
+    "speed": 1.05
+   },
+   "lines": [
+    "TWENTY OF US HOME! ENOUGH TO NEED A PROPER MAP OF THE PLACE, AND I'M THE ONE TO DRAW IT.",
+    "I KNOW EVERY LOOKOUT TOWER IN THE LAND. OR I DID, BEFORE THE HEX MOVED HALF THE TREES."
+   ]
+  },
+  {
+   "id": "hale",
+   "name": "MOTHER HALE",
+   "x": 42,
+   "y": 218,
+   "look": "hale",
+   "voice": {
+    "pitch": 230,
+    "wave": "triangle",
+    "speed": 0.9
+   },
+   "vendor": {
+    "item": "tonic",
+    "price": 60,
+    "gift": 2,
+    "giftLine": "YOU CAME UP THE PASS IN THAT? SIT. DRINK. HERE - TWO TONICS, AND DON'T ARGUE WITH ME."
+   },
+   "lines": [
+    "FROST TONIC. FIVE MINUTES OF WARM IN YOUR BELLY. SIXTY GOLD.",
+    "RIMEGLASS AND MOONHERB, STEEPED. IT TASTES LIKE A COLD SPOON. IT WORKS."
+   ],
+   "errands": [
+    "tonicRun"
+   ]
+  },
+  {
+   "id": "oda",
+   "name": "SER ODA",
+   "x": 50,
+   "y": 222,
+   "look": "oda",
+   "trainer": "guardian",
+   "voice": {
+    "pitch": 200,
+    "wave": "square",
+    "duty": 0.5,
+    "speed": 0.9
+   },
+   "lines": [
+    "I HELD THE KING'S GATE FOR TWENTY WINTERS. THE CURSE DIDN'T MOVE ME EITHER.",
+    "I TEACH THE GUARDIAN'S OATH: RAISE YOUR GUARD, CALL THE BLOWS TO YOU, AND DON'T GIVE AN INCH."
+   ]
+  },
+  {
+   "id": "rimeboard",
+   "name": "BOUNTY BOARD",
+   "x": 49,
+   "y": 215,
+   "look": "board",
+   "lines": [
+    "NOTICES, PINNED WITH ICICLES."
+   ],
+   "errands": [
+    "greymaw",
+    "trollBounty",
+    "sledKing"
+   ]
+  },
+  {
+   "id": "kaari",
+   "name": "WARDEN KAARI",
+   "x": 44,
+   "y": 222,
+   "look": "kaari",
+   "voice": {
+    "pitch": 180,
+    "wave": "square",
+    "duty": 0.25
+   },
+   "lines": [
+    "RIMEWATCH WAS A TRAPPERS' CAMP. NOW IT'S EVERYONE WHO RAN FROM THE VILLAGE WHEN THE ICE KNIGHT CAME.",
+    "THE SPIRE UP ON THE HIGHFOLD USED TO BE THE ASTRONOMERS'. NOW IT JUST GLOWS AT NIGHT. NOBODY GOES UP."
+   ],
+   "errands": [
+    "lostTrapper"
+   ],
+   "later": [
+    {
+     "when": "ward_frost",
+     "lines": [
+      "THE ICE KNIGHT'S GONE. THE VILLAGERS ARE GOING BACK DOWN TO THEIR HOMES, AND I'M LEFT WITH A CAMP FULL OF EMPTY TENTS. GOOD.",
+      "THE SPIRE STOPPED GLOWING THE NIGHT THE STONE BROKE. SOMEONE SHOULD GO UP AND LOOK. NOT ME."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "aldric",
+   "name": "SIR ALDRIC, ROYAL ARMORER",
+   "x": 33,
+   "y": 31,
+   "look": "aldric",
+   "wards": 5,
+   "voice": {
+    "pitch": 160,
+    "wave": "square",
+    "duty": 0.5,
+    "speed": 0.9
+   },
+   "shop": [
+    {
+     "gear": "oathkeeper",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "whisper_wane",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "skyfall",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "first_light",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "worldsplitter",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "heart_of_winter",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    },
+    {
+     "gear": "omniwrench",
+     "price": 1500,
+     "mats": {
+      "starmetal": 6
+     }
+    }
+   ],
+   "lines": [
+    "THE ROYAL ARMORY IS OPEN AGAIN. FIVE STONES DOWN - THE KING WOULD WEEP. WELL. HE WOULD CROAK.",
+    "LEGENDARY ARMS, FORGED FROM STARMETAL. ONE FOR EACH OF YOUR COMPANY. BRING ME STARMETAL AND GOLD."
+   ],
+   "later": [
+    {
+     "when": "kingRestored",
+     "lines": [
+      "THE ROYAL ARMORY IS OPEN AND THE KING IS A KING. HE CAME DOWN TO WATCH THE FORGE YESTERDAY AND DIDN'T CROAK ONCE.",
+      "LEGENDARY ARMS, FORGED FROM STARMETAL. ONE FOR EACH OF YOUR COMPANY. BRING ME STARMETAL AND GOLD."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "bjorna",
+   "name": "BJORNA OF THE RIMEWATCH INN",
+   "x": 48,
+   "y": 218,
+   "look": "bjorna",
+   "requires": "ward_frost",
+   "voice": {
+    "pitch": 250,
+    "wave": "triangle",
+    "speed": 0.95
+   },
+   "lines": [
+    "THE ICE KNIGHT'S GONE AND THE VILLAGERS ARE COMING BACK UP THE PASS. RIMEWATCH IS A VILLAGE AGAIN - AND A VILLAGE NEEDS AN INN.",
+    "SIT BY THE FIRE. YOU'VE EARNED A HOT CUP AND A WARM BED. FIRST ONE'S FREE. SO'S THE SECOND."
+   ]
+  },
+  {
+   "id": "marek",
+   "name": "OLD MAREK, THE LAST WATCHER",
+   "x": 138,
+   "y": 313,
+   "look": "marek",
+   "voice": {
+    "pitch": 130,
+    "wave": "square",
+    "duty": 0.25,
+    "speed": 0.85
+   },
+   "lines": [
+    "I'VE WATCHED THAT TOWER FOR NINE YEARS. IT HASN'T BLINKED. NEITHER HAVE I. MUCH.",
+    "THE BARRIER COMES DOWN A LAYER EVERY TIME A WARD STONE BREAKS. I'VE WATCHED IT GO. IT'S BEAUTIFUL. AND TERRIFYING."
+   ],
+   "errands": [
+    "shatteredMirror"
+   ],
+   "later": [
+    {
+     "when": "malgrimDefeated",
+     "lines": [
+      "NINE YEARS I WATCHED THAT TOWER. NOW I WATCH THE RUBBLE. IT'S A LOT LESS WORK.",
+      "I MIGHT GO HOME. I'VE FORGOTTEN WHERE IT IS. THAT'S ALL RIGHT - I'LL WALK UNTIL SOMETHING LOOKS FAMILIAR."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "basinboard",
+   "name": "BOUNTY BOARD",
+   "x": 135,
+   "y": 313,
+   "look": "board",
+   "lines": [
+    "NOTICES, NAILED UP WITH SHAKING HANDS."
+   ],
+   "errands": [
+    "voidmother",
+    "colossus",
+    "glassking"
+   ]
+  },
+  {
+   "id": "ferryman",
+   "name": "THE FERRYMAN",
+   "x": 15,
+   "y": 36,
+   "look": "ferryman",
+   "ferry": true,
+   "voice": {
+    "pitch": 110,
+    "wave": "sine",
+    "speed": 0.8
+   },
+   "lines": [
+    "WHERE SHALL THE FIRES TAKE YOU?"
+   ],
+   "wards": 1,
+   "wanderer": true
+  },
+  {
+   "id": "bess",
+   "name": "BESS THE CURIO-MONGER",
+   "x": 4,
+   "y": 31,
+   "look": "bess",
+   "folk": 5,
+   "curio": true,
+   "voice": {
+    "pitch": 300,
+    "wave": "triangle",
+    "speed": 1
+   },
+   "lines": [
+    "FIVE OF YOU HOME AND I CAN FINALLY OPEN THE SHUTTERS. CURIOS! ODDMENTS! THINGS I CAN'T ENTIRELY EXPLAIN!",
+    "I GET NEW STOCK EVERY TIME YOU REST AT A FIRE. DON'T ASK WHERE FROM. I DON'T ASK YOU WHERE YOU GO."
+   ]
+  },
+  {
+   "id": "wynn",
+   "name": "FLETCHER WYNN",
+   "x": 28,
+   "y": 46,
+   "look": "wynn",
+   "folk": 15,
+   "minigame": "Archery",
+   "play": "SHOOT",
+   "fee": 15,
+   "voice": {
+    "pitch": 220,
+    "wave": "square",
+    "speed": 1
+   },
+   "lines": [
+    "FIFTEEN HOME. ENOUGH THAT SOMEONE WANTS TO SHOOT AT STRAW AGAIN, AND I'M THAT SOMEONE.",
+    "FIVE ARROWS. FIX THE SIGHT SIDE TO SIDE, THEN UP AND DOWN, THEN LET FLY. SCORE FORTY-FOUR OR BETTER AND MY THUMB RING IS YOURS. NOBODY HAS YET."
+   ]
+  },
+  {
+   "id": "hilde",
+   "name": "HILDE OF THE STEAM HOUSE",
+   "x": 12,
+   "y": 43,
+   "look": "hilde",
+   "folk": 25,
+   "bath": true,
+   "voice": {
+    "pitch": 260,
+    "wave": "triangle",
+    "speed": 1
+   },
+   "lines": [
+    "TWENTY-FIVE OF US HOME, AND THE SPRING UNDER THE HOUSE STARTED STEAMING THE DAY THE LAST HEX BROKE. COINCIDENCE? PROBABLY NOT.",
+    "A SOAK MENDS EVERY ACHE, AND YOU'LL LEARN FASTER FOR A WHILE AFTER. TRUST ME."
+   ]
+  },
+  {
+   "id": "mayor",
+   "name": "MAYOR TOBIN",
+   "x": 27,
+   "y": 29,
+   "look": "mayor",
+   "folk": 30,
+   "mayorHouse": true,
+   "voice": {
+    "pitch": 180,
+    "wave": "square",
+    "speed": 1
+   },
+   "lines": [
+    "EVERY LAST ONE OF US, HOME. I'VE WRITTEN A SPEECH. IT'S FOUR HOURS LONG. YOU'VE EARNED A SHORTER VERSION.",
+    "BRIGHTWATER OWES YOU EVERYTHING. TAKE THE KEY TO THE TOWN. IT DOESN'T OPEN ANYTHING, BUT EVERYONE WILL KNOW YOU BY IT."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,164 @@
+// The locked game palette. Every pixel in the game comes from here (plus the
+// curse transform, which is derived). Keys are short names used by sprite code.
+export const PAL = {
+  // neutrals
+  ink: '#1a1423', // universal outline
+  night: '#2b2140',
+  slate: '#45405e',
+  stone: '#6e6a87',
+  mist: '#a3a1b9',
+  bone: '#d8d3e0',
+  white: '#f6f2ea',
+
+  // skin & hair
+  skinD: '#b8735a',
+  skin: '#e5a07c',
+  skinL: '#f6c9a2',
+  hairBr: '#5c3a2a',
+  hairBrL: '#8a5a3c',
+  hairBl: '#e9c46a',
+  hairBlD: '#c08f3a',
+  hairBk: '#2e2438',
+  hairBkL: '#4a3a5c',
+
+  // greens (vale)
+  grassD: '#2f5d3a',
+  grass: '#4a8a4a',
+  grassL: '#73b25a',
+  grassXL: '#a6d36a',
+  leafD: '#1f4630',
+  leaf: '#2f6e45',
+
+  // earth
+  dirtD: '#7a5236',
+  dirt: '#a7744a',
+  dirtL: '#c99a66',
+  sand: '#e2c48f',
+  woodD: '#5a3a26',
+  wood: '#8a5c38',
+  woodL: '#b07d4c',
+
+  // water
+  waterD: '#20406e',
+  water: '#2f6aa3',
+  waterL: '#4e9ad0',
+  foam: '#bfe6f2',
+
+  // steel & cloth
+  steelD: '#4d5873',
+  steel: '#8593b0',
+  steelL: '#c4cfe2',
+  blueD: '#25386e',
+  blue: '#3a5fb0',
+  blueL: '#6f93e0',
+  redD: '#7a2238',
+  red: '#c0394b',
+  redL: '#ec6a5e',
+  purpD: '#3e2463',
+  purp: '#6b3fa0',
+  purpL: '#a070d8',
+  leatherD: '#3a2a2e',
+  leather: '#5e4048',
+
+  // magic & fx
+  gold: '#f2c14e',
+  goldL: '#fff0a0',
+  fire: '#ff7b2e',
+  fireL: '#ffd04a',
+  curse: '#b24ce6',
+  curseL: '#e7a6ff',
+  hexD: '#2a1838',
+
+  // Mistfen marsh
+  mossD: '#2f3a24',
+  moss: '#4a5a32',
+  mossL: '#6e7c42',
+  mossXL: '#93a055',
+  mudD: '#3a2e24',
+  mud: '#58462f',
+  bogD: '#1a302e',
+  bog: '#27463f',
+  bogL: '#3f6a5a',
+  bogXL: '#7aa88a',
+  reed: '#b8a45c',
+  reedD: '#7d6e3a',
+  mushR: '#c8473a',
+  mushL: '#f2dcc4',
+
+  // caves
+  caveD: '#120e17',
+  cave: '#241d2c',
+  caveL: '#3a3046',
+  caveXL: '#5a4c68',
+  crystal: '#5fd4e8',
+  crystalL: '#c8f6ff',
+
+  // Gloamwood (haunted forest): blue-black loam, cold moss, ghost-green glow
+  gloomD: '#121823',
+  gloom: '#1b2630',
+  gloomL: '#283a40',
+  gloomXL: '#3f5b56',
+  fernD: '#21402f',
+  fern: '#34634a',
+  fernL: '#5a9266',
+  glow: '#8ff0c0',
+  glowL: '#d8fff0',
+  web: '#c9cfe0',
+  barkD: '#221c28',
+  bark: '#3a2f40',
+  barkL: '#57485a',
+
+  // Cinderreach (volcanic badlands): ash, basalt, lava, brimstone
+  ashD: '#2f2729',
+  ash: '#4b4040',
+  ashL: '#6f6260',
+  ashXL: '#9c8c84',
+  basaltD: '#19171f',
+  basalt: '#2b2833',
+  basaltL: '#433e4c',
+  lavaD: '#7e1c14',
+  lava: '#d9481a',
+  lavaL: '#ff9a2e',
+  lavaXL: '#ffe58a',
+  brim: '#d8c24a',
+
+  // Frosthelm (frozen highlands): blue-shadowed snow, lake ice, dark pines
+  snowD: '#7d8bb4',
+  snow: '#b9c6e2',
+  snowL: '#dce6f5',
+  snowXL: '#f4f8ff',
+  iceD: '#2f5b8c',
+  ice: '#5f97c7',
+  iceL: '#9cc9ea',
+  iceXL: '#d6efff',
+  pineD: '#132c34',
+  pine: '#1d4448',
+  pineL: '#2f6660',
+  frostD: '#3a4566', // cold rock
+  frost: '#5c6a8e',
+  frostL: '#8c9abd',
+  // the beasts' fur in six steps (gfx/beasts.js draws in these, then recolours
+  // each beast from them; Keep Defense's wolf ramp)
+  furD: '#262229', fur: '#45403f', furM: '#7a6650', furL: '#ab9070', furXL: '#cdbb98', furXXL: '#e9e1cc',
+};
+
+export const hex = (k) => PAL[k] ?? k;
+export const toInt = (k) => parseInt(hex(k).slice(1), 16);
+
+export function rgb(k) {
+  const h = hex(k);
+  return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+}
+
+// Curse transform: desaturate, crush toward violet-grey. Used on the ground
+// canvas and (as a tint) on sprites in cursed areas.
+export function curseRGB(r, g, b) {
+  const l = 0.3 * r + 0.55 * g + 0.15 * b;
+  const m = 0.72;
+  return [
+    Math.round((l * 0.78 + r * 0.12) * m + 18),
+    Math.round((l * 0.66 + g * 0.08) * m + 10),
+    Math.round((l * 0.92 + b * 0.14) * m + 30),
+  ];
+}
+export const CURSE_TINT = 0x9a86b8;

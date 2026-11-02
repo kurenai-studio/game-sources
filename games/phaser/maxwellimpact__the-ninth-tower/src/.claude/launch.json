@@ -1,0 +1,73 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ninth-tower",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5180",
+        "--strictPort",
+        "--host"
+      ],
+      "port": 5180
+    },
+    {
+      "name": "ninth-tower-test",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5184",
+        "--strictPort"
+      ],
+      "port": 5184
+    },
+    {
+      "name": "ninth-tower-tiiny",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--outDir",
+        "dist/tiiny",
+        "--port",
+        "5187",
+        "--strictPort"
+      ],
+      "port": 5187
+    },
+    {
+      "name": "ninth-tower-profile",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--outDir",
+        "dist-profile",
+        "--port",
+        "5188",
+        "--strictPort"
+      ],
+      "port": 5188
+    },
+    {
+      "name": "ninth-tower-guide",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "guide",
+        "--",
+        "--port",
+        "5190",
+        "--strictPort"
+      ],
+      "port": 5190
+    }
+  ]
+}

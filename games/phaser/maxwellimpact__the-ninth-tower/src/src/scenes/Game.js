@@ -1,0 +1,4947 @@
+import Phaser from 'phaser';
+import { W, Q as QDATA, MAP, useMap, mapRect, mapDef } from '../world/content.js'; // world.json / quests.json, or a test map's own content
+import { chimneyOf, doorOf, colosseumArt, COLOSSEUM } from '../gfx/props.js';
+import { vnoise } from '../gfx/pixel.js';
+import { buildWorld, buildMapWorld, LANDMARKS, TILE, MAP_W, MAP_H, T, SOLID, biomeAt, areaAt, AREAS, MARSH_Y, SOUTH_Y, RIDGE_X, FROST_Y, frostEdge, southEdge, ridgeAt, TOWER, BARRIER_R, OW_W } from '../world/map.js';
+import { makeTerrainPainter, CHUNK } from '../gfx/terrain.js';
+import { NavGrid } from '../game/path.js';
+import { Hero, Enemy, Golem, Murk, Huntsman, Vulk, Isolde, Gadget, WardStone, Breakable, AFFIXES, dist, norm, chillHero, freezeHero } from '../game/units.js';
+import { FX } from '../game/fx.js';
+import { Streamer } from '../game/streamer.js';
+import { MiniMap } from '../game/minimap.js';
+import { GearFX } from '../game/gearfx.js';
+import { loadGroup, loadGroupNow, loaded, assetStats } from '../game/assets.js';
+import { rollGearDrop, rollChestGear, ensureItems, makeItem, tierForLevel, gearValue } from '../game/itemgen.js';
+import { itemTex } from '../game/itemtex.js';
+import { QuestManager } from '../game/quests.js';
+import { DungeonKit, DUNGEONS, dungeonStart } from '../game/dungeon.js';
+import { fitString } from './textfit.js';
+import HERO_LIST from '../data/heroes.json';
+import { newSkillState } from '../game/state.js';
+import { Colosseum } from '../game/colosseum.js';
+import { Battlefield } from '../game/battlefield.js';
+import { saveState, switchWorld, ownSaveKey, HOME, gainItems, learnDiscipline, respecHero, respecCost, switchCost, heroInfo, setStatMods, addMats, addPotions, CRAFT, xpFor, xpToNext, regionBand, OUTER_REGIONS, itemName, gemName } from '../game/state.js';
+import { audio } from '../audio/synth.js';
+import { music, themeFor } from '../audio/music.js';
+import KEY_ITEMS from '../data/relics.json';
+import DISCIPLINES from '../data/disciplines.json';
+import LORE from '../data/lore.json';
+import { CURSE_TINT } from '../gfx/palette.js';
+import { bayer, hash, makeCanvas } from '../gfx/pixel.js';
+import items from '../data/items.json';
+import skillData from '../data/skills.json';
+import tuning from '../data/tuning.json';
+
+const TOP = 100000;
+const WET = new Set([T.WATER, T.BOG, T.SHALLOW, T.LAVA]); // no one stands on or beside these
+const w_locked = (sc, o) => (o.warp.lockedBy && !sc.flags[`broke_${o.warp.lockedBy}`]) || (o.warp.requires && !sc.flags[o.warp.requires]);
+// the lead hero's thoughts at each beat of a Ward Stone's story
+const THOUGHTS = {
+  vale: {
+    stone: "THAT STONE... IT'S DRINKING SOMETHING IN. AND THERE'S A VINE COILED ROUND ITS BASE.",
+    vine: "THIS VINE IS WARM, LIKE IT'S CARRYING SOMETHING TO THE STONE. WHERE DOES IT START?",
+    below: 'IT GOES DOWN UNDER THE OLD KEEP. WHATEVER IT FEEDS ON IS DOWN HERE.',
+    source: "IT'S DRAINING THE KEEP'S OLD SHRINE. HOLY GROUND... THAT'S WHAT POWERS THE STONE.",
+    withered: "THE VINE'S WITHERING! THE SHRINE'S LIGHT IS COMING BACK. THE STONE MUST BE WEAK NOW.",
+    stir: "THE GROUND AROUND THE STONE IS TREMBLING... SOMETHING'S STILL GUARDING IT.",
+    open: "NOTHING LEFT TO PROTECT IT. LET'S BREAK THAT STONE.",
+  },
+  marsh: {
+    stone: 'ANOTHER WARD STONE... AND ANOTHER VINE, FEEDING IT FROM SOMEWHERE NORTH.',
+    vine: 'THE VINE TRAILS TOWARD THE BROKEN BELL TOWER. THE OLD ABBEY?',
+    below: 'IT RUNS ON DOWN THROUGH THE DROWNED ABBEY. WHATEVER IT DRINKS IS DEEPER IN.',
+    source: "IT'S FEEDING ON THE ABBEY'S ALTAR. THE SISTERS' BLESSING, TWISTED INTO THAT STONE.",
+    withered: 'THE VINE IS DYING! THE ALTAR SHINES AGAIN. BACK TO THE STONE, BEFORE IT RECOVERS.',
+    stir: 'THE BOG BY THE STONE IS BUBBLING... SOMETHING BIG IS WAITING IN THERE.',
+    open: "SHE'S GONE. NOTHING GUARDS THE STONE NOW. BREAK IT!",
+  },
+  gloam: {
+    stone: "A WARD STONE IN THE DEEP WOOD... AND A VINE, CREEPING OFF TOWARD THAT ENORMOUS TREE.",
+    vine: 'THE VINE RUNS STRAIGHT FOR THE ELDER TREE. INTO THE HOLLOW AT ITS ROOTS.',
+    below: "IT WINDS DOWN THROUGH THE ROOTS. IT'S DARK DOWN HERE - DARKER THAN IT SHOULD BE.",
+    source: "IT'S DRINKING THE ELDER'S HEARTWOOD. EVERY DAWN THE TREE EVER SAW... FEEDING THAT STONE.",
+    withered: 'THE VINE IS ROTTING AWAY! THE HEARTWOOD IS GLOWING AGAIN. BACK TO THE STONE!',
+    stir: 'HOUNDS... I HEAR HOUNDS IN THE FOG BY THE STONE. AND NO DOGS.',
+    open: 'THE HUNT IS OVER. NOTHING GUARDS THE STONE NOW. BREAK IT!',
+  },
+  cinder: {
+    stone: "A WARD STONE IN THE ASH... ITS VINE IS SCORCHED BLACK. IT RUNS TOWARD THE MOUNTAIN.",
+    vine: "THE VINE GOES STRAIGHT FOR THAT GATE IN THE MOUNTAIN. A DWARVEN FORGE?",
+    below: "IT'S HOTTER IN HERE THAN OUTSIDE. THE VINE KEEPS GOING DOWN, TOWARD THE HEAT.",
+    source: "IT'S FEEDING ON THE DWARVES' HEARTHSTONE. THE FIRE THAT WARMS THE WHOLE REACH.",
+    withered: 'THE VINE IS BURNING AWAY! THE HEARTHSTONE BLAZES AGAIN. BACK TO THE STONE!',
+    stir: 'THE LAVA VENT BY THE STONE IS BUBBLING... SOMETHING HUGE IS CLIMBING OUT.',
+    open: "THE FORGEMASTER'S DOWN. NOTHING GUARDS THE STONE NOW. BREAK IT!",
+  },
+  frost: {
+    stone: 'A WARD STONE FROZEN INTO THE SNOW... ITS VINE CLIMBS STRAIGHT UP THE CLIFF BEHIND IT.',
+    vine: "THE VINE GOES UP THE HIGHFOLD, TO THAT GLASS TOWER. WE'D HAVE TO CLIMB.",
+    below: "IT'S COLDER IN HERE THAN OUT IN THE SNOW. THE VINE KEEPS CLIMBING.",
+    source: "IT'S DRAINING THE ASTRONOMERS' STAR-MIRROR. THE LIGHT IN IT IS GOING OUT.",
+    withered: 'THE VINE IS SHATTERING LIKE ICE! THE MIRROR SHINES AGAIN. BACK TO THE STONE!',
+    stir: 'FROST IS CREEPING ACROSS THE SNOW BY THE STONE... SOMETHING IS GATHERING THERE.',
+    open: 'ISOLDE IS DOWN. NOTHING GUARDS THE STONE NOW. BREAK IT!',
+  },
+};
+
+// Golden Flies in the world, plus the ones won at the minigames
+export const TOTAL_FLIES = W.flies.length + 2; // + Hexling Whack and the Frog Races
+// Cleared overworld groups come back after a few minutes away, never in sight:
+// the clock runs only while the party is over a screen's width off (480px),
+// and the group reappears only out of view (300px).
+const RESPAWN_SECS = 180, RESPAWN_AWAY = 480, RESPAWN_HIDDEN = 300;
+// a brief white flash on whatever you tap (people, levers, chests, foes); false keeps just the rings
+const TAP_FLASH = true;
+// hero health stages (portrait bars and the bar over a hurt hero): green, yellow below WARN, red below CRIT
+export const HP_WARN = 0.5, HP_CRIT = 0.35;
+
+// the Hex Legion: in the Blight Basin every one of them comes as Hexborn
+const HEXBORN = new Set(['goblin', 'archer', 'knight', 'hexling', 'warlock', 'wisp']);
+const BLOCKING = new Set(['tree', 'deadtree', 'gloomtree', 'stump', 'ashtree', 'obsidian', 'vent', 'tent', 'snowpine', 'rimeglass', 'snowrock', 'furtent', 'hexcrystal', 'bush', 'rock', 'pillar', 'barrel', 'stalagmite', 'counter', 'table', 'whackboard']);
+// Gathering node kinds: what they look like, how long they take, which tool
+const NODE_KINDS = {
+  herb: { base: 'herb', dur: 1.5 }, bogmoss: { base: 'herb', dur: 1.8, tint: 0xc9b46a },
+  ore: { base: 'ore', dur: 2.4 }, silver: { base: 'ore', dur: 2.9, tint: 0xd8e4ff },
+  crystal: { base: 'crystal', dur: 3.2 },
+  ghostcap: { base: 'herb', dur: 1.6, tint: 0x9ff2c8 },
+  brimstone: { base: 'ore', dur: 2.2, tint: 0xffe070 },
+  rimeglass: { base: 'crystal', dur: 2.8, tint: 0xd6efff },
+  starmetal: { base: 'ore', dur: 3.4, tint: 0xc9a0ff },
+};
+const nodeBase = (n) => NODE_KINDS[n.kind]?.base || n.kind;
+const PROP_GROUP = { hexcrystal: 'basin', bones: 'basin', snowpine: 'frost', rimeglass: 'frost', snowrock: 'frost', drift: 'frost', snowtuft: 'frost', furtent: 'frost', ashtree: 'cinder', obsidian: 'cinder', vent: 'cinder', emberbloom: 'cinder', cinders: 'cinder', gloomtree: 'gloam', fern: 'gloam', glowcap: 'gloam', stump: 'gloam', web: 'gloam', deadtree: 'marsh', reeds: 'marsh', mushrooms: 'marsh', stalagmite: 'cave', crystal: 'cave', counter: 'interior', shelf: 'interior', table: 'interior', rug: 'interior', whackboard: 'interior', fireplace: 'interior' };
+
+const BARKS = {
+  start: { brann: "THE KING'S TOWN... WHAT'S LEFT OF IT.", pip: 'OOH, A RUIN! I MEAN... HOW TRAGIC.', sable: 'QUIET OUT HERE. TOO QUIET. ALSO: GOBLINS.' },
+  curse: { brann: 'STAY CLOSE. THE AIR TASTES WRONG.', pip: 'THAT STONE IS HUMMING. I HATE IT WHEN THEY HUM.', sable: 'PURPLE GRASS. NEVER A GOOD SIGN.' },
+  ward: { brann: 'FOR THE KING. THE FROG KING. STILL COUNTS.', pip: 'ONE DOWN! MALGRIM IS GOING TO BE SO CROSS.', sable: 'THAT FELT GOOD. WHAT ELSE CAN WE BREAK?' },
+  chest: { brann: 'A FINE FIND. WE TAKE IT FOR THE KING.', pip: "IS IT A SPELLBOOK? IT'S NOT A SPELLBOOK.", sable: 'FINDERS KEEPERS.' },
+  gap: { brann: "I SEEM TO BE MISSING A TOOL FOR THIS.", pip: "WE'RE MISSING SOME KIND OF TOOL FOR THIS. I'LL REMEMBER IT.", sable: "I'D NEED A TOOL TO USE THIS. COME BACK LATER?" },
+  help: { brann: '', pip: 'HELP! THE PUDDLES ARE WINNING!', sable: "LITTLE HELP? THESE THINGS DON'T TAKE BRIBES." },
+};
+// Kesh and Wren lead too
+Object.assign(BARKS.start, { kesh: 'SMELLS LIKE HOME. AND GOBLINS.', wren: 'KESTREL, HIGH WATCH. I HAVE THE GROUND.' });
+Object.assign(BARKS.curse, { kesh: 'THE CURSE STINKS HERE. IT REMEMBERS ME.', wren: 'EVEN THE BIRDS WENT QUIET.' });
+Object.assign(BARKS.ward, { kesh: 'BROKEN. GOOD. ONE LESS CAGE.', wren: 'CLEAN SHOT. WELL, CLEAN-ISH.' });
+Object.assign(BARKS.chest, { kesh: 'SHINY. MINE. OURS.', wren: 'KESTREL SPOTTED IT FIRST, FOR THE RECORD.' });
+Object.assign(BARKS.gap, { kesh: 'NEED A TOOL FOR THIS. NOT A FIST.', wren: "WE DON'T HAVE WHAT THIS NEEDS. NOT YET." });
+
+// cottage art with nothing tied to it: as a landmark with no home to reopen, shown only while its chunk is in
+const PLAIN_COTTAGES = new Set(['shop', 'tavern', 'curio', 'bath', 'mayor']);
+
+// the gem that resists a region's elemental foes (see design/enemies.md, elemental attacks)
+const REGION_GEM = { cinder: 'ember', frost: 'rime', marsh: 'venom', gloam: 'gloam' };
+// a warlock's bolt, coloured by its school (see Enemy.atkEl)
+const SCHOOL_TINT = { fire: 0xffa060, frost: 0x9fe6ff, venom: 0x9cff7a, shadow: 0xd28cff };
+
+// Who sits where in the Colosseum: looks sorted into families that read
+// alike (brown hair, green hoods, red caps...), so that no two of a family sit
+// side by side or one behind the other, and each family is used about as
+// often as the rest. About one seat in six stays empty. The one-of-a-kind
+// characters (the king, the mayor, the ferryman, the hermit, Aldric) aren't in the crowd.
+const CROWD_FAMILIES = [['tam', 'hobb', 'greta', 'hale', 'tolly'], ['brisk', 'rowan', 'inka', 'wynn', 'kaari'], ['margo', 'tansy', 'iren'], ['fennel', 'brew', 'hilde'],
+  ['ada', 'wick', 'orla', 'quill', 'bess', 'moss'], ['bard', 'ember', 'bjorna'], ['oswin', 'rook', 'oda', 'marek', 'halloway'], ['hew', 'coal', 'dusty'], ['piet', 'vey', 'tamsin', 'ignatius']];
+function crowdFor(seats) {
+  const famOf = [], used = new Map(), famUsed = CROWD_FAMILIES.map(() => 0);
+  return seats.map((st, i) => {
+    if (hash(i, 7, 43) < 0.16) return null;
+    const near = seats.slice(0, i).map((o, j) => [o, famOf[j]]).filter(([o, fam]) => fam !== undefined && Math.abs(o.x - st.x) < 13);
+    const order = CROWD_FAMILIES.map((_, k) => k).filter((k) => !near.some(([, fam]) => fam === k)).sort((a, b2) => famUsed[a] - famUsed[b2] || hash(a, i, 44) - hash(b2, i, 44));
+    const k = order[0] ?? Math.floor(hash(i, 8, 43) * CROWD_FAMILIES.length);
+    famOf[i] = k; famUsed[k]++;
+    const id = [...CROWD_FAMILIES[k]].sort((a, b2) => (used.get(a) || 0) - (used.get(b2) || 0) || hash(a.length, i, 45) - hash(b2.length, i, 45))[0];
+    used.set(id, (used.get(id) || 0) + 1);
+    return id;
+  });
+}
+
+export class Game extends Phaser.Scene {
+  constructor() { super('Game'); }
+
+  create(data) {
+    const st = (this.state = data.state);
+    // load timings, for profiling big maps (shown in the debug panel, logged as [load])
+    const lt = (this.loadMs = {}), t0 = performance.now(), lap = (k) => { const t = performance.now(); lt[k] = Math.round(t - (lap.t ?? t0)); lap.t = t; };
+    useMap(st.map || null); // Aldermere, or a test map (src/data/maps): W and QDATA below then mean its content
+    st.stats ??= { kills: 0, levelUps: [] };
+    this.events.off('postupdate', this.cullOffscreen, this); this.events.on('postupdate', this.cullOffscreen, this); // see cullOffscreen
+    this.travelling = false; this.colosseum = null; this.battlefield = null; this.crowdKills = 0;
+    this.barkObj = null; this.hpBars = null; this.arenaGate = null; this.golem = null; this.eliteRings = null; this.harvestBar = null; // fresh on every (re)start
+    st.gems ??= {}; st.sockets ??= {};
+    for (const hs of Object.values(st.heroes)) { hs.equip.trinket1 ??= null; hs.equip.trinket2 ??= null; }
+    ensureItems(st);
+    setStatMods(st);
+    this.difficulty = { dmg: tuning.difficulty[st.difficulty] ?? 1, hp: 1 };
+    this.speed = this.registry.get('gameSpeed') ?? tuning.gameSpeed;
+    this.dangers = [];
+    this.projectiles = [];
+    this.enemies = [];
+    this.party = [];
+    this.interactables = [];
+    this.loot = [];
+    this.shockwaves = [];
+    this.hitStopT = 0;
+    this.combatHold = 0;
+    this.swapCd = 0;
+    this.flags = st.flags;
+    this.frameMs = [];
+
+    // ------------------------------------------------------------ world
+    this.world = MAP ? buildMapWorld(MAP) : buildWorld();
+    lap('world');
+    this.painter = makeTerrainPainter(this.world);
+    const WPX = MAP_W * TILE, HPX = MAP_H * TILE;
+    this.area = null;
+    this.nav = new NavGrid(MAP_W, MAP_H);
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) { const t = this.world.at(x, y); if (SOLID.has(t)) this.nav.block(x, y, t === T.WATER ? 2 : 1); }
+    for (const p of this.world.props) if (BLOCKING.has(p.type)) this.nav.block(p.x, p.y);
+    lap('nav');
+
+    this.propsByChunk = new Map();
+    this.lazyByChunk = new Map(); // world furniture shown only while its chunk is in (see lazy)
+    this.parked = new Map(); // far-off objects out of the display list (see cullOffscreen)
+    this.events.once('shutdown', () => { for (const o of this.parkedObjects()) o.destroy(); this.parked.clear(); }); // (not in the display list, so the scene wouldn't)
+    for (const p of this.world.props) {
+      const k = `${Math.floor((p.x * TILE) / CHUNK)},${Math.floor((p.y * TILE) / CHUNK)}`;
+      if (!this.propsByChunk.has(k)) this.propsByChunk.set(k, []);
+      this.propsByChunk.get(k).push(p);
+    }
+    this.chunkObjs = new Map();
+    lap('propIndex');
+    this.minimap = new MiniMap(this, this.world, st);
+    lap('minimap');
+    this.fx = new FX(this);
+    this.gearFx = new GearFX(this);
+    this.streamer = new Streamer(this, {
+      painter: this.painter, worldW: WPX, worldH: HPX,
+      onChunkIn: (cx, cy) => this.spawnChunk(cx, cy),
+      onChunkOut: (cx, cy) => this.despawnChunk(cx, cy),
+    });
+
+    // Ward Stones: each holds a region under a curse until its guardian falls and it breaks
+    this.wards = W.wards.map((def) => ({ def, C: { x: (def.x + 0.5) * TILE, y: (def.y + 0.5) * TILE, R: def.r * TILE }, bloomR: -1 }));
+    this.moteT = 0;
+    for (const w of this.wards) if (!this.flags[w.def.flag]) this.buildCurse(w);
+
+    this.allies = []; // non-hero friendlies enemies can attack (escort carts, NPCs being defended)
+    this.buildLandmarks();
+    if (!MAP) this.buildBarrier(); // the Tower's barrier belongs to Aldermere
+    // hand-built dungeons (C8): one kit each; this.dungeon is the one you're in
+    this.dungeons = {};
+    if (!MAP) for (const id of Object.keys(DUNGEONS)) { const k = new DungeonKit(this, id); this.dungeons[k.def.area] = k; }
+    this.quests = new QuestManager(this);
+    lap('landmarks');
+
+    // ------------------------------------------------------------ party
+    // a save from inside the old (pre-rebuild) Undercroft or Abbey: those tiles
+    // are gone, so start at the new dungeon's entrance instead
+    const OLD = { undercroft: [256, 2, 318, 60], abbey: [256, 63, 318, 126] };
+    if (st.pos && !st.lab && !MAP) for (const [id, [x0, y0, x1, y1]] of Object.entries(OLD)) {
+      const tx = Math.floor(st.pos.x / TILE), ty = Math.floor(st.pos.y / TILE);
+      if (tx >= x0 && tx <= x1 && ty >= y0 && ty <= y1) { const p = dungeonStart(id); st.pos = { x: p.x * TILE + 8, y: p.y * TILE + 8 }; }
+    }
+    const start = st.pos || { x: W.start.x * TILE, y: W.start.y * TILE };
+    st.active ??= st.recruited.slice(0, 3);
+    if (!st.active.includes(st.leader)) st.active.unshift(st.leader);
+    st.active = st.active.slice(0, 3);
+    for (const h of HERO_LIST) if (!st.heroes[h.id]) st.heroes[h.id] = { level: 1, xp: 0, hp: null, ult: 0, equip: { ...h.equip, trinket1: null, trinket2: null }, ...newSkillState(h.id) };
+    const order = [st.leader, ...st.active.filter((id) => id !== st.leader)];
+    order.forEach((id, i) => this.party.push(new Hero(this, id, st.heroes[id], start.x + i * 12, start.y + (i ? 12 : 0))));
+    this.setLeader(this.party[0], true);
+    this.buildRecruits();
+    // groups cleared before the last save keep their respawn clocks (and still never reappear in sight)
+    const rs = st.respawn || {};
+    this.groups = W.groups.map((g) => ({ ...g, def: g, units: [], active: false, deadT: rs[g.id] ?? 0, cleared: g.id in rs, spawnedOnce: g.id in rs, chunk: `${Math.floor((g.units[0][1] * TILE) / CHUNK)},${Math.floor((g.units[0][2] * TILE) / CHUNK)}` }));
+
+    const cam = this.cameras.main;
+    cam.startFollow(this.leader.sprite, true, 0.12, 0.12);
+    cam.centerOn(this.leader.x, this.leader.y);
+
+    this.buildDarkness();
+    this.setupInput();
+    this.scene.launch('UI', { game: this });
+    this.ui = this.scene.get('UI');
+
+    this.region = null;
+    // Hold the game behind the loading curtain until the art, terrain and
+    // enemies around the party are all in place, so nothing starts mid-load.
+    this.loading = true;
+    this.busy = true;
+    const place = this.placeName(start.x, start.y);
+    if (!this.scene.isActive('Loading')) this.scene.launch('Loading', { title: place });
+    const curtain = this.scene.get('Loading');
+    if (this.scene.isActive('Loading')) curtain.setTitle(place);
+    lap('scene');
+    this.prepareAt(start.x, start.y, curtain, 8).then(() => {
+      lap('firstChunks');
+      lt.ready = Math.round(performance.now() - (window.__loadT0 ?? t0)); // from the tap that started it
+      lt.worker = this.streamer.stats.workerReady ?? null;
+      window.__loadTimes = { map: MAP?.id || 'aldermere', size: `${MAP_W}x${MAP_H}`, ...lt, build: this.world.ms || null, workerBuild: this.streamer.stats.workerBuild || null, props: this.world.props.length, groups: W.groups.length };
+      console.info('[load]', JSON.stringify(window.__loadTimes));
+      // a save made somewhere the party can't stand (older saves from up a lookout): step off to open ground
+      const ltx = Math.floor(this.leader.x / TILE), lty = Math.floor(this.leader.y / TILE);
+      if (this.nav.isSolid(ltx, lty)) {
+        const o = this.nav.nearestOpen(ltx, lty + 2, 8) || this.nav.nearestOpen(ltx, lty, 8);
+        if (o) this.party.forEach((h, i) => { h.x = o[0] * TILE + 8 + (i ? (i === 1 ? -10 : 10) : 0); h.y = o[1] * TILE + 8 + (i ? 8 : 0); h.lift = 0; h.sync(0); });
+      }
+      this.settleParty();
+      this.loading = false;
+      this.busy = false;
+      this.calmT = 1.5; // a moment to get bearings before anything nearby notices you
+      this.musicRegion = biomeAt(Math.floor(start.x / TILE), Math.floor(start.y / TILE));
+      music.start(themeFor(this.musicRegion));
+      music.setBard(!!this.flags.bard);
+      if (curtain.sys.isActive()) curtain.done(); else curtain.events.once('create', () => curtain.done()); // (see teleportParty)
+      if (!st.lab && !st.demo && !MAP) this.time.delayedCall(2200, () => this.bark(this.leader, BARKS.start[this.leader.def.id])); // the lab has its own hints, and the opening lines are about Aldermere
+      if (st.demo) this.startDemo(st.demo);
+      if (MAP?.arena) { this.colosseum = new Colosseum(this, MAP.arena, MAP.at); this.colosseum.start(); } // the Colosseum's waves
+      if (MAP?.battlefield) this.battlefield = new Battlefield(this, MAP.battlefield, MAP.at); // the Proving Field's muster board
+    });
+
+    window.__game = this.game;
+    window.__scene = this;
+    // free the terrain worker and chunk textures if the scene is ever restarted
+    this.events.once('shutdown', () => { this.colosseum?.destroy(); this.streamer?.destroy(); for (const w of this.wards || []) if (w.tex) this.textures.remove(`curseOverlay_${w.def.id}`); });
+  }
+
+  // ============================================================ streaming
+  spawnChunk(cx, cy) {
+    const k = `${cx},${cy}`;
+    const list = this.propsByChunk.get(k) || [];
+    for (const p of list) { const g = PROP_GROUP[p.type]; if (g && !loaded.has(g)) loadGroupNow(this, g); }
+    const objs = [];
+    for (const p of list) objs.push(...this.createProp(p));
+    // water sparkles (deterministic per chunk)
+    for (const e of this.lazyByChunk.get(k) || []) this.ensureLazy(e);
+    for (let i = 0; i < 10; i++) {
+      const x = cx * CHUNK + Math.floor(hash(cx, cy * 31 + i, 5) * CHUNK), y = cy * CHUNK + Math.floor(hash(cx * 17 + i, cy, 6) * CHUNK);
+      const t = this.painter.typeAt(x, y);
+      if (t === T.LAVA && this.painter.typeAt(x + 6, y) === t) { // bubbling lava glints
+        const s = this.add.image(x, y, 'px2_fireL').setDepth(-49).setAlpha(0);
+        this.tweens.add({ targets: s, alpha: 1, y: y - 2, duration: 400 + i * 50, yoyo: true, repeat: -1, delay: i * 250, repeatDelay: 600 + i * 150 });
+        objs.push(s);
+        continue;
+      }
+      if ((t !== T.WATER && t !== T.SHALLOW) || this.painter.typeAt(x + 10, y) !== t || this.painter.typeAt(x - 10, y) !== t) continue;
+      const s = this.add.image(x, y, i % 3 ? 'px_white' : 'px_foam').setDepth(-49).setScale(i % 4 ? 2 : 3, 1).setAlpha(0);
+      this.tweens.add({ targets: s, alpha: t === T.SHALLOW ? 0.5 : 0.9, duration: 500 + i * 60, yoyo: true, repeat: -1, delay: i * 300, hold: 200, repeatDelay: 900 + i * 200 });
+      objs.push(s);
+    }
+    this.chunkObjs.set(k, objs);
+  }
+
+  despawnChunk(cx, cy) {
+    const k = `${cx},${cy}`;
+    for (const o of this.chunkObjs.get(k) || []) { this.tweens.killTweensOf(o); o.destroy(); }
+    this.chunkObjs.delete(k);
+    for (const e of this.lazyByChunk.get(k) || []) this.dropLazy(e);
+  }
+
+  // World furniture (chests, signs, campfires, lookouts, cottages) that only
+  // exists on screen while its chunk is streamed in: build(e) makes its
+  // display objects (and any timers, pushed to e.timers) when the chunk comes
+  // in, and they're destroyed when it goes. What it is stays loaded the whole
+  // time: its interactable, its nav block, its marker. A big map would
+  // otherwise carry every chest and campfire it has, on screen or not.
+  lazy(x, y, build) {
+    const k = `${Math.floor(x / CHUNK)},${Math.floor(y / CHUNK)}`, e = { build, objs: null, timers: [] };
+    if (!this.lazyByChunk.has(k)) this.lazyByChunk.set(k, []);
+    this.lazyByChunk.get(k).push(e);
+    if (this.streamer.resident.has(k)) this.ensureLazy(e);
+    return e;
+  }
+  ensureLazy(e) { return (e.objs ??= e.build(e) || []); } // (also when something needs it before its chunk is in)
+  dropLazy(e) {
+    if (!e.objs) return;
+    for (const o of e.objs) { this.tweens.killTweensOf(o); o.destroy(); }
+    for (const t of e.timers) t.remove();
+    e.objs = null; e.timers = [];
+  }
+
+  createProp(p) {
+    const x = p.x * TILE + TILE / 2, y = p.y * TILE + TILE / 2;
+    const out = [];
+    let img = null;
+    switch (p.type) {
+      case 'tree':
+        img = this.add.image(x, y + 6, `tree${p.seed}`).setOrigin(0.5, 1);
+        out.push(this.add.image(x + 2, y + 4, 'shadowL').setAlpha(0.22).setDepth(-4).setScale(1.3, 1.2));
+        break;
+      case 'deadtree':
+        img = this.add.image(x, y + 6, `deadtree${p.seed}`).setOrigin(0.5, 1);
+        out.push(this.add.image(x + 1, y + 4, 'shadow').setAlpha(0.22).setDepth(-4));
+        break;
+      case 'gloomtree':
+        img = this.add.image(x, y + 6, `gloomtree${p.seed}`).setOrigin(0.5, 1);
+        out.push(this.add.image(x + 2, y + 4, 'shadowL').setAlpha(0.3).setDepth(-4).setScale(1.2, 1.1));
+        break;
+      case 'ashtree':
+        img = this.add.image(x, y + 6, `ashtree${p.seed}`).setOrigin(0.5, 1);
+        out.push(this.add.image(x + 1, y + 4, 'shadow').setAlpha(0.22).setDepth(-4));
+        break;
+      case 'obsidian': img = this.add.image(x, y + 4, `${p.big ? 'obsidianB' : 'obsidian'}${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'snowpine':
+        img = this.add.image(x, y + 6, `snowpine${p.seed}`).setOrigin(0.5, 1);
+        out.push(this.add.image(x + 2, y + 4, 'shadowL').setAlpha(0.18).setDepth(-4).setScale(1.1, 1));
+        break;
+      case 'rimeglass': img = this.add.image(x, y + 5, `${p.big ? 'rimeglassB' : 'rimeglass'}${p.seed % 4}`).setOrigin(0.5, 1); img.isLight = true; break;
+      case 'snowrock': img = this.add.image(x, y + 4, `${p.big ? 'snowrockB' : 'snowrock'}${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'drift': img = this.add.image(x, y + 3, `drift${p.seed % 4}`).setOrigin(0.5, 1).setDepth(-45); break;
+      case 'snowtuft': img = this.add.image(x, y + 4, `snowtuft${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'furtent': img = this.add.image(x, y + 8, `furtent${p.seed % 3}`).setOrigin(0.5, 1); break;
+      case 'hexcrystal': img = this.add.image(x, y + 5, `${p.big ? 'hexcrystalB' : 'hexcrystal'}${p.seed % 4}`).setOrigin(0.5, 1); img.isLight = true; break;
+      case 'bones': img = this.add.image(x, y, `bones${p.seed % 4}`).setDepth(-45); break;
+      case 'vent': {
+        img = this.add.sprite(x, y + 4, `vent${p.seed % 4}`).setOrigin(0.5, 1).play(`vent${p.seed % 4}`);
+        // a lazy column of smoke
+        const puff = this.time.addEvent({ delay: 700 + (p.seed % 5) * 140, loop: true, callback: () => {
+          if (!this.cameras.main.worldView.contains(x, y)) return;
+          const s = this.add.circle(x + (Math.random() - 0.5) * 4, y - 4, 3, 0x9c8c84, 0.45).setDepth(y + 20);
+          this.tweens.add({ targets: s, y: y - 30, scale: 2.2, alpha: 0, duration: 1600, onComplete: () => s.destroy() });
+        } });
+        out.push({ destroy: () => puff.remove(), x, y });
+        break;
+      }
+      case 'tent': img = this.add.image(x, y + 8, `tent${p.seed % 3}`).setOrigin(0.5, 1); break;
+      case 'emberbloom': img = this.add.image(x, y + 4, `emberbloom${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'cinders': img = this.add.image(x, y, `cinders${p.seed % 4}`).setDepth(-50); break;
+      case 'fern': img = this.add.sprite(x, y + 4, `fern${p.seed % 4}`).setOrigin(0.5, 1).play({ key: `fern${p.seed % 4}`, startFrame: p.seed % 3 }); break;
+      case 'glowcap': img = this.add.sprite(x, y + 4, `glowcap${p.seed % 4}`).setOrigin(0.5, 1).play(`glowcap${p.seed % 4}`); img.isLight = true; break;
+      case 'stump': img = this.add.image(x, y + 4, `stump${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'web': img = this.add.image(x, y, `web${p.seed % 4}`).setDepth(-50).setAlpha(0.7); break;
+      case 'bush': img = this.add.image(x, y + 4, `${p.berries ? 'bushB' : 'bush'}${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'rock': img = this.add.image(x, y + 4, `${p.big ? 'rockB' : 'rock'}${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'tuft': img = this.add.sprite(x, y + 4, `tuft${p.seed % 4}`).setOrigin(0.5, 1).play({ key: `tuft${p.seed % 4}`, startFrame: p.seed % 3 }); break;
+      case 'reeds': img = this.add.sprite(x, y + 6, `reeds${p.seed % 4}`).setOrigin(0.5, 1).play({ key: `reeds${p.seed % 4}`, startFrame: p.seed % 3 }); break;
+      case 'mushrooms': img = this.add.image(x, y + 4, `mushrooms${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'flowers': img = this.add.image(x, y, `flowers${p.seed % 6}`).setDepth(-50); break;
+      case 'lily': img = this.add.image(x, y, `lily${p.seed % 3}`).setDepth(-50); break;
+      case 'pillar': img = this.add.image(x, y + 8, p.broken ? 'pillarBroken' : 'pillar').setOrigin(0.5, 1); break;
+      case 'barrel': img = this.add.image(x, y + 4, 'barrel').setOrigin(0.5, 1); break;
+      case 'stalagmite': img = this.add.image(x, y + 6, `stalagmite${p.seed % 4}`).setOrigin(0.5, 1); break;
+      case 'crystal': img = this.add.sprite(x, y + 4, `crystal${p.seed % 3}`).setOrigin(0.5, 1).play(`crystal${p.seed % 3}`); img.isLight = true; break;
+      case 'counter': img = this.add.image(x, y + 8, 'counter').setOrigin(0.5, 1); break;
+      case 'shelf': img = this.add.image(x, y + 10, 'shelf').setOrigin(0.5, 1); break;
+      case 'table': img = this.add.image(x, y + 6, 'table').setOrigin(0.5, 1); break;
+      case 'rug': img = this.add.image(x, y, 'rug').setDepth(-50); break;
+      case 'whackboard': img = this.add.image(x, y + 8, 'whackboard').setOrigin(0.5, 1); break;
+      case 'fireplace': img = this.add.sprite(x, y + 14, 'fireplace').setOrigin(0.5, 1).play('fireplace'); out.push(this.add.circle(x, y + 22, 34, 0xffb050, 0.1).setDepth(-60).setBlendMode(Phaser.BlendModes.ADD)); break;
+    }
+    if (img) {
+      if (img.depth === 0) img.setDepth(img.y);
+      if (this.inCurse(x, y, 12)) img.setTint(CURSE_TINT);
+      out.push(img);
+    }
+    return out;
+  }
+
+  updateGroups(dt) {
+    const L = this.leader;
+    const quiet = this.quests?.quietZones() || [];
+    const inQuiet = (g) => quiet.some((z) => g.def.units.some(([, x, y]) => Math.hypot(x * TILE - z.x, y * TILE - z.y) < z.r));
+    for (const g of this.groups) {
+      const blocked = (g.until && this.flags[g.until]) || (g.once && this.state.cleared[g.id]) || (!g.active && quiet.length && inQuiet(g)); // kept off an errand set piece's stage
+      const res = this.streamer.resident.has(g.chunk);
+      if (!g.active) {
+        if (blocked) continue;
+        const def = g.def.units; // (kept on the pack: looking it up by id for every pack was quadratic, a 44 ms hitch on the 40x Vast)
+        const far = Math.hypot(def[0][1] * TILE - L.x, def[0][2] * TILE - L.y);
+        // a cleared group's clock only runs while the party is well away (it
+        // counts even once its chunk unloads), so lingering nearby never brings it back
+        if (g.deadT > 0) { if (far > RESPAWN_AWAY) g.deadT -= dt; continue; }
+        if (!res) continue;
+        // never respawn a cleared group in plain sight
+        if (g.spawnedOnce && far < RESPAWN_HIDDEN) continue;
+        const eliteIdx = !g.guards && Math.random() < 0.3 ? Math.floor(Math.random() * def.length) : -1;
+        g.units = def.map(([k, x, y], i) => this.spawnEnemy(k, x * TILE + 8, y * TILE + 8, false, i === eliteIdx));
+        g.active = true;
+        g.spawnedOnce = true;
+        g.cleared = false;
+      } else {
+        const alive = g.units.filter((u) => u.alive);
+        if (!alive.length) {
+          g.active = false;
+          if (g.once) this.state.cleared[g.id] = true;
+          g.deadT = RESPAWN_SECS;
+          g.cleared = true;
+          continue;
+        }
+        if (!res && !alive.some((u) => u.engaged)) {
+          for (const u of alive) { u.alive = false; u.clearZone(); u.destroy(); }
+          g.active = false;
+          g.deadT = 0;
+        }
+      }
+    }
+  }
+
+  enemyLevel(x, y) {
+    const r = W.regions.find((k) => k.id === biomeAt(Math.floor(x / TILE), Math.floor(y / TILE)));
+    // the party may not exist yet (errand fights rebuilt while the save loads): fall back to the saved levels
+    const lv = this.party.length ? this.party.map((h) => h.level) : (this.state.active || [this.state.leader]).map((id) => this.state.heroes[id]?.level || 1);
+    const avg = lv.reduce((a, l) => a + l, 0) / lv.length;
+    const [lo, hi] = MAP?.band || regionBand(this.state, r); // a map with a band of its own uses it everywhere
+    return Phaser.Math.Clamp(Math.round(avg), lo, hi);
+  }
+
+  spawnEnemy(kind, x, y, engaged = false, elite = false, level = null) {
+    if (['mire', 'drowned', 'witchling', 'leeches', 'lurker', 'croaker', 'snapjaw', 'murk'].includes(kind) && !loaded.has('marsh')) loadGroupNow(this, 'marsh');
+    if (['shade', 'rootling', 'spider', 'spiderling', 'hound', 'banshee', 'mab', 'eggsac', 'huntsman', 'huntecho'].includes(kind) && !loaded.has('gloam')) loadGroupNow(this, 'gloam');
+    if (['imp', 'slug', 'salamander', 'brute', 'beetle', 'drake', 'vulk'].includes(kind) && !loaded.has('cinder')) loadGroupNow(this, 'cinder');
+    if (['frostwolf', 'rimehorn', 'icewraith', 'sentinel', 'raider', 'troll', 'isolde'].includes(kind) && !loaded.has('frost')) loadGroupNow(this, 'frost');
+    if (['voidling', 'gargoyle', 'chainwarden', 'malgrim'].includes(kind) && !loaded.has('basin')) loadGroupNow(this, 'basin');
+    // the Blight Basin: the Hex Legion comes as Hexborn (elite, with an affix)
+    const bAt = biomeAt(Math.floor(x / TILE), Math.floor(y / TILE));
+    const hexborn = HEXBORN.has(kind) && (bAt === 'basin' || bAt.startsWith('tower') || !!this.flags.postgame); // Hexborn remnants spread after the end
+    if (hexborn) elite = true;
+    const open = this.nav.nearestOpen(Math.floor(x / TILE), Math.floor(y / TILE));
+    if (open && this.nav.isSolid(Math.floor(x / TILE), Math.floor(y / TILE))) { x = open[0] * TILE + 8; y = open[1] * TILE + 8; }
+    const e = new Enemy(this, kind, x, y, { level: (level ?? this.enemyLevel(x, y)) + (elite ? 2 : 0), elite }); // elites sit 2 levels up (C1); the Colosseum sets each wave's level itself
+    if (hexborn) { e.hexborn = true; e.s = { ...e.s, name: `HEXBORN ${e.s.name}` }; e.restoreTint(); }
+    if (kind === 'mirror') this.makeMirror(e);
+    this.enemies.push(e);
+    if (engaged) { this.fx.puff(x, y, 'sparkCurse'); e.aggroOn(this.leader, false); }
+    return e;
+  }
+
+  // ============================================================ areas
+  areaRect(id = this.area) { return AREAS[id] || AREAS.overworld; }
+
+  enterArea(id) {
+    this.area = id;
+    this.fitCameraBounds();
+    this.veilArea();
+    this.events.emit('area', id);
+  }
+
+  // Inside a building, cave, dungeon or Tower floor, nothing beyond its own
+  // walls shows: the rest of the map (other interiors packed alongside) is
+  // painted over in the backdrop colour. Out in the overworld, no veil.
+  veilArea() {
+    const a = AREAS[this.area];
+    this.areaVeil ??= this.add.graphics().setDepth(99990);
+    const g = this.areaVeil.clear();
+    if (!a?.interior) return;
+    const x0 = a.x0 * TILE, y0 = a.y0 * TILE, x1 = (a.x1 + 1) * TILE, y1 = (a.y1 + 1) * TILE, F = 4000;
+    g.fillStyle(0x16121f, 1).fillRect(x0 - F, y0 - F, x1 - x0 + 2 * F, F).fillRect(x0 - F, y1, x1 - x0 + 2 * F, F).fillRect(x0 - F, y0, F, y1 - y0).fillRect(x1, y0, F, y1 - y0);
+  }
+
+  // Camera bounds = the area. An area smaller than the screen is centred:
+  // Phaser pins short bounds to their top-left corner, which put small caves
+  // under the HUD portraits where nothing could be tapped.
+  fitCameraBounds() {
+    const a = (MAP && this.area === 'overworld' && mapRect()) || this.areaRect(), cam = this.cameras.main; // a test map: just its own rectangle
+    let x = a.x0 * TILE, y = a.y0 * TILE, w = (a.x1 - a.x0 + 1) * TILE, h = (a.y1 - a.y0 + 1) * TILE;
+    const dw = cam.width / cam.zoom, dh = cam.height / cam.zoom;
+    if (w < dw) { x -= Math.floor((dw - w) / 2); w = Math.ceil(dw); }
+    if (h < dh) { y -= Math.floor((dh - h) / 2); h = Math.ceil(dh); }
+    cam.setBounds(x, y, w, h);
+  }
+
+  // Malgrim's curse: the leader becomes a frog for 6s (unless the Frog King blessed them)
+  frogify(h) {
+    if (!h?.alive || h.downed || h.frogT > 0) return;
+    if (this.state.flags.blessing) { this.floatText(h.x, h.y - 34, "THE FROG KING'S BLESSING!", 'fontGold'); this.fx.ring(h.x, h.y - 6, 'ringGold', 2.5); return; }
+    h.frogT = 6; h.anim = ''; h.play('idle'); h.clearPath?.();
+    this.fx.puff(h.x, h.y - 8, 'sparkCurse'); audio.sfx('squish', { pitch: 0.7 });
+    this.floatText(h.x, h.y - 34, 'RIBBIT', 'fontGold', 0x8cff8c);
+  }
+
+  // The Ninth Tower: the door (open once the Vale stone is down; Malgrim warns
+  // an early party off, but lets them in) and each floor's stairs up, which
+  // pass by any floor whose outer Ward Stone has fallen.
+  towerSealed(n) { const d = DUNGEONS[`tower${n}`]; return !!(d?.seal && this.flags[d.seal]); }
+  towerStairs(w) {
+    const n = w.tower, here = DUNGEONS[`tower${n}`];
+    if (here?.boss && !this.towerSealed(n) && !this.flags[here.boss.flag]) { this.bark(this.leader, "THE STAIRS WON'T OPEN WHILE THE ECHO STILL STANDS."); return; }
+    let next = n + 1;
+    const sealed = [];
+    while (next < 9 && this.towerSealed(next)) sealed.push(next++);
+    const to = dungeonStart(`tower${next}`);
+    this.warp({ ...w, to: { x: to.x, y: to.y }, tower: undefined });
+    this.time.delayedCall(800, () => this.events.emit('banner', next === 9 ? "MALGRIM'S CHAMBER" : `FLOOR ${next}`, sealed.length ? `FLOOR${sealed.length > 1 ? 'S' : ''} ${sealed.join(', ')} SEALED - A WARD STONE YOU BROKE` : 'THE NINTH TOWER'));
+  }
+
+  tryWarp(w) {
+    if (typeof w.tower === 'number') { this.towerStairs(w); return; }
+    if (w.tower === 'door' && this.flags.malgrimDefeated && !this.flags.ruinBark) { this.flags.ruinBark = true; this.bark(this.leader, 'RUBBLE AND WIND... BUT THE STAIRS STILL CLIMB.'); } // the ruin stays open: nothing in it is lost for good
+    if (w.tower === 'door' && this.flags.wardBroken && !this.flags.towerWarned && OUTER_REGIONS.some((r) => !this.flags[`ward_${r}`])) {
+      this.flags.towerWarned = true;
+      const M = (text) => ({ who: 'MALGRIM', text, voice: { pitch: 110, wave: 'sawtooth', speed: 0.8 } });
+      this.events.emit('dialogue', [M('AH. VISITORS. HOW... OPTIMISTIC.'), M('MY STONES STILL STAND, LITTLE ONES. EVERY ONE OF THEM IS A WALL BETWEEN YOU AND ME. COME BACK WHEN YOU ARE LESS... SMALL.'), M('OR COME IN NOW. I COULD USE THE ENTERTAINMENT.')], () => this.tryWarp(w));
+      return;
+    }
+    if (w.requires && !this.flags[w.requires]) { this.bark(this.leader, 'BARRED FROM THE OTHER SIDE.'); return; }
+    if (w.lockedBy && !this.flags[`broke_${w.lockedBy}`]) {
+      this.bark(this.leader, { brann: 'THIS ROCK IS CRACKED. ONE GOOD HIT...', pip: "THERE'S A DRAFT BEHIND THAT ROCK. SUSPICIOUS.", sable: 'HOLLOW BEHIND THERE. I CAN SMELL TREASURE.' }[this.leader.def.id]);
+      return;
+    }
+    this.warp(w);
+  }
+
+  // ============================================================ secrets & gathering
+  onBreak(b) {
+    this.flags[`broke_${b.def.id}`] = true;
+    for (const [tx, ty] of b.def.tiles) this.nav.solid[ty * this.nav.w + tx] = 0;
+    audio.sfx('bash'); audio.sfx('shatter');
+    this.shake(200, 0.008);
+    for (let i = 0; i < 3; i++) this.time.delayedCall(i * 80, () => this.fx.dust(b.x + (i - 1) * 8, b.y));
+    this.fx.burst('spark', b.x, b.y - 10, 20);
+    this.tweens.add({ targets: b.sprite, alpha: 0, scaleY: 0.3, duration: 260, onComplete: () => b.destroy() });
+    this.breakables = this.breakables.filter((x) => x !== b);
+    for (const h of this.party) if (h.command?.target === b) h.command = null;
+    audio.sfx('levelUp');
+    this.events.emit('banner', 'A SECRET!', b.def.kind === 'boulder' ? 'THE BOULDER CRUMBLES TO REVEAL A PASSAGE' : 'THE WALL GIVES WAY');
+    this.autosave('secret');
+  }
+
+  // Harvesting is a timed action: the hero swings a tool (pickaxe / sickle)
+  // until the bar fills. Rarer materials take longer. Moving or getting hit
+  // interrupts it.
+  // Where a hero stands to work a node: right beside it, on the side they came
+  // from (so the swing or the picking faces it), on open ground.
+  harvestSpot(n, h) {
+    const side = h.x < n.px ? -1 : 1;
+    const tries = [[side * 11, 2], [-side * 11, 2], [0, 11], [0, -9]];
+    for (const [dx, dy] of tries) { const x = n.px + dx, y = n.py + dy; if (!this.nav.solidAtPx(x, y)) return { x, y }; }
+    return null;
+  }
+
+  harvest(n, h) {
+    if (!n.ready) { this.floatText(n.px, n.py - 16, `REGROWS IN ${Math.ceil(n.t)}S`, 'fontPlain'); return; }
+    if (!n.s || h.action) return;
+    const dur = NODE_KINDS[n.kind]?.dur || 2;
+    h.face(n.px - h.x, n.py - h.y);
+    h.clearPath();
+    const mine = nodeBase(n) !== 'herb';
+    // the mining swing strikes 4/6 of the way through its loop: start the clock so each tick (chip, sound) lands on the strike
+    h.action = { type: 'harvest', t: 0, dur, node: n, anim: mine ? 'mine' : 'gather', swingT: mine ? 0.6 / 3 : 0, period: mine ? 0.6 : 0.5 };
+    h.anim = '';
+    h.play(h.action.anim);
+  }
+
+  harvestTick(h, n) {
+    const herb = nodeBase(n) === 'herb';
+    audio.sfx(herb ? 'stab' : 'block');
+    this.fx.burst(herb ? 'heal' : 'spark', n.px + (Math.random() * 6 - 3), n.py - 4, herb ? 3 : 4);
+    if (!herb) this.shake(30, 0.0015);
+  }
+
+  cancelHarvest(h) {
+    if (h.action?.type !== 'harvest') return;
+    h.action = null;
+    h.anim = '';
+    this.floatText(h.x, h.y - 30, 'STOPPED', 'fontPlain');
+  }
+
+  finishHarvest(h, n) {
+    n.ready = false; n.t = 90;
+    const amt = n.kind === 'crystal' ? 1 : 1 + (Math.random() < 0.5 ? 1 : 0);
+    addMats(this.state, { [n.kind]: amt });
+    this.quests?.onGather(n.kind, amt);
+    audio.sfx(nodeBase(n) === 'ore' ? 'bash' : n.kind === 'crystal' ? 'frost' : 'heal');
+    audio.sfx('coin');
+    this.fx.burst(nodeBase(n) === 'herb' ? 'heal' : 'gold', n.px, n.py - 6, 10);
+    this.floatText(n.px, n.py - 18, `+${amt} ${CRAFT.materials[n.kind].name}`, 'fontGold');
+    this.nodeTexture(n);
+    this.events.emit('party');
+  }
+
+  nodeTexture(n) {
+    if (!n.s) return;
+    if (nodeBase(n) === 'herb') { if (n.ready) n.s.play('herb'); else { n.s.stop(); n.s.setTexture('herb_used'); } }
+    else if (nodeBase(n) === 'ore') n.s.setTexture(n.ready ? 'ore' : 'ore_used');
+    else { if (n.ready) { n.s.setAlpha(1).play('crystal1'); } else { n.s.stop(); n.s.setAlpha(0.35); } }
+    if (NODE_KINDS[n.kind]?.tint) n.s.setTint(NODE_KINDS[n.kind].tint);
+  }
+
+  updateNodesAndNpcs(dt) {
+    // a node's sprite and bubble exist only while it's near the screen (built
+    // as it comes into view, dropped once well away), so a big map doesn't
+    // carry five objects for every node it has; regrowing runs everywhere
+    const v = this.cameras.main.worldView;
+    for (const n of this.nodes) {
+      if (!n.ready) { n.t -= dt; if (n.t <= 0) { n.ready = true; this.nodeTexture(n); audio.sfx('click'); } }
+      const dx = Math.max(v.x - n.px, 0, n.px - v.right), dy = Math.max(v.y - n.py, 0, n.py - v.bottom);
+      if (dx > 640 || dy > 640) { if (n.s) this.dropNode(n); continue; }
+      if (dx > 160 || dy > 160) continue;
+      if (!n.s) {
+        const grp = n.kind === 'crystal' ? 'cave' : 'core';
+        if (grp === 'core' || loaded.has(grp)) {
+          if (nodeBase(n) === 'herb') n.s = this.add.sprite(n.px, n.py + 6, 'herb').setOrigin(0.5, 1).play('herb');
+          else if (nodeBase(n) === 'ore') n.s = this.add.image(n.px, n.py + 6, 'ore').setOrigin(0.5, 1);
+          else { n.s = this.add.sprite(n.px, n.py + 6, 'crystal1').setOrigin(0.5, 1).play('crystal1').setScale(1.3); n.s.isLight = true; }
+          n.s.setDepth(n.py);
+          this.nodeTexture(n);
+        }
+      }
+      this.updateNodeMarker(n);
+    }
+    for (const n of this.npcs) {
+      // "?" when an errand is ready to hand in to them
+      n.mark ??= this.add.image(n.px, n.py - 30, 'markA').setDepth(TOP - 40).setVisible(false);
+      n.mark.setVisible(!!this.quests?.turnInFor(n)).setY(n.py - 31 + Math.sin(this.time.now / 300) * 1.5);
+      if (n.s || !loaded.has('interior')) continue;
+      n.s = this.add.sprite(n.px, n.py, n.id, 'idle_down_0').setOrigin(0.5, 0.75).play(`${n.id}_idle_down`).setDepth(n.py);
+      this.add.image(n.px + 1, n.py + 1, 'shadow').setAlpha(0.2).setDepth(-4);
+    }
+    // golden flies: walk close to grab
+    const LL = this.leader;
+    for (const f of this.flies) {
+      if (f.got || Math.abs(f.x - LL.x) > 160 || Math.abs(f.y - LL.y) > 160) continue; // (the party is never far from its leader)
+      if (!this.party.some((h) => !h.downed && Math.hypot(h.x - f.x, h.y - f.y) < 16)) continue;
+      f.got = true;
+      this.state.flies.push(f.i);
+      this.tweens.killTweensOf(f.s);
+      this.tweens.add({ targets: f.s, y: f.s.y - 24, alpha: 0, duration: 500, onComplete: () => f.s.destroy() });
+      this.fx.burst('gold', f.x, f.y - 8, 18);
+      audio.sfx('coin'); audio.sfx('levelUp');
+      this.events.emit('banner', `GOLDEN FLY!  ${this.state.flies.length} / ${TOTAL_FLIES}`, 'THE FROG KING WILL WANT TO SEE THIS');
+      this.autosave('fly');
+    }
+  }
+
+  // Harvestables always wear the same marker: a bobbing bubble with the
+  // material icon when ready, a filling ring while regrowing, and a label
+  // when you're close. Nothing without a bubble can be harvested.
+  dropNode(n) {
+    n.s.destroy(); n.mk?.destroy(); n.label?.destroy();
+    n.s = n.mk = n.mkBub = n.mkIcon = n.mkRing = n.label = null;
+  }
+
+  updateNodeMarker(n) {
+    if (!n.s) return;
+    const v = this.cameras.main.worldView;
+    if (n.mk && (n.px < v.x - 48 || n.px > v.right + 48 || n.py < v.y - 64 || n.py > v.bottom + 48)) { n.label?.setVisible(false); return; } // off screen: nothing to redraw
+    if (!n.mk) {
+      n.mk = this.add.container(n.px, n.py - 26).setDepth(TOP - 40);
+      n.mkBub = this.add.image(0, 0, 'bubble');
+      n.mkIcon = this.add.image(0, -1, `icon_${n.kind}`);
+      n.mkRing = this.add.graphics();
+      n.mk.add([n.mkBub, n.mkIcon, n.mkRing]);
+      n.label = this.add.bitmapText(n.px, n.py - 44, 'font', `${CRAFT.materials[n.kind].name} - TAP TO ${nodeBase(n) === 'ore' ? 'MINE' : nodeBase(n) === 'herb' ? 'PICK' : 'GATHER'}`).setOrigin(0.5).setDepth(TOP - 39).setVisible(false);
+    }
+    const t = this.time.now / 1000;
+    n.mk.y = n.py - 26 + Math.round(Math.sin(t * 3 + n.px) * 1.5);
+    n.mkBub.setVisible(n.ready);
+    n.mkIcon.setVisible(n.ready);
+    const g = n.mkRing.clear();
+    if (!n.ready) {
+      const f = 1 - n.t / 90;
+      g.fillStyle(0x1a1423, 0.75).fillCircle(0, 0, 6);
+      g.lineStyle(2, 0x6fd3a0, 1).beginPath().arc(0, 0, 5, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2).strokePath();
+      g.lineStyle(1, 0x45405e, 1).strokeCircle(0, 0, 6.5);
+    }
+    const L = this.leader;
+    const near = Math.hypot(L.x - n.px, L.y - n.py) < 48;
+    n.label.setVisible(near).setText(n.ready ? `${CRAFT.materials[n.kind].name} - TAP TO ${nodeBase(n) === 'ore' ? 'MINE' : nodeBase(n) === 'herb' ? 'PICK' : 'GATHER'}` : `REGROWS IN ${Math.ceil(n.t)}S`);
+    if (near && n.ready && !this.flags.harvestHint) {
+      this.flags.harvestHint = true;
+      this.events.emit('banner', 'GATHERING', 'TAP ANYTHING WITH A BUBBLE. IT REGROWS.');
+    }
+  }
+
+  talkNpc(npc) {
+    const L = this.leader;
+    L.face(npc.px - L.x, npc.py - L.y);
+    // errands handed in to Marla or Bruno come first
+    const turnIn = this.quests.turnInFor(npc);
+    if (turnIn) { this.quests.advance(turnIn, npc); return; }
+    const lines = npc.lines.map((text) => ({ who: npc.name, portrait: loaded.has('interior') ? `${npc.id}_portrait` : null, voice: npc.voice, text }));
+    if (npc.kind === 'merchant') this.events.emit('dialogue', lines.slice(this.flags.metMarla ? 1 : 0), () => { this.flags.metMarla = true; this.openOverlay('Shop'); });
+    else {
+      const can = this.state.gold >= 10;
+      const play = () => { this.flags.metBruno = true; this.state.gold -= 10; this.openOverlay('Minigame'); };
+      const ask = { who: npc.name, portrait: `${npc.id}_portrait`, voice: npc.voice, text: can ? 'TEN GOLD A GAME. YOU IN?' : "YOU'RE SHORT OF TEN GOLD, FRIEND. COME BACK RICHER." };
+      if (can) ask.choices = [['PLAY (10G)', play], ['NOT NOW', () => { this.flags.metBruno = true; }]];
+      this.events.emit('dialogue', [...lines.slice(this.flags.metBruno ? 1 : 0), ask], () => { this.flags.metBruno = true; });
+    }
+  }
+
+  // Key items (relics) stop the game with a card that stays up until it's
+  // tapped away, so nobody misses picking one up. Anything queued on the game
+  // clock (a chest's ambush, barks) waits until play resumes.
+  refreshFalseWalls() {
+    const px = (t) => t * TILE + TILE / 2;
+    for (const f of this.falseWalls || []) {
+      const on = this.state.relics.includes(f.relic);
+      if (on) {
+        this.nav.unblock(f.x, f.y);
+        f.o.hidden = true;
+        f.s ??= this.add.sprite(px(f.x), (f.y + 1) * TILE, 'dgFalseWall').setOrigin(0.5, 1).play('dgFalseWall').setAlpha(0.5).setDepth((f.y + 1) * TILE + 2);
+      } else { this.nav.block(f.x, f.y); f.o.hidden = false; f.s?.destroy(); f.s = null; }
+    }
+  }
+
+  acquireRelic(id, delay = 0) {
+    if (this.state.relics.includes(id)) return;
+    this.state.relics.push(id);
+    this.refreshFalseWalls();
+    this.autosave('relic');
+    const show = () => {
+      if (this.scene.isPaused()) { this.time.delayedCall(300, show); return; }
+      this.scene.pause();
+      audio.sfx('levelUp');
+      this.events.emit('keyItem', KEY_ITEMS[id] || { name: id.toUpperCase(), icon: 'icon_bag', text: '' }, () => this.scene.resume());
+    };
+    this.time.delayedCall(delay, show);
+  }
+
+  openOverlay(key) {
+    if (this.scene.isActive(key)) return;
+    this.scene.pause();
+    this.scene.launch(key, { game: this });
+  }
+
+  closeOverlay() { this.scene.resume(); this.autosave('overlay'); this.events.emit('party'); }
+
+  // ============================================================ potions
+  usePotion(kind = 'potion') {
+    const st = this.state;
+    if (!st.potions[kind]) { audio.sfx('click'); return false; }
+    const c = CRAFT.consumables[kind];
+    if (kind === 'potion') {
+      const L = this.leader;
+      if (L.downed || L.hp >= L.maxHp) { audio.sfx('click'); return false; }
+      const phial = this.party.some((h) => h.hasPerk('phial')) ? 1.3 : 1; // Phial of Second Wind
+      const amt = Math.round(L.maxHp * c.heal * (L.hasTrait('tonic') ? 1.2 : 1) * phial);
+      L.hp = Math.min(L.maxHp, L.hp + amt);
+      this.floatText(L.x, L.y - 28, `+${amt}`, 'font', 0x8cff8c);
+      this.fx.heal(L.x, L.y);
+    } else if (kind === 'salve') {
+      st.salveT = 300; // five minutes in the heat
+      for (const h of this.party) if (!h.downed) this.fx.heal(h.x, h.y);
+      this.floatText(this.leader.x, this.leader.y - 28, 'COOL AS A CELLAR', 'font', 0x9fd8ff);
+    } else if (kind === 'tonic') {
+      st.tonicT = 300; // five minutes in the cold
+      for (const h of this.party) if (!h.downed) this.fx.heal(h.x, h.y);
+      this.floatText(this.leader.x, this.leader.y - 28, 'WARM AS TOAST', 'font', 0xffd04a);
+    } else if (kind === 'antidote') {
+      for (const h of this.party) { h.poison = null; h.antidoteT = 30; if (!h.downed) h.sprite.clearTint(); this.fx.heal(h.x, h.y); }
+      this.floatText(this.leader.x, this.leader.y - 28, 'CURED', 'font', 0x8cff8c);
+    } else {
+      const phial = this.party.some((h) => h.hasPerk('phial')) ? 1.3 : 1;
+      for (const h of this.party) { if (h.downed) h.revive(c.heal); else h.hp = Math.min(h.maxHp, h.hp + Math.round(h.maxHp * c.heal * phial)); this.fx.heal(h.x, h.y); }
+    }
+    st.potions[kind]--;
+    audio.sfx('heal');
+    this.events.emit('party');
+    return true;
+  }
+
+  // ============================================================ heat
+  // Cinderreach's soft gate: out in the badlands the heat wears the party
+  // down (more beside the lava) unless an Ember Salve is on, or a hero's gear
+  // is heatproof. It never takes anyone below 15% health on its own. Cool
+  // spots: the outpost and the monastery court, the hot springs, campfires.
+  inHeat(x, y) {
+    const tx = x / TILE, ty = y / TILE;
+    if (this.areaRect() !== AREAS.overworld || biomeAt(Math.floor(tx), Math.floor(ty)) !== 'cinder') return 0;
+    for (const z of W.coolZones || []) if (Math.hypot(tx - z.x, ty - z.y) < z.r) return 0;
+    for (const c of W.campfires) if (Math.hypot(tx - c.x, ty - c.y) < 4) return 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (this.world.at(Math.floor(tx) + dx, Math.floor(ty) + dy) === T.LAVA) return 2;
+    return 1;
+  }
+
+  updateHeat(dt) {
+    const st = this.state, L = this.leader;
+    const heat = this.busy || this.onLookout ? 0 : this.inHeat(L.x, L.y);
+    this.heat = { level: heat, salve: st.salveT || 0 };
+    if (!heat) return;
+    if (st.salveT > 0) { st.salveT = Math.max(0, st.salveT - dt); if (st.salveT === 0) this.bark(L, "THE SALVE'S WORN OFF. THE HEAT'S BACK."); return; }
+    if (!this.flags.heatWarned) { this.flags.heatWarned = true; this.bark(L, "THIS HEAT IS COOKING US. AN EMBER SALVE WOULD KEEP IT OFF - QUARTERMASTER COAL AT EMBERWATCH SELLS THEM - OR HEATPROOF GEAR."); }
+    this.heatT = (this.heatT ?? 1.5) - dt;
+    if (this.heatT > 0) return;
+    this.heatT = 3;
+    for (const h of this.party) {
+      if (h.downed || !h.alive || this.heatproof(h)) continue;
+      const lvl = Math.max(heat, this.inHeat(h.x, h.y));
+      const floor = h.maxHp * 0.15;
+      if (h.hp <= floor) continue;
+      const amt = Math.min(h.hp - floor, Math.round(h.maxHp * (lvl === 2 ? 0.08 : 0.05))); // enough to feel: a full bar is down to the floor in about a minute
+      h.hp -= amt;
+      h.flash?.(80);
+      this.floatText(h.x, h.y - 30, `${lvl === 2 ? 'SCORCHED' : 'HEAT'} -${amt}`, 'fontPlain', 0xffa060);
+      if (h.hp <= floor + 0.5) this.hazardLow(h, "WE'RE COOKING - WE NEED A SALVE, OR TO GET BACK TO A FIRE.");
+    }
+    this.cameras.main.flash(120, 255, 120, 40, false, null);
+  }
+
+  // the heat or cold has worn someone down to its floor: said once, until the party's out of it again
+  hazardLow(h, line) {
+    if (this.hazardWarned) return;
+    this.hazardWarned = true;
+    this.bark(h, line);
+  }
+
+  heatproof(h) { return h.hasTrait?.('heatproof') || h.hasPerk?.('flameproof') || h.hasPerk?.('emberheart') || h.stats?.passives?.includes('heatproof'); }
+  coldproof(h) { return h.hasTrait?.('coldproof') || h.hasPerk?.('frostward') || h.stats?.passives?.includes('coldproof'); }
+  // the badlands' heat or the snow's cold is wearing at this hero right now (no salve / tonic, no gear for it)
+  exposed(h) {
+    const st = this.state;
+    return (this.heat?.level > 0 && !(st.salveT > 0) && !this.heatproof(h)) || (this.cold?.level > 0 && !(st.tonicT > 0) && !this.coldproof(h));
+  }
+
+  // ============================================================ cold
+  // Frosthelm's soft gate, the heat's mirror: out in the snow the cold wears
+  // the party down (more out on the lake ice and up on the windswept
+  // Highfold) unless a Frost Tonic is on, or a hero's gear is coldproof. It
+  // never takes anyone below 15% on its own. Warm spots: Rimewatch, campfires.
+  inCold(x, y) {
+    const tx = x / TILE, ty = y / TILE;
+    if (this.areaRect() !== AREAS.overworld || biomeAt(Math.floor(tx), Math.floor(ty)) !== 'frost') return 0;
+    for (const z of W.warmZones || []) if (Math.hypot(tx - z.x, ty - z.y) < z.r) return 0;
+    for (const c of W.campfires) if (Math.hypot(tx - c.x, ty - c.y) < 4) return 0;
+    const t = this.world.at(Math.floor(tx), Math.floor(ty));
+    return t === T.ICE || t === T.PLATEAU ? 2 : 1;
+  }
+
+  updateCold(dt) {
+    const st = this.state, L = this.leader;
+    const cold = this.busy || this.onLookout ? 0 : this.inCold(L.x, L.y);
+    this.cold = { level: cold, tonic: st.tonicT || 0, region: this.areaRect() === AREAS.overworld && biomeAt(Math.floor(L.x / TILE), Math.floor(L.y / TILE)) === 'frost' };
+    if (!cold) return;
+    if (st.tonicT > 0) { st.tonicT = Math.max(0, st.tonicT - dt); if (st.tonicT === 0) this.bark(L, "THE TONIC'S WORN OFF. I CAN'T FEEL MY TOES."); return; }
+    if (!this.flags.coldWarned) { this.flags.coldWarned = true; this.bark(L, "THIS COLD IS EATING AT US. A FROST TONIC WOULD KEEP IT OFF - THEY SELL THEM AT RIMEWATCH - OR COLDPROOF GEAR."); }
+    this.coldT = (this.coldT ?? 1.5) - dt;
+    if (this.coldT > 0) return;
+    this.coldT = 3;
+    for (const h of this.party) {
+      if (h.downed || !h.alive || this.coldproof(h)) continue;
+      const lvl = Math.max(cold, this.inCold(h.x, h.y));
+      const floor = h.maxHp * 0.15;
+      if (h.hp <= floor) continue;
+      const amt = Math.min(h.hp - floor, Math.round(h.maxHp * (lvl === 2 ? 0.08 : 0.05)));
+      h.hp -= amt;
+      h.flash?.(80);
+      this.floatText(h.x, h.y - 30, `${lvl === 2 ? 'FREEZING' : 'COLD'} -${amt}`, 'fontPlain', 0x9fd8ff);
+      if (h.hp <= floor + 0.5) this.hazardLow(h, "WE'RE FREEZING - WE NEED A TONIC, OR TO GET BACK TO A FIRE.");
+    }
+    this.cameras.main.flash(120, 150, 190, 255, false, null);
+  }
+
+  // party-wide unique perks that tick on their own
+  updatePerks(dt) {
+    // Troll-Hide Mantle: below half health, 1% a second (not while burning)
+    this.trollT = (this.trollT ?? 1) - dt;
+    if (this.trollT <= 0) {
+      this.trollT = 1;
+      for (const h of this.party) if (h.alive && !h.downed && !h.burn && h.hp < h.maxHp * 0.5 && h.hasPerk('trollhide')) { h.hp = Math.min(h.maxHp, h.hp + Math.max(1, Math.round(h.maxHp * 0.01))); if (Math.random() < 0.3) this.fx.burst('heal', h.x, h.y - 10, 1); }
+    }
+    this.regenT = (this.regenT ?? 5) - dt;
+    if (this.regenT > 0) return;
+    this.regenT = 5;
+    if (!this.party.some((h) => !h.downed && h.hasPerk('undimmed'))) return; // Vestments of the Undimmed: 2% every 5s
+    for (const h of this.party) if (h.alive && !h.downed && h.hp < h.maxHp) { h.heal(Math.max(1, Math.round(h.maxHp * 0.02))); this.fx.burst('heal', h.x, h.y - 10, 2); }
+  }
+
+  // ============================================================ enemy arrows
+  // kind: arrow (default), orb (slow curse orb that slows), bolt (hex bolt)
+  spawnEnemyArrow(from, to, dmg, kind = 'arrow') {
+    const [nx, ny] = norm(to.x - from.x, to.y - (from.y - 8));
+    let s, sp = 210;
+    if (kind === 'orb') { s = this.add.sprite(from.x, from.y - 8, 'sparkCurse').setScale(2).setDepth(TOP - 21); sp = 110; audio.sfx('frost', { pitch: 0.6 }); }
+    else if (kind === 'bolt') { s = this.add.sprite(from.x, from.y - 8, 'firebolt').play('firebolt').setTint(SCHOOL_TINT[from.atkEl] || 0xd28cff).setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)); sp = 160; audio.sfx('fireCast'); }
+    else if (kind === 'thorn') { s = this.add.image(from.x, from.y - 8, 'arrow').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)).setTint(0x8a5c38).setScale(0.8); sp = 190; audio.sfx('swing', { pitch: 2 }); }
+    else if (kind === 'ember') { s = this.add.sprite(from.x, from.y - 8, 'firebolt').play('firebolt').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)); sp = 150; audio.sfx('fireCast', { pitch: 1.4 }); }
+    else if (kind === 'heavy') { s = this.add.image(from.x, from.y - 8, 'arrow').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)).setScale(1.8).setTint(0xff9a8a); sp = 270; audio.sfx('dash'); }
+    else if (kind === 'web') { s = this.add.image(from.x, from.y - 8, 'web0').setDepth(TOP - 21).setScale(0.45); sp = 130; audio.sfx('squish', { pitch: 1.6 }); }
+    else if (kind === 'frogcurse') { s = this.add.sprite(from.x, from.y - 8, 'sparkCurse').setScale(3).setTint(0x8cff8c).setDepth(TOP - 21); sp = 120; audio.sfx('hexCharge', { pitch: 1.4 }); }
+    else if (kind === 'snowball') { s = this.add.circle(from.x, from.y - 14, 4, 0xf4f8ff).setStrokeStyle(1, 0x7d8bb4).setDepth(TOP - 21); sp = 150; audio.sfx('swing', { pitch: 0.6 }); }
+    else if (kind === 'shard') { s = this.add.image(from.x, from.y - 8, 'arrow').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)).setTint(0xb8e8ff).setScale(1.2); sp = 190; audio.sfx('frost', { pitch: 1.4 }); }
+    else if (kind === 'mirror') { s = this.add.image(from.x, from.y - 8, 'arrow').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)).setTint(0xe7a6ff).setScale(1.4); sp = 230; audio.sfx('block', { pitch: 1.4 }); } // a spell turned back by the Hex Sentinel's face
+    else { s = this.add.image(from.x, from.y - 8, 'arrow').setDepth(TOP - 21).setRotation(Math.atan2(ny, nx)); audio.sfx('swing', { pitch: 1.6 }); }
+    (this.enemyShots ??= []).push({ s, x: from.x, y: from.y - 8, vx: nx * sp, vy: ny * sp, dmg, life: kind === 'orb' || kind === 'web' ? 1.8 : 1.1, from, kind });
+  }
+
+  updateEnemyShots(dt) {
+    if (!this.enemyShots) return;
+    for (const p of this.enemyShots) {
+      p.life -= dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.s.setPosition(Math.round(p.x), Math.round(p.y));
+      const hit = this.party.find((h) => h.alive && !h.downed && !h.zipping && Math.hypot(h.x - p.x, h.y - 8 - p.y) < h.r + 4)
+        || (this.allies || []).find((a) => a.alive && Math.hypot(a.x - p.x, a.y - 8 - p.y) < a.r + 4);
+      const t = this.painter.typeAt(p.x, p.y + 8);
+      const wall = this.nav.solidAtPx(p.x, p.y + 8) && t !== T.WATER && t !== T.BOG && t !== T.CHASM && !this.dungeon?.lowAt(p.x, p.y + 8); // shots fly over pegs
+      if (hit && hit.wallT > 0 && !p.reflected && p.from?.alive) {
+        // Shield Wall: send the arrow back at the archer
+        p.reflected = true; p.life = 1.1;
+        const [rx, ry] = norm(p.from.x - p.x, p.from.y - 8 - p.y);
+        p.vx = rx * 230; p.vy = ry * 230; p.s.setRotation(Math.atan2(ry, rx));
+        audio.sfx('block'); this.fx.burst('spark', p.x, p.y, 6);
+        continue;
+      }
+      if (p.reflected) {
+        const e = this.enemies.find((k) => k.alive && Math.hypot(k.x - p.x, k.y - 8 - p.y) < k.r + 4);
+        if (e) { this.dealDamage(this.party.find((h) => h.wallT > 0) || this.party.find((h) => h.truthsT > this.time.now) || this.leader, e, p.dmg * 1.5, { knock: 40 }); p.dead = true; p.s.destroy(); continue; }
+        if (p.life <= 0) { p.dead = true; p.s.destroy(); }
+        continue;
+      }
+      if (hit?.hasPerk?.('truths') && !hit.downed && this.time.now > (hit.truthsT || 0) && p.from?.alive) { // Mirror of Truths: one shot back every 5s
+        hit.truthsT = this.time.now + 5000;
+        p.reflected = true; p.life = 1.1;
+        const [rx, ry] = norm(p.from.x - p.x, p.from.y - 8 - p.y);
+        p.vx = rx * 230; p.vy = ry * 230; p.s.setRotation(Math.atan2(ry, rx));
+        audio.sfx('block'); this.fx.burst('curse', p.x, p.y, 8); this.floatText(hit.x, hit.y - 28, 'REFLECT', 'fontPlain', 0xd9b8ff);
+        continue;
+      }
+      if (hit?.hasPerk?.('bulwark') && hit.action?.type !== 'attack' && !hit.downed) { // Bulwark of Aldermere: blocks shots from the front
+        const [fx, fy] = hit.facingVec(), [sx, sy] = norm(-p.vx, -p.vy);
+        if (fx * sx + fy * sy > 0.35) { audio.sfx('block'); this.fx.burst('spark', p.x, p.y, 6); this.floatText(hit.x, hit.y - 28, 'BLOCK', 'fontPlain'); p.dead = true; p.s.destroy(); continue; }
+      }
+      if (hit && !p.from?.boss && (!p.kind || p.kind === 'arrow' || p.kind === 'mirror') && this.tryEvade(hit, p.from)) { p.dead = true; p.s.destroy(); continue; } // a hero dodges a plain arrow (or a reflected spell)
+      if (hit) {
+        hit.damage(p.dmg, p.from);
+        if (p.kind === 'ember') hit.addBurn?.(p.dmg * 0.12, 3);
+        this.fx.burst(p.kind === 'arrow' || !p.kind ? 'spark' : 'curse', p.x, p.y, 4);
+        if (p.kind === 'orb' && hit.buff) { hit.buff('slow', 0.6, 2.5 * (1 - (hit.stats?.resist?.[p.from?.atkEl] || 0))); this.floatText(hit.x, hit.y - 34, 'SLOWED', 'fontPlain', 0xd9b8ff); } // (a gem against the caster's element shortens it)
+        if (p.kind === 'bolt' && p.from?.kind === 'warlock' && hit.buff) { // a warlock's school leaves its mark: a short burn, chill, poison or hex-slow
+          const el = p.from.atkEl;
+          if (el === 'fire') hit.addBurn(p.dmg * 0.12, 2);
+          else if (el === 'frost') chillHero(hit, 1.2);
+          else if (el === 'venom') hit.addPoison(p.dmg * 0.12, 3);
+          else hit.buff('slow', 0.75, 1.5 * (1 - (hit.stats?.resist?.shadow || 0)));
+        }
+        if (p.kind === 'web' && hit.buff) { hit.buff('slow', 0.05, 1.4); this.floatText(hit.x, hit.y - 34, 'WEBBED', 'fontPlain', 0xc9cfe0); }
+        if (p.kind === 'snowball') { freezeHero(hit, 1.2); this.fx.burst('foam', p.x, p.y, 10); }
+        if (p.kind === 'frogcurse') this.frogify(hit);
+        if (p.kind === 'shard') chillHero(hit, 1.6);
+      }
+      if (hit || wall || p.life <= 0) { p.dead = true; p.s.destroy(); }
+    }
+    this.enemyShots = this.enemyShots.filter((p) => !p.dead);
+  }
+
+  // ============================================================ curse
+  buildCurse(w) {
+    const c = w.def;
+    const m = c.r + 3;
+    const x0 = Math.max(0, (c.x - m) * TILE), y0 = Math.max(0, (c.y - m) * TILE);
+    const x1 = Math.min(MAP_W * TILE, (c.x + m) * TILE), y1 = Math.min(MAP_H * TILE, (c.y + m) * TILE);
+    w.region = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    this.streamer.curse(w.region, c).then((canvas) => {
+      if (this.flags[c.flag]) return;
+      w.canvas = canvas;
+      w.tex = this.textures.addCanvas(`curseOverlay_${c.id}`, canvas);
+      w.img = this.add.image(x0, y0, `curseOverlay_${c.id}`).setOrigin(0).setDepth(-90);
+    });
+  }
+
+  // the unbroken ward whose curse covers this point
+  curseAt(x, y, pad = 0) { return this.wards.find((w) => !this.flags[w.def.flag] && Math.hypot(x - w.C.x, y - w.C.y) < w.C.R - pad); }
+  inCurse(x, y, pad = 0) { return !!this.curseAt(x, y, pad); }
+  get canSwim() { return this.state.relics.includes('tide'); }
+
+  wardUnits() { return this.wards.filter((w) => w.unit?.alive).map((w) => w.unit); }
+
+  // shielded until its guardian below falls, and (Vale) while its Warden still stands
+  wardShielded(unit) {
+    const wd = unit?.wardDef;
+    if (!wd) return !this.flags.golemDefeated;
+    return !this.flags[wd.guardian] || (!!wd.warden && !this.flags[wd.warden]);
+  }
+
+  // ============================================================ landmarks
+  addInteractable(o) { this.interactables.push(o); return o; }
+  removeInteractable(o) { o.removed = true; this.interactables = this.interactables.filter((k) => k !== o); }
+
+  get dungeon() { return this.dungeons?.[this.area] || null; }
+
+  // The blight spreads a step beyond each standing Ward Stone: patches of the
+  // Basin's dead violet earth scattered over the region it holds (clear of
+  // camps, towns and the stone's own curse), all laid out the same every game.
+  // They wash away in a wave from the stone when it breaks.
+  buildBlight() {
+    const FLAG = { vale: 'wardBroken', meadow: 'wardBroken', marsh: 'ward_marsh', gloam: 'ward_gloam', cinder: 'ward_cinder', frost: 'ward_frost' };
+    // camps, people, signs and chests keep a clear ring of 9 tiles: painted into
+    // a grid once (checking every one at every sample was quadratic in map size)
+    const keepClear = new Uint8Array(MAP_W * MAP_H);
+    for (const k of [...W.campfires, ...QDATA.npcs, ...W.npcs, ...W.signs, ...W.chests, ...W.townsfolk]) {
+      for (let y = Math.max(0, Math.floor(k.y - 9)); y <= Math.min(MAP_H - 1, k.y + 9); y++) for (let x = Math.max(0, Math.floor(k.x - 9)); x <= Math.min(MAP_W - 1, k.x + 9); x++) if (Math.hypot(k.x - x, k.y - y) < 9) keepClear[y * MAP_W + x] = 1;
+    }
+    this.blight = [];
+    for (let ty = 4; ty < MAP_H - 4; ty += 6) for (let tx = 4; tx < OW_W - 4; tx += 6) {
+      const x = tx + Math.floor(vnoise(tx, ty, 341) * 5), y = ty + Math.floor(vnoise(ty, tx, 342) * 5);
+      const reg = biomeAt(x, y), flag = FLAG[reg];
+      if (!flag || this.flags[flag]) continue;
+      if (vnoise(x / 13, y / 13, 343 + reg.length) < 0.77) continue; // patches, not a carpet
+      if (this.nav.isSolid(x, y) || this.nav.isWater(x + 1, y) || this.nav.isWater(x - 1, y)) continue;
+      if (keepClear[y * MAP_W + x]) continue;
+      if (this.wards.some((w) => Math.hypot((x + 0.5) * TILE - w.C.x, (y + 0.5) * TILE - w.C.y) < w.C.R + 2 * TILE)) continue; // the stone's curse already covers it
+      const img = this.add.image(x * TILE + 8, y * TILE + 8, `blight${Math.floor(vnoise(x, y, 344) * 6) % 6}`).setDepth(-88).setAlpha(0.85).setFlipX(vnoise(y, x, 345) < 0.5);
+      this.blight.push({ img, flag });
+    }
+  }
+
+  // a stone fell: its blight withers in a wave outward from the stone
+  clearBlight(flag, cx, cy) {
+    for (const b of this.blight || []) {
+      if (b.flag !== flag || !b.img.active) continue;
+      const d = Math.hypot(b.img.x - cx, b.img.y - cy);
+      this.time.delayedCall(700 + d * 2.2, () => {
+        if (!b.img.active) return;
+        this.fx.burst('bloom', b.img.x, b.img.y - 4, 6);
+        this.tweens.add({ targets: b.img, alpha: 0, scale: 0.7, duration: 900, onComplete: () => b.img.destroy() });
+      });
+    }
+    this.blight = (this.blight || []).filter((b) => b.flag !== flag);
+  }
+
+  buildLandmarks() {
+    const px = (t) => t * TILE + TILE / 2;
+    this.buildTownsfolk();
+    this.buildBlight();
+    this.buildLore();
+    this.campfireObjs = W.campfires.map((c) => ({ x: px(c.x), y: px(c.y) })); // light sources in the gloom
+    for (const c of W.campfires) {
+      const x = px(c.x), y = px(c.y);
+      const e = this.lazy(x, y, (e) => {
+        const fire = this.add.sprite(x, y + 6, 'campfire').setOrigin(0.5, 1).play('campfire').setDepth(y);
+        const glow = this.add.circle(x, y, 26, 0xffb050, 0.12).setDepth(-60).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: glow, alpha: 0.06, scale: 0.9, duration: 220, yoyo: true, repeat: -1 });
+        // a lazy thread of woodsmoke over every fire
+        e.timers.push(this.time.addEvent({ delay: 600 + (c.x % 5) * 70, loop: true, callback: () => {
+          if (!this.cameras.main.worldView.contains(x, y)) return;
+          const p = this.add.circle(x + (Math.random() - 0.5) * 3, y - 8, 2, 0xb8b0c4, 0.5).setDepth(y + 40);
+          this.tweens.add({ targets: p, x: x + 4 + Math.random() * 6, y: y - 30 - Math.random() * 8, scale: 2.4, alpha: 0, duration: 2000, ease: 'Sine.easeOut', onComplete: () => p.destroy() });
+        } }));
+        return [fire, glow];
+      });
+      this.nav.block(c.x, c.y);
+      this.addInteractable({ x, y, reach: 26, h: 20, kind: 'campfire', vis: () => e.objs?.[0], interact: () => { this.flags[`camp_${c.x}_${c.y}`] = true; this.rest(); } });
+    }
+    for (const s of W.signs) {
+      const x = px(s.x), y = px(s.y);
+      const e = this.lazy(x, y, () => [this.add.image(x, y + 4, 'sign').setOrigin(0.5, 1).setDepth(y)]);
+      this.nav.block(s.x, s.y);
+      const read = () => { // (the Colosseum's board of champions has a card of its own)
+        if (s.board && this.colosseum) { this.scene.pause(); this.events.emit('board', this.colosseum.board(), () => this.scene.resume()); return; }
+        if (s.muster && this.battlefield) { this.battlefield.menu(); return; } // the Proving Field's: a list of foes to fight
+        this.events.emit('dialogue', this.quests.linesOf(s).map((text) => ({ who: 'SIGN', text })));
+      };
+      this.addInteractable({ x, y, reach: 22, h: 16, kind: 'sign', vis: () => e.objs?.[0], interact: read });
+    }
+    for (const c of W.chests) {
+      const x = px(c.x), y = px(c.y);
+      const e = this.lazy(x, y, () => {
+        const done = this.flags[`chest_${c.id}`]; // (read when it's shown, so an opened one comes back open)
+        // a treasure under the floor shows as what you'd actually see: a cracked flagstone with water below
+        return [c.look === 'cistern' ? this.add.image(x, y, done ? 'cisternDived' : 'cistern').setDepth(-30) : this.add.image(x, y + 4, done ? 'chestOpen' : 'chest').setOrigin(0.5, 1).setDepth(y)];
+      });
+      this.nav.block(c.x, c.y);
+      this.addInteractable({ x, y, reach: 22, h: 14, kind: 'chest', chest: c, vis: () => e.objs?.[0], interact: (h) => this.openChest(c, this.ensureLazy(e)[0], h) });
+    }
+    // overworld illusions (the hermit's door): solid wall until the party holds the relic
+    this.falseWalls = (W.falseWalls || []).map((f) => {
+      const o = this.addInteractable({ x: px(f.x), y: px(f.y), reach: 24, standOff: 14, h: 20, kind: 'sign', interact: () => this.events.emit('dialogue', [{ who: 'WALL', text: f.locked }]) });
+      return { ...f, o, s: null };
+    });
+    this.refreshFalseWalls();
+    for (const p of W.posts) {
+      const x = px(p.x), y = px(p.y);
+      const postImg = this.add.image(x, y + 4, 'post').setOrigin(0.5, 1).setDepth(y);
+      this.add.image(x + 1, y + 3, 'shadow').setAlpha(0.2).setDepth(-4);
+      this.nav.block(p.x, p.y);
+      this.addInteractable({ x, y, reach: 34, standOff: 14, h: 20, kind: 'post', vis: () => postImg, id: p.id, pair: p.pair, land: p.land, interact: (h, o) => this.grapple(o) });
+    }
+    // Climbing Claws faces (Frosthelm's Highfold): tap the marks to climb up, or the lip above to climb down
+    for (const c of W.climbs || []) {
+      const x = px(c.x);
+      this.add.image(x, px(c.y) - 8, 'clawmarks').setOrigin(0.5, 1).setDepth(-38);
+      this.addInteractable({ x, y: px(c.y), reach: 26, standOff: 12, h: 30, kind: 'climb', interact: () => this.climb(c, true) });
+      this.addInteractable({ x, y: px(c.top[1]), reach: 26, standOff: 12, h: 14, kind: 'climb', interact: () => this.climb(c, false) });
+    }
+    // Gale Cloak glides in the overworld: tap the wind vent to glide off to its landing
+    for (const gl of W.glides || []) {
+      const x = px(gl.x), y = px(gl.y);
+      this.add.sprite(x, y, 'windvent').setDepth(-24).play('windvent');
+      this.addInteractable({ x, y, reach: 24, standOff: 2, h: 12, kind: 'climb', interact: () => {
+        if (this.busy) return;
+        if (!this.state.relics.includes('cloak')) { this.bark(this.leader, 'A STRONG UPDRAFT HERE. WITH SOMETHING TO CATCH IT, WE COULD GLIDE A LONG WAY.'); return; }
+        this.leader.x = x; this.leader.y = y;
+        this.glideTo(px(gl.land[0]), px(gl.land[1]), () => this.autosave('glide'));
+      } });
+    }
+    // Shrines: +1 skill point for every recruited hero, once each (C10)
+    for (const k of W.shrines || []) {
+      const x = px(k.x), y = px(k.y), used = this.flags[`shrine_${k.id}`];
+      const img = this.add.image(x, y + 6, used ? 'shrineUsed' : 'shrine').setOrigin(0.5, 1).setDepth(y);
+      if (!used) { img.glow = this.add.circle(x, y - 6, 12, 0x9fe6ff, 0.18).setDepth(-50).setBlendMode(Phaser.BlendModes.ADD); this.tweens.add({ targets: img.glow, alpha: 0.06, duration: 1400, yoyo: true, repeat: -1 }); }
+      this.nav.block(k.x, k.y);
+      this.addInteractable({ x, y, reach: 24, standOff: 14, h: 22, kind: 'shrine', vis: () => img, interact: () => this.useShrine(k, img) });
+    }
+    // Lookout towers: climb to sketch the surrounding region onto the map
+    for (const k of W.lookouts || []) {
+      const x = px(k.x), y = px(k.y);
+      const e = this.lazy(x, y, () => [
+        this.add.image(x, y + 8, 'lookout').setOrigin(0.5, 1).setDepth(y),
+        this.add.image(x, y + 8, 'lookoutFront').setOrigin(0.5, 1).setDepth(y + 30), // railing in front of anyone up top
+      ]);
+      for (const dx of [-1, 0, 1]) { this.nav.block(k.x + dx, k.y); this.nav.block(k.x + dx, k.y - 1); }
+      this.addInteractable({ x, y: y + 12, reach: 26, standOff: 10, h: 60, kind: 'lookout', vis: () => e.objs?.[0], look: k, interact: () => this.climbLookout(k) });
+    }
+    for (const w of W.warps) {
+      const x = px(w.x), y = px(w.y);
+      const o = this.addInteractable({ x, y, reach: 22, standOff: 10, h: 16, kind: 'warp', warp: w, armed: false, interact: () => this.tryWarp(w) });
+      (this.warpObjs ??= []).push(o);
+      if (w.stairs || (w.tap && w.label)) {
+        // a visible stairwell (or a named gate, like the Colosseum's): you go in by tapping it, never by stumbling in
+        if (w.stairs) this.add.image(x, y + 8, 'stairsDown').setOrigin(0.5, 1).setDepth(-40);
+        o.label = this.add.bitmapText(x, y - 22, 'fontGold', w.label || 'STAIRS DOWN').setOrigin(0.5).setDepth(TOP).setAlpha(0);
+        o.labelArrow = this.add.bitmapText(x, y - 14, 'fontGold', 'V').setOrigin(0.5).setDepth(TOP).setAlpha(0);
+        this.tweens.add({ targets: o.labelArrow, y: y - 11, duration: 450, yoyo: true, repeat: -1 });
+      }
+      if (w.exit && !w.door) o.needsLight = true;
+    }
+    // Brightwater buildings
+    this.homes = {};
+    for (const b of W.buildings) {
+      const bx = b.x * TILE + 8, by = (b.y + 1) * TILE;
+      if (b.landmark && !b.opens && PLAIN_COTTAGES.has(b.kind)) { // a plain cottage (the Vast's villages): shown with its chunk
+        this.lazy(bx, by, (e) => {
+          const objs = [this.add.image(bx, by, `house_${b.kind}`).setOrigin(0.5, 1).setDepth(by), this.add.image(bx + 3, by - 4, 'shadowXL').setAlpha(0.25).setDepth(-4).setScale(1.5, 1.6)];
+          const ch = chimneyOf(b.kind);
+          if (ch) { const sx = bx + ch[0], sy = by + ch[1]; e.timers.push(this.time.addEvent({ delay: 520, loop: true, callback: () => {
+            if (!this.cameras.main.worldView.contains(sx, sy + 40)) return;
+            const sm = this.add.circle(sx + (Math.random() - 0.5) * 2, sy, 2, 0xd8d3e0, 0.55).setDepth(by + 50);
+            this.tweens.add({ targets: sm, x: sx + 6 + Math.random() * 6, y: sy - 22 - Math.random() * 8, scale: 2.6, alpha: 0, duration: 2200, ease: 'Sine.easeOut', onComplete: () => sm.destroy() });
+          } })); }
+          return objs;
+        });
+        continue;
+      }
+      if (b.kind === 'colosseum') { this.buildColosseum(b); continue; }
+      const shut = b.opens && this.folkCount() < b.opens; // a Brightwater home still boarded up
+      const img = this.add.image(bx, by, `house_${b.kind === 'tower' && this.flags.malgrimDefeated ? 'towerRuin' : b.kind}${shut ? '_shut' : ''}`).setOrigin(0.5, 1).setDepth(by);
+      this.add.image(bx + 3, by - 4, 'shadowXL').setAlpha(0.25).setDepth(-4).setScale(1.5, 1.6);
+      if (b.opens) this.addHome(b, img, bx, by);
+      if (b.kind === 'archery') for (const [dx, dy] of [[5, -2], [8, -2]]) { const tx = (b.x + dx) * TILE + 8, ty = (b.y + dy) * TILE + 8; this.add.image(tx, ty + 6, 'strawbutt').setOrigin(0.5, 1).setDepth(ty); this.nav.block(b.x + dx, b.y + dy); }
+      const ch = chimneyOf(b.kind);
+      if (ch) { // a thread of chimney smoke, drifting off with the breeze (not from a cold, boarded-up chimney)
+        const sx = bx + ch[0], sy = by + ch[1];
+        const puff = this.time.addEvent({ delay: 520, loop: true, callback: () => {
+          if (!this.cameras.main.worldView.contains(sx, sy + 40) || (b.opens && this.folkCount() < b.opens)) return;
+          const s = this.add.circle(sx + (Math.random() - 0.5) * 2, sy, 2, 0xd8d3e0, 0.55).setDepth(by + 50);
+          this.tweens.add({ targets: s, x: sx + 6 + Math.random() * 6, y: sy - 22 - Math.random() * 8, scale: 2.6, alpha: 0, duration: 2200, ease: 'Sine.easeOut', onComplete: () => s.destroy() });
+        } });
+        this.events.once('shutdown', () => puff.remove());
+      }
+      if (b.kind === 'mill') { // its wheel, in the mill race on the east wall: seized until Gizmo mends it
+        this.millWheel = this.add.sprite(bx + 33, by + 1, 'millwheel', '0').setOrigin(0.5, 1).setDepth(by - 1);
+        if (this.state.quests?.waterWheel?.done) this.startMill(false);
+      }
+    }
+    // Doors: an open-doorway overlay on each cottage, and a door in each
+    // interior's bottom wall
+    this.doors = {};
+    for (const b of W.buildings) {
+      if (b.landmark) continue; // the elder tree and the like: no door to dress
+      const bx = b.x * TILE + 8, by = (b.y + 1) * TILE;
+      const dr = doorOf(b.kind); // each cottage's own doorway (arched or square, its own width)
+      const ext = this.add.image(bx + dr.x, by + dr.y, `door_open_${b.kind}`).setOrigin(0).setDepth(by + 1).setVisible(false);
+      const out = W.warps.find((w) => w.door && w.exit && w.building === b.id);
+      const int = this.add.image(out.x * TILE + 8, (out.y + 1) * TILE, 'idoor').setOrigin(0.5, 1).setDepth((out.y + 1) * TILE);
+      this.doors[b.id] = { ext, int };
+    }
+    // Breakable secrets
+    this.breakables = [];
+    for (const bd of W.breakables) {
+      if (this.flags[`broke_${bd.id}`]) continue;
+      const b = new Breakable(this, bd);
+      for (const [tx, ty] of bd.tiles) this.nav.block(tx, ty);
+      this.breakables.push(b);
+    }
+    // Golden flies
+    this.flies = [];
+    W.flies.forEach(([fxT, fyT], i) => {
+      if (this.state.flies.includes(i)) return;
+      const x = fxT * TILE + 8, y = fyT * TILE + 8;
+      const s = this.add.sprite(x, y - 6, 'fly').play('fly').setDepth(y - 14);
+      this.tweens.add({ targets: s, y: y - 10, duration: 700 + i * 37, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.flies.push({ i, x, y, s });
+    });
+    // Gathering nodes (sprites created once their biome art exists)
+    this.nodes = W.nodes.map((n) => ({ ...n, px: n.x * TILE + 8, py: n.y * TILE + 8, ready: true, t: 0, s: null }));
+    for (const n of this.nodes) {
+      n.o = this.addInteractable({ x: n.px, y: n.py, reach: 22, standOff: 12, h: 12, kind: 'node', vis: () => n.s, node: n, interact: (h) => this.harvest(n, h), approach: (h) => this.harvestSpot(n, h) });
+    }
+    // Townsfolk NPCs (sprites appear when interior art is loaded)
+    this.npcs = W.npcs.map((n) => {
+      const x = n.x * TILE + 8, y = n.y * TILE + 8;
+      const npc = { ...n, px: x, py: y, s: null };
+      npc.o = this.addInteractable({ x, y, reach: 40, standOff: 32, h: 24, kind: 'npc', vis: () => npc.s, interact: () => this.talkNpc(npc) });
+      return npc;
+    });
+
+    // Frog King (Aldermere's: a test map has none)
+    if (!MAP) {
+      const f = LANDMARKS.frog;
+      const fx = px(f.x), fy = px(f.y);
+      this.frog = this.flags.kingRestored
+        ? this.add.sprite(fx, fy, 'king', 'idle_down_0').setOrigin(0.5, 0.75).play('king_idle_down').setDepth(fy)
+        : this.add.sprite(fx, fy + 6, 'frog').setOrigin(0.5, 1).play('frog_idle').setDepth(fy);
+      this.add.image(fx + 1, fy + 5, 'shadow').setAlpha(0.2).setDepth(-4);
+      this.nav.block(f.x, f.y);
+      this.addInteractable({ x: fx, y: fy, reach: 30, standOff: 26, h: 14, kind: 'frog', vis: () => this.frog, interact: () => { this.leader.face(fx - this.leader.x, fy - this.leader.y); this.talkFrog(); } });
+    }
+    // Ward Stone
+    for (const w of this.wards) {
+      const wd = w.def;
+      if (!this.flags[wd.flag]) {
+        w.unit = new WardStone(this, px(wd.x), px(wd.y));
+        w.unit.wardDef = wd;
+        w.shieldFx = this.add.ellipse(w.unit.x, w.unit.y - 18, 46, 60, 0x6f93e0, 0.12).setStrokeStyle(1, 0x9fd8ff, 0.6).setDepth(w.unit.y + 3);
+        this.tweens.add({ targets: w.shieldFx, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
+        if (!this.wardShielded(w.unit)) w.shieldFx.setVisible(false);
+      } else this.add.image(px(wd.x), px(wd.y) + 6, 'wardRubble').setOrigin(0.5, 1).setDepth(px(wd.y));
+      for (const dx of [-1, 0, 1]) this.nav.block(wd.x + dx, wd.y);
+    }
+    this.ward = this.wards[0]?.unit ?? null; // the Vale stone (kept for older code paths; a test map has none)
+    this.buildVines();
+  }
+
+  buildRecruits() {
+    this.recruitNPCs = [];
+    for (const r of W.recruits) {
+      const id = this.recruitOrder()[r.slot];
+      if (!id || this.state.recruited.includes(id)) continue;
+      const x = r.x * TILE + 8, y = r.y * TILE + 8;
+      const sprite = this.add.sprite(x, y, id, 'idle_down_0').setOrigin(0.5, 0.75).play(`${id}_idle_down`).setDepth(y);
+      const sh = this.add.image(x + 1, y + 1, 'shadow').setAlpha(0.2).setDepth(-4);
+      const mark = this.add.bitmapText(x, y - 32, 'fontGold', r.guardedBy ? '!!' : '!').setOrigin(0.5).setDepth(TOP);
+      this.tweens.add({ targets: mark, y: y - 35, duration: 400, yoyo: true, repeat: -1 });
+      const npc = { id, r, sprite, sh, mark };
+      npc.o = this.addInteractable({ x, y, reach: 24, standOff: 18, h: 24, kind: 'recruit', vis: () => sprite, interact: () => this.talkRecruit(npc) });
+      this.recruitNPCs.push(npc);
+    }
+  }
+
+  recruitOrder() {
+    // slot 3 only fills when the starter isn't one of the core three, so no core hero is lost
+    const all = ['brann', 'pip', 'sable'];
+    const first = this.state.recruited[0];
+    return [first, ...all.filter((i) => i !== first)];
+  }
+
+  // ============================================================ the Basin's foes
+  // Malgrim's Mirror: a dark copy of whoever is leading - their look, their
+  // gear, their reach, their weight.
+  makeMirror(e) {
+    const L = this.leader;
+    e.mirrorOf = L.def.id;
+    e.tex = L.texKey; e.sprite.setTexture(L.texKey, 'idle_down_0'); e.anim = '';
+    e.maxHp = e.hp = Math.round(L.maxHp * 1.6 * this.difficulty.hp);
+    e.s = { ...e.s, name: `MIRROR OF ${L.def.name.toUpperCase()}`, dmg: L.stats.atk * 1.3, ranged: L.ranged, reach: L.ranged ? 100 : 22, keepAway: L.ranged ? 50 : 0, shot: L.ranged ? 'bolt' : undefined, speed: L.stats.speed * 0.9 };
+    e.restoreTint();
+  }
+
+  // A Chain Warden's chain: two heroes bound together for 6s (slowed, +20%
+  // damage taken, yanked back if they pull apart). Tap it with the Grapple
+  // Hook to break it.
+  chainHeroes(a, b, src) {
+    const ch = { a, b, t: 6, g: this.add.graphics().setDepth(TOP - 25), label: this.add.bitmapText(0, 0, 'fontPlain', '').setOrigin(0.5).setTint(0xd9b8ff).setDepth(TOP - 24) };
+    ch.o = this.addInteractable({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, reach: 30, standOff: 0, h: 10, kind: 'chain', interact: () => {
+      if (!this.state.relics.includes('grapple')) { this.bark(this.leader, "IT'S TOO STRONG TO PULL APART BY HAND."); return; }
+      ch.t = 0; this.fx.burst('spark', ch.o.x, ch.o.y - 8, 12); audio.sfx('zip'); this.floatText(ch.o.x, ch.o.y - 20, 'CHAIN BROKEN', 'fontGold');
+    } });
+    (this.chains ??= []).push(ch);
+    this.floatText((a.x + b.x) / 2, (a.y + b.y) / 2 - 30, 'CHAINED TOGETHER!', 'fontPlain', 0xd9b8ff);
+    if (!this.flags.chainHint) { this.flags.chainHint = true; this.bark(this.leader, this.state.relics.includes('grapple') ? 'A CHAIN WARDEN BOUND US! THE HOOK CAN SNAP IT - TAP THE CHAIN.' : "A CHAIN WARDEN BOUND US TOGETHER! IT WON'T HOLD LONG. STAY CLOSE."); } // the first time, say what it is
+    void src;
+  }
+
+  updateChains(dt) {
+    if (!this.chains?.length) return;
+    for (const ch of this.chains) {
+      const { a, b } = ch;
+      ch.t -= dt;
+      if (ch.t <= 0 || a.downed || b.downed || !a.alive || !b.alive) { ch.g.destroy(); ch.label.destroy(); this.removeInteractable(ch.o); ch.dead = true; continue; }
+      a.chainedT = b.chainedT = 0.2; a.buff('slow', 0.6, 0.2); b.buff('slow', 0.6, 0.2);
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > 70) { const k = (d - 70) / d * 0.25; const dx = (b.x - a.x) * k, dy = (b.y - a.y) * k; a.x += dx; a.y += dy; b.x -= dx; b.y -= dy; }
+      ch.o.x = (a.x + b.x) / 2; ch.o.y = (a.y + b.y) / 2;
+      // drawn as a chain: iron links along a sagging curve, a faint hex glow
+      // under it, a shackle at each hero's waist, and a label over its middle
+      const g = ch.g.clear(), ax = a.x, ay = a.y - 9, bx = b.x, by = b.y - 9, sag = Math.min(14, 4 + d * 0.08);
+      const pt = (t) => [ax + (bx - ax) * t, ay + (by - ay) * t + Math.sin(t * Math.PI) * sag];
+      const pulse = 0.25 + Math.sin(this.time.now / 160) * 0.1;
+      g.lineStyle(4, 0xb24ce6, pulse);
+      for (let i = 0; i < 12; i++) { const [x0, y0] = pt(i / 12), [x1, y1] = pt((i + 1) / 12); g.lineBetween(x0, y0, x1, y1); }
+      const n = Math.max(4, Math.round(d / 4));
+      for (let i = 0; i <= n; i++) {
+        const [x, y] = pt(i / n);
+        if (i % 2) g.fillStyle(0x1a1423).fillRect(Math.round(x) - 1, Math.round(y) - 2, 3, 5).fillStyle(0xc4cfe2).fillRect(Math.round(x), Math.round(y) - 1, 1, 3); // a link edge-on
+        else g.fillStyle(0x1a1423).fillRect(Math.round(x) - 2, Math.round(y) - 1, 5, 3).fillStyle(0x8593b0).fillRect(Math.round(x) - 1, Math.round(y), 3, 1); // a link face-on
+      }
+      for (const [x, y] of [[ax, ay], [bx, by]]) g.lineStyle(2, 0x1a1423, 1).strokeEllipse(x, y, 12, 5).lineStyle(1, 0x8593b0, 1).strokeEllipse(x, y - 1, 12, 5); // the shackles
+      const [mx, my] = pt(0.5);
+      ch.label.setPosition(Math.round(mx), Math.round(Math.min(a.y, b.y)) - 34) // over their heads
+        .setText(this.state.relics.includes('grapple') ? `CHAINED ${Math.ceil(ch.t)} - TAP TO BREAK` : `CHAINED ${Math.ceil(ch.t)}`);
+    }
+    this.chains = this.chains.filter((c) => !c.dead);
+  }
+
+  // ============================================================ the barrier
+  // The Tower's barrier (the Blight Basin): four layers, one for each outer
+  // Ward Stone still standing, outermost first. A layer is a ring round the
+  // Tower plus the walls along the causeway inside its band, so the Basin opens
+  // band by band as stones fall while the causeway always runs to the door.
+  barrierTiles(i) {
+    this.barrierCache ??= [];
+    if (this.barrierCache[i]) return this.barrierCache[i];
+    const r = BARRIER_R[i], rIn = BARRIER_R[i + 1] ?? 6.5, out = [];
+    for (let y = Math.floor(TOWER.y - r - 2); y <= TOWER.y + r + 2; y++) for (let x = Math.floor(TOWER.x - r - 2); x <= TOWER.x + r + 2; x++) {
+      if (biomeAt(x, y) !== 'basin' || SOLID.has(this.world.at(x, y))) continue;
+      const d = Math.hypot(x - TOWER.x, y - TOWER.y), dx = Math.abs(x - TOWER.x), south = y > TOWER.y;
+      if (Math.abs(d - r) < 0.8 && !(south && dx <= 1)) out.push([x, y]);
+      else if (south && dx === 2 && d > rIn && d < r) out.push([x, y]);
+    }
+    return (this.barrierCache[i] = out);
+  }
+
+  buildBarrier() {
+    for (const [x, y] of this.barrierBlocked || []) this.nav.unblock(x, y);
+    this.barrierBlocked = [];
+    this.barrierG?.destroy();
+    const down = OUTER_REGIONS.filter((r) => this.flags[`ward_${r}`]).length;
+    if (down >= BARRIER_R.length) { this.barrierG = null; return; }
+    // Drawn once into a texture: as a live Graphics it was ~64,000 commands that
+    // WebGL rebuilt every frame (Graphics are never culled), wherever you were
+    // in Aldermere: half of every frame. The texture is culled off screen.
+    const g = this.make.graphics({ add: false });
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = down; i < BARRIER_R.length; i++) for (const [x, y] of this.barrierTiles(i)) {
+      this.nav.block(x, y); this.barrierBlocked.push([x, y]);
+      x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+      // a curtain of hex light: thin violet strands rising off the tile
+      for (let k = 0; k < 8; k++) { const h = 10 + ((x * 7 + y * 3 + k * 5) % 9); g.fillStyle(k % 3 ? 0xb24ce6 : 0xe7a6ff, k % 3 ? 0.35 : 0.6).fillRect(x * TILE + k * 2, y * TILE + 14 - h, 1, h); }
+      g.fillStyle(0x6b3fa0, 0.35).fillRect(x * TILE, y * TILE + 10, TILE, 6);
+    }
+    if (x0 === Infinity) { g.destroy(); this.barrierG = null; return; }
+    const ox = x0 * TILE, oy = (y0 - 1) * TILE, w = (x1 - x0 + 1) * TILE, h = (y1 - y0 + 2) * TILE; // (strands rise up to a tile above their row)
+    let b;
+    try { b = this.add.renderTexture(ox, oy, w, h).setOrigin(0).setDepth(-20); b.draw(g, -ox, -oy); g.destroy(); }
+    catch (e) { console.warn('[barrier] texture unavailable, drawing live', e.message); b?.destroy(); b = this.add.existing(g).setDepth(-20); } // too big for the GPU: the old way
+    this.barrierG = b;
+    this.tweens.add({ targets: b, alpha: 0.55, duration: 1100, yoyo: true, repeat: -1 });
+  }
+
+  // ============================================================ darkness (caves)
+  buildDarkness() {
+    if (!this.textures.exists('lightMask')) { // (made once: the scene restarts when the party travels to another world)
+      // a light: full in the middle, fading smoothly to nothing at the edge (a
+      // plain fade, filtered smoothly, rather than a dithered pixel pattern)
+      const [c, ctx] = makeCanvas(128, 128);
+      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.5, 'rgba(255,255,255,0.95)'); grad.addColorStop(0.8, 'rgba(255,255,255,0.45)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
+      this.textures.addCanvas('lightMask', c).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+    this.darkRT = this.add.renderTexture(0, 0, this.scale.width + 2, this.scale.height + 2).setOrigin(0).setScrollFactor(0).setDepth(TOP + 40).setVisible(false);
+    const onResize = () => {
+      if (this.scale.width >= 2 && this.scale.height >= 2) { try { this.darkRT.resize(this.scale.width + 2, this.scale.height + 2); } catch (e) { console.warn('[dark] resize failed', e.message); } } // (never to a zero-sized screen)
+      if (this.area) this.fitCameraBounds();
+    };
+    this.scale.on('resize', onResize);
+    this.events.once('shutdown', () => this.scale.off('resize', onResize)); // a restart's old scene must stop answering
+  }
+
+  updateDarkness() {
+    const L = this.leader;
+    const inCave = !!this.areaRect().dark || !!this.malgrimDark; // (Malgrim's dark phase)
+    // Gloamwood's canopy dims the overworld: fades in over ~10 tiles as you
+    // walk in from the fen, never as dark as a cave
+    const ltx = L.x / TILE, lty = L.y / TILE;
+    // (a generated map has its own Gloamwood: the canopy follows its region rule, easing in and out)
+    if (MAP?.generated) this.gloomK = (this.gloomK ?? 0) + ((!inCave && biomeAt(Math.floor(ltx), Math.floor(lty)) === 'gloam' ? 1 : 0) - (this.gloomK ?? 0)) * 0.04;
+    const gloom = MAP?.generated ? (this.gloomK > 0.01 ? this.gloomK : 0)
+      : !inCave && this.areaRect() === AREAS.overworld && ltx < ridgeAt(lty) + 2 ? Math.max(0, Math.min(1, (lty - (southEdge(ltx) - 4)) / 10, (frostEdge(Math.floor(ltx)) + 1 - lty) / 5)) : 0; // follows the meandering border, and lifts on the stairs up to Frosthelm
+    this.darkRT.setVisible(inCave || gloom > 0);
+    if (!inCave && gloom <= 0) return;
+    const cam = this.cameras.main;
+    const rt = this.darkRT;
+    // a zoomed-out camera (up a lookout) shrinks everything toward the screen's
+    // middle, this layer included: scale it back up so it still covers the screen
+    const z = cam.zoom || 1;
+    rt.setOrigin(0.5).setPosition(this.scale.width / 2, this.scale.height / 2).setScale(1 / z);
+    rt.clear();
+    const lantern = this.state.relics.includes('lantern');
+    // Every light is a stamp from a pool, placed where it shines, and they're
+    // all erased out of the dark in one pass: erasing them one at a time
+    // opened and closed the texture per light (~0.9 ms a frame in Gloamwood).
+    const pool = (this.lightPool ??= []);
+    let n = 0;
+    const stamp = (wx, wy, s) => { const im = (pool[n] ??= this.make.image({ key: 'lightMask', add: false }).setOrigin(0.5)); n++; im.setScale(s * z).setPosition(Math.round((wx - cam.worldView.x) * z + 1), Math.round((wy - cam.worldView.y) * z + 1)); }; // (in the layer's own pixels)
+    if (!inCave) {
+      rt.fill(0x060a14, gloom * (lantern ? 0.42 : 0.52));
+      stamp(L.x, L.y - 10, (lantern ? 2.8 : 2.1) + Math.sin(this.time.now / 180) * 0.03);
+      for (const h of this.party) if (h !== L) stamp(h.x, h.y - 10, 0.8);
+      for (const objs of this.chunkObjs.values()) for (const o of objs) if (o.isLight && cam.worldView.contains(o.x, o.y)) stamp(o.x, o.y - 6, 0.45);
+      for (const c of this.campfireObjs || []) if (cam.worldView.contains(c.x, c.y)) stamp(c.x, c.y - 6, 1.6);
+    } else {
+      rt.fill(0x05030a, lantern ? 0.86 : 0.94);
+      stamp(L.x, L.y - 10, (lantern ? 2.1 : 1.25) + Math.sin(this.time.now / 180) * 0.03); // the Lantern of Embers lights far more
+      for (const h of this.party) if (h !== L) stamp(h.x, h.y - 10, 0.55);
+      for (const objs of this.chunkObjs.values()) for (const o of objs) if (o.isLight && cam.worldView.contains(o.x, o.y)) stamp(o.x, o.y - 6, 0.35);
+      for (const i of this.interactables) if (i.needsLight) stamp(i.x, i.y - 10, 0.9);
+      for (const b of this.dungeon?.lights?.() || []) if (cam.worldView.contains(b.x, b.y)) stamp(b.x, b.y - 12, 1.3 + Math.sin(this.time.now / 90 + b.x) * 0.05); // lit braziers
+    }
+    rt.erase(pool.slice(0, n));
+  }
+
+  // ============================================================== party
+  setLeader(h, silent = false) {
+    for (const p of this.party) p.isLeader = false;
+    const prev = this.leader;
+    h.isLeader = true;
+    h.command = null;
+    h.clearPath();
+    h.target = null;
+    this.leader = h;
+    this.state.leader = h.def.id;
+    if (prev && prev !== h) { prev.command = null; prev.clearPath(); prev.direct = null; }
+    this.cameras.main.startFollow(h.sprite, true, 0.12, 0.12);
+    if (!silent) {
+      audio.sfx('swap');
+      this.fx.ring(h.x, h.y, 'ringGold', 3);
+      this.floatText(h.x, h.y - 30, h.def.name.toUpperCase(), 'fontGold');
+    }
+    this.events.emit('party');
+  }
+
+  swapLeader(dir = 1) {
+    const alive = this.party.filter((p) => !p.downed);
+    if (alive.length < 2 || this.swapCd > 0) return;
+    this.swapCd = 0.6;
+    const i = this.party.indexOf(this.leader);
+    for (let k = 1; k <= this.party.length; k++) {
+      const n = this.party[(i + dir * k + this.party.length * 3) % this.party.length];
+      if (!n.downed) { this.setLeader(n); return; }
+    }
+  }
+
+  // ============================================================== input
+  setupInput() {
+    this.input.mouse?.disableContextMenu();
+    this.input.on('pointerdown', (p) => {
+      if (this.consumeUI() || this.busy) return;
+      if (this.ui?.dialogOpen) return;
+      if (p.rightButtonDown()) { this.leader.dodge(p.worldX - this.leader.x, p.worldY - this.leader.y); this.down = null; return; }
+      this.down = { x: p.x, y: p.y, t: this.time.now, real: performance.now(), wx: p.worldX, wy: p.worldY };
+    });
+    this.input.on('pointerup', (p) => {
+      if (this.consumeUI()) { this.down = null; return; }
+      if (this.ui?.dialogOpen) { this.down = null; return; } // the UI's dialogue catcher advances it
+      const d = this.down;
+      this.down = null;
+      if (!d || this.busy) return;
+      const dx = p.x - d.x, dy = p.y - d.y;
+      if (Math.hypot(dx, dy) > 18 && performance.now() - d.real < 380) { this.leader.dodge(dx, dy); return; }
+      this.tapWorld(d.wx, d.wy);
+    });
+    const K = Phaser.Input.Keyboard.KeyCodes;
+    this.keys = this.input.keyboard.addKeys({ W: K.W, A: K.A, S: K.S, D: K.D, UP: K.UP, DOWN: K.DOWN, LEFT: K.LEFT, RIGHT: K.RIGHT });
+    const kb = this.input.keyboard;
+    kb.on('keydown-SPACE', () => {
+      if (this.ui?.dialogOpen) { this.ui.advanceDialog(); return; }
+      this.leaderDodge();
+    });
+    kb.on('keydown-ONE', () => this.leaderSkill(0));
+    kb.on('keydown-TWO', () => this.leaderSkill(1));
+    kb.on('keydown-THREE', () => this.leaderSkill(2));
+    kb.on('keydown-Z', () => this.useUltimate(this.leader));
+    kb.on('keydown-TAB', (e) => { e.preventDefault?.(); this.swapLeader(); });
+    kb.on('keydown-Q', () => this.swapLeader(-1));
+    kb.on('keydown-E', () => this.swapLeader(1));
+    kb.on('keydown-M', () => this.toggleMute());
+    kb.on('keydown-I', () => this.openMenu());
+    kb.on('keydown-N', () => this.openMap());
+    kb.on('keydown-H', () => this.usePotion('potion'));
+    kb.on('keydown-J', () => this.usePotion('elixir'));
+    kb.on('keydown-K', () => this.usePotion('antidote'));
+    kb.on('keydown-L', () => this.usePotion(this.cold?.region ? 'tonic' : 'salve'));
+    kb.on('keydown-BACKTICK', () => this.ui?.toggleDebug());
+    kb.on('keydown-ENTER', () => { if (this.ui?.dialogOpen) this.ui.advanceDialog(); });
+    kb.addCapture('TAB,SPACE');
+  }
+
+  consumeUI() {
+    if (this.registry.get('uiTap')) { this.registry.set('uiTap', false); return true; }
+    return false;
+  }
+
+  toggleMute() { audio.setMuted(!audio.muted); this.events.emit('party'); }
+
+  setSpeed(v) {
+    this.speed = Math.round(Phaser.Math.Clamp(v, 0.3, 1.5) * 100) / 100;
+    this.registry.set('gameSpeed', this.speed);
+  }
+
+  openMenu(opts = {}) {
+    if (this.busy || this.ui?.dialogOpen || this.scene.isActive('Menu')) return;
+    audio.sfx('click');
+    this.scene.pause();
+    this.scene.launch('Menu', { game: this, ...opts });
+  }
+
+  // travel: the Ferryman's map ({ here, pick(fire) }): the fires you've rested at
+  // become buttons, and tapping one sends the party there
+  openMap(travel = null) {
+    if (this.busy || this.ui?.dialogOpen || this.scene.isActive('WorldMap') || this.scene.isActive('Menu')) return;
+    audio.sfx('click');
+    this.scene.pause();
+    this.scene.launch('WorldMap', { game: this, travel });
+  }
+
+  // the campfires you've rested at (the Ferryman's network; Brightwater's always counts)
+  restedFires() { return W.campfires.filter((c) => this.flags[`camp_${c.x}_${c.y}`] || c.name === 'BRIGHTWATER'); }
+
+  closeMap() { this.scene.resume(); }
+
+  // Points of interest for the minimap / world map (tile coords).
+  // near (tiles): only what lies in it, for the HUD's small window (the world
+  // map asks for everything); the quest pin always comes, to point the way
+  mapMarkers(near = null) {
+    const now = this.time.now; // the minimap asks every frame; a quarter-second-old list is plenty
+    const key = near ? `${near.x0},${near.y0},${near.x1},${near.y1}` : 'all';
+    if (this.markCache && now - this.markCache.t < 250 && this.markCache.area === this.area && this.markCache.key === key) return this.markCache.m;
+    const m = this.computeMapMarkers(near);
+    this.markCache = { t: now, area: this.area, key, m };
+    return m;
+  }
+
+  computeMapMarkers(near = null) {
+    const m = [];
+    const tile = (o) => ({ x: Math.floor(o.x / TILE), y: Math.floor(o.y / TILE) });
+    const out = near ? (x, y) => x < near.x0 || x > near.x1 || y < near.y0 || y > near.y1 : () => false;
+    for (const o of this.interactables) {
+      if (o.hidden) continue;
+      const t = tile(o);
+      if (out(t.x, t.y)) continue;
+      if (o.kind === 'chest') { const c = o.chest || W.chests.find((k) => k.x === t.x && k.y === t.y); if (c && !this.flags[`chest_${c.id}`]) m.push({ ...t, kind: 'chest' }); } // (dungeon chests are looked up)
+      else if (o.kind === 'campfire') m.push({ ...t, kind: 'camp' });
+      else if (o.kind === 'recruit') m.push({ ...t, kind: 'recruit' });
+      else if (o.kind === 'warp') m.push({ ...t, kind: 'door' });
+      else if (o.kind === 'frog') m.push({ ...t, kind: 'npc' });
+      else if (o.kind === 'post' || o.kind === 'climb') m.push({ ...t, kind: 'post' });
+      else if (o.kind === 'shrine') m.push({ ...t, kind: 'recruit' });
+      else if (o.kind === 'lookout') m.push({ ...t, kind: 'recruit', always: !!this.flags.cartoPins }); // the Cartographer's pins
+    }
+    for (const u of this.wardUnits()) m.push({ ...tile(u), kind: 'boss' });
+    for (const n of this.npcs) m.push({ ...tile({ x: n.px, y: n.py }), kind: 'npc' });
+    for (const n of this.quests.npcs) if (!n.hiddenNow && !out(n.x, n.y)) m.push({ x: n.x, y: n.y, kind: 'npc' });
+    const pin = this.quests.pin();
+    if (pin) m.push({ ...pin, kind: 'quest', always: true });
+    for (const n of this.nodes) if (n.ready && !out(n.x, n.y)) m.push({ ...tile({ x: n.px, y: n.py }), kind: 'node' });
+    if (this.dungeon) m.push(...this.dungeon.markers());
+    if (this.party.some((h) => h.hasPerk('compass'))) { // Traveler's Compass: every unopened chest here
+      const shut = this.dungeon ? this.dungeon.chests.filter((c) => !c.opened && !c.reveal) : W.chests.filter((c) => !this.flags[`chest_${c.id}`]);
+      for (const c of shut) m.push({ x: c.x, y: c.y, kind: 'chest', always: true });
+    }
+    if (this.party.some((h) => !h.downed && h.hasPerk('clockwork'))) { // Clockwork Goggles: chests within 6 tiles show, explored or not
+      const L = tile(this.leader), near = (c) => Math.hypot(c.x - L.x, c.y - L.y) <= 6;
+      const shut = this.dungeon ? this.dungeon.chests.filter((c) => !c.opened) : W.chests.filter((c) => !this.flags[`chest_${c.id}`]);
+      for (const c of shut) if (near(c)) m.push({ x: c.x, y: c.y, kind: 'chest', always: true });
+    }
+    if (!this.dungeon && this.party.some((h) => h.hasPerk('amber'))) { // Gold Fly in Amber: every uncollected fly
+      W.flies.forEach(([x, y], i) => { if (!this.state.flies.includes(i)) m.push({ x, y, kind: 'fly', always: true }); });
+    }
+    const a = this.areaRect();
+    return m.filter((k) => k.x >= a.x0 && k.x <= a.x1 && k.y >= a.y0 && k.y <= a.y1 && (k.always || this.minimap.isExplored(k.x, k.y)));
+  }
+
+  closeMenu() {
+    this.scene.resume();
+    this.autosave('menu');
+    this.events.emit('party');
+  }
+
+  // Dodge: where you're steering, else wherever is safe (Hero.smartDodge)
+  leaderDodge() {
+    const L = this.leader;
+    L.dodge(...(L.direct && (L.direct.x || L.direct.y) ? [L.direct.x, L.direct.y] : L.smartDodge()));
+  }
+
+  leaderSkill(i) {
+    const L = this.leader;
+    const t = L.command && L.command.type === 'attack' ? L.command.target : null;
+    if (!L.useSkill(i, t) && L.skills[i]?.t > 0) audio.sfx('click');
+    this.events.emit('party');
+  }
+
+  tapWorld(wx, wy) {
+    const L = this.leader;
+    if (L.downed) return;
+    if (L.action?.type === 'harvest') this.cancelHarvest(L);
+    // boss plates take priority over the boss behind them
+    const plate = this.interactables.find((o) => o.kind === 'plate' && Math.hypot(o.x - wx, o.y - 24 - wy) < 16);
+    if (plate) { plate.interact(L, plate); this.tapFeedback(plate.x, plate.y, 'ringGold', plate); audio.sfx('click'); return; }
+    const all = [...this.enemies.filter((e) => e.alive && !e.submerged), ...this.wardUnits(), ...this.breakables.filter((b) => b.alive)];
+    let best = null, bd = 16;
+    for (const e of all) {
+      // set-piece foes (staged for an errand) need a tap right on them: hitting
+      // one starts the fight, so a tap meant for the NPC they crowd mustn't
+      if (e.kind === 'breakable' && e.breakableNow && !e.breakableNow()) continue; // an iron door you can't break yet isn't a target (see below)
+      const d = Math.hypot(e.x - wx, e.y - (e.boss ? 24 : 8) - wy) - (e.kind === 'ward' ? 10 : e.kind === 'breakable' ? 4 : e.boss ? 16 : 0) + (e.staged ? 7 : 0);
+      if (d < bd) { bd = d; best = e; }
+    }
+    if (best?.staged && this.interactables.some((o) => o.kind === 'npc' && !o.hidden && Math.hypot(o.x - wx, o.y - (o.h || 12) / 2 - wy) < Math.min(18, bd))) best = null; // nearer the NPC: talk to them
+    if (best?.kind === 'crystal') {
+      // crystal switches: shoot them from range, or (with the Grapple) hook
+      // them from across a chasm or a row of pegs
+      const d = Math.hypot(best.x - L.x, best.y - L.y);
+      if (L.ranged && d < L.stats.range + 12) { L.command = null; L.clearPath(); L.face(best.x - L.x, best.y - L.y); L.startAttack(best); this.tapFeedback(best.x, best.y, 'ringRed', best); audio.sfx('click'); return; }
+      if (!L.ranged && d > L.stats.range + 14 && d < 150 && this.state.relics.includes('grapple')) { L.command = null; L.clearPath(); best.kit.hook(best); this.tapFeedback(best.x, best.y, 'ringGold', best); return; }
+    }
+    if (best) {
+      L.command = { type: 'attack', target: best };
+      L.clearPath();
+      this.tapFeedback(best.x, best.y, 'ringRed', best, best.boss ? 3 : 1.6);
+      audio.sfx('click');
+      return;
+    }
+    // a tap on dropped gear: it comes to the leader (a foe beside it is still attacked first, above)
+    const loot = this.loot.filter((l) => !l.dead && !l.flying).sort((a, b) => Math.hypot(a.s.x - wx, a.s.y - wy) - Math.hypot(b.s.x - wx, b.s.y - wy))[0];
+    if (loot && Math.hypot(loot.s.x - wx, loot.s.y - wy) < 14) { this.pullLoot(loot); return; }
+    // tapped right on something that won't break yet: say so, then treat the tap as a move
+    const shut = this.breakables.find((b) => b.alive && b.breakableNow && !b.breakableNow() && Math.hypot(b.x - wx, b.y - 8 - wy) < 12);
+    if (shut && this.time.now > (this.shutHintT || 0)) { this.shutHintT = this.time.now + 2500; this.bark(L, "IT WON'T BUDGE. WE'D NEED SOMETHING FAR STRONGER THAN A BLADE."); }
+    // a tap anywhere on a house: walk to its door (not to the nearest open ground beside it)
+    for (const b of W.buildings) {
+      if (b.kind !== 'shop' && b.kind !== 'tavern' && !b.opens) continue;
+      const bx = b.x * TILE + 8, by = (b.y + 1) * TILE;
+      if (wx < bx - 28 || wx > bx + 28 || wy < by - 64 || wy > by) continue;
+      const door = this.interactables.find((o) => o.kind === 'warp' && o.warp.building === b.id && !o.warp.exit) || this.homes?.[b.id]?.o;
+      if (!door) break;
+      L.command = { type: 'interact', obj: door };
+      L.clearPath();
+      this.tapFeedback(door.x, door.y, 'ringGold', door);
+      audio.sfx('click');
+      return;
+    }
+    for (const o of this.interactables) {
+      if (o.hidden) continue;
+      if (Math.hypot(o.x - wx, o.y - (o.h || 12) / 2 - wy) < 16 + (o.h || 12) / 2) {
+        L.command = { type: 'interact', obj: o };
+        L.clearPath();
+        this.tapFeedback(o.x, o.y, 'ringGold', o);
+        audio.sfx('click');
+        return;
+      }
+    }
+    this.nav.swimmer = this.canSwim;
+    const path = this.nav.find(L.x, L.y, wx, wy);
+    this.nav.swimmer = false;
+    if (path?.length) { // empty when you're already as close as you can get (e.g. tapping a shut door beside you)
+      L.command = { type: 'move' };
+      L.path = path;
+      L.pathGoal = { x: wx, y: wy };
+      const end = path[path.length - 1];
+      this.fx.ring(end.x, end.y, 'ringWhite', 1.4);
+    } else this.fx.ring(wx, wy, 'ringWhite', 1.1); // nowhere to walk (a wall, or already there): still show the tap landed
+  }
+
+  // Every tap answers: a ring where it landed (white to walk, gold for things
+  // you use, red for foes), and the tapped thing itself flashes for a moment.
+  tapFeedback(x, y, ring, target, size = 1.4) {
+    this.fx.ring(x, y, ring, size);
+    if (!TAP_FLASH) return;
+    // only ever the tapped thing's own sprite: a unit's, or the one an interactable
+    // names (vis). Things with no sprite of their own (doors' walk-through spots,
+    // warps, climb points) just get the ring - never a guess by position, which
+    // could light up a tree overhanging a rock instead of the rock
+    const spr = target?.sprite || target?.vis?.();
+    if (!spr?.active || !spr.visible || !spr.frame) return;
+    // a white copy of its current frame laid over it, fading out: the real sprite (its tint, its animation) is untouched
+    const f = this.add.image(spr.x, spr.y, spr.texture.key, spr.frame.name).setOrigin(spr.originX, spr.originY)
+      .setFlipX(spr.flipX).setScale(spr.scaleX, spr.scaleY).setDepth(spr.depth + 0.5).setTintFill(0xffffff).setAlpha(0.6);
+    this.tweens.add({ targets: f, alpha: 0, duration: 220, ease: 'Quad.easeOut', onComplete: () => f.destroy() });
+  }
+
+  // ============================================================== combat api
+  // A foe heroes may pick on their own (skills, ultimates, auto-aim): one
+  // already in the fight, or one in view. Never an errand set piece's actor,
+  // and never something off screen that hasn't noticed us.
+  fairTarget(e) {
+    return e.alive && !e.staged && (e.engaged || e.boss || e.onScreen(0));
+  }
+
+  nearestEnemy(from, range) {
+    let best = null, bd = range;
+    for (const e of this.enemies) { if (!this.fairTarget(e) || e.submerged) continue; const d = dist(e, from); if (d < bd) { bd = d; best = e; } }
+    return best;
+  }
+
+  nearestHero(from, range) {
+    if (this.calmT > 0 && from.team !== 'party') return null; // just arrived: enemies haven't noticed yet
+    let best = null, bd = range;
+    for (const h of this.party) { if (!h.alive || h.downed || h.zipping || h.hiddenT > 0) continue; const d = dist(h, from); if (d < bd) { bd = d; best = h; } }
+    return best;
+  }
+
+  // Smoke clouds (Sable): enemies inside miss half their attacks.
+  addSmoke(x, y, r, t) {
+    const g = this.add.graphics().setDepth(y + 30).setAlpha(0.8);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2, d = r * (0.3 + Math.random() * 0.55);
+      g.fillStyle(i % 2 ? 0x6e6a87 : 0x45405e, 0.55).fillCircle(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6 - 4, 8 + Math.random() * 6);
+    }
+    (this.smokes ??= []).push({ x, y, r, t, g });
+    this.tweens.add({ targets: g, alpha: 0.55, duration: t * 1000, onComplete: () => g.destroy() });
+    this.time.delayedCall(t * 1000, () => { this.smokes = this.smokes.filter((k) => k.g !== g); });
+  }
+
+  inSmoke(x, y) { return (this.smokes || []).some((k) => Math.hypot(x - k.x, (y - k.y) / 0.6) < k.r); }
+
+  taunt(by, range, t) { for (const e of this.enemies) if (e.alive && dist(e, by) < range) e.setTaunt(by, t); }
+
+  // All hero damage goes through here: element, passives and marks apply.
+  // opts: crit, knock, element (forced, e.g. a skill), spell, basic (weapon hit), noProc
+  dealDamage(src, target, amount, { crit = false, knock = 40, element = null, spell = false, basic = false, noProc = false } = {}) {
+    const hero = src?.team === 'party' && src.passive;
+    if (basic && hero && target.team === 'enemy' && this.tryEvade(target, src)) return; // a foe sidesteps a plain hit (skills always land)
+    if (basic && hero && src.counterT > this.time.now) { src.counterT = 0; amount *= 1 + tuning.evade.counter; this.floatText(src.x, src.y - 36, 'COUNTER!', 'fontPlain', 0x9fe8ff); } // the hit after a dodge
+    const weaponEl = src?.stats?.element;
+    const el = element || weaponEl;
+    if (target.elementMul) amount *= target.elementMul(el);
+    if (target.status?.weaken) amount *= 1.1;
+    if (target.marked) amount *= target.marked.mul;
+    if (target.hawkMarked) amount *= this.party.some((p) => p.hasPerk('hawkeye')) ? 1.2 : 1.1; // Hawkeye Hood
+    if (hero) {
+      const rage = src.passive('rage');
+      if (rage) amount *= 1 + (0.4 + 0.05 * (rage - 1)) * (1 - src.hp / src.maxHp);
+      if (src.passive('steadyaim') && src.stillT > 1) amount *= 1.2;
+      if (src.buffs?.primal) amount *= 1.5;
+      if (src.buffs?.might) amount *= src.buffs.might.mul; // Wolfskull Helm's Howl
+      if (src.hasPerk('cufflink')) amount *= 1.25; // Malgrim's Cufflink
+      if (src.hasPerk('arenacrown')) amount *= 1.08; // Crown of the Colosseum
+      if (src.hasPerk('laurel')) { let n = 0; for (const e of this.enemies) if (e.alive && Math.hypot(e.x - src.x, e.y - src.y) < 64 && ++n >= 3) break; if (n >= 3) amount *= 1.12; } // Laurel of the Sands: three or more foes close
+      if (src.hasTrait('slayer') && (target.elite || target.boss)) amount *= 1.15;
+      if (src.hasPerk('huntertooth') && (target.elite || target.named || target.bounty)) amount *= 1.15; // Hunter's Tooth
+      if (target.s?.hexed) { const ws = src.hasPerk('wardcrown') ? 0.3 : src.hasPerk('wardprism') ? 0.2 : src.hasPerk('wardshard') ? 0.1 : 0; amount *= 1 + ws; } // Ward Shard / Prism / Crown
+      // weapon gems: a little extra elemental damage on every hit
+      for (const g of src.stats.gemElements || []) if (!g.armor) amount *= 1 + g.dmg * (target.elementMul ? target.elementMul(g.el) : 1);
+      const bs = src.passive('backstab');
+      if (bs && !spell && target.view) {
+        const f = target.view === 'side' ? [target.flip ? -1 : 1, 0] : [0, target.view === 'down' ? 1 : -1];
+        const [dx, dy] = norm(src.x - target.x, src.y - target.y);
+        if (f[0] * dx + f[1] * dy < -0.3) { amount *= 1.5 + 0.1 * (bs - 1); if (!target.backstabShown) { target.backstabShown = true; this.floatText(target.x, target.y - 34, 'BACKSTAB', 'fontPlain', 0xff9ad8); } }
+      }
+      // Ambush (Shadow discipline): any hero hits harder from behind
+      const am = src.passive('ambush');
+      if (am && !bs && !spell && target.view) {
+        const f = target.view === 'side' ? [target.flip ? -1 : 1, 0] : [0, target.view === 'down' ? 1 : -1];
+        const [dx, dy] = norm(src.x - target.x, src.y - target.y);
+        if (f[0] * dx + f[1] * dy < -0.3) amount *= 1.2 + 0.04 * (am - 1);
+      }
+    }
+    if (hero && crit && target.status?.freeze) { const fb = this.party.find((p) => !p.downed && p.passive('frostbite')); if (fb) amount *= 1.25 + 0.05 * (fb.passive('frostbite') - 1); } // Frostbite (Mirelle): the party's crits on frozen foes
+    if (hero && crit && target.view && src.hasPerk('raven') && this.time.now > (src.ravenT || 0)) { // Raven Mask
+      const f = target.view === 'side' ? [target.flip ? -1 : 1, 0] : [0, target.view === 'down' ? 1 : -1];
+      const [dx, dy] = norm(src.x - target.x, src.y - target.y);
+      const st = src.skills.find((k) => k.id === 'step');
+      if (st && st.t > 0 && f[0] * dx + f[1] * dy < -0.3) { st.t = 0; src.ravenT = this.time.now + 1000; this.floatText(src.x, src.y - 34, 'STEP READY', 'fontPlain', 0xb48cff); }
+    }
+    // Malgrim's mirror-shield: the next spell comes straight back
+    if (hero && spell && target.reflectNext) {
+      target.reflectNext = false; target.restoreTint?.();
+      src.damage(amount * 0.6, target);
+      this.fx.burst('curse', target.x, target.y - 20, 12); audio.sfx('block', { pitch: 1.4 });
+      this.floatText(target.x, target.y - 50, 'REFLECTED!', 'fontGold', 0xe7a6ff);
+      return;
+    }
+    // the Hex Sentinel turns spells cast at its face back on the caster
+    if (hero && spell && target.s?.reflect && target.view && !(target.stunT > 0) && !target.status?.shock) {
+      const f = target.view === 'side' ? [target.flip ? -1 : 1, 0] : [0, target.view === 'down' ? 1 : -1];
+      const [dx, dy] = norm(src.x - target.x, src.y - target.y);
+      if (f[0] * dx + f[1] * dy > 0.3) { // its face flashes and the spell flies back at the caster, a hex-lit shard for half its harm
+        this.spawnEnemyArrow(target, src, amount * 0.5, 'mirror');
+        target.sprite.setTintFill(0xe7a6ff); this.time.delayedCall(140, () => target.alive && target.restoreTint?.());
+        this.fx.burst('curse', target.x, target.y - 12, 8);
+        if (!target.reflectMsgT || this.time.now > target.reflectMsgT) { target.reflectMsgT = this.time.now + 1800; this.floatText(target.x, target.y - 36, 'REFLECTED - GET BEHIND IT', 'fontPlain', 0xd9b8ff); }
+        return;
+      }
+    }
+    target.lastElement = el;
+    const hpBefore = target.hp;
+    const dealt = target.damage(amount, src, { crit, knock });
+    if (!dealt) return;
+    if (!noProc && target.applyElement) {
+      if (element) target.applyElement(element, src);
+      else if (weaponEl && (!basic || Math.random() < 0.25 || src.hasPerk?.('thunder'))) target.applyElement(weaponEl, src); // Thunderwrench: every hit
+      if (hero && src.envenom > 0 && !spell) { src.envenom--; target.applyElement('venom', src); }
+      if (hero && src.surgeT > 0 && spell) for (const e of ['fire', 'frost', 'storm']) if (e !== element) target.applyElement(e, src);
+      // Shock: this hit arcs to two nearby foes for 40%
+      if (target.status?.shock && el !== 'storm' && !target.arcing) {
+        const near = this.enemies.filter((e) => e !== target && e.alive && dist(e, target) < 60).slice(0, 2);
+        for (const e of near) { e.arcing = true; this.dealDamage(src, e, dealt * 0.4, { knock: 0, noProc: true }); e.arcing = false; this.fx.burst('spark', e.x, e.y - 8, 4); }
+      }
+      if (el === 'light' && hero) { const low = this.party.filter((p) => !p.downed).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0]; low?.heal(Math.round(dealt * 0.02)); }
+      if (el === 'light' && hero && src.passive('faith')) for (const p of this.party) if (p.alive && !p.downed) p.heal(Math.round(dealt * 0.1 / this.party.length)); // Faith (Oake)
+    }
+    if (hero) {
+      // cooldown refunds from crits: at most once a second, so one big AoE crit-storm can't reset everything
+      const now = this.time.now;
+      if (crit && src.passive('quickhands') && now > (src.qhT || 0)) { src.qhT = now + 1000; for (const k of src.skills) k.t = Math.max(0, k.t - 0.3 - 0.05 * (src.passive('quickhands') - 1)); }
+      if (crit && spell && src.passive('studious') && now > (src.stT || 0)) { src.stT = now + 1000; const k = [...src.skills].sort((a, b) => b.t - a.t)[0]; if (k) k.t = Math.max(0, k.t - 1); }
+      if (src.passive('lightfingers') && !target.fingered && target.s?.gold) { target.fingered = true; if (Math.random() < 0.15 + 0.03 * (src.passive('lightfingers') - 1)) { for (let i = 0; i < 3; i++) this.dropCoin(target.x, target.y); this.floatText(target.x, target.y - 34, 'PILFERED', 'fontPlain', 0xf2c14e); } }
+    }
+    // ultimate charge: by the share of the foe's health actually taken (overkill doesn't count),
+    // so a whole regular foe is worth ~6 points and one hit is never more than a nudge
+    if (src.addUlt && target.maxHp) {
+      const share = Math.min(dealt, Math.max(0, hpBefore)) / target.maxHp;
+      src.addUlt(Math.max(tuning.ultHitMin, Math.min(tuning.ultHitMax, share * tuning.ultPerFoe)));
+    }
+    if (hero && src.hasTrait('lifesteal') && !src.downed) src.hp = Math.min(src.maxHp, src.hp + dealt * 0.03);
+    if (hero && src.hasPerk('bloodfang') && !src.downed) src.hp = Math.min(src.maxHp, src.hp + dealt * 0.05);
+    if (hero && src.buffs?.primal && src.primalSlam && basic && this.time.now > (src.slamT || 0)) { // Primal Form (tome): every hit slams
+      src.slamT = this.time.now + 500;
+      this.fx.slam(target.x, target.y, 26);
+      for (const e of this.enemies) if (e.alive && e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 28 + e.r) this.dealDamage(src, e, src.stats.atk * 0.5, { knock: 60, noProc: true });
+    }
+    if (hero && src.hasPerk('kiss') && !src.downed) src.hp = Math.min(src.maxHp, src.hp + dealt * 0.02); // Vampire's Kiss
+    if (hero && src.buffs?.primal && !src.downed) src.hp = Math.min(src.maxHp, src.hp + dealt * 0.2);
+    this.fx.hit(target.x, target.y - (target.boss ? 24 : 8), crit);
+    this.floatText(target.x + (Math.random() * 8 - 4), target.y - (target.boss ? 50 : 20), `${dealt}`, crit ? 'fontGold' : 'font', 0xffffff, crit);
+    // hit-stop sells impact, but stacked on every party hit it makes crowds feel sluggish:
+    // only the leader's hits (and crits) freeze, and never more than ~4 times a second
+    // a tiny freeze on the leader's own hits for punch; never while you're steering
+    // away, and spaced out so a busy fight doesn't stutter (it froze input too)
+    const steering = this.leader.direct && (this.leader.direct.x || this.leader.direct.y);
+    if (src === this.leader && !steering && this.time.now - (this.lastHitStop || 0) > 450) { this.lastHitStop = this.time.now; this.hitStop(crit ? 0.05 : 0.025); }
+    if (crit) { this.shake(80, 0.004); audio.sfx('crit'); }
+    else if (target.kind === 'hexling' || target.kind === 'mire') audio.sfx('squish');
+    else audio.sfx('hit', { pitch: target.kind === 'ward' || target.boss ? 0.6 : 1 });
+  }
+
+  spawnProjectile(o) {
+    const tex = o.kind === 'knife' ? 'px_white' : o.kind === 'arrow' || o.kind === 'iceshard' ? 'arrow' : 'firebolt';
+    const s = this.add.sprite(o.x, o.y, tex).setDepth(TOP - 20);
+    if (o.kind === 'knife') s.setScale(4, 1);
+    else if (o.kind === 'iceshard') s.setScale(1.4, 1.2).setTint(0xc8f0ff);
+    else if (o.kind === 'arrow') { if (o.pierce) s.setScale(1.4); if (o.element === 'frost') s.setTint(0x9fe6ff); }
+    else {
+      s.play('firebolt');
+      if (o.kind === 'fireball') s.setScale(o.split ? 1 : o.echo ? 1.2 : 1.6);
+      const el = o.owner?.stats?.element;
+      if (o.echo || o.kind === 'missile') s.setTint(0xd28cff);
+      else if (el === 'frost' || o.owner?.def?.id === 'mirelle') s.setTint(0x9fe6ff);
+      else if (el === 'venom') s.setTint(0xa6ff7a);
+    }
+    s.setRotation(Math.atan2(o.vy, o.vx));
+    this.projectiles.push({ ...o, s, life: o.life ?? 1.2, trail: 0 });
+  }
+
+  // Fizzle anything in flight (before cutscenes and climbing a lookout, which freeze the
+  // world: otherwise a fireball hangs in mid-air until play resumes).
+  clearProjectiles() {
+    for (const p of this.projectiles) { this.fx.burst('spark', p.x, p.y, 3); p.s?.destroy(); }
+    for (const p of this.enemyShots || []) p.s?.destroy();
+    this.projectiles = [];
+    this.enemyShots = [];
+  }
+
+  // can a hero's shot hit this foe? Always if aimed at it; otherwise not a
+  // staged set-piece foe, nor an idle one off screen
+  strayHits(e, p) {
+    if (p.target === e) return true;
+    if (e.staged) return false;
+    return e.engaged || e.boss || !e.onScreen || e.onScreen(0);
+  }
+
+  updateProjectiles(dt) {
+    const targets = [...this.enemies, ...this.wardUnits(), ...this.breakables.filter((b) => b.alive)];
+    for (const p of this.projectiles) {
+      p.life -= dt;
+      if (p.target && p.target.alive && (p.kind === 'bolt' || p.kind === 'missile')) {
+        const [nx, ny] = norm(p.target.x - p.x, p.target.y - (p.target.boss ? 24 : 8) - p.y);
+        const sp = Math.hypot(p.vx, p.vy);
+        p.vx += (nx * sp - p.vx) * Math.min(1, dt * 6);
+        p.vy += (ny * sp - p.vy) * Math.min(1, dt * 6);
+        p.s.setRotation(Math.atan2(p.vy, p.vx));
+      }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.s.setPosition(Math.round(p.x), Math.round(p.y));
+      if (p.kind !== 'knife' && p.kind !== 'arrow') { p.trail -= dt; if (p.trail <= 0) { p.trail = 0.03; this.fx.burst(p.kind === 'iceshard' || p.owner?.def?.id === 'mirelle' ? 'foam' : 'ember', p.x - p.vx * 0.02, p.y - p.vy * 0.02, 1); } }
+      let hit = null;
+      // shots aimed elsewhere fly past set-piece foes (staged for an errand)
+      // and foes off screen that aren't in the fight yet (no surprise pulls)
+      for (const e of targets) if (e.alive && !e.submerged && !p.hitSet?.has(e) && this.strayHits(e, p) && Math.hypot(e.x - p.x, e.y - (e.boss ? 24 : 8) - p.y) < e.r + 5) { hit = e; break; }
+      if (hit && p.pierce) {
+        // Power Shot / Ice Shard: punches through everything in the line
+        (p.hitSet ??= new Set()).add(hit);
+        this.dealDamage(p.owner, hit, p.dmg, { knock: 60, element: p.element, spell: p.spell });
+        if (p.chain && !p.chained) { // Galeheart Longbow: Power Shot chains lightning to two more foes
+          p.chained = true;
+          const near = targets.filter((e) => e.alive && e !== hit && !p.hitSet.has(e) && this.strayHits(e, p) && dist(e, hit) < 70).sort((a, b) => dist(a, hit) - dist(b, hit)).slice(0, 2);
+          for (const e of near) { this.fx.burst('spark', e.x, e.y - 8, 6); this.dealDamage(p.owner, e, p.dmg * 0.5, { knock: 20, element: 'storm' }); }
+          if (near.length) audio.sfx('zap');
+        }
+        if (p.split === 0) { // Glacier Wand: the shard splits in three at the first hit
+          p.split = 1;
+          const a0 = Math.atan2(p.vy, p.vx);
+          for (const da of [-0.5, 0.5]) this.spawnProjectile({ owner: p.owner, x: p.x, y: p.y, vx: Math.cos(a0 + da) * 210, vy: Math.sin(a0 + da) * 210, dmg: p.dmg * 0.6, kind: 'iceshard', pierce: true, element: 'frost', spell: true, life: 0.4, split: -1, hitSet: new Set([hit]) });
+        }
+        hit = null;
+      }
+      const t = this.painter.typeAt(p.x, p.y + 8);
+      const wall = this.nav.solidAtPx(p.x, p.y + 8) && t !== T.WATER && t !== T.BOG && t !== T.CHASM && !this.dungeon?.lowAt(p.x, p.y + 8); // shots fly over pegs
+      if (hit || p.life <= 0 || wall) {
+        p.dead = true;
+        p.s.destroy();
+        if (p.kind === 'knife') { if (hit) this.dealDamage(p.owner, hit, p.dmg, { knock: 30 }); continue; }
+        if (p.kind === 'arrow') {
+          if (hit) {
+            const crit = Math.random() < p.owner.stats.crit + (p.critBonus || 0);
+            this.dealDamage(p.owner, hit, p.dmg * (crit ? tuning.critMult : 1) * (0.9 + Math.random() * 0.2), { crit, knock: 25, basic: p.basic, element: p.element });
+            if (p.element === 'frost') hit.applyElement?.('frost', p.owner);
+            if (p.blast) { // an ember arrow bursts
+              this.fx.burst('ember', p.x, p.y, 14); audio.sfx('fireImpact');
+              for (const e of targets) if (e.alive && e !== hit && this.strayHits(e, p) && Math.hypot(e.x - p.x, e.y - 8 - p.y) < 26 + e.r) this.dealDamage(p.owner, e, p.dmg * 0.6, { knock: 30, element: 'fire' });
+              hit.applyElement?.('fire', p.owner);
+            }
+          }
+          continue;
+        }
+        if (p.kind === 'missile') { this.fx.puff(p.x, p.y, 'sparkCurse'); if (hit) this.dealDamage(p.owner, hit, p.dmg, { knock: 20, spell: true }); continue; }
+        audio.sfx('fireImpact');
+        this.fx.burst('ember', p.x, p.y, p.kind === 'fireball' ? 22 : 8);
+        if (p.kind === 'fireball' && !p.split && !p.echo && p.owner.hasPerk?.('sunspire')) { // Sunspire Staff: it splits in three
+          const a0 = Math.atan2(p.vy, p.vx);
+          for (const da of [-0.7, 0, 0.7]) this.spawnProjectile({ owner: p.owner, x: p.x, y: p.y, vx: Math.cos(a0 + da) * 150, vy: Math.sin(a0 + da) * 150, dmg: p.dmg * 0.4, kind: 'fireball', aoe: 16, element: 'fire', spell: true, split: true, life: 0.35 });
+        }
+        if (p.aoe) {
+          this.fx.ring(p.x, p.y + 6, 'ringGold', (p.aoe / 8) * 1.2);
+          this.shake(90, 0.005);
+          for (const e of targets) if (e.alive && (e === hit || this.strayHits(e, p)) && Math.hypot(e.x - p.x, e.y - 8 - p.y) < p.aoe + e.r) this.dealDamage(p.owner, e, p.dmg * (e === hit ? 1 : 0.45), { knock: e === hit ? 90 : 40, element: e === hit ? p.element : null, spell: p.spell }); // splash: weaker, and only the direct hit burns
+        } else if (hit) {
+          const crit = Math.random() < p.owner.stats.crit;
+          this.dealDamage(p.owner, hit, p.dmg * (crit ? tuning.critMult : 1) * (0.9 + Math.random() * 0.2), { crit, knock: 35, element: p.element, spell: p.spell, basic: p.basic });
+        }
+      }
+    }
+    this.projectiles = this.projectiles.filter((p) => !p.dead);
+  }
+
+  addShockwave(x, y, delay, maxR, speed, opts = {}) {
+    const g = this.add.graphics().setDepth(-3);
+    this.shockwaves.push({ x, y, t: 0, delay, maxR, speed, hit: new Set(), g, ...opts });
+  }
+
+  updateShockwaves(dt) {
+    for (const w of this.shockwaves) {
+      w.t += dt;
+      if (w.t < w.delay) continue;
+      const r = (w.t - w.delay) * w.speed;
+      w.g.clear().lineStyle(2, 0xec6a5e, 1 - r / w.maxR).strokeEllipse(w.x, w.y, r * 2, r * 1.3);
+      w.g.lineStyle(1, 0xffd04a, 0.7 * (1 - r / w.maxR)).strokeEllipse(w.x, w.y, r * 2 - 4, r * 1.3 - 3);
+      for (const h of this.party) {
+        if (!h.alive || h.downed || w.hit.has(h) || (w.skipSwimmers && h.swimming)) continue;
+        const d = Math.hypot((h.x - w.x), (h.y - w.y) / 0.65);
+        if (Math.abs(d - r) < 7) { w.hit.add(h); h.damage(16 * this.difficulty.dmg, { x: w.x, y: w.y }); }
+      }
+      if (r > w.maxR) { w.g.destroy(); w.done = true; }
+    }
+    this.shockwaves = this.shockwaves.filter((w) => !w.done);
+  }
+
+  // ============================================================== ultimates
+  useUltimate(h) {
+    if (h.downed || !h.alive || h.ult < 100 || this.busy) { audio.sfx('click'); return false; }
+    h.ult = 0;
+    const sc = this;
+    audio.sfx('ult');
+    this.events.emit('ult', h);
+    this.hitStop(0.12);
+    const legend = Object.values(h.hs.equip).some((id) => items[id]?.legend); // a Legendary changes its hero's ultimate (C4)
+    const tome = !!h.hs.ultTome || legend; // the level-20 Ultimate Tome upgrade (C3); a Legendary includes it
+    switch (h.ultimate.id) {
+      case 'bulwark': {
+        sc.shake(200, 0.008);
+        sc.fx.ring(h.x, h.y, 'ringGold', 9);
+        for (const p of this.party) {
+          if (p.downed) continue;
+          p.shield = Math.round(p.maxHp * 0.35); p.shieldT = legend ? 12 : 6; // Oathkeeper: twice as long
+          sc.fx.ring(p.x, p.y - 8, 'ringBlue', 2.5);
+        }
+        sc.taunt(h, 150, 5);
+        for (const e of this.enemies) if (e.alive && dist(e, h) < 56) this.dealDamage(h, e, h.stats.atk * 1.2, { knock: 150 });
+        sc.floatText(h.x, h.y - 36, 'BULWARK!', 'fontGold', 0xffffff, true);
+        if (tome) this.time.delayedCall(legend ? 12000 : 6000, () => { // the shields burst into healing light
+          for (const p of this.party) if (p.alive && !p.downed) { p.heal(Math.round(p.maxHp * (legend ? 0.3 : 0.15))); this.fx.ring(p.x, p.y - 8, 'ringGold', 2); }
+          for (const e of this.enemies) if (e.alive && !h.downed && dist(e, h) < 56) this.dealDamage(h, e, h.stats.atk * 0.8, { knock: 90 });
+          audio.sfx('shatter');
+        });
+        break;
+      }
+      case 'meteor': {
+        const pool = this.enemies.filter((e) => this.fairTarget(e) && dist(e, h) < 190);
+        if (!pool.length) { h.ult = 100; audio.sfx('click'); this.floatText(h.x, h.y - 30, 'NO TARGETS', 'fontPlain'); return false; }
+        const ranked = pool.map((e) => [e, pool.filter((o) => dist(o, e) < 44).length]).sort((a, b) => b[1] - a[1]).map((r) => r[0]);
+        const t = ranked[0];
+        h.face(t.x - h.x, t.y - h.y);
+        h.action = { type: 'skill', id: 'meteor', t: 0, dur: 0.6 }; h.anim = ''; h.play('cast');
+        // the Staff of the Ninth Apprentice: three meteors, on the three biggest clusters
+        const spots = [t, ...(h.hasPerk('ninthstaff') ? [ranked[1] || t, ranked[2] || ranked[1] || t] : [])];
+        spots.forEach((tg, si) => this.time.delayedCall(si * 260, () => {
+          const tx = tg.x + (si && tg === t ? (si === 1 ? -30 : 30) : 0), ty = tg.y;
+          const g = this.fx.telegraph(tx, ty, 46, 0.8);
+          g.setDepth(-2);
+          (this.partyZones ??= []).push({ x: tx, y: ty, r: 46, until: this.time.now + 800 }); // elites read it and step out
+          const m = this.add.sprite(tx - 60, ty - 180, 'firebolt').play('firebolt').setScale(3.2).setDepth(TOP - 15).setRotation(Math.atan2(180, 60));
+          audio.sfx('fireCast');
+          this.tweens.add({
+            targets: m, x: tx, y: ty - 8, duration: 800, ease: 'Quad.easeIn',
+            onUpdate: () => this.fx.burst('ember', m.x, m.y, 2),
+            onComplete: () => {
+              m.destroy(); g.destroy();
+              this.shake(350, 0.014); this.cameras.main.flash(120, 255, 200, 120);
+              audio.sfx('fireImpact'); audio.sfx('bash');
+              this.fx.burst('ember', tx, ty, 50); this.fx.ring(tx, ty, 'ringGold', 7);
+              for (const e of [...this.enemies, ...this.wardUnits()]) if (e.alive && Math.hypot(e.x - tx, e.y - ty) < 46 + e.r) this.dealDamage(h, e, h.stats.atk * 6, { crit: true, knock: 200 });
+              if (tome) { // the crater keeps burning
+                const pool = this.add.ellipse(tx, ty, 92, 56, 0xff7b2e, 0.32).setDepth(-25);
+                this.tweens.add({ targets: pool, alpha: 0, duration: 5000, onComplete: () => pool.destroy() });
+                this.time.addEvent({ delay: 500, repeat: 9, callback: () => { for (const e of this.enemies) if (e.alive && Math.hypot(e.x - tx, e.y - ty) < 46 + e.r) this.dealDamage(h, e, h.stats.atk * 0.35, { knock: 0, element: 'fire' }); } });
+              }
+            },
+          });
+        }));
+        sc.floatText(h.x, h.y - 36, 'METEOR!', 'fontGold', 0xffffff, true);
+        break;
+      }
+      case 'talons': {
+        // Storm of Talons: Kestrel and a rain of arrows on every foe nearby
+        const pool = () => this.enemies.filter((e) => this.fairTarget(e) && !e.submerged && dist(e, h) < 180);
+        if (!pool().length) { h.ult = 100; audio.sfx('click'); this.floatText(h.x, h.y - 30, 'NO TARGETS', 'fontPlain'); return false; }
+        sc.floatText(h.x, h.y - 36, 'STORM OF TALONS!', 'fontGold', 0xffffff, true);
+        const hawk = this.add.sprite(h.x, h.y - 60, 'hawk', '0').play('hawk').setDepth(TOP - 15).setScale(1.4);
+        const shots = tome ? 40 : 20; // tome: 8s, and every hit stuns
+        for (let i = 0; i < shots; i++) this.time.delayedCall(i * 200, () => {
+          const list = pool();
+          if (!list.length) return;
+          const e = list[Math.floor(Math.random() * list.length)];
+          if (i % 3 === 0) this.tweens.add({ targets: hawk, x: e.x, y: e.y - 12, duration: 160, yoyo: true });
+          const ar = this.add.image(e.x - 12, e.y - 70, 'arrow').setRotation(1.4).setDepth(TOP - 20);
+          this.tweens.add({ targets: ar, x: e.x, y: e.y - 6, duration: 150, onComplete: () => { ar.destroy(); if (e.alive) { this.dealDamage(h, e, h.stats.atk * 0.8, { knock: 15 }); if (tome && !e.boss) e.stun?.(0.4); } } });
+          audio.sfx('swing', { pitch: 1.8 });
+        });
+        this.time.delayedCall(shots * 200 + 200, () => this.tweens.add({ targets: hawk, y: hawk.y - 120, alpha: 0, duration: 500, onComplete: () => hawk.destroy() }));
+        break;
+      }
+      case 'dawnbreak': {
+        // every fallen ally rises, and the party heals to full over 3s
+        h.act?.('dawnbreak', 0.8, 'cast');
+        const light = this.add.circle(h.x, h.y - 10, 20, 0xfff6c0, 0.5).setDepth(TOP - 30).setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: light, scale: 10, alpha: 0, duration: 1200, onComplete: () => light.destroy() });
+        this.cameras.main.flash(300, 255, 246, 200);
+        for (const p of this.party) if (p.downed) p.revive(0.3);
+        if (tome) { for (const e of this.enemies) if (e.alive && dist(e, h) < 90) this.dealDamage(h, e, h.stats.atk * 3, { knock: 120, element: 'light', spell: true }); this.shake(200, 0.008); }
+        this.time.addEvent({ delay: 500, repeat: 5, callback: () => { for (const p of this.party) if (p.alive && !p.downed) p.heal(Math.round(p.maxHp / 6)); } });
+        audio.sfx('levelUp');
+        sc.floatText(h.x, h.y - 36, 'DAWNBREAK!', 'fontGold', 0xffffff, true);
+        break;
+      }
+      case 'clank': {
+        const [fx, fy] = h.facingVec();
+        const x = h.x + fx * 20, y = h.y + fy * 14;
+        const ck = new Gadget(this, h, 'clank', this.nav.solidAtPx(x, y) ? h.x : x, this.nav.solidAtPx(x, y) ? h.y + 6 : y, 1);
+        if (tome) { ck.life *= 2; ck.rockets = true; } // 24s, and rockets
+        this.shake(260, 0.01); audio.sfx('bash');
+        sc.floatText(h.x, h.y - 36, 'CLANK!', 'fontGold', 0xffffff, true);
+        break;
+      }
+      case 'absolutezero': {
+        // everything on screen freezes; bosses are chilled to the bone (tome: they freeze for 2s)
+        sc.shake(300, 0.01);
+        sc.cameras.main.flash(260, 200, 235, 255, false, null);
+        audio.sfx('frost', { pitch: 0.4 });
+        sc.fx.ring(h.x, h.y - 6, 'ringBlue', 12);
+        for (const e of this.enemies) {
+          if (!e.alive || e.submerged || !e.onScreen(0)) continue;
+          e.status ??= {};
+          const cold = !!h.passive('coldheart');
+          if (e.boss) {
+            e.status.chill = { t: 3, n: 2, heavy: true, cold };
+            if (tome) { const ft = legend ? 3 : 2; e.status.freeze = { t: ft, cold }; e.stunT = Math.max(e.stunT, ft); e.clearZone(); } // Heart of Winter: 3s
+          } else { e.status.freeze = { t: 3, cold }; e.stunT = Math.max(e.stunT, 3); e.clearZone(); }
+          e.statusTint?.();
+          sc.fx.burst('foam', e.x, e.y - 10, 10);
+        }
+        sc.floatText(h.x, h.y - 40, 'ABSOLUTE ZERO', 'fontGold', 0xffffff, true);
+        break;
+      }
+      case 'primal': {
+        h.buff('primal', 1, tome ? 12 : 8);
+        h.primalSlam = tome;
+        sc.fx.ring(h.x, h.y - 6, 'ringRed', 7);
+        sc.shake(260, 0.01);
+        audio.sfx('roar');
+        h.sprite.setTint(0xffb0a0);
+        this.time.delayedCall(tome ? 12000 : 8000, () => { if (!h.flashT) h.sprite.clearTint(); });
+        sc.floatText(h.x, h.y - 36, 'PRIMAL FORM!', 'fontGold', 0xffffff, true);
+        break;
+      }
+      case 'thousand_cuts': {
+        // Paced so each cut reads on a phone: a dark streak from where she was
+        // to the next foe, she lands beside it, a beat, then the slash. Fewer
+        // targets than the old 0.13s blur, but every one is visible.
+        const targets = this.enemies.filter((e) => this.fairTarget(e) && dist(e, h) < 170).sort((a, b) => dist(a, h) - dist(b, h)).slice(0, legend ? 10 : tome ? 8 : 5); // Whisper & Wane: 10
+        if (!targets.length) { h.ult = 100; audio.sfx('click'); this.floatText(h.x, h.y - 30, 'NO TARGETS', 'fontPlain'); return false; }
+        const home = { x: h.x, y: h.y };
+        const STEP = 320, SLASH = 110; // ms per foe; the cut lands this long after she arrives
+        h.invuln = (STEP * targets.length + 500) / 1000;
+        h.zipping = true;
+        sc.floatText(h.x, h.y - 36, 'THOUSAND CUTS!', 'fontGold', 0xffffff, true);
+        const lift = h.sprite.y - h.y;
+        const streak = (fx, fy, tx, ty) => { for (let k = 1; k <= 6; k++) this.fx.ghost(h, { x: fx + (tx - fx) * (k / 7), y: fy + (ty - fy) * (k / 7) + lift, tint: 0x2a1840, alpha: 0.25 + 0.1 * k, dur: 200 + 45 * k }); };
+        const slash = (e, dir) => { // a bright cut across the foe that fades fast
+          const g = this.add.graphics().setDepth(e.y + 40);
+          const a = dir > 0 ? -0.7 : 0.7, cx = e.x, cy = e.y - 10, L = 14;
+          g.lineStyle(3, 0xd9b8ff, 0.9).lineBetween(cx - Math.cos(a) * L, cy - Math.sin(a) * L, cx + Math.cos(a) * L, cy + Math.sin(a) * L);
+          g.lineStyle(1, 0xffffff, 1).lineBetween(cx - Math.cos(a) * (L - 2), cy - Math.sin(a) * (L - 2), cx + Math.cos(a) * (L - 2), cy + Math.sin(a) * (L - 2));
+          this.tweens.add({ targets: g, alpha: 0, duration: 220, onComplete: () => g.destroy() });
+        };
+        let from = { x: h.x, y: h.y };
+        targets.forEach((e, i) => this.time.delayedCall(STEP * i, () => {
+          if (!e.alive) return;
+          const side = from.x <= e.x ? -1 : 1; // land on the side she came from
+          const bx = e.x + side * 12, by = e.y + 2;
+          streak(from.x, from.y, bx, by);
+          this.fx.puff(from.x, from.y, 'sparkCurse');
+          h.x = bx; h.y = by; h.face(-side, 0); h.anim = ''; h.play('idle'); h.sync(0);
+          this.fx.puff(h.x, h.y, 'sparkCurse');
+          audio.sfx('dash', { pitch: 1.1 + i * 0.05 });
+          from = { x: bx, y: by };
+          this.time.delayedCall(SLASH, () => {
+            if (!e.alive || !h.zipping) return;
+            h.anim = ''; h.play('attack');
+            slash(e, -side);
+            audio.sfx('stab');
+            this.dealDamage(h, e, h.stats.atk * 2.5, { crit: true, knock: 40 });
+          });
+        }));
+        this.time.delayedCall(STEP * targets.length + 120, () => {
+          streak(h.x, h.y, home.x, home.y);
+          h.x = home.x; h.y = home.y; h.zipping = false; h.anim = '';
+          this.fx.puff(h.x, h.y, 'sparkCurse');
+          if (tome && !h.cutsRecast && !targets[targets.length - 1].alive) { h.cutsRecast = true; h.ult = 100; this.floatText(h.x, h.y - 36, 'AGAIN!', 'fontGold'); } // once per charge
+          else h.cutsRecast = false;
+        });
+        break;
+      }
+    }
+    return true;
+  }
+
+  // Health bars over enemies you're fighting: they appear once a foe is
+  // engaged (or hurt) and stay until it disengages. Bosses use the top bar.
+  drawEnemyBars() {
+    const g = (this.hpBars ??= this.add.graphics().setDepth(TOP - 35));
+    g.clear();
+    // an elite's tag shows exactly when its bar does (hidden here, re-shown
+    // below); otherwise it was left frozen where the fight happened
+    for (const e of this.enemies) e.eliteTag?.setVisible(false);
+    let named = null;
+    for (const e of this.enemies) {
+      if (!e.alive || e.boss || e.submerged || e.riseT > 0 || e.hidden) continue; // a veiled Shade shows nothing
+      const hurt = e.hp < e.maxHp;
+      if (!(e.engaged || (hurt && e.state !== 'idle' && e.state !== 'return'))) continue;
+      if (e.named) { if (e.engaged) named ??= e; continue; } // a named foe fights under the boss bar's gold title, as a Ward boss does
+      const w = e.named ? 26 : e.elite ? 20 : 16;
+      // measured once: per-frame sprite sizes (attack poses) made the bar and tag hop
+      e.barH ??= e.sprite.displayHeight * e.sprite.originY;
+      const top = e.sprite.y - e.barH;
+      const x = Math.round(e.x - w / 2), y = Math.round(top + (e.puppet ? 10 : 6) - 6);
+      const f = Math.max(0, e.hp / e.maxHp);
+      g.fillStyle(0x1a1423, 0.9).fillRect(x - 1, y - 1, w + 2, 4);
+      g.fillStyle(0x3a2f52).fillRect(x, y, w, 2);
+      g.fillStyle(f > 0.5 ? 0xec6a5e : f > 0.25 ? 0xf29a4e : 0xffd04a).fillRect(x, y, Math.max(1, Math.round(w * f)), 2);
+      if (e.wardShield > 0) g.fillStyle(0xd9b8ff).fillRect(x, y - 1, Math.round(w * Math.min(1, e.wardShield / e.maxHp)), 1);
+      if (e.elite) {
+        g.fillStyle(0xf2c14e).fillRect(x - 1, y - 1, 1, 4).fillRect(x + w, y - 1, 1, 4);
+        // a tag that stays up through the fight so it's clear why this one hits so hard
+        e.eliteTag ??= this.add.bitmapText(0, 0, 'fontGold', e.named ? e.s.name : e.affix ? AFFIXES[e.affix] : 'ELITE').setOrigin(0.5, 1).setDepth(TOP - 34);
+        e.eliteTag.setPosition(Math.round(e.x), y - 2).setVisible(true);
+      }
+    }
+    if (!this.golem?.alive && named !== this.namedBar) { this.namedBar = named; this.events.emit('boss', named); }
+    // heroes in trouble: below half health a bar shows over their head (yellow, then
+    // red below 35%, as on their portrait) and goes again once they're back in the green
+    for (const h of this.party) {
+      if (!h.alive || h.downed || h.zipping) continue;
+      const f = Math.max(0, h.hp / h.maxHp);
+      if (f >= HP_WARN) continue;
+      h.barH ??= h.sprite.displayHeight * h.sprite.originY;
+      const w = 16, x = Math.round(h.x - w / 2), y = Math.round(h.sprite.y - h.barH + 4);
+      g.fillStyle(0x1a1423, 0.9).fillRect(x - 1, y - 1, w + 2, 4);
+      g.fillStyle(0x3a2f52).fillRect(x, y, w, 2);
+      g.fillStyle(f < HP_CRIT ? 0xec6a5e : 0xf2c14e).fillRect(x, y, Math.max(1, Math.round(w * f)), 2);
+    }
+    // elites: a slow gold ring under their feet (always, so you can pick them out before engaging)
+    const rg = (this.eliteRings ??= this.add.graphics().setDepth(-5));
+    rg.clear();
+    const view = this.cameras.main.worldView, pulse = 0.35 + Math.sin(this.time.now / 260) * 0.2;
+    for (const e of this.enemies) {
+      if (!e.alive || !e.elite || e.boss || e.submerged) continue;
+      if (e.x < view.x - 20 || e.x > view.right + 20 || e.y < view.y - 20 || e.y > view.bottom + 20) continue;
+      rg.lineStyle(1, 0xf2c14e, pulse + 0.3).strokeEllipse(e.x, e.y + 2, 22, 9);
+      rg.fillStyle(0xf2c14e, pulse * 0.35).fillEllipse(e.x, e.y + 2, 22, 9);
+      if (e.affix === 'armored') {
+        // the guarded side: a steel arc in front of it
+        const f = e.view === 'side' ? [e.flip ? -1 : 1, 0] : [0, e.view === 'down' ? 1 : -1];
+        const a0 = Math.atan2(f[1], f[0]);
+        rg.lineStyle(2, 0xbfd0e6, 0.85).beginPath(); rg.arc(e.x, e.y - 6, 14, a0 - 0.9, a0 + 0.9); rg.strokePath();
+      }
+      if (e.affix === 'volatile' && e.hp < e.maxHp * 0.3) rg.lineStyle(1, 0xffa060, 0.5 + Math.sin(this.time.now / 90) * 0.4).strokeCircle(e.x, e.y - 8, 12);
+    }
+  }
+
+  // ============================================================== helpers
+  hitStop(t) { this.hitStopT = Math.max(this.hitStopT, t); }
+  shake(ms, amt) { this.cameras.main.shake(ms, amt); }
+
+  surfaceAt(x, y) {
+    const t = this.painter.typeAt(x, y);
+    return t === T.PAVED || t === T.STAIRS || t === T.CAVEFLOOR || t === T.DFLOOR || t === T.BRIDGE ? 'stone' : t === T.PATH || t === T.SAND || t === T.SHALLOW ? 'path' : 'grass';
+  }
+
+  floatText(x, y, text, font = 'font', tint = 0xffffff, big = false) {
+    const t = this.add.bitmapText(Math.round(x), Math.round(y), font, String(text).toUpperCase()).setOrigin(0.5).setDepth(TOP + 5);
+    if (tint !== 0xffffff) t.setTint(tint);
+    if (big) t.setScale(1.5);
+    this.tweens.add({ targets: t, y: y - 14, duration: 420, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: t, alpha: 0, delay: 520, duration: 260, onComplete: () => t.destroy() });
+  }
+
+  bark(h, text) {
+    if (!h || !text) return;
+    // never over the big title (a region or errand banner): wait until it clears.
+    // Only the latest line waits - a newer one replaces it, as barks always have
+    const wait = this.ui?.bannerLeft?.() || 0;
+    if (wait > 0) { this.barkWait?.remove(); this.barkWait = this.ui.time.delayedCall(wait + 200, () => { this.barkWait = null; this.bark(h, text); }); return; } // (on the HUD's clock: the title's fade runs in real time, the game's clock at the game speed)
+    this.barkCur = [h, text];
+    if (this.barkObj?.active) this.barkObj.destroy();
+    this.barkEv?.remove(); // the replaced bark's typing timer must stop too
+    text = fitString(text, Math.min(200, this.scale.width - 16), 3); // wraps on narrow screens
+    const t = this.add.bitmapText(0, 0, 'font', '').setOrigin(0.5, 1).setDepth(TOP + 6).setCenterAlign();
+    this.barkObj = t;
+    let i = 0;
+    const ev = this.time.addEvent({ delay: 32, repeat: text.length - 1, callback: () => {
+      if (!t.active) { ev.remove(); return; }
+      i++; t.setText(text.slice(0, i));
+      if (i % 2 === 0 && text[i - 1] !== ' ') audio.sfx('blip', { voice: h.def?.voice || h.voice });
+    } });
+    this.barkEv = ev;
+    t.follow = h;
+    this.time.delayedCall(text.length * 32 + 2200, () => { if (this.barkObj === t) this.barkObj = null; ev.remove(); this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
+  }
+
+  // A title just came up: a line being said steps aside and is said again once it clears.
+  holdBarks() {
+    if (!this.barkObj?.active || !this.barkCur) return;
+    const [h, text] = this.barkCur;
+    this.barkEv?.remove(); this.barkObj.destroy(); this.barkObj = null;
+    this.bark(h, text); // (waits for the title)
+  }
+
+  // the dungeon lab, the deep-link demos and test maps never touch a save
+  savesHere() { return !(this.state.lab || this.state.demo || (MAP && (MAP.save || 'none') === 'none')); }
+
+  autosave(reason) {
+    if (!this.savesHere()) return;
+    const L = this.leader;
+    this.state.explored = this.minimap.serialize();
+    this.state.exploredW = MAP_W; // so a later, wider map still reads it right
+    // never save a spot the party can't stand on (up a lookout, inside a blocked tile)
+    let px0 = L.x, py0 = L.y;
+    const tx = Math.floor(px0 / TILE), ty = Math.floor(py0 / TILE);
+    if (L.lift || this.nav.isSolid(tx, ty)) { const o = this.nav.nearestOpen(tx, ty + 2, 8) || this.nav.nearestOpen(tx, ty, 8); if (o) { px0 = o[0] * TILE + 8; py0 = o[1] * TILE + 8; } }
+    this.state.pos = { x: Math.round(px0), y: Math.round(py0) };
+    for (const h of this.party) h.hs.hp = h.hp;
+    this.state.respawn = Object.fromEntries((this.groups || []).filter((g) => g.cleared && !g.active && !(g.once && this.state.cleared[g.id])).map((g) => [g.id, Math.max(0, Math.round(g.deadT))]));
+    if (saveState(this.state, MAP?.save === 'own' ? ownSaveKey(MAP.id) : undefined)) this.events.emit('saved', reason); // a map with a save of its own keeps it apart from the main one
+  }
+
+  // Back to the title (the pause card's TITLE SCREEN): saved first where this
+  // map saves, the music stopped, and this scene and its HUD shut down.
+  toTitle() {
+    if (this.travelling) return;
+    this.travelling = this.busy = true;
+    this.scene.resume();
+    this.autosave('title');
+    music.stop();
+    this.scene.stop('UI');
+    this.scene.start('Title');
+  }
+
+  // Travel to another world of the main game (a shared map, or back to
+  // Aldermere: id null): save, swap the worlds over and rebuild the scene there.
+  goToWorld(id) {
+    if (this.travelling) return;
+    this.travelling = this.busy = true;
+    this.autosave('travel');
+    // swap the worlds over in a copy: this scene keeps running on its own state until it's gone
+    const next = switchWorld(JSON.parse(JSON.stringify(this.state)), id || HOME);
+    const d = id && mapDef(id);
+    if (d && (!next.pos || d.arena)) next.pos = { x: (d.at[0] + d.start[0]) * TILE + 8, y: (d.at[1] + d.start[1]) * TILE + 8 }; // a first visit (or a new run in the Colosseum): its own start
+    audio.sfx('warp');
+    this.cameras.main.fadeOut(350, 5, 3, 10);
+    this.time.delayedCall(380, () => { window.__loadT0 = performance.now(); this.scene.launch('Loading'); this.time.delayedCall(80, () => this.scene.restart({ state: next })); }); // the curtain gets a frame to draw, as from the title
+  }
+
+  nextFrame() { return new Promise((r) => this.events.once('postupdate', r)); }
+
+  placeName(x, y) {
+    const id = biomeAt(Math.floor(x / TILE), Math.floor(y / TILE));
+    return W.regions.find((r) => r.id === id)?.name || { cave: 'FENMOUTH CAVE', grotto: 'HIDDEN GROTTO', shop: "MARLA'S GOODS", tavern: "BRUNO'S TAVERN" }[id] || 'THE NINTH TOWER';
+  }
+
+  // Biome art groups wanted around a tile (shared by streaming and preloading).
+  groupsNear(tx, ty, area) {
+    const out = [];
+    if (MAP?.generated) { // its own regions, sampled round the spot (Aldermere's rows and columns mean nothing there)
+      const ART = { marsh: 'marsh', gloam: 'gloam', cinder: 'cinder', frost: 'frost', basin: 'basin' };
+      for (const [dx, dy] of [[0, 0], [22, 0], [-22, 0], [0, 22], [0, -22]]) { const a = ART[biomeAt(Math.round(tx + dx), Math.round(ty + dy))]; if (a && !out.includes(a)) out.push(a); }
+      return out;
+    }
+    if ((ty > MARSH_Y - 22 && ty < SOUTH_Y + 10 && area === 'overworld') || area === 'abbey') out.push('marsh');
+    if ((ty > SOUTH_Y - 22 && ty < FROST_Y + 14 && tx < RIDGE_X + 22 && area === 'overworld') || area === 'witchroot') out.push('gloam');
+    if (ty > SOUTH_Y - 22 && ty < FROST_Y + 14 && tx > RIDGE_X - 22 && area === 'overworld') out.push('cinder');
+    if (ty > FROST_Y - 22 && area === 'overworld') out.push('frost');
+    if (ty > FROST_Y - 10 && tx > 100 && area === 'overworld') out.push('basin');
+    if (Math.hypot(tx - 96, ty - 90) < 26 || Math.hypot(tx - 73, ty - 16) < 20 || area !== 'overworld') out.push('cave');
+    if (Math.hypot(tx - 17, ty - 30) < 24 || area === 'shop' || area === 'tavern') out.push('interior', 'cave');
+    // the big bosses' art (assets.js BOSSES), ahead of where they're fought: their region, their dungeon, the Tower's echoes
+    const boss = (...ks) => { for (const k of ks) if (!out.includes(`boss_${k}`)) out.push(`boss_${k}`); };
+    if (area === 'overworld' && Math.hypot(tx - 178, ty - 30) < 34) boss('snagtooth'); // his camp
+    if (area === 'overworld' && Math.hypot(tx - 60, ty - 104) < 34) boss('pitchamp'); // the pit
+    if ((area === 'overworld' && Math.hypot(tx - 82, ty - 38) < 30) || area === 'undercroft') boss('golem'); // the Vale's stone, the Undercroft
+    if (out.includes('marsh') || area === 'abbey') boss('snapjaw', 'murk');
+    if (out.includes('gloam') || area === 'witchroot') boss('huntsman', 'mab');
+    if (out.includes('cinder') || area === 'forge') boss('vulk', 'drake');
+    if (out.includes('frost') || area === 'spire') boss('troll', 'isolde');
+    if (out.includes('basin') || area.startsWith('tower')) boss('malgrim', 'golem', 'murk', 'huntsman', 'vulk', 'isolde'); // Malgrim, and the Ward Echoes on the floors
+    return out;
+  }
+
+  // Get everything around (x, y) ready before play resumes: art groups for
+  // the area and its props, every terrain chunk in and around the view, the
+  // enemy groups there, then a few frames for the frame time to settle.
+  // `ui` is the loading curtain (or a stand-in) that receives progress.
+  async prepareAt(x, y, ui, settleFrames = 4) {
+    const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+    const area = areaAt(tx, ty);
+    const vw = this.scale.width, vh = this.scale.height;
+    const need = new Set(this.groupsNear(tx, ty, area));
+    const reach = Math.hypot(vw, vh) * 0.5 + CHUNK * 2;
+    for (const [k, list] of this.propsByChunk) {
+      const [cx, cy] = k.split(',').map(Number);
+      if (Math.hypot((cx + 0.5) * CHUNK - x, (cy + 0.5) * CHUNK - y) > reach) continue;
+      for (const p of list) if (PROP_GROUP[p.type]) need.add(PROP_GROUP[p.type]);
+    }
+    const groups = [...need].filter((g) => !loaded.has(g));
+    for (let i = 0; i < groups.length; i++) {
+      await loadGroup(this, groups[i], (p) => ui?.setProgress(0.35 * (i + p) / groups.length, 'GATHERING ART'));
+    }
+    ui?.setProgress(0.35, 'PAINTING THE WORLD');
+    for (;;) {
+      this.streamer.update(x, y, vw, vh);
+      const p = this.streamer.wantedProgress();
+      ui?.setProgress(0.35 + 0.5 * p, 'PAINTING THE WORLD');
+      if (p >= 1) break;
+      await this.nextFrame();
+    }
+    ui?.setProgress(0.88, 'WAKING THE LOCALS');
+    this.updateGroups(0);
+    let calm = 0;
+    for (let i = 0; i < 120 && calm < settleFrames; i++) {
+      await this.nextFrame();
+      calm = this.game.loop.rawDelta < 40 ? calm + 1 : 0;
+      ui?.setProgress(0.88 + 0.12 * Math.min(1, calm / settleFrames));
+    }
+  }
+
+  waitForWorld(cb) {
+    const v = this.cameras.main.worldView;
+    if (this.streamer.isReady(v.x, v.y, v.width || this.scale.width, v.height || this.scale.height)) { cb(); return; }
+    this.time.delayedCall(50, () => this.waitForWorld(cb));
+  }
+
+  // ============================================================== events
+  onEnemyKilled(e, src) {
+    // Gladiator's Torc: the one who finished it heals; Crown of the Colosseum:
+    // every tenth foe the party fells, the crowd's cheer heals everyone
+    if (src?.team === 'party' && src.hasPerk?.('torc') && src.alive && !src.downed) { src.heal(src.maxHp * 0.04); this.fx.burst('heal', src.x, src.y - 10, 3); }
+    if (this.party.some((p) => !p.downed && p.hasPerk('arenacrown')) && ++this.crowdKills % 10 === 0) {
+      for (const p of this.party) if (p.alive && !p.downed) { p.heal(p.maxHp * 0.08); this.fx.burst('heal', p.x, p.y - 10, 6); }
+      this.floatText(this.leader.x, this.leader.y - 40, 'THE CROWD CHEERS!', 'fontGold');
+      audio.sfx('heal');
+    }
+    // Crown of Rime: a frozen foe shatters, chilling everything near it
+    if (e.status?.freeze && !e.rimeBurst) {
+      const crown = this.party.find((p) => !p.downed && p.hasPerk('rimecrown'));
+      if (crown) {
+        e.rimeBurst = true;
+        this.fx.burst('foam', e.x, e.y - 8, 22); this.fx.ring(e.x, e.y - 4, 'ringBlue', 4); audio.sfx('bash', { pitch: 1.7 });
+        for (const o of this.enemies) if (o !== e && o.alive && dist(o, e) < 48) { o.applyElement?.('frost', crown); this.dealDamage(crown, o, crown.stats.atk * 0.8, { knock: 50, spell: true, noProc: true }); }
+      }
+    }
+    audio.sfx('enemyDie');
+    this.fx.dust(e.x, e.y);
+    this.fx.burst('curse', e.x, e.y - 6, 10);
+    const n = Phaser.Math.Between(...e.s.gold);
+    for (let i = 0; i < n; i++) this.dropCoin(e.x, e.y);
+    for (const h of this.party) if (!h.downed) h.gainXp(xpFor(h.level, e.level, e.s.xp));
+    this.state.stats.kills++;
+    if (e.s.gem && Math.random() < e.s.gem) {
+      // warlocks and witchlings sometimes carry a chipped gem; in a region whose
+      // foes strike with an element, half the time it's the gem that resists it
+      const kinds = ['ember', 'rime', 'storm', 'venom', 'sun', 'gloam', 'ruby', 'onyx', 'topaz', 'emerald'];
+      const counter = REGION_GEM[biomeAt(Math.floor(e.x / TILE), Math.floor(e.y / TILE))];
+      const g = `${counter && Math.random() < 0.5 ? counter : kinds[Math.floor(Math.random() * kinds.length)]}1`;
+      this.state.gems[g] = (this.state.gems[g] || 0) + 1;
+      this.time.delayedCall(400, () => this.floatText(e.x, e.y - 40, 'A GEM!', 'fontGold'));
+    }
+    const drop = rollGearDrop(this.state, e.level, e.elite);
+    if (drop) this.dropLoot(drop, e.x, e.y);
+    const got = {};
+    for (const [m, chance] of Object.entries(e.s.drops || {})) {
+      const n = (Math.random() < chance ? 1 : 0) + (e.elite ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0);
+      if (n) got[m] = n;
+    }
+    if (got.scrap && this.party.some((h) => h.alive && h.passive?.('scrapper'))) got.scrap = Math.ceil(got.scrap * 1.5); // Scrap Collector (Gizmo)
+    if ((e.elite || e.named) && !e.boss && Math.random() < (e.named ? 0.6 : 0.12)) got.starmetal = (got.starmetal || 0) + 1; // Starmetal: elites and bounties (C6)
+    this.quests?.onKill(e);
+    if (Object.keys(got).length) {
+      addMats(this.state, got);
+      for (const [m, n] of Object.entries(got)) this.quests?.onGather(m, n);
+      this.time.delayedCall(250, () => this.floatText(e.x, e.y - 30, Object.entries(got).map(([k, n]) => `+${n} ${CRAFT.materials[k].name}`).join(' '), 'fontPlain', 0xbfe6f2));
+    }
+    this.events.emit('party');
+  }
+
+  onBossKilled(b) {
+    const B = b.bossDef || this.bossDefs()[0];
+    if (B.sentAway) { this.golem = null; this.events.emit('boss', null); this.sealArena(false); return; } // cleared off the Proving Field from its board: gone, unbeaten
+    this.flags[B.flag] = true;
+    if (b.level >= 10) { const sm = b.isShadow ? 1 : 2; addMats(this.state, { starmetal: sm }); this.time.delayedCall(1800, () => this.floatText(b.x, b.y - 50, `+${sm} STARMETAL`, 'fontGold')); } // Starmetal from the lieutenants (C6)
+    audio.sfx('shatter'); audio.sfx('roar');
+    this.shake(700, 0.014);
+    this.cameras.main.flash(200, 255, 255, 255);
+    this.fx.burst('curse', b.x, b.y - 20, 60);
+    for (let i = 0; i < 4; i++) this.time.delayedCall(i * 150, () => this.fx.dust(b.x + (i - 1.5) * 12, b.y));
+    for (let i = 0; i < 18; i++) this.dropCoin(b.x, b.y);
+    const drops = [...(B.cfg.drops || [])];
+    for (let i = 0; i < (B.cfg.rares || 0); i++) { // generated Rares for the party, at the boss's tier
+      const hero = this.state.active[Math.floor(Math.random() * this.state.active.length)];
+      const id = makeItem(hero, ['weapon', 'offhand', 'head', 'body'][Math.floor(Math.random() * 4)], tierForLevel(b.level), 'rare');
+      if (id) drops.push(id);
+    }
+    drops.forEach((id, i) => this.time.delayedCall(300 + i * 200, () => this.dropLoot(id, b.x + (i - (drops.length - 1) / 2) * 14, b.y + 6)));
+    this.state.gold += B.cfg.gold || 0;
+    for (const h of this.party) if (!h.downed) h.gainXp(b.s.xp);
+    this.golem = null;
+    Object.values(this.dungeons || {}).find((k) => k.id === B.id)?.witherVine();
+    for (const w of this.wards) {
+      if (w.def.guardian === B.flag) this.witherVines(w);
+      if (w.unit) w.shieldFx?.setVisible(this.wardShielded(w.unit));
+    }
+    this.events.emit('boss', null);
+    this.events.emit('banner', ...(B.cfg.fall || [`${B.cfg.name} FALLS`, "THE WARD STONE'S BARRIER HAS FAILED"]));
+    this.sealArena(false);
+    for (const e of this.enemies) if (e.alive && e.summoned) e.damage(999, this.leader);
+    if (B.cfg.ward) this.time.delayedCall(2600, () => this.think(B.cfg.ward, 'open', true));
+    this.autosave('boss');
+    if (B.flag === 'malgrimDefeated') this.time.delayedCall(3200, () => this.ending());
+  }
+
+  // ============================================================== the end
+  // Malgrim is gone: his study gives up Pip's staff, the Tower shudders, the
+  // curse lifts across Aldermere (any stones still standing crumble), and the
+  // party is carried home to Brightwater, where the Frog King turns back into
+  // King Aldric. Credits, then the post-game: the world stays open.
+  ending() {
+    if (this.flags.endingSeen) return;
+    this.flags.endingSeen = true;
+    const st = this.state;
+    if (!st.inventory.includes('staff_ninth') && !Object.values(st.heroes).some((hs) => hs.equip?.weapon === 'staff_ninth')) {
+      gainItems(st, ['staff_ninth']);
+      this.events.emit('loot', { ids: ['staff_ninth'] });
+    }
+    const L = this.leader;
+    const lines = [
+      { who: 'NARRATOR', text: "IN MALGRIM'S STUDY, BEHIND A MIRROR THAT NO LONGER LIES, A STAFF WAITS ON A HOOK MARKED 'FOR THE NINTH APPRENTICE'." },
+      { who: 'NARRATOR', text: 'THE NINTH TOWER SHUDDERS. CRACKS OF WHITE LIGHT RUN UP ITS WALLS.' },
+      { who: L.def.name.toUpperCase(), text: "IT'S COMING DOWN. RUN!" },
+    ];
+    this.events.emit('dialogue', lines, () => {
+      this.busy = true;
+      this.cameras.main.flash(600, 255, 255, 255);
+      this.shake(1200, 0.02);
+      audio.sfx('shatter'); audio.sfx('curseLift');
+      this.time.delayedCall(900, () => {
+        // the curse lifts everywhere: the last stones crumble
+        for (const w of this.wards) {
+          const d = w.def;
+          if (this.flags[d.flag]) continue;
+          this.flags[d.flag] = true; if (d.guardian) this.flags[d.guardian] = true; if (d.warden) this.flags[d.warden] = true;
+          this.removeVines(w);
+          if (w.unit) { w.unit.alive = false; w.unit.sprite.stop(); w.unit.sprite.setTexture('wardRubble').clearTint(); w.shieldFx?.destroy(); }
+          w.bloomR = 0;
+        }
+        this.flags.smithRank = 3; this.flags.royalArmory = true; this.flags.enchanter = true;
+        this.buildBarrier();
+        this.busy = false;
+        this.warp({ to: { x: LANDMARKS.frog.x, y: LANDMARKS.frog.y + 2 } });
+        this.time.delayedCall(1800, () => this.kingRestored());
+      });
+    });
+  }
+
+  kingRestored() {
+    const f = LANDMARKS.frog, fx = f.x * TILE + 8, fy = f.y * TILE + 8;
+    const K = (text) => ({ who: 'KING ALDRIC', portrait: this.textures.exists('king_portrait') ? 'king_portrait' : null, voice: { pitch: 140, wave: 'square', duty: 0.25 }, text }); // a man again: his own face
+    music.setVariant('freed', 1.6);
+    this.events.emit('banner', 'THE CURSE IS LIFTED', 'ALDERMERE IS FREE');
+    this.time.delayedCall(2200, () => {
+      this.cameras.main.flash(400, 255, 240, 200);
+      this.fx.burst('gold', fx, fy - 10, 40); audio.sfx('levelUp');
+      this.frog.destroy();
+      this.flags.kingRestored = true;
+      this.frog = this.add.sprite(fx, fy, 'king', 'idle_down_0').setOrigin(0.5, 0.75).play('king_idle_down').setDepth(fy);
+      this.time.delayedCall(900, () => this.events.emit('dialogue', [
+        K("...OH. OH NO. I'M TALL AGAIN. AND DRY. HOW DREADFUL."),
+        K('NO - FORGIVE ME. THANK YOU. ALL OF YOU. THE TOWER IS FALLEN, THE CURSE IS BROKEN, AND ALDERMERE IS FREE. I WILL NEVER HIRE A COURT MAGE AGAIN.'),
+        K('I DO MISS THE POND, THOUGH. AND THE FLIES. THE FLIES WERE DELICIOUS. KEEP BRINGING ME THE GOLDEN ONES, WOULD YOU? FOR OLD TIMES.'),
+      ], () => {
+        this.scene.pause();
+        this.scene.launch('Credits', { onDone: () => {
+          this.scene.resume();
+          this.flags.postgame = true;
+          this.events.emit('banner', 'THE WORLD IS YOURS', 'EVERY REGION NOW RISES TO LEVELS 26-35');
+          this.autosave('ending');
+        } });
+      }));
+    });
+  }
+
+  dropCoin(x, y) {
+    const c = this.add.sprite(x, y - 6, 'coin').play('coin').setDepth(TOP - 30);
+    const a = Math.random() * Math.PI * 2;
+    const tx = x + Math.cos(a) * 14, ty = y + Math.sin(a) * 8;
+    this.tweens.add({ targets: c, x: tx, duration: 380 });
+    this.tweens.add({ targets: c, y: ty - 14, duration: 190, ease: 'Quad.easeOut', onComplete: () => this.tweens.add({ targets: c, y: ty, duration: 190, ease: 'Bounce.easeOut' }) });
+    this.time.delayedCall(700 + Math.random() * 300, () => {
+      const L = this.leader;
+      this.tweens.add({ targets: c, x: L.x, y: L.y - 10, duration: 260, ease: 'Quad.easeIn', onComplete: () => {
+        c.destroy(); this.state.gold += (this.party.some((h) => !h.downed && h.hasTrait('fortune')) && Math.random() < 0.1 ? 2 : 1) + (this.party.some((h) => h.hasPerk('signet')) && Math.random() < 0.15 ? 1 : 0) + (this.party.some((h) => h.hasPerk('brightkey')) && Math.random() < 0.1 ? 1 : 0); // Frog King's Signet: +15%
+        audio.sfx('coin'); this.fx.coinBurst(this.leader.x, this.leader.y); this.events.emit('party');
+      } });
+    });
+  }
+
+  dropLoot(id, x, y) {
+    const it = items[id];
+    const key = it.rarity === 'unique' || it.rarity === 'legendary' ? 'lootU' : it.rarity === 'common' ? 'lootC' : 'lootF';
+    const s = this.add.sprite(x, y - 6, key).play(key).setDepth(TOP - 31);
+    if (it.rarity === 'rare') s.setTint(0x9fc0ff);
+    const beam = this.add.rectangle(x, y - 20, 2, 26, { unique: 0xfff0a0, legendary: 0xffb060, rare: 0x6f93e0 }[it.rarity] || 0xa6d36a, 0.5).setDepth(TOP - 32).setBlendMode(Phaser.BlendModes.ADD);
+    this.tweens.add({ targets: beam, alpha: 0.15, duration: 600, yoyo: true, repeat: -1 });
+    const a = Math.random() * Math.PI * 2;
+    const tx = x + Math.cos(a) * 10, ty = y + Math.sin(a) * 6;
+    this.tweens.add({ targets: s, x: tx, duration: 380 });
+    this.tweens.add({ targets: s, y: ty - 16, duration: 190, ease: 'Quad.easeOut', onComplete: () => this.tweens.add({ targets: s, y: ty, duration: 220, ease: 'Bounce.easeOut' }) });
+    this.tweens.add({ targets: beam, x: tx, y: ty - 14, duration: 400 });
+    audio.sfx('coin');
+    this.loot.push({ id, s, beam, x: tx, y: ty, t: 0 });
+  }
+
+  updateLoot(dt) {
+    for (const l of this.loot) {
+      l.t += dt;
+      if (l.t < 0.6) continue;
+      if (l.flying) continue;
+      const h = this.party.find((p) => !p.downed && Math.hypot(p.x - l.x, p.y - l.y) < 16);
+      if (h) this.takeLoot(l, l.x, l.y);
+    }
+    this.loot = this.loot.filter((l) => !l.dead);
+  }
+
+  takeLoot(l, x, y) {
+    l.dead = true;
+    this.tweens.killTweensOf(l.s); l.s.destroy(); this.tweens.killTweensOf(l.beam); l.beam.destroy();
+    gainItems(this.state, [l.id]);
+    audio.sfx('chest');
+    this.fx.burst('gold', x, y - 6, 14);
+    this.events.emit('loot', { ids: [l.id] });
+    this.autosave('loot');
+  }
+
+  // Tapped loot flies to the leader, as coins do, instead of the party walking over to it.
+  pullLoot(l) {
+    l.flying = true;
+    this.tweens.killTweensOf(l.s); this.tweens.killTweensOf(l.beam);
+    l.beam.setVisible(false);
+    this.tapFeedback(l.s.x, l.s.y + 6, 'ringGold', { sprite: l.s });
+    audio.sfx('click');
+    const L = this.leader;
+    this.tweens.add({ targets: l.s, x: L.x, y: L.y - 10, duration: 260, ease: 'Quad.easeIn', onComplete: () => { if (!l.dead) this.takeLoot(l, this.leader.x, this.leader.y); } });
+  }
+
+  // The level (stats, full health) counts at once; the celebration waits until
+  // the fight is over (see updateLevelUps) so it never interrupts a battle.
+  onLevelUp(h) {
+    if (h === this.leader) this.state.stats.levelUps.push({ level: h.level, t: Math.round(this.state.playTime), kills: this.state.stats.kills });
+    (h.lvQueue ??= []).push(h.level);
+    this.events.emit('party');
+  }
+
+  // Queued level-ups play once things have been calm for a moment, a hero at a time.
+  updateLevelUps(dt) {
+    const waiting = this.party.filter((h) => h.lvQueue?.length && !h.downed);
+    if (!waiting.length) { this.lvCalmT = 0; return; }
+    const calm = !this.busy && !(this.combatHold > 0) && !this.ui?.dialogOpen && !this.enemies.some((e) => e.alive && e.engaged);
+    this.lvCalmT = calm ? (this.lvCalmT || 0) + dt : 0;
+    if (this.lvCalmT < 0.8) return;
+    this.lvCalmT = 0;
+    waiting.forEach((h, i) => { const lv = h.lvQueue; h.lvQueue = []; this.time.delayedCall(i * 900, () => this.celebrateLevel(h, lv)); });
+  }
+
+  celebrateLevel(h, levels) {
+    if (!h.alive || h.downed) return;
+    const n = levels.length, lv = levels[n - 1];
+    const walking = h.isLeader && (h.path?.length || (h.direct && (h.direct.x || h.direct.y)));
+    if (!h.action && !walking) h.act('levelup', 1.1, 'cast'); // the cast pose, arm raised (never stops you mid-walk)
+    audio.sfx('levelUp');
+    // light running up the body: a bright copy of the hero, shown only in a band that climbs from feet to head
+    const spr = h.sprite;
+    const glow = this.add.image(spr.x, spr.y, spr.texture.key, spr.frame.name).setOrigin(spr.originX, spr.originY).setTintFill(0xfff0a0).setBlendMode(Phaser.BlendModes.ADD);
+    // and a soft glow over the whole body while it climbs
+    const aura = this.add.image(spr.x, spr.y, spr.texture.key, spr.frame.name).setOrigin(spr.originX, spr.originY).setTintFill(0xfff0a0).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.35);
+    const sweep = { p: 0 };
+    this.tweens.add({ targets: sweep, p: 1, duration: 750, ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        if (!spr.active) return;
+        const fh = spr.frame.height, band = 9, top = Math.round((1 - sweep.p) * (fh + band)) - band;
+        glow.setFrame(spr.frame.name).setPosition(spr.x, spr.y).setFlipX(spr.flipX).setDepth(spr.depth + 0.5).setAlpha(0.9 - sweep.p * 0.3)
+          .setCrop(0, Math.max(0, top), spr.frame.width, Math.max(0, Math.min(band, fh - top, band + top)));
+        aura.setFrame(spr.frame.name).setPosition(spr.x, spr.y).setFlipX(spr.flipX).setDepth(spr.depth + 0.4).setAlpha(0.35 * (1 - sweep.p));
+      },
+      onComplete: () => { glow.destroy(); aura.destroy(); } });
+    for (let i = 0; i < 10; i++) {
+      const p = this.add.image(h.x + Phaser.Math.Between(-8, 8), h.y - Phaser.Math.Between(0, 6), 'px2_goldL').setDepth(TOP - 6);
+      this.tweens.add({ targets: p, y: p.y - 26 - Math.random() * 14, alpha: 0, duration: 650 + Math.random() * 300, delay: i * 50, onComplete: () => p.destroy() });
+    }
+    this.fx.ring(h.x, h.y - 2, 'ringGold', 2.4);
+    this.floatText(h.x, h.y - 36, `LEVEL ${lv}`, 'fontGold', 0xffffff, true);
+    this.time.delayedCall(800, () => this.floatText(h.x, h.y - 46, n > 1 ? `+${n} SKILL POINTS` : '+1 SKILL POINT', 'fontPlain', 0x8cff8c));
+  }
+
+  onHeroDowned(h) {
+    // Mirelle's Penance (passive) and the Penitent's Gown: someone falls, the cold answers
+    for (const p of this.party) {
+      if (p === h || p.downed) continue;
+      if (p.passive?.('penance')) { p.shield = Math.max(p.shield || 0, Math.round(p.maxHp * 0.2)); p.shieldT = Math.max(p.shieldT || 0, 6); for (const k of p.skills) k.t = 0; this.floatText(p.x, p.y - 34, 'PENANCE', 'fontPlain', 0x9fe6ff); this.fx.ring(p.x, p.y - 6, 'ringBlue', 2.6); }
+    }
+    if (this.party.some((p) => p !== h && !p.downed && p.hasPerk('penitent'))) {
+      for (const p of this.party) if (!p.downed && p !== h) { p.shield = Math.max(p.shield || 0, Math.round(p.maxHp * 0.15)); p.shieldT = Math.max(p.shieldT || 0, 6); this.fx.burst('foam', p.x, p.y - 10, 6); }
+      this.floatText(this.leader.x, this.leader.y - 40, 'A FROST SHIELD!', 'fontPlain', 0x9fe6ff);
+    }
+    if (h.isLeader) {
+      const next = this.party.find((p) => !p.downed);
+      if (next) this.time.delayedCall(250, () => this.setLeader(next));
+    }
+    if (this.party.every((p) => p.downed)) this.wipe();
+  }
+
+  wipe() {
+    this.events.emit('banner', 'THE PARTY FALLS...', 'REGROUPING AT THE CAMPFIRE');
+    this.busy = true;
+    this.cameras.main.fadeOut(900, 10, 6, 20);
+    this.time.delayedCall(1100, () => {
+      if (!this.colosseum) this.state.gold -= Math.floor(this.state.gold * 0.1); // (falling in the Colosseum costs nothing: it's how every run ends)
+      const run = this.colosseum?.onWipe();
+      for (const h of this.party) { h.downed = false; h.hp = h.maxHp; h.sprite.setAlpha(1); h.anim = ''; }
+      for (const e of this.enemies) if (e.alive) { e.x = e.spawn.x; e.y = e.spawn.y; e.state = 'idle'; e.target = null; e.engaged = false; e.hp = e.maxHp; e.clearZone(); }
+      this.dungeon?.onWipe();
+      const errands = this.quests?.onWipe() || []; // an errand caught mid-fight starts that step over
+      if (this.golem) { for (const p of this.golem.plates || []) { p.img.destroy(); this.removeInteractable(p.o); } this.golem.alive = false; this.golem.destroy(); this.golem = null; this.events.emit('boss', null); this.sealArena(false); }
+      this.setLeader(this.party[0], true);
+      this.events.emit('party');
+      // back to the nearest campfire you've found, behind the loading curtain (it may be a different area entirely)
+      this.teleportParty({ to: this.respawnCamp() }, () => {
+        this.cameras.main.fadeIn(700); this.busy = false;
+        if (errands.length) this.time.delayedCall(900, () => this.events.emit('banner', ...this.quests.wipeNote(errands[0])));
+        if (run) { this.events.emit('banner', ...run); this.autosave('run'); this.colosseum.start(4000); }
+      }, 0, true);
+    });
+  }
+
+  // ------------------------------------------------------- cursed townsfolk
+  // Hexed townsfolk wait around the world with odd side effects. Break the hex
+  // (some are guarded) and they head home to Brightwater, where they stay. At
+  // 10 rescued the Bard returns (and the music gains a harp).
+  folkCount() { return W.townsfolk.filter((t) => this.flags[`folk_${t.id}`]).length; }
+
+  buildTownsfolk() {
+    const px = (t) => t * TILE + TILE / 2;
+    const homes = W.townsfolk.some((t) => this.flags[`folk_${t.id}`]) ? this.townsfolkHomes() : []; // only the rescued go home
+    W.townsfolk.forEach((t, i) => {
+      const saved = !!this.flags[`folk_${t.id}`];
+      const [hx, hy] = saved ? homes[i] : [t.x, t.y];
+      const x = px(hx), y = px(hy);
+      const s = this.add.sprite(x, y, t.look, 'idle_down_0').setOrigin(0.5, 0.75).play(`${t.look}_idle_down`).setDepth(y);
+      const sh = this.add.image(x + 1, y + 1, 'shadow').setAlpha(0.2).setDepth(-4);
+      const f = { t, s, x, y, saved, sh };
+      if (!saved) {
+        s.setTint(0xb48ce0);
+        if (!this.textures.exists('hexRing')) { // drawn once: a live Graphics re-issues its ~200 commands every frame
+          const g = this.make.graphics({ add: false });
+          g.lineStyle(1, 0xd9b8ff, 0.7).strokeEllipse(14, 7, 26, 11).lineStyle(1, 0x8a5cc4, 0.5).strokeEllipse(14, 7, 18, 7);
+          g.generateTexture('hexRing', 28, 14); g.destroy();
+        }
+        f.ring = this.add.image(x, y + 2, 'hexRing').setDepth(-5);
+        f.blight = this.add.image(x, y + 4, `blight${(i % 3) + 3}`).setDepth(-88).setAlpha(0.95); // the blight they caught, pooled at their feet
+        this.tweens.add({ targets: s, y: y - 2, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      }
+      f.o = this.addInteractable({ x, y, reach: 34, standOff: 22, h: 24, kind: 'npc', vis: () => s, interact: () => this.talkTownsfolk(f) });
+      if (saved) f.home = { x, y }, f.idleT = 1 + Math.random() * 5; // home again: they potter about
+      else this.nav.block(hx, hy);
+      (this.townsfolk ??= []).push(f);
+    });
+  }
+
+  // Rescued townsfolk potter about near their spot in Brightwater: a few steps
+  // somewhere open, a pause, a few steps back. They stop to face you when you're near.
+  updateTownsfolk(dt) {
+    const L = this.leader, view = this.cameras.main.worldView;
+    for (const f of this.townsfolk || []) {
+      if (!f.home || !f.s.visible || !view.contains(f.home.x, f.home.y)) continue;
+      const look = f.t.look, near = Math.hypot(L.x - f.x, L.y - f.y) < 40;
+      if (near || this.ui?.dialogOpen) { // stop and look at whoever came over
+        f.goal = null;
+        const dx = L.x - f.x, dy = L.y - f.y, v = Math.abs(dx) > Math.abs(dy) ? 'side' : dy > 0 ? 'down' : 'up';
+        if (f.s.anims.currentAnim?.key !== `${look}_idle_${v}`) f.s.play(`${look}_idle_${v}`);
+        f.s.setFlipX(v === 'side' && dx < 0);
+        continue;
+      }
+      if (!f.goal) {
+        if ((f.idleT -= dt) > 0) continue;
+        const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 26;
+        const gx = f.home.x + Math.cos(a) * r, gy = f.home.y + Math.sin(a) * r * 0.7;
+        const busy = this.personSpots().some(([sx, sy]) => Math.hypot(sx * TILE + 8 - gx, sy * TILE + 8 - gy) < 30)
+          || this.townsfolk.some((o) => o !== f && o.s.visible && (Math.hypot(o.x - gx, o.y - gy) < 20 || (o.goal && Math.hypot(o.goal.x - gx, o.goal.y - gy) < 20)));
+        if (busy || this.nav.solidAtPx(gx, gy) || !this.nav.lineClear(f.x, f.y, gx, gy, 3)) { f.idleT = 1; continue; } // somewhere free, not onto anyone
+        f.goal = { x: gx, y: gy };
+      }
+      const dx = f.goal.x - f.x, dy = f.goal.y - f.y, d = Math.hypot(dx, dy), sp = 18 * dt;
+      const v = Math.abs(dx) > Math.abs(dy) ? 'side' : dy > 0 ? 'down' : 'up';
+      if (d <= sp) { f.goal = null; f.idleT = 3 + Math.random() * 6; f.s.play(`${look}_idle_${v}`); continue; }
+      f.x += (dx / d) * sp; f.y += (dy / d) * sp;
+      if (f.s.anims.currentAnim?.key !== `${look}_walk_${v}`) f.s.play(`${look}_walk_${v}`);
+      f.s.setFlipX(v === 'side' && dx < 0).setPosition(f.x, f.y).setDepth(f.y);
+      f.sh.setPosition(f.x + 1, f.y + 1);
+      f.o.x = f.x; f.o.y = f.y;
+    }
+  }
+
+  // Free spots around the Brightwater hamlet for rescued townsfolk to live.
+  // Everywhere a person or a fixed thing can ever stand in the world (every
+  // NPC whether they've shown up yet or not, town NPCs, signs, campfires,
+  // gathering nodes, the doors of houses), so townsfolk keep clear of them all.
+  personSpots() {
+    return this._spots ??= [...QDATA.npcs, ...W.npcs, ...W.signs, ...W.campfires, ...W.nodes, ...W.buildings.filter((b) => !b.landmark || b.opens || b.kind === 'mill').map((b) => ({ x: b.x, y: b.y + 1 }))].map((k) => [k.x, k.y]);
+  }
+
+  // Free spots around the Brightwater hamlet for rescued townsfolk to live:
+  // at least 2.5 tiles from anyone or anything above and from each other.
+  townsfolkHomes() {
+    // every tile within 2.5 of someone's spot, or of a home already given out,
+    // is marked in a set as it's taken (checking every spot and home for every
+    // tile tried was cubic: 160 s with the dense Vast's 900 townsfolk)
+    const out = [], near = new Set();
+    const mark = (a, b) => { for (let y = Math.floor(b - 2.5); y <= b + 2.5; y++) for (let x = Math.floor(a - 2.5); x <= a + 2.5; x++) if (Math.hypot(a - x, b - y) < 2.5) near.add(y * MAP_W + x); };
+    for (const [a, b] of this.personSpots()) mark(a, b);
+    const clear = (x, y) => !this.nav.isSolid(x, y) && !near.has(y * MAP_W + x);
+    const [hx, hy] = MAP?.generated ? [W.start.x, W.start.y] : [19, 39]; // Brightwater's square (a generated map: where you start)
+    for (const t of W.townsfolk) {
+      let found = null;
+      for (let r = 0; r < 16 && !found; r++) for (let dy = -r; dy <= r && !found; dy++) for (let dx = -r; dx <= r && !found; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+        if (clear(hx + dx, hy + dy)) found = [hx + dx, hy + dy];
+      }
+      found ??= [hx, hy];
+      mark(found[0], found[1]); out.push(found);
+    }
+    return out;
+  }
+
+  talkTownsfolk(f) {
+    const t = f.t, L = this.leader;
+    L.face(f.x - L.x, f.y - L.y);
+    const me = { who: t.name, voice: { pitch: 280 + (t.id.length * 23) % 160, wave: 'square', duty: 0.25 } };
+    if (f.saved) { this.events.emit('dialogue', [{ ...me, text: t.home }]); return; }
+    // a hex needs a Hexbane Draught to break (brewed in CRAFT > BREW)
+    const have = this.state.potions.hexbane || 0;
+    if (!have) {
+      const R = CRAFT.recipes.find((r) => r.id === 'hexbane');
+      const need = Object.entries(R.needs).map(([k, n]) => `${n} ${CRAFT.materials[k].name}`).join(', ');
+      this.events.emit('dialogue', [{ ...me, text: t.quirk }, { ...me, text: 'PLEASE... CAN YOU BREAK THIS HEX?' },
+        { who: L.def.name.toUpperCase(), text: `A HEX THIS DEEP WON'T BREAK BY HAND. WE NEED A HEXBANE DRAUGHT: ${need}. BREW IT UNDER CRAFT.` }]);
+      return;
+    }
+    const ask = { ...me, text: 'PLEASE... CAN YOU BREAK THIS HEX?' };
+    ask.choices = [[`USE HEXBANE DRAUGHT (${have})`, () => { this.state.potions.hexbane = Math.max(0, (this.state.potions.hexbane || 0) - 1); this.rescueTownsfolk(f); }], ['NOT NOW', () => {}]];
+    this.events.emit('dialogue', [{ ...me, text: t.quirk }, ask]);
+  }
+
+  rescueTownsfolk(f) {
+    const t = f.t;
+    this.flags[`folk_${t.id}`] = true;
+    f.saved = true;
+    audio.sfx('curseLift');
+    this.cameras.main.flash(160, 230, 210, 255);
+    this.fx.burst('bloom', f.x, f.y - 10, 24);
+    f.ring?.destroy();
+    if (f.blight) { const patch = f.blight; f.blight = null; this.tweens.add({ targets: patch, alpha: 0, scale: 0.6, duration: 1400, onComplete: () => patch.destroy() }); } // (keep our own handle: f.blight is cleared now)
+    this.tweens.killTweensOf(f.s);
+    f.s.clearTint().setY(f.y);
+    // some hexes lash out as they break
+    if (t.guard) {
+      this.events.emit('banner', 'THE HEX LASHES OUT!', `PROTECT ${t.name}`);
+      for (const [k, dx, dy] of t.guard) this.spawnEnemy(k, f.x + dx * TILE, f.y + dy * TILE, true);
+    }
+    const n = this.folkCount();
+    this.state.gold += 25;
+    for (const h of this.party) if (!h.downed) h.gainXp(30);
+    this.time.delayedCall(t.guard ? 2400 : 400, () => {
+      this.events.emit('banner', `TOWNSFOLK RESCUED  ${n} / 30`, `${t.name} IS HEADING HOME TO BRIGHTWATER`);
+      this.bark(f.s ? { x: f.x, y: f.y, def: {} } : this.leader, 'THANK YOU! I\'LL SEE YOU IN BRIGHTWATER!');
+    });
+    this.time.delayedCall(t.guard ? 3200 : 1400, () => {
+      this.tweens.add({ targets: f.s, alpha: 0, x: f.x + 30, duration: 900, onComplete: () => f.s.setVisible(false) });
+      this.tweens.add({ targets: f.sh, alpha: 0, duration: 900 });
+      this.removeInteractable(f.o);
+      this.nav.unblock?.(Math.floor(f.x / TILE), Math.floor(f.y / TILE));
+    });
+    this.openHomes(n);
+    if (n >= 10 && !this.flags.bard) {
+      this.flags.bard = true;
+      this.time.delayedCall(5200, () => { this.events.emit('banner', 'THE BARD HAS COME HOME', 'TILLY PLAYS BY THE TAVERN DOOR - LISTEN FOR THE HARP'); music.setBard(true); audio.sfx('levelUp'); });
+    }
+    this.autosave('townsfolk');
+  }
+
+  // ------------------------------------------------------------ the Colosseum
+  // Its stands, a crowd of townsfolk on the benches (head and shoulders: each
+  // sprite cropped at the bench in front of them), then its near wall and
+  // gate over them. Built with its chunk. The crowd breathes, someone looks
+  // round now and then, someone hops up cheering; with the party near, cheers
+  // roll along the stands.
+  buildColosseum(b) {
+    const bx = b.x * TILE + 8, by = (b.y + 1) * TILE, x0 = bx - COLOSSEUM.W / 2, y0 = by - COLOSSEUM.H;
+    const seats = (COLOSSEUM.seats ??= colosseumArt().seats);
+    this.lazy(bx, by, (e) => {
+      const objs = [this.add.image(bx, by, 'colosseum_back').setOrigin(0.5, 1).setDepth(by - 2)];
+      const crowd = crowdFor(seats);
+      const fans = [];
+      seats.forEach((st, i) => {
+        const id = crowd[i];
+        if (!id || !this.textures.exists(id)) return;
+        // frame rows 13-24 (head and shoulders) sit just above the bench line
+        const s = this.add.sprite(x0 + st.x - 24, y0 + st.y - 25, id, 'idle_down_0').setOrigin(0).setDepth(by - 2 + 0.5 + st.tier * 0.5).setCrop(15, 13, 18, 12);
+        const f = { s, id, st, baseY: s.y, face: st.face };
+        this.faceFan(f, st.face);
+        s.anims.setProgress(hash(i, 5, 41)); s.anims.timeScale = 0.8 + hash(i, 6, 41) * 0.5; // each breathes on their own beat
+        fans.push(f); objs.push(s);
+      });
+      objs.push(this.add.image(bx, by, 'colosseum_front').setOrigin(0.5, 1).setDepth(by));
+      let waveT = 0;
+      e.timers.push(this.time.addEvent({ delay: 300, loop: true, callback: () => {
+        if (!this.cameras.main.worldView.contains(bx, by - 30)) return;
+        const r = Math.random(), f = fans[Math.floor(Math.random() * fans.length)];
+        if (!f) return;
+        if (r < 0.12) this.cheerFan(f); // someone hops up
+        else if (r < 0.2 && f.st.face === 'down' && !f.glance) { // someone looks along the row
+          f.glance = true; this.faceFan(f, Math.random() < 0.5 ? 'left' : 'right');
+          this.time.delayedCall(1200 + Math.random() * 1500, () => { if (f.s.active) { this.faceFan(f, 'down'); f.glance = false; } });
+        }
+        // the party near the gate: a cheer rolls along the stands every few seconds
+        const L = this.leader;
+        if ((waveT -= 0.3) <= 0 && L && Math.hypot(L.x - bx, L.y - by) < 10 * TILE) {
+          waveT = 4 + Math.random() * 3;
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          for (const k of fans) this.time.delayedCall(Math.max(0, (k.st.x - (dir > 0 ? 0 : COLOSSEUM.W)) * dir) * 6 + k.st.tier * 60, () => k.s.active && this.cheerFan(k));
+        }
+      } }));
+      return objs;
+    });
+  }
+
+  faceFan(f, face) {
+    f.s.play(`${f.id}_idle_${face === 'down' ? 'down' : 'side'}`, true).setFlipX(face === 'left');
+    f.s.setCrop(15, 13, 18, 12);
+  }
+
+  // a hop with the arms up: the crop grows with the hop, so no gap opens above the bench
+  cheerFan(f) {
+    if (f.cheering) return;
+    f.cheering = true;
+    this.tweens.add({ targets: f.s, y: f.baseY - 4, duration: 130, yoyo: true, repeat: 1, ease: 'Quad.easeOut',
+      onUpdate: () => f.s.setCrop(15, 13, 18, 12 + Math.round(f.baseY - f.s.y)),
+      onComplete: () => { f.s.y = f.baseY; f.s.setCrop(15, 13, 18, 12); f.cheering = false; } });
+  }
+
+  // ------------------------------------------------------------ lore pages
+  buildLore() {
+    this.lorePages = [];
+    for (const p of MAP ? [] : LORE) { // (lore pages are Aldermere's)
+      if (this.state.lore?.includes(p.id)) continue;
+      const x = p.x * TILE + 8, y = p.y * TILE + 8;
+      const s = this.add.image(x, y, 'lorePage').setOrigin(0.5, 1).setDepth(y);
+      const glow = this.add.circle(x, y - 4, 9, 0xfff0a0, 0.15).setDepth(-6).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: s, y: y - 3, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.tweens.add({ targets: glow, alpha: 0.05, duration: 1100, yoyo: true, repeat: -1 });
+      const page = { p, s, glow };
+      page.o = this.addInteractable({ x, y, reach: 22, standOff: 10, h: 14, kind: 'lore', vis: () => s, interact: () => this.readLore(page) });
+      this.lorePages.push(page);
+    }
+  }
+
+  readLore(page) {
+    const st = this.state;
+    st.lore ??= [];
+    if (!st.lore.includes(page.p.id)) st.lore.push(page.p.id);
+    this.removeInteractable(page.o);
+    this.tweens.killTweensOf([page.s, page.glow]);
+    page.s.destroy(); page.glow.destroy();
+    audio.sfx('chest');
+    this.scene.pause();
+    this.events.emit('lore', page.p, st.lore.length, () => this.scene.resume());
+    this.autosave('lore');
+  }
+
+  // Campfires count as found once the party has been near one (or rested there).
+  updateCampfires() {
+    const L = this.leader;
+    for (const c of W.campfires) {
+      const dx = L.x - (c.x * TILE + 8), dy = L.y - (c.y * TILE + 8);
+      if (dx > 7 * TILE || dx < -7 * TILE || dy > 7 * TILE || dy < -7 * TILE) continue; // (cheap test first: a big map has hundreds)
+      const k = `camp_${c.x}_${c.y}`;
+      if (!this.flags[k] && Math.hypot(dx, dy) < 7 * TILE) {
+        this.flags[k] = true;
+        this.floatText(c.x * TILE + 8, c.y * TILE - 18, 'CAMPFIRE FOUND', 'fontGold');
+      }
+    }
+  }
+
+  // A deep-link demo (?demo=combat | explore). Audio wakes on the first tap
+  // (the title screen normally does that). Combat runs in the Training
+  // Grounds, a sandbox hall of its own: waves of foes from the far side, a new
+  // one a moment after each is beaten.
+  startDemo(kind) {
+    this.input.once('pointerdown', () => audio.init());
+    this.input.keyboard?.once('keydown', () => audio.init());
+    if (kind !== 'combat') return;
+    const C = this.state.demoAt, A = { x: C.x + 20, y: C.y };
+    const WAVES = [
+      [['goblin', 0, 0], ['goblin', 1, -2], ['goblin', 1, 2]],
+      [['goblin', 0, -1], ['goblin', 0, 1], ['archer', 3, 0]],
+      [['hexling', 0, -2], ['hexling', 1, 0], ['hexling', 0, 2], ['hexling', 2, 1]],
+      [['knight', 0, 0], ['goblin', 1, -2], ['archer', 3, 2]],
+    ];
+    let n = 0, waiting = false, foes = [];
+    const wave = () => {
+      const w = WAVES[n++ % WAVES.length];
+      foes = w.map(([k, dx, dy]) => { const o = this.nav.nearestOpen(A.x + dx, A.y + dy, 4) || [A.x, A.y]; return this.spawnEnemy(k, o[0] * TILE + 8, o[1] * TILE + 8, true); });
+      this.events.emit('banner', `WAVE ${n}`, n === 1 ? 'TAP A FOE TO ATTACK - SWIPE TO DODGE' : `${w.length} FOES`);
+    };
+    this.time.delayedCall(1400, wave);
+    this.time.addEvent({ delay: 400, loop: true, callback: () => {
+      if (waiting || !foes.length || foes.some((e) => e.alive)) return;
+      waiting = true;
+      this.time.delayedCall(2200, () => { waiting = false; wave(); });
+    } });
+  }
+
+  // Where the party regroups after a wipe: the found campfire nearest to where they fell.
+  // Inside an interior, distance is measured from its entrance in the overworld.
+  respawnCamp() {
+    const dk = this.dungeon;
+    if (dk?.respawn) return dk.respawn; // lab boss test
+    if (this.state.demoAt) return this.state.demoAt; // a deep-link demo: back to its own field
+    if (this.colosseum) return W.start; // the Colosseum: back to the gate for the next run
+    if (dk?.camp && (dk.lab || this.flags[`camp_${dk.camp.x}_${dk.camp.y}`])) return { x: dk.camp.x + 2, y: dk.camp.y }; // this dungeon's own fire, once found
+    const L = this.leader;
+    let fx = L.x / TILE, fy = L.y / TILE;
+    if (this.area !== 'overworld') {
+      const door = W.warps.find((w) => !w.exit && areaAt(w.to.x, w.to.y) === this.area);
+      if (door) { fx = door.x; fy = door.y; }
+    }
+    const found = W.campfires.filter((c) => this.flags[`camp_${c.x}_${c.y}`]);
+    const best = (found.length ? found : [W.start]).sort((a, b) => Math.hypot(a.x - fx, a.y - fy) - Math.hypot(b.x - fx, b.y - fy))[0];
+    return best === W.start ? W.start : { x: best.x, y: best.y + 2 };
+  }
+
+  // ------------------------------------------------------------ trainers
+  // A trainer teaches their discipline to one party member at a time (one
+  // discipline per hero; switching refunds skill points but costs more gold).
+  trainerTalk(npc) {
+    this.flags[`taught_${npc.trainer}`] = true; // the Trainers' Hall can teach it from now on
+    const D = DISCIPLINES[npc.trainer];
+    const line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    const intro = npc.metTrainer ? [] : this.quests.linesOf(npc).map(line);
+    npc.metTrainer = true;
+    const opts = this.party.filter((h) => h.hs.disc !== npc.trainer);
+    if (!opts.length) { this.events.emit('dialogue', [...intro, line(`YOUR WHOLE PARTY ALREADY KNOWS THE ${D.name}. NOW PRACTISE.`)]); return; }
+    const ask = line(`${D.pitch} WHO WILL LEARN IT? ${D.cost} GOLD - MORE FOR A HERO WHO MUST FORGET ANOTHER DISCIPLINE.`);
+    ask.choices = [...opts.map((h) => [h.def.name.toUpperCase(), () => this.teachDiscipline(npc, h)]), ['NOT NOW', () => {}]];
+    this.events.emit('dialogue', [...intro, ask]);
+  }
+
+  teachDiscipline(npc, h) {
+    const disc = npc.trainer, D = DISCIPLINES[disc], cost = switchCost(h.hs, disc);
+    if (this.state.gold < cost) { this.events.emit('dialogue', [{ who: npc.name, voice: npc.voice, text: `THAT'S ${cost} GOLD. COME BACK WHEN YOUR PURSE IS HEAVIER.` }]); return; }
+    const had = h.hs.disc;
+    this.state.gold -= cost;
+    learnDiscipline(h.hs, disc);
+    h.buildSkills(); h.refreshStats();
+    audio.sfx('levelUp');
+    this.fx.burst('bloom', h.x, h.y - 10, 24);
+    this.events.emit('banner', `${h.def.name.toUpperCase()} LEARNED ${D.name}`, had ? `FORGOT ${DISCIPLINES[had].name} - SKILL POINTS REFUNDED` : 'OPEN SKILLS IN THE MENU TO EQUIP AND RANK UP');
+    this.events.emit('party');
+    this.autosave('discipline');
+  }
+
+  // The Trainers' Hall (C9, 3 stones): any discipline you've met a trainer for,
+  // respecs, Veteran's Tomes for benched heroes and Ultimate Tomes at level 20.
+  hallTalk(npc) {
+    const st = this.state, line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    const say = (t, choices) => { const l = line(t); if (choices) l.choices = [...choices, ['NOT NOW', () => {}]]; this.events.emit('dialogue', [l]); };
+    const heroes = (list) => list.map((id) => ({ id, hs: st.heroes[id], name: heroInfo(id).name.toUpperCase() }));
+    const pay = (g) => { if (st.gold < g) { say(`THAT'S ${g} GOLD. THE HALL DOESN'T RUN ON GOODWILL.`); return false; } st.gold -= g; audio.sfx('coin'); return true; };
+    const avg = () => Math.round(this.party.reduce((a, h) => a + h.level, 0) / Math.max(1, this.party.length));
+    const menu = () => say(npc.metHall ? 'WHAT WILL IT BE?' : this.quests.linesOf(npc).join(' '), [
+      ['DISCIPLINES', () => {
+        const known = Object.keys(DISCIPLINES).filter((d) => this.flags[`taught_${d}`]);
+        if (!known.length) { say('YOU HAVEN\'T MET A SINGLE TRAINER. GO AND SHAKE SOME HANDS FIRST.'); return; }
+        say('WHICH DISCIPLINE?', known.slice(0, 5).map((d) => [DISCIPLINES[d].name, () => this.trainerTalk({ ...npc, trainer: d, metTrainer: true })]));
+      }],
+      ['RESPEC', () => say('WHO WANTS TO START OVER? EVERY SKILL POINT COMES BACK.', heroes(st.active).map((h) => [`${h.name} ${respecCost(h.hs)}G`, () => {
+        if (!pay(respecCost(h.hs))) return;
+        const n = respecHero(h.id, h.hs);
+        this.party.find((p) => p.def.id === h.id)?.buildSkills();
+        this.events.emit('banner', `${h.name} RESPECCED`, `${n} SKILL POINT${n === 1 ? '' : 'S'} BACK TO SPEND`); this.events.emit('party'); this.autosave('respec');
+      }]))],
+      ['VETERAN TOME', () => {
+        const a = avg(), bench = heroes(st.recruited.filter((id) => !st.active.includes(id) && st.heroes[id].level < a));
+        if (!bench.length) { say('NOBODY ON YOUR BENCH IS BEHIND. A VETERAN\'S TOME BRINGS A RESTING HERO UP TO THE PARTY.'); return; }
+        say(`A VETERAN'S TOME BRINGS A BENCHED HERO UP TO LEVEL ${a}.`, bench.slice(0, 4).map((h) => [`${h.name} ${60 * (a - h.hs.level)}G`, () => {
+          if (!pay(60 * (a - h.hs.level))) return;
+          h.hs.sp = (h.hs.sp || 0) + (a - h.hs.level); h.hs.level = a; h.hs.xp = 0;
+          this.events.emit('banner', `${h.name} STUDIED HARD`, `NOW LEVEL ${a}`); this.events.emit('party'); this.autosave('tome');
+        }]));
+      }],
+      ['ULTIMATE TOME', () => {
+        const ok = heroes(st.recruited.filter((id) => st.heroes[id].level >= 20 && !st.heroes[id].ultTome));
+        if (!ok.length) { say('ULTIMATE TOMES ARE FOR HEROES OF LEVEL 20. NOT A DAY BEFORE. I DON\'T MAKE THE RULES. (I DO.)'); return; }
+        say('READ THIS AND YOUR ULTIMATE GROWS. 1200 GOLD.', ok.slice(0, 4).map((h) => [h.name, () => {
+          if (!pay(1200)) return;
+          h.hs.ultTome = true;
+          this.events.emit('banner', `${h.name}'S ULTIMATE GROWS`, skillData[heroInfo(h.id).ultimate]?.upgrade?.replace('L20 TOME: ', '') || 'STRONGER THAN EVER'); this.events.emit('party'); this.autosave('tome');
+        }]));
+      }],
+    ]);
+    npc.metHall = true;
+    menu();
+  }
+
+  // The Cartographer (C9, 20 townsfolk home): pins every lookout tower on
+  // your map, and gives the Wanderer's Charm once you've climbed them all.
+  cartographerTalk(npc) {
+    const line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    const intro = this.flags.cartoPins ? [] : this.quests.linesOf(npc).map(line);
+    this.flags.cartoPins = true; // mapMarkers shows every lookout from now on
+    const climbed = W.lookouts.filter((k) => this.flags[`lookout_${k.id}`]).length, all = W.lookouts.length;
+    if (climbed >= all && !this.flags.wanderer) {
+      this.flags.wanderer = true;
+      gainItems(this.state, ['wanderers_charm']); // given now, shown after the talk, so a closed game can't lose it
+      this.autosave('carto');
+      this.events.emit('dialogue', [...intro, line(`EVERY TOWER I KNOW OF - ${all} OF ${all}! YOU WALK MORE THAN I DO, AND I DRAW MAPS FOR A LIVING. TAKE THIS.`)], () => this.events.emit('loot', { ids: ['wanderers_charm'] }));
+      return;
+    }
+    this.events.emit('dialogue', [...intro, line(this.flags.wanderer ? 'STILL WALKING? GOOD. THE MAP NEEDS FEET.' : `I'VE PINNED EVERY LOOKOUT TOWER ON YOUR MAP. YOU'VE CLIMBED ${climbed} OF ${all}. CLIMB THEM ALL AND I'LL HAVE SOMETHING FOR YOU.`)]);
+  }
+
+  // Brightwater's homes: boarded up until enough townsfolk are back, then open
+  // with a keeper and something worth coming for (DESIGN: townsfolk rewards).
+  addHome(b, img, bx, by) {
+    const KEEPER = { curio: 'bess', archery: 'wynn', bath: 'hilde', mayor: 'mayor' };
+    const home = { b, img, keeper: KEEPER[b.kind] };
+    this.homes[b.id] = home;
+    home.o = this.addInteractable({ x: bx, y: by - 4, reach: 26, standOff: 14, h: 18, kind: 'sign', vis: () => img, interact: () => {
+      const n = this.folkCount();
+      if (n < b.opens) {
+        this.events.emit('dialogue', [{ who: b.name, text: `BOARDED UP. A NOTE ON THE DOOR: 'WE CAUGHT THE HEX. WE'LL BE BACK WHEN BRIGHTWATER IS.' (OPENS WITH ${b.opens} TOWNSFOLK HOME - ${n} SO FAR.)` }]);
+        return;
+      }
+      const k = this.quests.npc(home.keeper);
+      if (k) this.quests.talk(k);
+    } });
+  }
+
+  // a rescue brought the count to a home's number: it opens, there and then
+  openHomes(n) {
+    for (const home of Object.values(this.homes || {})) {
+      if (home.b.opens !== n) continue;
+      home.img.setTexture(`house_${home.b.kind}`);
+      this.time.delayedCall(6500, () => { this.events.emit('banner', `${home.b.name} IS OPEN`, `IN BRIGHTWATER - ${n} TOWNSFOLK HOME`); audio.sfx('unlock'); });
+    }
+  }
+
+  // Bess's curios: three things, new stock after every rest at a campfire
+  curioStock() {
+    const st = this.state, n = st.rests || 0;
+    if (st.curio?.n === n) return st.curio;
+    const lv = Math.round(this.party.reduce((a, h) => a + h.level, 0) / this.party.length), tier = tierForLevel(lv);
+    const hero = st.recruited[Math.floor(Math.random() * st.recruited.length)];
+    const gear = makeItem(hero, ['weapon', 'offhand', 'head', 'body'][Math.floor(Math.random() * 4)], tier, 'rare');
+    const gems = Object.keys(CRAFT.gems.kinds), gem = `${gems[Math.floor(Math.random() * gems.length)]}3`;
+    const mats = [['pearl', 3, 260], ['silver', 4, 220], ['scale', 3, 240], ['crystal', 3, 200], ...(this.flags.royalArmory ? [['starmetal', 1, 650], ['starmetal', 2, 1200]] : [])]; // starmetal only once it's any use (the Royal Armory)
+    const mat = mats[Math.floor(Math.random() * mats.length)];
+    st.curio = { n, offers: [
+      { gear, price: Math.round(gearValue(gear) * 1.6) }, // a curio-monger's mark-up on what it's worth
+      { gem, price: 300 },
+      { mat: mat[0], count: mat[1], price: mat[2] },
+    ], sold: [] };
+    return st.curio;
+  }
+
+  curioTalk(npc) {
+    const st = this.state, line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    const c = this.curioStock();
+    const label = (o) => o.gear ? itemName(o.gear) : o.gem ? gemName(o.gem) : `${o.count} ${CRAFT.materials[o.mat].name}`;
+    const intro = this.flags.metBess ? [] : this.quests.linesOf(npc).slice(0, 1).map(line);
+    this.flags.metBess = true;
+    const l = line(c.sold.length >= 3 ? 'SOLD OUT! REST AT A FIRE AND COME BACK. I\'LL HAVE FOUND SOMETHING.' : 'WHAT CATCHES YOUR EYE?');
+    l.choices = [...c.offers.map((o, i) => [c.sold.includes(i) ? `${label(o)} - SOLD` : `${label(o)} ${o.price}G`, () => {
+      if (c.sold.includes(i)) { this.curioTalk(npc); return; }
+      if (st.gold < o.price) { this.events.emit('dialogue', [line("THAT'S MORE THAN YOU'VE GOT, DEAR. IT'LL KEEP UNTIL YOUR NEXT REST.")]); return; }
+      st.gold -= o.price; c.sold.push(i); audio.sfx('coin');
+      if (o.gear) { gainItems(st, [o.gear]); this.events.emit('loot', { ids: [o.gear] }); }
+      if (o.gem) { st.gems[o.gem] = (st.gems[o.gem] || 0) + 1; this.floatText(this.leader.x, this.leader.y - 30, `+1 ${gemName(o.gem)}`, 'fontGold'); }
+      if (o.mat) { addMats(st, { [o.mat]: o.count }); this.floatText(this.leader.x, this.leader.y - 30, `+${o.count} ${CRAFT.materials[o.mat].name}`, 'fontGold'); }
+      this.events.emit('party'); this.autosave('curio');
+    }]), ['NOT NOW', () => {}]];
+    this.events.emit('dialogue', [...intro, l]);
+  }
+
+  // the steam house: a soak heals everyone and makes them quicker learners for a while
+  bathTalk(npc) {
+    const st = this.state, line = (t) => ({ who: npc.name, voice: npc.voice, text: t }), FEE = 40;
+    const intro = this.flags.metHilde ? [] : this.quests.linesOf(npc).map(line);
+    this.flags.metHilde = true;
+    const l = line((st.steamT || 0) > 0 ? `STILL STEAMING? YOU'VE ${Math.ceil(st.steamT / 60)} MINUTES OF IT LEFT. ANOTHER SOAK TOPS IT BACK UP.` : 'A SOAK? FORTY GOLD.');
+    l.choices = [[`SOAK (${FEE}G)`, () => {
+      if (st.gold < FEE) { this.events.emit('dialogue', [line('FORTY GOLD, LOVE. THE SPRING IS FREE, THE TOWELS ARE NOT.')]); return; }
+      st.gold -= FEE; st.steamT = 600; audio.sfx('heal');
+      for (const h of this.party) { if (h.downed) h.revive(1); h.hp = h.maxHp; this.fx.heal(h.x, h.y); }
+      this.events.emit('banner', 'A GOOD LONG SOAK', 'HP RESTORED  -  +15% XP FOR 10 MINUTES');
+      this.events.emit('party'); this.autosave('bath');
+    }], ['NOT NOW', () => {}]];
+    this.events.emit('dialogue', [...intro, l]);
+  }
+
+  // the mayor: the town's thanks, once
+  mayorTalk(npc) {
+    const line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    if (this.flags.townKey) { this.events.emit('dialogue', [line('THE WHOLE TOWN, HOME. I STILL CAN\'T QUITE BELIEVE IT. DROP IN ANY TIME - THE KETTLE\'S ALWAYS ON.')]); return; }
+    this.flags.townKey = true;
+    gainItems(this.state, ['key_brightwater']); addMats(this.state, { starmetal: 2 }); this.state.gold += 1000;
+    this.autosave('mayor');
+    this.events.emit('dialogue', [...this.quests.linesOf(npc).map(line), line('AND A PURSE FROM ALL OF US - A THOUSAND GOLD AND TWO PIECES OF STARMETAL. DON\'T ARGUE. IT\'S BEEN VOTED.')], () => { this.events.emit('loot', { ids: ['key_brightwater'] }); this.events.emit('party'); });
+  }
+
+  // Gizmo's repair: the mill wheel turns (and keeps turning on every visit).
+  startMill(show = true) {
+    const w = this.millWheel;
+    if (!w || w.anims.isPlaying) return;
+    w.play('millwheel');
+    if (!show) return;
+    audio.sfx('equip');
+    this.fx.burst('foam', w.x, w.y - 4, 14);
+    this.floatText(w.x, w.y - 40, 'THE WHEEL TURNS!', 'fontGold');
+  }
+
+  // ============================================================ dodges
+  // Now and then a basic attack misses (tuning.evade): heroes by their DODGE
+  // stat (Sable and Wren most, Brann in plate least, Fleet gear adds a little),
+  // foes by kind (wolves, imps and raiders slippery; golems, trolls and knights
+  // hardly ever; bosses and anything stunned, frozen or flipped never). Skills,
+  // area attacks and boss moves always land. A hero who dodges counters: their
+  // next basic hit within a few seconds lands harder.
+  evadeChance(u) {
+    const E = tuning.evade;
+    if (u.team === 'party') return u.stats?.evade ?? 0;
+    if (!this.enemies.includes(u)) return 0; // only creatures sidestep: walls, crystals, braziers and plates never do
+    if (u.boss || E.never.includes(u.kind) || u.stunT > 0 || u.flippedT > 0 || u.status?.freeze || u.frozenT > 0) return 0;
+    return E.slippery.includes(u.kind) ? E.slipperyRate : E.heavy.includes(u.kind) ? E.heavyRate : E.enemy;
+  }
+
+  tryEvade(target, src) {
+    if (!target?.alive || target.downed || Math.random() >= this.evadeChance(target)) return false;
+    // a quick sidestep across the line of the blow
+    const [nx, ny] = norm(target.x - (src?.x ?? target.x), target.y - (src?.y ?? target.y - 1)), side = Math.random() < 0.5 ? 1 : -1;
+    target.knock?.(-ny * side, nx * side, 70);
+    const party = target.team === 'party';
+    this.floatText(target.x, target.y - 30, party ? 'DODGE' : 'MISS', 'fontPlain', party ? 0x9fe8ff : 0xd8d3e0);
+    audio.sfx('dodge');
+    if (party) target.counterT = this.time.now + tuning.evade.counterWindow * 1000;
+    return true;
+  }
+
+  // ============================================================ the Ferryman
+  // A hooded mystic, freed when the first Ward Stone falls: "not of rivers - of
+  // firelight". He's always waiting at the campfire you're heading for (he
+  // moves there while neither spot is on screen), with a portal sign over his
+  // head, and calls out if you hang about. He opens a portal to any campfire
+  // you've rested at (Brightwater's always); the party walks through it.
+  ferryman() { return this.quests?.npc('ferryman'); }
+
+  // a free spot beside a campfire, clear of everyone else's
+  // water, bog, shallows or lava on or next to a tile
+  wetNear(x, y) {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (WET.has(this.world.at(x + dx, y + dy))) return true;
+    return false;
+  }
+
+  ferrySpot(c, not = null) {
+    const F = this.ferryman();
+    const busy = this.personSpots().filter(([x, y]) => !(F && x === F.def?.x && y === F.def?.y));
+    for (const [dx, dy] of [[2, 0], [-2, 0], [2, 1], [-2, 1], [2, -1], [-2, -1], [1, -2], [-1, -2], [3, 0], [-3, 0], [0, -2]]) {
+      const x = c.x + dx, y = c.y + dy;
+      if (this.nav.isSolid(x, y) || (not && not[0] === x && not[1] === y)) continue;
+      if (this.wetNear(x, y)) continue; // dry ground, never at the water's edge
+      if (busy.some(([bx, by]) => Math.hypot(bx - x, by - y) < 1.6 && !(bx === c.x && by === c.y))) continue;
+      return [x, y];
+    }
+    return null;
+  }
+
+  updateFerryman(dt) {
+    const F = this.ferryman();
+    if (!F || F.hiddenNow || this.area !== 'overworld') return;
+    F.def ||= QDATA.npcs.find((n) => n.id === 'ferryman');
+    const L = this.leader, v = this.cameras.main.worldView;
+    // a few motes of violet light drift up off him
+    if (v.contains(F.px, F.py) && Math.random() < dt * 3) this.fx.burst('motes', F.px + (Math.random() - 0.5) * 12, F.py - 10 - Math.random() * 10, 1);
+    if (this.busy) return;
+    F.moveT = (F.moveT || 0) - dt;
+    if (F.moveT <= 0) { F.moveT = 0.4; this.placeFerryman(false); }
+    // he calls out if you're nearby but don't come over
+    const d = Math.hypot(F.px - L.x, F.py - L.y);
+    if (d < 120 && d > 40 && !this.ui.dialogOpen) {
+      F.waitT = (F.waitT || 0) + dt;
+      if (F.waitT > 2.5 && !F.called) { F.called = true; this.bark(F.s, this.flags.metFerryman ? 'NEED A LIFT?' : 'YOU THERE. I HAVE BEEN WAITING FOR YOU.'); }
+    } else if (d > 220) { F.waitT = 0; F.called = false; }
+  }
+
+  // move him to the campfire the party is nearest (within 22 tiles). Unforced,
+  // only while neither his old spot nor the new one is on screen; forced (the
+  // first placing, or behind a warp's fade) anywhere.
+  placeFerryman(force) {
+    const F = this.ferryman();
+    if (!F || F.hiddenNow) return;
+    const L = this.leader, v = this.cameras.main.worldView, ltx = L.x / TILE, lty = L.y / TILE;
+    let best = null, bd = Infinity;
+    for (const c of W.campfires) { const d = Math.hypot(c.x - ltx, c.y - lty); if (d < bd) { bd = d; best = c; } }
+    if (!best || F.fire === best || (F.fire && bd > 22)) return;
+    const seen = (x, y) => x > v.x - 32 && x < v.right + 32 && y > v.y - 48 && y < v.bottom + 32;
+    const spot = this.ferrySpot(best);
+    if (!spot || (!force && F.fire && (seen(F.px, F.py) || seen(spot[0] * TILE + 8, spot[1] * TILE + 8)))) return;
+    this.quests.moveNpc(F, spot[0], spot[1]);
+    F.fire = best; F.called = false; F.waitT = 0;
+    F.s.play(`${F.look}_idle_down`, true);
+  }
+
+  ferryTalk(npc) {
+    const line = (t) => ({ who: npc.name, voice: npc.voice, text: t });
+    const here = npc.fire;
+    if (here) this.flags[`camp_${here.x}_${here.y}`] = true; // he knows this fire now
+    const known = this.restedFires().filter((c) => c !== here);
+    const intro = this.flags.metFerryman ? [] : [
+      line('THE STONE IS BROKEN. I FELT IT CRACK, FROM THE FAR SIDE OF THE FIRES.'),
+      line('I AM THE FERRYMAN. NOT OF RIVERS - OF FIRELIGHT. EVERY FIRE IN ALDERMERE IS ONE FIRE, IF YOU KNOW THE WAY THROUGH.'),
+      line('REST BY A FIRE AND I WILL REMEMBER IT. FIND ME AT THE NEXT ONE AND I WILL OPEN THE WAY. NO CHARGE. MALGRIM HAS TAKEN ENOUGH.'),
+    ];
+    this.flags.metFerryman = true;
+    const ask = line(known.length ? this.quests.linesOf(npc)[0] : 'REST BY OTHER FIRES, AND I CAN TAKE YOU BACK TO THEM.');
+    this.events.emit('dialogue', [...intro, ask], () => {
+      // a list of names, or the same fires on the map (MAP)
+      if (known.length) this.ui.pickPlace('WHERE TO?', known.map((c) => c.name), (i) => this.ferryTravel(npc, known[i]), ['MAP', () => this.openMap({ here, pick: (c) => this.ferryTravel(npc, c) })]);
+    });
+  }
+
+  // He lifts his staff, a portal opens beside him, and the party walks in; at
+  // the far fire it opens again, they step out, and it closes. He's there too.
+  ferryTravel(npc, c) {
+    this.busy = true;
+    // the portal opens on his far side from the fire (or in front of him)
+    const fire = npc.fire || { x: npc.x - 2, y: npc.y }, away = Math.sign(npc.x - fire.x) || 1;
+    let pt = [npc.x + away, npc.y];
+    for (const [dx, dy] of [[away, 0], [0, 1], [away, 1], [-away, 1], [0, -1]]) {
+      const x = npc.x + dx, y = npc.y + dy;
+      if (!this.nav.isSolid(x, y) && Math.hypot(x - fire.x, y - fire.y) >= 1.5) { pt = [x, y]; break; }
+    }
+    const ppx = pt[0] * TILE + 8, ppy = pt[1] * TILE + 8;
+    // he raises his staff (it stays up, the crystal glowing, until everyone's through)
+    if (this.anims.exists(`${npc.look}_cast_down`)) npc.s.play(`${npc.look}_cast_down`);
+    const tx = npc.px - 6, ty = npc.py - 26; // the crystal, staff raised
+    const glow = [this.add.circle(tx, ty, 6, 0xb98cff), this.add.circle(tx, ty, 2.5, 0xffffff)].map((o) => o.setAlpha(0).setDepth(npc.py + 2));
+    this.tweens.add({ targets: glow[0], alpha: 0.5, duration: 250, delay: 150 });
+    this.tweens.add({ targets: glow[1], alpha: 0.95, duration: 250, delay: 150 });
+    this.tweens.add({ targets: glow[0], scale: 1.5, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const glint = this.time.addEvent({ delay: 90, loop: true, callback: () => this.fx.burst('motes', tx + (Math.random() - 0.5) * 6, ty, 1) });
+    const lower = () => { glint.remove(); this.tweens.add({ targets: glow, alpha: 0, duration: 250, onComplete: () => glow.forEach((o) => o.destroy()) }); npc.s.play(`${npc.look}_idle_down`); };
+    const open = (x, y) => {
+      audio.sfx('portalOpen');
+      const p = this.add.sprite(x, y + 6, 'portal').setOrigin(0.5, 1).play('portal').setScale(0.1).setDepth(y + 3);
+      this.tweens.add({ targets: p, scale: 1, duration: 380, ease: 'Back.easeOut' });
+      this.fx.burst('motes', x, y - 10, 10); this.fx.puff(x, y - 12, 'spark');
+      return p;
+    };
+    const close = (p) => { audio.sfx('portalClose'); this.tweens.add({ targets: p, scale: 0, duration: 300, ease: 'Back.easeIn', onComplete: () => p.destroy() }); };
+    const portal = open(ppx, ppy);
+    // everyone walks in, one after another
+    this.time.delayedCall(450, () => {
+      for (const h of this.party) { h.clearPath(); h.command = null; h.target = null; h.anim = ''; h.face(ppx - h.x, ppy - h.y); h.play('walk'); }
+      this.tweens.killTweensOf(this.party);
+      // at a walk (a companion a way off takes longer), each a beat behind the one before
+      const walk = this.party.map((h) => Phaser.Math.Clamp(Math.hypot(h.x - ppx, h.y - ppy) / 80 * 1000, 300, 1400));
+      this.party.forEach((h, i) => this.tweens.add({ targets: h, x: ppx, y: ppy, duration: walk[i], delay: i * 150, onComplete: () => { audio.sfx('portalStep'); h.shadow?.setVisible(false); this.tweens.add({ targets: h.sprite, alpha: 0, duration: 140 }); } }));
+      this.time.delayedCall(Math.max(...walk.map((w, i) => w + i * 150)) + 150, () => this.events.emit('ferryIn'));
+    });
+    this.events.once('ferryIn', () => {
+      lower();
+      this.cameras.main.fadeOut(260, 12, 6, 24);
+      this.time.delayedCall(280, () => {
+        close(portal);
+        // the far fire: where the party steps out, and the Ferryman beside it
+        let at = null;
+        for (const [dx, dy] of [[0, 2], [1, 2], [-1, 2], [2, 1], [-2, 1], [0, -2]]) if (!this.nav.isSolid(c.x + dx, c.y + dy)) { at = [c.x + dx, c.y + dy]; break; }
+        at ||= [c.x, c.y + 2];
+        const spot = this.ferrySpot(c, at);
+        if (spot) { this.quests.moveNpc(npc, spot[0], spot[1]); npc.fire = c; npc.called = true; npc.waitT = 0; }
+        this.tweens.killTweensOf(this.party); // a walk-in still running would drag them back to this portal (see doorWarp)
+        this.teleportParty({ to: { x: at[0], y: at[1] } }, () => {
+          const ox = at[0] * TILE + 8, oy = at[1] * TILE + 8;
+          const ends = this.party.map((h, i) => (i === 0 ? { x: ox, y: oy + 14 } : { x: ox + (i === 1 ? -14 : 14), y: oy + 8 }));
+          for (const h of this.party) { h.x = ox; h.y = oy; h.sprite.setAlpha(0); h.shadow?.setVisible(false); h.sync(0); h.face(0, 1); h.anim = ''; h.play('walk'); }
+          const out = open(ox, oy);
+          this.cameras.main.fadeIn(300);
+          this.party.forEach((h, i) => {
+            this.tweens.add({ targets: h.sprite, alpha: 1, duration: 160, delay: 300 + i * 150, onStart: () => { audio.sfx('portalStep'); h.shadow?.setVisible(true); } });
+            this.tweens.add({ targets: h, x: ends[i].x, y: ends[i].y, duration: 360, delay: 300 + i * 150, onComplete: () => { h.anim = ''; } });
+          });
+          this.time.delayedCall(300 + this.party.length * 150 + 420, () => {
+            close(out);
+            this.busy = false;
+            this.autosave('ferry');
+          });
+        });
+      });
+    });
+  }
+
+  rest() {
+    this.state.rests = (this.state.rests || 0) + 1; // Bess restocks
+    for (const h of this.party) { if (h.downed) h.revive(1); h.hp = h.maxHp; this.fx.heal(h.x, h.y); }
+    audio.sfx('heal');
+    this.autosave('rest');
+    this.events.emit('banner', 'THE PARTY RESTS', 'HP RESTORED  -  GAME SAVED');
+    this.events.emit('party');
+    // with more than three heroes, the campfire is where you choose who travels
+    if (this.state.recruited.length > 3) this.time.delayedCall(400, () => this.events.emit('dialogue', [{ who: 'CAMPFIRE', text: 'THE FIRE CRACKLES. YOUR WHOLE COMPANY IS HERE.', choices: [['CHANGE PARTY', () => this.openMenu({ tab: 'party' })], ['RESUME', () => {}]] }]));
+  }
+
+  openChest(c, img, h) {
+    const flag = `chest_${c.id}`;
+    const crack = c.look === 'cistern', who = crack ? 'CRACKED FLOOR' : 'CHEST';
+    if (c.needs && !this.flags[flag] && !this.state.relics.includes(c.needs)) { this.events.emit('dialogue', [{ who, text: c.locked || 'IT WON\'T OPEN. NOT YET.' }]); return; } // a relic opens it (C8)
+    if (this.flags[flag]) { this.events.emit('dialogue', [{ who, text: crack ? 'JUST DARK WATER NOW. WE TOOK WHAT WAS DOWN THERE.' : "IT'S EMPTY. YOU ALREADY LOOTED IT. SHAMELESS." }]); return; }
+    this.flags[flag] = true;
+    if (crack) { img.setTexture('cisternDived'); this.fx.burst('foam', img.x, img.y, 14); audio.sfx('squish'); this.bark(h, c.dive || 'DOWN WE GO... GOT IT!'); } // diving for it
+    else img.setTexture('chestOpen');
+    audio.sfx('chest');
+    this.fx.burst('gold', img.x, img.y - 10, 24);
+    this.state.gold += Math.round((c.gold || 0) * (this.party.some((h) => h.hasPerk('signet')) ? 1.15 : 1) * (this.party.some((h) => h.hasPerk('brightkey')) ? 1.1 : 1));
+    // a treasure chest with nothing placed in it holds a piece of gear for
+    // someone in the party, a little better than what they wear (C4)
+    const loot = c.items?.length || c.relic || !c.gold ? c.items || [] : [rollChestGear(this.state, { dungeon: !!this.dungeon })].filter(Boolean);
+    gainItems(this.state, loot);
+    addMats(this.state, c.mats || {});
+    addPotions(this.state, c.potions || {});
+    if (loot.length) this.events.emit('loot', { ids: loot, gold: c.gold });
+    const extras = [c.gold && !loot.length ? `${c.gold} GOLD` : null,
+      ...Object.entries(c.potions || {}).map(([k, n]) => `${n} ${CRAFT.consumables[k].name}`),
+      ...Object.entries(c.mats || {}).map(([k, n]) => `${n} ${CRAFT.materials[k].name}`)].filter(Boolean);
+    if (extras.length) this.time.delayedCall(loot.length ? 2600 * loot.length : 0, () => this.events.emit('banner', 'TREASURE!', extras.join(', ')));
+    if (c.relic) this.acquireRelic(c.relic, 450);
+    // some chests are bait: hollow guards rise when the lid opens
+    if (c.ambush) this.time.delayedCall(900, () => { for (const [k, x, y] of c.ambush) this.spawnEnemy(k, x * TILE + 8, y * TILE + 8, true); this.bark(h, 'THE ARMOUR IS MOVING!'); });
+    this.time.delayedCall(1800, () => this.bark(h, BARKS.chest[h.def.id]));
+    this.autosave('chest');
+    this.events.emit('party');
+  }
+
+  useShrine(k, img) {
+    const flag = `shrine_${k.id}`;
+    if (this.flags[flag]) { this.events.emit('dialogue', [{ who: 'SHRINE', text: 'THE RUNE IS DARK. ITS GIFT IS ALREADY GIVEN.' }]); return; }
+    this.flags[flag] = true;
+    img.setTexture('shrineUsed');
+    img.glow?.destroy();
+    for (const id of this.state.recruited) this.state.heroes[id].sp = (this.state.heroes[id].sp || 0) + 1;
+    for (const h of this.party) { if (h.downed) h.revive(1); h.hp = h.maxHp; this.fx.heal(h.x, h.y); }
+    audio.sfx('levelUp'); audio.sfx('heal');
+    this.fx.burst('bloom', img.x, img.y - 14, 30);
+    const n = Object.keys(this.flags).filter((f) => f.startsWith('shrine_')).length;
+    this.events.emit('banner', 'SHRINE OF INSIGHT', `+1 SKILL POINT FOR EVERY HERO  (${n} / 12 SHRINES)`);
+    this.autosave('shrine');
+  }
+
+  // Lookout towers: the party climbs the ladder one by one, lines up on the
+  // platform, and the camera pulls back to take in the land around (terrain
+  // and scenery stream in for the wider view; enemy groups and AI stay asleep
+  // while you look). Tap anywhere to climb back down.
+  climbLookout(k) {
+    if (this.busy || this.onLookout) return;
+    if (this.combatHold > 0 || this.enemies.some((e) => e.alive && e.engaged)) { this.bark(this.leader, 'NOT NOW - WE\'RE A BIT BUSY!'); return; }
+    this.clearProjectiles();
+    const cam = this.cameras.main, x = k.x * TILE + 8, y = k.y * TILE + 8;
+    const ZOOM = 1 / 3, LIFT = 51, foot = { x, y: y + 12 };
+    const first = !this.flags[`lookout_${k.id}`];
+    this.flags[`lookout_${k.id}`] = true;
+    this.busy = true;
+    this.onLookout = true;
+    // keep painting the wider view (it started as you walked over)
+    this.lookoutView = this.lookoutViewFor(k);
+    this.streamer.maxResident = 220; // the wide view needs ~9x the ground; released on the way down
+    const heroes = this.party.filter((h) => !h.downed);
+    const slots = [-14, 0, 14];
+    heroes.forEach((h, i) => {
+      h.clearPath(); h.command = null; h.target = null; h.action = null; h.lift = 0;
+      this.time.delayedCall(i * 550, () => {
+        // over to the ladder, up it, then along the deck to a spot at the rail
+        h.view = 'up'; h.flip = false; h.anim = ''; h.play('walk');
+        this.tweens.add({ targets: h, x: foot.x, y: foot.y, duration: Math.min(600, 120 + Math.hypot(h.x - foot.x, h.y - foot.y) * 4), onComplete: () => {
+          audio.sfx('step');
+          this.tweens.add({ targets: h, lift: LIFT, y: y + 2, duration: 750, ease: 'Sine.easeInOut', onComplete: () => {
+            h.view = slots[i] ? 'side' : 'down'; h.flip = slots[i] < 0; h.anim = ''; h.play('walk');
+            this.tweens.add({ targets: h, x: x + (slots[i] ?? 0), duration: 250, onComplete: () => { h.view = 'down'; h.anim = ''; h.play('idle'); } });
+          } });
+        } });
+      });
+    });
+    // once everyone's up and the wide view is painted (or 3s at most): pull back and take it in
+    const upAt = this.time.now + (heroes.length - 1) * 550 + 1350;
+    const ready = (cb) => { if (this.time.now >= upAt) cb(); else this.time.delayedCall(60, () => ready(cb)); };
+    ready(() => {
+      cam.stopFollow();
+      cam.pan(x, y - 40, 900, 'Sine.easeInOut');
+      cam.zoomTo(ZOOM, 1300, 'Sine.easeInOut');
+      audio.sfx('curseLift');
+      this.minimap.reveal(k.x, k.y, k.r);
+      this.minimap.flush();
+      this.events.emit('banner', k.name, first ? 'THE LAND AROUND IS SKETCHED ONTO YOUR MAP' : 'TAP ANYWHERE TO CLIMB DOWN');
+      if (first) for (const h of heroes) h.gainXp(60);
+      this.time.delayedCall(1500, () => this.bark(this.leader, first ? 'YOU CAN SEE HALF THE KINGDOM FROM UP HERE.' : 'SAME VIEW. STILL GOOD.'));
+      // tap (or Esc / Space) to come back down
+      this.time.delayedCall(1400, () => {
+        if (this.ui) { this.ui.tweens.killTweensOf(this.ui.toast); this.ui.toast.setText('TAP TO CLIMB DOWN').setAlpha(1); }
+        const down = () => { this.input.off('pointerdown', down); this.input.keyboard?.off('keydown-ESC', down); this.input.keyboard?.off('keydown-SPACE', down); this.leaveLookout(k, heroes); };
+        this.input.on('pointerdown', down);
+        this.input.keyboard?.on('keydown-ESC', down);
+        this.input.keyboard?.on('keydown-SPACE', down);
+      });
+    });
+  }
+
+  // the area a lookout's zoomed-out view needs painted, with a margin so the edges are never caught loading
+  lookoutViewFor(k) {
+    const ZOOM = 1 / 3, M = 1.25;
+    return { x: k.x * TILE + 8, y: k.y * TILE + 8 - 40, w: (this.scale.width / ZOOM) * M, h: (this.scale.height / ZOOM) * M };
+  }
+
+  leaveLookout(k, heroes) {
+    const cam = this.cameras.main, x = k.x * TILE + 8, y = k.y * TILE + 8;
+    if (this.ui) { this.ui.tweens.killTweensOf(this.ui.toast); this.ui.toast.setAlpha(0); }
+    cam.zoomTo(1, 900, 'Sine.easeInOut');
+    cam.pan(x, y + 20, 900, 'Sine.easeInOut');
+    audio.sfx('click');
+    const spots = [[0, 26], [-14, 32], [14, 32]];
+    heroes.forEach((h, i) => this.time.delayedCall(i * 380, () => {
+      h.view = 'up'; h.anim = ''; h.play('walk');
+      this.tweens.add({ targets: h, x, duration: 200, onComplete: () => {
+        this.tweens.add({ targets: h, lift: 0, y: y + 12, duration: 650, ease: 'Sine.easeInOut', onComplete: () => {
+          h.view = 'down'; h.anim = ''; h.play('walk');
+          this.tweens.add({ targets: h, x: x + spots[i][0], y: y + spots[i][1], duration: 280, onComplete: () => { h.anim = ''; h.play('idle'); h.lift = 0; } });
+        } });
+      } });
+    }));
+    this.time.delayedCall((heroes.length - 1) * 380 + 1250, () => {
+      for (const h of heroes) h.lift = 0;
+      cam.startFollow(this.leader.sprite, true, 0.12, 0.12);
+      this.lookoutView = null;
+      this.streamer.maxResident = 40;
+      this.onLookout = false;
+      this.busy = false;
+      this.autosave('lookout');
+    });
+  }
+
+  grapple(o) {
+    const L = this.leader;
+    if (!this.state.relics.includes('grapple')) { this.bark(L, BARKS.gap[L.def.id]); return; }
+    const pair = this.interactables.find((i) => i.kind === 'post' && i.id === o.pair);
+    const land = o.land ? { x: o.land[0] * TILE + TILE / 2, y: o.land[1] * TILE + TILE / 2 } : { x: pair.x + Math.sign(pair.x - o.x) * 14, y: pair.y + 10 };
+    const up = land.y < o.y - 24; // hauling up a cliff vs. dropping down it
+    this.busy = true;
+    const zipOne = (h, delay) => this.time.delayedCall(delay, () => {
+      h.zipping = true; h.clearPath(); h.command = null; h.target = null; h.action = null;
+      const line = this.add.graphics().setDepth(TOP - 18);
+      const from = { x: h.x, y: h.y - 12 };
+      audio.sfx('zip');
+      const hook = { k: 0 };
+      this.tweens.add({ targets: hook, k: 1, duration: 160, onUpdate: () => {
+        line.clear().lineStyle(1, 0xc4cfe2, 1).lineBetween(from.x, from.y, from.x + (pair.x - from.x) * hook.k, from.y + (pair.y - 16 - from.y) * hook.k);
+      }, onComplete: () => {
+        const ox = h.x, oy = h.y;
+        const tgt = { x: land.x + (h === L ? 0 : (Math.random() - 0.5) * 16), y: land.y + (h === L ? 0 : (up ? -8 : 8) - Math.random() * 6 * (up ? 1 : -1)) };
+        this.tweens.addCounter({ from: 0, to: 1, duration: up ? 520 : 380, ease: up ? 'Quad.easeIn' : 'Sine.easeInOut', onUpdate: (tw) => {
+          const k = tw.getValue();
+          h.x = ox + (tgt.x - ox) * k; h.y = oy + (tgt.y - oy) * k - Math.sin(k * Math.PI) * (up ? 10 : 18);
+          line.clear().lineStyle(1, 0xc4cfe2, 1).lineBetween(h.x, h.y - 12, pair.x, pair.y - 16);
+          if (Math.random() < 0.5) this.fx.ghost(h);
+        }, onComplete: () => { line.destroy(); h.zipping = false; this.fx.dust(h.x, h.y); if (h === L) this.busy = false; } });
+      } });
+    });
+    zipOne(L, 0);
+    this.party.filter((p) => p !== L && !p.downed).forEach((p, i) => zipOne(p, 450 + i * 300));
+  }
+
+  // Gale Cloak: the party leaps and glides one by one to a spot (across a
+  // chasm, off a ledge, up a wind vent), cloaks spread
+  glideTo(x, y, done) {
+    const L = this.leader;
+    this.busy = true;
+    const heroes = [L, ...this.party.filter((p) => p !== L && !p.downed)];
+    heroes.forEach((h, i) => this.time.delayedCall(i * 240, () => {
+      h.zipping = true; h.clearPath(); h.command = null; h.target = null; h.action = null;
+      const ox = h.x, oy = h.y, tx = x + (h === L ? 0 : (i % 2 ? -1 : 1) * (8 + i * 3)), ty = y + (h === L ? 0 : 4 + i * 2);
+      const d = Math.hypot(tx - ox, ty - oy);
+      audio.sfx('dash', { pitch: 0.7 });
+      this.tweens.addCounter({ from: 0, to: 1, duration: 500 + d * 2.4, ease: 'Sine.easeInOut', onUpdate: (tw) => {
+        const k = tw.getValue();
+        h.x = ox + (tx - ox) * k; h.y = oy + (ty - oy) * k - Math.sin(k * Math.PI) * Math.min(40, 14 + d * 0.12);
+        h.face(tx - ox, ty - oy); h.play('walk');
+        if (Math.random() < 0.35) this.fx.ghost(h, { tint: 0xd6efff, alpha: 0.4 });
+      }, onComplete: () => {
+        h.zipping = false; this.fx.dust(h.x, h.y);
+        if (i === heroes.length - 1) { this.busy = false; done?.(); }
+      } });
+    }));
+  }
+
+  // Climbing Claws: the party scrambles up (or down) a marked face one by one
+  climb(c, up) {
+    const L = this.leader;
+    if (this.busy) return;
+    if (!this.state.relics.includes('claws')) { this.bark(L, "CLAW MARKS, SCORED DEEP INTO THE ICE. SOMETHING CLIMBS HERE. WE'D NEED CLAWS OF OUR OWN."); return; }
+    const x = c.x * TILE + 8, foot = c.y * TILE + 8, top = c.top[1] * TILE + 8;
+    const from = up ? foot : top, to = up ? top : foot;
+    this.busy = true;
+    const heroes = [L, ...this.party.filter((p) => p !== L && !p.downed)];
+    heroes.forEach((h, i) => this.time.delayedCall(i * 380, () => {
+      h.zipping = true; h.clearPath(); h.command = null; h.target = null; h.action = null;
+      const ox = h.x, oy = h.y, tx = x + (h === L ? 0 : (i % 2 ? -1 : 1) * (6 + i * 3)), ty = to + (h === L ? 0 : (up ? -1 : 1) * (2 + i * 3));
+      audio.sfx('swing', { pitch: 1.8 });
+      this.tweens.addCounter({ from: 0, to: 1, duration: 1000, ease: 'Sine.easeInOut', onUpdate: (tw) => {
+        const k = tw.getValue();
+        if (k < 0.2) { const q = k / 0.2; h.x = ox + (x - ox) * q; h.y = oy + (from - oy) * q; h.face(x - ox, from - oy); }
+        else { const q = (k - 0.2) / 0.8; h.x = x + (tx - x) * q + Math.sin(q * 28) * 1.2; h.y = from + (ty - from) * q; h.face(0, up ? -1 : 1); }
+        h.play('walk');
+      }, onComplete: () => {
+        h.zipping = false; this.fx.dust(h.x, h.y);
+        if (i === heroes.length - 1) { this.busy = false; this.autosave('climb'); }
+      } });
+    }));
+  }
+
+  warp(w) {
+    if ('toMap' in w) { this.goToWorld(w.toMap); return; } // a way into another world (null: back to Aldermere)
+    this.cullNow = true; // the camera jumps: re-cull on the next frame, not up to three later
+    if (w.door) { this.doorWarp(w); return; }
+    this.busy = true;
+    audio.sfx('warp');
+    this.cameras.main.fadeOut(350, 5, 3, 10);
+    this.time.delayedCall(380, () => this.teleportParty(w, () => { this.cameras.main.fadeIn(400); this.busy = false; this.autosave('warp'); }));
+  }
+
+  // Move the party to a warp's destination, wait for the area to be painted.
+  teleportParty(w, onReady, arriveOffsetY = 0, curtainNow = false) {
+    const tx = w.to.x * TILE + 8, ty = w.to.y * TILE + 8;
+    const dest = areaAt(w.to.x, w.to.y);
+    this.enterArea(dest);
+    // arrive with companions already behind the leader (they used to land beside
+    // and below, then walk a lap round the leader to reach a slot behind them).
+    // Through a door the party is about to walk on in a line, so they file
+    // through the doorway after the leader, the way they went in.
+    const L = this.leader, ahead = arriveOffsetY > 0 ? -1 : arriveOffsetY < 0 ? 1 : 0; // door arrivals walk on up (in) or down (out)
+    L.x = tx; L.y = ty + arriveOffsetY;
+    if (ahead) L.head = { x: 0, y: ahead };
+    const [fx, fy] = L.head ? [L.head.x, L.head.y] : L.facingVec();
+    this.party.forEach((h) => {
+      if (h !== L) {
+        const k = this.party.filter((p) => p !== L).indexOf(h) + 1;
+        if (ahead) { h.x = L.x; h.y = L.y - fy * 8 * k; } // single file through the doorway (the walk-on clears it)
+        else { const s = h.formationSlot(); h.x = s.x; h.y = s.y; }
+        h.slotOff = null; h.settled = false; h.face(fx, fy);
+      }
+      h.clearPath(); h.command = null; h.target = null; h.action = null; h.sync(0);
+      h.lastX = h.x; h.lastY = h.y; h.vel = { x: 0, y: 0 }; // the jump isn't a walk: don't let it swing the heading
+    });
+    for (const e of this.enemies) if (e.alive && e.engaged) { e.state = 'return'; e.engaged = false; e.target = null; e.clearZone(); }
+    this.cameras.main.centerOn(tx, ty);
+    for (const o of this.interactables) if (o.kind === 'warp') o.armed = false;
+    // Quick hops finish under the fade; the loading curtain only comes up
+    // when the destination takes a while (new biome art, many chunks).
+    const t0 = performance.now();
+    let curtain = null;
+    if (curtainNow) { this.scene.launch('Loading', { title: this.placeName(tx, ty) }); curtain = this.scene.get('Loading'); }
+    const ui = {
+      setProgress: (p, label) => {
+        if (!curtain && performance.now() - t0 > 250) {
+          this.scene.launch('Loading', { title: this.placeName(tx, ty) });
+          curtain = this.scene.get('Loading');
+        }
+        curtain?.setProgress(p, label);
+      },
+    };
+    this.placeFerryman(true); // (behind the fade: arriving beside a fire, he's already there)
+    this.prepareAt(tx, ty, ui, 2).then(() => {
+      this.settleParty();
+      this.calmT = 1;
+      // fades over the camera fade-in. A curtain launched this frame hasn't
+      // started yet (launch takes effect next frame), and starting would reset
+      // it - so close it once it's up, or it waits forever
+      if (curtain) { if (curtain.sys.isActive()) curtain.done(); else curtain.events.once('create', () => curtain.done()); }
+      onReady();
+    });
+  }
+
+  // Buildings: the door swings open, the party steps through, and it closes
+  // behind them on the other side.
+  doorWarp(w) {
+    const d = this.doors[w.building];
+    if (!d) { this.warp({ ...w, door: false }); return; }
+    this.busy = true;
+    const entering = !w.exit;
+    const L = this.leader;
+    const open = (outside) => { if (outside) d.ext.setVisible(true); else d.int.setTexture('idoor_open'); };
+    const close = (outside) => { if (outside) d.ext.setVisible(false); else d.int.setTexture('idoor'); audio.sfx('doorClose'); };
+    open(entering);
+    audio.sfx('doorOpen');
+    const dir = entering ? -1 : 1;
+    for (const h of this.party) { h.face(0, dir); h.anim = ''; h.play('walk'); }
+    this.tweens.killTweensOf(this.party);
+    // everyone files into the doorway, one behind the other, rather than each
+    // walking straight ahead into the wall beside it
+    const doorX = w.x * TILE + 8, doorY = w.y * TILE + 8;
+    this.party.forEach((h, i) => this.tweens.add({ targets: h, x: doorX, y: doorY + dir * 12 - dir * i * 7, duration: 300, delay: i * 60 }));
+    this.time.delayedCall(220, () => this.cameras.main.fadeOut(220, 5, 3, 10));
+    this.time.delayedCall(470, () => {
+      this.tweens.killTweensOf(this.party); // the step-in tween must not fight the teleport
+      if (!entering) close(false);
+      open(!entering);
+      // arrive on the doorstep, then walk clear of the door
+      this.teleportParty(w, () => {
+        this.cameras.main.fadeIn(260);
+        for (const h of this.party) { h.face(0, entering ? -1 : 1); h.anim = ''; h.play('walk'); }
+        this.tweens.add({ targets: this.party, y: `+=${entering ? -12 : 12}`, duration: 340, onComplete: () => {
+          for (const h of this.party) { h.anim = ''; }
+          close(!entering);
+          if (entering) d.ext.setVisible(false);
+          this.busy = false;
+          this.autosave('warp');
+        } });
+      }, entering ? 12 : -12);
+    });
+  }
+
+
+  talkRecruit(npc) {
+    const g = npc.r.guardedBy && this.groups.find((x) => x.id === npc.r.guardedBy);
+    if (g && !this.state.cleared[g.id] && (!g.active || g.units.some((u) => u.alive))) { this.bark({ x: npc.sprite.x, y: npc.sprite.y, def: { voice: heroInfo(npc.id).voice } }, BARKS.help[npc.id] || 'HELP!'); return; }
+    const info = heroInfo(npc.id);
+    const lines = info.recruit.map((text) => ({ who: info.name.toUpperCase(), portrait: `${npc.id}_portrait`, voice: info.voice, text }));
+    lines.push({ who: info.name.toUpperCase(), portrait: `${npc.id}_portrait`, voice: info.voice, text: 'LEAD THE WAY.' });
+    this.events.emit('dialogue', lines, () => this.recruit(npc));
+  }
+
+  recruit(npc) {
+    npc.sprite.destroy(); npc.sh.destroy(); npc.mark.destroy();
+    npc.o.hidden = true;
+    this.interactables = this.interactables.filter((i) => i !== npc.o);
+    this.addRecruit(npc.id, npc.sprite.x, npc.sprite.y);
+  }
+
+  // A hero joins: caught up to the party's level (C3), into the party if
+  // there's room, otherwise onto the bench until the next campfire.
+  addRecruit(id, x, y, force = false) {
+    const st = this.state;
+    if (st.recruited.includes(id)) return;
+    st.recruited.push(id);
+    const hs = st.heroes[id];
+    const avg = Math.round(this.party.reduce((a, h) => a + h.level, 0) / Math.max(1, this.party.length));
+    if (hs.level < avg) {
+      const shrines = Object.keys(this.flags).filter((f) => f.startsWith('shrine_')).length;
+      hs.sp = (hs.sp || 0) + (avg - hs.level) + shrines;
+      hs.level = avg; hs.xp = 0;
+    }
+    audio.sfx('levelUp');
+    this.party.find((h) => h.def.id === id)?.refreshStats();
+    if (st.active.includes(id)) { this.events.emit('partyChanged'); this.autosave('recruit'); return; }
+    if (st.active.length < 3 || force) {
+      // a hero who must fight now (Mirelle in the Spire) takes the last companion's place
+      let swapped = null;
+      if (st.active.length >= 3) {
+        swapped = [...this.party].reverse().find((p) => !p.isLeader);
+        st.active = st.active.filter((a) => a !== swapped.def.id);
+        this.party = this.party.filter((p) => p !== swapped);
+        this.gearFx?.clear?.(swapped.def.id); swapped.alive = false; swapped.destroy();
+      }
+      st.active.push(id);
+      const h = new Hero(this, id, hs, x, y);
+      this.party.push(h);
+      this.fx.burst('gold', h.x, h.y - 10, 20);
+      this.events.emit('banner', `${h.def.name.toUpperCase()} JOINED THE PARTY!`, swapped ? `SHE TAKES ${swapped.def.name.toUpperCase()}'S PLACE - SWAP BACK AT ANY CAMPFIRE` : 'TAP A PORTRAIT TO SWITCH HEROES');
+    } else {
+      this.fx.burst('gold', x, y - 10, 20);
+      this.events.emit('banner', `${heroInfo(id).name.toUpperCase()} JOINED!`, 'THE PARTY IS FULL - SWAP HEROES AT ANY CAMPFIRE');
+    }
+    this.events.emit('partyChanged');
+    this.autosave('recruit');
+  }
+
+  // Rebuild the travelling party from state.active (campfire swaps).
+  applyParty() {
+    const st = this.state;
+    if (!st.active.length) st.active = [st.leader];
+    for (const h of [...this.party]) if (!st.active.includes(h.def.id)) {
+      this.gearFx.clear?.(h.def.id);
+      h.alive = false; h.destroy();
+      this.party = this.party.filter((p) => p !== h);
+    }
+    const L = this.leader && this.party.includes(this.leader) ? this.leader : this.party[0];
+    for (const id of st.active) if (!this.party.some((h) => h.def.id === id)) {
+      const h = new Hero(this, id, st.heroes[id], (L?.x ?? 0) + 12, (L?.y ?? 0) + 8);
+      this.party.push(h);
+      this.fx.puff(h.x, h.y, 'spark');
+    }
+    this.setLeader(this.party.includes(L) ? L : this.party[0], true);
+    this.settleParty();
+    this.events.emit('partyChanged');
+    this.autosave('party');
+  }
+
+  // Companions placed around the leader (loading a save, a warp, a campfire
+  // swap) can land in water or a wall, or across water from the leader: move
+  // each one that did to the nearest open tile beside the leader instead.
+  settleParty() {
+    const L = this.leader, nav = this.nav;
+    if (!L || !nav) return;
+    const ltx = Math.floor(L.x / TILE), lty = Math.floor(L.y / TILE), taken = new Set([`${ltx},${lty}`]);
+    const ok = (tx, ty) => !nav.isSolid(tx, ty) && !taken.has(`${tx},${ty}`) && nav.lineClear(L.x, L.y, tx * TILE + 8, ty * TILE + 8, 2);
+    for (const h of this.party) {
+      if (h === L) continue;
+      const tx = Math.floor(h.x / TILE), ty = Math.floor(h.y / TILE);
+      if (!nav.isSolid(tx, ty) && nav.lineClear(L.x, L.y, h.x, h.y, 2)) { taken.add(`${tx},${ty}`); continue; }
+      let spot = null;
+      for (let r = 1; r <= 4 && !spot; r++) for (let dy = -r; dy <= r && !spot; dy++) for (let dx = -r; dx <= r && !spot; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (ok(ltx + dx, lty + dy)) spot = [ltx + dx, lty + dy];
+      }
+      if (!spot) spot = [ltx, lty]; // nowhere else: share the leader's tile rather than stand in the water
+      taken.add(`${spot[0]},${spot[1]}`);
+      h.x = spot[0] * TILE + 8 + (h.x % 2 ? 2 : -2); h.y = spot[1] * TILE + 8; h.lift = 0; h.clearPath(); h.sync(0);
+    }
+  }
+
+  talkFrog() {
+    const K = this.flags.kingRestored && this.textures.exists('king_portrait')
+      ? { who: 'KING ALDRIC', portrait: 'king_portrait', voice: { pitch: 140, wave: 'square', duty: 0.25 } }
+      : { who: 'KING ALDRIC', portrait: 'portrait_frog', voice: { pitch: 110, wave: 'square', duty: 0.125 } };
+    const st = this.state;
+    const tiers = W.flyRewards;
+    const next = tiers[st.flyRewards];
+    if (next && st.flies.length >= next.n) {
+      st.flyRewards++;
+      st.gold += next.gold || 0;
+      addPotions(st, next.potions || {});
+      addMats(st, next.mats || {});
+      if (next.blessing) { st.flags.blessing = true; for (const h of this.party) h.refreshGear(); }
+      if (next.items) { gainItems(st, next.items); this.time.delayedCall(1200, () => this.events.emit('loot', { ids: next.items })); }
+      const what = [...(next.items || []).map((id) => `THE ${items[id].name}`), next.gold ? `${next.gold} GOLD` : null, ...Object.entries(next.potions || {}).map(([k, n]) => `${n} ${CRAFT.consumables[k].name}`), ...Object.entries(next.mats || {}).map(([k, n]) => `${n} ${CRAFT.materials[k].name}`)].filter(Boolean).join(', ');
+      audio.sfx('chest');
+      this.events.emit('dialogue', [
+        { ...K, text: `GOLDEN FLIES! ${st.flies.length} OF THEM! OH, MY ROYAL TONGUE IS TINGLING.` },
+        { ...K, text: next.blessing ? `EVERY LAST FLY IN ALDERMERE. I GRANT YOU THE ROYAL BLESSING OF THE FROG KING: YOUR PARTY IS HARDIER, FOREVER, AND NO CURSE WILL EVER MAKE A FROG OF YOU. TAKE IT FROM ONE WHO KNOWS. ALSO, ${next.gold} GOLD.` : `A KING REWARDS LOYALTY. TAKE THIS: ${what}.` },
+      ], () => this.autosave('frog'));
+      this.events.emit('party');
+      return;
+    }
+    if (st.flies.length > 0 && next) {
+      this.events.emit('dialogue', [{ ...K, text: `YOU HAVE ${st.flies.length} GOLDEN FLIES. BRING ME ${next.n} AND I SHALL REWARD YOU. THEY HIDE IN THE STRANGEST PLACES...` }]);
+      return;
+    }
+    // what the King says follows how far you've come
+    const left = OUTER_REGIONS.filter((r) => !this.flags[`ward_${r}`]).length;
+    const lines = this.flags.kingRestored
+      ? [
+        { ...K, text: 'MY KINGDOM, AND ME IN IT, TALL AND DRY. I STILL SIT BY THE POND SOME EVENINGS. FORCE OF HABIT.' },
+        { ...K, text: 'IF YOU FIND ANY MORE GOLDEN FLIES, YOU KNOW WHERE I AM. FOR OLD TIMES.' },
+      ]
+      : this.flags.wardBroken && left === 0
+      ? [
+        { ...K, text: 'ALL FIVE STONES! THE BARRIER IS GONE. NOTHING STANDS BETWEEN YOU AND THE NINTH TOWER NOW.' },
+        { ...K, text: 'GO TO THE BLIGHT BASIN AND END THIS. AND IF MALGRIM ASKS, TELL HIM THE KING SAID "RIBBIT". HE\'LL KNOW WHAT I MEAN.' },
+      ]
+      : this.flags.wardBroken
+      ? [
+        { ...K, text: left === 4 ? 'YOU DID IT! LOOK AT THOSE COLOURS! I HAD FORGOTTEN WHAT GREEN LOOKED LIKE. ...OTHER THAN ME.' : 'ANOTHER STONE DOWN! I FELT IT IN MY WEBBED LITTLE TOES.' },
+        { ...K, text: `${left === 1 ? 'ONE MORE WARD STONE HOLDS' : `${['', '', 'TWO', 'THREE', 'FOUR'][left]} MORE WARD STONES HOLD`} THE NINTH TOWER. BRING ${left === 1 ? 'IT' : 'THEM'} DOWN, AND MALGRIM WITH ${left === 1 ? 'IT' : 'THEM'}.` },
+        { ...K, text: 'ALSO, IF YOU SEE ANY FLIES... NO. NO. A KING HAS STANDARDS.' },
+      ]
+      : [
+        { ...K, text: 'AH, HEROES! FORGIVE THE... GREEN. MALGRIM HAS MADE A FROG OF YOUR KING.' },
+        { ...K, text: 'A WARD STONE BURNS TO THE EAST. ITS BARRIER DRAWS ON A GUARDIAN BENEATH THE OLD KEEP - STAIRS IN THE RUINS. DEFEAT IT, SMASH THE STONE, AND THE VALE WILL BLOOM AGAIN!' },
+        { ...K, text: 'YOU WILL WANT FRIENDS FOR THAT. AND BETTER ARMOUR. AND IF YOU FIND ANY FLIES... NO. FORGET I SAID THAT.' },
+      ];
+    this.events.emit('dialogue', lines);
+  }
+
+  // Ward Shard (C4 charm): the first stone gives a shard; later stones grow it
+  // into a Prism, then a Crown - wherever it is (bag or worn).
+  growWardShard() {
+    const st = this.state, tiers = ['ward_shard', 'ward_prism', 'ward_crown'];
+    const where = (id) => { const i = st.inventory.indexOf(id); if (i >= 0) return { bag: i }; for (const h of Object.values(st.heroes)) for (const [k, v] of Object.entries(h.equip)) if (v === id) return { h, k }; return null; };
+    const have = tiers.findIndex((id) => where(id));
+    if (have === tiers.length - 1) return;
+    const next = tiers[have + 1];
+    if (have < 0) gainItems(st, [next]);
+    else { const w = where(tiers[have]); if (w.bag !== undefined) st.inventory[w.bag] = next; else { w.h.equip[w.k] = next; for (const p of this.party) p.refreshStats?.(); } }
+    this.events.emit('loot', { ids: [next] });
+  }
+
+  onWardDestroyed(unit) {
+    const w = this.wards.find((k) => k.unit === unit) || this.wards[0];
+    const def = w.def;
+    // a freed outer region keeps the band it had (C1)
+    const region = W.regions.find((r) => r.outer === def.region);
+    if (region) this.flags[`band_${def.region}`] = regionBand(this.state, region);
+    this.flags[def.flag] = true;
+    this.clearBlight(def.flag, w.C.x, w.C.y);
+    this.removeVines(w);
+    if (def.id === 'vale') this.flags.smithRank = Math.max(this.flags.smithRank || 0, 1); // the Blacksmith returns (C9)
+    const down = this.wards.filter((k) => this.flags[k.def.flag]).length;
+    this.time.delayedCall(5200, () => this.growWardShard());
+    if (down >= 2) this.flags.enchanter = true; // two stones: the Enchanter comes home
+    if (down >= 3) this.flags.smithRank = Math.max(this.flags.smithRank || 0, 2);
+    if (OUTER_REGIONS.includes(def.region)) this.buildBarrier(); // a layer of the Tower's barrier falls with it
+    if (down >= 5 && !this.flags.royalArmory) { // all five: the Royal Armory and the Blacksmith's last rank (C9)
+      this.flags.royalArmory = true; this.flags.smithRank = 3;
+      this.time.delayedCall(9000, () => this.events.emit('banner', 'THE ROYAL ARMORY OPENS', 'IN BRIGHTWATER: LEGENDARY ARMS. THE BLACKSMITH REACHES RANK 3'));
+    }
+    this.hitStop(0.3);
+    this.cameras.main.flash(250, 240, 200, 255);
+    this.shake(500, 0.012);
+    audio.sfx('shatter');
+    unit.sprite.stop();
+    unit.sprite.setTexture('wardRubble').clearTint();
+    this.fx.burst('curse', unit.x, unit.y - 20, 40);
+    for (const h of this.party) if (h.command?.target === unit) h.command = null;
+    this.time.delayedCall(700, () => {
+      audio.sfx('curseLift');
+      music.setVariant('freed', 1.6);
+      w.bloomR = 0;
+      this.events.emit('banner', 'WARD STONE DESTROYED', def.lifts);
+    });
+    this.time.delayedCall(4200, () => this.bark(this.leader, BARKS.ward[this.leader.def.id]));
+    this.autosave('ward');
+  }
+
+  updateBloom(dt) { for (const w of this.wards) this.bloomWard(w, dt); }
+
+  bloomWard(w, dt) {
+    if (w.bloomR < 0 || !w.canvas) { if (w.bloomR >= 0 && !w.canvas) w.bloomR = -1; return; }
+    w.bloomR += dt * 190;
+    const ctx = w.canvas.getContext('2d');
+    const { x: rx, y: ry } = w.region;
+    const cx = w.C.x - rx, cy = w.C.y - ry;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, w.bloomR - 10), 0, Math.PI * 2); ctx.fill();
+    const band = 10, r0 = w.bloomR - band, r1 = w.bloomR;
+    const steps = Math.ceil(r1 * Math.PI * 2);
+    for (let i = 0; i < steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      for (let r = Math.max(0, r0); r < r1; r++) {
+        const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r);
+        if (bayer(x, y) < (r1 - r) / band) ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    w.tex.refresh();
+    for (let k = 0; k < 6; k++) {
+      const a = Math.random() * Math.PI * 2;
+      this.fx.burst('bloom', w.C.x + Math.cos(a) * w.bloomR, w.C.y + Math.sin(a) * w.bloomR, 1);
+    }
+    for (const objs of this.chunkObjs.values()) for (const img of objs) {
+      if (img.cleansed || !img.tintTopLeft || img.tintTopLeft === 0xffffff) continue;
+      if (Math.hypot(img.x - w.C.x, img.y - w.C.y) < w.bloomR) { img.cleansed = true; img.clearTint(); }
+    }
+    for (const e of this.enemies) {
+      if (e.alive && e.cursed && Math.hypot(e.x - w.C.x, e.y - w.C.y) < w.bloomR) {
+        e.alive = false; e.clearZone(); this.fx.burst('bloom', e.x, e.y - 6, 14); this.fx.dust(e.x, e.y); e.destroy();
+      }
+    }
+    if (w.bloomR > w.C.R + 80) { w.bloomR = -1; w.img.setVisible(false); }
+  }
+
+
+  // Walk-on doorways (plus visible markers once the cave art is loaded).
+  updateWarps() {
+    const L = this.leader;
+    for (const o of this.warpObjs || []) { // (their own list: walking every tappable thing for them cost 0.17 ms a frame on the dense Vast)
+      if (o.removed) continue;
+      if (w_locked(this, o)) continue;
+      if (!o.marker && o.needsLight && loaded.has('cave')) {
+        o.marker = this.add.image(o.x, o.y + 10, 'lightShaft').setOrigin(0.5, 1).setDepth(o.y - 20).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.8);
+        this.tweens.add({ targets: o.marker, alpha: 0.45, duration: 1200, yoyo: true, repeat: -1 });
+        o.label = this.add.bitmapText(o.x, o.y - 34, 'fontGold', 'EXIT').setOrigin(0.5).setDepth(TOP);
+        this.tweens.add({ targets: o.label, y: o.y - 37, duration: 500, yoyo: true, repeat: -1 });
+      }
+      const d = Math.hypot(L.x - o.x, L.y - o.y);
+      if (o.warp.stairs) { const a = d < 70 ? 1 : 0; o.label.setAlpha(a); o.labelArrow.setAlpha(a); }
+      if (o.warp.tap) continue; // stairs: tap to descend
+      if (d > 30) o.armed = true;
+      else if (d < 12 && o.armed) { o.armed = false; this.tryWarp(o.warp); return; }
+    }
+  }
+
+  // Lieutenant arenas: the boss wakes once the party is inside, bars close behind.
+  bossDefs() {
+    return [
+      // each dungeon's lieutenant Shadow, placed from its layout
+      ...Object.values(this.dungeons || {}).map((k) => k.bossDef(W)),
+    ].filter(Boolean);
+  }
+
+  // ------------------------------------------------------------ boss intros
+  // Big entrances: the world holds still while the camera turns to the boss,
+  // the ground rumbles and the boss assembles (stones fly in / shadow gathers
+  // / she heaves up out of her pool), roars, and only then does the fight start.
+  bossIntro(g, style, B) {
+    const cam = this.cameras.main, L = this.leader;
+    const at = (ms, fn) => this.time.delayedCall(ms, fn);
+    this.busy = true;
+    this.clearProjectiles();
+    for (const h of this.party) { h.clearPath(); h.command = null; h.target = null; }
+    g.introT = 99;
+    g.sprite.setAlpha(0); g.shadow.setAlpha(0);
+    const bx = g.x, by = g.y;
+    cam.stopFollow();
+    cam.pan(bx, by - 24, 700, 'Sine.easeInOut');
+    at(250, () => audio.sfx('rumble'));
+    at(1300, () => audio.sfx('rumble'));
+    for (let i = 0; i < 9; i++) at(250 + i * 210, () => this.shake(230, 0.002 + i * 0.0011));
+    if (style === 'magma') {
+      // the ground cracks and glows, then he climbs out of the lava
+      for (let i = 0; i < 14; i++) at(300 + i * 130, () => this.fx.burst('ember', bx + (Math.random() - 0.5) * 70, by + (Math.random() - 0.5) * 30, 10));
+      if (g.isShadow) for (let i = 0; i < 6; i++) at(450 + i * 230, () => this.fx.burst('curse', bx, by - 20, 10));
+    } else if (style === 'fog') {
+      // hounds howl in the mist, then he steps out of it
+      at(300, () => audio.sfx('roar', { pitch: 2.2 }));
+      at(1100, () => audio.sfx('roar', { pitch: 2.5 }));
+      for (let i = 0; i < 16; i++) at(250 + i * 120, () => this.fx.burst(g.isShadow ? 'curse' : 'spark', bx + (Math.random() - 0.5) * 90, by - 10 + (Math.random() - 0.5) * 40, 6));
+    } else if (style === 'frost') {
+      // frost creeps out over the ground, then shards of ice spiral up into her
+      const rime = this.add.ellipse(bx, by, 10, 6, 0xf4f8ff, 0.45).setDepth(-26);
+      this.tweens.add({ targets: rime, scaleX: 14, scaleY: 14, alpha: 0.25, duration: 1900, ease: 'Sine.easeOut', onComplete: () => this.tweens.add({ targets: rime, alpha: 0, duration: 1500, onComplete: () => rime.destroy() }) });
+      for (let i = 0; i < 16; i++) at(500 + i * 100, () => {
+        const a = i * 0.9, r0 = 70;
+        const sh = this.add.image(bx + Math.cos(a) * r0, by + Math.sin(a) * r0 * 0.6, 'arrow').setTint(g.isShadow ? 0xb48cff : 0xd6efff).setScale(1.2).setDepth(TOP - 40);
+        const st = { k: 0 };
+        this.tweens.add({ targets: st, k: 1, duration: 600, ease: 'Quad.easeIn', onUpdate: () => { const r = r0 * (1 - st.k), aa = a + st.k * 3; sh.setPosition(bx + Math.cos(aa) * r, by - 20 * st.k + Math.sin(aa) * r * 0.6).setRotation(aa + Math.PI / 2); }, onComplete: () => { audio.sfx('frost', { pitch: 1.6 }); sh.destroy(); } });
+      });
+    } else if (style === 'pool') {
+      if (g.isShadow) for (let i = 0; i < 7; i++) at(450 + i * 230, () => this.fx.burst('curse', bx, by - 20, 10));
+      for (let i = 0; i < 12; i++) at(350 + i * 140, () => this.fx.burst('foam', bx + (Math.random() - 0.5) * 80, by + (Math.random() - 0.5) * 34, 8));
+    } else {
+      const tint = style === 'shadow' ? 0x8a6cc4 : 0xffffff;
+      for (let i = 0; i < 18; i++) at(450 + i * 85, () => {
+        const a = Math.random() * Math.PI * 2, r = 42 + Math.random() * 50;
+        const sx = bx + Math.cos(a) * r, sy = by + Math.sin(a) * r * 0.6;
+        const rock = this.add.image(sx, sy + 4, 'boulder').setScale(0.35 + Math.random() * 0.3).setAlpha(0).setTint(tint).setDepth(sy);
+        this.fx.dust(sx, sy);
+        this.tweens.add({ targets: rock, alpha: 1, y: sy - 4, duration: 180, onComplete: () => {
+          const st = { k: 0 }, tx = bx + (Math.random() - 0.5) * 16, ty = by - 12 - Math.random() * 30;
+          this.tweens.add({ targets: st, k: 1, duration: 420, ease: 'Quad.easeIn',
+            onUpdate: () => rock.setPosition(sx + (tx - sx) * st.k, sy - 4 + (ty - sy + 4) * st.k - Math.sin(st.k * Math.PI) * 26).setRotation(st.k * 5).setDepth(TOP - 40),
+            onComplete: () => { audio.sfx('block'); rock.destroy(); } });
+        } });
+      });
+      if (style === 'shadow') for (let i = 0; i < 7; i++) at(450 + i * 230, () => this.fx.burst('curse', bx, by - 20, 10));
+    }
+    // it takes shape
+    at(2150, () => {
+      cam.flash(180, 255, style === 'shadow' ? 200 : 255, 255);
+      audio.sfx('bash'); this.shake(400, 0.012);
+      this.fx.burst('curse', bx, by - 20, 30);
+      if (style === 'fog') { g.shadow.setAlpha(0.28); g.sprite.setAlpha(0); this.tweens.add({ targets: g.sprite, alpha: 1, duration: 700 }); }
+      else {
+        const sx = g.s.scale || 1; // keep a scaled boss's size (Vulk)
+        g.sprite.setAlpha(1).setScale(sx, sx * 0.4); g.shadow.setAlpha(0.28);
+        this.tweens.add({ targets: g.sprite, scaleY: sx, duration: 450, ease: 'Back.easeOut' });
+      }
+      if (style === 'pool' || style === 'magma') { const y0 = g.sprite.y; g.sprite.y = y0 + 30; this.tweens.add({ targets: g.sprite, y: y0, duration: 500, ease: 'Back.easeOut' }); }
+    });
+    // ...and roars
+    at(2750, () => {
+      g.play('windup');
+      audio.sfx('roar');
+      this.shake(800, 0.016);
+      this.events.emit('banner', B.cfg.name, B.cfg.sub);
+      this.events.emit('boss', g);
+    });
+    at(3800, () => { g.play('idle'); cam.pan(L.x, L.y, 600, 'Sine.easeInOut'); });
+    at(4450, () => {
+      cam.startFollow(L.sprite, true, 0.12, 0.12);
+      this.busy = false;
+      g.introT = 0.4; g.introTarget = L;
+    });
+  }
+
+  // The Vale Warden: once the Shadow below is gone, walking up to the Ward
+  // Stone wakes the real Gatewarden out of the rubble around it. Run far
+  // enough away and he sinks back to wait (full health) for the next try.
+  updateWardBoss() {
+    const L = this.leader;
+    const g = this.golem;
+    if (g?.wardBoss) {
+      const w = this.wards.find((k) => k.def.id === g.wardBoss.ward);
+      if (!this.busy && Math.hypot(L.x - w.C.x, L.y - w.C.y) > g.wardBoss.leash * TILE) {
+        for (const p of g.plates || []) { p.img.destroy(); this.removeInteractable(p.o); }
+        g.alive = false; g.clearZone();
+        this.fx.burst('curse', g.x, g.y - 20, 30);
+        this.tweens.add({ targets: g.sprite, alpha: 0, y: g.sprite.y + 20, duration: 600, onComplete: () => g.destroy() });
+        this.golem = null;
+        this.events.emit('boss', null);
+        const wk = g.wardBoss.kind;
+        for (const v of g.vents || []) { v.s.destroy(); this.removeInteractable(v.o); }
+        g.plat?.destroy(); g.blizzard?.destroy();
+        this.events.emit('banner', wk === 'huntsman' ? `${g.wardBoss.name} FADES INTO THE FOG` : wk === 'isolde' ? `${g.wardBoss.name} CRUMBLES INTO SNOW` : `${g.wardBoss.name} SINKS ${wk === 'murk' ? 'BACK INTO THE BOG' : 'INTO THE EARTH'}`, wk === 'huntsman' ? 'THE HUNT WILL COME FOR YOU AGAIN' : wk === 'isolde' ? 'SHE WILL FORM AGAIN TO GUARD THE STONE' : 'IT WILL RISE AGAIN TO GUARD THE STONE');
+      }
+      return;
+    }
+    if (g || this.busy) return;
+    for (const wb of W.wardBosses || []) {
+      const w = this.wards.find((k) => k.def.id === wb.ward);
+      if (!w?.unit || this.flags[wb.flag] || this.flags[w.def.flag] || !this.flags[w.def.guardian]) continue;
+      // wakes when you come close to where it will rise, so it starts on screen
+      const x = (w.def.x + wb.offset[0]) * TILE + 8, y = (w.def.y + wb.offset[1]) * TILE + 8;
+      if (Math.hypot(L.x - x, L.y - y) > wb.trigger * TILE) continue;
+      const opts = { level: this.enemyLevel(x, y) + 2, arena: wb.arena, pool: wb.pool };
+      const boss = wb.kind === 'murk' ? new Murk(this, x, y, opts) : wb.kind === 'huntsman' ? new Huntsman(this, x, y, opts) : wb.kind === 'vulk' ? new Vulk(this, x, y, opts) : wb.kind === 'isolde' ? new Isolde(this, x, y, opts) : new Golem(this, x, y, opts);
+      boss.maxHp = Math.round(boss.maxHp * wb.hpMul); boss.hp = boss.maxHp;
+      boss.s = { ...boss.s, dmg: boss.s.dmg * wb.dmgMul };
+      const B = { id: wb.id, flag: wb.flag, cfg: wb };
+      boss.bossName = wb.name; boss.bossDef = B; boss.wardBoss = wb;
+      this.golem = boss;
+      this.enemies.push(boss);
+      this.bossIntro(boss, wb.kind === 'murk' ? 'pool' : wb.kind === 'huntsman' ? 'fog' : wb.kind === 'vulk' ? 'magma' : wb.kind === 'isolde' ? 'frost' : 'stone', B);
+      return;
+    }
+  }
+
+  // ------------------------------------------------------------------ vines
+  // The curse feeds each Ward Stone through a vine that grows from a sacred
+  // place (the keep's old shrine, the abbey altar) up to the stone. It is
+  // grown, not drawn: it creeps along walls, ruins and tree roots, climbs over
+  // low obstacles, and is painted once as three braided strands with leaves,
+  // thorns, curling tendrils and glowing pods. Stolen holy light flows up it
+  // (gold at the shrine, curse-purple by the stone). When the guardian falls
+  // it withers to a grey husk and the shrine's sigil shines clean again.
+  buildVines() {
+    this.vines = [];
+    this.vineStuff = new Set();
+    for (const p of this.world.props) if (BLOCKING.has(p.type)) this.vineStuff.add(p.x + ',' + p.y);
+    for (const w of this.wards) {
+      const list = this.flags[w.def.flag] ? [] : w.def.vines || []; // a fallen stone's vines are gone
+      list.forEach((pts, i) => {
+        const v = { ward: w, i, n: list.length, seed: w.def.x * 31 + i * 17, dead: !!this.flags[w.def.guardian] || !!this.flags[w.def.flag] };
+        v.pts = this.vinePath(this.growVineRoute(pts));
+        v.len = v.pts[v.pts.length - 1].d;
+        v.stoneEnd = i === 0;           // starts coiled round the Ward Stone
+        v.diveEnd = i < list.length - 1; // ends plunging down a stairwell
+        v.source = i === list.length - 1; // ends draining the sacred sigil
+        this.paintVine(v);
+        this.vines.push(v);
+      });
+    }
+  }
+
+  // A* over tiles between the authored waypoints. Hugging walls, ruins and
+  // trees is cheap, open ground costs more, low walls can be climbed, water and
+  // solid rock are avoided — so it reads as something that grew there.
+  growVineRoute(anchors) {
+    const at = this.world.at, stuff = this.vineStuff;
+    const hard = (t) => t === T.CAVEWALL || t === T.DWALL || t === T.IWALL;
+    // dungeon doorways: the vine goes through the middle of the opening, square
+    // on, never along the leaf or the jambs
+    // (read from the layouts: the vines are grown before the dungeon kits are built)
+    const doors = this.vineDoors ??= (() => {
+      const m = new Map(), DOORCH = new Set(['=', 'k', 'K', 'V']);
+      for (const d of Object.values(DUNGEONS)) {
+        if (!d.rows) continue;
+        const [ox, oy] = d.origin, ch = (x, y) => d.rows[y]?.[x];
+        const seen = new Set();
+        d.rows.forEach((row, y) => [...row].forEach((c, x) => {
+          if (!DOORCH.has(c) || seen.has(x + ',' + y)) return;
+          const run = [], q = [[x, y]]; seen.add(x + ',' + y);
+          while (q.length) { const [a, b] = q.pop(); run.push([a, b]); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k2 = (a + dx) + ',' + (b + dy); if (!seen.has(k2) && ch(a + dx, b + dy) === c) { seen.add(k2); q.push([a + dx, b + dy]); } } }
+          const vertical = new Set(run.map((t) => t[0])).size === 1 && run.length > 1;
+          run.sort((p, q2) => (vertical ? p[1] - q2[1] : p[0] - q2[0]));
+          const mid = run[Math.floor(run.length / 2)];
+          for (const [a, b] of run) m.set((ox + a) + ',' + (oy + b), { center: a === mid[0] && b === mid[1], vertical });
+        }));
+      }
+      return m;
+    })();
+    const wet = (t) => t === T.WATER || t === T.BOG;
+    const near = (x, y, test) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && test(x + dx, y + dy)) return true; return false; };
+    const cost = (x, y) => {
+      const t = at(x, y), door = doors.get(x + ',' + y);
+      if (door) return door.center ? 1 : 30;
+      if (hard(t)) return 40;
+      if (t === T.STAIRS) return 30;
+      const byDoor = near(x, y, (a, b) => doors.has(a + ',' + b));
+      // water is a last resort, except right at a doorway a channel runs up to (a short hop to its middle)
+      let c = wet(t) ? (byDoor ? 4 : 14) : SOLID.has(t) || stuff.has(x + ',' + y) ? 2.2 : 1.2;
+      // hug walls and clutter (it climbs them), but not round a doorway, where it should run straight in
+      if (!byDoor && near(x, y, (a, b) => { const n = at(a, b); return (SOLID.has(n) && !wet(n) && !doors.has(a + ',' + b)) || stuff.has(a + ',' + b); })) c *= 0.4;
+      // keep a clear margin off water's edge and the stairs
+      if (!wet(t) && near(x, y, (a, b) => wet(at(a, b)))) c += 2.5;
+      if (near(x, y, (a, b) => at(a, b) === T.STAIRS)) c += 2;
+      return c + vnoise(x / 4, y / 4, 77) * 0.8; // a little meander
+    };
+    // squeezing diagonally into or out of a doorway cuts the corner of the frame
+    const stepCost = (x, y, nx, ny) => (x !== nx && y !== ny && (doors.has(x + ',' + y) || doors.has(nx + ',' + ny)) ? 6 : 1);
+    const out = [];
+    for (let k = 0; k < anchors.length - 1; k++) {
+      const [ax, ay] = anchors[k], [bx, by] = anchors[k + 1];
+      const sx = Math.round(ax), sy = Math.round(ay), gx = Math.round(bx), gy = Math.round(by);
+      const x0 = Math.min(sx, gx) - 8, y0 = Math.min(sy, gy) - 8, x1 = Math.max(sx, gx) + 8, y1 = Math.max(sy, gy) + 8;
+      const W = x1 - x0 + 1, key = (x, y) => (y - y0) * W + (x - x0);
+      const g = new Map(), from = new Map(), open = [[0, sx, sy]];
+      g.set(key(sx, sy), 0);
+      const hScore = (x, y) => Math.hypot(gx - x, gy - y) * 0.45;
+      let found = false;
+      while (open.length) {
+        let bi = 0;
+        for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
+        const [, x, y] = open[bi];
+        open[bi] = open[open.length - 1]; open.pop();
+        if (x === gx && y === gy) { found = true; break; }
+        const gc = g.get(key(x, y));
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx < x0 || nx > x1 || ny < y0 || ny > y1) continue;
+          const ng = gc + cost(nx, ny) * (dx && dy ? 1.41 : 1) * stepCost(x, y, nx, ny);
+          const nk = key(nx, ny);
+          if (ng < (g.get(nk) ?? Infinity)) { g.set(nk, ng); from.set(nk, [x, y]); open.push([ng + hScore(nx, ny), nx, ny]); }
+        }
+      }
+      const seg = [];
+      if (found) { let c = [gx, gy]; while (c) { seg.push(c); c = from.get(key(c[0], c[1])); } seg.reverse(); }
+      else seg.push([sx, sy], [gx, gy]);
+      // keep every other tile (smoother), the exact authored endpoints, and every
+      // doorway tile and its neighbours on the path (so the curve can't cut the frame)
+      const keep = (i) => i % 2 === 0 || i === seg.length - 1 || [-1, 0, 1].some((o) => seg[i + o] && doors.has(seg[i + o][0] + ',' + seg[i + o][1]));
+      const pts = seg.filter((_, i) => keep(i)).map(([x, y]) => [x, y]);
+      pts[0] = [ax, ay]; pts[pts.length - 1] = [bx, by];
+      if (k > 0) pts.shift();
+      out.push(...pts);
+    }
+    return out;
+  }
+
+  vinePath(pts) {
+    const P = pts.map(([x, y]) => ({ x: (x + 0.5) * TILE, y: (y + 0.5) * TILE }));
+    const cr = (a, b, c, d, t) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
+    const out = [];
+    for (let i = 0; i < P.length - 1; i++) {
+      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+      const n = Math.max(2, Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 3));
+      for (let k = 0; k < n; k++) out.push({ x: cr(p0.x, p1.x, p2.x, p3.x, k / n), y: cr(p0.y, p1.y, p2.y, p3.y, k / n) });
+    }
+    out.push({ ...P[P.length - 1] });
+    let d = 0;
+    return out.map((p, i) => {
+      if (i) d += Math.hypot(p.x - out[i - 1].x, p.y - out[i - 1].y);
+      const a = out[Math.max(0, i - 1)], b = out[Math.min(out.length - 1, i + 1)];
+      const l = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / l, ny = (b.x - a.x) / l;
+      const wob = Math.sin(d / 23) * 1.6 + Math.sin(d / 9.7) * 0.6;
+      return { x: p.x + nx * wob, y: p.y + ny * wob, d, nx, ny, tx: (b.x - a.x) / l, ty: (b.y - a.y) / l };
+    });
+  }
+
+  // Paint a vine once into its own texture (cheap to draw every frame).
+  paintVine(v) {
+    const P = v.pts, dead = v.dead;
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    for (const p of P) { bx0 = Math.min(bx0, p.x); by0 = Math.min(by0, p.y); bx1 = Math.max(bx1, p.x); by1 = Math.max(by1, p.y); }
+    const pad = 36, ox = Math.floor(bx0 - pad), oy = Math.floor(by0 - pad);
+    const w = Math.ceil(bx1 - bx0 + pad * 2), h = Math.ceil(by1 - by0 + pad * 2);
+    v.box = { x: ox, y: oy, w, h };
+    let s = v.seed;
+    const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    const X = (x) => x - ox, Y = (y) => y - oy;
+    const C = dead
+      ? { out: 0x2b2420, a: 0x4a4038, b: 0x5c5045, hi: 0x7a6c5c, leaf: 0x5a4e3a, leaf2: 0x4a4034, thorn: 0x3a332c }
+      : { out: 0x140a1c, a: 0x3b1f52, b: 0x5a2f7a, hi: 0xa77be0, leaf: 0x6f8f3a, leaf2: 0x9a5cc8, thorn: 0x1a1423 };
+    const strand = (amp, ph, wd, col, alpha = 1, dy = 0) => {
+      g.lineStyle(wd, col, alpha).beginPath();
+      P.forEach((p, i) => {
+        // taper the braid in toward the ends so they meet cleanly
+        const taper = Math.min(1, p.d / 20, (v.len - p.d) / 20);
+        const o = Math.sin(p.d / 7 + ph) * amp * taper;
+        const x = X(p.x + p.nx * o), y = Y(p.y + p.ny * o) + dy;
+        if (i) g.lineTo(x, y); else g.moveTo(x, y);
+      });
+      g.strokePath();
+    };
+    // shadow, then three twisting strands, then a highlight
+    strand(0, 0, 7, 0x000000, 0.22, 2);
+    for (const [amp, ph, wd, col] of [[2.4, 0, 3, C.a], [2.0, 2.1, 2, C.b], [1.7, 4.2, 2, C.a]]) { strand(amp, ph, wd + 2, C.out, dead ? 0.6 : 1); strand(amp, ph, wd, col, dead ? 0.7 : 1); }
+    strand(2.4, 0, 1, C.hi, dead ? 0.35 : 0.55, -0.6);
+
+    // overgrowth along the way
+    v.pods = [];
+    for (let d = 6; d < v.len - 4; d += 5 + rnd() * 7) {
+      const p = this.vineAt(v, d), side = rnd() < 0.5 ? -1 : 1;
+      const px = X(p.x), py = Y(p.y);
+      const r = rnd();
+      if (r < 0.42) {
+        // leaf: a little blade off the stem (dead vines have lost most of theirs)
+        if (dead && rnd() < 0.7) continue;
+        const len = 6 + rnd() * 3, tipx = px + (p.nx * side * len) + p.tx * 3, tipy = py + (p.ny * side * len) + p.ty * 3;
+        const col = rnd() < 0.55 ? C.leaf : C.leaf2;
+        g.fillStyle(C.out, dead ? 0.5 : 0.9).fillTriangle(px - p.tx * 3.2, py - p.ty * 3.2, px + p.tx * 3.2, py + p.ty * 3.2, tipx + p.nx * side, tipy + p.ny * side);
+        g.fillStyle(col, dead ? 0.6 : 1).fillTriangle(px - p.tx * 2.4, py - p.ty * 2.4, px + p.tx * 2.4, py + p.ty * 2.4, tipx, tipy);
+        g.lineStyle(1, C.out, 0.6).lineBetween(px, py, (px + tipx) / 2, (py + tipy) / 2);
+      } else if (r < 0.7) {
+        // thorns
+        for (const k of [-1, 1]) g.fillStyle(C.thorn, dead ? 0.6 : 1).fillTriangle(px - p.tx * 1.2, py - p.ty * 1.2, px + p.tx * 1.2, py + p.ty * 1.2, px + p.nx * k * 4 + p.tx * 1.5, py + p.ny * k * 4 + p.ty * 1.5);
+      } else if (r < 0.86) {
+        // a curling tendril reaching off the stem
+        g.lineStyle(1, dead ? C.b : C.b, dead ? 0.5 : 0.9).beginPath();
+        let a = Math.atan2(p.ny * side, p.nx * side), cx = px, cy = py;
+        g.moveTo(cx, cy);
+        for (let k = 0; k < 9; k++) { a += 0.55 * side; cx += Math.cos(a) * (2.2 - k * 0.18); cy += Math.sin(a) * (2.2 - k * 0.18); g.lineTo(cx, cy); }
+        g.strokePath();
+      } else if (!dead) {
+        // a curse pod (they pulse at runtime)
+        v.pods.push({ x: p.x + p.nx * side * 3, y: p.y + p.ny * side * 3, ph: rnd() * 6 });
+        g.fillStyle(C.out).fillCircle(px + p.nx * side * 3, py + p.ny * side * 3, 3);
+        g.fillStyle(0x7d4fb8).fillCircle(px + p.nx * side * 3, py + p.ny * side * 3, 2.2);
+      } else {
+        g.fillStyle(C.thorn, 0.6).fillCircle(px + p.nx * side * 3, py + p.ny * side * 3, 1.6); // a shrivelled pod
+      }
+    }
+    // side shoots: short thorny runners branching off, with a leaf or a bloom
+    for (let d = 18; d < v.len - 18; d += 22 + rnd() * 26) {
+      const p = this.vineAt(v, d), side = rnd() < 0.5 ? -1 : 1;
+      let a = Math.atan2(p.ny * side + p.ty * 0.6, p.nx * side + p.tx * 0.6), cx = X(p.x), cy = Y(p.y);
+      const n = 4 + Math.floor(rnd() * 4);
+      const pts = [[cx, cy]];
+      for (let k = 0; k < n; k++) { a += (rnd() - 0.5) * 0.9; cx += Math.cos(a) * 3; cy += Math.sin(a) * 3; pts.push([cx, cy]); }
+      for (const [wd, col] of [[3, C.out], [1.5, C.b]]) { g.lineStyle(wd, col, dead ? 0.6 : 1).beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (const q of pts) g.lineTo(q[0], q[1]); g.strokePath(); }
+      const [ex, ey] = pts[pts.length - 1];
+      if (!dead && rnd() < 0.55) {
+        // a sickly curse bloom
+        for (let k = 0; k < 4; k++) { const fa = (k / 4) * Math.PI * 2; g.fillStyle(C.out).fillCircle(ex + Math.cos(fa) * 2, ey + Math.sin(fa) * 2, 2); }
+        for (let k = 0; k < 4; k++) { const fa = (k / 4) * Math.PI * 2; g.fillStyle(0xd06ad8).fillCircle(ex + Math.cos(fa) * 2, ey + Math.sin(fa) * 2, 1.4); }
+        g.fillStyle(0xffe08a).fillCircle(ex, ey, 1);
+      } else {
+        g.fillStyle(dead ? C.leaf2 : C.leaf, dead ? 0.5 : 1).fillTriangle(ex - 2, ey, ex + 2, ey, ex + Math.cos(a) * 5, ey + Math.sin(a) * 5);
+      }
+    }
+    // wraps where it grips walls and trunks
+    for (let d = 10; d < v.len - 10; d += 14) {
+      const p = this.vineAt(v, d), tx = Math.floor(p.x / TILE), ty = Math.floor(p.y / TILE);
+      let grip = false;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const t = this.world.at(tx + dx, ty + dy); if ((SOLID.has(t) && t !== T.WATER) || this.vineStuff.has(tx + dx + ',' + (ty + dy))) grip = true; }
+      if (!grip) continue;
+      for (const k of [-2, 2]) g.lineStyle(1, C.out, 0.8).lineBetween(X(p.x + p.tx * k - p.nx * 4), Y(p.y + p.ty * k - p.ny * 4), X(p.x + p.tx * (k + 1.5) + p.nx * 4), Y(p.y + p.ty * (k + 1.5) + p.ny * 4));
+    }
+    const roots = (cx, cy, n, r0, r1, a0 = 0, spread = Math.PI * 2) => {
+      for (let k = 0; k < n; k++) {
+        const a = a0 + (k / n) * spread + rnd() * 0.4, rr = r0 + rnd() * (r1 - r0);
+        g.lineStyle(2, C.out, dead ? 0.6 : 1).beginPath(); g.moveTo(X(cx), Y(cy));
+        g.lineTo(X(cx + Math.cos(a) * rr * 0.5 + rnd() * 3), Y(cy + Math.sin(a) * rr * 0.35));
+        g.lineTo(X(cx + Math.cos(a) * rr), Y(cy + Math.sin(a) * rr * 0.6)); g.strokePath();
+        g.lineStyle(1, C.a, dead ? 0.6 : 1).lineBetween(X(cx), Y(cy), X(cx + Math.cos(a) * rr * 0.8), Y(cy + Math.sin(a) * rr * 0.5));
+      }
+    };
+    // the stone end: roots splay out and coils clutch the stone's base
+    if (v.stoneEnd) {
+      const s0 = P[0];
+      roots(s0.x, s0.y + 4, 7, 14, 26);
+      for (let k = 0; k < 3; k++) g.lineStyle(2, k % 2 ? C.b : C.a, dead ? 0.55 : 1).strokeEllipse(X(s0.x), Y(s0.y + 2 - k * 5), 22 - k * 3, 9 - k);
+    }
+    // a stairwell end: the vine plunges down into the dark
+    if (v.diveEnd || (v.i > 0 && !v.source)) {
+      const e = P[P.length - 1];
+      roots(e.x, e.y, 5, 6, 12);
+      g.fillStyle(C.out, 0.8).fillEllipse(X(e.x), Y(e.y), 10, 6);
+    }
+    if (v.i > 0) { const s0 = P[0]; roots(s0.x, s0.y, 5, 6, 12); g.fillStyle(C.out, 0.8).fillEllipse(X(s0.x), Y(s0.y), 10, 6); }
+    // the source: a sacred sigil, clutched and drained (or shining clean)
+    if (v.source) {
+      const e = P[P.length - 1];
+      v.sigil = { x: e.x, y: e.y };
+      const gold = dead ? 0xffe08a : 0xc49a44, ga = dead ? 0.9 : 0.6;
+      g.lineStyle(2, gold, ga).strokeEllipse(X(e.x), Y(e.y), 40, 26);
+      g.lineStyle(1, gold, ga).strokeEllipse(X(e.x), Y(e.y), 30, 19);
+      for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; g.fillStyle(gold, ga).fillRect(Math.round(X(e.x + Math.cos(a) * 17)) - 1, Math.round(Y(e.y + Math.sin(a) * 11)) - 1, 2, 2); }
+      if (!dead) roots(e.x, e.y, 9, 16, 22);
+    }
+    const key = `vine_${v.ward.def.id}_${v.i}${dead ? '_dead' : ''}`;
+    if (this.textures.exists(key)) this.textures.remove(key);
+    g.generateTexture(key, w, h);
+    g.destroy();
+    v.img?.destroy();
+    v.img = this.add.image(ox, oy, key).setOrigin(0).setDepth(-80);
+    this.submergeVine(v, key, ox, oy, w, h);
+  }
+
+  // Where a vine crosses water it stays faintly visible under the surface
+  // instead of vanishing below pool overlays: the stretch over water is cut out
+  // of the vine and drawn as its own pale, blue-tinted copy above the water.
+  submergeVine(v, key, ox, oy, w, h) {
+    const wetTiles = this.vineWetTiles ??= (() => {
+      const m = new Set();
+      for (const d of Object.values(DUNGEONS)) if (d.rows) d.rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === 'w' || c === 'v') m.add((d.origin[0] + x) + ',' + (d.origin[1] + y)); })); // basins (water images)
+      return m;
+    })();
+    // two masks: all water (the faint copy), and standing water only (cut from the vine
+    // itself; basins drain and refill, so under them the vine stays whole)
+    const mk = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; return [c, x]; };
+    const [allM, allX] = mk(), [poolM, poolX] = mk();
+    let any = false, pools = false;
+    for (let ty = Math.floor(oy / TILE); ty <= Math.floor((oy + h) / TILE); ty++) for (let tx = Math.floor(ox / TILE); tx <= Math.floor((ox + w) / TILE); tx++) {
+      const t = this.world.at(tx, ty), pool = t === T.WATER || t === T.BOG;
+      if (pool || wetTiles.has(tx + ',' + ty)) { allX.fillRect(tx * TILE - ox, ty * TILE - oy, TILE, TILE); any = true; }
+      if (pool) { poolX.fillRect(tx * TILE - ox, ty * TILE - oy, TILE, TILE); pools = true; }
+    }
+    if (!any) return;
+    const src = this.textures.get(key).getSourceImage();
+    const cut = (mask, op) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = op; x.drawImage(mask, 0, 0); return c; };
+    const wet = cut(allM, 'destination-in');
+    if (pools) { const dry = cut(poolM, 'destination-out'); this.textures.remove(key); this.textures.addCanvas(key, dry); v.img.setTexture(key); }
+    if (this.textures.exists(`${key}_wet`)) this.textures.remove(`${key}_wet`);
+    this.textures.addCanvas(`${key}_wet`, wet);
+    const wi = this.add.image(ox, oy, `${key}_wet`).setOrigin(0).setDepth(-28).setTint(0xa8d4ff);
+    (this.vineWet ??= []).push([v.img, wi]);
+  }
+
+  vineAt(v, d) {
+    const P = v.pts;
+    let lo = 0, hi = P.length - 1;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (P[m].d < d) lo = m + 1; else hi = m; }
+    return P[lo];
+  }
+
+  // live vines: pods throb, and stolen light flows from the shrine toward the stone
+  updateVines(dt) {
+    const view = this.cameras.main.worldView;
+    // submerged stretches follow their vine's fade (and go when it does)
+    if (this.vineWet) this.vineWet = this.vineWet.filter(([img, wi]) => { if (!img.active) { wi.destroy(); return false; } wi.setAlpha(img.alpha * 0.45).setVisible(img.visible); return true; });
+    for (const v of this.vines || []) {
+      v.fx ??= this.add.graphics().setDepth(-79);
+      v.fx.clear();
+      const b = v.box;
+      if (b.x > view.right || b.x + b.w < view.x || b.y > view.bottom || b.y + b.h < view.y) continue;
+      v.t = (v.t || 0) + dt;
+      if (v.dead && !v.dying) {
+        if (v.sigil) { const a = 0.25 + Math.sin(v.t * 2) * 0.12; v.fx.fillStyle(0xfff0a0, a).fillEllipse(v.sigil.x, v.sigil.y, 34, 20); }
+        continue;
+      }
+      const life = v.dying ? 1 - v.dying.k : 1; // pods and motes fade out with the wither
+      for (const p of v.pods) {
+        if (p.x < view.x - 8 || p.x > view.right + 8 || p.y < view.y - 8 || p.y > view.bottom + 8) continue; // only what's on screen (Graphics redraws every command, every frame)
+        const a = (0.35 + Math.sin(v.t * 3 + p.ph) * 0.3) * life; v.fx.fillStyle(0xe7a6ff, a).fillCircle(p.x, p.y, 3.2).fillStyle(0xffffff, a * 0.8).fillCircle(p.x - 0.6, p.y - 0.6, 0.9);
+      }
+      if (v.sigil) { const a = 0.18 + Math.sin(v.t * 4) * 0.1; v.fx.fillStyle(0xffd27a, a).fillEllipse(v.sigil.x, v.sigil.y, 30, 18); }
+      // motes travel toward d = 0; on the shrine vine they start gold and sour to purple
+      for (let k = 0; k < Math.ceil(v.len / 70); k++) {
+        const d = v.len - ((v.t * 34 + k * 70) % v.len);
+        const p = this.vineAt(v, d);
+        if (p.x < view.x - 8 || p.x > view.right + 8 || p.y < view.y - 8 || p.y > view.bottom + 8) continue;
+        const f = v.source ? d / v.len : 0;
+        const col = f > 0.6 ? 0xffe08a : f > 0.3 ? 0xf0b8e8 : 0xe7a6ff;
+        v.fx.fillStyle(col, 0.95 * life).fillCircle(p.x, p.y, 1.8).fillStyle(0xffffff, 0.9 * life).fillCircle(p.x, p.y, 0.8);
+      }
+    }
+  }
+
+  // The Shadow is broken: the vine dies slowly enough to watch. A wave of
+  // decay crawls from the shrine back toward the stone while the living vine
+  // greys out in step with it; the dead vine stays until the stone falls.
+  witherVines(w) {
+    for (const v of this.vines || []) {
+      if (v.ward !== w || v.dead) continue;
+      const live = v.img; v.img = null;
+      v.dead = true;
+      this.paintVine(v); // the dead version, faded in under the living one
+      const dead = v.img.setAlpha(0);
+      const dur = Phaser.Math.Clamp(v.len / 130, 4, 7) * 1000; // game time: about 6-10 s at the default 0.72 speed
+      v.dying = { k: 0 };
+      this.tweens.add({ targets: v.dying, k: 1, duration: dur, ease: 'Linear', onUpdate: () => { live?.setAlpha(1 - v.dying.k); dead.setAlpha(v.dying.k); }, onComplete: () => { live?.destroy(); this.textures.remove(`vine_${v.ward.def.id}_${v.i}`); v.dying = null; } });
+      const step = 22, n = Math.ceil(v.len / step);
+      for (let i = 0; i <= n; i++) {
+        const p = this.vineAt(v, Math.max(0, v.len - i * step));
+        this.time.delayedCall((i / n) * dur, () => { this.fx.burst('curse', p.x, p.y, 4); if (i % 4 === 0) this.fx.dust(p.x, p.y + 2); });
+      }
+      if (v.sigil) { this.fx.burst('gold', v.sigil.x, v.sigil.y, 24); this.fx.burst('bloom', v.sigil.x, v.sigil.y, 20); }
+      audio.sfx('rumble');
+    }
+    this.time.delayedCall(2600, () => this.think(w.def.id, 'withered', true));
+  }
+
+  // The Ward Stone itself is down: its dead vines crumble away entirely.
+  removeVines(w) {
+    for (const v of (this.vines || []).filter((k) => k.ward === w)) {
+      for (let i = 0; i < v.len; i += 30) { const p = this.vineAt(v, i); this.time.delayedCall(Math.random() * 1500, () => this.fx.dust(p.x, p.y)); }
+      this.tweens.add({ targets: v.img, alpha: 0, duration: 2500, delay: 400, onComplete: () => { v.img?.destroy(); v.fx?.destroy(); } });
+      this.vines = this.vines.filter((k) => k !== v);
+    }
+  }
+
+  // ------------------------------------------------------------ thoughts
+  // The lead hero thinks out loud the first time they meet each beat of a
+  // ward's story, nudging the player toward what to do next.
+  think(wardId, beat, force = false) {
+    const k = `th_${wardId}_${beat}`;
+    if (this.flags[k] || (!force && (this.combatHold > 0 || this.ui?.dialogOpen || this.busy))) return false;
+    const line = THOUGHTS[wardId]?.[beat];
+    if (!line) return false;
+    this.flags[k] = true;
+    this.bark(this.leader, line);
+    return true;
+  }
+
+  nearVine(w, L, tiles) {
+    let best = null;
+    for (const v of this.vines || []) {
+      if (v.ward !== w) continue;
+      const b = v.box;
+      if (L.x < b.x || L.x > b.x + b.w || L.y < b.y || L.y > b.y + b.h) continue;
+      for (let i = 0; i < v.pts.length; i += 3) if (Math.hypot(v.pts[i].x - L.x, v.pts[i].y - L.y) < tiles * TILE) { best = { v, p: v.pts[i] }; break; }
+      if (best) break;
+    }
+    return best;
+  }
+
+  updateThoughts(dt) {
+    this.thoughtT = (this.thoughtT || 0) - dt;
+    if (this.thoughtT > 0) return;
+    this.thoughtT = 0.5;
+    if (this.combatHold > 0 || this.busy || this.ui?.dialogOpen || this.golem) return;
+    const L = this.leader, f = this.flags;
+    for (const w of this.wards) {
+      const wd = w.def, id = wd.id;
+      if (f[wd.flag]) continue;
+      const dStone = Math.hypot(L.x - w.C.x, L.y - w.C.y) / TILE;
+      if (!f[wd.guardian]) {
+        if (dStone < 9 && this.think(id, 'stone')) return;
+        const nv = this.nearVine(w, L, 3);
+        if (!nv) continue;
+        if (nv.v.i === 0 && dStone > 11 && this.think(id, 'vine')) return;
+        if (nv.v.source && Math.hypot(nv.v.sigil.x - L.x, nv.v.sigil.y - L.y) < 11 * TILE && this.think(id, 'source')) return;
+        if (nv.v.i > 0 && this.think(id, 'below')) return;
+      } else if (wd.warden && !f[wd.warden]) {
+        if (dStone < 16 && this.think(id, 'stir')) return;
+      } else if (dStone < 12 && this.think(id, 'open')) return;
+    }
+  }
+
+  updateBoss() {
+    if (this.golem) return;
+    const L = this.leader;
+    for (const B of this.bossDefs()) {
+      if (this.flags[B.flag]) continue;
+      const [x0, y0, x1, y1] = B.rect;
+      const inArena = (h) => h.x > x0 * TILE && h.x < (x1 + 1) * TILE && h.y < (y1 + 1) * TILE && h.y > y0 * TILE;
+      if (!inArena(L)) continue;
+      for (const h of this.party) if (!inArena(h) && !h.downed) { h.x = L.x + (Math.random() - 0.5) * 16; h.y = L.y - 6; }
+      const ax = B.cfg.arena[0] * TILE + 8, ay = B.cfg.arena[1] * TILE + 8;
+      const g = B.make(ax, ay, { level: this.enemyLevel(ax, ay) + (B.cfg.levelBonus ?? 1) }); // bosses sit a level up unless the def says otherwise
+      // per-boss tuning (like the true lieutenants' hpMul / dmgMul)
+      if (B.cfg.hpMul) { g.maxHp = Math.round(g.maxHp * B.cfg.hpMul); g.hp = g.maxHp; }
+      if (B.cfg.dmgMul) g.s = { ...g.s, dmg: g.s.dmg * B.cfg.dmgMul };
+      g.bossName = B.cfg.name; g.bossDef = B;
+      this.golem = g; // the active lieutenant (name kept from the demo)
+      this.enemies.push(g);
+      this.sealArena(true, B.gate);
+      this.bossIntro(g, B.style || (B.cfg.shadow ? 'shadow' : 'stone'), B);
+      return;
+    }
+  }
+
+  // Bars drop across the arena's entrance during the boss fight.
+  sealArena(on, gate) {
+    if (gate) this.arenaGatePos = gate;
+    const [gx, gy] = this.arenaGatePos || [288, 16];
+    if (on && !this.arenaGate) {
+      this.arenaGate = this.add.graphics().setDepth(gy * TILE + 20);
+      for (let i = 0; i < 4; i++) this.arenaGate.fillStyle(0x1a1423).fillRect((gx - 1) * TILE + 6 + i * 11, gy * TILE - 6, 4, 26).fillStyle(0x6e6a87).fillRect((gx - 1) * TILE + 7 + i * 11, gy * TILE - 6, 2, 26);
+      for (let x = gx - 1; x <= gx + 1; x++) this.nav.block(x, gy);
+      audio.sfx('doorClose');
+    } else if (!on && this.arenaGate) {
+      this.arenaGate.destroy(); this.arenaGate = null;
+      for (let x = gx - 1; x <= gx + 1; x++) this.nav.unblock?.(x, gy);
+      audio.sfx('doorOpen');
+    }
+  }
+
+
+  // ============================================================== update
+  // A shot's line of fire, by the same rule projectiles use in flight: walls,
+  // rock and trees stop it; water, bog, chasms and low pegs don't.
+  shotClear(x0, y0, x1, y1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4);
+    for (let i = 1; i < n; i++) {
+      const x = x0 + (x1 - x0) * (i / n), y = y0 + (y1 - y0) * (i / n);
+      const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+      if (!this.nav.isSolid(tx, ty)) continue;
+      const t = this.world.at(tx, ty);
+      if (t === T.WATER || t === T.BOG || t === T.CHASM || this.dungeon?.lowAt(x, y)) continue;
+      return false;
+    }
+    return true;
+  }
+
+  // Phaser draws every object in the display list, on screen or not, and the
+  // world keeps a lot alive (every dungeon's pieces, props, flies, markers):
+  // ~1,260 objects with ~50 in view. Each frame, anything well outside the
+  // camera is excluded from it (cameraFilter, so code that shows/hides things
+  // with setVisible is untouched). Fixed-to-screen objects and Graphics are
+  // left alone.
+  //
+  // Anything more than two chunks past the view is parked as well: taken out
+  // of the display list (so it isn't drawn, sorted, culled or animated) into a
+  // bucket for its chunk, and put back once the view comes within a chunk of
+  // it. It stays alive, so whatever holds it (an errand, a townsperson, a fly)
+  // keeps working with it. Once a second the parked are re-filed if they
+  // moved, and dropped if they were destroyed. A big map can hold any number
+  // of people and pickups this way at no cost per frame (rule 14).
+  cullOffscreen() {
+    // every third frame, with a margin wide enough that nothing moving can reach the edge in between
+    if ((this.cullN = (this.cullN || 0) + 1) % 3 && !this.cullNow) return;
+    this.cullNow = false;
+    const cam = this.cameras.main, v = cam.worldView, m = 96, id = cam.id;
+    const vx0 = v.x - m, vy0 = v.y - m, vx1 = v.right + m, vy1 = v.bottom + m;
+    const pm = CHUNK * 2, toPark = [];
+    this.unparkNear(v);
+    for (const o of this.sys.displayList.list) {
+      if (o.scrollFactorX !== 1 || o.type === 'Graphics' || o.noCull) continue;
+      const box = o.type === 'Container'; // containers here are small (node bubbles)
+      const w = box ? 48 : o.displayWidth || 0, h = box ? 48 : o.displayHeight || 0;
+      let x0, y0, x1, y1;
+      if (o.rotation) { const r = Math.max(w, h); x0 = o.x - r; y0 = o.y - r; x1 = o.x + r; y1 = o.y + r; } // turned: a generous square
+      else { x0 = o.x - w * (o.originX ?? 0.5); y0 = o.y - h * (o.originY ?? 0.5); x1 = x0 + w; y1 = y0 + h; }
+      // (only things smaller than a chunk park: a big one, like the barrier, could reach the view from a far-off anchor)
+      if (!o.unit && !o.noPark && w <= CHUNK && h <= CHUNK && (x1 < v.x - pm || x0 > v.right + pm || y1 < v.y - pm || y0 > v.bottom + pm)) { toPark.push(o); continue; }
+      if (x1 < vx0 || x0 > vx1 || y1 < vy0 || y0 > vy1) {
+        o.cameraFilter |= id;
+        // a looping animation off screen is paused (not a hero's or foe's)
+        if (o.anims?.isPlaying && o.anims.repeat === -1 && !o.unit) { o.anims.pause(); o.cullPaused = true; }
+      } else if (o.cameraFilter & id) {
+        o.cameraFilter &= ~id;
+        if (o.cullPaused) { o.cullPaused = false; o.anims.resume(); }
+      }
+    }
+    for (const o of toPark) this.park(o, id);
+    if ((this.parkSweep = (this.parkSweep || 0) + 1) % 20 === 0) this.sweepParked();
+    // twice a second: endless tweens (bobbing, pulsing glows) whose targets are
+    // all off screen are paused, and resumed as soon as one comes back
+    if ((this.cullT = (this.cullT || 0) + 1) % 10) return;
+    for (const t of this.tweens.getTweens()) {
+      if (!(t.loop === -1 || t.data?.some((d) => d.repeat === -1))) continue;
+      const tg = t.targets;
+      if (!tg?.length || !tg.every((o) => o && o.cameraFilter !== undefined && o.scrollFactorX === 1)) continue;
+      const off = tg.every((o) => o.cameraFilter & id);
+      if (off && !t.paused) { t.pause(); t.cullPaused = true; }
+      else if (!off && t.cullPaused) { t.cullPaused = false; t.resume(); }
+    }
+  }
+
+  park(o, id) {
+    o.cameraFilter |= id; // (counts as off screen: its endless tweens pause)
+    if (o.anims?.isPlaying && o.anims.repeat === -1 && !o.cullPaused) { o.anims.pause(); o.cullPaused = true; }
+    this.sys.displayList.remove(o);
+    const k = `${Math.floor(o.x / CHUNK)},${Math.floor(o.y / CHUNK)}`;
+    if (!this.parked.has(k)) this.parked.set(k, new Set());
+    this.parked.get(k).add(o);
+    o.parkedAt = k; o.parkX = o.x; o.parkY = o.y;
+  }
+
+  // put back everything parked within a chunk of the view
+  unparkNear(v) {
+    if (!this.parked.size) return;
+    const c0 = Math.floor((v.x - CHUNK) / CHUNK), c1 = Math.floor((v.right + CHUNK) / CHUNK), r0 = Math.floor((v.y - CHUNK) / CHUNK), r1 = Math.floor((v.bottom + CHUNK) / CHUNK);
+    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) {
+      const k = `${cx},${cy}`, b = this.parked.get(k);
+      if (!b) continue;
+      this.parked.delete(k);
+      for (const o of b) { o.parkedAt = null; if (o.scene) this.sys.displayList.add(o); } // (the cull sorts out what's on screen)
+    }
+  }
+
+  // once a second: drop the destroyed, re-file the moved
+  sweepParked() {
+    for (const [k, b] of this.parked) for (const o of b) {
+      if (!o.scene) { b.delete(o); continue; }
+      if (o.x === o.parkX && o.y === o.parkY) continue; // (almost everything parked stands still)
+      o.parkX = o.x; o.parkY = o.y;
+      const nk = `${Math.floor(o.x / CHUNK)},${Math.floor(o.y / CHUNK)}`;
+      if (nk === k) continue;
+      b.delete(o);
+      if (!this.parked.has(nk)) this.parked.set(nk, new Set());
+      this.parked.get(nk).add(o); o.parkedAt = nk;
+    }
+    for (const [k, b] of this.parked) if (!b.size) this.parked.delete(k);
+  }
+
+  *parkedObjects() { for (const b of this.parked.values()) yield* b; }
+
+  update(time, deltaMs) {
+    this.frameMs.push(deltaMs);
+    if (this.frameMs.length > 60) this.frameMs.shift();
+    const sp = this.speed;
+    this.anims.globalTimeScale = sp;
+    this.tweens.timeScale = sp;
+    this.time.timeScale = sp;
+    this.fx.setTimeScale(sp);
+    const dt = Math.min(0.05, deltaMs / 1000) * sp;
+    const L = this.leader;
+    const view = this.cameras.main.worldView;
+    if (!this.busy && (this.state.steamT || 0) > 0) this.state.steamT = Math.max(0, this.state.steamT - dt);
+    // safety net: a companion standing in water (without the Tide Charm) or a wall, however it got there, steps back beside the leader
+    if (!this.busy && !this.loading && (this.stuckCheckT = (this.stuckCheckT || 0) + dt) > 1) {
+      this.stuckCheckT = 0;
+      const nav = this.nav, inBad = (h) => { const tx = Math.floor(h.x / TILE), ty = Math.floor(h.y / TILE); return this.canSwim ? nav.solid[ty * nav.w + tx] === 1 : nav.isSolid(tx, ty); };
+      if (this.party.some((h) => h !== L && !h.downed && !h.zipping && !h.lift && inBad(h))) this.settleParty();
+    }
+    // up a lookout the view is zoomed out: stream terrain for the wider area (prefetched during the climb)
+    // walking over to a lookout: start painting its wide view before the climb
+    if (!this.onLookout) {
+      const c = L.command;
+      const k = c?.type === 'interact' && c.obj.kind === 'lookout' && Math.hypot(c.obj.x - L.x, c.obj.y - L.y) < 16 * TILE ? c.obj.look : null;
+      this.lookoutView = k ? this.lookoutViewFor(k) : null;
+    }
+    const lv = this.lookoutView;
+    this.streamer.update(lv ? lv.x : L.x, lv ? lv.y : L.y, lv ? lv.w : view.width || this.scale.width, lv ? lv.h : view.height || this.scale.height);
+    this.state.playTime += deltaMs / 1000;
+
+    // lazy biome assets: start loading before the party gets there
+    const ty = L.y / TILE, tx = L.x / TILE;
+    const area = areaAt(Math.floor(tx), Math.floor(ty));
+    if (area !== this.area && area !== 'void') this.enterArea(area);
+    if (this.loading) { for (const h of this.party) h.sync(dt); return; } // prepareAt is running
+    for (const g of this.groupsNear(tx, ty, area)) loadGroup(this, g);
+    this.calmT = Math.max(0, (this.calmT || 0) - dt);
+
+    // region banner: borders fray, so a new region has to hold for a moment
+    // (walking along an edge would otherwise flip banners and music back and forth)
+    // (the void between interiors isn't a region: stepping out through a door
+    // walks the party a few pixels past the doorway into it, so hold the last one)
+    const here = biomeAt(Math.floor(tx), Math.floor(ty));
+    if (here !== this.region && here === this.regionCand) this.regionCandT += dt; else { this.regionCand = here; this.regionCandT = 0; }
+    const region = here === 'void' ? this.region : this.region === null || areaAt(Math.floor(tx), Math.floor(ty)) !== 'overworld' || this.regionCandT > 1 ? here : this.region;
+    if (region !== this.region && W.regions.some((x) => x.id === region)) {
+      if (this.region !== null) { const r = W.regions.find((x) => x.id === region); this.events.emit('banner', r.name, r.sub); }
+      else { const r = W.regions.find((x) => x.id === region); this.time.delayedCall(600, () => this.events.emit('banner', r.name, r.sub)); }
+      this.region = region;
+      this.musicT = 0.8; // settle before switching themes, so walking a border doesn't flip-flop
+    }
+    // each region has its own variation of the theme
+    if (!this.loading && this.region !== this.musicRegion && (this.musicT -= dt) <= 0) {
+      this.musicRegion = this.region;
+      music.setTheme(themeFor(this.region));
+    }
+
+    this.swapCd = Math.max(0, this.swapCd - dt);
+    this.updateDarkness();
+    this.revealT = (this.revealT || 0) - deltaMs / 1000;
+    if (this.revealT <= 0) {
+      this.revealT = 0.25;
+      this.minimap.reveal(Math.floor(tx), Math.floor(ty), region === 'cave' ? 6 : 13);
+      this.minimap.flush();
+    }
+
+    if (this.hitStopT > 0) {
+      this.hitStopT -= deltaMs / 1000;
+      if (!this.anims.paused) this.anims.pauseAll();
+      return;
+    }
+    if (this.anims.paused) this.anims.resumeAll();
+    if (this.busy) { for (const h of this.party) h.sync(dt); return; }
+
+    const k = this.keys;
+    const dx = (k.D.isDown || k.RIGHT.isDown ? 1 : 0) - (k.A.isDown || k.LEFT.isDown ? 1 : 0);
+    const dy = (k.S.isDown || k.DOWN.isDown ? 1 : 0) - (k.W.isDown || k.UP.isDown ? 1 : 0);
+    L.direct = this.ui?.dialogOpen ? null : { x: dx, y: dy };
+    if ((dx || dy) && L.action?.type === 'harvest') this.cancelHarvest(L);
+    const hv = this.party.find((h) => h.action?.type === 'harvest');
+    this.harvestBar ??= this.add.graphics().setDepth(TOP + 4);
+    this.harvestBar.clear();
+    if (hv) {
+      const f = Math.min(1, hv.action.t / hv.action.dur), x = Math.round(hv.x) - 12, y = Math.round(hv.y) - 34;
+      this.harvestBar.fillStyle(0x1a1423).fillRect(x - 1, y - 1, 26, 5).fillStyle(0x2b2140).fillRect(x, y, 24, 3).fillStyle(0x6fd3a0).fillRect(x, y, Math.round(24 * f), 3);
+    }
+
+    for (const h of this.party) { if (h.zipping) h.sync(dt); else h.update(dt); this.gearFx.update(h, dt); }
+    // idle foes well off screen (they can't notice anyone from there) think every
+    // 4th frame with the time saved up; anything in a fight runs every frame
+    const fv = this.cameras.main.worldView, far = (e) => e.x < fv.x - 200 || e.x > fv.right + 200 || e.y < fv.y - 200 || e.y > fv.bottom + 200;
+    for (const e of this.enemies) {
+      let step = dt + (e.idleAcc || 0); // this frame plus any time saved up while far
+      if (!e.engaged && !e.boss && e.alive && far(e) && (e.idleN = (e.idleN || 0) + 1) % 4) { e.idleAcc = step; continue; }
+      e.idleAcc = 0;
+      e.update(Math.min(0.2, step));
+    }
+    for (const g of [...(this.gadgets || [])]) g.update(dt); // Gizmo's machines
+    this.drawEnemyBars();
+    this.updateLevelUps(dt);
+    this.enemies = this.enemies.filter((e) => e.alive);
+    for (const u of this.wardUnits()) u.update(dt);
+    this.updateProjectiles(dt);
+    this.updateEnemyShots(dt);
+    this.updateNodesAndNpcs(dt);
+    for (const b of this.breakables) b.update(dt);
+    this.updateShockwaves(dt);
+    this.updateBloom(dt);
+    this.updateLoot(dt);
+    this.updateBoss();
+    this.updateCampfires();
+    this.updateWardBoss();
+    this.updateVines(dt);
+    this.updateThoughts(dt);
+    this.updateWarps();
+    this.quests.update(dt);
+    this.updateHeat(dt);
+    this.updateCold(dt);
+    if (this.hazardWarned && !this.party.some((h) => this.exposed(h))) this.hazardWarned = false; // out of it: the warning can come again next time
+    this.updateTownsfolk(dt);
+    this.updateFerryman(dt);
+    this.updateChains(dt);
+    this.updatePerks(dt);
+    this.dungeon?.update(dt);
+    this.groupT = (this.groupT || 0) - dt;
+    if (this.groupT <= 0) { this.groupT = 0.4; this.updateGroups(0.4); }
+
+    if (this.barkObj && !this.barkObj.active) this.barkObj = null;
+    if (this.barkObj && this.barkObj.follow) {
+      // keep speech inside the view even when the speaker is at the screen edge
+      const v = this.cameras.main.worldView, half = this.barkObj.width / 2 + 4;
+      const bx = Phaser.Math.Clamp(this.barkObj.follow.x, v.x + half, Math.max(v.x + half, v.right - half));
+      this.barkObj.setPosition(Math.round(bx), Math.round(Math.max(this.barkObj.follow.y - 30 - (this.barkObj.follow.barkLift || 0), v.y + this.barkObj.height + 4)));
+    }
+
+    this.moteT -= dt;
+    const mw = this.wards.find((w) => !this.flags[w.def.flag] && Math.hypot(L.x - w.C.x, L.y - w.C.y) < 500);
+    if (mw && this.moteT <= 0) {
+      this.moteT = 0.08;
+      const a = Math.random() * Math.PI * 2, r = Math.random() * mw.C.R * 0.8;
+      this.fx.burst('motes', mw.C.x + Math.cos(a) * r, mw.C.y + Math.sin(a) * r * 0.8, 1);
+    }
+
+    const inZone = this.inCurse(L.x, L.y, 30);
+    music.setVariant(inZone ? 'cursed' : 'freed');
+    if (inZone && !this.flags.enteredCurse) {
+      this.flags.enteredCurse = true;
+      const pip = this.party.find((p) => p.def.id === 'pip') || L;
+      this.bark(pip, BARKS.curse[pip.def.id]);
+    }
+    const fighting = this.golem || this.enemies.some((e) => e.alive && e.engaged && dist(e, L) < 220);
+    if (fighting) this.combatHold = 2.5; else this.combatHold -= dt;
+    if (this.combatHold <= 0) for (const h of this.party) h.lastStandUsed = false;
+    // out of combat the party catches its breath: after a short pause, HP
+    // refills at ~3% per second, and anyone downed gets back on their feet
+    this.calmFor = this.combatHold > 0 ? 0 : (this.calmFor || 0) + dt;
+    if (this.calmFor > 2) for (const h of this.party) {
+      if (!h.alive) continue;
+      if (h.downed) { if (this.calmFor > 4) { h.revive(0.2); } continue; }
+      if (h.hp < h.maxHp && !this.exposed(h)) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * 0.03 * dt); // no catching your breath while the heat or cold is on you (it used to cancel them out)
+    }
+    music.setCombat(this.combatHold > 0);
+
+    for (const b of this.breakables) {
+      if (b.hinted || Math.hypot(L.x - b.x, L.y - b.y) > 70) continue;
+      b.hinted = true;
+      this.bark(L, b.def.kind === 'boulder' ? 'THAT BOULDER LOOKS CRACKED...' : 'THIS WALL SOUNDS HOLLOW.');
+    }
+    // recruit guarded by enemies calls for help when the party is near
+    for (const n of this.recruitNPCs) {
+      if (n.called || !n.r.guardedBy || n.o.hidden) continue;
+      if (Math.hypot(L.x - n.sprite.x, L.y - n.sprite.y) < 140) { n.called = true; this.bark({ x: n.sprite.x, y: n.sprite.y, def: { voice: heroInfo(n.id).voice } }, BARKS.help[n.id] || 'HELP!'); }
+    }
+  }
+
+  debugInfo() {
+    const s = this.streamer.stats;
+    const fps = this.frameMs.length ? Math.round(1000 / (this.frameMs.reduce((a, b) => a + b, 0) / this.frameMs.length)) : 0;
+    const texMB = (this.streamer.textureBytes() / 1048576).toFixed(1);
+    const sprites = this.children.list.length;
+    return [
+      `FPS ${fps}   SPEED ${this.speed.toFixed(2)}X`,
+      `CHUNKS ${this.streamer.resident.size}/${this.streamer.cols * this.streamer.rows}  PENDING ${this.streamer.pending.size}`,
+      `PAINT ${s.worker ? 'WORKER' : 'MAIN'} AVG ${s.avgMs.toFixed(0)}MS MAX ${s.maxMs.toFixed(0)}MS`,
+      `PAINTED ${s.painted} EVICTED ${s.evicted}  TERRAIN ${texMB}MB`,
+      `OBJECTS ${sprites}  ENEMIES ${this.enemies.length}  PROPS ${[...this.chunkObjs.values()].reduce((a, o) => a + o.length, 0)}`,
+      `ASSETS ${[...loaded].join(',').toUpperCase()}`,
+      `${assetStats.log.slice(-2).join('  ').toUpperCase()}`,
+      `TILE ${Math.floor(this.leader.x / TILE)},${Math.floor(this.leader.y / TILE)}  ${this.region?.toUpperCase()}`,
+      `MAP ${MAP_W}X${MAP_H}  PROPS ${this.world.props.length}  PACKS ${this.groups.length} (${this.groups.filter((g) => g.active).length} UP)`,
+      `LOAD ${['world', 'nav', 'minimap', 'landmarks', 'firstChunks'].map((k) => `${k.toUpperCase()} ${this.loadMs[k] ?? '-'}`).join(' ')}MS  WORKER ${this.loadMs.worker ?? '-'}MS  READY ${((this.loadMs.ready || 0) / 1000).toFixed(1)}S`,
+      this.pacingLine(),
+    ];
+  }
+
+  // Pacing telemetry for tuning the XP curve: time on this level, how long
+  // the last level took, kills per minute over the whole save.
+  pacingLine() {
+    const st = this.state, ups = st.stats.levelUps, L = this.leader;
+    const last = ups[ups.length - 1], prev = ups[ups.length - 2];
+    const since = (st.playTime - (last?.t || 0)) / 60;
+    const took = last ? (last.t - (prev?.t || 0)) / 60 : null;
+    const kpm = st.stats.kills / Math.max(1, st.playTime / 60);
+    return `PACE LV${L.level} ${Math.round((L.hs.xp / xpToNext(L.level)) * 100)}%  ON LV ${since.toFixed(1)}M  LAST ${took === null ? '-' : took.toFixed(1) + 'M'}  KILLS/MIN ${kpm.toFixed(1)}`;
+  }
+}

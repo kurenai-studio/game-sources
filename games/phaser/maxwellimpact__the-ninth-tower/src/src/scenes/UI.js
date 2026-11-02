@@ -1,0 +1,949 @@
+import Phaser from 'phaser';
+import { audio } from '../audio/synth.js';
+import items from '../data/items.json';
+import { itemTex } from '../game/itemtex.js';
+import { TRAITS } from '../game/itemgen.js';
+import { fitString } from './textfit.js';
+import { freshFor, skillsReady, xpToNext } from '../game/state.js';
+import { GLYPHS } from '../gfx/font.js';
+import { HP_WARN, HP_CRIT } from './Game.js';
+
+const C = { ink: 0x1a1423, night: 0x2b2140, slate: 0x45405e, stone: 0x6e6a87, gold: 0xf2c14e, goldL: 0xfff0a0, hp: 0x73b25a, hpMid: 0xf2c14e, hpLow: 0xec6a5e, bone: 0xd8d3e0, ult: 0x6f93e0, ultFull: 0xfff0a0, xp: 0xc8a0ff, boss: 0xc0394b };
+export const RARITY = { common: { col: 0xd8d3e0, label: 'COMMON' }, fine: { col: 0x6fd3a0, label: 'FINE' }, rare: { col: 0x6f93e0, label: 'RARE' }, unique: { col: 0xf2c14e, label: 'UNIQUE' }, legendary: { col: 0xff9a3c, label: 'LEGENDARY' } };
+
+// Marker colours shared by the minimap and the world map.
+export const MARK = { chest: 0xf2c14e, camp: 0xff7b2e, recruit: 0x8cff8c, door: 0xe7a6ff, npc: 0x6fd3a0, post: 0xc4cfe2, boss: 0xb24ce6, node: 0x4e9ad0, quest: 0xffffff, fly: 0xfff06a };
+
+// green "+" badge: this hero has skill points to spend (matches the menu's rank-up button)
+export function skillBadge(g, x, y) {
+  g.fillStyle(0x1a1423).fillRect(x - 1, y - 1, 9, 9).fillStyle(0x8cff8c).fillRect(x, y, 7, 7);
+  g.fillStyle(0x1f4a2a).fillRect(x + 3, y + 1, 1, 5).fillRect(x + 1, y + 3, 5, 1);
+}
+
+export function panel(g, x, y, w, h, fill = C.night, edge = C.stone) {
+  g.fillStyle(C.ink, 1).fillRect(x - 1, y - 1, w + 2, h + 2);
+  g.fillStyle(edge, 1).fillRect(x, y, w, h);
+  g.fillStyle(fill, 1).fillRect(x + 1, y + 1, w - 2, h - 2);
+  g.fillStyle(0x000000, 0.25).fillRect(x + 1, y + h - 2, w - 2, 1);
+}
+
+export class UI extends Phaser.Scene {
+  constructor() { super('UI'); }
+
+  create({ game }) {
+    this.g = game;
+    this.dialogOpen = false;
+    this.gfx = this.add.graphics();
+    this.lvG = this.add.graphics().setDepth(1); // over the portrait images (levels, skill badges)
+    this.portraits = [];
+    this.buttons = [];
+
+    // combat cluster (bottom left): dodge, two skills, the leader's ultimate
+    // combat grid (bottom left), all buttons the same size, each labelled:
+    //   [ULT ]  [ALLY ULT] [ALLY ULT]
+    //   [DODGE] [SKILL 1]  [SKILL 2]  [SKILL 3]
+    const SZ = 26;
+    this.skillBtns = [0, 1, 2].map((i) => this.makeButton('icon_bash', () => this.g.leaderSkill(i), `${i + 1}`, null, SZ, true));
+    this.dodgeBtn = this.makeButton('icon_dodge', () => this.g.leaderDodge(), 'SPC', null, SZ, true);
+    this.ultBtn = this.makeButton('icon_meteor', () => this.g.useUltimate(this.g.leader), 'Z', null, SZ, true);
+    this.allyBtns = [0, 1].map((i) => this.makeButton('icon_meteor', () => { const a = this.allies()[i]; if (a) this.g.useUltimate(a); }, '', null, SZ, true));
+    for (const b of [this.ultBtn, ...this.allyBtns, this.dodgeBtn, ...this.skillBtns]) b.lbl = this.add.bitmapText(0, 0, 'font', '').setOrigin(0.5, 0);
+    this.dodgeBtn.lbl.setText('DODGE');
+    this.arcG = this.add.graphics().setDepth(10); // recharge arcs drawn over the icons
+    // touch devices don't need keyboard hints on the round buttons
+    if (this.sys.game.device.input.touch) for (const b of [this.dodgeBtn, this.ultBtn, ...this.skillBtns]) { b.hideKey = true; b.key.setVisible(false); }
+    this.bagBtn = this.makeButton('icon_bag', () => this.g.openMenu(), 'I');
+    this.potBtn = this.makeButton('icon_potion', () => this.g.usePotion('potion'), 'H', null, 18);
+    this.elxBtn = this.makeButton('icon_elixir', () => this.g.usePotion('elixir'), 'J', null, 18);
+    this.antBtn = this.makeButton('icon_antidote', () => this.g.usePotion('antidote'), 'K', null, 18);
+    this.salveBtn = this.makeButton('icon_salve', () => this.g.usePotion(this.climate || 'salve'), 'L', null, 18); // Ember Salve, or Frost Tonic in Frosthelm: shown once met
+    this.salveTxt = this.add.bitmapText(0, 0, 'font', '0');
+    this.heatTxt = this.add.bitmapText(0, 0, 'font', '').setOrigin(1, 1);
+    this.potTxt = this.add.bitmapText(0, 0, 'font', '0');
+    this.elxTxt = this.add.bitmapText(0, 0, 'font', '0');
+    this.antTxt = this.add.bitmapText(0, 0, 'font', '0');
+    this.muteBtn = this.makeButton('icon_soundOn', () => this.g.toggleMute(), 'M', null, 14);
+    this.dbgBtn = this.makeButton('icon_bug', () => this.toggleDebug(), '`', null, 14);
+    this.pauseBtn = this.makeButton('icon_pause', () => this.togglePause(), 'P', null, 14);
+    // out of combat the fight buttons fold into this one (tap to open them again)
+    this.hudBtn = this.makeButton('icon_combat', () => { this.hudManual = true; this.hudUsedT = this.time.now; }, '', null, 24, true);
+    this.hudBtn.hideKey = true;
+    this.input.keyboard?.on('keydown-P', () => this.togglePause());
+
+    // minimap (2px per tile window centred on the leader); tap for the world map
+    this.MM = { w: 56, h: 36, s: 1 }; // 1px per tile: about twice the screen's width of land around you (kept small: it sat in the way)
+    this.mmFrame = this.add.graphics();
+    this.mmImg = this.add.image(0, 0, 'minimap').setOrigin(0).setScale(this.MM.s);
+    this.mmG = this.add.graphics();
+    this.mmZone = this.add.zone(0, 0, this.MM.w, this.MM.h).setOrigin(0).setInteractive({ useHandCursor: true });
+    this.mmZone.on('pointerdown', () => { this.tapUI(); this.g.openMap(); });
+
+    this.coin = this.add.sprite(0, 0, 'coin').play('coin').setOrigin(0);
+    this.goldTxt = this.add.bitmapText(0, 0, 'fontGold', '0');
+
+    this.hint = this.add.bitmapText(0, 0, 'font', 'TAP: MOVE / ATTACK / TALK   YOUR PORTRAIT: GEAR   OTHER PORTRAIT: SWITCH').setAlpha(0.85);
+    this.time.delayedCall(16000, () => this.tweens.add({ targets: this.hint, alpha: 0, duration: 1200 }));
+
+    this.bannerT = this.add.bitmapText(0, 0, 'fontGold', '').setOrigin(0.5).setScale(2).setAlpha(0);
+    this.bannerS = this.add.bitmapText(0, 0, 'font', '').setOrigin(0.5).setAlpha(0);
+    this.toast = this.add.bitmapText(0, 0, 'font', '').setOrigin(1, 0).setAlpha(0);
+
+    // boss bar
+    this.bossName = this.add.bitmapText(0, 0, 'fontGold', '').setOrigin(0.5).setVisible(false);
+    this.boss = null;
+
+    // loading overlay
+    this.loadTxt = this.add.bitmapText(0, 0, 'fontGold', 'LOADING').setOrigin(0.5).setVisible(false);
+
+    // dialogue
+    this.dlg = this.add.container(0, 0).setVisible(false).setDepth(50);
+    this.dlgG = this.add.graphics();
+    this.dlgPortrait = this.add.image(0, 0, 'portrait_frog').setOrigin(0).setScale(2);
+    this.dlgName = this.add.bitmapText(0, 0, 'fontGold', '');
+    this.dlgText = this.add.bitmapText(0, 0, 'font', '').setMaxWidth(200);
+    this.dlgMore = this.add.bitmapText(0, 0, 'fontGold', '>');
+    this.dlg.add([this.dlgG, this.dlgPortrait, this.dlgName, this.dlgText, this.dlgMore]);
+    this.dlgCatch = this.add.zone(0, 0, 4000, 4000).setOrigin(0).setDepth(49).setInteractive();
+    this.dlgCatch.on('pointerdown', () => { this.tapUI(); this.advanceDialog(); });
+    this.dlgCatch.disableInteractive();
+    this.tweens.add({ targets: this.dlgMore, alpha: 0.2, duration: 350, yoyo: true, repeat: -1 });
+
+    this.choiceObjs = [];
+    // errand tracker: one line under the minimap
+    this.trackTitle = this.add.bitmapText(0, 0, 'fontGold', '').setOrigin(1, 0);
+    this.trackTxt = this.add.bitmapText(0, 0, 'font', '').setOrigin(1, 0).setRightAlign();
+    this.loot = this.add.container(0, 0).setVisible(false).setDepth(40);
+    this.lootQueue = [];
+
+    // debug overlay
+    this.dbg = this.add.container(0, 0).setVisible(false).setDepth(60);
+    this.dbgG = this.add.graphics();
+    this.dbgTxt = this.add.bitmapText(0, 0, 'fontPlain', '').setLineSpacing(2);
+    this.dbg.add([this.dbgG, this.dbgTxt]);
+    this.speedDown = this.makeButton(null, () => this.g.setSpeed(this.g.speed - 0.05), '', 'SLOW', 22);
+    this.speedUp = this.makeButton(null, () => this.g.setSpeed(this.g.speed + 0.05), '', 'FAST', 22);
+
+    this.buildPortraits();
+    // what the HUD listens for, taken off again when it shuts down: the Game
+    // scene restarts (travelling to another world) and relaunches the HUD, and
+    // listeners left behind would show every banner twice
+    const subs = [
+      ['banner', this.showBanner], ['dialogue', this.openDialog], ['loot', this.showLoot], ['keyItem', this.showKeyItem], ['lore', this.showLore], ['board', this.showBoard], ['partyChanged', this.buildPortraits],
+      ['boss', (b) => { this.boss = b; this.bossName.setVisible(!!b).setText(b ? b.bossName || b.s?.name || 'BOSS' : ''); }],
+      ['saved', () => { this.toast.setText('SAVED').setAlpha(1); this.tweens.killTweensOf(this.toast); this.tweens.add({ targets: this.toast, alpha: 0, delay: 900, duration: 500 }); }],
+      ['loading', (on) => this.loadTxt.setVisible(on)],
+    ];
+    for (const [ev, fn] of subs) game.events.on(ev, fn, this);
+    const onResize = () => this.layout();
+    this.scale.on('resize', onResize);
+    this.events.once('shutdown', () => { for (const [ev, fn] of subs) game.events.off(ev, fn, this); this.scale.off('resize', onResize); });
+    this.layout();
+  }
+
+  allies() { return this.g.party.filter((h) => h !== this.g.leader); }
+
+  // The fight buttons show while there's a fight (and 6 s after), or for 8 s
+  // after you open them yourself with the folded button; any fight opens them at once.
+  // They also come up a beat early: the moment you order an attack, or when a foe
+  // on screen is nearly close enough to notice you (just inside its sight range
+  // plus a step, so foes merely somewhere nearby don't pop them open).
+  combatBarOpen(time) {
+    const game = this.g, L = game.leader, cmd = L?.command;
+    const fighting = !!this.boss || game.enemies.some((e) => e.alive && e.engaged);
+    const attacking = cmd?.type === 'attack' && cmd.target?.alive && cmd.target.kind !== 'breakable';
+    const closing = !fighting && !attacking && L && game.enemies.some((e) => e.alive && !e.staged && !e.submerged && e.onScreen?.(0)
+      && Math.hypot(e.x - L.x, e.y - L.y) < (e.s?.aggro || 90) + 16);
+    if (fighting || attacking || closing) { this.fightT = time; this.hudManual = false; return true; }
+    if (time - (this.fightT ?? -1e9) < 6000) return true; // a few seconds' grace: another foe often joins, and it shouldn't blink away
+    if (this.hudManual && time - Math.max(this.hudUsedT || 0, this.btnTapT || 0) < 8000) return true;
+    this.hudManual = false;
+    return false;
+  }
+
+  tapUI() { this.registry.set('uiTap', true); audio.sfx('click'); }
+
+  makeButton(icon, fn, key, label, size = 22, round = false) {
+    const b = { size, round, icon: icon ? this.add.image(0, 0, icon) : null, key: this.add.bitmapText(0, 0, 'font', key), label: label ? this.add.bitmapText(0, 0, 'font', label).setOrigin(0.5) : null, visible: true };
+    b.zone = this.add.zone(0, 0, size, size).setOrigin(0).setInteractive({ useHandCursor: true });
+    b.zone.on('pointerdown', () => { if (!b.visible) return; this.tapUI(); this.btnTapT = this.time.now; if (this.dialogOpen) { this.advanceDialog(); return; } fn(); });
+    this.buttons.push(b);
+    return b;
+  }
+
+  placeButton(b) {
+    b.zone.setPosition(b.x, b.y);
+    b.icon?.setPosition(b.x + b.size / 2, b.y + b.size / 2);
+    b.key.setPosition(b.round ? b.x + b.size - 6 : b.x + 1, b.round ? b.y + b.size - 6 : b.y + b.size + 2);
+    b.label?.setPosition(b.x + b.size / 2, b.y + b.size / 2);
+  }
+
+  // Landscape: one compact row hugging the bottom edge, icons only. The
+  // leader's own buttons sit in a thin gold outline tagged with their name;
+  // the companions' ULTs sit apart in a grey one. Only visible buttons are
+  // packed and framed (re-packed when a skill unlocks or the leader changes).
+  packRow(L) {
+    const lead = [this.ultBtn, this.dodgeBtn, ...this.skillBtns].filter((b) => b.visible);
+    const allies = this.allyBtns.filter((b) => b.visible);
+    const key = `${lead.length}|${allies.length}|${L.def.id}`;
+    if (key === this.rowKey) return;
+    this.rowKey = key;
+    const step = this.ultBtn.size + 4, y = this.rowY, x0 = 8 + this.pad.l;
+    lead.forEach((b, i) => { b.x = x0 + i * step; b.y = y; this.placeButton(b); });
+    const ax = x0 + lead.length * step + 10;
+    allies.forEach((b, i) => { b.x = ax + i * step; b.y = y; this.placeButton(b); });
+    const g = this.grpG.clear();
+    const frame = (bs, col, lbl, text) => {
+      if (!bs.length) { lbl.setVisible(false); return; }
+      const fx = bs[0].x - 3, fw = bs[bs.length - 1].x + bs[0].size + 3 - fx;
+      g.lineStyle(1, col, 0.75).strokeRoundedRect(fx, y - 3, fw, bs[0].size + 6, 4);
+      lbl.setText(text).setVisible(true);
+      // the name sits on the frame's top edge
+      g.fillStyle(C.ink, 0.85).fillRect(fx + 4, y - 7, lbl.width + 4, 7);
+      lbl.setPosition(fx + 6, y - 7);
+    };
+    frame(lead, C.gold, this.groupLbl[0], L.def.name.toUpperCase());
+    frame(allies, C.stone, this.groupLbl[1], 'ALLIES');
+  }
+
+  setButtonVisible(b, v) {
+    b.visible = v;
+    b.icon?.setVisible(v); b.key.setVisible(v && !b.hideKey); b.label?.setVisible(v);
+    if (!v) b.cdTxt?.setVisible(false);
+    if (v) b.zone.setInteractive(); else b.zone.disableInteractive();
+  }
+
+  buildPortraits() {
+    for (const p of this.portraits) { p.img.destroy(); p.hit.destroy(); p.nm.destroy(); }
+    this.portraits = this.g.party.map((h) => {
+      const img = this.add.image(0, 0, `${h.texKey}_portrait`).setOrigin(0);
+      const hit = this.add.zone(0, 0, 26, 40).setOrigin(0).setInteractive({ useHandCursor: true });
+      // tap the leader to open their gear menu; tap anyone else to switch to them
+      hit.on('pointerdown', () => { this.tapUI(); if (h === this.g.leader) this.g.openMenu(); else if (!h.downed) this.g.setLeader(h); });
+      const nm = this.add.bitmapText(0, 0, 'font', h.def.name.toUpperCase());
+      return { h, img, hit, nm };
+    });
+    this.layout();
+  }
+
+  layout() {
+    this.W = this.scale.width;
+    this.H = this.scale.height;
+    // keep controls clear of notches, rounded corners and the home indicator
+    const z = this.scale.zoom || 1;
+    const si = window.__safeInsets ? window.__safeInsets() : { top: 0, right: 0, bottom: 0, left: 0 };
+    const pad = { t: Math.ceil(si.top / z), r: Math.ceil(si.right / z), b: Math.ceil(si.bottom / z), l: Math.ceil(si.left / z) };
+    if (pad.b > 0) pad.l = Math.max(pad.l, 8), pad.r = Math.max(pad.r, 8); // rounded screen corners
+    this.pad = pad;
+    const W = this.W - pad.r, H = this.H - pad.b;
+    const L0 = pad.l, T0 = pad.t;
+    // party portraits: a slim column down the left edge, each hero as name /
+    // 22px portrait / health+XP bars (name 7px, 1 gap, portrait, bars 7px, gaps)
+    this.portraits.forEach((p, i) => {
+      const x = 6 + L0, y = 14 + T0 + i * 43;
+      p.x = x; p.y = y;
+      p.img.setPosition(x + 3, y + 3);
+      p.hit.setPosition(x - 2, y - 9);
+      p.nm.setPosition(x - 1, y - 9);
+    });
+    // combat controls. Landscape: one row along the bottom edge — the leader's
+    // own group (ULT, DODGE, skills) framed in gold, the companions' ULTs apart
+    // in a grey frame. Portrait: the two-row grid in the bottom-left corner.
+    const colX = (c) => 6 + L0 + c * 38;
+    const rowB = H - 40, rowT = rowB - 40;
+    this.rowMode = this.W > this.H && W - L0 >= 260; // any landscape phone (the compact row needs ~230px, even with notch insets)
+    if (!this.grpG?.scene) this.grpG = this.add.graphics().setDepth(-1); // rebuilt after a scene restart (old ones are destroyed)
+    this.grpG.clear();
+    this.rowKey = null; // re-pack the landscape row on the next frame
+    if (this.rowMode) {
+      if (!this.groupLbl?.[0].scene) this.groupLbl = [this.add.bitmapText(0, 0, 'fontGold', ''), this.add.bitmapText(0, 0, 'font', 'ALLIES')];
+      this.rowY = H - this.ultBtn.size - 5;
+    } else {
+      [[this.dodgeBtn, 0, rowB], [this.skillBtns[0], 1, rowB], [this.skillBtns[1], 2, rowB], [this.skillBtns[2], 3, rowB],
+        [this.ultBtn, 0, rowT], [this.allyBtns[0], 1, rowT], [this.allyBtns[1], 2, rowT]].forEach(([b, c, y]) => { b.x = colX(c); b.y = y; });
+      this.groupLbl?.forEach((t) => t.scene && t.setVisible(false));
+    }
+    for (const b of [this.ultBtn, ...this.allyBtns, this.dodgeBtn, ...this.skillBtns]) b.lbl.setPosition(b.x + b.size / 2, b.y + b.size + 2);
+    // icons only in the landscape row (keyboard hints are already hidden on touch screens)
+    for (const b of [this.ultBtn, ...this.allyBtns, this.dodgeBtn, ...this.skillBtns]) b.lbl.setVisible(!this.rowMode);
+    // utility, bottom right: bag + flasks
+    this.bagBtn.x = W - 30; this.bagBtn.y = H - 30;
+    this.muteBtn.x = W - 22; this.muteBtn.y = 6 + T0;
+    this.potBtn.x = W - 54; this.potBtn.y = H - 26;
+    this.elxBtn.x = W - 76; this.elxBtn.y = H - 26;
+    this.antBtn.x = W - 98; this.antBtn.y = H - 26;
+    this.potTxt.setPosition(this.potBtn.x + 12, this.potBtn.y + 11);
+    this.elxTxt.setPosition(this.elxBtn.x + 12, this.elxBtn.y + 11);
+    this.antTxt.setPosition(this.antBtn.x + 12, this.antBtn.y + 11);
+    this.salveBtn.x = W - 120; this.salveBtn.y = H - 26;
+    this.salveTxt.setPosition(this.salveBtn.x + 12, this.salveBtn.y + 11);
+    this.heatTxt.setPosition(W - 6, H - 30);
+    this.pauseBtn.x = W - 40; this.pauseBtn.y = 6 + T0;
+    this.dbgBtn.x = W - 58; this.dbgBtn.y = 6 + T0;
+    this.speedDown.x = 8; this.speedDown.y = H - 100;
+    this.speedUp.x = 34; this.speedUp.y = H - 100;
+    for (const b of this.buttons) this.placeButton(b);
+    this.mmX = W - this.MM.w - 6; this.mmY = 24 + T0;
+    this.mmZone.setPosition(this.mmX, this.mmY);
+    this.mmFrame.clear();
+    panel(this.mmFrame, this.mmX - 1, this.mmY - 1, this.MM.w + 2, this.MM.h + 2, 0x2b2140, 0x6e6a87);
+    this.coin.setPosition(W - 102, 8 + T0);
+    this.goldTxt.setPosition(W - 92, 9 + T0);
+    const tw = Math.max(this.MM.w + 30, Math.min(160, W - 100));
+    const ty = this.mmHidden ? this.mmY : this.mmY + this.MM.h + 4; // (indoors the minimap is hidden and the tracker takes its place)
+    this.trackTitle.setPosition(W - 6, ty);
+    this.trackTxt.setPosition(W - 6, ty + 9).setMaxWidth(tw);
+    this.hint.setPosition(162 + L0, H - 9).setMaxWidth(Math.max(40, W - 250));
+    if (W < 360 || this.rowMode) this.hint.setVisible(false); // no room beside the combat controls
+    // portrait: drop banners below the hero portraits
+    this.bannerY = W < 300 ? 142 + T0 : 40;
+    this.bannerT.setPosition(W / 2, this.bannerY);
+    this.bannerS.setPosition(W / 2, this.bannerY + 16);
+    this.bossName.setPosition(W / 2, 12);
+    this.loadTxt.setPosition(W / 2, H / 2);
+    this.setButtonVisible(this.speedDown, this.dbg.visible);
+    this.setButtonVisible(this.speedUp, this.dbg.visible);
+  }
+
+  toggleDebug() {
+    this.dbg.setVisible(!this.dbg.visible);
+    this.layout();
+  }
+
+  showBanner(title, sub) {
+    // big title at 2x when it fits, otherwise 1x; the subtitle wraps to two lines
+    this.bannerT.setScale(2).setText(title);
+    if (this.bannerT.width > this.W - 8) this.bannerT.setScale(1).setText(fitString(title, this.W - 8));
+    this.bannerS.setText(fitString(sub || '', this.W - 12, 2)).setCenterAlign();
+    this.tweens.killTweensOf([this.bannerT, this.bannerS]);
+    const by = this.bannerY ?? 40;
+    this.bannerT.setAlpha(0).setY(by - 6); this.bannerS.setAlpha(0).setY(by + (this.bannerT.scaleX > 1 ? 16 : 11));
+    this.tweens.add({ targets: this.bannerT, alpha: 1, y: by, duration: 400 });
+    this.tweens.add({ targets: this.bannerS, alpha: 1, duration: 400, delay: 200 });
+    this.tweens.add({ targets: [this.bannerT, this.bannerS], alpha: 0, duration: 600, delay: 3200 });
+    this.bannerEnd = this.time.now + 3800;
+    this.g.holdBarks?.(); // the heroes wait until the title has cleared before they speak
+  }
+
+  // ms until the big title has faded (0 when none is up)
+  bannerLeft() { return Math.max(0, (this.bannerEnd || 0) - this.time.now); }
+
+  // Pause (button by the volume, or P): the world and music stop under a card;
+  // a tap anywhere else carries on. Not while another card or menu already holds the game.
+  // TITLE SCREEN asks once more (a second tap) before it leaves, and says
+  // whether the game was saved: a demo or a test map never is.
+  togglePause() {
+    const gs = this.g.scene;
+    if (this.pauseCard) {
+      this.pauseCard.destroy(true); this.pauseCard = null;
+      this.pauseZone.destroy(); this.pauseZone = null;
+      gs.resume(); audio.ctx?.resume();
+      return;
+    }
+    if (gs.isPaused() || this.dialogOpen || this.g.busy) return;
+    gs.pause(); audio.ctx?.suspend();
+    const W = this.W, H = this.H, w = 170, h = 70, x = Math.round((W - w) / 2), y = Math.round((H - h) / 2) - 10;
+    const g = this.add.graphics();
+    g.fillStyle(0x0a0710, 0.6).fillRect(-2, -2, W + 4, H + 4);
+    panel(g, x, y, w, h, C.night, C.gold);
+    const t1 = this.add.bitmapText(Math.round(W / 2), y + 8, 'fontGold', 'PAUSED').setOrigin(0.5, 0).setScale(2);
+    const t2 = this.add.bitmapText(Math.round(W / 2), y + h - 11, 'fontPlain', 'TAP ANYWHERE TO RESUME').setOrigin(0.5, 0).setTint(0x9d93b3);
+    const bw = 72, bh = 15, by = y + 30, objs = [g, t1, t2], zones = [];
+    const btn = (bx, label, hot, fn) => {
+      const bg = this.add.graphics();
+      const t = this.add.bitmapText(bx + bw / 2, by + 5, hot ? 'fontGold' : 'font', label).setOrigin(0.5, 0);
+      const draw = (warn) => { bg.clear(); panel(bg, bx, by, bw, bh, warn ? 0x4a1f2a : hot ? 0x2f5d3a : 0x2b2140, warn ? 0xec6a5e : hot ? 0x8cff8c : 0x9b7bd6); };
+      draw(false);
+      const z = this.add.zone(bx, by - 1, bw, bh + 2).setOrigin(0).setDepth(87).setInteractive({ useHandCursor: true }).on('pointerdown', (p, lx, ly, ev) => { ev?.stopPropagation?.(); this.tapUI?.(); fn(t, draw); });
+      objs.push(bg, t); zones.push(z);
+    };
+    btn(x + 10, 'RESUME', true, () => this.togglePause());
+    btn(x + w - 10 - bw, 'TITLE SCREEN', false, (t, draw) => {
+      if (!this.pauseSure) { this.pauseSure = true; t.setText('TAP TO LEAVE'); draw(true); t2.setText(this.g.savesHere() ? 'YOUR GAME IS SAVED FIRST' : 'THIS PLAY ISN\'T SAVED').setTint(this.g.savesHere() ? 0x8cff8c : 0xec6a5e); return; }
+      this.pauseCard.destroy(true); this.pauseCard = null;
+      this.pauseZone.destroy(); this.pauseZone = null;
+      audio.ctx?.resume();
+      this.g.toTitle();
+    });
+    this.pauseSure = false;
+    this.pauseCard = this.add.container(0, 0, objs).setDepth(85);
+    this.pauseZone = this.add.zone(0, 0, 4000, 4000).setOrigin(0).setDepth(86).setInteractive();
+    this.pauseZone.on('pointerdown', () => { this.tapUI?.(); this.togglePause(); });
+    this.pauseZone.on('destroy', () => { for (const z of zones) z.destroy(); });
+  }
+
+  // Key item card: the game is paused behind it until it's tapped away.
+  showKeyItem(def, onClose) {
+    const W = this.W, H = this.H;
+    const w = Math.min(220, W - 16), h = 128, x = Math.round((W - w) / 2), y = Math.max(4, Math.round(H * 0.32 - h / 2)); // never off the top in landscape
+    const box = this.add.container(0, 0).setDepth(80);
+    const dim = this.add.rectangle(0, 0, W, H, 0x0a0710, 0.6).setOrigin(0);
+    const g = this.add.graphics();
+    panel(g, x, y, w, h, C.night, C.gold);
+    g.fillStyle(C.ink).fillRect(Math.round(W / 2) - 26, y + 18, 52, 46);
+    const head = this.add.bitmapText(Math.round(W / 2), y + 7, 'fontPlain', 'KEY ITEM ACQUIRED').setOrigin(0.5, 0).setTint(0xf2c14e);
+    const icon = this.add.image(Math.round(W / 2), y + 41, def.icon).setScale(3);
+    const name = this.add.bitmapText(Math.round(W / 2), y + 70, 'fontGold', def.name).setOrigin(0.5, 0).setScale(2);
+    if (name.width > w - 10) name.setScale(1);
+    const desc = this.add.bitmapText(Math.round(W / 2), y + 86, 'font', fitString(def.text, w - 14, 2)).setOrigin(0.5, 0).setCenterAlign();
+    const tap = this.add.bitmapText(Math.round(W / 2), y + h - 13, 'fontPlain', 'TAP TO CONTINUE').setOrigin(0.5, 0).setTint(0x9d93b3).setAlpha(0);
+    box.add([dim, g, head, icon, name, desc, tap]);
+    box.setAlpha(0);
+    this.tweens.add({ targets: box, alpha: 1, duration: 250 });
+    this.tweens.add({ targets: icon, scale: 3.4, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    // swallow taps; ignore them for a moment so a tap already in flight doesn't dismiss it
+    const zone = this.add.zone(0, 0, 4000, 4000).setOrigin(0).setDepth(81).setInteractive();
+    let ready = false;
+    this.time.delayedCall(700, () => { ready = true; this.tweens.add({ targets: tap, alpha: 1, duration: 300, yoyo: true, repeat: -1, hold: 400 }); });
+    const close = () => {
+      if (!ready) return;
+      ready = false;
+      this.tapUI?.();
+      zone.destroy();
+      this.input.keyboard?.off('keydown', close);
+      this.tweens.add({ targets: box, alpha: 0, duration: 200, onComplete: () => { this.tweens.killTweensOf([icon, tap]); box.destroy(true); onClose?.(); } });
+    };
+    zone.on('pointerdown', close);
+    this.input.keyboard?.on('keydown', close);
+  }
+
+  // Lore page card: the game pauses while you read; tap to put it away.
+  showLore(page, count, onClose) {
+    const W = this.W, H = this.H;
+    const w = Math.min(260, W - 16), x = Math.round((W - w) / 2);
+    const lines = fitString(page.text, w - 16, 9).split('\n').length;
+    const h = 40 + lines * 8 + 12, y = Math.max(4, Math.round((H - h) / 2) - 6);
+    const box = this.add.container(0, 0).setDepth(80);
+    const dim = this.add.rectangle(0, 0, W, H, 0x0a0710, 0.6).setOrigin(0);
+    const g = this.add.graphics();
+    panel(g, x, y, w, h, 0x2a2238, C.gold);
+    g.fillStyle(0xe8dcc0, 0.08).fillRect(x + 3, y + 3, w - 6, h - 6);
+    const head = this.add.bitmapText(x + 8, y + 6, 'fontPlain', `LORE PAGE  ${count} / 40`).setTint(0x9d93b3);
+    const title = this.add.bitmapText(x + 8, y + 16, 'fontGold', fitString(page.title, w - 16));
+    const body = this.add.bitmapText(x + 8, y + 30, 'font', fitString(page.text, w - 16, 9)).setLineSpacing(3);
+    const tap = this.add.bitmapText(x + w - 8, y + h - 11, 'fontPlain', 'TAP TO CONTINUE').setOrigin(1, 0).setTint(0x9d93b3).setAlpha(0);
+    box.add([dim, g, head, title, body, tap]).setAlpha(0);
+    this.tweens.add({ targets: box, alpha: 1, duration: 250 });
+    const zone = this.add.zone(0, 0, 4000, 4000).setOrigin(0).setDepth(81).setInteractive();
+    let ready = false;
+    this.time.delayedCall(800, () => { ready = true; this.tweens.add({ targets: tap, alpha: 1, duration: 300 }); });
+    const close = () => {
+      if (!ready) return;
+      ready = false;
+      this.tapUI?.();
+      zone.destroy();
+      this.input.keyboard?.off('keydown', close);
+      this.tweens.add({ targets: box, alpha: 0, duration: 200, onComplete: () => { box.destroy(true); onClose?.(); } });
+    };
+    zone.on('pointerdown', close);
+    this.input.keyboard?.on('keydown', close);
+  }
+
+  // The Colosseum's board of champions: a card like a lore page, with the five
+  // best runs in columns (rank, wave, the party, the day) and the crowd's
+  // prizes under them, won or still to win. The game pauses while it's read.
+  showBoard({ runs, prizes, more }, onClose) {
+    const W = this.W, H = this.H;
+    const w = Math.min(272, W - 16), x = Math.round((W - w) / 2);
+    const h = 38 + Math.max(1, runs.length) * 9 + 20 + prizes.length * 9 + 22, y = Math.max(4, Math.round((H - h) / 2) - 6);
+    const box = this.add.container(0, 0).setDepth(80);
+    const dim = this.add.rectangle(0, 0, W, H, 0x0a0710, 0.6).setOrigin(0);
+    const g = this.add.graphics();
+    panel(g, x, y, w, h, 0x2a2238, C.gold);
+    const t = (tx, ty, font, str, tint) => { const o = this.add.bitmapText(tx, ty, font, str); if (tint) o.setTint(tint); box.add(o); return o; };
+    box.add([dim, g]);
+    t(x + 8, y + 6, 'fontGold', 'THE BOARD OF CHAMPIONS');
+    const cRank = x + 8, cWave = x + 20, cParty = x + 50, cDay = x + w - 8;
+    let ry = y + 20;
+    t(cRank, ry, 'fontPlain', '#', 0x9d93b3); t(cWave, ry, 'fontPlain', 'WAVE', 0x9d93b3); t(cParty, ry, 'fontPlain', 'PARTY', 0x9d93b3); t(cDay, ry, 'fontPlain', 'DAY', 0x9d93b3).setOrigin(1, 0);
+    ry += 11;
+    if (!runs.length) { t(cRank, ry, 'font', 'NO NAMES YET. CLEAR A WAVE AND YOURS GOES UP.'); ry += 9; }
+    runs.forEach((r, i) => {
+      t(cRank, ry, 'font', `${i + 1}`); t(cWave, ry, i ? 'font' : 'fontGold', `${r.w}`);
+      t(cParty, ry, 'font', fitString(r.party, cDay - cParty - 30)); t(cDay, ry, 'fontPlain', r.day, 0x9d93b3).setOrigin(1, 0);
+      if (r.current) g.fillStyle(C.gold, 0.12).fillRect(x + 4, ry - 2, w - 8, 9); // this run
+      ry += 9;
+    });
+    ry += 6;
+    g.fillStyle(C.slate, 1).fillRect(x + 8, ry - 3, w - 16, 1);
+    t(cRank, ry + 1, 'fontPlain', "THE CROWD'S PRIZES", 0x9d93b3); ry += 12;
+    for (const p of prizes) { t(cRank, ry, p.won ? 'fontPlain' : 'font', `WAVE ${p.wave}`, p.won ? 0x9d93b3 : 0); t(cParty, ry, p.won ? 'fontPlain' : 'fontGold', p.name, p.won ? 0x9d93b3 : 0); t(cDay, ry, 'fontPlain', p.won ? 'WON' : '', 0x9cff7a).setOrigin(1, 0); ry += 9; }
+    t(cRank, ry + 1, 'fontPlain', more, 0x9d93b3);
+    const tap = t(x + w - 8, y + h - 11, 'fontPlain', 'TAP TO CONTINUE', 0x9d93b3).setAlpha(0);
+    box.setAlpha(0);
+    this.tweens.add({ targets: box, alpha: 1, duration: 250 });
+    const zone = this.add.zone(0, 0, 4000, 4000).setOrigin(0).setDepth(81).setInteractive();
+    let ready = false;
+    this.time.delayedCall(500, () => { ready = true; this.tweens.add({ targets: tap, alpha: 1, duration: 300 }); });
+    const close = () => {
+      if (!ready) return;
+      ready = false;
+      this.tapUI?.();
+      zone.destroy();
+      this.input.keyboard?.off('keydown', close);
+      this.tweens.add({ targets: box, alpha: 0, duration: 200, onComplete: () => { box.destroy(true); onClose?.(); } });
+    };
+    zone.on('pointerdown', close);
+    this.input.keyboard?.on('keydown', close);
+  }
+
+  // Loot popup: one card per item, queued.
+  showLoot({ ids, gold }) {
+    ids.forEach((id, i) => this.lootQueue.push({ id, gold: i === 0 ? gold : 0 }));
+    if (!this.lootBusy) this.nextLoot();
+  }
+
+  nextLoot() {
+    const n = this.lootQueue.shift();
+    if (!n) { this.lootBusy = false; return; }
+    this.lootBusy = true;
+    const it = items[n.id];
+    const r = RARITY[it.rarity];
+    this.loot.removeAll(true);
+    if (this.g.combatHold > 0) { this.smallLoot(n, it, r); return; }
+    const W = this.W, w = Math.min(184, W - 12), h = 54, x = Math.round((W - w) / 2), y = 66;
+    const g = this.add.graphics();
+    panel(g, x, y, w, h, C.night, r.col);
+    g.fillStyle(C.ink).fillRect(x + 6, y + 9, 36, 36);
+    this.loot.add(g);
+    this.loot.add(this.add.image(x + 8, y + 11, itemTex(this, n.id)).setOrigin(0).setScale(2));
+    this.loot.add(this.add.bitmapText(x + 48, y + 7, 'font', 'FOUND!'));
+    this.loot.add(this.add.bitmapText(x + 48, y + 17, 'fontGold', fitString(it.name, w - 52)).setTint(it.rarity === 'unique' ? 0xffffff : r.col));
+    this.loot.add(this.add.bitmapText(x + 48, y + 27, 'fontPlain', `${r.label} ${it.slot === 'trinket' ? 'RING' : it.slot.toUpperCase()} - ${it.hero ? it.hero.toUpperCase() : 'ANY HERO'}`).setTint(r.col));
+    const st = Object.entries(it.stats).map(([k, v]) => (k === 'crit' || k === 'cdr' ? `+${Math.round(v * 100)}% ${k === 'cdr' ? 'CDR' : 'CRIT'}` : `+${v} ${k.toUpperCase()}`)).join('  ') + (it.element ? `  ${it.element.toUpperCase()}` : '') + (it.passive ? '  ECHO' : '') + (it.trait ? `  ${TRAITS[it.trait].name}` : '');
+    this.loot.add(this.add.bitmapText(x + 48, y + 37, 'fontPlain', fitString(st + (n.gold ? `   +${n.gold} GOLD` : ''), w - 52)));
+    this.loot.setVisible(true).setAlpha(0);
+    this.tweens.add({ targets: this.loot, alpha: 1, duration: 200 });
+    this.tweens.add({ targets: this.loot, alpha: 0, duration: 300, delay: 2300, onComplete: () => { this.loot.setVisible(false); this.nextLoot(); } });
+  }
+
+  // Mid-fight pickups: a small line on the right under the minimap, no card
+  // over the action. Stacks if several drop at once.
+  smallLoot(n, it, r) {
+    const right = this.W - 6 - (this.pad?.r || 0);
+    const y = this.mmY + this.MM.h + 26 + (this.smallLoots?.length || 0) * 12; // update() keeps the stack under the tracker
+    const img = this.add.image(right, y, itemTex(this, n.id)).setOrigin(1, 0.5).setScale(0.75).setDepth(40);
+    // outlined white text (like the LV labels) so it reads over any ground
+    const t = this.add.bitmapText(right - 14, y - 3, 'font', fitString(`+ ${it.name}`, Math.min(130, this.W - 120))).setOrigin(1, 0).setDepth(40);
+    const objs = [img, t], line = { img, t };
+    (this.smallLoots ||= []).push(line);
+    for (const o of objs) o.setAlpha(0);
+    this.tweens.add({ targets: objs, alpha: 1, duration: 150 });
+    this.tweens.add({ targets: objs, alpha: 0, delay: 1800, duration: 300, onComplete: () => { for (const o of objs) o.destroy(); this.smallLoots = this.smallLoots.filter((l) => l !== line); } });
+    this.time.delayedCall(250, () => this.nextLoot());
+  }
+
+  // ---------------------------------------------------------- dialogue
+  // Dialogue never opens over a fight: it waits until combat ends.
+  openDialog(lines, onDone) {
+    if (this.g.combatHold > 0) { this.pendingDialog = [lines, onDone]; return; }
+    this.pendingDialog = null;
+    this.lines = lines;
+    this.lineI = 0;
+    this.onDone = onDone;
+    this.dialogOpen = true;
+    this.dlg.setVisible(true);
+    this.dlgCatch.setInteractive();
+    this.showLine();
+  }
+
+  showLine() {
+    const L = this.lines[this.lineI];
+    const W = this.W, H = this.H;
+    const w = Math.min(W - 16, 300), h = 50, x = Math.round((W - w) / 2), y = H - h - 40;
+    this.dlgG.clear();
+    panel(this.dlgG, x, y, w, h, C.night, C.stone);
+    const hasP = !!L.portrait;
+    if (hasP) this.dlgG.fillStyle(C.ink).fillRect(x + 5, y + 7, 36, 36);
+    this.dlgPortrait.setVisible(hasP).setPosition(x + 7, y + 9);
+    if (hasP) this.dlgPortrait.setTexture(L.portrait);
+    const tx = hasP ? x + 48 : x + 8;
+    this.dlgName.setText(L.who).setPosition(tx, y + 6);
+    this.dlgText.setPosition(tx, y + 16).setMaxWidth(w - (tx - x) - 8).setText('');
+    this.dlgMore.setPosition(x + w - 10, y + h - 10).setVisible(false);
+    this.clearChoices();
+    this.dlgBox = { x, y, w, h };
+    this.full = L.text;
+    this.shown = 0;
+    this.typing = true;
+    this.voice = L.voice || { pitch: 240, wave: 'square', duty: 0.25 };
+    this.typeEv?.remove();
+    this.typeEv = this.time.addEvent({ delay: 28, loop: true, callback: () => {
+      this.shown++;
+      this.dlgText.setText(this.full.slice(0, this.shown));
+      const ch = this.full[this.shown - 1];
+      if (this.shown % 2 === 0 && ch !== ' ') audio.sfx('blip', { voice: this.voice });
+      if (this.shown >= this.full.length) this.finishLine();
+    } });
+  }
+
+  finishLine() {
+    this.typing = false;
+    this.typeEv?.remove();
+    this.dlgText.setText(this.full);
+    const L = this.lines[this.lineI];
+    if (L.choices) { this.showChoices(L.choices); return; }
+    this.dlgMore.setVisible(true);
+  }
+
+  // Two-button choice under the dialogue box (accept / not now).
+  showChoices(choices) {
+    this.choosing = true;
+    const { x, y, w, h } = this.dlgBox;
+    let bx = x + w, row = 0;
+    [...choices].reverse().forEach(([label, fn], i) => {
+      const bw = label.length * 5 + 12;
+      bx -= bw + 4;
+      if (bx < x) { row++; bx = x + w - bw - 4; } // out of room: start another row underneath
+      const by = y + h + 3 + row * 18;
+      const g = this.add.graphics().setDepth(51);
+      panel(g, bx, by, bw, 15, i === choices.length - 1 ? 0x2f5d3a : C.night, i === choices.length - 1 ? 0x8cff8c : C.stone);
+      const t = this.add.bitmapText(bx + 6, by + 5, i === choices.length - 1 ? 'fontGold' : 'font', label).setDepth(52);
+      const z = this.add.zone(bx, by - 2, bw, 19).setOrigin(0).setInteractive({ useHandCursor: true }).setDepth(53);
+      z.on('pointerdown', () => {
+        this.tapUI();
+        this.clearChoices();
+        this.dialogOpen = false;
+        this.dlgCatch?.disableInteractive();
+        this.dlg.setVisible(false);
+        this.onDone = null;
+        fn();
+      });
+      this.choiceObjs.push(g, t, z);
+    });
+  }
+
+  clearChoices() { for (const o of this.choiceObjs) o.destroy(); this.choiceObjs = []; this.choosing = false; }
+
+  // A list of places to pick from (the Ferryman's fires): a panel of buttons,
+  // two columns when there are many, NOT NOW at the foot. Too many for dialogue choices.
+  pickPlace(title, labels, onPick, alt = null) { // alt: [label, fn], a second button beside NOT NOW
+    const W = this.W, H = this.H, n = labels.length, cols = n > 6 ? 2 : 1, rows = Math.ceil(n / cols);
+    const bw = Math.min(cols === 2 ? 118 : 150, Math.floor((W - 40) / cols)), bh = 15, gap = 3;
+    // the footer (NOT NOW, and the alt button beside it) spans the same width
+    // as the list, inside the same 8px margin, so nothing pokes past the frame
+    const inner = cols * bw + (cols - 1) * 6, pw = inner + 16, ph = 22 + rows * (bh + gap) - gap + 7 + bh + 8;
+    const x0 = Math.round((W - pw) / 2), y0 = Math.max(4, Math.round((H - ph) / 2));
+    const objs = [];
+    const done = (fn) => { for (const o of objs) o.destroy(); fn?.(); };
+    objs.push(this.add.zone(0, 0, W, H).setOrigin(0).setDepth(69).setInteractive().on('pointerdown', () => { this.tapUI(); done(); }));
+    const g = this.add.graphics().setDepth(70);
+    g.fillStyle(0x0d0a14, 0.55).fillRect(0, 0, W, H);
+    panel(g, x0, y0, pw, ph, 0x1f1830, 0x9b7bd6);
+    objs.push(g, this.add.bitmapText(W / 2, y0 + 7, 'fontGold', title).setOrigin(0.5, 0).setDepth(71));
+    const btn = (x, y, w, label, hot, fn) => {
+      const bg = this.add.graphics().setDepth(71);
+      panel(bg, x, y, w, bh, hot ? 0x2b2140 : 0x2f5d3a, hot ? 0x9b7bd6 : 0x8cff8c);
+      const t = this.add.bitmapText(x + w / 2, y + 5, hot ? 'font' : 'fontGold', fitString(label, w - 8)).setOrigin(0.5, 0).setDepth(72);
+      const z = this.add.zone(x, y - 1, w, bh + 2).setOrigin(0).setDepth(73).setInteractive({ useHandCursor: true }).on('pointerdown', (p, lx, ly, ev) => { ev?.stopPropagation?.(); this.tapUI(); done(fn); });
+      objs.push(bg, t, z);
+    };
+    labels.forEach((l, i) => btn(x0 + 8 + (i % cols) * (bw + 6), y0 + 22 + Math.floor(i / cols) * (bh + gap), bw, l, true, () => onPick(i)));
+    const fy = y0 + ph - bh - 8, half = Math.floor((inner - 6) / 2);
+    if (alt) { btn(x0 + 8, fy, half, alt[0], true, alt[1]); btn(x0 + pw - 8 - half, fy, half, 'NOT NOW', false, null); }
+    else btn(Math.round(W / 2 - 40), fy, 80, 'NOT NOW', false, null);
+  }
+
+  advanceDialog() {
+    if (!this.dialogOpen || this.choosing) return;
+    if (this.typing) { this.finishLine(); return; }
+    this.lineI++;
+    if (this.lineI >= this.lines.length) {
+      this.dialogOpen = false;
+      this.dlgCatch?.disableInteractive();
+      this.dlg.setVisible(false);
+      const cb = this.onDone; this.onDone = null;
+      cb?.();
+      return;
+    }
+    audio.sfx('click');
+    this.showLine();
+  }
+
+  // A fight starting closes the open dialogue; it comes back (from the line
+  // you were on) once things are quiet again.
+  checkDialogCombat() {
+    const fighting = this.g.combatHold > 0;
+    if (fighting && this.dialogOpen) {
+      this.pendingDialog = [this.lines.slice(this.lineI), this.onDone];
+      this.typeEv?.remove();
+      this.clearChoices();
+      this.dialogOpen = false;
+      this.dlgCatch?.disableInteractive();
+      this.dlg.setVisible(false);
+      this.onDone = null;
+    } else if (!fighting && !this.dialogOpen && this.pendingDialog && !this.g.busy) {
+      const [lines, done] = this.pendingDialog;
+      this.pendingDialog = null;
+      if (lines.length) this.openDialog(lines, done);
+    }
+  }
+
+  // ---------------------------------------------------------- per frame
+  update(time) {
+    this.checkDialogCombat();
+    const g = this.gfx;
+    const game = this.g;
+    g.clear();
+    this.arcG.clear();
+    // gold dot on the bag button while there's unseen gear
+    const b = this.bagBtn;
+    if (b?.visible && b.x != null && game.party.some((h) => freshFor(game.state, h.def.id).length)) {
+      const blink = Math.floor(time / 450) % 2;
+      this.arcG.fillStyle(0x1a1423).fillCircle(b.x + b.size - 3, b.y + 3, 4).fillStyle(blink ? 0xfff0a0 : 0xf2c14e).fillCircle(b.x + b.size - 3, b.y + 3, 3);
+    }
+    const lg = this.lvG.clear(); // drawn over the portrait art: levels and skill badges
+    for (const p of this.portraits) {
+      const h = p.h, lead = h === game.leader, sz = 22;
+      // gold means the leader and nothing else: a double gold frame and a gold name
+      panel(g, p.x, p.y, sz, sz, C.ink, lead ? C.gold : C.slate);
+      if (lead) g.fillStyle(C.goldL).fillRect(p.x + 1, p.y + 1, sz - 2, 1).fillRect(p.x + 1, p.y + sz - 2, sz - 2, 1).fillRect(p.x + 1, p.y + 1, 1, sz - 2).fillRect(p.x + sz - 2, p.y + 1, 1, sz - 2);
+      if (p.img.texture.key !== `${h.texKey}_portrait` && this.textures.exists(`${h.texKey}_portrait`)) p.img.setTexture(`${h.texKey}_portrait`);
+      p.img.setAlpha(h.downed ? 0.35 : 1);
+      p.nm.setTint(lead ? C.goldL : 0xffffff);
+      // health over XP in one dark strip, as wide as the portrait's frame (x-1 .. x+sz+1)
+      const fr = Math.max(0, Math.min(1, h.hp / h.maxHp)), xf = Math.max(0, Math.min(1, (h.hs.xp || 0) / xpToNext(h.level)));
+      const bx = p.x - 1, bw = sz + 2, by = p.y + sz + 2;
+      g.fillStyle(C.ink).fillRect(bx, by, bw, 7);
+      g.fillStyle(0x3a2f52).fillRect(bx + 1, by + 1, bw - 2, 3);
+      g.fillStyle(h.downed || fr < HP_CRIT ? C.hpLow : fr < HP_WARN ? C.hpMid : C.hp).fillRect(bx + 1, by + 1, Math.round((bw - 2) * fr), 3);
+      if (h.shield > 0) g.fillStyle(C.ult).fillRect(bx + 1, by + 1, Math.round((bw - 2) * Math.min(1, h.shield / h.maxHp)), 1);
+      g.fillStyle(0x2b2140).fillRect(bx + 1, by + 4, bw - 2, 2);
+      g.fillStyle(C.xp).fillRect(bx + 1, by + 4, Math.round((bw - 2) * xf), 2);
+      // level: bare 3x5 digits on a dark patch cut into the frame's top-left corner, the same
+      // for every hero (the font's outline would double its size); a red X while down
+      const t = h.downed ? 'X' : `${h.level}`;
+      lg.fillStyle(C.ink).fillRect(p.x, p.y, t.length * 4 + 1, 6).fillStyle(h.downed ? 0xec6a5e : 0xd8d3e0);
+      [...t].forEach((ch, k) => { const gl = GLYPHS[ch]; for (let yy = 0; yy < 5; yy++) for (let xx = 0; xx < 3; xx++) if (gl[yy * 3 + xx] === '#') lg.fillRect(p.x + k * 4 + xx, p.y + yy, 1, 1); });
+      if (skillsReady(h.def.id, h.hs)) skillBadge(lg, p.x + sz - 6, p.y - 1); // skill points to spend: top-right, under the name line
+    }
+    const tq = game.quests, tid = tq?.state.tracked, tstep = tid && tq.step(tid);
+    const dk = game.dungeon;
+    if (dk) {
+      // dungeon lab: what you're carrying in place of the errand tracker
+      this.trackTitle.setText(dk.def.name);
+      const locks = dk.doors.some((d) => d.kind === 'key' || d.kind === 'boss'); // a hall with no locks (the sandbox) has no keys to count
+      this.trackTxt.setText(!locks ? (game.state.demo ? 'NOTHING HERE IS SAVED' : '') : [`KEYS ${dk.keys}`, dk.big && 'SEAL', dk.map && 'MAP', dk.compass && 'COMPASS'].filter(Boolean).join('  '));
+    } else if (game.colosseum) {
+      this.trackTitle.setText('THE COLOSSEUM');
+      this.trackTxt.setText(`WAVE ${game.colosseum.wave || '-'}  BEST ${game.colosseum.best}`);
+    } else {
+      this.trackTitle.setText(tstep ? tq.title(tid) : ''); // no step fraction: next to a kill count ("3/6") a "1/2" read as the count
+      const steam = (game.state.steamT || 0) > 0 ? `STEAMED: +15% XP ${Math.ceil(game.state.steamT / 60)}M` : ''; // the steam house's soak
+      this.trackTxt.setText([tstep ? tq.stepText(tid) : '', steam].filter(Boolean).join('\n'));
+    }
+    // the SAVED notice and pickup lines stack under the tracker, however many lines it has right now
+    let lootTop = this.trackTxt.text ? this.trackTxt.y + this.trackTxt.height + 9 : this.trackTitle.text ? this.trackTitle.y + 17 : this.mmY + this.MM.h + 9;
+    if (this.toast.alpha > 0) { this.toast.setPosition(this.trackTxt.x, lootTop - 3); lootTop += 12; }
+    (this.smallLoots || []).forEach((o, i) => { const y = lootTop + i * 12; o.img.y = y; o.t.y = y - 3; });
+    const L = game.leader;
+
+    const open = this.combatBarOpen(time);
+    this.setButtonVisible(this.dodgeBtn, open); this.setButtonVisible(this.ultBtn, open);
+    this.dodgeBtn.lbl.setVisible(open && !this.rowMode); this.ultBtn.lbl.setVisible(open && !this.rowMode);
+    this.setButtonVisible(this.hudBtn, !open);
+    if (!open) { this.hudBtn.x = (this.rowMode ? 8 : 6) + this.pad.l; this.hudBtn.y = this.rowMode ? this.rowY + (this.ultBtn.size - this.hudBtn.size) / 2 : this.H - this.pad.b - 40; this.placeButton(this.hudBtn); this.drawBtn(g, this.hudBtn, 0, 0xb89a4a); }
+    this.skillBtns.forEach((b, i) => {
+      const s = open && L.skills[i];
+      this.setButtonVisible(b, !!s);
+      b.lbl.setVisible(!!s && !this.rowMode);
+      if (!s) return;
+      if (this.textures.exists(s.icon)) b.icon.setTexture(s.icon);
+      b.lbl.setText(s.short || s.name);
+      b.cdSecs = s.t;
+      this.drawBtn(g, b, s.t / s.cd);
+    });
+    this.dodgeBtn.cdSecs = 0; // too short for a number: the flash shows it's back
+    this.drawBtn(g, this.dodgeBtn, L.dodgeCd / 0.55);
+    // ultimate: its own icon, a slow clockwise recharge sweep, gold pulse when ready
+    const u = L.ultimate;
+    this.ultBtn.icon.setTexture(u.icon || 'icon_meteor');
+    const ready = L.ult >= 100 && !L.downed;
+    // ready: a slow, soft breathe between two close golds (no blinking)
+    const breathe = Math.round((0.5 + 0.5 * Math.sin(time / 650)) * 8) / 8; // in steps: the HUD is repainted only when it changes (see bake)
+    const gold = Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0xc89b3c), Phaser.Display.Color.ValueToColor(0xf2c14e), 1, breathe);
+    this.drawBtn(g, this.ultBtn, 1 - L.ult / 100, ready ? Phaser.Display.Color.GetColor(gold.r, gold.g, gold.b) : 0x6e6a87, 0x6fd3ff);
+    this.ultBtn.lbl.setText(u.short || u.name).setTint(ready ? 0xfff0a0 : 0xffffff);
+    // companions' ultimates: the AI fires them on its own, these let you fire them yourself
+    const al = this.allies();
+    this.allyBtns.forEach((b, i) => {
+      const a = open && al[i];
+      this.setButtonVisible(b, !!a);
+      b.lbl.setVisible(!!a && !this.rowMode);
+      if (!a) return;
+      const r = a.ult >= 100 && !a.downed;
+      b.icon.setTexture(a.ultimate.icon || 'icon_meteor');
+      b.lbl.setText(a.def.name.toUpperCase()).setTint(a.downed ? 0xec6a5e : r ? 0xfff0a0 : 0xffffff);
+      this.drawBtn(g, b, a.downed ? 1 : 1 - a.ult / 100, r ? Phaser.Display.Color.GetColor(gold.r, gold.g, gold.b) : 0x6e6a87, 0x6fd3ff);
+    });
+    if (this.rowMode) this.packRow(L);
+    this.drawBtn(g, this.bagBtn, 0);
+    this.drawBtn(g, this.potBtn, 0); this.drawBtn(g, this.elxBtn, 0); this.drawBtn(g, this.antBtn, 0);
+    this.potTxt.setText(`${game.state.potions.potion || 0}`).setTint(game.state.potions.potion ? 0xffffff : 0x777777);
+    this.elxTxt.setText(`${game.state.potions.elixir || 0}`).setTint(game.state.potions.elixir ? 0xffffff : 0x777777);
+    this.antTxt.setText(`${game.state.potions.antidote || 0}`).setTint(game.state.potions.antidote ? 0xffffff : 0x777777);
+    // the climate flask: Ember Salve, or Frost Tonic while in Frosthelm; it
+    // appears once the heat (or cold) or the flask itself has been met
+    const frost = !!game.cold?.region;
+    this.climate = frost ? 'tonic' : 'salve';
+    const sv = game.state.potions[this.climate] || 0, lvl = (frost ? game.cold?.level : game.heat?.level) || 0, salveT = (frost ? game.state.tonicT : game.state.salveT) || 0;
+    const showSalve = sv > 0 || salveT > 0 || game.flags[frost ? 'coldWarned' : 'heatWarned'];
+    this.salveBtn.visible = showSalve;
+    this.salveBtn.icon.setTexture(`icon_${this.climate}`);
+    this.salveBtn.icon.setVisible(showSalve); this.salveBtn.key.setVisible(showSalve && !this.sys.game.device.input.touch); this.salveTxt.setVisible(showSalve);
+    if (showSalve) this.drawBtn(g, this.salveBtn, 0);
+    this.salveTxt.setText(`${sv}`).setTint(sv ? 0xffffff : 0x777777);
+    const mm = Math.floor(salveT / 60), ss = String(Math.floor(salveT % 60)).padStart(2, '0');
+    const warn = frost ? (lvl === 2 ? 'FREEZING!' : 'TOO COLD!') : (lvl === 2 ? 'SCORCHING!' : 'TOO HOT!');
+    this.heatTxt.setText(salveT > 0 && lvl ? `${frost ? 'TONIC' : 'SALVE'} ${mm}:${ss}` : lvl && !salveT ? warn : '')
+      .setTint(salveT > 0 ? (frost ? 0xffd04a : 0x9fd8ff) : frost ? (Math.floor(time / 300) % 2 ? 0x9fd8ff : 0xd6efff) : Math.floor(time / 300) % 2 ? 0xffa060 : 0xffd04a);
+    this.muteBtn.icon.setTexture(audio.muted ? 'icon_soundOff' : 'icon_soundOn');
+    this.drawBtn(g, this.muteBtn, 0);
+    this.drawBtn(g, this.dbgBtn, 0);
+    this.drawBtn(g, this.pauseBtn, 0);
+    this.goldTxt.setText(`${game.state.gold}`);
+    // no minimap inside a house (the shop, the tavern): there's nothing to map,
+    // and the errand tracker moves up into its place
+    const indoors = game.area === 'shop' || game.area === 'tavern';
+    if (indoors !== this.mmHidden) {
+      this.mmHidden = indoors;
+      for (const o of [this.mmFrame, this.mmImg, this.mmG, this.mmZone]) o.setVisible(!indoors);
+      if (indoors) this.mmZone.disableInteractive(); else this.mmZone.setInteractive();
+      const ty = indoors ? this.mmY : this.mmY + this.MM.h + 4;
+      this.trackTitle.y = ty; this.trackTxt.y = ty + 9;
+    }
+    if (!indoors) this.drawMinimap(time);
+
+    // boss bar
+    if (this.boss && this.boss.alive) {
+      const w = Math.min(220, this.W - 160), x = Math.round((this.W - w) / 2), y = 18;
+      g.fillStyle(C.ink).fillRect(x - 1, y - 1, w + 2, 7);
+      g.fillStyle(0x3a2f52).fillRect(x, y, w, 5);
+      g.fillStyle(C.boss).fillRect(x, y, Math.round(w * Math.max(0, this.boss.hp / this.boss.maxHp)), 5);
+      for (const f of [0.6, 0.3]) g.fillStyle(C.ink).fillRect(x + Math.round(w * f), y, 1, 5);
+    } else if (this.boss && !this.boss.alive) { this.boss = null; this.bossName.setVisible(false); }
+
+    if (this.loadTxt.visible) this.loadTxt.setText('LOADING' + '.'.repeat(Math.floor(time / 300) % 4));
+
+    if (this.dbg.visible) {
+      const lines = game.debugInfo();
+      this.dbgTxt.setText(lines.join('\n')).setPosition(10, this.H - 96 - lines.length * 8 - 18);
+      this.dbgG.clear().fillStyle(0x000000, 0.6).fillRect(6, this.dbgTxt.y - 4, Math.max(170, this.dbgTxt.width + 8), lines.length * 8 + 6);
+      this.drawBtn(g, this.speedDown, 0); this.drawBtn(g, this.speedUp, 0);
+    }
+    this.bake(this.gfx); this.bake(this.arcG); this.bake(this.lvG);
+  }
+
+  // The HUD is drawn as Graphics every frame, but WebGL re-processes every
+  // Graphics command on every frame (~700 here: more than the whole world
+  // costs to draw). So each HUD Graphics is kept off the camera and painted
+  // into a texture instead, repainted only when what it drew has changed.
+  // If the texture can't be made (a zero-sized screen mid-rotation, or the GPU
+  // out of room), the Graphics is simply drawn live for a moment and baking is
+  // tried again shortly: a missing texture must never stop the game.
+  bake(g) {
+    const cam = this.cameras.main, W = Math.ceil(this.scale.width), H = Math.ceil(this.scale.height);
+    const live = () => { g.cameraFilter &= ~cam.id; g.bakeRT?.setVisible(false); };
+    if (W < 2 || H < 2 || this.time.now < (g.bakeRetry || 0)) { live(); return; }
+    if (!g.bakeRT || g.bakeW !== W || g.bakeH !== H) { // compare what we asked for: Phaser rounds the texture's own size
+      g.bakeRT?.destroy(); g.bakeRT = null;
+      try {
+        g.bakeRT = this.add.renderTexture(0, 0, W, H).setOrigin(0).setDepth(g.depth - 0.5); // under whatever shared the Graphics' depth, as the Graphics (drawn early) was
+      } catch (e) {
+        console.warn('[hud] texture unavailable, drawing live for now', e.message);
+        g.bakeW = g.bakeH = 0; g.bakeRetry = this.time.now + 2000; live(); return;
+      }
+      g.bakeW = W; g.bakeH = H;
+      g.cameraFilter |= cam.id;
+      g.bakeSig = null;
+    }
+    g.bakeRT.setVisible(true);
+    const cb = g.commandBuffer;
+    let h = cb.length;
+    for (let i = 0; i < cb.length; i++) { const v = cb[i]; h = (Math.imul(h, 31) + (typeof v === 'number' ? Math.round(v * 8) : 7)) | 0; }
+    if (h === g.bakeSig) return;
+    g.bakeSig = h;
+    g.cameraFilter &= ~cam.id; // the texture's own camera has to see it while drawing
+    g.bakeRT.clear().draw(g);
+    g.cameraFilter |= cam.id;
+  }
+
+  drawMinimap(time) {
+    const { w, h, s } = this.MM;
+    const L = this.g.leader;
+    const tw = w / s, th = h / s;
+    const ltx = L.x / 16, lty = L.y / 16;
+    const a = this.g.areaRect(), aw = a.x1 - a.x0 + 1, ah = a.y1 - a.y0 + 1;
+    // an area smaller than the window (the Drowned Hollow is 29 tiles wide) sits
+    // centred in it, and only its own tiles are drawn: the grid beside it holds
+    // other interiors (the shop, the grotto), which must never show through
+    const cx = aw < tw ? a.x0 - (tw - aw) / 2 : Phaser.Math.Clamp(ltx - tw / 2, a.x0, a.x1 + 1 - tw);
+    const cy = ah < th ? a.y0 - (th - ah) / 2 : Phaser.Math.Clamp(lty - th / 2, a.y0, a.y1 + 1 - th);
+    const ox = Math.floor(cx), oy = Math.floor(cy);
+    const key = this.g.minimap.viewTexture(ox, oy, tw, th, a); // just this window (only the area's own tiles), not the whole map
+    if (this.mmImg.texture.key !== key) this.mmImg.setTexture(key).setCrop();
+    this.mmImg.setPosition(this.mmX, this.mmY);
+    const g = this.mmG.clear();
+    const sn = (v) => Math.floor(v / 32) * 32; // the window's surroundings, snapped so the cached list holds while you walk
+    for (const m of this.g.mapMarkers({ x0: sn(ox) - 32, y0: sn(oy) - 32, x1: sn(ox + tw) + 64, y1: sn(oy + th) + 64 })) {
+      if (m.kind !== 'quest' && (m.x < a.x0 || m.x > a.x1 || m.y < a.y0 || m.y > a.y1)) continue;
+      let x = (m.x - ox) * s, y = (m.y - oy) * s;
+      if (m.kind === 'quest') {
+        // errand pin: clamps to the minimap edge so it points the way
+        x = Phaser.Math.Clamp(x, 1, w - 3); y = Phaser.Math.Clamp(y, 1, h - 3);
+        g.fillStyle(0x1a1423).fillRect(this.mmX + x - 1, this.mmY + y - 1, 4, 4);
+        g.fillStyle(0xffffff).fillRect(this.mmX + x, this.mmY + y, 2, 2);
+        continue;
+      }
+      if (x < 0 || y < 0 || x >= w - 1 || y >= h - 1) continue;
+      g.fillStyle(MARK[m.kind]).fillRect(this.mmX + x, this.mmY + y, 2, 2);
+    }
+    for (const e of this.g.enemies) {
+      if (!e.alive || !e.engaged) continue;
+      const x = (e.x / 16 - ox) * s, y = (e.y / 16 - oy) * s;
+      if (x >= 0 && y >= 0 && x < w - 1 && y < h - 1) g.fillStyle(0xec6a5e).fillRect(this.mmX + Math.round(x), this.mmY + Math.round(y), 1, 1);
+    }
+    for (const p of this.g.party) {
+      if (p === L) continue;
+      g.fillStyle(0xd8d3e0).fillRect(this.mmX + Math.round((p.x / 16 - ox) * s), this.mmY + Math.round((p.y / 16 - oy) * s), 1, 1);
+    }
+    const lx = this.mmX + Math.round((ltx - ox) * s), ly = this.mmY + Math.round((lty - oy) * s);
+    g.fillStyle(Math.floor(time / 300) % 2 ? 0xffffff : 0xfff0a0).fillRect(lx - 1, ly - 1, 3, 3);
+    g.fillStyle(0x1a1423).fillRect(lx, ly, 1, 1);
+  }
+
+  drawBtn(g, b, cd, ring = 0x6e6a87, arc = 0x8cff8c) {
+    if (!b.visible) return;
+    if (b.round) {
+      const r = b.size / 2, cx = b.x + r, cy = b.y + r;
+      g.fillStyle(C.ink, 1).fillCircle(cx, cy, r + 1);
+      g.fillStyle(ring, 1).fillCircle(cx, cy, r);
+      g.fillStyle(C.night, 1).fillCircle(cx, cy, r - 1.5);
+      const charging = cd > 0.001;
+      b.icon?.setAlpha(charging ? 0.3 : 1);
+      if (charging) {
+        // remaining cooldown as a dark pie, plus a bright rim arc that fills clockwise
+        const f = Math.round((1 - Math.min(1, cd)) * 48) / 48; // 48 steps round the dial (see bake)
+        const a0 = -Math.PI / 2 + f * Math.PI * 2;
+        g.fillStyle(C.ink, 0.82).slice(cx, cy, r - 1.5, a0, Math.PI * 1.5, false).fillPath();
+        if (f > 0.01) this.arcG.lineStyle(2, arc, 1).beginPath().arc(cx, cy, r - 0.5, -Math.PI / 2, a0, false).strokePath();
+      } else if (b !== this.ultBtn) this.arcG.lineStyle(1, 0xe8e2f0, 0.9).strokeCircle(cx, cy, r - 0.5); // ready: a bright rim
+      // seconds left on longer cooldowns (b.cdSecs is set by the caller)
+      b.cdTxt ??= this.add.bitmapText(0, 0, 'font', '').setOrigin(0.5).setDepth(5);
+      const secs = charging && b.cdSecs >= 1 ? Math.ceil(b.cdSecs) : 0;
+      b.cdTxt.setText(secs ? `${secs}` : '').setPosition(Math.round(cx), Math.round(cy)).setVisible(b.visible && !!secs);
+      // back from cooldown: a flash ring and a little pop so you notice it's ready
+      if (b.wasCharging && !charging) { b.readyAt = this.time.now; if (b.icon) { this.tweens.killTweensOf(b.icon); this.tweens.add({ targets: b.icon, scale: { from: 1.35, to: 1 }, duration: 220, ease: 'Back.easeOut' }); } }
+      b.wasCharging = charging;
+      const since = this.time.now - (b.readyAt || -1e9);
+      if (since < 380) { const k = since / 380; this.arcG.lineStyle(2, 0xfff0a0, 1 - k).strokeCircle(cx, cy, r + 1 + k * 7); }
+      this.children.sendToBack(g);
+      return;
+    }
+    panel(g, b.x, b.y, b.size, b.size, C.night, C.stone);
+    if (cd > 0) {
+      const h = Math.round((b.size - 2) * Math.min(1, cd));
+      g.fillStyle(C.ink, 0.7).fillRect(b.x + 1, b.y + b.size - 1 - h, b.size - 2, h);
+    }
+    this.children.sendToBack(g);
+  }
+}

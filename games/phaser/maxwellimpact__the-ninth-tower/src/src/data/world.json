@@ -1,0 +1,5156 @@
+{
+ "size": {
+  "w": 512,
+  "h": 320,
+  "tile": 16,
+  "overworldW": 192
+ },
+ "start": {
+  "x": 15,
+  "y": 37
+ },
+ "regions": [
+  {
+   "id": "vale",
+   "name": "BRIGHTWATER VALE",
+   "sub": "THE KINGDOM OF ALDERMERE",
+   "band": [
+    1,
+    6
+   ]
+  },
+  {
+   "id": "meadow",
+   "name": "HIGHMEADOW",
+   "sub": "THE VALE'S EASTERN HILLS",
+   "band": [
+    2,
+    6
+   ]
+  },
+  {
+   "id": "marsh",
+   "name": "MISTFEN",
+   "sub": "WHERE THE PATHS SINK",
+   "outer": "marsh"
+  },
+  {
+   "id": "cave",
+   "name": "DROWNED HOLLOW",
+   "sub": "A CAVE BENEATH THE FEN",
+   "outer": "marsh"
+  },
+  {
+   "id": "shop",
+   "name": "MARLA'S GOODS",
+   "sub": "OPEN FOR BUSINESS. MOSTLY.",
+   "band": [
+    1,
+    1
+   ]
+  },
+  {
+   "id": "tavern",
+   "name": "THE SOGGY FROG",
+   "sub": "TAVERN AND GAMES",
+   "band": [
+    1,
+    1
+   ]
+  },
+  {
+   "id": "grotto",
+   "name": "HIDDEN GROTTO",
+   "sub": "YOU FOUND A SECRET!",
+   "band": [
+    3,
+    6
+   ]
+  },
+  {
+   "id": "undercroft",
+   "name": "BRIGHTWATER UNDERCROFT",
+   "sub": "BENEATH THE OLD KEEP",
+   "band": [
+    3,
+    6
+   ]
+  },
+  {
+   "id": "abbey",
+   "name": "THE SUNKEN ABBEY",
+   "sub": "WHERE THE BELLS DROWNED",
+   "outer": "marsh"
+  },
+  {
+   "id": "gloam",
+   "name": "GLOAMWOOD",
+   "sub": "WHERE THE LIGHT GETS LOST",
+   "outer": "gloam"
+  },
+  {
+   "id": "cinder",
+   "name": "CINDERREACH",
+   "sub": "THE BADLANDS THAT BURN",
+   "outer": "cinder"
+  },
+  {
+   "id": "witchroot",
+   "name": "WITCHROOT HOLLOW",
+   "sub": "BENEATH THE ELDER",
+   "outer": "gloam"
+  },
+  {
+   "id": "forge",
+   "name": "THE FORGE OF ASH",
+   "sub": "WHERE THE HEARTH NEVER COOLED",
+   "outer": "cinder"
+  },
+  {
+   "id": "frost",
+   "name": "FROSTHELM",
+   "sub": "THE HIGHLANDS UNDER THE SNOW",
+   "outer": "frost"
+  },
+  {
+   "id": "basin",
+   "name": "THE BLIGHT BASIN",
+   "sub": "IN THE TOWER'S SHADOW",
+   "basin": true
+  },
+  {
+   "id": "clawhold",
+   "name": "THE CLAWHOLD",
+   "sub": "THE TRAPPERS' ICE CAVE",
+   "outer": "frost"
+  },
+  {
+   "id": "spire",
+   "name": "THE RIMEGLASS SPIRE",
+   "sub": "WHERE THE ASTRONOMERS WATCHED",
+   "outer": "frost"
+  },
+  {
+   "id": "tower1",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 1",
+   "basin": true
+  },
+  {
+   "id": "tower2",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 2",
+   "basin": true
+  },
+  {
+   "id": "tower3",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 3",
+   "basin": true
+  },
+  {
+   "id": "tower4",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 4",
+   "basin": true
+  },
+  {
+   "id": "tower5",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 5",
+   "basin": true
+  },
+  {
+   "id": "tower6",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 6",
+   "basin": true
+  },
+  {
+   "id": "tower7",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 7",
+   "basin": true
+  },
+  {
+   "id": "tower8",
+   "name": "THE NINTH TOWER",
+   "sub": "FLOOR 8",
+   "basin": true
+  },
+  {
+   "id": "tower9",
+   "name": "THE NINTH TOWER",
+   "sub": "MALGRIM'S CHAMBER",
+   "basin": true
+  }
+ ],
+ "groups": [
+  {
+   "id": "g1",
+   "units": [
+    [
+     "hexling",
+     140,
+     52
+    ],
+    [
+     "hexling",
+     143,
+     53
+    ],
+    [
+     "goblin",
+     141,
+     55
+    ]
+   ]
+  },
+  {
+   "id": "g2",
+   "units": [
+    [
+     "goblin",
+     71,
+     33
+    ],
+    [
+     "hexling",
+     73,
+     35
+    ],
+    [
+     "archer",
+     69,
+     31
+    ]
+   ]
+  },
+  {
+   "id": "g3",
+   "units": [
+    [
+     "goblin",
+     79,
+     35
+    ],
+    [
+     "goblin",
+     85,
+     41
+    ],
+    [
+     "hexling",
+     86,
+     35
+    ],
+    [
+     "archer",
+     88,
+     38
+    ]
+   ],
+   "until": "wardBroken"
+  },
+  {
+   "id": "gV1",
+   "units": [
+    [
+     "goblin",
+     70,
+     8
+    ],
+    [
+     "goblin",
+     76,
+     10
+    ],
+    [
+     "archer",
+     64,
+     6
+    ]
+   ]
+  },
+  {
+   "id": "gV2",
+   "units": [
+    [
+     "hexling",
+     38,
+     10
+    ],
+    [
+     "hexling",
+     41,
+     12
+    ],
+    [
+     "archer",
+     40,
+     8
+    ]
+   ]
+  },
+  {
+   "id": "gV3",
+   "units": [
+    [
+     "hexling",
+     10,
+     48
+    ],
+    [
+     "hexling",
+     13,
+     50
+    ],
+    [
+     "goblin",
+     12,
+     52
+    ]
+   ]
+  },
+  {
+   "id": "g4",
+   "units": [
+    [
+     "goblin",
+     118,
+     24
+    ],
+    [
+     "goblin",
+     121,
+     27
+    ],
+    [
+     "hexling",
+     116,
+     27
+    ],
+    [
+     "archer",
+     120,
+     22
+    ]
+   ]
+  },
+  {
+   "id": "g5",
+   "units": [
+    [
+     "goblin",
+     158,
+     27
+    ],
+    [
+     "goblin",
+     165,
+     28
+    ],
+    [
+     "hexling",
+     161,
+     29
+    ],
+    [
+     "knight",
+     162,
+     31
+    ]
+   ]
+  },
+  {
+   "id": "gM1",
+   "units": [
+    [
+     "goblin",
+     100,
+     48
+    ],
+    [
+     "goblin",
+     104,
+     50
+    ],
+    [
+     "archer",
+     102,
+     45
+    ]
+   ]
+  },
+  {
+   "id": "gM2",
+   "units": [
+    [
+     "knight",
+     145,
+     50
+    ],
+    [
+     "archer",
+     148,
+     47
+    ],
+    [
+     "goblin",
+     142,
+     52
+    ]
+   ]
+  },
+  {
+   "id": "gM3",
+   "units": [
+    [
+     "goblin",
+     175,
+     40
+    ],
+    [
+     "goblin",
+     178,
+     43
+    ],
+    [
+     "hexling",
+     176,
+     37
+    ]
+   ]
+  },
+  {
+   "id": "gM4",
+   "units": [
+    [
+     "archer",
+     120,
+     16
+    ],
+    [
+     "archer",
+     123,
+     14
+    ],
+    [
+     "goblin",
+     121,
+     19
+    ]
+   ]
+  },
+  {
+   "id": "g6",
+   "units": [
+    [
+     "mire",
+     30,
+     75
+    ],
+    [
+     "mire",
+     34,
+     77
+    ],
+    [
+     "mire",
+     32,
+     79
+    ]
+   ]
+  },
+  {
+   "id": "g7",
+   "units": [
+    [
+     "mire",
+     58,
+     90
+    ],
+    [
+     "mire",
+     63,
+     87
+    ],
+    [
+     "goblin",
+     60,
+     94
+    ],
+    [
+     "archer",
+     56,
+     92
+    ]
+   ]
+  },
+  {
+   "id": "g8",
+   "units": [
+    [
+     "mire",
+     92,
+     96
+    ],
+    [
+     "mire",
+     100,
+     97
+    ],
+    [
+     "mire",
+     96,
+     99
+    ]
+   ],
+   "once": true,
+   "guards": "recruit3"
+  },
+  {
+   "id": "g9",
+   "units": [
+    [
+     "mire",
+     37,
+     93
+    ],
+    [
+     "mire",
+     45,
+     94
+    ],
+    [
+     "knight",
+     41,
+     91
+    ]
+   ]
+  },
+  {
+   "id": "g10",
+   "units": [
+    [
+     "goblin",
+     117,
+     99
+    ],
+    [
+     "goblin",
+     119,
+     109
+    ],
+    [
+     "mire",
+     114,
+     104
+    ],
+    [
+     "archer",
+     112,
+     101
+    ]
+   ]
+  },
+  {
+   "id": "gF1",
+   "units": [
+    [
+     "mire",
+     70,
+     110
+    ],
+    [
+     "mire",
+     73,
+     112
+    ],
+    [
+     "mire",
+     68,
+     113
+    ]
+   ]
+  },
+  {
+   "id": "gF2",
+   "units": [
+    [
+     "knight",
+     150,
+     90
+    ],
+    [
+     "mire",
+     153,
+     92
+    ],
+    [
+     "mire",
+     147,
+     93
+    ]
+   ]
+  },
+  {
+   "id": "gF3",
+   "units": [
+    [
+     "goblin",
+     175,
+     110
+    ],
+    [
+     "archer",
+     178,
+     107
+    ],
+    [
+     "mire",
+     172,
+     112
+    ]
+   ]
+  },
+  {
+   "id": "gF4",
+   "units": [
+    [
+     "mire",
+     20,
+     100
+    ],
+    [
+     "mire",
+     23,
+     103
+    ],
+    [
+     "archer",
+     18,
+     104
+    ]
+   ]
+  },
+  {
+   "id": "g11",
+   "units": [
+    [
+     "goblin",
+     211,
+     34
+    ],
+    [
+     "hexling",
+     216,
+     29
+    ],
+    [
+     "hexling",
+     218,
+     33
+    ],
+    [
+     "archer",
+     214,
+     36
+    ]
+   ],
+   "once": true
+  },
+  {
+   "id": "g12",
+   "units": [
+    [
+     "goblin",
+     214,
+     20
+    ],
+    [
+     "hexling",
+     221,
+     15
+    ],
+    [
+     "goblin",
+     226,
+     13
+    ]
+   ],
+   "once": true
+  },
+  {
+   "id": "gC3",
+   "units": [
+    [
+     "knight",
+     222,
+     11
+    ],
+    [
+     "archer",
+     226,
+     8
+    ]
+   ],
+   "once": true
+  },
+  {
+   "id": "gB1",
+   "units": [
+    [
+     "boar",
+     42,
+     10
+    ],
+    [
+     "boar",
+     46,
+     8
+    ]
+   ]
+  },
+  {
+   "id": "gB2",
+   "units": [
+    [
+     "boar",
+     112,
+     40
+    ],
+    [
+     "goblin",
+     115,
+     43
+    ]
+   ]
+  },
+  {
+   "id": "gB3",
+   "units": [
+    [
+     "boar",
+     140,
+     12
+    ],
+    [
+     "boar",
+     146,
+     16
+    ],
+    [
+     "boar",
+     150,
+     11
+    ]
+   ]
+  },
+  {
+   "id": "gC1",
+   "units": [
+    [
+     "crab",
+     12,
+     22
+    ],
+    [
+     "crab",
+     35,
+     19
+    ]
+   ]
+  },
+  {
+   "id": "gC2",
+   "units": [
+    [
+     "crab",
+     40,
+     50
+    ],
+    [
+     "crab",
+     48,
+     51
+    ],
+    [
+     "crab",
+     60,
+     50
+    ]
+   ]
+  },
+  {
+   "id": "gW1",
+   "units": [
+    [
+     "wisp",
+     118,
+     6
+    ],
+    [
+     "wisp",
+     123,
+     8
+    ]
+   ]
+  },
+  {
+   "id": "gW2",
+   "units": [
+    [
+     "wisp",
+     100,
+     16
+    ],
+    [
+     "wisp",
+     104,
+     20
+    ],
+    [
+     "hexling",
+     102,
+     18
+    ]
+   ]
+  },
+  {
+   "id": "gK1",
+   "units": [
+    [
+     "warlock",
+     126,
+     45
+    ],
+    [
+     "goblin",
+     123,
+     43
+    ],
+    [
+     "goblin",
+     128,
+     48
+    ]
+   ]
+  },
+  {
+   "id": "gK2",
+   "units": [
+    [
+     "warlock",
+     170,
+     40
+    ],
+    [
+     "archer",
+     166,
+     37
+    ],
+    [
+     "goblin",
+     172,
+     44
+    ]
+   ]
+  },
+  {
+   "id": "gH1",
+   "units": [
+    [
+     "hexling",
+     30,
+     44
+    ],
+    [
+     "hexling",
+     34,
+     46
+    ]
+   ]
+  },
+  {
+   "id": "gH3",
+   "units": [
+    [
+     "boar",
+     80,
+     57
+    ],
+    [
+     "crab",
+     88,
+     51
+    ]
+   ]
+  },
+  {
+   "id": "gL1",
+   "units": [
+    [
+     "leeches",
+     45,
+     74
+    ],
+    [
+     "leeches",
+     50,
+     76
+    ]
+   ]
+  },
+  {
+   "id": "gL2",
+   "units": [
+    [
+     "leeches",
+     115,
+     82
+    ],
+    [
+     "drowned",
+     118,
+     85
+    ],
+    [
+     "drowned",
+     112,
+     86
+    ]
+   ]
+  },
+  {
+   "id": "gL3",
+   "units": [
+    [
+     "croaker",
+     64,
+     80
+    ],
+    [
+     "leeches",
+     60,
+     83
+    ]
+   ]
+  },
+  {
+   "id": "gL4",
+   "units": [
+    [
+     "croaker",
+     142,
+     112
+    ],
+    [
+     "mire",
+     146,
+     110
+    ]
+   ]
+  },
+  {
+   "id": "gL5",
+   "units": [
+    [
+     "croaker",
+     80,
+     110
+    ],
+    [
+     "drowned",
+     84,
+     113
+    ]
+   ]
+  },
+  {
+   "id": "gL6",
+   "units": [
+    [
+     "witchling",
+     125,
+     72
+    ],
+    [
+     "mire",
+     122,
+     75
+    ],
+    [
+     "mire",
+     128,
+     74
+    ]
+   ]
+  },
+  {
+   "id": "gL7",
+   "units": [
+    [
+     "witchling",
+     175,
+     85
+    ],
+    [
+     "drowned",
+     172,
+     88
+    ],
+    [
+     "drowned",
+     178,
+     88
+    ]
+   ]
+  },
+  {
+   "id": "gL8",
+   "units": [
+    [
+     "drowned",
+     158,
+     112
+    ],
+    [
+     "drowned",
+     163,
+     118
+    ],
+    [
+     "witchling",
+     156,
+     118
+    ]
+   ],
+   "until": "ward_marsh"
+  },
+  {
+   "id": "gL9",
+   "units": [
+    [
+     "lurker",
+     186,
+     100
+    ],
+    [
+     "leeches",
+     182,
+     96
+    ]
+   ]
+  },
+  {
+   "id": "gR3",
+   "units": [
+    [
+     "hexling",
+     49,
+     44
+    ],
+    [
+     "goblin",
+     55,
+     44
+    ],
+    [
+     "hexling",
+     52,
+     49
+    ]
+   ],
+   "once": true
+  },
+  {
+   "id": "gG1",
+   "units": [
+    [
+     "hound",
+     52,
+     150
+    ],
+    [
+     "hound",
+     54,
+     152
+    ],
+    [
+     "hound",
+     50,
+     153
+    ]
+   ]
+  },
+  {
+   "id": "gG2",
+   "units": [
+    [
+     "rootling",
+     62,
+     144
+    ],
+    [
+     "rootling",
+     66,
+     141
+    ],
+    [
+     "spider",
+     64,
+     147
+    ]
+   ]
+  },
+  {
+   "id": "gG3",
+   "units": [
+    [
+     "shade",
+     37,
+     178
+    ],
+    [
+     "shade",
+     41,
+     180
+    ],
+    [
+     "banshee",
+     39,
+     175
+    ]
+   ]
+  },
+  {
+   "id": "gG4",
+   "units": [
+    [
+     "spider",
+     27,
+     184
+    ],
+    [
+     "spider",
+     31,
+     186
+    ],
+    [
+     "spiderling",
+     25,
+     187
+    ],
+    [
+     "spiderling",
+     29,
+     189
+    ]
+   ]
+  },
+  {
+   "id": "gG5",
+   "units": [
+    [
+     "hound",
+     71,
+     155
+    ],
+    [
+     "hound",
+     74,
+     157
+    ],
+    [
+     "hound",
+     69,
+     158
+    ],
+    [
+     "hound",
+     73,
+     160
+    ]
+   ]
+  },
+  {
+   "id": "gG6",
+   "units": [
+    [
+     "shade",
+     69,
+     177
+    ],
+    [
+     "shade",
+     82,
+     179
+    ],
+    [
+     "banshee",
+     75,
+     191
+    ],
+    [
+     "shade",
+     80,
+     189
+    ]
+   ],
+   "until": "ward_gloam"
+  },
+  {
+   "id": "gG7",
+   "units": [
+    [
+     "rootling",
+     89,
+     170
+    ],
+    [
+     "rootling",
+     93,
+     166
+    ],
+    [
+     "banshee",
+     87,
+     175
+    ],
+    [
+     "rootling",
+     92,
+     177
+    ]
+   ]
+  },
+  {
+   "id": "gG8",
+   "units": [
+    [
+     "goblin",
+     60,
+     197
+    ],
+    [
+     "archer",
+     64,
+     199
+    ],
+    [
+     "warlock",
+     58,
+     200
+    ],
+    [
+     "goblin",
+     62,
+     195
+    ]
+   ]
+  },
+  {
+   "id": "gG9",
+   "units": [
+    [
+     "banshee",
+     12,
+     150
+    ],
+    [
+     "shade",
+     15,
+     153
+    ],
+    [
+     "shade",
+     10,
+     154
+    ]
+   ]
+  },
+  {
+   "id": "gG10",
+   "units": [
+    [
+     "spider",
+     36,
+     197
+    ],
+    [
+     "rootling",
+     39,
+     201
+    ],
+    [
+     "spider",
+     34,
+     201
+    ]
+   ]
+  },
+  {
+   "id": "cG1",
+   "units": [
+    [
+     "imp",
+     122,
+     142
+    ],
+    [
+     "imp",
+     125,
+     140
+    ],
+    [
+     "imp",
+     120,
+     145
+    ]
+   ]
+  },
+  {
+   "id": "cG2",
+   "units": [
+    [
+     "salamander",
+     156,
+     156
+    ],
+    [
+     "salamander",
+     159,
+     158
+    ],
+    [
+     "imp",
+     153,
+     159
+    ]
+   ]
+  },
+  {
+   "id": "cG3",
+   "units": [
+    [
+     "slug",
+     134,
+     182
+    ],
+    [
+     "slug",
+     137,
+     180
+    ],
+    [
+     "beetle",
+     132,
+     185
+    ]
+   ]
+  },
+  {
+   "id": "cG4",
+   "units": [
+    [
+     "brute",
+     182,
+     152
+    ],
+    [
+     "beetle",
+     178,
+     150
+    ],
+    [
+     "beetle",
+     184,
+     155
+    ]
+   ]
+  },
+  {
+   "id": "cG5",
+   "units": [
+    [
+     "salamander",
+     156,
+     163
+    ],
+    [
+     "salamander",
+     152,
+     165
+    ],
+    [
+     "salamander",
+     158,
+     166
+    ]
+   ]
+  },
+  {
+   "id": "cG6",
+   "units": [
+    [
+     "imp",
+     143,
+     190
+    ],
+    [
+     "slug",
+     157,
+     197
+    ],
+    [
+     "salamander",
+     150,
+     201
+    ],
+    [
+     "imp",
+     145,
+     199
+    ]
+   ],
+   "until": "ward_cinder"
+  },
+  {
+   "id": "cG7",
+   "units": [
+    [
+     "beetle",
+     110,
+     160
+    ],
+    [
+     "beetle",
+     113,
+     158
+    ],
+    [
+     "beetle",
+     108,
+     163
+    ]
+   ]
+  },
+  {
+   "id": "cG8",
+   "units": [
+    [
+     "goblin",
+     118,
+     200
+    ],
+    [
+     "archer",
+     121,
+     202
+    ],
+    [
+     "warlock",
+     116,
+     203
+    ],
+    [
+     "goblin",
+     120,
+     198
+    ]
+   ]
+  },
+  {
+   "id": "cG9",
+   "units": [
+    [
+     "brute",
+     186,
+     196
+    ],
+    [
+     "imp",
+     183,
+     199
+    ]
+   ]
+  },
+  {
+   "id": "cG10",
+   "units": [
+    [
+     "imp",
+     138,
+     201
+    ],
+    [
+     "salamander",
+     134,
+     203
+    ]
+   ]
+  },
+  {
+   "id": "fG1",
+   "units": [
+    [
+     "frostwolf",
+     64,
+     232
+    ],
+    [
+     "frostwolf",
+     67,
+     234
+    ],
+    [
+     "frostwolf",
+     62,
+     236
+    ]
+   ]
+  },
+  {
+   "id": "fG2",
+   "units": [
+    [
+     "frostwolf",
+     88,
+     232
+    ],
+    [
+     "frostwolf",
+     91,
+     230
+    ],
+    [
+     "raider",
+     86,
+     237
+    ]
+   ]
+  },
+  {
+   "id": "fG3",
+   "units": [
+    [
+     "rimehorn",
+     42,
+     251
+    ],
+    [
+     "frostwolf",
+     45,
+     254
+    ],
+    [
+     "frostwolf",
+     39,
+     255
+    ]
+   ]
+  },
+  {
+   "id": "fG4",
+   "units": [
+    [
+     "icewraith",
+     20,
+     246
+    ],
+    [
+     "icewraith",
+     26,
+     252
+    ]
+   ]
+  },
+  {
+   "id": "fG5",
+   "units": [
+    [
+     "raider",
+     14,
+     253
+    ],
+    [
+     "raider",
+     31,
+     245
+    ]
+   ]
+  },
+  {
+   "id": "fG6",
+   "units": [
+    [
+     "sentinel",
+     60,
+     258
+    ],
+    [
+     "icewraith",
+     56,
+     256
+    ],
+    [
+     "frostwolf",
+     65,
+     256
+    ]
+   ]
+  },
+  {
+   "id": "fG7",
+   "units": [
+    [
+     "rimehorn",
+     106,
+     272
+    ],
+    [
+     "raider",
+     104,
+     283
+    ]
+   ]
+  },
+  {
+   "id": "fG8",
+   "units": [
+    [
+     "frostwolf",
+     10,
+     272
+    ],
+    [
+     "frostwolf",
+     13,
+     268
+    ],
+    [
+     "icewraith",
+     8,
+     280
+    ]
+   ]
+  },
+  {
+   "id": "fG9",
+   "units": [
+    [
+     "sentinel",
+     20,
+     300
+    ],
+    [
+     "rimehorn",
+     26,
+     296
+    ]
+   ]
+  },
+  {
+   "id": "fG10",
+   "units": [
+    [
+     "sentinel",
+     50,
+     304
+    ],
+    [
+     "icewraith",
+     56,
+     300
+    ],
+    [
+     "frostwolf",
+     74,
+     302
+    ],
+    [
+     "frostwolf",
+     76,
+     306
+    ]
+   ],
+   "until": "ward_frost"
+  },
+  {
+   "id": "fG11",
+   "units": [
+    [
+     "raider",
+     98,
+     306
+    ],
+    [
+     "frostwolf",
+     100,
+     312
+    ],
+    [
+     "frostwolf",
+     95,
+     314
+    ]
+   ]
+  },
+  {
+   "id": "fG12",
+   "units": [
+    [
+     "sentinel",
+     40,
+     272
+    ],
+    [
+     "icewraith",
+     46,
+     276
+    ],
+    [
+     "rimehorn",
+     84,
+     282
+    ]
+   ]
+  },
+  {
+   "id": "fG13",
+   "units": [
+    [
+     "frostwolf",
+     70,
+     286
+    ],
+    [
+     "frostwolf",
+     74,
+     288
+    ],
+    [
+     "frostwolf",
+     66,
+     288
+    ]
+   ]
+  },
+  {
+   "id": "fG14",
+   "units": [
+    [
+     "rimehorn",
+     104,
+     244
+    ],
+    [
+     "frostwolf",
+     100,
+     240
+    ]
+   ]
+  },
+  {
+   "id": "bG1",
+   "units": [
+    [
+     "hexling",
+     136,
+     303
+    ],
+    [
+     "hexling",
+     139,
+     305
+    ],
+    [
+     "hexling",
+     141,
+     301
+    ]
+   ]
+  },
+  {
+   "id": "bG2",
+   "units": [
+    [
+     "goblin",
+     145,
+     229
+    ],
+    [
+     "archer",
+     149,
+     227
+    ],
+    [
+     "knight",
+     147,
+     232
+    ]
+   ]
+  },
+  {
+   "id": "bG3",
+   "units": [
+    [
+     "voidling",
+     175,
+     241
+    ],
+    [
+     "voidling",
+     178,
+     244
+    ],
+    [
+     "wisp",
+     172,
+     244
+    ]
+   ]
+  },
+  {
+   "id": "bG4",
+   "units": [
+    [
+     "gargoyle",
+     131,
+     247
+    ],
+    [
+     "gargoyle",
+     126,
+     253
+    ]
+   ]
+  },
+  {
+   "id": "bG5",
+   "units": [
+    [
+     "chainwarden",
+     141,
+     281
+    ],
+    [
+     "knight",
+     145,
+     284
+    ]
+   ]
+  },
+  {
+   "id": "bG6",
+   "units": [
+    [
+     "gargoyle",
+     176,
+     282
+    ],
+    [
+     "voidling",
+     172,
+     286
+    ]
+   ]
+  },
+  {
+   "id": "bG7",
+   "units": [
+    [
+     "warlock",
+     168,
+     270
+    ],
+    [
+     "hexling",
+     165,
+     273
+    ],
+    [
+     "hexling",
+     171,
+     273
+    ]
+   ]
+  },
+  {
+   "id": "bG8",
+   "units": [
+    [
+     "mirror",
+     146,
+     257
+    ],
+    [
+     "voidling",
+     143,
+     260
+    ]
+   ]
+  },
+  {
+   "id": "bG9",
+   "units": [
+    [
+     "archer",
+     132,
+     292
+    ],
+    [
+     "goblin",
+     135,
+     296
+    ],
+    [
+     "goblin",
+     130,
+     296
+    ]
+   ]
+  },
+  {
+   "id": "bG10",
+   "units": [
+    [
+     "chainwarden",
+     184,
+     252
+    ],
+    [
+     "archer",
+     182,
+     248
+    ]
+   ]
+  }
+ ],
+ "chests": [
+  {
+   "id": "plateau",
+   "x": 72,
+   "y": 8,
+   "items": [],
+   "gold": 120,
+   "mats": {
+    "crystal": 2
+   }
+  },
+  {
+   "id": "watchtower",
+   "x": 162,
+   "y": 19,
+   "items": [],
+   "gold": 120,
+   "potions": {
+    "elixir": 1
+   }
+  },
+  {
+   "id": "witchhut",
+   "x": 40,
+   "y": 99,
+   "items": [],
+   "gold": 90,
+   "mats": {
+    "herb": 3
+   }
+  },
+  {
+   "id": "cave",
+   "x": 224,
+   "y": 9,
+   "items": [],
+   "gold": 90,
+   "mats": {
+    "crystal": 2
+   }
+  },
+  {
+   "id": "island",
+   "x": 136,
+   "y": 101,
+   "items": [
+    "wyrmfang",
+    "wyrmfang_twin"
+   ],
+   "gold": 60
+  },
+  {
+   "id": "towerSecret",
+   "x": 166,
+   "y": 16,
+   "items": [],
+   "gold": 120,
+   "mats": {
+    "ore": 4,
+    "crystal": 2
+   },
+   "potions": {
+    "elixir": 1
+   }
+  },
+  {
+   "id": "grotto",
+   "x": 243,
+   "y": 38,
+   "items": [],
+   "gold": 150,
+   "mats": {
+    "crystal": 3,
+    "herb": 3,
+    "gel": 3
+   },
+   "potions": {
+    "potion": 3,
+    "elixir": 1
+   }
+  },
+  {
+   "id": "gloamLog",
+   "x": 13,
+   "y": 143,
+   "gold": 60,
+   "mats": {
+    "silk": 2,
+    "ghostcap": 2
+   }
+  },
+  {
+   "id": "gloamRidge",
+   "x": 94,
+   "y": 198,
+   "gold": 90,
+   "mats": {
+    "heartwood": 2,
+    "crystal": 2
+   }
+  },
+  {
+   "id": "cinderCrags",
+   "x": 117,
+   "y": 131,
+   "gold": 80,
+   "mats": {
+    "brimstone": 3,
+    "silver": 1
+   }
+  },
+  {
+   "id": "cinderSprings",
+   "x": 134,
+   "y": 159,
+   "gold": 60,
+   "potions": {
+    "salve": 2
+   }
+  },
+  {
+   "id": "gloamChapel",
+   "x": 10,
+   "y": 178,
+   "needs": "lantern",
+   "locked": "A CHEST IN THE CHAPEL'S CRYPT, BLACK AS PITCH. WE CAN'T EVEN FIND THE LATCH WITHOUT A LIGHT.",
+   "items": [
+    "vestments_of_the_undimmed"
+   ],
+   "gold": 60
+  },
+  {
+   "id": "gloamWorkshop",
+   "x": 89,
+   "y": 171,
+   "needs": "lantern",
+   "locked": "A GNOMISH STRONGBOX, DEEP IN A LIGHTLESS WORKSHOP. SOMETHING TICKS INSIDE. WE NEED A LIGHT TO SEE THE DIALS.",
+   "items": [
+    "turret_mk2"
+   ],
+   "gold": 60,
+   "mats": {
+    "ore": 3
+   }
+  },
+  {
+   "id": "cinderMine",
+   "x": 112,
+   "y": 194,
+   "items": [
+    "flameproof_overalls"
+   ],
+   "gold": 70,
+   "mats": {
+    "brimstone": 2
+   }
+  },
+  {
+   "id": "kingsTomb",
+   "x": 57,
+   "y": 19,
+   "items": [
+    "lionheart_helm"
+   ],
+   "gold": 80
+  },
+  {
+   "id": "monasteryVault",
+   "x": 169,
+   "y": 135,
+   "needs": "tide",
+   "locked": "A CRACK IN THE CHAPEL FLOOR. BELOW IT, A FLOODED CISTERN, FULL TO THE BRIM - AND SOMETHING GLINTS AT THE BOTTOM. WE'D HAVE TO SWIM DOWN FOR IT.",
+   "items": [
+    "aegis_of_dawn"
+   ],
+   "gold": 90,
+   "look": "cistern",
+   "dive": "DEEP BREATH... DOWN WE GO. GOT IT - SOMETHING WRAPPED IN OILCLOTH!"
+  },
+  {
+   "id": "fenmill",
+   "x": 126,
+   "y": 120,
+   "items": [
+    "thunderwrench"
+   ],
+   "gold": 70,
+   "mats": {
+    "pearl": 1
+   }
+  },
+  {
+   "id": "frostLake",
+   "x": 24,
+   "y": 251,
+   "gold": 70,
+   "mats": {
+    "rimeglass": 2
+   },
+   "potions": {
+    "tonic": 1
+   }
+  },
+  {
+   "id": "frostRidge",
+   "x": 109,
+   "y": 262,
+   "gold": 90,
+   "mats": {
+    "pelt": 2,
+    "silver": 1
+   }
+  },
+  {
+   "id": "frostSummit",
+   "x": 37,
+   "y": 273,
+   "gold": 80,
+   "items": [
+    "hawkeye_hood"
+   ]
+  },
+  {
+   "id": "frostSW",
+   "x": 4,
+   "y": 313,
+   "gold": 60,
+   "potions": {
+    "potion": 2
+   }
+  },
+  {
+   "id": "frostSky",
+   "x": 31,
+   "y": 250,
+   "gold": 90,
+   "items": [
+    "windrunner_leathers"
+   ]
+  },
+  {
+   "id": "penitentShrine",
+   "x": 7,
+   "y": 139,
+   "gold": 60,
+   "items": [
+    "penitent_gown"
+   ]
+  }
+ ],
+ "boss": {
+  "kind": "golem",
+  "name": "SHADOW OF THE GATEWARDEN",
+  "sub": "A CURSED ECHO, ROOTED TO THE WARD STONE ABOVE",
+  "arena": [
+   288,
+   7
+  ],
+  "trigger": 9,
+  "drops": [],
+  "gold": 40,
+  "shadow": true,
+  "fall": [
+   "THE SHADOW BREAKS",
+   "THE CURSED VINE WITHERS... SOMETHING STIRS BENEATH THE WARD STONE."
+  ]
+ },
+ "recruits": [
+  {
+   "id": "recruit2",
+   "slot": 1,
+   "x": 41,
+   "y": 31,
+   "face": "down"
+  },
+  {
+   "id": "recruit3",
+   "slot": 2,
+   "x": 52,
+   "y": 46,
+   "face": "down",
+   "guardedBy": "gR3"
+  },
+  {
+   "id": "recruit4",
+   "slot": 3,
+   "x": 30,
+   "y": 38,
+   "face": "down"
+  }
+ ],
+ "warps": [
+  {
+   "id": "colosseumIn",
+   "x": 160,
+   "y": 44,
+   "to": {
+    "x": 160,
+    "y": 45
+   },
+   "toMap": "colosseum",
+   "tap": true,
+   "label": "THE COLOSSEUM"
+  },
+  {
+   "id": "caveIn",
+   "x": 96,
+   "y": 90,
+   "to": {
+    "x": 208,
+    "y": 46
+   }
+  },
+  {
+   "id": "caveOut",
+   "x": 208,
+   "y": 49,
+   "to": {
+    "x": 96,
+    "y": 93
+   },
+   "exit": true
+  },
+  {
+   "id": "shopIn",
+   "x": 14,
+   "y": 30,
+   "to": {
+    "x": 242,
+    "y": 9
+   },
+   "door": true,
+   "building": "shop"
+  },
+  {
+   "id": "shopOut",
+   "x": 242,
+   "y": 11,
+   "to": {
+    "x": 14,
+    "y": 31
+   },
+   "exit": true,
+   "door": true,
+   "building": "shop"
+  },
+  {
+   "id": "tavernIn",
+   "x": 21,
+   "y": 31,
+   "to": {
+    "x": 243,
+    "y": 25
+   },
+   "door": true,
+   "building": "tavern"
+  },
+  {
+   "id": "tavernOut",
+   "x": 243,
+   "y": 27,
+   "to": {
+    "x": 21,
+    "y": 32
+   },
+   "exit": true,
+   "door": true,
+   "building": "tavern"
+  },
+  {
+   "id": "grottoIn",
+   "x": 73,
+   "y": 16,
+   "to": {
+    "x": 241,
+    "y": 40
+   },
+   "lockedBy": "grottoRock"
+  },
+  {
+   "id": "grottoOut",
+   "x": 241,
+   "y": 42,
+   "to": {
+    "x": 73,
+    "y": 18
+   },
+   "exit": true
+  },
+  {
+   "id": "undercroftIn",
+   "x": 47,
+   "y": 25,
+   "to": {
+    "x": 375,
+    "y": 68
+   },
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS DOWN"
+  },
+  {
+   "id": "undercroftOut",
+   "x": 375,
+   "y": 70,
+   "to": {
+    "x": 47,
+    "y": 27
+   },
+   "exit": true
+  },
+  {
+   "id": "undercroftBack",
+   "x": 375,
+   "y": 19,
+   "to": {
+    "x": 47,
+    "y": 27
+   },
+   "exit": true,
+   "requires": "golemDefeated"
+  },
+  {
+   "id": "abbeyIn",
+   "x": 171,
+   "y": 100,
+   "to": {
+    "x": 471,
+    "y": 66
+   },
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS DOWN"
+  },
+  {
+   "id": "abbeyOut",
+   "x": 471,
+   "y": 69,
+   "to": {
+    "x": 171,
+    "y": 102
+   },
+   "exit": true
+  },
+  {
+   "id": "abbeyBack",
+   "x": 470,
+   "y": 10,
+   "to": {
+    "x": 171,
+    "y": 102
+   },
+   "exit": true,
+   "requires": "murkDefeated"
+  },
+  {
+   "id": "witchrootIn",
+   "x": 50,
+   "y": 186,
+   "to": {
+    "x": 369,
+    "y": 194
+   },
+   "tap": true,
+   "stairs": true,
+   "label": "INTO THE HOLLOW"
+  },
+  {
+   "id": "witchrootOut",
+   "x": 369,
+   "y": 197,
+   "to": {
+    "x": 50,
+    "y": 188
+   },
+   "exit": true
+  },
+  {
+   "id": "witchrootBack",
+   "x": 369,
+   "y": 142,
+   "to": {
+    "x": 50,
+    "y": 188
+   },
+   "exit": true,
+   "requires": "huntsmanDefeated"
+  },
+  {
+   "id": "forgeIn",
+   "x": 177,
+   "y": 186,
+   "to": {
+    "x": 465,
+    "y": 194
+   },
+   "tap": true,
+   "stairs": true,
+   "label": "INTO THE FORGE"
+  },
+  {
+   "id": "forgeOut",
+   "x": 465,
+   "y": 197,
+   "to": {
+    "x": 177,
+    "y": 188
+   },
+   "exit": true
+  },
+  {
+   "id": "forgeBack",
+   "x": 465,
+   "y": 142,
+   "to": {
+    "x": 177,
+    "y": 188
+   },
+   "exit": true,
+   "requires": "vulkDefeated"
+  },
+  {
+   "id": "clawholdIn",
+   "x": 27,
+   "y": 216,
+   "to": {
+    "x": 279,
+    "y": 36
+   }
+  },
+  {
+   "id": "clawholdOut",
+   "x": 279,
+   "y": 38,
+   "to": {
+    "x": 27,
+    "y": 218
+   },
+   "exit": true
+  },
+  {
+   "id": "spireIn",
+   "x": 62,
+   "y": 271,
+   "to": {
+    "x": 369,
+    "y": 288
+   }
+  },
+  {
+   "id": "spireOut",
+   "x": 369,
+   "y": 291,
+   "to": {
+    "x": 62,
+    "y": 273
+   },
+   "exit": true
+  },
+  {
+   "id": "spireBack",
+   "x": 380,
+   "y": 223,
+   "to": {
+    "x": 62,
+    "y": 273
+   },
+   "exit": true,
+   "requires": "isoldeDefeated"
+  },
+  {
+   "id": "towerIn",
+   "x": 155,
+   "y": 269,
+   "to": {
+    "x": 433,
+    "y": 242
+   },
+   "requires": "wardBroken",
+   "tower": "door"
+  },
+  {
+   "id": "towerOut",
+   "x": 433,
+   "y": 243,
+   "to": {
+    "x": 155,
+    "y": 271
+   },
+   "exit": true
+  },
+  {
+   "id": "towerUp1",
+   "x": 433,
+   "y": 215,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 1,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp2",
+   "x": 473,
+   "y": 215,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 2,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp3",
+   "x": 495,
+   "y": 215,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 3,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp4",
+   "x": 442,
+   "y": 250,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 4,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp5",
+   "x": 473,
+   "y": 250,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 5,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp6",
+   "x": 495,
+   "y": 250,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 6,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp7",
+   "x": 433,
+   "y": 285,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 7,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  },
+  {
+   "id": "towerUp8",
+   "x": 473,
+   "y": 285,
+   "to": {
+    "x": 0,
+    "y": 0
+   },
+   "tower": 8,
+   "tap": true,
+   "stairs": true,
+   "label": "STAIRS UP"
+  }
+ ],
+ "posts": [
+  {
+   "id": "postA",
+   "x": 132,
+   "y": 109,
+   "pair": "postB",
+   "land": [
+    132,
+    103
+   ]
+  },
+  {
+   "id": "postB",
+   "x": 132,
+   "y": 105,
+   "pair": "postA",
+   "land": [
+    133,
+    110
+   ]
+  }
+ ],
+ "campfires": [
+  {
+   "x": 13,
+   "y": 35,
+   "name": "BRIGHTWATER"
+  },
+  {
+   "x": 86,
+   "y": 97,
+   "name": "THE FROG PONDS"
+  },
+  {
+   "x": 124,
+   "y": 37,
+   "name": "THE WATCHTOWER ROAD"
+  },
+  {
+   "x": 31,
+   "y": 62,
+   "name": "HOBB'S FARM"
+  },
+  {
+   "x": 31,
+   "y": 141,
+   "name": "THE HUNTERS' CAMP"
+  },
+  {
+   "x": 64,
+   "y": 164,
+   "name": "THE HERMIT'S PATH"
+  },
+  {
+   "x": 139,
+   "y": 152,
+   "name": "EMBERWATCH"
+  },
+  {
+   "x": 166,
+   "y": 194,
+   "name": "THE FORGE GATE"
+  },
+  {
+   "x": 46,
+   "y": 219,
+   "name": "RIMEWATCH"
+  },
+  {
+   "x": 80,
+   "y": 272,
+   "name": "THE HIGHFOLD"
+  },
+  {
+   "x": 92,
+   "y": 311,
+   "name": "THE CAUSEWAY"
+  },
+  {
+   "x": 11,
+   "y": 276,
+   "name": "GLASSWATER SHORE"
+  },
+  {
+   "x": 133,
+   "y": 313,
+   "name": "MAREK'S CAMP"
+  },
+  {
+   "x": 150,
+   "y": 272,
+   "name": "THE TOWER GATE"
+  }
+ ],
+ "signs": [
+  {
+   "x": 27,
+   "y": 37,
+   "lines": [
+    "NORTH: BRIGHTWATER. (WHAT REMAINS OF IT.)",
+    "EAST: THE WARD STONE. TURN BACK. NO, REALLY.",
+    "SOUTH: MISTFEN. BRING BOOTS."
+   ],
+   "later": [
+    {
+     "when": "wardBroken",
+     "lines": [
+      "NORTH: BRIGHTWATER. (WHAT REMAINS OF IT.)",
+      "EAST: THE BROKEN WARD STONE. (SOMEONE HAS SCRATCHED OUT 'TURN BACK'.)",
+      "SOUTH: MISTFEN. BRING BOOTS."
+     ]
+    }
+   ]
+  },
+  {
+   "x": 24,
+   "y": 60,
+   "lines": [
+    "MISTFEN AHEAD.",
+    "THE CAVE IN THE FEN IS SAID TO HOLD A HOOK THAT REACHES WHERE NO LADDER DOES."
+   ]
+  },
+  {
+   "x": 127,
+   "y": 38,
+   "lines": [
+    "EAST: THE OLD WATCHTOWER.",
+    "WEST: THE VALE. AND A VERY CROSS FROG."
+   ],
+   "later": [
+    {
+     "when": "kingRestored",
+     "lines": [
+      "EAST: THE OLD WATCHTOWER.",
+      "WEST: THE VALE. AND A VERY RELIEVED KING."
+     ]
+    }
+   ]
+  },
+  {
+   "x": 37,
+   "y": 129,
+   "lines": [
+    "GLOAMWOOD. KEEP TO THE ROADS.",
+    "IF A LIGHT IN THE TREES CALLS YOUR NAME, IT ISN'T A FRIEND. PROBABLY."
+   ]
+  },
+  {
+   "x": 95,
+   "y": 151,
+   "lines": [
+    "EAST: CINDERREACH. THE GROUND GETS WARM. THEN HOT. THEN WORSE.",
+    "WEST: GLOAMWOOD. THE GROUND GETS DARK. THEN DARKER."
+   ]
+  },
+  {
+   "x": 86,
+   "y": 152,
+   "lines": [
+    "THE HERMIT IS NOT IN.",
+    "THE HERMIT IS NEVER IN. THE HERMIT CAN SEE YOU READING THIS. - THE HERMIT"
+   ]
+  },
+  {
+   "x": 147,
+   "y": 124,
+   "lines": [
+    "SOUTH: CINDERREACH. ASH ROADS, HOT WINDS, WORSE MANNERS."
+   ]
+  },
+  {
+   "x": 129,
+   "y": 152,
+   "lines": [
+    "EMBERWATCH. EMBER SALVE SOLD HERE.",
+    "OUT IN THE ASH THE HEAT WILL COOK YOU SLOWLY. BUY SALVE. TRUST US."
+   ]
+  },
+  {
+   "x": 170,
+   "y": 150,
+   "lines": [
+    "ST. CINDER'S. UP THE STEPS. MIND THE MONKS, THEY BLESS YOU WHETHER YOU LIKE IT OR NOT."
+   ]
+  },
+  {
+   "x": 12,
+   "y": 176,
+   "lines": [
+    "THE CHAPEL OF THE UNDIMMED.",
+    "WHOEVER TENDS THE FLAME, TENDS US ALL.",
+    "(BELOW, A HYMN IS CARVED:) 'SING LOW TO WAKE THE MORNING, THEN HIGHEST FOR THE LIGHT; THEN DEEPEST FOR THE SLEEPERS, AND MIDDLE FOR THE NIGHT.'"
+   ]
+  },
+  {
+   "x": 91,
+   "y": 170,
+   "lines": [
+    "TINKERWORKS. KNOCK TWICE.",
+    "(THE DOOR HAS BEEN KNOCKED DOWN.)"
+   ]
+  },
+  {
+   "x": 114,
+   "y": 193,
+   "lines": [
+    "OLD SEAM NO. 4 - CLOSED.",
+    "TOO HOT EVEN FOR DWARVES. THAT'S SAYING SOMETHING."
+   ]
+  },
+  {
+   "x": 32,
+   "y": 171,
+   "lines": [
+    "THE OLD BELFRY.",
+    "IT USED TO RING THE HOURS FOR THE WHOLE WOOD. NOW THE WOOD KEEPS ITS OWN HOURS."
+   ],
+   "later": [
+    {
+     "when": "done:belfry",
+     "lines": [
+      "THE OLD BELFRY.",
+      "IT RINGS THE HOURS FOR THE WHOLE WOOD AGAIN. MOSTLY THE RIGHT ONES."
+     ]
+    }
+   ]
+  },
+  {
+   "x": 60,
+   "y": 23,
+   "lines": [
+    "HERE LIES THE KING'S CHAMPION.",
+    "HE STOOD AT THE GATE SO OTHERS COULD RUN. THE DOOR IS IRON SO NO ONE CAN TAKE HIS HELM. (SOMEONE STRONG COULD.)"
+   ]
+  },
+  {
+   "x": 126,
+   "y": 126,
+   "lines": [
+    "OLD FENMILL.",
+    "DROWNED IN THE BIG FLOOD. THE MILLER SWAM. THE MILL DIDN'T."
+   ]
+  },
+  {
+   "x": 43,
+   "y": 204,
+   "lines": [
+    "THE OLD ROAD TO FROSTHELM. UP THE STAIRS.",
+    "WRAP UP. NO, WARMER THAN THAT."
+   ]
+  },
+  {
+   "x": 43,
+   "y": 228,
+   "lines": [
+    "RIMEWATCH. FROST TONIC SOLD HERE.",
+    "OUT IN THE SNOW THE COLD WILL TAKE YOU BIT BY BIT. STAY NEAR A FIRE OR DRINK SOMETHING HOT."
+   ]
+  },
+  {
+   "x": 9,
+   "y": 262,
+   "lines": [
+    "GLASSWATER. THE ICE HOLDS. MOSTLY.",
+    "THE WIND ON THE OPEN ICE IS THE COLDEST THING IN THE HIGHLANDS. AFTER THE WARDEN'S STARE."
+   ]
+  },
+  {
+   "x": 130,
+   "y": 307,
+   "lines": [
+    "THE BLIGHT BASIN. THE CAUSEWAY RUNS TO THE NINTH TOWER.",
+    "THE BARRIER WALLS OFF EVERYTHING ELSE. EVERY WARD STONE YOU BREAK TAKES A LAYER AWAY. TURN BACK. PLEASE."
+   ],
+   "later": [
+    {
+     "when": "malgrimDefeated",
+     "lines": [
+      "THE BLIGHT BASIN. THE CAUSEWAY RUNS TO WHAT'S LEFT OF THE NINTH TOWER.",
+      "THE BARRIER IS GONE, AND SO IS HE. (SOMEONE HAS SCRAWLED UNDERNEATH: 'TURN BACK? NEVER!')"
+     ]
+    }
+   ]
+  },
+  {
+   "x": 8,
+   "y": 21,
+   "lines": [
+    "BRIGHTWATER MILL.",
+    "(THE WHEEL HASN'T TURNED IN A YEAR. SOMEONE HAS CHALKED 'BROKE' ON THE DOOR.)"
+   ],
+   "later": [
+    {
+     "when": "done:waterWheel",
+     "lines": [
+      "BRIGHTWATER MILL.",
+      "FLOUR, BREAD AND GOOD MOODS, ALL RESTORED. (THE CHALK NOW SAYS 'FIXED BY GIZMO'.)"
+     ]
+    }
+   ]
+  }
+ ],
+ "buildings": [
+  {
+   "id": "colosseum",
+   "x": 160,
+   "y": 44,
+   "kind": "colosseum",
+   "landmark": true
+  },
+  {
+   "id": "shop",
+   "x": 14,
+   "y": 29,
+   "kind": "shop"
+  },
+  {
+   "id": "tavern",
+   "x": 21,
+   "y": 30,
+   "kind": "tavern"
+  },
+  {
+   "id": "mill",
+   "x": 10,
+   "y": 19,
+   "kind": "mill",
+   "landmark": true
+  },
+  {
+   "id": "elder",
+   "x": 50,
+   "y": 186,
+   "kind": "elder",
+   "landmark": true
+  },
+  {
+   "id": "forgegate",
+   "x": 177,
+   "y": 186,
+   "kind": "forgegate",
+   "landmark": true
+  },
+  {
+   "id": "spire",
+   "x": 62,
+   "y": 270,
+   "kind": "spire",
+   "landmark": true
+  },
+  {
+   "id": "tower",
+   "x": 155,
+   "y": 268,
+   "kind": "tower",
+   "landmark": true
+  },
+  {
+   "id": "curio",
+   "x": 6,
+   "y": 30,
+   "kind": "curio",
+   "landmark": true,
+   "opens": 5,
+   "name": "BESS'S CURIOS"
+  },
+  {
+   "id": "archery",
+   "x": 26,
+   "y": 44,
+   "kind": "archery",
+   "landmark": true,
+   "opens": 15,
+   "name": "THE ARCHERY BUTTS"
+  },
+  {
+   "id": "bath",
+   "x": 15,
+   "y": 42,
+   "kind": "bath",
+   "landmark": true,
+   "opens": 25,
+   "name": "THE STEAM HOUSE"
+  },
+  {
+   "id": "mayor",
+   "x": 29,
+   "y": 28,
+   "kind": "mayor",
+   "landmark": true,
+   "opens": 30,
+   "name": "THE MAYOR'S HOUSE"
+  }
+ ],
+ "breakables": [
+  {
+   "id": "grottoRock",
+   "x": 73.5,
+   "y": 16,
+   "kind": "boulder",
+   "hp": 80,
+   "tiles": [
+    [
+     73,
+     16
+    ],
+    [
+     74,
+     16
+    ]
+   ]
+  },
+  {
+   "id": "towerWall",
+   "x": 165,
+   "y": 19,
+   "kind": "wall",
+   "hp": 80,
+   "tiles": [
+    [
+     165,
+     19
+    ]
+   ]
+  },
+  {
+   "id": "kingsTombDoor",
+   "x": 57,
+   "y": 22,
+   "kind": "wall",
+   "hp": 120,
+   "reinforced": true,
+   "tex": "dgReinforcedFace",
+   "tiles": [
+    [
+     57,
+     22
+    ]
+   ]
+  }
+ ],
+ "npcs": [
+  {
+   "id": "marla",
+   "x": 242,
+   "y": 5,
+   "kind": "merchant",
+   "name": "MARLA",
+   "lines": [
+    "WELCOME TO MARLA'S! THE CURSE TURNED ME INTO A NEWT FOR A WEEK. BAD FOR BUSINESS.",
+    "TAKE A LOOK. I BUY, I SELL, I DO NOT DO REFUNDS."
+   ],
+   "voice": {
+    "pitch": 420,
+    "wave": "square",
+    "duty": 0.25
+   }
+  },
+  {
+   "id": "bruno",
+   "x": 241,
+   "y": 18,
+   "kind": "games",
+   "name": "BRUNO",
+   "lines": [
+    "FANCY A ROUND OF HEXLING WHACK? TEN GOLD A GAME.",
+    "WHACK THE HEXLINGS, NOT THE CURSE WISPS. BIG SCORES WIN BIG PRIZES. I HEAR A GOLDEN FLY IS IN THE PRIZE BOX..."
+   ],
+   "voice": {
+    "pitch": 190,
+    "wave": "square",
+    "duty": 0.5
+   }
+  }
+ ],
+ "furniture": [
+  {
+   "type": "counter",
+   "x": 239,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 240,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 241,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 242,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 243,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 244,
+   "y": 6
+  },
+  {
+   "type": "counter",
+   "x": 245,
+   "y": 6
+  },
+  {
+   "type": "shelf",
+   "x": 238,
+   "y": 3
+  },
+  {
+   "type": "shelf",
+   "x": 240,
+   "y": 3
+  },
+  {
+   "type": "shelf",
+   "x": 244,
+   "y": 3
+  },
+  {
+   "type": "shelf",
+   "x": 246,
+   "y": 3
+  },
+  {
+   "type": "barrel",
+   "x": 238,
+   "y": 9
+  },
+  {
+   "type": "barrel",
+   "x": 246,
+   "y": 9
+  },
+  {
+   "type": "rug",
+   "x": 242,
+   "y": 8
+  },
+  {
+   "type": "counter",
+   "x": 238,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 239,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 240,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 241,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 242,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 243,
+   "y": 19
+  },
+  {
+   "type": "counter",
+   "x": 244,
+   "y": 19
+  },
+  {
+   "type": "table",
+   "x": 240,
+   "y": 23
+  },
+  {
+   "type": "table",
+   "x": 239,
+   "y": 25
+  },
+  {
+   "type": "table",
+   "x": 246,
+   "y": 25
+  },
+  {
+   "type": "fireplace",
+   "x": 248,
+   "y": 17
+  },
+  {
+   "type": "barrel",
+   "x": 249,
+   "y": 19
+  },
+  {
+   "type": "barrel",
+   "x": 249,
+   "y": 20
+  },
+  {
+   "type": "whackboard",
+   "x": 246,
+   "y": 21
+  },
+  {
+   "type": "shelf",
+   "x": 239,
+   "y": 17
+  },
+  {
+   "type": "shelf",
+   "x": 243,
+   "y": 17
+  },
+  {
+   "type": "rug",
+   "x": 243,
+   "y": 24
+  }
+ ],
+ "flies": [
+  [
+   9,
+   9
+  ],
+  [
+   30,
+   24
+  ],
+  [
+   79,
+   4
+  ],
+  [
+   49,
+   27
+  ],
+  [
+   166,
+   17
+  ],
+  [
+   239,
+   37
+  ],
+  [
+   224,
+   11
+  ],
+  [
+   134,
+   100
+  ],
+  [
+   40,
+   98
+  ],
+  [
+   24,
+   8
+  ],
+  [
+   56,
+   16
+  ],
+  [
+   116,
+   60
+  ],
+  [
+   183,
+   62
+  ],
+  [
+   158,
+   63
+  ],
+  [
+   41,
+   120
+  ],
+  [
+   13,
+   79
+  ],
+  [
+   100,
+   67
+  ],
+  [
+   160,
+   79
+  ],
+  [
+   458,
+   65
+  ],
+  [
+   6,
+   158
+  ],
+  [
+   28,
+   176
+  ],
+  [
+   62,
+   190
+  ],
+  [
+   90,
+   186
+  ],
+  [
+   82,
+   134
+  ],
+  [
+   44,
+   203
+  ],
+  [
+   341,
+   140
+  ],
+  [
+   106,
+   131
+  ],
+  [
+   189,
+   134
+  ],
+  [
+   130,
+   205
+  ],
+  [
+   186,
+   163
+  ],
+  [
+   122,
+   156
+  ],
+  [
+   190,
+   205
+  ],
+  [
+   437,
+   140
+  ],
+  [
+   12,
+   232
+  ],
+  [
+   36,
+   262
+  ],
+  [
+   107,
+   252
+  ],
+  [
+   52,
+   284
+  ],
+  [
+   7,
+   306
+  ],
+  [
+   86,
+   316
+  ],
+  [
+   40,
+   282
+  ],
+  [
+   370,
+   256
+  ],
+  [
+   262,
+   13
+  ],
+  [
+   32,
+   251
+  ],
+  [
+   186,
+   239
+  ],
+  [
+   176,
+   300
+  ],
+  [
+   150,
+   258
+  ],
+  [
+   132,
+   236
+  ],
+  [
+   165,
+   290
+  ],
+  [
+   492,
+   242
+  ],
+  [
+   498,
+   262
+  ],
+  [
+   444,
+   298
+  ],
+  [
+   8,
+   8
+  ],
+  [
+   150,
+   50
+  ],
+  [
+   186,
+   10
+  ],
+  [
+   80,
+   120
+  ],
+  [
+   150,
+   70
+  ],
+  [
+   94,
+   200
+  ],
+  [
+   186,
+   180
+  ]
+ ],
+ "nodes": [
+  {
+   "kind": "herb",
+   "x": 28,
+   "y": 70
+  },
+  {
+   "kind": "herb",
+   "x": 48,
+   "y": 78
+  },
+  {
+   "kind": "herb",
+   "x": 55,
+   "y": 95
+  },
+  {
+   "kind": "herb",
+   "x": 70,
+   "y": 85
+  },
+  {
+   "kind": "herb",
+   "x": 81,
+   "y": 104
+  },
+  {
+   "kind": "herb",
+   "x": 110,
+   "y": 95
+  },
+  {
+   "kind": "herb",
+   "x": 140,
+   "y": 80
+  },
+  {
+   "kind": "herb",
+   "x": 152,
+   "y": 104
+  },
+  {
+   "kind": "herb",
+   "x": 25,
+   "y": 110
+  },
+  {
+   "kind": "herb",
+   "x": 100,
+   "y": 115
+  },
+  {
+   "kind": "ore",
+   "x": 68,
+   "y": 10
+  },
+  {
+   "kind": "ore",
+   "x": 118,
+   "y": 40
+  },
+  {
+   "kind": "ore",
+   "x": 150,
+   "y": 30
+  },
+  {
+   "kind": "ore",
+   "x": 170,
+   "y": 55
+  },
+  {
+   "kind": "ore",
+   "x": 213,
+   "y": 22
+  },
+  {
+   "kind": "ore",
+   "x": 226,
+   "y": 12
+  },
+  {
+   "kind": "crystal",
+   "x": 215,
+   "y": 31
+  },
+  {
+   "kind": "crystal",
+   "x": 210,
+   "y": 44
+  },
+  {
+   "kind": "crystal",
+   "x": 221,
+   "y": 9
+  },
+  {
+   "kind": "crystal",
+   "x": 240,
+   "y": 36
+  },
+  {
+   "kind": "crystal",
+   "x": 245,
+   "y": 39
+  },
+  {
+   "kind": "herb",
+   "x": 35,
+   "y": 46
+  },
+  {
+   "kind": "herb",
+   "x": 46,
+   "y": 44
+  },
+  {
+   "kind": "herb",
+   "x": 62,
+   "y": 47
+  },
+  {
+   "kind": "herb",
+   "x": 5,
+   "y": 25
+  },
+  {
+   "kind": "herb",
+   "x": 100,
+   "y": 25
+  },
+  {
+   "kind": "herb",
+   "x": 128,
+   "y": 20
+  },
+  {
+   "kind": "herb",
+   "x": 150,
+   "y": 42
+  },
+  {
+   "kind": "herb",
+   "x": 178,
+   "y": 12
+  },
+  {
+   "kind": "bogmoss",
+   "x": 35,
+   "y": 72
+  },
+  {
+   "kind": "bogmoss",
+   "x": 62,
+   "y": 80
+  },
+  {
+   "kind": "bogmoss",
+   "x": 78,
+   "y": 96
+  },
+  {
+   "kind": "bogmoss",
+   "x": 120,
+   "y": 88
+  },
+  {
+   "kind": "bogmoss",
+   "x": 150,
+   "y": 100
+  },
+  {
+   "kind": "bogmoss",
+   "x": 30,
+   "y": 95
+  },
+  {
+   "kind": "silver",
+   "x": 102,
+   "y": 86
+  },
+  {
+   "kind": "silver",
+   "x": 130,
+   "y": 96
+  },
+  {
+   "kind": "silver",
+   "x": 490,
+   "y": 65
+  },
+  {
+   "kind": "silver",
+   "x": 494,
+   "y": 65
+  },
+  {
+   "kind": "ghostcap",
+   "x": 20,
+   "y": 148
+  },
+  {
+   "kind": "ghostcap",
+   "x": 45,
+   "y": 186
+  },
+  {
+   "kind": "ghostcap",
+   "x": 70,
+   "y": 147
+  },
+  {
+   "kind": "ghostcap",
+   "x": 84,
+   "y": 160
+  },
+  {
+   "kind": "ghostcap",
+   "x": 12,
+   "y": 178
+  },
+  {
+   "kind": "ghostcap",
+   "x": 58,
+   "y": 182
+  },
+  {
+   "kind": "ghostcap",
+   "x": 30,
+   "y": 170
+  },
+  {
+   "kind": "herb",
+   "x": 38,
+   "y": 155
+  },
+  {
+   "kind": "herb",
+   "x": 66,
+   "y": 172
+  },
+  {
+   "kind": "brimstone",
+   "x": 126,
+   "y": 150
+  },
+  {
+   "kind": "brimstone",
+   "x": 154,
+   "y": 162
+  },
+  {
+   "kind": "brimstone",
+   "x": 171,
+   "y": 160
+  },
+  {
+   "kind": "brimstone",
+   "x": 112,
+   "y": 166
+  },
+  {
+   "kind": "brimstone",
+   "x": 140,
+   "y": 189
+  },
+  {
+   "kind": "brimstone",
+   "x": 180,
+   "y": 161
+  },
+  {
+   "kind": "brimstone",
+   "x": 124,
+   "y": 197
+  },
+  {
+   "kind": "silver",
+   "x": 187,
+   "y": 150
+  },
+  {
+   "kind": "silver",
+   "x": 108,
+   "y": 140
+  },
+  {
+   "kind": "silver",
+   "x": 160,
+   "y": 204
+  },
+  {
+   "kind": "rimeglass",
+   "x": 30,
+   "y": 226
+  },
+  {
+   "kind": "rimeglass",
+   "x": 70,
+   "y": 240
+  },
+  {
+   "kind": "rimeglass",
+   "x": 96,
+   "y": 248
+  },
+  {
+   "kind": "rimeglass",
+   "x": 18,
+   "y": 263
+  },
+  {
+   "kind": "rimeglass",
+   "x": 50,
+   "y": 298
+  },
+  {
+   "kind": "rimeglass",
+   "x": 88,
+   "y": 300
+  },
+  {
+   "kind": "rimeglass",
+   "x": 58,
+   "y": 281
+  },
+  {
+   "kind": "herb",
+   "x": 56,
+   "y": 230
+  },
+  {
+   "kind": "herb",
+   "x": 14,
+   "y": 286
+  },
+  {
+   "kind": "herb",
+   "x": 100,
+   "y": 296
+  },
+  {
+   "kind": "herb",
+   "x": 76,
+   "y": 262
+  },
+  {
+   "kind": "starmetal",
+   "x": 128,
+   "y": 257
+  },
+  {
+   "kind": "starmetal",
+   "x": 178,
+   "y": 262
+  },
+  {
+   "kind": "starmetal",
+   "x": 150,
+   "y": 248
+  },
+  {
+   "kind": "starmetal",
+   "x": 162,
+   "y": 277
+  }
+ ],
+ "shop": {
+  "stock": [
+   {
+    "id": "potion",
+    "price": 25
+   },
+   {
+    "id": "elixir",
+    "price": 90
+   },
+   {
+    "id": "herb",
+    "price": 8
+   },
+   {
+    "id": "gel",
+    "price": 10
+   },
+   {
+    "id": "ore",
+    "price": 14
+   },
+   {
+    "id": "crystal",
+    "price": 30
+   }
+  ],
+  "gearPrice": {
+   "fine": 140
+  },
+  "sell": {
+   "common": 12,
+   "fine": 45,
+   "unique": 160,
+   "mat": 0.5
+  }
+ },
+ "flyRewards": [
+  {
+   "n": 3,
+   "gold": 100,
+   "potions": {
+    "potion": 2
+   }
+  },
+  {
+   "n": 6,
+   "gold": 150,
+   "potions": {
+    "elixir": 2
+   },
+   "mats": {
+    "ore": 3,
+    "crystal": 2
+   }
+  },
+  {
+   "n": 10,
+   "gold": 300,
+   "potions": {
+    "antidote": 3
+   },
+   "items": [
+    "frog_signet"
+   ]
+  },
+  {
+   "n": 15,
+   "gold": 400,
+   "potions": {
+    "elixir": 2
+   },
+   "mats": {
+    "silver": 3,
+    "pearl": 2
+   }
+  },
+  {
+   "n": 20,
+   "gold": 500,
+   "items": [
+    "mitre_of_good_cheer"
+   ]
+  },
+  {
+   "n": 30,
+   "gold": 800,
+   "potions": {
+    "elixir": 3
+   },
+   "items": [
+    "bulwark_of_aldermere"
+   ]
+  },
+  {
+   "n": 40,
+   "gold": 1000,
+   "potions": {
+    "elixir": 4
+   },
+   "mats": {
+    "starmetal": 2
+   }
+  },
+  {
+   "n": 50,
+   "gold": 1200,
+   "items": [
+    "gold_fly_amber"
+   ]
+  },
+  {
+   "n": 60,
+   "gold": 2000,
+   "blessing": true,
+   "royal": true
+  }
+ ],
+ "shrines": [
+  {
+   "id": "shrineHeights",
+   "x": 76,
+   "y": 6
+  },
+  {
+   "id": "shrinePond",
+   "x": 99,
+   "y": 9
+  },
+  {
+   "id": "shrineGloam",
+   "x": 7,
+   "y": 186
+  },
+  {
+   "id": "shrineCinder",
+   "x": 187,
+   "y": 140
+  },
+  {
+   "id": "shrineFrost",
+   "x": 94,
+   "y": 283
+  },
+  {
+   "id": "shrineBasinA",
+   "x": 180,
+   "y": 236
+  },
+  {
+   "id": "shrineBasinB",
+   "x": 130,
+   "y": 262
+  },
+  {
+   "id": "shrineBasinC",
+   "x": 168,
+   "y": 251
+  },
+  {
+   "id": "shrineSky",
+   "x": 29,
+   "y": 250
+  },
+  {
+   "id": "shrineSpire",
+   "x": 358,
+   "y": 244
+  },
+  {
+   "id": "shrineTower",
+   "x": 502,
+   "y": 252
+  },
+  {
+   "id": "shrineMeadow",
+   "x": 176,
+   "y": 52
+  }
+ ],
+ "lookouts": [
+  {
+   "id": "lookoutVale",
+   "x": 120,
+   "y": 26,
+   "r": 48,
+   "name": "HIGHMEADOW LOOKOUT"
+  },
+  {
+   "id": "lookoutFen",
+   "x": 159,
+   "y": 100,
+   "r": 44,
+   "name": "FENWATCH LOOKOUT"
+  },
+  {
+   "id": "lookoutGloam",
+   "x": 55,
+   "y": 174,
+   "r": 46,
+   "name": "GLOAMWATCH LOOKOUT"
+  },
+  {
+   "id": "lookoutCinder",
+   "x": 164,
+   "y": 200,
+   "r": 46,
+   "name": "ASHFALL LOOKOUT"
+  },
+  {
+   "id": "lookoutFrost",
+   "x": 34,
+   "y": 272,
+   "r": 50,
+   "name": "HIGHFOLD LOOKOUT"
+  },
+  {
+   "id": "lookoutBasin",
+   "x": 126,
+   "y": 301,
+   "r": 52,
+   "name": "THE LAST WATCH"
+  }
+ ],
+ "wards": [
+  {
+   "id": "vale",
+   "x": 82,
+   "y": 38,
+   "r": 15,
+   "flag": "wardBroken",
+   "guardian": "golemDefeated",
+   "region": "vale",
+   "lifts": "THE CURSE LIFTS FROM THE VALE",
+   "warden": "gatewardenDefeated",
+   "vines": [
+    [
+     [
+      82,
+      38
+     ],
+     [
+      70,
+      37
+     ],
+     [
+      60,
+      30
+     ],
+     [
+      54,
+      23
+     ],
+     [
+      50,
+      22
+     ],
+     [
+      47,
+      24.6
+     ]
+    ],
+    [
+     [
+      375,
+      68.4
+     ],
+     [
+      375,
+      60
+     ],
+     [
+      371,
+      55
+     ],
+     [
+      379,
+      49
+     ],
+     [
+      375,
+      44
+     ],
+     [
+      375,
+      37
+     ],
+     [
+      375,
+      22.6
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "marsh",
+   "x": 160,
+   "y": 115,
+   "r": 13,
+   "flag": "ward_marsh",
+   "guardian": "murkDefeated",
+   "region": "marsh",
+   "lifts": "THE CURSE LIFTS FROM MISTFEN",
+   "vines": [
+    [
+     [
+      160,
+      115
+     ],
+     [
+      167,
+      113
+     ],
+     [
+      169,
+      106
+     ],
+     [
+      171,
+      100.6
+     ]
+    ],
+    [
+     [
+      471,
+      66.4
+     ],
+     [
+      471,
+      60
+     ],
+     [
+      465,
+      54
+     ],
+     [
+      465,
+      46
+     ],
+     [
+      468,
+      40
+     ],
+     [
+      470,
+      37
+     ],
+     [
+      470,
+      33
+     ],
+     [
+      470,
+      24
+     ]
+    ]
+   ],
+   "warden": "murkWardenDefeated"
+  },
+  {
+   "id": "gloam",
+   "x": 76,
+   "y": 184,
+   "r": 12,
+   "flag": "ward_gloam",
+   "guardian": "huntsmanDefeated",
+   "region": "gloam",
+   "lifts": "THE CURSE LIFTS FROM GLOAMWOOD",
+   "warden": "huntsmanWardenDefeated",
+   "vines": [
+    [
+     [
+      76,
+      184
+     ],
+     [
+      70,
+      186.5
+     ],
+     [
+      63,
+      189
+     ],
+     [
+      57,
+      189
+     ],
+     [
+      50,
+      186.6
+     ]
+    ],
+    [
+     [
+      369,
+      195.4
+     ],
+     [
+      369,
+      188
+     ],
+     [
+      367,
+      182
+     ],
+     [
+      371,
+      174
+     ],
+     [
+      369,
+      168
+     ],
+     [
+      369,
+      160
+     ],
+     [
+      369,
+      149.4
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "cinder",
+   "x": 150,
+   "y": 194,
+   "r": 12,
+   "flag": "ward_cinder",
+   "guardian": "vulkDefeated",
+   "region": "cinder",
+   "lifts": "THE CURSE LIFTS FROM CINDERREACH",
+   "warden": "vulkWardenDefeated",
+   "vines": [
+    [
+     [
+      150,
+      194
+     ],
+     [
+      158,
+      192
+     ],
+     [
+      166,
+      190
+     ],
+     [
+      172,
+      189
+     ],
+     [
+      177,
+      186.6
+     ]
+    ],
+    [
+     [
+      465,
+      195.4
+     ],
+     [
+      465,
+      188
+     ],
+     [
+      467,
+      182
+     ],
+     [
+      463,
+      174
+     ],
+     [
+      465,
+      168
+     ],
+     [
+      465,
+      160
+     ],
+     [
+      465,
+      149.4
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "frost",
+   "x": 62,
+   "y": 307,
+   "r": 12,
+   "flag": "ward_frost",
+   "guardian": "isoldeDefeated",
+   "region": "frost",
+   "lifts": "THE CURSE LIFTS FROM FROSTHELM",
+   "warden": "isoldeWardenDefeated",
+   "vines": [
+    [
+     [
+      62,
+      307
+     ],
+     [
+      59,
+      302
+     ],
+     [
+      63,
+      297
+     ],
+     [
+      60,
+      293
+     ],
+     [
+      64,
+      288
+     ],
+     [
+      60,
+      282
+     ],
+     [
+      63,
+      276
+     ],
+     [
+      62,
+      272
+     ]
+    ],
+    [
+     [
+      369,
+      289.4
+     ],
+     [
+      369,
+      282
+     ],
+     [
+      369,
+      276
+     ],
+     [
+      369,
+      270
+     ],
+     [
+      369,
+      264
+     ],
+     [
+      369,
+      258
+     ],
+     [
+      369,
+      250
+     ],
+     [
+      369,
+      242
+     ],
+     [
+      369,
+      236
+     ],
+     [
+      368,
+      227.6
+     ]
+    ]
+   ]
+  }
+ ],
+ "murk": {
+  "name": "SHADOW OF MOTHER MURK",
+  "sub": "A CURSED ECHO, ROOTED TO THE WARD STONE ABOVE",
+  "arena": [
+   287,
+   71
+  ],
+  "drops": [],
+  "gold": 50,
+  "fall": [
+   "THE SHADOW BREAKS",
+   "THE CURSED VINE WITHERS... SOMETHING STIRS IN THE BOG BY THE WARD STONE."
+  ],
+  "shadow": true
+ },
+ "wardBosses": [
+  {
+   "id": "gatewarden",
+   "ward": "vale",
+   "flag": "gatewardenDefeated",
+   "name": "THE GATEWARDEN",
+   "sub": "GUARDIAN OF THE VALE WARD STONE",
+   "trigger": 6,
+   "leash": 20,
+   "offset": [
+    0,
+    -4
+   ],
+   "hpMul": 1.3,
+   "dmgMul": 1.15,
+   "drops": [],
+   "gold": 80,
+   "fall": [
+    "THE GATEWARDEN FALLS",
+    "NOTHING GUARDS THE WARD STONE NOW. BREAK IT!"
+   ],
+   "kind": "golem",
+   "rares": 2
+  },
+  {
+   "id": "murkWarden",
+   "kind": "murk",
+   "ward": "marsh",
+   "flag": "murkWardenDefeated",
+   "name": "MOTHER MURK",
+   "sub": "GUARDIAN OF THE MISTFEN WARD STONE",
+   "trigger": 5,
+   "leash": 20,
+   "offset": [
+    0,
+    -7
+   ],
+   "hpMul": 1.3,
+   "dmgMul": 1.15,
+   "arena": {
+    "x0": 144,
+    "y0": 98,
+    "x1": 176,
+    "y1": 118
+   },
+   "pool": {
+    "rx": 4.6,
+    "ry": 2.6
+   },
+   "drops": [
+    "wyrmfang_twin"
+   ],
+   "gold": 120,
+   "fall": [
+    "MOTHER MURK FALLS",
+    "NOTHING GUARDS THE WARD STONE NOW. BREAK IT!"
+   ]
+  },
+  {
+   "id": "huntsmanWarden",
+   "kind": "huntsman",
+   "ward": "gloam",
+   "flag": "huntsmanWardenDefeated",
+   "name": "THE PALE HUNTSMAN",
+   "sub": "MASTER OF THE ENDLESS HUNT",
+   "trigger": 6,
+   "leash": 20,
+   "offset": [
+    0,
+    -5
+   ],
+   "hpMul": 1.3,
+   "dmgMul": 1.15,
+   "arena": {
+    "x0": 64,
+    "y0": 172,
+    "x1": 88,
+    "y1": 192
+   },
+   "drops": [
+    "raven_mask"
+   ],
+   "gold": 140,
+   "fall": [
+    "THE PALE HUNTSMAN FALLS",
+    "THE HUNT IS ENDED. NOTHING GUARDS THE STONE NOW. BREAK IT!"
+   ]
+  },
+  {
+   "id": "vulkWarden",
+   "kind": "vulk",
+   "ward": "cinder",
+   "flag": "vulkWardenDefeated",
+   "name": "FORGEMASTER VULK",
+   "sub": "KEEPER OF THE FORGE THAT NEVER COOLS",
+   "trigger": 6,
+   "leash": 20,
+   "offset": [
+    0,
+    -8
+   ],
+   "hpMul": 1.3,
+   "dmgMul": 1.15,
+   "arena": {
+    "x0": 138,
+    "y0": 178,
+    "x1": 162,
+    "y1": 200
+   },
+   "drops": [
+    "emberbrand"
+   ],
+   "gold": 150,
+   "fall": [
+    "FORGEMASTER VULK FALLS",
+    "THE FORGE COOLS. NOTHING GUARDS THE STONE NOW. BREAK IT!"
+   ]
+  },
+  {
+   "id": "isoldeWarden",
+   "kind": "isolde",
+   "ward": "frost",
+   "flag": "isoldeWardenDefeated",
+   "name": "ISOLDE THE RIMEGUARD",
+   "sub": "MALGRIM'S KNIGHT OF THE ENDLESS WINTER",
+   "trigger": 6,
+   "leash": 20,
+   "offset": [
+    0,
+    -5
+   ],
+   "hpMul": 1.3,
+   "dmgMul": 1.15,
+   "arena": {
+    "x0": 50,
+    "y0": 296,
+    "x1": 74,
+    "y1": 318
+   },
+   "drops": [
+    "glacier_wand"
+   ],
+   "gold": 150,
+   "fall": [
+    "ISOLDE THE RIMEGUARD FALLS",
+    "SHE KNEELS IN THE SNOW... AND IS GONE. NOTHING GUARDS THE STONE NOW. BREAK IT!"
+   ]
+  }
+ ],
+ "townsfolk": [
+  {
+   "id": "percy",
+   "name": "PERCY THE MILLER",
+   "look": "tam",
+   "x": 89,
+   "y": 18,
+   "quirk": "THE HEX MADE ME HICCUP BUBBLES. *HIC* ...BLOOP. IT'S HUMILIATING.",
+   "home": "NO MORE BUBBLES. MOSTLY. *BLOOP*. THAT ONE WAS ON PURPOSE."
+  },
+  {
+   "id": "nell",
+   "name": "NELL",
+   "look": "ada",
+   "x": 71,
+   "y": 63,
+   "quirk": "!EM PLEH. ...SORRY. I'VE BEEN SPEAKING BACKWARDS FOR A MONTH. IT'S THE HEX.",
+   "home": "I CAN SAY 'THANK YOU' THE RIGHT WAY ROUND. THANK YOU!"
+  },
+  {
+   "id": "bramble",
+   "name": "OLD BRAMBLE",
+   "look": "hobb",
+   "x": 56,
+   "y": 60,
+   "quirk": "MY BEARD WON'T STOP GROWING. IT'S PAST MY KNEES AND IT HAS OPINIONS.",
+   "home": "I KEPT A LITTLE OF THE BEARD. FOR LUCK.",
+   "guard": [
+    [
+     "hexling",
+     -2,
+     1
+    ],
+    [
+     "hexling",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "toby",
+   "name": "SER TOBY",
+   "look": "piet",
+   "x": 138,
+   "y": 30,
+   "quirk": "I CAN ONLY WALK IN SQUARES. LEFT, UP, RIGHT, DOWN. I'VE BEEN CIRCLING THIS ROCK FOR DAYS.",
+   "home": "I WALKED HERE IN A STRAIGHT LINE. GLORIOUS."
+  },
+  {
+   "id": "marigold",
+   "name": "MARIGOLD",
+   "look": "ada",
+   "x": 184,
+   "y": 22,
+   "quirk": "EVERYTHING I TOUCH TURNS TO PORRIDGE. I WAS A LOCKSMITH.",
+   "home": "I MADE A KEY TODAY. A REAL ONE. I CRIED.",
+   "guard": [
+    [
+     "goblin",
+     -2,
+     1
+    ],
+    [
+     "goblin",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "fenwick",
+   "name": "OLD WADE",
+   "look": "wick",
+   "x": 9,
+   "y": 117,
+   "quirk": "I'M QUITE SURE I'M A HERON NOW. I'VE EATEN FOUR FISH TODAY. RAW.",
+   "home": "I'VE GONE BACK TO COOKED FISH. MOSTLY."
+  },
+  {
+   "id": "hetty",
+   "name": "HETTY",
+   "look": "ada",
+   "x": 88,
+   "y": 69,
+   "quirk": "MY SHADOW LEFT ME. IT'S OVER THERE BEHIND THE REEDS, SULKING.",
+   "home": "MY SHADOW CAME BACK. WE'RE TALKING AGAIN.",
+   "guard": [
+    [
+     "drowned",
+     -2,
+     1
+    ],
+    [
+     "drowned",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "gruff",
+   "name": "GRUFF THE COOPER",
+   "look": "tam",
+   "x": 133,
+   "y": 125,
+   "quirk": "I FLOAT A LITTLE WHEN I'M HAPPY. I HAVEN'T FLOATED IN WEEKS.",
+   "home": "LOOK! I'M FLOATING! ...AN INCH. IT COUNTS."
+  },
+  {
+   "id": "liddy",
+   "name": "LIDDY",
+   "look": "piet",
+   "x": 172,
+   "y": 75,
+   "quirk": "~THE HEX TURNED ALL MY WORDS TO SONG~ ~AND I CAN'T EVEN SING~",
+   "home": "I CAN TALK AGAIN! ...I KIND OF MISS THE SINGING.",
+   "guard": [
+    [
+     "witchling",
+     -2,
+     1
+    ],
+    [
+     "leeches",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "barty",
+   "name": "BARTHOLOMEW",
+   "look": "hobb",
+   "x": 140,
+   "y": 66,
+   "quirk": "I SNEEZE SPARKS. I'VE SET FIRE TO THREE HATS AND A GOAT. THE GOAT WAS FINE.",
+   "home": "NOT ONE SPARK ALL WEEK. THE GOAT SENDS ITS REGARDS."
+  },
+  {
+   "id": "timmons",
+   "name": "TIMMONS THE TINKER",
+   "look": "piet",
+   "x": 58,
+   "y": 150,
+   "quirk": "EVERYTHING I TOUCH TURNS TO MOSS. THIS WAS A SPOON. NOW IT'S A MOSS SPOON.",
+   "home": "I'M MENDING POTS IN BRIGHTWATER NOW. NOT ONE OF THEM HAS SPROUTED."
+  },
+  {
+   "id": "weft",
+   "name": "GRANNY WEFT",
+   "look": "ada",
+   "x": 24,
+   "y": 154,
+   "quirk": "MY SHADOW WANDERS OFF AT NIGHT. LAST WEEK IT CAME HOME WEARING SOMEONE ELSE'S HAT.",
+   "home": "MY SHADOW STAYS PUT NOW. I KEPT THE HAT."
+  },
+  {
+   "id": "pipkin",
+   "name": "PIPKIN THE PEDLAR",
+   "look": "tam",
+   "x": 80,
+   "y": 163,
+   "quirk": "I CAN ONLY SPEAK IN RHYME. IT'S A CRIME. ALL THE TIME. ...SEE?",
+   "home": "PROSE! BLESSED PROSE! I'VE BEEN TALKING FOR SIX HOURS STRAIGHT.",
+   "guard": [
+    [
+     "hound",
+     -2,
+     1
+    ],
+    [
+     "hound",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "mayweed",
+   "name": "SISTER MAYWEED",
+   "look": "orla",
+   "x": 16,
+   "y": 184,
+   "quirk": "I GLOW IN THE DARK. THE MOTHS ADORE ME. I DO NOT ADORE THE MOTHS.",
+   "home": "NO MORE GLOWING. THE MOTHS HAVE MOVED ON TO A LAMPPOST. GOOD RIDDANCE."
+  },
+  {
+   "id": "bracken",
+   "name": "BARNABY BRACKEN",
+   "look": "hobb",
+   "x": 46,
+   "y": 196,
+   "quirk": "MY FEET HAVE TAKEN ROOT. NOT A FIGURE OF SPEECH. ACTUAL ROOTS.",
+   "home": "I CAN WALK AGAIN! I'VE BEEN WALKING IN CIRCLES ALL MORNING, JUST BECAUSE.",
+   "guard": [
+    [
+     "rootling",
+     -2,
+     -1
+    ],
+    [
+     "rootling",
+     2,
+     -1
+    ]
+   ]
+  },
+  {
+   "id": "flint",
+   "name": "FLINT THE SMELTER",
+   "look": "greta",
+   "x": 126,
+   "y": 145,
+   "quirk": "EVERYTHING I SAY COMES OUT AS SMOKE SIGNALS. ...THAT PUFF WAS 'HELLO'.",
+   "home": "I CAN TALK AGAIN! I'VE KEPT A FEW PUFFS FOR SPECIAL OCCASIONS."
+  },
+  {
+   "id": "ashby",
+   "name": "MOTHER ASHBY",
+   "look": "ada",
+   "x": 160,
+   "y": 171,
+   "quirk": "MY HAIR IS ON FIRE. HAS BEEN FOR A WEEK. IT DOESN'T HURT. IT'S JUST VERY HARD TO SLEEP.",
+   "home": "MY HAIR IS JUST HAIR NOW. A BIT SINGED. VERY FASHIONABLE IN BRIGHTWATER, APPARENTLY."
+  },
+  {
+   "id": "tinder",
+   "name": "TOBIAS TINDER",
+   "look": "piet",
+   "x": 112,
+   "y": 152,
+   "quirk": "EVERYTHING I COOK TURNS TO CHARCOAL. EVERYTHING. I TRIED TO MAKE A SALAD.",
+   "home": "I MADE A SALAD THIS MORNING. IT WAS GREEN. I ATE THE WHOLE THING STANDING UP.",
+   "guard": [
+    [
+     "imp",
+     -2,
+     1
+    ],
+    [
+     "imp",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "bellows",
+   "name": "OLD BELLOWS",
+   "look": "hobb",
+   "x": 176,
+   "y": 196,
+   "quirk": "I CAN ONLY WHISPER. WHENEVER I RAISE MY VOICE, SOMETHING CATCHES FIRE.",
+   "home": "I CAN SHOUT AGAIN. I SHOUTED ALL THE WAY HERE. NOTHING BURNED. GLORIOUS."
+  },
+  {
+   "id": "cinderly",
+   "name": "PRIM CINDERLY",
+   "look": "orla",
+   "x": 184,
+   "y": 178,
+   "quirk": "I'M MADE OF GLASS FROM THE ELBOWS DOWN. PLEASE DON'T TOUCH. PLEASE DON'T BREATHE TOO HARD.",
+   "home": "FLESH AND BLOOD AGAIN. I'VE BEEN HUGGING EVERYONE. THEY'VE BEEN VERY PATIENT.",
+   "guard": [
+    [
+     "salamander",
+     -2,
+     1
+    ],
+    [
+     "salamander",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "bram",
+   "name": "BRAM THE FISHER",
+   "look": "hobb",
+   "x": 20,
+   "y": 247,
+   "quirk": "EVERY TIME I SPEAK, A FISH COMES OUT. ...SORRY. THAT ONE WAS A HERRING.",
+   "home": "NO FISH! JUST WORDS! I'VE NEVER BEEN SO HAPPY TO BE BORING."
+  },
+  {
+   "id": "magda",
+   "name": "OLD MAGDA",
+   "look": "ada",
+   "x": 70,
+   "y": 229,
+   "quirk": "I'M FROZEN TO THIS SPOT. NOT IN A POETIC WAY. MY BOOTS ARE STUCK TO THE GROUND.",
+   "home": "I WALKED ALL THE WAY TO BRIGHTWATER. MY FEET ARE THRILLED. MY KNEES LESS SO."
+  },
+  {
+   "id": "pell",
+   "name": "SVEN THE PEDLAR",
+   "look": "piet",
+   "x": 104,
+   "y": 260,
+   "quirk": "EVERYTHING I TOUCH TURNS TO SNOW. I USED TO SELL SPOONS. NOW I SELL SMALL PILES OF SNOW.",
+   "home": "I SOLD A SPOON TODAY! IT STAYED A SPOON ALL THE WAY TO THE CUSTOMER'S HOUSE!",
+   "guard": [
+    [
+     "frostwolf",
+     -2,
+     1
+    ],
+    [
+     "frostwolf",
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "ingrid",
+   "name": "INGRID",
+   "look": "greta",
+   "x": 10,
+   "y": 296,
+   "quirk": "MY TEETH WON'T STOP CHATTERING. NOT FROM THE COLD - THEY'RE TAPPING OUT MESSAGES. RUDE ONES.",
+   "home": "MY TEETH ARE QUIET. I STILL DON'T KNOW WHO THEY WERE TALKING TO."
+  },
+  {
+   "id": "hobnail",
+   "name": "BROTHER HOBNAIL",
+   "look": "quill",
+   "x": 92,
+   "y": 304,
+   "quirk": "I SNEEZE SNOWFLAKES. EACH ONE IS UNIQUE. I'VE NAMED SEVERAL HUNDRED.",
+   "home": "NO MORE SNOWFLAKES. I MISS GERALD. GERALD WAS MY FAVOURITE."
+  },
+  {
+   "id": "bramwell",
+   "name": "SER ANSELM",
+   "look": "oswin",
+   "x": 145,
+   "y": 315,
+   "quirk": "I CAN ONLY MARCH FORWARD. I'VE BEEN WALKING INTO THIS ROCK FOR A WEEK. HONOURABLY.",
+   "home": "I TURNED AROUND TODAY! ALL THE WAY AROUND! I FELL OVER, BUT STILL."
+  },
+  {
+   "id": "hedda",
+   "name": "HEDDA THE HERBALIST",
+   "look": "ada",
+   "x": 150,
+   "y": 316,
+   "quirk": "EVERY PLANT I TOUCH WILTS. I'M A HERBALIST. YOU SEE THE PROBLEM.",
+   "home": "I GREW A DAISY. A WHOLE DAISY. I'VE NAMED IT AND I TALK TO IT AND NO, I WON'T STOP."
+  },
+  {
+   "id": "corwin",
+   "name": "CORWIN",
+   "look": "tam",
+   "x": 141,
+   "y": 19,
+   "quirk": "EVERY DOOR I OPEN LEADS BACK OUTSIDE. I HAVEN'T BEEN INDOORS IN A MONTH. I MISS CEILINGS.",
+   "home": "I WALKED INTO A HOUSE TODAY AND I WAS IN A HOUSE. I SAT UNDER THE CEILING FOR AN HOUR."
+  },
+  {
+   "id": "wenna",
+   "name": "WENNA",
+   "look": "greta",
+   "x": 100,
+   "y": 110,
+   "quirk": "WHENEVER I SIT DOWN, I SINK. NOT IN THE BOG. IN CHAIRS. IN ROCKS. ANYWHERE.",
+   "home": "I SAT ON A STOOL THIS MORNING AND STAYED ON TOP OF IT. MY HUSBAND CLAPPED."
+  },
+  {
+   "id": "forge_fergus",
+   "name": "FERGUS THE BELLOWS-BOY",
+   "look": "piet",
+   "x": 160,
+   "y": 160,
+   "quirk": "EVERY TIME I BREATHE OUT, IT'S A GUST. I'VE BLOWN OUT EVERY FIRE IN EMBERWATCH. TWICE.",
+   "home": "I BLEW ON MY SOUP AND IT DIDN'T LEAVE THE BOWL. THIS IS THE LIFE."
+  }
+ ],
+ "huntsman": {
+  "name": "SHADOW OF THE PALE HUNTSMAN",
+  "sub": "A CURSED ECHO, BOUND TO THE ELDER'S HEARTWOOD",
+  "arena": [
+   369,
+   148
+  ],
+  "drops": [],
+  "gold": 50,
+  "fall": [
+   "THE SHADOW BREAKS",
+   "THE CURSED VINE WITHERS... HOUNDS HOWL IN THE FOG BY THE WARD STONE."
+  ],
+  "shadow": true
+ },
+ "coolZones": [
+  {
+   "x": 139,
+   "y": 150,
+   "r": 8
+  },
+  {
+   "x": 172,
+   "y": 139,
+   "r": 7
+  },
+  {
+   "x": 128,
+   "y": 163,
+   "r": 6.5
+  }
+ ],
+ "vulk": {
+  "name": "SHADOW OF FORGEMASTER VULK",
+  "sub": "A CURSED ECHO, CHAINED TO THE DWARVES' HEARTHSTONE",
+  "arena": [
+   465,
+   148
+  ],
+  "drops": [],
+  "gold": 55,
+  "fall": [
+   "THE SHADOW BREAKS",
+   "THE CURSED VINE BURNS AWAY... THE LAVA VENT BY THE WARD STONE BEGINS TO BOIL."
+  ],
+  "shadow": true
+ },
+ "falseWalls": [
+  {
+   "x": 86,
+   "y": 149,
+   "relic": "lens",
+   "locked": "A WALL OF OLD STONE. IT FEELS... THIN, SOMEHOW. LIKE A PAINTING OF A WALL. IF ONLY WE COULD SEE WHAT'S REALLY THERE."
+  },
+  {
+   "x": 7,
+   "y": 142,
+   "relic": "lens",
+   "locked": "A RUINED SHRINE'S WALL. THE STONES SHIMMER WHEN YOU AREN'T LOOKING STRAIGHT AT THEM."
+  }
+ ],
+ "warmZones": [
+  {
+   "x": 46,
+   "y": 220,
+   "r": 9
+  }
+ ],
+ "climbs": [
+  {
+   "id": "climbW",
+   "x": 40,
+   "y": 294,
+   "top": [
+    40,
+    290
+   ]
+  },
+  {
+   "id": "climbE",
+   "x": 84,
+   "y": 294,
+   "top": [
+    84,
+    290
+   ]
+  }
+ ],
+ "isolde": {
+  "name": "SHADOW OF ISOLDE",
+  "sub": "A CURSED ECHO, BOUND TO THE ASTRONOMERS' STAR-MIRROR",
+  "arena": [
+   368,
+   227
+  ],
+  "drops": [],
+  "gold": 55,
+  "fall": [
+   "THE SHADOW SHATTERS",
+   "THE CURSED VINE CRACKS LIKE ICE... FROST GATHERS BY THE WARD STONE."
+  ],
+  "shadow": true
+ },
+ "glides": [
+  {
+   "id": "skyIn",
+   "x": 34,
+   "y": 267,
+   "land": [
+    30,
+    250
+   ]
+  },
+  {
+   "id": "skyOut",
+   "x": 30,
+   "y": 252,
+   "land": [
+    30,
+    258
+   ]
+  }
+ ],
+ "echoMarsh": {
+  "name": "WARD ECHO: MOTHER MURK",
+  "sub": "THE MISTFEN STONE STILL STANDS, AND IT REMEMBERS HER",
+  "drops": [],
+  "gold": 120,
+  "fall": [
+   "THE ECHO FADES",
+   "THE WAY UP IS OPEN."
+  ]
+ },
+ "echoGloam": {
+  "name": "WARD ECHO: THE PALE HUNTSMAN",
+  "sub": "THE GLOAMWOOD STONE STILL STANDS, AND THE HUNT GOES ON",
+  "drops": [],
+  "gold": 120,
+  "fall": [
+   "THE ECHO FADES",
+   "THE WAY UP IS OPEN."
+  ]
+ },
+ "echoCinder": {
+  "name": "WARD ECHO: FORGEMASTER VULK",
+  "sub": "THE CINDERREACH STONE STILL STANDS, AND ITS FORGE STILL BURNS",
+  "drops": [],
+  "gold": 120,
+  "fall": [
+   "THE ECHO FADES",
+   "THE WAY UP IS OPEN."
+  ]
+ },
+ "echoFrost": {
+  "name": "WARD ECHO: ISOLDE",
+  "sub": "THE FROSTHELM STONE STILL STANDS, AND ITS KNIGHT STILL GUARDS IT",
+  "drops": [],
+  "gold": 120,
+  "fall": [
+   "THE ECHO FADES",
+   "THE WAY UP IS OPEN."
+  ]
+ },
+ "malgrim": {
+  "name": "MALGRIM THE UNKIND",
+  "sub": "COURT MAGE TO THE FROG KING. ARCHITECT OF THE NINTH TOWER",
+  "drops": [],
+  "gold": 500,
+  "fall": [
+   "MALGRIM FALLS",
+   "THE NINTH TOWER SHUDDERS..."
+  ]
+ }
+}
