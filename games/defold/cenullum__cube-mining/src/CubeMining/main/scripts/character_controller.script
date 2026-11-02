@@ -1,0 +1,771 @@
+-- character_controller.script
+-- Purpose: Handles physical movement of the player character, including gravity, collision with world (physics module), walking, sprinting, jumping, and free-camera flying mode.
+
+
+local vmath = vmath
+local msg = msg
+local go = go
+local window = window
+local factory = factory
+local hash = hash
+local math = math
+local sm = require "main.scripts.sound_manager"
+local items = require "main.scripts.items"
+
+
+-- Pre-hashed strings for optimization
+local H_ACQUIRE_INPUT_FOCUS = hash("acquire_input_focus")
+local H_KEY_ESC = hash("key_esc")
+local H_CLICK = hash("click")
+local H_MOVE_FORWARD = hash("move_forward")
+local H_MOVE_BACKWARD = hash("move_backward")
+local H_MOVE_LEFT = hash("move_left")
+local H_MOVE_RIGHT = hash("move_right")
+local H_MOVE_UP = hash("move_up")
+local H_MOVE_DOWN = hash("move_down")
+local H_JUMP = hash("jump")
+local H_SPRINT = hash("sprint")
+local H_SNEAK = hash("sneak")
+local H_SWITCH_MODE = hash("switch_mode")
+local H_SET_VIEW = hash("set_view")
+local H_SET_FOV = hash("set_fov")
+local H_DRAW_LINE = hash("draw_line")
+local H_EULER = hash("euler")
+local H_SPAWN_MOUSE = hash("spawn_mouse")
+local H_SPAWN_FAST = hash("spawn_fast")
+local H_TOGGLE_LIGHT_MODE = hash("toggle_light_mode")
+local H_TOGGLE_AO = hash("toggle_ao")
+local H_TEST_SPAWN = hash("test_spawn")
+
+go.property("speed", 5)
+go.property("jump_force", 9.0) -- Tweaked for standard gravity
+go.property("sensitivity", 0.15)
+go.property("gravity", -25.0)
+go.property("mouse_factory", msg.url())
+go.property("bomb_factory", msg.url())
+
+-- Sprint & ADS Properties
+go.property("default_fov", 60)
+go.property("sprint_fov", 68)
+go.property("ads_sensitivity_mul", 0.09)
+go.property("ads_move_speed_mul", 0.5)
+go.property("sneak_move_speed_mul", 0.4)
+
+-- Camera Sway/Lean Properties
+go.property("sway_enabled", true)
+go.property("lean_intensity", 0.05)  -- Forward lean based on velocity
+go.property("tilt_intensity", 1.5)   -- Sideways roll based on velocity
+go.property("sway_smoothness", 10.0) -- How fast it interpolates
+
+
+local STATE_FREE_CAM = 1
+local STATE_WALK = 2
+
+function init(self)
+    msg.post(".", H_ACQUIRE_INPUT_FOCUS)
+
+    -- Starting position now handled by world_manager
+
+    self.state = STATE_FREE_CAM
+    self.velocity = vmath.vector3(0, 0, 0)
+    self.pitch = 0
+    self.yaw = 0
+
+    self.shake_intensity = 0
+    self.shake_duration = 0
+
+    -- Recoil state
+    self.recoil_offset_pos = 0   -- Backward movement (local Z)
+    self.recoil_offset_pitch = 0 -- Upward pitch
+
+    -- Inputs
+    self.input = vmath.vector3()
+    self.move_fw = 0
+    self.move_bw = 0
+    self.move_l = 0
+    self.move_r = 0
+    self.move_up = 0
+    self.move_dn = 0
+    self.sprinting = false
+    self.sneaking = false
+    self.ads_active = false
+    self.jump_pressed = false
+    self.fly_mode = true -- Start in fly mode (free cam)
+    self.spawn_fast = false
+
+    -- Camera Sway state
+    self.current_lean = 0
+    self.current_tilt = 0
+
+    -- Character Physics params
+    -- AABB size: 0.6 width, 1.5 height
+    self.size = vmath.vector3(0.6, 1.5, 0.6)
+
+    -- Eye Height (GO is at eyes, feet are below)
+    self.eye_height = 1.25
+    self.sneak_eye_height = 1.1
+    self.current_eye_height = self.eye_height
+    self.eye_offset = vmath.vector3(0, self.eye_height, 0)
+
+    -- Mouse Lock
+    window.set_mouse_lock(true)
+
+    -- Initial camera setup
+    local rot = go.get_rotation()
+    local euler = go.get(".", H_EULER)
+    self.yaw = euler.y
+    self.pitch = euler.x
+    self.grounded = true
+
+    -- Walk sound tracking
+    self.distance_walked = 0
+
+    -- Render optimization state
+    self.last_view_pos = vmath.vector3(0)
+    self.last_view_rot = vmath.quat()
+    self.last_clear_color = vmath.vector4(0)
+end
+
+local function update_camera(self, dt)
+    -- Compute base rotation
+    local current_yaw = self.yaw
+    local current_pitch = self.pitch
+
+    -- Apply screen shake
+    local shake_duration = self.shake_duration
+    if shake_duration > 0 then
+        local intensity = self.shake_intensity
+        local shake_x = (math.random() - 0.5) * 2.0 * intensity
+        local shake_y = (math.random() - 0.5) * 2.0 * intensity
+        current_yaw = current_yaw + shake_x
+        current_pitch = current_pitch + shake_y
+    end
+
+    -- Apply recoil
+    current_pitch = current_pitch + self.recoil_offset_pitch
+
+    -- Apply Camera Sway (Tilt/Roll)
+    local roll = 0
+    if self.sway_enabled and self.state == STATE_WALK then
+        -- Calculate target tilt based on local sideways velocity
+        -- We want to tilt AWAY from the movement direction (centrifugal feel) or TOWARDS it (leaning into turn)
+        -- The request says "sağa gidiyor sağa rotate sola gidiyor sola rotate", which means leaning into the turn.
+        local rot_y = vmath.quat_rotation_y(math.rad(self.yaw))
+        local right = vmath.rotate(rot_y, vmath.vector3(1, 0, 0))
+        local side_vel = vmath.dot(self.velocity, right)
+
+        local target_tilt = -side_vel * self.tilt_intensity -- negative for leaning into it
+        self.current_tilt = vmath.lerp(math.min(self.sway_smoothness * dt, 1.0), self.current_tilt, target_tilt)
+        roll = self.current_tilt
+    else
+        self.current_tilt = vmath.lerp(math.min(self.sway_smoothness * dt, 1.0), self.current_tilt, 0)
+        roll = self.current_tilt
+    end
+
+    local rot = vmath.quat_rotation_y(math.rad(current_yaw)) *
+        vmath.quat_rotation_x(math.rad(current_pitch)) *
+        vmath.quat_rotation_z(math.rad(roll))
+    go.set_rotation(rot)
+
+    -- GO is at eye level now, so no offset for camera view
+    -- Recoil position offset (move back along local negative forward)
+    local eye_pos = go.get_position()
+
+    -- Apply Camera Sway (Lean Forward/Backward)
+    if self.sway_enabled and self.state == STATE_WALK then
+        local rot_y = vmath.quat_rotation_y(math.rad(self.yaw))
+        local forward_horiz = vmath.rotate(rot_y, vmath.vector3(0, 0, -1))
+        local forward_vel = vmath.dot(self.velocity, forward_horiz)
+
+        -- Move forward based on forward velocity
+        local target_lean = forward_vel * self.lean_intensity
+        self.current_lean = vmath.lerp(math.min(self.sway_smoothness * dt, 1.0), self.current_lean, target_lean)
+    else
+        self.current_lean = vmath.lerp(math.min(self.sway_smoothness * dt, 1.0), self.current_lean, 0)
+    end
+
+    local forward = vmath.rotate(rot, vmath.vector3(0, 0, -1))
+    eye_pos = eye_pos - forward * self.recoil_offset_pos + forward * self.current_lean
+
+    -- Export camera state for performance_overlay
+    _G.cam_pos = eye_pos
+    _G.cam_rot = rot
+
+    -- Continuous Mouse Spawning (Y Key)
+    if self.spawn_fast then
+        local cam_dir = vmath.rotate(rot, vmath.vector3(0, 0, -1))
+        local spawn_pos = eye_pos + cam_dir * 2.0
+        factory.create(self.mouse_factory, spawn_pos, vmath.quat())
+        sm.play(sm.swing)
+    end
+
+    -- Camera View Matrix
+    local view = vmath.matrix4_from_quat(rot)
+    view = vmath.inv(view)
+    local pos_inv = vmath.matrix4_translation(-eye_pos)
+    view = view * pos_inv
+
+    if self.last_view_pos ~= eye_pos or self.last_view_rot ~= rot then
+        msg.post("@render:", H_SET_VIEW, { view = view, pos = eye_pos })
+        self.last_view_pos = vmath.vector3(eye_pos)
+        self.last_view_rot = vmath.quat(rot)
+    end
+end
+
+local function perform_shot(self, message)
+    local cam_pos = go.get_world_position()
+    local cam_rot = go.get_rotation()
+    local forward = vmath.rotate(cam_rot, vmath.vector3(0, 0, -1))
+
+    -- C++ raycasting against voxels AND NPCs
+    -- parameters: origin, dir, dist, penetration, damage, knockback_power
+    local damage = message.damage or 25
+    local penetration = message.penetration or 1
+    local hits = voxel_engine.shoot(cam_pos, forward, 100, penetration, damage, 5.0)
+
+    if hits and #hits > 0 then
+        for _, hit in ipairs(hits) do
+            if hit.is_block then
+                -- Hit terrain
+                sm.play(sm.stone_debris, 0.5, hit.pos)
+            end
+        end
+    end
+
+    -- Recoil Visuals
+    msg.post(".", "apply_recoil", { power = 1.0 })
+end
+
+
+function update(self, dt)
+    -- Screen shake decay
+    local shake_duration = self.shake_duration
+    if shake_duration > 0 then
+        shake_duration = shake_duration - dt
+        if shake_duration <= 0 then
+            shake_duration = 0
+            self.shake_intensity = 0
+        end
+        self.shake_duration = shake_duration
+    end
+
+    -- Recoil decay
+    local lerp_speed = 10
+    self.recoil_offset_pos = vmath.lerp(math.min(dt * lerp_speed, 1.0), self.recoil_offset_pos, 0)
+    self.recoil_offset_pitch = vmath.lerp(math.min(dt * lerp_speed, 1.0), self.recoil_offset_pitch, 0)
+
+    -- Rotation Logic
+    -- (Applied in update_camera directly from accumulated pitch/yaw)
+
+    if not self.spawn_initialized and voxel_engine.get_block then
+        local p = go.get_position()
+        voxel_engine.update_world(p) -- Force load center chunk
+        
+        -- Find surface
+        local surface_y = 32
+        for y = 64, 0, -1 do
+            if voxel_engine.get_block(0, y, 0) ~= 0 then
+                surface_y = y + 1
+                break
+            end
+        end
+        -- Clear air above
+        voxel_engine.set_block(0, surface_y, 0, 0)
+        voxel_engine.set_block(0, surface_y+1, 0, 0)
+        
+        go.set_position(vmath.vector3(0.5, surface_y + self.eye_height, 0.5))
+        self.spawn_initialized = true
+    end
+
+    if self.state == STATE_FREE_CAM then
+        -- Free Camera Logic (Spectator)
+        local rot = go.get_rotation()
+        local forward = vmath.rotate(rot, vmath.vector3(0, 0, -1))
+        local right = vmath.rotate(rot, vmath.vector3(1, 0, 0))
+        local up = vmath.vector3(0, 1, 0)
+
+        local speed = self.speed * (self.sprinting and 3 or 1)
+
+        local move_dir = forward * self.input.z + right * self.input.x + up * self.input.y
+        if vmath.length_sqr(move_dir) > 0 then
+            move_dir = vmath.normalize(move_dir)
+        end
+
+        local p = go.get_position()
+        go.set_position(p + move_dir * speed * dt)
+
+        self.velocity = vmath.vector3(0) -- Reset velocity for when we switch back
+        _G.is_freecam = true
+    elseif self.state == STATE_WALK then
+        _G.is_freecam = false
+        -- Character Controller Logic
+        local rot_y = vmath.quat_rotation_y(math.rad(self.yaw))
+        local forward = vmath.rotate(rot_y, vmath.vector3(0, 0, -1))
+        local right = vmath.rotate(rot_y, vmath.vector3(1, 0, 0))
+
+        -- Flatten forward/right to horizontal plane
+        forward.y = 0
+        right.y = 0
+        if vmath.length_sqr(forward) > 0.001 then forward = vmath.normalize(forward) end
+        if vmath.length_sqr(right) > 0.001 then right = vmath.normalize(right) end
+
+        local wish_dir = forward * self.input.z + right * self.input.x
+        if vmath.length_sqr(wish_dir) > 1 then wish_dir = vmath.normalize(wish_dir) end
+
+        -- Speed calculation: sprint (1.5x), ADS (ads_move_speed_mul), sneak (sneak_move_speed_mul), normal (1x)
+        local speed_mul = 1
+        if self.sprinting then
+            speed_mul = 1.5
+        elseif self.ads_active then
+            speed_mul = self.ads_move_speed_mul
+        elseif self.sneaking then
+            speed_mul = self.sneak_move_speed_mul
+        end
+        local speed = self.speed * speed_mul
+
+        -- Smooth eye offset lerp for sneaking
+        -- Compensate GO position so feet stay at the same level when eye_offset changes
+        local prev_eye_height = self.current_eye_height
+        local target_eye = self.sneaking and self.sneak_eye_height or self.eye_height
+        self.current_eye_height = vmath.lerp(math.min(15.0 * dt, 1.0), self.current_eye_height, target_eye)
+        if math.abs(self.current_eye_height - target_eye) < 0.001 then
+            self.current_eye_height = target_eye
+        end
+        self.eye_offset.y = self.current_eye_height
+
+        -- Push GO position up/down to keep feet level when eye height changes
+        local eye_delta = self.current_eye_height - prev_eye_height
+        if eye_delta ~= 0 then
+            local p = go.get_position()
+            p.y = p.y + eye_delta
+            go.set_position(p)
+        end
+
+        -- Apply horizontal movement
+        local target_vel_x = wish_dir.x * speed
+        local target_vel_z = wish_dir.z * speed
+
+        -- Accelerate towards target velocity
+        self.velocity.x = vmath.lerp(math.min(10.0 * dt, 1.0), self.velocity.x, target_vel_x)
+        self.velocity.z = vmath.lerp(math.min(10.0 * dt, 1.0), self.velocity.z, target_vel_z)
+
+        -- Gravity
+        self.velocity.y = self.velocity.y + self.gravity * dt
+
+        local eye_pos = go.get_position()
+        local feet_pos = eye_pos - self.eye_offset
+
+        -- Physics Step
+        local impact_vel_y = self.velocity.y
+        local new_feet_pos, new_vel, grounded = voxel_engine.move_and_slide(feet_pos, self.velocity, self.size, dt,
+            self.sneaking and self.grounded, true)
+
+        self.velocity = new_vel
+
+        -- Update EYES based on new FEET
+        -- Position is not set by voxel_engine.cpp like npcs so we need to set it manually
+        local new_eye_pos = new_feet_pos + self.eye_offset
+        go.set_position(new_eye_pos)
+
+        -- Export state for hand_slot_manager & performance overlay (on-demand calculations)
+        _G.player_eye_height = self.current_eye_height
+        _G.player_size = self.size
+        _G.player_sneaking = self.sneaking
+
+        -- Landing Sound & Bounce
+        if grounded and not self.grounded and impact_vel_y < -2.0 then
+            sm.play(sm.landing)
+            msg.post("#hand_slot_manager", "bounce_item", { intensity = math.min(1.0, math.abs(impact_vel_y) / 10.0) })
+        end
+        self.grounded = grounded
+
+        -- Jump
+        if self.jump_pressed and grounded then
+            self.velocity.y = self.jump_force
+            self.jump_pressed = false -- Consume jump
+            sm.play(sm.jumping)
+            msg.post("#hand_slot_manager", "bounce_item", { intensity = 1.0 })
+        end
+
+        -- Reset jump constraints if falling too fast
+        if not grounded and self.velocity.y < -30 then self.velocity.y = -30 end
+
+        -- Expose movement state for head bob and inertia (hand_slot_manager)
+        local hvel = math.sqrt(self.velocity.x * self.velocity.x + self.velocity.z * self.velocity.z)
+        _G.player_speed = hvel
+        _G.player_sprinting = self.sprinting
+        _G.player_grounded = grounded
+        _G.player_velocity = self.velocity
+
+        -- Footstep logic
+        if grounded and hvel > 0.5 then
+            self.distance_walked = self.distance_walked + (hvel * dt)
+            
+            -- Adjust stride distance based on movement state
+            -- Multipliers: Sprint (~1.5x), Sneak (~0.4x), Walk (1x)
+            -- We scale distance slightly less than speed to make the rhythm feel "pushed" during sprint
+            local step_distance = 1.8
+            if self.sprinting then
+                step_distance = 2.5
+            elseif self.sneaking then
+                step_distance = 1.2
+            end
+            
+            if self.distance_walked >= step_distance then
+                self.distance_walked = self.distance_walked % step_distance
+                
+                -- Feet position
+                local foot_pos = eye_pos - self.eye_offset
+                
+                -- Gain adjustments
+                local step_gain = 0.8
+                if self.sneaking then step_gain = 0.3 end
+                if self.sprinting then step_gain = 1.0 end
+                
+                -- Detect material beneath feet
+                local check_pos = vmath.vector3(foot_pos.x, foot_pos.y - 0.1, foot_pos.z)
+                local b_id = voxel_engine.get_block(check_pos.x, check_pos.y, check_pos.z)
+                local b_def = items.definitions[b_id]
+
+                local material = b_def and b_def.footstep_type or "stone"
+                
+                sm.play_footstep(material, foot_pos, step_gain)
+
+                -- Sprint particles: Spawn particles under feet matching the block texture
+                if self.sprinting and b_id ~= 0 then
+                    voxel_engine.spawn_block_particles(check_pos.x, check_pos.y, check_pos.z, b_id)
+                end
+
+            end
+        elseif not grounded then
+            -- Reset slightly when not grounded so landing/moving resets rhythm safely
+            self.distance_walked = 0
+        end
+
+        -- Sprint FOV: only when actually moving
+        if self.sprinting then
+            if hvel > 0.5 then
+                msg.post("@render:", H_SET_FOV, { fov = self.sprint_fov })
+            else
+                msg.post("@render:", H_SET_FOV, { fov = self.default_fov })
+            end
+        end
+
+        -- Sync ADS state from hand_slot_manager
+        self.ads_active = _G.ads_active or false
+    end
+
+    -- Debug Drawing
+    if _G.performance_mode == 2 then
+        -- Calculate feet pos from GO pos (eyes)
+        local pos = go.get_position() - self.eye_offset
+
+        local half_size = self.size * 0.5
+        -- Pivot at bottom-center of feet pos
+        local min = pos + vmath.vector3(-half_size.x, 0, -half_size.z)
+        local max = pos + vmath.vector3(half_size.x, self.size.y, half_size.z)
+        local color = vmath.vector4(1, 0, 0, 1) -- Red
+
+        -- Draw bottom rect
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, min.y, min.z),
+                end_point = vmath.vector3(max.x, min.y, min.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, min.y, min.z),
+                end_point = vmath.vector3(max.x, min.y, max.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, min.y, max.z),
+                end_point = vmath.vector3(min.x, min.y, max.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, min.y, max.z),
+                end_point = vmath.vector3(min.x, min.y, min.z),
+                color =
+                    color
+            })
+
+        -- Draw top rect
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, max.y, min.z),
+                end_point = vmath.vector3(max.x, max.y, min.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, max.y, min.z),
+                end_point = vmath.vector3(max.x, max.y, max.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, max.y, max.z),
+                end_point = vmath.vector3(min.x, max.y, max.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, max.y, max.z),
+                end_point = vmath.vector3(min.x, max.y, min.z),
+                color =
+                    color
+            })
+
+        -- Draw verticals
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, min.y, min.z),
+                end_point = vmath.vector3(min.x, max.y, min.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, min.y, min.z),
+                end_point = vmath.vector3(max.x, max.y, min.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(max.x, min.y, max.z),
+                end_point = vmath.vector3(max.x, max.y, max.z),
+                color =
+                    color
+            })
+        msg.post("@render:", H_DRAW_LINE,
+            {
+                start_point = vmath.vector3(min.x, min.y, max.z),
+                end_point = vmath.vector3(min.x, max.y, max.z),
+                color =
+                    color
+            })
+    end
+
+    -- Update Hand Item Light
+    local eye_pos = go.get_position()
+    local px = math.floor(eye_pos.x)
+    local py = math.floor(eye_pos.y)
+    local pz = math.floor(eye_pos.z)
+
+    -- 1. Lighting calculation with caching (Offloaded to C++)
+    if px ~= self.last_px or py ~= self.last_py or pz ~= self.last_pz then
+        self.last_px, self.last_py, self.last_pz = px, py, pz
+
+        local ambient_light = voxel_engine.get_ambient_light(vmath.vector3(px, py, pz))
+        _G.player_ambient_light = ambient_light
+
+        -- Only update shader if ambient light actually changed
+        if ambient_light ~= self.last_ambient_light then
+            self.last_ambient_light = ambient_light
+            if _G.voxelizer_mesh_url then
+                pcall(function() go.set(_G.voxelizer_mesh_url, "tint", ambient_light) end)
+            end
+        end
+    end
+
+    -- Fog color and clear color is now handled by GPU (render script and shaders)
+    -- We just calculate the depth factor for clear color here (or move it to render script)
+    local surface_y = 64
+    local player_grid_y = eye_pos.y
+    local depth_below_surface = surface_y - player_grid_y
+    local depth_factor = math.max(0, math.min(1, depth_below_surface / 5.0))
+
+    local sky_r, sky_g, sky_b = 0.67, 0.79, 0.98
+    local fog_r = sky_r * (1.0 - depth_factor)
+    local fog_g = sky_g * (1.0 - depth_factor)
+    local fog_b = sky_b * (1.0 - depth_factor)
+
+    local current_clear_color = vmath.vector4(fog_r, fog_g, fog_b, 1.0)
+    if current_clear_color ~= self.last_clear_color then
+        msg.post("@render:", "clear_color", { color = current_clear_color })
+        self.last_clear_color = current_clear_color
+    end
+
+    update_camera(self, dt)
+    voxel_engine.update_world(eye_pos)
+end
+
+function on_input(self, action_id, action)
+    if not action_id then
+        if window.get_mouse_lock() then
+            -- Mouse movement (reduced sensitivity when ADS)
+            local sens = self.sensitivity
+            if self.ads_active then
+                sens = sens * self.ads_sensitivity_mul
+            end
+            self.yaw = self.yaw - action.dx * sens
+            self.pitch = self.pitch + action.dy * sens
+
+            -- Clamp pitch
+            if self.pitch > 89 then self.pitch = 89 end
+            if self.pitch < -89 then self.pitch = -89 end
+        end
+        return
+    end
+
+    if action_id == H_KEY_ESC and action.released then
+        window.set_mouse_lock(false)
+    elseif action_id == H_CLICK and action.pressed and not window.get_mouse_lock() then
+        window.set_mouse_lock(true)
+        return
+    end
+
+    -- (Note: next_item, previous_item, click, click_right handling moved to hand_slot_manager.script)
+
+    -- Movement Input
+    if action_id == H_MOVE_FORWARD then
+        self.move_fw = action.released and 0 or 1
+    elseif action_id == H_MOVE_BACKWARD then
+        self.move_bw = action.released and 0 or 1
+    elseif action_id == H_MOVE_LEFT then
+        self.move_l = action.released and 0 or 1
+    elseif action_id == H_MOVE_RIGHT then
+        self.move_r = action.released and 0 or 1
+    elseif action_id == H_MOVE_UP and self.state == STATE_FREE_CAM then
+        self.move_up = action.released and 0 or 1
+    elseif action_id == H_MOVE_DOWN and self.state == STATE_FREE_CAM then
+        self.move_dn = action.released and 0 or 1
+    elseif action_id == H_JUMP then
+        if action.pressed then self.jump_pressed = true end
+        if action.released then self.jump_pressed = false end
+    end
+
+    -- Always update input vector based on current state
+    self.input.z = self.move_fw - self.move_bw
+    self.input.x = self.move_r - self.move_l
+    self.input.y = self.move_up - self.move_dn
+
+    if action_id == H_SNEAK then
+        if action.pressed then
+            self.sneaking = true
+            -- Sneak cancels sprint
+            if self.sprinting then
+                self.sprinting = false
+                msg.post("@render:", H_SET_FOV, { fov = self.default_fov })
+            end
+        elseif action.released then
+            self.sneaking = false
+        end
+    elseif action_id == H_SPRINT then
+        if action.pressed then
+            -- Sprint cancels sneak
+            if self.sneaking then
+                self.sneaking = false
+            end
+            -- Sprint while ADS → cancel ADS, start sprint
+            if self.ads_active then
+                msg.post("#hand_slot_manager", "cancel_ads")
+                self.ads_active = false
+            end
+            self.sprinting = true
+            -- FOV change handled in update() based on movement
+        elseif action.released then
+            self.sprinting = false
+            if not self.ads_active then
+                msg.post("@render:", H_SET_FOV, { fov = self.default_fov })
+            end
+        end
+    elseif action_id == H_SWITCH_MODE and action.released then
+        if self.state == STATE_FREE_CAM then
+            self.state = STATE_WALK
+            print("Switched to WALK mode")
+        else
+            self.state = STATE_FREE_CAM
+            print("Switched to FREE CAM mode")
+        end
+    elseif action_id == H_SPAWN_MOUSE and action.released then
+        -- Spawn one mouse forwards
+        local cam_pos = go.get_world_position()
+        local cam_rot = go.get_world_rotation()
+        local cam_dir = vmath.rotate(cam_rot, vmath.vector3(0, 0, -1))
+        local spawn_pos = cam_pos + cam_dir * 2.0
+        factory.create(self.mouse_factory, spawn_pos, vmath.quat())
+        sm.play(sm.swing)
+    elseif action_id == H_TOGGLE_LIGHT_MODE and action.released then
+        msg.post("/root#main", "toggle_light_mode")
+        print("Light Mode Toggle Request Sent")
+    elseif action_id == H_SPAWN_FAST then
+        if action.pressed then
+            self.spawn_fast = true
+        elseif action.released then
+            self.spawn_fast = false
+        end
+    elseif action_id == H_TOGGLE_AO and action.released then
+        msg.post("/root#main", "toggle_ao")
+        print("AO Toggle Request Sent")
+    elseif action_id == H_TEST_SPAWN and action.released then
+        -- Spawn 16x16 mice grid and a bomb in the center
+        local cam_pos = go.get_world_position()
+        local center_pos = cam_pos
+
+        -- Spawn bomb at center
+        factory.create(self.bomb_factory, center_pos, vmath.quat())
+
+        -- Spawn 16x16 mice grid around center
+        local grid_size = 16
+        local spacing = 1.0
+
+        for x = 0, grid_size - 1 do
+            for z = 0, grid_size - 1 do
+                local spawn_x = center_pos.x + (x * spacing)
+                local spawn_z = center_pos.z + (z * spacing)
+                local spawn_pos_mouse = vmath.vector3(spawn_x, center_pos.y, spawn_z)
+                factory.create(self.mouse_factory, spawn_pos_mouse, vmath.quat())
+            end
+        end
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("explosion") then
+        local dist = vmath.length(go.get_world_position() - message.position)
+        local max_dist = 12.0
+        if dist < max_dist then
+            -- Linear intensity falloff based on distance
+            local intensity_factor = 1.0 - (dist / max_dist)
+
+            self.shake_intensity = 5.0 * intensity_factor * message.force
+            self.shake_duration = 0.35 * intensity_factor
+        end
+    elseif message_id == hash("apply_recoil") then
+        local power = message.power or 1
+        local is_ads = message.is_ads or false
+
+        -- Reduce recoil if aiming down sights
+        local ads_multiplier = is_ads and 0.4 or 1.0
+
+        -- Add recoil offsets (stackable)
+        self.recoil_offset_pos = self.recoil_offset_pos + (0.03 * power * ads_multiplier)
+        self.recoil_offset_pitch = self.recoil_offset_pitch + (1.2 * power * ads_multiplier)
+
+        -- Clamp recoil
+        self.recoil_offset_pos = math.min(self.recoil_offset_pos, 0.5)
+    elseif message_id == hash("toggle_sway") then
+        self.sway_enabled = message.enabled ~= false
+        print("Camera Sway Enabled:", self.sway_enabled)
+    elseif message_id == hash("cancel_sprint") then
+        -- Called by hand_slot_manager when ADS overrides sprint
+        self.sprinting = false
+        -- FOV will be set by hand_slot_manager (ADS FOV)
+    elseif message_id == hash("fire") then
+        if message.pressed then
+            perform_shot(self, message)
+        end
+    end
+end

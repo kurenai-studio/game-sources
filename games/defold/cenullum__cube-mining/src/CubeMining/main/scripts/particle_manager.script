@@ -1,0 +1,54 @@
+local vmath             = vmath
+local pool_size = 1000
+
+go.property("game_atlas", resource.atlas())
+
+function init(self)
+    -- Start up particle pool and pass them to C++ memory automatically
+    -- We pass the collection socket so C++ can post messages to the right GOs
+    local socket = msg.url().socket
+    local atlas = resource.get_atlas(self.game_atlas)
+    local texture0 = hash(atlas.texture)
+
+    self.particle_models = {}
+
+    -- Register this script as the central particle manager
+    voxel_engine.set_particle_manager(msg.url().socket, msg.url().path, msg.url().fragment)
+
+    for i = 1, pool_size do
+        -- Spawn far away and disabled initially
+
+        local random_x = math.random(-10, 10)
+        local random_z = math.random(-10, 10)
+        local id = factory.create("#particle_factory", vmath.vector3(random_x, 15,random_z))
+        
+        -- Assign the terrain atlas texture to the particle's model
+        local model_url = msg.url(nil, id, "model")
+        self.particle_models[id] = model_url
+        go.set(model_url, "texture0", texture0)
+
+        voxel_engine.register_particle(id, id, socket)
+    end
+    print("Particle Manager: Registered " .. pool_size .. " particles to C++ pool.")
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("particle_events") then
+        local events = voxel_engine.pull_particle_events()
+        for i = 1, #events do
+            local e = events[i]
+            local model_url = self.particle_models[e.id]
+            if model_url then
+                if e.type == 1 then
+                    -- Enable
+                    go.set(model_url, "atlas_bounds", vmath.vector4(e.u, e.v, e.w, e.h))
+                    model.set_constant(model_url, "light_tint", vmath.vector4(e.r, e.g, e.b, e.a))
+                    msg.post(model_url, "enable")
+                else
+                    -- Disable
+                    msg.post(model_url, "disable")
+                end
+            end
+        end
+    end
+end

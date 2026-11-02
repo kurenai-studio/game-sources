@@ -1,0 +1,116 @@
+local vmath = vmath
+local msg = msg
+local go = go
+local resource = resource
+local buffer = buffer
+local hash = hash
+
+local H_POSITION = hash("position")
+local H_ACQUIRE_INPUT_FOCUS = hash("acquire_input_focus")
+local H_ENABLE = hash("enable")
+local H_DISABLE = hash("disable")
+
+
+local function get_targeted_cube(ray_start, ray_dir, max_dist)
+    local hits = voxel_engine.shoot(ray_start, ray_dir, max_dist, 0)
+    if hits and #hits > 0 then
+        local hit = hits[1]
+        if hit.is_block then
+            local gx, gy, gz = hit.pos.x, hit.pos.y, hit.pos.z
+            return vmath.vector3(gx, gy, gz), gx, gy, gz, hit.normal
+        end
+    end
+    return nil
+end
+
+
+function init(self)
+    msg.post(".", H_ACQUIRE_INPUT_FOCUS)
+    -- Define unit cube vertices
+    local v = {
+        vmath.vector3(-0.5, -0.5, 0.5),  -- 1
+        vmath.vector3(0.5, -0.5, 0.5),   -- 2
+        vmath.vector3(0.5, 0.5, 0.5),    -- 3
+        vmath.vector3(-0.5, 0.5, 0.5),   -- 4
+        vmath.vector3(-0.5, -0.5, -0.5), -- 5
+        vmath.vector3(0.5, -0.5, -0.5),  -- 6
+        vmath.vector3(0.5, 0.5, -0.5),   -- 7
+        vmath.vector3(-0.5, 0.5, -0.5)   -- 8
+    }
+    -- 12 triangles (6 faces)
+    local indices = {
+        1, 2, 3, 1, 3, 4,
+        6, 5, 8, 6, 8, 7,
+        4, 3, 7, 4, 7, 8,
+        5, 6, 2, 5, 2, 1,
+        2, 6, 7, 2, 7, 3,
+        5, 1, 4, 5, 4, 8
+    }
+
+    local buf = buffer.create(#indices, {
+        { name = H_POSITION, type = buffer.VALUE_TYPE_FLOAT32, count = 3 }
+    })
+    local positions = buffer.get_stream(buf, H_POSITION)
+
+    for i, idx in ipairs(indices) do
+        local vert = v[idx]
+        positions[(i - 1) * 3 + 1] = vert.x
+        positions[(i - 1) * 3 + 2] = vert.y
+        positions[(i - 1) * 3 + 3] = vert.z
+    end
+
+    local mesh_url = msg.url("#mesh")
+    local buffer_resource = resource.create_buffer("/main/cursor.bufferc", { buffer = buf })
+    go.set(mesh_url, "vertices", buffer_resource)
+
+    self.visible = false
+    msg.post("#mesh", H_DISABLE)
+
+    self.target_grid = nil
+    self.target_normal = nil
+end
+
+function update(self, dt)
+    -- Get camera info from the "camera" GO
+    local cam_pos = go.get_world_position("camera")
+    local cam_rot = go.get_world_rotation("camera")
+    local cam_dir = vmath.rotate(cam_rot, vmath.vector3(0, 0, -1))
+
+    local reach = _G.is_freecam and 100 or 4.5
+    local target, gx, gy, gz, normal = get_targeted_cube(cam_pos, cam_dir, reach)
+
+    -- Always update global state for game interaction
+    _G.targeted_cube = target and { target = target, gx = gx, gy = gy, gz = gz, normal = normal } or nil
+
+    if target and _G.performance_mode ~= 4 then
+        if not self.visible then
+            msg.post("#mesh", H_ENABLE)
+            self.visible = true
+        end
+
+        -- Position strictly in the air, slightly offset from the face to avoid clipping
+        local face_pos = target + normal * 0.55
+        go.set_position(face_pos)
+
+        -- Scale: 0.1 on the normal axis, slightly larger on others to avoid z-fighting
+        local s = vmath.vector3(1.01, 1.01, 1.01)
+        if math.abs(normal.x) > 0.5 then
+            s.x = 0.05
+        elseif math.abs(normal.y) > 0.5 then
+            s.y = 0.05
+        else
+            s.z = 0.05
+        end
+        go.set_scale(s)
+
+        self.target_grid = { gx = gx, gy = gy, gz = gz }
+        self.target_normal = normal
+    else
+        if self.visible then
+            msg.post("#mesh", H_DISABLE)
+            self.visible = false
+        end
+        self.target_grid = target and { gx = gx, gy = gy, gz = gz } or nil
+        self.target_normal = normal
+    end
+end
