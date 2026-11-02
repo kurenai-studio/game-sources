@@ -15,4 +15,4 @@ MIT License — permissive OSS. Permission to use, copy, modify, merge, publish,
 
 ## Notes
 
-UE ATLA game project (MIT). Snapshot at main tip edd7fa778d825e702c68386ebb756ecd203bde4c; omitted .idea/.vscode. CLEAN: MIT LICENSE; 0 LFS pointers; no exe/dll/so/wasm/a/elf/nes/rom; no TTF/OTF (fonts as .uasset only); no StarterContent/Marketplace InsertPack/Asset Store/Odin/Photon/RTP/Freepik/ElevenLabs/CC-BY-NC/SoundCloud; no mp3/ogg. ~18MB. Claim #2869
+UE ATLA game project (MIT). Snapshot at main tip edd7fa778d825e702c68386ebb756ecd203bde4c; omitted .idea/.vscode. CLEAN: MIT LICENSE; 0 LFS pointers; no exe/dll/so/wasm/a/elf/nes/rom; no TTF/OTF (fonts as .uasset only); no StarterContent/Marketplace InsertPack/Asset Store/Odin/Photon/RTP/Freepik/ElevenLabs/CC-BY-NC/SoundCloud; no mp3/ogg. ~9MB. Claim #2869
