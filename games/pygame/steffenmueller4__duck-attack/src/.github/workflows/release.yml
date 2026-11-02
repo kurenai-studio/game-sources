@@ -1,0 +1,103 @@
+name: Release
+
+# Builds the Windows and macOS apps with PyInstaller (packaging/duck_attack.spec).
+# Pushing a tag vX.Y.Z (matching the version in pyproject.toml) also publishes a GitHub
+# Release with the zips; "Run workflow" only builds them as downloadable artifacts.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            platform: windows-x64
+            binary: dist/DuckAttack/DuckAttack.exe
+          - runner: macos-latest
+            platform: macos-arm64
+            binary: dist/DuckAttack.app/Contents/MacOS/DuckAttack
+          - runner: macos-15-intel
+            platform: macos-intel
+            binary: dist/DuckAttack.app/Contents/MacOS/DuckAttack
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - run: pip install -r requirements-package.txt
+      - run: pytest
+
+      - name: Read version
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match version $version in pyproject.toml" >&2
+            exit 1
+          fi
+          echo "ZIP_NAME=DuckAttack-$version-${{ matrix.platform }}.zip" >> "$GITHUB_ENV"
+
+      - run: pyinstaller packaging/duck_attack.spec --noconfirm
+
+      - name: Smoke test (the app must still be running after a few seconds)
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: |
+          "${{ matrix.binary }}" &
+          pid=$!
+          sleep 10
+          if ! kill -0 "$pid" 2>/dev/null; then
+            wait "$pid"
+            echo "The app exited early (exit code $?)" >&2
+            exit 1
+          fi
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            taskkill //F //IM DuckAttack.exe
+          else
+            kill "$pid"
+          fi
+
+      - name: Zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/DuckAttack -DestinationPath $env:ZIP_NAME
+      - name: Zip (macOS)
+        if: runner.os == 'macOS'
+        # ditto keeps the app bundle's symlinks and signature intact.
+        run: ditto -c -k --keepParent dist/DuckAttack.app "$ZIP_NAME"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.platform }}
+          path: ${{ env.ZIP_NAME }}
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+      # The release may already exist (created in the GitHub UI, which also pushes the
+      # tag, or by an earlier run of this workflow): then just replace its zips.
+      - run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" *.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" *.zip --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

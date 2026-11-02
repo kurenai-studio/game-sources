@@ -1,0 +1,23 @@
+# Weekly update PRs for the pinned Python packages (requirements*.txt) and the GitHub
+# Actions used in .github/workflows/. The version ranges in pyproject.toml are left alone.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # pygame-ce is the only runtime dependency; it gets its own PRs.
+      dev-tools:
+        patterns: ["pytest", "ruff"]
+      packaging:
+        patterns: ["pyinstaller", "pillow"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
