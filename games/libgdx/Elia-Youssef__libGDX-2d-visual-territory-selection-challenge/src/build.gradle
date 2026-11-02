@@ -1,0 +1,55 @@
+// Root build script. Territory Challenge is a libGDX 1.14.0 project with Gradle source
+// compatibility set to Java 8 (task requirement), lwjgl3 desktop backend only. Two modules:
+// core (game logic + geometry + render/input) and lwjgl3 (desktop launcher + runnable fat JAR).
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    version = '1.0'
+    ext {
+        appName = 'TerritoryChallenge'
+        gdxVersion = '1.14.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        // Task requirement: Gradle source compatibility set to Java 8.
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // When Gradle runs on JDK 9+, also compile against the Java 8 API surface. Source/target
+        // alone only controls bytecode and would still allow accidental calls to newer JDK APIs.
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.release = 8
+        }
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+// Source deliverable requested by the assignment. The archive contains the complete importable
+// project and wrapper, while excluding machine-local caches and generated build output.
+tasks.register('projectZip', Zip) {
+    archiveFileName = 'TerritoryChallenge.zip'
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+    into('TerritoryChallenge') {
+        from(rootDir)
+        exclude '.gradle/**', '**/.gradle/**', 'build/**', '**/build/**'
+    }
+}

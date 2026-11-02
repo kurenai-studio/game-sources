@@ -1,0 +1,9 @@
+// Core module: platform-independent game code. GameLogic is a pure state machine (geometry,
+// shoelace areas, polygon hit detection, CPU picks, scoring - no GL) so it is unit-testable
+// headlessly; GameScreen/TerritoryGame do rendering and input. The four round PNGs live in
+// the root assets/ folder.
+
+dependencies {
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+    testImplementation 'junit:junit:4.13.2'
+}
