@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Air Hockey</title>
+  <meta name="description" content="Neon air hockey in the browser: play the computer on three levels or a friend on one device. Touch, mouse and keyboard.">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Air Hockey">
+  <meta property="og:description" content="Neon air hockey in the browser: play the computer on three levels or a friend on one device.">
+  <meta property="og:url" content="https://celaldrg.github.io/air-hockey/">
+  <meta property="og:image" content="https://celaldrg.github.io/air-hockey/docs/screenshot.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Ccircle cx='32' cy='40' r='14' fill='none' stroke='%2322d3ee' stroke-width='5'/%3E%3Ccircle cx='32' cy='40' r='5' fill='%2322d3ee'/%3E%3Ccircle cx='38' cy='17' r='8' fill='%23facc15'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="title" data-i18n="title">Air Hockey</h1>
+    <div class="actions">
+      <button id="btn-new" class="btn" type="button" data-i18n="newGame">New game</button>
+      <button id="btn-pause" class="btn icon" type="button" aria-label="Pause" title="Pause">
+        <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+      </button>
+      <button id="btn-mute" class="btn icon" type="button" aria-label="Mute sound" title="Mute sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h4l5-4v13l-5-4H4z"/><path class="i-waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="i-off" d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btn-lang" class="btn icon lang" type="button" aria-label="TR: switch to Turkish" title="TR: switch to Turkish">TR</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <canvas id="table" class="table" role="img" aria-label="Air hockey table"></canvas>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+
+    <section id="setup" class="overlay" hidden aria-labelledby="setup-title">
+      <div class="card">
+        <h2 id="setup-title" data-i18n="setupTitle">New game</h2>
+        <div class="field">
+          <span class="label" data-i18n="mode">Mode</span>
+          <div class="seg" data-setting="mode">
+            <button type="button" class="btn" data-value="cpu" data-i18n="modeCpu">vs computer</button>
+            <button type="button" class="btn" data-value="pvp" data-i18n="modePvp">Two players</button>
+          </div>
+        </div>
+        <div class="field" id="level-field">
+          <span class="label" data-i18n="level">Level</span>
+          <div class="seg" data-setting="level">
+            <button type="button" class="btn" data-value="easy" data-i18n="easy">Easy</button>
+            <button type="button" class="btn" data-value="medium" data-i18n="medium">Medium</button>
+            <button type="button" class="btn" data-value="hard" data-i18n="hard">Hard</button>
+          </div>
+          <p id="record" class="muted small"></p>
+        </div>
+        <div class="field">
+          <span class="label" data-i18n="goals">Goals to win</span>
+          <div class="seg" data-setting="goalsToWin">
+            <button type="button" class="btn" data-value="5">5</button>
+            <button type="button" class="btn" data-value="7">7</button>
+            <button type="button" class="btn" data-value="10">10</button>
+          </div>
+        </div>
+        <p id="hint" class="muted small"></p>
+        <div class="row">
+          <button id="setup-back" class="btn" type="button" data-i18n="back">Back</button>
+          <button id="setup-start" class="btn primary" type="button" data-i18n="start">Start</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pause" class="overlay" hidden aria-labelledby="pause-title">
+      <div class="card">
+        <h2 id="pause-title" data-i18n="paused">Paused</h2>
+        <p class="muted small" data-i18n="pausedHint">Press P or Esc to resume</p>
+        <div class="row">
+          <button id="pause-restart" class="btn" type="button" data-i18n="restart">Restart</button>
+          <button id="pause-resume" class="btn primary" type="button" data-i18n="resume">Resume</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="over" class="overlay" hidden aria-labelledby="over-title">
+      <div class="card">
+        <div id="over-top" class="over-top" hidden aria-hidden="true">
+          <p id="over-top-title" class="over-top-title"></p>
+          <p id="over-top-score" class="score-line"></p>
+        </div>
+        <h2 id="over-title"></h2>
+        <p id="over-score" class="score-line"></p>
+        <div class="row">
+          <button id="over-new" class="btn" type="button" data-i18n="newGame">New game</button>
+          <button id="over-rematch" class="btn primary" type="button" data-i18n="rematch">Rematch</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span data-i18n="footerLicense">MIT</span> ·
+    <a href="https://github.com/celaldrg/air-hockey" data-i18n="footerSource">Source on GitHub</a>
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
