@@ -1,0 +1,140 @@
+local Class = require("src.core.class")
+
+--- @class Camera
+--- @field x number
+--- @field y number
+--- @field scale number
+--- @field isDragging boolean
+--- @field lastMouseX number
+--- @field lastMouseY number
+--- @field minScale number
+--- @field maxScale number
+--- @field mapW number?
+--- @field mapH number?
+local Camera = Class()
+
+
+--- @return Camera
+function Camera:init()
+    self.x = 0
+    self.y = 0
+    self.scale = 1
+    self.isDragging = false
+    self.lastMouseX = 0
+    self.lastMouseY = 0
+    self.minScale = 0.05
+    self.maxScale = 24.0
+end
+
+
+--- @param dt number?
+--- @return void
+function Camera:update(dt)
+    local mouseX, mouseY = love.mouse.getPosition()
+    
+    if love.mouse.isDown(2) then
+        if not self.isDragging then
+            self.isDragging = true
+            self.lastMouseX = mouseX
+            self.lastMouseY = mouseY
+        else
+            local dx = mouseX - self.lastMouseX
+            local dy = mouseY - self.lastMouseY
+            
+            self.x = self.x + dx / self.scale
+            self.y = self.y + dy / self.scale
+            
+            self.lastMouseX = mouseX
+            self.lastMouseY = mouseY
+        end
+    else
+        self.isDragging = false
+    end
+    
+    self:clamp()
+end
+
+
+--- @param factor number
+--- @param mouseX number?
+--- @param mouseY number?
+--- @return void
+function Camera:zoom(factor, mouseX, mouseY)
+    if self.mapW and self.mapH then
+        local W, H = love.graphics.getDimensions()
+        self.minScale = math.max(W / self.mapW, H / self.mapH)
+    end
+
+    local oldScale = self.scale
+    self.scale = math.max(self.minScale, math.min(self.maxScale, self.scale * factor))
+    
+    if mouseX and mouseY then
+        local worldX = mouseX - self.x * oldScale
+        local worldY = mouseY - self.y * oldScale
+        
+        self.x = (mouseX - worldX * (self.scale / oldScale)) / self.scale
+        self.y = (mouseY - worldY * (self.scale / oldScale)) / self.scale
+    end
+    
+    self:clamp()
+end
+
+
+--- @return void
+function Camera:clamp()
+    if not self.mapW or not self.mapH then return end
+    
+    local W, H = love.graphics.getDimensions()
+    
+    local minScale = math.max(W / self.mapW, H / self.mapH)
+    self.minScale = minScale
+    if self.scale < minScale then
+        self.scale = minScale
+    end
+    
+    local minX = W / self.scale - self.mapW
+    local minY = H / self.scale - self.mapH
+    
+    self.x = math.max(minX, math.min(0, self.x))
+    self.y = math.max(minY, math.min(0, self.y))
+end
+
+
+--- @param sx number
+--- @param sy number
+--- @return number, number
+function Camera:toWorld(sx, sy)
+    return sx / self.scale - self.x, sy / self.scale - self.y
+end
+
+--- @param wx number
+--- @param wy number
+--- @return number, number
+function Camera:toScreen(wx, wy)
+    return (wx + self.x) * self.scale, (wy + self.y) * self.scale
+end
+
+--- @param wx number
+--- @param wy number
+--- @return void
+function Camera:centerOn(wx, wy)
+    local W, H = love.graphics.getDimensions()
+    self.x = W / (2 * self.scale) - wx
+    self.y = H / (2 * self.scale) - wy
+    self:clamp()
+end
+
+--- @return void
+function Camera:apply()
+    love.graphics.push()
+    love.graphics.scale(self.scale, self.scale)
+    love.graphics.translate(self.x, self.y)
+end
+
+
+--- @return void
+function Camera:clear()
+    love.graphics.pop()
+end
+
+return Camera
