@@ -1,0 +1,47 @@
+namespace RogueBit.Core;
+
+/// <summary>What occupies one cell of the map.</summary>
+public enum TileKind
+{
+    Wall,
+    Floor,
+    StairsDown,
+
+    /// <summary>
+    /// The way back to the floor above. Every floor below the first has one,
+    /// where the player arrives.
+    /// </summary>
+    StairsUp,
+
+    /// <summary>
+    /// A doorway. It can be walked through and it cannot be seen through,
+    /// which makes it the one tile where the two properties disagree.
+    /// </summary>
+    Door,
+
+    /// <summary>
+    /// A trap nobody has stepped on. It is drawn as ordinary ground, because
+    /// a trap you can see is not one.
+    /// </summary>
+    TrapArmed,
+
+    /// <summary>A trap that has gone off. It is drawn, and it is spent.</summary>
+    TrapSprung,
+}
+
+/// <summary>
+/// The properties of one cell. Walkability and transparency are read from the
+/// kind, so the two can never disagree with each other.
+/// </summary>
+public static class TileRules
+{
+    /// <summary>True when an entity can stand on this tile.</summary>
+    public static bool IsWalkable(this TileKind kind) =>
+        kind is TileKind.Floor or TileKind.StairsDown or TileKind.StairsUp or TileKind.Door
+            or TileKind.TrapArmed or TileKind.TrapSprung;
+
+    /// <summary>True when light passes through this tile.</summary>
+    public static bool IsTransparent(this TileKind kind) =>
+        kind is TileKind.Floor or TileKind.StairsDown or TileKind.StairsUp
+            or TileKind.TrapArmed or TileKind.TrapSprung;
+}
