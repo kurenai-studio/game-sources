@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - '.github/workflows/deploy.yml'
+  # Manual run from the Actions tab or `gh workflow run deploy.yml`
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  ftp-deploy:
+    name: Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install LFTP
+        run: sudo apt-get install -y lftp
+
+      - name: Configure LFTP
+        run: mkdir ~/.lftp && echo "set ssl:verify-certificate false;" >> ~/.lftp/rc
+
+      - name: Load Secrets
+        run: echo "machine ${{ secrets.FTP_HOSTNAME }} login ${{ secrets.FTP_USERNAME }} password ${{ secrets.FTP_PASSWORD }}" > ~/.netrc
+
+      # One lftp session (credentials from ~/.netrc above). The site is static: Vite writes
+      # index.html plus hashed bundles in assets/. The bundles go first with `--delete`, so
+      # chunks from previous builds are removed and the new ones are in place before the new
+      # index.html that references them is uploaded, with no window where the page is broken.
+      # Only assets/ is synced with `--delete`: nothing else on the hosting is touched.
+      - name: Upload site
+        run: |
+          lftp ${{ secrets.FTP_HOSTNAME }} <<'EOF'
+          set cmd:fail-exit yes
+          mirror -R --delete --parallel=10 assets /assets
+          put -O / index.html
+          put -O / .htaccess
+          bye
+          EOF
+        working-directory: dist

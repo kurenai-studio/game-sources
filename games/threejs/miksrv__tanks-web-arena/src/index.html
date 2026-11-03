@@ -1,0 +1,1299 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Стальной фронт</title>
+		<style>
+			:root {
+				--ink: #ece6d2;
+				--dim: #a9a494;
+				--khaki: #d8c27a;
+				--khaki-dim: rgba(216, 194, 122, 0.35);
+				--panel: rgba(14, 18, 16, 0.74);
+				--line: rgba(236, 230, 210, 0.16);
+				--ok: #8fd36b;
+				--warn: #e0a04a;
+				--bad: #ff5a5a;
+				--red: #e04b3f;
+				--blue: #5aa0e0;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				overflow: hidden;
+				background: #1a2026;
+				font-family:
+					'Avenir Next Condensed', 'Arial Narrow', 'Roboto Condensed', 'Helvetica Neue', Arial, sans-serif;
+			}
+			canvas {
+				display: block;
+			}
+			#hud {
+				position: fixed;
+				inset: 0;
+				pointer-events: none;
+				color: var(--ink);
+				text-shadow: 0 1px 1px #000;
+				user-select: none;
+				font-size: 14px;
+			}
+			.panel {
+				position: absolute;
+				background: var(--panel);
+				border: 1px solid var(--line);
+				padding: 8px 12px;
+				font-size: 13px;
+				line-height: 1.45;
+				clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+			}
+			.cap {
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--dim);
+			}
+			/* top: teams and the clock */
+			#top {
+				left: 50%;
+				top: 10px;
+				transform: translateX(-50%);
+				display: flex;
+				gap: 16px;
+				align-items: center;
+				padding: 6px 16px;
+				border-top: 2px solid var(--khaki);
+			}
+			#top .team {
+				display: flex;
+				gap: 3px;
+			}
+			#top .pip {
+				width: 11px;
+				height: 14px;
+				transform: skewX(-14deg);
+				opacity: 0.95;
+			}
+			#top .pip.dead {
+				background: #3a3a38 !important;
+				opacity: 0.55;
+			}
+			#top .ussr .pip {
+				background: var(--red);
+			}
+			#top .germany .pip {
+				background: var(--blue);
+			}
+			#timer {
+				min-width: 58px;
+				text-align: center;
+				font-weight: bold;
+				font-size: 18px;
+				letter-spacing: 0.05em;
+				color: var(--khaki);
+			}
+			/* base capture bars under the clock */
+			#capture {
+				position: absolute;
+				left: 50%;
+				top: 52px;
+				transform: translateX(-50%);
+				display: flex;
+				flex-direction: column;
+				gap: 3px;
+				align-items: center;
+			}
+			.cap-bar {
+				width: 260px;
+				padding: 2px 8px 4px;
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				text-align: center;
+				background: var(--panel);
+			}
+			.cap-bar .track {
+				height: 5px;
+				margin-top: 2px;
+				background: rgba(0, 0, 0, 0.55);
+			}
+			.cap-bar .fill {
+				height: 100%;
+			}
+			.cap-bar.ours .fill {
+				background: var(--ok);
+			}
+			.cap-bar.theirs .fill {
+				background: var(--bad);
+			}
+			.cap-bar.frozen {
+				opacity: 0.65;
+			}
+			/* status */
+			#status {
+				left: 14px;
+				bottom: 14px;
+				min-width: 280px;
+				border-left: 3px solid var(--khaki);
+			}
+			#tankName {
+				font-size: 17px;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+			#tankRole {
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--dim);
+				margin-left: 4px;
+			}
+			#hpText {
+				float: right;
+				font-weight: bold;
+			}
+			#status .bar {
+				height: 9px;
+				background: rgba(0, 0, 0, 0.55);
+				margin: 4px 0 7px;
+				border: 1px solid var(--line);
+			}
+			#status .bar > div {
+				height: 100%;
+				width: 100%;
+				background: var(--ok);
+				transition: width 0.1s;
+			}
+			#modules span,
+			#crew span {
+				display: inline-block;
+				margin-right: 10px;
+				font-size: 11px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--dim);
+			}
+			#crew {
+				margin: -2px 0 5px;
+			}
+			#crew span {
+				margin-right: 8px;
+				font-size: 10px;
+			}
+			#crew span.bad {
+				color: var(--bad);
+			}
+			#modules span::before {
+				content: '';
+				display: inline-block;
+				width: 7px;
+				height: 7px;
+				margin-right: 5px;
+				background: #4a4a46;
+				vertical-align: 1px;
+			}
+			#modules span.bad {
+				color: var(--warn);
+			}
+			#modules span.bad::before {
+				background: var(--warn);
+			}
+			#consum span {
+				display: inline-block;
+				margin-right: 8px;
+				padding: 1px 8px;
+				border: 1px solid var(--khaki-dim);
+				font-size: 12px;
+			}
+			#consum span.used {
+				opacity: 0.35;
+				text-decoration: line-through;
+			}
+			#consum kbd {
+				color: var(--khaki);
+			}
+			#speedText {
+				font-size: 11px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--dim);
+				margin-top: 3px;
+			}
+			/* team signal wheel (Q) */
+			#radial {
+				display: none;
+				position: fixed;
+				left: 50%;
+				top: 50%;
+				width: 0;
+				height: 0;
+				pointer-events: none;
+				z-index: 6;
+			}
+			#radial::before {
+				content: 'отпустите Q';
+				position: absolute;
+				left: -45px;
+				top: -45px;
+				width: 90px;
+				height: 90px;
+				border: 1px solid var(--line);
+				border-radius: 50%;
+				background: rgba(20, 22, 16, 0.55);
+				color: var(--dim);
+				font-size: 10px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				line-height: 90px;
+				text-align: center;
+			}
+			#radial .opt {
+				position: absolute;
+				left: -75px;
+				top: -16px;
+				width: 150px;
+				padding: 6px 0;
+				text-align: center;
+				font-size: 13px;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				color: var(--dim);
+				background: rgba(20, 22, 16, 0.8);
+				border: 1px solid var(--line);
+			}
+			#radial .opt kbd {
+				margin-left: 6px;
+				color: var(--khaki);
+				font-size: 11px;
+			}
+			#radial .opt.on {
+				color: #16190f;
+				background: var(--khaki);
+				border-color: var(--khaki);
+				font-weight: bold;
+			}
+			#radial .opt.on kbd {
+				color: #16190f;
+			}
+			#radial .pointer {
+				position: absolute;
+				left: -4px;
+				top: -4px;
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: var(--khaki);
+			}
+			/* ammo */
+			#ammoRow {
+				left: 50%;
+				bottom: 14px;
+				transform: translateX(-50%);
+				padding: 6px 8px;
+			}
+			.chip {
+				display: inline-block;
+				font-size: 13px;
+				padding: 3px 10px;
+				margin: 0 2px;
+				border: 1px solid var(--line);
+				color: var(--dim);
+			}
+			.chip.on {
+				color: #16190f;
+				background: var(--khaki);
+				border-color: var(--khaki);
+				font-weight: bold;
+			}
+			.chip.empty {
+				color: var(--bad);
+				border-color: var(--bad);
+			}
+			.chip.on.empty {
+				color: #16190f;
+				background: var(--bad);
+			}
+			#resupply {
+				display: none;
+				margin-top: 4px;
+				font-size: 11px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				text-align: center;
+				color: var(--dim);
+			}
+			#resupply.low {
+				color: var(--warn);
+			}
+			#resupply.on {
+				color: var(--ok);
+			}
+			/* battle ribbons */
+			#ribbons {
+				position: absolute;
+				left: 50%;
+				bottom: 58px;
+				transform: translateX(-50%);
+				display: flex;
+				gap: 4px;
+				white-space: nowrap;
+			}
+			.ribbon {
+				padding: 2px 9px 2px 7px;
+				font-size: 11px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				background: var(--panel);
+				border-left: 2px solid var(--khaki);
+				clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+			}
+			.ribbon b {
+				margin-right: 4px;
+				color: var(--khaki);
+			}
+			.ribbon b:empty {
+				margin: 0;
+			}
+			.ribbon.new {
+				animation: ribbon 0.6s ease-out;
+				background: rgba(216, 194, 122, 0.35);
+			}
+			@keyframes ribbon {
+				from {
+					transform: translateY(-10px) scale(1.15);
+				}
+				to {
+					transform: none;
+				}
+			}
+			/* reticle */
+			#ring {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 1400px;
+				height: 1400px;
+				transform: translate(-50%, -50%) rotate(-90deg);
+				display: none;
+			}
+			#ring circle {
+				fill: none;
+				stroke-width: 3.5;
+			}
+			#ring .track {
+				stroke: rgba(0, 0, 0, 0.45);
+			}
+			#ring .arc {
+				stroke: var(--warn);
+				stroke-linecap: round;
+			}
+			#ring.ready .arc {
+				stroke: var(--ok);
+			}
+			#cross {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 40px;
+				height: 40px;
+				border: 2px solid rgba(255, 255, 255, 0.85);
+				border-radius: 50%;
+				transform: translate(-50%, -50%);
+				box-shadow:
+					0 0 2px #000 inset,
+					0 0 2px #000;
+				transition: border-color 0.15s;
+			}
+			/* the circle shows convergence; the dot and the readout show the armour under it */
+			#cross.green {
+				border-color: #7fe07f;
+			}
+			#cross.yellow {
+				border-color: #f2d65a;
+			}
+			#cross.red {
+				border-color: #ff6a5a;
+			}
+			#dot.green,
+			#dot.orange,
+			#dot.red {
+				width: 6px;
+				height: 6px;
+				margin: -3px;
+				box-shadow: 0 0 2px #000;
+			}
+			#dot.green {
+				background: #7fe07f;
+			}
+			#dot.orange {
+				background: #f0b040;
+			}
+			#dot.red {
+				background: #ff5a5a;
+			}
+			#aimInfo.green {
+				color: #7fe07f;
+			}
+			#aimInfo.orange {
+				color: #f0b040;
+			}
+			#aimInfo.red {
+				color: #ff5a5a;
+			}
+			#dot {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 4px;
+				height: 4px;
+				margin: -2px;
+				background: #fff;
+				border-radius: 50%;
+			}
+			#gunDot {
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 14px;
+				height: 14px;
+				margin: -7px;
+				border: 1.5px solid rgba(255, 220, 150, 0.9);
+				border-radius: 50%;
+				box-shadow:
+					0 0 2px #000,
+					0 0 2px #000 inset;
+				display: none;
+				will-change: transform;
+			}
+			#gunDot::after {
+				content: '';
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 3px;
+				height: 3px;
+				margin: -1.5px;
+				background: rgba(255, 220, 150, 0.95);
+				border-radius: 50%;
+			}
+			#freeLook {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translate(-50%, 44px);
+				display: none;
+				padding: 1px 8px;
+				font-size: 11px;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: var(--khaki);
+				background: var(--panel);
+				border-bottom: 1px solid var(--khaki-dim);
+			}
+			/* sixth sense: the enemy has just spotted the player */
+			#sixth {
+				position: absolute;
+				left: calc(50% - 200px);
+				top: 14px;
+				transform: translateX(-50%);
+				display: none;
+				width: 30px;
+				height: 30px;
+				border: 2px solid #1a1a1a;
+				border-radius: 50%;
+				background: var(--warn);
+				color: #1a1a1a;
+				font-size: 20px;
+				font-weight: bold;
+				line-height: 30px;
+				text-align: center;
+				text-shadow: none;
+			}
+			/* the player's plane: flight readout and the course cross */
+			#planeHud {
+				left: 50%;
+				bottom: 64px;
+				transform: translateX(-50%);
+				display: none;
+				font-size: 13px;
+				text-align: center;
+				border-top: 3px solid var(--khaki);
+			}
+			#planeHud b {
+				margin-right: 8px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+			#planeHud .bombs {
+				color: var(--khaki);
+				letter-spacing: 0.15em;
+			}
+			#planeCross {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 22px;
+				height: 22px;
+				transform: translate(-50%, -50%);
+				display: none;
+				background:
+					linear-gradient(#f4f1e8, #f4f1e8) center / 2px 100% no-repeat,
+					linear-gradient(#f4f1e8, #f4f1e8) center / 100% 2px no-repeat;
+				opacity: 0.85;
+			}
+			#aimInfo {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translate(28px, 22px);
+				font-size: 12px;
+				white-space: nowrap;
+				letter-spacing: 0.03em;
+			}
+			#hitdir {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				width: 0;
+				height: 0;
+			}
+			#hitdir .arrow {
+				position: absolute;
+				left: -12px;
+				top: -120px;
+				width: 24px;
+				height: 14px;
+				background: rgba(255, 60, 40, 0.85);
+				clip-path: polygon(50% 0, 100% 100%, 0 100%);
+				transform-origin: 12px 120px;
+				opacity: 0;
+				transition: opacity 0.4s;
+			}
+			/* feed and log */
+			#feed {
+				position: absolute;
+				right: 14px;
+				top: 12px;
+				font-size: 13px;
+				text-align: right;
+			}
+			.feed {
+				margin: 3px 0;
+				padding: 2px 8px;
+				background: var(--panel);
+				border-right: 2px solid var(--khaki-dim);
+				transition: opacity 0.3s;
+			}
+			.feed b {
+				color: var(--khaki);
+			}
+			#log {
+				position: absolute;
+				left: 50%;
+				top: 112px;
+				transform: translateX(-50%);
+				font-size: 15px;
+				text-align: center;
+				letter-spacing: 0.03em;
+			}
+			.log {
+				margin: 2px 0;
+				font-weight: bold;
+				text-transform: uppercase;
+				font-size: 13px;
+				letter-spacing: 0.06em;
+			}
+			/* minimap with corner brackets */
+			#mapWrap {
+				position: absolute;
+				right: 14px;
+				bottom: 14px;
+				padding: 5px;
+				clip-path: none;
+			}
+			#mapWrap::before,
+			#mapWrap::after {
+				content: '';
+				position: absolute;
+				width: 14px;
+				height: 14px;
+				border: 2px solid var(--khaki);
+			}
+			#mapWrap::before {
+				left: -1px;
+				top: -1px;
+				border-right: 0;
+				border-bottom: 0;
+			}
+			#mapWrap::after {
+				right: -1px;
+				bottom: -1px;
+				border-left: 0;
+				border-top: 0;
+			}
+			#minimap {
+				width: 220px;
+				height: 220px;
+				display: block;
+				image-rendering: pixelated;
+			}
+			/* centre messages */
+			#center {
+				left: 50%;
+				top: 38%;
+				transform: translate(-50%, -50%);
+				font-size: 34px;
+				text-align: center;
+				display: none;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				padding: 10px 28px;
+				border-top: 2px solid var(--khaki);
+			}
+			#center small {
+				display: block;
+				font-size: 13px;
+				letter-spacing: 0.1em;
+				color: var(--dim);
+				margin-top: 4px;
+			}
+			#hint {
+				position: absolute;
+				left: 50%;
+				top: 58%;
+				transform: translateX(-50%);
+				font-size: 14px;
+				display: none;
+				text-align: center;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--khaki);
+			}
+			#help {
+				left: 14px;
+				top: 34px;
+				font-size: 12px;
+				opacity: 0.95;
+				max-width: 340px;
+				display: none;
+			}
+			#help kbd {
+				color: var(--khaki);
+			}
+			#scores {
+				left: 50%;
+				top: 24%;
+				transform: translateX(-50%);
+				display: none;
+				min-width: 580px;
+			}
+			#scores table {
+				border-collapse: collapse;
+				width: 100%;
+			}
+			#scores td,
+			#scores th {
+				padding: 3px 10px;
+				text-align: left;
+			}
+			#scores th {
+				font-weight: normal;
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--dim);
+				border-bottom: 1px solid var(--khaki-dim);
+			}
+			#scores tr:nth-child(even) td {
+				background: rgba(255, 255, 255, 0.03);
+			}
+			#scores tr.me td {
+				color: var(--ok);
+				font-weight: bold;
+			}
+			#scores tr.dead td {
+				opacity: 0.5;
+			}
+			#scores .ussr {
+				color: #ff8a80;
+			}
+			#scores .germany {
+				color: #9ccbff;
+			}
+			/* garage */
+			#garage {
+				position: absolute;
+				inset: 0;
+				background: rgba(10, 13, 11, 0.9);
+				display: none;
+				pointer-events: auto;
+				overflow: auto;
+			}
+			#report {
+				display: none;
+				margin: 10px 0;
+				padding: 6px 10px;
+				border: 1px solid var(--line);
+				font-size: 12px;
+			}
+			#report summary {
+				cursor: pointer;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--khaki);
+			}
+			#report .totals {
+				margin: 6px 0;
+			}
+			#report h3 {
+				margin: 8px 0 3px;
+				font-size: 12px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--dim);
+			}
+			#report table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			#report th,
+			#report td {
+				padding: 2px 6px;
+				text-align: left;
+				border-bottom: 1px solid var(--line);
+			}
+			#report th {
+				font-weight: normal;
+				color: var(--dim);
+			}
+			#report td small {
+				color: var(--dim);
+			}
+			#report tr.kill td {
+				color: var(--ok);
+			}
+			#report tr.killer td {
+				color: var(--bad);
+			}
+			#report .none {
+				color: var(--dim);
+			}
+			#garage .inner {
+				max-width: 1400px;
+				margin: 28px auto;
+				padding: 0 20px;
+			}
+			#garage h1 {
+				margin: 0 0 4px;
+				font-size: 34px;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				color: var(--khaki);
+			}
+			#garage h1 small {
+				display: block;
+				font-size: 12px;
+				letter-spacing: 0.14em;
+				color: var(--dim);
+				font-weight: normal;
+				margin-top: 2px;
+			}
+			#garage .nations {
+				margin: 18px 0 14px;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			#garage .nation {
+				--accent: var(--khaki);
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				min-width: 190px;
+				padding: 9px 22px 9px 16px;
+				font-family: inherit;
+				font-size: 17px;
+				font-weight: bold;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				text-align: left;
+				color: var(--dim);
+				background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+				border: 1px solid var(--line);
+				border-bottom: 3px solid transparent;
+				cursor: pointer;
+				clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+				transition:
+					background 0.15s,
+					color 0.15s,
+					border-color 0.15s;
+			}
+			#garage .nation.ussr {
+				--accent: var(--red);
+			}
+			#garage .nation.germany {
+				--accent: #9fb3c4;
+			}
+			#garage .nation:hover {
+				color: var(--ink);
+				background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+			}
+			#garage .nation.on {
+				color: var(--ink);
+				border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+				border-bottom-color: var(--accent);
+				background: linear-gradient(
+					180deg,
+					color-mix(in srgb, var(--accent) 8%, transparent),
+					color-mix(in srgb, var(--accent) 26%, transparent)
+				);
+			}
+			#garage .nation small {
+				display: block;
+				margin-top: 1px;
+				font-size: 10px;
+				font-weight: normal;
+				letter-spacing: 0.14em;
+				color: var(--dim);
+			}
+			#garage .emblem {
+				width: 30px;
+				height: 30px;
+				flex: none;
+				fill: var(--accent);
+				opacity: 0.45;
+				transition: opacity 0.15s;
+			}
+			#garage .germany .emblem {
+				fill: #111;
+			}
+			#garage .germany .emblem .rim {
+				fill: #e8e8e8;
+			}
+			#garage .nation:hover .emblem,
+			#garage .nation.on .emblem {
+				opacity: 1;
+			}
+			#garage .battleopts {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px 28px;
+				margin: 0 0 12px;
+			}
+			#garage .optrow {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 4px;
+			}
+			#garage .optrow .cap {
+				margin-right: 6px;
+			}
+			#garage .opt {
+				padding: 4px 11px;
+				font-family: inherit;
+				font-size: 12px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--dim);
+				background: rgba(255, 255, 255, 0.03);
+				border: 1px solid var(--line);
+				cursor: pointer;
+			}
+			#garage .opt:hover {
+				color: var(--ink);
+				background: rgba(255, 255, 255, 0.08);
+			}
+			#garage .opt.on {
+				color: #16190f;
+				background: var(--khaki);
+				border-color: var(--khaki);
+				font-weight: bold;
+			}
+			#garage .carousel {
+				display: flex;
+				align-items: stretch;
+				gap: 8px;
+			}
+			#garage .arrow {
+				flex: none;
+				width: 40px;
+				font-size: 38px;
+				line-height: 1;
+				font-family: inherit;
+				color: var(--khaki);
+				background: rgba(255, 255, 255, 0.03);
+				border: 1px solid var(--line);
+				cursor: pointer;
+			}
+			#garage .arrow:hover:not(:disabled) {
+				background: rgba(216, 194, 122, 0.14);
+			}
+			#garage .arrow:disabled {
+				opacity: 0.25;
+				cursor: default;
+			}
+			#garage .tanks {
+				flex: 1;
+				display: flex;
+				gap: 12px;
+				overflow-x: auto;
+				scroll-snap-type: x proximity;
+				scrollbar-width: none;
+				padding: 2px 0;
+			}
+			#garage .tanks::-webkit-scrollbar {
+				display: none;
+			}
+			#garage .tank {
+				flex: none;
+				width: 300px;
+				scroll-snap-align: center;
+				border: 1px solid var(--line);
+				padding: 10px 14px 10px;
+				cursor: pointer;
+				background: rgba(255, 255, 255, 0.03);
+				border-left: 3px solid transparent;
+			}
+			#garage .tank:hover {
+				background: rgba(255, 255, 255, 0.07);
+			}
+			#garage .tank.on {
+				border-color: var(--khaki-dim);
+				border-left-color: var(--khaki);
+				background: rgba(216, 194, 122, 0.1);
+			}
+			#garage .tank .model {
+				display: block;
+				width: 100%;
+				height: 190px;
+				margin-bottom: 8px;
+				background: radial-gradient(ellipse at 50% 70%, rgba(216, 194, 122, 0.1), transparent 70%);
+			}
+			#garage .tank b {
+				font-size: 18px;
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+			}
+			#garage .tank .role {
+				float: right;
+				font-size: 10px;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: var(--khaki);
+				border: 1px solid var(--khaki-dim);
+				padding: 1px 6px;
+			}
+			#garage .stat {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 11px;
+				margin-top: 5px;
+			}
+			#garage .stat span {
+				width: 62px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--dim);
+			}
+			#garage .stat .sbar {
+				flex: 1;
+				height: 5px;
+				background: rgba(0, 0, 0, 0.5);
+			}
+			#garage .stat .sbar > div {
+				height: 100%;
+				background: var(--khaki);
+			}
+			#garage .stat b {
+				width: 34px;
+				text-align: right;
+				font-size: 12px;
+			}
+			#garage .tank small {
+				display: block;
+				margin-top: 6px;
+				font-size: 11px;
+				line-height: 1.45;
+				color: var(--dim);
+			}
+			#garage .go {
+				margin-left: auto;
+				padding: 8px 40px;
+				font-size: 20px;
+				letter-spacing: 0.16em;
+				text-transform: uppercase;
+				background: var(--khaki);
+				color: #16190f;
+				border: 0;
+				cursor: pointer;
+				font-weight: bold;
+				font-family: inherit;
+				clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+			}
+			#garage .go:hover {
+				background: #e9d58f;
+			}
+			#garage .controls {
+				margin-top: 18px;
+				padding-top: 12px;
+				border-top: 1px solid var(--line);
+				font-size: 12px;
+				color: var(--dim);
+				line-height: 1.8;
+			}
+			#garage .controls .key {
+				display: inline-block;
+				white-space: nowrap;
+				margin-right: 22px;
+			}
+			#garage .controls kbd {
+				color: var(--khaki);
+				font-family: inherit;
+				font-weight: bold;
+			}
+			#garage .controls small {
+				display: block;
+				margin-top: 4px;
+				font-size: 11px;
+				opacity: 0.8;
+			}
+			@media (max-height: 800px) {
+				#garage .inner {
+					margin: 16px auto;
+				}
+				#garage .nations {
+					margin: 12px 0 10px;
+				}
+				#garage .tank .model {
+					height: 150px;
+				}
+				#garage .controls {
+					margin-top: 12px;
+					padding-top: 8px;
+				}
+			}
+			#result {
+				left: 50%;
+				top: 30%;
+				transform: translate(-50%, -50%);
+				font-size: 34px;
+				text-align: center;
+				display: none;
+				min-width: 380px;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				padding: 14px 30px;
+				border-top: 2px solid var(--khaki);
+			}
+			#result small {
+				font-size: 13px;
+				display: block;
+				margin-top: 8px;
+				letter-spacing: 0.08em;
+				color: var(--dim);
+			}
+			#result .medals {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				gap: 6px;
+				margin: 10px 0 2px;
+				text-transform: none;
+				letter-spacing: 0.02em;
+			}
+			.medal {
+				min-width: 120px;
+				padding: 5px 10px;
+				font-size: 11px;
+				color: var(--dim);
+				border: 1px solid var(--khaki-dim);
+				border-top: 2px solid var(--khaki);
+				background: rgba(216, 194, 122, 0.08);
+			}
+			.medal b {
+				display: block;
+				font-size: 13px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--khaki);
+			}
+			#fps {
+				position: absolute;
+				left: 14px;
+				top: 12px;
+				font-size: 11px;
+				opacity: 0.85;
+				display: none;
+				font-family: Menlo, Consolas, monospace;
+				letter-spacing: 0;
+			}
+			#hit {
+				position: fixed;
+				inset: 0;
+				background: rgba(255, 40, 20, 0);
+				transition: background 0.2s;
+			}
+			#vignette {
+				position: fixed;
+				inset: 0;
+				display: none;
+				border: 60px solid rgba(0, 0, 0, 0.55);
+				box-sizing: border-box;
+			}
+			.popup {
+				position: absolute;
+				left: 0;
+				top: 0;
+				font-size: 15px;
+				font-weight: bold;
+				white-space: nowrap;
+				text-shadow: 0 1px 2px #000;
+				will-change: transform;
+			}
+			.label {
+				position: absolute;
+				left: 0;
+				top: 0;
+				font-size: 11px;
+				white-space: nowrap;
+				text-align: center;
+				will-change: transform;
+				letter-spacing: 0.03em;
+			}
+			.label .lbar {
+				width: 46px;
+				height: 4px;
+				background: rgba(0, 0, 0, 0.6);
+				margin: 2px auto 0;
+			}
+			.label .lbar > div {
+				height: 100%;
+			}
+			kbd {
+				font-family: inherit;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="hud">
+			<div id="hit"></div>
+			<div id="vignette"></div>
+			<div id="top" class="panel">
+				<div class="team ussr" id="teamA"></div>
+				<div id="timer">8:00</div>
+				<div class="team germany" id="teamB"></div>
+			</div>
+			<div id="capture"></div>
+			<div id="log"></div>
+			<div id="feed"></div>
+			<svg id="ring" viewBox="-700 -700 1400 1400">
+				<circle class="track" r="40"></circle>
+				<circle class="arc" r="40"></circle>
+			</svg>
+			<div id="cross"></div>
+			<div id="dot"></div>
+			<div id="gunDot"></div>
+			<div id="aimInfo"></div>
+			<div id="freeLook">обзор · наводка удерживается</div>
+			<div id="sixth" title="Вас обнаружили">!</div>
+			<div id="planeCross"></div>
+			<div id="planeHud" class="panel"></div>
+			<div id="hitdir"></div>
+			<div id="radial"></div>
+			<div id="status" class="panel">
+				<div><b id="tankName"></b><span id="tankRole"></span><span id="hpText"></span></div>
+				<div class="bar"><div id="hpBar"></div></div>
+				<div id="modules">
+					<span id="mTrack">гусеница</span><span id="mEngine">двигатель</span><span id="mFire">пожар</span
+					><span id="mGun">орудие</span><span id="mRing">погон</span><span id="mRack">боеукладка</span
+					><span id="mSpot">вас видят</span>
+				</div>
+				<div id="crew">
+					<span data-crew="commander">командир</span><span data-crew="gunner">наводчик</span
+					><span data-crew="driver">мехвод</span><span data-crew="loader">заряжающий</span>
+				</div>
+				<div id="consum">
+					<span id="cRepair"><kbd>R</kbd> ремкомплект</span><span id="cMed"><kbd>E</kbd> аптечка</span
+					><span id="cExt"><kbd>F</kbd> огнетушитель</span>
+				</div>
+				<div id="speedText" style="opacity: 0.75"></div>
+			</div>
+			<div id="ribbons"></div>
+			<div id="ammoRow" class="panel">
+				<div id="ammo"></div>
+				<div id="resupply"></div>
+			</div>
+			<div id="mapWrap" class="panel"><canvas id="minimap"></canvas></div>
+			<div id="center" class="panel"></div>
+			<div id="hint"></div>
+			<div id="help" class="panel">
+				<kbd>W / S</kbd> — газ / назад · <kbd>A / D</kbd> — поворот корпуса<br />
+				<kbd>Мышь</kbd> — прицел (башня идёт за камерой) · <kbd>ЛКМ</kbd> — огонь<br />
+				<kbd>ПКМ</kbd> (удерживать) — осмотреться, не сбивая наводку<br />
+				<kbd>Shift</kbd> или колесо до упора — снайперский / артиллерийский режим · <kbd>Колесо</kbd> — зум /
+				высота<br />
+				<kbd>1 / 2 / 3</kbd> — ББ / подкалиберный / фугас<br />
+				<kbd>R</kbd> — ремкомплект (гусеница, двигатель, погон, орудие) · <kbd>E</kbd> — аптечка (экипаж) ·
+				<kbd>F</kbd> — огнетушитель<br />
+				<kbd>V</kbd> — самолёт: мышь — курс, <kbd>W / S</kbd> — газ, <kbd>ЛКМ</kbd> / <kbd>Пробел</kbd> — бомба,
+				<kbd>V</kbd> — назад в танк<br />
+				<kbd>Q</kbd> (удерживать) — меню команд: мышью выбрать, отпустить <kbd>Q</kbd> — отправить<br />
+				<kbd>T</kbd> — «Атакую!» (цель под прицелом или точка) · <kbd>G</kbd> — «Нужна помощь!» · <kbd>B</kbd> —
+				«Защищайте базу!»<br />
+				<kbd>Tab</kbd> — таблица · <kbd>H</kbd> — подсказка · <kbd>M</kbd> — звук · <kbd>P</kbd> — fps<br />
+				<kbd>Пробел</kbd> — (после гибели) следующий союзник · <kbd>Esc</kbd> — пауза<br />
+				<small
+					>Жёлтый кружок — куда смотрит орудие прямо сейчас (башня догоняет прицел). Цвет прицела: зелёный —
+					пробьёт, оранжевый — как повезёт, красный — не пробить. Бейте в борт и корму, прячьтесь в кустах, за
+					домами и в складках местности.</small
+				>
+			</div>
+			<div id="scores" class="panel"></div>
+			<div id="result" class="panel"></div>
+			<div id="fps"></div>
+			<div id="labels"></div>
+			<div id="garage">
+				<div class="inner">
+					<h1>Стальной фронт <small>командный бой 7 × 7 · СССР против Германии · 1943</small></h1>
+					<div class="nations">
+						<button class="nation ussr on" data-n="ussr">
+							<svg class="emblem" viewBox="-12 -12 24 24" aria-hidden="true">
+								<path
+									d="M0,-11 L2.59,-3.56 L10.46,-3.4 L4.18,1.36 L6.47,8.9 L0,4.4 L-6.47,8.9 L-4.18,1.36 L-10.46,-3.4 L-2.59,-3.56 Z"
+								/>
+							</svg>
+							<span>СССР<small data-count="ussr"></small></span>
+						</button>
+						<button class="nation germany" data-n="germany">
+							<svg class="emblem" viewBox="-12 -12 24 24" aria-hidden="true">
+								<path class="rim" d="M-3,-11 H3 V-3 H11 V3 H3 V11 H-3 V3 H-11 V-3 H-3 Z" />
+								<path d="M-1.6,-9.4 H1.6 V-1.6 H9.4 V1.6 H1.6 V9.4 H-1.6 V1.6 H-9.4 V-1.6 H-1.6 Z" />
+							</svg>
+							<span>Германия<small data-count="germany"></small></span>
+						</button>
+						<button class="go" id="goBtn">В БОЙ</button>
+					</div>
+					<div class="battleopts">
+						<div class="optrow"><span class="cap">Карта</span><span id="mapChoice"></span></div>
+						<div class="optrow"><span class="cap">Режим</span><span id="modeChoice"></span></div>
+					</div>
+					<div class="carousel">
+						<button class="arrow" id="carPrev" aria-label="Назад">&#8249;</button>
+						<div class="tanks" id="tankList"></div>
+						<button class="arrow" id="carNext" aria-label="Вперёд">&#8250;</button>
+					</div>
+					<details id="report">
+						<summary>Разбор последнего боя</summary>
+						<div id="reportBody"></div>
+					</details>
+					<div class="controls" id="garageHelp"></div>
+				</div>
+			</div>
+		</div>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
