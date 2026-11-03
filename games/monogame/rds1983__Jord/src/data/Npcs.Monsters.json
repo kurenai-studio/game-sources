@@ -1,0 +1,105 @@
+{
+	"CreatureInfos": {
+		"SewersRat": {
+			"Name": "a sewer rat",
+			"Image": "CreatureRat",
+			"Type": "Enemy",
+			"Experience": 300,
+			"Attacks": [
+				{
+					"AttackType": "Claw",
+					"MinDamage": 5,
+					"MaxDamage": 10
+				}
+			],
+			"Evasion": 15,
+			"MaxHp": 50,
+			"MinimumLevel": 1,
+			"Loot": [
+				{
+					"Id": "RatTail",
+					"Rate": 60
+				}
+			],
+			"Symbol": "r",
+			"Color": "Gray"
+		},
+		"SewersLeech": {
+			"Name": "a sewer leech",
+			"Image": "CreatureLeech",
+			"Type": "Enemy",
+			"Experience": 250,
+			"Attacks": [
+				{
+					"AttackType": "Bite",
+					"MinDamage": 4,
+					"MaxDamage": 8
+				}
+			],
+			"Evasion": 15,
+			"MaxHp": 40,
+			"MinimumLevel": 1,
+			"Symbol": "l",
+			"Color": "Gray"
+		},
+		"SewersSnake": {
+			"Name": "a sewer snake",
+			"Image": "CreatureSnake",
+			"Type": "Enemy",
+			"Experience": 450,
+			"Attacks": [
+				{
+					"AttackType": "Bite",
+					"MinDamage": 4,
+					"MaxDamage": 8
+				},
+				{
+					"AttackType": "Bite",
+					"MinDamage": 4,
+					"MaxDamage": 8
+				}
+			],
+			"Evasion": 20,
+			"MaxHp": 60,
+			"MinimumLevel": 2,
+			"Symbol": "s",
+			"Color": "Gray"
+		},
+		"HugeBlackDragon": {
+			"Name": "Ancient Black Dragon",
+			"Type": "Enemy",
+			"Experience": 5000000,
+			"Gold": 120000,
+			"Attacks": [
+				{
+					"AttackType": "Claw",
+					"MinDamage": 50,
+					"MaxDamage": 120
+				},
+				{
+					"AttackType": "Claw",
+					"MinDamage": 50,
+					"MaxDamage": 120
+				},
+				{
+					"AttackType": "Bite",
+					"MinDamage": 80,
+					"MaxDamage": 150
+				},
+				{
+					"AttackType": "Smash",
+					"MinDamage": 70,
+					"MaxDamage": 140
+				}
+			],
+			"Melee": 100,
+			"Armor": 100,
+			"Evasion": 0,
+			"Blocking": 50,
+			"MaxHp": 20000,
+			"MinimumLevel": 15,
+			"Symbol": "D",
+			"Color": "Gray"
+		}
+	}
+}
