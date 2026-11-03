@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拾光者 · CORE RUNNER | 马雪容</title>
+  <meta name="description" content="互动编程作业二：用 Three.js 制作的 3D 收集小游戏。">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <!-- 顶部 HUD：分数 / 时间 / 生命 -->
+  <header id="hud" class="hud hidden">
+    <div class="hud-item">
+      <span class="hud-label">能量核心</span>
+      <span class="hud-value"><b id="hud-score">0</b> / 12</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">剩余时间</span>
+      <span class="hud-value"><b id="hud-time">60</b> s</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">护盾</span>
+      <span class="hud-value" id="hud-lives">◆◆◆</span>
+    </div>
+  </header>
+
+  <p id="hud-tip" class="hud-tip hidden">WASD / 方向键 移动　·　鼠标拖拽旋转视角　·　滚轮缩放</p>
+
+  <!-- 开始 / 结算面板 -->
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <p class="panel-eyebrow">Interaction Programming · Assignment 02</p>
+      <h1 class="panel-title" id="panel-title">拾光者</h1>
+      <p class="panel-sub" id="panel-sub">CORE RUNNER</p>
+      <p class="panel-text" id="panel-text">
+        你是一颗小小的光。平台上有 <b>12 枚能量核心</b>，<br>
+        在 <b>60 秒</b>内把它们全部收齐。<br>
+        小心红色巡逻者——每次碰撞会消耗一格护盾，<br>
+        护盾耗尽任务失败。
+      </p>
+      <button id="panel-btn" class="panel-btn">开始游戏</button>
+      <p class="panel-hint" id="panel-hint">也可以按空格键开始</p>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← 返回作品索引</a>
+
+  <!-- three.js（UMD 版，离线可用，双击本页即可运行） -->
+  <script src="lib/three.min.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/cores.js"></script>
+  <script src="js/hazards.js"></script>
+  <script src="js/camera-rig.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
