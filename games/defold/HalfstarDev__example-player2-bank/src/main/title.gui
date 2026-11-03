@@ -1,0 +1,208 @@
+script: "/main/title.gui_script"
+fonts {
+  name: "font"
+  font: "/assets/fonts/font.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/images/gui/gui.atlas"
+}
+nodes {
+  position {
+    x: 480.0
+    y: 270.0
+  }
+  type: TYPE_BOX
+  id: "title"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 960.0
+    y: 540.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "background"
+  parent: "title"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 135.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  type: TYPE_BOX
+  texture: "gui/title"
+  id: "logo"
+  parent: "title"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "levels"
+  parent: "title"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -90.0
+    y: -4.0
+  }
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  color {
+    x: 0.502
+    y: 0.502
+    z: 0.502
+  }
+  type: TYPE_BOX
+  id: "level_left_box"
+  parent: "levels"
+  inherit_alpha: true
+  alpha: 0.2
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -90.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "<"
+  font: "font"
+  id: "level_left"
+  parent: "levels"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -55.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Level 1"
+  font: "font"
+  id: "level_text"
+  pivot: PIVOT_W
+  parent: "levels"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 90.0
+    y: -4.0
+  }
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  color {
+    x: 0.502
+    y: 0.502
+    z: 0.502
+  }
+  type: TYPE_BOX
+  id: "level_right_box"
+  parent: "levels"
+  inherit_alpha: true
+  alpha: 0.2
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 90.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: ">"
+  font: "font"
+  id: "level_right"
+  parent: "levels"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -135.0
+  }
+  size {
+    x: 220.0
+    y: 70.0
+  }
+  type: TYPE_BOX
+  id: "start"
+  parent: "title"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "gui/textbox"
+  id: "start_box"
+  parent: "start"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Start"
+  font: "font"
+  id: "text"
+  parent: "start"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,159 @@
+local save = require "main.save"
+local data = require "main.data"
+
+local images = {
+	[2] = "drawing",
+	[4] = "girl",
+}
+
+local LINEAR = gui.EASING_LINEAR
+local OUTSINE = gui.EASING_OUTSINE
+local TOUCH = hash("touch")
+
+local hovered = false
+local viewed = false
+local notes = {}
+
+local function get_position(i)
+	local u = (i - 1) % 2
+	local v = math.floor((i - 0.5) / 2)
+	local x = -390 + u * 80
+	local y = 122-20 - v * 100
+	return vmath.vector3(x, y, 0)
+end
+
+local function unhover()
+	if not hovered then return end
+	local duration = 0.15
+	gui.animate(notes[hovered].node, "scale", 0.125, LINEAR, duration)
+	hovered = false
+end
+
+local function hover(i)
+	if hovered == i then return end
+	unhover()
+	hovered = i
+	local duration = 0.15
+	gui.animate(notes[i].node, "scale", 0.15, LINEAR, duration)
+end
+
+local function unview()
+	if not viewed then return end
+	unhover()
+	local duration = 0.2
+	local note = notes[viewed]
+	local node = note.node
+	gui.cancel_animation(node, "position")
+	gui.animate(node, "scale", 0.125, OUTSINE, duration)
+	gui.animate(node, "position", get_position(viewed), LINEAR, duration, 0, function()
+		gui.set_layer(node, "back")
+	end)
+	gui.animate(note.text, "color.w", 0, OUTSINE, duration)
+	gui.animate(note.image, "color.w", 0, OUTSINE, duration)
+	viewed = false
+end
+
+local function view(i)
+	if viewed == i then return end
+	save.set("note_" .. i, true)
+	unhover()
+	viewed = i
+	local duration = 0.2
+	local note = notes[i]
+	local node = note.node
+	gui.cancel_animation(node, "position")
+	gui.animate(node, "scale", 1, OUTSINE, duration)
+	gui.animate(node, "position", vmath.vector3(0, 0, 0), LINEAR, duration)
+	gui.animate(note.text, "color.w", 1, OUTSINE, duration)
+	gui.animate(note.image, "color.w", 0.9, OUTSINE, duration)
+	gui.animate(note.new, "color.w", 0, OUTSINE, duration)
+	gui.set_layer(node, "front")
+end
+
+local function create(n)
+	for i = 1, n do
+		if not notes[i] then
+			local cloned = gui.clone_tree(gui.get_node("note"))
+			local node = cloned[hash("note")]
+			local node_text = cloned[hash("text")]
+			local node_image = cloned[hash("image")]
+			local node_new = cloned[hash("new")]
+			gui.set_enabled(node, true)
+			gui.set_position(node, get_position(i))
+			local text = data.get("notes/"..i..".txt")
+			if text then
+				gui.set_text(node_text, text)
+			end
+			if images[i] then
+				gui.set_enabled(node_image, true)
+				gui.play_flipbook(node_image, images[i])
+			end
+			notes[i] = {
+				node = node,
+				text = node_text,
+				image = node_image,
+				paper = cloned[hash("paper")],
+				new = node_new,
+			}
+			gui.set_alpha(node_text, 0)
+			gui.set_alpha(node_image, 0)
+			if save.get("note_" .. i) then
+				gui.set_enabled(node_new, false)
+			end
+		end
+	end
+end
+
+local function remove()
+	for k, v in pairs(notes) do
+		gui.delete_node(v.node)
+	end
+	notes = {}
+end
+
+local function show(n)
+	remove()
+	create(n)
+	hovered = false
+	viewed = false
+end
+
+function init(self)
+	gui.set_render_order(3)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		show(message.notes)
+	end
+end
+
+function on_input(self, action_id, action)
+	if not action_id then
+		if not viewed then
+			if hovered then
+				if not gui.pick_node(notes[hovered].paper, action.x, action.y) then
+					unhover()
+				end
+			end
+			if not hovered then
+				for i, v in ipairs(notes) do
+					if gui.pick_node(v.paper, action.x, action.y) then
+						hover(i)
+					end
+				end	
+			end
+		end
+	elseif action.pressed and action_id == TOUCH then
+		if viewed then
+			unview()
+		else
+			for i, v in ipairs(notes) do
+				if gui.pick_node(v.paper, action.x, action.y) then
+					view(i)
+					break
+				end
+			end	
+		end
+	end
+end

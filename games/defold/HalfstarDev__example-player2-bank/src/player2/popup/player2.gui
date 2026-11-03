@@ -1,0 +1,141 @@
+script: "/player2/popup/popup.gui_script"
+fonts {
+  name: "font"
+  font: "/player2/popup/font.font"
+}
+textures {
+  name: "popup"
+  texture: "/player2/popup/popup.atlas"
+}
+nodes {
+  position {
+    x: 480.0
+    y: 270.0
+  }
+  type: TYPE_BOX
+  id: "center"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  id: "popup"
+  parent: "center"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 116.0
+  }
+  size {
+    x: 400.0
+    y: 32.0
+  }
+  color {
+    x: 0.2
+    y: 0.224
+    z: 0.502
+  }
+  type: TYPE_BOX
+  id: "header"
+  parent: "popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 400.0
+    y: 64.0
+  }
+  type: TYPE_TEXT
+  text: "Player2"
+  font: "font"
+  id: "header_text"
+  parent: "header"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 400.0
+    y: 200.0
+  }
+  color {
+    x: 0.122
+    y: 0.137
+    z: 0.369
+  }
+  type: TYPE_BOX
+  id: "popup_box"
+  parent: "popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -100.0
+    y: 58.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 400.0
+    y: 80.0
+  }
+  type: TYPE_TEXT
+  text: "Log in to use AI:"
+  font: "font"
+  id: "login_text"
+  pivot: PIVOT_W
+  parent: "popup"
+  inherit_alpha: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_login"
+  parent: "popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 300.0
+    y: 40.0
+  }
+  color {
+    x: 0.2
+    y: 0.224
+    z: 0.502
+  }
+  type: TYPE_BOX
+  id: "button_login_box"
+  parent: "button_login"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 400.0
+    y: 80.0
+  }
+  type: TYPE_TEXT
+  text: "Log In"
+  font: "font"
+  id: "button_login_text"
+  parent: "button_login"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

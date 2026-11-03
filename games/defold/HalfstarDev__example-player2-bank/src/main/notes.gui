@@ -1,0 +1,136 @@
+script: "/main/notes.gui_script"
+fonts {
+  name: "note"
+  font: "/assets/fonts/note.font"
+}
+textures {
+  name: "bank"
+  texture: "/assets/images/bank.atlas"
+}
+nodes {
+  position {
+    x: 480.0
+    y: 270.0
+  }
+  type: TYPE_BOX
+  id: "center"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -350.0
+    y: -50.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  type: TYPE_BOX
+  texture: "bank/notes"
+  id: "box"
+  parent: "center"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -390.0
+    y: 120.0
+  }
+  scale {
+    x: 0.125
+    y: 0.125
+  }
+  size {
+    x: 64.0
+    y: 64.0
+  }
+  type: TYPE_BOX
+  id: "note"
+  parent: "center"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+  visible: false
+}
+nodes {
+  scale {
+    x: 4.0
+    y: 4.0
+  }
+  type: TYPE_BOX
+  texture: "bank/note"
+  id: "paper"
+  parent: "note"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 242.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  size {
+    x: 960.0
+    y: 100.0
+  }
+  color {
+    x: 0.102
+    y: 0.102
+    z: 0.102
+  }
+  type: TYPE_TEXT
+  text: "Patch 1.2.419\n"
+  "\n"
+  "Our tellers were told to not tell any customer the password for the safe. Please remember that stealing is a crime, and don\'t try to circumvent this. We also changed the password, so don\'t even try.\n"
+  "\n"
+  "If you see the criminal that abused out previous vulnerability, please call us. Our AI camera describes the crinimal as following: Two round eyes, one nose, one mouth, stands on two legs, has hair on top of head. If you see them, please call us."
+  font: "note"
+  id: "text"
+  pivot: PIVOT_N
+  line_break: true
+  parent: "note"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -242.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  type: TYPE_BOX
+  texture: "bank/drawing"
+  id: "image"
+  pivot: PIVOT_S
+  parent: "note"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  type: TYPE_BOX
+  texture: "bank/note_new"
+  id: "new"
+  parent: "note"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "back"
+}
+layers {
+  name: "front"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

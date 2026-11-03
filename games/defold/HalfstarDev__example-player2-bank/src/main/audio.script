@@ -1,0 +1,13 @@
+local function play_music()
+	local url = "#music"
+	sound.play(url)
+	sound.set_gain(url, 0)
+	go.animate(url, "gain", go.PLAYBACK_ONCE_FORWARD, 1, go.EASING_LINEAR, 1)
+end
+
+function init(self)
+	play_music()
+end
+
+function on_message(self, message_id, message, sender)
+end
