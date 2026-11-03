@@ -1,0 +1,898 @@
+{
+  "emergentAppearance": true,
+  "deathResetsLife": true,
+  "dungeon": {
+    "firstMapId": 1001,
+    "name": "Ruínas do Eclipse",
+    "tileset": "soluna/atlas.png",
+    "floorTile": 135,
+    "wallTile": -1,
+    "enemies": [
+      10,
+      11,
+      12
+    ],
+    "boss": 99,
+    "bossEvery": 3,
+    "exitName": "Fio de retorno",
+    "descentName": "Escada selada",
+    "chestName": "Relicário esquecido",
+    "extractionName": "Veio de ecos",
+    "wallFaceTile": 182,
+    "floorVariants": [
+      187
+    ],
+    "exitTile": 102,
+    "descentTile": 217,
+    "chestTile": 215,
+    "extractionTile": 218,
+    "roomStyles": [
+      {
+        "name": "Claustro da Lua",
+        "minDepth": 1,
+        "floorTile": 186,
+        "borderTile": 178,
+        "decorations": [
+          {
+            "anchor": "Center",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                47,
+                863,
+                338,
+                234
+              ],
+              "width": 3,
+              "height": 3,
+              "underfoot": true,
+              "solid": []
+            }
+          },
+          {
+            "anchor": "NorthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                144,
+                10,
+                173,
+                349
+              ],
+              "width": 1,
+              "height": 3,
+              "solid": [
+                0,
+                2,
+                1,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "NorthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                144,
+                10,
+                173,
+                349
+              ],
+              "width": 1,
+              "height": 3,
+              "solid": [
+                0,
+                2,
+                1,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1087,
+                43,
+                196,
+                293
+              ],
+              "width": 1,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1087,
+                43,
+                196,
+                293
+              ],
+              "width": 1,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                1,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Cripta dos Vigias",
+        "minDepth": 1,
+        "floorTile": 178,
+        "borderTile": 135,
+        "decorations": [
+          {
+            "anchor": "Center",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                386,
+                893,
+                349,
+                189
+              ],
+              "width": 3,
+              "height": 2,
+              "underfoot": true,
+              "solid": []
+            }
+          },
+          {
+            "anchor": "NorthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                53,
+                387,
+                348,
+                195
+              ],
+              "width": 3,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                3,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "NorthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                726,
+                11,
+                215,
+                341
+              ],
+              "width": 2,
+              "height": 3,
+              "solid": [
+                0,
+                2,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                433,
+                163,
+                224,
+                188
+              ],
+              "width": 2,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1087,
+                43,
+                196,
+                293
+              ],
+              "width": 1,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                1,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Arquivo Esquecido",
+        "minDepth": 1,
+        "floorTile": 186,
+        "borderTile": 187,
+        "decorations": [
+          {
+            "anchor": "Center",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                386,
+                893,
+                349,
+                189
+              ],
+              "width": 3,
+              "height": 2,
+              "underfoot": true,
+              "solid": []
+            }
+          },
+          {
+            "anchor": "NorthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                763,
+                353,
+                239,
+                265
+              ],
+              "width": 2,
+              "height": 3,
+              "solid": [
+                0,
+                2,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "NorthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                763,
+                353,
+                239,
+                265
+              ],
+              "width": 2,
+              "height": 3,
+              "solid": [
+                0,
+                2,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                434,
+                392,
+                285,
+                216
+              ],
+              "width": 3,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                3,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1087,
+                43,
+                196,
+                293
+              ],
+              "width": 1,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                1,
+                1
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Raízes do Eclipse",
+        "minDepth": 3,
+        "floorTile": 190,
+        "borderTile": 187,
+        "decorations": [
+          {
+            "anchor": "Center",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                738,
+                876,
+                314,
+                220
+              ],
+              "width": 2,
+              "height": 2,
+              "underfoot": true,
+              "solid": []
+            }
+          },
+          {
+            "anchor": "NorthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1071,
+                623,
+                306,
+                242
+              ],
+              "width": 2,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "NorthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                765,
+                626,
+                242,
+                236
+              ],
+              "width": 2,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthWest",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                1054,
+                887,
+                322,
+                194
+              ],
+              "width": 2,
+              "height": 1,
+              "solid": [
+                0,
+                0,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "anchor": "SouthEast",
+            "offsetX": 0,
+            "offsetY": 0,
+            "prop": {
+              "sprite": "atlases/ruins.png",
+              "source": [
+                433,
+                163,
+                224,
+                188
+              ],
+              "width": 2,
+              "height": 2,
+              "solid": [
+                0,
+                1,
+                2,
+                1
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "startingGold": 20,
+  "startingSupplies": {
+    "Tonic": 4,
+    "Ether": 3
+  },
+  "resources": [
+    {
+      "id": "wood",
+      "name": "Madeira antiga",
+      "value": 2
+    },
+    {
+      "id": "ore",
+      "name": "Minério pálido",
+      "value": 3
+    },
+    {
+      "id": "herb",
+      "name": "Erva amarga",
+      "value": 2
+    },
+    {
+      "id": "fish",
+      "name": "Peixe prateado",
+      "value": 3
+    },
+    {
+      "id": "echo",
+      "name": "Essência bruta",
+      "value": 4
+    },
+    {
+      "id": "ingot",
+      "name": "Lingote pálido",
+      "value": 9
+    }
+  ],
+  "supplies": [
+    {
+      "id": "Tonic",
+      "name": "Tônico de vida",
+      "description": "Restaura 40 de vida.",
+      "hp": 40,
+      "hotkey": 1
+    },
+    {
+      "id": "Ether",
+      "name": "Éter azul",
+      "description": "Restaura 25 de essência.",
+      "mp": 25,
+      "hotkey": 2
+    },
+    {
+      "id": "Moonfruit",
+      "name": "Fruto pálido",
+      "description": "Restaura 12 de essência.",
+      "mp": 12,
+      "habit": "moonfood"
+    },
+    {
+      "id": "Wildroot",
+      "name": "Raiz amarga",
+      "description": "Restaura 18 de vida.",
+      "hp": 18,
+      "habit": "wildfood"
+    },
+    {
+      "id": "Emberseed",
+      "name": "Semente ardente",
+      "description": "Restaura 10 de vida.",
+      "hp": 10,
+      "habit": "emberfood"
+    },
+    {
+      "id": "FortuneTea",
+      "name": "Chá dos espíritos",
+      "description": "Sorte favorecida por dois minutos.",
+      "effect": "tea"
+    },
+    {
+      "id": "AshSalt",
+      "name": "Sal de cinzas",
+      "description": "Dissipa uma maldição.",
+      "cleanse": "curse"
+    }
+  ],
+  "effects": [
+    {
+      "id": "blessing",
+      "name": "Bênção do santuário",
+      "luck": 6,
+      "seconds": 180
+    },
+    {
+      "id": "curse",
+      "name": "Maldição das ruínas",
+      "luck": -9,
+      "seconds": 120
+    },
+    {
+      "id": "tea",
+      "name": "Chá dos espíritos",
+      "luck": 7,
+      "seconds": 120
+    }
+  ],
+  "recipes": [
+    {
+      "id": "tonic",
+      "name": "Tônico de vida",
+      "description": "Restaura 40 de vida.",
+      "costs": {
+        "herb": 2,
+        "fish": 1
+      },
+      "item": 0,
+      "resource": "",
+      "supply": "Tonic",
+      "amount": 2
+    },
+    {
+      "id": "ether",
+      "name": "Éter azul",
+      "description": "Restaura 25 de essência.",
+      "costs": {
+        "herb": 1,
+        "echo": 2
+      },
+      "item": 0,
+      "resource": "",
+      "supply": "Ether",
+      "amount": 2
+    },
+    {
+      "id": "smelt",
+      "name": "Fundir lingote",
+      "description": "Metal para novas ferramentas.",
+      "costs": {
+        "ore": 3,
+        "wood": 2
+      },
+      "item": 0,
+      "resource": "ingot",
+      "supply": "",
+      "amount": 1
+    },
+    {
+      "id": "blade",
+      "name": "Espada de ferro pálido",
+      "description": "Arma · +6 ataque.",
+      "costs": {
+        "ingot": 2,
+        "wood": 3
+      },
+      "item": 101,
+      "resource": "",
+      "supply": "",
+      "amount": 1
+    },
+    {
+      "id": "echo-blade",
+      "name": "Lâmina de ecos",
+      "description": "Arma · +10 ataque, -2 sorte.",
+      "costs": {
+        "ingot": 3,
+        "echo": 8
+      },
+      "item": 102,
+      "resource": "",
+      "supply": "",
+      "amount": 1
+    },
+    {
+      "id": "talisman",
+      "name": "Talismã das marés",
+      "description": "Pescoço · +2 defesa, +5 sorte.",
+      "costs": {
+        "fish": 5,
+        "echo": 5
+      },
+      "item": 103,
+      "resource": "",
+      "supply": "",
+      "amount": 1
+    },
+    {
+      "id": "cloak",
+      "name": "Manto do peregrino",
+      "description": "Costas · +4 defesa, +1 sorte.",
+      "costs": {
+        "herb": 6,
+        "wood": 5,
+        "echo": 2
+      },
+      "item": 104,
+      "resource": "",
+      "supply": "",
+      "amount": 1
+    },
+    {
+      "id": "tea",
+      "name": "Chá dos espíritos",
+      "description": "Sorte favorecida por dois minutos.",
+      "costs": {
+        "herb": 3,
+        "fish": 1
+      },
+      "item": 0,
+      "resource": "",
+      "supply": "FortuneTea",
+      "amount": 1
+    },
+    {
+      "id": "salt",
+      "name": "Sal de cinzas",
+      "description": "Dissipa uma maldição.",
+      "costs": {
+        "ore": 2,
+        "echo": 2
+      },
+      "item": 0,
+      "resource": "",
+      "supply": "AshSalt",
+      "amount": 1
+    }
+  ],
+  "activities": [
+    {
+      "id": "fishing",
+      "habit": "fish",
+      "resource": "fish",
+      "message": "A linha retorna do escuro.",
+      "cooldownSeconds": 4,
+      "supply": "Moonfruit"
+    },
+    {
+      "id": "forage",
+      "habit": "gather",
+      "resource": "herb",
+      "message": "Você recolhe o que resiste.",
+      "cooldownSeconds": 4,
+      "supply": "Wildroot"
+    },
+    {
+      "id": "mining",
+      "habit": "mine",
+      "resource": "ore",
+      "message": "A pedra cede sob suas mãos.",
+      "cooldownSeconds": 4,
+      "supply": "Emberseed"
+    },
+    {
+      "id": "woodcutting",
+      "habit": "wood",
+      "resource": "wood",
+      "message": "O bosque entrega um fragmento.",
+      "cooldownSeconds": 4,
+      "supply": ""
+    },
+    {
+      "id": "extraction",
+      "habit": "extract",
+      "resource": "echo",
+      "message": "Um eco se desprende do cristal.",
+      "cooldownSeconds": 5,
+      "supply": "Moonfruit"
+    }
+  ],
+  "shop": {
+    "name": "Mercador de cinzas",
+    "greeting": "Algo por algo. Nada desaparece de verdade.",
+    "keepPerResource": 10,
+    "offers": [
+      {
+        "supply": "Tonic",
+        "name": "Tônico de vida",
+        "price": 8
+      },
+      {
+        "supply": "Ether",
+        "name": "Éter azul",
+        "price": 8
+      },
+      {
+        "item": 101,
+        "name": "Espada de ferro pálido",
+        "price": 60
+      }
+    ]
+  },
+  "objectivesTitle": "O SINO DA VIGÍLIA",
+  "objectives": [
+    {
+      "id": "first-hunt",
+      "text": "Ecos no bosque",
+      "counter": "kills",
+      "goal": 6,
+      "gold": 45,
+      "supplies": {
+        "Tonic": 3
+      },
+      "memory": "hunt",
+      "message": "Vigília concluída. 45 ouro e três tônicos."
+    },
+    {
+      "id": "eclipse",
+      "text": "O coração do eclipse",
+      "counter": "bosses",
+      "goal": 1,
+      "gold": 100,
+      "memory": "eclipse",
+      "message": "O sino volta a soar. A vila se lembrará desta vida."
+    }
+  ],
+  "objectivesDone": "A noite se lembra. As ruínas voltam a mudar.",
+  "memories": [
+    {
+      "id": "tide",
+      "name": "Paciência das águas",
+      "counter": "account.catches",
+      "goal": 10
+    },
+    {
+      "id": "hands",
+      "name": "Mãos que aprenderam a criar",
+      "counter": "harvests",
+      "goal": 12
+    },
+    {
+      "id": "hunter",
+      "name": "Instinto da caçada",
+      "counter": "account.kills",
+      "goal": 10
+    },
+    {
+      "id": "guardian",
+      "name": "A queda do guardião",
+      "counter": "account.bosses",
+      "goal": 1
+    },
+    {
+      "id": "hunt",
+      "name": "A primeira vigília"
+    },
+    {
+      "id": "eclipse",
+      "name": "Coração do eclipse"
+    }
+  ],
+  "loot": {
+    "supplyChance": 0.4,
+    "supply": "Tonic",
+    "rareSupply": "Moonfruit",
+    "resource": "echo",
+    "bossSupplies": {
+      "Emberseed": 3,
+      "Moonfruit": 2
+    },
+    "bossMessage": "O Guardião do Eclipse se desfez. A escada responde ao seu toque.",
+    "chestGold": 12,
+    "chestGoldPerDepth": 3,
+    "chestSupplies": [
+      "Tonic",
+      "Ether",
+      "Moonfruit",
+      "Wildroot",
+      "Emberseed"
+    ],
+    "chestResource": "echo",
+    "chestCurseChance": 0.18,
+    "chestCurse": "curse"
+  },
+  "luck": {
+    "innate": "Marca de nascimento",
+    "spirits": "Vozes dos espíritos",
+    "spiritPhases": [
+      -3,
+      2,
+      5,
+      -1
+    ],
+    "phaseSeconds": 180,
+    "nature": "Natureza",
+    "memories": "Memórias",
+    "relics": "Relíquias",
+    "shrineEffect": "blessing"
+  },
+  "texts": {
+    "merchantFar": "Aproxime-se do mercador de cinzas.",
+    "merchant": "O mercador espera. Abra o diário [J], aba Trocas. Excedentes: apenas acima de dez unidades.",
+    "sold": "Excedentes trocados por {0} ouro. Dez de cada material foram reservados.",
+    "shopFar": "Encontre o mercador na praça da vila.",
+    "workbench": "Bancada de ofícios. Abra [C] para combinar seus materiais.",
+    "benchFar": "Aproxime-se de uma bancada de ofícios.",
+    "nothingHere": "Nada responde aqui. Procure um sinal na paisagem.",
+    "shrine": "Uma presença antiga pousa sobre seus ombros.",
+    "shrineActive": "O santuário ainda vela por você.",
+    "chest": "O relicário guardava ouro, provisões e ecos antigos.",
+    "chestCursed": "O relicário cedeu. Algo o seguiu de volta.",
+    "chestEmpty": "Restam apenas ecos neste relicário.",
+    "descentSealed": "A escada está selada. Silencie as criaturas deste andar.",
+    "enterFloor": "As ruínas se fecham atrás de você. Profundidade {0}.",
+    "returnBlocked": "A passagem não se abre durante o combate.",
+    "gatherCooldown": "Deixe a natureza respirar mais um instante.",
+    "noDungeon": "Não há expedições neste mundo.",
+    "memory": "Uma memória permanece: {0}",
+    "journalTitle": "CADERNO DE VESTÍGIOS",
+    "rebirth": "A forma se desfez. As memórias ficaram. Uma nova vida começa.",
+    "woke": "Você acordou na vila."
+  }
+}
