@@ -1,0 +1,146 @@
+// ===== Core game logic (pure, no rendering) =====
+const DIRS = { N:[0,-1], S:[0,1], W:[-1,0], E:[1,0] };
+
+function parseLevel(L){
+  const h = L.map.length, w = Math.max(...L.map.map(r=>r.length));
+  const grid = [], snails=[], beetles=[]; const SD={'>':[1,0],'<':[-1,0],'^':[0,-1],'v':[0,1]};
+  for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++){ let c=L.map[y][x]||' ';
+    if(SD[c]){ snails.push({x,y,dx:SD[c][0],dy:SD[c][1]}); c='.'; }
+    if(c==='O'){ beetles.push({x,y}); c='.'; }
+    row.push(c); } grid.push(row); }
+  return { w, h, grid, snails, beetles };
+}
+function initState(L){
+  const {w,h,grid,snails,beetles} = parseLevel(L);
+  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, pollen:'', status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
+}
+function tileAt(s,x,y){ if(x<0||y<0||x>=s.w||y>=s.h) return ' '; return s.grid[y][x]; }
+function partner(s,x,y){
+  const c = s.grid[y][x];
+  for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++) if(s.grid[yy][xx]===c && (xx!==x||yy!==y)) return [xx,yy];
+  return null;
+}
+function cloneState(s){ return { ...s, grid: s.grid.map(r=>r.slice()), segs: s.segs.map(p=>p.slice()), snails:(s.snails||[]).map(n=>({...n})), beetles:(s.beetles||[]).map(b=>({...b})) }; }
+function snailAt(s,x,y){ return (s.snails||[]).some(n=>n.x===x&&n.y===y); }
+function beetleAt(s,x,y){ return (s.beetles||[]).findIndex(b=>b.x===x&&b.y===y); }
+// beetles can be pushed onto grass, flower buttons, dry patches and wet leaves (where they slide)
+const BEETLE_OK = { '.':1, 'B':1, 'x':1, 'i':1 };
+// pollen: a flower (P pink, Y yellow, U blue) dusts the worm in its colour; a petal gate (p, y, u)
+// lets the head through only while the worm wears that colour. Gates stay; colours change at the next flower.
+const POLLEN = { P:1, Y:1, U:1 }, PETALS = { p:1, y:1, u:1 };
+// soft soil (#): the worm burrows through it, so the head may cross its own body there (one pass over
+// another, never more), but never fold back onto its neck
+const SOFT = '#';
+function countChar(s,c){ let n=0; for(const r of s.grid) for(const t of r) if(t===c) n++; return n; }
+
+// flower buttons: every hedge is open while any part of the worm, or a beetle, rests on a flower
+function onFlower(s,segs){ return segs.some(p=>tileAt(s,p[0],p[1])==='B'); }
+function beetleOnFlower(s,beetles){ return (beetles||[]).some(b=>tileAt(s,b.x,b.y)==='B'); }
+function hedgesOpen(s){ return onFlower(s,s.segs)||beetleOnFlower(s,s.beetles); }
+
+// everything that tells two states apart, as one string, for the solvers' visited sets. Hedges follow
+// from the worm and beetles, so they add nothing; beetles are sorted so identical ones don't double up.
+function stateKey(s){
+  return s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+
+    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';')+'|'+(s.pollen||'');
+}
+
+// One crawl of the head by one tile, with everything it touches. No snails, no win check:
+// step() runs this once, or several times while the worm slides over wet leaves.
+function advance(s, dirKey){
+  const d = DIRS[dirKey];
+  const head = s.segs[0];
+  const nx = head[0]+d[0], ny = head[1]+d[1];
+  const t = tileAt(s,nx,ny);
+  if(t===' ') return { blocked:'edge' };
+  if(t==='~') return { blocked:'water' };
+  const horiz = d[1]===0; const hc=tileAt(s,head[0],head[1]);
+  if((t==='=' && !horiz) || (t==='|' && horiz)) return { blocked:'bridge' };
+  if((hc==='=' && !horiz) || (hc==='|' && horiz)) return { blocked:'bridge' };
+  if(t==='G' && s.keys===0) return { blocked:'locked' };
+  if(t==='w' && s.raining) return { blocked:'flooded' };
+  if(t==='s' && !s.raining) return { blocked:'sprout' };
+  if(PETALS[t] && s.pollen!==t.toUpperCase()) return { blocked:'petals' };
+  const ev = { type:'move', from: head, via:null, portal:false };
+  let dest = [nx,ny];
+  if(t>='1' && t<='9'){ const p = partner(s,nx,ny); if(p){ dest=p; ev.portal=true; ev.via=[nx,ny]; } }
+  if(snailAt(s,dest[0],dest[1])) return { blocked:'snail' };
+  const len = s.segs.length;
+  let newLen = len;
+  if(t==='+') newLen = len+1;
+  if(t==='-') newLen = Math.max(1,len-1);
+  const newSegs = [dest, ...s.segs].slice(0,newLen);
+  const hits=[]; for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) hits.push(i);
+  // on soft soil the head may burrow past one stretch of its own body (index 2 is the neck: no folding back)
+  if(hits.length && !(tileAt(s,dest[0],dest[1])===SOFT && hits.length===1 && hits[0]>=4)) return { blocked:'body' };
+  if(hits.length) ev.cross = [dest[0],dest[1]];
+  // a beetle in the way gets pushed one tile on (sliding further over wet leaves), if there's room for it
+  let beetles = s.beetles||[];
+  const bi = beetleAt(s,dest[0],dest[1]);
+  if(bi>=0){
+    const free = (x,y) => BEETLE_OK[tileAt(s,x,y)] && !newSegs.some(q=>q[0]===x&&q[1]===y) && !snailAt(s,x,y) && beetleAt(s,x,y)<0;
+    let bx = dest[0]+d[0], by = dest[1]+d[1];
+    if(!free(bx,by)) return { blocked:'beetle' };
+    const path = [[bx,by]];
+    while(tileAt(s,bx,by)==='i' && free(bx+d[0],by+d[1])){ bx+=d[0]; by+=d[1]; path.push([bx,by]); }
+    beetles = beetles.map((b,i)=>i===bi?{x:bx,y:by}:{...b});
+    ev.pushed = { i:bi, from:[dest[0],dest[1]], path };
+  }
+  // a hedge lets the head in only if the worm (or a beetle) is still holding a flower after this move
+  if(t==='H' && !onFlower(s,newSegs) && !beetleOnFlower(s,beetles)) return { blocked:'hedge' };
+  const ns = cloneState(s);
+  ns.beetles = beetles.map(b=>({...b}));
+  ns.segs = newSegs; ns.moves++;
+  ev.eaten = null;
+  if(t==='K'){ ns.keys++; ns.grid[ny][nx]='.'; ev.eaten='K'; }
+  if(t==='G'){ ns.keys--; ns.grid[ny][nx]='.'; ev.eaten='G'; }
+  if(t==='+'||t==='-'){ ns.grid[ny][nx]='.'; ev.eaten=t; }
+  // a turnaround mushroom (T) is eaten and the worm turns around: its tail becomes the head
+  if(t==='T'){ ns.grid[ny][nx]='.'; ns.segs=newSegs.slice().reverse(); ev.eaten='T'; ev.turn=true; }
+  if(t==='C'){ ns.grid[ny][nx]='c'; ev.eaten='C'; }
+  if(t==='R'){ ns.raining=!s.raining; ev.rain=ns.raining; }
+  if(POLLEN[t] && s.pollen!==t){ ns.pollen=t; ev.pollen=t; }
+  if(t==='L'){ ev.swung=[]; for(let yy=0;yy<ns.h;yy++) for(let xx=0;xx<ns.w;xx++){ const c=ns.grid[yy][xx]; if(c!=='='&&c!=='|') continue;
+      if(newSegs.some(q=>q[0]===xx&&q[1]===yy)) continue; ns.grid[yy][xx]= c==='='?'|':'='; ev.swung.push([xx,yy]); } }
+  // crumbling tiles fall once nothing stands on them
+  ev.crumbled = [];
+  for(const p of s.segs){
+    if(tileAt(ns,p[0],p[1])!=='x') continue;
+    if(!newSegs.some(q=>q[0]===p[0]&&q[1]===p[1])){ ns.grid[p[1]][p[0]]=' '; ev.crumbled.push([p[0],p[1]]); }
+  }
+  return { state:ns, ev };
+}
+
+// returns {state, ev} or {blocked: reason}. One swipe is one move, even when it slides.
+function step(s, dirKey){
+  if(s.status!=='play') return { blocked:'over' };
+  let r = advance(s,dirKey);
+  if(r.blocked) return r;
+  // wet leaves: keep sliding the same way until the head is off the leaves or something is in the way
+  const slide = [];
+  for(let n=0; n<s.w*s.h; n++){
+    const h = r.state.segs[0];
+    // a turnaround ends the move: the new head doesn't carry on sliding
+    if(r.ev.turn||tileAt(r.state,h[0],h[1])!=='i') break;
+    const nx = advance(r.state,dirKey);
+    if(nx.blocked) break;
+    slide.push(r); r = nx;
+  }
+  for(const x of slide) x.state.moves = s.moves+1;
+  const ns = r.state, ev = r.ev;
+  ns.moves = s.moves+1;
+  if(slide.length) ev.slide = slide;
+  const newSegs = ns.segs, dest = newSegs[0];
+  // snails slide one tile after every move, turning around when something is in the way
+  if(ns.snails.length){ ev.snails=[];
+    for(const n of ns.snails){ const tx=n.x+n.dx, ty=n.y+n.dy; const from=[n.x,n.y];
+      const free = tileAt(ns,tx,ty)==='.' && !newSegs.some(q=>q[0]===tx&&q[1]===ty) && !ns.snails.some(o=>o!==n&&o.x===tx&&o.y===ty) && beetleAt(ns,tx,ty)<0;
+      if(free){ n.x=tx; n.y=ty; ev.snails.push({from,to:[tx,ty],turned:false}); } else { n.dx=-n.dx; n.dy=-n.dy; ev.snails.push({from,to:from,turned:true}); } } }
+  if(tileAt(ns,dest[0],dest[1])==='E'){
+    const left = countChar(ns,'C');
+    if(left===0 && newSegs.length===ns.exitLen){ ns.status='won'; ev.won=true; }
+    else ev.exitNote = left>0 ? 'flags' : 'length';
+  }
+  return { state:ns, ev };
+}
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey, POLLEN, PETALS, SOFT };
