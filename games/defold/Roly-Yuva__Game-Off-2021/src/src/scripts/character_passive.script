@@ -1,0 +1,65 @@
+function init(self)
+	--test
+	self.moves = {
+		{
+			name = "test_move1",
+			damage = 50,
+			-- mana = 25
+		},
+		{
+			name = "test_move2",
+			damage = 25,
+			-- mana = 15
+		}
+	}
+	-- test
+	self.stats = {
+		base_health = 250,
+		-- base_mana = 100,
+		exp = 0,
+		level = 1
+	}
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("get_moves") then
+		local moves = self.moves
+		msg.post(sender, "delivered_moves", {moves = moves})
+	elseif message_id == hash("get_stats") then
+		local stats = self.stats
+		msg.post(sender, "delivered_stats", {stats = stats})
+	elseif message_if == hash("get_stat") then
+		local stat = self.stats[message.stat]
+		msg.post(sender, "delivered_stat", {stat = stat})
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
