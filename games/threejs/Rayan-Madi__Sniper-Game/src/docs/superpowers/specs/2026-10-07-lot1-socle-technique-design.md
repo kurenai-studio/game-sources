@@ -1,0 +1,194 @@
+# Lot 1 : socle technique (mesure, mémoire, réglages graphiques, chargement, confort)
+
+> Conçu le 7 octobre 2026 après l'audit de reprise et le lot 0. Rayan a donné carte blanche sur le process : cette spec est rédigée d'un bloc, sans validation section par section.
+> Sources : `.superpowers/sdd/2026-10-07-reprise/audit/rapport-legerete.md` (inventaire des fuites, chiffres, plan mesurable) et `contre-verification.md` §3.1 et §3.3.
+
+## 1. Pourquoi ce lot passe avant le gameplay
+
+- Le jeu ne libère aucune ressource GPU hors de l'enquête : chaque lancement de mission, chaque tir et chaque manche PvP ajoute des géométries, des matériaux et des textures d'os qui ne repartent jamais. Toute mesure de fluidité faite avant ce lot serait faussée.
+- Le gameplay décidé ensuite (tirs à 155, 430 et environ 138 m en M3 à M5, caméra qui suit la balle) ajoute de la charge : plan lointain, foules plus visibles, ralentis. Il faut d'abord savoir ce que coûte chaque image et pouvoir baisser la qualité.
+- Le rendu est aujourd'hui figé au maximum (densité de pixels jusqu'à 2, ombres douces 2048², ombre de chaque personnage, aucun personnage écarté hors champ) et rien ne réagit à `prefers-reduced-motion`, alors que chaque tir fait un flash plein écran et que les cinématiques multiplient les glitchs.
+- Machine de Rayan (lue par WebGL le 7 octobre) : RTX 3080, 16 cœurs, 32 Go, écran 1080p à densité 1. Elle ne dit rien d'un PC de milieu de gamme : les objectifs de ce lot sont donc des **budgets chiffrés** mesurés par le renderer, pas une impression de fluidité chez Rayan.
+
+## 2. Périmètre
+
+**Dans le lot :**
+1. Mesure : panneau de performances pour tout le jeu, route de test mémoire scriptée, script de mesure dans Chrome sans interface, relevé de référence avant correction.
+2. Mémoire : libération de tout ce que le jeu crée (cartes, PNJ, effets, impacts, cadenas, jeeps, arène et foule PvP), décor du menu reconstruit au retour, audio débranché, PvP sur le contexte audio commun.
+3. Réglages graphiques : Auto, Bas, Moyen, Haut ; personnages écartés hors champ sans clignotement ; résolution dynamique en Auto.
+4. Chargement : écran de chargement des modèles avant une mission ou une manche, perte du contexte WebGL rattrapée.
+5. Confort : effets atténués (automatique selon le système, ou forcé), plein écran.
+6. Précompilation des shaders d'une mission pendant son briefing.
+
+**Hors du lot (lots suivants) :** compression des GLB, partage des animations, niveaux de détail, chargement à la demande du bundle (lot poids) ; `camera.far` et plan lointain (lot distances) ; remappage des touches de campagne.
+
+## 3. Approches envisagées pour la mémoire
+
+| | Approche | Pour | Contre |
+|---|---|---|---|
+| A | **Portées de propriété** : chaque sous-système enregistre ce qu'il crée dans une portée (`scope.track(obj)`) et la libère d'un coup | Très explicite | Il faut toucher chaque `new THREE.*` du jeu (plus de 1 000 créations dans les cartes) ; un oubli fuit en silence |
+| B | **Libération par parcours avec marquage du partagé** : à la sortie, on parcourt l'objet retiré et on libère géométries, matériaux, textures et squelettes, sauf ce qui porte la marque « partagé » | Peu d'endroits à toucher (les points de retrait existent déjà) ; le piège principal (libérer une texture d'un GLB, d'où des modèles noirs) est traité à la source, au chargement | Une ressource partagée non marquée serait libérée : il faut un test qui le garde |
+| C | **Caches** de géométries et de matériaux par clé, jamais libérés | Borné par construction, moins d'objets | Clés partout dans les cartes ; ne règle ni les squelettes ni les matériaux clonés |
+
+**Choix : B**, complété par C là où c'est simple et rentable : les effets de tir partagent une géométrie par type, les trous d'impact une géométrie et un matériau (ils sont créés en rafale ; détail au §4.2). Les cartes restent en B dans ce lot (leur cache relève du lot poids).
+
+## 4. Conception
+
+### 4.1 Mesure
+
+- **`src/gfx/stats.js`** : panneau discret en bas à gauche (même typographie que le HUD) : images par seconde (moyenne glissante sur 1 s), durée d'une image en ms (p50 et p95 sur 120 images), appels de dessin, triangles, géométries, textures, programmes, tas JS en Mo si disponible. Affiché par `?stats=1` (toutes phases, y compris l'enquête qui garde son compteur actuel) **ou** par le réglage « Afficher les performances ». Une fonction pure `frameStats(samples)` calcule moyenne, p50 et p95 (testée).
+- **Route de développement `?memtest=1`** (sous `import.meta.env.DEV`) : enchaîne sans `requestAnimationFrame` (il ne tourne pas dans un panneau masqué) : menu, puis M1 à M6 montées par la même fonction que le jeu, avec quelques images rendues par appel direct à `renderer.render`, puis 10 montages de M6, 5 arènes PvP hors réseau, retour au menu. Après chaque étape, l'état de `renderer.info` (géométries, textures, programmes, appels, triangles) et le tas JS sont écrits en JSON dans un `<pre id="memtest">`.
+- **`scripts/memtest.mjs`** : sur le modèle de `scripts/shots.mjs`, lance Chrome sans interface (SwiftShader, profil jetable, **aucun port de débogage fixe**), lit le JSON par `--dump-dom`, l'écrit dans `shots/memtest-<date>.json` et vérifie les seuils du §6. Code de sortie non nul si un seuil est dépassé.
+- **Référence** : la première tâche relève les chiffres actuels (avant toute correction) et les inscrit dans `docs/superpowers/specs/annexes/2026-10-07-memtest-reference.json`. Le README des annexes dit comment relancer la mesure.
+
+Pour monter une mission sans le DOM des menus, `main.js` expose (en dev seulement) `mountLevel(n)` et `unmountLevel()`, qui sont les fonctions que le jeu utilise lui-même (pas une copie) : `startLevel` appelle `mountLevel`, `clearEntities` et `showMenu` appellent `unmountLevel`.
+
+### 4.2 Mémoire
+
+**`src/gfx/dispose.js`** (pur, sans DOM) :
+```js
+export function markShared(root)            // pose userData.shared = true sur toutes les géométries, matériaux et textures de root
+export function disposeObject(root, opts)   // retire root de son parent, puis libère ce qui n'est pas partagé ; renvoie { geometries, materials, textures, skeletons } libérés
+export function isShared(resource)
+```
+Règles de `disposeObject` :
+- parcourt tout l'arbre ; libère chaque géométrie, chaque matériau et chaque texture référencée par un matériau (`map`, `normalMap`, `emissiveMap`, etc., par parcours des propriétés `isTexture`), sauf si `isShared` ;
+- pour chaque `SkinnedMesh`, `skeleton.dispose()` (texture d'os) : le squelette d'un clone n'est jamais partagé ;
+- lumières qui portent une ombre : `light.shadow.dispose()` ;
+- idempotent : une ressource n'est libérée qu'une fois (ensemble des déjà vus), deux appels de suite ne font rien de plus ;
+- ne touche jamais au DOM, aux mixers ni à l'audio.
+
+**Points de retrait branchés :**
+| Quoi | Où aujourd'hui | Correction |
+|---|---|---|
+| Décor des cartes et pluie | `maps.js` `clear()` | `disposeObject` sur chaque objet de `mapObjects` ; la pluie (`ambientFn`) libère sa géométrie |
+| PNJ | `main.js` `clearEntities`, `showMenu` ; `npc.js:555` (corps retiré à 8 s) | nouvelle méthode `NPC.dispose()` : `mixer.stopAllAction()`, `mixer.uncacheRoot(model)`, puis `disposeObject(this.mesh)` (les matériaux **clonés** pour la teinte ne sont pas marqués partagés, donc libérés ; les géométries et textures du GLB sont marquées au chargement, donc gardées) ; le minuteur de 8 s devient une durée gérée dans `update` |
+| Modèles GLB | `characters.js` chargement | `markShared(gltf.scene)` au chargement ; la teinte blanche `0xffffff` ne clone plus le matériau |
+| Effets de tir | `effects.js` | une géométrie de particule et une de flash, partagées (marquées) ; un seul matériau par impact (pas un par particule), à lui, libéré en fin de vie ; traceur et flash libèrent ce qu'ils possèdent. Pas de matériau partagé par couleur (écart de L2) : l'opacité de chaque impact baisse à son propre rythme, il lui faut son matériau, et `Material.clone` recopierait la marque `userData.shared` |
+| Trous d'impact | `main.js` tir manqué | géométrie et matériau uniques partagés ; le trou le plus ancien est retiré sans rien libérer |
+| Cadenas | `main.js` `startLevel`, tir | `disposeObject` au retrait |
+| Jeeps | `main.js` `clearConvoy` | `disposeObject` sur chaque jeep |
+| Arène et foule PvP | `pvpMap.js`, `pvp.js` `endRound`, `quitToMenu` | `clearPvpMap` libère, la foule passe par `NPC.dispose`, avatars, laser et pistolet par `disposeObject` |
+| Décor du menu | `showMenu` garde la dernière carte | `showMenu` libère la carte courante et reconstruit la rue (`MAP_BUILDERS[0]`) |
+| Nappe de mission | `audio.js` `stopMissionAmbience` | le gain est débranché à la fin de son fondu |
+| Audio du PvP | `pvp.js:97` crée un 2ᵉ `AudioContext` branché sur `destination` | utilise `audioContext()` et `masterNode()` de `audio.js` : un seul contexte, et le volume du jeu s'applique au PvP |
+
+### 4.3 Réglages graphiques
+
+Nouveaux champs de `settings` (avec migration : une sauvegarde ancienne prend les valeurs par défaut) :
+```js
+graphics: 'auto',        // 'auto' | 'bas' | 'moyen' | 'haut'
+showStats: false,
+reducedMotion: 'auto',   // 'auto' (suit le système) | 'oui' | 'non'
+```
+**`src/gfx/quality.js`** (pur) : `presetFor(name, devicePixelRatio)` renvoie les paramètres effectifs :
+
+| | Bas | Moyen | Haut |
+|---|---|---|---|
+| Densité de pixels | 0,75 × min(dpr, 1) | min(dpr, 1,25) | min(dpr, 2) |
+| Ombres | 1024², `PCFShadowMap` | 2048², `PCFShadowMap` | 2048², `PCFSoftShadowMap` |
+| Ombre des personnages | non | cibles et gardes | tous |
+| Personnages écartés hors champ | oui | oui | oui |
+
+`Auto` = Moyen avec **résolution dynamique** : `createResolutionController({ min: 0.7, max: 1 })` (pur) reçoit la durée de chaque image et ajuste l'échelle par pas de 0,05 : baisse si la p95 sur 2 s dépasse 22 ms, remonte si elle passe sous 14 ms pendant 4 s, jamais plus d'un changement par seconde (pas d'oscillation). Testé avec des séquences de durées synthétiques.
+
+L'anticrénelage reste actif (il ne se change qu'en recréant le renderer). Un changement de préréglage s'applique immédiatement (densité, taille et type d'ombre : la carte d'ombre est recréée par `sun.shadow.map.dispose()` puis `null`).
+
+Écarts de L4 : three r185 a déprécié `PCFSoftShadowMap`, qu'il remplace au premier rendu par `PCFShadowMap` avec un avertissement dans la console. Le jeu rendait donc déjà en `PCFShadowMap`, et tous les préréglages l'utilisent : Haut rend exactement comme avant le lot (captures identiques à l'octet). « Cibles et gardes » s'entend des personnages qui se montrent comme tels : le commanditaire de M6 (modèle de la foule, sans marqueur) et l'avatar du contre-tueur en PvP suivent la règle des civils, sinon leur ombre les distinguerait de la foule en Moyen.
+
+Relecture de L4, résolution dynamique : le jeu nourrit le contrôleur de l'écart entre deux images, mesuré par l'horodatage que `requestAnimationFrame` passe à son rappel. Sur un écran synchronisé, cet écart ne descend jamais sous la période de l'écran (16,7 ms à 60 Hz), si légère que soit l'image : le seuil de 14 ms n'y était jamais atteint, et chaque à-coup passager coûtait de la résolution jusqu'à la fin de la mission (simulation à 60 Hz, 12 images de 40 ms toutes les 30 s : 0,95 à 2 s, puis 0,90, 0,85, 0,80, 0,75 et 0,70 à 90 s, sans retour). Correction, actée le 9 octobre 2026 (§8) :
+- le seuil de remontée est le plus lent de 14 ms et de la cadence de l'écran × 1,1, la cadence étant la plus petite médiane d'une fenêtre de 2 s vue depuis le montage de la mission ou le dernier changement de réglage (une image prête à la synchro compte comme rapide) ; sur un écran à 120 ou 144 Hz où le jeu a tenu la cadence, il reste 14 ms ;
+- il ne dépasse jamais 22 × (0,7 / 0,75)², soit 19,2 ms : un pas de plus ajoute au plus 15 % de pixels, et une image sous ce plafond reste sous 22 ms après le pas, même sur un écran sans cadence fixe, où la « cadence » ne serait que le coût de l'image ;
+- une image à la cadence ne dit pas s'il reste de la marge, donc chaque remontée est un essai. Il est manqué si l'échelle retombe moins de 2 s plus l'attente après la remontée **et** si la fenêtre qui la fait retomber a une médiane hors cadence (au moins égale au seuil de remontée : la plupart de ses images manquent leur synchro) **ou** des images hors cadence étalées (au moins une dans chacun de ses quatre quarts de 500 ms : règle des images étalées, ci-dessous) ; l'attente avant l'essai suivant double alors (4, 8, 16, 32, puis 64 s au plus, jusqu'au prochain montage de mission ou changement de réglage). Un à-coup passager (explosion, kill-cam) laisse la médiane de sa fenêtre à la cadence et, s'il dure moins d'une seconde, n'a d'images hors cadence que dans trois quarts au plus : il fait baisser l'échelle sans compter comme un essai manqué. Sans cette condition, des à-coups toutes les 15 ou 20 s, tombant chacun peu après la remontée à 1, doublaient l'attente à chaque fois, et l'échelle restait à 0,7 jusqu'à la fin de la mission (dès 77 s pour 15 s, 100 s pour 20 s) ;
+- l'horodatage de `requestAnimationFrame` (le début de l'image, aligné sur la synchro) remplace `performance.now()` lu dans le rappel, qui arrive avec un retard variable sur la synchro (autres rappels, tâches). Cette gigue grossit la p95 des écarts : uniforme sur 2 ms, l'échelle remonte encore (p95 vers 18 ms, sous les 18,3 ms du seuil) ; sur 2,5 ms, elle ne revient plus à 1 (90 s simulées, 100 tirages).
+
+Même simulation (écran à 60 Hz, images de 9 ms, 12 images de 40 ms par à-coup) : retour à 1 moins de 15 s après chaque à-coup, qu'ils reviennent toutes les 30, 20 ou 15 s (14,3 s au plus) ; l'échelle va et vient entre 0,9 et 1 (un à-coup d'une demi-seconde coûte encore deux pas : ses images lentes d'après la première baisse comptent dans la mesure suivante). Plus rapprochés, ils coûtent plus de résolution qu'il n'en revient entre deux : toutes les 10 s pendant 2 min, 0,75 à la fin, puis retour à 1 en 26 s après le dernier (avant la correction : 0,70, et 50 s). Écran à 60 Hz dont l'échelle 1 manque la synchro et 0,95 la tient : essais à 8, 20, 40, 76, 144, 212 et 280 s, chacun de 2 s, inchangés par la correction.
+
+Ces retours à 1 supposent une gigue d'appel faible (0,8 ms simulés ; l'horodatage de `requestAnimationFrame` n'en a guère). Jusqu'à 1,5 ms, l'échelle finit à 1 dans les 20 tirages à phases variées ; à 2 ms, la p95 frôle le seuil, la remontée traîne, et avec la seule médiane, des à-coups toutes les 20 ou 15 s ne la laissent à 1 que 8 et 4 fois sur 20 (tirages de `tests/gfx/quality.test.js`). La règle des images étalées (ci-dessous) y ajoute les images calmes que la gigue pousse au-dessus du seuil de remontée : à 2 ms, 0 et 2 fois sur 20, sur les mêmes tirages ; à 1,5 ms, toujours 20 sur 20.
+
+Limite de la règle, tranchée le 9 octobre 2026 (§8 : images étalées) : avec la seule médiane hors cadence, un essai dont une partie seulement des images manque la synchro (de 5 à 50 %, médiane à la cadence) ne comptait pas non plus comme manqué, et l'attente ne doublait pas. Une machine juste à la limite à l'échelle 1, la cible même d'Auto, y réessayait donc toutes les 8 s, avec à chaque fois 2 s de saccades (simulation, coût tiré entre 15 et 17,5 ms à l'échelle 1, soit un tiers des images hors synchro : 37 essais en 5 min au lieu de 7, et environ 1 150 images à 33 ms au lieu de 240, moyenne de huit tirages). Deux règles ont été simulées sur une copie du contrôleur ; chacune s'ajoute à la médiane hors cadence (l'essai est aussi manqué si…) :
+- **part des images** (proposition de la relecture de la correction) : au moins 20 ou 25 % des images de la fenêtre hors cadence. Un à-coup de 12 images pèse au plus 11,5 % de la fenêtre, la machine limite 33 %. À-coups de 12 images toutes les 30, 20 et 15 s et cas « 17,5 ms à 1 » : résultats identiques à la seule médiane ; machine limite : 7 essais. Mais une machine dont 10 à 15 % des images manquent la synchro réessaie presque aussi souvent qu'avec la seule médiane (seuil de 20 % : 35 et 21 essais en 5 min ; seuil de 25 % : 37 et 34), et un à-coup d'une seconde (24 images à 40 ms) toutes les 15 s compte comme un essai manqué : l'échelle finit à 0,75 après 2 min (0,70 avant la correction, 1 avec la seule médiane) ;
+- **images étalées** : au moins une image hors cadence dans chacun des quatre quarts (500 ms) de la fenêtre, ce qu'un à-coup de moins d'une seconde ne peut pas faire, quel que soit le coût de ses images. À-coups de 12 images, cas « 17,5 ms à 1 » et machine limite : mêmes résultats que ci-dessus ; machine dont 5 à 50 % des images manquent la synchro : 7 à 8 essais en 5 min en moyenne ; à-coups de 1 à 1,2 s toutes les 15 s (24 ou 30 images à 40 ms, 18 à 60 ms, 12 à 100 ms, 40 phases chacun) : retour à 1. (Chiffres de la copie simulée ; ceux de la règle finale, ci-dessous, les nuancent pour 5 % d'images hors synchro et pour les à-coups de 1,2 s.)
+
+**Règle finale** (images étalées, actée au §8 et appliquée à `createResolutionController`) : un essai de remontée est manqué si l'échelle retombe moins de 2 s plus l'attente après la remontée et si la fenêtre qui la fait retomber a sa médiane hors cadence **ou** au moins une image hors cadence (au moins égale au seuil de remontée) dans chacun de ses quatre quarts de 500 ms. Résultats sur les simulations de `tests/gfx/quality.test.js` (écran à 60 Hz) :
+- machine limite (un tiers des images hors synchro) : 7 essais en 5 min dans chacun des huit tirages, à 8, 20, 40, 76, 144, 212 et 280 s, et 240 images à 33 ms en moyenne (avant : 37 essais, environ 1 150 images) ; machines dont 5, 10 et 15 % des images manquent la synchro : 9,9, 7,4 et 7 essais en moyenne (avant : 33,5, 37 et 37 ; avec la part des images à 20 % : 33,5, 37 et 27,6) ; 50 % : 7 (avant : 9,6) ;
+- à-coups de 12 images toutes les 30, 20 et 15 s, cas « 17,5 ms à l'échelle 1 » : inchangés (retour à 1 en 14,3 s au plus ; essais à 8, 20, 40, 76, 144, 212 et 280 s) ;
+- à-coups d'une seconde toutes les 15 s (24 images à 40 ms, 16 à 60 ms, 20 phases) : retour à 1 à la fin de chaque cycle (avec la part des images : 0,75 après 2 min) ; gigue d'appel de 1,5 ms, à-coups toutes les 20 et 15 s : l'échelle finit à 1 dans les 20 phases.
+
+Limites connues de la règle finale :
+- rien n'est jugé pendant les 2 s qui suivent un changement d'échelle : un à-coup de plus d'une seconde qui commence moins de 0,5 s après une remontée tombe tout entier dans la première fenêtre jugée et peut en remplir les quatre quarts, ce qui compte comme un essai manqué. À-coups de 1,2 s (30 images à 40 ms) toutes les 15 s, 40 phases : retour à 1 dans 39 (40 avec la seule médiane) ; dans la dernière, un à-coup commence 0,42 s après la remontée à 1, l'attente passe à 8 s, chaque à-coup coûte ensuite deux pas quand il n'en revient qu'un, et l'échelle finit à 0,75 après 2 min. 18 images à 60 ms et 12 à 100 ms : retour à 1 dans les 40 phases ;
+- la gigue d'appel, au-delà de 1,5 ms (ci-dessus). Piste si une gigue de 2 ms ou plus est relevée en jeu, non appliquée : ne compter dans les quarts que les images d'au moins 1,5 fois la cadence (synchro manquée). Simulée sur les mêmes tirages : 8 et 4 retours à 1 sur 20 à 2 ms, comme la seule médiane, et toujours 7 essais pour la machine limite.
+
+**Personnages écartés hors champ.** `characters.js` force aujourd'hui `frustumCulled = false` (les maillages animés sortent de leur sphère englobante et clignotaient). Correction : chaque instance reçoit une sphère englobante généreuse calculée une fois (centre à mi-hauteur, rayon égal à 1,25 fois la hauteur d'ajustement), posée sur le `SkinnedMesh` cloné, puis `frustumCulled = true`. Test : la sphère contient la boîte de la pose de repos et celle de l'image la plus étendue du clip de marche (échantillonné), avec une marge. Écart de L3 : le rayon prévu, 0,75 fois la hauteur, couvre la marche mais pas les autres clips joués ; mesuré sommet par sommet sur les sept modèles, Dance (la foule de M6 et du PvP) en sortait de 43 cm, Death (le corps reste 8 s) de 78 cm, Look de quelques millimètres. À 1,25, tous les clips joués tiennent avec au moins 11 cm de marge, et le test échantillonne aussi une mort qui recule et finit couchée.
+
+**Interface** : l'écran Paramètres gagne une section « Affichage » : Qualité (Auto, Bas, Moyen, Haut), Afficher les performances, Effets atténués (Auto, Oui, Non), Plein écran. Mêmes composants que les réglages existants, libellés sans tiret cadratin.
+
+### 4.4 Chargement
+
+- `preloadCharacters()` expose `charactersReady()` (promesse) et `charactersProgress()` (0 à 1, par octets reçus si disponibles, sinon par fichiers).
+- `launchLevel` et le départ d'une manche PvP attendent `charactersReady()` : si le chargement n'est pas fini, un écran « dossier du fixeur » s'affiche (« PRÉPARATION DU DOSSIER · 63 % », barre fine, même style que les cartes de l'enquête) puis s'efface. Un modèle en échec ne bloque pas : on part avec ce qui est chargé (le repli procédural existant), et l'écran ne reste jamais plus de 20 s.
+- Contexte WebGL perdu (`webglcontextlost`) : `preventDefault()`, pause de la partie, écran « Le rendu a été interrompu » avec un bouton RECHARGER (la sauvegarde est déjà faite à chaque réussite). `webglcontextrestored` recharge la page.
+
+### 4.5 Confort
+
+- **Effets atténués** : `reducedMotionActive()` (pur sur `settings.reducedMotion` et `matchMedia('(prefers-reduced-motion: reduce)')`). Actif : flash du tir à 0,06 d'opacité au lieu de 0,22, aucune secousse (`K.shake` sans effet), glitchs des cinématiques à un tiers d'intensité et sans glitchs d'ambiance, fondus gardés. Le kit reçoit l'option par `playCinematic(id, { reducedMotion })`, sans édition des scènes générées.
+- **Plein écran** : bouton dans les Paramètres (`requestFullscreen` sur `document.documentElement`, `exitFullscreen` sinon), qui marche aussi sous Electron ; libellé à jour selon `fullscreenchange`.
+
+Relecture de L6, actée le 9 octobre 2026 (§8) :
+- le tiers d'intensité porte sur l'effet visuel des glitchs (déchirure, séparation des couleurs, déplacement, grain, qui ne monte plus que d'un tiers) ; leur son garde sa puissance, les effets atténués ne touchant pas au son ;
+- le carton SIGNAL PERDU d'un signal perdu (`K.lost`) clignotait à 5,5 Hz, au-delà de 3 flashs par seconde (WCAG 2.3.1), et M6 le tient 1,3 s : en effets atténués, il reste affiché sans clignoter, le temps prévu par la scène ;
+- hors du périmètre de cette section, le flash rouge de l'alarme PvP (environ 2,7 Hz pendant 2,5 s) et la secousse de caméra du téléphone et de l'alarme en PvP ne suivent pas le réglage : leur atténuation touche au jeu (gêne voulue par la capacité adverse), suite à prévoir.
+
+### 4.6 Précompilation
+
+Quand un briefing se joue avant une mission, la carte de la mission est montée **pendant** le briefing (le rendu WebGL est déjà arrêté pendant les cinématiques), puis `renderer.compile(scene, camera)` est appelé. `startLevel` réutilise la carte montée au lieu d'en construire une autre. Sans briefing (réessai), le comportement reste celui d'aujourd'hui. Mesure : durée de la première image de la mission dans `?memtest`, avant et après.
+
+Relecture de L7, actée le 9 octobre 2026 (§8) :
+- « pendant » s'entend de l'écran noir par lequel la cinématique commence, pas de son animation : le montage se fait sur cet écran une fois peint, et l'animation ne démarre qu'après lui (`playCinematic(id, { ready })`). Le montage bloque le fil principal : fait dans le clic, il figeait le clic (0,4 s en M6 sur la machine de Rayan) ; fait pendant l'animation, il la figeait. En contrepartie, cet écran noir s'allonge du temps du montage : de 57 ms à 400 ms en M6 sur la RTX 3080, sans doute 0,8 à 1 s sur un PC de milieu de gamme (non mesuré). L'arrêt entre la cinématique et la mission passe, lui, d'environ 2,8 s à 0,5 à 0,7 s en M6. Si ce choix n'est pas retenu : découper le montage en tâches assez courtes pour passer entre deux images de l'animation (la carte, les PNJ, la compilation), ce qui touche à `mountLevel` et aux constructeurs des cartes ;
+- modèles encore en chargement au lancement (REPRENDRE juste après l'ouverture du jeu, briefing pas encore vu) : la cinématique démarre sans les attendre, et la mission se monte à leur arrivée, en pleine animation, qu'elle fige de 0,1 à 0,4 s. Cas rare, gardé tel quel dans ce lot : reporter ce montage à la fin de la cinématique rendrait le montage et la compilation à l'arrêt qui la suit. Suite possible : plan du lot, tâche L7.
+
+## 5. Tests
+
+- **Niveau 1, jsdom** : `tests/gfx/dispose.test.js` avec une aide qui s'abonne aux événements `dispose` (c'est par eux que le renderer décompte). Pour chaque carte (`vi.mock` de `scene.js` avec une vraie `THREE.Scene`), pour un PNJ (GLTFLoader simulé qui renvoie un petit `SkinnedMesh` avec os et clip), pour les effets, le cadenas, les jeeps et l'arène PvP : **100 % des ressources possédées libérées et 0 ressource marquée partagée libérée**. Témoin rouge : sur le code actuel, `clear()` ne libère rien.
+- **Niveau 2, faux renderer comptable** : `tests/gfx/fakeRenderer.js` compte les géométries vues et les textures d'os comme le vrai (`WebGLGeometries.get`, création de texture d'os) et les décompte au `dispose`. Scénario : rue, les 6 cartes, rue ; 10 montages de M6 ; 5 arènes PvP. Les compteurs reviennent exactement à la référence.
+- **Pur** : `frameStats`, `presetFor`, `createResolutionController`, `reducedMotionActive`, migration des réglages.
+- **Niveau 3, Chrome réel** : `node scripts/memtest.mjs` avec les seuils du §6, lancé en fin de lot et consigné.
+
+## 6. Critères de fin
+
+| Critère | Seuil |
+|---|---|
+| Niveau 1 | 100 % des ressources possédées libérées ; 0 ressource partagée libérée |
+| Niveau 2 | Δ géométries = 0 et Δ textures = 0 après chaque cycle |
+| Chrome réel, partie complète (menu, M1 à M6, menu) | géométries de `menu-campagne` ≤ géométries de `menu` + 2 % + géométries des modèles ; textures de `menu-campagne` ≤ textures de `menu` + 2 + textures des modèles ; `menu-m6` et `menu-final` identiques à `menu-campagne` (Δ = 0, géométries et textures). Nombres des modèles (géométries et textures distinctes des modèles chargés, marquées partagées) relevés par la route et publiés dans le JSON, jamais écrits en dur |
+| Chrome réel, 10 montages de M6 | Δ = 0 entre le 2ᵉ et le 10ᵉ (géométries, textures, programmes) |
+| Chrome réel, PvP | Δ = 0 après la 1re arène |
+| Triangles rendus en M6, vue de départ | Moyen ≤ 1,5 M ; Bas ≤ 1,4 M (géométrie des personnages seule, aucune ombre de personnage) ; 0,8 M en Bas : objectif du lot poids (niveaux de détail des foules) |
+| Chargement | aucune mission ni manche ne démarre avec des PNJ procéduraux si les modèles sont encore en cours de chargement (test sur `launchLevel` extrait) |
+| Confort | les trois réglages d'effets atténués changent bien l'opacité du flash et les appels de secousse (tests) |
+| Général | `npx vitest run` vert ; `npx vite build` sans erreur ; aucune régression visuelle sur les captures de M1, M3, M5, M6 et d'une cinématique comparées avant et après |
+
+Relecture de L3 : le critère « partie complète » ne peut pas tenir tel qu'écrit, le menu de départ n'ayant dessiné aucun personnage alors que les ressources des modèles GLB (partagées) restent au GPU après leur premier dessin. Reformulation proposée dans la tâche L8 du plan, actée le 9 octobre 2026 (§8) et reportée dans le tableau ci-dessus à la tâche L8 (critère d'origine : géométries ≤ référence du menu + 2 % ; textures ≤ référence du menu + 2).
+
+Relecture de L4 : le seuil Bas des triangles de M6 (0,8 M) ne peut pas tenir avec les leviers de ce lot. En Bas, plus aucun personnage ne projette d'ombre, et les 27 PNJ de M6, tous dans le champ à la vue de départ, font à eux seuls 1,33 M triangles ; la carte en fait moins de 3 000 (mesure du 9 octobre 2026, README des annexes). Seuls des niveaux de détail des foules (lot poids) feraient descendre ce chiffre. Le seuil Moyen (1,5 M) tient : 1,42 M. Reformulation proposée dans la tâche L8 du plan, actée le 9 octobre 2026 (§8) et reportée dans le tableau ci-dessus à la tâche L8 (seuil d'origine : Bas ≤ 0,8 M, ombres des personnages coupées).
+
+Mesure de fin de lot (tâche L8, 9 octobre 2026, `5b8e7ec`) : les cinq critères Chrome réel du tableau sont tenus en Moyen et en Bas (`node scripts/memtest.mjs --check`, annexes `2026-10-07-memtest-apres-lot1.json` et `…-apres-lot1-bas.json`) ; captures du menu, de M1, M3, M5, M6 et d'une cinématique sans régression visible face à celles d'avant le lot. Chiffres avant et après : README des annexes, « Après le lot 1 ».
+
+## 7. Risques
+
+- **Libérer une ressource partagée** (modèles noirs ou sans texture) : traité par le marquage au chargement et par le test « 0 partagé libéré ».
+- **Personnages qui disparaissent en bord d'écran** avec le hors champ : sphère généreuse et test sur l'image la plus étendue du clip ; vérification par capture.
+- **Montage pendant le briefing** : la mission ne doit jamais apparaître sous la cinématique (le rendu est arrêté en phase `briefing`) ; si le briefing est passé très vite, `startLevel` attend la fin du montage.
+- **Résolution dynamique qui oscille** : hystérésis et un changement par seconde au plus, testés.
+- **Mesure sous SwiftShader** : les durées d'image n'y valent rien ; seuls les compteurs (géométries, textures, programmes, triangles, appels) servent de critère.
+
+## 8. Décisions actées le 9 octobre 2026
+
+Rayan a délégué la conduite du projet (carte blanche) ; les points laissés « à acter » par les relectures sont tranchés ainsi :
+- **Sphère d'instance (relecture de L3)** : rayon de 1,25 fois la hauteur gardé (aucun écart mesuré de triangles ni d'appels avec 0,75, et aucun risque de personnage qui disparaît en bord d'écran).
+- **Résolution dynamique (relecture de L4)** : la remontée à la cadence de l'écran est actée. Un défaut reste à corriger avant la clôture : un essai de remontée ne compte comme manqué que si la fenêtre qui provoque la baisse a une médiane hors cadence (p50 au moins égale au seuil rapide), pour qu'une rafale passagère (explosion, kill-cam) ne bloque plus l'échelle ; le contrôleur est nourri par l'horodatage de `requestAnimationFrame` ; « depuis le montage de la mission » se lit « depuis le montage de la mission ou le dernier changement de réglage ».
+- **Effets atténués (relecture de L6)** : actés tels qu'écrits. Le flash d'alarme du PvP (environ 2,7 Hz, sous le seuil de 3 flashs par seconde) et les secousses du PvP passent au lot multijoueur.
+- **Précompilation (relecture de L7)** : le montage sur l'écran noir d'ouverture de la cinématique est gardé ; le cas rare des modèles arrivés en pleine cinématique aussi.
+- **Critère « partie complète » (§6, relecture de L3)** : la reformulation du plan (tâche L8) est adoptée et remplace le critère du §6 : géométries de `menu-campagne` au plus égales à celles de `menu` + 2 % + celles des modèles ; textures au plus égales à celles de `menu` + 2 + celles des modèles ; `menu-m6` et `menu-final` identiques à `menu-campagne` ; les nombres des modèles sont relevés par la route, jamais écrits en dur.
+- **Seuil Bas des triangles de M6 (§6, relecture de L4)** : 1,4 M au plus pour le lot 1 (géométrie des personnages seule) ; l'objectif de 0,8 M passe au lot poids (niveaux de détail des foules).
+- **Essai manqué de la résolution dynamique (relecture de la correction de L4)** : règle des **images étalées** retenue. Un essai de remontée compte comme manqué si la fenêtre qui provoque la baisse a sa médiane hors cadence **ou** au moins une image hors cadence dans chacun de ses quatre quarts (500 ms) ; un à-coup de moins d'une seconde ne peut pas remplir les quatre quarts, une machine juste à la limite de la cadence, si. Effet simulé : la machine limite passe de 37 essais en 5 min à 7, les à-coups de 12 images toutes les 30, 20 et 15 s reviennent à 1, le cas « 17,5 ms à l'échelle 1 » garde ses essais espacés. Les retours à 1 supposent une gigue d'appel faible (jusqu'à 1,5 ms), consigné comme limite connue.
