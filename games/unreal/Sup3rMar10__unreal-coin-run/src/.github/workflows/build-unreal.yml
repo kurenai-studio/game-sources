@@ -1,0 +1,35 @@
+name: build-unreal
+
+# Reference pipeline, never run. Building an Unreal project in CI needs Epic's engine, which is only
+# available to GitHub accounts linked to an Epic account (https://www.unrealengine.com/ , "Connect GitHub"),
+# via a container image. Store a token for that account as the EPIC_GHCR_USER / EPIC_GHCR_TOKEN secrets.
+# The image tag, the in-container paths, the root user and the disk space needed (the image is tens of GB,
+# more than a standard runner has free) are all unchecked. Starts only when run by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Tag of ghcr.io/epicgames/unreal-engine (unchecked default)
+        default: dev-5.5
+
+permissions:
+  contents: read
+
+jobs:
+  package-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Log in to Epic's container registry
+        run: echo "${{ secrets.EPIC_GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.EPIC_GHCR_USER }}" --password-stdin
+      - name: Cook and package (Linux, Development)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE":/project -u root \
+            ghcr.io/epicgames/unreal-engine:${{ inputs.image_tag }} \
+            /home/ue4/UnrealEngine/Engine/Build/BatchFiles/RunUAT.sh BuildCookRun \
+            -project=/project/CoinRun.uproject -noP4 -platform=Linux -clientconfig=Development \
+            -build -cook -stage -pak -archive -archivedirectory=/project/Packaged
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coin-run-linux
+          path: Packaged
