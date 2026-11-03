@@ -1,0 +1,41 @@
+-- Centralised game navigation / level-flow control.
+
+local data = require "main.data"
+local const = require "game.lib.const"
+local audio = require "main.audio"
+
+local M = {}
+
+-- Return to the main menu. Callers that paused the game are responsible for
+-- resuming it first (see pause.gui_script) — navigation doesn't touch time step.
+function M.quit_to_menu()
+	audio.music_stop()
+	msg.post(const.URLS.MAIN_HANDLER, const.MSG.SHOW_MENU)
+end
+
+-- Advance to the next level, if there is one.
+function M.goto_next_level()
+	if data.next_level() then
+		msg.post(const.URLS.GAME_LOADER, const.MSG.NEW_LEVEL)
+	end
+end
+
+-- Go back to the previous level, if there is one.
+function M.goto_previous_level()
+	if data.previous_level() then
+		msg.post(const.URLS.GAME_LOADER, const.MSG.NEW_LEVEL)
+	end
+end
+
+-- Reload the current level, keeping any reached checkpoint and collected items.
+function M.reload_level()
+	msg.post(const.URLS.GAME_LOADER, const.MSG.RELOAD_LEVEL)
+end
+
+-- Restart the current level from the beginning, clearing checkpoint and collected items.
+function M.restart_level()
+	data.restart_level()
+	msg.post(const.URLS.GAME_LOADER, const.MSG.RELOAD_LEVEL)
+end
+
+return M

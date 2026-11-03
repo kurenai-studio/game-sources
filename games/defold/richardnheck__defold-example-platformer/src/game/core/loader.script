@@ -1,0 +1,41 @@
+local data = require "main.data"
+local const = require "game.lib.const"
+local audio = require "main.audio"
+
+local function unloadlevel(self)
+	if self.loaded > 0 then
+		msg.post (string.format("#level%d", self.loaded), "unload")
+	end
+end
+
+local function loadlevel(self)
+	-- load the leel
+	local level = data.get_level()
+	msg.post(string.format("#level%d", level), "load")
+	audio.music_play(const.AUDIO.MUSIC_LEVEL..level)
+	self.loaded = level
+end
+
+function init(self)
+	self.loaded = 0
+	self.reload = false
+	msg.post(".", "acquire_input_focus")
+	loadlevel(self)
+end
+
+function on_message(self, message_id, message,sender)
+	if message_id == const.MSG.NEW_LEVEL then
+		unloadlevel(self)
+		loadlevel(self)
+	elseif message_id == const.MSG.PROXY_LOADED then
+		msg.post(sender, const.MSG.ENABLE)
+	elseif message_id == const.MSG.RELOAD_LEVEL then 
+		unloadlevel(self)
+		self.reload = true
+	elseif message_id == const.MSG.PROXY_UNLOADED then
+		if self.reload then
+			self.reload = false
+			loadlevel(self)
+		end
+	end
+end	

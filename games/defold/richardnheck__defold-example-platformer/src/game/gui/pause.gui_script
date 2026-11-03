@@ -1,0 +1,128 @@
+local data = require "main.data"
+local const = require "game.lib.const"
+local audio = require "main.audio"
+local nav = require "game.lib.nav"
+
+local MENU_LEN = 3   -- Continue, Restart, Quit
+
+-- Nodes
+local CONTAINER = "container"
+local CLOSE_BUTTON = "close-button"
+local ARROW = "arrow"
+
+
+function init(self)
+	self.handpos = 1
+	self.arrowpos = {}
+	for n = 1, MENU_LEN do
+		self.arrowpos[n] = gui.get_position(gui.get_node(tostring(n)))
+	end
+	self.node = gui.get_node(CONTAINER)
+	self.close_button = gui.get_node(CLOSE_BUTTON)
+	gui.set_enabled(self.node, false)
+	--gui.set_position(self.node, vmath.vector3(data.SCR_W/2, (data.SCR_H/2), 0))
+end
+
+function update(self, dt)
+	if data.state == data.STATE_PAUSE then
+		local pos = vmath.vector3(self.arrowpos[self.handpos].x - 32, self.arrowpos[self.handpos].y, 0)
+		gui.set_position(gui.get_node(ARROW), pos)
+	end
+end
+
+-- Pause the game
+local function pause_game(self)
+	gui.set_enabled(self.node, true)
+	data.state = data.STATE_PAUSE
+	msg.post(const.URLS.MAIN_HANDLER, const.MSG.SET_TIME_STEP, {factor = 0, mode = 0})
+end
+
+-- Resume the game
+local function resume_game(self)
+	gui.set_enabled(self.node, false)
+	data.state = data.STATE_PLAYING
+	msg.post(const.URLS.MAIN_HANDLER, const.MSG.SET_TIME_STEP, {factor = 1, mode = 0})
+end
+
+-- Return the index of the menu item under the cursor, or nil
+local function hovered_item(action)
+	for n = 1, MENU_LEN do
+		if gui.pick_node(gui.get_node(tostring(n)), action.x, action.y) then
+			return n
+		end
+	end
+end
+
+-- Accept the currently selected menu item
+local function select(self)
+	if self.handpos == 1 then
+		-- Continue
+		audio.sound(const.AUDIO.SELECT)
+		resume_game(self)
+	elseif self.handpos == 2 then
+		-- Restart from the start of the level, ignoring any reached checkpoint
+		audio.sound(const.AUDIO.SELECT)
+		resume_game(self)
+		nav.restart_level()
+	elseif self.handpos == 3 then
+		-- Quit to the main menu
+		audio.sound(const.AUDIO.SELECT, function()
+			resume_game(self)
+			nav.quit_to_menu()
+		end)
+	end
+end
+
+local function input(self, action_id, action)
+	if action_id == nil then
+		-- Mouse hover: move the arrow to the hovered item
+		local item = hovered_item(action)
+		if item and item ~= self.handpos then
+			self.handpos = item
+			audio.sound(const.AUDIO.BEEP)
+		end
+	elseif action_id == const.ACTIONS.UP and action.pressed then
+		self.handpos = self.handpos - 1
+		if self.handpos < 1 then
+			self.handpos = MENU_LEN
+		end
+		audio.sound(const.AUDIO.BEEP)
+	elseif action_id == const.ACTIONS.DOWN and action.pressed then
+		self.handpos = self.handpos + 1
+		if self.handpos > MENU_LEN then
+			self.handpos = 1
+		end
+		audio.sound(const.AUDIO.BEEP)
+	elseif action_id == const.ACTIONS.CONFIRM and action.pressed then
+		select(self)
+	elseif action_id == const.ACTIONS.EXIT and action.pressed then
+		resume_game(self)
+	elseif action_id == const.ACTIONS.TOUCH and action.pressed then
+		if gui.pick_node(self.close_button, action.x, action.y) then
+			-- Close button clicked: resume the game
+			audio.sound(const.AUDIO.SELECT)
+			resume_game(self)
+		else
+			-- Mouse click: select the clicked item
+			local item = hovered_item(action)
+			if item then
+				self.handpos = item
+				select(self)
+			end
+		end
+	end
+end
+	
+function on_input(self, action_id, action)
+	-- All overlay GUIs share the "view" game object and so they share input focus.
+	-- Gate on visibility so the pause menu only reacts while it is showing.
+	if not gui.is_enabled(self.node) then return end
+	input(self, action_id, action)
+	return true   -- consume input while paused
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == const.MSG.SHOW then
+		pause_game(self)
+	end
+end
