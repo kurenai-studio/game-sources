@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beach Road</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <div id="status" class="panel slim">
+      <span id="clock">18:36</span><i>·</i><span id="weatherName">Clear</span><i>·</i><span id="odo">0.0 km</span>
+    </div>
+    <div id="region"></div>
+    <div id="toast"></div>
+
+    <div id="speedo" class="panel">
+      <div class="speed"><b id="speed">0</b><span id="unit">km/h</span></div>
+      <div class="row">
+        <span id="gear">N</span>
+        <span id="mode" class="badge manual">Manual</span>
+        <span id="lightsIcon" class="dim" title="Headlights">◐</span>
+      </div>
+    </div>
+
+    <div id="quick" class="panel slim">
+      <button data-act="autodrive">Autodrive <kbd>E</kbd></button>
+      <button data-act="cruise">Cruise <kbd>C</kbd></button>
+      <button data-act="camera"><span id="camName">Chase</span> <kbd>V</kbd></button>
+      <button data-act="menu">Menu <kbd>Esc</kbd></button>
+    </div>
+
+    <div id="radio" class="panel">
+      <button data-act="prevStation" aria-label="Previous station">‹</button>
+      <div class="info"><div id="stName">Radio</div><div id="stMeta"></div></div>
+      <button data-act="nextStation" aria-label="Next station">›</button>
+    </div>
+
+    <div id="hint">W S to drive · A D to steer · E autodrive · C cruise · V camera · Esc menu</div>
+  </div>
+
+  <div id="menu"></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
