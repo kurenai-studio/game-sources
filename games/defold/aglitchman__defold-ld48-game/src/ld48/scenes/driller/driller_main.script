@@ -1,0 +1,309 @@
+local app_scenemanager = require("ld48.app.scenemanager")
+local app_render = require("ld48.app.render")
+local lume = require("ld48.app.lume")
+local player_state = require("ld48.scenes.common.player_state")
+local flow = require("ludobits.m.flow")
+local powerups = require("ld48.scenes.powerups.powerups_helper")
+
+local RAYCAST_FIRE = { hash("harvester"), hash("target_blue"), hash("plant"), hash("floor") }
+local RAYCAST_HOLO = { hash("holo") }
+local RAYCAST_NEAREST = { all = false }
+
+local DISPLAY1_ID = hash("/display1")
+local DISPLAY2_ID = hash("/display2")
+local DISPLAY3_ID = hash("/display3")
+
+local function add_ammo(self)
+    local s = player_state
+    local ws = s.weapon_state
+
+    if ws.ammo_count < 10 then
+        ws.ammo_count = math.min(ws.max_ammo, ws.ammo_count + 1)
+    end
+end
+
+local function spawn_fx_contact(self, pos, normal)
+    local url = "/main#fx_contact"
+    local fx_obj = factory.create(url, pos)
+
+    local n = vmath.normalize(pos - app_render.view_position)
+    local ey = math.deg(math.atan2(n.x, n.z))
+    go.set(fx_obj, "euler.y", ey)
+
+    go.animate(msg.url(nil, fx_obj, "sprite"), "tint.w", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0.35)
+
+    local scale = 1
+    go.set(fx_obj, "scale", vmath.vector3(scale * 0.1))
+    go.animate(fx_obj, "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(scale), go.EASING_LINEAR, 0.35, 0, function (self)
+        go.delete(fx_obj)
+    end)
+end
+
+local CHUNK_FAR = 3000
+local CHUNK_UPDATE = 1
+local CHUNK_SIZE = 1000
+local function chunked(x)
+    return math.floor(x / CHUNK_SIZE) * CHUNK_SIZE
+end
+
+local function generate_floor(self)
+    self.floor_map = self.floor_map or {}
+    local RADIUS = chunked(CHUNK_FAR + CHUNK_SIZE) / CHUNK_SIZE
+
+    local MY_X = chunked(player_state.pos.x)
+    local MY_Z = chunked(player_state.pos.z)
+
+    CHUNK_UPDATE = CHUNK_UPDATE + 1
+
+    for ix = -RADIUS, RADIUS do
+        for iz = -RADIUS, RADIUS do
+            local x = ix * CHUNK_SIZE + MY_X
+            local z = iz * CHUNK_SIZE + MY_Z
+            local id = x .. "_" .. z
+
+            if self.floor_map[id] then
+                self.floor_map[id].used = CHUNK_UPDATE
+            else
+                local obj_id = factory.create("#floor")
+                local pos = vmath.vector3(x, 0, z)
+                go.set_position(pos, obj_id)
+                self.floor_map[id] = {
+                    obj_id = obj_id,
+                    pos = pos,
+                    used = CHUNK_UPDATE
+                }
+            end
+        end
+    end
+
+    local d = {}
+    for id, v in pairs(self.floor_map) do
+        if v.used ~= CHUNK_UPDATE then
+            table.insert(d, id)
+            go.delete(v.obj_id)
+        end
+    end
+    for _, id in ipairs(d) do
+        self.floor_map[id] = nil
+    end
+end
+
+function init(self)
+    local bg_color = vmath.vector4(lume.color("#EFAC68"))
+    msg.post("@render:", "clear_color", {color = bg_color})
+
+    flow.start(function()
+        app_render.reset()
+        player_state.reset()
+        powerups.reset()
+
+        app_render.fog_color = bg_color
+        app_render.fog_color.w = 0.0 -- zero value enables it
+
+        generate_floor(self)
+
+        self.cog_ez = 0
+        -- go.animate("/power_plant_cog", "euler.z", go.PLAYBACK_LOOP_FORWARD, -3600, go.EASING_LINEAR, 100)
+
+        msg.post("/raycast_tester", "disable")
+
+        for i = 1, 5 do
+            powerups.spawn_blue(vmath.vector3(200 + i * 20 + math.random(10), 10, -350 + (i % 2) * 20 + math.random(20)), nil, false)
+        end
+
+        for i = 1, 10 do
+            local a = math.random() * math.pi * 2
+            local r = math.random(4500, 6000)
+            -- local r = 1000
+            factory.create("/enemies#harvester", vmath.vector3(math.cos(a) * r, 232, math.sin(a) * r))
+        end
+
+        -- Wait for transition completion
+        local _, _, sender = flow.until_message("fade_out_complete")
+        msg.post(sender, "fade_out_complete_ok")
+
+        msg.post(".", hash("acquire_input_focus"))
+
+        -- msg.post("@system:", "toggle_profile")
+
+        if player_state.tutorial_step == 0 then
+            player_state.tutorial_step = 1
+            msg.post("/ui#crosshair", "tutorial1")
+        end
+
+        timer.delay(1, true, add_ammo)
+    end, nil, error)
+end
+
+function final(self)
+    flow.stop()
+end
+
+local function raycast_to_holo(self)
+    local s = player_state
+    local ws = s.weapon_state
+    ws.holo = false
+    self.cur_holo = nil
+    local results = physics.raycast(s.pos + s.eye_pos, s.pos + s.eye_pos + app_render.view_front * 400, RAYCAST_HOLO, RAYCAST_NEAREST)
+    if results ~= nil then
+        for _,result in ipairs(results) do
+            -- msg.post("/raycast_tester", "enable")
+            -- go.set_position(result.position + result.normal * 0.05, "/raycast_tester")
+
+            ws.holo = true
+            self.cur_holo = result.id
+        end
+    end
+end
+
+function update(self, dt)
+    local s = player_state
+    local ws = s.weapon_state
+    local pp = s.power_plant
+
+    generate_floor(self)
+
+    -- Weapon aim
+    s.update_aim(dt)
+
+    -- Holo stuff + Weapon
+    label.set_text("/weapon_ui#label", string.format("%02d", ws.ammo_count))
+    go.set("/weapon_ui#holo", "tint.w", app_render.holo_tint and 0.6 or 0.75)
+    go.set("/weapon_ui#signal", "tint.w", app_render.holo_tint and 0.6 or 0.75)
+    go.set("/weapon_ui#label", "color.w", app_render.holo_tint and 0.6 or 0.75)
+
+    local power_plant_pos = go.get_world_position("/power_plant_body")
+    local signal_strength = lume.round(lume.clamp(1 - vmath.length(power_plant_pos - s.pos) / 15000, 0, 1) * 4 + 1)
+    sprite.play_flipbook("/weapon_ui#signal", "weap_signal_" .. signal_strength)
+
+    raycast_to_holo(self)
+
+    -- Display 1
+    label.set_text("/display1_drill_value#holo", string.format("%.2f%%", pp.energy / pp.max_energy * 100))
+
+    if pp.energy >= pp.max_energy then
+        pp.timeout = pp.timeout - dt
+        if pp.timeout < 0 then
+            pp.timeout = 10
+            app_scenemanager.load_scene("finalcut")
+        end
+    end
+
+    --
+    self.cog_ez = self.cog_ez - (5 + pp.energy / 7) * dt
+    go.set("/power_plant_cog", "euler.z", self.cog_ez)
+
+    --
+    if player_state.tutorial_step == 1 and player_state.cursor_locked then
+        player_state.tutorial_step = 2
+        msg.post("/ui#crosshair", "tutorial2")
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    flow.on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+    if action_id == hash("touch") and action.pressed then
+
+        local s = player_state
+        local ws = s.weapon_state
+        local pp = s.power_plant
+
+        if self.cur_holo == DISPLAY2_ID then
+            msg.post("/display2_bg#holo_display", "highlight")
+            if not ws.present then
+                if s.remove_blue(5) then
+                    ws.present = true
+                    label.set_text("/display2_gun_text#holo", "1 = AMMO +10")
+                end
+            else
+                if s.remove_blue(1) then
+                    ws.ammo_count = math.min(ws.max_ammo, ws.ammo_count + 10)
+                end
+            end
+            return
+        end
+
+        if self.cur_holo == DISPLAY1_ID then
+            msg.post("/display1_bg#holo_display", "highlight")
+            if ws.present then
+                if s.remove_blue(1) then
+                    pp.energy = math.min(pp.max_energy, pp.energy + 1)
+                end
+            end
+            return
+        end
+
+        if self.cur_holo == DISPLAY3_ID then
+            msg.post("/display3_bg#holo_display", "highlight")
+            return
+        end
+
+        if not s.weapon_state.present then
+            return
+        end
+
+        -- SHOOTING!
+
+        if ws.ammo_count <= 0 then
+            go.set("/weapon_ui#holo", "tint", vmath.vector4(0.9, 0, 0, 1))
+            go.animate("/weapon_ui#holo", "tint", go.PLAYBACK_ONCE_FORWARD, vmath.vector4(1, 1, 1, 0.75), go.EASING_LINEAR, 0.2)
+            return
+        end
+
+        ws.ammo_count = ws.ammo_count - 1
+        if ws.ammo_count < 0 then
+            ws.ammo_count = 0
+        end
+
+        local s = player_state
+        local ws = s.weapon_state
+        local results = physics.raycast(s.pos + s.eye_pos, s.pos + s.eye_pos + app_render.view_front * 3000, RAYCAST_FIRE, RAYCAST_NEAREST)
+        if results ~= nil then
+            for _,result in ipairs(results) do
+                spawn_fx_contact(self, result.position, result.normal)
+                if result.group == hash("target_blue") then
+                    powerups.free_from_harvester(result.id)
+                end
+                -- msg.post("/raycast_tester", "enable")
+                -- go.set_position(result.position + result.normal * 0.05, "/raycast_tester")
+            end
+        end
+
+        msg.post("/player_weapon#weapon_anim", "shoot")
+
+        ws.aim_penalty = ws.aim_penalty + 70
+
+    elseif player_state.tutorial_step == 2 and 
+            action.pressed and
+            (action_id == hash("key_w") or 
+            action_id == hash("key_s") or 
+            action_id == hash("key_a") or 
+            action_id == hash("key_d")) then
+
+        player_state.tutorial_step = 3
+        msg.post("/ui#crosshair", "tutorial3")
+
+    end
+
+    if player_state.DEBUG then
+        if action_id == hash("key_5") and action.pressed then
+            player_state.weapon_state.present = true
+        elseif action_id == hash("key_6") and action.pressed then
+            for i = 1, 100 do
+                player_state.add_blue()
+            end
+        elseif action_id == hash("key_7") and action.pressed then
+            player_state.power_plant.energy = player_state.power_plant.energy + 10
+        elseif action_id == hash("key_8") and action.pressed then
+            app_scenemanager.load_scene("finalcut")
+        elseif action_id == hash("key_9") and action.pressed then
+            app_scenemanager.load_scene("intro")
+        end
+    end
+end
+
+function on_reload(self)
+end
