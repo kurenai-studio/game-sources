@@ -1,0 +1,424 @@
+<menus>
+    <menu>
+        <id>menu_welcome</id>
+        <text>Welcome to pyNekketsu</text>
+        <dialogtext>Press arrows to move, L to continue and K to go back.</dialogtext>
+        <!--<variable></variable>--><!-- do not change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <sub-menu>
+                <text>Play!</text>
+                <goto>menu_play</goto>
+                <default></default>
+            </sub-menu>
+            <sub-menu>
+                <text>Instructions</text>
+                <goto>menu_instructions1</goto>
+            </sub-menu>
+            <sub-menu>
+                <text>Options</text>
+                <goto>menu_options</goto>
+            </sub-menu>
+            <sub-menu>
+                <text>Quit</text>
+                <goto>menu_quit</goto>
+            </sub-menu>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_play</id>
+        <text>Play!</text>
+        <variable>game_mode</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>Simple Match</text>
+                <value>simple_match</value>
+                <goto>menu_simple_match1</goto>
+                <default></default>
+            </setting>
+<!--            <setting>
+                <text>Championship</text>
+                <value>championship</value>
+                <goto>menu_championship</goto>
+            </setting>
+            <setting>
+                <text>Survival</text>
+                <value>survival</value>
+                <goto>menu_survival</goto>
+            </setting>-->
+            <setting>
+                <text>Fight</text>
+                <value>fight</value>
+                <goto>menu_fight1</goto>
+            </setting>
+            <setting>
+                <text>Cancel</text>
+                <value>restart</value>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_simple_match1</id>
+        <text>Simple Match: human players</text>
+        <variable>human_players_repartition</variable>
+        <choices>
+            <setting>
+                <text>no human player</text>
+                <value>none</value>
+                <goto>menu_simple_match2</goto>
+            </setting>
+            <setting>
+                <text>1 player</text>
+                <value>1vsCPU</value>
+                <goto>menu_simple_match2</goto>
+                <default></default>
+            </setting>
+            <setting>
+                <text>2 players team</text>
+                <value>12vsCPU</value>
+                <goto>menu_simple_match2</goto>
+            </setting>
+            <setting>
+                <text>2 players contest</text>
+                <value>1vs2</value>
+                <goto>menu_simple_match2</goto>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_simple_match2</id>
+        <text>Simple Match: number of players</text>
+        <variable>nb_players_team</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>1</text>
+                <value>1</value>
+                <goto>menu_simple_match3</goto>
+            </setting>
+            <setting>
+                <text>2</text>
+                <value>2</value>
+                <default></default>
+                <goto>menu_simple_match3</goto>
+            </setting>
+            <setting>
+                <text>3</text>
+                <value>3</value>
+                <goto>menu_simple_match3</goto>
+            </setting>
+            <setting>
+                <text>4</text>
+                <value>4</value>
+                <goto>menu_simple_match3</goto>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_simple_match3</id>
+        <text>Simple Match: duration (s)</text>
+        <variable>duration</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>30</text>
+                <value>30</value>
+                <goto>menu_simple_match4</goto>
+            </setting>
+            <setting>
+                <text>60</text>
+                <value>60</value>
+                <default></default>
+                <goto>menu_simple_match4</goto>
+            </setting>
+            <setting>
+                <text>120</text>
+                <value>120</value>
+                <goto>menu_simple_match4</goto>
+            </setting>
+            <setting>
+                <text>240</text>
+                <value>240</value>
+                <goto>menu_simple_match4</goto>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_simple_match4</id>
+        <text>Simple Match: difficulty</text>
+        <variable>difficulty</variable><!-- this menu is here to change a setting-->
+        <exits></exits>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>too easy</text>
+                <value>2</value>
+            </setting>
+            <setting>
+                <text>easy</text>
+                <value>3</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>medium</text>
+                <value>4</value>
+            </setting>
+            <setting>
+                <text>hard</text>
+                <value>5</value>
+            </setting>
+            <setting>
+                <text>too hard</text>
+                <value>6</value>
+            </setting>
+        </choices>
+    </menu>
+
+
+
+
+
+
+
+    <menu>
+        <id>menu_fight1</id>
+        <text>Fight: human players</text>
+        <variable>human_players_repartition</variable>
+        <choices>
+            <setting>
+                <text>no human player</text>
+                <value>none</value>
+                <goto>menu_fight2</goto>
+            </setting>
+            <setting>
+                <text>1 player</text>
+                <value>1vsCPU</value>
+                <goto>menu_fight2</goto>
+                <default></default>
+            </setting>
+            <setting>
+                <text>2 players contest</text>
+                <value>1vs2</value>
+                <goto>menu_fight2</goto>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_fight2</id>
+        <text>Fight: duration (s)</text>
+        <variable>duration</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>30</text>
+                <value>30</value>
+                <goto>menu_fight3</goto>
+            </setting>
+            <setting>
+                <text>60</text>
+                <value>60</value>
+                <default></default>
+                <goto>menu_fight3</goto>
+            </setting>
+            <setting>
+                <text>120</text>
+                <value>120</value>
+                <goto>menu_fight3</goto>
+            </setting>
+            <setting>
+                <text>240</text>
+                <value>240</value>
+                <goto>menu_fight3</goto>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_fight3</id>
+        <text>Fight: difficulty</text>
+        <variable>difficulty</variable><!-- this menu is here to change a setting-->
+        <exits></exits>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>too easy</text>
+                <value>2</value>
+            </setting>
+            <setting>
+                <text>easy</text>
+                <value>3</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>medium</text>
+                <value>4</value>
+            </setting>
+            <setting>
+                <text>hard</text>
+                <value>5</value>
+            </setting>
+            <setting>
+                <text>too hard</text>
+                <value>6</value>
+            </setting>
+        </choices>
+    </menu>
+
+
+
+
+
+
+
+
+
+    <menu>
+        <id>menu_options</id>
+        <text>Options</text>
+        <!--<variable></variable>--><!-- do not change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <sub-menu>
+                <text>Sound</text>
+                <goto>menu_sound</goto>
+                <default></default>
+            </sub-menu>
+            <sub-menu>
+                <text>Speed</text>
+                <goto>menu_speed</goto>
+            </sub-menu>
+
+            <sub-menu>
+                <text>Input Player 1</text>
+                <goto>menu_input_p1</goto>
+            </sub-menu>
+            <sub-menu>
+                <text>Input Player 2</text>
+                <goto>menu_input_p2</goto>
+            </sub-menu>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_sound</id>
+        <text>Options</text>
+        <variable>sound</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>On</text>
+                <value>on</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>Off</text>
+                <value>off</value>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_speed</id>
+        <text>Options</text>
+        <variable>speed</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>1</text>
+                <value>1</value>
+            </setting>
+            <setting>
+                <text>2</text>
+                <value>2</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>3</text>
+                <value>3</value>
+            </setting>
+            <setting>
+                <text>4</text>
+                <value>4</value>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_input_p1</id>
+        <text>Input for player 1</text>
+        <variable>input_p1</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>Keyboard</text>
+                <value>keyboard</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>Joystick</text>
+                <value>joystick</value>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_input_p2</id>
+        <text>Input for player 2</text>
+        <variable>input_p2</variable><!-- this menu is here to change a setting-->
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>Keyboard</text>
+                <value>keyboard</value>
+                <default></default>
+            </setting>
+            <setting>
+                <text>Joystick</text>
+                <value>joystick</value>
+            </setting>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_quit</id>
+        <text>You want to quit?</text>
+        <variable>quit_game</variable><!-- this menu is here to change a setting-->
+        <exits></exits>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>Yes</text>
+                <value>quit</value>
+            </setting>
+            <setting>
+                <text>No</text>
+                <value>no</value>
+                <default></default>
+                <goto>menu_welcome</goto>
+            </setting>
+        </choices>
+    </menu>
+    
+    
+    <!-- instructions...-->
+    <menu>
+        <id>menu_instructions1</id>
+        <text>Instructions (1 of 3):</text>
+        <dialogtext>Press L to continue, K to go back and Esc to quit.</dialogtext>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <sub-menu>
+                <text>Continue...</text>
+                <goto>menu_instructions2</goto>
+                <default></default>
+            </sub-menu>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_instructions2</id>
+        <text>Instructions (2 of 3):</text>
+        <dialogtext>Player 1 controls:          arrows (to move),           K (shoot or attack),        L (pass), P (pause, start)</dialogtext>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <sub-menu>
+                <text>Continue...</text>
+                <goto>menu_instructions3</goto>
+                <default></default>
+            </sub-menu>
+        </choices>
+    </menu>
+    <menu>
+        <id>menu_instructions3</id>
+        <text>Instructions (3 of 3):</text>
+        <dialogtext>Player 2 controls:          F, G, H, T (to move),       A (shoot or attack),        Z (pass), R (pause, start)</dialogtext>
+        <variable>instructions</variable>
+        <choices><!-- choices can be setting or sub-menu. if variable not set, only sub-menus are possible-->
+            <setting>
+                <text>Return</text>
+                <value>read</value>
+                <goto>menu_welcome</goto>
+            </setting>
+        </choices>
+    </menu>
+ 
+</menus>
