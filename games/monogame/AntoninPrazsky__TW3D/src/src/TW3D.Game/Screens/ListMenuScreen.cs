@@ -1,0 +1,150 @@
+using System;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using TW3D.Audio;
+using TW3D.Input;
+
+namespace TW3D.Screens
+{
+    /// <summary>
+    /// A menu with a title and its items one per line in the middle of the screen (Options, the pause menu), possibly
+    /// with some content above them, or with its items in a row along the bottom of the screen and the content in the
+    /// middle (the results of a level).
+    /// The items are chosen by the mouse or touch, the arrow keys and Enter, or a gamepad; Esc (Back) closes the menu.
+    /// </summary>
+    public abstract class ListMenuScreen : Screen
+    {
+        //The line spacing relative to the line height
+        private const float LineSpacing = 1.4f;
+        //The least gap between the items in a row, relative to the line height
+        private const float RowGap = 2f;
+        //Extra area around the item text that reacts to the mouse, in reference pixels
+        private const float ItemPadding = 12f;
+        //How far the items slide in and out, and the title, in reference pixels
+        private const float ItemSlide = 320f;
+        private const float TitleSlide = 140f;
+
+        private readonly string title;
+        private readonly MenuItems items = new MenuItems();
+        private float contentTop;
+        //Font scale of the items as laid out (in a row they may be smaller)
+        private float itemScale;
+
+        protected ListMenuScreen(string title)
+        {
+            this.title = title;
+        }
+
+        protected void AddItem(MenuItem item)
+        {
+            items.Add(item);
+        }
+
+        /// <summary>
+        /// The items stand in a row along the bottom of the screen, the first one on the left, the last one on the right
+        /// (left and right move between them), leaving the middle of the screen to the content: on phones, whose user
+        /// interface is bigger, a column of items leaves little room for content above it.
+        /// </summary>
+        protected bool ItemsInRow { get; set; }
+
+        public override void HandleInput(InputState input, GameTime gameTime)
+        {
+            UpdateLayout();
+            items.FollowMouse(input);
+
+            if (ItemsInRow ? input.LeftPressed : input.UpPressed)
+                items.MoveFocus(-1);
+            if (ItemsInRow ? input.RightPressed : input.DownPressed)
+                items.MoveFocus(1);
+
+            //In a row, left and right move the focus, so they do not switch an item
+            if (!items.Activate(input, switchByLeftRight: !ItemsInRow) && input.BackPressed)
+            {
+                Manager.Sounds.Play(Sound.MenuBack);
+                Close();
+            }
+        }
+
+        public override void LoadContent()
+        {
+            items.Sounds = Manager.Sounds;
+        }
+
+        private void UpdateLayout()
+        {
+            Viewport viewport = Manager.Viewport;
+            SpriteFont font = Manager.Fonts.Menu;
+            Rectangle safe = Manager.SafeArea;
+            float scale = MenuItems.TextScale * Manager.UiScale;
+            float lineHeight = font.MeasureString("M").Y * scale;
+            float belowTitle = safe.Top + MainMenuScreen.TitleHeight(Manager) + lineHeight * (LineSpacing - 1f) * 2f;
+            float content = ContentHeight;
+            int padding = (int)(ItemPadding * Manager.UiScale);
+
+            if (ItemsInRow)
+            {
+                //The items spread along the bottom with equal gaps, smaller if the gaps would be too narrow (phones)
+                float width = 0f;
+                foreach (MenuItem item in items)
+                    width += font.MeasureString(item.Text()).X * scale;
+                float fit = Math.Min(1f, (safe.Width - RowGap * lineHeight * (items.Count - 1)) / width);
+                itemScale = scale * fit;
+                float rowHeight = lineHeight * fit;
+                float gap = items.Count > 1 ? (safe.Width - width * fit) / (items.Count - 1) : 0f;
+                float rowTop = safe.Bottom - rowHeight;
+                float x = items.Count > 1 ? safe.Left : (viewport.Width - width * fit) / 2f;
+                for (int i = 0; i < items.Count; i++)
+                {
+                    Vector2 size = font.MeasureString(items[i].Text()) * itemScale;
+                    items[i].Place(new Rectangle((int)x, (int)rowTop, (int)size.X, (int)rowHeight), padding);
+                    x += size.X + gap;
+                }
+                //The content in the middle between the title and the row
+                contentTop = Math.Max((belowTitle + rowTop - content) / 2f, belowTitle);
+                return;
+            }
+
+            //In the middle of the screen, but below the title; smaller if they do not fit under it (the user interface of
+            //phones is bigger)
+            float needed = lineHeight * (LineSpacing * (items.Count - 1) + 1f);
+            float columnFit = Math.Min(1f, (safe.Bottom - belowTitle - content) / needed);
+            itemScale = scale * columnFit;
+            float line = lineHeight * columnFit;
+            float top = Math.Max(viewport.Height / 2f - (content + line * LineSpacing * items.Count) / 2f, belowTitle);
+            contentTop = top;
+            top += content;
+            for (int i = 0; i < items.Count; i++)
+            {
+                Vector2 size = font.MeasureString(items[i].Text()) * itemScale;
+                items[i].Place(new Rectangle((int)((viewport.Width - size.X) / 2f), (int)(top + i * line * LineSpacing), (int)size.X, (int)line), padding);
+            }
+        }
+
+        /// <summary>Draws what is behind the menu; called between SpriteBatch.Begin and End.</summary>
+        protected virtual void DrawBackdrop() { }
+
+        /// <summary>Height of the content above the items, in screen pixels.</summary>
+        protected virtual float ContentHeight => 0f;
+
+        /// <summary>Draws the content above the items from its top; called between SpriteBatch.Begin and End.</summary>
+        /// <param name="slide">How far the items are moved sideways as they slide in or out.</param>
+        protected virtual void DrawContent(float top, float slide, float alpha) { }
+
+        public override void Draw(GameTime gameTime)
+        {
+            UpdateLayout();
+            float uiScale = Manager.UiScale;
+            float alpha = Visibility;
+
+            //Items slide in from the left and out to the right, the title slides from the top
+            float slide = SlideAmount * ItemSlide * uiScale * (IsDisappearing ? 1f : -1f);
+
+            Manager.SpriteBatch.Begin();
+            DrawBackdrop();
+            DrawContent(contentTop, slide, alpha);
+            items.Draw(Manager, itemScale, slide, alpha, HasFocus);
+            MainMenuScreen.DrawTitle(Manager, title, Manager.SafeArea.Top - SlideAmount * TitleSlide * uiScale, alpha);
+            Manager.SpriteBatch.End();
+        }
+    }
+}
