@@ -1,0 +1,574 @@
+// Copied from F:\bay-ride\src\render\post.ts (Bay Ride). Adapted: profiler type made local; far plane settable (setFar); ink fade distances settable (setInkFade) for altitude views.
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
+import { TOD_GRADE } from "./todUniforms";
+import { G, SAFE_GLSL } from "./materials";
+import { Paint } from "./paint";
+import { renderSplit } from "./mrtSplit";
+/** Optional GPU pass profiler (Bay Ride's render/profiler.ts, not copied). */
+export interface Profiler {
+  on: boolean;
+  begin(name: string, r: THREE.WebGLRenderer): void;
+  end(name: string, r: THREE.WebGLRenderer): void;
+  cpuMark(name: string, ms: number): void;
+}
+
+/** Lowest scene resolution scale the adaptive controller goes to. */
+const RES_FLOOR = 0.75;
+const RES_STEP = 0.05;
+
+/**
+ * Post options. The phone tier (platform.ts) also sets the adaptive range and frame budgets, the
+ * bloom's share of the output and, on a GPU that can't render to half floats, 8-bit colour targets;
+ * left out, they are the desktop game's own.
+ */
+export interface PostOptions {
+  kuwahara: boolean;
+  msaa?: number;
+  /** Adaptive resolution: starting scale, floor and ceiling. */
+  res?: [number, number, number];
+  /** GPU timer high/low marks, frame interval high/low marks (ms). */
+  budget?: [number, number, number, number];
+  /** Bloom resolution as a share of the output (0.5 by default). */
+  bloom?: number;
+  /** Ink width and paint radius follow the frame height below 1080p (phones; platform.ts `fineLines`). */
+  fineLines?: boolean;
+  colorType?: THREE.TextureDataType;
+}
+
+const FS_VS = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+
+/**
+ * Ink line width in output pixels, and its strength: 1.35 px at 1080p and never thinner; or, `fine`,
+ * thinner with the frame, sampled at least half a pixel apart and fading below that.
+ */
+function inkWidth(H: number, fine: boolean): [width: number, strength: number] {
+  if (!fine) return [Math.max(1.0, H / 1080) * 1.35, 1];
+  const w = (H / 1080) * 1.35;
+  return [Math.max(w, 0.5), Math.min(1, w / 0.5)];
+}
+
+/**
+ * Scene → MRT (colour, normal/id/mask, depth) → [paint filter + ink outlines] → bloom →
+ * [warm grade, vignette, paper grain, sRGB] → SMAA (only when MSAA is off) → CAS sharpen.
+ */
+export class Post {
+  readonly mrt: THREE.WebGLRenderTarget;
+  readonly composer: EffectComposer;
+  private ink: ShaderPass;
+  private grade: ShaderPass;
+  private smaa: SMAAPass;
+  private sharpen: ShaderPass;
+  readonly bloom: UnrealBloomPass;
+  /** Anisotropic Kuwahara paint filter ahead of the ink pass (null with ?kuwahara=0). */
+  readonly paint: Paint | null;
+  prof: Profiler | null = null;
+  /** Scene in one two-target pass (?mrt1), for comparing against the split passes. */
+  singlePass = new URLSearchParams(location.search).has("mrt1");
+  private wrapped = false;
+  sceneCalls = 0;
+  sceneTris = 0;
+  /**
+   * Scene resolution scale: the scene and the paint filter draw on the lower-left `scale` of their
+   * full-size targets (no reallocation or recompile on a change), and the ink pass upsamples into
+   * the full-resolution post chain. ?res=1 or ?res=0.8 fixes it; otherwise it adapts between 1 and
+   * RES_FLOOR to a GPU frame-time budget.
+   */
+  scale = 1;
+  readonly adaptive: boolean;
+  /** Ink width and paint radius follow the frame height (phones; see inkWidth). */
+  private readonly fine: boolean;
+  private W: number;
+  private H: number;
+  private timer: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null;
+  private queries: WebGLQuery[] = [];
+  private freeQ: WebGLQuery[] = [];
+  private lastFrame = 0;
+  private ctlT = 0;
+  private ema = 0;
+  private over = 0;
+  private under = 0;
+  private hold = 0;
+  private lastRaise = -1e9;
+  private raiseBlock = 0;
+  private backoff = 4000;
+  /** Consecutive frames clearly over budget. */
+  private hot = 0;
+  private changed = -1e9;
+  private floor = RES_FLOOR;
+  private ceil = 1;
+  private budget: [number, number, number, number] = [14.5, 12, 18, 13];
+  /** Scale changes as [ms since page load, new scale, frame ms that triggered it] (checks and captures). */
+  readonly scaleLog: [number, number, number][] = [];
+
+  get msaa(): number {
+    return this.mrt.samples;
+  }
+
+  /** Change scene-pass MSAA at runtime (the target re-allocates on next use); SMAA covers 0. */
+  setMsaa(n: number): void {
+    if (this.mrt.samples === n) return;
+    this.mrt.samples = n;
+    this.mrt.dispose();
+    this.smaa.enabled = n === 0;
+  }
+
+  constructor(private renderer: THREE.WebGLRenderer, w: number, h: number, opts: PostOptions) {
+    const pr = renderer.getPixelRatio();
+    const W = Math.floor(w * pr), H = Math.floor(h * pr);
+    this.W = W;
+    this.H = H;
+    this.fine = !!opts.fineLines;
+    const res = new URLSearchParams(location.search).get("res");
+    const fixed = res !== null && res !== "" && Number.isFinite(Number(res)) ? THREE.MathUtils.clamp(Number(res), 0.5, 1) : null;
+    this.adaptive = fixed === null;
+    if (opts.res) [, this.floor, this.ceil] = opts.res;
+    if (opts.budget) this.budget = opts.budget;
+    const colorType = opts.colorType ?? THREE.HalfFloatType;
+    this.timer = renderer.getContext().getExtension("EXT_disjoint_timer_query_webgl2");
+    this.mrt = new THREE.WebGLRenderTarget(W, H, {
+      count: 2,
+      type: colorType,
+      depthTexture: new THREE.DepthTexture(W, H, THREE.UnsignedIntType),
+      // MSAA on the scene pass: thin blades, wires and lattice resolve without sub-pixel crawl.
+      samples: opts.msaa ?? 4,
+    });
+    this.mrt.textures[0].name = "color";
+    this.mrt.textures[1].name = "normal";
+
+    this.composer = colorType === THREE.HalfFloatType ? new EffectComposer(renderer) : new EffectComposer(renderer, new THREE.WebGLRenderTarget(W, H, { type: colorType }));
+    this.composer.setPixelRatio(pr);
+    this.composer.setSize(w, h);
+
+    this.ink = new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        tColor: { value: null },
+        tNormal: { value: null },
+        tDepth: { value: null },
+        uRes: { value: new THREE.Vector2(W, H) },
+        uNear: { value: 0.15 },
+        uFar: { value: 4200 },
+        uFade: { value: new THREE.Vector2(60, 420) },
+        uWidth: { value: inkWidth(H, this.fine)[0] },
+        ...(this.fine ? { uInkK: { value: inkWidth(H, true)[1] } } : {}),
+        uKuwa: { value: opts.kuwahara ? 1 : 0 },
+        uInk: { value: new THREE.Color("#1c1418") },
+        uS: { value: new THREE.Vector2(1, 1) },
+        uMax: { value: new THREE.Vector2(1, 1) },
+      },
+      vertexShader: FS_VS,
+      fragmentShader: /* glsl */ `
+        ${SAFE_GLSL}
+        uniform sampler2D tColor, tNormal, tDepth;
+        uniform vec2 uRes; uniform float uNear, uFar, uWidth, uKuwa; uniform vec3 uInk; uniform vec2 uFade;${this.fine ? " uniform float uInkK;" : ""}
+        uniform vec2 uS, uMax;
+        varying vec2 vUv;
+        float linz(float d){ float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
+        float lum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+
+        // 4-sector Kuwahara (radius 2): flattens texture into gouache-like patches, keeps edges.
+        vec4 kuwahara(vec2 uv){
+          vec2 px = 1.0 / uRes;
+          vec3 m[4]; float s[4];
+          for (int k = 0; k < 4; k++){
+            vec2 dir = vec2(k == 1 || k == 2 ? -1.0 : 1.0, k >= 2 ? -1.0 : 1.0);
+            vec3 sum = vec3(0.0); float sq = 0.0;
+            for (int j = 0; j <= 2; j++) for (int i = 0; i <= 2; i++){
+              vec3 c = textureLod(tColor, min(uv + vec2(float(i), float(j)) * dir * px, uMax), 0.0).rgb;
+              sum += c; float l = lum(c); sq += l * l;
+            }
+            vec3 mean = sum / 9.0; float lm = lum(mean);
+            m[k] = mean; s[k] = sq / 9.0 - lm * lm;
+          }
+          vec3 best = m[0]; float bs = s[0];
+          for (int k = 1; k < 4; k++) if (s[k] < bs) { bs = s[k]; best = m[k]; }
+          // Even the calmest sector is busy: this is real detail (lattice, leaves, tiles), keep it.
+          return vec4(best, bs);
+        }
+
+        void main(){
+          // The scene fills the lower-left uS of its targets (adaptive resolution); line widths stay
+          // in output pixels. Colour upsamples bilinearly; ids and depth come from the nearest texel.
+          vec2 uv = vUv * uS;
+          vec2 uvC = (floor(uv * uRes) + 0.5) / uRes;
+          vec3 col = safe3(textureLod(tColor, uv, 0.0).rgb);
+          vec4 nC = textureLod(tNormal, uvC, 0.0);
+          // Eye features (irises, catch-lights, lashes, brows, glasses) stay crisp: no paint filter.
+          bool crisp = abs(nC.z * 32.0 - 19.0) < 0.5;
+          float dC = linz(textureLod(tDepth, uvC, 0.0).r);
+          float iC = 1.0 / dC;
+          // On her (shirt 13, hair 14, skin 18, face 19, clothes 22-24) the taps close in with
+          // distance, so a far figure keeps fine lines instead of clotted outlines.
+          float id0 = floor(nC.z * 32.0 + 0.5);
+          bool her = id0 == 13.0 || id0 == 14.0 || id0 == 18.0 || id0 == 19.0 || (id0 >= 22.0 && id0 <= 24.0);
+          vec2 px = uWidth * uS / uRes * (her ? mix(1.0, 0.85, smoothstep(6.0, 30.0, dC)) : 1.0);
+          float eD = 0.0, eN = 0.0, eI = 0.0, mask = max(nC.a, 0.0), nBoat = 0.0;
+          vec2 offs[4];
+          offs[0] = vec2(1.0, 0.0); offs[1] = vec2(0.0, 1.0); offs[2] = vec2(0.7071, 0.7071); offs[3] = vec2(0.7071, -0.7071);
+          for (int i = 0; i < 4; i++){
+            vec2 o = offs[i] * px;
+            ${this.fine ? `// Ids, masks and depths are per texel: a bilinear read between a grass texel (mask -1) and the
+            // sand beside it reads as neither, so the sand drew a ring round every blade. Nearest texel.
+            vec2 u1 = (floor(min(uv + o, uMax) * uRes) + 0.5) / uRes, u2 = (floor((uv - o) * uRes) + 0.5) / uRes;
+            vec4 n1 = textureLod(tNormal, u1, 0.0), n2 = textureLod(tNormal, u2, 0.0);` : `vec4 n1 = textureLod(tNormal, min(uv + o, uMax), 0.0), n2 = textureLod(tNormal, uv - o, 0.0);`}
+            // Excluded surfaces (mask < 0: grass, leaf cards, motes) never ink or induce ink.
+            if (n1.a < 0.0 || n2.a < 0.0) continue;
+            ${this.fine ? `float i1 = 1.0 / linz(textureLod(tDepth, u1, 0.0).r);
+            float i2 = 1.0 / linz(textureLod(tDepth, u2, 0.0).r);` : `float i1 = 1.0 / linz(textureLod(tDepth, min(uv + o, uMax), 0.0).r);
+            float i2 = 1.0 / linz(textureLod(tDepth, uv - o, 0.0).r);`}
+            // Laplacian of 1/z is zero on planes: only creases and silhouettes light up.
+            eD = max(eD, abs(i1 + i2 - 2.0 * iC) / iC);
+            eN = max(eN, length(n1.xy - nC.xy) + length(n2.xy - nC.xy));
+            eI = max(eI, step(0.01, abs(n1.z - nC.z)) + step(0.01, abs(n2.z - nC.z)));
+            nBoat = max(nBoat, max(step(abs(n1.z * 32.0 - 20.5), 0.75), step(abs(n2.z * 32.0 - 20.5), 0.75)));
+            mask = max(mask, max(n1.a, n2.a));
+          }
+          if (nC.a < 0.0) mask = 0.0;
+          float e = max(smoothstep(0.05, 0.16, eD), smoothstep(0.55, 1.0, eN));
+          e = max(e, min(eI, 1.0));
+          // Paint filter: a light gouache flattening on calm mid/far surfaces only. It stays off
+          // near the camera, on ink edges and on fine detail (it boils frame to frame there).
+          if (uKuwa > 0.5 && !crisp) {
+            float wK = 0.5 * smoothstep(6.0, 40.0, dC) * (1.0 - clamp(max(e, min(eI, 1.0)) * 1.5, 0.0, 1.0));
+            if (wK > 0.02) {
+              vec4 k = kuwahara(uv);
+              wK *= 1.0 - smoothstep(0.0015, 0.012, k.a);
+              if (!badF3(k.rgb) && !badF1(wK)) col = mix(col, k.rgb, wK);
+            }
+          }
+          float farInk = smoothstep(uFade.x, uFade.y, dC);
+          float fade = 1.0 - farInk * 0.8;
+          e *= clamp(mask, 0.0, 1.0) * fade;
+          // The rider (shirt 13, hair 14, skin 18, face 19, clothes 22-24) is inked in warm dark brown.
+          float idC = floor(nC.z * 32.0 + 0.5);
+          float chr = (idC == 13.0 || idC == 14.0 || idC == 18.0 || idC == 19.0 || (idC >= 22.0 && idC <= 24.0)) ? 1.0 : 0.0;
+          // Inside her hair only the big clump overlaps ink (deep steps); creases stay soft.
+          float hairIn = (idC == 14.0 && eI < 0.5) ? 1.0 : 0.0;
+          e *= mix(1.0, 0.15 + 0.75 * smoothstep(0.035, 0.11, eD), hairIn);
+          // The boat (hull 20, outboard 21) thins its line with distance, drawing it on her own
+          // pixels only and in a shade of her paint, so far off she stays a light painted shape.
+          float boatC = (idC == 20.0 || idC == 21.0) ? 1.0 : 0.0;
+          float bFar = smoothstep(20.0, 110.0, dC);
+          e *= mix(1.0, mix(1.0 - 0.45 * bFar, 1.0 - bFar, 1.0 - boatC), max(boatC, nBoat));
+          vec3 inkCol = mix(mix(col * 0.22, uInk, 0.55), vec3(0.042, 0.023, 0.016), chr * 0.85);
+          inkCol = mix(inkCol, col * 0.55, boatC * bFar * 0.7);
+          // With distance the line warms and lightens into a darker shade of what it outlines (a
+          // painted edge, not a black map grid).
+          inkCol = mix(inkCol, col * vec3(0.62, 0.56, 0.5), farInk * 0.85 * (1.0 - chr));
+          col = mix(col, inkCol, safe1(e) * 0.92${this.fine ? " * uInkK" : ""});
+          gl_FragColor = vec4(safe3(col), 1.0);
+        }`,
+    });
+    this.ink.uniforms.tColor.value = this.mrt.textures[0];
+    this.ink.uniforms.tNormal.value = this.mrt.textures[1];
+    this.ink.uniforms.tDepth.value = this.mrt.depthTexture;
+    this.composer.addPass(this.ink);
+    // The paint filter replaces the ink pass's own small Kuwahara; ?paint=0..1 sets its strength.
+    this.paint = opts.kuwahara ? new Paint(W, H, this.mrt, colorType) : null;
+    if (this.paint) this.paint.fine = this.fine;
+    if (this.paint) {
+      const ps = new URLSearchParams(location.search).get("paint");
+      if (ps !== null && Number.isFinite(Number(ps))) this.paint.strength = Number(ps);
+      this.ink.uniforms.uKuwa.value = 0;
+      // Found by the shader warm-up (it compiles every material hanging off a pass).
+      Object.assign(this.ink, { paintMaterials: this.paint.materials });
+    }
+
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(w / 2, h / 2), 0.28, 0.5, 1.0);
+    if (opts.bloom !== undefined && opts.bloom !== 0.5) {
+      // The pass halves the size it is given: hand it the share wanted, doubled.
+      const set = this.bloom.setSize.bind(this.bloom), k = opts.bloom * 2;
+      this.bloom.setSize = (bw: number, bh: number) => set(Math.max(2, Math.round(bw * k)), Math.max(2, Math.round(bh * k)));
+    }
+    if (colorType !== THREE.HalfFloatType) {
+      const b = this.bloom as unknown as { renderTargetBright: THREE.WebGLRenderTarget; renderTargetsHorizontal: THREE.WebGLRenderTarget[]; renderTargetsVertical: THREE.WebGLRenderTarget[] };
+      for (const t of [b.renderTargetBright, ...b.renderTargetsHorizontal, ...b.renderTargetsVertical]) t.texture.type = colorType;
+    }
+    this.composer.addPass(this.bloom);
+
+    this.grade = new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        uRes: { value: new THREE.Vector2(W, H) },
+        uTime: { value: 0 },
+      },
+      vertexShader: FS_VS,
+      fragmentShader: /* glsl */ `
+        ${SAFE_GLSL}
+        uniform sampler2D tDiffuse; uniform vec2 uRes; uniform float uTime;
+        uniform vec3 uGradeMul; uniform float uSat;
+        varying vec2 vUv;
+        float h12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+        float vn(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(h12(i), h12(i + vec2(1, 0)), u.x), mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), u.x), u.y); }
+        vec3 toSRGB(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+        void main(){
+          vec3 c = safe3(texture2D(tDiffuse, vUv).rgb) * uGradeMul;
+          float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+          c = mix(vec3(l), c, uSat);
+          // Split tone: cool teal shadows, warm (#fff1d8) highlight lift.
+          c *= mix(vec3(0.96, 1.0, 1.04), vec3(1.0, 0.975, 0.93) * 1.03, smoothstep(0.08, 0.75, l));
+          // Soft shoulder.
+          c = c / (1.0 + max(c - 0.85, 0.0) * 0.8);
+          vec3 s = toSRGB(c);
+          // Vignette.
+          vec2 q = vUv - 0.5; q.x *= uRes.x / uRes.y;
+          s *= mix(1.0, 0.8, smoothstep(0.45, 1.05, length(q)));
+          // Paper / brush grain (screen space, very subtle).
+          vec2 fc = gl_FragCoord.xy;
+          float paper = vn(fc * 0.35) * 0.5 + vn(fc * 0.09 + 7.0) * 0.5;
+          float fib = vn(vec2(fc.x * 0.02, fc.y * 0.6));
+          s *= 0.99 + paper * 0.018 + fib * 0.004;
+          s += (h12(fc) - 0.5) * 0.006;
+          gl_FragColor = vec4(badF3(s) ? vec3(0.0) : clamp(s, 0.0, 1.0), 1.0);
+        }`,
+    });
+    Object.assign(this.grade.uniforms, TOD_GRADE);
+    this.composer.addPass(this.grade);
+
+    // SMAA keeps thin lines (wires, lattice, blades) crisp where FXAA smeared them.
+    this.smaa = new SMAAPass();
+    if (colorType !== THREE.HalfFloatType) {
+      const s = this.smaa as unknown as { _edgesRT: THREE.WebGLRenderTarget; _weightsRT: THREE.WebGLRenderTarget };
+      for (const t of [s._edgesRT, s._weightsRT]) t.texture.type = colorType;
+    }
+    // With MSAA on the scene pass, SMAA only re-softens already resolved edges.
+    this.smaa.enabled = !(opts.msaa ?? 4);
+    this.composer.addPass(this.smaa);
+    // Mild contrast-adaptive sharpening (AMD CAS style): recovers texture after AA without halos.
+    this.sharpen = new ShaderPass({
+      uniforms: { tDiffuse: { value: null }, uTexel: { value: new THREE.Vector2(1 / W, 1 / H) }, uAmount: { value: 0.45 } },
+      vertexShader: FS_VS,
+      fragmentShader: /* glsl */ `
+        uniform sampler2D tDiffuse; uniform vec2 uTexel; uniform float uAmount;
+        varying vec2 vUv;
+        void main(){
+          vec3 c = texture2D(tDiffuse, vUv).rgb;
+          vec3 n = texture2D(tDiffuse, vUv + vec2(0.0, uTexel.y)).rgb;
+          vec3 s = texture2D(tDiffuse, vUv - vec2(0.0, uTexel.y)).rgb;
+          vec3 e = texture2D(tDiffuse, vUv + vec2(uTexel.x, 0.0)).rgb;
+          vec3 w = texture2D(tDiffuse, vUv - vec2(uTexel.x, 0.0)).rgb;
+          vec3 mn = min(c, min(min(n, s), min(e, w))), mx = max(c, max(max(n, s), max(e, w)));
+          // Less sharpening where local contrast is already high (edges), more on soft texture.
+          vec3 amp = sqrt(clamp(min(mn, 1.0 - mx) / max(mx, 1e-4), 0.0, 1.0));
+          vec3 wgt = -amp * mix(0.125, 0.2, uAmount);
+          vec3 o = (c + (n + s + e + w) * wgt) / (1.0 + 4.0 * wgt);
+          gl_FragColor = vec4(clamp(o, 0.0, 1.0), 1.0);
+        }`,
+    });
+    this.composer.addPass(this.sharpen);
+    this.setScale(fixed ?? opts.res?.[0] ?? 1);
+  }
+
+  /** Adapt afresh from scale `s` (phones, as play starts: the loader's compile stalls read as slow frames). */
+  restartAdaptive(s: number): void {
+    if (!this.adaptive) return;
+    this.setScale(s);
+    this.ema = this.over = this.under = this.hot = 0;
+    this.hold = performance.now() + 1500;
+  }
+
+  /** Draw the scene at `s` of the output resolution (viewports and uniforms only). */
+  setScale(s: number): void {
+    this.scale = s;
+    const sw = s >= 1 ? this.W : 2 * Math.max(1, Math.round((this.W * s) / 2));
+    const sh = s >= 1 ? this.H : 2 * Math.max(1, Math.round((this.H * s) / 2));
+    this.mrt.viewport.set(0, 0, sw, sh);
+    this.ink.uniforms.uS.value.set(sw / this.W, sh / this.H);
+    this.ink.uniforms.uMax.value.set((sw - 0.5) / this.W, (sh - 0.5) / this.H);
+    this.paint?.setScale(s);
+  }
+
+  /**
+   * Adaptive resolution: `ms` is the frame's GPU time (scene + post, or the whole frame interval
+   * without a timer).
+   * - Fast drop: three frames in a row more than 12% over budget step down at once, by as many
+   *   steps as the overrun needs (cost ~ scale squared), so a sudden heavy view is caught within a
+   *   few frames instead of after half a second of smoothed overrun.
+   * - Slow drop: the smoothed time over budget for 0.5 s steps down one step (mild overruns).
+   * - Raise: under the low mark for 2 s, and no change for 3 s, one step up. The gap between the
+   *   marks exceeds one step's cost, and a drop soon after a raise blocks raising for a growing
+   *   while, so it settles instead of pumping.
+   * Every change holds the controller for 400 ms (results in flight are from the old scale).
+   */
+  private control(ms: number, gpu: boolean): void {
+    const now = performance.now();
+    const dt = Math.min(0.1, Math.max(0, (now - this.ctlT) / 1000));
+    this.ctlT = now;
+    if (now < this.hold) return;
+    this.ema = this.ema > 0 ? this.ema + (ms - this.ema) * 0.15 : ms;
+    // The timer misses the shadow and reflection passes (~1 ms at 1080p). Without it, a 60 Hz
+    // vsync'd frame reads 16.7 ms however light it is, so only a missed vsync counts as over.
+    const [hg, lg, hf, lf] = this.budget;
+    const hi = gpu ? hg : hf, lo = gpu ? lg : lf;
+    const floor = this.floor, ceil = this.ceil;
+    this.hot = ms > hi * 1.12 ? this.hot + 1 : 0;
+    if (this.ema > hi) { this.over += dt; this.under = 0; }
+    else if (this.ema < lo) { this.under += dt; this.over = 0; }
+    else { this.over = 0; this.under = 0; }
+    let next = this.scale;
+    if (this.hot >= 3 && this.scale > floor) {
+      const want = this.scale * Math.sqrt((hi * 0.95) / ms);
+      next = Math.max(floor, Math.min(this.scale - RES_STEP, Math.round(want * 20) / 20));
+    } else if (this.over >= 0.5 && this.scale > floor) {
+      next = Math.max(floor, Math.round((this.scale - RES_STEP) * 20) / 20);
+    } else if (this.under >= 2 && this.scale < ceil && now >= this.raiseBlock && now - this.changed >= 3000) {
+      next = Math.min(ceil, Math.round((this.scale + RES_STEP) * 20) / 20);
+      this.lastRaise = now;
+    }
+    if (next < this.scale && now - this.lastRaise < 3000) {
+      this.raiseBlock = now + this.backoff;
+      this.backoff = Math.min(30000, this.backoff * 2);
+    }
+    if (next !== this.scale) {
+      if (this.scaleLog.length < 200) this.scaleLog.push([Math.round(now), next, +ms.toFixed(1)]);
+      this.setScale(next);
+      this.over = this.under = 0;
+      this.hot = 0;
+      this.ema = 0;
+      this.changed = now;
+      this.hold = now + 400;
+    }
+  }
+
+  private timeBegin(pf: Profiler | null): WebGLQuery | null {
+    if (!this.adaptive) return null;
+    const now = performance.now();
+    const gpu = !!this.timer && !pf;
+    if (!gpu && this.lastFrame > 0 && now - this.lastFrame < 250) this.control(now - this.lastFrame, false);
+    this.lastFrame = now;
+    if (!gpu) return null;
+    const gl = this.renderer.getContext() as WebGL2RenderingContext;
+    const ext = this.timer!;
+    const disjoint = gl.getParameter(ext.GPU_DISJOINT_EXT);
+    while (this.queries.length) {
+      const q = this.queries[0];
+      if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
+      const ns = gl.getQueryParameter(q, gl.QUERY_RESULT) as number;
+      if (!disjoint) this.control(ns / 1e6, true);
+      this.freeQ.push(q);
+      this.queries.shift();
+    }
+    if (this.queries.length > 4) return null;
+    const q = this.freeQ.pop() ?? gl.createQuery()!;
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
+    return q;
+  }
+
+  private timeEnd(q: WebGLQuery | null): void {
+    if (!q) return;
+    const gl = this.renderer.getContext() as WebGL2RenderingContext;
+    gl.endQuery(this.timer!.TIME_ELAPSED_EXT);
+    this.queries.push(q);
+  }
+
+  /** Compile the SMAA programs up front, so a later step down to SMAA doesn't hitch mid-ride. */
+  warmSmaa(): void {
+    const was = this.smaa.enabled;
+    this.smaa.enabled = true;
+    this.composer.render();
+    this.smaa.enabled = was;
+  }
+
+  /** Keep depth linearisation in sync with the camera (FPP uses a much smaller near plane). */
+  setNear(n: number): void {
+    this.ink.uniforms.uNear.value = n;
+    this.paint?.setNear(n);
+  }
+
+  /** Keep depth linearisation in sync with the camera's far plane. */
+  setFar(f: number): void {
+    this.ink.uniforms.uFar.value = f;
+    this.paint?.setFar(f);
+  }
+
+  /** Ink lines fade (to 25 %) between these view distances (m). */
+  setInkFade(near: number, far: number): void {
+    this.ink.uniforms.uFade.value.set(near, far);
+  }
+
+  setSize(w: number, h: number): void {
+    const pr = this.renderer.getPixelRatio();
+    const W = Math.floor(w * pr), H = Math.floor(h * pr);
+    this.W = W;
+    this.H = H;
+    this.mrt.setSize(W, H);
+    this.paint?.setSize(W, H);
+    this.composer.setSize(w, h);
+    this.ink.uniforms.uRes.value.set(W, H);
+    const [iw, ik] = inkWidth(H, this.fine);
+    this.ink.uniforms.uWidth.value = iw;
+    if (this.fine) this.ink.uniforms.uInkK.value = ik;
+    this.grade.uniforms.uRes.value.set(W, H);
+    this.sharpen.uniforms.uTexel.value.set(1 / W, 1 / H);
+    this.setScale(this.scale);
+  }
+
+  /**
+   * The scene into the MRT in two passes (see mrtSplit.ts): colour with only target 0 enabled, then
+   * the normal/id target through the materials' normal-only twins. Never both targets at once: that
+   * makes ANGLE rebuild each material's pixel shader in the middle of a frame. Returns the draw
+   * calls and triangles of the colour passes.
+   */
+  renderScene(scene: THREE.Scene, camera: THREE.Camera): [number, number] {
+    const rd = this.renderer;
+    const gl = rd.getContext() as WebGL2RenderingContext;
+    const autoClear = rd.autoClear;
+    rd.setRenderTarget(this.mrt);
+    rd.clear();
+    rd.autoClear = false;
+    G.uDither.value = this.mrt.samples === 0 ? 1 : 0;
+    if (this.singlePass) {
+      // ?mrt1: both targets in one pass, as before the split (comparison captures only; slow boot).
+      const c = rd.info.render.calls, t = rd.info.render.triangles;
+      rd.render(scene, camera);
+      G.uDither.value = 0;
+      rd.autoClear = autoClear;
+      return [rd.info.render.calls - c, rd.info.render.triangles - t];
+    }
+    // three unbinds the target after resolving it: bind again before each change of draw buffers.
+    const stats = renderSplit(rd, scene, camera, this.mrt, (normals) => {
+      rd.setRenderTarget(this.mrt);
+      gl.drawBuffers(normals ? [gl.NONE, gl.COLOR_ATTACHMENT1] : [gl.COLOR_ATTACHMENT0, gl.NONE]);
+    });
+    rd.setRenderTarget(this.mrt);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+    G.uDither.value = 0;
+    rd.autoClear = autoClear;
+    return stats;
+  }
+
+  render(scene: THREE.Scene, camera: THREE.Camera, time: number): void {
+    const pf = this.prof?.on ? this.prof : null;
+    if (pf && !this.wrapped) {
+      this.wrapped = true;
+      const names = ["ink+kuwahara", "bloom", "grade", "smaa", "sharpen"];
+      this.composer.passes.forEach((p, i) => {
+        const r = p.render.bind(p);
+        p.render = (...a: Parameters<typeof r>) => {
+          pf.begin(names[i] ?? `pass${i}`, this.renderer);
+          r(...a);
+          pf.end(names[i] ?? `pass${i}`, this.renderer);
+        };
+      });
+    }
+    const q = this.timeBegin(pf);
+    pf?.begin("scene", this.renderer);
+    const cs = performance.now();
+    [this.sceneCalls, this.sceneTris] = this.renderScene(scene, camera);
+    pf?.cpuMark("scene", performance.now() - cs);
+    pf?.end("scene", this.renderer);
+    pf?.begin("paint", this.renderer);
+    const painted = this.paint?.render(this.renderer) ?? false;
+    pf?.end("paint", this.renderer);
+    this.ink.uniforms.tColor.value = painted ? this.paint!.output.texture : this.mrt.textures[0];
+    this.renderer.setRenderTarget(null);
+    this.grade.uniforms.uTime.value = time;
+    this.composer.render();
+    this.timeEnd(q);
+  }
+}

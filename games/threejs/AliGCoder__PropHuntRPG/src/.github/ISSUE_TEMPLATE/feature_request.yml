@@ -1,0 +1,16 @@
+name: Feature / content idea
+description: New props, skills, abilities, maps or improvements
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Props / wardrobe, Skills & progression, Abilities, Map, Networking, Graphics, UI, Other]
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe it from the player's point of view. How does it affect the hide/hunt loop?
+    validations:
+      required: true

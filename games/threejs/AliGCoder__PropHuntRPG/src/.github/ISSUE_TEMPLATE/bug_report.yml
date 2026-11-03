@@ -1,0 +1,31 @@
+name: Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Start single player\n2. ..."
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Game mode
+      options: [Single player, Hosting online, Joined online]
+  - type: input
+    id: browser
+    attributes:
+      label: Browser + renderer
+      placeholder: "Chrome 142, WebGPU"
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      render: text
