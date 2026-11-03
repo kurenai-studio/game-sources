@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON WASTELAND — 3D</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Segoe UI',system-ui,sans-serif; color:#0ff; }
+  canvas { display:block; }
+  #ui { position:fixed; inset:0; pointer-events:none; z-index:10; }
+
+  /* --- HUD --- */
+  .hud-panel { position:absolute; padding:10px 14px; background:rgba(0,10,20,.55); border:1px solid #0ff5; border-radius:8px; backdrop-filter:blur(4px); text-shadow:0 0 6px #0ff8; }
+  #health-bar-wrap { left:20px; bottom:20px; width:280px; }
+  .bar-label { font-size:12px; letter-spacing:2px; margin-bottom:4px; color:#7ff; }
+  .bar-outer { height:14px; background:#001; border:1px solid #0ff6; border-radius:4px; overflow:hidden; }
+  .bar-inner { height:100%; width:100%; transition:width .15s; }
+  #hp-bar { background:linear-gradient(90deg,#f06,#f6a); }
+  #xp-bar { height:8px; background:linear-gradient(90deg,#0af,#0fd); }
+  #statpanel { left:20px; bottom:78px; font-size:13px; line-height:1.6; }
+  #statpanel b { color:#fff; }
+  #weapon-panel { right:20px; bottom:20px; text-align:right; font-size:14px; }
+  #weapon-name { font-size:20px; color:#fff; letter-spacing:2px; }
+  #ammo { font-size:30px; font-weight:bold; color:#0ff; }
+  #wave-panel { top:20px; left:50%; transform:translateX(-50%); text-align:center; }
+  #wave-num { font-size:26px; font-weight:bold; color:#fff; text-shadow:0 0 12px #0ff; }
+  #enemies-left { font-size:13px; color:#fa0; }
+  #minimap-wrap { top:20px; right:20px; padding:6px; }
+  #minimap { display:block; border:1px solid #0ff4; border-radius:4px; }
+  #quests { top:110px; left:20px; max-width:320px; font-size:12px; }
+  #quests h3 { font-size:13px; letter-spacing:2px; color:#ff0; margin-bottom:6px; }
+  .quest { margin-bottom:6px; padding-left:10px; border-left:2px solid #ff04; }
+  .quest.done { color:#5f5; border-left-color:#5f55; text-decoration:line-through; }
+  .quest .qprog { color:#fff; }
+  #killfeed { bottom:160px; right:20px; text-align:right; font-size:12px; }
+  .kf-line { color:#f88; margin-top:3px; opacity:1; transition:opacity 1s; }
+  #crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:20px; height:20px; }
+  #crosshair::before, #crosshair::after { content:''; position:absolute; background:#0ffa; }
+  #crosshair::before { left:9px; top:0; width:2px; height:20px; }
+  #crosshair::after { top:9px; left:0; width:20px; height:2px; }
+  #damage-vignette { position:absolute; inset:0; box-shadow:inset 0 0 120px 40px rgba(255,0,0,.0); transition:box-shadow .2s; }
+  #toast { position:absolute; top:35%; left:50%; transform:translate(-50%,-50%); font-size:34px; font-weight:bold; color:#fff; text-shadow:0 0 20px #0ff, 0 0 40px #0ff; opacity:0; transition:opacity .4s; text-align:center; }
+  #combo-badge { position:absolute; top:78px; left:50%; transform:translateX(-50%); text-align:center; pointer-events:none; transition:opacity .2s; }
+  #combo-text { font-size:18px; font-weight:bold; letter-spacing:2px; color:#ffcc00; text-shadow:0 0 10px #ff8800, 0 0 20px #ff2200; }
+  #combo-bar-wrap { width:120px; height:5px; margin:3px auto 0; background:rgba(0,0,0,.6); border:1px solid #fa06; border-radius:3px; overflow:hidden; }
+  #combo-bar { height:100%; width:100%; background:linear-gradient(90deg,#ffcc00,#ff0066); transition:width .05s linear; }
+
+  /* --- Screens --- */
+  .screen { position:fixed; inset:0; background:radial-gradient(ellipse at center,#031,#000 80%); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; pointer-events:auto; }
+  .screen h1 { font-size:64px; color:#0ff; text-shadow:0 0 30px #0ff; letter-spacing:8px; margin-bottom:10px; }
+  .screen h2 { font-size:18px; color:#8ff; font-weight:normal; margin-bottom:40px; letter-spacing:3px; }
+  .screen button { pointer-events:auto; padding:14px 50px; font-size:22px; letter-spacing:3px; background:#011; color:#0ff; border:2px solid #0ff; border-radius:6px; cursor:pointer; margin:8px; box-shadow:0 0 20px #0ff4; }
+  .screen button:hover { background:#033; box-shadow:0 0 40px #0ffa; }
+  .screen .help { margin-top:40px; font-size:13px; color:#6cc; line-height:1.9; text-align:center; }
+  .screen .help kbd { background:#022; border:1px solid #0ff5; padding:1px 7px; border-radius:4px; color:#0ff; }
+  #gameover-screen h1 { color:#f44; text-shadow:0 0 30px #f44; }
+  #gameover-stats { font-size:18px; color:#ccc; margin-bottom:30px; text-align:center; line-height:2; }
+  #levelup-flash { position:fixed; inset:0; background:rgba(0,255,255,.15); opacity:0; pointer-events:none; z-index:50; transition:opacity .3s; }
+  #shop-screen .shop-item { background:#012; border:1px solid #0ff5; border-radius:8px; padding:14px 20px; margin:8px; width:460px; display:flex; justify-content:space-between; align-items:center; }
+  #shop-screen .shop-item button { margin:0; padding:8px 20px; font-size:15px; }
+  #shop-screen .shop-items { max-height:60vh; overflow-y:auto; }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <div id="damage-vignette"></div>
+  <div id="crosshair"></div>
+
+  <div id="health-bar-wrap" class="hud-panel">
+    <div class="bar-label">HP <span id="hp-text">100/100</span></div>
+    <div class="bar-outer"><div class="bar-inner" id="hp-bar"></div></div>
+    <div class="bar-label" style="margin-top:6px">XP</div>
+    <div class="bar-outer"><div class="bar-inner" id="xp-bar" style="width:0%"></div></div>
+  </div>
+
+  <div id="statpanel" class="hud-panel">
+    Уровень: <b id="lvl">1</b> &nbsp;|&nbsp; Монеты: <b id="coins">0</b> ⬡<br>
+    Убийств: <b id="kills">0</b> &nbsp;|&nbsp; Урон: <b id="dmgstat">13</b> &nbsp;|&nbsp; Скорострельность: <b id="rofstat">x1.0</b>
+  </div>
+
+  <div id="quests" class="hud-panel">
+    <h3> ЗАДАНИЯ </h3>
+    <div id="quest-list"></div>
+  </div>
+
+  <div id="wave-panel" class="hud-panel">
+    <div id="wave-num">ВОЛНА 1</div>
+    <div id="enemies-left">Врагов: 7</div>
+  </div>
+
+  <div id="combo-badge" style="opacity:0">
+    <div id="combo-text">🔥 КОМБО x2</div>
+    <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
+  </div>
+
+  <div id="weapon-panel" class="hud-panel">
+    <div id="weapon-name">ПЛАЗМА-ПИСТОЛЕТ</div>
+    <div><span id="ammo">∞</span></div>
+    <div style="font-size:11px;color:#6cc" id="weapon-hint">[1][2][3] — смена оружия</div>
+  </div>
+
+  <div id="minimap-wrap" class="hud-panel">
+    <canvas id="minimap" width="180" height="180"></canvas>
+  </div>
+
+  <div id="killfeed"></div>
+  <div id="toast"></div>
+</div>
+
+<div id="levelup-flash"></div>
+
+<div id="start-screen" class="screen">
+  <h1>NEON WASTELAND</h1>
+  <h2>ПРОЦЕДУРНЫЙ ОТКРЫТЫЙ МИР · ВОЛНЫ · БОССЫ · ЛУТ</h2>
+  <button id="btn-continue" style="display:none">⟲ ПРОДОЛЖИТЬ</button>
+  <button id="btn-play">▶ НАЧАТЬ ИГРУ</button>
+  <div class="help">
+    <kbd>W A S D</kbd> движение &nbsp; <kbd>Мышь</kbd> обзор &nbsp; <kbd>ЛКМ</kbd> огонь &nbsp; <kbd>Shift</kbd> бег &nbsp; <kbd>Space</kbd> прыжок<br>
+    <kbd>1</kbd> пистолет &nbsp; <kbd>2</kbd> дробовик &nbsp; <kbd>3</kbd> рельсотрон &nbsp; <kbd>E</kbd> магазин (у Маяка) &nbsp; <kbd>M</kbd> увеличить карту
+  </div>
+</div>
+
+<div id="pause-screen" class="screen" style="display:none">
+  <h1>ПАУЗА</h1>
+  <h2>ИГРА ПРИОСТАНОВЛЕНА</h2>
+  <button id="btn-resume">▶ ПРОДОЛЖИТЬ [ESC]</button>
+  <button id="btn-restart" onclick="location.reload()">⟳ ЗАНОВО</button>
+  <div class="help">
+    Нажмите <kbd>ESC</kbd> или кликните «Продолжить», чтобы вернуться в бой
+  </div>
+</div>
+
+<div id="gameover-screen" class="screen" style="display:none">
+  <h1>ВЫ ПОГИБЛИ</h1>
+  <div id="gameover-stats"></div>
+  <button onclick="location.reload()">⟳ ЗАНОВО</button>
+</div>
+
+<div id="shop-screen" class="screen" style="display:none">
+  <h1 style="font-size:40px">⬡ МАГАЗИН ⬡</h1>
+  <h2 id="shop-coins">Монеты: 0</h2>
+  <div class="shop-items" id="shop-items"></div>
+  <button id="btn-shop-close">ЗАКРЫТЬ [E]</button>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module" src="game.js"></script>
+</body>
+</html>

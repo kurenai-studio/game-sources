@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax-check game.js (ES module)
+        run: |
+          cp game.js game.mjs
+          node --check game.mjs
+      - name: Index references existing assets
+        run: |
+          grep -q 'game.js' index.html
+          grep -q 'NEON WASTELAND' index.html
