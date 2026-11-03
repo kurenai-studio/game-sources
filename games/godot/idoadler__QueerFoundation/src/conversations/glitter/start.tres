@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://csqsi8e4wck31"]
+
+[ext_resource type="Resource" uid="uid://biy5452w5ailm" path="res://conversations/glitter/needs.tres" id="1_q4j1v"]
+[ext_resource type="Resource" uid="uid://c7wru7lbpdmag" path="res://conversations/glitter/experience.tres" id="2_gh6vv"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_r3dw7"]
+[ext_resource type="Resource" uid="uid://b068w3oys32md" path="res://conversations/glitter/introduction.tres" id="3_fo0q1"]
+
+[resource]
+script = ExtResource("2_r3dw7")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["We need $80,000 for app development and a fabulous team who understands mental health!", "I’m creating a Mental Health App for the queer community!
+It offers support, therapy, and self-care tools to help everyone stay bright and mentally strong!", "Hi, I’m Glitter! I’m all about sparkles, rainbows, and making the world a shinier place for everyone!"])
+goto = Array[ExtResource("2_r3dw7")]([ExtResource("1_q4j1v"), ExtResource("2_gh6vv"), ExtResource("3_fo0q1")])

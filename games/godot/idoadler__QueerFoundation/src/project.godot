@@ -1,0 +1,30 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="QueerFoundation"
+run/main_scene="res://scenes/menu.tscn"
+config/features=PackedStringArray("4.2", "GL Compatibility")
+config/icon="res://art/candidates/Dog.png"
+
+[display]
+
+window/size/viewport_width=1450
+window/size/viewport_height=1080
+window/size/window_width_override=725
+window/size/window_height_override=540
+window/stretch/mode="viewport"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/screen_space_aa=1

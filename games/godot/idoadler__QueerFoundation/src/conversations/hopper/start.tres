@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://gwedv03qyp5i"]
+
+[ext_resource type="Resource" uid="uid://c06j7oqocdxra" path="res://conversations/hopper/experience.tres" id="1_ictft"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_7m0xa"]
+[ext_resource type="Resource" uid="uid://dvhfcpf07qdp2" path="res://conversations/hopper/plan.tres" id="2_j65jb"]
+[ext_resource type="Resource" uid="uid://ck6pb1sia8uuq" path="res://conversations/hopper/introduction.tres" id="3_ohhhj"]
+
+[resource]
+script = ExtResource("2_7m0xa")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["We need a cozy clinic, skilled staff, and the medical gizmos that make healthcare a hop in the right direction!", "I’m launching the Trans Health Clinic!
+It’s a top-notch facility where trans folks get the care they deserve, with a sprinkle of bunny energy.", "Hi there! I’m Hopper, the bounciest and most enthusiastic bunny you’ll ever meet!"])
+goto = Array[ExtResource("2_7m0xa")]([ExtResource("1_ictft"), ExtResource("2_j65jb"), ExtResource("3_ohhhj")])

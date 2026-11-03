@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://btyd3ptoqwn4i"]
+
+[ext_resource type="Resource" uid="uid://cx3db12g88cii" path="res://conversations/sly/experience.tres" id="1_eirjd"]
+[ext_resource type="Resource" uid="uid://cm8gn2yb31ql1" path="res://conversations/sly/introduction.tres" id="1_uli8q"]
+[ext_resource type="Resource" uid="uid://pus33dn3lgiq" path="res://conversations/sly/plan.tres" id="2_a7ahc"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_iqgm3"]
+
+[resource]
+script = ExtResource("2_iqgm3")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["I need to get a tiny space where I can sleep and eat.
+I’ll need some basic things like a bed, a small kitchen, and maybe a lock on the door to keep me safe.", "I call it the Self Shelter. 
+It’s a small, safe place where I can rest, have a meal, and feel secure.
+It’s just for me to have a little bit of peace and safety in this big, scary world.", "Hi there, I’m Sly. I’m a fox who’s a bit down on his luck.
+I’m a bit shy and I’m all alone."])
+goto = Array[ExtResource("2_iqgm3")]([ExtResource("1_eirjd"), ExtResource("2_a7ahc"), ExtResource("1_uli8q")])

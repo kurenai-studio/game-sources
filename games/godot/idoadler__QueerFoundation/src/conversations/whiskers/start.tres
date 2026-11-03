@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://cibsp4tv7smi2"]
+
+[ext_resource type="Resource" uid="uid://ctxkqawtjhkok" path="res://conversations/whiskers/experience.tres" id="1_ogg6r"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_7oimo"]
+[ext_resource type="Resource" uid="uid://bvxd1b3xjalj7" path="res://conversations/whiskers/plan.tres" id="2_rg8by"]
+[ext_resource type="Resource" uid="uid://c43h45pc57x50" path="res://conversations/whiskers/introduction.tres" id="3_scs5m"]
+
+[resource]
+script = ExtResource("2_7oimo")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["Just a never-ending supply of bubble wrap, and snacks to keep everyone purring with delight.
+And, of course, we’ll need plenty of enthusiastic poppers!", "It’s called the Bubble Wrap Appreciation Society.
+We gather fabulous folks to pop bubble wrap, relax, and chat about its many uses.
+It’s the purr-fect way to de-stress and have fun!", "Hello, darling! I’m Whiskers, the most fashionable and fun-loving cat you’ll ever meet.
+I’m all about style, smiles, and the joy of popping bubble wrap!"])
+goto = Array[ExtResource("2_7oimo")]([ExtResource("1_ogg6r"), ExtResource("2_rg8by"), ExtResource("3_scs5m")])
