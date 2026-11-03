@@ -1,0 +1,51 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+
+config/name="Arena Overdrive"
+config/description="Top-down roguelite arena survival game built with typed GDScript."
+config/version="2.0.0"
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7")
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
+[autoload]
+
+EventBus="*res://autoload/event_bus.gd"
+SaveSystem="*res://autoload/save_system.gd"
+Settings="*res://autoload/settings.gd"
+AudioManager="*res://autoload/audio_manager.gd"
+GameState="*res://autoload/game_state.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://ui/theme.tres"
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://data/strings.en.translation", "res://data/strings.es.translation")
+locale/fallback="en"
+
+[layer_names]
+
+2d_physics/layer_1="player"
+2d_physics/layer_2="enemies"
+2d_physics/layer_3="walls"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.04, 0.05, 0.09, 1)
+2d/snap/snap_2d_transforms_to_pixel=false
