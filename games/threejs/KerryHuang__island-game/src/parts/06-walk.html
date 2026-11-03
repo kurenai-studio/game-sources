@@ -1,0 +1,42 @@
+
+<style>
+/* ===== 城市日誌 ===== */
+#log {
+  position: fixed; z-index: 11; top: calc(16px + env(safe-area-inset-top, 0px)); right: calc(350px + env(safe-area-inset-right, 0px));
+  width: 280px; max-height: 46vh; border-radius: 18px; display: flex; flex-direction: column; overflow: hidden;
+}
+#log.noside { right: max(16px, env(safe-area-inset-right, 0px)); }
+#log header { display: flex; align-items: center; gap: 8px; padding: 12px 14px 8px; }
+#log header b { font-size: 14px; }
+.live { display: inline-flex; align-items: center; gap: 5px; font: 700 10px var(--mono); letter-spacing: 1.5px; color: var(--live); margin-left: auto; }
+.live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: 0 0 0 3px #3fae5a33; animation: pulse 1.6s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px #3fae5a00; } }
+#logFilter { margin: 0 14px 8px; min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: 13px; padding: 0 8px; }
+#logList { list-style: none; margin: 0; padding: 0 14px 14px; overflow-y: auto; display: grid; gap: 6px; font-size: 12.5px; line-height: 1.45; }
+#logList li { display: grid; grid-template-columns: 42px 1fr; gap: 6px; }
+#logList time { font: 600 11px var(--mono); color: #8a7b70; font-variant-numeric: tabular-nums; padding-top: 1px; }
+#logList .k { font: 700 9px var(--mono); letter-spacing: 1px; padding: 1px 5px; border-radius: 4px; margin-right: 4px; background: var(--cream); }
+#logList .k.arrive { background: var(--yellow); } #logList .k.handoff { background: #f2b5c6; }
+
+/* ===== 牽連線圖例 ===== */
+#legend {
+  position: fixed; z-index: 11; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  display: flex; gap: 14px; padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+#legend span { display: inline-flex; align-items: center; gap: 6px; }
+#legend i { width: 26px; height: 0; border-top: 3px solid var(--coral); }
+#legend i.thematic { border-top-style: dashed; } #legend i.pending { border-top-style: dotted; }
+
+/* 小人名牌氣泡 */
+.bubble { background: #fff; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: var(--chip-shadow); transform: translateY(-14px); }
+</style>
+<section id="log" class="panel" hidden aria-label="城市日誌" data-en-label="City log">
+  <header><b data-en="City log">城市日誌</b><span class="live">LIVE</span></header>
+  <select id="logFilter" aria-label="依牽連線篩選" data-en-label="Filter by link"></select>
+  <ol id="logList" aria-live="off"></ol>
+</section>
+<div id="legend" class="panel" hidden>
+  <span><i></i><span data-en="Direct">直接牽動</span></span>
+  <span><i class="thematic"></i><span data-en="Related">間接相關</span></span>
+  <span><i class="pending"></i><span data-en="Proposed">有人提出</span></span>
+</div>
