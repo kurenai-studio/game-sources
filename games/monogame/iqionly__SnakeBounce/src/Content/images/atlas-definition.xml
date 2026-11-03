@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas>
+	<Texture>images/atlas-snake</Texture>
+	<Regions>
+		<Region name="snake-head-left" x="40" y="40" width="40" height="40"/>
+		<Region name="snake-head-up" x="120" y="40" width="40" height="40"/>
+		<Region name="snake-head-right" x="80" y="40" width="40" height="40"/>
+		<Region name="snake-head-down" x="0" y="40" width="40" height="40"/>
+
+		<Region name="apple" x="0" y="0" width="40" height="40"/>
+	</Regions>
+	<Animations>
+		<Animation name="snake-animation" delay="500">
+			<Frame region="snake-head-left" />
+			<Frame region="snake-head-down" />
+			<Frame region="snake-head-right" />
+			<Frame region="snake-head-up" />
+		</Animation>
+		<Animation name="apple-animation" delay="200">
+			<Frame region="apple" />
+			<Frame region="apple" />
+		</Animation>
+	</Animations>
+</TextureAtlas>
