@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "cStandard": "gnu23",
+      "compilerArgs": ["-Wall", "-fno-stack-protector", "-fpic", "-fshort-wchar", "-mno-red-zone"],
+      "compilerPath": "/usr/bin/gcc",
+      "cppStandard": "gnu++23",
+      "defines": ["EFI_FUNCTION_WRAPPER", "GOP=1"],
+      "includePath": [
+        "${default}",
+        "${workspaceFolder}",
+        "${workspaceFolder}/src",
+        "/usr/include/efi/protocol",
+        "/usr/include/efi/x86_64"
+      ],
+      "name": "Linux"
+    }
+  ],
+  "env": {},
+  "version": 4
+}
