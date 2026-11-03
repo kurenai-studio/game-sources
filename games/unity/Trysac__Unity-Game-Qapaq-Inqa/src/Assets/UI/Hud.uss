@@ -1,0 +1,311 @@
+/*
+ * Qapaq Inqa HUD: night-blue panels with gold trim and tocapu-red accents.
+ * Designed at 1280x720 reference pixels; the panel settings scale it to the screen.
+ */
+
+:root {
+    --ink: #120c10;
+    --panel: rgba(22, 14, 18, 0.9);
+    --gold: #f2c440;
+    --gold-dark: #9a6e18;
+    --red: #c0392b;
+    --text: #f6ecd6;
+    --muted: #c4b49a;
+    --teal: #3fa58f;
+
+    color: var(--text);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.hud,
+.layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- Damage vignette ---- */
+
+.hurt {
+    border-width: 40px;
+    border-color: rgba(200, 30, 20, 0.6);
+    opacity: 0;
+}
+
+/* ---- Corners ---- */
+
+.corner {
+    position: absolute;
+    top: 12px;
+    padding: 8px 14px;
+    background-color: rgba(18, 12, 16, 0.62);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgba(242, 196, 64, 0.45);
+}
+
+.corner--left {
+    left: 16px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.corner--center {
+    left: 440px;
+    width: 400px;
+    align-items: center;
+}
+
+.corner--right {
+    right: 16px;
+    align-items: flex-end;
+    min-width: 170px;
+}
+
+.hearts {
+    flex-direction: row;
+    margin-right: 12px;
+}
+
+.heart {
+    width: 24px;
+    height: 22px;
+    margin-right: 5px;
+    background-color: #e8423a;
+    border-radius: 11px 11px 4px 4px;
+    border-width: 2px;
+    border-color: #4a1210;
+    rotate: 0deg;
+}
+
+.heart--empty {
+    background-color: rgba(80, 40, 40, 0.6);
+}
+
+.lives {
+    color: var(--gold);
+    font-size: 18px;
+}
+
+.level-name {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+}
+
+.counter {
+    font-size: 20px;
+    margin: 2px 12px 0 12px;
+}
+
+.counter--idols {
+    color: var(--gold);
+}
+
+.counter--done {
+    color: #9ff0a0;
+}
+
+.counter--coins {
+    color: #ffe9a0;
+}
+
+.score {
+    font-size: 26px;
+    color: var(--text);
+    -unity-text-align: middle-right;
+}
+
+.timer {
+    font-size: 16px;
+    color: var(--muted);
+    -unity-text-align: middle-right;
+}
+
+/* ---- Boss bar ---- */
+
+.boss {
+    position: absolute;
+    bottom: 26px;
+    left: 340px;
+    width: 600px;
+    align-items: center;
+}
+
+.boss__name {
+    color: var(--gold);
+    font-size: 18px;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+}
+
+.boss__track {
+    width: 100%;
+    height: 16px;
+    background-color: rgba(18, 12, 16, 0.8);
+    border-width: 2px;
+    border-color: var(--gold-dark);
+    border-radius: 4px;
+}
+
+.boss__fill {
+    height: 100%;
+    width: 100%;
+    background-color: var(--red);
+    border-radius: 2px;
+}
+
+/* ---- Banner ---- */
+
+.banner {
+    position: absolute;
+    top: 150px;
+    left: 240px;
+    width: 800px;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: rgba(18, 12, 16, 0.75);
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-color: var(--gold);
+}
+
+.banner__title {
+    font-size: 34px;
+    color: var(--gold);
+    -unity-text-align: middle-center;
+    letter-spacing: 2px;
+}
+
+.banner__sub {
+    font-size: 18px;
+    color: var(--text);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+/* ---- Floating text ---- */
+
+.floater {
+    position: absolute;
+    font-size: 18px;
+    color: #ffe9a0;
+    translate: -50% -50%;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: var(--ink);
+}
+
+.floater--big {
+    font-size: 26px;
+    color: var(--gold);
+}
+
+.floater--good {
+    color: #9ff0a0;
+}
+
+/* ---- Menus ---- */
+
+.menu-layer {
+    background-color: rgba(10, 6, 8, 0.55);
+    align-items: center;
+    justify-content: center;
+}
+
+.menu {
+    width: 760px;
+    max-height: 680px;
+    padding: 26px 40px 22px 40px;
+    background-color: var(--panel);
+    border-width: 3px;
+    border-color: var(--gold);
+    border-radius: 10px;
+    align-items: center;
+}
+
+.menu--title {
+    background-color: rgba(22, 14, 18, 0.78);
+}
+
+.emblem {
+    width: 112px;
+    height: 112px;
+    margin-bottom: 4px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.menu__title {
+    font-size: 44px;
+    color: var(--gold);
+    -unity-text-align: middle-center;
+    letter-spacing: 3px;
+    white-space: normal;
+}
+
+.menu__subtitle {
+    font-size: 20px;
+    color: #f08a5a;
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    white-space: normal;
+}
+
+.menu__body {
+    font-size: 18px;
+    -unity-font-style: normal;
+    color: var(--text);
+    white-space: normal;
+    -unity-text-align: upper-center;
+    margin: 6px 0 12px 0;
+    max-width: 680px;
+}
+
+.menu__items {
+    align-items: stretch;
+    width: 520px;
+}
+
+.menu__item {
+    font-size: 22px;
+    padding: 6px 12px;
+    margin: 2px 0;
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.menu__item--selected {
+    color: var(--ink);
+    background-color: var(--gold);
+    border-color: #fff2a8;
+}
+
+.menu__item--disabled {
+    color: rgba(196, 180, 154, 0.4);
+}
+
+.menu__footer {
+    font-size: 14px;
+    -unity-font-style: normal;
+    color: var(--muted);
+    margin-top: 12px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
