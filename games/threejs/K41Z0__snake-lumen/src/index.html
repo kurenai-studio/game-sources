@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070912">
+<title>Snake: Lumen</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view" aria-label="Game board"></canvas>
+
+<div id="hud" class="hud" hidden>
+  <div class="hud-row">
+    <div class="chip hud-level">
+      <small id="hud-tag">1-1</small>
+      <b id="hud-name">First Sprout</b>
+    </div>
+    <div class="hud-mid">
+      <div class="chip hud-score"><small id="hud-score-label">Light</small><b id="hud-score">0</b></div>
+      <div id="hud-combo" class="combo">x2</div>
+    </div>
+    <div class="hud-right">
+      <div class="chip hud-time"><small id="hud-time-label">Time</small><b id="hud-time">0:00</b></div>
+      <button id="hud-pause" class="icon-btn" aria-label="Pause"><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="hud-goal" id="hud-goal">
+    <span id="hud-goal-text">Catch 8 stars</span>
+    <div class="bar"><i id="hud-goal-bar"></i></div>
+  </div>
+  <div id="hud-effects" class="hud-effects"></div>
+</div>
+
+<div id="screens"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<div id="pad" class="pad" hidden>
+  <button data-dir="up" class="up" aria-label="Up">&#9650;</button>
+  <button data-dir="left" class="left" aria-label="Left">&#9664;</button>
+  <button data-dir="down" class="down" aria-label="Down">&#9660;</button>
+  <button data-dir="right" class="right" aria-label="Right">&#9654;</button>
+</div>
+
+<div id="wipe"></div>
+<div id="note" class="note"></div>
+
+<div id="fallback" class="fallback">
+  <h1>Snake: <span>Lumen</span></h1>
+  <p>Loading&hellip;</p>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/i18n/i18n.js"></script>
+<script src="js/i18n/en.js"></script>
+<script src="js/i18n/ru.js"></script>
+<script src="js/core/rng.js"></script>
+<script src="js/core/board.js"></script>
+<script src="js/core/snake.js"></script>
+<script src="js/core/levels.js"></script>
+<script src="js/core/game.js"></script>
+<script src="js/core/daily.js"></script>
+<script src="js/core/autopilot.js"></script>
+<script src="js/core/profile.js"></script>
+<script src="js/core/achievements.js"></script>
+<script src="js/render/theme.js"></script>
+<script src="js/render/backgrounds.js"></script>
+<script src="js/render/boardView.js"></script>
+<script src="js/render/snakeView.js"></script>
+<script src="js/render/itemsView.js"></script>
+<script src="js/render/particles.js"></script>
+<script src="js/render/icons.js"></script>
+<script src="js/render/logo.js"></script>
+<script src="js/render/lighting.js"></script>
+<script src="js/render/scene.js"></script>
+<script src="js/render/story.js"></script>
+<script src="js/audio/synth.js"></script>
+<script src="js/audio/music.js"></script>
+<script src="js/ui/storage.js"></script>
+<script src="js/ui/input.js"></script>
+<script src="js/ui/nav.js"></script>
+<script src="js/ui/dom.js"></script>
+<script src="js/ui/hud.js"></script>
+<script src="js/ui/toasts.js"></script>
+<script src="js/ui/chart.js"></script>
+<script src="js/ui/screens.js"></script>
+<script src="js/render3d/kit.js"></script>
+<script src="js/render3d/board3d.js"></script>
+<script src="js/render3d/dioramas.js"></script>
+<script src="js/render3d/world3d.js"></script>
+<script src="js/main.js"></script>
+<script>
+  (function () {
+    var fb = document.getElementById("fallback");
+    if (window.LUMEN && window.LUMEN.app) { fb.parentNode.removeChild(fb); return; }
+    fb.innerHTML = "<h1>Snake: <span>Lumen</span></h1><h2>Game files did not load</h2>" +
+      "<p>Unzip the archive and open <code>index.html</code> from the unzipped folder. " +
+      "The page loads <code>js/</code> and <code>css/</code> from the folder it sits in.</p>";
+  })();
+</script>
+</body>
+</html>
