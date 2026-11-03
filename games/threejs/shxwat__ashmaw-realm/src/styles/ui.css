@@ -1,0 +1,279 @@
+/* ═══════════════════════════════════════════════════════════
+   ASHMAW — interface skin
+   Molten gold on volcanic glass. Type is thin, wide, quiet;
+   the render is the hero.
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ink:        #07060a;
+  --glass:      rgba(14,11,16,.58);
+  --glass-edge: rgba(255,196,120,.16);
+  --ember:      #ff8a3c;
+  --ember-hot:  #ffd39a;
+  --ash:        #b9b2ae;
+  --ash-dim:    #6f6a68;
+  --danger:     #ff4a2b;
+  --f-display:  'Cinzel', 'Trajan Pro', 'Optima', 'Palatino Linotype', Georgia, serif;
+  --f-ui:       'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; background:var(--ink); overflow:hidden; }
+body{
+  font-family:var(--f-ui);
+  color:var(--ash);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  cursor:default;
+}
+canvas#stage{ position:fixed; inset:0; width:100%; height:100%; display:block; }
+kbd{
+  font:600 10px/1 var(--f-ui); letter-spacing:.04em;
+  padding:3px 5px; margin:0 1px; border-radius:4px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
+  color:#e8e2dc;
+}
+
+/* ─────────── boot / title card ─────────── */
+.boot{
+  position:fixed; inset:0; z-index:60;
+  display:grid; place-items:center;
+  background:
+    radial-gradient(90% 70% at 50% 110%, rgba(255,86,24,.30), transparent 60%),
+    radial-gradient(70% 55% at 50% -10%, rgba(94,60,140,.20), transparent 60%),
+    linear-gradient(#08070b, #100b0d 60%, #1a0c08);
+  transition:opacity 1.4s cubic-bezier(.4,0,.2,1), visibility 1.4s;
+}
+.boot.is-gone{ opacity:0; visibility:hidden; pointer-events:none; }
+.boot__vignette{
+  position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(58% 58% at 50% 46%, transparent 40%, rgba(0,0,0,.82));
+  mix-blend-mode:multiply;
+}
+/* 560px could not fit the letter-spaced title at its maximum size — see the
+   note on .boot__title below. The bar and sub-heading keep their own widths. */
+.boot__inner{ position:relative; text-align:center; padding:0 24px; max-width:760px; }
+.crest{ opacity:.95; filter:drop-shadow(0 0 26px rgba(255,120,40,.45)); animation:crestIn 1.6s cubic-bezier(.16,1,.3,1) both; }
+@keyframes crestIn{ from{ opacity:0; transform:translateY(14px) scale(.9);} to{ opacity:.95; transform:none;} }
+
+/**
+ * The title is painted with a gradient via background-clip:text, which makes
+ * the element's box do double duty as the paint surface. The text is
+ * letter-spaced by .34em with a matching text-indent, so it needed 656px while
+ * the block box was only 512px wide — and a glyph sitting outside the box has
+ * no background to be clipped *to*, so it renders fully transparent. The final
+ * "W" of ASHMAW was being drawn every frame and was simply invisible.
+ *
+ * width:max-content makes the box hug the laid-out text, indent and trailing
+ * letter-space included, so the gradient always covers every glyph — provided
+ * the container can actually accommodate it, hence the wider .boot__inner and
+ * the 88px cap here (6 letter-spaced glyphs run ~6.8x the font size, so 88px
+ * needs ~600px of the 712px available).
+ */
+.boot__title{
+  margin:14px auto 2px; font-family:var(--f-display); font-weight:700;
+  font-size:clamp(34px,7.6vw,88px); letter-spacing:.34em; text-indent:.34em;
+  width:max-content; max-width:100%;
+  color:#fff;
+  background:linear-gradient(180deg,#fff6ea 8%, #ffb066 52%, #a3401b 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 6px 40px rgba(255,110,40,.35));
+  animation:crestIn 1.8s .1s cubic-bezier(.16,1,.3,1) both;
+}
+.boot__sub{
+  margin:0 0 34px; font-size:clamp(10px,1.5vw,13px);
+  letter-spacing:.52em; text-indent:.52em; text-transform:uppercase; color:#a4948a;
+  animation:crestIn 1.8s .22s cubic-bezier(.16,1,.3,1) both;
+}
+.boot__bar{
+  height:1px; width:min(420px,72vw); margin:0 auto;
+  background:rgba(255,255,255,.09); position:relative; overflow:visible;
+}
+.boot__bar i{
+  position:absolute; inset:0 auto 0 0; width:0%;
+  background:linear-gradient(90deg,#7a2a10,#ff8a3c 60%,#ffe6c4);
+  box-shadow:0 0 18px rgba(255,140,60,.9), 0 0 3px #fff;
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+}
+.boot__status{
+  margin:16px 0 0; font-size:10.5px; letter-spacing:.34em; text-transform:uppercase;
+  color:var(--ash-dim); min-height:14px;
+}
+.boot__enter{
+  margin-top:26px; padding:13px 34px; cursor:pointer;
+  font:600 11px/1 var(--f-ui); letter-spacing:.34em; text-transform:uppercase;
+  color:#1a0d06; background:linear-gradient(180deg,#ffd9a8,#ff9040);
+  border:0; border-radius:2px;
+  box-shadow:0 0 0 1px rgba(255,220,180,.5), 0 12px 40px -8px rgba(255,120,40,.7);
+  transition:transform .25s, box-shadow .25s, filter .25s;
+  animation:crestIn .9s both;
+}
+.boot__enter:hover{ transform:translateY(-2px); filter:brightness(1.08); box-shadow:0 0 0 1px rgba(255,230,200,.7), 0 18px 50px -8px rgba(255,130,50,.85); }
+.boot__hint{ margin-top:22px; font-size:9.5px; letter-spacing:.3em; text-transform:uppercase; color:#4d4744; }
+
+/* ─────────── cinematic frame ─────────── */
+/* One source of truth for the letterbox height — the HUD insets itself by the
+   same amount, so the two can never disagree. */
+:root{ --bar-h: 0px; }
+body:has(.bars.is-on){ --bar-h: 9.5vh; }
+
+.bars{ position:fixed; inset:0; z-index:20; pointer-events:none; }
+.bars i{
+  position:absolute; left:0; right:0; height:0; background:#000;
+  transition:height .9s cubic-bezier(.65,0,.35,1);
+}
+.bars i:first-child{ top:0; } .bars i:last-child{ bottom:0; }
+.bars.is-on i{ height:var(--bar-h); }
+
+.shot-title{
+  /* Clears the letterbox *and* the HUD's footer key-hint row beneath it. */
+  position:fixed; left:clamp(18px,4vw,60px); bottom:calc(var(--bar-h) + 62px); z-index:41;
+  display:flex; gap:12px; align-items:baseline; pointer-events:none;
+  opacity:0; transform:translateY(8px); transition:opacity .7s, transform .7s;
+}
+.shot-title.is-on{ opacity:1; transform:none; }
+.shot-title__k{ font-size:9px; letter-spacing:.42em; text-transform:uppercase; color:var(--ember); }
+.shot-title span:last-child{
+  font-family:var(--f-display); font-size:clamp(15px,2.4vw,26px);
+  letter-spacing:.2em; text-transform:uppercase; color:#efe6dd;
+  text-shadow:0 2px 30px rgba(0,0,0,.9);
+}
+
+.flash{ position:fixed; inset:0; z-index:39; pointer-events:none; background:#fff; opacity:0; }
+
+/* ─────────── HUD ─────────── */
+/**
+ * The HUD sits *above* the cinematic letterbox (z 30 vs 20) and insets itself
+ * by the bar height.
+ *
+ * Previously the bars were z-index 40 against the HUD's 30, so with cinematic
+ * mode on — the default — the 9.5vh top bar painted straight over the brand,
+ * the fps/draw-call readout, and the top of the Camera panel. On a 1008px-tall
+ * window that's a 96px black band over a header sitting at y=0 and a panel
+ * starting at y=66: the controls were there and clickable, just invisible.
+ */
+.hud{
+  position:fixed; inset:var(--bar-h) 0; z-index:30;
+  pointer-events:none; opacity:1;
+  transition:opacity .45s, inset .9s cubic-bezier(.65,0,.35,1);
+}
+.hud.is-hidden{ opacity:0; }
+.hud > *{ pointer-events:none; }
+.hud button, .hud input{ pointer-events:auto; }
+
+.hud__top{
+  position:absolute; top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  padding:16px clamp(16px,3vw,34px);
+  background:linear-gradient(#000000a8, transparent);
+}
+.brand{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+.brand__mark{ color:var(--ember); font-size:9px; transform:translateY(-2px); }
+.brand__name{ font-family:var(--f-display); font-size:15px; letter-spacing:.4em; color:#fff; }
+.brand__div{ color:#4a4340; }
+.brand__sub{
+  font-size:9.5px; letter-spacing:.3em; text-transform:uppercase; color:var(--ash-dim);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.stats{ display:flex; gap:14px; font-variant-numeric:tabular-nums; }
+.stat{ font-size:9.5px; letter-spacing:.22em; text-transform:uppercase; color:#5f5956; white-space:nowrap; }
+.stat b{ color:#d9cfc6; font-weight:600; }
+.stat--q b{ color:var(--ember); }
+
+.hud__side{
+  position:absolute; top:66px; right:clamp(12px,2vw,26px);
+  width:236px; display:flex; flex-direction:column; gap:9px;
+  max-height:calc(100% - 108px); overflow:auto; padding-right:2px;
+  scrollbar-width:thin; scrollbar-color:#3a3330 transparent;
+}
+.hud__side::-webkit-scrollbar{ width:4px; }
+.hud__side::-webkit-scrollbar-thumb{ background:#3a3330; border-radius:2px; }
+
+.panel{
+  pointer-events:auto;
+  background:var(--glass);
+  backdrop-filter:blur(14px) saturate(120%);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);
+  border:1px solid rgba(255,255,255,.06);
+  border-top-color:var(--glass-edge);
+  border-radius:3px; padding:11px 12px 13px;
+  box-shadow:0 18px 50px -22px #000;
+}
+.panel__h{
+  margin:0 0 9px; font-size:8.5px; font-weight:600;
+  letter-spacing:.34em; text-transform:uppercase; color:#8a8280;
+  display:flex; align-items:center; gap:8px;
+}
+.panel__h::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--glass-edge),transparent); }
+.panel__note{ margin:9px 0 0; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--ash-dim); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:5px; }
+.chip{
+  font:500 9.5px/1 var(--f-ui); letter-spacing:.12em; text-transform:uppercase;
+  color:#a49b96; background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.07); border-radius:2px;
+  padding:6px 8px; cursor:pointer;
+  transition:color .18s, background .18s, border-color .18s, box-shadow .18s, transform .12s;
+}
+.chip:hover{ color:#fff; background:rgba(255,255,255,.1); transform:translateY(-1px); }
+.chip.is-on{
+  color:#180d05; background:linear-gradient(180deg,#ffd39a,#ff8f3f);
+  border-color:#ffc98f; box-shadow:0 0 16px -3px rgba(255,140,60,.8);
+}
+.chip--act{ color:var(--ember-hot); border-color:rgba(255,150,80,.28); background:rgba(255,120,50,.09); }
+.chip--act:hover{ background:rgba(255,140,60,.2); color:#fff; }
+.chip--danger{ color:#ffb3a2; border-color:rgba(255,74,43,.35); background:rgba(255,60,30,.12); }
+.chip--danger:hover{ background:rgba(255,60,30,.28); }
+.chip--cataclysm{
+  flex-basis:100%; padding:9px 8px; font-weight:700; letter-spacing:.42em;
+  color:#fff1e6; border-color:rgba(255,74,43,.6);
+  background:linear-gradient(90deg, rgba(120,10,0,.55), rgba(255,70,20,.38), rgba(120,10,0,.55));
+  background-size:200% 100%;
+  box-shadow:0 0 0 1px rgba(255,90,40,.15), 0 0 18px rgba(255,60,20,.25);
+  animation:cata 3.2s ease-in-out infinite;
+}
+.chip--cataclysm:hover{ box-shadow:0 0 0 1px rgba(255,120,60,.4), 0 0 28px rgba(255,70,20,.55); color:#fff; }
+@keyframes cata{ 0%,100%{ background-position:0% 0; } 50%{ background-position:100% 0; } }
+@media (prefers-reduced-motion: reduce){ .chip--cataclysm{ animation:none; } }
+
+.slider{ display:block; margin-top:11px; }
+.slider span{ display:flex; justify-content:space-between; font-size:8.5px; letter-spacing:.26em; text-transform:uppercase; color:#8a8280; margin-bottom:7px; }
+.slider b{ color:var(--ember); font-variant-numeric:tabular-nums; }
+.slider input{
+  -webkit-appearance:none; appearance:none; width:100%; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,#2a2f4a,#ff8a3c,#ffe0bd,#2a2f4a);
+  outline:none; cursor:pointer;
+}
+.slider input::-webkit-slider-thumb{
+  -webkit-appearance:none; width:11px; height:11px; border-radius:50%;
+  background:#fff2e0; border:1px solid #ff9a4d; box-shadow:0 0 12px rgba(255,140,60,.9);
+}
+.slider input::-moz-range-thumb{
+  width:11px; height:11px; border:1px solid #ff9a4d; border-radius:50%; background:#fff2e0;
+}
+
+.hud__bottom{
+  position:absolute; left:0; right:0; bottom:0;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px clamp(16px,3vw,34px);
+  background:linear-gradient(transparent, #000000a6);
+}
+.keys{ font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#5f5956; }
+.ghost{
+  pointer-events:auto; font:500 9.5px/1 var(--f-ui); letter-spacing:.24em; text-transform:uppercase;
+  color:#a49b96; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+  border-radius:2px; padding:8px 13px; cursor:pointer; transition:.2s;
+}
+.ghost:hover{ color:#fff; background:rgba(255,255,255,.12); }
+
+.walkhint{
+  position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
+  font-size:9.5px; letter-spacing:.22em; text-transform:uppercase; color:#cfc5bd;
+  background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.08);
+  padding:9px 15px; border-radius:2px; backdrop-filter:blur(8px);
+}
+
+@media (max-width:820px){
+  .hud__side{ width:180px; top:58px; }
+  .keys{ display:none; }
+}

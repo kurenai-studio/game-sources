@@ -1,0 +1,76 @@
+local player_state = require("ld48.scenes.common.player_state")
+
+local function gui_set_alpha(node, alpha)
+    gui.cancel_animation(node, "color.w")
+    local color = gui.get_color(node)
+    gui.set_color(node, vmath.vector4(color.x, color.y, color.z, alpha))
+end
+
+local function gui_anim_alpha(node, alpha, time, delay)
+    gui.cancel_animation(node, "color.w")
+    gui.animate(node, "color.w", alpha, gui.EASING_OUTQUAD, time, delay or 0)
+end
+
+function init(self)
+    self.arrow = gui.get_node("arrow")
+    self.crosshair = gui.get_node("crosshair")
+    self.ext = gui.get_node("crosshair_ext")
+    self.blue_count = gui.get_node("blue_count")
+    self.blue_count_text = gui.get_node("blue_count_text")
+
+    self.tutorial1 = gui.get_node("tutorial1")
+    self.tutorial2 = gui.get_node("tutorial2")
+
+    gui_set_alpha(self.tutorial1, 0)
+    gui_set_alpha(self.tutorial2, 0)
+end
+
+function final(self)
+end
+
+function update(self, dt)
+    local s = player_state
+    local ws = s.weapon_state
+    local inv = s.inventory
+
+    -- Crosshair
+    local lower_size = 78
+    local upper_size = 300
+    local lower_alpha = 1
+    local upper_alpha = 0.6
+
+    local v = lower_size + (upper_size - lower_size) * (ws.aim_penalty / ws.aim_penalty_upper)
+    gui.set_size(self.ext, vmath.vector3(v, v, 0))
+
+    v = lower_alpha + (upper_alpha - lower_alpha) * (ws.aim_penalty / ws.aim_penalty_upper)
+    gui_set_alpha(self.ext, v)
+
+    -- Blue res count
+    gui.set_text(self.blue_count_text, string.format("%03d", inv.blue))
+    if self.cur_blue ~= nil and self.cur_blue ~= inv.blue then
+        gui.cancel_animation(self.blue_count, gui.PROP_SCALE)
+        gui.set_scale(self.blue_count, vmath.vector3(1.25))
+        gui.animate(self.blue_count, gui.PROP_SCALE, vmath.vector3(1.0), gui.EASING_OUTQUAD, 0.3)
+    end
+    self.cur_blue = inv.blue
+
+    -- Arrow
+    -- if ws.holo then
+        gui.set_enabled(self.arrow, ws.holo)
+        gui.set_enabled(self.crosshair, not ws.holo)
+        gui.set_enabled(self.ext, not ws.holo)
+    -- else
+
+    -- end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("tutorial1") then
+        gui_anim_alpha(self.tutorial1, 1, 0.3)
+    elseif message_id == hash("tutorial2") then
+        gui_anim_alpha(self.tutorial1, 0, 0.3)
+        gui_anim_alpha(self.tutorial2, 1, 0.3)
+    elseif message_id == hash("tutorial3") then
+        gui_anim_alpha(self.tutorial2, 0, 0.3)
+    end
+end

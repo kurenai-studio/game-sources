@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>ASHMAW — Realm of the Emberwyrm</title>
+<meta name="description" content="A cinematic real-time WebGL fantasy: a volcanic kingdom ruled by a giant dragon." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./styles/ui.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<!-- ═══════════════ LOADING / TITLE CARD ═══════════════ -->
+<div id="boot" class="boot">
+  <div class="boot__vignette"></div>
+  <div class="boot__inner">
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 100 100" width="86" height="86">
+        <defs>
+          <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffd9a0"/><stop offset="55%" stop-color="#ff8a3c"/><stop offset="100%" stop-color="#8c2b12"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#cg)" d="M50 6 12 24v28c0 20 16 34 38 42 22-8 38-22 38-42V24L50 6Zm0 12 26 12v22c0 13-10 23-26 30-16-7-26-17-26-30V30l26-12Z"/>
+        <path fill="url(#cg)" d="M50 30c-9 6-14 12-14 19 0 8 6 13 14 18 8-5 14-10 14-18 0-7-5-13-14-19Z" opacity=".85"/>
+      </svg>
+    </div>
+    <h1 class="boot__title">ASHMAW</h1>
+    <p class="boot__sub">Realm of the Emberwyrm</p>
+    <div class="boot__bar"><i id="bootFill"></i></div>
+    <p class="boot__status" id="bootStatus">Kindling the forge…</p>
+    <button class="boot__enter" id="bootEnter" hidden>Enter the Realm</button>
+    <p class="boot__hint">Headphones optional · Fullscreen recommended</p>
+  </div>
+</div>
+
+<!-- ═══════════════ CINEMATIC FRAME ═══════════════ -->
+<div id="bars" class="bars" aria-hidden="true"><i></i><i></i></div>
+<div id="shotTitle" class="shot-title"><span class="shot-title__k">Shot</span><span id="shotName"></span></div>
+<div id="flash" class="flash" aria-hidden="true"></div>
+
+<!-- ═══════════════ HUD ═══════════════ -->
+<div id="hud" class="hud" hidden>
+
+  <header class="hud__top">
+    <div class="brand">
+      <span class="brand__mark">◆</span>
+      <span class="brand__name">ASHMAW</span>
+      <span class="brand__div">/</span>
+      <span class="brand__sub" id="regionName">The Emberwyrm's Caldera</span>
+    </div>
+  </header>
+
+  <div class="hud__side">
+    <div class="panel">
+      <h2 class="panel__h">Camera</h2>
+      <div class="chips" id="camChips">
+        <button class="chip is-on" data-cam="cinematic">Cinematic</button>
+        <button class="chip" data-cam="orbit">Orbit</button>
+        <button class="chip" data-cam="follow">Follow Dragon</button>
+        <button class="chip" data-cam="free">Free Flight</button>
+        <button class="chip" data-cam="walk">Walk Village</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel__h">Weather &amp; Sky</h2>
+      <div class="chips" id="wxChips">
+        <button class="chip is-on" data-wx="sunset">Sunset</button>
+        <button class="chip" data-wx="sunny">Sunny</button>
+        <button class="chip" data-wx="night">Moonlight</button>
+        <button class="chip" data-wx="storm">Storm</button>
+        <button class="chip" data-wx="rain">Rain</button>
+        <button class="chip" data-wx="fog">Heavy Fog</button>
+        <button class="chip" data-wx="ashstorm">Ash Storm</button>
+        <button class="chip" data-wx="eruption">Eruption</button>
+      </div>
+      <label class="slider">
+        <span>Time of day <b id="todReadout">16:26</b></span>
+        <input id="tod" type="range" min="0" max="1" step="0.001" value="0.727" />
+      </label>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel__h">The Dragon</h2>
+      <div class="chips">
+        <button class="chip chip--act" data-act="fire">Breathe Fire</button>
+        <button class="chip chip--act" data-act="land">Land</button>
+        <button class="chip chip--act" data-act="takeoff">Take Off</button>
+        <button class="chip chip--act" data-act="roar">Roar</button>
+        <button class="chip chip--act" data-act="lightning">Call Lightning</button>
+        <button class="chip chip--act chip--danger" data-act="erupt">Erupt Volcano</button>
+        <button class="chip chip--cataclysm" data-act="cataclysm">Cataclysm</button>
+        <button class="chip is-on" data-act="mute">Sound On</button>
+      </div>
+      <p class="panel__note" id="dragonState">State — circling</p>
+    </div>
+
+  </div>
+
+  <!--
+    No Render panel and no stats readout.
+
+    Both were developer instrumentation: the FX chips (SSAO / Motion Blur /
+    Chromatic Ab. / Wireframe) and the Low–Ultra tier buttons exist to A/B a
+    renderer, not to be used by someone watching a dragon, and Wireframe in
+    particular makes a finished piece look like an unfinished demo. The
+    post-processing chain still runs with everything enabled; quality is still
+    chosen by detectTier() at boot and then adjusted at runtime by PerfMonitor,
+    so nothing here was load-bearing. App.setFx / App.setQuality remain for the
+    console.
+  -->
+
+  <footer class="hud__bottom">
+    <div class="keys" id="keys">
+      <kbd>1–5</kbd> camera <kbd>C</kbd> cinematic <kbd>F</kbd> fire <kbd>L</kbd> land <kbd>T</kbd> take&nbsp;off
+      <kbd>E</kbd> erupt <kbd>B</kbd> lightning <kbd>Q</kbd> cataclysm <kbd>M</kbd> sound <kbd>X</kbd> weather <kbd>Space</kbd> pause <kbd>H</kbd> ui <kbd>WASD</kbd> move
+    </div>
+    <button class="ghost" id="pauseBtn">⏸ Pause</button>
+  </footer>
+
+  <div class="walkhint" id="walkhint" hidden>Click to look around · <kbd>WASD</kbd> walk · <kbd>Shift</kbd> run · <kbd>Esc</kbd> release</div>
+</div>
+
+<noscript><p style="color:#fff;font:16px system-ui;padding:2rem">This experience requires JavaScript and WebGL2.</p></noscript>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
