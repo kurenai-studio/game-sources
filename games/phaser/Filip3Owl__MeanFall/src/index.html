@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeanFall — Beta</title>
+    <link rel="icon" type="image/png" sizes="180x180" href="icon/meanfallfav.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon/meanfallfav.png?v=3">
+    <link rel="stylesheet" href="css/style.css?v=0.10.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header id="game-header">
+            <div class="brand">
+                <h1>MeanFall</h1>
+                <span class="beta-tag">BETA</span>
+            </div>
+            <div id="header-info">
+                <span id="header-area">Vila dos Dados</span>
+                <span id="header-keys">WASD · Espaço &nbsp;|&nbsp; I · C · Q · B · K · L · N · F5</span>
+                <div class="volume-group" title="Volume do jogo">
+                    <button id="btn-sound" class="sound-btn" title="Ligar/desligar som" aria-label="Ligar ou desligar som">🔊</button>
+                    <input type="range" id="vol-slider" min="0" max="100" value="35" aria-label="Volume do jogo">
+                </div>
+            </div>
+        </header>
+
+        <div id="game-layout">
+            <aside id="left-panel">
+                <div class="panel-section">
+                    <div class="panel-title">Minimapa</div>
+                    <canvas id="minimap-canvas" width="180" height="180"></canvas>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">Área Atual</div>
+                    <div id="area-name">Vila dos Dados</div>
+                    <div id="area-topic">Tipos de Dados</div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">Missão</div>
+                    <div id="quest-tracker">—</div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">Maestria Elemental</div>
+                    <div id="elemental-mastery-list"></div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-title">Maestria por Área</div>
+                    <div id="mastery-list"></div>
+                </div>
+            </aside>
+
+            <main id="game-canvas-container">
+                <div id="game-container"></div>
+            </main>
+
+            <aside id="right-panel">
+                <div class="panel-section character-card">
+                    <div class="char-header">
+                        <span class="char-name" id="char-name">Aventureiro</span>
+                        <span class="char-level-badge">Nv. <span id="char-level">1</span></span>
+                    </div>
+
+                    <div class="bar-container hp-row">
+                        <div class="bar-label-row">
+                            <span class="bar-label">HP</span>
+                            <span class="bar-text" id="hp-text">100/100</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill hp-bar" id="hp-bar" style="width:100%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bar-container">
+                        <div class="bar-label-row">
+                            <span class="bar-label">Foco</span>
+                            <span class="bar-text" id="focus-text">50/50</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill focus-bar" id="focus-bar" style="width:100%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bar-container">
+                        <div class="bar-label-row">
+                            <span class="bar-label">XP</span>
+                            <span class="bar-text" id="xp-text">0/100</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill xp-bar" id="xp-bar" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">Atributos</div>
+                    <div class="stat-row"><span class="stat-label">Força</span><span class="stat-value" id="stat-str">5</span></div>
+                    <div class="stat-row"><span class="stat-label">Inteligência</span><span class="stat-value" id="stat-int">5</span></div>
+                    <div class="stat-row"><span class="stat-label">Agilidade</span><span class="stat-value" id="stat-agi">5</span></div>
+                    <div class="stat-row"><span class="stat-label">Vitalidade</span><span class="stat-value" id="stat-vit">5</span></div>
+                    <div class="stat-row gold-row"><span class="stat-label">Ouro</span><span class="stat-value" id="stat-gold">0</span></div>
+                </div>
+
+                <div class="panel-section actions">
+                    <div class="panel-title">Ações</div>
+                    <button class="action-btn" id="btn-inventory"><span class="kbd">I</span><span>Inventário</span><span class="alert-dot"></span></button>
+                    <button class="action-btn" id="btn-character"><span class="kbd">C</span><span>Personagem</span></button>
+                    <button class="action-btn" id="btn-quests"><span class="kbd">Q</span><span>Missões</span><span class="alert-dot"></span></button>
+                    <button class="action-btn" id="btn-books"><span class="kbd">B</span><span>Biblioteca</span><span class="alert-dot"></span></button>
+                    <button class="action-btn" id="btn-skill"><span class="kbd">K</span><span>Habilidades</span><span class="alert-dot"></span></button>
+                    <button class="action-btn" id="btn-compendium"><span class="kbd">L</span><span>Compêndio</span></button>
+                    <button class="action-btn" id="btn-save"><span class="kbd">F5</span><span>Salvar</span></button>
+                </div>
+            </aside>
+        </div>
+
+        <div id="chat-log">
+            <div id="chat-messages"></div>
+        </div>
+
+        <footer id="game-footer">
+            <span>MeanFall v0.10.0 BETA</span>
+            <span class="footer-credit">Developed by <strong>Filipe Rangel</strong></span>
+        </footer>
+    </div>
+
+    <script type="module" src="js/main.js?v=0.10.0"></script>
+    <script>
+    /* Auto-scale the game canvas to fit the available container space.
+     * CSS transform is used so Phaser's logical coordinate system (544×480)
+     * is unaffected. For sharpness (pixel art), integer multipliers (1×, 2×, 3×)
+     * are used when upscaling. Fractional scale is only used when the viewport
+     * is too small to show the canvas at 1×. */
+    (function () {
+        var ticking = false;
+        function rescale() {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () {
+                ticking = false;
+                var outer = document.getElementById('game-canvas-container');
+                var gc    = document.getElementById('game-container');
+                if (!outer || !gc) return;
+                var aw = outer.clientWidth, ah = outer.clientHeight;
+                var s;
+                if (aw >= 544 && ah >= 480) {
+                    // Upscale: use largest integer multiplier that fits
+                    s = Math.max(1, Math.min(Math.floor(aw / 544), Math.floor(ah / 480)));
+                } else {
+                    // Must shrink: fractional unavoidable, keep as precise as possible
+                    s = Math.min(aw / 544, ah / 480);
+                }
+                gc.style.transform       = (Math.abs(s - 1) > 0.001) ? 'scale(' + s + ')' : '';
+                gc.style.transformOrigin = 'center center';
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            rescale();
+            setTimeout(rescale, 200); // catch late font/layout shifts
+            window.addEventListener('resize', rescale);
+        });
+    })();
+    </script>
+</body>
+</html>
