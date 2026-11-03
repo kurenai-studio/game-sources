@@ -1,0 +1,491 @@
+script: "/druid/druid_widget.gui_script"
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+textures {
+  name: "game"
+  texture: "/assets/game.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  color {
+    x: 0.3647059
+    y: 0.03529412
+    z: 0.30588236
+  }
+  type: TYPE_BOX
+  blend_mode: BLEND_MODE_MULT
+  texture: "gui/pixel"
+  id: "background"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  alpha: 0.55
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  size {
+    x: 720.0
+    y: 990.0
+  }
+  type: TYPE_BOX
+  id: "WIndow_Anchor"
+  pivot: PIVOT_E
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -527.0
+  }
+  size {
+    x: 790.0
+    y: 990.0
+  }
+  color {
+    x: 0.42745098
+    y: 0.47843137
+    z: 0.72156864
+  }
+  type: TYPE_BOX
+  texture: "gui/button_side"
+  id: "window"
+  pivot: PIVOT_E
+  parent: "WIndow_Anchor"
+  layer: "gui"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+}
+nodes {
+  position {
+    x: -395.0
+    y: 435.0
+  }
+  size {
+    x: 680.0
+    y: 60.0
+  }
+  color {
+    x: 0.318
+    y: 0.384
+    z: 0.541
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "header"
+  parent: "window"
+  layer: "gui"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 300.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Settings"
+  font: "text"
+  id: "text_header"
+  parent: "header"
+  layer: "text"
+  inherit_alpha: true
+  alpha: 0.6
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    x: -395.0
+    y: 375.0
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "group_settings"
+  parent: "window"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 700.0
+    y: 800.0
+  }
+  type: TYPE_BOX
+  id: "group_button"
+  pivot: PIVOT_N
+  parent: "group_settings"
+  inherit_alpha: true
+  slice9 {
+    z: 8.0
+    w: 32.0
+  }
+  visible: false
+}
+nodes {
+  position {
+    y: -140.0
+  }
+  type: TYPE_TEMPLATE
+  id: "settings_slider_sound"
+  parent: "group_button"
+  inherit_alpha: true
+  template: "/widget/settings_slider/settings_slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/root"
+  parent: "settings_slider_sound"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/group_info"
+  parent: "settings_slider_sound/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "settings_slider_sound/text"
+  parent: "settings_slider_sound/group_info"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/icon"
+  parent: "settings_slider_sound/group_info"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/slider"
+  parent: "settings_slider_sound/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/slider_back"
+  parent: "settings_slider_sound/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/slider_fill"
+  parent: "settings_slider_sound/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_sound/pin"
+  parent: "settings_slider_sound/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -340.0
+  }
+  type: TYPE_TEMPLATE
+  id: "settings_slider_music"
+  parent: "group_button"
+  inherit_alpha: true
+  template: "/widget/settings_slider/settings_slider.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/root"
+  parent: "settings_slider_music"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/group_info"
+  parent: "settings_slider_music/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Music"
+  id: "settings_slider_music/text"
+  parent: "settings_slider_music/group_info"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  texture: "gui/music_on"
+  id: "settings_slider_music/icon"
+  parent: "settings_slider_music/group_info"
+  overridden_fields: 9
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/slider"
+  parent: "settings_slider_music/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/slider_back"
+  parent: "settings_slider_music/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/slider_fill"
+  parent: "settings_slider_music/slider"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_slider_music/pin"
+  parent: "settings_slider_music/slider"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -540.0
+  }
+  type: TYPE_TEMPLATE
+  id: "settings_button_language"
+  parent: "group_button"
+  inherit_alpha: true
+  template: "/widget/settings_button/settings_button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_button_language/root"
+  parent: "settings_button_language"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.8392157
+    y: 0.76862746
+    z: 0.5137255
+  }
+  type: TYPE_BOX
+  id: "settings_button_language/button"
+  parent: "settings_button_language/root"
+  overridden_fields: 5
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "settings_button_language/text"
+  parent: "settings_button_language/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_button_language/icon"
+  parent: "settings_button_language/button"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -720.0
+  }
+  type: TYPE_TEMPLATE
+  id: "settings_button_menu"
+  parent: "group_button"
+  inherit_alpha: true
+  template: "/widget/settings_button/settings_button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_button_menu/root"
+  parent: "settings_button_menu"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.9137255
+    y: 0.49411765
+    z: 0.5294118
+  }
+  type: TYPE_BOX
+  id: "settings_button_menu/button"
+  parent: "settings_button_menu/root"
+  overridden_fields: 5
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Menu"
+  id: "settings_button_menu/text"
+  parent: "settings_button_menu/button"
+  overridden_fields: 1
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "settings_button_menu/icon"
+  parent: "settings_button_menu/button"
+  overridden_fields: 45
+  template_node_child: true
+  enabled: false
+}
+nodes {
+  position {
+    x: -790.0
+    y: 495.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "anchor_menu"
+  pivot: PIVOT_NW
+  parent: "window"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 67.5
+    y: -65.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "button_menu"
+  parent: "anchor_menu"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_BOX
+  texture: "gui/icon_menu"
+  id: "icon_menu"
+  parent: "button_menu"
+  inherit_alpha: true
+  alpha: 0.7
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -395.0
+    y: -490.0
+  }
+  size {
+    x: 660.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Game 1.31, Defold 1.2.24"
+  font: "text"
+  id: "text_version"
+  pivot: PIVOT_S
+  line_break: true
+  parent: "window"
+  layer: "text"
+  inherit_alpha: true
+  alpha: 0.4
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+  text_leading: 1.3
+}
+nodes {
+  position {
+    x: -960.0
+    y: -540.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "SW_Anchor"
+  pivot: PIVOT_SW
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 30.0
+    y: 30.0
+  }
+  size {
+    x: 660.0
+    y: 190.0
+  }
+  type: TYPE_TEXT
+  text: "Made by Insality\n"
+  "Made with Defold\n"
+  "#Gamedevjs jam 2026"
+  font: "text"
+  id: "text_about"
+  pivot: PIVOT_SW
+  line_break: true
+  parent: "SW_Anchor"
+  layer: "text"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+  text_leading: 1.3
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+layers {
+  name: "game"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

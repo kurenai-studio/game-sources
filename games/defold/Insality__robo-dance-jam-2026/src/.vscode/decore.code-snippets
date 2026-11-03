@@ -1,0 +1,72 @@
+{
+	"Decore Command Template": {
+		"prefix": "decore_command",
+		"body": [
+			"---@class system.${1:TEMPLATE}.command",
+			"---@field ${1:TEMPLATE} system.${1:TEMPLATE}",
+			"local M = {}",
+			"",
+			"",
+			"---@param ${1:TEMPLATE} system.${1:TEMPLATE}",
+			"function M.register(${1:TEMPLATE})",
+			"\tM.${1:TEMPLATE} = ${1:TEMPLATE}",
+			"end",
+			"",
+			"",
+			"--- Example: expose a plain function; delegate to the backing system with `:` where needed.",
+			"function M.example(...)",
+			"\tM.${1:TEMPLATE}:example(...)",
+			"end",
+			"",
+			"",
+			"return M"
+		],
+		"description": "Decore command module template"
+	},
+	"Decore Entity Template": {
+		"prefix": "decore_entity",
+		"body": [
+			"---@diagnostic disable: missing-fields",
+			"---@class entity",
+			"return {",
+			"\ttransform = {},",
+			"\tgame_object = { collectionfactory_url = \"/entities#${1:TEMPLATE}\" },",
+			"\t${1:TEMPLATE} = {}",
+			"}"
+		],
+		"description": "Decore entity prefab template"
+	},
+	"Decore System Template": {
+		"prefix": "decore_system",
+		"body": [
+			"local decore = require(\"decore.decore\")",
+			"",
+			"local ${1:TEMPLATE}_command = require(\"system.${1:TEMPLATE}.${1:TEMPLATE}_command\")",
+			"",
+			"---@class entity",
+			"---@field ${1:TEMPLATE} component.${1:TEMPLATE}|nil",
+			"",
+			"---@class entity.${1:TEMPLATE}: entity",
+			"---@field ${1:TEMPLATE} component.${1:TEMPLATE}",
+			"",
+			"---@class component.${1:TEMPLATE}",
+			"decore.register_component(\"${1:TEMPLATE}\", {})",
+			"",
+			"---@class system.${1:TEMPLATE}: system",
+			"---@field entities entity.${1:TEMPLATE}[]",
+			"local M = {}",
+			"",
+			"",
+			"---@return system.${1:TEMPLATE}",
+			"function M.create()",
+			"\tlocal self = decore.system(M, \"${1:TEMPLATE}\", { \"${1:TEMPLATE}\" })",
+			"\t${1:TEMPLATE}_command.register(self)",
+			"\treturn self",
+			"end",
+			"",
+			"",
+			"return M"
+		],
+		"description": "Decore system module template"
+	}
+}

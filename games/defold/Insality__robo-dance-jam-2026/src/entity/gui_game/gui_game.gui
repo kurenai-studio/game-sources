@@ -1,0 +1,950 @@
+script: "/druid/druid_widget.gui_script"
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "NE_Anchor"
+  pivot: PIVOT_NE
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -100.0
+  }
+  color {
+    x: 0.42745098
+    y: 0.47843137
+    z: 0.72156864
+  }
+  type: TYPE_BOX
+  texture: "gui/button_side"
+  id: "button_menu"
+  pivot: PIVOT_E
+  parent: "NE_Anchor"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -70.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_menu"
+  id: "icon_menu"
+  parent: "button_menu"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -300.0
+  }
+  color {
+    x: 0.72156864
+    y: 0.7058824
+    z: 0.38431373
+  }
+  type: TYPE_BOX
+  texture: "gui/button_side"
+  id: "button_restart"
+  pivot: PIVOT_E
+  parent: "NE_Anchor"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -70.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_restart"
+  id: "icon_restart"
+  parent: "button_restart"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 430.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "Plan_Anchor"
+  pivot: PIVOT_W
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel"
+  parent: "Plan_Anchor"
+  inherit_alpha: true
+  template: "/widget/plan_panel/plan_panel.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/root"
+  parent: "plan_panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/layout_action"
+  parent: "plan_panel/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card"
+  parent: "plan_panel/layout_action"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/root"
+  parent: "plan_panel/turn_action_card"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/group_description"
+  parent: "plan_panel/turn_action_card/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/turn_action_card/text_description"
+  parent: "plan_panel/turn_action_card/group_description"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/turn_action_card/text_hint"
+  parent: "plan_panel/turn_action_card/group_description"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_group"
+  parent: "plan_panel/turn_action_card/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/fx_hint"
+  parent: "plan_panel/turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/side_selector"
+  parent: "plan_panel/turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/root"
+  parent: "plan_panel/turn_action_card/side_selector"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sectors"
+  parent: "plan_panel/turn_action_card/side_selector/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/side_selector/sector_up"
+  parent: "plan_panel/turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_up/root"
+  parent: "plan_panel/turn_action_card/side_selector/sector_up"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_up/group"
+  parent: "plan_panel/turn_action_card/side_selector/sector_up/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_up/outer"
+  parent: "plan_panel/turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_up/inner"
+  parent: "plan_panel/turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_up/icon_arrow"
+  parent: "plan_panel/turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/side_selector/sector_left"
+  parent: "plan_panel/turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_left/root"
+  parent: "plan_panel/turn_action_card/side_selector/sector_left"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_left/group"
+  parent: "plan_panel/turn_action_card/side_selector/sector_left/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_left/outer"
+  parent: "plan_panel/turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_left/inner"
+  parent: "plan_panel/turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_left/icon_arrow"
+  parent: "plan_panel/turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/side_selector/sector_down"
+  parent: "plan_panel/turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_down/root"
+  parent: "plan_panel/turn_action_card/side_selector/sector_down"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_down/group"
+  parent: "plan_panel/turn_action_card/side_selector/sector_down/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_down/outer"
+  parent: "plan_panel/turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_down/inner"
+  parent: "plan_panel/turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_down/icon_arrow"
+  parent: "plan_panel/turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/side_selector/sector_right"
+  parent: "plan_panel/turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_right/root"
+  parent: "plan_panel/turn_action_card/side_selector/sector_right"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_right/group"
+  parent: "plan_panel/turn_action_card/side_selector/sector_right/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_right/outer"
+  parent: "plan_panel/turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_right/inner"
+  parent: "plan_panel/turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/side_selector/sector_right/icon_arrow"
+  parent: "plan_panel/turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/icon_turn_action"
+  parent: "plan_panel/turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/root"
+  parent: "plan_panel/turn_action_card/icon_turn_action"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/shadow"
+  parent: "plan_panel/turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/panel"
+  parent: "plan_panel/turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/back"
+  parent: "plan_panel/turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/outline"
+  parent: "plan_panel/turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/icon"
+  parent: "plan_panel/turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/turn_action_card/icon_turn_action/button_input_hint"
+  parent: "plan_panel/turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/button_input_hint/root"
+  parent: "plan_panel/turn_action_card/icon_turn_action/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/turn_action_card/icon_turn_action/button_input_hint/panel"
+  parent: "plan_panel/turn_action_card/icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/turn_action_card/icon_turn_action/button_input_hint/text"
+  parent: "plan_panel/turn_action_card/icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/panel_turns_plan"
+  parent: "plan_panel/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/root"
+  parent: "plan_panel/panel_turns_plan"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/panel_turns"
+  parent: "plan_panel/panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/panel_background"
+  parent: "plan_panel/panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/layout_turns"
+  parent: "plan_panel/panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/panel_turns_plan/icon_turn_side"
+  parent: "plan_panel/panel_turns_plan/layout_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/root"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/panel"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/group"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/panel_side"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/icon_turn"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/cancel"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/icon_cancel"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/cancel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/empty"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/circle"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_side/circle2"
+  parent: "plan_panel/panel_turns_plan/icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/arrow_selected"
+  parent: "plan_panel/panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_selected_player"
+  parent: "plan_panel/panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_player_head"
+  parent: "plan_panel/panel_turns_plan/icon_selected_player"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_eye_outside"
+  parent: "plan_panel/panel_turns_plan/icon_player_head"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_eye_inside"
+  parent: "plan_panel/panel_turns_plan/icon_eye_outside"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/panel_turns_plan/text_counter"
+  parent: "plan_panel/panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/panel_turns_plan/icon_turn_skip"
+  parent: "plan_panel/panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/root"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/shadow"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/panel"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/back"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/outline"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/icon"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint/panel"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint/text"
+  parent: "plan_panel/panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/button_plan_execute"
+  parent: "plan_panel/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/root"
+  parent: "plan_panel/button_plan_execute"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/button"
+  parent: "plan_panel/button_plan_execute/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/button_green_mask"
+  parent: "plan_panel/button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/button_green"
+  parent: "plan_panel/button_plan_execute/button_green_mask"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/button_plan_execute/text_animated"
+  parent: "plan_panel/button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/text_animated/root"
+  parent: "plan_panel/button_plan_execute/text_animated"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/button_plan_execute/text_animated/text"
+  parent: "plan_panel/button_plan_execute/text_animated/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/button_plan_execute/button_input_hint"
+  parent: "plan_panel/button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/button_input_hint/root"
+  parent: "plan_panel/button_plan_execute/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_execute/button_input_hint/panel"
+  parent: "plan_panel/button_plan_execute/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/button_plan_execute/button_input_hint/text"
+  parent: "plan_panel/button_plan_execute/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/button_plan_mode"
+  parent: "plan_panel/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_mode/root"
+  parent: "plan_panel/button_plan_mode"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/button_plan_mode/button"
+  parent: "plan_panel/button_plan_mode/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "plan_panel/button_plan_mode/text"
+  parent: "plan_panel/button_plan_mode/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "plan_panel/health_bar"
+  parent: "plan_panel/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/health_bar/root"
+  parent: "plan_panel/health_bar"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/health_bar/heart_1"
+  parent: "plan_panel/health_bar/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/health_bar/heart_2"
+  parent: "plan_panel/health_bar/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "plan_panel/health_bar/heart_3"
+  parent: "plan_panel/health_bar/root"
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "level_select"
+  parent: "Plan_Anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 490.0
+  }
+  size {
+    x: 600.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "hint_control"
+  parent: "Plan_Anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "text_hint_control"
+  parent: "hint_control"
+  inherit_alpha: true
+  template: "/widget/text_animated/text_animated.gui"
+}
+nodes {
+  size {
+    x: 750.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  id: "text_hint_control/root"
+  parent: "text_hint_control"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 500.0
+    y: 50.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_TEXT
+  text: "Drag icon to action!"
+  id: "text_hint_control/text"
+  parent: "text_hint_control/root"
+  overridden_fields: 4
+  overridden_fields: 5
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    y: 540.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "N_Anchor"
+  pivot: PIVOT_N
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -360.0
+    y: -50.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "level_controle"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "N_Anchor"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -220.0
+  }
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_BOX
+  texture: "druid/empty"
+  id: "icon_left"
+  parent: "level_controle"
+  inherit_alpha: true
+}
+nodes {
+  rotation {
+    z: 90.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_select"
+  id: "icon_left_image"
+  parent: "icon_left"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 220.0
+  }
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_BOX
+  texture: "druid/empty"
+  id: "icon_right"
+  parent: "level_controle"
+  inherit_alpha: true
+}
+nodes {
+  rotation {
+    z: -90.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_select"
+  id: "icon_right_image"
+  parent: "icon_right"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 230.0
+    y: 50.0
+  }
+  color {
+    x: 0.9647059
+    y: 0.8901961
+    z: 0.5137255
+  }
+  type: TYPE_TEXT
+  text: "Level 4"
+  font: "text"
+  id: "text_level"
+  parent: "level_controle"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+layers {
+  name: "gui_top"
+}
+layers {
+  name: "text_top"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

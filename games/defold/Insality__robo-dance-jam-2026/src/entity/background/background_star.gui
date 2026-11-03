@@ -1,0 +1,33 @@
+textures {
+  name: "background"
+  texture: "/entity/background/assets/background.atlas"
+}
+nodes {
+  size {
+    x: 300.0
+    y: 300.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: 39.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  type: TYPE_BOX
+  texture: "background/star"
+  id: "star"
+  parent: "root"
+  inherit_alpha: true
+  alpha: 0.02
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

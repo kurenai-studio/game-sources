@@ -1,0 +1,62 @@
+script: "/druid/druid_widget.gui_script"
+fonts {
+  name: "text_world"
+  font: "/assets/text_world.font"
+}
+nodes {
+  size {
+    x: 750.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "text_animated"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/text_animated/text_animated.gui"
+}
+nodes {
+  size {
+    x: 750.0
+    y: 75.0
+  }
+  type: TYPE_BOX
+  id: "text_animated/root"
+  parent: "text_animated"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 500.0
+    y: 50.0
+  }
+  type: TYPE_TEXT
+  text: "Thanks for playing!"
+  font: "text_world"
+  id: "text_animated/text"
+  parent: "text_animated/root"
+  layer: "text_world"
+  overridden_fields: 4
+  overridden_fields: 5
+  overridden_fields: 8
+  overridden_fields: 10
+  overridden_fields: 20
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text_world"
+}
+material: "/materials/gui_world/gui_world.material"
+adjust_reference: ADJUST_REFERENCE_DISABLED
+max_nodes: 128

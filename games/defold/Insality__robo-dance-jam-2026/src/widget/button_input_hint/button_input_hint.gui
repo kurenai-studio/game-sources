@@ -1,0 +1,69 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 110.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 110.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_input_hint"
+  id: "panel"
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  slice9 {
+    x: 20.0
+    y: 20.0
+    z: 20.0
+    w: 20.0
+  }
+}
+nodes {
+  scale {
+    x: 0.625
+    y: 0.625
+  }
+  size {
+    x: 120.0
+    y: 40.0
+  }
+  color {
+    x: 0.25882354
+    y: 0.2901961
+    z: 0.34117648
+  }
+  type: TYPE_TEXT
+  text: "Space"
+  font: "text"
+  id: "text"
+  parent: "root"
+  layer: "text"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

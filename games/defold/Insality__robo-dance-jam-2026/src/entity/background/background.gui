@@ -1,0 +1,521 @@
+script: "/druid/druid_widget.gui_script"
+textures {
+  name: "background"
+  texture: "/entity/background/assets/background.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  color {
+    x: 0.30980393
+    y: 0.3882353
+    z: 0.7529412
+  }
+  type: TYPE_BOX
+  texture: "background/background_gradient"
+  id: "background"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 1.0
+    z: 1.0
+  }
+}
+nodes {
+  rotation {
+    z: -10.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "group"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "stars"
+  parent: "group"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 250.0
+    y: 900.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star_row1"
+  parent: "stars"
+  inherit_alpha: true
+  template: "/entity/background/background_star_row.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/root"
+  parent: "background_star_row1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/group"
+  parent: "background_star_row1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row1/background_star1"
+  parent: "background_star_row1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star1/root"
+  parent: "background_star_row1/background_star1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star1/star"
+  parent: "background_star_row1/background_star1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row1/background_star2"
+  parent: "background_star_row1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star2/root"
+  parent: "background_star_row1/background_star2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star2/star"
+  parent: "background_star_row1/background_star2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row1/background_star3"
+  parent: "background_star_row1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star3/root"
+  parent: "background_star_row1/background_star3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star3/star"
+  parent: "background_star_row1/background_star3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row1/background_star4"
+  parent: "background_star_row1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star4/root"
+  parent: "background_star_row1/background_star4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star4/star"
+  parent: "background_star_row1/background_star4/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row1/background_star5"
+  parent: "background_star_row1/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star5/root"
+  parent: "background_star_row1/background_star5"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row1/background_star5/star"
+  parent: "background_star_row1/background_star5/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: 400.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star_row2"
+  parent: "stars"
+  inherit_alpha: true
+  template: "/entity/background/background_star_row.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/root"
+  parent: "background_star_row2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/group"
+  parent: "background_star_row2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row2/background_star1"
+  parent: "background_star_row2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star1/root"
+  parent: "background_star_row2/background_star1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star1/star"
+  parent: "background_star_row2/background_star1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row2/background_star2"
+  parent: "background_star_row2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star2/root"
+  parent: "background_star_row2/background_star2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star2/star"
+  parent: "background_star_row2/background_star2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row2/background_star3"
+  parent: "background_star_row2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star3/root"
+  parent: "background_star_row2/background_star3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star3/star"
+  parent: "background_star_row2/background_star3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row2/background_star4"
+  parent: "background_star_row2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star4/root"
+  parent: "background_star_row2/background_star4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star4/star"
+  parent: "background_star_row2/background_star4/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row2/background_star5"
+  parent: "background_star_row2/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star5/root"
+  parent: "background_star_row2/background_star5"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row2/background_star5/star"
+  parent: "background_star_row2/background_star5/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 250.0
+    y: -100.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star_row3"
+  parent: "stars"
+  inherit_alpha: true
+  template: "/entity/background/background_star_row.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/root"
+  parent: "background_star_row3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/group"
+  parent: "background_star_row3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row3/background_star1"
+  parent: "background_star_row3/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star1/root"
+  parent: "background_star_row3/background_star1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star1/star"
+  parent: "background_star_row3/background_star1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row3/background_star2"
+  parent: "background_star_row3/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star2/root"
+  parent: "background_star_row3/background_star2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star2/star"
+  parent: "background_star_row3/background_star2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row3/background_star3"
+  parent: "background_star_row3/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star3/root"
+  parent: "background_star_row3/background_star3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star3/star"
+  parent: "background_star_row3/background_star3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row3/background_star4"
+  parent: "background_star_row3/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star4/root"
+  parent: "background_star_row3/background_star4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star4/star"
+  parent: "background_star_row3/background_star4/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row3/background_star5"
+  parent: "background_star_row3/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star5/root"
+  parent: "background_star_row3/background_star5"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row3/background_star5/star"
+  parent: "background_star_row3/background_star5/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -600.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star_row4"
+  parent: "stars"
+  inherit_alpha: true
+  template: "/entity/background/background_star_row.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/root"
+  parent: "background_star_row4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/group"
+  parent: "background_star_row4/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row4/background_star1"
+  parent: "background_star_row4/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star1/root"
+  parent: "background_star_row4/background_star1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star1/star"
+  parent: "background_star_row4/background_star1/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row4/background_star2"
+  parent: "background_star_row4/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star2/root"
+  parent: "background_star_row4/background_star2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star2/star"
+  parent: "background_star_row4/background_star2/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row4/background_star3"
+  parent: "background_star_row4/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star3/root"
+  parent: "background_star_row4/background_star3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star3/star"
+  parent: "background_star_row4/background_star3/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row4/background_star4"
+  parent: "background_star_row4/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star4/root"
+  parent: "background_star_row4/background_star4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star4/star"
+  parent: "background_star_row4/background_star4/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "background_star_row4/background_star5"
+  parent: "background_star_row4/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star5/root"
+  parent: "background_star_row4/background_star5"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star_row4/background_star5/star"
+  parent: "background_star_row4/background_star5/root"
+  template_node_child: true
+}
+material: "/materials/gui_back/gui_back.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

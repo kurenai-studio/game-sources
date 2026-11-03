@@ -1,0 +1,25 @@
+name: "object_door"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_door\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 66.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}

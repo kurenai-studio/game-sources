@@ -1,0 +1,129 @@
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 130.0
+    y: 130.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  scale {
+    x: 1.8
+    y: 1.8
+  }
+  color {
+    x: 0.5764706
+    y: 0.7254902
+    z: 0.6039216
+  }
+  type: TYPE_BOX
+  texture: "gui/light_128"
+  id: "shadow"
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  alpha: 0.1
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  color {
+    x: 0.5764706
+    y: 0.7254902
+    z: 0.6039216
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_130"
+  id: "panel"
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.5764706
+    y: 0.7254902
+    z: 0.6039216
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_130"
+  id: "back"
+  parent: "panel"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  type: TYPE_BOX
+  texture: "gui/panel_circle_130_outline_10"
+  id: "outline"
+  parent: "panel"
+  layer: "gui"
+  inherit_alpha: true
+  alpha: 0.2
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  type: TYPE_BOX
+  texture: "gui/icon_turn_move"
+  id: "icon"
+  parent: "panel"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -62.0
+  }
+  type: TYPE_TEMPLATE
+  id: "button_input_hint"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/button_input_hint/button_input_hint.gui"
+}
+nodes {
+  size {
+    x: 90.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "button_input_hint/root"
+  parent: "button_input_hint"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 90.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "button_input_hint/panel"
+  parent: "button_input_hint/root"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "wasd"
+  id: "button_input_hint/text"
+  parent: "button_input_hint/root"
+  overridden_fields: 8
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

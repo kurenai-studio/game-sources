@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Defold: Build",
+            "type": "shell",
+            "command": ".vscode/build_and_log.sh",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+                "clear": true
+            },
+            "runOptions": {
+                "reevaluateOnRerun": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Defold: Hot Reload",
+            "type": "shell",
+            "command": ".vscode/hot_reload.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": false,
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

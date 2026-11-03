@@ -1,0 +1,9 @@
+local deftest = require("deftest.deftest")
+
+function init(self)
+	deftest.add(require("system.field.field.test.tests.test_field_movement"))
+	deftest.add(require("system.field.field.test.tests.test_field_damage"))
+	deftest.add(require("system.field.field.test.tests.test_field_spawn_entity"))
+
+	deftest.run()
+end

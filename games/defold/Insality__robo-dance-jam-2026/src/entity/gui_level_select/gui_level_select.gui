@@ -1,0 +1,176 @@
+script: "/druid/druid_widget.gui_script"
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -380.0
+  }
+  size {
+    x: 450.0
+    y: 180.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_yellow"
+  id: "button_back"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 80.0
+    y: 80.0
+    z: 80.0
+    w: 80.0
+  }
+}
+nodes {
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  color {
+    x: 0.4627451
+    y: 0.40392157
+    z: 0.30980393
+  }
+  type: TYPE_TEXT
+  text: "Back"
+  font: "text"
+  id: "text_back"
+  parent: "button_back"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 870.0
+    y: 520.0
+  }
+  type: TYPE_BOX
+  id: "levels"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    z: 24.0
+    w: 24.0
+  }
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "level_button"
+  parent: "levels"
+  inherit_alpha: true
+  template: "/widget/level_button/level_button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_button/root"
+  parent: "level_button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "level_button/level_back"
+  parent: "level_button/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "level_button/text"
+  parent: "level_button/level_back"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "NE_Anchor"
+  pivot: PIVOT_NE
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -100.0
+  }
+  color {
+    x: 0.42745098
+    y: 0.47843137
+    z: 0.72156864
+  }
+  type: TYPE_BOX
+  texture: "gui/button_side"
+  id: "button_menu"
+  pivot: PIVOT_E
+  parent: "NE_Anchor"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -70.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_menu"
+  id: "icon_menu"
+  parent: "button_menu"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

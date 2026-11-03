@@ -1,0 +1,458 @@
+name: "object_spikes"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  children: "bot"
+  children: "cover"
+  children: "middle"
+  children: "spike_hall_1"
+  children: "spike_hall_2"
+  children: "spike_hall_3"
+  children: "spike_hall_4"
+  children: "top"
+  data: ""
+  position {
+    y: -0.5
+  }
+}
+embedded_instances {
+  id: "spike_hall_1"
+  children: "spike_1"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_hall\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: -31.5
+    y: 24.5
+    z: 0.002
+  }
+}
+embedded_instances {
+  id: "spike_1"
+  children: "spike_group_1"
+  data: ""
+  position {
+    y: -65.0
+    z: 1.0E-4
+  }
+}
+embedded_instances {
+  id: "spike_hall_2"
+  children: "spike_2"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_hall\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 52.0\\n"
+  "  y: 42.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 28.5
+    y: 24.5
+    z: 0.002
+  }
+}
+embedded_instances {
+  id: "spike_2"
+  children: "spike_group_2"
+  data: ""
+  position {
+    y: -65.0
+    z: 1.0E-4
+  }
+}
+embedded_instances {
+  id: "spike_hall_3"
+  children: "spike_3"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_hall\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 52.0\\n"
+  "  y: 42.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: -31.5
+    y: -25.0
+    z: 0.004
+  }
+}
+embedded_instances {
+  id: "spike_3"
+  children: "spike_group_3"
+  data: ""
+  position {
+    y: -65.0
+    z: 1.0E-4
+  }
+}
+embedded_instances {
+  id: "spike_hall_4"
+  children: "spike_4"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_hall\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 52.0\\n"
+  "  y: 42.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 28.5
+    y: -25.0
+    z: 0.004
+  }
+}
+embedded_instances {
+  id: "spike_4"
+  children: "spike_group_4"
+  data: ""
+  position {
+    y: -65.0
+    z: 1.0E-4
+  }
+}
+embedded_instances {
+  id: "bot"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_bot\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 66.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.1568627506494522\\n"
+  "    v: 0.3607843220233917\\n"
+  "    v: 0.47843137383461\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite1\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_bot\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 34.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 1.0\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: 1.0E-4\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: -38.5
+    z: 0.005
+  }
+}
+embedded_instances {
+  id: "middle"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_middle\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 20.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.1568627506494522\\n"
+  "    v: 0.3607843220233917\\n"
+  "    v: 0.47843137383461\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite1\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_middle\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 50.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 1.0\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: 1.0E-4\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 2.0
+    z: 0.003
+  }
+}
+embedded_instances {
+  id: "top"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_top\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 20.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.1568627506494522\\n"
+  "    v: 0.3607843220233917\\n"
+  "    v: 0.47843137383461\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"sprite1\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike_holes_top\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 31.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 1.0\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.054901961237192154\\n"
+  "    v: 0.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: 1.0E-4\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 42.0
+    z: 0.001
+  }
+}
+embedded_instances {
+  id: "spike_group_1"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 66.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 38.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "spike_group_2"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 66.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 38.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "spike_group_3"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 66.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 38.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "spike_group_4"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_spike\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 66.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 38.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "cover"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"pixel\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "slice9 {\\n"
+  "  x: 2.0\\n"
+  "  y: 2.0\\n"
+  "  z: 2.0\\n"
+  "  w: 2.0\\n"
+  "}\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 50.0\\n"
+  "}\\n"
+  "size_mode: SIZE_MODE_MANUAL\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.09019608050584793\\n"
+  "    v: 0.20392157137393951\\n"
+  "    v: 0.3176470696926117\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: -82.0
+    z: 0.006
+  }
+}

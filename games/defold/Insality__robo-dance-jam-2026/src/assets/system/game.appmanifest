@@ -1,0 +1,75 @@
+platforms:
+    armv7-ios:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    arm64-ios:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    x86_64-ios:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    armv7-android:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    arm64-android:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    arm64-osx:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate, graphics_vulkan, platform_vulkan, MoltenVK]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt, GraphicsAdapterVulkan]
+            symbols: [GraphicsAdapterOpenGL]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null, graphics, platform]
+            frameworks: [OpenGL]
+    x86_64-osx:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate, graphics_vulkan, platform_vulkan, MoltenVK]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt, GraphicsAdapterVulkan]
+            symbols: [GraphicsAdapterOpenGL]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null, graphics, platform]
+            frameworks: [OpenGL]
+    x86_64-linux:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    arm64-linux:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    x86-win32:
+        context:
+            excludeLibs: [libphysics, libLinearMath, libBulletDynamics, libBulletCollision, libbox2d_defold, libscript_box2d_defold, libgamesys_model, libgamesys_rig, librig, libliveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [libphysics_null.lib, libgamesys_rig_null.lib, libgamesys_model_null.lib, librig_null.lib, libliveupdate_null.lib]
+    x86_64-win32:
+        context:
+            excludeLibs: [libphysics, libLinearMath, libBulletDynamics, libBulletCollision, libbox2d_defold, libscript_box2d_defold, libgamesys_model, libgamesys_rig, librig, libliveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [libphysics_null.lib, libgamesys_rig_null.lib, libgamesys_model_null.lib, librig_null.lib, libliveupdate_null.lib]
+    js-web:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    wasm-web:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
+    wasm_pthread-web:
+        context:
+            excludeLibs: [physics, LinearMath, BulletDynamics, BulletCollision, box2d_defold, script_box2d_defold, gamesys_model, gamesys_rig, rig, liveupdate]
+            excludeSymbols: [ScriptBox2DExt, ScriptModelExt]
+            libs: [physics_null, gamesys_rig_null, gamesys_model_null, rig_null, liveupdate_null]
