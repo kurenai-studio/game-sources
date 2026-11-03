@@ -1,0 +1,33 @@
+EL JUEGO DE LA DERIVADA NUMERICA
+
+
+Es un juego tipo endless runner (estilo dinosaurio de Chrome) donde
+aplicamos derivacion numerica e integracion de Euler.
+
+Proyecto en equipo de la materia de Metodos Numericos.
+
+Archivos:
+   main.py                el juego que programamos
+   audio.py               musica y efectos: los generamos con codigo
+   docs/manual-de-usuario.txt  como se juega (para el jugador)
+   docs/manual-tactico.txt     como lo construimos por dentro (matematica y pruebas)
+
+Requisitos: Python 3.10 o superior y la libreria pygame.
+Si no la tienen:
+   Windows:  py -m pip install pygame
+   Linux:    python3 -m pip install pygame
+   Mac:      python3 -m pip install pygame
+
+Como jugar:
+   Windows:  py main.py
+   Linux/Mac: python3 main.py
+
+Controles: ESPACIO o flecha arriba = saltar, flecha abajo = agacharse,
+ESC o P = pausa, TAB = reiniciar, M = musica, F11 = pantalla completa.
+En Opciones: T cambia de tema (Halloween, Clasico, Navidad, Oscuro).
+
+Bonuses:
+   Letras             -> completa DERIVADA, NEWTON, GAUSS, JACOBI, EULER o
+                         BISECCION y gana +500 puntos.
+   Corazones          -> cada 3.000 puntos aparece uno en el camino.
+   Cada 10.000 puntos -> sube la velocidad y los obstaculos salen mas seguidos.

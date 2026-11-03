@@ -1,0 +1,666 @@
+==============================================================================
+     MANUAL TÁCTICO - ARQUITECTURA, DERIVACIÓN NUMÉRICA Y MODELO DE COLISIÓN
+==============================================================================
+
+Este manual lo escribimos los autores del juego para detallar cómo lo
+implementamos, los principios matemáticos que aplicamos y, sobre todo, POR
+QUÉ ESTÁ GARANTIZADO que el atleta no puede saltar los drones.
+
+Índice:
+   1. Intuición conceptual: las manos en la montaña rusa
+   2. El terreno
+   3. Núcleo matemático: derivación numérica
+   4. Física del salto
+   5. Modelo de colisión: franjas verticales sobre el suelo del obstáculo
+   6. Prueba de los márgenes (por qué el dron es inalcanzable)
+   7. Diagnóstico del bug corregido
+   8. Parámetros y cómo ajustarlos
+   9. Estado de la partida: Sesion, vidas, puntuación y ritmo
+  10. Audio: música y efectos sintetizados
+  11. Validación
+  12. Resumen del flujo por frame
+
+
+------------------------------------------------------------------------------
+1. INTUICIÓN CONCEPTUAL: LAS MANOS EN LA MONTAÑA RUSA
+------------------------------------------------------------------------------
+
+Para inclinar el cuerpo del atleta sobre un terreno dinámico sin conocer una
+fórmula analítica compleja, aplicamos diferencias finitas:
+
+   "Imagina que corres con los ojos cerrados sobre una montaña rusa. Para
+    saber si estás subiendo o bajando, estiras una mano un pasito hacia
+    adelante y la otra un pasito hacia atrás para tantear el suelo.
+
+      - Si tu mano de adelante está MÁS ARRIBA que la de atrás, estás
+        SUBIENDO.
+      - Si tu mano de adelante está MÁS ABAJO, estás BAJANDO.
+
+    Ese cálculo instantáneo que hace el cerebro al comparar ambos puntos es
+    exactamente lo que hace la computadora para inclinar al atleta."
+
+
+------------------------------------------------------------------------------
+2. EL TERRENO
+------------------------------------------------------------------------------
+
+   SUELO_BASE = 420
+
+   def terreno_f(x):
+       # Amplitudes calibradas (ver sección 6): pendiente máxima 0.235 y
+       # variación máxima de 8.41 px dentro de la ventana de solape.
+       return SUELO_BASE + 18 * math.sin(x * 0.007) + 10 * math.cos(x * 0.014)
+
+   - Períodos: 2*pi/0.007 = 898 px  y  2*pi/0.014 = 449 px.
+   - Rango vertical: 420 +/- 28 px (de 392 a 448). Con la resolución lógica de
+     960x540 el terreno queda en el tercio inferior y deja aire para el salto y
+     los drones.
+   - Derivada analítica de referencia:
+        f'(x) = 0.126*cos(0.007x) - 0.14*sin(0.014x),  con |f'(x)| <= 0.2352.
+
+
+------------------------------------------------------------------------------
+3. NÚCLEO MATEMÁTICO: DERIVACIÓN NUMÉRICA
+------------------------------------------------------------------------------
+
+La pendiente instantánea se evalúa con DIFERENCIAS FINITAS CENTRALES:
+
+                    f(x + h) - f(x - h)
+        f'(x)  aprox  -------------------        con h = 1.0 px
+                            2h
+
+   def derivada_numerica(x, h=1.0):
+       return (terreno_f(x + h) - terreno_f(x - h)) / (2 * h)
+
+Se usa para dos cosas:
+
+   1. Inclinar el sprite del atleta: ángulo = atan(f'(x)), se dibuja rotado.
+   2. Mostrar f'(x) en el HUD, para que el jugador vea la matemática en vivo.
+
+ERROR DE TRUNCAMIENTO. El desarrollo de Taylor da
+
+        f'(x) - [f(x+h) - f(x-h)] / (2h)  =  (h^2 / 6) * f'''(xi)  =  O(h^2)
+
+es decir, el esquema es de SEGUNDO ORDEN. Con h = 1 y esta familia de senos, el
+error medido es del orden de 1e-6:
+
+        x        f'(x) numérica    f'(x) analítica    error
+        ----     --------------    ---------------    ---------
+             0       +0.125999         +0.126000      1.0e-06
+           500       -0.209968         -0.209972      4.0e-06
+          1500       -0.177045         -0.177049      4.3e-06
+
+   La derivación numérica no se tocó: el arreglo de colisiones es independiente
+   de ella y la reutiliza como referencia de pendiente.
+
+
+------------------------------------------------------------------------------
+4. FÍSICA DEL SALTO
+------------------------------------------------------------------------------
+
+El salto se mide como ALTURA DE VUELO (h) sobre el terreno, integrada
+numéricamente con Euler semi-implícito:
+
+   VELOCIDAD_SALTO = -7.5    # px/frame
+   GRAVEDAD        =  0.55   # px/frame^2
+
+   self.vy += GRAVEDAD
+   self.h   = self.h - self.vy            # integral de la velocidad vertical
+   self.y   = terreno_f(real_x) - self.h  # posición en pantalla
+
+Por qué h y no y: si la altura se midiera en píxeles de pantalla, al bajar una
+cuesta el terreno se alejaría bajo los pies y la altura aparente crecería hasta
+unos 40 px extra. Integrando la velocidad, h depende solo de la física:
+
+   - Altura máxima continua: v^2 / (2g) = 7.5^2 / (2*0.55) = 51.14 px.
+   - Altura máxima discreta (la real, a 60 fps): 47.45 px.
+   - Tiempo en el aire: 27 frames aprox 0.45 s.
+   - Al aterrizar: h = 0 e y = terreno_f(x), sin hundimientos ni flotaciones.
+
+Ese techo de 47.45 px es la pieza clave de la garantía de la sección 6.
+
+
+------------------------------------------------------------------------------
+5. MODELO DE COLISIÓN: FRANJAS VERTICALES SOBRE EL SUELO DEL OBSTÁCULO
+------------------------------------------------------------------------------
+
+Cada cuerpo se describe por una FRANJA VERTICAL (base, techo) medida en píxeles
+sobre el suelo:
+
+        CUERPO              FRANJA (px sobre el suelo)
+        ----------------    ---------------------------
+        Atleta de pie       0 - 46
+        Atleta agachado     0 - 22
+        Piedra ('bajo')     0 - 28
+        Dron   ('alto')     34 - 62
+
+   def colisiona(player, obs, world_offset):
+       p_rect = player.get_rect()
+       o_rect = obs.get_rect(world_offset)
+       # Fase 1: solape horizontal
+       if not (p_rect.right > o_rect.left and p_rect.left < o_rect.right):
+           return False
+       # Fase 2: solape vertical, ambos medidos sobre el suelo del obstáculo
+       suelo_obs = int(round(terreno_f(obs.world_x)))
+       p_base, p_techo = player.get_banda_vertical(suelo_obs)
+       o_base, o_techo = obs.get_banda_vertical()
+       return p_base < o_techo and p_techo > o_base
+
+Detalles importantes:
+
+   - UNA SOLA REFERENCIA VERTICAL (el suelo del obstáculo) para ambos cuerpos.
+     Así la colisión coincide EXACTAMENTE con lo que se ve: si los sprites se
+     solapan, hay choque; si no, no hay choque. Comprobado en 10 000 estados
+     aleatorios: 0 incoherencias.
+   - Se redondea el suelo y la posición del atleta a píxeles enteros, igual que
+     al dibujar, para que no existan diferencias sub-píxel.
+   - Cada sprite se dibuja dentro de su rectángulo de colisión (la piedra y el
+     dron incluidos), de modo que "lo que ves es lo que choca".
+
+
+------------------------------------------------------------------------------
+6. PRUEBA DE LOS MÁRGENES (POR QUÉ EL DRON ES INALCANZABLE)
+------------------------------------------------------------------------------
+
+La ventana de solape horizontal es a lo sumo 24 px del obstáculo + 24 px del
+atleta: <= 48 px de recorrido, es decir <= 36 px de separación entre el centro
+del atleta y el borde del obstáculo cuando se tocan. Con la pendiente máxima, el
+terreno cambia como mucho
+
+        Delta_max = 0.2352 * 36  aprox  8.41 px
+
+Ese es el único "error" posible al comparar alturas sobre suelos distintos.
+
+DRON (34 - 62 px):
+
+   CASO                FRANJA DEL ATLETA              ¿CHOCA?    MARGEN
+   -----------------   ----------------------------   --------   ----------
+   De pie (0-46)       [-8.41, 37.59]..[8.41, 54.41]  SIEMPRE    >= 3.59 px
+   Agachado (0-22)     [-8.41, 13.59]..[8.41, 30.41]  NUNCA      >= 3.59 px
+   Saltando            base >= 47.45 - 8.41 = 39.04   SIEMPRE    14.55 px
+
+   TEOREMA DEL JUEGO: el salto llega como máximo a h = 47.45 px, que es menor
+   que el techo del dron (62). Los pies siempre quedan por debajo de ese techo,
+   así que el cuerpo SIEMPRE interseca la franja [34, 62]: ninguna
+   temporización permite superarlo saltando. Agachado, en cambio, su techo
+   22 + 8.41 = 30.41 < 34 nunca alcanza la base del dron.
+
+PIEDRA (0 - 28 px):
+
+   - Sin saltar:  [-8.41, 37.59] intersecta [0, 28]  -> choque siempre.
+   - Agachado:    [-8.41, 30.41] intersecta [0, 28]  -> choque (no salva).
+   - Saltando:    basta h > 28 + 8.41 = 36.41 < 47.45 -> siempre superable con
+                  buen tiempo.
+
+6.1. POR QUÉ SE RECALIBRÓ LA AMPLITUD DEL TERRENO
+
+   Con las amplitudes originales (35 y 20), la pendiente máxima era 0.4648 y el
+   terreno podía cambiar 16.61 px dentro de la ventana de solape. Ese valor es
+   mayor que el margen del agachado (34 - 22 = 12 px), así que la cuesta podía
+   "colar" al atleta por encima del dron. Al calibrar a 18 y 10 la variación
+   baja a 8.41 px y todos los márgenes quedan positivos (>= 3.59 px). Fue una
+   decisión de diseño del equipo para que la regla sea DEMOSTRABLE, no una
+   casualidad numérica.
+
+
+------------------------------------------------------------------------------
+7. DIAGNÓSTICO DEL BUG CORREGIDO
+------------------------------------------------------------------------------
+
+SÍNTOMA: saltando se superaban también los obstáculos superiores (drones).
+
+CAUSA RAÍZ (dos efectos combinados):
+
+   1. La colisión comparaba rectángulos en COORDENADAS DE PANTALLA
+      (player_rect.colliderect(obs.get_rect(...))). El dron se anclaba a SU
+      suelo y el atleta se movía sobre OTRO suelo; en una cuesta la diferencia
+      llegaba a 16.61 px, suficiente para que los pies "aparecieran" por encima
+      del cuerpo del dron.
+   2. La altura del salto se acumulaba en y de pantalla. Al bajar una cuesta,
+      el suelo se alejaba bajo los pies y la altura aparente crecía hasta unos
+      40 px extra, de modo que el salto efectivo podía rebasar el techo del dron
+      (58 px en el modelo anterior).
+
+ANTES / DESPUÉS (barrido automático de 120 posiciones x 120 instantes de salto,
+reproducible con un barrido sobre las 120 posiciones del terreno):
+
+   MÉTRICA                              ANTES                AHORA
+   ----------------------------------   ------------------   ----------------
+   Posiciones donde el salto limpia
+   el dron                              24 de 120 (20 %)     0 de 120
+   Agachado pasa el dron                sí                   sí (0 fallos)
+   De pie choca con el dron             sí                   sí (0 fallos)
+   Piedra superable saltando            sí                   sí (120/120)
+   Coherencia colisión <-> dibujo       no garantizada       0 incoherencias
+                                                             / 10 000
+
+
+------------------------------------------------------------------------------
+8. PARÁMETROS Y CÓMO AJUSTARLOS
+------------------------------------------------------------------------------
+
+Todo está centralizado al inicio de main.py:
+
+   CONSTANTE               VALOR      EFECTO SI LA AUMENTAS
+   ---------------------   --------   ---------------------------------------
+   VELOCIDAD_SALTO         -7.5       Salto más alto (si llegas a -9.1 el
+                                      dron se vuelve saltable)
+   GRAVEDAD                0.55       Caída más pesada, salto más corto
+   ALTO_PIE                46         Cuerpo más alto: choca antes con drones
+   ALTO_AGACHADO           22         Menos margen bajo el dron (máx. 25)
+   ROCA_TECHO              28         Piedra más alta: exige saltar más cerca
+                                      del pico
+   DRON_BASE               34         Dron más bajo: más difícil agacharse
+                                      (rango seguro: 31-37)
+   DRON_TECHO              62         Dron más alto: más margen contra el salto
+   Amplitudes del terreno  18, 10     Más pendiente: reduce los márgenes (6)
+   VELOCIDAD_MAXIMA        11.0       Más velocidad: menos frames de reacción
+   VIDAS_INICIALES         3          Partida más fácil
+   VIDAS_MAXIMAS           5          Tope de corazones acumulables
+   FRAMES_INVULNERABLE     90         Más gracia tras un choque (1.5 s)
+   PUNTOS_POR_VIDA         3000       Un corazón cada menos/más puntos
+   PUNTOS_POR_OBSTACULO    100        Puntos que da cada obstáculo esquivado
+   BONO_FORMULA            500        Puntos al completar una fórmula
+   PUNTOS_POR_NIVEL        10000      Puntos para subir de nivel
+   NIVELES_MAXIMOS         3          Subidas de velocidad (11 -> 14)
+
+REGLA DE SEGURIDAD AL MODIFICAR:
+
+   h_max            = VELOCIDAD_SALTO^2 / (2*GRAVEDAD)
+                      # cota continua 51.14; discreta real 47.45
+   margen_salto     = DRON_TECHO - h_max > 0
+   margen_agachado  = DRON_BASE - (ALTO_AGACHADO + Delta_max) > 0
+   margen_de_pie    = (ALTO_PIE - Delta_max) - DRON_BASE > 0
+
+
+------------------------------------------------------------------------------
+9. ESTADO DE LA PARTIDA: SESION, VIDAS, PUNTUACIÓN Y RITMO
+------------------------------------------------------------------------------
+
+El estado jugable vive en la clase Sesion, separada del dibujo.
+Sesion.avanzar() simula UN FRAME SIN PINTAR NADA, lo que permite probar la
+lógica sin abrir ventana (así se validan vidas, corazones, puntuación e
+invulnerabilidad de forma automática).
+
+   class Sesion:
+       vidas             # 3 al empezar, máximo 5
+       invulnerable      # frames de gracia que quedan tras un choque
+       proximo_corazon   # puntaje del próximo corazón (500, 1000, 1500, ...)
+       esquivados        # obstáculos superados sin chocar (define la velocidad)
+       golpes            # choques recibidos
+       vidas_ganadas     # corazones convertidos en vida
+       letras            # Letra activa en el mundo (o lista vacía)
+       formula_indice    # método en curso dentro de FORMULAS
+       formula_progreso  # letras ya recogidas de ese método
+       nivel             # 0 = velocidad base; 1..3 = subidas
+       formulas_completas, letras_recogidas
+
+SISTEMA DE VIDAS
+
+   EVENTO                                  EFECTO
+   -------------------------------------   --------------------------------
+   Choque con un obstáculo                 vidas -= 1, invulnerable = 90 y
+                                           el obstáculo se retira
+   Estar invulnerable                      no se pierden vidas, pero el
+                                           obstáculo queda marcado 'golpeado'
+                                           (no da puntos)
+   Corazón con vidas < 5                   vidas += 1
+   Corazón con vidas == 5                  score += 100 (bono)
+   vidas == 0                              game_over = True
+
+PUNTUACIÓN: ESQUIVAR (MÁS BONUS)
+
+No hay puntos por tiempo ni por maniobrar; el marcador sube +100 cuando un
+obstáculo pasa por detrás del atleta sin haberlo tocado. Aparte de eso, los
+bonuses suman: +500 por fórmula completada y +100 por un corazón con las 5
+vidas llenas (ver sección 10).
+
+   for obs in self.obstacles:
+       if obs.superado or obs.golpeado:
+           continue
+       if obs.world_x + obs.width < p.x - 12 + self.world_offset:
+           obs.superado = True
+           p.score += PUNTOS_POR_OBSTACULO
+           self.esquivados += 1
+
+Cada Obstacle lleva dos banderas: golpeado (el atleta lo tocó) y superado (ya se
+contó). El orden importa: la comprobación de esquivado se hace ANTES de reciclar
+la lista, y un obstáculo golpeado nunca se marca como superado. Esto también se
+aplica a los obstáculos que el atleta atraviesa durante los 90 frames de
+invulnerabilidad: se marcan como golpeados aunque no cuesten vida, para que la
+gracia no regale puntos.
+
+Como pasar una piedra exige estar en el aire (agachado chocaría) y pasar un dron
+exige estar agachado (de pie o saltando chocaría), CADA +100 IMPLICA LA MANIOBRA
+CORRECTA: no se puede cobrar un obstáculo sin haberlo esquivado bien.
+
+VELOCIDAD Y HUECOS
+
+La velocidad crece cada 3 obstáculos esquivados y con cada nivel de puntaje:
+
+   self.nivel = min(p.score // PUNTOS_POR_NIVEL, NIVELES_MAXIMOS)
+   speed = min(VELOCIDAD_MAXIMA + nivel * VELOCIDAD_POR_NIVEL,
+               base_speed + (esquivados // 3) * 0.5 + nivel * VELOCIDAD_POR_NIVEL)
+
+El tope de 11.0 por nivel (hasta 14.0) tiene dos motivos. Primero, la ventana de
+solape horizontal mide 24 + 24 = 48 px: a 14 px/frame el obstáculo permanece
+solapado más de 3 frames, así que no puede "colarse" entre dos frames
+(tunneling); haría falta pasar de 48 px/frame. Segundo, a 14 px/frame un salto
+de 27 frames cubre 378 px, que es la referencia con la que se dimensionan los
+huecos.
+
+La distancia entre obstáculos se calcula en función de esa velocidad para que el
+salto siga siendo posible, y el margen aleatorio se acorta con el nivel para que
+aparezcan más seguidos:
+
+   def nuevo_hueco(ultimo_x, speed, nivel=0):
+       minimo = max(230, int(28 * speed) + 70 - nivel * 10)
+       extra = max(80, 230 - nivel * 50)
+       return ultimo_x + random.randint(minimo, minimo + extra)
+
+Verificación de jugabilidad: con un piloto automático que salta 9 frames antes
+del impacto y se agacha hasta que el dron termina de pasar, se sobreviven 4000
+frames y 5 de 5 partidas completas con huecos generados por el juego a nivel
+máximo (14 px/frame), además de las pruebas a 5.5, 9.0, 10.5 y 11.0.
+
+PRESENTACIÓN Y COLOR
+
+Se dibuja siempre en una superficie lógica de 960x540 y presentar() la escala a
+la ventana (manteniendo 16:9, con bandas negras si hace falta). Así ninguna
+coordenada depende del tamaño de la pantalla. Los cuatro temas (Halloween,
+Clásico, Navidad, Oscuro) son solo paletas: no cambian ni la física ni la
+colisión.
+
+Cada tema define una paleta completa (fondo, suelos, atleta, piedra, dron,
+HUD...) y, opcionalmente, un "estilo" y efectos de cielo. Halloween usa estilo
+"halloween": el obstáculo alto se dibuja como FANTASMA y el bajo como LÁPIDA, y
+el cielo lleva luna con cráteres y 70 estrellas. Navidad usa estilo "navidad":
+el alto es una BOLA de Navidad y el bajo un REGALO con lazo; el cielo lleva 70
+estrellas y 70 copos de nieve animados. El resto de temas usa el estilo
+"normal" (piedra y dron). El cambio está solo en Obstacle.draw:
+
+   estilo = tema.get("estilo", "normal")
+   if self.tipo == 'bajo':
+       tumba / regalo / piedra  según estilo
+   else:
+       fantasma / bola / dron   según estilo
+
+Ambos sprites de cada tema se dibujan dentro del rectángulo exacto de colisión
+(24x28), y las pruebas del desarrollo comprobaron que no pintan ni un píxel
+fuera de él.
+
+La nieve no usa random (para no alterar el azar de los obstáculos): cada copo
+deriva su posición de su índice y del frame con un hash senoidal.
+
+   def dibujar_nieve(surface, color, frame, copos=70):
+       x = (_copo(i, 1.7) * 960 + sin(frame*0.015 + i) * 16) % 960
+       y = (_copo(i, 4.3) * 540 + frame * (0.6 + _copo(i, 9.1)*1.8)) % 540
+
+dibujar_escena la llama solo si tema.get("nieve"), después de los obstáculos y
+los popups y antes del HUD, así los copos quedan por delante de la escena pero
+nunca tapan el marcador.
+
+Cada tema define una paleta completa (fondo, suelos, atleta, piedra, dron,
+HUD...). El cielo es un degradado vertical que se construye UNA vez por tema y
+se guarda en caché (_fondos en main.py), de modo que no cuesta nada por frame:
+
+   def fondo_tema(tema):
+       # 540 líneas de color interpolado entre tema["fondo"] y tema["fondo2"]
+       ...
+
+El terreno se rellena en tres capas, siempre muestreando terreno_f() cada 4 px:
+
+   1. tierra: polígono desde la curva hasta el borde inferior (marrón).
+   2. césped: banda de 12 px pegada a la curva (verde).
+   3. línea del suelo: el trazo de la función, más grueso y oscuro.
+
+Encima se dibujan matas de hierba y piedritas. Ninguna de estas capas
+interviene en colisiona(): la colisión sigue usando solo las franjas
+verticales, así que el aspecto no puede alterar la jugabilidad.
+
+F11 no usa pygame.display.toggle_fullscreen() porque SDL2 LO IGNORA EN WAYLAND
+(aviso: "skipping toggle_fullscreen on wayland"). En su lugar se reconstruye el
+modo de vídeo con set_mode: (0, 0) + FULLSCREEN para entrar y el tamaño guardado
+para volver. Si el compositor no concede el modo (tamaño < 320x240) se restaura
+la ventana anterior, de modo que nunca queda una ventana inservible.
+
+
+------------------------------------------------------------------------------
+10. BONUS: LETRAS DE FÓRMULAS, CORAZONES Y NIVELES
+------------------------------------------------------------------------------
+
+Dos sistemas de recogibles (letras y corazones) y un tercero que ajusta el
+ritmo (niveles). Ninguno toca la física ni la colisión: solo añaden objetos y
+modifican la velocidad con topes seguros.
+
+CORAZONES Y SEPARACIÓN
+   Los corazones salen cada 3.000 puntos (PUNTOS_POR_VIDA) y se colocan con el
+   mismo criterio que las letras: nunca pegados a un obstáculo. Si no, el
+   jugador no puede decidir con margen si le conviene desviarse. Para eso hay
+   dos ayudas en Sesion:
+
+       def _separada(self, x, margen=170, entre_recogibles=110):
+           # False si hay un obstáculo a menos de 170 px
+           # o otro recogible a menos de 110 px
+
+       def _x_libre(self, x, margen=170):
+           # avanza de 80 en 80 px hasta encontrar un hueco limpio
+
+   Al crear un obstáculo nuevo, _reubicar_recogibles(obs) revisa corazones y
+   letras y aparta a +220 px cualquiera que haya quedado a menos de 170 px. Como
+   el obstáculo y el recogible aún están fuera de pantalla, el ajuste no se ve.
+
+LETRAS DE FÓRMULAS
+   FORMULAS es una lista de (palabra, nombre del método):
+
+       DERIVADA -> Derivación numérica
+       NEWTON   -> Newton-Raphson modificado
+       GAUSS    -> Gauss-Seidel
+       JACOBI   -> Jacobi
+       EULER    -> Método de Euler
+       BISECCION-> Bisección
+
+   La palabra se escribe solo con letras A-Z (sin tildes) porque cada letra es
+   un objeto Letra recogible. El estado es (formula_indice, formula_progreso).
+
+   La letra que aparece es SIEMPRE palabra[formula_progreso], de modo que el
+   jugador no adivina: recoge en orden. Si la deja pasar:
+
+       self.proxima_letra = min(self.proxima_letra,
+                                self.world_offset + random.randint(340, 520))
+
+   y la misma letra vuelve a salir más adelante; el progreso no se pierde.
+
+   Al recogerla, formula_progreso += 1. Al completar la palabra:
+
+       score += BONO_FORMULA            # +500
+       formulas_completas += 1
+       audio.sonar("formula")
+       formula_indice = (formula_indice + 1) % len(FORMULAS)
+       formula_progreso = 0
+
+   Las letras aparecen por distancia (proxima_letra, 420-640 px después de la
+   anterior) y a alturas alternas (30, 66 u 80 px): las altas obligan a saltar.
+   El HUD muestra el método y la palabra con las letras ya recogidas en color de
+   acento y las que faltan en gris.
+
+   Al programar una letra se pasa por _x_libre(x): si cae a menos de 170 px de
+   un obstáculo (o a menos de 110 px de un corazón), se desplaza de 80 en 80 px
+   hasta encontrar un hueco limpio. El corazón usa el mismo criterio al
+   aparecer, así que ninguno de los dos sale pegado a un obstáculo.
+
+NIVELES DE VELOCIDAD
+   Cada 10.000 puntos:
+
+       self.nivel = min(score // PUNTOS_POR_NIVEL, NIVELES_MAXIMOS)   # 0..3
+
+   y la velocidad suma 1.0 px/frame por nivel, con tope 11 + nivel (12, 13 y
+   14). Los huecos se acortan porque el margen aleatorio de nuevo_hueco baja
+   con el nivel, pero el mínimo sigue atado a 28 * speed (duración del salto),
+   así que nunca desaparece la respuesta posible. Al subir de nivel suena
+   "nivel" y salen dos popups ("¡NIVEL n!" y "MÁS RÁPIDO").
+
+DIBUJO
+   - dibujar_letra(): insignia circular con borde de acento y la letra centrada.
+   - El corazón ya existía (dibujar_corazon) y flota con una onda seno.
+   - La nieve y las nubes no se enteran de estos objetos: van en capas aparte.
+
+
+------------------------------------------------------------------------------
+11. AUDIO: MÚSICA Y EFECTOS SINTETIZADOS
+------------------------------------------------------------------------------
+
+Todo el audio se genera en audio.py al arrancar. No hay archivos .wav ni .ogg:
+el juego no depende de assets externos, solo de main.py + audio.py.
+
+FORMATO. El mezclador se abre a 22050 Hz, 16 bits con signo, mono, buffer 512:
+
+   pygame.mixer.pre_init(22050, -16, 1, 512)
+   pygame.init()
+   audio.iniciar()
+
+iniciar() nunca lanza excepción: si no hay dispositivo de audio deja
+_disponible = False y todos los sonar() pasan a ser no-ops silenciosos.
+
+SÍNTESIS. Cada nota es una onda con envolvente de ataque (6 ms) y caída
+exponencial:
+
+   fase  = (freq * t) mod 1
+   v     = +1 si fase < 0.5, -1 si no         (onda cuadrada)
+   env   = min(1, i/ataque) * exp(-t*caida/duracion)
+
+Formas: cuadrada (melodía), triángulo (bajo y arpegios), seno (brillo) y sierra
+(choques). La frecuencia sale del nombre de la nota:
+
+   f = 440 * 2^((semitonos - 9)/12)           A4 = 440 Hz
+
+MÚSICA: DOS PISTAS. Cada pista se sintetiza una vez y se guarda como Sound:
+
+   _musicas = {"menu": ..., "juego": ...}
+
+musica(pista) cambia de pista sin reiniciar si ya está sonando y respeta el
+estado de M (encendido/apagado):
+
+   menu  (9.60 s)  100 BPM, la menor, triángulo + seno una octava arriba.
+                   Arpegio A4-C5-E5-A5 / G4-B4-D5-G5 / F4-A4-C5-F5 /
+                   E4-G#4-B4-E5 sobre un bajo A2-G2-F2-E2. Suena en los menús.
+   juego (7.27 s)  132 BPM, do mayor, cuadrada sobre bajo de triángulo.
+                   Suena al entrar en partida.
+
+main_menu() llama audio.musica("menu") en cada vuelta (es idempotente: si ya
+suena esa pista no hace nada) y run_game() llama audio.musica("juego"), así que
+al entrar y salir de la partida la música cambia sola. M enciende o apaga la
+pista actual, no cambia de pista.
+
+EFECTOS:
+
+   NOMBRE        DURACIÓN   SÍNTESIS                     CUÁNDO
+   -----------   --------   --------------------------   -------------------
+   salto         0.13 s     barrido 520 -> 900 Hz        al despegar
+   punto         0.10 s     E6 + A6, triángulo           al esquivar (+100)
+   choque        0.30 s     barrido 320 -> 70 Hz, sierra al perder una vida
+   vida          0.43 s     C5-E5-G5-C6-E6 + seno        al recoger corazón
+   vida_llena    0.37 s     C5-G5-C6-G6                  corazón con 5 vidas
+   game_over     0.90 s     G4-E4-C4-C3 descendente      al llegar a 0 vidas
+   blip          0.045 s    E5, triángulo                al mover el menú o
+                                                          cambiar una opción
+   letra         0.13 s     G5-D6, triángulo             al coger una letra
+   formula       0.66 s     C5-E5-G5-C6-E6, cuadrada     fórmula completada
+   nivel         0.48 s     C4-G4-C5-G5-C6 + sierra      al subir de nivel
+
+El sonido de vida es a propósito el más largo (0.43 s), ascendente y con una
+capa de seno una octava arriba: se distingue de "punto" (0.10 s) y de "choque"
+(0.30 s) incluso con el volumen bajo. Con 5 vidas el corazón no da vida sino
++100 puntos, y suena "vida_llena", con final agudo distinto.
+
+Disparos desde Sesion: saltar() -> "salto"; bloque de esquivados -> "punto";
+recogida de corazón -> "vida" / "vida_llena"; choque -> "choque", o "game_over"
+si era la última vida; letra -> "letra"; fórmula completa -> "formula";
+subida de nivel -> "nivel".
+
+COSTE. La síntesis completa tarda ~0.7 s UNA sola vez al arrancar; después no
+hay cálculo por frame (solo Sound.play(), una llamada al mezclador).
+
+
+------------------------------------------------------------------------------
+12. VALIDACIÓN
+------------------------------------------------------------------------------
+
+Verificamos el arreglo con tres pruebas automáticas que escribimos nosotros
+(sin ventana, con SDL_VIDEODRIVER=dummy):
+
+   1. BARRIDO DE COLISIONES: 120 posiciones del terreno x 120 instantes de
+      salto, para dron y piedra, de pie / agachado / saltando. Resultado:
+      0 de 120 saltos superan un dron (imposible por diseño).
+   2. COHERENCIA VISUAL: 10 000 estados aleatorios comparando colisiona() con
+      el solape real de los rectángulos dibujados. Resultado: 0 incoherencias.
+   3. REGRESIÓN: se reimplementa el código original (terreno 35/20 + colisión
+      por rectángulos) y se comprueba que el bug reaparece (24 de 120
+      posiciones), para garantizar que la corrección no se pierda en futuros
+      cambios.
+
+Las mismas pruebas cubrieron además:
+
+   - LÓGICA DE PARTIDA: 30 comprobaciones sobre Sesion sin ventana. Vidas
+     iniciales, choque, invulnerabilidad, dron agachado/de pie, corazón que suma
+     vida, bono con vidas llenas, tope de 5, un corazón cada 3.000 puntos,
+     game_over solo a 0 vidas, tope y subida de velocidad, pausa, y puntuación:
+     +100 al esquivar piedra y dron, 0 puntos al saltar/agacharse al aire, 0 al
+     chocar, 0 al correr y 0 al atravesar un obstáculo durante la
+     invulnerabilidad.
+
+   - BUCLE REAL: run_game() con eventos inyectados. 700 frames con piloto
+     automático, guardado del nombre, retorno "reiniciar" con TAB y "menu" con
+     ESPACIO, pausa + reanudación, M alternando la música, R reiniciando desde
+     la pausa y F11.
+
+   - AUDIO, PALETA Y SPRITES: 45 comprobaciones. Mezclador a 22050/-16/1, 10
+     efectos, dos pistas de música (juego 7.27 s, menú 9.60 s y distintas entre
+     sí), cambio de pista con musica(), M encendiendo/apagando, duraciones
+     distintas para vida / punto / choque / vida_llena, sonar() seguro con
+     nombres desconocidos, las 20 claves de paleta en los 4 temas, Halloween
+     con estilo, luna y estrellas, Navidad con estilo, nieve y estrellas, tumba,
+     fantasma, regalo y bola sin pintar fuera de su rectángulo de colisión, y
+     nieve determinista por frame que solo se dibuja en los temas que la
+     declaran.
+
+   - BONUS: 39 comprobaciones sobre letras, corazones y niveles. Las letras
+     avanzan en orden, completan DERIVADA (+500), pasan a NEWTON, no pierden
+     progreso si se dejan pasar y reaparecen. Los corazones salen exactamente
+     cada 3.000 puntos y ni ellos ni las letras aparecen a menos de 170 px de un
+     obstáculo (ni a menos de 110 px entre sí). Los niveles suben a 10.000,
+     20.000 y 30.000 puntos, aceleran de 11 a 14 y acortan los huecos sin bajar
+     del mínimo del salto. Además, la escena completa se dibuja sin errores.
+
+Las cifras clave que fija el diseño: apex del salto 47.45 px, dron entre 34 y
+62 px, roca entre 0 y 28 px, velocidad 11.0 (14.0 a nivel máximo), +100 por
+esquiva, +500 por fórmula, un corazón cada 3.000 puntos y tope de 5.
+
+
+------------------------------------------------------------------------------
+13. RESUMEN DEL FLUJO POR FRAME
+------------------------------------------------------------------------------
+
+   1. Leer teclas/eventos: sesion.saltar() / sesion.agacharse() / pausa /
+      reinicio / M (música). Al entrar en partida, audio.musica("juego").
+   2. Sesion.avanzar(): nivel por puntaje y velocidad (cada 3 esquivados y +1
+      por nivel, con tope), world_offset, detección de obstáculos esquivados
+      (+100 y sonido "punto"), reciclado de obstáculos, aparición y recogida de
+      corazones (sonido "vida"), letras de la fórmula (sonido "letra",
+      fanfarria "formula" al completar), invulnerabilidad y choques (sonido
+      "choque" o "game_over").
+   3. player.update(): integra h y coloca el sprite sobre el terreno.
+   4. dibujar_escena(): cielo con degradado en caché (luna y estrellas en
+      Halloween) y nubes con parallax, terreno muestreado cada 4 px con
+      terreno_f (tierra + césped + línea), corazones, obstáculos (tumba /
+      fantasma en Halloween), atleta rotado según atan(derivada_numerica(x)),
+      HUD (f'(x), h, método y letras de la fórmula, marcador, HI, corazones,
+      NIVEL) y superposiciones de pausa / Game Over.
+   5. presentar(): escala la superficie lógica a la ventana.
+   6. Game Over -> medalla -> ingreso de nombre -> top 5 -> menú (vuelve la
+      pista "menu").
+
+
+==============================================================================
+                        Fin del manual táctico
+==============================================================================
