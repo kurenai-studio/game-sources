@@ -1,0 +1,43 @@
+local player_near = false
+local note_open = false
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("#q_note", "disable")
+	self.note_id = 7
+end
+
+function on_message(self, message_id, message, sender)
+	-- Check trigger - enter/exit
+	if message_id == hash("trigger_response") then
+		print("TRIGGER")
+		player_near = message.enter
+		if player_near then
+			msg.post("#q_note", "enable")
+		else
+			msg.post("#q_note", "disable")
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("interact") and action.pressed then
+
+		if player_near then
+			if note_open then
+				print("CLOSE NOTE")
+				msg.post("main:/gui#main", "hide_note", { id = self.note_id })
+				msg.post("main:/hero#hero", "close_note")
+				msg.post("main:/wave#wave1", "start_wave")
+				msg.post("main:/gui#main", "warning")
+				
+				note_open = false
+			else
+				print("OPEN NOTE")
+				msg.post("main:/gui#main", "show_note", { id = self.note_id })
+				note_open = true
+			end
+		end
+	end
+end

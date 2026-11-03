@@ -1,0 +1,8 @@
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.enter then
+		if message.other_group == hash("player") then
+			-- send damage to player
+			msg.post("main:/hero#hero", "take_damage", { amount = 1 })
+		end
+	end
+end

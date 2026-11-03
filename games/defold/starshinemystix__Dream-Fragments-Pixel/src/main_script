@@ -1,0 +1,72 @@
+local MAX_HEALTH = 2
+local current_note = nil
+
+function init(self)
+
+	-- Disable all possible note popups
+	for i = 1, 7 do
+		gui.set_enabled(gui.get_node("note_popup_" .. i), false)
+	end
+
+	self.health = gui.get_node("health")
+	self.fragments = 0
+	gui.set_text(gui.get_node("score"), "0")
+
+	gui.set_enabled(gui.get_node("root"), false)
+
+end
+
+
+function on_message(self, message_id, message, sender)
+
+	if message_id == hash("show_hud") then
+		gui.set_enabled(gui.get_node("root"), true)
+	elseif message_id == hash("hide_hud") then
+		gui.set_enabled(gui.get_node("root"), false)
+	elseif message_id == hash("hide_warning") then
+		gui.set_enabled(gui.get_node("warning"), false)
+	end
+	if message_id == hash("warning") then
+		gui.set_enabled(gui.get_node("warning"), true)
+	end
+
+	if message_id == hash("reset_hud") then
+		self.fragments = 0
+		gui.set_text(gui.get_node("score"), "0")
+
+		msg.post("main:/gui#main", "update_health", { health = 2 })
+	end
+
+	-- Show the correct note
+	if message_id == hash("show_note") then
+		print("GUI RECEIVED show_note")
+
+		current_note = message.id
+		local node = gui.get_node("note_popup_" .. current_note)
+
+		gui.set_enabled(node, true)
+		
+	elseif message_id == hash("hide_note") then
+		print("GUI RECEIVED hide_note")
+
+		current_note = message.id
+		local node = gui.get_node("note_popup_" .. current_note)
+
+		gui.set_enabled(node, false)
+	end
+	
+
+	-- Update health bar
+	if message_id == hash("update_health") then
+		local percent = math.max(0, message.health / MAX_HEALTH)
+		local size = gui.get_size(self.health)
+		size.x = 300 * percent
+		gui.set_size(self.health, size)
+	end
+
+	-- Update score
+	if message_id == hash("update_score") then
+		self.fragments = self.fragments + 1
+		gui.set_text(gui.get_node("score"), tostring(self.fragments))
+	end
+end

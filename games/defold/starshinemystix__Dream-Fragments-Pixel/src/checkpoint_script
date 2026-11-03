@@ -1,0 +1,14 @@
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.enter then
+		if message.other_group == hash("player") then
+			-- Send world position to hero
+			msg.post("/hero#hero", "set_checkpoint", { position = go.get_world_position() })
+
+			-- Debug print
+			print("Checkpoint reached! GO ID:", go.get_id(), "Position:", go.get_world_position())
+
+			-- Play particle effect
+			particlefx.play("#sparkle")
+		end
+	end
+end

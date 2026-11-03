@@ -1,0 +1,59 @@
+local player_near = false
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	msg.post("#escape", "disable")
+
+	self.active = false
+	self.player_inside = false
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+
+		if message.other_group == hash("player") then
+
+			if message.enter then
+				self.player_inside = true
+				print("EXIT: Player entered")
+
+				sprite.play_flipbook("#exit", "idle")
+
+				if self.active then
+					msg.post("#escape", "enable")
+				end
+			else
+				self.player_inside = false
+				print("EXIT: Player left")
+
+				msg.post("#escape", "disable")
+			end
+		end
+	end
+
+	if message_id == hash("enable_checkpoint") then
+		self.active = true
+		print("EXIT: Activated")
+
+		if self.player_inside then
+			msg.post("#escape", "enable")
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("interact") and action.pressed then
+
+		print("Q pressed. Active:", self.active, "Inside:", self.player_inside)
+
+		if self.active and self.player_inside then
+			print("ENDING TRIGGERED")
+			msg.post("main:/ending#ending", "attempt_end")
+			msg.post("main:/wave#wave1", "reset_wave")
+		else
+			print("Conditions not met, ending not triggered.")
+		end
+	end
+end
