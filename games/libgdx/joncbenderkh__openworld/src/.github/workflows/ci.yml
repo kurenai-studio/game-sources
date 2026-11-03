@@ -1,0 +1,33 @@
+name: CI
+
+# Docs-only changes skip the build. Do not make this workflow a required status check
+# without changing this: a skipped run never reports, so a docs-only PR would wait forever.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'LICENSE']
+  pull_request:
+    paths-ignore: ['**/*.md', 'LICENSE']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ubuntu-latest already ships a full Android SDK (ANDROID_HOME), so no
+      # extra SDK-setup action is needed - android-actions/setup-android@v3
+      # was failing outright trying to install the long-removed 'tools'
+      # package.
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, test, and lint
+        run: ./gradlew build --console=plain
