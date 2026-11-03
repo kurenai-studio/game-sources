@@ -1,0 +1,1699 @@
+@import "@fontsource-variable/inter/wght.css";
+
+/* Design tokens from docs/brand.md. */
+:root {
+  --ff-ember: #f25c2a;
+  --ff-ember-bright: #ff7a47;
+  --ff-front: #2f80ed;
+  --ff-night-900: #060c12;
+  --ff-night-800: #0a131c;
+  --ff-night-700: #111d29;
+  --ff-night-600: #182838;
+  --ff-night-500: #23384c;
+  --ff-slate-400: #5c7389;
+  --ff-slate-300: #8da2b6;
+  --ff-text: #e7eef5;
+  --ff-success: #3ccb7f;
+  --ff-warning: #f5b83d;
+  --ff-danger: #f04c5e;
+  --ff-info: #4c9aff;
+  --ff-font: "Inter Variable", "Inter", system-ui, sans-serif;
+  --ff-radius: 10px;
+  --ff-lift: inset 0 1px 0 rgb(255 255 255 / 8%), 0 6px 16px rgb(0 0 0 / 40%);
+  --ff-raised: linear-gradient(180deg, #162636, var(--ff-night-800));
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ff-night-800);
+  color: var(--ff-text);
+  font-family: var(--ff-font);
+  font-feature-settings: "tnum";
+  /* The map handles every gesture; the page itself never scrolls or zooms. */
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Outside a game the menus and the lobby may be pinched; the map handles its own gestures. */
+:root:not(:has(.map-surface)),
+body:not(:has(.map-surface)) {
+  touch-action: manipulation;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+.status {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: rgb(10 19 28 / 80%);
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.notice button {
+  display: block;
+  margin-top: 12px;
+}
+
+/* A game left behind, offered back: its two choices side by side. */
+.notice .resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notice {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  box-sizing: border-box;
+  width: min(440px, calc(100% - 32px));
+  margin: 0;
+  padding: 16px 20px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--ff-warning);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  color: var(--ff-text);
+  font-size: 15px;
+  line-height: 1.5;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* An announced restart of the server, over everything else. */
+.maintenance {
+  position: fixed;
+  z-index: 20;
+  top: 8px;
+  left: 50%;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 8px 14px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ff-warning);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  color: var(--ff-text);
+  font-size: 14px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* Shared controls */
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button.primary,
+button.secondary {
+  padding: 10px 18px;
+  border-radius: var(--ff-radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary {
+  border: 1px solid var(--ff-ember);
+  background: var(--ff-ember);
+  color: var(--ff-night-800);
+}
+
+button.primary:hover {
+  border-color: var(--ff-ember-bright);
+  background: var(--ff-ember-bright);
+}
+
+button.secondary {
+  border: 1px solid var(--ff-night-500);
+  background: var(--ff-night-600);
+}
+
+button.secondary:hover {
+  border-color: var(--ff-slate-400);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ff-ember);
+  outline-offset: 2px;
+}
+
+input[type="range"] {
+  accent-color: var(--ff-ember);
+}
+
+.range {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.range input {
+  flex: 1;
+  min-width: 0;
+}
+
+.toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--ff-slate-300);
+}
+
+.toggle input {
+  accent-color: var(--ff-ember);
+}
+
+.range-value {
+  min-width: 3.5em;
+  text-align: right;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Main menu */
+
+.menu {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(47 128 237 / 12%), transparent 60%), var(--ff-night-800);
+}
+
+.menu-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.logo {
+  width: min(320px, 80vw);
+  height: auto;
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: var(--ff-slate-300);
+}
+
+.menu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(640px, 100%);
+  padding: 24px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+}
+
+/* Online play in the menu, and the lobby before an online game (ui/lobby.ts). */
+
+.menu-online,
+.lobby-panel {
+  width: min(640px, 100%);
+  box-sizing: border-box;
+}
+
+.menu-online,
+.lobby-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+}
+
+.menu-online h2,
+.lobby-title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.online-actions,
+.lobby-actions,
+.lobby-invite-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.online-actions > button,
+.lobby-actions > button {
+  flex: 1;
+}
+
+.public-games,
+.lobby-players {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-game,
+.lobby-player {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+}
+
+.lobby-player {
+  justify-content: flex-start;
+}
+
+button.primary:disabled,
+button.secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.online-quick .hint,
+.hint.error {
+  text-align: left;
+}
+
+.hint.error {
+  color: var(--ff-ember-bright);
+}
+
+#online-game-name {
+  flex: 2 1 180px;
+  min-width: 0;
+}
+
+.public-game-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.public-game-name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-game-details,
+.public-game-state {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.public-game-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.public-game-state.waiting {
+  color: var(--ff-ember);
+}
+
+.public-game.running {
+  opacity: 0.7;
+}
+
+.lobby-kind {
+  margin: -8px 0 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+@media (width < 720px) {
+  .menu-online .online-actions {
+    flex-direction: column;
+  }
+
+  .online-actions > .replay-picker {
+    flex: 1;
+  }
+
+  .replay-picker > button {
+    flex: 1;
+  }
+
+  .public-game {
+    flex-wrap: wrap;
+  }
+
+  .public-game-text {
+    flex-basis: 100%;
+  }
+
+  .public-game > button {
+    margin-left: auto;
+  }
+
+  #online-game-name {
+    flex-basis: 100%;
+  }
+}
+
+.lobby-player.you {
+  font-weight: 700;
+}
+
+.lobby-host {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.lobby-remove {
+  margin-left: auto;
+  padding: 2px 10px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: transparent;
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lobby-remove:hover,
+.lobby-remove:focus-visible {
+  color: inherit;
+  border-color: var(--ff-slate-300);
+}
+
+.lobby-settings {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.lobby-summary,
+.lobby-status {
+  margin: 0;
+  color: var(--ff-slate-300);
+}
+
+.lobby-settings select {
+  padding: 6px 8px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font: inherit;
+  color: inherit;
+}
+
+.lobby-allowed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.lobby-settings[hidden],
+.lobby-summary[hidden] {
+  display: none;
+}
+
+.lobby-invite {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-invite input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font: inherit;
+  color: inherit;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.field > label,
+.field-label {
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.field > label.toggle {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+#player-name,
+#join-name,
+#online-game-name,
+#lobby-name {
+  padding: 10px 12px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-600);
+}
+
+.map-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-group-label {
+  color: var(--ff-secondary);
+  font-size: 13px;
+}
+
+.map-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.map-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-600);
+  cursor: pointer;
+}
+
+.map-card:has(input:checked) {
+  border-color: var(--ff-ember);
+}
+
+.map-card:has(input:focus-visible) {
+  outline: 2px solid var(--ff-ember);
+  outline-offset: 2px;
+}
+
+.map-card input,
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.map-thumb {
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+  image-rendering: pixelated;
+}
+
+.map-name {
+  font-weight: 600;
+}
+
+.map-size {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  overflow: hidden;
+}
+
+.segmented label {
+  position: relative;
+  flex: 1;
+  padding: 8px 10px;
+  text-align: center;
+  background: var(--ff-night-600);
+  cursor: pointer;
+}
+
+.segmented label + label {
+  border-left: 1px solid var(--ff-night-500);
+}
+
+.segmented label:has(input:checked) {
+  background: var(--ff-ember);
+  color: var(--ff-night-800);
+  font-weight: 600;
+}
+
+.segmented label:has(input:focus-visible) {
+  outline: 2px solid var(--ff-ember);
+  outline-offset: -2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* In-game interface */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.panel {
+  position: absolute;
+  padding: 10px 12px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  /* Opaque: the bright structures and ships of the map do not show through. */
+  background: var(--ff-night-800);
+}
+
+.stats {
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 18px;
+}
+
+/* Nothing to say, no empty pill. */
+.banner:empty {
+  display: none;
+}
+
+.banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100vw - 24px));
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-800);
+  text-align: center;
+  pointer-events: none;
+}
+
+.leader.you {
+  font-weight: 700;
+}
+
+.swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  fill: currentcolor;
+}
+
+.icon-button .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.player-menu .icon-close .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.icon .ac {
+  fill: var(--icon-accent, currentcolor);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(6 12 18 / 70%);
+}
+
+.help {
+  width: min(420px, 100%);
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+  text-align: center;
+}
+
+.end-screen.won h1 {
+  color: var(--ff-ember);
+}
+
+.feedback {
+  margin: 0 0 16px;
+}
+
+button.link {
+  grid-column: 1 / -1;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--ff-slate-300);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+kbd {
+  padding: 0 4px;
+  border: 1px solid var(--ff-slate-400);
+  border-radius: 3px;
+  color: var(--ff-text);
+  font-family: var(--ff-font);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Phones: the map keeps the middle of the screen; panels hug the edges. */
+@media (width < 720px) {
+  .hud {
+    font-size: 13px;
+  }
+
+  .stats {
+    gap: 12px;
+  }
+
+  /* Beside the leaderboard, above the attack ratio. */
+
+  /* The ratio panel stops short of the three toolbar buttons. */
+
+  /* Over the base rule, which comes later in this file. */
+  .game .click-note {
+    bottom: auto;
+    top: 170px;
+  }
+
+  /* Over the banner, under the build row it explains. */
+  .game .build-tip {
+    bottom: auto;
+    top: 78px;
+    z-index: 3;
+    background: var(--ff-night-800);
+  }
+
+  .banner {
+    top: 90px;
+  }
+
+  /* Play stays in reach without scrolling past the maps. */
+  .menu-form #play {
+    position: sticky;
+    bottom: 12px;
+    z-index: 1;
+  }
+}
+
+/* A screen comes in with a short fade rather than a cut: menu, lobby and game alike. Where
+   motion is reduced the rules below drop the animation, and the screen simply appears. */
+@keyframes screen-in {
+  from {
+    opacity: 0;
+  }
+}
+
+main.menu,
+main.join {
+  animation: screen-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+:root[data-reduce-motion] * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Interface size and contrast chosen in the menu (ui/accessibility.ts). */
+.panel,
+.menu > *,
+.lobby-panel {
+  zoom: var(--ff-ui-scale, 1);
+}
+
+:root[data-high-contrast] {
+  --ff-slate-300: #c3d1de;
+  --ff-slate-400: #8da2b6;
+  --ff-night-500: #5c7389;
+}
+
+.accessibility {
+  width: min(420px, 100%);
+  box-sizing: border-box;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+.accessibility summary {
+  cursor: pointer;
+}
+
+.accessibility-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.accessibility select {
+  padding: 6px 8px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+}
+
+.accessibility-note {
+  margin: 0;
+  color: var(--ff-slate-300);
+}
+
+/* Beta badge, shown until 1.0 (src/release.ts). */
+
+.beta-badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 8px;
+  border: 1px solid var(--ff-ember);
+  border-radius: 999px;
+  color: var(--ff-ember-bright);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.beta-badge strong {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.beta-version {
+  color: var(--ff-slate-300);
+}
+
+.beta-menu {
+  margin-top: 8px;
+}
+
+.goal {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ff-night-500);
+}
+
+.click-mark.refused::before {
+  border-color: var(--ff-danger);
+}
+
+.click-note {
+  position: fixed;
+  bottom: 68px;
+  left: 50%;
+  max-width: min(420px, calc(100vw - 24px));
+  margin: 0;
+  padding: 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ff-danger);
+  border-radius: var(--ff-radius);
+  background: rgb(10 19 28 / 90%);
+  font-size: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Player names over their land (ui/labels.ts). */
+
+.labels {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  color: var(--ff-text);
+  font-weight: 700;
+  text-shadow:
+    0 0 2px var(--ff-night-900),
+    0 0 4px var(--ff-night-900),
+    0 1px 2px var(--ff-night-900);
+  white-space: nowrap;
+  will-change: transform;
+}
+
+/* Build buttons (ui/hud.ts): structures, units and demolish, with the cost of the next one. */
+
+/* A dock of icons at the foot of the map. Name, key and cost show in a bubble
+   over the button the pointer or the keyboard is on. */
+.build {
+  bottom: 12px;
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  transform: translateX(-50%);
+}
+
+.build-button.unaffordable .build-icon {
+  opacity: 0.45;
+}
+
+.build-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--ff-text);
+}
+
+.build-button .icon {
+  width: 100%;
+  height: 100%;
+}
+
+.build-missile .build-icon,
+.build-heavyMissile .build-icon {
+  --icon-accent: var(--ff-ember-bright);
+}
+
+.build-demolish .build-icon {
+  color: var(--ff-danger);
+}
+
+.build-palace .build-icon,
+.build-mosque .build-icon,
+.build-airDefense .build-icon {
+  --icon-accent: var(--ff-warning);
+}
+
+.click-mark.build::before {
+  border-color: var(--ff-text);
+  border-radius: 2px;
+}
+
+.click-mark.demolish::before {
+  border-color: var(--ff-danger);
+  border-style: dashed;
+}
+
+/* Phones and short windows: the build panel turns into two rows of icons
+   and costs under the stats, clear of the leaderboard. After the rules above, so
+   it wins over them. */
+@media (width < 720px), (height < 560px) {
+  /* A tray over the toolbar, opened by its button (ui/hud.ts). */
+  .build {
+    right: 12px;
+    bottom: 64px;
+    left: 12px;
+    z-index: 2;
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 4px;
+    transform: none;
+  }
+
+  .build.open {
+    display: grid;
+  }
+
+  /* The icon over the cost: five buttons fit across a 320 px phone. */
+
+  .build-icon {
+    margin-bottom: 2px;
+  }
+}
+
+/* Short and wide windows keep the leaderboard top right: the banner goes under
+   the stats, on the left, short of it. */
+@media (height < 560px) and (width >= 720px) {
+  .banner {
+    top: 88px;
+    left: 12px;
+    max-width: calc(100vw - 300px);
+    transform: none;
+  }
+}
+
+.badge {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge[hidden] {
+  display: none;
+}
+
+.requests[hidden] {
+  display: none;
+}
+
+/* Under the banner, in the middle: an answer is expected. */
+.requests {
+  top: 60px;
+  left: 50%;
+  display: grid;
+  gap: 6px;
+  width: min(440px, calc(100vw - 24px));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px;
+  transform: translateX(-50%);
+  list-style: none;
+}
+
+.request {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  column-gap: 8px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+/* Phones: the requests go under the banner. */
+@media (width < 720px) {
+  .requests {
+    top: 242px;
+  }
+}
+
+/* Watching a replay: no orders to give, a bar to set the pace instead. */
+
+.watching .build,
+.watching .requests,
+.watching .banner {
+  display: none;
+}
+
+.replay-result.same {
+  color: var(--ff-slate-300);
+}
+
+.replay-picker {
+  display: flex;
+  justify-content: center;
+}
+
+/* Achievements */
+
+.badge {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.achievements {
+  width: min(480px, 100%);
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  overflow-y: auto;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+}
+
+.achievements h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.achievements-count {
+  color: var(--ff-slate-300);
+}
+
+.achievement-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.achievement-list li.locked strong {
+  color: var(--ff-slate-300);
+}
+
+.achievement-list span {
+  display: grid;
+}
+
+.achievement-list small {
+  color: var(--ff-slate-300);
+}
+
+.achievement-list em {
+  color: var(--ff-slate-400);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.achievement-list li.earned em {
+  color: var(--ff-warning);
+}
+
+.achievement-list em.progress {
+  color: var(--ff-slate-300);
+}
+
+/* The profile in the menu (ui/profile-panel.ts). */
+
+.profile-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.menu-profile {
+  width: min(640px, 100%);
+  box-sizing: border-box;
+  padding: 16px 24px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+}
+
+.menu-profile summary {
+  cursor: pointer;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.menu-profile .hint {
+  text-align: left;
+}
+
+.color-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.color-choice {
+  position: relative;
+  display: inline-flex;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: var(--ff-radius);
+  cursor: pointer;
+}
+
+.color-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.color-choice .swatch {
+  width: 28px;
+  height: 28px;
+}
+
+.color-choice:has(input:checked) {
+  border-color: var(--ff-text);
+}
+
+.color-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ff-ember);
+  outline-offset: 2px;
+}
+
+.recent-games {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+/* The rule of the win is one tap away. */
+.leaderboard:not(.open) .goal-text {
+  display: none;
+}
+
+/* A lighter menu: name, a line that sums up the game, Play. The rest is in the bar. */
+
+.menu {
+  padding-top: 64px;
+}
+
+.menu-bar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.bar-button,
+.menu-bar select {
+  box-sizing: border-box;
+  height: 36px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  color: var(--ff-text);
+  font-size: 13px;
+}
+
+.bar-button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 0 9px;
+  cursor: pointer;
+}
+
+.bar-button:hover,
+.bar-button[aria-expanded="true"] {
+  border-color: var(--ff-slate-400);
+}
+
+.menu-bar select {
+  padding: 0 8px;
+}
+
+.bar-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bar-count {
+  color: var(--ff-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-panels {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.menu-panel {
+  width: min(380px, 100%);
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 50%);
+  pointer-events: auto;
+}
+
+.menu-panel:not([open]),
+.menu-panel > summary {
+  display: none;
+}
+
+.menu-options {
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+}
+
+.options-summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.options-summary::-webkit-details-marker {
+  display: none;
+}
+
+.options-summary::after {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border: solid var(--ff-slate-300);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.menu-options[open] > .options-summary::after {
+  transform: rotate(225deg);
+}
+
+.options-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 999px;
+  background: var(--ff-night-800);
+  font-size: 13px;
+}
+
+.options-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 12px;
+  border-top: 1px solid var(--ff-night-500);
+}
+
+.online-actions > .replay-picker {
+  flex: none;
+}
+
+.online-more summary {
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.online-more[open] > summary {
+  margin-bottom: 12px;
+}
+
+.online-more > .field + .field {
+  margin-top: 12px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Relief (docs/art-direction.md): panels sit above the map as raised pieces. */
+
+.panel,
+.banner,
+.menu-form,
+.menu-online,
+.lobby-panel,
+.menu-panel,
+.help,
+.notice {
+  border-radius: 14px;
+  background: var(--ff-raised);
+  box-shadow: var(--ff-lift);
+}
+
+.menu-form,
+.menu-online,
+.lobby-panel,
+.menu-panel,
+.help {
+  background: linear-gradient(180deg, #1a2d40, var(--ff-night-700));
+}
+
+button.primary {
+  background: linear-gradient(180deg, var(--ff-ember-bright), var(--ff-ember));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%);
+}
+
+button.primary:hover {
+  background: var(--ff-ember-bright);
+}
+
+button.secondary,
+.bar-button {
+  background: linear-gradient(180deg, var(--ff-night-500), var(--ff-night-600));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+
+.end-screen.won {
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgb(242 92 42 / 22%), transparent), var(--ff-night-700);
+}
+
+.end-screen.lost {
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgb(47 128 237 / 18%), transparent), var(--ff-night-700);
+}
+
+input::placeholder {
+  color: var(--ff-slate-300);
+  opacity: 1;
+}
+
+/* A finger needs 44 px to hit: what is smaller under a mouse grows on a touch screen. */
+@media (pointer: coarse) {
+  .bar-button,
+  .menu-bar select {
+    height: 44px;
+    min-width: 44px;
+  }
+
+  button.primary,
+  button.secondary,
+  input[type="text"],
+  select {
+    min-height: 44px;
+  }
+
+  .segmented label {
+    padding-block: 12px;
+  }
+
+  .toggle,
+  input[type="range"] {
+    min-height: 44px;
+  }
+
+  .options-summary {
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .online-more summary,
+  .accessibility summary {
+    padding-block: 14px;
+  }
+
+  .feedback-links a {
+    display: inline-block;
+    padding-block: 14px;
+  }
+}
+
+/* Special rules (R-MODE-08): a fieldset of its own, apart from the other options. */
+.rules-set {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 12px 12px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+}
+
+.rules-set legend {
+  padding: 0 6px;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rules-set .toggle {
+  min-height: 44px;
+  color: var(--ff-text);
+  font-weight: 600;
+}
+
+.rules-set .hint {
+  text-align: left;
+}
+
+.lobby-settings > .rules-set {
+  grid-column: 1 / -1;
+}
+
+/* R-MODE-09: the names also read inside a sentence, so they start in lower case. */
+.lobby-operator .toggle span {
+  display: inline-block;
+}
+
+.lobby-operator .toggle span::first-letter {
+  text-transform: uppercase;
+}
+
+.end-rules {
+  margin: 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+/* Table de campagne (docs/art-direction.md): night leather panels with a brass rule and a stitched
+   seam, keys that stand 3 px proud and sink when pressed, a brass label colour. */
+
+:root {
+  --ff-brass: #c9a55e;
+  --ff-brass-dark: #8a6d3b;
+  --ff-brass-light: #f0d9a0;
+  --ff-label: #d3c08f;
+  --ff-value: #f6f0de;
+  --ff-secondary: #a9bccd;
+  --ff-key: #f0e4c4;
+  --ff-key-ink: #1c1408;
+  --ff-well: #05090e;
+  --ff-raised: linear-gradient(180deg, #1b2e42 0%, #101d2b 55%, #0c1722 100%);
+  --ff-lift:
+    inset 0 0 0 1px rgb(201 165 94 / 55%), inset 0 0 0 3px #0a1219,
+    inset 0 0 0 4px rgb(201 165 94 / 18%), inset 0 8px 14px -6px rgb(255 255 255 / 7%),
+    0 12px 26px rgb(0 0 0 / 55%), 0 2px 0 rgb(0 0 0 / 60%);
+  --ff-key-face: linear-gradient(180deg, #2c445b, #1a2b3c);
+  --ff-key-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%), inset 0 0 0 1px rgb(201 165 94 / 35%),
+    0 3px 0 var(--ff-well), 0 6px 12px rgb(0 0 0 / 40%);
+  --ff-key-down:
+    inset 0 1px 0 rgb(255 255 255 / 12%), inset 0 0 0 1px rgb(201 165 94 / 35%),
+    0 1px 0 var(--ff-well);
+
+  /* The painted miniatures (ui/painted-icons.ts): three tones, the owner's paint, a flame. */
+  --own: #56b4e9;
+  --t-l: #f4e8c8;
+  --t-m: #c8a862;
+  --t-d: #7b5f30;
+  --t-k: #18222d;
+  --t-f: #ffb347;
+  --t-w: #8fd0ee;
+}
+
+.pl {
+  fill: var(--t-l);
+}
+
+.pm {
+  fill: var(--t-m);
+}
+
+.pd {
+  fill: var(--t-d);
+}
+
+.pk {
+  fill: var(--t-k);
+}
+
+.po {
+  fill: var(--own);
+}
+
+.pf {
+  fill: var(--t-f);
+}
+
+.pw {
+  stroke: var(--t-w);
+}
+
+.psd {
+  stroke: var(--t-d);
+}
+
+.psl {
+  stroke: var(--t-l);
+}
+
+.panel,
+.banner,
+.menu-form,
+.menu-online,
+.lobby-panel,
+.menu-panel,
+.help,
+.notice {
+  border-color: #070d14;
+  color: var(--ff-text);
+}
+
+/* The stitched seam inside a panel of the game screen. */
+.hud > .panel:not(.feed-item, .player-tip)::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px dashed rgb(201 165 94 / 20%);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+button.primary,
+button.secondary {
+  border-color: var(--ff-well);
+  border-radius: 12px;
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
+}
+
+button.secondary {
+  background: var(--ff-key-face);
+  color: var(--ff-value);
+  box-shadow: var(--ff-key-shadow);
+}
+
+button.secondary:hover {
+  border-color: var(--ff-well);
+  filter: brightness(1.12);
+}
+
+button.primary {
+  border-color: #5c1d08;
+  background: linear-gradient(180deg, #ff8c58, #e4501d);
+  color: var(--ff-night-800);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    inset 0 -2px 0 rgb(0 0 0 / 12%),
+    0 3px 0 #7a290c,
+    0 8px 16px rgb(242 92 42 / 35%);
+}
+
+button.primary:hover {
+  border-color: #5c1d08;
+  background: linear-gradient(180deg, #ff9a6a, #ee5a26);
+}
+
+button.secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: var(--ff-key-down);
+}
+
+button.primary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 40%),
+    0 1px 0 #7a290c;
+}
+
+input:not([type="range"], [type="checkbox"], [type="radio"]),
+select {
+  border-color: var(--ff-well);
+  background: #08111a;
+  color: var(--ff-value);
+  box-shadow:
+    inset 0 2px 5px #000,
+    0 1px 0 rgb(201 165 94 / 30%);
+}
+
+:root[data-high-contrast] {
+  --ff-secondary: #d3e0ec;
+}

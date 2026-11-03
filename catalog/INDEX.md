@@ -1,6 +1,6 @@
 # Game catalog / 游戏目录
 
-_Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
+_Auto-refreshed 2026-11-04 · 1652 games · do not edit in feature PRs_
 
 | path | upstream | license | engine | bot | collected |
 | --- | --- | --- | --- | --- | --- |
@@ -24,6 +24,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/browser/bte808__fun-20260604-a-star-sling | https://github.com/bte808/fun-20260604-a-star-sling | MIT | browser | c |  |
 | games/browser/byilias29-max__30-noches | https://github.com/byilias29-max/30-noches | MIT | browser | c | 2026-10-23 |
 | games/browser/bytegames__bytes | https://github.com/bytegames/bytes | MIT | browser | c | 2026-10-23 |
+| games/browser/celaldrg__air-hockey | https://github.com/celaldrg/air-hockey | MIT | browser | c | 2026-11-03 |
 | games/browser/chiaogu__stolen-sword | https://github.com/chiaogu/stolen-sword | MIT | browser | d | 2026-11-03 |
 | games/browser/codyebberson__js13k-callisto | https://github.com/codyebberson/js13k-callisto | MIT | browser | d | 2026-11-03 |
 | games/browser/codyebberson__js13k-minipunk | https://github.com/codyebberson/js13k-minipunk | MIT | browser | d | 2026-11-03 |
@@ -72,9 +73,11 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/browser/jobbojobson__Sheepdog | https://github.com/jobbojobson/Sheepdog | GPL-3.0 | browser | c |  |
 | games/browser/Joeynoh__HTML5-Minesweeper | https://github.com/Joeynoh/HTML5-Minesweeper | MIT | browser | c | 2026-10-23 |
 | games/browser/JohnDev19__Flappy-Ball | https://github.com/JohnDev19/Flappy-Ball | MIT | browser | c | 2026-10-23 |
+| games/browser/js13kGames__dawn-breaker | https://github.com/js13kGames/dawn-breaker | MIT | browser | d | 2026-11-03 |
 | games/browser/jzohdi__tunnel_game | https://github.com/jzohdi/tunnel_game | GPL-3.0 | browser | c |  |
 | games/browser/kbjorklu__chess | https://github.com/kbjorklu/chess | MIT | browser | c | 2026-10-23 |
 | games/browser/kenrick95__c4 | https://github.com/kenrick95/c4 | MIT | browser | c | 2026-10-23 |
+| games/browser/kothf__zizzy | https://github.com/kothf/zizzy | MIT | browser | c | 2026-11-03 |
 | games/browser/kwrush__react-2048 | https://github.com/kwrush/react-2048 | MIT | browser | e | 2026-11-02 |
 | games/browser/leaves615__playfennec-neon-snake | https://github.com/leaves615/playfennec-neon-snake | MIT | browser | c | 2026-11-01 |
 | games/browser/leereilly__Coil | https://github.com/leereilly/Coil | MIT | browser | c | 2026-10-23 |
@@ -343,6 +346,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/godot/Ghostofzenin08__Echo_of_Dread | https://github.com/Ghostofzenin08/Echo_of_Dread | MIT | godot | a | 2026-10-23 |
 | games/godot/GodotGarden__ant-game | https://github.com/GodotGarden/ant-game | MIT | godot | a | 2026-11-01 |
 | games/godot/Griiimon__2D-Mining-Sandbox | https://github.com/Griiimon/2D-Mining-Sandbox | GPL-3.0 | godot | a | 2026-10-23 |
+| games/godot/guimsantos__Godot_Shooter2D | https://github.com/guimsantos/Godot_Shooter2D | MIT | godot | a | 2026-11-03 |
 | games/godot/guladam__BigBlackBookOfMagic | https://github.com/guladam/BigBlackBookOfMagic | MIT | godot | a | 2026-10-23 |
 | games/godot/guladam__deck_builder_tutorial | https://github.com/guladam/deck_builder_tutorial | MIT | godot | a | 2026-10-23 |
 | games/godot/Hairic95__Godot-Barebone-RPG | https://github.com/Hairic95/Godot-Barebone-RPG | MIT | godot | a | 2026-10-22 |
@@ -438,6 +442,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/godot/teeeece__godot_open_star_fighter | https://github.com/teeeece/godot_open_star_fighter | MIT | godot | a | 2026-10-23 |
 | games/godot/teeeece__godot_open_target_shooter | https://github.com/teeeece/godot_open_target_shooter | MIT | godot | a | 2026-10-22 |
 | games/godot/themisterdragon__approved | https://github.com/themisterdragon/approved | GPL-3.0 | godot | a | 2026-10-23 |
+| games/godot/TheRealHeli4m__Roots-of-Sorrow | https://github.com/TheRealHeli4m/Roots-of-Sorrow | MIT | godot | a | 2026-11-03 |
 | games/godot/thorkellmani__ratbar | https://github.com/thorkellmani/ratbar | MIT | godot | a | 2026-10-23 |
 | games/godot/Traveler-NoOne__gacha-civilization | https://github.com/Traveler-NoOne/gacha-civilization | MIT | godot | a | 2026-11-01 |
 | games/godot/tsleung__fordline | https://github.com/tsleung/fordline | MIT | godot | a | 2026-11-01 |
@@ -456,6 +461,8 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/godot/Willowblade__godot-wild-jam-29 | https://github.com/Willowblade/godot-wild-jam-29 | MIT | godot | a | 2026-10-23 |
 | games/godot/Willowblade__godot-wild-jam-34 | https://github.com/Willowblade/godot-wild-jam-34 | MIT | godot | a | 2026-10-23 |
 | games/godot/xaviervitor__godotchess | https://github.com/xaviervitor/godotchess | GPL-3.0 | godot | a | 2026-11-03 |
+| games/godot/Yokasashii__Godot-Pong | https://github.com/Yokasashii/Godot-Pong | MIT | godot | a | 2026-11-03 |
+| games/godot/Yokasashii__Godot-Snake | https://github.com/Yokasashii/Godot-Snake | MIT | godot | a | 2026-11-03 |
 | games/godot/zees-games__game-arena | https://github.com/zees-games/game-arena | MIT | godot | a | 2026-10-23 |
 | games/godot/zees-games__game-deathrun | https://github.com/zees-games/game-deathrun | MIT | godot | a | 2026-10-23 |
 | games/godot/zees-games__game-g2gfast | https://github.com/zees-games/game-g2gfast | MIT | godot | a | 2026-10-23 |
@@ -484,6 +491,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/libgdx/DaanVanYperen__odb-arktrail | https://github.com/DaanVanYperen/odb-arktrail | MIT | libgdx | d | 2026-11-01 |
 | games/libgdx/danirod__jumpdontdie | https://github.com/danirod/jumpdontdie | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/danirod__rectball | https://github.com/danirod/rectball | GPL-3.0 | libgdx |  |  |
+| games/libgdx/darellanodev__monkey-banana-run | https://github.com/darellanodev/monkey-banana-run | MIT | libgdx | d | 2026-11-03 |
 | games/libgdx/DarkShark02__JustJump | https://github.com/DarkShark02/JustJump | MIT | libgdx | d | 2026-10-23 |
 | games/libgdx/devalexx__evilrain | https://github.com/devalexx/evilrain | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/egordorichev__LastTry | https://github.com/egordorichev/LastTry | MIT | libgdx | d | 2026-10-23 |
@@ -551,6 +559,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/libgdx/moltenwolfcub__adventureRPG | https://github.com/moltenwolfcub/adventureRPG | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/msk610__3D-TETRIS | https://github.com/msk610/3D-TETRIS | MIT | libgdx | d | 2026-10-23 |
 | games/libgdx/msk610__Chemtris | https://github.com/msk610/Chemtris | MIT | libgdx | d | 2026-10-23 |
+| games/libgdx/muhammadyusuftechid-star__stickman-tower-adventure | https://github.com/muhammadyusuftechid-star/stickman-tower-adventure | MIT | libgdx | d | 2026-11-03 |
 | games/libgdx/n-patel__puffin | https://github.com/n-patel/puffin | GPL-3.0 | libgdx | d | 2026-10-23 |
 | games/libgdx/NafisMuntasir__project-enigma | https://github.com/NafisMuntasir/project-enigma | GPL-3.0 | libgdx | d | 2026-11-01 |
 | games/libgdx/niparasc__papanikolis-submarine | https://github.com/niparasc/papanikolis-submarine | GPL-3.0 | libgdx | d | 2026-11-02 |
@@ -613,7 +622,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/love2d/bastienleonard__7drl2022 | https://github.com/bastienleonard/7drl2022 | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/besnoi__arkanoid | https://github.com/besnoi/arkanoid | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/bismuthsoft__super_rogue | https://github.com/bismuthsoft/super_rogue | AGPL-3.0 | love2d | b | 2026-11-03 |
-| games/love2d/blackmanrublev__PLONG-Source | https://github.com/blackmanrublev/PLONG-Source | MIT | love2d | e | 2026-11-01 |
+| games/love2d/blackmanrublev__PLONG-Source |  |  | love2d | e | 2026-11-01 |
 | games/love2d/Bowuigi__TimeShip | https://github.com/Bowuigi/TimeShip | GPL-3.0 | love2d | b | 2026-10-23 |
 | games/love2d/BytewaveMLP__snekLOVE | https://github.com/BytewaveMLP/snekLOVE | MIT | love2d | b | 2026-11-01 |
 | games/love2d/cafehaine__coffeecross | https://github.com/cafehaine/coffeecross | GPL-3.0 | love2d | b | 2026-10-23 |
@@ -742,6 +751,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/monogame/Atraxi__Proto4X | https://github.com/Atraxi/Proto4X | MIT | monogame | e | 2026-11-03 |
 | games/monogame/autumn-mck__ParticleSim | https://github.com/autumn-mck/ParticleSim | GPL-3.0 | monogame | d | 2026-10-23 |
 | games/monogame/bencz-games__Etervale | https://github.com/bencz-games/Etervale | GPL-3.0 | monogame | d | 2026-10-23 |
+| games/monogame/BenMakesGames__BlockBreak | https://github.com/BenMakesGames/BlockBreak | MIT | monogame | b | 2026-11-03 |
 | games/monogame/Beriff__AsliipaJiliicofmog | https://github.com/Beriff/AsliipaJiliicofmog | MIT | monogame | b | 2026-11-03 |
 | games/monogame/blocktest-game__Blocktest-MonoGame | https://github.com/blocktest-game/Blocktest-MonoGame | MIT | monogame | d | 2026-10-23 |
 | games/monogame/blugart-dev__MonoGame-Breakout | https://github.com/blugart-dev/MonoGame-Breakout | MIT | monogame | d | 2026-11-02 |
@@ -754,7 +764,9 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/monogame/daxnet__tetris-sharp | https://github.com/daxnet/tetris-sharp | MIT | monogame | d | 2026-10-23 |
 | games/monogame/DreamyStranger__MonoGame-Platformer | https://github.com/DreamyStranger/MonoGame-Platformer | MIT | monogame | d | 2026-10-23 |
 | games/monogame/dswisher__monogame-pong | https://github.com/dswisher/monogame-pong | MIT | monogame | c | 2026-11-03 |
+| games/monogame/DTopping256__snake-clone | https://github.com/DTopping256/snake-clone | MIT | monogame | b | 2026-11-03 |
 | games/monogame/Dzhake__DerelictDimension | https://github.com/Dzhake/DerelictDimension | GPL-3.0 | monogame | d | 2026-11-01 |
+| games/monogame/eduardo-lamounier__Campo-Minado-Infinito | https://github.com/eduardo-lamounier/Campo-Minado-Infinito | MIT | monogame | e | 2026-11-03 |
 | games/monogame/endrealm__Monogame-Platformer-Example | https://github.com/endrealm/Monogame-Platformer-Example | MIT | monogame | d | 2026-10-23 |
 | games/monogame/EnthusiastGuy__MonoGame-Pixel-Planets | https://github.com/EnthusiastGuy/MonoGame-Pixel-Planets | MIT | monogame | d | 2026-10-23 |
 | games/monogame/FabioRNobrega__MonoGame-ElectricTruckOutRun | https://github.com/FabioRNobrega/MonoGame-ElectricTruckOutRun | MIT | monogame | a | 2026-11-03 |
@@ -771,6 +783,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/monogame/iqionly__SnakeBounce | https://github.com/iqionly/SnakeBounce | MIT | monogame | c | 2026-11-03 |
 | games/monogame/jakubpodgorniak__tdos | https://github.com/jakubpodgorniak/tdos | MIT | monogame | c | 2026-11-03 |
 | games/monogame/jasmine-blush__monogame_snake | https://github.com/jasmine-blush/monogame_snake | GPL-3.0 | monogame | b | 2026-11-03 |
+| games/monogame/jcapellman__DasUberScroller | https://github.com/jcapellman/DasUberScroller | MIT | monogame | e | 2026-11-03 |
 | games/monogame/Jeff0502__Flying-Fox | https://github.com/Jeff0502/Flying-Fox | GPL-3.0 | monogame | d | 2026-11-01 |
 | games/monogame/joncloud__tetrominoes | https://github.com/joncloud/tetrominoes | MIT | monogame | d | 2026-10-22 |
 | games/monogame/Kamiloso__TowerProtect | https://github.com/Kamiloso/TowerProtect | GPL-3.0 | monogame | e | 2026-11-03 |
@@ -793,6 +806,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/monogame/NRZ2017__Pong_MonoGame | https://github.com/NRZ2017/Pong_MonoGame | MIT | monogame | d | 2026-10-23 |
 | games/monogame/Pac-Dessert1436__CupcakePursuit-MonoGame-VB | https://github.com/Pac-Dessert1436/CupcakePursuit-MonoGame-VB | BSD-3-Clause | monogame | b | 2026-11-03 |
 | games/monogame/Pac-Dessert1436__FileBasedSnakeGame.CSharp | https://github.com/Pac-Dessert1436/FileBasedSnakeGame.CSharp | MIT | monogame | c | 2026-11-03 |
+| games/monogame/Pac-Dessert1436__SadConsole-Snake-Game-VB | https://github.com/Pac-Dessert1436/SadConsole-Snake-Game-VB | MIT | monogame | d | 2026-11-03 |
 | games/monogame/Pac-Dessert1436__ZongziCatcher.FSharpGame | https://github.com/Pac-Dessert1436/ZongziCatcher.FSharpGame | BSD-3-Clause | monogame | d | 2026-11-03 |
 | games/monogame/pdragon__MonoGameLudo | https://github.com/pdragon/MonoGameLudo | BSD-2-Clause | monogame | c | 2026-11-03 |
 | games/monogame/R0U5__Data-Center-Tycoon | https://github.com/R0U5/Data-Center-Tycoon | MIT | monogame | d | 2026-10-23 |
@@ -813,111 +827,111 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/monogame/vycdev__MineDirt | https://github.com/vycdev/MineDirt | MIT | monogame | e | 2026-11-03 |
 | games/monogame/xFedeT__DungeonExplorer | https://github.com/xFedeT/DungeonExplorer | MIT | monogame | e | 2026-11-03 |
 | games/monogame/yjpark__FSharpGameTutorial | https://github.com/yjpark/FSharpGameTutorial | MIT | monogame | b | 2026-11-03 |
-| games/other/0xAsce__Tetris | https://github.com/0xAsce/Tetris | MIT | other | e | 2026-11-01 |
+| games/other/0xAsce__Tetris |  |  | other | e | 2026-11-01 |
 | games/other/8me4real__raylib-pong-game | https://github.com/8me4real/raylib-pong-game | MIT | other | e | 2026-11-01 |
-| games/other/8me4real__single-player-pong | https://github.com/8me4real/single-player-pong | MIT | other | e | 2026-11-01 |
-| games/other/abhijitswain0x0__odin-life | https://github.com/abhijitswain0x0/odin-life | MIT | other | e | 2026-11-01 |
+| games/other/8me4real__single-player-pong |  |  | other | e | 2026-11-01 |
+| games/other/abhijitswain0x0__odin-life |  |  | other | e | 2026-11-01 |
 | games/other/Ahmet-Can-Urhan__raylib-game | https://github.com/Ahmet-Can-Urhan/raylib-game | MIT | other | e | 2026-11-01 |
-| games/other/alexjercan__raylib-2048 | https://github.com/alexjercan/raylib-2048 | MIT | other | e | 2026-11-01 |
-| games/other/alixhanbasha__asteroids | https://github.com/alixhanbasha/asteroids | MIT | other | e | 2026-11-01 |
+| games/other/alexjercan__raylib-2048 |  |  | other | e | 2026-11-01 |
+| games/other/alixhanbasha__asteroids |  |  | other | e | 2026-11-01 |
 | games/other/AndrewHamel111__raylib-2048 | https://github.com/AndrewHamel111/raylib-2048 | MIT | other | e | 2026-11-01 |
 | games/other/AndrewHamel111__raylib-minesweeper | https://github.com/AndrewHamel111/raylib-minesweeper | MIT | other | e | 2026-11-01 |
 | games/other/andrewrk__tetris | https://github.com/andrewrk/tetris | MIT | other | e | 2026-11-01 |
-| games/other/andrewstephengames__snake | https://github.com/andrewstephengames/snake | MIT | other | e | 2026-11-01 |
-| games/other/arnisritins__15-Puzzle | https://github.com/arnisritins/15-Puzzle | MIT | other | e | 2026-11-01 |
-| games/other/bagasjs__2048 | https://github.com/bagasjs/2048 | MIT | other | e | 2026-11-01 |
-| games/other/BeanwareHQ__beanbricks | https://github.com/BeanwareHQ/beanbricks | MIT | other | e | 2026-11-01 |
-| games/other/BrickSigma__C-Snake | https://github.com/BrickSigma/C-Snake | MIT | other | e | 2026-11-01 |
-| games/other/brno-hof__2048 | https://github.com/brno-hof/2048 | MIT | other | e | 2026-11-01 |
-| games/other/Broyojo__tetris | https://github.com/Broyojo/tetris | MIT | other | e | 2026-11-01 |
+| games/other/andrewstephengames__snake |  |  | other | e | 2026-11-01 |
+| games/other/arnisritins__15-Puzzle |  |  | other | e | 2026-11-01 |
+| games/other/bagasjs__2048 |  |  | other | e | 2026-11-01 |
+| games/other/BeanwareHQ__beanbricks |  |  | other | e | 2026-11-01 |
+| games/other/BrickSigma__C-Snake |  |  | other | e | 2026-11-01 |
+| games/other/brno-hof__2048 |  |  | other | e | 2026-11-01 |
+| games/other/Broyojo__tetris |  |  | other | e | 2026-11-01 |
 | games/other/bryanbraun__connect-four | https://github.com/bryanbraun/connect-four | MIT | other | e | 2026-11-01 |
 | games/other/candrewlee14__tetris-raylib | https://github.com/candrewlee14/tetris-raylib | MIT | other | e | 2026-11-01 |
 | games/other/cMerd__pong | https://github.com/cMerd/pong | MIT | other | e | 2026-11-01 |
-| games/other/crazymykl__rust-life | https://github.com/crazymykl/rust-life | MIT | other | e | 2026-11-01 |
+| games/other/crazymykl__rust-life |  |  | other | e | 2026-11-01 |
 | games/other/cristianscheid__space-crusher | https://github.com/cristianscheid/space-crusher | MIT | other | e | 2026-11-01 |
 | games/other/CyberVictim__snake-raylib | https://github.com/CyberVictim/snake-raylib | MIT | other | e | 2026-11-01 |
 | games/other/DaksshDev__CoolRaylibGame | https://github.com/DaksshDev/CoolRaylibGame | MIT | other | e | 2026-11-01 |
-| games/other/De-Alchmst__gforth-tetris | https://github.com/De-Alchmst/gforth-tetris | MIT | other | e | 2026-11-01 |
+| games/other/De-Alchmst__gforth-tetris |  |  | other | e | 2026-11-01 |
 | games/other/Deka-13__Raylib-Tetris | https://github.com/Deka-13/Raylib-Tetris | MIT | other | e | 2026-11-01 |
 | games/other/dimaglushkov__checkers-online | https://github.com/dimaglushkov/checkers-online | MIT | other | e | 2026-11-01 |
 | games/other/DJAcquila__Space-Infection | https://github.com/DJAcquila/Space-Infection | MIT | other | e | 2026-11-01 |
-| games/other/Durengo__TicTacToe | https://github.com/Durengo/TicTacToe | MIT | other | e | 2026-11-01 |
+| games/other/Durengo__TicTacToe |  |  | other | e | 2026-11-01 |
 | games/other/einsiedlerspiel__pongwars-raylib | https://github.com/einsiedlerspiel/pongwars-raylib | MIT | other | e | 2026-11-01 |
 | games/other/enesceylandev__Snake | https://github.com/enesceylandev/Snake | MIT | other | e | 2026-11-01 |
 | games/other/erikyuzwa__raylib-minesweeper | https://github.com/erikyuzwa/raylib-minesweeper | MIT | other | e | 2026-11-01 |
 | games/other/Firebrnr__raylib-pong | https://github.com/Firebrnr/raylib-pong | MIT | other | e | 2026-11-01 |
 | games/other/fogleman__Craft | https://github.com/fogleman/Craft | MIT | other | e | 2026-10-23 |
 | games/other/frederickjjoubert__bevy-ball-game | https://github.com/frederickjjoubert/bevy-ball-game | MIT | other | e | 2026-11-01 |
-| games/other/FrendaWinter__Breakout | https://github.com/FrendaWinter/Breakout | MIT | other | e | 2026-11-01 |
+| games/other/FrendaWinter__Breakout |  |  | other | e | 2026-11-01 |
 | games/other/frostming__wordle-tui | https://github.com/frostming/wordle-tui | MIT | other | e | 2026-11-01 |
 | games/other/FunToHard__Space-Shooter | https://github.com/FunToHard/Space-Shooter | MIT | other | e | 2026-11-01 |
-| games/other/gabriel-ab__snake | https://github.com/gabriel-ab/snake | MIT | other | e | 2026-11-01 |
+| games/other/gabriel-ab__snake |  |  | other | e | 2026-11-01 |
 | games/other/gabryon99__pong-raylib | https://github.com/gabryon99/pong-raylib | MIT | other | e | 2026-11-01 |
-| games/other/GKaszewski__minesweeper-cpp | https://github.com/GKaszewski/minesweeper-cpp | MIT | other | e | 2026-11-01 |
+| games/other/GKaszewski__minesweeper-cpp |  |  | other | e | 2026-11-01 |
 | games/other/GoogolFisch__raylib-minesweeper | https://github.com/GoogolFisch/raylib-minesweeper | MIT | other | e | 2026-11-01 |
-| games/other/harisahmed05__cha_craft | https://github.com/harisahmed05/cha_craft | MIT | other | e | 2026-11-01 |
+| games/other/harisahmed05__cha_craft |  |  | other | e | 2026-11-01 |
 | games/other/IndieCoderMM__platformer-raylib | https://github.com/IndieCoderMM/platformer-raylib | MIT | other | e | 2026-11-01 |
 | games/other/JannikStr__raylib-breakout | https://github.com/JannikStr/raylib-breakout | MIT | other | e | 2026-11-01 |
-| games/other/jhewlett__react-reversi | https://github.com/jhewlett/react-reversi | MIT | other | e | 2026-11-01 |
+| games/other/jhewlett__react-reversi |  |  | other | e | 2026-11-01 |
 | games/other/Jhyde927__DeadCityNights | https://github.com/Jhyde927/DeadCityNights | MIT | other | e | 2026-11-01 |
-| games/other/jlafayette__zig-tetris | https://github.com/jlafayette/zig-tetris | MIT | other | e | 2026-11-01 |
-| games/other/JonesRepo__Pong-Tutorial | https://github.com/JonesRepo/Pong-Tutorial | MIT | other | e | 2026-11-01 |
-| games/other/joshaustintech__pong | https://github.com/joshaustintech/pong | MIT | other | e | 2026-11-01 |
-| games/other/jqntn__minesweeper | https://github.com/jqntn/minesweeper | MIT | other | e | 2026-11-01 |
-| games/other/K4zoku__r2048 | https://github.com/K4zoku/r2048 | MIT | other | e | 2026-11-01 |
+| games/other/jlafayette__zig-tetris |  |  | other | e | 2026-11-01 |
+| games/other/JonesRepo__Pong-Tutorial |  |  | other | e | 2026-11-01 |
+| games/other/joshaustintech__pong |  |  | other | e | 2026-11-01 |
+| games/other/jqntn__minesweeper |  |  | other | e | 2026-11-01 |
+| games/other/K4zoku__r2048 |  |  | other | e | 2026-11-01 |
 | games/other/kasa320__raylib-shooter-c | https://github.com/kasa320/raylib-shooter-c | MIT | other | e | 2026-11-01 |
-| games/other/kenrick95__c4 | https://github.com/kenrick95/c4 | MIT | other | e | 2026-11-01 |
+| games/other/kenrick95__c4 |  |  | other | e | 2026-11-01 |
 | games/other/Leftium__asteroid | https://github.com/Leftium/asteroid | MIT | other | e | 2026-11-01 |
 | games/other/luca01github__Tetris-Raylib | https://github.com/luca01github/Tetris-Raylib | MIT | other | e | 2026-11-01 |
-| games/other/maaslalani__gambit | https://github.com/maaslalani/gambit | MIT | other | e | 2026-11-01 |
+| games/other/maaslalani__gambit |  |  | other | e | 2026-11-01 |
 | games/other/mandaw2014__PongRaylib | https://github.com/mandaw2014/PongRaylib | MIT | other | e | 2026-11-01 |
-| games/other/marcusbuffett__command-line-chess | https://github.com/marcusbuffett/command-line-chess | MIT | other | e | 2026-11-01 |
-| games/other/mariuszmatkowsk__RaylibSnake | https://github.com/mariuszmatkowsk/RaylibSnake | MIT | other | e | 2026-11-01 |
+| games/other/marcusbuffett__command-line-chess |  |  | other | e | 2026-11-01 |
+| games/other/mariuszmatkowsk__RaylibSnake |  |  | other | e | 2026-11-01 |
 | games/other/marvelboyop__Tetris_CPP_Raylib | https://github.com/marvelboyop/Tetris_CPP_Raylib | MIT | other | e | 2026-11-01 |
-| games/other/maxcohen31__Pong-Game | https://github.com/maxcohen31/Pong-Game | MIT | other | e | 2026-11-01 |
-| games/other/MichailTalReborn__Snake | https://github.com/MichailTalReborn/Snake | MIT | other | e | 2026-11-01 |
-| games/other/MichalHrbek__Snake | https://github.com/MichalHrbek/Snake | MIT | other | e | 2026-11-01 |
-| games/other/misterabdul__2048 | https://github.com/misterabdul/2048 | MIT | other | e | 2026-11-01 |
-| games/other/molor824__Asteroids | https://github.com/molor824/Asteroids | MIT | other | e | 2026-11-01 |
+| games/other/maxcohen31__Pong-Game |  |  | other | e | 2026-11-01 |
+| games/other/MichailTalReborn__Snake |  |  | other | e | 2026-11-01 |
+| games/other/MichalHrbek__Snake |  |  | other | e | 2026-11-01 |
+| games/other/misterabdul__2048 |  |  | other | e | 2026-11-01 |
+| games/other/molor824__Asteroids |  |  | other | e | 2026-11-01 |
 | games/other/mordv__mnswpr | https://github.com/mordv/mnswpr | MIT | other | e | 2026-11-02 |
-| games/other/mthsgimenez__snake | https://github.com/mthsgimenez/snake | MIT | other | e | 2026-11-01 |
-| games/other/NeverMendel__snake | https://github.com/NeverMendel/snake | MIT | other | e | 2026-11-01 |
+| games/other/mthsgimenez__snake |  |  | other | e | 2026-11-01 |
+| games/other/NeverMendel__snake |  |  | other | e | 2026-11-01 |
 | games/other/nulljosh__hamurapi | https://github.com/nulljosh/hamurapi | MIT | other | e | 2026-11-01 |
 | games/other/olistic__warriorjs | https://github.com/olistic/warriorjs | MIT | other | e | 2026-11-02 |
 | games/other/oostap2__RaylibGame | https://github.com/oostap2/RaylibGame | MIT | other | e | 2026-11-01 |
 | games/other/OrangoMango__Minesweeper | https://github.com/OrangoMango/Minesweeper | MIT | other | e | 2026-11-02 |
-| games/other/OussamaTeyib__Pong | https://github.com/OussamaTeyib/Pong | MIT | other | e | 2026-11-01 |
+| games/other/OussamaTeyib__Pong |  |  | other | e | 2026-11-01 |
 | games/other/petergpt__lean-3d-game-axiom | https://github.com/petergpt/lean-3d-game-axiom | MIT | other | e | 2026-11-01 |
 | games/other/plibither8__2048.cpp | https://github.com/plibither8/2048.cpp | MIT | other | e | 2026-11-02 |
 | games/other/PokeSquared__RaylibChess | https://github.com/PokeSquared/RaylibChess | MIT | other | e | 2026-11-01 |
-| games/other/procub3r__gameoflife | https://github.com/procub3r/gameoflife | MIT | other | e | 2026-11-01 |
+| games/other/procub3r__gameoflife |  |  | other | e | 2026-11-01 |
 | games/other/przemek83__tankble | https://github.com/przemek83/tankble | MIT | other | e | 2026-11-01 |
 | games/other/rainpaw__space-shooter | https://github.com/rainpaw/space-shooter | MIT | other | e | 2026-11-01 |
-| games/other/RecompileX__breakout-raylib | https://github.com/RecompileX/breakout-raylib | MIT | other | e | 2026-11-01 |
+| games/other/RecompileX__breakout-raylib |  |  | other | e | 2026-11-01 |
 | games/other/RecompileX__pong-raylib | https://github.com/RecompileX/pong-raylib | MIT | other | e | 2026-11-01 |
 | games/other/RocketBuddyBro__Asteroid_raylib_game | https://github.com/RocketBuddyBro/Asteroid_raylib_game | MIT | other | e | 2026-11-01 |
 | games/other/Ryp__minesweeper-zig | https://github.com/Ryp/minesweeper-zig | MIT | other | e | 2026-11-01 |
-| games/other/sachaos__go-life | https://github.com/sachaos/go-life | MIT | other | e | 2026-11-01 |
+| games/other/sachaos__go-life |  |  | other | e | 2026-11-01 |
 | games/other/setghm__space-invaders | https://github.com/setghm/space-invaders | MIT | other | e | 2026-11-01 |
 | games/other/Sherif-Abdou__Checkers | https://github.com/Sherif-Abdou/Checkers | MIT | other | e | 2026-11-02 |
 | games/other/Sirvoid__Midless | https://github.com/Sirvoid/Midless | MIT | other | e | 2026-10-23 |
-| games/other/Sqydev__Snakey | https://github.com/Sqydev/Snakey | MIT | other | e | 2026-11-01 |
+| games/other/Sqydev__Snakey |  |  | other | e | 2026-11-01 |
 | games/other/starkertyp__raylib_sokoban | https://github.com/starkertyp/raylib_sokoban | MIT | other | e | 2026-11-01 |
 | games/other/Strophox__tetro-tui | https://github.com/Strophox/tetro-tui | MIT | other | e | 2026-11-01 |
-| games/other/SynXufr__raylib-game-of-life | https://github.com/SynXufr/raylib-game-of-life | GPL-3.0 | other | e | 2026-11-01 |
-| games/other/taniarascia__sokoban | https://github.com/taniarascia/sokoban | MIT | other | e | 2026-11-01 |
-| games/other/themaxhero__snake | https://github.com/themaxhero/snake | MIT | other | e | 2026-11-01 |
+| games/other/SynXufr__raylib-game-of-life |  |  | other | e | 2026-11-01 |
+| games/other/taniarascia__sokoban |  |  | other | e | 2026-11-01 |
+| games/other/themaxhero__snake |  |  | other | e | 2026-11-01 |
 | games/other/ToriDoesntExist__RaylibBreakout | https://github.com/ToriDoesntExist/RaylibBreakout | MIT | other | e | 2026-11-01 |
 | games/other/tristangoossens__sokoban-go | https://github.com/tristangoossens/sokoban-go | MIT | other | e | 2026-11-02 |
-| games/other/umtdg__breakout | https://github.com/umtdg/breakout | MIT | other | e | 2026-11-01 |
+| games/other/umtdg__breakout |  |  | other | e | 2026-11-01 |
 | games/other/unklnik__bitty_knight | https://github.com/unklnik/bitty_knight | MIT | other | e | 2026-11-01 |
 | games/other/UnknownRori__raylib-breakout-game | https://github.com/UnknownRori/raylib-breakout-game | MIT | other | e | 2026-11-01 |
-| games/other/vernonlim__RaylibPong | https://github.com/vernonlim/RaylibPong | MIT | other | e | 2026-11-01 |
-| games/other/vsamarth__tetris.c | https://github.com/vsamarth/tetris.c | MIT | other | e | 2026-11-01 |
+| games/other/vernonlim__RaylibPong |  |  | other | e | 2026-11-01 |
+| games/other/vsamarth__tetris.c |  |  | other | e | 2026-11-01 |
 | games/other/wolfdroid__The_Mighty_Gatot_Kaca | https://github.com/wolfdroid/The_Mighty_Gatot_Kaca | MIT | other | e | 2026-11-01 |
 | games/other/ystepanoff__ParaGopher | https://github.com/ystepanoff/ParaGopher | MIT | other | e | 2026-11-01 |
 | games/other/zladovan__gorched | https://github.com/zladovan/gorched | MIT | other | e | 2026-11-01 |
-| games/other/Zolomon__reversi-ai | https://github.com/Zolomon/reversi-ai | MIT | other | e | 2026-11-01 |
+| games/other/Zolomon__reversi-ai |  |  | other | e | 2026-11-01 |
 | games/phaser/0xbabyalien__Gangster2D | https://github.com/0xbabyalien/Gangster2D | MIT | phaser | c | 2026-11-03 |
 | games/phaser/about14sheep__meltdown | https://github.com/about14sheep/meltdown | GPL-3.0 | phaser | c | 2026-10-23 |
 | games/phaser/AdsGames__brick-breaker-js | https://github.com/AdsGames/brick-breaker-js | MIT | phaser | c | 2026-11-02 |
@@ -1006,7 +1020,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/phaser/qjngbac__abyss-survivors | https://github.com/qjngbac/abyss-survivors | MIT | phaser | c |  |
 | games/phaser/Quinten__phaser3-maze-demo | https://github.com/Quinten/phaser3-maze-demo | MIT | phaser | c | 2026-11-02 |
 | games/phaser/rajkdas__goal-rush-game | https://github.com/rajkdas/goal-rush-game | MIT | phaser | c | 2026-11-02 |
-| games/phaser/rblopes__phaser-3-snake-game | https://github.com/rblopes/phaser-3-snake-game | MIT | phaser | c | 2026-11-02 |
+| games/phaser/rblopes__phaser-3-snake-game | https://github.com/rblopes/phaser-3-snake-game |  | phaser | c | 2026-11-02 |
 | games/phaser/remarkablegames__fortify | https://github.com/remarkablegames/fortify | MIT | phaser | c | 2026-11-01 |
 | games/phaser/remarkablegames__inversion | https://github.com/remarkablegames/inversion | MIT | phaser | c | 2026-11-01 |
 | games/phaser/remarkablegames__lights-out | https://github.com/remarkablegames/lights-out | MIT | phaser | c | 2026-11-01 |
@@ -1053,6 +1067,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/pygame/bailiyyds__SpaceShooter-Pygame | https://github.com/bailiyyds/SpaceShooter-Pygame | MIT | pygame | b | 2026-11-01 |
 | games/pygame/bandali__asteroids | https://github.com/bandali/asteroids | GPL-3.0 | pygame | b | 2026-11-02 |
 | games/pygame/ben-ryder__Conqueror-of-Empires | https://github.com/ben-ryder/Conqueror-of-Empires | GPL-3.0 | pygame | b | 2026-10-23 |
+| games/pygame/Bha-123-v__pygame-pong-game | https://github.com/Bha-123-v/pygame-pong-game | MIT | pygame | b | 2026-11-03 |
 | games/pygame/BhuvanM17__gridquest-python | https://github.com/BhuvanM17/gridquest-python | MIT | pygame | b | 2026-11-01 |
 | games/pygame/Bigpiglee__work-life-survival | https://github.com/Bigpiglee/work-life-survival | MIT | pygame | b | 2026-10-23 |
 | games/pygame/CestnyTR__space_game_PyGame | https://github.com/CestnyTR/space_game_PyGame | MIT | pygame | b | 2026-10-23 |
@@ -1140,6 +1155,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/pygame/plbrault__youre-the-os | https://github.com/plbrault/youre-the-os | GPL-3.0 | pygame | b | 2026-10-22 |
 | games/pygame/punker76__Pyout | https://github.com/punker76/Pyout | MIT | pygame | b | 2026-10-23 |
 | games/pygame/rachit-dubey__humanRL_prior_games | https://github.com/rachit-dubey/humanRL_prior_games | MIT | pygame | b | 2026-11-03 |
+| games/pygame/Rahul678910__my-first-pygame | https://github.com/Rahul678910/my-first-pygame | MIT | pygame | b | 2026-11-03 |
 | games/pygame/RB211__Spectre | https://github.com/RB211/Spectre | GPL-3.0 | pygame | b | 2026-11-01 |
 | games/pygame/RealMizat__Maze-PyGame | https://github.com/RealMizat/Maze-PyGame | MIT | pygame | b | 2026-10-23 |
 | games/pygame/remance__Masendor | https://github.com/remance/Masendor | MIT | pygame | b | 2026-10-23 |
@@ -1171,12 +1187,14 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/pygame/tonderaikawere__my-python-pong | https://github.com/tonderaikawere/my-python-pong | MIT | pygame | b | 2026-10-23 |
 | games/pygame/UncleSocks__Meeps | https://github.com/UncleSocks/Meeps | GPL-3.0 | pygame | b | 2026-10-23 |
 | games/pygame/unternehmen__dirt | https://github.com/unternehmen/dirt | GPL-3.0 | pygame | b | 2026-10-23 |
+| games/pygame/urreadiego0518-code__runner-matematico | https://github.com/urreadiego0518-code/runner-matematico | MIT | pygame | b | 2026-11-03 |
 | games/pygame/veddegre__python-games-collection | https://github.com/veddegre/python-games-collection | MIT | pygame | b | 2026-11-01 |
 | games/pygame/VelaWind__vela-sea | https://github.com/VelaWind/vela-sea | MIT | pygame | b | 2026-11-01 |
 | games/pygame/VictorHachard__pygame-roguelike | https://github.com/VictorHachard/pygame-roguelike | MIT | pygame | b | 2026-11-01 |
 | games/pygame/VIDAKHOSHPEY22__Atari-Racer | https://github.com/VIDAKHOSHPEY22/Atari-Racer | MIT | pygame | b | 2026-10-22 |
 | games/pygame/vineetjc__pygame-Search-the-Key | https://github.com/vineetjc/pygame-Search-the-Key | MIT | pygame | b | 2026-10-23 |
 | games/pygame/vocdex__pong-wars-python | https://github.com/vocdex/pong-wars-python | MIT | pygame | b | 2026-11-02 |
+| games/pygame/wackocontendor__pygame-pong | https://github.com/wackocontendor/pygame-pong | MIT | pygame | b | 2026-11-03 |
 | games/pygame/whoashish115__void-break | https://github.com/whoashish115/void-break | MIT | pygame | b | 2026-10-23 |
 | games/pygame/wulfalpha__alchemy | https://github.com/wulfalpha/alchemy | MIT | pygame | b | 2026-11-01 |
 | games/pygame/yagizkoryurek__Vampire_Survivors-clone | https://github.com/yagizkoryurek/Vampire_Survivors-clone | MIT | pygame | b | 2026-11-01 |
@@ -1225,8 +1243,8 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/retro/martial-plains__pong-sdl | https://github.com/martial-plains/pong-sdl | MIT | retro | e | 2026-10-23 |
 | games/retro/maxipriani__pong-game | https://github.com/maxipriani/pong-game | MIT | retro | e | 2026-10-23 |
 | games/retro/mevdschee__2048.c | https://github.com/mevdschee/2048.c | MIT | retro | e | 2026-10-23 |
-| games/retro/mpereira__tty-solitaire | https://github.com/mpereira/tty-solitaire | MIT | retro | e | 2026-11-01 |
-| games/retro/nielssp__csol | https://github.com/nielssp/csol | MIT | retro | e | 2026-11-01 |
+| games/retro/mpereira__tty-solitaire |  |  | retro | e | 2026-11-01 |
+| games/retro/nielssp__csol |  |  | retro | e | 2026-11-01 |
 | games/retro/nikolaspadilla__Pong-SDL2 | https://github.com/nikolaspadilla/Pong-SDL2 | MIT | retro | e | 2026-10-23 |
 | games/retro/olzhasar__sdl-tetris | https://github.com/olzhasar/sdl-tetris | MIT | retro | e | 2026-10-23 |
 | games/retro/pinobatch__thwaite-nes | https://github.com/pinobatch/thwaite-nes | GPL-3.0 | retro | e | 2026-11-03 |
@@ -1246,7 +1264,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/retro/tsoding__pewpew3d | https://github.com/tsoding/pewpew3d | MIT | retro | e | 2026-10-23 |
 | games/retro/tsoding__pinpog | https://github.com/tsoding/pinpog | MIT | retro | e | 2026-11-01 |
 | games/retro/tsoding__smooth-snake | https://github.com/tsoding/smooth-snake | MIT | retro | e | 2026-10-23 |
-| games/retro/TurkeyMcMac__ts3d | https://github.com/TurkeyMcMac/ts3d | MIT | retro | e | 2026-11-01 |
+| games/retro/TurkeyMcMac__ts3d |  |  | retro | e | 2026-11-01 |
 | games/retro/velorek1__asteroid | https://github.com/velorek1/asteroid | MIT | retro | e | 2026-10-23 |
 | games/retro/vgmoose__space-nx | https://github.com/vgmoose/space-nx | MIT | retro | e | 2026-10-23 |
 | games/retro/vilhelmbergsoe__snake | https://github.com/vilhelmbergsoe/snake | MIT | retro | e | 2026-10-23 |
@@ -1269,7 +1287,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/threejs/appleweiping__hungry-fin | https://github.com/appleweiping/hungry-fin | MIT | threejs | c | 2026-11-01 |
 | games/threejs/appleweiping__overdrive-city | https://github.com/appleweiping/overdrive-city | MIT | threejs | c |  |
 | games/threejs/arjunemirchandani__skyward-flight-simulator | https://github.com/arjunemirchandani/skyward-flight-simulator | MIT | threejs | d | 2026-11-03 |
-| games/threejs/arnicas__bee-garden-game | https://github.com/arnicas/bee-garden-game | MIT | threejs | c |  |
+| games/threejs/arnicas__bee-garden-game | https://github.com/arnicas/bee-garden-game | MIT | threejs | a | 2026-11-03 |
 | games/threejs/atmirrr__fox-floe | https://github.com/atmirrr/fox-floe | MIT | threejs | c | 2026-11-01 |
 | games/threejs/augy-studios__colorsort-game | https://github.com/augy-studios/colorsort-game | MIT | threejs | e | 2026-11-03 |
 | games/threejs/Avanith12__nexus-strike-game | https://github.com/Avanith12/nexus-strike-game | MIT | threejs | a | 2026-11-03 |
@@ -1297,10 +1315,12 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/threejs/EvanBacon__pillar-valley | https://github.com/EvanBacon/pillar-valley | MIT | threejs | c | 2026-10-23 |
 | games/threejs/farzinmirzaie__squirm | https://github.com/farzinmirzaie/squirm | MIT | threejs | d | 2026-11-03 |
 | games/threejs/feldhaus__tower-blocks | https://github.com/feldhaus/tower-blocks | MIT | threejs | e | 2026-11-03 |
+| games/threejs/Furkiozknn__bogaz-vapuru | https://github.com/Furkiozknn/bogaz-vapuru | MIT | threejs | a | 2026-11-03 |
 | games/threejs/Furkiozknn__carsi-kacisi | https://github.com/Furkiozknn/carsi-kacisi | MIT | threejs | c | 2026-11-02 |
 | games/threejs/Furkiozknn__cini-ustasi | https://github.com/Furkiozknn/cini-ustasi | MIT | threejs | b | 2026-11-03 |
 | games/threejs/Furkiozknn__ebru | https://github.com/Furkiozknn/ebru | MIT | threejs | a | 2026-11-03 |
 | games/threejs/Furkiozknn__lale-bahcesi | https://github.com/Furkiozknn/lale-bahcesi | MIT | threejs | a | 2026-11-03 |
+| games/threejs/Furkiozknn__mehter | https://github.com/Furkiozknn/mehter | MIT | threejs | a | 2026-11-03 |
 | games/threejs/Furkiozknn__pamukkale | https://github.com/Furkiozknn/pamukkale | MIT | threejs | a | 2026-11-03 |
 | games/threejs/Furkiozknn__peri-golf | https://github.com/Furkiozknn/peri-golf | MIT | threejs | a | 2026-11-03 |
 | games/threejs/Furkiozknn__simit-firini | https://github.com/Furkiozknn/simit-firini | MIT | threejs | c | 2026-11-03 |
@@ -1309,9 +1329,11 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/threejs/GeekBoySupreme__crossy-road | https://github.com/GeekBoySupreme/crossy-road | MIT | threejs | c | 2026-10-22 |
 | games/threejs/Gitguy268__spot-fetch | https://github.com/Gitguy268/spot-fetch | MIT | threejs | d | 2026-11-03 |
 | games/threejs/Golopmoui3__neon-wasteland | https://github.com/Golopmoui3/neon-wasteland | MIT | threejs | b | 2026-11-03 |
+| games/threejs/GunshipPenguin__corridors.io | https://github.com/GunshipPenguin/corridors.io | MIT | threejs | e | 2026-11-03 |
 | games/threejs/H-Pluto__h-threejs-game | https://github.com/H-Pluto/h-threejs-game | MIT | threejs | e | 2026-11-03 |
 | games/threejs/haibruce__GAME_Rex_Legend | https://github.com/haibruce/GAME_Rex_Legend | MIT | threejs | c |  |
 | games/threejs/HALCONDEORO__almojarife-game | https://github.com/HALCONDEORO/almojarife-game | MIT | threejs | c |  |
+| games/threejs/haranishi__kamakura-no-zanka | https://github.com/haranishi/kamakura-no-zanka | MIT | threejs | e | 2026-11-03 |
 | games/threejs/Hearthlight__hearthlight.github.io | https://github.com/Hearthlight/hearthlight.github.io | MIT | threejs | c | 2026-11-03 |
 | games/threejs/hendrasaputra__petal-mines | https://github.com/hendrasaputra/petal-mines | MIT | threejs | a | 2026-11-03 |
 | games/threejs/heyyanixx__nukkad-knockout | https://github.com/heyyanixx/nukkad-knockout | MIT | threejs | b | 2026-11-03 |
@@ -1351,7 +1373,9 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/threejs/mutaaf__cold-gas | https://github.com/mutaaf/cold-gas | MIT | threejs | b | 2026-11-03 |
 | games/threejs/nelsonkuang__find-the-beans | https://github.com/nelsonkuang/find-the-beans | MIT | threejs | c | 2026-11-03 |
 | games/threejs/notchris__mini-golf-3d | https://github.com/notchris/mini-golf-3d | GPL-3.0 | threejs | c | 2026-10-23 |
+| games/threejs/omsingh02__bunny | https://github.com/omsingh02/bunny | MIT | threejs | e | 2026-11-03 |
 | games/threejs/otakuch__castellan | https://github.com/otakuch/castellan | MIT | threejs | e | 2026-11-03 |
+| games/threejs/paugm__deep-space-atlas | https://github.com/paugm/deep-space-atlas | MIT | threejs | b | 2026-11-03 |
 | games/threejs/pemmyz__js_lotus_threejs | https://github.com/pemmyz/js_lotus_threejs | MIT | threejs | b | 2026-11-03 |
 | games/threejs/pengfeiw__rubiks-cube | https://github.com/pengfeiw/rubiks-cube | MIT | threejs | c | 2026-10-22 |
 | games/threejs/pieterubeltje__rocket-dash | https://github.com/pieterubeltje/rocket-dash | MIT | threejs | c | 2026-10-23 |
@@ -1555,6 +1579,7 @@ _Auto-refreshed 2026-11-04 · 1627 games · do not edit in feature PRs_
 | games/unreal/dydzio0614__BallGame | https://github.com/dydzio0614/BallGame | MIT | unreal | d | 2026-11-01 |
 | games/unreal/EncodedWorlds__Boids | https://github.com/EncodedWorlds/Boids | MIT | unreal | d | 2026-11-01 |
 | games/unreal/EvelynSchwab__ComponentFuseMechanic | https://github.com/EvelynSchwab/ComponentFuseMechanic | MIT | unreal | d | 2026-11-01 |
+| games/unreal/Event-Horizon-Games__FirstUnrealProject | https://github.com/Event-Horizon-Games/FirstUnrealProject | MIT | unreal | a | 2026-11-03 |
 | games/unreal/eyupalemdar__BuildingEscape | https://github.com/eyupalemdar/BuildingEscape | MIT | unreal | e | 2026-11-02 |
 | games/unreal/eyupalemdar__SimpleShooter | https://github.com/eyupalemdar/SimpleShooter | MIT | unreal | e | 2026-11-02 |
 | games/unreal/GMihalkow__ToonTanks | https://github.com/GMihalkow/ToonTanks | MIT | unreal | d | 2026-11-01 |
