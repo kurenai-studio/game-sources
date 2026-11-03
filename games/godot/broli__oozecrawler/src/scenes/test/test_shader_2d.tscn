@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bi4ljyylwgoox"]
+
+[ext_resource type="Shader" uid="uid://bcxdj8lqoufja" path="res://scenes/test/test_shader_2d.gdshader" id="1_fwwcj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uge06"]
+shader = ExtResource("1_fwwcj")
+shader_parameter/base_color = Color(0.3, 0.85, 0.3, 1)
+
+[node name="Node2D" type="Node2D" unique_id=68594831]
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1926771405]
+material = SubResource("ShaderMaterial_uge06")
+offset_right = 200.0
+offset_bottom = 200.0

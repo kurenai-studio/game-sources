@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cpio4edsf1pe1"]
+
+[ext_resource type="Script" uid="uid://bghem5fh204o5" path="res://scripts/characters/dropper.gd" id="1_f2eq8"]
+[ext_resource type="Texture2D" uid="uid://cevejaetnknwt" path="res://assets/sprites/prototiping/liftarn_Adventurer_Hat.svg" id="2_lfe3p"]
+[ext_resource type="Shader" uid="uid://qikhvu7oy3m1" path="res://Shaders/kerno.gdshader" id="3_bnnnk"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ktxv1"]
+shader = ExtResource("3_bnnnk")
+shader_parameter/base_color = Color(0.3, 0.85, 0.3, 1)
+
+[node name="Dropper" type="Node2D" unique_id=1659214463]
+script = ExtResource("1_f2eq8")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1532709190]
+position = Vector2(0, 30)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_lfe3p")
+
+[node name="PreviewKerno" type="ColorRect" parent="." unique_id=25715229]
+material = SubResource("ShaderMaterial_ktxv1")
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
