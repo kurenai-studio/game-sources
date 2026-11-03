@@ -1,0 +1,33 @@
+# Reuse from Summer Cycle and Bay Ride
+
+Source projects (read-only): `F:\bay-ride` (newer, preferred) and `F:\summer-cycle`. Each copied file starts with a header naming its source and what changed.
+
+**Verdicts:** *reused* means copied unchanged apart from its header. *adapted* means copied and then changed. *skipped* means not copied.
+
+| Area | Module(s) considered | Verdict | Why / what changed |
+|---|---|---|---|
+| Sky dome | BR `world/skyDome.ts` | **reused** | Gradient, cirrus, stars, sun disc + rays, painted moon. Unchanged. |
+| Sky layout | BR `world/sky.ts` (SC `world/sky.ts` is an older version) | **adapted** | Sea-level import removed. The cloud field is scaled ×2.5 (its placement checks are angular, so they still hold). The ridge bands are scaled ×3.6 in radius and ×2.4 in height, and now ring the full horizon (Bay Ride left the sea side open). The sun-avoid list uses our four presets. Dome radius is 9.5 km. |
+| Clouds | BR `render/cloudPaint.ts` | **reused** | Painted lobe-union cumulus cards (camera-parallel). Their cards are vertical, so from altitude they need a rework (a later system). |
+| Sun / time of day | BR `world/timeofday.ts`, `render/todUniforms.ts`, BR `water/look.ts`; SC `world/timeofday.ts` (older) | **adapted** | Reduced to **sunrise / golden / sunset / blue**. Sunrise is BR morning moved to the east (az 78°). Golden and sunset are BR's own. Blue is BR dusk. Noon and night were dropped, and so were the lighthouse beam fields. BR's `water/look.ts` (`WATER_TOD`) is folded into timeofday.ts as a small local table, and the per-preset water colours stay for the lake. `FOG_SCALE = 0.4` scales BR's densities for a 6 km world. |
+| Toon / cel shader | BR `render/materials.ts` (SC has an older copy) | **adapted** | Uber-shader factory, `G` uniforms, `COMMON` / `OUT` GLSL, `specializeUber`, shadow depth material. Tier comes from `core/tier.ts`. The coast-road material is removed. New uniform `uFogH` (haze height scale, BR's 90 m hard-coded → 220 m here). The rider / pier-lamp branches are left in but inert. |
+| Outlines | BR `render/post.ts` ink pass | **adapted** | Depth + normal/id ink kept as is. Added `setFar()` (camera far 16 km vs BR 4.2 km) and `setInkFade()` (BR faded ink at 60–420 m, which is everything from a balloon, so main.ts scales the fade with altitude). The profiler type is made local. |
+| Post-processing | BR `render/post.ts`, `paint.ts`, `mrtSplit.ts`, `precompile.ts` | **adapted** | Full chain kept: MRT scene (split colour / normal passes for ANGLE), anisotropic Kuwahara paint, ink, Unreal bloom, warm grade + vignette + paper grain, SMAA, CAS sharpen, adaptive resolution, parallel shader precompile. `paint.ts` gained `setFar()`. `precompile.ts` takes the new tier. |
+| Light passes | BR `render/lightpasses.ts` | **adapted** | `SunShadow` and `PlanarReflection` (for the lake later) kept. The rider's `CharShadow` and her layers are removed. |
+| GPU caps | BR `platform.ts` `probeGpu` | **adapted** | Only `probeGpu` lifted, into `render/gpucaps.ts`. |
+| Quality tier | BR `platform.ts` `TIER` | **adapted** | Replaced with `core/tier.ts`: only the fields the reused code reads (+ dpr, msaa, shadow, paint, bloom, res), with the same desktop/phone values and `?tier=` overrides. Touch / fullscreen / portrait helpers skipped (later, with mobile controls). |
+| Leaf atlas | BR `render/leafAtlas.ts` | **reused** | Painted leaf canvas for foliage cards. |
+| Geometry helpers | BR `world/geo.ts` | **adapted** | `roadX` / `shear()` removed. `M` / `ID` tables, `prep`, `blob`, `beam` etc. unchanged. |
+| Vegetation (trees) | BR `flora/trees.ts`, `flora/glsl.ts` | **adapted** (trees), **reused** (glsl) | Trees lift out cleanly: colliders and the grass layout were removed, and ground height is now a parameter. Phase 1 uses them for test groves. |
+| Vegetation (grass, flowers) | BR `flora/meadow.ts`, `flowers.ts`, `place.ts`, `index.ts`; SC `world/vegetation.ts` | **skipped** | Bound to Bay Ride's terrain/layout (`place.ts` imports road, pier, island). Meadow grass is ground-scale detail that is invisible from 100 m+. It is a candidate for the low-altitude pass later. |
+| Terrain | BR `world/bay/terrain.ts`; SC `world/chunks.ts`, `road.ts` | **skipped** | Both are tied to their maps (bay + island + sea wall; a road ribbon with chunks along it). Balloon Ride needs a 6 km patchwork heightfield with tiles + LOD (see research.md §b). It will be new code, using the uber `M.ground` paint. |
+| Houses / village | BR `world/bay/houses.ts`, `detail/*`; SC `world/props.ts`, `street.ts` | **skipped (for now)** | BR houses are a stepped seaside row built around lanes and pier. SC props are Japanese (kawara roofs, shoji, vending machines). The *techniques* (merged per-row geometry, `M.roof` / `M.plaster` / window materials in the uber shader) are reused through materials.ts. The village itself will be new: European cottages, church, windmill. |
+| Water | BR `water/*` (Gerstner sea, wake, depth map); SC `waterMaterial` (paddies) | **skipped** | An open-ocean sea is the wrong thing for a lake and river. The lake will use `PlanarReflection` + the per-preset water colours (kept in timeofday) with a small new shader. |
+| Birds / life | BR `life/gulls.ts`, `butterflies`, `fireflies`; SC `world/birds.ts` | **skipped (for now)** | Seagulls and road-bound perches. Birds seen *below* the balloon need new flight paths. BR gulls' deterministic-by-time pattern is the model to follow. |
+| Audio synthesis | BR `sound/dsp.ts`, `kit.ts`, `air.ts` | **reused** (dsp), **adapted** (kit, air) | `RideState` now holds balloon fields (altitude, burner, vent, felt wind). `WindLayer` adds a gentle altitude term. No audio engine is wired yet (no burner or birds yet). |
+| Audio (other) | BR `sound/engine.ts`, `sea.ts`, `boat.ts`, `music.ts`, `voices.ts`, `gulls.ts`, `steps.ts`; SC `nature.ts` (cicadas), `bike.ts` | **skipped (for now)** | These are boat, sea, footstep and Japanese-summer voices. BR `music.ts` (generative score) and SC `voices.ts` (bird synths) are good candidates for the sound pass. |
+| Input | BR `core/input.ts` | **reused** | Keyboard / pointer state, for later controls. |
+| RNG | BR `core/rng.ts` | **reused** | mulberry32 + helpers. |
+| Capture checks | BR `capture/gpucheck.ts` | **reused** | Program-limit and GPU-memory reports, for later perf checks. |
+| Capture harness | BR `scripts/shoot.mjs`, `scripts/lib/harness.mjs` | **adapted** | Harness: sea-luma guard removed. shoot.mjs is rewritten around our spots and `window.__game` (see PROGRESS.md). |
+| Boot / loader / HUD / intro | BR `main.ts`, `loader.ts`, `ui/*` | **skipped** | The brief allows no on-screen text. main.ts is new and minimal. |
