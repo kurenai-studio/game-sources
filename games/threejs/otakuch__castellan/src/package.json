@@ -1,0 +1,17 @@
+{
+  "name": "castellan",
+  "version": "1.0.0",
+  "description": "Cut the ground, raise a castle, then run a day through it and see whether anyone can live in it.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check",
+    "start": "node build.mjs && node serve.mjs",
+    "dev": "node build.mjs && node serve.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["threejs","webgl","castle","citybuilder","procedural","ecs","simulation"],
+  "files": ["index.html","dist","src","build.mjs","serve.mjs","README.md","LICENSE"]
+}
