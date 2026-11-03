@@ -1,0 +1,58 @@
+name: Build Desktop Release (.exe)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build and Package Windows Desktop Executables
+        run: npm run app:build
+
+      - name: Create GitHub Release and Upload .exe Files
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ github.event.inputs.release_version || github.ref_name }}
+          name: Super Star Hopper ${{ github.event.inputs.release_version || github.ref_name }}
+          body: |
+            ## 🎮 Super Star Hopper 3D Desktop Game
+
+            ### 📥 Download Options:
+            - **Setup Installer (`.exe`)**: Installs Super Star Hopper on your PC and adds a desktop shortcut.
+            - **Portable Version (`.exe`)**: Standalone single-file executable that runs immediately without installation.
+
+            ### ✨ Key Features:
+            - 🏃 3D Platformer with coyote time, double jump front-flips, and ground pounds.
+            - 🏝️ 5 Handcrafted floating sky islands with moving platforms and bounce mushrooms.
+            - 👾 Stompable slime enemies with Goomba-style squash physics.
+            - 🪙 30+ Magnetic gold coins and 3 Grand Power Stars.
+            - 🎵 100% Procedural 16-bit sound synthesizer & BGM engine (Zero external audio files).
+            - 🖥️ One-key fullscreen toggle (<kbd>F11</kbd>).
+          files: |
+            release/*.exe
+            release/*.exe.blockmap
