@@ -1,0 +1,42 @@
+name: Version Management
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+    
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Extract version from project
+      id: version
+      run: |
+        version=$(grep -oP '<Version>\K[^<]+' MCGame.csproj)
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "Current version: $version"
+        
+    - name: Check if version bump needed
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        echo "Checking if version should be bumped..."
+        # This is where you would add logic to automatically bump version
+        # For now, just display current version
+        echo "Current version: ${{ steps.version.outputs.version }}"
+        
+    - name: Create tag if version changed
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        # Check if we should create a new tag
+        # This would typically be done by analyzing commits or manually
+        echo "Tag creation would happen here if version changed"

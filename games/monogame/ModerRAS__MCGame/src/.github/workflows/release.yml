@@ -1,0 +1,157 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 2.1.0)'
+        required: true
+        default: '2.1.0'
+      release_title:
+        description: 'Release title'
+        required: true
+        default: '图形设备问题解决方案 v2.1.0'
+      prerelease:
+        description: 'Is this a prerelease?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build Windows version
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/windows
+      
+    - name: Build Linux version
+      run: dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/linux
+      
+    - name: Create Windows zip
+      run: Compress-Archive -Path ./publish/windows/* -DestinationPath ./MCGame-Windows-x64.zip
+      
+    - name: Create Linux tar.gz
+      run: tar -czf ./MCGame-Linux-x64.tar.gz -C ./publish/linux .
+      
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        $tag = "${{ github.ref_name }}"
+        if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          $tag = "v${{ github.event.inputs.version }}"
+        }
+        
+        echo "TAG_NAME=$tag" >> $env:GITHUB_OUTPUT
+        
+        $notes = @"
+        # MCGame Release $tag
+        
+        ## 🎉 主要特性
+        
+        ### 图形设备问题解决
+        - ✅ 实现多种启动模式（正常/软件渲染/无头模式）
+        - ✅ 自动环境变量配置
+        - ✅ 智能降级机制
+        - ✅ 详细的故障排除日志
+        
+        ### 新增功能
+        - 🚀 **无头模式**: 支持在无图形设备环境下运行
+        - 🔧 **软件渲染**: 强制使用软件渲染解决兼容性问题
+        - 📊 **环境检测**: 自动检测硬件加速支持
+        - 🛠️ **启动脚本**: 便捷的启动模式选择器
+        
+        ### 命令行参数支持
+        - `--headless` 或 `-h`: 无头模式
+        - `--software` 或 `-s`: 强制软件渲染
+        
+        ## 🎮 使用方法
+        
+        ### 推荐方式
+        ```bash
+        启动MCGame.bat
+        ```
+        
+        ### 直接运行
+        ```bash
+        MCGame.exe              # 正常模式
+        MCGame.exe --software   # 软件渲染
+        MCGame.exe --headless   # 无头模式
+        ```
+        
+        ## 🔧 修复的问题
+        - 修复 `NoSuitableGraphicsDeviceException` 错误
+        - 支持在各种图形环境下启动
+        - 自动降级到兼容模式
+        - 完善的错误日志记录
+        
+        ## 📊 兼容性
+        - Windows 10/11 (x64)
+        - Linux (x64)
+        - 虚拟机环境
+        - 无图形设备环境
+        
+        ## 📦 包含文件
+        - MCGame.exe (Windows单文件可执行程序)
+        - 启动MCGame.bat (便捷启动脚本)
+        - 完整的源代码和文档
+        
+        ## 🎮 基础控制
+        - WASD: Move
+        - Mouse: Look around
+        - Space: Jump
+        - Shift: Sprint
+        - F: Toggle fly mode
+        - F3: Toggle debug info
+        - F11: Toggle fullscreen
+        - +/-: Adjust render distance
+        - R: Regenerate world
+        
+        ## 📝 详细信息
+        - 查看 [GRAPHICS_ISSUE_DIAGNOSIS.md](https://github.com/ModerRAS/MCGame/blob/master/GRAPHICS_ISSUE_DIAGNOSIS.md) 了解技术细节
+        - 查看 [README_GRAPHICS_SOLUTION.md](https://github.com/ModerRAS/MCGame/blob/master/README_GRAPHICS_SOLUTION.md) 获取使用指南
+        
+        ---
+        
+        **提示**: 如果遇到启动问题，请尝试使用启动脚本选择不同的启动模式，或查看日志文件获取详细信息。
+        
+        ## 🏗️ 技术架构
+        - Built with MonoGame 3.8.1.303
+        - .NET 9.0 Runtime
+        - Custom Graphics Device Manager
+        - Environment Configuration System
+        - Headless Mode Support
+        - Advanced Logging System
+        "@
+        
+        $notes | Out-File -FilePath ./RELEASE_NOTES.md -Encoding UTF8
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.release_notes.outputs.TAG_NAME }}
+        name: ${{ github.event.inputs.release_title || format('Release {0}', steps.release_notes.outputs.TAG_NAME) }}
+        body_path: ./RELEASE_NOTES.md
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease || false }}
+        files: |
+          ./MCGame-Windows-x64.zip
+          ./MCGame-Linux-x64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

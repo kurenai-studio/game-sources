@@ -1,0 +1,59 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+    
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build Debug
+      run: dotnet build -c Debug
+      
+    - name: Build Release
+      run: dotnet build -c Release
+      
+    - name: Run tests (if any)
+      run: |
+        if [ -f "tests/MCGame.Tests.csproj" ]; then
+          dotnet test tests/MCGame.Tests.csproj -c Release --verbosity normal
+        else
+          echo "No test project found, skipping tests"
+        fi
+      shell: bash
+      
+    - name: Test publish (Windows)
+      if: matrix.os == 'windows-latest'
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./test-publish/windows
+      
+    - name: Test publish (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ./test-publish/linux
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.os }}
+        path: |
+          ./bin/Release/
+          ./test-publish/
+        retention-days: 7
