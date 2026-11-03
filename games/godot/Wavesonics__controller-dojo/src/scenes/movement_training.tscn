@@ -1,0 +1,130 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/movement_training.gd" id="1_movement"]
+[ext_resource type="Script" path="res://scripts/movement_field.gd" id="2_field"]
+[ext_resource type="Script" path="res://scripts/mini_stick_indicator.gd" id="3_mini"]
+[ext_resource type="Script" path="res://scripts/score_stars.gd" id="4_stars"]
+
+[node name="MovementTraining" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_movement")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0705882, 0.0862745, 0.156863, 1)
+
+[node name="FieldMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 96
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 76
+
+[node name="Field" type="Control" parent="FieldMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("2_field")
+
+[node name="Overlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MiniStick" type="Control" parent="Overlay"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 124.0
+offset_bottom = 124.0
+script = ExtResource("3_mini")
+
+[node name="StarRow" type="CenterContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 12.0
+offset_bottom = 76.0
+
+[node name="ScoreStars" type="Control" parent="Overlay/StarRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(264, 48)
+layout_mode = 2
+script = ExtResource("4_stars")
+
+[node name="Cheer" type="Label" parent="Overlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.784314, 0.278431, 1)
+theme_override_font_sizes/font_size = 84
+text = "AMAZING!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackRow" type="CenterContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+offset_top = -64.0
+offset_bottom = -12.0
+
+[node name="BackButton" type="Button" parent="Overlay/BackRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+mouse_filter = 0
+text = "Back"
+
+[node name="Hint" type="Label" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -40.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.443137, 0.486275, 0.6, 1)
+theme_override_font_sizes/font_size = 18
+text = "Select or Start, then A to go back"
+horizontal_alignment = 2
+
+[connection signal="pressed" from="Overlay/BackRow/BackButton" to="." method="_on_back_pressed"]

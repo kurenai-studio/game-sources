@@ -1,0 +1,144 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/controller_test.gd" id="1_test"]
+[ext_resource type="Script" path="res://scripts/stick_display.gd" id="2_stick"]
+
+[node name="ControllerTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_test")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0862745, 0.0980392, 0.129412, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Controller Test"
+horizontal_alignment = 1
+
+[node name="DeviceLabel" type="Label" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65098, 0.694118, 0.768627, 1)
+text = "No controller connected"
+horizontal_alignment = 1
+
+[node name="Sticks" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 64
+alignment = 1
+
+[node name="LeftColumn" type="VBoxContainer" parent="Margin/Layout/Sticks"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="LeftTitle" type="Label" parent="Margin/Layout/Sticks/LeftColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Left Stick"
+horizontal_alignment = 1
+
+[node name="LeftStick" type="Control" parent="Margin/Layout/Sticks/LeftColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(228, 228)
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_stick")
+axis_x = 0
+axis_y = 1
+
+[node name="LeftValue" type="Label" parent="Margin/Layout/Sticks/LeftColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.360784, 0.717647, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "x +0.00    y +0.00"
+horizontal_alignment = 1
+
+[node name="RightColumn" type="VBoxContainer" parent="Margin/Layout/Sticks"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="RightTitle" type="Label" parent="Margin/Layout/Sticks/RightColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Right Stick"
+horizontal_alignment = 1
+
+[node name="RightStick" type="Control" parent="Margin/Layout/Sticks/RightColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(228, 228)
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_stick")
+axis_x = 2
+axis_y = 3
+
+[node name="RightValue" type="Label" parent="Margin/Layout/Sticks/RightColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.360784, 0.717647, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "x +0.00    y +0.00"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="Margin/Layout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(220, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back to Menu"
+
+[node name="Hint" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -40.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.443137, 0.486275, 0.6, 1)
+theme_override_font_sizes/font_size = 18
+text = "Select or Start, then A to go back"
+horizontal_alignment = 2
+
+[connection signal="pressed" from="Margin/Layout/BackButton" to="." method="_on_back_pressed"]
