@@ -1,0 +1,79 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+    <!-- PublishTrimmed have to be false. Because GH Actions thrws error about optimization until trimming is true. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;Balance</Configurations>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>LAST</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Balance'">
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;SHOW_NUMS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Content\bin\**" />
+    <Compile Remove="Content\obj\**" />
+    <EmbeddedResource Remove="Content\bin\**" />
+    <EmbeddedResource Remove="Content\obj\**" />
+    <None Remove="Content\bin\**" />
+    <None Remove="Content\obj\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icon.ico" />
+    <EmbeddedResource Include="Icon.bmp" />
+  </ItemGroup>
+  <Target Name="RestoreDotnetTools" BeforeTargets="Restore">
+	<Message Text="Restoring dotnet tools" Importance="High" />
+	<Exec Command="dotnet tool restore" />
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
+    <PackageReference Condition="'$(SONAR_TOKEN)' == ''" Include="Nopipeline.Task" Version="2.2.0" />
+    <PackageReference Condition="'$(SONAR_TOKEN)' == ''" Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Zilon.Bot.Players.NetCore\Zilon.Bot.Players.NetCore.csproj" />
+    <ProjectReference Include="..\Zilon.Bot.Players\Zilon.Bot.Players.csproj" />
+    <ProjectReference Include="..\Zilon.Bot.Sdk\Zilon.Bot.Sdk.csproj" />
+    <ProjectReference Include="..\Zilon.Core\Zilon.Core.csproj" />
+    <ProjectReference Include="..\Zilon.DependencyInjection\Zilon.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Zilon.Emulation.Common\Zilon.Emulation.Common.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Resources\UiResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UiResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\UiResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>UiResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="version.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="CopySchemeCatalogToClientBin" BeforeTargets="PrepareForBuild">
+    <ItemGroup>
+      <SchemeCatalogFiles Include="$(ProjectDir)../../Zilon.Client/Assets/Resources/Schemes/**/*.json" />
+    </ItemGroup>
+    <Message Text="Copy the Scheme Catalog from $(SchemeCatalogFiles) to $(TargetDir)." />
+    <RemoveDir Directories="$(TargetDir)/Content/Schemes" />
+    <Copy SourceFiles="@(SchemeCatalogFiles)" DestinationFiles="@(SchemeCatalogFiles->'$(TargetDir)/Content/Schemes/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

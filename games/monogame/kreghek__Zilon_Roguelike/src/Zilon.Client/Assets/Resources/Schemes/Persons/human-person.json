@@ -1,0 +1,147 @@
+{
+  "Name": {
+    "Ru": "Персонаж игрока"
+  },
+  "Hp": 60,
+  "DefaultActs": [
+    "punch",
+    "uppercut",
+    "death-punch"
+  ],
+  "Slots": [
+    {
+      "Types": "Head",
+      "Name": {
+        "En": "Head",
+        "Ru": "Голова"
+      }
+    },
+    {
+      "Types": "Body"
+    },
+    {
+      "Types": "Hand",
+      "IsMain": true,
+      "Name": {
+        "En": "Main hand",
+        "Ru": "Основая рука"
+      }
+    },
+    {
+      "Types": "Hand",
+      "Name": {
+        "En": "Off hand",
+        "Ru": "Доп. рука"
+      }
+    },
+    {
+      "Types": "Aux"
+    },
+    {
+      "Types": "Aux"
+    },
+    {
+      "Types": "Aux"
+    }
+  ],
+  "SurvivalStats": [
+    {
+      "Type": "Satiety",
+      "MinValue": -600,
+      "MaxValue": 100,
+      "StartValue": 50,
+      "KeyPoints": [
+        {
+          "Level": "Max",
+          "Start": 0,
+          "End": 0.01
+        },
+        {
+          "Level": "Strong",
+          "Start": 0.1,
+          "End": 0.75
+        },
+        {
+          "Level": "Lesser",
+          "Start": 0.75,
+          "End": 0.86
+        }
+      ]
+    },
+    {
+      "Type": "Hydration",
+      "MinValue": -600,
+      "MaxValue": 60,
+      "StartValue": 20,
+      "KeyPoints": [
+        {
+          "Level": "Max",
+          "Start": 0,
+          "End": 0.01
+        },
+        {
+          "Level": "Strong",
+          "Start": 0.01,
+          "End": 0.75
+        },
+        {
+          "Level": "Lesser",
+          "Start": 0.75,
+          "End": 0.86
+        }
+      ]
+    },
+    {
+      "Type": "Intoxication",
+      "MinValue": 0,
+      "MaxValue": 130,
+      "StartValue": 0,
+      "KeyPoints": [
+        {
+          "Level": "Lesser",
+          "Start": 0.23,
+          "End": 0.46
+        },
+        {
+          "Level": "Strong",
+          "Start": 0.46,
+          "End": 0.85
+        },
+        {
+          "Level": "Max",
+          "Start": 0.85,
+          "End": 1
+        }
+      ]
+    },
+    {
+      "Type": "Wound",
+      "MinValue": 0,
+      "MaxValue": 50,
+      "StartValue": 0
+    },
+    {
+      "Type": "Energy",
+      "MinValue": -1,
+      "MaxValue": 99,
+      "StartValue": 99,
+      "KeyPoints": [
+        {
+          "Level": "Max",
+          "Start": 0,
+          "End": 0.01
+        },
+        {
+          "Level": "Strong",
+          "Start": 0.01,
+          "End": 0.75
+        },
+        {
+          "Level": "Lesser",
+          "Start": 0.75,
+          "End": 0.86
+        }
+      ]
+    }
+  ]
+}

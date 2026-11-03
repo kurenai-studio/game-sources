@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="Tactics\StaticObjectModules\**" />
+      <EmbeddedResource Remove="Tactics\StaticObjectModules\**" />
+      <None Remove="Tactics\StaticObjectModules\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="World\NameGeneration\names.json" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="World\NameGeneration\names.json" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="JsonSubTypes">
+            <Version>2.0.1</Version>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Newtonsoft.Json">
+            <Version>13.0.2</Version>
+        </PackageReference>
+        <PackageReference Include="System.Drawing.Common">
+            <Version>6.0.0</Version>
+        </PackageReference>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,38 @@
+﻿using Zilon.Core.Graphs;
+
+namespace Zilon.Core.Tactics.Spatial
+{
+    /// <summary>
+    /// Регион карты - это тематическое объединение узлов карты.
+    /// </summary>
+    /// <remarks>
+    /// Обычно используется для обозначения комнат или других замкнутых пространств
+    /// внутри карты для внутренних нужд:
+    /// 1. Для распределения лута.
+    /// 2. Для распределения монстров.
+    /// 3. Для ориентации монстров внутри карты. Например, для патрулирования комнат.
+    /// </remarks>
+    public class MapRegion
+    {
+        public MapRegion(int id, IGraphNode[] nodes)
+        {
+            Id = id;
+            Nodes = nodes;
+        }
+
+        public IGraphNode[]? ExitNodes { get; set; }
+
+        public int Id { get; }
+
+        public bool IsOut { get; set; }
+
+        public bool IsStart { get; set; }
+
+        public IGraphNode[] Nodes { get; }
+
+        public override string ToString()
+        {
+            return $"{Id}, Nodes: {Nodes.Length}";
+        }
+    }
+}
