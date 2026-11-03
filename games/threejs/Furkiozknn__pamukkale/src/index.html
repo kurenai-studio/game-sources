@@ -1,0 +1,1861 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pamukkale</title>
+<meta name="description" content="A 3D water-flow puzzle on the white travertine terraces of Pamukkale, redesigned in pastel travertine and turquoise water: guide the spring into the pools with stones, dams and splitters across 20 levels. Plays in the browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pamukkale · Travertine Water Puzzle">
+<meta property="og:description" content="A 3D water-flow puzzle on the white travertine terraces of Pamukkale, redesigned in pastel travertine and turquoise water: guide the spring into the pools with stones, dams and splitters across 20 levels. Plays in the browser.">
+<meta property="og:url" content="https://furkiozknn.github.io/pamukkale/">
+<meta property="og:image" content="https://furkiozknn.github.io/pamukkale/docs/card.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<style>
+:root{
+  /* palette: travertine #F5F3EE, turquoise #2EC4C9, sunset peach #FFC9A9, ruin stone #CDB89A, sky #BFE6FF */
+  /* --ink-soft darkened to #3E5C63 (>6.3:1 on cream/glass) so subtitle, result and footer text pass WCAG AA 4.5:1 */
+  --ink:#1D3F49; --ink-soft:#3E5C63; --paper:#FFFFFF; --cream:#F5F3EE;
+  --accent:#2EC4C9; --accent-deep:#0F8B91; --gold:#E9A53C; --danger:#D9644F;
+  --glass:rgba(255,255,255,.94); --glass-line:rgba(29,63,73,.1); --overlay-bg:rgba(245,243,238,.5);
+  --shadow:0 10px 28px rgba(29,63,73,.12); --focus:#0F8B91;
+  --sky-top:#BFE6FF; --sky-bottom:#FFE3D0; --star-off:rgba(23,59,68,.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    /* --ink-soft lightened to #B8D4D7 (>7.8:1 on dark paper/glass) and dark overlay backdrop for WCAG AA 4.5:1 */
+    --ink:#EAF6F6; --ink-soft:#B8D4D7; --paper:#132D35; --cream:#1A3840;
+    --glass:rgba(19,45,53,.92); --glass-line:rgba(234,246,246,.14); --overlay-bg:rgba(19,45,53,.6);
+    --shadow:0 10px 28px rgba(0,0,0,.45); --sky-top:#23485A; --sky-bottom:#5A4A4F; --star-off:#B8D4D7;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#EAF6F6; --ink-soft:#B8D4D7; --paper:#132D35; --cream:#1A3840;
+  --glass:rgba(19,45,53,.92); --glass-line:rgba(234,246,246,.14); --overlay-bg:rgba(19,45,53,.6);
+  --shadow:0 10px 28px rgba(0,0,0,.45); --sky-top:#23485A; --sky-bottom:#5A4A4F; --star-off:#B8D4D7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--cream);color:var(--ink);font-family:Nunito,system-ui,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}
+#stage{position:fixed;inset:0;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-bottom) 70%)}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;min-height:44px;min-width:44px}
+button:focus{outline:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:24px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.hidden{display:none !important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 20px;border-radius:999px;border:1px solid var(--glass-line);background:#FFFFFF;color:var(--ink);font-weight:800;font-size:16px;transition:transform .12s,background .12s}
+:root[data-theme="dark"] .btn:not(.primary):not(.run){background:rgba(255,255,255,.08)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.primary):not(.run){background:rgba(255,255,255,.08)}}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--accent);border-color:var(--accent-deep);color:#073A3D;box-shadow:0 6px 18px rgba(46,196,201,.38)}
+.btn.small{min-height:44px;padding:0 12px;font-size:14px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--ink)}
+.icon-btn:hover{background:rgba(23,59,68,.08)}
+.icon-btn.on{background:rgba(46,196,201,.22);border-color:rgba(18,134,140,.35)}
+.ico{width:22px;height:22px;fill:currentColor;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.f{stroke:none}
+.ico.s{fill:none}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--overlay-bg);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:20}
+.card{width:min(460px,100%);max-height:100%;overflow:auto;padding:28px 26px;text-align:center}
+.wide{width:min(820px,100%)}
+h1,h2{font-family:Nunito,system-ui,sans-serif;margin:0;letter-spacing:-.2px}
+h1{font-size:clamp(40px,8vw,60px);font-weight:700;line-height:1}
+h2{font-size:30px;font-weight:700}
+.sub{color:var(--ink-soft);font-size:16px;line-height:1.5;margin:8px 0 0}
+.stack{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.logo{width:92px;height:92px;margin:0 auto 4px;display:block}
+.best{margin-top:14px;font-size:14px;color:var(--ink-soft)}
+/* opaque pill backing so footer/credits text keeps >7:1 contrast over the 3D stage in light and dark schemes */
+.footer{position:fixed;left:0;right:0;bottom:8px;width:max-content;max-width:calc(100% - 16px);margin:0 auto;padding:4px 14px;border-radius:999px;background:var(--paper);border:1px solid var(--glass-line);box-shadow:var(--shadow);text-align:center;font-size:13px;color:var(--ink-soft);z-index:5;pointer-events:auto}
+.footer a{color:inherit;font-weight:800}
+.footer a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.lang-seg,.quality-seg{display:flex;gap:6px;justify-content:center}
+.lang-seg button,.quality-seg button{min-width:72px;background:rgba(255,255,255,.55);border:1px solid var(--glass-line);border-radius:12px;padding:0 12px;font-weight:800;color:var(--ink)}
+.lang-seg button[aria-pressed="true"],.quality-seg button[aria-pressed="true"]{background:var(--accent);color:#073A3D;border-color:var(--accent-deep)}
+.set-row{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;text-align:left;padding:10px 0;border-bottom:1px solid var(--glass-line)}
+.set-row:last-child{border-bottom:0}
+.set-row label,.set-row .lbl{font-weight:800}
+.set-row input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent);min-height:44px}
+.val{color:var(--ink-soft);font-size:14px;min-width:42px;text-align:right}
+.toggle{min-width:96px;border-radius:12px;background:rgba(255,255,255,.55);border:1px solid var(--glass-line);font-weight:800;color:var(--ink);padding:0 12px}
+.toggle[aria-pressed="true"]{background:var(--accent);color:#073A3D}
+/* HUD */
+#hud{position:fixed;left:10px;right:10px;top:10px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 10px 0 12px;z-index:10;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* the HUD is three floating white pills, not one glass bar */
+.brand,.stats,.actions{background:var(--paper);border:1px solid var(--glass-line);border-radius:999px;box-shadow:var(--shadow);height:48px}
+.brand{padding:0 14px 0 8px}
+.stats{padding:0 16px}
+.actions{padding:0 4px;gap:0}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand .logo-sm{width:30px;height:30px;flex:none}
+.brand b{font-family:Nunito,system-ui,sans-serif;font-size:20px;font-weight:800;white-space:nowrap}
+.stats{display:flex;align-items:center;gap:14px;font-size:14px;font-weight:800;white-space:nowrap;min-width:0;overflow:hidden}
+.stats span small{display:block;font-size:11px;font-weight:700;color:var(--ink-soft);letter-spacing:.3px;text-transform:uppercase}
+.stars{display:inline-flex;gap:2px}
+.stars svg{width:18px;height:18px;fill:var(--star-off)}
+.stars svg.on{fill:var(--gold)}
+.actions{display:flex;align-items:center;gap:2px;flex:none}
+#tray{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:8px;align-items:center;padding:8px;z-index:10;max-width:calc(100% - 20px);border-radius:24px}
+.tool{position:relative;min-width:64px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:12px;border:1px solid var(--glass-line);background:rgba(255,255,255,.6);color:var(--ink);font-size:12px;font-weight:800;padding:0 6px}
+:root:not([data-theme="light"]) .tool,:root[data-theme="dark"] .tool{background:rgba(255,255,255,.06)}
+.tool.sel{background:var(--accent);border-color:var(--accent-deep);color:#073A3D}
+/* the dark theme's translucent .tool rule outranks .tool.sel, so the selected chip needs its own dark-mode rule */
+:root:not([data-theme="light"]) .tool.sel,:root[data-theme="dark"] .tool.sel{background:#0A6C71;border-color:var(--accent);color:#EAF6F6}
+:root:not([data-theme="light"]) .tool.sel .n,:root[data-theme="dark"] .tool.sel .n{color:#EAF6F6}
+.tool .n{position:absolute;top:3px;left:6px;font-size:10px;color:var(--ink-soft)}
+.tool .c{position:absolute;top:3px;right:5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--ink);color:var(--paper);font-size:11px;line-height:18px;text-align:center}
+.tool:disabled .c{background:var(--danger)}
+.sep{width:1px;height:34px;background:var(--glass-line);margin:0 4px}
+.act{min-width:60px;height:52px;flex-direction:column;gap:0;white-space:nowrap;padding:0 10px;font-size:14px}
+.act.run{min-width:92px;background:var(--accent);border-color:var(--accent-deep);color:#073A3D}
+.act small{font-size:10px;font-weight:800}
+#toasts{position:fixed;top:78px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:12;pointer-events:none;width:min(420px,calc(100% - 24px))}
+.toast{padding:9px 16px;border-radius:999px;font-weight:800;font-size:14px;background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:tin .2s ease-out}
+.toast.good{border-color:var(--accent-deep)}
+.toast.bad{border-color:var(--danger)}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* area map */
+.areas{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;text-align:left}
+.area{border-radius:20px;border:1px solid var(--glass-line);padding:14px;background:#FFFFFF}
+:root:not([data-theme="light"]) .area,:root[data-theme="dark"] .area{background:rgba(255,255,255,.05)}
+.area h3{margin:0 0 8px;font-size:16px;font-weight:800}
+.area .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.lvl{min-height:52px;border-radius:999px;border:1px solid var(--glass-line);background:rgba(255,255,255,.7);color:var(--ink);font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px}
+:root:not([data-theme="light"]) .lvl,:root[data-theme="dark"] .lvl{background:rgba(255,255,255,.08)}
+.lvl small{font-size:11px;color:var(--ink-soft);letter-spacing:1px}
+.lvl:disabled{opacity:.4}
+.lvl.cur{border-color:var(--accent-deep);box-shadow:inset 0 0 0 2px var(--accent)}
+.lvl:not(:disabled):hover{background:#E9FAFA}
+.stat-list{list-style:none;margin:16px 0 0;padding:0;text-align:left}
+.stat-list li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--glass-line);font-weight:700}
+.stat-list li span:last-child{font-weight:800}
+.check{display:inline-block;width:18px;height:18px;border-radius:5px;border:2px solid var(--ink-soft);vertical-align:-4px;margin-right:6px}
+.check.on{background:var(--accent);border-color:var(--accent-deep)}
+.ending{padding:16px 14px;border-radius:20px;background:linear-gradient(180deg,#FFE3D0,#FFC9A9 60%,#FFA98C);color:#2A1721;margin-bottom:14px}
+.ending h2{color:#2A1721}
+#debug{position:fixed;left:8px;top:74px;z-index:30;font:12px/1.5 Consolas,monospace;background:rgba(0,0,0,.7);color:#D7FFFA;padding:8px 10px;border-radius:8px;max-width:min(520px,calc(100% - 16px));white-space:pre-wrap;pointer-events:none}
+#debug.err{color:#FFB3A6}
+#loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-weight:800;color:var(--ink-soft);z-index:19}
+@media (max-width:760px){
+  .brand b{display:none}
+  .stats .hide-s{display:none}
+  .areas{grid-template-columns:1fr}
+  .tool{min-width:56px}
+  .act{min-width:50px}
+  .act.run{min-width:78px}
+}
+@media (max-width:520px){
+  #tray{bottom:8px;gap:5px;padding:6px}
+  .tool{min-width:50px;height:50px}
+  .act span.lbl{display:none}
+  .lvl-name{display:none}
+  .stats span small{display:none}
+  .stats{gap:8px;font-size:13px}
+  #hud{left:8px;right:8px;top:8px}
+  .card{padding:18px}
+  h1{font-size:44px}
+}
+/* narrow phones: the tool bar wraps to two rows so Fast forward, Undo and Reset all stay on screen */
+@media (max-width:480px){
+  #tray{width:calc(100% - 16px);flex-wrap:wrap;justify-content:center;row-gap:5px}
+  .sep{display:none}
+  .act span.lbl{display:inline}
+}
+/* short landscape phones: keep the board visible above the tray, and the title card's buttons on screen */
+@media (max-height:500px) and (orientation:landscape){
+  #tray{bottom:4px;padding:4px}
+  .tool{height:44px;min-width:50px}
+  .act{height:44px}
+  .overlay{padding:8px}
+  .card{padding:12px 18px}
+  .logo{width:44px;height:44px;margin-bottom:0}
+  h1{font-size:30px}
+  #ov-title .sub:first-of-type{display:none}
+  #ov-title .stack{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  #ov-title .btn{min-height:40px}
+  #ov-title .best{margin-top:4px}
+  #ov-title .row{margin-top:6px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script data-goatcounter="https://furkiozknn.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<div id="stage"><canvas id="c" aria-label="Pamukkale board"></canvas></div>
+<div id="loading" data-i18n="loading">Yükleniyor…</div>
+
+<header id="hud" class="glass hidden">
+  <div class="brand">
+    <svg class="logo-sm" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c0 0-8 9-8 15a8 8 0 0 0 16 0c0-6-8-15-8-15z" fill="#2EC4C9"/><path d="M4 26c3-2 5-2 8 0s5 2 8 0 5-2 8 0" stroke="#173B44" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    <b>Pamukkale</b>
+  </div>
+  <div class="stats">
+    <span id="hud-level"></span>
+    <span><small data-i18n="pools">Havuz</small><b id="hud-pools">0/0</b></span>
+    <span class="hide-s"><small data-i18n="water">Su</small><b id="hud-water">0.0</b></span>
+    <span class="stars" id="hud-stars" aria-label="stars"></span>
+  </div>
+  <div class="actions">
+    <button class="icon-btn" id="btn-pause" aria-label="Pause" title="P"></button>
+    <button class="icon-btn" id="btn-sound" aria-label="Sound" title="M / X"></button>
+    <button class="icon-btn" id="btn-lang" aria-label="Language" title="L" style="font-weight:800;font-size:13px">TR</button>
+  </div>
+</header>
+
+<div id="toasts" aria-live="polite"></div>
+
+<nav id="tray" class="glass hidden" aria-label="Tools">
+  <button class="tool" data-tool="stone" id="tool-stone"><span class="n">1</span><span class="c" id="cnt-stone">0</span><span data-i18n="toolStone">Taş</span></button>
+  <button class="tool" data-tool="dam" id="tool-dam"><span class="n">2</span><span class="c" id="cnt-dam">0</span><span data-i18n="toolDam">Set</span></button>
+  <button class="tool" data-tool="split" id="tool-split"><span class="n">3</span><span class="c" id="cnt-split">0</span><span data-i18n="toolSplit">Ayırıcı</span></button>
+  <span class="sep"></span>
+  <button class="btn act run" id="btn-run"><span id="run-label" data-i18n="start">Suyu başlat</span></button>
+  <button class="btn act" id="btn-fast" aria-pressed="false"><svg class="ico f" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l8 6-8 6zM12 6l8 6-8 6z"/></svg><span data-i18n="fast" class="lbl">Hızlı ileri</span></button>
+  <button class="btn act" id="btn-undo"><span data-i18n="undo">Geri al</span></button>
+  <button class="btn act" id="btn-reset"><span data-i18n="reset">Sıfırla</span></button>
+</nav>
+
+<section id="ov-title" class="overlay">
+  <div class="card glass">
+    <svg class="logo" viewBox="0 0 96 96" aria-hidden="true">
+      <circle cx="48" cy="48" r="44" fill="#FBF7EE" stroke="#2EC4C9" stroke-width="3"/>
+      <path d="M48 14c0 0-18 20-18 34a18 18 0 0 0 36 0c0-14-18-34-18-34z" fill="#2EC4C9"/>
+      <path d="M18 66c8-6 14-6 22 0s14 6 22 0 10-6 16 0" stroke="#173B44" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M26 56c6-3 10-3 16 0M54 50c6-3 10-3 16 0" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+    <h1>Pamukkale</h1>
+    <p class="sub" data-i18n="subtitle">Travertenlerde su akışı bulmacası</p>
+    <p class="sub" style="margin-top:12px" data-i18n="howto">Kaynaktan akan suyu taş, set ve ayırıcılarla havuzlara yönlendir.</p>
+    <div class="stack">
+      <button class="btn primary" id="btn-play" data-i18n="play">Oyna</button>
+      <button class="btn" id="btn-continue" data-i18n="continue">Devam et</button>
+      <button class="btn" id="btn-areas" data-i18n="areas">Seviyeler</button>
+      <button class="btn" id="btn-settings-title" data-i18n="settings">Ayarlar</button>
+    </div>
+    <div class="best" id="best-line"></div>
+    <div class="row"><button class="btn small" id="btn-lang-title">TR / EN</button></div>
+  </div>
+  <div class="footer"><a href="https://furkiozknn.github.io/" target="_blank" rel="noopener">Claude Game Arena</a> · built by Claude Haiku 5.5</div>
+</section>
+
+<section id="ov-areas" class="overlay hidden">
+  <div class="card glass wide">
+    <h2 data-i18n="areas">Seviyeler</h2>
+    <div class="areas" id="areas-grid"></div>
+    <div class="row"><button class="btn" id="btn-areas-back" data-i18n="back">Geri</button></div>
+  </div>
+</section>
+
+<section id="ov-settings" class="overlay hidden">
+  <div class="card glass">
+    <h2 data-i18n="settings">Ayarlar</h2>
+    <div style="margin-top:12px">
+      <div class="set-row"><label for="set-master" data-i18n="master">Ana ses</label><span class="val" id="v-master"></span>
+        <input type="range" id="set-master" min="0" max="1" step="0.05"></div>
+      <div class="set-row"><label for="set-music" data-i18n="music">Müzik</label><span class="val" id="v-music"></span>
+        <input type="range" id="set-music" min="0" max="1" step="0.05"></div>
+      <div class="set-row"><label for="set-sfx" data-i18n="sfx">Efektler</label><span class="val" id="v-sfx"></span>
+        <input type="range" id="set-sfx" min="0" max="1" step="0.05"></div>
+      <div class="set-row"><span class="lbl" data-i18n="language">Dil</span>
+        <div class="lang-seg" style="grid-column:2"><button id="seg-tr" aria-pressed="false">TR</button><button id="seg-en" aria-pressed="false">EN</button></div></div>
+      <div class="set-row"><span class="lbl" data-i18n="quality">Kalite</span>
+        <div class="quality-seg" style="grid-column:2"><button id="q-low" aria-pressed="false" data-i18n="low">Düşük</button><button id="q-high" aria-pressed="false" data-i18n="high">Yüksek</button></div></div>
+      <div class="set-row"><span class="lbl" data-i18n="fullscreen">Tam ekran</span>
+        <button class="toggle" id="btn-full" aria-pressed="false">—</button></div>
+    </div>
+    <div class="row"><button class="btn" id="btn-settings-back" data-i18n="back">Geri</button></div>
+  </div>
+</section>
+
+<section id="ov-pause" class="overlay hidden">
+  <div class="card glass">
+    <h2 data-i18n="pause">Duraklat</h2>
+    <div class="stack">
+      <button class="btn primary" id="btn-resume" data-i18n="resume">Devam</button>
+      <button class="btn" id="btn-restart" data-i18n="restart">Baştan</button>
+      <button class="btn" id="btn-pause-settings" data-i18n="settings">Ayarlar</button>
+      <button class="btn" id="btn-main" data-i18n="mainMenu">Ana menü</button>
+    </div>
+  </div>
+</section>
+
+<section id="ov-result" class="overlay hidden">
+  <div class="card glass">
+    <h2 id="res-title"></h2>
+    <p class="sub" id="res-sub"></p>
+    <div class="stars" id="res-stars" style="justify-content:center;margin:14px 0 0"></div>
+    <ul class="stat-list" id="res-list"></ul>
+    <div class="stack">
+      <button class="btn primary" id="btn-next"></button>
+      <button class="btn" id="btn-retry" data-i18n="retry">Tekrar dene</button>
+      <div class="row" style="margin-top:0">
+        <button class="btn" id="btn-res-areas" data-i18n="areas">Seviyeler</button>
+        <button class="btn" id="btn-res-main" data-i18n="mainMenu">Ana menü</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ov-end" class="overlay hidden">
+  <div class="card glass">
+    <div class="ending">
+      <h2 data-i18n="endTitle">Gün batımında Pamukkale</h2>
+      <p class="sub" style="color:#2A1721" data-i18n="endText">Yamaçtaki tüm havuzlar doldu.</p>
+    </div>
+    <ul class="stat-list" id="end-list"></ul>
+    <div class="row">
+      <button class="btn primary" id="btn-again" data-i18n="playAgain">Yeniden oyna</button>
+      <button class="btn" id="btn-end-main" data-i18n="mainMenu">Ana menü</button>
+    </div>
+  </div>
+</section>
+
+<div id="debug" class="hidden"></div>
+
+<script>
+/* SIM-BEGIN */
+var PSim = (function () {
+  'use strict';
+  var EPS = 1e-4;     // water below this depth is ignored
+  var MAXF = 0.5;     // most water a cell passes on per tick
+  var STILL = 0.2;    // a pool this deep that stands still...
+  var CAL_T = 16;     // ...for this many ticks builds calcium
+  var RIM_STEP = 0.5; // height gained by one calcium step
+  var RIM_MAX = 2;    // most calcium a single cell can gain
+  var ADD = { stone: 1, dam: 2, split: 0 };
+  var DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  function height(st, i) {
+    return st.h0[i] + (st.tool[i] ? ADD[st.tool[i]] : 0) + st.rim[i];
+  }
+
+  function create(def) {
+    var n = def.n, size = n * n;
+    var st = {
+      n: n, size: size, drain: !!def.drain,
+      h0: new Float64Array(size), rim: new Float64Array(size),
+      tool: new Array(size).fill(null),
+      w: new Float64Array(size), cal: new Int32Array(size),
+      tick: 0, emitted: 0, wasted: 0, rimChanged: false,
+      spring: def.spring[1] * n + def.spring[0], rate: def.rate, time: def.time,
+      pools: def.pools.map(function (p) { return { i: p[1] * n + p[0], m: p[2] }; })
+    };
+    for (var y = 0; y < n; y++) {
+      for (var x = 0; x < n; x++) st.h0[y * n + x] = +def.rows[y].charAt(x);
+    }
+    return st;
+  }
+
+  function step(st) {
+    var n = st.n, size = st.size, w = st.w, wn = Float64Array.from(w);
+    var s = new Float64Array(size), moved = new Uint8Array(size);
+    var i, k, x, y, j, out, cand, best, nx, ny, per, c;
+    for (i = 0; i < size; i++) s[i] = height(st, i) + w[i];
+    wn[st.spring] += st.rate;
+    st.emitted += st.rate;
+
+    function deliver(from, to, amount) {
+      if (amount <= EPS) return;
+      wn[from] -= amount; moved[from] = 1;
+      if (to < 0) st.wasted += amount;
+      else { wn[to] += amount; moved[to] = 1; }
+    }
+
+    for (i = 0; i < size; i++) {
+      if (w[i] <= EPS) continue;
+      x = i % n; y = (i - x) / n;
+      cand = [];
+      for (k = 0; k < 4; k++) {
+        nx = x + DIRS[k][0]; ny = y + DIRS[k][1];
+        if (nx < 0 || nx >= n) continue;
+        if (ny === n) {                        // off the bottom edge
+          if (!st.drain) continue;
+          j = -1;
+          if (-1 < s[i] - 1e-6) cand.push([j, -1]);
+          continue;
+        }
+        if (ny < 0) continue;
+        j = ny * n + nx;
+        if (s[j] < s[i] - 1e-6) cand.push([j, s[j]]);
+      }
+      if (!cand.length) continue;
+      if (st.tool[i] === 'split') {          // splitter: share the flow between every lower neighbour
+        per = Math.min(w[i], MAXF) / cand.length;
+        for (c = 0; c < cand.length; c++) {
+          out = Math.min(per, (s[i] - cand[c][1]) / 2);
+          deliver(i, cand[c][0], out);
+        }
+      } else {                               // ordinary cell: the lowest neighbour takes the flow
+        best = cand[0];
+        for (c = 1; c < cand.length; c++) if (cand[c][1] < best[1]) best = cand[c];
+        out = Math.min(w[i], MAXF, (s[i] - best[1]) / 2);
+        deliver(i, best[0], out);
+      }
+    }
+
+    // still water builds calcium: dry cells beside a standing pool rise to its level
+    st.rimChanged = false;
+    for (i = 0; i < size; i++) {
+      if (w[i] >= STILL && !moved[i]) st.cal[i]++;
+      else st.cal[i] = 0;
+      if (st.cal[i] >= CAL_T) {
+        st.cal[i] = 0;
+        x = i % n; y = (i - x) / n;
+        for (k = 0; k < 4; k++) {
+          nx = x + DIRS[k][0]; ny = y + DIRS[k][1];
+          if (nx < 0 || nx >= n || ny < 0 || ny >= n) continue;
+          j = ny * n + nx;
+          if (wn[j] < 0.05 && height(st, j) <= s[i] + 0.01 && st.rim[j] < RIM_MAX - 1e-9) {
+            st.rim[j] = Math.min(RIM_MAX, st.rim[j] + RIM_STEP);
+            st.rimChanged = true;
+          }
+        }
+      }
+    }
+    st.w = wn;
+    st.tick++;
+    return st;
+  }
+
+  function status(st) {
+    var done = true, fill = 0;
+    for (var p = 0; p < st.pools.length; p++) {
+      var q = st.pools[p], d = st.w[q.i];
+      fill += Math.min(1, d / q.m);
+      if (d < q.m - 1e-6) done = false;
+    }
+    return { done: done, fill: st.pools.length ? fill / st.pools.length : 1 };
+  }
+
+  // runs until every pool is full or the time limit is reached
+  function run(st, ticks) {
+    var limit = ticks === undefined ? st.time : ticks;
+    var s = status(st);
+    while (!s.done && st.tick < limit) {
+      step(st);
+      s = status(st);
+    }
+    return s;
+  }
+
+  function place(st, tool, i) { st.tool[i] = tool; st.rimChanged = true; }
+  function remove(st, i) { st.tool[i] = null; st.rimChanged = true; }
+
+  return { create: create, step: step, run: run, status: status, height: height, place: place, remove: remove,
+    ADD: ADD, RIM_MAX: RIM_MAX, EPS: EPS };
+})();
+/* SIM-END */
+
+/* LEVELS-BEGIN */
+var LEVELS = [
+  { area: 0, n: 7, rows: ['7888888', '7867687', '6776667', '5065445', '5444444', '3333233', '9929999'], spring: [4, 0], rate: 0.4, time: 200, drain: true, pools: [[1, 3, 2]], tools: { stone: 2, dam: 1, split: 1 }, par: 1, sol: [["dam",2,5]] },
+  { area: 0, n: 7, rows: ['8888888', '7777878', '6665606', '5955569', '4543444', '3333323', '3999994'], spring: [2, 0], rate: 0.4, time: 200, drain: true, pools: [[5, 2, 2]], tools: { stone: 2, dam: 1, split: 1 }, par: 1, sol: [["dam",3,3]] },
+  { area: 0, n: 7, rows: ['8888888', '7777778', '5666666', '5559505', '4440345', '2333332', '9999299'], spring: [2, 0], rate: 0.4, time: 220, drain: true, pools: [[5, 3, 1], [3, 4, 2]], tools: { stone: 2, dam: 1, split: 1 }, par: 1, sol: [["split",2,2]] },
+  { area: 0, n: 8, rows: ['88888888', '78777777', '66675566', '95555656', '95565506', '34444444', '33333323', '99992999'], spring: [2, 0], rate: 0.4, time: 220, drain: true, pools: [[6, 4, 1]], tools: { stone: 3, dam: 1, split: 1 }, par: 1, sol: [["dam",4,5]] },
+  { area: 0, n: 8, rows: ['88887888', '78777778', '66665606', '65555555', '55504455', '44344944', '34333333', '29999999'], spring: [2, 0], rate: 0.4, time: 240, drain: true, pools: [[6, 2, 2], [3, 4, 2]], tools: { stone: 3, dam: 1, split: 1 }, par: 1, sol: [["dam",0,6]] },
+  { area: 1, n: 8, rows: ['88888888', '77767777', '50556666', '65595555', '50555655', '34454345', '33333333', '99999942'], spring: [5, 0], rate: 0.4, time: 240, drain: true, pools: [[1, 2, 2], [1, 4, 2]], tools: { stone: 3, dam: 1, split: 1 }, par: 1, sol: [["stone",5,1]] },
+  { area: 1, n: 8, rows: ['88888888', '77777787', '70656666', '56559699', '45966905', '43494554', '33333243', '99999929'], spring: [3, 0], rate: 0.4, time: 240, drain: true, pools: [[1, 2, 1], [6, 4, 2]], tools: { stone: 3, dam: 1, split: 1 }, par: 1, sol: [["dam",6,6]] },
+  { area: 1, n: 8, rows: ['88888887', '77778778', '69666906', '59556555', '55554055', '54443445', '43333323', '92929999'], spring: [2, 0], rate: 0.4, time: 260, drain: true, pools: [[6, 2, 1], [5, 4, 1]], tools: { stone: 3, dam: 1, split: 1 }, par: 2, sol: [["dam",3,6],["stone",2,5]] },
+  { area: 1, n: 9, rows: ['887888888', '677778777', '777779708', '656660696', '549555556', '444054454', '444544444', '323333333', '939992999'], spring: [3, 0], rate: 0.4, time: 260, drain: true, pools: [[7, 2, 2], [3, 5, 1], [5, 3, 1]], tools: { stone: 4, dam: 1, split: 1 }, par: 3, sol: [["dam",5,7],["stone",2,1],["stone",4,1]] },
+  { area: 1, n: 9, rows: ['887888888', '877778787', '877777707', '666966666', '650545555', '404934444', '545453459', '233333433', '999929992'], spring: [3, 0], rate: 0.4, time: 260, drain: true, pools: [[7, 2, 2], [2, 4, 2], [1, 5, 2]], tools: { stone: 4, dam: 1, split: 1 }, par: 2, sol: [["dam",4,2],["stone",2,2]] },
+  { area: 2, n: 9, rows: ['878878888', '778786778', '706707776', '666566677', '955554555', '444444044', '444944454', '322433333', '999992499'], spring: [5, 0], rate: 0.5, time: 280, drain: true, pools: [[1, 2, 1], [4, 2, 2], [6, 5, 2]], tools: { stone: 4, dam: 1, split: 1 }, par: 2, sol: [["stone",5,2],["dam",3,1]] },
+  { area: 2, n: 9, rows: ['888888888', '876777777', '708667798', '766667677', '555545555', '995044554', '445453403', '433333333', '999939993'], spring: [5, 0], rate: 0.5, time: 280, drain: true, pools: [[7, 6, 2], [1, 2, 2], [3, 5, 1]], tools: { stone: 4, dam: 1, split: 1 }, par: 2, sol: [["dam",3,2],["stone",6,1]] },
+  { area: 2, n: 9, rows: ['888888887', '787877778', '707777778', '766666666', '555555556', '444549444', '444040445', '332333342', '993499999'], spring: [5, 0], rate: 0.5, time: 280, drain: true, pools: [[1, 2, 2], [5, 6, 2], [3, 6, 2]], tools: { stone: 4, dam: 1, split: 1 }, par: 2, sol: [["stone",4,1],["dam",5,1]] },
+  { area: 2, n: 10, rows: ['8888888888', '7777787777', '7977087077', '6066666676', '4996555555', '6656559655', '4445445444', '3333339932', '3332333323', '3999999499'], spring: [6, 0], rate: 0.5, time: 300, drain: true, pools: [[4, 2, 1], [7, 2, 1], [1, 3, 2]], tools: { stone: 5, dam: 1, split: 1 }, par: 2, sol: [["stone",7,1],["dam",4,1]] },
+  { area: 2, n: 10, rows: ['8888887888', '7777777776', '7770977877', '6667606669', '9456555595', '5554556905', '4444443994', '3324333392', '3333433233', '9292999999'], spring: [3, 0], rate: 0.5, time: 337, drain: true, pools: [[3, 2, 2], [5, 3, 1], [8, 5, 2]], tools: { stone: 5, dam: 1, split: 1 }, par: 3, sol: [["dam",4,8],["stone",3,7],["stone",2,6]] },
+  { area: 3, n: 10, rows: ['8888888888', '7677776776', '7776677687', '6065666665', '4905555455', '5554550554', '3444434504', '4333332339', '3233333333', '9499992999'], spring: [6, 0], rate: 0.5, time: 320, drain: true, pools: [[2, 4, 1], [1, 3, 2], [8, 6, 2], [6, 5, 1]], tools: { stone: 5, dam: 1, split: 1 }, par: 2, sol: [["dam",7,1],["stone",3,4]] },
+  { area: 3, n: 10, rows: ['8888888888', '8778777777', '7709776777', '6696696666', '5999545095', '5555556556', '4444445054', '3303393323', '3433333342', '9939993999'], spring: [6, 0], rate: 0.5, time: 320, drain: true, pools: [[7, 4, 1], [7, 6, 1], [2, 2, 2], [2, 7, 1]], tools: { stone: 5, dam: 1, split: 1 }, par: 3, sol: [["dam",6,4],["stone",4,2],["stone",7,0]] },
+  { area: 3, n: 10, rows: ['8888888777', '7777777677', '9077067777', '6666666666', '9555540564', '5555466559', '3034494344', '3333333323', '3333433432', '9499929999'], spring: [6, 0], rate: 0.5, time: 340, drain: true, pools: [[4, 2, 2], [1, 6, 1], [1, 2, 1], [6, 4, 1]], tools: { stone: 5, dam: 1, split: 1 }, par: 4, sol: [["dam",5,8],["stone",6,1],["stone",4,3],["stone",5,3]] },
+  { area: 3, n: 10, rows: ['8888878888', '6787777776', '7077677707', '9665066666', '4555545655', '4554555665', '4449430449', '3340333439', '3323333233', '9999949399'], spring: [6, 0], rate: 0.5, time: 385, drain: true, pools: [[6, 6, 1], [3, 7, 2], [4, 3, 2], [8, 2, 2], [1, 2, 2]], tools: { stone: 6, dam: 1, split: 1 }, par: 4, sol: [["dam",7,9],["stone",5,9],["stone",1,4],["stone",2,5]] },
+  { area: 3, n: 10, rows: ['8888788888', '7877777767', '7097787777', '6766566665', '5646555555', '5564059959', '4444444044', '4033033343', '3343423333', '9492999999'], spring: [6, 0], rate: 0.5, time: 380, drain: true, pools: [[7, 6, 1], [1, 2, 1], [1, 7, 2], [4, 5, 1], [4, 7, 1]], tools: { stone: 6, dam: 1, split: 1 }, par: 4, sol: [["dam",3,8],["stone",4,2],["stone",3,2],["stone",6,2]] }
+];
+/* LEVELS-END */
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- constants and flags ----------
+const Q = new URLSearchParams(location.search);
+const FLAGS = { auto: Q.has('auto'), debug: Q.has('debug'), low: Q.has('low'), noassets: Q.has('noassets') };
+const TICK = 0.05;   // one simulation tick = 0.05 s of game time (20 ticks per second)
+const HU = 0.22;     // world height of one height unit
+const K = 4;         // fine mesh vertices per cell
+const LEVEL_COUNT = LEVELS.length;
+const SAVE_KEY = 'arena.pamukkale.save', SET_KEY = 'arena.pamukkale.settings', BEST_KEY = 'arena.pamukkale.best';
+const GAME_URL = 'https://furkiozknn.github.io/';
+const errors = [];
+window.addEventListener('error', e => errors.push(String(e.message || e)));
+window.addEventListener('unhandledrejection', e => errors.push('promise: ' + String(e.reason)));
+
+// ---------- storage (every access guarded) ----------
+function readJSON(key, fallback) {
+  try { const v = localStorage.getItem(key); return Object.assign({}, fallback, v ? JSON.parse(v) : {}); }
+  catch (e) { return Object.assign({}, fallback); }
+}
+function writeJSON(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { /* private mode */ } }
+
+const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+const settings = readJSON(SET_KEY, { master: 0.8, music: 0.6, sfx: 0.8, lang: /^tr/i.test(navigator.language || '') ? 'tr' : 'en', quality: coarse ? 'low' : 'high', musicOn: true, sfxOn: true });
+if (Q.get('lang') === 'en' || Q.get('lang') === 'tr') settings.lang = Q.get('lang');
+const progress = readJSON(SAVE_KEY, { unlocked: 1, stars: {}, last: 0 });
+const best = readJSON(BEST_KEY, { stars: 0, done: 0 });
+const quality = FLAGS.low ? 'low' : settings.quality;
+
+// ---------- text (TR default, EN toggle) ----------
+const S = {
+  tr: {
+    loading: 'Yükleniyor…', subtitle: 'Travertenlerde su akışı bulmacası',
+    howto: 'Kaynaktan akan suyu taş, set ve ayırıcılarla havuzlara yönlendir. Durgun su zamanla beyaz bir kenar örer.',
+    play: 'Oyna', continue: 'Devam et', settings: 'Ayarlar', areas: 'Seviyeler', back: 'Geri', resume: 'Devam',
+    restart: 'Baştan', mainMenu: 'Ana menü', next: 'Sonraki seviye', ending: 'Sonuç', retry: 'Tekrar dene', undo: 'Geri al',
+    reset: 'Sıfırla', start: 'Suyu başlat', stop: 'Suyu durdur', fast: 'Hızlı ileri', master: 'Ana ses', music: 'Müzik',
+    sfx: 'Efektler', language: 'Dil', quality: 'Kalite', low: 'Düşük', high: 'Yüksek', fullscreen: 'Tam ekran',
+    pools: 'Havuz', water: 'Su', levelWord: 'Seviye', pause: 'Duraklat', toolStone: 'Taş', toolDam: 'Set', toolSplit: 'Ayırıcı',
+    done: 'Seviye tamamlandı', failed: 'Süre doldu', poolsFilled: 'Dolu havuz', waterUsed: 'Kullanılan su',
+    spilled: 'Taşan su', toolsLeft: 'Kalan araç', toolsUsed: 'Kullanılan araç', star1: 'Tüm havuzlar dolu', star2: 'Taşan su yok',
+    star3: 'Araç tasarrufu', best: 'En iyi', endTitle: 'Gün batımında Pamukkale',
+    endText: 'Yamaçtaki tüm havuzlar doldu. Akşam ışığı beyaz teraslara altın rengi veriyor.',
+    playAgain: 'Yeniden oyna', totalStars: 'Toplam yıldız', levelsDone: 'Tamamlanan seviye',
+    footer: 'Claude Game Arena · built by Claude Haiku 5.5',
+    toastNoTool: 'Bu aracın hakkı kalmadı', toastOccupied: 'Bu hücrede zaten bir araç var',
+    toastSpring: 'Kaynağın üstüne araç konmaz', toastRemoved: 'Araç geri alındı', toastUndone: 'Geri alındı',
+    toastNothing: 'Geri alınacak bir şey yok', toastStart: 'Su akmaya başladı', toastStop: 'Su durduruldu',
+    toastReset: 'Seviye sıfırlandı', toastPoolFull: 'Bir havuz doldu', toastTimeUp: 'Süre doldu. R ile tekrar dene.',
+    toastLocked: 'Önce önceki seviyeyi tamamla', toastCalcium: 'Kalsiyum yeni bir kenar ördü', toastNoPlace: 'Burada araç yerleşmez',
+    hint: '1-3 araç seç · tıkla yerleştir · sağ tık sil · Space su', tipKeys: 'P duraklat · M müzik · X efekt · L dil',
+    lockedTag: 'kilitli', onOff: ['açık', 'kapalı']
+  },
+  en: {
+    loading: 'Loading…', subtitle: 'A water-flow puzzle on the white terraces',
+    howto: 'Guide the spring water into the pools with stones, dams and splitters. Still water slowly builds a white calcium rim.',
+    play: 'Play', continue: 'Continue', settings: 'Settings', areas: 'Levels', back: 'Back', resume: 'Resume',
+    restart: 'Restart', mainMenu: 'Main menu', next: 'Next level', ending: 'Ending', retry: 'Try again', undo: 'Undo',
+    reset: 'Reset', start: 'Start water', stop: 'Stop water', fast: 'Fast forward', master: 'Master', music: 'Music',
+    sfx: 'Effects', language: 'Language', quality: 'Quality', low: 'Low', high: 'High', fullscreen: 'Fullscreen',
+    pools: 'Pools', water: 'Water', levelWord: 'Level', pause: 'Pause', toolStone: 'Stone', toolDam: 'Dam', toolSplit: 'Splitter',
+    done: 'Level complete', failed: 'Out of time', poolsFilled: 'Pools filled', waterUsed: 'Water used',
+    spilled: 'Water spilled', toolsLeft: 'Tools left', toolsUsed: 'Tools used', star1: 'All pools full', star2: 'No water spilled',
+    star3: 'Tool saving', best: 'Best', endTitle: 'Pamukkale at sunset',
+    endText: 'Every pool on the hillside is full. The evening light turns the white terraces gold.',
+    playAgain: 'Play again', totalStars: 'Total stars', levelsDone: 'Levels complete',
+    footer: 'Claude Game Arena · built by Claude Haiku 5.5',
+    toastNoTool: 'No tools of this kind left', toastOccupied: 'This cell already has a tool',
+    toastSpring: 'Tools cannot go on the spring', toastRemoved: 'Tool returned', toastUndone: 'Undone',
+    toastNothing: 'Nothing to undo', toastStart: 'Water is flowing', toastStop: 'Water paused',
+    toastReset: 'Level reset', toastPoolFull: 'A pool is full', toastTimeUp: 'Time is up. Press R to try again.',
+    toastLocked: 'Finish the previous level first', toastCalcium: 'Calcium built a new rim', toastNoPlace: 'Nothing can go here',
+    hint: '1-3 pick a tool · click to place · right-click to remove · Space water', tipKeys: 'P pause · M music · X effects · L language',
+    lockedTag: 'locked', onOff: ['on', 'off']
+  }
+};
+const LV = [
+  ['İlk Damla', 'First Drop'], ['Kıvrık Oluk', 'Winding Channel'], ['Çift Havuz', 'Twin Pools'], ['Taş Set', 'Stone Weir'], ['Bölünen Akış', 'Split Stream'],
+  ['İlk Basamak', 'First Shelf'], ['Kalsiyum Kenarı', 'Calcium Edge'], ['Dar Geçit', 'Narrow Gate'], ['Üç Havuz', 'Three Pools'], ['Beyaz Dizi', 'White Row'],
+  ['Tiyatro Basamağı', 'Theatre Step'], ['Kutsal Kaynak', 'Sacred Spring'], ['Yedi Kanal', 'Seven Channels'], ['Sütun Gölgesi', 'Column Shadow'], ['Büyük Havuz', 'The Great Pool'],
+  ['Altın Saat', 'Golden Hour'], ['Kızıl Yamaç', 'Red Slope'], ['Kireç Köprüsü', 'Lime Bridge'], ['Son Havuzlar', 'Last Pools'], ['Pamukkale', 'Pamukkale']
+];
+const HINTS = [
+  ['Bir taş koy, su havuza doğru dönsün.', 'Place one stone to turn the water toward the pool.'],
+  ['Kıvrık yolu takip et, taşı doğru yere koy.', 'Follow the bend and place the stone where the water turns.'],
+  ['İki havuz, iki ayrı yol.', 'Two pools, two separate routes.'],
+  ['Set, suyu bekletip havuzu doldurur.', 'A dam holds water back until the pool fills.'],
+  ['Ayırıcı akışı iki yana böler.', 'A splitter divides the stream in two.'],
+  ['Birinci basamağa su yetişsin.', 'Let the water reach the first shelf.'],
+  ['Durgun su kenar örer; bunu planla.', 'Still water builds rims. Plan for it.'],
+  ['Dar geçidi açık tut.', 'Keep the narrow gate open for the water.'],
+  ['Üç havuzu sırayla doldur.', 'Fill the three pools in turn.'],
+  ['Beyaz dizi: her havuza ayrı kanal.', 'A white row: one channel per pool.'],
+  ['Tiyatro basamaklarında su yavaş iner.', 'On the theatre steps the water descends slowly.'],
+  ['Kaynağın çevresinde dön.', 'Work around the sacred spring.'],
+  ['Yedi kanalın hangisi açık?', 'Which of the seven channels is open?'],
+  ['Sütunların gölgesinde su bekler.', 'Water waits in the shadow of the columns.'],
+  ['Büyük havuz çok su ister.', 'The great pool needs a lot of water.'],
+  ['Altın saatte son damlaya kadar çalış.', 'Work through the golden hour.'],
+  ['Kızıl yamaçta su hızlı kayar.', 'On the red slope the water runs fast.'],
+  ['Köprünün aralığından geçir.', 'Pass the water through the bridge gap.'],
+  ['Altı havuz, az araç.', 'Six pools, few tools.'],
+  ['Son havuzları doldur, gün batsın.', 'Fill the last pools as the sun sets.']
+];
+const AREA_NAMES = [['Alt Havuzlar', 'Lower Pools'], ['Orta Basamaklar', 'Middle Shelves'], ['Antik Havuz', 'Ancient Pool'], ['Gün Batımı', 'Sunset']];
+const t = k => (S[settings.lang] && S[settings.lang][k] !== undefined ? S[settings.lang][k] : S.en[k]) || k;
+const L = settings.lang === 'en' ? 1 : 0;
+const levelName = i => LV[i][L];
+const levelHint = i => HINTS[i][L];
+
+// ---------- icons (inline SVG, no emoji) ----------
+const ICON = {
+  drop: '<path d="M12 2.5c0 0-6.5 7.2-6.5 12.2a6.5 6.5 0 0 0 13 0c0-5-6.5-12.2-6.5-12.2z"/>',
+  stone: '<ellipse cx="12" cy="14" rx="8.5" ry="4.6"/><ellipse cx="11" cy="12" rx="4.5" ry="2.2" opacity=".5"/>',
+  dam: '<rect x="2.5" y="9.5" width="19" height="6" rx="3"/>',
+  split: '<path d="M12 21V13M12 13L5 4.5M12 13L19 4.5" class="s"/>',
+  play: '<path d="M8 5v14l11-7z"/>',
+  pause: '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>',
+  fast: '<path d="M3 6l8 6-8 6zM12 6l8 6-8 6z"/>',
+  undo: '<path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" class="s"/>',
+  reset: '<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5" class="s"/>',
+  sound: '<path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" class="s"/>',
+  mute: '<path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6" class="s"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'
+};
+const svg = (name, cls = 'ico') => `<svg class="${cls}${/class="s"/.test(ICON[name]) ? ' s' : ' f'}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
+const starSvg = on => `<svg viewBox="0 0 24 24" class="${on ? 'on' : ''}" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>`;
+
+// ---------- three.js scene ----------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1 : 1.5));
+renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled = quality !== 'low';
+renderer.shadowMap.type = THREE.PCFShadowMap;
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xFBE6D6, 28, 62);
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 160);
+const hemi = new THREE.HemisphereLight(0xEAF8FF, 0xF2E2C8, 1.05);
+const sun = new THREE.DirectionalLight(0xFFF6E6, 1.9);
+sun.position.set(-7, 13, 10);
+sun.target.position.set(0, 0, 0);
+sun.castShadow = quality !== 'low';
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 45 });
+sun.shadow.camera.updateProjectionMatrix();
+sun.shadow.bias = -0.0015;
+sun.shadow.normalBias = 0.06;
+scene.add(hemi, sun, sun.target);
+
+// seeded random so the decor is the same on every load
+let seed = 7741;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const tmpM = new THREE.Matrix4(), tmpC = new THREE.Color(), tmpQ = new THREE.Quaternion(), tmpS = new THREE.Vector3(), tmpP = new THREE.Vector3(), tmpE = new THREE.Euler();
+
+// ground and land
+const groundGeo = new THREE.CircleGeometry(70, 40);
+groundGeo.rotateX(-Math.PI / 2);
+const gp = groundGeo.attributes.position, gc = new Float32Array(gp.count * 3);
+for (let k = 0; k < gp.count; k++) {
+  const x = gp.getX(k), z = gp.getZ(k);
+  const m = 0.5 + 0.5 * Math.sin(x * 0.23) * Math.cos(z * 0.19);
+  tmpC.setRGB(0.66 + 0.07 * m, 0.76 + 0.06 * m, 0.56 + 0.05 * m);
+  gc.set([tmpC.r, tmpC.g, tmpC.b], k * 3);
+}
+groundGeo.setAttribute('color', new THREE.BufferAttribute(gc, 3));
+const ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+ground.position.y = -1.5;
+ground.receiveShadow = quality !== 'low';
+scene.add(ground);
+
+// green hills around the valley
+const hills = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshLambertMaterial({ color: 0xffffff }), 22);
+for (let k = 0; k < 22; k++) {
+  const a = (k / 22) * Math.PI * 2 + rnd() * 0.25, r = 17 + rnd() * 9;
+  const sy = 2.6 + rnd() * 2.2;
+  tmpP.set(Math.cos(a) * r, -1.5 + sy * 0.25, Math.sin(a) * r * 0.85);
+  tmpS.set(5 + rnd() * 4, sy, 4.5 + rnd() * 3);
+  tmpM.compose(tmpP, tmpQ, tmpS);
+  hills.setMatrixAt(k, tmpM);
+  hills.setColorAt(k, tmpC.setHSL(0.24 + rnd() * 0.05, 0.3, 0.66 + rnd() * 0.08));
+}
+hills.instanceMatrix.needsUpdate = true; hills.instanceColor.needsUpdate = true;
+scene.add(hills);
+
+// pale distant range behind the valley: the fog softens it into the sky
+const range = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 14, 8), new THREE.MeshLambertMaterial({ color: 0xC4DCEB }), 12);
+for (let k = 0; k < 12; k++) {
+  const a = (k / 12) * Math.PI * 2 + 0.3, r = 46 + rnd() * 6, sy = 6 + rnd() * 4;
+  tmpM.compose(tmpP.set(Math.cos(a) * r, -1.5 + sy * 0.3, Math.sin(a) * r * 0.8), tmpQ, tmpS.set(12 + rnd() * 6, sy, 8 + rnd() * 4));
+  range.setMatrixAt(k, tmpM);
+}
+scene.add(range);
+
+// poplars along both sides
+const poplarTrunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.08, 0.1, 0.9, 6), new THREE.MeshLambertMaterial({ color: 0xB8A08A }), 18);
+const poplarTop = new THREE.InstancedMesh(new THREE.ConeGeometry(0.34, 2.2, 8), new THREE.MeshLambertMaterial({ color: 0x8CC08E }), 18);
+for (let k = 0; k < 18; k++) {
+  const side = k % 2 ? 1 : -1, z = -7 + Math.floor(k / 2) * 2.1 + rnd() * 0.6;
+  const x = side * (9.5 + rnd() * 3.5), sc = 0.8 + rnd() * 0.5;
+  tmpM.compose(tmpP.set(x, -1.5 + 0.45 * sc, z), tmpQ, tmpS.set(sc, sc, sc));
+  poplarTrunk.setMatrixAt(k, tmpM);
+  tmpM.compose(tmpP.set(x, -1.5 + 2.0 * sc, z), tmpQ, tmpS.set(sc, sc, sc));
+  poplarTop.setMatrixAt(k, tmpM);
+}
+scene.add(poplarTrunk, poplarTop);
+
+// ruined columns on the back ridge and a theatre on the left
+const colShaft = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.24, 0.27, 3.2, 12), new THREE.MeshLambertMaterial({ color: 0xCDB89A }), 9);
+const colCap = new THREE.InstancedMesh(new THREE.BoxGeometry(0.66, 0.22, 0.66), new THREE.MeshLambertMaterial({ color: 0xDCCBAE }), 9);
+for (let k = 0; k < 9; k++) {
+  const broken = k === 2 || k === 6 ? 0.45 : 1;
+  const x = -8 + k * 2, z = -11.5 + (k % 2) * 0.4;
+  tmpM.compose(tmpP.set(x, -1.5 + 1.6 * broken, z), tmpQ, tmpS.set(1, broken, 1));
+  colShaft.setMatrixAt(k, tmpM);
+  tmpM.compose(tmpP.set(x, -1.5 + 3.2 * broken + 0.1, z), tmpQ, tmpS.set(1, 1, 1));
+  colCap.setMatrixAt(k, tmpM);
+}
+scene.add(colShaft, colCap);
+const theatre = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.46, 0.5, 0.22, 14, 1, false, 0, Math.PI), new THREE.MeshLambertMaterial({ color: 0xEDE2CE }), 27);
+for (let tier = 0; tier < 3; tier++) for (let k = 0; k < 9; k++) {
+  const a = Math.PI * (0.15 + 0.7 * (k / 8));
+  const r = 4.2 + tier * 0.9;
+  tmpE.set(0, -a + Math.PI / 2, 0);
+  tmpQ.setFromEuler(tmpE);
+  tmpM.compose(tmpP.set(-13.5 + Math.cos(a) * r, -1.4 + tier * 0.42, -4.5 + Math.sin(a) * r * 0.7), tmpQ, tmpS.set(1, 1, 1));
+  theatre.setMatrixAt(tier * 9 + k, tmpM);
+}
+scene.add(theatre);
+
+// clouds and sun
+tmpQ.identity();
+const clouds = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshLambertMaterial({ color: 0xFFFFFF, emissive: 0x3A3A3A }), 36);
+for (let k = 0; k < 36; k++) {
+  const cx = -24 + rnd() * 48, cz = -26 + rnd() * 30, cy = 11 + rnd() * 5;
+  const s = 1.4 + rnd() * 1.6;
+  tmpM.compose(tmpP.set(cx, cy, cz), tmpQ, tmpS.set(s * 2.2, s * 0.6, s * 1.2));
+  clouds.setMatrixAt(k, tmpM);
+}
+scene.add(clouds);
+
+// travertine boulders scattered over the valley floor, one draw call
+const boulders = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.6, 0), new THREE.MeshLambertMaterial({ color: 0xffffff }), 26);
+for (let k = 0; k < 26; k++) {
+  const a = rnd() * Math.PI * 2, r = 11 + rnd() * 7, sc = 0.5 + rnd() * 0.9;
+  tmpQ.setFromEuler(tmpE.set(rnd() * 3, rnd() * 3, 0));
+  tmpM.compose(tmpP.set(Math.cos(a) * r, -1.5 + 0.12 * sc, Math.sin(a) * r * 0.85), tmpQ, tmpS.set(sc, sc * 0.6, sc));
+  boulders.setMatrixAt(k, tmpM);
+  boulders.setColorAt(k, tmpC.setHSL(0.11, 0.2, 0.86 - rnd() * 0.08));
+}
+boulders.instanceMatrix.needsUpdate = true; boulders.instanceColor.needsUpdate = true;
+scene.add(boulders);
+
+// stepped travertine ledges on the valley sides: three rounded rings that fall away from the board
+const ledgeProfile = [[0.9, 0], [1.0, 0.03], [1.06, 0.12], [1.0, 0.2], [0.9, 0.14], [0.86, 0.03]].map(([x, y]) => new THREE.Vector2(x, y));
+const ledges = new THREE.InstancedMesh(new THREE.LatheGeometry(ledgeProfile, 64), new THREE.MeshLambertMaterial({ color: 0xF2ECDF, side: THREE.DoubleSide }), 3);
+[[12.5, -1.45], [15, -1.3], [17.5, -1.15]].forEach(([R, y], k) => {
+  tmpM.compose(tmpP.set(0, y, 0), tmpQ.identity(), tmpS.set(R, 1, R));
+  ledges.setMatrixAt(k, tmpM);
+});
+ledges.instanceMatrix.needsUpdate = true;
+scene.add(ledges);
+
+// meadow shrubs around the valley floor, one draw call
+const shrubs = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.5, 0), new THREE.MeshLambertMaterial({ color: 0xffffff }), 40);
+for (let k = 0; k < 40; k++) {
+  const a = rnd() * Math.PI * 2, r = 13 + rnd() * 9, sc = 0.45 + rnd() * 0.5;
+  tmpM.compose(tmpP.set(Math.cos(a) * r, -1.5 + 0.2 * sc, Math.sin(a) * r * 0.85), tmpQ.identity(), tmpS.set(sc * 1.3, sc * 0.8, sc * 1.3));
+  shrubs.setMatrixAt(k, tmpM);
+  shrubs.setColorAt(k, tmpC.setHSL(0.27 + rnd() * 0.05, 0.35, 0.5 + rnd() * 0.1));
+}
+shrubs.instanceMatrix.needsUpdate = true; shrubs.instanceColor.needsUpdate = true;
+scene.add(shrubs);
+const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5, 20, 14), new THREE.MeshLambertMaterial({ color: 0xFFD27A, emissive: 0xFFB84A, emissiveIntensity: 0.9 }));
+sunMesh.position.set(7, 6.5, -20);   // above the right-hand hills, clear of the HUD bar
+scene.add(sunMesh);
+
+// white travertine flanks beside the terraces, fading into the green land
+{
+  const S = 36, R = 19, EDGE = 9.5;   // grid size, half-extent, and where the terrace apron meets the land
+  const fpos = new Float32Array((S + 1) * (S + 1) * 3), fcol = new Float32Array((S + 1) * (S + 1) * 3), fidx = [];
+  for (let j = 0; j <= S; j++) for (let i = 0; i <= S; i++) {
+    const x = -R + (2 * R * i) / S, z = -R + (2 * R * j) / S, k = j * (S + 1) + i;
+    const d = Math.hypot(Math.max(0, Math.abs(x) - EDGE), Math.max(0, Math.abs(z) - EDGE));
+    const bump = Math.min(0.7, d * 0.25) * (0.9 + 0.1 * Math.sin(x * 1.3) * Math.cos(z * 1.1));
+    fpos[k * 3] = x; fpos[k * 3 + 1] = -1.45 + bump; fpos[k * 3 + 2] = z;
+    const white = Math.max(0, 1 - Math.max(0, d - 1.2) / 4.8);
+    const streak = 0.04 * Math.sin(x * 3.7) + 0.03 * Math.cos(z * 2.9);
+    fcol[k * 3] = 0.66 + (0.96 - 0.66) * white + streak;
+    fcol[k * 3 + 1] = 0.76 + (0.95 - 0.76) * white + streak;
+    fcol[k * 3 + 2] = 0.56 + (0.93 - 0.56) * white + streak;
+  }
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    const a = j * (S + 1) + i, b = a + 1, c = a + (S + 1), e = c + 1;
+    fidx.push(a, c, b, b, c, e);
+  }
+  const fg = new THREE.BufferGeometry();
+  fg.setAttribute('position', new THREE.BufferAttribute(fpos, 3));
+  fg.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
+  fg.setIndex(fidx);
+  fg.computeVertexNormals();
+  const flanks = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  flanks.receiveShadow = quality !== 'low';
+  scene.add(flanks);
+}
+
+// ---------- board: terrain, water, tools, targets ----------
+let board = null;        // { n, terrainGeo, waterGeo, terrain, water, perim, V, P }
+const TOOL_KINDS = ['stone', 'dam', 'split'];
+const toolGeo = {
+  stone: new THREE.IcosahedronGeometry(0.32, 2).scale(1, 0.55, 1),
+  dam: new THREE.CapsuleGeometry(0.14, 0.55, 6, 14).rotateZ(Math.PI / 2),
+  split: new THREE.ConeGeometry(0.28, 0.42, 16)
+};
+const toolMat = {
+  stone: new THREE.MeshLambertMaterial({ color: 0xCDB89A }),
+  dam: new THREE.MeshLambertMaterial({ color: 0xCDB89A }),
+  split: new THREE.MeshLambertMaterial({ color: 0x2EC4C9 })
+};
+const toolMesh = {};
+for (const k of TOOL_KINDS) {
+  toolMesh[k] = new THREE.InstancedMesh(toolGeo[k], toolMat[k], 16);
+  toolMesh[k].castShadow = quality !== 'low';
+  toolMesh[k].count = 0;
+  scene.add(toolMesh[k]);
+}
+const ringMesh = new THREE.InstancedMesh(new THREE.TorusGeometry(0.4, 0.04, 6, 28).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xffffff }), 12);
+ringMesh.count = 0;
+scene.add(ringMesh);
+// the spring basin is a turned bowl with a rounded rim
+const springBowl = [[0.12, 0], [0.26, 0.04], [0.34, 0.16], [0.33, 0.3], [0.26, 0.37], [0.21, 0.32], [0.19, 0.2]].map(([x, y]) => new THREE.Vector2(x, y));
+const spring = new THREE.Mesh(new THREE.LatheGeometry(springBowl, 20), new THREE.MeshLambertMaterial({ color: 0xF5F3EE }));
+spring.castShadow = quality !== 'low';
+scene.add(spring);
+const ghost = new THREE.Mesh(toolGeo.stone, new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5, depthWrite: false }));
+ghost.visible = false;
+scene.add(ghost);
+
+// soft round sprite for particles
+const spriteCanvas = document.createElement('canvas');
+spriteCanvas.width = spriteCanvas.height = 64;
+{
+  const g = spriteCanvas.getContext('2d'), grd = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.5, 'rgba(255,255,255,0.55)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+}
+const spriteTex = new THREE.CanvasTexture(spriteCanvas);
+const MAXP = quality === 'low' ? 120 : 240;
+const pPos = new Float32Array(MAXP * 3), pVel = new Float32Array(MAXP * 3), pLife = new Float32Array(MAXP);
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ map: spriteTex, size: 0.22, color: 0xD9FBFB, transparent: true, opacity: 0.9, depthWrite: false, alphaTest: 0.01 }));
+particles.frustumCulled = false;
+scene.add(particles);
+let pNext = 0, spawnAcc = 0;
+for (let k = 0; k < MAXP; k++) pPos[k * 3 + 1] = -100;
+
+function spawnParticle(x, y, z, vx, vy, vz, life) {
+  const k = pNext; pNext = (pNext + 1) % MAXP;
+  pPos[k * 3] = x; pPos[k * 3 + 1] = y; pPos[k * 3 + 2] = z;
+  pVel[k * 3] = vx; pVel[k * 3 + 1] = vy; pVel[k * 3 + 2] = vz;
+  pLife[k] = life;
+}
+
+// Terraces: every cell is a flat shelf; between two shelves sits a narrow rounded lip.
+// A drop of 3 or more units is climbed in three small steps instead of one wall.
+// Render only: the simulation grid and the level data are unchanged.
+const RIM_W = 0.16;  // half-width of the lip ramp, in cell units (larger = rounder shelves)
+function smooth01(a, b, x) {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+// a: height at the near shelf, d: height difference to the next shelf, f: 0..1 across the boundary
+function rimStep(a, d, f) {
+  const m = Math.abs(d) >= 3 ? 3 : 1;
+  let q = smooth01(0.5 - RIM_W, 0.5 + RIM_W, f);
+  if (m > 1) {
+    const x = q * m, k = Math.floor(x), r = x - k;
+    q = Math.min(1, (k + smooth01(0.55, 1, r)) / m);
+  }
+  return a + d * q;
+}
+function cellFrac(n, u, v) {
+  const gx = Math.min(Math.max(u - 0.5, 0), n - 1), gy = Math.min(Math.max(v - 0.5, 0), n - 1);
+  const i = Math.min(Math.floor(gx), n - 2), j = Math.min(Math.floor(gy), n - 2);
+  return { i, j, fx: gx - i, fy: gy - j };
+}
+function samp(arr, n, u, v) {
+  const { i, j, fx, fy } = cellFrac(n, u, v);
+  const rowAt = r => rimStep(arr[r * n + i], arr[r * n + i + 1] - arr[r * n + i], fx);
+  const a0 = rowAt(j), a1 = rowAt(j + 1);
+  return rimStep(a0, a1 - a0, fy);
+}
+// white drip ridges that hang along the lips (sine bumps, only where the shelves differ)
+function dripAt(arr, n, u, v) {
+  const { i, j, fx, fy } = cellFrac(n, u, v);
+  const dx = arr[j * n + i + 1] - arr[j * n + i], dy = arr[(j + 1) * n + i] - arr[j * n + i];
+  const ax = Math.min(1, Math.abs(dx) / 3), ay = Math.min(1, Math.abs(dy) / 3);
+  return 0.22 * ax * 4 * fx * (1 - fx) * Math.sin(v * 11) + 0.22 * ay * 4 * fy * (1 - fy) * Math.sin(u * 11);
+}
+function buildBoard(n) {
+  disposeBoard();
+  const M = n * K, V = (M + 1) * (M + 1);
+  const idx = (i, j) => j * (M + 1) + i;
+  const perim = [];
+  for (let i = 0; i < M; i++) perim.push(idx(i, 0));
+  for (let j = 0; j < M; j++) perim.push(idx(M, j));
+  for (let i = M; i > 0; i--) perim.push(idx(i, M));
+  for (let j = M; j > 0; j--) perim.push(idx(0, j));
+  const P = perim.length;
+
+  const pos = new Float32Array((V + P) * 3), col = new Float32Array((V + P) * 3);
+  for (let j = 0; j <= M; j++) for (let i = 0; i <= M; i++) {
+    const k = idx(i, j);
+    pos[k * 3] = i / K - n / 2; pos[k * 3 + 2] = j / K - n / 2;
+  }
+  for (let k = 0; k < P; k++) {
+    // the skirt flares outward into a sloped apron, so the terraces sit on the land instead of standing in a box
+    const src = perim[k], dst = V + k;
+    pos[dst * 3] = pos[src * 3] * 2.2; pos[dst * 3 + 2] = pos[src * 3 + 2] * 2.2;
+  }
+  const index = [];
+  for (let j = 0; j < M; j++) for (let i = 0; i < M; i++) {
+    const a = idx(i, j), b = idx(i + 1, j), c = idx(i, j + 1), d = idx(i + 1, j + 1);
+    index.push(a, c, b, b, c, d);
+  }
+  for (let k = 0; k < P; k++) {
+    const a = perim[k], b = perim[(k + 1) % P], ab = V + k, bb = V + ((k + 1) % P);
+    index.push(a, ab, b, b, ab, bb);
+  }
+  const terrainGeo = new THREE.BufferGeometry();
+  terrainGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  terrainGeo.setIndex(index);
+
+  const wpos = new Float32Array(V * 3), wcol = new Float32Array(V * 3);
+  for (let k = 0; k < V; k++) { wpos[k * 3] = pos[k * 3]; wpos[k * 3 + 2] = pos[k * 3 + 2]; }
+  const wIndex = [];
+  for (let j = 0; j < M; j++) for (let i = 0; i < M; i++) {
+    const a = idx(i, j), b = idx(i + 1, j), c = idx(i, j + 1), d = idx(i + 1, j + 1);
+    wIndex.push(a, c, b, b, c, d);
+  }
+  const waterGeo = new THREE.BufferGeometry();
+  waterGeo.setAttribute('position', new THREE.BufferAttribute(wpos, 3));
+  waterGeo.setAttribute('color', new THREE.BufferAttribute(wcol, 3));
+  waterGeo.setIndex(wIndex);
+  const wuv = new Float32Array(V * 2);
+  for (let j = 0; j <= M; j++) for (let i = 0; i <= M; i++) { const k = idx(i, j); wuv[k * 2] = (i / M) * 3; wuv[k * 2 + 1] = (j / M) * 3; }
+  waterGeo.setAttribute('uv', new THREE.BufferAttribute(wuv, 2));
+
+  const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  // the terrain casts shadows but does not receive them: receiving produced banding on the sloped apron
+  terrain.receiveShadow = false;
+  terrain.castShadow = quality !== 'low';
+  const water = new THREE.Mesh(waterGeo, new THREE.MeshLambertMaterial({ vertexColors: true, map: causticTex, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false }));
+  water.renderOrder = 2;
+  scene.add(terrain, water);
+  board = { n, M, V, P, perim, terrainGeo, waterGeo, terrain, water, waterBase: new Float32Array(V * 3) };
+}
+
+// caustic light on the water: a tileable pattern of bright veins, built once on a canvas
+const causticTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'), img = g.createImageData(128, 128);
+  for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+    const a = (x / 128) * Math.PI * 2, b = (y / 128) * Math.PI * 2;
+    const v = Math.abs(Math.sin(a * 2 + Math.sin(b * 3) * 1.4) * Math.sin(b * 2 + Math.cos(a * 3) * 1.2));
+    const lit = Math.pow(1 - v, 6), k = (y * 128 + x) * 4;
+    img.data[k] = 255 * (0.8 + 0.2 * lit); img.data[k + 1] = 255 * (0.94 + 0.06 * lit); img.data[k + 2] = 255; img.data[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+})();
+
+function disposeBoard() {
+  if (!board) return;
+  scene.remove(board.terrain, board.water);
+  board.terrainGeo.dispose(); board.waterGeo.dispose();
+  board.terrain.material.dispose(); board.water.material.dispose();
+  board = null;
+}
+
+const CREAM = [0.94, 0.91, 0.84], WHITE = [1, 1, 1], SHALLOW = [0.74, 0.96, 0.96], DEEP = [0.18, 0.77, 0.8], FOAM = [0.97, 1, 1], DRY = [0.42, 0.6, 0.3];
+
+function refreshTerrain() {
+  if (!board || !G.st) return;
+  const st = G.st, n = board.n, M = board.M, V = board.V;
+  const hArr = new Float64Array(n * n), rArr = new Float64Array(n * n);
+  for (let i = 0; i < n * n; i++) { hArr[i] = PSim.height(st, i); rArr[i] = st.rim[i]; }
+  const pos = board.terrainGeo.attributes.position, col = board.terrainGeo.attributes.color;
+  for (let j = 0; j <= M; j++) for (let i = 0; i <= M; i++) {
+    const k = j * (M + 1) + i;
+    const u = i / K, v = j / K;
+    const h = (samp(hArr, n, u, v) + dripAt(hArr, n, u, v)) * HU;
+    pos.setY(k, h);
+    const rim = Math.min(1, samp(rArr, n, u, v) / PSim.RIM_MAX);
+    const band = 0.012 * Math.sin(u * 2.3 + v * 1.7) + 0.01 * Math.cos(u * 5.1 - v * 3.3);
+    // steep parts of a shelf sit a little darker, so every rounded lip reads
+    const sl = Math.min(1, Math.abs(samp(hArr, n, u + 0.3, v) - samp(hArr, n, u - 0.3, v)) + Math.abs(samp(hArr, n, u, v + 0.3) - samp(hArr, n, u, v - 0.3)));
+    // the steepest edges catch the light: their top brightens towards #FBF8F2
+    const shade = 1 - 0.1 * sl, hi = Math.min(1, sl * 1.5) * 0.5;
+    const cr = (CREAM[0] + (WHITE[0] - CREAM[0]) * rim + band) * shade, cg = (CREAM[1] + (WHITE[1] - CREAM[1]) * rim + band) * shade, cb = (CREAM[2] + (WHITE[2] - CREAM[2]) * rim + band) * shade;
+    col.setXYZ(k, cr + (0.984 - cr) * hi, cg + (0.973 - cg) * hi, cb + (0.949 - cb) * hi);
+  }
+  for (let p = 0; p < board.P; p++) {
+    const src = board.perim[p], dst = V + p;
+    // the apron's foot hangs in uneven drips and carries faint vertical flowstone streaks
+    const drip = 0.3 * Math.pow(0.5 + 0.5 * Math.sin(p * 0.61), 2);
+    pos.setXYZ(dst, pos.getX(dst), -1.5 + drip, pos.getZ(dst));
+    const streak = 0.5 + 0.14 * Math.sin(p * 2.3) + 0.07 * Math.sin(p * 0.9);
+    col.setXYZ(dst, 0.93 + (0.6 - 0.93) * streak, 0.9 + (0.64 - 0.9) * streak, 0.82 + (0.42 - 0.82) * streak);
+  }
+  pos.needsUpdate = true; col.needsUpdate = true;
+  board.terrainGeo.computeVertexNormals();
+}
+
+function refreshWater() {
+  if (!board || !G.st) return;
+  const st = G.st, n = board.n, M = board.M;
+  const hArr = new Float64Array(n * n), sArr = new Float64Array(n * n);
+  for (let i = 0; i < n * n; i++) { hArr[i] = PSim.height(st, i); sArr[i] = hArr[i] + st.w[i]; }
+  const pos = board.waterGeo.attributes.position, col = board.waterGeo.attributes.color;
+  for (let j = 0; j <= M; j++) for (let i = 0; i <= M; i++) {
+    const k = j * (M + 1) + i;
+    const u = i / K, v = j / K;
+    const h = samp(hArr, n, u, v), lvl = samp(sArr, n, u, v);
+    const d = lvl - h;
+    if (d > 0.004) {
+      pos.setY(k, lvl * HU + 0.02);
+      const f = Math.min(1, d / 1.2), foam = 0.7 * Math.max(0, 1 - d / 0.3);
+      const r = SHALLOW[0] + (DEEP[0] - SHALLOW[0]) * f, g = SHALLOW[1] + (DEEP[1] - SHALLOW[1]) * f, b = SHALLOW[2] + (DEEP[2] - SHALLOW[2]) * f;
+      col.setXYZ(k, r + (FOAM[0] - r) * foam, g + (FOAM[1] - g) * foam, b + (FOAM[2] - b) * foam);
+    } else {
+      pos.setY(k, h * HU - 0.3);
+      col.setXYZ(k, DEEP[0], DEEP[1], DEEP[2]);
+    }
+  }
+  pos.needsUpdate = true; col.needsUpdate = true;
+  board.waterGeo.computeVertexNormals();
+  board.waterBase.set(col.array);
+}
+
+// soft shimmer: a slow, per-vertex brightness wave over the turquoise surface
+function shimmer(time) {
+  causticTex.offset.set(time * 0.035, time * 0.02);
+  if (!board || !board.waterBase) return;
+  const col = board.waterGeo.attributes.color, base = board.waterBase, M = board.M, arr = col.array;
+  for (let j = 0; j <= M; j++) for (let i = 0; i <= M; i++) {
+    const k = (j * (M + 1) + i) * 3;
+    const f = 1 + 0.07 * Math.sin(time * 1.6 + i * 0.5 + j * 0.37) * Math.cos(time * 0.9 - j * 0.45);
+    arr[k] = base[k] * f; arr[k + 1] = base[k + 1] * f; arr[k + 2] = base[k + 2] * f;
+  }
+  col.needsUpdate = true;
+}
+
+const cellX = (i, n) => (i % n) + 0.5 - n / 2;
+const cellZ = (i, n) => Math.floor(i / n) + 0.5 - n / 2;
+
+function refreshTools() {
+  if (!board || !G.st) return;
+  const st = G.st, n = board.n;
+  const cnt = { stone: 0, dam: 0, split: 0 };
+  for (let i = 0; i < n * n; i++) {
+    const kind = st.tool[i];
+    if (!kind) continue;
+    const k = cnt[kind]++;
+    const h = PSim.height(st, i) * HU;
+    const yOff = kind === 'stone' ? 0.14 : kind === 'dam' ? 0.16 : 0.24;
+    tmpE.set(0, ((i * 2654435761) % 1000) / 1000 * Math.PI, 0);
+    tmpQ.setFromEuler(tmpE);
+    tmpM.compose(tmpP.set(cellX(i, n), h + yOff, cellZ(i, n)), tmpQ, tmpS.set(1, 1, 1));
+    toolMesh[kind].setMatrixAt(k, tmpM);
+    tmpC.setHSL(0.11 + ((i * 37) % 10) * 0.002, 0.14, 0.94 - ((i * 13) % 7) * 0.012);
+    if (kind === 'stone') toolMesh.stone.setColorAt(k, tmpC);
+  }
+  for (const kind of TOOL_KINDS) {
+    toolMesh[kind].count = cnt[kind];
+    toolMesh[kind].instanceMatrix.needsUpdate = true;
+    if (toolMesh[kind].instanceColor) toolMesh[kind].instanceColor.needsUpdate = true;
+  }
+  spring.position.set(cellX(st.spring, n), PSim.height(st, st.spring) * HU - 0.05, cellZ(st.spring, n));
+  let r = 0;
+  for (const p of st.pools) {
+    const full = st.w[p.i] >= p.m - 1e-6;
+    const h = PSim.height(st, p.i);
+    tmpM.compose(tmpP.set(cellX(p.i, n), (h + p.m) * HU + 0.03, cellZ(p.i, n)), tmpQ.set(0, 0, 0, 1), tmpS.set(1, 1, 1));
+    ringMesh.setMatrixAt(r, tmpM);
+    tmpC.set(full ? 0x2EC4C9 : 0xB9C9C4);
+    ringMesh.setColorAt(r, tmpC);
+    r++;
+  }
+  ringMesh.count = r;
+  ringMesh.instanceMatrix.needsUpdate = true;
+  if (ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true;
+}
+
+// ---------- camera ----------
+const TARGET = new THREE.Vector3(0, 1.4, 0);   // a little above the board, so the blue sky shows at the top of the frame
+const view = { yaw: 0.22, pitch: 0.78, dist: 15 };   // about 45 degrees down onto the terraces
+function updateCamera() {
+  const portrait = camera.aspect < 1;
+  const d = view.dist * (portrait ? 1.35 : 1);
+  const cp = Math.cos(view.pitch), sp = Math.sin(view.pitch);
+  camera.position.set(TARGET.x + d * Math.sin(view.yaw) * cp, TARGET.y + d * sp, TARGET.z + d * Math.cos(view.yaw) * cp);
+  camera.lookAt(TARGET);
+}
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ---------- audio (Web Audio, everything synthesised) ----------
+const AU = { ctx: null, master: null, music: null, sfx: null, noise: null, trickle: null, trickleG: null, timers: [], nextBar: 0, bar: 0 };
+const CHORDS = [
+  { root: 146.83, tones: [293.66, 349.23, 440.0, 587.33] },   // Dm
+  { root: 116.54, tones: [293.66, 349.23, 466.16, 440.0] },   // Bb
+  { root: 174.61, tones: [261.63, 349.23, 440.0, 523.25] },   // F
+  { root: 130.81, tones: [261.63, 329.63, 392.0, 523.25] }    // C
+];
+const PHRASE = [[0, 2], [1, 3], [2, 1], [3, 0], [1, 2], [2, 3], [3, 1], [0, 0]];
+
+function audioInit() {
+  if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    AU.ctx = ctx;
+    AU.master = ctx.createGain(); AU.master.connect(ctx.destination);
+    AU.music = ctx.createGain(); AU.music.connect(AU.master);
+    AU.sfx = ctx.createGain(); AU.sfx.connect(AU.master);
+    const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), ch = buf.getChannelData(0);
+    for (let k = 0; k < len; k++) ch[k] = Math.random() * 2 - 1;
+    AU.noise = buf;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 3.5;
+    AU.trickleG = ctx.createGain(); AU.trickleG.gain.value = 0;
+    src.connect(bp); bp.connect(AU.trickleG); AU.trickleG.connect(AU.sfx);
+    src.start();
+    applyVolumes();
+    AU.timers.push(setInterval(scheduleMusic, 150), setInterval(maybeBird, 1800));
+  } catch (e) { AU.ctx = null; }
+}
+function applyVolumes() {
+  if (!AU.ctx) return;
+  AU.master.gain.value = settings.master;
+  AU.music.gain.value = settings.musicOn ? settings.music * 0.5 : 0;
+  AU.sfx.gain.value = settings.sfxOn ? settings.sfx : 0;
+}
+function envNote(freq, when, dur, vol, type, dest) {
+  const ctx = AU.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(vol, when + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(dest);
+  o.start(when); o.stop(when + dur + 0.05);
+}
+function saz(freq, when) {  // plucked string: triangle with a faint octave partial
+  envNote(freq, when, 1.4, 0.18, 'triangle', AU.music);
+  envNote(freq * 2, when, 0.6, 0.03, 'sine', AU.music);
+}
+function flute(freq, when, dur) {  // soft breathy flute with vibrato
+  const ctx = AU.ctx, o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  lfo.frequency.value = 5; lg.gain.value = 3.5;
+  lfo.connect(lg); lg.connect(o.frequency);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(0.09, when + 0.3);
+  g.gain.setValueAtTime(0.09, when + dur - 0.35);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(AU.music);
+  o.start(when); lfo.start(when); o.stop(when + dur + 0.05); lfo.stop(when + dur + 0.05);
+}
+function scheduleMusic() {
+  if (!AU.ctx || !settings.musicOn) return;
+  const beat = 0.84; // about 72 beats per minute
+  if (AU.nextBar < AU.ctx.currentTime) AU.nextBar = AU.ctx.currentTime + 0.1;
+  while (AU.nextBar < AU.ctx.currentTime + 0.6) {
+    const ch = CHORDS[AU.bar % CHORDS.length], when = AU.nextBar;
+    envNote(ch.root, when, beat * 4, 0.07, 'sine', AU.music);
+    const ph = PHRASE[AU.bar % PHRASE.length];
+    saz(ch.tones[ph[0]], when);
+    saz(ch.tones[ph[1]], when + beat * 2);
+    if (AU.bar % 2 === 1) flute(ch.tones[3], when + beat, beat * 2.6);
+    AU.nextBar += beat * 4;
+    AU.bar++;
+  }
+}
+function maybeBird() {
+  if (!AU.ctx || !settings.musicOn || G.screen === 'pause') return;
+  if (Math.random() > 0.45) return;
+  const when = AU.ctx.currentTime + 0.05, base = 2100 + Math.random() * 900;
+  for (let k = 0; k < 3; k++) {
+    const f = base * (1 + k * 0.12), ctx = AU.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f, when + k * 0.16);
+    o.frequency.exponentialRampToValueAtTime(f * 1.35, when + k * 0.16 + 0.09);
+    g.gain.setValueAtTime(0.0001, when + k * 0.16);
+    g.gain.exponentialRampToValueAtTime(0.05, when + k * 0.16 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + k * 0.16 + 0.12);
+    o.connect(g); g.connect(AU.music);
+    o.start(when + k * 0.16); o.stop(when + k * 0.16 + 0.15);
+  }
+}
+function sfxSplash() {
+  if (!AU.ctx || !settings.sfxOn) return;
+  const ctx = AU.ctx, s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain(), now = ctx.currentTime;
+  s.buffer = AU.noise; bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.2;
+  g.gain.setValueAtTime(0.25, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+  s.connect(bp); bp.connect(g); g.connect(AU.sfx); s.start(now, Math.random());
+  s.stop(now + 0.25);
+}
+function sfxChime(notes) {
+  if (!AU.ctx || !settings.sfxOn) return;
+  notes.forEach((f, k) => envNote(f, AU.ctx.currentTime + k * 0.13, 0.9, 0.16, 'sine', AU.sfx));
+}
+function sfxFail() {
+  if (!AU.ctx || !settings.sfxOn) return;
+  const now = AU.ctx.currentTime;
+  envNote(220, now, 0.7, 0.12, 'triangle', AU.sfx);
+  envNote(165, now + 0.22, 0.9, 0.1, 'triangle', AU.sfx);
+}
+function setTrickle(on) {
+  if (!AU.ctx) return;
+  const target = on && settings.sfxOn ? 0.05 * settings.sfx : 0;
+  AU.trickleG.gain.setTargetAtTime(target, AU.ctx.currentTime, 0.25);
+}
+
+// ---------- game state ----------
+const G = {
+  screen: 'title', inLevel: false, idx: 0, def: null, st: null, n: 0,
+  used: { stone: 0, dam: 0, split: 0 }, undo: [], tool: 'stone',
+  running: false, speed: 1, acc: 0, dirty: true, waterDirty: true, hover: -1,
+  poolFull: [], calciumTick: -100, lastWin: false, res: null, returnTo: 'title'
+};
+
+function budget(kind) { return G.def.tools[kind] - G.used[kind]; }
+function totalUsed() { return G.used.stone + G.used.dam + G.used.split; }
+function poolCounts() {
+  let filled = 0;
+  for (const p of G.st.pools) if (G.st.w[p.i] >= p.m - 1e-6) filled++;
+  return { filled, total: G.st.pools.length };
+}
+function starState(win) {
+  const par = G.def.sol ? G.def.sol.length : 0;
+  return [!!win, !!win && G.st.wasted < 0.01, !!win && totalUsed() <= par];
+}
+
+function loadLevel(i) {
+  G.idx = Math.max(0, Math.min(LEVEL_COUNT - 1, i));
+  G.def = LEVELS[G.idx];
+  G.n = G.def.n;
+  G.st = PSim.create(G.def);
+  G.used = { stone: 0, dam: 0, split: 0 };
+  G.undo = [];
+  G.running = false; G.acc = 0; G.hover = -1; G.poolFull = []; G.calciumTick = -100;
+  buildBoard(G.n);
+  view.dist = 9 + G.n * 0.35;   // closer, so the terraces fill the frame
+  G.dirty = true; G.waterDirty = true;
+  G.inLevel = true;
+  document.getElementById('toasts').innerHTML = '';   // toasts from the previous level do not carry over
+  progress.last = G.idx;
+  writeJSON(SAVE_KEY, progress);
+  refreshTerrain(); refreshTools(); refreshWater();
+  renderTray();
+  document.body.dataset.area = String(G.def.area);
+  applyAreaSky();
+}
+
+function startLevel(i) {
+  if (i > progress.unlocked - 1) return toast(t('toastLocked'), 'bad');
+  loadLevel(i);
+  showScreen('play');
+  toast(`${levelName(i)}: ${levelHint(i)}`, 'info');
+}
+
+function placeAt(i, kind = G.tool) {
+  if (G.screen !== 'play' || i < 0) return false;
+  const st = G.st;
+  if (i === st.spring) { toast(t('toastSpring'), 'bad'); return false; }
+  if (st.tool[i]) { toast(t('toastOccupied'), 'bad'); return false; }
+  if (budget(kind) <= 0) { toast(t('toastNoTool'), 'bad'); return false; }
+  PSim.place(st, kind, i);
+  G.used[kind]++;
+  G.undo.push({ op: 'place', i, tool: kind });
+  G.dirty = true;
+  sfxSplash();
+  for (let b = 0; b < 6; b++) burst(i);
+  renderTray();
+  return true;
+}
+
+function removeAt(i) {
+  if (G.screen !== 'play' || i < 0) return false;
+  const kind = G.st.tool[i];
+  if (!kind) return false;
+  PSim.remove(G.st, i);
+  G.used[kind]--;
+  G.undo.push({ op: 'remove', i, tool: kind });
+  G.dirty = true;
+  toast(t('toastRemoved'), 'info');
+  renderTray();
+  return true;
+}
+
+function undoLast() {
+  if (G.screen !== 'play') return;
+  const a = G.undo.pop();
+  if (!a) return toast(t('toastNothing'), 'info');
+  if (a.op === 'place') { PSim.remove(G.st, a.i); G.used[a.tool]--; }
+  else { PSim.place(G.st, a.tool, a.i); G.used[a.tool]++; }
+  G.dirty = true;
+  toast(t('toastUndone'), 'info');
+  renderTray();
+}
+
+function setRunning(on) {
+  if (G.screen !== 'play' && G.screen !== 'pause') return;
+  G.running = on;
+  if (on) { G.acc = 0; toast(t('toastStart'), 'good'); }
+  else if (G.st && G.st.tick > 0) toast(t('toastStop'), 'info');
+  setTrickle(on);
+  renderTray();
+}
+function toggleRun() { if (G.screen === 'play') setRunning(!G.running); }
+
+function setTool(kind) {
+  G.tool = kind;
+  renderTray();
+}
+
+function resetLevel() {
+  if (G.screen !== 'play' && G.screen !== 'pause') return;
+  loadLevel(G.idx);
+  showScreen('play');
+  toast(t('toastReset'), 'info');
+}
+
+// advances one tick and checks for the end of the level
+function advance() {
+  const st = G.st;
+  PSim.step(st);
+  if (st.rimChanged) {
+    G.dirty = true;
+    if (st.tick - G.calciumTick > 60) { toast(t('toastCalcium'), 'info'); G.calciumTick = st.tick; }
+  }
+  G.waterDirty = true;
+  st.pools.forEach((p, k) => {
+    const full = st.w[p.i] >= p.m - 1e-6;
+    if (full && !G.poolFull[k]) {
+      G.poolFull[k] = true;
+      sfxChime([880, 1320]);
+      toast(t('toastPoolFull'), 'good');
+      for (let b = 0; b < 14; b++) burst(p.i);
+    }
+  });
+  const s = PSim.status(st);
+  if (s.done) finish(true);
+  else if (st.tick >= G.def.time) finish(false);
+}
+
+function burst(cell) {
+  const n = G.n, x = cellX(cell, n), z = cellZ(cell, n), y = PSim.height(G.st, cell) * HU + 0.2;
+  spawnParticle(x, y, z, (Math.random() - 0.5) * 1.6, 1.8 + Math.random() * 1.8, (Math.random() - 0.5) * 1.6, 1.1);
+}
+
+function finish(win) {
+  G.running = false;
+  setTrickle(false);
+  const [s1, s2, s3] = starState(win);
+  const stars = (s1 ? 1 : 0) + (s2 ? 1 : 0) + (s3 ? 1 : 0);
+  G.lastWin = win;
+  G.res = { win, stars: [s1, s2, s3] };
+  if (win) {
+    progress.stars[G.idx] = Math.max(progress.stars[G.idx] || 0, stars);
+    progress.unlocked = Math.max(progress.unlocked, Math.min(LEVEL_COUNT, G.idx + 2));
+    writeJSON(SAVE_KEY, progress);
+    updateBest();
+    sfxChime([523.25, 659.25, 783.99, 1046.5]);
+  } else {
+    sfxFail();
+    toast(t('toastTimeUp'), 'bad');
+  }
+  showResult();
+}
+
+function updateBest() {
+  let total = 0, done = 0;
+  for (const k in progress.stars) { total += progress.stars[k]; if (progress.stars[k] > 0) done++; }
+  best.stars = Math.max(best.stars, total);
+  best.done = Math.max(best.done, done);
+  writeJSON(BEST_KEY, best);
+}
+
+function showResult() {
+  const r = G.res, title = r.win ? t('done') : t('failed');
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-sub').textContent = `${t('levelWord')} ${G.idx + 1} · ${levelName(G.idx)}`;
+  document.getElementById('res-stars').innerHTML = r.stars.map(starSvg).join('') ;
+  const cnt = poolCounts(), used = totalUsed();
+  const rows = [
+    [t('poolsFilled'), `${cnt.filled}/${cnt.total}`],
+    [t('waterUsed'), G.st.emitted.toFixed(1)],
+    [t('spilled'), G.st.wasted.toFixed(1)],
+    [t('toolsLeft'), String(G.def.tools.stone + G.def.tools.dam + G.def.tools.split - used)]
+  ];
+  document.getElementById('res-list').innerHTML = rows.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('') +
+    [[t('star1'), r.stars[0]], [t('star2'), r.stars[1]], [t('star3'), r.stars[2]]].map(([a, on]) => `<li><span><i class="check ${on ? 'on' : ''}"></i>${a}</span><span></span></li>`).join('');
+  const next = document.getElementById('btn-next');
+  const last = G.idx === LEVEL_COUNT - 1;
+  next.textContent = last ? t('ending') : t('next');
+  next.disabled = !r.win;
+  document.getElementById('btn-retry').classList.toggle('primary', !r.win);
+  showScreen('result');
+}
+
+function showEnd() {
+  let total = 0, done = 0;
+  for (const k in progress.stars) { total += progress.stars[k]; if (progress.stars[k] > 0) done++; }
+  document.getElementById('end-list').innerHTML =
+    `<li><span>${t('totalStars')}</span><span>${total}/${LEVEL_COUNT * 3}</span></li>` +
+    `<li><span>${t('levelsDone')}</span><span>${done}/${LEVEL_COUNT}</span></li>`;
+  G.endSpin = 0;
+  G.inLevel = false;
+  showScreen('end');
+}
+
+// ---------- screens and overlays ----------
+const OVERLAYS = { title: 'ov-title', areas: 'ov-areas', settings: 'ov-settings', pause: 'ov-pause', result: 'ov-result', end: 'ov-end' };
+function showScreen(name) {
+  G.screen = name;
+  for (const k in OVERLAYS) document.getElementById(OVERLAYS[k]).classList.toggle('hidden', k !== name);
+  const inGame = name === 'play' || name === 'pause' || name === 'result';
+  document.getElementById('hud').classList.toggle('hidden', !inGame || !G.inLevel);
+  document.getElementById('tray').classList.toggle('hidden', !(name === 'play' || name === 'pause'));
+  if (name === 'areas') renderAreas();
+  if (name === 'settings') syncSettingsUI();
+  if (name === 'title') renderTitle();
+  if (name === 'pause') { G.running = false; setTrickle(false); }
+  if (name === 'result') { G.running = false; setTrickle(false); }
+  renderTray();
+  if (name === 'play' || name === 'result' || name === 'pause') renderHUD();
+}
+
+function renderTitle() {
+  const cont = document.getElementById('btn-continue');
+  const started = progress.unlocked > 1 || Object.keys(progress.stars).length > 0;
+  cont.classList.toggle('hidden', !started);
+  const bl = document.getElementById('best-line');
+  bl.textContent = best.stars > 0 ? `${t('best')}: ${best.stars}/${LEVEL_COUNT * 3} ★ · ${best.done}/${LEVEL_COUNT}` : '';
+}
+
+function renderAreas() {
+  const box = document.getElementById('areas-grid');
+  box.innerHTML = '';
+  for (let a = 0; a < 4; a++) {
+    const div = document.createElement('div');
+    div.className = 'area';
+    div.innerHTML = `<h3>${AREA_NAMES[a][L]}</h3><div class="grid"></div>`;
+    const grid = div.querySelector('.grid');
+    for (let i = 0; i < LEVEL_COUNT; i++) {
+      if (LEVELS[i].area !== a) continue;
+      const b = document.createElement('button');
+      const st = progress.stars[i] || 0;
+      const locked = i > progress.unlocked - 1;
+      b.className = 'lvl' + (i === G.idx && G.inLevel ? ' cur' : '');
+      b.disabled = locked;
+      b.setAttribute('aria-label', `${t('levelWord')} ${i + 1} ${levelName(i)}`);
+      b.innerHTML = `${i + 1}<small>${'★'.repeat(st)}${st ? '' : '·'}</small>`;
+      b.onclick = () => startLevel(i);
+      grid.appendChild(b);
+    }
+    box.appendChild(div);
+  }
+}
+
+function syncSettingsUI() {
+  const setv = (id, v) => { document.getElementById(id).value = v; };
+  setv('set-master', settings.master); setv('set-music', settings.music); setv('set-sfx', settings.sfx);
+  document.getElementById('v-master').textContent = Math.round(settings.master * 100) + '%';
+  document.getElementById('v-music').textContent = Math.round(settings.music * 100) + '%';
+  document.getElementById('v-sfx').textContent = Math.round(settings.sfx * 100) + '%';
+  document.getElementById('seg-tr').setAttribute('aria-pressed', String(settings.lang === 'tr'));
+  document.getElementById('seg-en').setAttribute('aria-pressed', String(settings.lang === 'en'));
+  document.getElementById('q-low').setAttribute('aria-pressed', String(settings.quality === 'low'));
+  document.getElementById('q-high').setAttribute('aria-pressed', String(settings.quality === 'high'));
+  const fs = !!document.fullscreenElement;
+  const bf = document.getElementById('btn-full');
+  bf.textContent = fs ? t('onOff')[0] : t('onOff')[1];
+  bf.setAttribute('aria-pressed', String(fs));
+  bf.setAttribute('aria-label', `${t('fullscreen')}: ${bf.textContent}`);
+}
+
+function applyI18n() {
+  document.documentElement.lang = settings.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelector('.footer').innerHTML = `<a href="${GAME_URL}" target="_blank" rel="noopener">Claude Game Arena</a> · built by Claude Haiku 5.5`;
+  document.getElementById('btn-lang').textContent = settings.lang.toUpperCase();
+  document.getElementById('btn-lang-title').textContent = settings.lang === 'tr' ? 'TR / EN' : 'EN / TR';
+  document.getElementById('btn-sound').innerHTML = svg(settings.musicOn || settings.sfxOn ? 'sound' : 'mute');
+  document.getElementById('btn-pause').innerHTML = svg(G.screen === 'play' ? 'pause' : 'play');
+  renderHUD(); renderTray();
+  renderTitle();
+  if (G.screen === 'areas') renderAreas();
+  if (G.screen === 'result' && G.res) showResult();
+  if (G.screen === 'end') showEnd();
+  if (G.screen === 'settings') syncSettingsUI();
+}
+
+function setLang(code) {
+  settings.lang = code;
+  writeJSON(SET_KEY, settings);
+  applyI18n();
+}
+
+// ---------- HUD and tray ----------
+function renderHUD() {
+  if (!G.st) return;
+  const cnt = poolCounts();
+  document.getElementById('hud-level').innerHTML = `<small>${t('levelWord')}</small>${G.idx + 1}/${LEVEL_COUNT}<span class="lvl-name"> · ${levelName(G.idx)}</span>`;
+  document.getElementById('hud-pools').textContent = `${cnt.filled}/${cnt.total}`;
+  document.getElementById('hud-water').textContent = G.st.emitted.toFixed(1);
+  const [s1, s2, s3] = starState(G.st.pools.length && poolCounts().filled === cnt.total);
+  document.getElementById('hud-stars').innerHTML = [s1, s2, s3].map(starSvg).join('');
+  document.getElementById('btn-pause').innerHTML = svg(G.screen === 'play' ? 'pause' : 'play');
+  document.getElementById('btn-sound').innerHTML = svg(settings.musicOn || settings.sfxOn ? 'sound' : 'mute');
+  document.getElementById('btn-sound').classList.toggle('on', settings.musicOn || settings.sfxOn);
+}
+
+function renderTray() {
+  for (const kind of TOOL_KINDS) {
+    const b = document.getElementById('tool-' + kind);
+    const left = G.def ? budget(kind) : 0;
+    b.classList.toggle('sel', G.tool === kind);
+    b.setAttribute('aria-pressed', String(G.tool === kind));
+    document.getElementById('cnt-' + kind).textContent = String(left);
+    b.disabled = left <= 0;
+  }
+  const run = document.getElementById('btn-run');
+  document.getElementById('run-label').textContent = G.running ? t('stop') : t('start');
+  run.classList.toggle('primary', !G.running);
+  document.getElementById('btn-fast').setAttribute('aria-pressed', String(G.speed > 1));
+  document.getElementById('btn-fast').classList.toggle('on', G.speed > 1);
+  renderHUD();
+}
+
+let toastCount = 0;
+function toast(msg, kind = 'info') {
+  const box = document.getElementById('toasts');
+  if ([...box.children].some(c => c.textContent === msg)) return;   // no stacked duplicates
+  const d = document.createElement('div');
+  d.className = 'toast ' + (kind === 'info' ? '' : kind);
+  d.textContent = msg;
+  box.appendChild(d);
+  while (box.children.length > 4) box.firstChild.remove();
+  setTimeout(() => d.remove(), 2600);
+  toastCount++;
+}
+
+// ---------- picking and pointer input ----------
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function cellAt(clientX, clientY) {
+  if (!board) return -1;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObject(board.terrain, false)[0];
+  if (!hit) return -1;
+  const n = G.n, x = Math.floor(hit.point.x + n / 2), y = Math.floor(hit.point.z + n / 2);
+  if (x < 0 || y < 0 || x >= n || y >= n) return -1;
+  return y * n + x;
+}
+
+const pointers = new Map();
+let drag = null, pinchStart = 0, pinchDist = 0, longTimer = 0;
+canvas.addEventListener('pointerdown', e => {
+  audioInit();
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinchStart = Math.hypot(a.x - b.x, a.y - b.y); pinchDist = view.dist;
+    drag = null; clearTimeout(longTimer);
+    return;
+  }
+  drag = { x: e.clientX, y: e.clientY, moved: false, long: false, button: e.button, touch: e.pointerType !== 'mouse' };
+  if (drag.touch && G.screen === 'play') {
+    longTimer = setTimeout(() => {
+      if (drag && !drag.moved) { drag.long = true; removeAt(cellAt(drag.x, drag.y)); }
+    }, 520);
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    view.dist = Math.min(24, Math.max(8, pinchDist * (pinchStart / Math.max(1, d))));
+    return;
+  }
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 7) { drag.moved = true; clearTimeout(longTimer); }
+    if (drag.moved) {
+      view.yaw = Math.max(-0.8, Math.min(0.8, view.yaw - dx * 0.006));
+      view.pitch = Math.max(0.12, Math.min(1.15, view.pitch + dy * 0.004));
+      drag.x = e.clientX; drag.y = e.clientY;
+    }
+  } else if (G.screen === 'play' && e.pointerType === 'mouse') {
+    G.hover = cellAt(e.clientX, e.clientY);
+  }
+});
+canvas.addEventListener('pointerup', e => {
+  pointers.delete(e.pointerId);
+  clearTimeout(longTimer);
+  if (drag && !drag.moved && !drag.long && pointers.size === 0 && G.screen === 'play') {
+    const i = cellAt(e.clientX, e.clientY);
+    if (drag.button === 2) removeAt(i);
+    else if (drag.button === 0) placeAt(i);
+  }
+  if (pointers.size === 0) drag = null;
+});
+canvas.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); drag = null; clearTimeout(longTimer); });
+canvas.addEventListener('pointerleave', () => { G.hover = -1; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  view.dist = Math.min(24, Math.max(8, view.dist * (1 + e.deltaY * 0.001)));
+}, { passive: false });
+
+function updateGhost() {
+  if (G.screen !== 'play' || G.hover < 0 || !G.st || G.st.tool[G.hover] || G.hover === G.st.spring || budget(G.tool) <= 0) {
+    ghost.visible = false; return;
+  }
+  ghost.visible = true;
+  ghost.geometry = toolGeo[G.tool];
+  ghost.position.set(cellX(G.hover, G.n), PSim.height(G.st, G.hover) * HU + 0.2, cellZ(G.hover, G.n));
+}
+
+// ---------- keyboard ----------
+function isControl(el) { return el && (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'A'); }
+window.addEventListener('keydown', e => {
+  audioInit();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (k === 'Escape' || k === 'p' || k === 'P') {
+    if (G.screen === 'play') { showScreen('pause'); e.preventDefault(); }
+    else if (G.screen === 'pause') { showScreen('play'); e.preventDefault(); }
+    else if (G.screen === 'settings' && G.returnTo === 'pause') { showScreen('pause'); }
+    return;
+  }
+  if (k === 'm' || k === 'M') { settings.musicOn = !settings.musicOn; writeJSON(SET_KEY, settings); applyVolumes(); toast(`${t('music')}: ${settings.musicOn ? t('onOff')[0] : t('onOff')[1]}`, 'info'); renderHUD(); return; }
+  if (k === 'x' || k === 'X') { settings.sfxOn = !settings.sfxOn; writeJSON(SET_KEY, settings); applyVolumes(); toast(`${t('sfx')}: ${settings.sfxOn ? t('onOff')[0] : t('onOff')[1]}`, 'info'); renderHUD(); return; }
+  if (k === 'l' || k === 'L') { setLang(settings.lang === 'tr' ? 'en' : 'tr'); return; }
+  if (isControl(e.target) && (k === ' ' || k === 'Enter')) return;   // let focused controls handle their own keys
+  if (G.screen !== 'play' && G.screen !== 'pause') return;
+  if (k === '1') setTool('stone');
+  else if (k === '2') setTool('dam');
+  else if (k === '3') setTool('split');
+  else if (k === ' ') { e.preventDefault(); if (G.screen === 'play') toggleRun(); }
+  else if (k === 'f' || k === 'F') { G.speed = G.speed > 1 ? 1 : 3; renderTray(); }
+  else if (k === 'r' || k === 'R') resetLevel();
+  else if (k === 'z' || k === 'Z') undoLast();
+});
+
+// ---------- buttons ----------
+const on = (id, fn) => document.getElementById(id).addEventListener('click', fn);
+on('btn-play', () => { audioInit(); startLevel(0); });
+on('btn-continue', () => { audioInit(); startLevel(Math.min(progress.unlocked - 1, Math.max(0, progress.last))); });
+on('btn-areas', () => { audioInit(); showScreen('areas'); });
+on('btn-areas-back', () => showScreen('title'));
+on('btn-settings-title', () => { G.returnTo = 'title'; showScreen('settings'); });
+on('btn-pause-settings', () => { G.returnTo = 'pause'; showScreen('settings'); });
+on('btn-settings-back', () => showScreen(G.returnTo));
+on('btn-resume', () => showScreen('play'));
+on('btn-restart', () => resetLevel());
+on('btn-main', () => { G.inLevel = false; showScreen('title'); });
+on('btn-res-main', () => { G.inLevel = false; showScreen('title'); });
+on('btn-res-areas', () => showScreen('areas'));
+on('btn-retry', () => { loadLevel(G.idx); showScreen('play'); });
+on('btn-next', () => {
+  if (!G.res || !G.res.win) return;
+  if (G.idx === LEVEL_COUNT - 1) return showEnd();
+  startLevel(G.idx + 1);
+});
+on('btn-again', () => startLevel(0));
+on('btn-end-main', () => { G.inLevel = false; showScreen('title'); });
+on('btn-lang-title', () => setLang(settings.lang === 'tr' ? 'en' : 'tr'));
+on('btn-lang', () => setLang(settings.lang === 'tr' ? 'en' : 'tr'));
+on('btn-pause', () => { if (G.screen === 'play') showScreen('pause'); else if (G.screen === 'pause') showScreen('play'); });
+on('btn-sound', () => {
+  const both = settings.musicOn || settings.sfxOn;
+  settings.musicOn = !both; settings.sfxOn = !both;
+  writeJSON(SET_KEY, settings); applyVolumes(); renderHUD();
+});
+on('seg-tr', () => setLang('tr'));
+on('seg-en', () => setLang('en'));
+on('q-low', () => { settings.quality = 'low'; writeJSON(SET_KEY, settings); syncSettingsUI(); });
+on('q-high', () => { settings.quality = 'high'; writeJSON(SET_KEY, settings); syncSettingsUI(); });
+on('btn-full', () => {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
+  } catch (e) { /* not allowed here */ }
+  setTimeout(syncSettingsUI, 300);
+});
+document.getElementById('set-master').addEventListener('input', e => { settings.master = +e.target.value; writeJSON(SET_KEY, settings); applyVolumes(); syncSettingsUI(); });
+document.getElementById('set-music').addEventListener('input', e => { settings.music = +e.target.value; writeJSON(SET_KEY, settings); applyVolumes(); syncSettingsUI(); });
+document.getElementById('set-sfx').addEventListener('input', e => { settings.sfx = +e.target.value; writeJSON(SET_KEY, settings); applyVolumes(); syncSettingsUI(); });
+for (const kind of TOOL_KINDS) document.getElementById('tool-' + kind).addEventListener('click', () => setTool(kind));
+on('btn-run', () => toggleRun());
+on('btn-fast', () => { G.speed = G.speed > 1 ? 1 : 3; renderTray(); });
+on('btn-undo', () => undoLast());
+on('btn-reset', () => resetLevel());
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.running) setRunning(false); });
+
+// ---------- area sky and light ----------
+const SKIES = [
+  { top: '#BFE6FF', bottom: '#FFE3D0', fog: 0xFBE6D6, sun: 0xFFF6E6, sunI: 1.9 },
+  { top: '#B5E2FA', bottom: '#FFD9C0', fog: 0xF9DCC8, sun: 0xFFEFD8, sunI: 1.9 },
+  { top: '#CDEEFF', bottom: '#FFEAD9', fog: 0xFCE9DA, sun: 0xFFF2E0, sunI: 1.85 },
+  { top: '#FFB997', bottom: '#FFE7D6', fog: 0xFFD2B8, sun: 0xFFC48F, sunI: 1.6 }
+];
+function applyAreaSky() {
+  const a = SKIES[G.def ? G.def.area : 0];
+  const stage = document.getElementById('stage');
+  stage.style.background = `linear-gradient(180deg, ${a.top} 0%, ${a.bottom} 70%)`;
+  scene.fog.color.setHex(a.fog);
+  sun.color.setHex(a.sun);
+  sun.intensity = a.sunI;
+}
+
+// ---------- hooks: fast-forward for tests ----------
+window.pamukkaleSim = function (seconds) {
+  if (!G.st) return null;
+  const steps = Math.round(seconds / TICK);
+  for (let k = 0; k < steps && G.screen !== 'result' && G.screen !== 'end'; k++) advance();
+  G.dirty = true; G.waterDirty = true;
+  return summary();
+};
+
+function summary() {
+  const cnt = G.st ? poolCounts() : { filled: 0, total: 0 };
+  return {
+    screen: G.screen, lang: settings.lang, level: G.idx + 1, levels: LEVEL_COUNT, tick: G.st ? G.st.tick : 0,
+    running: G.running, speed: G.speed, pools: cnt, used: totalUsed(), emitted: G.st ? +G.st.emitted.toFixed(2) : 0,
+    wasted: G.st ? +G.st.wasted.toFixed(2) : 0, stars: G.res ? G.res.stars : null,
+    assets: { mode: 'procedural', loaded: [], failed: [], noassets: FLAGS.noassets },
+    quality: FLAGS.low ? 'low' : quality, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+    fps: fpsNow, errors: errors.length, bot: bot.state, progress: { unlocked: progress.unlocked },
+    // test hooks: the same functions a click or tap calls
+    sol: G.def ? G.def.sol : null,
+    place: (x, y, kind) => placeAt(y * G.n + x, kind),
+    remove: (x, y) => removeAt(y * G.n + x)
+  };
+}
+
+// ---------- bot for ?auto (replays the verified solution through the normal input functions) ----------
+const bot = { active: FLAGS.auto, phase: 'title', timer: 0, state: { phase: 'title', level: 0, won: [], failed: [] } };
+function botTick(dt) {
+  if (!bot.active) return;
+  bot.state.phase = bot.phase; bot.state.level = G.idx + 1;
+  if (bot.phase === 'title' && G.screen === 'title') { bot.phase = 'place'; startLevel(0); return; }
+  if (bot.phase === 'place' && G.screen === 'play') {
+    const sol = G.def.sol || [];
+    for (const [kind, x, y] of sol) placeAt(y * G.n + x, kind);
+    G.speed = 3; G.running = true; G.acc = 0; setTrickle(true);
+    bot.phase = 'run'; bot.timer = 0;
+    return;
+  }
+  if (bot.phase === 'run' && G.screen === 'result') {
+    bot.timer += dt;
+    if (bot.timer < 0.5) return;
+    bot.state.won.push(G.idx + 1);
+    if (!G.res.win) { bot.state.failed.push(G.idx + 1); bot.active = false; bot.phase = 'stopped'; return; }
+    if (G.idx === LEVEL_COUNT - 1) { showEnd(); bot.phase = 'end'; return; }
+    startLevel(G.idx + 1); bot.phase = 'place';
+    return;
+  }
+  if (bot.phase === 'run' && G.screen === 'play' && !G.running) { bot.phase = 'stopped'; bot.active = false; }
+}
+
+// ---------- title, loop and debug ----------
+let last = performance.now(), fpsFrames = 0, fpsStart = last, fpsNow = 0, debugTimer = 0, hudClock = 0;
+const dbg = document.getElementById('debug');
+if (FLAGS.debug) dbg.classList.remove('hidden');
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (!document.hidden && G.running && G.st) {
+    G.acc += dt * G.speed;
+    let guard = 0;
+    while (G.acc >= TICK && G.running && guard++ < 120) { G.acc -= TICK; advance(); }
+  }
+  // spring fountain particles
+  if (G.st && G.running) {
+    spawnAcc += dt * (quality === 'low' ? 45 : 90);
+    while (spawnAcc >= 1) {
+      spawnAcc -= 1;
+      const sx = cellX(G.st.spring, G.n), sz = cellZ(G.st.spring, G.n), sy = PSim.height(G.st, G.st.spring) * HU + 0.5;
+      spawnParticle(sx, sy, sz, (Math.random() - 0.5) * 0.4, 1.2 + Math.random() * 1.2, (Math.random() - 0.5) * 0.4, 0.9);
+    }
+  }
+  for (let k = 0; k < MAXP; k++) {
+    if (pLife[k] <= 0) { pPos[k * 3 + 1] = -100; continue; }
+    pLife[k] -= dt;
+    pVel[k * 3 + 1] -= 6 * dt;
+    pPos[k * 3] += pVel[k * 3] * dt; pPos[k * 3 + 1] += pVel[k * 3 + 1] * dt; pPos[k * 3 + 2] += pVel[k * 3 + 2] * dt;
+    if (pLife[k] <= 0) pPos[k * 3 + 1] = -100;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+
+  if (G.dirty && G.st) { refreshTerrain(); refreshTools(); G.dirty = false; G.waterDirty = true; }
+  if (G.waterDirty && G.st) { refreshWater(); G.waterDirty = false; }
+  if (G.st && board) shimmer(now / 1000);
+  hudClock += dt;
+  if (hudClock > 0.25) {   // keep the HUD counters in step with the simulation
+    hudClock = 0;
+    if (G.inLevel && (G.screen === 'play' || G.screen === 'pause')) renderHUD();
+  }
+  if (G.screen === 'play' || G.screen === 'pause') updateGhost(); else ghost.visible = false;
+
+  clouds.position.x = Math.sin(now / 12000) * 2;
+  if (G.screen === 'title') view.yaw += dt * 0.07;
+  if (G.screen === 'end') view.yaw += dt * 0.1;
+  updateCamera();
+  renderer.render(scene, camera);
+
+  botTick(dt);
+  fpsFrames++;
+  if (now - fpsStart >= 500) { fpsNow = Math.round(fpsFrames * 1000 / (now - fpsStart)); fpsFrames = 0; fpsStart = now; }
+  debugTimer += dt;
+  if (debugTimer > 0.25 && FLAGS.debug) {
+    debugTimer = 0;
+    dbg.classList.toggle('err', errors.length > 0);
+    dbg.textContent = `fps ${fpsNow}  draw calls ${renderer.info.render.calls}  triangles ${renderer.info.render.triangles}\n` +
+      `screen ${G.screen}  level ${G.idx + 1}  tick ${G.st ? G.st.tick : 0}  speed ${G.speed}\n` +
+      `quality ${quality}  shadows ${renderer.shadowMap.enabled ? 'on' : 'off'}  lang ${settings.lang}\n` +
+      `errors ${errors.length}${errors.length ? ': ' + errors.slice(-3).join(' | ') : ''}`;
+  }
+}
+
+// ---------- boot ----------
+function boot() {
+  applyI18n();
+  window.pamukkale = {};
+  document.getElementById('loading').classList.add('hidden');
+  const simSec = Number(Q.get('sim') || 0);
+  if (simSec > 0) {
+    G.inLevel = false;
+    startLevel(Math.min(progress.last, progress.unlocked - 1));
+    G.running = true; setTrickle(false);
+    window.pamukkaleSim(simSec);
+    G.running = true;
+  } else {
+    loadLevel(0);
+    showScreen('title');
+  }
+  if (FLAGS.auto) { bot.phase = 'title'; }
+  requestAnimationFrame(t0 => { last = t0; requestAnimationFrame(frame); });
+  Object.defineProperty(window, 'pamukkale', { get: summary, configurable: true });
+}
+boot();
+</script>
+</body>
+</html>
