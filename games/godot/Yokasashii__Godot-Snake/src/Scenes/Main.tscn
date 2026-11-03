@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cl8dswxeygses"]
+
+[ext_resource type="Script" uid="uid://h076qse2tkfh" path="res://Scripts/Snake.cs" id="1_r150o"]
+[ext_resource type="Texture2D" uid="uid://bx6n4shu281st" path="res://Assets/Snake/Background.png" id="2_idj7w"]
+[ext_resource type="PackedScene" uid="uid://bp6dh0rh6ts4f" path="res://Scenes/Head.tscn" id="2_pbw6q"]
+[ext_resource type="PackedScene" uid="uid://bh8hpgf1wjpek" path="res://Scenes/Body.tscn" id="3_v1gob"]
+[ext_resource type="PackedScene" uid="uid://dpv857tx8cpos" path="res://Scenes/Apple.tscn" id="4_jw32o"]
+
+[node name="Main" type="Node2D" unique_id=1958644901 node_paths=PackedStringArray("gameTimer")]
+script = ExtResource("1_r150o")
+sceneHead = ExtResource("2_pbw6q")
+sceneBody = ExtResource("3_v1gob")
+sceneApple = ExtResource("4_jw32o")
+gameTimer = NodePath("Timer")
+
+[node name="GameBackground" type="Sprite2D" parent="." unique_id=368551447]
+position = Vector2(576.00006, 323.99997)
+texture = ExtResource("2_idj7w")
+
+[node name="Timer" type="Timer" parent="." unique_id=1481991057]
+wait_time = 0.25
+autostart = true
+
+[node name="GameContener" type="Node2D" parent="." unique_id=834581386]
+position = Vector2(267, 89)

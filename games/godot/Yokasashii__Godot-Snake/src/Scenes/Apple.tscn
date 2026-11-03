@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://dpv857tx8cpos"]
+
+[ext_resource type="Texture2D" uid="uid://cs6xundbodg8e" path="res://Assets/Visual/Snake/Apple.png" id="1_gep6q"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1i43n"]
+size = Vector2(32, 32)
+
+[node name="Apple" type="Area2D" unique_id=780165708]
+
+[node name="Runderer" type="Sprite2D" parent="." unique_id=49592412]
+texture = ExtResource("1_gep6q")
+
+[node name="Collision" type="CollisionShape2D" parent="." unique_id=435978897]
+shape = SubResource("RectangleShape2D_1i43n")
