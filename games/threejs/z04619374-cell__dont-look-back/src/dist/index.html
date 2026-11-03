@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A split-screen whitebox horror game.">
+  <meta name="theme-color" content="#0c1012">
+  <title>Don't Look Back</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c1012'/%3E%3Cpath d='M16 5v22M7 7h18v18H7z' stroke='%23d7d9d0' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-title">DON’T LOOK BACK</span></div>
+      <div class="top-actions"><span class="edition">90s</span><button id="sound" class="icon-button" aria-label="Mute" title="Sound">♪</button><button id="settings" class="icon-button" aria-label="Settings" title="Settings">⚙</button><button id="pause" class="icon-button" aria-label="Pause" title="Pause">Ⅱ</button></div>
+    </header>
+    <section id="stage" class="stage" aria-label="Game: A on the left, B on the right">
+      <canvas id="game" aria-label="Split-screen 3D whitebox scene"></canvas>
+      <div class="view-label a-label"><span>A</span><i>/</i>AHEAD</div>
+      <div id="b-label" class="view-label b-label"><span>B</span><i>/</i>BEHIND</div>
+      <div id="divider" class="divider"></div>
+      <div id="damage" class="damage"></div>
+      <div class="a-status"><span id="cue"></span><div id="hold-warning" class="hold-warning" hidden>Release A</div><div class="pressure-track"><span id="pressure-fill"></span></div></div>
+      <div id="b-cue" class="b-cue"></div>
+      <div id="reticle" class="reticle" hidden>+</div>
+      <div id="overlay" class="overlay">
+        <div class="dialog" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-copy">
+          <p id="result-label" class="result-label" hidden></p>
+          <h1 id="dialog-title">Don’t look back.</h1>
+          <p id="dialog-copy" class="dialog-copy"></p>
+          <p id="dialog-detail" class="dialog-detail"></p>
+          <button id="start" class="primary">Start <span aria-hidden="true">→</span></button>
+          <p id="dialog-note" class="dialog-note"></p>
+        </div>
+      </div>
+      <div id="settings-panel" class="settings-panel" hidden>
+        <div class="settings-head"><h2>Settings</h2><button id="close-settings" class="icon-button" aria-label="Close settings">×</button></div>
+        <label for="sensitivity">Sensitivity <output id="sensitivity-value">1.0×</output></label><input id="sensitivity" type="range" min="0.3" max="2.5" step="0.1" value="1">
+        <label for="volume">Volume <output id="volume-value">35%</output></label><input id="volume" type="range" min="0" max="100" step="5" value="35">
+        <label class="checkbox"><input id="reduced-motion" type="checkbox">Reduce shake</label>
+        
+      </div>
+      <div id="unsupported" class="unsupported" hidden><h2>Desktop required</h2><p>Mouse & keyboard required.</p></div>
+    </section>
+    <div class="hud"><div class="hud-item health"><span>Health</span><div class="meter"><span id="health-fill"></span></div><span id="health-value">100</span></div><div class="time"><span id="time-value">00:00</span><span class="time-end"> / 01:30</span></div><div class="hud-item contact"><span>Contact</span><div class="meter"><span id="contact-fill"></span></div><span id="contact-value">100%</span></div></div>
+    <footer class="controls"><span><kbd>Mouse</kbd> Look</span><span><kbd>A</kbd> Tap to guard</span><span><kbd>Click</kbd> Tap shoulder</span><span><kbd>Esc</kbd> Pause</span></footer>
+  </main>
+  <noscript>Enable JavaScript to play.</noscript>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
