@@ -1,0 +1,29 @@
+local const = require("game.lib.const")
+
+local ANIM_PLAY = "endpoint-play"
+
+local SPRITE_URL = "#sprite"
+local CONFETTI_URL = "confetti#confetti"
+
+function init(self)
+	self.endpoint_reached = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == const.MSG.TRIGGER_RESPONSE then
+		if message.other_group == const.GROUP.PLAYER and message.enter and not self.endpoint_reached then 
+			-- player has entered the endpoint
+			self.endpoint_reached = true
+
+			-- message the player that endpoint is reached
+			msg.post(message.other_id, const.MSG.ENDPOINT_REACHED)
+
+			-- animate the trophy and shoot confetti
+			sprite.play_flipbook(SPRITE_URL, ANIM_PLAY)
+			timer.delay(0.2, false, function() 
+				particlefx.play(CONFETTI_URL) 
+			end)	
+		end
+	end
+end
+

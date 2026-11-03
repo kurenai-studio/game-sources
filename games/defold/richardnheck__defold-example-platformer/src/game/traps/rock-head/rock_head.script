@@ -1,0 +1,73 @@
+-- =============================================================================
+-- Rock-Head Trap
+--
+-- A patrolling hazard that moves in a straight line (vertical or horizontal,
+-- set via the `direction` property) at `speed` px/s. It bounces off world
+-- tiles -- on contact with a wall/floor/ceiling ahead it reverses direction.
+-- The sprite blinks at a random interval (idle -> blink -> idle).
+-- Touching it kills the player (its collision object is in the `trap` group,
+-- which the player's trap-death handler reacts to).
+-- =============================================================================
+
+local const = require("game.lib.const")
+local audio = require "main.audio"
+
+-- Patrol axis and speed. Set per instance in the level.
+-- Start direction: (0,-1)=down (0,1)=up (1,0)=right (-1,0)=left
+go.property("speed", 50)
+go.property("direction", vmath.vector3(0, -1, 0))
+
+local SPRITE     = "#sprite"
+local ANIM_IDLE  = hash("rock-head-idle")
+local ANIM_BLINK = hash("rock-head-blink")
+
+-- Random seconds between blinks
+local BLINK_MIN = 2.0
+local BLINK_MAX = 6.0
+
+-- Wait a random delay, play the one-shot blink, then return to idle and repeat.
+local function schedule_blink()
+	local delay = BLINK_MIN + math.random() * (BLINK_MAX - BLINK_MIN)
+	timer.delay(delay, false, function()
+		sprite.play_flipbook(SPRITE, ANIM_BLINK, function()
+			sprite.play_flipbook(SPRITE, ANIM_IDLE)
+			schedule_blink()
+		end)
+	end)
+end
+
+function init(self)
+	-- Make direction a unit vector so movement speed always equals `speed`,
+	-- regardless of how the direction property was entered (e.g. (0,-2,0)).
+	-- Guard against a zero vector, which can't be normalized.
+	if vmath.length(self.direction) > 0 then
+		self.direction = vmath.normalize(self.direction)
+	end
+
+	-- For blinking, seed per instance so multiple rock-heads blink out of sync.
+	local p = go.get_position()
+	math.randomseed(math.floor(p.x * 73 + p.y * 131))
+
+	sprite.play_flipbook(SPRITE, ANIM_IDLE)
+	schedule_blink()
+end
+
+function fixed_update(self, dt)
+	go.set_position(go.get_position() + self.direction * self.speed * dt)
+end
+
+function on_message(self, message_id, message, sender)
+	-- Reverse when the collision box hits a world tile (wall / floor / ceiling).
+	if message_id == const.MSG.CONTACT_POINT_RESPONSE and message.other_group == const.GROUP.WORLD then
+		-- Only react to walls ahead of us; the normal points back toward us,
+		-- so it opposes our travel direction on a head-on hit.
+		if vmath.dot(message.normal, self.direction) < 0 then
+			-- Push out of the tile so we never stick, then turn around.
+			go.set_position(go.get_position() + message.normal * message.distance)
+			self.direction = -self.direction
+
+			-- play a thud sound on impact, quieter/panned by distance from the camera centre
+			audio.sound_at(const.AUDIO.THUD, go.get_world_position())
+		end
+	end
+end
