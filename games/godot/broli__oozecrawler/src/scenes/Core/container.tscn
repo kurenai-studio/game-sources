@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://ovlqf2paxyyg"]
+
+[ext_resource type="Script" uid="uid://dhowunixfbjvr" path="res://scripts/core/container.gd" id="1_8cqdy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ktxv1"]
+size = Vector2(400, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_o54e2"]
+size = Vector2(20, 500)
+
+[node name="Container" type="StaticBody2D" unique_id=303102109]
+script = ExtResource("1_8cqdy")
+
+[node name="Floor" type="CollisionShape2D" parent="." unique_id=1762830937]
+position = Vector2(640, 650)
+shape = SubResource("RectangleShape2D_ktxv1")
+
+[node name="LeftWall" type="CollisionShape2D" parent="." unique_id=1387886737]
+position = Vector2(430, 400)
+shape = SubResource("RectangleShape2D_o54e2")
+
+[node name="RightWall" type="CollisionShape2D" parent="." unique_id=747134696]
+position = Vector2(850, 400)
+shape = SubResource("RectangleShape2D_o54e2")
+
+[node name="VisualOutline" type="Line2D" parent="." unique_id=1003771294]
+points = PackedVector2Array(430, 150, 430, 650, 850, 650, 850, 150)
+width = 12.0
+default_color = Color(0.6054965, 0.694361, 0.735357, 1)
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
