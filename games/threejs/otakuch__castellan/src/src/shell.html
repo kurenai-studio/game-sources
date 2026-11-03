@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CASTELLAN — build a castle, then run its day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17120C; --gold:#C8A44D; --gold-dim:rgba(200,164,77,.34);
+  --minium:#B23A24; --minium-lit:#D2542F; --verdigris:#5C8A72;
+  --vellum:#EADFC6; --vellum-dim:#A79A80; --pad:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
+body{font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--vellum);
+     -webkit-font-smoothing:antialiased;touch-action:none;
+     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,#gate p,#gate li span{-webkit-user-select:text;user-select:text}
+canvas{display:block;position:fixed;inset:0;z-index:0}
+
+/* ─────────── welcome ─────────── */
+#gate{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(120% 90% at 50% 0%,#241C13 0%,#0E0B07 62%,#070605 100%);
+  transition:opacity .55s ease}
+#gate.gone{opacity:0;pointer-events:none}
+#gatebox{width:min(560px,100%);max-height:100%;overflow:auto}
+#crest{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+#gate h1{font-family:"IM Fell English SC",Georgia,serif;font-size:clamp(38px,9vw,66px);
+  line-height:.95;margin:0;font-weight:400;letter-spacing:.03em;color:var(--vellum)}
+#tagline{font-family:"IM Fell English SC",Georgia,serif;font-size:17px;line-height:1.5;
+  color:var(--vellum-dim);margin:14px 0 26px;max-width:44ch}
+#gate ol{list-style:none;margin:0 0 28px;padding:0;
+  border-top:1px solid rgba(200,164,77,.22)}
+#gate li{display:flex;gap:14px;align-items:baseline;padding:11px 0;
+  border-bottom:1px solid rgba(200,164,77,.22)}
+#gate li b{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.2em;
+  color:var(--gold);font-weight:400;width:60px;flex:none;text-transform:uppercase}
+#gate li span{font-size:13px;line-height:1.5;color:var(--vellum)}
+#gate li span i{font-style:normal;color:var(--vellum-dim)}
+#namewrap{margin-bottom:22px}
+#namewrap label{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--vellum-dim);margin-bottom:9px}
+.namerow{display:flex;gap:8px;align-items:stretch}
+#name{flex:1;background:rgba(234,223,198,.05);border:1px solid var(--gold-dim);border-radius:2px;
+  color:var(--vellum);font-family:"IM Fell English SC",Georgia,serif;font-size:22px;
+  padding:9px 12px;letter-spacing:.02em}
+#name:focus{outline:2px solid var(--gold);outline-offset:2px;border-color:var(--gold)}
+#gate .go{display:flex;gap:10px;flex-wrap:wrap}
+.big{pointer-events:auto;cursor:pointer;border-radius:2px;padding:13px 18px;
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+.big.prime{background:var(--minium);border:1px solid var(--minium);color:#F8EBD8}
+.big.prime:hover{background:var(--minium-lit)}
+.big.ghost{background:transparent;border:1px solid var(--gold-dim);color:var(--vellum)}
+.big.ghost:hover{border-color:var(--gold)}
+#soundrow{display:flex;align-items:center;gap:11px;margin-top:16px;flex-wrap:wrap}
+#soundrow span{font-size:11px;color:var(--vellum-dim);line-height:1.5;flex:1;min-width:180px}
+#wantmusic{cursor:pointer;border-radius:2px;padding:7px 12px;background:transparent;
+  border:1px solid var(--gold-dim);color:var(--vellum-dim);
+  font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase}
+#wantmusic[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+#wantmusic:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.big:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+#gatefoot{margin-top:20px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--vellum-dim);opacity:.7;line-height:2}
+
+/* ─────────── hud ─────────── */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;padding:var(--pad);
+     display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.panel{pointer-events:auto;
+  background:linear-gradient(180deg,rgba(23,18,12,.93),rgba(23,18,12,.80));
+  border:1px solid var(--gold-dim);border-radius:2px;padding:10px 13px;
+  backdrop-filter:blur(7px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.20em;
+  text-transform:uppercase;color:var(--vellum-dim)}
+h1#title{font-family:"IM Fell English SC",Georgia,serif;font-size:22px;line-height:1;
+  margin:3px 0 0;font-weight:400;letter-spacing:.02em}
+h1#title small{display:block;font-size:10px;letter-spacing:.15em;color:var(--gold);margin-top:6px;
+  font-family:"IBM Plex Mono",monospace;text-transform:uppercase}
+#retitle{background:transparent;border:0;border-bottom:1px solid var(--gold);color:var(--vellum);
+  font-family:"IM Fell English SC",Georgia,serif;font-size:22px;padding:0 0 2px;width:180px}
+#retitle:focus{outline:none}
+
+.toprt{display:flex;align-items:flex-start;gap:8px}
+#bare{pointer-events:auto;cursor:pointer;border-radius:2px;padding:9px 10px;flex:none;
+  background:linear-gradient(180deg,rgba(23,18,12,.93),rgba(23,18,12,.80));
+  border:1px solid var(--gold-dim);color:var(--vellum-dim);backdrop-filter:blur(7px);
+  font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.18em;
+  text-transform:uppercase;opacity:.75;transition:opacity .2s,color .2s}
+#bare:hover{opacity:1;color:var(--vellum);border-color:rgba(200,164,77,.65)}
+#bare:focus-visible{outline:2px solid var(--gold);outline-offset:2px;opacity:1}
+/* the bare view: everything but the one way back out */
+#hud .panel,#run{transition:opacity .35s ease,transform .35s ease}
+#hud.bare .panel,#hud.bare #run{opacity:0;pointer-events:none;transform:translateY(8px)}
+#hud.bare #dock{opacity:0;pointer-events:none}
+#dock{transition:opacity .35s ease}
+#hud.bare #bare{opacity:.32}
+#hud.bare #bare:hover,#hud.bare #bare:focus-visible{opacity:1}
+#census{display:flex;flex-wrap:wrap;gap:15px;text-align:right}
+.tally .n{font-family:"IBM Plex Mono",monospace;font-size:19px;line-height:1;
+  font-variant-numeric:tabular-nums}
+.tally .k{font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--vellum-dim);margin-top:4px}
+
+#buildrow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+
+.group{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.group .glab{font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--vellum-dim);width:54px;flex:none}
+.tool{pointer-events:auto;background:rgba(234,223,198,.05);border:1px solid var(--gold-dim);
+  border-radius:2px;color:var(--vellum-dim);cursor:pointer;padding:4px 7px;
+  font-family:"IBM Plex Sans";font-size:10.5px;line-height:1.1;white-space:nowrap}
+.tool:hover{color:var(--vellum);border-color:rgba(200,164,77,.6)}
+.tool[aria-pressed="true"]{background:var(--gold);color:#17120C;border-color:var(--gold);font-weight:500}
+.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.tool.warn[aria-pressed="true"]{background:var(--minium);color:#F8EBD8;border-color:var(--minium)}
+.tool.dig[aria-pressed="true"]{background:var(--verdigris);color:#0E1712;border-color:var(--verdigris)}
+
+#workbench{max-width:min(700px,70vw)}
+#workbench.folded>div:not(.tabs){display:none}
+.tabs{display:flex;border:1px solid var(--gold-dim);border-radius:2px;overflow:hidden;
+  width:max-content;margin-bottom:2px}
+.tabs button{pointer-events:auto;background:transparent;border:0;cursor:pointer;
+  color:var(--vellum-dim);font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;padding:8px 18px}
+.tabs button+button{border-left:1px solid var(--gold-dim)}
+.tabs button[aria-pressed="true"]{background:var(--gold);color:#17120C}
+.tabs #fold{color:var(--gold);font-size:13px;line-height:1;padding:6px 12px}
+.tabs #fold[aria-pressed="true"]{background:transparent;color:var(--vellum-dim)}
+.tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.lrow{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.slab{font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--vellum-dim);width:46px;flex:none}
+#chronicle{margin-top:6px;max-height:32vh;overflow:auto;max-width:56ch}
+#lore{border-bottom:1px solid rgba(200,164,77,.28);padding-bottom:10px;margin-bottom:6px}
+#lore p{margin:0 0 8px;font-size:12px;line-height:1.62;color:var(--vellum)}
+#lore p:last-child{margin-bottom:0}
+#lore i{color:var(--gold);font-style:italic}
+#lore b{font-family:"IM Fell English SC",Georgia,serif;font-size:15px;font-weight:400}
+.crow{display:flex;gap:10px;padding:6px 0;border-top:1px solid rgba(200,164,77,.14)}
+.cwhen{font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--gold);width:106px;flex:none;padding-top:2px}
+.ctxt{font-size:11.5px;line-height:1.5;color:var(--vellum-dim);flex:1}
+#standing{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--gold);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em}
+#report{margin-top:4px;max-height:30vh;overflow:auto}
+.rrow{display:flex;align-items:baseline;gap:9px;padding:6px 0;
+  border-top:1px solid rgba(200,164,77,.16)}
+.rrow .dot{width:6px;height:6px;border-radius:50%;flex:none;margin-top:4px}
+.rrow .lab{font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--vellum-dim);width:74px;flex:none}
+.rrow .txt{font-size:11.5px;line-height:1.45;flex:1}
+.rrow .txt b{font-weight:400;color:var(--vellum)}
+.ok .dot{background:#5C8A72} .thin .dot{background:var(--gold)} .bad .dot{background:var(--minium)}
+.ok .txt{color:var(--vellum-dim)} .thin .txt{color:var(--vellum-dim)} .bad .txt{color:#E0A48A}
+.note{font-size:10.5px;color:var(--vellum-dim);line-height:1.55;margin-top:10px;max-width:52ch}
+.btn{pointer-events:auto;background:rgba(234,223,198,.05);border:1px solid var(--gold-dim);
+  border-radius:2px;color:var(--vellum);cursor:pointer;padding:6px 10px;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase}
+.btn:hover{border-color:rgba(200,164,77,.65)}
+.btn[aria-pressed="true"]{background:rgba(200,164,77,.16)}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:88px;height:14px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:rgba(200,164,77,.34)}
+input[type=range]::-moz-range-track{height:2px;background:rgba(200,164,77,.34)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;border-radius:50%;
+  background:var(--gold);margin-top:-3.5px}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border:0;border-radius:50%;background:var(--gold)}
+input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+#deck{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+#run{pointer-events:auto;position:relative;width:96px;height:96px;flex:none;
+  border:0;padding:0;cursor:pointer;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,var(--minium-lit),var(--minium) 58%,#7C2214 100%);
+  box-shadow:0 0 0 1px rgba(200,164,77,.55),0 0 0 6px rgba(23,18,12,.85),
+             0 14px 34px rgba(0,0,0,.6),inset 0 2px 8px rgba(255,190,160,.35);
+  color:#F8EBD8;font-family:"IM Fell English SC",Georgia,serif;font-size:15px;
+  letter-spacing:.03em;line-height:1.15;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.4),background .35s}
+#run:hover{transform:scale(1.045)}
+#run:active{transform:scale(.97)}
+#run:focus-visible{outline:2px solid var(--gold);outline-offset:9px}
+#run::after{content:"";position:absolute;inset:9px;border-radius:50%;
+  border:1px dashed rgba(255,230,200,.22);pointer-events:none}
+#run .sub{display:block;font-family:"IBM Plex Mono",monospace;font-size:8px;
+  letter-spacing:.2em;text-transform:uppercase;opacity:.72;margin-top:4px}
+#run.running{background:radial-gradient(circle at 34% 30%,#43584A,#2C3A31 58%,#18211B 100%)}
+#run.running .sub{color:#8FBFA3;opacity:1}
+
+#band{flex:1 1 300px;min-width:240px}
+#bandhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+#clock{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--gold);
+  font-variant-numeric:tabular-nums;letter-spacing:.06em}
+#office{font-family:"IM Fell English SC",Georgia,serif;font-size:17px}
+#doing{font-size:11.5px;color:var(--vellum-dim);margin-top:9px;min-height:2.4em;line-height:1.45}
+#dial{position:relative;height:30px;cursor:ew-resize;pointer-events:auto;touch-action:none}
+#dial:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+#track{position:absolute;left:0;right:0;top:19px;height:2px;background:rgba(200,164,77,.18)}
+#lit{position:absolute;left:0;top:19px;height:2px;background:var(--gold)}
+.mark{position:absolute;top:13px;width:1px;height:8px;background:rgba(200,164,77,.34)}
+.mark b{position:absolute;top:-12px;left:0;transform:translateX(-50%);
+  font-family:"IBM Plex Mono",monospace;font-size:7.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--vellum-dim);font-weight:400;white-space:nowrap}
+#sun{position:absolute;z-index:2;top:14px;width:8px;height:8px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 12px rgba(200,164,77,.9);margin-left:-4px}
+#sun.moon{background:#C3CEE2;box-shadow:0 0 12px rgba(195,206,226,.8)}
+
+.seg{display:flex;border:1px solid var(--gold-dim);border-radius:2px;overflow:hidden}
+.seg button{pointer-events:auto;background:transparent;border:0;cursor:pointer;
+  color:var(--vellum-dim);font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;padding:7px 10px}
+.seg button+button{border-left:1px solid var(--gold-dim)}
+.seg button[aria-pressed="true"]{background:rgba(200,164,77,.16);color:var(--vellum)}
+.seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+#perf{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.1em;
+  color:var(--gold);opacity:.8;text-transform:uppercase;margin-top:9px;font-variant-numeric:tabular-nums}
+#hint{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.1em;
+  color:var(--vellum-dim);opacity:.7;text-transform:uppercase;margin-top:9px;max-width:180px;line-height:1.7}
+
+/* ── movable panels ── */
+.floating{position:fixed;margin:0 !important;z-index:11}
+.phead{flex:1 0 100%;display:flex;align-items:center;gap:7px;margin:-10px -13px 9px;padding:6px 9px;
+  border-bottom:1px solid var(--gold-dim);cursor:grab;touch-action:none}
+.phead:active{cursor:grabbing}
+.panel[style*="8px 10px"] .phead{margin:-8px -10px 8px}
+.grip{width:9px;height:9px;flex:none;opacity:.65;
+  background-image:radial-gradient(currentColor 1px,transparent 1px);
+  background-size:4px 4px;color:var(--gold)}
+.ptitle{font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--vellum-dim);flex:1;white-space:nowrap;text-align:left}
+.phead button{background:transparent;border:0;cursor:pointer;color:var(--vellum-dim);
+  font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1;padding:2px 5px;border-radius:2px}
+.phead button:hover{color:var(--vellum);background:rgba(200,164,77,.14)}
+.phead button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.collapsed>*:not(.phead){display:none !important}
+.collapsed{padding-bottom:2px !important}
+.gone{display:none !important}
+#dock{position:fixed;top:var(--pad);left:50%;transform:translateX(-50%);z-index:13;
+  pointer-events:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:4px;
+  max-width:calc(100vw - var(--pad)*2);
+  background:linear-gradient(180deg,rgba(23,18,12,.93),rgba(23,18,12,.82));
+  border:1px solid var(--gold-dim);border-radius:2px;backdrop-filter:blur(7px)}
+#dock button{background:transparent;border:1px solid transparent;border-radius:2px;cursor:pointer;
+  color:var(--vellum-dim);font-family:"IBM Plex Mono",monospace;font-size:8px;
+  letter-spacing:.14em;text-transform:uppercase;padding:4px 7px}
+#dock button:hover{color:var(--vellum)}
+#dock button[aria-pressed="true"]{background:rgba(200,164,77,.18);color:var(--vellum);
+  border-color:var(--gold-dim)}
+#dock button.reset{color:var(--gold);opacity:.8}
+#dock button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+#run.floating{position:fixed}
+
+#keys{position:fixed;inset:0;z-index:25;display:grid;place-items:center;padding:22px;
+  background:rgba(7,6,5,.72);backdrop-filter:blur(3px)}
+#keysbox{width:min(620px,100%);max-height:100%;overflow:auto;
+  background:linear-gradient(180deg,rgba(28,22,15,.98),rgba(20,16,11,.98));
+  border:1px solid var(--gold-dim);border-radius:2px;padding:16px 20px 20px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.khead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.khead span{font-family:"IM Fell English SC",Georgia,serif;font-size:21px;color:var(--vellum)}
+#keysclose{background:transparent;border:0;color:var(--vellum-dim);cursor:pointer;
+  font-size:18px;line-height:1;padding:3px 7px;border-radius:2px}
+#keysclose:hover{color:var(--vellum);background:rgba(200,164,77,.14)}
+#keysbox dl{display:grid;grid-template-columns:minmax(150px,auto) 1fr;margin:0}
+#keysbox dt{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--gold);padding:8px 14px 8px 0;
+  border-top:1px solid rgba(200,164,77,.18);white-space:nowrap}
+#keysbox dd{margin:0;font-size:11.5px;line-height:1.5;color:var(--vellum-dim);
+  padding:8px 0;border-top:1px solid rgba(200,164,77,.18)}
+@media (max-width:520px){#keysbox dl{grid-template-columns:1fr}
+  #keysbox dd{padding-top:0;border-top:0} #keysbox dt{padding-bottom:3px}}
+
+[hidden]{display:none !important}
+
+@media (max-width:900px){
+  #workbench{max-width:100%}
+  #buildrow{flex-wrap:wrap}
+  .group .glab{width:100%;margin-bottom:-3px}
+}
+@media (max-width:660px){
+  :root{--pad:9px}
+  h1#title{font-size:17px} #run{width:74px;height:74px;font-size:12.5px}
+  #census{gap:10px} .tally .n{font-size:15px} #hint{display:none}
+  #detail button{padding:7px 7px}
+  #season button{padding:6px 6px;font-size:8.5px}
+  .rrow .lab{width:60px}
+  #band{flex-basis:100%;order:2} #doing{min-height:0;font-size:11px}
+  .tool{font-size:10.5px;padding:4px 7px}
+  #workbench{max-height:34vh;overflow:auto}
+  .tabs button{padding:7px 13px}
+  #gate li b{width:48px}
+}
+@media (prefers-reduced-motion:reduce){#run{transition:none}
+  #hud .panel,#run{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div id="gatebox">
+    <div id="crest">A holding in the marches · 1327</div>
+    <h1>Castellan</h1>
+    <p id="tagline">Cut the ground, raise the walls, and then let a day run through
+       the place to see whether anyone can actually live in it.</p>
+    <ol>
+      <li><b>Ground</b><span>Generate a valley, then raise, lower, flatten and smooth it by hand. <i>The water finds its own level.</i></span></li>
+      <li><b>Build</b><span>Walls, towers, a gatehouse, cottages, a mill, fields and pens. <i>Arrows on the ground show which way each door and wall face.</i></span></li>
+      <li><b>Run</b><span>Everyone you housed goes to work: field hands, traders, monks, the watch on the walls, flocks out to the common and back at dusk. <i>Build nothing and nobody comes.</i></span></li>
+    </ol>
+    <div id="namewrap">
+      <label for="name">Name your holding</label>
+      <div class="namerow">
+        <input id="name" maxlength="26" autocomplete="off" spellcheck="false" value="Aubemont">
+        <button class="big ghost" id="roll" type="button" title="Another name">Roll</button>
+      </div>
+    </div>
+    <div class="go">
+      <button class="big prime" id="startPlan" type="button">Start from the standard plan</button>
+      <button class="big ghost" id="startEmpty" type="button">Start on empty ground</button>
+    </div>
+    <div id="soundrow">
+      <button id="wantmusic" type="button" aria-pressed="false">Music off</button>
+      <span>Drone, psaltery and tabor, played as you go — it follows the hour and the season.
+        Off unless you ask for it, and you can turn it on later under Controls.</span>
+    </div>
+    <div id="gatefoot">Left mouse uses the tool · right-drag or shift-drag orbits · wheel zooms<br>
+      W A S D pans, Q E turns · 1–9 picks a tool · Z undoes · H hides the panels<br>
+      Press ? at any time for the whole list</div>
+  </div>
+</div>
+
+<div id="keys" hidden>
+  <div id="keysbox">
+    <div class="khead"><span>Controls</span><button type="button" id="keysclose" title="Close">&times;</button></div>
+    <dl>
+      <dt>Left mouse</dt><dd>use the tool in hand — place a piece, or cut the ground</dd>
+      <dt>Right drag &middot; Shift + drag</dt><dd>orbit</dd>
+      <dt>Middle drag &middot; Alt + drag</dt><dd>pan</dd>
+      <dt>Wheel</dt><dd>zoom</dd>
+      <dt>Shift + wheel &middot; [ ]</dt><dd>brush size, or the size of the piece in hand</dd>
+      <dt>W A S D &middot; Q E</dt><dd>pan &middot; turn</dd>
+      <dt>Shift + W A S D</dt><dd>pan faster</dd>
+      <dt>1 &ndash; 9 , 0</dt><dd>pick a tool from the open tab</dd>
+      <dt>, .</dt><dd>turn the piece (Shift for 5&deg;), or flip which way a wall faces</dd>
+      <dt>Shift during a stroke</dt><dd>35% strength, for fine cutting</dd>
+      <dt>Z</dt><dd>undo &mdash; ten cuts deep, and every piece you have laid</dd>
+      <dt>Space</dt><dd>run the day, or hold it</dd>
+      <dt>R</dt><dd>ring the bell &mdash; jump the clock to the next office</dd>
+      <dt>P</dt><dd>photo mode: panels away and the camera drifts</dd>
+      <dt>H</dt><dd>hide the panels</dd>
+      <dt>Esc</dt><dd>cancel what you are placing &middot; pause the day &middot; leave photo mode</dd>
+      <dt>?</dt><dd>this list</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="hud" hidden>
+  <div id="dock" hidden></div>
+  <div class="row">
+    <div class="panel" id="p-name">
+      <div class="eyebrow">A holding in the marches</div>
+      <h1 id="title">Aubemont<small id="sitename">Building</small></h1>
+    </div>
+    <div class="toprt">
+      <div class="panel" id="census">
+        <div class="tally"><div class="n" id="n1">0</div><div class="k" id="k1">Homes</div></div>
+        <div class="tally"><div class="n" id="n2">0</div><div class="k" id="k2">Works</div></div>
+        <div class="tally"><div class="n" id="n3">0</div><div class="k" id="k3">Defence</div></div>
+      </div>
+      <button id="bare" type="button" aria-pressed="false" title="Hide the panels (H)">Hide</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="row" id="buildrow">
+      <div class="panel" id="workbench">
+        <div class="tabs" id="tabs">
+          <button type="button" data-t="terrain" aria-pressed="false">Terrain</button>
+          <button type="button" data-t="build" aria-pressed="true">Build</button>
+          <button type="button" data-t="holding" aria-pressed="false">Holding</button>
+          <button type="button" data-t="chronicle" aria-pressed="false">Chronicle</button>
+        </div>
+
+        <div id="tabTerrain" hidden>
+          <div id="groundtools"></div>
+          <div class="lrow">
+            <span class="slab">Brush</span>
+            <input type="range" id="brush" min="4" max="26" step="1" value="10" aria-label="Brush size">
+            <span class="slab" style="width:auto">Relief</span>
+            <input type="range" id="relief" min="0.3" max="2.6" step="0.05" value="1.35" aria-label="Relief of the land">
+            <span class="slab" style="width:auto">Water</span>
+            <input type="range" id="waterlvl" min="-7" max="1" step="0.2" value="-2.8" aria-label="Water level">
+          </div>
+          <div class="lrow">
+            <button class="btn" id="newland">New land</button>
+            <button class="btn" id="mount" aria-pressed="true">Mount &amp; moat</button>
+            <button class="btn" id="resetcuts">Reset cuts</button>
+          </div>
+          <div class="note" id="terrainnote">Drag with a brush to cut the ground. Shift-drag still turns the camera.</div>
+        </div>
+
+        <div id="tabHolding" hidden>
+          <div class="lrow" style="margin-top:2px;justify-content:space-between">
+            <div class="eyebrow">How it stands</div>
+            <div id="standing">—</div>
+          </div>
+          <div id="report"></div>
+        </div>
+
+        <div id="tabChronicle" hidden>
+          <div id="chronicle"></div>
+        </div>
+
+        <div id="tabBuild">
+          <div id="tools"></div>
+          <div class="lrow" style="margin-top:11px">
+            <button class="btn" id="preset">Standard plan</button>
+            <button class="btn" id="clear">Clear</button>
+            <button class="btn" id="rename">Rename</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="deck" style="margin-top:10px">
+      <button id="run" aria-pressed="false">
+        Run<br>the day
+        <span class="sub" id="runsub">Building</span>
+      </button>
+
+      <div class="panel" id="band">
+        <div id="bandhead">
+          <div id="office">Terce</div>
+          <div id="clock">09:00</div>
+        </div>
+        <div id="dial" tabindex="0" role="slider" aria-label="Hour of the day"
+             aria-valuemin="0" aria-valuemax="24" aria-valuenow="9" aria-valuetext="09:00, terce">
+          <div id="track"></div><div id="lit"></div><div id="sun"></div>
+        </div>
+        <div class="lrow" style="margin-top:10px">
+          <span class="slab" style="width:auto">Season</span>
+          <div class="seg" id="season">
+            <button data-s="0" aria-pressed="false">Spring</button>
+            <button data-s="1" aria-pressed="true">Summer</button>
+            <button data-s="2" aria-pressed="false">Harvest</button>
+            <button data-s="3" aria-pressed="false">Winter</button>
+          </div>
+        </div>
+        <div id="doing">Pick something from the palette, then click the ground to place it.</div>
+      </div>
+
+      <div class="panel" id="p-ctrl" style="padding:8px 10px">
+        <div class="eyebrow" style="margin-bottom:7px">Mode</div>
+        <div class="seg" id="modes">
+          <button data-m="build" aria-pressed="true">Build</button>
+          <button data-m="run" aria-pressed="false">Run</button>
+        </div>
+        <div class="eyebrow" style="margin:9px 0 7px">Pace</div>
+        <div class="seg" id="pace">
+          <button data-p="0.4" aria-pressed="false">Slow</button>
+          <button data-p="1" aria-pressed="true">Steady</button>
+          <button data-p="3.2" aria-pressed="false">Brisk</button>
+        </div>
+        <div class="eyebrow" style="margin:9px 0 7px">Music</div>
+        <div class="seg" id="music">
+          <button data-v="0" aria-pressed="true">Off</button>
+          <button data-v="0.32" aria-pressed="false">Soft</button>
+          <button data-v="0.55" aria-pressed="false">Full</button>
+        </div>
+        <div class="eyebrow" style="margin:9px 0 7px">Detail</div>
+        <div class="seg" id="detail">
+          <button data-q="auto" aria-pressed="true">Auto</button>
+          <button data-q="low" aria-pressed="false">Low</button>
+          <button data-q="mid" aria-pressed="false">Med</button>
+          <button data-q="high" aria-pressed="false">High</button>
+        </div>
+        <div id="perf">— fps</div>
+        <div id="hint">Drag to orbit · wheel to zoom · shift-drag to pan</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js" } }
+</script>
+<script type="module">
+/* modern build first; fall back to the last UMD release if modules are blocked */
+let THREE=null;
+try{ THREE=await import('three'); }
+catch(err){
+  THREE=await new Promise(res=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    s.onload=()=>res(window.THREE); s.onerror=()=>res(null);
+    document.head.appendChild(s);
+  });
+}
+if(!THREE){
+  document.getElementById('gate').innerHTML=
+    '<div id="gatebox"><h1>Castellan</h1><p id="tagline">three.js could not be loaded. '+
+    'Check the connection and reload.</p></div>';
+}
+
+/* @@BUNDLE@@ */

@@ -1,0 +1,1047 @@
+extends Control
+
+## Renders the seeded map and colonists top-down, two ways: flat coloured
+## squares (no art assets, diagnostic) or a TileMapLayer populated from the
+## generated placeholder tile set via tile_atlas_map.gd's TILE_ATLAS_MAP (art
+## is the default view; Toggle Art switches to the flat-colour
+## diagnostic view). Both draw paths stay fully working;
+## set_art_enabled()/toggle_art_enabled() switch between them at runtime
+## without touching world/tick state, so state_hash() (see
+## test_viewer_hash.gd) stays independent of which one is active.
+
+const WorldStateType = preload("res://scripts/core/world_state.gd")
+const TileAtlasMapType = preload("res://scripts/viewer/tile_atlas_map.gd")
+const ColonistSpritesType = preload("res://scripts/viewer/colonist_sprites.gd")
+const DesignationOverlayType = preload("res://scripts/viewer/designation_overlay.gd")
+const DragPreviewType = preload("res://scripts/viewer/drag_preview.gd")
+const ActorSpritesType = preload("res://scripts/viewer/actor_sprites.gd")
+const PackAssetsType = preload("res://scripts/viewer/pack_assets.gd")
+
+const TILE_SIZE := 16.0
+const GROUND_ITEM_ICON_SIZE := TILE_SIZE * 0.6
+const CONSTRUCTION_BAR_HEIGHT := 3.0
+const CONSTRUCTION_BAR_GAP := 1.0
+
+const TILE_SET_PATH := "res://data/tilesets/terrain_tileset.tres"
+
+const TILE_COLORS := {
+	"rock": Color(0.32, 0.32, 0.34),
+	"soil": Color(0.35, 0.52, 0.24),
+	"trench": Color(0.42, 0.25, 0.14),
+	"floor": Color(0.78, 0.78, 0.80),
+	"hazard": Color(0.82, 0.18, 0.18),
+	"tree": Color(0.16, 0.48, 0.20),
+	"water": Color(0.16, 0.40, 0.78),
+	"plowed_soil": Color(0.45, 0.32, 0.16),
+	"planted": Color(0.30, 0.42, 0.18),
+	"crop_grown": Color(0.26, 0.50, 0.16),
+	"crop_ripe": Color(0.80, 0.48, 0.14),
+	"sapling_1": Color(0.24, 0.46, 0.20),
+	"sapling_2": Color(0.20, 0.44, 0.18),
+	"sapling_3": Color(0.18, 0.40, 0.16),
+}
+const UNKNOWN_TILE_COLOR := Color.MAGENTA
+const COLONIST_COLOR := Color(1.0, 0.95, 0.15)
+
+## Flat colour-mode fallback for world.get_object(x,y), drawn as an inset
+## square over the base tile colour, mirroring TILE_COLORS. Kept in sync with
+## TileAtlasMapType.OBJECT_ATLAS_MAP's kinds even though only the atlas
+## mapping is required (colonist-ai.md 3.5).
+const OBJECT_COLORS := {
+	"chair": Color(0.85, 0.45, 0.15),
+	"door": Color(0.40, 0.22, 0.08),
+	"wall": Color(0.60, 0.60, 0.63),
+	"table": Color(0.75, 0.60, 0.35),
+	"berry_bush": Color(0.55, 0.15, 0.45),
+	"bed": Color(0.70, 0.55, 0.65),
+}
+const UNKNOWN_OBJECT_COLOR := Color.MAGENTA
+
+## Flat diagnostic colours for ground items and carried cargo. Wood keeps
+## its original carried colour and its stockpile icon in both modes.
+const CARRIED_ITEM_COLOR := Color(0.55, 0.35, 0.10)
+const GROUND_ITEM_COLORS := {
+	"wood": CARRIED_ITEM_COLOR,
+	"stone": Color("526568"),
+	# Pack-only ground icons (tile_atlas_map.gd's PACK_ITEM_MAP), shown as
+	# these squares only when the pack is present and art mode is off.
+	"seed": Color("c8742c"),
+	"food": Color("e08a2a"),
+	"coal": Color("2a2a30"),
+	"gold_coin": Color("e8c040"),
+	"flint": Color("4a5060"),
+	"planks": Color("b08050"),
+	"stone_blocks": Color("6a7480"),
+}
+const STOCKPILE_COUNT_TEXT_COLOR := Color.WHITE
+const STOCKPILE_COUNT_FONT_SIZE := 10
+
+var world: WorldStateType
+
+## Emitted once per completed drag (mouse-up), carrying every tile in the
+## resulting axis-aligned rectangle in row-major order. A plain click with no
+## movement is a 1x1 rectangle through this same signal -- there is no
+## separate single-tile path.
+signal rectangle_committed(tiles: Array[Vector2i])
+
+## Emitted after a zone-tool drag applies its single zone_add command,
+## carrying world.apply()'s own result so a caller
+## (or a test) can inspect ok/rejection without polling get_zones() itself.
+signal zone_add_committed(result: Dictionary)
+
+## Emitted after the build tool's own click-to-place path
+## applies its single `build` command, carrying world.apply()'s own result --
+## mirrors zone_add_committed above.
+signal build_committed(result: Dictionary)
+
+signal tool_left
+var tool_enabled := false
+var preview_validity: Callable
+var _hover := Vector2i(-1, -1)
+## The previewed tiles (row-major) and whether each is valid: the incremental
+## per-tile drag preview's while one is active, else _list_tiles/_list_valid
+## (hover, footprint and whole-rectangle previews, computed in one call).
+var _preview_tiles: Array[Vector2i]:
+	get: return _drag_preview.tiles() if _drag_preview.is_active() else _list_tiles
+var _preview_valid: Array[bool]:
+	get: return _drag_preview.valid() if _drag_preview.is_active() else _list_valid
+var _list_tiles: Array[Vector2i] = []
+var _list_valid: Array[bool] = []
+## B1: OrderInput.select_tool() turns this on for tools whose validity is per
+## tile, so a drag previews incrementally through _drag_preview (see
+## drag_preview.gd) instead of re-validating the whole rectangle per move.
+var _preview_per_tile := false
+var _drag_preview := DragPreviewType.new()
+## The tick and log cursors (world.get_dirty_cells_since(),
+## world.get_designation_changes()) _drag_preview's changed tiles were last
+## read up to; see _drag_preview_changes().
+var _drag_preview_changes_tick := -1
+var _drag_preview_cells_read := 0
+var _drag_preview_designations_read := -1
+var _suppress_hover := false
+var _dragging: bool = false
+var _drag_start: Vector2i = Vector2i.ZERO
+var _drag_current: Vector2i = Vector2i.ZERO
+## The (tool_enabled, hover/drag rectangle, tick) key _preview_tiles/_preview_valid were last
+## computed from, so refresh()'s own once-per-tick _update_preview() call can skip
+## preview_validity.call() when nothing that could change the outcome actually changed. Starts
+## as a key no real state can produce (7 elements never match the empty Array) so the very first
+## _update_preview() call always computes.
+var _preview_cache_key: Array = []
+
+## Zone-drawing tool state. boot.gd (game/scripts/boot.gd) owns the shared
+## toolbar row and toggles this control's zone mode via
+## set_zone_tool_enabled() alongside its other tool buttons, but the drag
+## itself reuses only the existing mouse-drag rectangle mechanic
+## (_gui_input/_dragging/tiles_in_rectangle) and issues its own direct
+## world.apply() call here rather than going through the generic per-tile
+## rectangle_committed signal, since a zone is one command per drag, not one
+## per tile.
+var _zone_tool_enabled: bool = false
+var _zone_payload: Dictionary = {}
+var _next_zone_command_id: int = 0
+
+## Build tool state, mirroring the zone tool's own pair of
+## fields above: boot.gd toggles _build_tool_enabled alongside its other tool
+## buttons and sets _build_kind to whichever object kind that button builds.
+## Unlike the zone tool this is a plain click, not a drag rectangle -- one
+## `build` command per click, issued directly from _gui_input() below.
+var _build_tool_enabled: bool = false
+var _build_kind: String = ""
+var _build_orientation: String = "horizontal"
+var _build_rotatable: bool = false
+var _next_build_command_id: int = 0
+
+## Toggle between the TileMapLayer art renderer (default; this is the
+## production presentation path -- its incremental refresh is
+## what keeps a large map from rebuilding all width*height cells every tick,
+## see _refresh_tile_map() below) and the flat-colour draw_rect renderer
+## (kept fully working as a fallback for machines/tests with no art assets,
+## reachable via the toggle_art_enabled() button). In art mode, colonists are
+## supplied by the sprite layer; colour mode keeps the plain draw_rect
+## markers for a dependency-free view.
+var _art_enabled: bool = true
+var _tile_map_layer: TileMapLayer
+var _grass_overlay_layer: TileMapLayer
+var _object_tile_map_layer: TileMapLayer
+var _colonist_sprites: Node2D
+var _actor_sprites: Node2D
+var _designation_overlay: Node2D
+## A9: the WorldState.get_view_snapshot() of the last refresh() (or set_world()),
+## which both sprite layers and _draw() read instead of calling the getters.
+var _snapshot: Dictionary = {}
+## The world _snapshot was taken from: a world assigned without set_world() (tests) is re-read.
+var _snapshot_world: WorldStateType
+
+## Raw-sheet textures cached once per registered item kind.
+var _item_atlas_textures: Dictionary = {}
+## With the pack (B3): item kind -> {texture, rect} from the pack TileSet
+## (pack_assets.gd's item_icons()); empty with the placeholder art.
+var _pack_item_icons: Dictionary = {}
+## With the pack (B7): the same for tile_atlas_map.gd's PACK_ITEM_MAP kinds,
+## which get a ground/stockpile icon only then. Kept apart from
+## _pack_item_icons so carried cargo keeps its current icons.
+var _pack_only_item_icons: Dictionary = {}
+
+## `pack_root` is where the synced Pixel Crawler sheets live (tests pass a
+## fixture or a missing root). With every sheet world_pack.json names present,
+## terrain and actor sheets alike (pack_assets.gd's world_pack()), the TileSet
+## is the pack's, laid out on the placeholder's source ids and coords, and the
+## actors are drawn; otherwise the placeholder TileSet and no actor sprites,
+## exactly as before.
+func _init(pack_root: String = PackAssetsType.DEFAULT_ROOT) -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	custom_minimum_size = Vector2(
+		WorldStateType.MAP_WIDTH * TILE_SIZE,
+		WorldStateType.MAP_HEIGHT * TILE_SIZE
+	)
+	size = custom_minimum_size
+	_drag_preview.resize(WorldStateType.MAP_WIDTH, WorldStateType.MAP_HEIGHT)
+	for kind in TileAtlasMapType.ITEM_ATLAS_MAP:
+		_item_atlas_textures[kind] = load(TileAtlasMapType.ITEM_ATLAS_MAP[kind]["texture_path"])
+	var tile_set_resource: TileSet = load(TILE_SET_PATH)
+	var world_pack := PackAssetsType.world_pack(tile_set_resource, pack_root)
+	if not world_pack.is_empty():
+		tile_set_resource = world_pack["tile_set"]
+		_pack_item_icons = PackAssetsType.item_icons(tile_set_resource, TileAtlasMapType.ITEM_ATLAS_MAP)
+		_pack_only_item_icons = PackAssetsType.item_icons(tile_set_resource, TileAtlasMapType.PACK_ITEM_MAP)
+	_tile_map_layer = TileMapLayer.new()
+	_tile_map_layer.tile_set = tile_set_resource
+	_tile_map_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_tile_map_layer.visible = _art_enabled
+	# Children draw on top of their parent's _draw() by default, which would
+	# cover the colonist draw_rect markers (drawn in this Control's _draw())
+	# with the tile textures. show_behind_parent keeps this layer beneath
+	# everything the parent draws so the markers stay visible in art mode.
+	_tile_map_layer.show_behind_parent = true
+	add_child(_tile_map_layer)
+	# Grass blob overlay: drawn only over TILE_SOIL
+	# cells, on top of the base layer, so a soil tile next to water/rock
+	# shows the terrain sheet's own jagged grass edge over the neighbour's
+	# plain opaque base cell -- water and rock never carry directional art
+	# of their own (see tile_atlas_map.gd's grass_overlay_coords()).
+	_grass_overlay_layer = TileMapLayer.new()
+	_grass_overlay_layer.tile_set = tile_set_resource
+	_grass_overlay_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_grass_overlay_layer.visible = _art_enabled
+	_grass_overlay_layer.show_behind_parent = true
+	add_child(_grass_overlay_layer)
+	_object_tile_map_layer = TileMapLayer.new()
+	_object_tile_map_layer.tile_set = tile_set_resource
+	_object_tile_map_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_object_tile_map_layer.visible = _art_enabled
+	# Added after the terrain/grass layers so an object's or a tile's own
+	# decorative sprite (tree canopy, hazard cluster, planted sprout) draws
+	# over both; still show_behind_parent so it stays under the colonist
+	# markers this Control draws directly in _draw().
+	_object_tile_map_layer.show_behind_parent = true
+	add_child(_object_tile_map_layer)
+	# Wolves, raiders and traders: pack sprites only (nothing without the pack).
+	# Added before the colonist layer so its health bars (every actor's) draw on top.
+	_actor_sprites = ActorSpritesType.new(world_pack.get("actor_frames", {}))
+	_actor_sprites.set_visible_for_art(_art_enabled)
+	add_child(_actor_sprites)
+	_colonist_sprites = ColonistSpritesType.new(pack_root)
+	_colonist_sprites.set_visible_for_art(_art_enabled)
+	if not _pack_item_icons.is_empty():
+		_colonist_sprites.use_item_icons(_pack_item_icons)
+	add_child(_colonist_sprites)
+	# Added last (and never hidden by art mode) so the designation outline is
+	# drawn on top of both tile renderers and the colonists, in either mode --
+	# orders exist regardless of which renderer is currently active.
+	_designation_overlay = DesignationOverlayType.new()
+	add_child(_designation_overlay)
+
+## world.get_dirty_cells_since() is a cursor stream over an append-only,
+## bounded log, never cleared by WorldState itself (test_architecture_rules.gd's
+## viewer-purity rule permits only get_*/apply/tick/get_events calls on world
+## from game/scripts/viewer/*.gd, so this Control keeps its own cursor instead
+## of asking WorldState to drain it). A "truncated" read -- retention dropped
+## cells this cursor had not consumed yet -- falls back to a full rebuild.
+var _dirty_cells_consumed: int = 0
+
+## Hands the shared TickDriver to the colonist sprite layer, so
+## its advance() can read seconds_per_tick() for glide timing. boot.gd calls
+## this once both are constructed; no other map_view.gd behaviour changes.
+func set_tick_driver(driver) -> void:
+	_colonist_sprites.set_tick_driver(driver)
+	_actor_sprites.set_tick_driver(driver)
+
+func set_world(world_ref: WorldStateType) -> void:
+	cancel_selection()
+	world = world_ref
+	_take_snapshot({})
+	_resize_for_world()
+	_colonist_sprites.set_world(world_ref)
+	_actor_sprites.set_world(world_ref)
+	_designation_overlay.set_world(world_ref)
+	# Skip straight past the log's current length: the full rebuild below
+	# already covers everything recorded so far, so none of it needs to be
+	# replayed as an incremental touch later.
+	_dirty_cells_consumed = int(world.get_dirty_cells_since(0)["next"]) if world != null else 0
+	_refresh_tile_map(true)
+	queue_redraw()
+
+## Sizes this Control to the attached world's own dimensions: a
+## loaded/newly generated world need not be the 48x48 fixture default, and
+## map_viewport.gd's pan/zoom bounds (_constrain()) read this Control's own
+## `size`, so it must reflect whichever world is actually live.
+func _resize_for_world() -> void:
+	var width: int = world.get_map_width() if world != null else WorldStateType.MAP_WIDTH
+	var height: int = world.get_map_height() if world != null else WorldStateType.MAP_HEIGHT
+	custom_minimum_size = Vector2(width * TILE_SIZE, height * TILE_SIZE)
+	size = custom_minimum_size
+	_drag_preview.resize(width, height)
+
+## Re-syncs both draw paths with the current world state. boot.gd calls this
+## once per tick instead of queue_redraw() directly so the TileMapLayer picks
+## up tile changes (e.g. a dig turning rock into floor) exactly like the
+## flat-colour path already does by re-reading world.get_tiles() every draw.
+## `snapshot` is this tick's WorldState.get_view_snapshot() (boot.gd takes one per
+## tick and hands it to every panel); {} takes a fresh one.
+func refresh(snapshot: Dictionary = {}) -> void:
+	_take_snapshot(snapshot)
+	_update_preview()
+	_refresh_tile_map(false)
+	_colonist_sprites.refresh(_snapshot)
+	_actor_sprites.refresh(_snapshot)
+	_designation_overlay.refresh()
+	queue_redraw()
+
+## Flips between the two renderers without rebuilding the world. Safe to call
+## at any time, including before set_world().
+func set_art_enabled(enabled: bool) -> void:
+	_art_enabled = enabled
+	_tile_map_layer.visible = enabled
+	_grass_overlay_layer.visible = enabled
+	_object_tile_map_layer.visible = enabled
+	_colonist_sprites.set_visible_for_art(enabled)
+	_actor_sprites.set_visible_for_art(enabled)
+	_refresh_tile_map(true)
+	queue_redraw()
+
+func toggle_art_enabled() -> void:
+	set_art_enabled(not _art_enabled)
+
+func is_art_enabled() -> bool:
+	return _art_enabled
+
+## Selects between the generic rectangle_committed signal (dig,
+## chop, cancel, remove-object, wall -- boot.gd submits walls as one
+## build_line batch and other tools per tile) and this control's own single
+## zone_add-per-drag path. boot.gd calls
+## this from its zone toolbar button and disables it again whenever another
+## toolbar tool is selected. Independent of art mode; safe to call before or
+## after set_world().
+func set_zone_tool_enabled(enabled: bool) -> void:
+	_zone_tool_enabled = enabled
+
+## Extra zone_add payload fields for the next drags ({"kind": "farm", "crop"} for the farm
+## zone tool, F1; {"kind": "forest"} for the forest zone tool, F6a; {} for a stockpile).
+func set_zone_payload(extra: Dictionary) -> void:
+	_zone_payload = extra.duplicate()
+
+func toggle_zone_tool_enabled() -> void:
+	set_zone_tool_enabled(not _zone_tool_enabled)
+
+func is_zone_tool_enabled() -> bool:
+	return _zone_tool_enabled
+
+## Selects the build tool's own click-to-place path in _gui_input() below,
+## mirroring set_zone_tool_enabled() above. boot.gd calls this from its build
+## toolbar buttons and disables it again whenever another tool is selected.
+func set_build_tool_enabled(enabled: bool) -> void:
+	_build_tool_enabled = enabled
+
+func is_build_tool_enabled() -> bool:
+	return _build_tool_enabled
+
+## The content/objects.json kind the next build click submits -- boot.gd sets
+## this alongside set_build_tool_enabled(true) when a specific build button
+## (Door/Bed/Workbench) is pressed. Walls use the rectangle signal instead;
+## their kind also invalidates the cached rectangle preview.
+func set_build_kind(kind: String) -> void:
+	_build_kind = kind
+	_build_orientation = "horizontal"
+	_preview_cache_key = []
+	queue_redraw()
+
+func set_build_rotatable(rotatable: bool) -> void:
+	_build_rotatable = rotatable
+	if not rotatable:
+		_build_orientation = "horizontal"
+	_preview_cache_key = []
+	queue_redraw()
+
+func get_build_orientation() -> String:
+	return _build_orientation
+
+func is_build_vertical() -> bool:
+	return _build_orientation == "vertical"
+
+func toggle_build_orientation() -> void:
+	if not _build_tool_enabled or not _build_rotatable:
+		return
+	_build_orientation = "vertical" if _build_orientation == "horizontal" else "horizontal"
+	_preview_cache_key = []
+	_update_preview()
+	queue_redraw()
+
+func tile_at_local(local_position: Vector2) -> Vector2i:
+	return Vector2i(floori(local_position.x / TILE_SIZE), floori(local_position.y / TILE_SIZE))
+
+## Every tile inside the axis-aligned rectangle with corners `start` and
+## `end`, both inclusive, in row-major order (ascending y, then ascending x)
+## -- the codebase's existing tie-break convention (see colonist_panel.gd's
+## and job_queue.gd's own id-ordered tie-breaks).
+static func tiles_in_rectangle(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
+	var min_x := mini(start.x, end.x)
+	var max_x := maxi(start.x, end.x)
+	var min_y := mini(start.y, end.y)
+	var max_y := maxi(start.y, end.y)
+	var tiles: Array[Vector2i] = []
+	for y in range(min_y, max_y + 1):
+		for x in range(min_x, max_x + 1):
+			tiles.append(Vector2i(x, y))
+	return tiles
+
+func set_preview_per_tile(enabled: bool) -> void:
+	_preview_per_tile = enabled
+	_drag_preview.clear()
+	_preview_cache_key = []
+
+func set_tool_enabled(enabled: bool) -> void:
+	cancel_selection()
+	tool_enabled = enabled
+	_suppress_hover = false
+
+func leave_tool() -> void:
+	set_tool_enabled(false)
+	tool_left.emit()
+
+func clear_hover() -> void:
+	_hover = Vector2i(-1, -1)
+	if not _dragging:
+		_update_preview()
+
+func cancel_selection() -> void:
+	_dragging = false
+	_hover = Vector2i(-1, -1)
+	_list_tiles.clear()
+	_list_valid.clear()
+	_drag_preview.clear()
+	_suppress_hover = true
+	# Cleared directly above rather than through _update_preview(), so drop the cache key too:
+	# an unrelated later key that happens to match the pre-cancel one (e.g. after set_world()
+	# swaps to a different world) must never skip a recompute and leave a stale preview.
+	_preview_cache_key = []
+	queue_redraw()
+
+func _inside(tile: Vector2i) -> bool:
+	var width: int = world.get_map_width() if world != null else WorldStateType.MAP_WIDTH
+	var height: int = world.get_map_height() if world != null else WorldStateType.MAP_HEIGHT
+	return tile.x >= 0 and tile.y >= 0 and tile.x < width and tile.y < height
+
+func _bounded(tile: Vector2i) -> Vector2i:
+	var width: int = world.get_map_width() if world != null else WorldStateType.MAP_WIDTH
+	var height: int = world.get_map_height() if world != null else WorldStateType.MAP_HEIGHT
+	return tile.clamp(Vector2i.ZERO, Vector2i(width - 1, height - 1))
+
+## Recomputes _preview_tiles/_preview_valid only when the key above actually changed --
+## called once per tick from refresh() (where the hover/drag rectangle is almost always
+## unchanged) as well as directly from _gui_input on a real hover/drag change, so the direct
+## calls still recompute immediately while refresh()'s own repeats are free.
+func _update_preview() -> void:
+	var key := _current_preview_key()
+	if key == _preview_cache_key:
+		return
+	_preview_cache_key = key
+	_list_tiles.clear()
+	_list_valid.clear()
+	if tool_enabled and _dragging and _preview_per_tile:
+		var changed := _drag_preview_changes()
+		_drag_preview.update(_rectangle(_drag_start, _drag_current), world.get_tick() if world != null else -1, preview_validity, changed)
+		queue_redraw()
+		return
+	# Zone judges the whole rectangle with one zone_add preview, which reads
+	# only its corners (OrderInput.preview_validity()): one fill, no per-tile
+	# list or draw, however large the drag (B1).
+	if tool_enabled and _dragging and _zone_tool_enabled and preview_validity.is_valid():
+		var rect := _rectangle(_drag_start, _drag_current)
+		var corners: Array[Vector2i] = [rect.position, rect.end - Vector2i.ONE]
+		var corner_valid: Array = preview_validity.call(corners)
+		_drag_preview.show_uniform(rect, not corner_valid.is_empty() and bool(corner_valid[0]))
+		queue_redraw()
+		return
+	if _drag_preview.is_active():
+		_drag_preview.clear()
+	if tool_enabled:
+		var next_preview_tiles: Array[Vector2i] = []
+		if _dragging:
+			next_preview_tiles = tiles_in_rectangle(_drag_start, _drag_current)
+		elif not _suppress_hover and _inside(_hover):
+			if _build_tool_enabled:
+				next_preview_tiles = _build_footprint_tiles(_hover)
+			else:
+				next_preview_tiles.append(_hover)
+		_list_tiles = next_preview_tiles
+	if not _list_tiles.is_empty() and preview_validity.is_valid():
+		_list_valid = preview_validity.call(_list_tiles)
+	queue_redraw()
+
+## The tiles whose terrain, object or pending orders changed since the last
+## call, read once per tick from the world's append-only logs: the drag
+## preview re-validates them first. None for a drag just starting, which
+## validates every tile anyway.
+func _drag_preview_changes() -> Array[Vector2i]:
+	var changed: Array[Vector2i] = []
+	if world == null or (_drag_preview.is_active() and world.get_tick() == _drag_preview_changes_tick):
+		return changed
+	var dirty: Dictionary = world.get_dirty_cells_since(_drag_preview_cells_read)
+	var designations: Dictionary = world.get_designation_changes(_drag_preview_designations_read if _drag_preview.is_active() else -1)
+	if _drag_preview.is_active():
+		# Cells retention dropped unread are unknown: re-validate the whole drag.
+		if bool(dirty["truncated"]):
+			changed.append_array(tiles_in_rectangle(_drag_start, _drag_current))
+		# The viewer draws the surface until L4's active layer (ADR 045 §7): deeper cells are
+		# consumed, not drawn.
+		for cell: Vector3i in dirty["cells"]:
+			if cell.z == TileGrid.SURFACE:
+				changed.append(Vector2i(cell.x, cell.y))
+		for tile: Vector3i in designations["tiles"]:
+			if tile.z == TileGrid.SURFACE:
+				changed.append(Vector2i(tile.x, tile.y))
+	_drag_preview_changes_tick = world.get_tick()
+	_drag_preview_cells_read = int(dirty["next"])
+	_drag_preview_designations_read = int(designations["next"])
+	return changed
+
+## Continues the per-tile drag preview's stale/unknown tiles, a budget per frame.
+func _process(_delta: float) -> void:
+	if _drag_preview.has_work():
+		_drag_preview.step(preview_validity)
+		queue_redraw()
+
+## Runs the drag preview's remaining work now (tests and benchmarks).
+func finish_preview_work() -> void:
+	while _drag_preview.has_work():
+		_drag_preview.step(preview_validity)
+	queue_redraw()
+
+## The tile rectangle with corners start and end, both inclusive.
+static func _rectangle(start: Vector2i, end: Vector2i) -> Rect2i:
+	var top_left := Vector2i(mini(start.x, end.x), mini(start.y, end.y))
+	return Rect2i(top_left, Vector2i(absi(end.x - start.x) + 1, absi(end.y - start.y) + 1))
+
+## The tiles at least partly on screen, so per-tile drawing stays bounded by
+## the screen, not by the selection.
+func _visible_tile_rect() -> Rect2i:
+	var view := get_global_transform_with_canvas().affine_inverse() * get_viewport_rect()
+	var top_left := Vector2i((view.position / TILE_SIZE).floor())
+	return Rect2i(top_left, Vector2i((view.end / TILE_SIZE).ceil()) - top_left)
+
+## The inputs that determine _preview_tiles/_preview_valid: tool_enabled, the hover/drag
+## rectangle, and the world's tick (a command's validity can depend on state a tick just
+## changed, e.g. a dig target another colonist just finished). Array equality is element-wise
+## in GDScript, so two keys with the same values compare equal without a hand-rolled hash.
+func _current_preview_key() -> Array:
+	var tick := world.get_tick() if world != null else -1
+	return [tool_enabled, _dragging, _drag_start, _drag_current, _hover, _suppress_hover, tick, _build_kind, _build_orientation]
+
+func _build_footprint_tiles(origin: Vector2i) -> Array[Vector2i]:
+	if _build_kind == "workbench" and _build_orientation == "vertical":
+		return [origin, origin + Vector2i.DOWN]
+	if _build_kind == "workbench":
+		return [origin, origin + Vector2i.RIGHT]
+	return [origin]
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+		toggle_build_orientation()
+
+func _gui_input(event: InputEvent) -> void:
+	if not tool_enabled:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			var tile := tile_at_local(event.position)
+			if not _inside(tile):
+				return
+			if _build_tool_enabled:
+				_commit_build(tile)
+				return
+			_dragging = true
+			_drag_start = tile
+			_drag_current = tile
+			_drag_preview.clear()
+			_update_preview()
+		elif _dragging:
+			_drag_current = _bounded(tile_at_local(event.position))
+			if _zone_tool_enabled:
+				_commit_zone(_drag_start, _drag_current)
+			else:
+				rectangle_committed.emit(tiles_in_rectangle(_drag_start, _drag_current))
+			cancel_selection()
+	elif event is InputEventMouseMotion:
+		var tile := tile_at_local(event.position)
+		var changed := tile != _hover or _suppress_hover
+		_hover = tile
+		_suppress_hover = false
+		if _dragging:
+			_drag_current = _bounded(tile)
+		if changed:
+			_update_preview()
+
+## Reuses the same drag-rectangle mechanic as the generic dig/chop path above
+## (_dragging/_drag_start/_drag_current, and the same min/max corner math as
+## tiles_in_rectangle()) but issues exactly one zone_add command for the
+## whole rectangle instead of one command per tile, matching
+## WorldState._apply_zone_add_command()'s {x, y, width, height} payload
+## (see test_zone_commands.gd). A no-op when world is unset.
+func _commit_zone(start: Vector2i, end: Vector2i) -> void:
+	if world == null:
+		return
+	var min_x := mini(start.x, end.x)
+	var max_x := maxi(start.x, end.x)
+	var min_y := mini(start.y, end.y)
+	var max_y := maxi(start.y, end.y)
+	_next_zone_command_id += 1
+	var command := {
+		"actor": "player",
+		"command_id": "viewer_zone_add_%d_%d" % [world.get_tick(), _next_zone_command_id],
+		"tick": world.get_tick(),
+		"type": "zone_add",
+		"payload": {"x": min_x, "y": min_y, "z": TileGrid.SURFACE, "width": max_x - min_x + 1, "height": max_y - min_y + 1},
+	}
+	command["payload"].merge(_zone_payload)
+	var result: Dictionary = world.apply(command)
+	zone_add_committed.emit(result)
+	refresh()
+
+## Build tool's own click-to-place path, mirroring
+## _commit_zone() above but for a single tile and a `build` command instead of
+## a drag rectangle and `zone_add`. A no-op when world is unset.
+##
+## _current_preview_key() includes world.get_tick(), which a
+## successful build command does not advance -- while paused, the hovered
+## tile's key is otherwise unchanged before and after this call, so
+## refresh()'s _update_preview() would skip the recompute and keep showing
+## the pre-claim validity (e.g. still green) for the site this click just
+## reserved. Clearing the cache key forces refresh() to recompute regardless.
+func _commit_build(tile: Vector2i) -> void:
+	if world == null:
+		return
+	_next_build_command_id += 1
+	var command := {
+		"actor": "player",
+		"command_id": "viewer_build_%d_%d" % [world.get_tick(), _next_build_command_id],
+		"tick": world.get_tick(),
+		"type": "build",
+		"payload": {"kind": _build_kind, "x": tile.x, "y": tile.y, "z": TileGrid.SURFACE, "orientation": _build_orientation if _build_rotatable else ""},
+	}
+	var result: Dictionary = world.apply(command)
+	build_committed.emit(result)
+	_preview_cache_key = []
+	refresh()
+
+## Number of TileMapLayer cells actually touched by the most recent
+## _refresh_tile_map() call (instrumentation): a full rebuild
+## touches every cell, an incremental refresh touches only the cells newly
+## appended to world.get_dirty_cells_since() since the last call.
+## test_map_view_incremental.gd asserts this stays far below width*height on
+## a tick with no terrain change, instead of the whole TileMapLayer being
+## cleared and rebuilt every tick.
+var last_tile_map_cells_touched: int = 0
+
+## Populates the TileMapLayer from world state via TILE_ATLAS_MAP. A no-op
+## while art is disabled, so toggling to colour mode leaves the layer's last
+## contents untouched (it is hidden, not drawn) instead of doing wasted work
+## every tick. `force_full` rebuilds every cell (set_world(), an art-mode
+## toggle, a truncated dirty-cell read); otherwise only the cells
+## world.get_dirty_cells_since(_dirty_cells_consumed) returns are touched, so
+## a tick with no dig/chop/forage/till/sow/place_object/remove_object never
+## reconstructs the whole map (65536 cells on a 256x256 world).
+func _refresh_tile_map(force_full: bool) -> void:
+	if not _art_enabled or world == null:
+		return
+	if force_full:
+		_tile_map_layer.clear()
+		_grass_overlay_layer.clear()
+		_object_tile_map_layer.clear()
+		var tiles: Array[String] = world.get_tiles()
+		var width: int = world.get_map_width()
+		var height: int = world.get_map_height()
+		var touched := 0
+		for y in height:
+			for x in width:
+				var kind: String = tiles[y * width + x]
+				_set_tile_map_cell(x, y, kind)
+				_set_decor_or_object_cell(x, y, kind, "")
+				touched += 1
+		for object_entry in world.get_objects():
+			var ox: int = int(object_entry["x"])
+			var oy: int = int(object_entry["y"])
+			_set_decor_or_object_cell(ox, oy, tiles[oy * width + ox], String(object_entry["kind"]))
+			touched += 1
+		last_tile_map_cells_touched = touched
+		_dirty_cells_consumed = int(world.get_dirty_cells_since(0)["next"])
+		return
+	var dirty: Dictionary = world.get_dirty_cells_since(_dirty_cells_consumed)
+	if bool(dirty["truncated"]):
+		_refresh_tile_map(true)
+		return
+	var touched := 0
+	for dirty_cell: Vector3i in dirty["cells"]:
+		if dirty_cell.z != TileGrid.SURFACE: # consumed, not drawn (ADR 045 §7)
+			continue
+		var cell := Vector2i(dirty_cell.x, dirty_cell.y)
+		var kind := world.get_tile(cell.x, cell.y)
+		_set_tile_map_cell(cell.x, cell.y, kind)
+		_set_decor_or_object_cell(cell.x, cell.y, kind, world.get_object(cell.x, cell.y))
+		# A dirty cell can flip a neighbouring TILE_SOIL cell's shore
+		# selection -- both its overlay blob shape and its base-layer backing
+		# material -- without that neighbour itself being marked dirty (e.g. a
+		# dig turns a rock tile into floor, exposing a straight prairie edge
+		# next to it where a corner used to be); re-resolve the full layered
+		# cell (_set_soil_cell(), not just the overlay) of all 8
+		# orthogonal+diagonal neighbours that are themselves TILE_SOIL.
+		# Diagonal neighbours matter since a concave-corner cell depends on
+		# its diagonal neighbour's kind, not just its 4 orthogonal ones.
+		for offset in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0),
+				Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
+			var neighbor: Vector2i = cell + offset
+			if not _inside(neighbor):
+				continue
+			if world.get_tile(neighbor.x, neighbor.y) == WorldStateType.TILE_SOIL:
+				_set_soil_cell(neighbor.x, neighbor.y)
+		touched += 1
+	_dirty_cells_consumed = int(dirty["next"])
+	last_tile_map_cells_touched = touched
+
+## Base terrain cell: TILE_ATLAS_MAP's plain/opaque entry for `kind`, except
+## for a boundary TILE_SOIL cell (one with a water/rock neighbour), which
+## instead gets that neighbour's own plain water/rock cell as its *backing*
+## -- see _set_soil_cell() below for why. Water and rock tiles themselves
+## never carry directional art of their own (see tile_atlas_map.gd's module
+## comment). Also resolves the grass overlay.
+func _set_tile_map_cell(x: int, y: int, kind: String) -> void:
+	if kind == WorldStateType.TILE_SOIL:
+		_set_soil_cell(x, y)
+		return
+	var coords_pos := Vector2i(x, y)
+	var atlas = TileAtlasMapType.TILE_ATLAS_MAP.get(kind)
+	if atlas == null:
+		_tile_map_layer.erase_cell(coords_pos)
+	else:
+		_tile_map_layer.set_cell(coords_pos, int(atlas["source_id"]), atlas["coords"])
+	_grass_overlay_layer.erase_cell(coords_pos)
+
+## A TILE_SOIL cell's neighbour-driven layered composition.
+## tile_atlas_map.gd's grass_shore_selection() resolves this
+## cell's 8 neighbours to at most one shape ("edge"/"corner"/"concave") and
+## direction, shared by two lookups that must always agree:
+##   - the overlay cell (grass_overlay_coords()): the terrain sheet's own
+##     transparent-bordered grass blob shape for that direction, drawn on
+##     _grass_overlay_layer, on top;
+##   - the base cell (_grass_backing_kind() below, via
+##     grass_shore_backing_offsets()): the single actual water/rock
+##     neighbour that shape's alpha is supposed to expose, drawn as that
+##     material's own plain opaque cell on _tile_map_layer, underneath.
+## An opaque grass fill under every soil cell would instead make the blob's
+## transparent pixels reveal only more grass, never the neighbouring
+## water/rock. A fully interior cell (no foreign neighbour) has no
+## selection, so it keeps a plain hash-selected grass fill with no overlay.
+func _set_soil_cell(x: int, y: int) -> void:
+	var coords_pos := Vector2i(x, y)
+	var selection := TileAtlasMapType.grass_shore_selection(
+		_is_shore_neighbor(x, y - 1), _is_shore_neighbor(x, y + 1),
+		_is_shore_neighbor(x + 1, y), _is_shore_neighbor(x - 1, y),
+		_is_shore_neighbor(x + 1, y - 1), _is_shore_neighbor(x - 1, y - 1),
+		_is_shore_neighbor(x + 1, y + 1), _is_shore_neighbor(x - 1, y + 1))
+	if selection.is_empty():
+		var atlas = TileAtlasMapType.TILE_ATLAS_MAP[WorldStateType.TILE_SOIL]
+		_tile_map_layer.set_cell(coords_pos, int(atlas["source_id"]), _grass_variant_coords(x, y))
+		_grass_overlay_layer.erase_cell(coords_pos)
+		return
+	var backing_kind := _grass_backing_kind(x, y, selection)
+	var backing_atlas = TileAtlasMapType.TILE_ATLAS_MAP[backing_kind]
+	_tile_map_layer.set_cell(coords_pos, int(backing_atlas["source_id"]), backing_atlas["coords"])
+	_grass_overlay_layer.set_cell(coords_pos, TileAtlasMapType.SOURCE_FLOORS, TileAtlasMapType.grass_overlay_coords_for_selection(selection))
+
+## The single water/rock neighbour a boundary soil cell's blob shape must
+## expose as its base-layer backing, deterministically chosen by trying
+## grass_shore_backing_offsets()' priority-ordered neighbour offsets in order
+## and returning the first that is actually water or rock -- so a corner
+## shape whose two represented sides are mixed materials (one water, one
+## rock) still resolves to exactly one backing cell instead of an undefined
+## pick. Falls back to TILE_WATER only if none of the offsets are foreign,
+## which cannot happen for a non-empty selection (grass_shore_selection()
+## only returns one when at least one represented neighbour is foreign).
+func _grass_backing_kind(x: int, y: int, selection: Dictionary) -> String:
+	for offset in TileAtlasMapType.grass_shore_backing_offsets(selection):
+		var neighbor: Vector2i = Vector2i(x, y) + (offset as Vector2i)
+		if not _inside(neighbor):
+			continue
+		var kind := world.get_tile(neighbor.x, neighbor.y)
+		if kind == WorldStateType.TILE_WATER or kind == WorldStateType.TILE_ROCK:
+			return kind
+	return WorldStateType.TILE_WATER
+
+## True when (x,y) is inside the map and TILE_WATER or TILE_ROCK -- the
+## "foreign neighbour" predicate for the grass overlay above. Out-of-bounds
+## is never foreign: a prairie tile at the map edge with no water/rock
+## neighbour is plain interior, not an invented edge against nothing.
+func _is_shore_neighbor(x: int, y: int) -> bool:
+	if not _inside(Vector2i(x, y)):
+		return false
+	var kind := world.get_tile(x, y)
+	return kind == WorldStateType.TILE_WATER or kind == WorldStateType.TILE_ROCK
+
+## Discrete prairie variant, chosen by hash(seed, x, y), never by frame --
+## a pure function of the
+## world's seed and the cell's own coordinates, so it is stable across pan,
+## zoom, save and load, and never changes on its own between redraws.
+func _grass_variant_coords(x: int, y: int) -> Vector2i:
+	var variants := TileAtlasMapType.TILE_SOIL_VARIANTS
+	var seed_value: int = world.get_seed() if world != null else 0
+	var key := "%d:%d:%d" % [seed_value, x, y]
+	var index: int = key.hash() % variants.size()
+	return variants[index]
+
+## Object/decor layer cell: an actual placed object (`object_kind`, from
+## world.get_objects()/get_object()) takes priority when present; otherwise
+## a tile kind with its own decorative sprite (tree canopy, hazard cluster,
+## planted sprout -- see tile_atlas_map.gd's TILE_DECOR_MAP) draws one;
+## otherwise the cell is cleared. `object_kind == ""` means no placed object
+## (e.g. during an incremental refresh after remove_object, or a forage
+## clearing its berry_bush) so this falls through to the tile's own decor, if any.
+func _set_decor_or_object_cell(x: int, y: int, tile_kind: String, object_kind: String) -> void:
+	var coords := Vector2i(x, y)
+	if not object_kind.is_empty():
+		var object_atlas = TileAtlasMapType.OBJECT_ATLAS_MAP.get(object_kind)
+		if object_atlas != null:
+			_object_tile_map_layer.set_cell(coords, int(object_atlas["source_id"]), object_atlas["coords"])
+			return
+	var decor = TileAtlasMapType.TILE_DECOR_MAP.get(tile_kind)
+	if decor != null:
+		_object_tile_map_layer.set_cell(coords, int(decor["source_id"]), _decor_variant_coords(x, y, decor))
+		return
+	_object_tile_map_layer.erase_cell(coords)
+
+## The tree decor shows one of its source's tiles per map tile (the pack's
+## three sizes), chosen by hash(seed, x, y) like the grass variants, never by
+## frame; the placeholder tree source has one tile, so it keeps its coords.
+## Other decor (the hazard shares the resources source) keeps its own coords.
+## Hashes a Vector3i, not a "seed:x:y" string: the string hash multiplies by
+## 33 per character, so modulo 3 it would only see the last character.
+func _decor_variant_coords(x: int, y: int, decor: Dictionary) -> Vector2i:
+	if int(decor["source_id"]) != TileAtlasMapType.SOURCE_TREE:
+		return decor["coords"]
+	var source := _object_tile_map_layer.tile_set.get_source(TileAtlasMapType.SOURCE_TREE) as TileSetAtlasSource
+	if source == null or source.get_tiles_count() <= 1:
+		return decor["coords"]
+	var seed_value: int = world.get_seed() if world != null else 0
+	return source.get_tile_id(hash(Vector3i(seed_value, x, y)) % source.get_tiles_count())
+
+func is_pack_art() -> bool:
+	return not _pack_item_icons.is_empty()
+
+func _take_snapshot(snapshot: Dictionary) -> void:
+	_snapshot_world = world
+	_snapshot = snapshot if not snapshot.is_empty() or world == null else world.get_view_snapshot()
+
+func _draw() -> void:
+	if world == null:
+		return
+	if _snapshot.is_empty() or _snapshot_world != world:
+		_take_snapshot({})
+	if not _art_enabled:
+		var tiles: Array[String] = world.get_tiles()
+		var width: int = world.get_map_width()
+		for y in world.get_map_height():
+			for x in width:
+				var kind: String = tiles[y * width + x]
+				var color: Color = TILE_COLORS.get(kind, UNKNOWN_TILE_COLOR)
+				draw_rect(Rect2(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE), color, true)
+		# Drawn once for the whole map, never inside the row loop above:
+		# world.get_objects() is O(objects), and iterating it once per row
+		# would make this O(height * objects).
+		var object_inset := TILE_SIZE * 0.1
+		for object_entry in world.get_objects():
+			var object_color: Color = OBJECT_COLORS.get(String(object_entry["kind"]), UNKNOWN_OBJECT_COLOR)
+			draw_rect(Rect2(
+				int(object_entry["x"]) * TILE_SIZE + object_inset,
+				int(object_entry["y"]) * TILE_SIZE + object_inset,
+				TILE_SIZE - object_inset * 2.0,
+				TILE_SIZE - object_inset * 2.0
+			), object_color, true)
+	if not _art_enabled:
+		var inset := TILE_SIZE * 0.2
+		var ids: Array = _snapshot["ids"]
+		var worker: Array = _snapshot["worker"]
+		var xs: Array = _snapshot["x"]
+		var ys: Array = _snapshot["y"]
+		var carrying: Array = _snapshot["carrying"]
+		for row in ids.size():
+			if worker[row] == 0:
+				continue
+			draw_rect(Rect2(
+				xs[row] * TILE_SIZE + inset,
+				ys[row] * TILE_SIZE + inset,
+				TILE_SIZE - inset * 2.0,
+				TILE_SIZE - inset * 2.0
+			), COLONIST_COLOR, true)
+			# Colour-mode carried-item marker.
+			# The art-mode equivalent lives in colonist_sprites.gd, whose badge
+			# layer draws over its bodies in art mode instead of underneath.
+			if carrying[row] != "":
+				var marker_size := TILE_SIZE * 0.35
+				draw_rect(Rect2(
+					xs[row] * TILE_SIZE + TILE_SIZE - marker_size,
+					ys[row] * TILE_SIZE,
+					marker_size,
+					marker_size
+				), GROUND_ITEM_COLORS.get(carrying[row], Color.MAGENTA), true)
+	_draw_stockpile_counts()
+	_draw_construction_sites()
+	_drag_preview.draw(self, TILE_SIZE, _visible_tile_rect())
+	for i in _list_tiles.size():
+		var tile := _list_tiles[i]
+		var valid := i < _list_valid.size() and _list_valid[i]
+		var color := Color(0.3, 1.0, 0.55) if valid else Color(1.0, 0.3, 0.3)
+		var rect := Rect2(Vector2(tile) * TILE_SIZE, Vector2.ONE * TILE_SIZE)
+		draw_rect(rect, Color(color, 0.22), true)
+		draw_rect(rect, color, false, 1.0)
+		if not valid:
+			draw_line(rect.position + Vector2(3, 3), rect.end - Vector2(3, 3), color, 1.0)
+
+func _draw_construction_sites() -> void:
+	for site: Dictionary in _snapshot["construction_sites"]:
+		var orientation := String(site.get("orientation", "horizontal"))
+		var kind := String(site["kind"])
+		var footprint_rect := construction_site_footprint_rect(site)
+		# A vertical-orientation kind with its own dedicated atlas
+		# entry (e.g. "workbench_vertical") draws that real art directly, at
+		# its own real size/grounding -- no synthetic 90-degree rotation of
+		# the horizontal crop. Falls back to the
+		# plain kind key when no dedicated vertical entry is registered yet.
+		var vertical_key := kind + "_vertical"
+		var atlas_key := vertical_key if orientation == "vertical" and TileAtlasMapType.OBJECT_ATLAS_MAP.has(vertical_key) else kind
+		var atlas: Dictionary = TileAtlasMapType.OBJECT_ATLAS_MAP.get(atlas_key, {})
+		if atlas.is_empty() or _tile_map_layer.tile_set.get_source(int(atlas["source_id"])) == null:
+			continue
+		var source := _tile_map_layer.tile_set.get_source(int(atlas["source_id"])) as TileSetAtlasSource
+		var texture := source.texture
+		var region := Rect2(Vector2(atlas["coords"]) * Vector2(source.texture_region_size), Vector2(source.texture_region_size))
+		var sprite_size := region.size
+		var tile_data := source.get_tile_data(atlas["coords"], 0)
+		var texture_origin := Vector2(tile_data.texture_origin)
+		var footprint_center := footprint_rect.get_center()
+		var sprite_rect := Rect2(footprint_center - sprite_size / 2.0 - texture_origin, sprite_size)
+		draw_texture_rect_region(texture, sprite_rect, region, Color(1.0, 1.0, 1.0, 0.5))
+		var progress := clampf(float(site.get("progress", 0)) / maxf(1.0, float(site.get("build_ticks", 1))), 0.0, 1.0)
+		var bar_rect := construction_bar_rect(footprint_rect)
+		draw_rect(bar_rect, Color(0.18, 0.12, 0.12, 0.9), true)
+		draw_rect(Rect2(bar_rect.position, Vector2(bar_rect.size.x * progress, bar_rect.size.y)), Color(0.35, 0.95, 0.45, 0.95), true)
+
+## The map-local pixel rect of a construction site's footprint tiles.
+static func construction_site_footprint_rect(site: Dictionary) -> Rect2:
+	var site_origin: Vector3i = site["origin"]
+	var origin := Vector2i(site_origin.x, site_origin.y)
+	var orientation := String(site.get("orientation", "horizontal"))
+	var kind := String(site["kind"])
+	var size := Vector2i(2, 1) if kind == "workbench" and orientation != "vertical" else Vector2i(1, 2) if kind == "workbench" else Vector2i.ONE
+	return Rect2(Vector2(origin) * TILE_SIZE, Vector2(size) * TILE_SIZE)
+
+## A construction site's progress bar: as wide as the footprint and glued just above its
+## top edge. It is placed from the footprint (the tiles), never from the ghost sprite, so
+## every kind and orientation shows it at the same offset whatever the sprite's height.
+static func construction_bar_rect(footprint_rect: Rect2) -> Rect2:
+	return Rect2(footprint_rect.position.x, footprint_rect.position.y - CONSTRUCTION_BAR_GAP - CONSTRUCTION_BAR_HEIGHT,
+		footprint_rect.size.x, CONSTRUCTION_BAR_HEIGHT)
+
+## Sum the snapshot's ground items once, never scan all items per cell.
+## Carried cargo is absent from get_items() and cannot inflate these counts.
+func _ground_item_counts() -> Dictionary:
+	var counts := {}
+	for item: Dictionary in _snapshot["items"]:
+		var kind := String(item["kind"])
+		if not _has_ground_icon(kind):
+			continue
+		var cell := Vector2i(int(item["x"]), int(item["y"]))
+		if not counts.has(cell):
+			counts[cell] = {}
+		counts[cell][kind] = int(counts[cell].get(kind, 0)) + int(item["count"])
+	for item: Dictionary in _snapshot["tool_items"]:
+		var location: Dictionary = item["location"]
+		if location["type"] != "ground":
+			continue
+		var kind := String(item["kind"])
+		if not _has_ground_icon(kind):
+			continue
+		var cell := Vector2i(int(location["x"]), int(location["y"]))
+		if not counts.has(cell):
+			counts[cell] = {}
+		counts[cell][kind] = int(counts[cell].get(kind, 0)) + 1
+	return counts
+
+## Every ITEM_ATLAS_MAP kind, and a PACK_ITEM_MAP kind only with the pack.
+func _has_ground_icon(kind: String) -> bool:
+	return TileAtlasMapType.ITEM_ATLAS_MAP.has(kind) or _pack_only_item_icons.has(kind)
+
+## Wood retains its original icon, dimensions, origin and count baseline in
+## both modes. Additional kinds occupy subsequent rows only on mixed cells.
+## Visits only the zoned cells that hold items (B1: walking every cell of every
+## zone on each redraw cost a whole-map zone 65,536 cells per frame), in the
+## zone-then-row-major order the full walk drew them in.
+func _draw_stockpile_counts() -> void:
+	var counts := _ground_item_counts()
+	var font := ThemeDB.fallback_font
+	var icon_size := GROUND_ITEM_ICON_SIZE
+	for cell in _zoned_cells_in_draw_order(counts):
+		var cell_counts: Dictionary = counts[cell]
+		var row := 0
+		for kind in TileAtlasMapType.ITEM_ATLAS_MAP.keys() + _pack_only_item_icons.keys():
+			var count := int(cell_counts.get(kind, 0))
+			if count <= 0:
+				continue
+			var origin := Vector2(cell.x * TILE_SIZE, cell.y * TILE_SIZE + row * TILE_SIZE)
+			var icon_rect := Rect2(origin, Vector2(icon_size, icon_size))
+			var pack_icon: Dictionary = _pack_item_icons.get(kind, _pack_only_item_icons.get(kind, {}))
+			if not pack_icon.is_empty() and (_art_enabled or kind == "wood"):
+				# Pack icons keep their own proportions inside the icon square.
+				draw_texture_rect_region(pack_icon["texture"], fit_rect(icon_rect, pack_icon["rect"].size), pack_icon["rect"])
+			elif _item_atlas_textures.has(kind) and (_art_enabled or kind == "wood"):
+				draw_texture_rect_region(_item_atlas_textures[kind], icon_rect, TileAtlasMapType.ITEM_ATLAS_MAP[kind]["rect"])
+			else:
+				draw_rect(icon_rect, GROUND_ITEM_COLORS.get(kind, Color.MAGENTA), true)
+			draw_string(font, origin + Vector2(icon_size + 1.0, TILE_SIZE - 2.0), str(count),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, STOCKPILE_COUNT_FONT_SIZE, STOCKPILE_COUNT_TEXT_COLOR)
+			row += 1
+
+## The largest rect of `content`'s proportions centred in `box` (pack icons
+## are never squashed; style.md "Native size, never squashed").
+static func fit_rect(box: Rect2, content: Vector2) -> Rect2:
+	var factor := minf(box.size.x / content.x, box.size.y / content.y)
+	var fitted := content * factor
+	return Rect2(box.position + (box.size - fitted) / 2.0, fitted)
+
+## The cells of `counts` inside a stockpile zone, ordered by zone (get_zones() order),
+## then row-major -- each cell once, under the first zone containing it. A farm zone (F1)
+## stores nothing, so its cells are skipped.
+func _zoned_cells_in_draw_order(counts: Dictionary) -> Array[Vector2i]:
+	var zones: Array = _snapshot["zones"]
+	var keyed: Array = []
+	for cell in counts:
+		for zone_index in zones.size():
+			var zone: Dictionary = zones[zone_index]
+			if zone.has("kind"):
+				continue
+			if Rect2i(int(zone["x"]), int(zone["y"]), int(zone["width"]), int(zone["height"])).has_point(cell):
+				keyed.append([zone_index, cell.y, cell.x, cell])
+				break
+	keyed.sort()
+	var cells: Array[Vector2i] = []
+	for entry in keyed:
+		cells.append(entry[3])
+	return cells

@@ -1,0 +1,192 @@
+# Trabajar en Deepholm desde Orca (guía del propietario)
+
+> **En corto:** Orca abre un *worktree* (una copia aislada del repo con su propia rama) por
+> tarea, lanza Claude Code (Opus) dentro para hacerla, y Codex revisa el resultado. Tú no
+> tocas el código: eliges la tarea, lees el informe, pides la revisión y fusionas.
+
+Esta carpeta sustituye al antiguo pipeline automático (`agent-orchestrator`). Ya no hay
+supervisor, ni issues `agent-ready`, ni tareas programadas en el PC. Cada tarea es un worktree
+de Orca que tú abres y cierras.
+
+## Qué hay aquí
+
+| Archivo | Para qué |
+| --- | --- |
+| `README.md` | Esta guía: cómo operar día a día |
+| `BACKLOG.md` | La lista ordenada de tareas, con criterios de aceptación. **Las tareas se cogen de aquí, en orden** |
+| `REFACTOR-PLAN.md` | El plan técnico para convertir `world_state.gd` (5.000 líneas) en módulos pequeños sin romper nada |
+| `REVIEW.md` | Lo que Codex comprueba al revisar. Claude lo lee antes de entregar; Codex lo usa como guion |
+| `../design/baseline.md` | El inventario del mínimo que el juego debe cubrir antes de añadir ideas nuevas |
+
+## Preparación (una sola vez)
+
+1. Repo local: `C:\dev\deepholm` (clon de `sterium-ai/deepholm`, rama `main`).
+2. Godot: variable de entorno de usuario `GODOT` apuntando al ejecutable de consola 4.7.2
+   (ya configurada; `tools\run_tests.ps1` la usa).
+3. Orca: el repo está registrado (`orca repo list` lo muestra como `deepholm`). Los worktrees
+   se crean en `C:\Users\<usuario>\orca\workspaces\deepholm\<nombre>`.
+4. Claude Code usa Opus por defecto en este repo (`.claude/settings.json`). Codex revisa con
+   `codex review`.
+5. `claude` y `codex` están instalados en `C:\dev\tools\npm` (ruta sin acentos, en el PATH).
+   La carpeta de perfil del usuario existe en `C:\Users` con varias codificaciones de la "ñ" y la
+   terminal de Orca no encuentra lo instalado bajo `AppData\Roaming\npm`; por eso nunca se
+   instalan herramientas ahí. Para actualizar:
+   `npm install -g --prefix C:\dev\tools\npm @anthropic-ai/claude-code @openai/codex`.
+6. El autoupdate de Claude Code está desactivado en `%USERPROFILE%\.claude\settings.json`
+   (`"env": {"DISABLE_AUTOUPDATER": "1"}`, vale para toda sesión sin depender del entorno de
+   Orca) y además como variable de usuario. Motivo: dos actualizaciones a mitad de tarea dejaron
+   el `claude` de `C:\dev\tools\npm` sin binario (npm omitía su script de instalación; ahora
+   `%USERPROFILE%\.npmrc` lo permite). Actualiza a mano, entre tareas:
+   `npm install -g --prefix C:\dev\tools\npm @anthropic-ai/claude-code@latest @openai/codex@latest`
+   y comprueba `claude --version`. Si una terminal de Orca dice que no encuentra `bin/claude.exe`,
+   es esto: repite el comando.
+7. Claude Code pregunta una vez por carpeta si confías en ella (cada worktree es una carpeta
+   nueva): `new-task.ps1` contesta "Yes, I trust this folder" por ti; si lo lanzas desde la app,
+   baja con la flecha y pulsa Enter.
+
+## Probar el juego
+
+Acceso directo **"Deepholm (última versión)"** en el escritorio → ejecuta `tools\play.cmd`: trae
+el `main` más reciente de GitHub, reimporta y abre el juego en ventana. Lo que está en `main` es
+lo fusionado; lo que los agentes tienen a medias en sus worktrees no aparece hasta fusionarse.
+
+## Benchmarks
+
+`tools\run_benches.ps1` corre todos los `game/scripts/tests/bench_*.gd` (unos 15–25 min) y
+reescribe `docs/architecture/bench-baseline.md`: commit y máquina en la cabecera, una sección con
+tablas por benchmark y sus líneas en bruto. Las tareas `A*` que tocan rendimiento citan en su
+informe las líneas de antes (de ese archivo) y las de después (de una pasada en su rama, con
+`-Out` a otro archivo o `-Filter <nombre>` para uno solo). Los tiempos dependen de la máquina y de
+lo que corra a la vez (la cabecera cuenta los demás procesos de Godot), así que no son una puerta
+de CI y `run_tests` no los ejecuta.
+
+## Ciclo de una tarea
+
+### 1. Abrir la tarea
+
+Desde cualquier PowerShell en `C:\dev\deepholm`:
+
+```powershell
+tools\orca\new-task.ps1 R1
+```
+
+Esto crea el worktree `R1`, lanza Claude Code dentro y le entrega el encargo
+"haz la tarea R1 de docs/orca/BACKLOG.md" con las reglas del repo. También puedes hacerlo a
+mano en Orca: *New worktree* → nombre `R1` → agente *Claude* → prompt:
+
+```
+Lee AGENTS.md y docs/orca/README.md. Haz la tarea R1 de docs/orca/BACKLOG.md.
+Termina con el informe de entrega que pide AGENTS.md.
+```
+
+Claude trabaja solo: importa el proyecto, hace el cambio, corre la suite de tests headless y
+escribe el informe de entrega en `docs/orca/handoffs/<id>.md` (Codex solo ve el repo, no su
+terminal). Si pregunta algo, contesta en su terminal.
+
+### 2. Revisar con Codex
+
+Cuando Claude diga que ha terminado, en una terminal **del mismo worktree** (Orca → `+` →
+Terminal) ejecuta:
+
+```powershell
+tools\orca\review.ps1
+```
+
+Codex compara la rama con `main`, aplica `docs/orca/REVIEW.md` y escribe su veredicto en
+`.orca-review.md` (ignorado por git). El script intenta además enviar el informe a la terminal
+de Claude con la instrucción de corregir lo que proceda. Si no lo consigue, escríbele tú:
+
+```
+Lee .orca-review.md y corrige lo que proceda. Vuelve a pasar los tests y actualiza el informe.
+```
+
+Repite revisión → corrección hasta que Codex no tenga hallazgos bloqueantes (normalmente 1–2
+vueltas). Codex **no** edita código; solo Claude escribe.
+
+### 3. Enviar y fusionar
+
+```powershell
+tools\orca\ship.ps1
+```
+
+Sube la rama y abre el pull request. GitHub Actions corre la suite completa en Windows. Cuando
+esté en verde, fusiona desde la pestaña *PR* de Orca (o `gh pr merge --squash`). Después borra
+el worktree en Orca (clic derecho → *Delete*).
+
+### 4. Siguiente tarea
+
+Vuelve al paso 1 con el siguiente id del `BACKLOG.md`. Las tareas `R*` (refactor) van en
+orden estricto, de una en una, porque cada una toca `world_state.gd`. Las tareas `F*`
+(funcionalidad) pueden ir en paralelo cuando el backlog lo indique.
+
+## Reglas que no cambian
+
+- **Tú decides reglas de juego; los agentes deciden implementación.** Antes de abrir una
+  tarea `F*` cuyo diseño no esté cerrado en `BACKLOG.md`, pídele a Claude (en el chat de
+  Claude, no en Orca) que te haga las preguntas de diseño y actualice el backlog.
+- **Primero el mínimo del juego de referencia (`docs/design/baseline.md`), luego las ideas
+  nuevas.** Si una tarea salta ese orden, hay que decirlo.
+- **Nunca se "arregla" un test desactivándolo.** Si un test falla por el refactor, el refactor
+  está mal o el test necesita adaptarse a una API nueva, y eso se explica en el informe.
+- **Una tarea = una rama = un PR.** Nada de mezclar refactor con funcionalidad.
+
+## Reglas de operación (auditoría del 28-10-2026)
+
+Salen de medir la primera semana con Orca (33 PR, 49 h de reloj, ~10.750 turnos de agente):
+
+- **Como mucho 4 agentes a la vez, y nunca 4 suites de Godot simultáneas.** Con 31 GB de RAM,
+  cuatro suites a la vez tiraron Orca (28-10, 00:30). Antes de abrir la cuarta tarea, mira que
+  al menos una de las tres no esté en la suite; si hay duda, tres.
+- **Revisar la entrada del backlog antes de abrir la tarea (10 minutos).** A2, A4, A5, A13 y
+  A16 descubrieron a mitad que sus *owned paths* o su aceptación eran anteriores a R8–R12 y
+  tuvieron que parar a preguntar. Quien abre la tarea comprueba que los ficheros nombrados
+  existen donde dice, que la aceptación sigue siendo medible en el `main` actual y que no choca
+  con lo que está en vuelo; si no, corrige la entrada en `BACKLOG.md` en el mismo commit que la
+  abre y lo escribe en la nota de coordinación del agente.
+- **Rebase y recuento antes de cada revisión: lo comprueba `review.ps1`.** Un tercio de las
+  rondas de Codex de la primera semana fueron "rebasa sobre `main` y actualiza el número de
+  tests". El script ya no lanza al revisor si la rama va por detrás de `origin/main` o si el
+  informe no cita la línea final de la suite con el recuento actual; avisa al agente y sale.
+- **Playtest del propietario cada 2–3 merges que toquen el visor.** Es la única validación que
+  no se automatiza. El acceso directo "Deepholm (ultima version)" baja `main`, importa y lanza;
+  lo que se vea raro va a `BACKLOG.md` como tarea `B*` con pasos para reproducirlo. Si hay una
+  grabación (F9 en la partida), adjunta el fichero de replay: `tools\replay.ps1` lo reproduce.
+- **Los cambios sólo de docs no pasan por la suite de CI** (`paths-ignore` en el workflow);
+  `docs/architecture/` sí, porque ahí viven los presupuestos y la línea base de avisos.
+
+## Reglas de consumo (auditoría de tokens del 30-10-2026)
+
+El 75 % del coste de las 52 primeras tareas fue relectura de contexto (226 k tokens por turno de
+media, 18.500 turnos). El coste crece con turnos × contexto, no con la dificultad. Por eso:
+
+- **Compactación a 120 k** (`autoCompactWindow` en `.claude/settings.json`): el agente nunca
+  arrastra más de ~120 k tokens. No subirlo por comodidad.
+- **Tope por tarea: 300 turnos / 4 h.** Una entrada que no cabe se divide antes de abrirla
+  (L2 → paquetes; B1 habría sido tres tareas). El prompt se lo recuerda al agente; si no cabe,
+  entrega lo cerrado y anota el resto en el informe.
+- **Brief en el prompt, no el backlog entero:** `new-task.ps1` incluye la entrada de la tarea
+  en el prompt y prohíbe leer `BACKLOG.md` completo (la fila de estado se cambia con grep +
+  edición puntual).
+- **Modelo por tarea:** `new-task.ps1 <id> -Model sonnet` para barridos mecánicos, higiene de
+  tests, docs, renumeraciones; Opus (el valor por defecto) sólo para diseño y core.
+- **Exploración por subagentes** que devuelven un resumen; nunca volcar ficheros largos ni
+  salidas completas de la suite al contexto principal (filtrar con `Select-String`/`tail`).
+- **El preflight de `review.ps1` ignora los commits de main que sólo tocan docs**
+  (`*.md`, `docs/orca|decisions|design|art/`): no obligan a rebasar.
+- **Supervisión cada 45 min** mientras los agentes están a mitad de tarea; cada 20 min sólo
+  con un PR en CI o una revisión en curso.
+- **Los ADR entran como `proposed`.** La firma de un ADR es del propietario y se hace fuera
+  del pipeline; un ADR `proposed` con "owner sign-off pending" no bloquea la revisión ni el
+  merge (precedentes: ADR 063, 068). El revisor comprueba que el ADR existe, está enlazado en
+  `docs/decisions/README.md` y describe lo que hace la rama.
+
+## Cuando algo va mal
+
+- *Claude dice que no puede correr Godot:* comprueba que `$env:GODOT` existe en esa terminal
+  (`echo $env:GODOT`). Si no, cierra y reabre Orca para que herede la variable.
+- *Los tests fallan en `main` también:* no es culpa de la tarea; ábrele una tarea `R0-fix`
+  a Claude con el nombre del test.
+- *Codex no tiene cuota:* `review.ps1 -Agent claude` hace la revisión con una sesión nueva de
+  Claude en lugar de Codex (misma guía, menos independiente; úsalo solo de emergencia).
+- *Un worktree quedó a medias:* bórralo en Orca y vuelve a abrir la tarea. La rama vieja se
+  puede recuperar desde `git branch -a` si hacía falta.
