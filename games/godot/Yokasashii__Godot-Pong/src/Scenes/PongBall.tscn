@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://bkgsgplmdrdk4"]
+
+[ext_resource type="Script" uid="uid://8klwp6jyggal" path="res://Scripts/Pong/PongBall.cs" id="1_3to0y"]
+[ext_resource type="Texture2D" uid="uid://bmlfuh0q7txcm" path="res://Assets/Ball.png" id="2_smosx"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_eb1ap"]
+radius = 22.19
+
+[node name="PongBall" type="Area2D" unique_id=2089158113]
+script = ExtResource("1_3to0y")
+
+[node name="Runderer" type="Sprite2D" parent="." unique_id=1651373093]
+scale = Vector2(0.56, 0.56)
+texture = ExtResource("2_smosx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2001732892]
+shape = SubResource("CircleShape2D_eb1ap")

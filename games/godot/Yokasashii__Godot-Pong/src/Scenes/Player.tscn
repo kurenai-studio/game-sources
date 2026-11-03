@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dvowx1o6tbauo"]
+
+[ext_resource type="Script" uid="uid://ia3trwmf5075" path="res://Scripts/Player.cs" id="1_3e7yg"]
+[ext_resource type="Texture2D" uid="uid://cws8hvxg55st4" path="res://Assets/Red.png" id="1_nlwqd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n5fpy"]
+size = Vector2(38, 185)
+
+[node name="Player" type="Area2D" unique_id=1573413692 node_paths=PackedStringArray("runderer")]
+script = ExtResource("1_3e7yg")
+runderer = NodePath("Runderer")
+
+[node name="Runderer" type="Sprite2D" parent="." unique_id=1899683651]
+scale = Vector2(0.5441176, 1)
+texture = ExtResource("1_nlwqd")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=150619847]
+shape = SubResource("RectangleShape2D_n5fpy")
