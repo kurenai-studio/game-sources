@@ -1,0 +1,25 @@
+package ru.fredboy.cavedroid.gameplay.controls.action.useblock
+
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.repository.ItemsRepository
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.gameplay.controls.action.annotation.BindUseBlockAction
+import javax.inject.Inject
+
+@GameScope
+@BindUseBlockAction(stringKey = UseTrapdoorOpenAction.KEY)
+class UseTrapdoorOpenAction @Inject constructor(
+    private val gameWorld: GameWorld,
+    private val itemsRepository: ItemsRepository,
+) : IUseBlockAction {
+
+    override fun perform(block: Block, x: Int, y: Int): Boolean {
+        gameWorld.setForeMap(x, y, itemsRepository.getBlockByKey("wood_trapdoor_closed"))
+        return true
+    }
+
+    companion object {
+        const val KEY = "wood_trapdoor_open"
+    }
+}

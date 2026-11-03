@@ -1,0 +1,49 @@
+package ru.fredboy.cavedroid.gdx.menu.v2.view.notice
+
+import com.badlogic.gdx.Gdx
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
+import ru.fredboy.cavedroid.common.mvvm.NavBackStack
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.BaseViewModel
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.BaseViewModelDependencies
+import ru.fredboy.cavedroid.gdx.utils.applicationComponent
+
+class NoticeMenuViewModel(
+    private val navBackStack: NavBackStack,
+    baseViewModelDependencies: BaseViewModelDependencies,
+) : BaseViewModel(baseViewModelDependencies) {
+
+    private val _noticesFlow = MutableSharedFlow<String>()
+
+    private val noticesFlow = _noticesFlow
+        .onStart {
+            val notices = withContext(ioDispatcher) {
+                Gdx.app.applicationListener.applicationComponent.assetResolver.handle("notices.txt").readString()
+            }
+            emit("${getLocalizedString("noticesPreamble")}\n\n$notices")
+        }
+
+    val stateFlow: StateFlow<NoticeMenuState> = noticesFlow
+        .map { notices ->
+            NoticeMenuState(
+                notices = notices,
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(500L),
+            initialValue = NoticeMenuState(""),
+        )
+
+    fun onCopyClicked(notices: String) {
+        Gdx.app.clipboard.contents = notices
+    }
+
+    fun onBackClick() {
+        navBackStack.pop()
+    }
+}

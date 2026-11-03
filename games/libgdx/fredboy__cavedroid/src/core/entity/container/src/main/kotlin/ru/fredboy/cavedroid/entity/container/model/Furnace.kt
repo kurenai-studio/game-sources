@@ -1,0 +1,170 @@
+package ru.fredboy.cavedroid.entity.container.model
+
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.utils.Disposable
+import com.badlogic.gdx.utils.TimeUtils
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.model.inventory.InventoryItem
+import ru.fredboy.cavedroid.domain.items.model.inventory.InventoryItem.Companion.isNoneOrNull
+import ru.fredboy.cavedroid.domain.items.model.item.Item
+import ru.fredboy.cavedroid.domain.items.model.item.isNone
+import ru.fredboy.cavedroid.domain.items.model.item.isTool
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.domain.world.lighting.LightHandle
+
+class Furnace(
+    fallbackItem: Item.None,
+    initialItems: List<InventoryItem>? = null,
+) : Container(
+    size = SIZE,
+    fallbackItem = fallbackItem,
+    initialItems = initialItems,
+),
+    Disposable {
+
+    var notifyStateChanged: ((isActive: Boolean) -> Unit)? = null
+
+    override val type get() = Block.Furnace::class
+
+    var lightSource: LightHandle? = null
+
+    var fuel: InventoryItem
+        get() = items[FUEL_INDEX]
+        set(value) {
+            items[FUEL_INDEX] = value
+        }
+
+    var input: InventoryItem
+        get() = items[INPUT_INDEX]
+        set(value) {
+            items[INPUT_INDEX] = value
+        }
+
+    var result: InventoryItem
+        get() = items[RESULT_INDEX]
+        set(value) {
+            items[RESULT_INDEX] = value
+        }
+
+    val isActive: Boolean get() = currentFuel != null
+
+    var currentFuel: Item? = null
+        set(value) {
+            currentFuelKey = value?.params?.key
+            field = value
+
+            lightSource?.apply {
+                this@apply.isActive = value != null && !value.isNone()
+            }
+            notifyStateChanged?.invoke(value != null && !value.isNone())
+        }
+
+    var currentFuelKey: String? = null
+
+    var startBurnTimeMs = 0L
+    var smeltStarTimeMs = 0L
+
+    var burnProgress = 0f
+        set(value) {
+            field = MathUtils.clamp(value, 0f, 1f)
+        }
+    var smeltProgress = 0f
+        set(value) {
+            field = MathUtils.clamp(value, 0f, 1f)
+        }
+
+    fun canSmelt(): Boolean = (result.isNoneOrNull() || (result.item.params.key == input.item.params.smeltProductKey)) &&
+        !input.isNoneOrNull() &&
+        input.item.params.smeltProductKey != null &&
+        (!fuel.isNoneOrNull() || burnProgress > 0f)
+
+    private fun startBurning() {
+        requireNotNull(fuel.item.params.burningTimeMs) { "Cant start burning without fuel" }
+        currentFuel = fuel.item
+        if (fuel.item.isTool()) {
+            fuel.amount = 0
+        } else {
+            fuel.subtract()
+        }
+        if (fuel.amount <= 0) {
+            fuel = fallbackItem.toInventoryItem()
+        }
+        startBurnTimeMs = TimeUtils.millis()
+        burnProgress = 0f
+    }
+
+    override fun update(itemByKey: GetItemByKeyUseCase) {
+        if (currentFuel?.isNone() == true) {
+            currentFuel = null
+        }
+
+        currentFuel?.let { curFuel ->
+            val burningTimeMs = curFuel.params.burningTimeMs ?: run {
+                logger.e { "Burning item has no burning time. Item : ${curFuel.params.key}" }
+                return
+            }
+
+            if (TimeUtils.timeSinceMillis(startBurnTimeMs).toDouble() / burningTimeMs >= 0.01) {
+                burnProgress += 0.01f
+                startBurnTimeMs = TimeUtils.millis()
+            }
+        }
+
+        if (currentFuel?.isNone() == false && burnProgress >= 1f) {
+            if (canSmelt() && !fuel.isNoneOrNull()) {
+                startBurning()
+            } else {
+                currentFuel = null
+                burnProgress = 0f
+                smeltProgress = 0f
+            }
+        }
+
+        if (!canSmelt()) {
+            return
+        }
+        if (currentFuel == null && !fuel.isNoneOrNull()) {
+            startBurning()
+            smeltStarTimeMs = startBurnTimeMs
+            smeltProgress = 0f
+        }
+
+        if ((TimeUtils.timeSinceMillis(smeltStarTimeMs).toDouble() / SMELTING_TIME_MS) >= 0.01) {
+            smeltProgress += 0.01f
+            smeltStarTimeMs = TimeUtils.millis()
+        }
+
+        if (isActive && smeltProgress >= 1f) {
+            val productKey = requireNotNull(input.item.params.smeltProductKey)
+            val res = itemByKey[productKey]
+            if (result.isNoneOrNull()) {
+                result = res.toInventoryItem()
+            } else {
+                result.add()
+            }
+            input.subtract()
+            if (input.amount <= 0) {
+                input = fallbackItem.toInventoryItem()
+            }
+            smeltStarTimeMs = TimeUtils.millis()
+            smeltProgress = 0f
+        }
+    }
+
+    override fun dispose() {
+        lightSource?.dispose()
+        notifyStateChanged = null
+    }
+
+    companion object {
+        private const val SIZE = 3
+        private const val TAG = "Furnace"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+
+        const val FUEL_INDEX = 0
+        const val INPUT_INDEX = 1
+        const val RESULT_INDEX = 2
+
+        const val SMELTING_TIME_MS = 10000L
+    }
+}

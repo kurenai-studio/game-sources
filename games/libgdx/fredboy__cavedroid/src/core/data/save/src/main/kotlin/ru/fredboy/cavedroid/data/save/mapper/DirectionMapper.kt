@@ -1,0 +1,37 @@
+package ru.fredboy.cavedroid.data.save.mapper
+
+import dagger.Reusable
+import ru.fredboy.cavedroid.data.save.model.SaveDataDto
+import ru.fredboy.cavedroid.entity.mob.model.Direction
+import javax.inject.Inject
+
+@Reusable
+class DirectionMapper @Inject constructor() {
+
+    fun mapSaveData(direction: Direction): SaveDataDto.DirectionSaveDataDto = SaveDataDto.DirectionSaveDataDto(
+        version = SAVE_DATA_VERSION,
+        value = when (direction) {
+            Direction.LEFT -> 0
+            Direction.RIGHT -> 1
+        },
+    )
+
+    fun mapDirection(saveDataDto: SaveDataDto.DirectionSaveDataDto): Direction {
+        saveDataDto.verifyVersion(SAVE_DATA_VERSION)
+
+        return when (saveDataDto.value) {
+            0 -> Direction.LEFT
+            1 -> Direction.RIGHT
+            else -> {
+                logger.e { "Unknown direction value: ${saveDataDto.value}" }
+                Direction.RIGHT
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "DirectionMapper"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+        private const val SAVE_DATA_VERSION = 3
+    }
+}

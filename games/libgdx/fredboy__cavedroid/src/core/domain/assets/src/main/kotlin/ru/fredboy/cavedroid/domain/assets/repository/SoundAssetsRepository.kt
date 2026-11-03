@@ -1,0 +1,46 @@
+package ru.fredboy.cavedroid.domain.assets.repository
+
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.audio.Sound
+import com.badlogic.gdx.files.FileHandle
+import ru.fredboy.cavedroid.domain.assets.pack.AssetResolver
+import java.util.*
+import javax.inject.Inject
+
+abstract class SoundAssetsRepository : AssetsRepository {
+
+    @Inject lateinit var assetResolver: AssetResolver
+
+    protected val loadedSounds = LinkedList<Sound>()
+
+    protected fun FileHandle.loadAllSounds(getName: (Int) -> String = { "$it.wav" }): List<Sound> {
+        if (!exists()) {
+            return emptyList()
+        }
+
+        var index = 0
+        lateinit var fileHandle: FileHandle
+
+        return buildList {
+            do {
+                fileHandle = child(getName(index++))
+                if (fileHandle.exists()) {
+                    add(loadSound(fileHandle))
+                } else {
+                    break
+                }
+            } while (true)
+        }
+    }
+
+    protected fun loadSound(handle: FileHandle): Sound {
+        return Gdx.audio.newSound(assetResolver.resolve(handle.path())).also { sound ->
+            loadedSounds.add(sound)
+        }
+    }
+
+    override fun dispose() {
+        loadedSounds.forEach(Sound::dispose)
+        loadedSounds.clear()
+    }
+}

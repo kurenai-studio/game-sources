@@ -1,0 +1,283 @@
+package ru.fredboy.cavedroid.gameplay.lighting.bfs
+
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.physics.box2d.Body
+import ru.fredboy.cavedroid.common.utils.floorToInt
+import ru.fredboy.cavedroid.domain.configuration.repository.GameContextRepository
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.world.lighting.LightHandle
+import ru.fredboy.cavedroid.domain.world.listener.OnBlockPlacedListener
+import ru.fredboy.cavedroid.domain.world.model.Layer
+import ru.fredboy.cavedroid.entity.mob.model.Mob
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.game.world.lighting.LightingSystem
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.roundToInt
+
+class BfsLightingSystem(
+    private val gameContextRepository: GameContextRepository,
+) : LightingSystem,
+    OnBlockPlacedListener {
+
+    private var _gameWorld: GameWorld? = null
+    private var _grid: LightGrid? = null
+    private var _overlay: LightingOverlayRenderer? = null
+
+    private var lightingWindow: LightingWindow? = null
+
+    private val transientEmitterIds = AtomicLong(0L)
+
+    private val gameWorld: GameWorld
+        get() = requireNotNull(_gameWorld)
+
+    override val chunkSize: Int = 1
+
+    override fun attachToGameWorld(gameWorld: GameWorld) {
+        if (_gameWorld != null) {
+            logger.w { "BfsLightingSystem already attached" }
+            return
+        }
+
+        _gameWorld = gameWorld
+
+        if (gameWorld.isInfinite) {
+            // Infinite worlds can't allocate a grid for the (unbounded) world, so light a window that
+            // follows the camera and is rebuilt as it drifts (see [update]). At attach the camera is
+            // not yet in world units, so centre on the spawn column (0); [update] re-centres next frame.
+            val window = LightingWindow(
+                height = gameWorld.height,
+                isOpaque = { x, y -> isOpaque(gameWorld, x, y) },
+                blockEmission = { x, y -> emissionAt(gameWorld, x, y) },
+            )
+            lightingWindow = window
+            _grid = window.grid
+            gameWorld.addChunkListener(window)
+        } else {
+            _grid = LightGrid(gameWorld.width, gameWorld.height).also { lightGrid ->
+                lightGrid.rebuildAll(
+                    isOpaque = { x, y -> isOpaque(gameWorld, x, y) },
+                    blockEmission = { x, y -> emissionAt(gameWorld, x, y) },
+                )
+            }
+        }
+
+        _overlay = LightingOverlayRenderer(gameContextRepository, gameWorld, requireNotNull(_grid))
+        gameWorld.addBlockPlacedListener(this)
+    }
+
+    override fun onBlockPlaced(block: Block, x: Int, y: Int, layer: Layer) {
+        val world = _gameWorld ?: return
+        val grid = _grid ?: return
+        lightingWindow?.invalidateCell(x)
+        if (lightingWindow?.contains(x) == false) {
+            // Outside the lit window; it'll be rebuilt from the world when the window re-centres.
+            return
+        }
+        grid.onCellChanged(
+            x = x,
+            y = y,
+            newOpaque = isOpaque(world, x, y),
+            newEmission = emissionAt(world, x, y),
+        )
+    }
+
+    override fun update(delta: Float) {
+        val window = lightingWindow ?: return
+        val visible = gameContextRepository.getCameraContext().visibleWorld
+        if (window.update(cameraCenterX(), 1_000_000L, visible.x.floorToInt(), (visible.x + visible.width).floorToInt())) {
+            _grid = window.grid
+            _overlay?.updateGrid(window.grid)
+        }
+    }
+
+    override fun prepareView(viewport: Rectangle, finish: Boolean): Boolean {
+        val window = lightingWindow ?: return true
+        val center = (viewport.x + viewport.width / 2f).floorToInt()
+        if (finish && window.update(center)) {
+            _grid = window.grid
+            _overlay?.updateGrid(window.grid)
+        }
+        return window.covers(viewport.x.floorToInt() - LightGrid.MAX_LEVEL, (viewport.x + viewport.width).floorToInt() + LightGrid.MAX_LEVEL)
+    }
+
+    private fun cameraCenterX(): Int {
+        val visible = gameContextRepository.getCameraContext().visibleWorld
+        return (visible.x + visible.width / 2f).floorToInt()
+    }
+
+    override fun recalculate() = Unit
+
+    override fun refreshChunks(chunks: Iterable<Pair<Int, Int>>) = Unit
+
+    override fun render(camera: OrthographicCamera) {
+        val overlay = _overlay ?: return
+        overlay.render(camera, gameWorld.getSunlight())
+    }
+
+    override fun isMobExposedToSun(mob: Mob): Boolean {
+        val world = _gameWorld ?: return false
+        val grid = _grid ?: return false
+        return grid.isSkyExposed(mob.mapX, mob.upperMapY.coerceIn(0, world.height - 1))
+    }
+
+    override fun createPlayerSightLight(body: Body, x: Float, y: Float): LightHandle = NoOpLightHandle
+
+    override fun createFurnaceLight(x: Float, y: Float): LightHandle {
+        if (_gameWorld == null) return NoOpLightHandle
+        val id = transientEmitterIds.incrementAndGet()
+        return FurnaceLightHandle(id, x, y)
+    }
+
+    override fun createFireLight(x: Float, y: Float): LightHandle {
+        if (_gameWorld == null) return NoOpLightHandle
+        val id = transientEmitterIds.incrementAndGet()
+        return FireLightHandle(id, x, y)
+    }
+
+    override fun getEffectiveBrightness(x: Int, y: Int, sunBrightness: Float): Float {
+        val grid = _grid ?: return sunBrightness
+        return grid.effective(x, y, sunBrightness)
+    }
+
+    override fun dispose() {
+        _gameWorld?.removeBlockPlacedListener(this)
+        lightingWindow?.let { _gameWorld?.removeChunkListener(it) }
+        lightingWindow = null
+        _overlay?.dispose()
+        _overlay = null
+        _grid = null
+        _gameWorld = null
+    }
+
+    private fun isOpaque(world: GameWorld, x: Int, y: Int): Boolean {
+        val foreground = world.getForeMap(x, y)
+        return foreground.params.castsShadows && foreground.params.hasCollision
+    }
+
+    private fun emissionAt(world: GameWorld, x: Int, y: Int): Int {
+        return world.getForeMap(x, y).params.lightInfo?.toLevel()
+            ?: world.getBackMap(x, y).params.lightInfo?.toLevel()
+            ?: 0
+    }
+
+    private inner class FurnaceLightHandle(
+        private val id: Long,
+        startX: Float,
+        startY: Float,
+    ) : LightHandle {
+
+        private var posX: Float = startX
+        private var posY: Float = startY
+        private var active: Boolean = true
+
+        init {
+            applyToGrid()
+        }
+
+        override var isActive: Boolean
+            get() = active
+            set(value) {
+                if (value == active) return
+                active = value
+                applyToGrid()
+            }
+
+        override fun setPosition(x: Float, y: Float) {
+            posX = x
+            posY = y
+            applyToGrid()
+        }
+
+        override fun update() {
+            applyToGrid()
+        }
+
+        override fun dispose() {
+            active = false
+            applyToGrid()
+        }
+
+        private fun applyToGrid() {
+            val currentGrid = _grid ?: return
+            val window = lightingWindow
+            if (window != null) {
+                window.setEmitter(id, posX.floorToInt(), posY.toInt(), if (active) FURNACE_LEVEL else 0)
+            } else if (active) {
+                currentGrid.setTransientEmitter(id, posX.floorToInt(), posY.toInt(), FURNACE_LEVEL)
+            } else {
+                currentGrid.clearTransientEmitter(id)
+            }
+        }
+    }
+
+    private inner class FireLightHandle(
+        private val id: Long,
+        startX: Float,
+        startY: Float,
+    ) : LightHandle {
+
+        private var posX: Float = startX
+        private var posY: Float = startY
+        private var active: Boolean = true
+
+        init {
+            applyToGrid()
+        }
+
+        override var isActive: Boolean
+            get() = active
+            set(value) {
+                if (value == active) return
+                active = value
+                applyToGrid()
+            }
+
+        override fun setPosition(x: Float, y: Float) {
+            posX = x
+            posY = y
+            applyToGrid()
+        }
+
+        override fun update() {
+            applyToGrid()
+        }
+
+        override fun dispose() {
+            active = false
+            applyToGrid()
+        }
+
+        private fun applyToGrid() {
+            val currentGrid = _grid ?: return
+            val window = lightingWindow
+            if (window != null) {
+                window.setEmitter(id, posX.toInt(), posY.toInt(), if (active) FIRE_LEVEL else 0)
+            } else if (active) {
+                currentGrid.setTransientEmitter(id, posX.toInt(), posY.toInt(), FIRE_LEVEL)
+            } else {
+                currentGrid.clearTransientEmitter(id)
+            }
+        }
+    }
+
+    private object NoOpLightHandle : LightHandle {
+        override var isActive: Boolean = true
+        override fun setPosition(x: Float, y: Float) = Unit
+        override fun update() = Unit
+        override fun dispose() = Unit
+    }
+
+    companion object {
+        private const val TAG = "BfsLightingSystem"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+
+        private const val FURNACE_LEVEL = 13
+        private const val FIRE_LEVEL = 11
+
+        private fun ru.fredboy.cavedroid.domain.items.model.block.BlockLightInfo.toLevel(): Int {
+            val raw = (lightBrightness * LightGrid.MAX_LEVEL_F).roundToInt()
+            return raw.coerceIn(0, LightGrid.MAX_LEVEL)
+        }
+    }
+}

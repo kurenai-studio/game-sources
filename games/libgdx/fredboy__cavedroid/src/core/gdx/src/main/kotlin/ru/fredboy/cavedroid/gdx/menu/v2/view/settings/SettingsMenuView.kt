@@ -1,0 +1,194 @@
+package ru.fredboy.cavedroid.gdx.menu.v2.view.settings
+
+import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
+import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable
+import com.badlogic.gdx.utils.Align
+import ktx.scene2d.Scene2dDsl
+import ktx.scene2d.actors
+import ktx.scene2d.label
+import ktx.scene2d.scrollPane
+import ktx.scene2d.table
+import ktx.scene2d.textButton
+import ru.fredboy.cavedroid.common.mvvm.collectViewState
+import ru.fredboy.cavedroid.common.utils.toToggleStateString
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.onClickWithSound
+
+private fun Boolean.toLocalizedToggle(viewModel: SettingsMenuViewModel): String = toToggleStateString(
+    on = viewModel.getLocalizedString("toggleOn"),
+    off = viewModel.getLocalizedString("toggleOff"),
+)
+
+@Scene2dDsl
+suspend fun Stage.settingsMenuView(viewModel: SettingsMenuViewModel) = viewModel.also {
+    collectViewState(viewModel.stateFlow) { state ->
+        actors {
+            table {
+                setFillParent(true)
+                background(
+                    TiledDrawable(
+                        TextureRegionDrawable(
+                            skin.getRegion("background"),
+                        ),
+                    ),
+                )
+                pad(8f)
+
+                label(viewModel.getLocalizedString("settings")) {
+                    setAlignment(Align.center)
+                }.cell(
+                    expandX = true,
+                    fillX = true,
+                    padBottom = 8f,
+                )
+
+                row()
+
+                scrollPane {
+                    name = "settings-content"
+                    table {
+                        defaults()
+                            .width(600f)
+                            .height(60f)
+                            .pad(10f)
+
+                        if (viewModel.showAssetPacks) {
+                            textButton(viewModel.getLocalizedString("assetPacks")) {
+                                onClickWithSound(viewModel) { viewModel.onAssetPacksClick() }
+                            }
+                            row()
+                        }
+
+                        textButton(
+                            viewModel.getFormattedString(
+                                "dynamicCamera",
+                                state.dynamicCamera.toLocalizedToggle(viewModel),
+                            ),
+                        ) {
+                            onClickWithSound(viewModel) {
+                                viewModel.onDynamicCameraClick(!state.dynamicCamera)
+                            }
+                        }
+
+                        row()
+
+                        if (state.showFullscreenButton) {
+                            textButton(
+                                viewModel.getFormattedString(
+                                    "fullscreen",
+                                    state.fullscreen.toLocalizedToggle(viewModel),
+                                ),
+                            ) {
+                                onClickWithSound(viewModel) {
+                                    viewModel.onFullscreenClick(!state.fullscreen)
+                                }
+                            }
+
+                            row()
+                        }
+
+                        textButton(
+                            viewModel.getFormattedString("autoJump", state.autoJump.toLocalizedToggle(viewModel)),
+                        ) {
+                            onClickWithSound(viewModel) {
+                                viewModel.onAutoJumpClick(!state.autoJump)
+                            }
+                        }
+
+                        row()
+
+                        textButton(
+                            viewModel.getFormattedString("enableSound", state.sound.toLocalizedToggle(viewModel)),
+                        ) {
+                            onClickWithSound(viewModel) {
+                                viewModel.onSoundClick(!state.sound)
+                            }
+                        }
+
+                        row()
+
+//                        textButton(
+//                            viewModel.getFormattedString(
+//                                "smoothLighting",
+//                                state.smoothLighting.toLocalizedToggle(viewModel),
+//                            ),
+//                        ) {
+//                            onClickWithSound(viewModel) {
+//                                viewModel.onSmoothLightingClick(!state.smoothLighting)
+//                            }
+//                        }
+//
+//                        row()
+
+                        if (state.showPersonalizedAdsToggle) {
+                            textButton(
+                                viewModel.getFormattedString(
+                                    "personalizedAds",
+                                    state.personalizedAds.toLocalizedToggle(viewModel),
+                                ),
+                            ) {
+                                onClickWithSound(viewModel) {
+                                    viewModel.onPersonalizedAdsClick(!state.personalizedAds)
+                                }
+                            }
+
+                            row()
+                        }
+
+                        if (state.performanceAvailable) {
+                            textButton(
+                                viewModel.getFormattedString(
+                                    "performanceMonitoring",
+                                    viewModel.getLocalizedString("performanceMode" + state.performanceMode.name),
+                                ),
+                            ) {
+                                onClickWithSound(viewModel) { viewModel.onPerformanceClick() }
+                            }
+                            row()
+                        }
+
+                        if (state.showDebugSetting) {
+                            textButton("Show debug: ${state.preferShowDebug}") {
+                                onClickWithSound(viewModel) {
+                                    viewModel.onShowDebugClick(!state.preferShowDebug)
+                                }
+                            }
+
+                            row()
+                        }
+
+                        textButton(viewModel.getLocalizedString("resetHints")) {
+                            onClickWithSound(viewModel) {
+                                if (!isDisabled) {
+                                    viewModel.onResetHintsClick()
+                                }
+                            }
+                            isDisabled = !state.canResetHints
+                        }
+
+                        row()
+                    }
+                }.also { pane ->
+                    setScrollFocus(pane)
+                }.cell(
+                    expand = true,
+                    fill = true,
+                    align = Align.center,
+                )
+
+                row()
+                    .bottom()
+
+                textButton(viewModel.getLocalizedString("done")) {
+                    onClickWithSound(viewModel) {
+                        viewModel.onDoneClick()
+                    }
+                }.cell(
+                    width = 600f,
+                    height = 60f,
+                    padTop = 16f,
+                )
+            }
+        }
+    }
+}

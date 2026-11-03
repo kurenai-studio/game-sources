@@ -1,0 +1,230 @@
+package ru.fredboy.cavedroid.data.items.mapper
+
+import com.badlogic.gdx.graphics.g2d.Sprite
+import ru.fredboy.cavedroid.common.model.SpriteOrigin
+import ru.fredboy.cavedroid.common.utils.colorFromHexString
+import ru.fredboy.cavedroid.data.items.model.ItemDto
+import ru.fredboy.cavedroid.data.items.repository.ItemsRepositoryImpl
+import ru.fredboy.cavedroid.domain.assets.repository.FontTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.WearableTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.usecase.GetItemTextureUseCase
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.model.item.CommonItemParams
+import ru.fredboy.cavedroid.domain.items.model.item.CreativeCategory
+import ru.fredboy.cavedroid.domain.items.model.item.Item
+import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class ItemMapper @Inject constructor(
+    private val getItemTexture: GetItemTextureUseCase,
+    private val fontAssetsRepository: FontTextureAssetsRepository,
+    private val wearableTextureAssetsRepository: WearableTextureAssetsRepository,
+) {
+
+    fun map(key: String, dto: ItemDto, block: Block?, slabTopBlock: Block.Slab?, slabBottomBlock: Block.Slab?): Item {
+        val params = mapCommonParams(key, dto)
+
+        return when (dto.type) {
+            "normal" -> Item.Normal(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+            )
+
+            "usable" -> Item.GenericUsable(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                useActionKey = requireNotNull(dto.actionKey),
+                mobKey = dto.mobKey,
+            )
+
+            "flint_and_steel" -> Item.FlintAndSteel(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "shovel" -> Item.Shovel(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "sword" -> Item.Sword(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "pickaxe" -> Item.Pickaxe(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "axe" -> Item.Axe(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "shears" -> Item.Shears(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "hoe" -> Item.Hoe(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                mobDamageMultiplier = dto.mobDamageMultiplier,
+                blockDamageMultiplier = dto.blockDamageMultiplier,
+                level = requireNotNull(dto.toolLevel),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "block" -> Item.Block(
+                params = params,
+                block = requireNotNull(block),
+            )
+
+            "slab" -> Item.Slab(
+                params = params,
+                topPartBlock = requireNotNull(slabTopBlock),
+                bottomPartBlock = requireNotNull(slabBottomBlock),
+            )
+
+            "food" -> Item.Food(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                heal = requireNotNull(dto.heal),
+                saturation = dto.saturation,
+                plantBlockKey = dto.plantBlock,
+            )
+
+            "bow" -> Item.Bow(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                stateSprites = requireNotNull(loadStateSprites(dto)),
+                durability = requireNotNull(dto.durability),
+            )
+
+            "helmet" -> Item.Helmet(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                protection = requireNotNull(dto.protection),
+                durability = requireNotNull(dto.durability),
+                material = requireNotNull(dto.armorMaterial),
+            )
+
+            "chestplate" -> Item.Chestplate(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                protection = requireNotNull(dto.protection),
+                durability = requireNotNull(dto.durability),
+                material = requireNotNull(dto.armorMaterial),
+            )
+
+            "leggings" -> Item.Leggings(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                protection = requireNotNull(dto.protection),
+                durability = requireNotNull(dto.durability),
+                material = requireNotNull(dto.armorMaterial),
+            )
+
+            "boots" -> Item.Boots(
+                params = params,
+                sprite = requireNotNull(loadSprite(dto)),
+                protection = requireNotNull(dto.protection),
+                durability = requireNotNull(dto.durability),
+                material = requireNotNull(dto.armorMaterial),
+            )
+
+            "none" -> Item.None(
+                params = params,
+            )
+
+            else -> throw IllegalArgumentException("Unknown item type ${dto.type}")
+        }
+    }
+
+    private fun mapCommonParams(key: String, dto: ItemDto): CommonItemParams {
+        val name = try {
+            fontAssetsRepository.getItemLocalizationBundle().get(key)
+        } catch (_: MissingResourceException) {
+            println("$key=${dto.name}")
+            dto.name
+        }
+
+        return CommonItemParams(
+            key = key,
+            name = name,
+            inHandSpriteOrigin = SpriteOrigin(
+                x = dto.originX,
+                y = dto.origin_y,
+            ),
+            maxStack = dto.maxStack,
+            burningTimeMs = dto.burningTime,
+            smeltProductKey = dto.smeltProduct,
+            tint = dto.tint?.let { colorFromHexString(it) },
+            creativeCategory = CreativeCategory.entries.first { it.key == dto.creativeCategory },
+        )
+    }
+
+    private fun loadSprite(dto: ItemDto): Sprite? {
+        if (dto.type == "none" || dto.type == "block" || dto.texture == ItemsRepositoryImpl.FALLBACK_ITEM_KEY) {
+            return null
+        }
+
+        val texture = getItemTexture[dto.texture]
+        return Sprite(texture)
+            .apply {
+                flip(false, true)
+                dto.tint?.let {
+                    color = colorFromHexString(it)
+                }
+            }
+    }
+
+    private fun loadStateSprites(dto: ItemDto): List<Sprite>? {
+        if (dto.stateSprites == null || dto.stateSprites.isEmpty()) {
+            return null
+        }
+
+        return dto.stateSprites.mapNotNull { textureName ->
+            if (textureName == ItemsRepositoryImpl.FALLBACK_ITEM_KEY) {
+                return@mapNotNull null
+            }
+
+            val texture = getItemTexture[textureName]
+            Sprite(texture).apply {
+                flip(false, true)
+                dto.tint?.let {
+                    color = colorFromHexString(it)
+                }
+            }
+        }.takeIf { it.isNotEmpty() }
+    }
+
+    companion object {
+        private const val TAG = "ItemMapper"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+    }
+}

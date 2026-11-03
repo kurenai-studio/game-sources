@@ -1,0 +1,57 @@
+package ru.fredboy.cavedroid.data.configuration.repository
+
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.common.model.Joystick
+import ru.fredboy.cavedroid.common.model.WorldType
+import ru.fredboy.cavedroid.data.configuration.store.GameContextStore
+import ru.fredboy.cavedroid.domain.configuration.model.CameraContext
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.GameContextRepository
+import javax.inject.Inject
+
+@GameScope
+class GameContextRepositoryImpl @Inject constructor(
+    private val applicationContextRepository: ApplicationContextRepository,
+    private val gameContextStore: GameContextStore,
+) : GameContextRepository {
+
+    override fun isLoadGame(): Boolean = gameContextStore.isLoadGame
+
+    override fun getSaveGameDirectory(): String = gameContextStore.saveGameDirectory
+
+    override fun setSaveGameDirectory(directory: String) {
+        gameContextStore.saveGameDirectory = directory
+    }
+
+    override fun getWorldName(): String = gameContextStore.worldName
+
+    override fun getRequestedWorldWidth(): Int? = gameContextStore.requestedWorldWidth
+
+    override fun getRequestedSeed(): Long? = gameContextStore.requestedSeed
+
+    override fun getWorldType(): WorldType = gameContextStore.worldType
+
+    override fun shouldShowInfo(): Boolean = applicationContextRepository.preferShowDebug
+
+    override fun shouldShowMap(): Boolean = gameContextStore.showMap
+
+    override fun getJoystick(): Joystick = gameContextStore.joystick
+
+    override fun getCameraContext(): CameraContext = gameContextStore.cameraContext
+
+    override fun setShowInfo(show: Boolean) {
+        applicationContextRepository.preferShowDebug = show
+    }
+
+    override fun setShowMap(show: Boolean) {
+        gameContextStore.showMap = show
+    }
+
+    override fun setJoystick(joystick: Joystick) {
+        gameContextStore.joystick = joystick
+    }
+
+    override fun setCameraContext(cameraContext: CameraContext) {
+        gameContextStore.cameraContext = cameraContext
+    }
+}

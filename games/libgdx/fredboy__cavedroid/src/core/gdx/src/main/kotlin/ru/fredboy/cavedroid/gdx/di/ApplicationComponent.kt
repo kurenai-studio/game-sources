@@ -1,0 +1,195 @@
+package ru.fredboy.cavedroid.gdx.di
+
+import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import dagger.BindsInstance
+import dagger.Component
+import ru.fredboy.cavedroid.common.api.AdController
+import ru.fredboy.cavedroid.common.api.ApplicationController
+import ru.fredboy.cavedroid.common.api.AssetPackPlatform
+import ru.fredboy.cavedroid.common.api.CloudStatsSync
+import ru.fredboy.cavedroid.common.api.InlineTextInput
+import ru.fredboy.cavedroid.common.api.PreferencesStore
+import ru.fredboy.cavedroid.common.api.SaveTransferController
+import ru.fredboy.cavedroid.common.api.SoftKeyboardObserver
+import ru.fredboy.cavedroid.common.api.SoundPlayer
+import ru.fredboy.cavedroid.common.coroutines.AppDispatchers
+import ru.fredboy.cavedroid.common.performance.PerformanceMonitor
+import ru.fredboy.cavedroid.common.utils.TooltipManager
+import ru.fredboy.cavedroid.data.assets.di.DataAssetsModule
+import ru.fredboy.cavedroid.data.configuration.di.ApplicationContextModule
+import ru.fredboy.cavedroid.data.configuration.model.ApplicationContext
+import ru.fredboy.cavedroid.data.items.di.DataItemsModule
+import ru.fredboy.cavedroid.data.save.di.DataSaveModule
+import ru.fredboy.cavedroid.data.stats.di.DataStatsModule
+import ru.fredboy.cavedroid.domain.assets.pack.AssetPackRepository
+import ru.fredboy.cavedroid.domain.assets.pack.AssetResolver
+import ru.fredboy.cavedroid.domain.assets.pack.AssetTextureLoader
+import ru.fredboy.cavedroid.domain.assets.repository.BlockActionSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.BlockDamageTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.BlockTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.DropSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.EnvironmentTextureRegionsRepositoryTexture
+import ru.fredboy.cavedroid.domain.assets.repository.FontTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.FoodSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.ItemsTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.MobSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.MobTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.StepsSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.TextureRegionsTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.TouchButtonsTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.UiSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.WearableTextureAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.repository.WeatherSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.assets.usecase.DisposeAssetsUseCase
+import ru.fredboy.cavedroid.domain.assets.usecase.InitializeAssetsUseCase
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.items.repository.ItemsRepository
+import ru.fredboy.cavedroid.domain.items.repository.MobParamsRepository
+import ru.fredboy.cavedroid.domain.save.repository.SaveDataRepository
+import ru.fredboy.cavedroid.domain.stats.repository.StatsRepository
+import ru.fredboy.cavedroid.game.world.lighting.LightingSystemFactory
+import ru.fredboy.cavedroid.gdx.game.GameScreen
+import ru.fredboy.cavedroid.gdx.menu.v2.MenuScreen
+import ru.fredboy.cavedroid.gdx.menu.v2.PauseMenuScreen
+import javax.inject.Singleton
+
+@Singleton
+@Component(
+    modules = [
+        DataAssetsModule::class,
+        DataItemsModule::class,
+        DataSaveModule::class,
+        DataStatsModule::class,
+        ApplicationContextModule::class,
+        ApplicationModule::class,
+    ],
+)
+interface ApplicationComponent {
+
+    val packDefinitionValidator: ru.fredboy.cavedroid.data.items.repository.PackDefinitionValidator
+
+    val assetPackPlatform: AssetPackPlatform
+    val assetPackRepository: AssetPackRepository
+    val assetResolver: AssetResolver
+    val assetTextureLoader: AssetTextureLoader
+
+    val initializeAssets: InitializeAssetsUseCase
+
+    val disposeAssets: DisposeAssetsUseCase
+
+    val gameScreen: GameScreen
+
+    val applicationContextRepository: ApplicationContextRepository
+
+    val blockAssetsRepository: BlockTextureAssetsRepository
+
+    val blockDamageAssetsRepository: BlockDamageTextureAssetsRepository
+
+    val fontAssetsRepository: FontTextureAssetsRepository
+
+    val mobAssetsRepository: MobTextureAssetsRepository
+
+    val itemAssetsRepository: ItemsTextureAssetsRepository
+
+    val textureRegionsAssetsRepository: TextureRegionsTextureAssetsRepository
+
+    val touchButtonsAssetsRepository: TouchButtonsTextureAssetsRepository
+
+    val itemsRepository: ItemsRepository
+
+    val saveDataRepository: SaveDataRepository
+
+    val statsRepository: StatsRepository
+
+    val cloudStatsSync: CloudStatsSync
+
+    val applicationController: ApplicationController
+
+    val mobParamsRepository: MobParamsRepository
+
+    val environmentTextureRegionsRepository: EnvironmentTextureRegionsRepositoryTexture
+
+    val menuScreen: MenuScreen
+
+    val pauseMenuScreen: PauseMenuScreen
+
+    val tooltipManager: TooltipManager
+
+    val stepsSoundAssetsRepository: StepsSoundAssetsRepository
+
+    val soundPlayer: SoundPlayer
+
+    val uiSoundAssetsRepository: UiSoundAssetsRepository
+
+    val mobSoundAssetsRepository: MobSoundAssetsRepository
+
+    val dropSoundAssetsRepository: DropSoundAssetsRepository
+
+    val foodSoundAssetsRepository: FoodSoundAssetsRepository
+
+    val blockSoundAssetsRepository: BlockActionSoundAssetsRepository
+
+    val wearableTextureAssetsRepository: WearableTextureAssetsRepository
+
+    val weatherSoundAssetsRepository: WeatherSoundAssetsRepository
+
+    val menuSkin: Skin
+
+    val adController: AdController
+
+    val inlineTextInput: InlineTextInput
+
+    val softKeyboardObserver: SoftKeyboardObserver
+
+    val saveTransferController: SaveTransferController
+
+    val lightingSystemFactory: LightingSystemFactory
+
+    val performanceMonitor: PerformanceMonitor
+
+    val appDispatchers: AppDispatchers
+
+    @Component.Builder
+    interface Builder {
+
+        @BindsInstance
+        fun applicationContext(context: ApplicationContext): Builder
+
+        @BindsInstance
+        fun applicationController(impl: ApplicationController): Builder
+
+        @BindsInstance
+        fun preferencesStore(impl: PreferencesStore): Builder
+
+        @BindsInstance
+        fun adController(impl: AdController): Builder
+
+        @BindsInstance
+        fun cloudStatsSync(impl: CloudStatsSync): Builder
+
+        @BindsInstance
+        fun inlineTextInput(impl: InlineTextInput): Builder
+
+        @BindsInstance
+        fun softKeyboardObserver(impl: SoftKeyboardObserver): Builder
+
+        @BindsInstance
+        fun saveTransferController(impl: SaveTransferController): Builder
+
+        @BindsInstance
+        fun lightingSystemFactory(factory: LightingSystemFactory): Builder
+
+        @BindsInstance
+        fun appDispatchers(dispatchers: AppDispatchers): Builder
+
+        @BindsInstance
+        fun performanceMonitor(monitor: PerformanceMonitor): Builder
+
+        @BindsInstance
+        fun assetPackPlatform(platform: AssetPackPlatform): Builder
+
+        fun dataStatsModule(module: DataStatsModule): Builder
+
+        fun build(): ApplicationComponent
+    }
+}

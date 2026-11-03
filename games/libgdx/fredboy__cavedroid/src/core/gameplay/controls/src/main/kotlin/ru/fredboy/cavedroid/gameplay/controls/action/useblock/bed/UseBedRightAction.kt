@@ -1,0 +1,52 @@
+package ru.fredboy.cavedroid.gameplay.controls.action.useblock.bed
+
+import com.badlogic.gdx.math.Vector2
+import ru.fredboy.cavedroid.common.api.GameMessageEvents
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.game.controller.mob.MobController
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.gameplay.controls.action.annotation.BindUseBlockAction
+import ru.fredboy.cavedroid.gameplay.controls.action.useblock.IUseBlockAction
+import javax.inject.Inject
+
+@GameScope
+@BindUseBlockAction(stringKey = UseBedRightAction.KEY)
+class UseBedRightAction @Inject constructor(
+    private val gameWorld: GameWorld,
+    private val mobController: MobController,
+    private val gameMessageEvents: GameMessageEvents,
+) : IUseBlockAction {
+
+    override fun perform(block: Block, x: Int, y: Int): Boolean {
+        if (mobController.player.isMounted) return true
+
+        val sleepPoint = Vector2(
+            (x.toFloat() + (1f - mobController.player.width / 2f)) - mobController.player.position.x,
+            (y.toFloat() + 1 - mobController.player.height / 2f) - mobController.player.position.y,
+        )
+
+        mobController.player.spawnPoint = sleepPoint.cpy().add(mobController.player.position)
+
+        if (gameWorld.isDayTime()) {
+            gameMessageEvents.showLocalized("cantSleepDayTime")
+            return true
+        }
+        if (!mobController.playerCanSleep()) {
+            gameMessageEvents.showLocalized("cantSleepMonstersNearby")
+            return true
+        }
+        if (gameWorld.getForeMap(x, y - 1).params.hasCollision) {
+            return true
+        }
+
+        gameWorld.skipNight()
+        mobController.player.isInBed = true
+        mobController.player.applyPendingTransform(sleepPoint)
+        return true
+    }
+
+    companion object {
+        const val KEY = "bed_r"
+    }
+}

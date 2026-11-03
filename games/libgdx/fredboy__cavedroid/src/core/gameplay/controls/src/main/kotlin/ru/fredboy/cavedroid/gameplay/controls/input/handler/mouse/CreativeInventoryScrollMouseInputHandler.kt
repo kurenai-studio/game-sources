@@ -1,0 +1,142 @@
+package ru.fredboy.cavedroid.gameplay.controls.input.handler.mouse
+
+import co.touchlab.kermit.Logger
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector2
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.common.utils.floorToInt
+import ru.fredboy.cavedroid.domain.assets.usecase.GetTextureRegionByNameUseCase
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.GameContextRepository
+import ru.fredboy.cavedroid.game.window.GameWindowType
+import ru.fredboy.cavedroid.game.window.GameWindowsManager
+import ru.fredboy.cavedroid.game.window.inventory.AbstractInventoryWindowWithScroll
+import ru.fredboy.cavedroid.game.window.inventory.CreativeInventoryTabsWindow
+import ru.fredboy.cavedroid.gameplay.controls.input.IMouseInputHandler
+import ru.fredboy.cavedroid.gameplay.controls.input.action.MouseInputAction
+import ru.fredboy.cavedroid.gameplay.controls.input.action.keys.MouseInputActionKey
+import ru.fredboy.cavedroid.gameplay.controls.input.annotation.BindMouseInputHandler
+import javax.inject.Inject
+import kotlin.math.abs
+
+@GameScope
+@BindMouseInputHandler
+class CreativeInventoryScrollMouseInputHandler @Inject constructor(
+    private val applicationContextRepository: ApplicationContextRepository,
+    private val gameContextRepository: GameContextRepository,
+    private val gameWindowsManager: GameWindowsManager,
+    private val textureRegions: GetTextureRegionByNameUseCase,
+) : IMouseInputHandler {
+
+    private val creativeInventoryTexture get() = requireNotNull(textureRegions["creative"])
+    private val itemsTabWindowTexture get() = requireNotNull(textureRegions["creative_items_tab"])
+
+    private val windowTexture
+        get() = when (gameWindowsManager.currentWindowType) {
+            GameWindowType.CREATIVE_INVENTORY -> creativeInventoryTexture
+            GameWindowType.CREATIVE_INVENTORY_TABS -> itemsTabWindowTexture
+            else -> {
+                logger.w { "Unsupported window type $gameWindowsManager. Fallback to creative" }
+                creativeInventoryTexture
+            }
+        }
+
+    private var dragStartY = 0f
+
+    override fun checkConditions(action: MouseInputAction): Boolean {
+        return (
+            gameWindowsManager.currentWindowType == GameWindowType.CREATIVE_INVENTORY ||
+                ((gameWindowsManager.currentWindow as? CreativeInventoryTabsWindow)?.selectedTab?.isInventory == false)
+            ) &&
+            (
+                gameWindowsManager.isDragging ||
+                    Rectangle(
+                        0f,
+                        0f,
+                        windowTexture.regionWidth.toFloat(),
+                        windowTexture.regionHeight.toFloat(),
+                    )
+                        .apply {
+                            setCenter(
+                                gameContextRepository.getCameraContext().viewport.getCenter(
+                                    Vector2(),
+                                ),
+                            )
+                        }
+                        .contains(action.screenX, action.screenY)
+                ) &&
+            (
+                checkStartDragConditions(action) ||
+                    checkEndDragConditions(action) ||
+                    checkDragConditions(action) ||
+                    action.actionKey is MouseInputActionKey.Scroll
+                )
+    }
+
+    private fun checkStartDragConditions(action: MouseInputAction): Boolean {
+        return (action.actionKey is MouseInputActionKey.Screen) &&
+            !action.actionKey.touchUp &&
+            !gameWindowsManager.isDragging
+    }
+
+    private fun checkEndDragConditions(action: MouseInputAction): Boolean {
+        return action.actionKey is MouseInputActionKey.Screen &&
+            action.actionKey.touchUp &&
+            gameWindowsManager.isDragging
+    }
+
+    private fun checkDragConditions(action: MouseInputAction): Boolean {
+        return applicationContextRepository.isTouch() &&
+            action.actionKey is MouseInputActionKey.Dragged &&
+            abs(action.screenY - dragStartY) >= DRAG_SENSITIVITY
+    }
+
+    private fun clampScrollAmount() {
+        gameWindowsManager.creativeScrollAmount =
+            MathUtils.clamp(
+                /* value = */ gameWindowsManager.creativeScrollAmount,
+                /* min = */ 0,
+                /* max = */ (gameWindowsManager.currentWindow as AbstractInventoryWindowWithScroll).getMaxScroll(),
+            )
+    }
+
+    private fun handleStartOrEndDrag(action: MouseInputAction) {
+        if (gameWindowsManager.isDragging) {
+            gameWindowsManager.isDragging = false
+        } else {
+            dragStartY = action.screenY
+        }
+    }
+
+    private fun handleDrag(action: MouseInputAction) {
+        gameWindowsManager.isDragging = true
+        gameWindowsManager.creativeScrollAmount += ((dragStartY - action.screenY) / DRAG_SENSITIVITY).floorToInt()
+        clampScrollAmount()
+        dragStartY = action.screenY
+    }
+
+    private fun handleScroll(action: MouseInputAction) {
+        gameWindowsManager.creativeScrollAmount += (action.actionKey as MouseInputActionKey.Scroll).amountY.floorToInt()
+        clampScrollAmount()
+    }
+
+    override fun handle(action: MouseInputAction) {
+        when (action.actionKey) {
+            is MouseInputActionKey.Screen -> handleStartOrEndDrag(action)
+            is MouseInputActionKey.Dragged -> handleDrag(action)
+            is MouseInputActionKey.Scroll -> handleScroll(action)
+            else -> return
+        }
+    }
+
+    override fun reset() {
+        dragStartY = 0f
+        gameWindowsManager.isDragging = false
+    }
+
+    companion object {
+        private val logger = Logger.withTag("CreativeInventoryScrollMouseInputHandler")
+        private const val DRAG_SENSITIVITY = 16f
+    }
+}

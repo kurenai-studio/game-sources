@@ -1,0 +1,106 @@
+package ru.fredboy.cavedroid.data.save.mapper
+
+import dagger.Reusable
+import ru.fredboy.cavedroid.data.save.model.SaveDataDto
+import ru.fredboy.cavedroid.domain.items.model.mob.MobBehaviorType
+import ru.fredboy.cavedroid.domain.items.repository.MobParamsRepository
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobPhysicsFactory
+import ru.fredboy.cavedroid.entity.mob.model.ArcherMob
+import ru.fredboy.cavedroid.entity.mob.model.CreeperMob
+import ru.fredboy.cavedroid.entity.mob.model.SheepMob
+import ru.fredboy.cavedroid.entity.mob.model.SpiderMob
+import ru.fredboy.cavedroid.entity.mob.model.VillagerMob
+import ru.fredboy.cavedroid.entity.mob.model.WalkingMob
+import javax.inject.Inject
+
+@Reusable
+class WalkingMobMapper @Inject constructor(
+    private val directionMapper: DirectionMapper,
+    private val mobParamsRepository: MobParamsRepository,
+    private val getItemByKeyUseCase: GetItemByKeyUseCase,
+) {
+
+    fun mapSaveData(mob: WalkingMob): SaveDataDto.WalkingMobSaveDataDto = SaveDataDto.WalkingMobSaveDataDto(
+        version = SAVE_DATA_VERSION,
+        key = mob.params.key,
+        x = mob.position.x,
+        y = mob.position.y,
+        width = mob.width,
+        height = mob.height,
+        velocityX = mob.velocity.x,
+        velocityY = mob.velocity.y,
+        animDelta = mob.animDelta,
+        anim = mob.anim,
+        direction = directionMapper.mapSaveData(mob.direction),
+        dead = mob.isDead,
+        canJump = mob.canJump,
+        flyMode = mob.isFlyMode,
+        maxHealth = mob.maxHealth,
+        health = mob.health,
+        hasFur = (mob as? SheepMob)?.hasFur ?: false,
+        breath = mob.breath,
+        woolColor = (mob as? SheepMob)?.woolToColor?.first,
+        fireTicksRemaining = mob.fireTicksRemaining,
+        spiderAngerRemainingSec = (mob as? SpiderMob)?.angerRemainingSec ?: 0f,
+        creeperFuseElapsedSec = (mob as? CreeperMob)?.fuse?.elapsedSec ?: 0f,
+        creeperForcedIgnition = (mob as? CreeperMob)?.fuse?.forced ?: false,
+        creeperDaylightSec = (mob as? CreeperMob)?.daylightSec ?: 0f,
+        villagerHome = (mob as? VillagerMob)?.home?.let { SaveDataDto.BlockPositionSaveDataDto(it.x, it.y) },
+        villagerSleeping = (mob as? VillagerMob)?.isSleeping ?: false,
+        villagerOpenedDoors = (mob as? VillagerMob)?.openedDoors.orEmpty().map { SaveDataDto.BlockPositionSaveDataDto(it.x, it.y) },
+    )
+
+    fun mapPassiveMob(
+        saveDataDto: SaveDataDto.WalkingMobSaveDataDto,
+        mobPhysicsFactory: MobPhysicsFactory,
+    ): WalkingMob {
+        saveDataDto.verifyVersion(SAVE_DATA_VERSION)
+
+        val params = requireNotNull(mobParamsRepository.getMobParamsByKey(saveDataDto.key))
+
+        val mob = when (params.behaviorType) {
+            MobBehaviorType.SHEEP -> SheepMob(params).apply {
+                hasFur = saveDataDto.hasFur
+                woolToColor = SheepMob.FUR_COLORS_MAP.values.firstOrNull { (wool, _) -> wool == saveDataDto.woolColor }
+                    ?: SheepMob.FUR_COLORS_MAP.values.first()
+            }
+
+            MobBehaviorType.CREEPER -> CreeperMob(params).apply {
+                fuse.elapsedSec = saveDataDto.creeperFuseElapsedSec
+                fuse.forced = saveDataDto.creeperForcedIgnition
+                daylightSec = saveDataDto.creeperDaylightSec
+            }
+
+            MobBehaviorType.VILLAGER -> VillagerMob(params).apply {
+                home = saveDataDto.villagerHome?.let { VillagerMob.BlockPosition(it.x, it.y) }
+                isSleeping = saveDataDto.villagerSleeping
+                openedDoors.addAll(saveDataDto.villagerOpenedDoors.map { VillagerMob.BlockPosition(it.x, it.y) })
+            }
+
+            MobBehaviorType.ARCHER -> ArcherMob(getItemByKeyUseCase, params)
+            MobBehaviorType.SPIDER -> SpiderMob(params).apply {
+                angerRemainingSec = saveDataDto.spiderAngerRemainingSec
+            }
+
+            else -> WalkingMob(params)
+        }
+
+        return mob.apply {
+            spawn(saveDataDto.x, saveDataDto.y, mobPhysicsFactory)
+            velocity.x = saveDataDto.velocityX
+            velocity.y = saveDataDto.velocityY
+            animDelta = saveDataDto.animDelta
+            anim = saveDataDto.anim
+            direction = directionMapper.mapDirection(saveDataDto.direction)
+            isFlyMode = saveDataDto.flyMode
+            health = saveDataDto.health
+            breath = saveDataDto.breath ?: params.maxBreath
+            fireTicksRemaining = saveDataDto.fireTicksRemaining
+        }
+    }
+
+    companion object {
+        private const val SAVE_DATA_VERSION = 4
+    }
+}

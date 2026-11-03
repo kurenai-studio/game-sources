@@ -1,0 +1,112 @@
+package ru.fredboy.cavedroid.gdx.game
+
+import co.touchlab.kermit.Logger
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.common.performance.PerformanceMonitor
+import ru.fredboy.cavedroid.common.performance.PerformanceOperation
+import ru.fredboy.cavedroid.common.performance.PerformanceTrigger
+import ru.fredboy.cavedroid.data.save.streaming.ChunkEntityStreamer
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.GameContextRepository
+import ru.fredboy.cavedroid.domain.save.model.FireEntry
+import ru.fredboy.cavedroid.domain.save.repository.SaveDataRepository
+import ru.fredboy.cavedroid.game.controller.container.ContainerController
+import ru.fredboy.cavedroid.game.controller.drop.DropController
+import ru.fredboy.cavedroid.game.controller.explosion.ExplosionController
+import ru.fredboy.cavedroid.game.controller.fire.FireController
+import ru.fredboy.cavedroid.game.controller.mob.MobController
+import ru.fredboy.cavedroid.game.controller.projectile.ProjectileController
+import ru.fredboy.cavedroid.game.controller.stats.StatsController
+import ru.fredboy.cavedroid.game.controller.vehicle.VehicleController
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.gameplay.physics.task.GameWorldGrowBlocksControllerTask
+import javax.inject.Inject
+
+@GameScope
+class GameSaveHelper @Inject constructor(
+    private val applicationContextRepository: ApplicationContextRepository,
+    private val gameContextRepository: GameContextRepository,
+    private val dropController: DropController,
+    private val mobController: MobController,
+    private val gameWorld: GameWorld,
+    private val containerController: ContainerController,
+    private val saveDataRepository: SaveDataRepository,
+    private val projectileController: ProjectileController,
+    private val statsController: StatsController,
+    private val growBlocksControllerTask: GameWorldGrowBlocksControllerTask,
+    private val fireController: FireController,
+    private val explosionController: ExplosionController,
+    private val chunkEntityStreamer: ChunkEntityStreamer,
+    private val vehicles: VehicleController,
+    private val performanceMonitor: PerformanceMonitor,
+) {
+
+    private var secondsSinceLastSave = 0f
+
+    // Called on the render thread after updating the world, only during active gameplay.
+    fun updateAutoSave(delta: Float) {
+        secondsSinceLastSave += delta
+        if (secondsSinceLastSave < AUTO_SAVE_INTERVAL_SEC) return
+
+        // A failed save is retried at the next interval, rather than on every frame.
+        secondsSinceLastSave = 0f
+        val save = performanceMonitor.beginOperation(PerformanceOperation.WORLD_SAVE, PerformanceTrigger.AUTOMATIC)
+        try {
+            saveGame(overwrite = true)
+        } catch (error: Exception) {
+            save?.fail(error)
+            logger.e(error) { "Automatic save failed" }
+        } finally {
+            save?.finish()
+        }
+    }
+
+    fun saveGame(overwrite: Boolean) {
+        val actualSaveDir = saveDataRepository.getActualSaveDirName(
+            gameDataFolder = applicationContextRepository.getGameDirectory(),
+            saveGameDirectory = gameContextRepository.getSaveGameDirectory(),
+            overwrite = overwrite,
+        )
+
+        gameContextRepository.setSaveGameDirectory(actualSaveDir)
+
+        val isInfinite = gameWorld.isInfinite
+
+        // Infinite worlds persist entities/fire/grow-blocks per resident chunk; the global payloads
+        // passed below are then left empty so nothing is double-counted on load.
+        if (isInfinite) {
+            chunkEntityStreamer.flushAll()
+            fireController.flushChunks()
+            growBlocksControllerTask.flushChunks()
+        }
+
+        saveDataRepository.save(
+            gameDataFolder = applicationContextRepository.getGameDirectory(),
+            saveGameDirectory = gameContextRepository.getSaveGameDirectory(),
+            worldName = gameContextRepository.getWorldName(),
+            dropController = dropController,
+            mobController = mobController,
+            containerController = containerController,
+            gameWorld = gameWorld,
+            projectileController = projectileController,
+            tntEntries = explosionController.snapshot(),
+            vehicles = if (isInfinite) emptyList() else vehicles.vehicles.map { it.snapshot() },
+            growBlockEntries = if (isInfinite) emptyList() else growBlocksControllerTask.snapshot(),
+            fireEntries = if (isInfinite) {
+                emptyList()
+            } else {
+                fireController.snapshot().map {
+                    FireEntry(x = it.x, y = it.y, layer = it.layer, age = it.age)
+                }
+            },
+        )
+
+        statsController.onSaveCheckpoint()
+        secondsSinceLastSave = 0f
+    }
+
+    companion object {
+        private const val AUTO_SAVE_INTERVAL_SEC = 60f
+        private val logger = Logger.withTag("GameSaveHelper")
+    }
+}

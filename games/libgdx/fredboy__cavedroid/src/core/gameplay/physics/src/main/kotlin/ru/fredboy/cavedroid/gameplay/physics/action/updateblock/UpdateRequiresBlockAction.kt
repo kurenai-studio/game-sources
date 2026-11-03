@@ -1,0 +1,49 @@
+package ru.fredboy.cavedroid.gameplay.physics.action.updateblock
+
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.game.controller.mob.factory.FallingBlockFactory
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.gameplay.physics.action.annotation.BindUpdateBlockAction
+import javax.inject.Inject
+
+@GameScope
+@BindUpdateBlockAction(stringKey = UpdateRequiresBlockAction.ACTION_KEY)
+class UpdateRequiresBlockAction @Inject constructor(
+    private val gameWorld: GameWorld,
+    private val fallingBlockFactory: FallingBlockFactory,
+) : IUpdateBlockAction {
+
+    override fun update(x: Int, y: Int) {
+        val block = gameWorld.getForeMap(x, y)
+
+        if (block.params.requiresBackground && !gameWorld.getBackMap(x, y).params.run { hasCollision && isFullBlock }) {
+            gameWorld.destroyForeMap(x, y, true)
+            return
+        }
+
+        if (!block.params.requiresBlock && !block.params.isFallable) {
+            return
+        }
+
+        val attachedToBottom = gameWorld.getForeMap(x, y + 1).params.hasCollision
+        val attachedToNeighbour = gameWorld.getForeMap(x, y).params.allowAttachToNeighbour &&
+            (
+                gameWorld.getForeMap(x - 1, y).params.run { hasCollision && !isTransparent } ||
+                    gameWorld.getForeMap(x + 1, y).params.run { hasCollision && !isTransparent } ||
+                    gameWorld.getBackMap(x, y).params.hasCollision
+                )
+
+        if (!attachedToBottom && !attachedToNeighbour) {
+            if (block.params.isFallable) {
+                gameWorld.resetForeMap(x, y)
+                fallingBlockFactory.create(x.toFloat() + .5f, y.toFloat() + .5f, block)
+            } else {
+                gameWorld.destroyForeMap(x, y, true)
+            }
+        }
+    }
+
+    companion object {
+        const val ACTION_KEY = "requires_block"
+    }
+}
