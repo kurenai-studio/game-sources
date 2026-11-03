@@ -1,0 +1,98 @@
+
+local function table_size(t)
+	local i = 0
+	for _,_ in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
+local function init_std_52_deck()
+	local deck = {}
+	local suits = {"spades","hearts","clubs","diamonds"}
+	for j=1,4 do
+		local s = suits[j]
+		for i=2,14 do
+			local id = factory.create("#factory")
+			msg.post(id,"set_card", {rank=i, suit=s})
+			table.insert(deck, id)
+		end
+	end
+	return deck
+end
+
+
+
+local function set_parent(cards)
+	for _, card in pairs(cards) do
+		local id_msg =
+		{
+			deck=go.get_id(),
+			discard=go.get_id("discard"),
+			hand=go.get_id("hand"),
+			score=go.get_id("score"),
+		}
+		msg.post(card, "set_ids", id_msg)
+	end
+end
+
+function init(self)
+	self.deck = init_std_52_deck()
+	set_parent(self.deck)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("get_random_cards") then
+		local nr = message.max - message.hand_size
+		while nr > 0 do
+			local index = math.random(1, table_size(self.deck))
+			local card = table.remove(self.deck, index)
+			msg.post("hand", "give_card", {card=card})
+			nr = nr - 1
+		end
+	end
+	if message_id == hash("get_one_random_card") then
+		local index = math.random(1, table_size(self.deck))
+		local card = table.remove(self.deck, index)
+		msg.post("hand", "give_card", {card=card})
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
