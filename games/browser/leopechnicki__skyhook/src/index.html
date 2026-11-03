@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#060713">
+<meta name="description" content="SKYHOOK - a one-touch neon climbing arcade game. Fly a rocket, orbit planets and stars, release to climb. How high can you get?">
+<link rel="canonical" href="https://skyhookplay.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SKYHOOK">
+<meta property="og:title" content="SKYHOOK - one-touch neon climbing arcade">
+<meta property="og:description" content="Tether your rocket to a planet or a star, then fire the thruster to let go. Stars pull harder and sling you further. Dodge lost meteoroids, stay on screen, and the climb never ends. One input, no install.">
+<meta property="og:url" content="https://skyhookplay.com/">
+<meta property="og:image" content="https://skyhookplay.com/screenshot.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SKYHOOK title screen - a neon rocket on a tether, orbiting a procedurally drawn planet against a dark starfield.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SKYHOOK - one-touch neon climbing arcade">
+<meta name="twitter:description" content="Fly a rocket. Hook, swing, release. How high can you get?">
+<meta name="twitter:image" content="https://skyhookplay.com/screenshot.png">
+<title>SKYHOOK</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2718%27%20r%3D%2712%27%20fill%3D%27none%27%20stroke%3D%27%2335e6ff%27%20stroke-width%3D%272%27%2F%3E%3Cpath%20d%3D%27M16%201c2.7%202.6%203.9%205.4%203.9%207.9l-1.5%201.6h-4.8l-1.5-1.6C12.1%206.4%2013.3%203.6%2016%201z%27%20fill%3D%27%23fff%27%20stroke%3D%27%2335e6ff%27%20stroke-width%3D%271.2%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M12.6%207.2%209.6%2011.4l3.3-1.1zM19.4%207.2l3%204.2-3.3-1.1z%27%20fill%3D%27%2335e6ff%27%2F%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%276.3%27%20r%3D%271.5%27%20fill%3D%27%2335e6ff%27%2F%3E%3C%2Fsvg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== GAME STAGE ===== -->
+  <div id="stage">
+    <canvas id="game" width="480" height="880" aria-label="Skyhook game canvas" role="img"></canvas>
+    <noscript>
+      <p class="noscript">SKYHOOK needs JavaScript enabled to run.</p>
+    </noscript>
+  </div>
+
+  <!-- =========================================================
+       AD SLOT  -  INACTIVE / HIDDEN BY DEFAULT
+       ---------------------------------------------------------
+       This is the ONLY place an ad unit should ever be inserted.
+       It is intentionally EMPTY: no ad network code, no publisher
+       IDs, no external scripts. It is also hidden (CSS: #ad-slot
+       { display: none }) so the shipped game shows no empty ad
+       furniture. See README.md > "Ad slot".
+
+       To activate: delete the `display: none` line in css/style.css,
+       put the ad unit markup inside #ad-slot-inner, and add the
+       network loader script at the bottom of <body>. The slot then
+       reserves a fixed height (54px mobile / 96px wide) so the
+       banner causes zero layout shift (CLS).
+       ========================================================= -->
+  <aside id="ad-slot" data-ad-slot="bottom-banner"
+         data-sizes="320x50,468x60,728x90"
+         aria-label="Advertisement area">
+    <div id="ad-slot-inner"></div>
+  </aside>
+
+  <!-- =========================================================
+       ACCOUNT / LEADERBOARD OVERLAY  -  HIDDEN BY DEFAULT
+       ---------------------------------------------------------
+       Real DOM rather than canvas, on purpose: this is the one
+       part of SKYHOOK a player TYPES into. A canvas-drawn text
+       field has no password manager, no mobile keyboard, no
+       autofill, no screen reader and no focus ring. The game
+       stays on the canvas; the form stays in the document.
+
+       It sits OUTSIDE #stage so its clicks can never reach the
+       game's pointer listeners, and it does not exist visually
+       until js/ui_online.js is told there is a backend to talk
+       to (js/config.js filled in). With no config it is inert
+       markup and the game is untouched.
+       ========================================================= -->
+  <div id="ol" class="ol" hidden aria-hidden="true">
+    <div class="ol-panel" role="dialog" aria-modal="true" aria-labelledby="ol-title">
+      <button type="button" id="ol-close" class="ol-close" aria-label="Close">&#215;</button>
+      <h2 id="ol-title" class="ol-title">GLOBAL LEADERBOARD</h2>
+
+      <section id="ol-board" class="ol-view">
+        <p id="ol-account" class="ol-account"></p>
+        <!-- The account line said "Signed in as leo" and stopped there, so
+             the only thing a signed-in player could do with their account was
+             leave it. These are the way in to changing the name on the
+             board and the password behind it, and to deleting the account
+             (Google Play requires that in-app). They are hidden by
+             js/ui_online.js whenever they would not work - signed out, and
+             during a run - because a link that cannot do its job should not
+             be drawn. -->
+        <div class="ol-account-links" id="ol-account-links" hidden>
+          <button type="button" id="ol-edit-name" class="ol-link">Change username</button>
+          <button type="button" id="ol-edit-password" class="ol-link">Change password</button>
+          <button type="button" id="ol-delete-account" class="ol-link is-danger">Delete account</button>
+        </div>
+        <!-- "Delete account" only opens this question; nothing is sent until
+             the red button is pressed (Google Play's in-app deletion rule,
+             supabase/schema.sql section 12). -->
+        <div id="ol-delete-confirm" class="ol-modbar ol-delete-confirm" role="group"
+             aria-labelledby="ol-delete-q" hidden>
+          <p id="ol-delete-q" class="ol-modq">Delete your account for good? Your
+            username, your sign-in and every score you have on the board will be
+            deleted. Your best score and the ship paint saved on this device stay.
+            This cannot be undone.</p>
+          <button type="button" id="ol-delete-keep" class="ol-modbtn">KEEP MY ACCOUNT</button>
+          <button type="button" id="ol-delete-yes" class="ol-modbtn is-danger">YES, DELETE MY ACCOUNT</button>
+        </div>
+        <ol id="ol-list" class="ol-list"></ol>
+        <p id="ol-board-msg" class="ol-msg" role="status" aria-live="polite"></p>
+        <p id="ol-myrank" class="ol-myrank"></p>
+        <div class="ol-actions">
+          <button type="button" id="ol-signin" class="ol-btn ol-btn-primary">SIGN IN / CREATE ACCOUNT</button>
+          <button type="button" id="ol-signout" class="ol-btn" hidden>SIGN OUT</button>
+        </div>
+      </section>
+
+      <section id="ol-auth" class="ol-view" hidden>
+        <button type="button" id="ol-google" class="ol-btn ol-btn-google">Continue with Google</button>
+        <p class="ol-or"><span>or</span></p>
+
+        <form id="ol-form" novalidate autocomplete="on">
+          <!-- Two names with two different jobs, and players ran them together:
+               the USERNAME is the public name on the board, the EMAIL is the
+               login credential. A form that says only "Email" gives someone who
+               chose a username no reason to think the two are different, so the
+               labels and the hint lines say which is which - and js/ui_online.js
+               rewrites them per mode, because the sentence that helps on SIGN IN
+               is not the one that helps on CREATE ACCOUNT.
+               The markup below is the SIGN IN wording: that is the view the
+               overlay opens in, so it must read correctly before any script
+               touches it. -->
+          <div class="ol-field" id="ol-username-field" hidden>
+            <label for="ol-username" id="ol-username-label">Username</label>
+            <input type="text" id="ol-username" name="username" autocomplete="username"
+                   maxlength="16" spellcheck="false" aria-describedby="ol-username-hint"
+                   placeholder="3-16 letters, numbers or _">
+            <p class="ol-hint" id="ol-username-hint">Your public name on the leaderboard.</p>
+          </div>
+          <div class="ol-field" id="ol-email-field">
+            <label for="ol-email" id="ol-email-label">Email you signed up with</label>
+            <input type="email" id="ol-email" name="email" autocomplete="email"
+                   spellcheck="false" aria-describedby="ol-email-hint"
+                   placeholder="you@example.com">
+            <p class="ol-hint" id="ol-email-hint">Not your leaderboard name.</p>
+          </div>
+          <!-- id so RESET PASSWORD can hide the whole field: that view asks
+               for an address and nothing else, and a password box on it would
+               be asking for the very thing the player came here without. -->
+          <div class="ol-field" id="ol-password-field">
+            <label for="ol-password" id="ol-password-label">Password</label>
+            <input type="password" id="ol-password" name="password"
+                   autocomplete="current-password" placeholder="at least 8 characters">
+          </div>
+          <!-- CHANGE PASSWORD is the only view that needs two password boxes:
+               the current one, which is proof of who is typing, and the new
+               one. Every other view hides this whole field. The autocomplete
+               value is fixed rather than rewritten per mode because this box
+               is only ever the NEW password - the box above it is the one
+               whose meaning changes. -->
+          <div class="ol-field" id="ol-password2-field" hidden>
+            <label for="ol-password2" id="ol-password2-label">New password</label>
+            <input type="password" id="ol-password2" name="new-password"
+                   autocomplete="new-password" placeholder="at least 8 characters">
+          </div>
+          <button type="submit" id="ol-submit" class="ol-btn ol-btn-primary">SIGN IN</button>
+        </form>
+
+        <p id="ol-auth-msg" class="ol-msg" role="alert"></p>
+        <div class="ol-links">
+          <button type="button" id="ol-toggle" class="ol-link">Create an account</button>
+          <!-- The way out of the dead end. Before this existed, a player who
+               had forgotten their password had NO route back into their
+               account from anywhere in the game: the only answers the form
+               could give were "wrong password" and "that email already has an
+               account", and both of them end the conversation. js/ui_online.js
+               hides this outside SIGN IN, where it would be noise. -->
+          <button type="button" id="ol-forgot" class="ol-link">Forgot password?</button>
+          <button type="button" id="ol-back" class="ol-link">Back to leaderboard</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       SHIP CUSTOMISER  -  HIDDEN BY DEFAULT
+       ---------------------------------------------------------
+       Opened by the CUSTOMISE SHIP button, which js/game.js draws
+       on every screen where the run is standing still: the title,
+       PAUSED and game over. One panel, three doors - the game only
+       emits 'openShip'; this markup is the only customiser there is.
+       Unlike the leaderboard overlay above, this one has NO
+       backend requirement: the colour lives in localStorage and
+       the feature works on a file:// open with no network at
+       all. It is a sibling of #ol rather than a view inside it
+       for exactly that reason - folding it in would have tied a
+       local feature to a configured Supabase project.
+
+       It reuses .ol / .ol-panel / .ol-btn wholesale, so it is
+       the same machine as the leaderboard panel rather than a
+       second visual language; only the preview and the swatch
+       grid are new (.sh-*).
+
+       The grid is built by js/ui_ship.js from SK.Ship.SWATCHES,
+       so the menu of colours has ONE definition and the markup
+       can never drift from what the model will actually accept.
+       ========================================================= -->
+  <div id="sh" class="ol" hidden aria-hidden="true">
+    <div class="ol-panel sh-panel" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+      <button type="button" id="sh-close" class="ol-close" aria-label="Close">&#215;</button>
+      <h2 id="sh-title" class="ol-title">YOUR SHIP</h2>
+
+      <!-- The rocket, drawn by js/rocket.js - the real renderer, not an
+           illustration of it. A mock-up here would be free to disagree with
+           the thing that actually flies. -->
+      <div class="sh-preview">
+        <canvas id="sh-canvas" width="240" height="230"
+                role="img" aria-label="Preview of your rocket"></canvas>
+      </div>
+
+      <p id="sh-crown" class="sh-crown" hidden></p>
+
+      <!-- One tab per part - nose, window, body, fire - built by
+           js/ui_ship.js from SK.Ship.PARTS. The grid below paints
+           whichever part is selected. -->
+      <div id="sh-parts" class="sh-parts" role="tablist"
+           aria-label="Part of the ship"></div>
+
+      <div id="sh-swatches" class="sh-swatches" role="radiogroup"
+           aria-label="Ship colour"></div>
+
+      <p id="sh-msg" class="ol-msg" role="status" aria-live="polite"></p>
+
+      <div class="ol-actions">
+        <button type="button" id="sh-done" class="ol-btn ol-btn-primary">DONE</button>
+        <button type="button" id="sh-reset" class="ol-btn">RESET TO DEFAULT</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- config.js first: it only sets a global, and js/online.js reads it. It is
+     empty in the repo, which is what keeps the default build offline. -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<!-- Before rocket.js: the renderer asks SK.Ship what colour to paint, and
+     falls back to the shipped default if this file is ever missing. -->
+<script src="js/ship.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/celestial.js"></script>
+<script src="js/rocket.js"></script>
+<script src="js/game.js"></script>
+<script src="js/online.js"></script>
+<script src="js/main.js"></script>
+<!-- Last: needs both SK.Online and the game instance main.js creates. -->
+<script src="js/ui_online.js"></script>
+<!-- Needs the game instance main.js creates, same as ui_online.js. Unlike it,
+     this one boots with or without a configured backend. -->
+<script src="js/ui_ship.js"></script>
+<!-- Ad network loader script (e.g. AdSense) would go here, after the game scripts. -->
+</body>
+</html>
