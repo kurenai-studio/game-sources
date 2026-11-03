@@ -1,0 +1,95 @@
+local player_state = require("ld48.scenes.common.player_state")
+
+function init(self)
+    self.def_local_pos = go.get_position()
+    -- go.animate(".", "position.y", go.PLAYBACK_LOOP_PINGPONG, self.def_local_pos.y - 4, go.EASING_INOUTSINE, 10)
+
+    self.last_pos = go.get_world_position()
+    self.ey = 0
+
+    go.set("/gun_shot_fx#sprite", "tint.w", 0)
+end
+
+function final(self)
+end
+
+function update(self, dt)
+    local s = player_state
+    local ws = s.weapon_state
+
+    local present = ws.present
+    if self.prev_present ~= present then
+        if not ws.present then
+            go.set_position(self.def_local_pos + vmath.vector3(0, -1000, 0))
+            go.cancel_animations(".", "position.y")
+        else
+            self.ey = 300
+            go.set_position(self.def_local_pos)
+            go.animate(".", "position.y", go.PLAYBACK_LOOP_PINGPONG, self.def_local_pos.y - 4, go.EASING_INOUTSINE, 10)
+        end
+    end
+    self.prev_present = present
+
+    if type(self.prev_yaw) ~= "nil" then
+        local dy = s.yaw - self.prev_yaw
+
+        if dy > 300 then
+            dy = s.yaw - (360 + self.prev_yaw)
+        elseif dy < -300 then
+            dy = (360 + s.yaw) - self.prev_yaw
+        end
+
+        local ey = self.ey
+        ey = math.max(math.min(20, ey + dy / 5), -20)
+
+        if ey > 0 then
+            ey = ey - math.max(0.5, math.abs(ey / 10))
+            if ey < 0 then
+                ey = 0
+            end
+        else
+            ey = ey + math.max(0.5, math.abs(ey / 10))
+            if ey > 0 then
+                ey = 0
+            end
+        end
+
+        self.ey = ey
+    end
+
+    self.prev_pitch = s.pitch
+    self.prev_yaw = s.yaw
+
+    go.set(".", "euler.y", self.ey)
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("shoot") then
+        local ey = self.ey
+        if ey > 0 then
+            ey = ey - math.max(0.5, math.abs(ey / 2))
+            if ey < 0 then
+                ey = 0
+            end
+        else
+            ey = ey + math.max(0.5, math.abs(ey / 2))
+            if ey > 0 then
+                ey = 0
+            end
+        end
+        self.ey = ey
+
+        go.cancel_animations(".", "position.z")
+        go.set(".", "position.z", self.def_local_pos.z + 20)
+        go.animate(".", "position.z", go.PLAYBACK_ONCE_FORWARD, self.def_local_pos.z, go.EASING_OUTQUAD, 0.5)
+
+        -- Fake light
+        go.cancel_animations("#model", "tint")
+        go.set("#model", "tint", vmath.vector4(1, 1, 1, 2))
+        go.animate("#model", "tint", go.PLAYBACK_ONCE_FORWARD, vmath.vector4(1), go.EASING_OUTQUAD, 0.1)
+
+        go.set("/gun_shot_fx", "euler.z", math.random() * 360)
+        go.set("/gun_shot_fx#sprite", "tint.w", 0.7)
+        go.animate("/gun_shot_fx#sprite", "tint.w", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 0.1)
+    end
+end

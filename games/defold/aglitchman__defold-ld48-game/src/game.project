@@ -1,0 +1,67 @@
+[bootstrap]
+main_collection = /ld48/main.collectionc
+render = /ld48/render/custom.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 2500
+height = 1400
+high_dpi = 1
+vsync = 0
+display_profiles = /ld48/render/layouts.display_profilesc
+
+[android]
+input_method = HiddenInputField
+
+[project]
+title = ld48_game
+version = 1.0.0
+developer = Artsiom Trubchyk
+dependencies#0 = https://github.com/subsoap/defos/archive/v2.5.0.zip
+dependencies#1 = https://github.com/indiesoftby/defold-splitmix64/archive/refs/tags/1.0.1.zip
+dependencies#2 = https://github.com/indiesoftby/defold-sharp-sprite/archive/refs/tags/0.2.3.zip
+dependencies#3 = https://github.com/britzl/ludobits/archive/refs/tags/6.9.1.zip
+
+[render]
+clear_color_alpha = 1.0
+clear_color_red = 0.9
+clear_color_green = 0.9
+clear_color_blue = 0.9
+
+[physics]
+scale = 0.01
+gravity_y = -1000.0
+type = 3D
+max_collisions = 500
+max_contacts = 1000
+ray_cast_limit_3d = 1000
+trigger_overlap_capacity = 100
+
+[html5]
+scale_mode = fit
+engine_arguments = --verify-graphics-calls=false
+splash_image = /ld48/res/web/loader_cover.png
+heap_size = 300
+cssfile = /builtins/manifests/web/dark_theme.css
+
+[input]
+game_binding = /builtins/input/all.input_bindingc
+
+[graphics]
+texture_profiles = /ld48/render/custom.texture_profiles
+max_draw_calls = 5000
+
+[sprite]
+max_count = 1000
+
+[model]
+max_count = 5000
+
+[mesh]
+max_count = 1000
+
+[resource]
+max_resources = 5000
+
