@@ -1,0 +1,828 @@
+// ============================================
+// MODALS
+// ============================================
+
+@use 'variables' as v;
+@use 'hud-theme' as hud;
+
+.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(v.$color-black, v.$opacity-overlay);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: v.$z-modal;
+    pointer-events: auto; // Ensure modal captures scroll/clicks
+
+    &.hidden {
+        display: none;
+    }
+}
+
+// Meta upgrades modal should be above other modals
+// Specific Override for Pause Modal
+#pause-modal {
+    .modal-content {
+        max-width: 1000px; // Much wider for 2 players
+        width: 95%;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title;
+            margin-bottom: v.$spacing-lg;
+        }
+    }
+}
+
+#meta-modal {
+    z-index: v.$z-modal-meta;
+
+    // SAFE OVERRIDE: Strictly scoped to this modal
+    .modal-content {
+        max-width: 600px; // Reset for meta
+        padding: v.$spacing-sm v.$spacing-xl; // Tighter padding
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.3s ease-out;
+    }
+
+    .modal-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin: v.$spacing-md 0 v.$spacing-sm;
+
+        h2 {
+            margin: 0;
+            @include hud.modal-title;
+        }
+
+        .souls-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            svg {
+                filter: drop-shadow(0 0 4px #b388ff);
+            }
+
+            .souls-count {
+                color: #d1c4e9;
+                font-weight: bold;
+                font-size: 20px;
+                text-shadow: 0 0 5px #b388ff;
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
+            }
+        }
+    }
+
+    // Muted destructive action
+    #reset-meta-btn {
+        background: #665555;
+    }
+}
+
+// Reset confirmation (sits above the meta modal)
+#reset-confirm-modal {
+    z-index: v.$z-modal-meta + 1;
+
+    .modal-content {
+        max-width: 500px;
+        text-align: center;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.25s ease-out;
+
+        h2 {
+            @include hud.modal-title(22px);
+            color: v.$enemy-shooter;
+            text-shadow: 0 0 14px rgba(v.$enemy-shooter, 0.5);
+            margin-bottom: v.$spacing-xl;
+        }
+    }
+
+    .reset-warning {
+        font-family: v.$font-ui;
+        font-size: 17px;
+        margin: v.$spacing-xl 0;
+    }
+
+    .reset-refund {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        font-size: 18px;
+        color: #00ff88;
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        margin: v.$spacing-xl 0;
+        font-weight: bold;
+    }
+
+    .reset-caution {
+        font-family: v.$font-ui;
+        color: v.$color-gray;
+        margin-bottom: v.$spacing-xxl;
+    }
+
+    .reset-actions {
+        display: flex;
+        gap: v.$spacing-xl;
+        justify-content: center;
+
+        .btn {
+            min-width: 120px;
+        }
+
+        #confirm-reset-btn {
+            background: #cc4444;
+        }
+    }
+}
+
+// Game Over screen grows in from small after the death sequence.
+// Gated on .animate-in (added by showGameOverStats for the initial
+// reveal only) so returning from the Upgrades screen doesn't replay it.
+#gameover-modal.animate-in .modal-content {
+    animation: gameover-zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes gameover-zoom-in {
+    from {
+        transform: scale(0.15);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: v.$color-bg-darker;
+    border: v.$border-width-lg solid v.$color-primary;
+    border-radius: v.$border-radius-xl;
+    padding: v.$spacing-xxl;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(v.$color-primary, 0.5);
+
+    // Context-specific overrides
+    // Pause Modal needs to be wider for 2P stats
+    .pause-content & {
+        max-width: 900px; // Wider for split stats
+        width: 95%;
+    }
+
+    h1 {
+        font-size: v.$font-size-mega;
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-xl;
+        text-shadow: v.$text-shadow-glow;
+    }
+
+    h2 {
+        font-size: v.$font-size-hero;
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-xl;
+    }
+
+    p {
+        font-size: v.$font-size-xl;
+        margin-bottom: v.$spacing-xl;
+        color: v.$color-light-gray;
+    }
+}
+
+// Special overrides for Start Screen to fit the wide controls diagram
+#start-screen {
+    .modal-content {
+        max-width: 950px;
+        width: 95%;
+        position: relative;
+        @include hud.modal-chrome;
+        animation: hud-modal-rise 0.35s ease-out;
+
+        // Tagline under the title
+        >p {
+            font-family: v.$font-ui;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: rgba(v.$color-white, 0.6);
+        }
+    }
+
+    // Header: Upgrades/Guide on their own row, title full-width below.
+    // The buttons never share a line with the title, so the souls count
+    // can grow arbitrarily without crowding it.
+    .start-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        row-gap: v.$spacing-md;
+        margin-bottom: v.$spacing-md;
+
+        h1 {
+            @include hud.modal-title(42px);
+            grid-row: 2;
+            grid-column: 1 / -1;
+            letter-spacing: 8px;
+            margin-bottom: 0;
+        }
+
+        #meta-btn {
+            grid-row: 1;
+            grid-column: 1;
+            justify-self: start;
+        }
+
+        #guide-btn {
+            grid-row: 1;
+            grid-column: 2;
+            justify-self: end;
+        }
+    }
+
+    .controls-info {
+        @include hud.panel;
+        background: none;
+        border: none;
+        border-radius: 0;
+
+        .controls-title {
+            @include hud.section-label;
+            margin-bottom: v.$spacing-lg;
+            text-align: left;
+        }
+    }
+
+    // Footer: speed controls (left) + main pill actions (right)
+    .start-actions {
+        margin-top: v.$spacing-xxl;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        width: 100%;
+
+        .speed-controls-group {
+            text-align: left;
+        }
+
+        .speed-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .main-buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+    }
+
+    #meta-btn,
+    #guide-btn {
+        padding: 8px 16px;
+        font-size: 16px;
+        z-index: 100;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .souls-display {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 4px;
+
+            &.hidden {
+                display: none;
+            }
+
+            .separator {
+                color: rgba(255, 255, 255, 0.3);
+                margin: 0 2px;
+                font-weight: normal;
+            }
+
+            svg {
+                filter: drop-shadow(0 0 4px #b388ff);
+            }
+
+            #main-souls-count {
+                color: #d1c4e9;
+                font-weight: bold;
+                text-shadow: 0 0 5px #b388ff, 0 0 10px rgba(179, 136, 255, 0.5);
+                // Match the souls readouts in the HUD and meta modal
+                font-family: v.$font-display;
+                font-variant-numeric: tabular-nums;
+            }
+        }
+    }
+
+    // PILL UI for Main Buttons
+    .main-menu-pill {
+        display: inline-flex;
+        background: linear-gradient(135deg, #1a1a2e, #0f3460); // Match standard btn bg
+        border: 2px solid v.$color-primary; // Match standard btn border
+        border-radius: v.$border-radius-lg; // Match standard btn radius
+        overflow: hidden; // Clip child corners
+        box-shadow: v.$shadow-md, v.$glow-cyan; // Match standard btn shadow
+        transition: all 0.2s ease;
+        // margin-bottom: 20px; // Removed to align with Game Speed controls
+
+        &:hover {
+            box-shadow: v.$shadow-lg, v.$glow-cyan-md; // Match standard btn hover glow
+        }
+
+        .pill-btn {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            padding: 15px 25px; // Larger padding closer to btn-large feel
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: v.$color-primary;
+            font-size: 18px; // Larger font
+            font-weight: bold;
+            font-family: v.$font-family; // Standard font
+            transition: all 0.2s ease;
+            position: relative;
+            cursor: pointer;
+
+            // Separator line
+            border-right: 1px solid rgba(v.$color-primary, 0.5);
+
+            &:last-child {
+                border-right: none;
+            }
+
+            &:hover {
+                background: rgba(v.$color-primary, 0.2);
+                color: v.$color-white;
+                text-shadow: 0 0 8px rgba(v.$color-primary, 0.8);
+            }
+
+            &:active {
+                background: rgba(v.$color-primary, 0.4);
+            }
+
+            // Specific styling
+            &.pill-main {
+                padding: 15px 50px; // Prominent center button
+                font-size: 24px; // Larger text like Start Game should have
+                background: rgba(v.$color-primary, 0.05); // Subtle highlight for main action
+
+                &:hover {
+                    background: rgba(v.$color-primary, 0.25);
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// Controls Info Section
+// ============================================
+
+.controls-info {
+    background: rgba(v.$color-primary, 0.05);
+    padding: 25px;
+    border-radius: v.$border-radius-xl;
+    margin: v.$spacing-xl 0;
+    border: v.$border-width-sm solid rgba(v.$color-primary, 0.2);
+    pointer-events: none; // Infographic is non-interactive
+}
+
+.controls-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px; // Narrowed gap to pull content away from edges
+    margin: v.$spacing-xl 0;
+}
+
+.keyboard-section {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-xs;
+    align-items: center;
+}
+
+.keyboard-row {
+    display: flex;
+    gap: v.$spacing-xs;
+}
+
+.key {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
+    border: v.$border-width-md solid v.$color-gray;
+    border-radius: v.$border-radius-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-xxl;
+    font-weight: bold;
+    color: v.$color-light-gray;
+    box-shadow: 0 4px 6px rgba(v.$color-black, 0.4),
+        inset 0 -2px 0 rgba(v.$color-black, 0.6),
+        inset 0 2px 0 rgba(v.$color-white, 0.15);
+    position: relative;
+    cursor: default;
+
+    &.esc {
+        width: 60px;
+        font-size: v.$font-size-base;
+    }
+
+    &.space {
+        width: 120px;
+        font-size: v.$font-size-base;
+    }
+}
+
+.key-label {
+    font-size: v.$font-size-xs;
+    color: #999;
+    text-align: center;
+    margin-top: 3px;
+}
+
+.mouse-section {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 280px;
+    height: 160px; // Increased height for Top Label
+
+    // Infographic Styles
+    &.infographic {
+        .callout {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 11px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            white-space: nowrap;
+            opacity: 1;
+            pointer-events: none;
+            z-index: 10;
+
+            .label {
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding: 4px 8px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(2px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            }
+
+            .connector {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+
+                .line {
+                    background: none;
+                }
+
+                .dot {
+                    width: 5px;
+                    height: 5px;
+                    background: #fff;
+                    border-radius: 50%;
+                    box-shadow: 0 0 5px currentColor;
+                    flex-shrink: 0;
+                }
+            }
+
+            // Aim: LEFT SIDE (Symmetrical)
+            &.aim {
+                right: 50%;
+                margin-right: 22px; // Align with Left Button outer edge
+                top: 30px; // Lower start point
+                transform: none; // Remove translateY
+                flex-direction: row;
+
+                .label {
+                    border-color: rgba(255, 136, 136, 0.3);
+                    color: #ffcccc;
+                    background: linear-gradient(90deg, rgba(50, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+                    transform: translate(5px, -20px); // Small adjustment to meet flatter line
+                }
+
+                .connector {
+                    flex-direction: row; // Line -> Dot
+                    width: 60px;
+                    transform: rotate(20deg); // Flatter angle
+                    transform-origin: right center;
+                    margin-right: -5px; // Pull closer to mouse
+
+                    .line {
+                        width: 100%;
+                        height: 1px;
+                        border-top: 2px dotted rgba(255, 136, 136, 0.6);
+                    }
+
+                    .dot {
+                        background: #ffaaaa;
+                        margin-left: -2px;
+                    }
+
+                    // Overlap slightly for solid connection
+                }
+            }
+
+            // Orbit: RIGHT SIDE (Symmetrical)
+            &.orbit {
+                left: 50%;
+                margin-left: 22px; // Align with Right Button outer edge
+                top: 30px; // Lower start point
+                transform: none;
+                flex-direction: row; // Connector -> Label
+
+                .label {
+                    border-color: rgba(136, 204, 255, 0.3);
+                    color: #cceeff;
+                    background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 20, 50, 0.6));
+                    transform: translate(-5px, -20px); // Small adjustment to meet flatter line
+                }
+
+                .connector {
+                    flex-direction: row-reverse; // Dot -> Line
+                    width: 60px;
+                    transform: rotate(-20deg); // Flatter angle
+                    transform-origin: left center;
+                    margin-left: -5px; // Pull closer to mouse
+
+                    .line {
+                        width: 100%;
+                        height: 1px;
+                        border-top: 2px dotted rgba(136, 204, 255, 0.6);
+                    }
+
+                    .dot {
+                        background: #ccffff;
+                        margin-right: -2px;
+                    }
+                }
+            }
+
+            // Zoom: TOP CENTER (Above Mouse)
+            &.zoom {
+                left: 50%;
+                top: -30px;
+                transform: translateX(-50%);
+                flex-direction: column-reverse;
+                gap: 4px;
+
+                .label {
+                    border-color: rgba(136, 255, 136, 0.3);
+                    color: #ccffcc;
+                    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 50, 0, 0.6));
+                }
+
+                .connector {
+                    flex-direction: column;
+                    height: 35px;
+                    width: 10px; // Narrow logic container
+
+                    .line {
+                        height: 100%;
+                        width: 1px;
+                        border-left: 2px dotted rgba(136, 255, 136, 0.6); // Vertical Dotted
+                    }
+
+                    .dot {
+                        background: #ccffcc;
+                        margin-top: -2px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.mouse {
+    width: 60px;
+    height: 90px;
+    background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
+    border: v.$border-width-md solid v.$color-gray;
+    border-radius: 30px 30px 20px 20px;
+    position: relative;
+    box-shadow: v.$shadow-md;
+    z-index: 2; // Above lines
+}
+
+.mouse-buttons {
+    position: absolute;
+    top: v.$spacing-xs;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 35px;
+    display: flex;
+    gap: 2px;
+}
+
+.mouse-button {
+    flex: 1;
+    background: rgba(v.$color-gray, 0.2);
+    border: v.$border-width-sm solid v.$color-gray;
+    border-bottom: none;
+
+    &.left {
+        border-radius: 15px 0 0 0;
+        background: rgba(255, 100, 100, 0.3);
+        border-color: #ff6666;
+        box-shadow: inset 0 2px 4px rgba(255, 150, 150, 0.2);
+    }
+
+    &.right {
+        border-radius: 0 15px 0 0;
+        background: rgba(100, 200, 255, 0.3);
+        border-color: #44aaff;
+        box-shadow: inset 0 2px 4px rgba(150, 200, 255, 0.2);
+    }
+}
+
+.mouse-wheel {
+    position: absolute;
+    top: v.$spacing-lg;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 15px;
+    background: rgba(100, 255, 100, 0.5); // Green tint
+    border: v.$border-width-sm solid #88ff88;
+    border-radius: v.$border-radius-md;
+    box-shadow: 0 0 5px rgba(100, 255, 100, 0.4);
+}
+
+// ============================================
+// Final Stats Section
+// ============================================
+
+#final-stats {
+    background: rgba(v.$color-primary, 0.1);
+    padding: v.$spacing-xl;
+    border-radius: v.$spacing-xs;
+    margin: v.$spacing-xl 0;
+
+    p {
+        margin: v.$spacing-xs + v.$spacing-xs 0;
+        font-size: v.$font-size-xxl;
+    }
+}
+
+// ============================================
+// Fancy Help Icon & Professional Tooltip System
+// ============================================
+
+@keyframes pulse-cyan {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(0, 255, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
+    }
+}
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 255, 255, 0.15);
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: bold;
+    color: #00ffff;
+    cursor: help;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+    position: relative;
+    user-select: none;
+    font-family: 'Courier New', monospace;
+    animation: pulse-cyan 2s infinite;
+
+    &:hover {
+        background: #00ffff;
+        color: #000;
+        box-shadow: 0 0 12px #00ffff;
+        border-color: #fff;
+
+        // Wiggle only the "?" glyph — a transform on the container
+        // would drag the tooltip's coordinate space along with it
+        &::before {
+            transform: scale(1.15) rotate(10deg);
+        }
+
+        // Tooltip settles with a right twist (same magnitude as the
+        // old inherited icon tilt, mirrored)
+        .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) rotate(10deg);
+        }
+    }
+
+    &::before {
+        content: "?";
+        display: block;
+        transition: transform 0.2s ease;
+    }
+}
+
+.tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    // Starts slightly counter-twisted so the hover reveal swings it
+    // to the right (see .help-icon:hover). Pivot at the arrow tip so
+    // the pin stays pointed at the (?) throughout the swing.
+    transform-origin: 50% calc(100% + 6px);
+    transform: translateX(-50%) translateY(8px) rotate(-4deg);
+    background: linear-gradient(180deg, #161625 0%, #0a0a14 100%);
+    border: 1px solid #00ffff;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    width: 240px;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 255, 0.15);
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    pointer-events: none;
+    font-weight: normal;
+    backdrop-filter: blur(8px);
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: #00ffff transparent transparent transparent;
+    }
+
+    strong {
+        color: #00ffff;
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .example-box {
+        margin-top: 10px;
+        padding: 8px;
+        background: rgba(0, 255, 136, 0.1);
+        border-radius: 4px;
+        border-left: 2px solid #00ff88;
+        color: #00ff88;
+        font-style: italic;
+        font-size: 11px;
+    }
+}
