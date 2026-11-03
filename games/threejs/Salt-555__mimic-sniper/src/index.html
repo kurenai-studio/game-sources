@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060808" />
+    <title>Mimic Sniper</title>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Mimic Sniper game"></canvas>
+
+    <div id="hud">
+      <div class="brand">MIMIC//SNIPER</div>
+      <div class="status-cluster">
+        <span id="stateLabel">FIELD TEST</span>
+        <span id="timer">01:30</span>
+      </div>
+      <div class="controls">WASD: MIMIC &nbsp; E: COPY TARGET &nbsp; RMB: SCOPE &nbsp; LMB: FIRE &nbsp; SHIFT: HOLD BREATH &nbsp; R: RELOAD</div>
+      <div id="targetPrompt">NO COPY TARGET</div>
+      <div id="ammo">5 / 10</div>
+      <div id="breathTrack"><div id="breathFill"></div></div>
+    </div>
+
+    <div id="scope" aria-hidden="true">
+      <div class="scope-ring"></div>
+      <div class="reticle reticle-h"></div>
+      <div class="reticle reticle-v"></div>
+      <div class="center-dot"></div>
+      <div class="range-mark m1"></div><div class="range-mark m2"></div>
+      <div class="range-mark m3"></div><div class="range-mark m4"></div>
+    </div>
+
+    <div id="startScreen" class="panel visible">
+      <div class="eyebrow">ASYMMETRIC FIELD TEST</div>
+      <h1>MIMIC<br /><span>SNIPER</span></h1>
+      <p>One body. Many shapes. One shot that matters.</p>
+      <button id="startButton">BEGIN HUNT</button>
+      <small>Current MVP: both roles are controllable for mechanical testing. Online matchmaking is the target architecture.</small>
+    </div>
+
+    <div id="roundEnd" class="panel">
+      <div class="eyebrow">ROUND COMPLETE</div>
+      <h2 id="winnerText">MIMIC ESCAPED</h2>
+      <p id="roundSummary"></p>
+      <button id="restartButton">RUN IT AGAIN</button>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
