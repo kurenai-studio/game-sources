@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = &"tank"
+name_key = "ENEMY_TANK"
+behavior = 2
+color = Color(0.561, 0.482, 1.000, 1)
+shape_sides = 8
+radius = 26.0
+max_hp = 150.0
+speed = 72.0
+damage = 22
+attack_range = 48.0
+attack_cooldown = 1.2
+knockback_resist = 0.85
+xp = 8
+coin_chance = 0.6
+score = 40
+min_wave = 3
+spawn_weight = 1.2
+cost = 4
