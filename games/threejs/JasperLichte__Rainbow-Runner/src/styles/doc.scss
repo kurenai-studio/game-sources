@@ -1,0 +1,23 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto|ZCOOL+KuaiLe);
+
+html {
+  font-size: 16px;
+
+  --font-1: 'Roboto', sans-serif;
+  --font-2: 'ZCOOL KuaiLe', cursive;
+}
+
+body {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: var(--font-1);
+
+  .preload * {
+    transition: none;
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -ms-transition: none !important;
+    -o-transition: none !important;
+  }
+}
