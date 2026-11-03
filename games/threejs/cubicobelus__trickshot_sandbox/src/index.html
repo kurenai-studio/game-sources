@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Browser FPS: chain slides, bunnyhops and wall bounces to build speed, then land trickshots for stacking score multipliers.">
+<title>Trickshot Sandbox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23ffd24a' stroke-width='3'/%3E%3Cpath d='M16 1v9M16 22v9M1 16h9M22 16h9' stroke='%23ffd24a' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23e02424'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="blocker">
+  <div id="instructions">
+    <h1 class="wordmark"><span>Trickshot</span><small>Sandbox</small></h1>
+    <details id="howto"><summary>How to play</summary>
+    <p id="controls-hint">
+      <span class="key">WASD</span> move &nbsp;•&nbsp; <span class="key">Space</span> jump &nbsp;•&nbsp;
+      <span class="key">Shift</span> sprint &nbsp;•&nbsp; <span class="key">Ctrl</span> slide &nbsp;•&nbsp;
+      <span class="key">R</span> reload &nbsp;•&nbsp; <span class="key">F</span> inspect &nbsp;•&nbsp; <span class="key">P</span> replay last hit<br>
+      <span class="key">Left click</span> attack &nbsp;•&nbsp; <span class="key">Right click</span> aim / throw knife &nbsp;•&nbsp;
+      <span class="key">1 / 2 / Q / wheel</span> gun / knife
+    </p>
+    <p>
+      You <em>build</em> speed by chaining slides, bunnyhops and wall bounces (up to 22 u/s, 25 on Ice Lake). Smaller, faster
+      targets are worth more, and every trick multiplies your score.
+    </p>
+    </details>
+
+
+    <p id="menu-opened" hidden>The whole menu is open now: every gun and grenade, the maps, modes and multiplayer.</p>
+
+    <div id="mode-tabs">
+      <button type="button" class="tab active" data-mode="solo">Singleplayer</button>
+      <button type="button" class="tab" data-mode="mp">Multiplayer</button>
+    </div>
+
+    <p id="touch-note" hidden>This game needs a keyboard and mouse. Open it on a computer to play.</p>
+
+    <div id="loadout"><span class="lo-label">Loadout</span></div>
+    <button type="button" class="btn small" id="attach-open" title="Add scopes, grips, suppressors and more to your guns: unlock them by landing hits with each gun">Attachments</button>   <!-- gun buttons are built in game.js; shared by singleplayer and multiplayer -->
+
+    <div id="panel-solo">
+      <div id="map-picker"><span class="lo-label">Map</span></div>   <!-- thumbnails are built in game.js -->
+      <p id="map-note"></p>
+      <div id="play-modes">
+        <span class="lo-label">Mode</span>
+        <button type="button" data-play-mode="free">Free play</button>
+        <button type="button" data-play-mode="sa60">Score Attack &middot; 1:00</button>
+        <button type="button" id="range-start" title="Dummies at set distances: every hit shows its damage">Shooting range</button>
+      </div>
+      <p id="mode-note"></p>
+      <div class="start" id="start-btn">Click to play</div>
+      <button type="button" class="btn" id="tutorial-btn">Tutorial</button>
+      <button type="button" class="btn" id="glossary-open">Trickshot list</button>
+      <button type="button" class="btn" id="stats-open">Stats</button>
+      <button type="button" class="btn" id="ach-open">Achievements <span id="ach-count"></span></button>
+      <button type="button" class="btn" id="chal-open">Challenges <span id="chal-count"></span></button>
+      <button type="button" class="btn" id="settings-open">Settings</button>
+      <button type="button" class="btn" id="run-quit" hidden>Quit run</button>
+      <div id="watch-row">
+        <button type="button" class="btn" id="watch-best" hidden>&#9654; Watch best trickshot</button>
+        <button type="button" class="btn" id="watch-last" hidden>&#9654; Watch last hit</button>
+        <button type="button" class="btn" id="card-best" hidden>Save best-shot card</button>
+      </div>
+    </div>
+
+    <div id="panel-mp" hidden>
+      <div id="mp-connect">
+        <div class="mp-row">
+          <label for="mp-name">Name</label>
+          <input type="text" id="mp-name" maxlength="14" placeholder="Player" autocomplete="off">
+        </div>
+        <div class="mp-cards">
+          <button type="button" class="mp-card" id="mp-card-practice"><b>Practice vs bots</b><span id="mp-card-practice-sub">Play a match offline against AI players</span></button>
+          <button type="button" class="mp-card" id="mp-card-host"><b>Host a room</b><span id="mp-card-host-sub">Start a room and share the code</span></button>
+          <div class="mp-card mp-join">
+            <b>Join a room</b>
+            <div class="mp-join-row"><input type="text" id="mp-code" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false"><button type="button" class="btn" id="mp-join-btn">Join</button></div>
+          </div>
+        </div>
+        <p class="mp-status" id="mp-status"></p>
+      </div>
+
+      <div id="mp-room" hidden>
+        <div class="mp-codebar">Room code <b id="mp-room-code">-----</b>
+          <button type="button" class="btn small" id="mp-copy-btn">Copy</button></div>
+        <div class="mp-modeline">Mode: <b id="mp-room-mode"></b>
+          <button type="button" class="btn small" id="mp-room-settings" hidden>Round settings&hellip;</button>
+          <div class="mp-next" id="mp-next-line"></div>
+        </div>
+        <ul id="mp-players"></ul>
+        <div class="start" id="mp-play-btn">Click to play</div>
+        <button type="button" class="btn small" id="mp-settings-open">Settings</button>
+        <button type="button" class="btn small" id="mp-leave-btn">Leave room</button>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+<div id="smoke-veil"></div>   <!-- standing in smoke: under the HUD, over the world -->
+<div id="hud">
+  <div id="speedlines"></div>
+  <div id="scope"><div id="scope-flash"></div><div id="scope-lines">
+    <div class="l lv"></div><div class="l lh"></div>
+    <div class="post pt"></div><div class="post pb"></div><div class="post pl"></div><div class="post pr"></div>
+    <div class="mils mh"></div><div class="mils mv"></div>
+    <div class="dot"></div>
+  </div></div>
+  <div id="crosshair"></div>
+  <div id="throw-bars" hidden><div class="tb"><i id="tb-dist"></i></div><div class="tb tb-cook" id="tb-cook-box" hidden><i id="tb-cook"></i></div></div>   <!-- holding G: how far it will go, and once the pin is out how long the fuse has left -->
+  <div id="range-info" hidden></div>
+  <div id="sound-cues"></div>
+  <div id="trick-feed"><div id="trick-chain"></div></div>
+  <div id="hitmark"></div>
+  <div id="speed">
+    <div id="flash-white"></div>   <!-- a flashbang's white-out -->
+    <div id="abilities">   <!-- grenade, blast pack and grapple: one tile each, a look for every state, no writing but the key -->
+      <div class="ab" id="ab-nade" hidden><svg class="ab-ico" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="14.2" rx="6" ry="7.6"/><rect x="9.6" y="2.6" width="4.8" height="3.4" rx="1"/><path d="M14.8 3.6 L19.4 5.8 L18.4 7.9 L14.6 6.1Z"/><rect x="5.6" y="13.4" width="12.8" height="1.6" fill="#000" opacity="0.45"/></svg><kbd></kbd><svg class="ab-ring" viewBox="0 0 38 38"><circle class="trk" cx="19" cy="19" r="16"/><circle class="fill" cx="19" cy="19" r="16"/></svg></div>
+      <div class="ab" id="ab-pack" hidden><svg class="ab-ico" viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="7" width="19" height="11" rx="2"/><rect x="10" y="6" width="4" height="13" fill="#000" opacity="0.45"/><circle cx="17.2" cy="10.8" r="1.5" fill="#ff3b30"/></svg><kbd></kbd><svg class="ab-ring" viewBox="0 0 38 38"><circle class="trk" cx="19" cy="19" r="16"/><circle class="fill" cx="19" cy="19" r="16"/></svg><b class="ab-fuse"></b></div>
+      <div class="ab" id="ab-hook" hidden><svg class="ab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6.5 15a5.5 5.5 0 0 0 11 0M6.5 15l-2-2.5M17.5 15l2-2.5"/></svg><kbd></kbd><svg class="ab-ring" viewBox="0 0 38 38"><circle class="trk" cx="19" cy="19" r="16"/><circle class="fill" cx="19" cy="19" r="16"/></svg></div>
+    </div>
+    <div class="sp-row"><span id="speed-val">0</span><small>u/s</small><span class="state" id="state-val"></span></div>
+    <div id="speedbar"><div id="speedbar-fill"></div></div>
+    <div id="hpbar" hidden title="Health"><div id="hpbar-fill"></div><span id="hpbar-text">100</span></div>
+  </div>
+  <div id="hud-right">
+    <div id="score">Score<br><span id="score-val">0</span></div>
+    <div id="best" hidden>Best trickshot<br><span id="best-val">0</span><div id="best-tags"></div></div>
+    <div id="streak">Streak<br><span id="streak-val">0</span></div>
+    <div id="bonus-tags"></div>
+  </div>
+  <div id="esc-hint">Esc: menu</div>
+  <div id="ladder-hint" hidden>Hold <b>forward</b> to climb &middot; jump to let go</div>
+  <div id="dmg-numbers"></div>
+  <div id="dmg-flash"></div>
+  <div id="dmg-dir"><i></i></div>
+  <div id="feed"></div>
+  <div id="kill-banner" hidden><div class="kb-top"></div><div class="kb-sub"></div></div>   <!-- ELIMINATED name, and the new gun in a gun game -->
+  <div id="run-count"></div>   <!-- Score Attack countdown: 3, 2, 1, GO -->
+  <div id="tutorial" hidden>
+    <div class="tut-head"><span id="tut-count"></span><span class="tut-skip">Enter skips a step &middot; Esc ends the tutorial</span></div>
+    <div class="tut-title" id="tut-title"></div>
+    <div class="tut-text" id="tut-text"></div>
+    <div class="tut-track"><div id="tut-fill"></div></div>
+  </div>
+  <div id="ach-toast"><small>Achievement unlocked</small><b></b><span></span></div>
+  <div id="koth-bar" hidden>
+    <div class="kb-track"><i class="kb-fill kb-a"></i><i class="kb-fill kb-b"></i><i class="kb-mark"></i></div>
+    <div class="kb-labels"><span id="kb-left"></span><span id="kb-mid"></span><span id="kb-right"></span></div>
+  </div>
+  <div id="mp-timer" hidden><span id="mp-timer-val">3:00</span><div id="mp-timer-mode"></div></div>
+  <div id="killfeed"></div>
+  <div id="fps" hidden></div>
+  <div id="dead-screen" hidden><div>ELIMINATED</div><small id="dead-by"></small><div id="dead-recap"></div><small id="dead-spec"></small></div>
+  <div id="ammo">
+    <div class="count" id="ammo-count">5<span class="max"> / 5</span></div>
+    <div class="label" id="ammo-label">ROUNDS</div>
+  </div>
+  <div id="spawn-prot" hidden>SPAWN PROTECTED</div>   <!-- shows for a few seconds after you spawn in a match, or until you shoot -->
+  <div id="hotbar"></div>   <!-- slots are built from the weapon list in game.js -->
+</div>
+
+<div id="scoreboard" hidden>
+  <h2 id="sb-title">Scoreboard</h2>
+  <table><thead><tr id="sb-head"><th>#</th><th>Player</th><th>Score</th><th>Kills</th><th>Deaths</th></tr></thead><tbody id="sb-body"></tbody></table>
+  <p id="sb-foot"></p>
+</div>
+
+<!-- after leaving an in-game replay with Esc -->
+<div id="resume" hidden><div>Move or click to keep playing<small>Esc for the menu</small></div></div>
+<div id="tut-start" hidden><div>Click to start<small>Esc skips the tutorial</small></div></div>   <!-- the first visit: the game opens in the tutorial -->
+
+<!-- a one-line tip the first time you play a map -->
+<div id="map-tip" hidden></div>
+
+<!-- replay controls, over the picture while a replay plays -->
+<div id="replay" hidden>
+  <div class="rp-top"><span class="rp-badge">Replay</span> <span id="replay-label"></span></div>
+  <div id="replay-note" hidden></div>
+  <div class="rp-rec">&#9679; Recording video&hellip;</div>
+  <div id="replay-tags"></div>
+  <div class="rp-bar">
+    <div class="rp-track"><div id="replay-progress"></div></div>
+    <div class="rp-buttons">
+      <button type="button" id="rp-pause">Pause (Space)</button>
+      <button type="button" id="rp-restart">Restart (R)</button>
+      <button type="button" id="rp-speed">Speed 1x (S)</button>
+      <button type="button" id="rp-slow">Slow-mo: on (M)</button>
+      <button type="button" id="rp-bullet">Bullet cam: on (B)</button>
+      <button type="button" id="rp-video">Save video</button>
+      <button type="button" id="rp-card">Save card</button>
+      <button type="button" id="rp-exit">Exit (Esc)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Score Attack results, shown when the clock runs out -->
+<div id="results" hidden>
+  <div class="r-panel" role="dialog" aria-label="Score Attack results">
+    <div class="r-title" id="r-title">Time!</div>
+    <div class="r-score" id="r-score">0</div>
+    <div class="r-rank" id="r-rank"></div>
+    <div class="r-stats" id="r-stats"></div>
+    <div class="r-cols">
+      <div><h3>Best shot of the run</h3><div id="r-best"></div></div>
+      <div><h3 id="r-top-title">Your top 5</h3><ol id="r-top"></ol></div>
+    </div>
+    <div class="r-buttons">
+      <button type="button" class="r-again" id="r-again">Play again (Enter)</button>
+      <button type="button" class="btn" id="r-watch" hidden>&#9654; Watch best shot</button>
+      <button type="button" class="btn" id="r-card" hidden>Save best-shot card</button>
+      <button type="button" class="btn" id="r-menu">Menu (Esc)</button>
+    </div>
+  </div>
+</div>
+
+<!-- achievements, a popup over everything; filled in game.js -->
+<div id="achievements" hidden>
+  <div class="g-panel" role="dialog" aria-label="Achievements">
+    <div class="g-head"><h2>Achievements</h2><button type="button" class="g-close" id="ach-close" aria-label="Close">&times;</button></div>
+    <p class="g-note">Goals to chase, kept in this browser.</p>
+    <div id="ach-list"></div>
+  </div>
+</div>
+
+<!-- trick challenges, a popup over everything; filled in game.js -->
+<div id="challenges" hidden>
+  <div class="g-panel" role="dialog" aria-label="Trick challenges">
+    <div class="g-head"><h2>Trick challenges</h2><button type="button" class="g-close" id="chal-close" aria-label="Close">&times;</button></div>
+    <p class="g-note">One shot that puts certain tricks together. Bronze to Legendary; the Legendary ones are meant to take a long time.</p>
+    <div id="chal-list"></div>
+  </div>
+</div>
+
+<!-- lifetime stats, a popup over everything; filled in game.js -->
+<div id="stats" hidden>
+  <div class="g-panel" role="dialog" aria-label="Stats">
+    <div class="g-head"><h2>Stats</h2><button type="button" class="g-close" id="stats-close" aria-label="Close">&times;</button></div>
+    <p class="g-note">Everything you've done, kept in this browser.</p>
+    <div id="stats-list"></div>
+    <div class="st-foot"><button type="button" class="btn small" id="stats-reset">Reset stats</button></div>
+  </div>
+</div>
+
+<!-- the trickshot list, a popup over everything; filled in game.js from the scoring values -->
+<div id="glossary" hidden>
+  <div class="g-panel" role="dialog" aria-label="Trickshots">
+    <div class="g-head"><h2>Trickshots</h2><button type="button" class="g-close" id="glossary-close" aria-label="Close">&times;</button></div>
+    <p class="g-note" id="glossary-note"></p>   <!-- filled in game.js from the scoring values -->
+    <div id="glossary-list"></div>
+  </div>
+</div>
+
+<!-- the full gun list, opened by the loadout's More button -->
+<div id="loadout-popup" hidden>
+  <div class="g-panel" role="dialog" aria-label="Choose a gun">
+    <div class="g-head"><h2>Choose a gun and a grenade</h2><button type="button" class="g-close" id="loadout-close" aria-label="Close">&times;</button></div>
+    <div id="loadout-groups"></div>   <!-- built in game.js -->
+  </div>
+</div>
+
+<!-- attachments: pick what goes on each gun (unlocked by hitting targets and players with it) -->
+<div id="attach-popup" hidden>
+  <div class="g-panel" role="dialog" aria-label="Attachments">
+    <div class="g-head"><h2>Attachments</h2><button type="button" class="g-close" id="attach-close" aria-label="Close">&times;</button></div>
+    <div id="attach-guns"></div>
+    <div id="attach-body">
+      <div id="attach-view">
+        <canvas id="attach-canvas" aria-label="A 3D view of the gun with its attachments. Drag to turn it."></canvas>
+        <div id="attach-name"></div>
+        <div id="attach-stats"></div>
+        <div id="attach-skins"></div>   <!-- the gun skins: under the stats, apart from the attachments -->
+        <p class="g-note">Drag to turn the gun.</p>
+      </div>
+      <div id="attach-slots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- dev tools: the ` key opens test switches -->
+<div id="dev-popup" hidden>
+  <div class="g-panel" role="dialog" aria-label="Dev tools">
+    <div class="g-head"><h2>Dev tools</h2><button type="button" class="g-close" id="dev-close" aria-label="Close">&times;</button></div>
+    <p class="g-note">For testing. Nothing here is saved; a reload turns it all off.</p>
+    <div id="dev-list"></div>
+  </div>
+</div>
+
+<!-- a bigger map: opens from the menu when you click the map that is already selected, and in a game while you hold M -->
+<div id="map-popup" hidden>
+  <div class="g-panel" role="dialog" aria-label="Map">
+    <div class="g-head"><h2 id="map-popup-title">Map</h2><button type="button" class="g-close" id="map-popup-close" aria-label="Close">&times;</button></div>
+    <p class="g-note" id="map-popup-note"></p>
+    <canvas id="map-big" width="440" height="440"></canvas>
+    <p class="g-note" id="map-popup-legend"></p>
+  </div>
+</div>
+
+<!-- the setup window for a practice match, a hosted room, and the next round of a room -->
+<div id="play-setup" hidden>
+  <div class="g-panel setup-panel" role="dialog" aria-label="Game setup">
+    <div class="g-head"><h2 id="ps-title">Practice vs bots</h2><button type="button" class="g-close" id="ps-close" aria-label="Close">&times;</button></div>
+    <h3 class="ps-h">Mode</h3>
+    <div id="ps-modes" class="ps-cards"></div>
+    <p class="g-note" id="ps-mode-desc"></p>
+    <h3 class="ps-h">Map</h3>
+    <div class="ps-maprow">
+      <div id="ps-maps"></div>
+      <div class="ps-preview"><canvas id="ps-preview" width="200" height="200"></canvas><b id="ps-map-name"></b><span id="ps-map-note"></span></div>
+    </div>
+    <div id="ps-rules">
+      <h3 class="ps-h">Rules</h3>
+      <div class="ps-rules-body">
+        <label id="ps-limit-row">First to <select id="ps-limit"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option><option value="0">no limit</option></select> <span id="ps-limit-unit"></span></label>
+        <label id="ps-bots-row"><span id="ps-bots-label">Bots</span> <select id="ps-bots"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+        <label id="ps-level-row">Bot level <select id="ps-level"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>
+        <div class="ps-rule-checks">
+          <label title="Everyone jumps about three times as high and floats"><input type="checkbox" id="ps-r-lowgrav">Low gravity</label>
+          <label id="ps-r-oneshot-row" title="Any hit kills"><input type="checkbox" id="ps-r-oneshot">One-shot kills</label>
+          <label id="ps-r-headonly-row" title="Only headshots (and the knife) do damage"><input type="checkbox" id="ps-r-headonly">Headshots only</label>
+          <label id="ps-r-fastresp-row" title="Back in the fight after 1 second instead of 3"><input type="checkbox" id="ps-r-fastresp">Fast respawn</label>
+          <label id="ps-r-siphon-row" title="Every kill refills your health to 100"><input type="checkbox" id="ps-r-siphon">Siphon</label>
+        </div>
+        <div id="ps-nades-row"><span class="ps-nades-label">Throwables</span><div id="ps-nades"></div></div>
+      </div>
+    </div>
+    <div id="ps-gg" hidden>
+      <h3 class="ps-h">Gun game guns</h3>
+      <p class="g-note" id="ps-gg-note"></p>
+      <div id="ps-gg-guns"></div>
+      <div class="ps-gg-row"><button type="button" class="btn small" id="ps-gg-all">All guns</button><button type="button" class="btn small" id="ps-gg-default">Default</button></div>
+    </div>
+    <div class="start ps-go" id="ps-go">Start</div>
+  </div>
+</div>
+
+<!-- settings, a popup over the menu so the menu itself fits on one screen -->
+<div id="settings-popup" hidden>
+  <div class="g-panel" role="dialog" aria-label="Settings">
+    <div class="g-head"><h2>Settings</h2><button type="button" class="g-close" id="settings-close" aria-label="Close">&times;</button></div>
+    <div id="settings">
+      <div class="settings-head">
+        <div class="stabs" role="tablist">
+          <button type="button" class="stab active" data-tab="mouse">Mouse</button>
+          <button type="button" class="stab" data-tab="controls">Controls</button>
+          <button type="button" class="stab" data-tab="crosshair">Crosshair</button>
+          <button type="button" class="stab" data-tab="view">View</button>
+          <button type="button" class="stab" data-tab="access">Accessibility</button>
+          <button type="button" class="stab" data-tab="targets">Targets</button>
+          <button type="button" class="stab" data-tab="sound">Sound</button>
+          <button type="button" class="stab" data-tab="other">Gameplay</button>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="mouse">
+        <div class="slider-row">
+          <label for="sens-x">Sens X</label>
+          <input type="range" id="sens-x" min="0.02" max="4" step="0.01" value="1">
+          <div class="val" id="sens-x-val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="sens-y">Sens Y</label>
+          <input type="range" id="sens-y" min="0.02" max="4" step="0.01" value="1">
+          <div class="val" id="sens-y-val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="sens-scope">Scoped mult</label>
+          <input type="range" id="sens-scope" min="0.05" max="1" step="0.05" value="0.35">
+          <div class="val" id="sens-scope-val">0.35</div>
+        </div>
+        <div class="slider-row">
+          <label for="accel-strength">Accel strength</label>
+          <input type="range" id="accel-strength" min="0" max="1.5" step="0.05" value="0.7" disabled>
+          <div class="val" id="accel-strength-val">0.70</div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="sens-link" checked>Link Y to X</label>
+          <label><input type="checkbox" id="mouse-accel">Mouse acceleration</label>
+        </div>
+        <div class="sens-import">
+          <div class="si-title">Import from another game</div>
+          <div class="si-row">
+            <select id="si-game" aria-label="Game"></select>
+            <input type="number" id="si-sens" placeholder="Your sens there" min="0" step="any" aria-label="Your sensitivity in that game">
+            <input type="number" id="si-dpi" placeholder="DPI (optional)" min="50" step="50" aria-label="Mouse DPI (optional)">
+            <button type="button" class="btn small" id="si-apply">Apply</button>
+          </div>
+          <p class="set-hint" id="si-result"></p>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="controls" hidden>
+        <p class="set-hint">Click a box, then press the key or mouse button you want, or scroll the wheel. Two boxes per action. Backspace clears a box, Esc cancels.</p>
+        <div class="check-row"><label title="Click the game once to start (a browser will not start the mouse capture from a controller), then the controller works. Start opens the menu."><input type="checkbox" id="pad-on" data-setting="padOn">Use a gamepad when one is connected</label></div>
+        <div class="slider-row">
+          <label for="pad-look">Gamepad look speed</label>
+          <input type="range" id="pad-look" data-setting="padLook" min="0.4" max="2.5" step="0.1" value="1">
+          <div class="val">1.0</div>
+        </div>
+        <p class="set-hint">Gamepad: left stick moves, right stick looks, A jump, B slide, X reload, Y swap gun / knife, LB grapple, RB knife, LT aim, RT fire, stick click sprint, Select the leaderboard, D-pad left the map, Start the menu. Click the game once to start playing.</p>
+        <div class="check-row"><label><input type="checkbox" id="auto-sprint" data-setting="autoSprint">Auto sprint (<span id="as-key">Shift</span> walks)</label></div>
+        <div id="bind-list"></div>   <!-- rows are built in game.js -->
+        <p class="set-hint" id="bind-note"></p>
+        <button type="button" class="btn small" id="bind-reset">Reset controls to defaults</button>
+      </div>
+
+      <div class="spanel" data-panel="crosshair" hidden>
+        <div class="xh-preview" id="xh-preview"></div>
+        <div class="xh-presets" id="xh-presets" title="Pick a ready-made crosshair, then fine-tune it below"></div>
+        <div class="slider-row">
+          <label for="xh-style">Style</label>
+          <select id="xh-style" data-setting="xhStyle">
+            <option value="cross">Cross</option>
+            <option value="cross-dot">Cross + dot</option>
+            <option value="t">T (no top)</option>
+            <option value="dot">Dot</option>
+            <option value="circle">Circle + dot</option>
+          </select>
+        </div>
+        <div class="slider-row">
+          <label for="xh-color">Colour</label>
+          <input type="color" id="xh-color" data-setting="xhColor" value="#eeeeee">
+          <div class="swatches" id="xh-swatches"></div>
+        </div>
+        <div class="slider-row">
+          <label for="xh-size">Length</label>
+          <input type="range" id="xh-size" data-setting="xhSize" min="2" max="30" step="1" value="9">
+          <div class="val">9</div>
+        </div>
+        <div class="slider-row">
+          <label for="xh-thick">Thickness</label>
+          <input type="range" id="xh-thick" data-setting="xhThick" min="1" max="6" step="0.5" value="2">
+          <div class="val">2</div>
+        </div>
+        <div class="slider-row">
+          <label for="xh-gap">Gap</label>
+          <input type="range" id="xh-gap" data-setting="xhGap" min="0" max="15" step="1" value="0">
+          <div class="val">0</div>
+        </div>
+        <div class="slider-row">
+          <label for="xh-alpha">Opacity</label>
+          <input type="range" id="xh-alpha" data-setting="xhAlpha" min="0.2" max="1" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="xh-outline" data-setting="xhOutline">Black outline</label>
+        </div>
+        <div class="slider-row">
+          <label for="hit-style">Hit marker</label>
+          <select id="hit-style" data-setting="hitStyle">
+            <option value="flash">Crosshair flash</option>
+            <option value="x">X marker</option>
+            <option value="ring">Ring</option>
+            <option value="off">None</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="access" hidden>
+        <div class="check-row">
+          <label title="Turns off the weapon bob, camera shake, lean, scope sway, the zoom-out at speed, speed lines and the hit freeze"><input type="checkbox" id="reduce-motion" data-setting="reduceMotion">Reduce motion</label>
+          <label title="Solid dark backgrounds, bold text and a crosshair outline on the HUD"><input type="checkbox" id="high-contrast" data-setting="highContrast">High contrast HUD</label>
+          <label title="An arrow around the crosshair points at where other players' shots come from, for when you can't hear them"><input type="checkbox" id="sound-cues" data-setting="soundCues">Show where shots come from</label>
+        </div>
+        <div class="slider-row">
+          <label for="hud-scale">HUD size</label>
+          <input type="range" id="hud-scale" data-setting="hudScale" min="0.8" max="1.6" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <p class="set-hint">The colourblind-friendly colours option (targets, team colours and the hill ring) is under View.</p>
+      </div>
+
+      <div class="spanel" data-panel="view" hidden>
+        <div class="slider-row">
+          <label for="hand">Weapon hand</label>
+          <select id="hand" data-setting="hand">
+            <option value="right">Right-handed</option>
+            <option value="left">Left-handed</option>
+          </select>
+        </div>
+        <div class="slider-row">
+          <label for="fov">Field of view</label>
+          <input type="range" id="fov" data-setting="fov" min="60" max="110" step="1" value="78">
+          <div class="val">78</div>
+        </div>
+        <div class="slider-row">
+          <label for="bob">Weapon bob</label>
+          <input type="range" id="bob" data-setting="bob" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="shake">Screen shake</label>
+          <input type="range" id="shake" data-setting="shake" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="scope-sway" data-setting="scopeSway" checked>Scope sway</label>
+          <label><input type="checkbox" id="speed-lines" data-setting="speedLines" checked>Speed lines</label>
+          <label><input type="checkbox" id="arms" data-setting="arms">Show arms</label>
+          <label><input type="checkbox" id="show-fps" data-setting="showFps">Show FPS</label>
+          <label title="The damage you deal, floating up from the player you hit"><input type="checkbox" id="damage-numbers" data-setting="damageNumbers">Damage numbers</label>
+          <label title="A short list on the left of the tricks you pull off, and your chain, before you even shoot"><input type="checkbox" id="trick-feed-on" data-setting="trickFeed">Live trick feed</label>
+          <label title="Dark marks on walls and the floor where shots land"><input type="checkbox" id="bullet-holes" data-setting="bulletHoles">Bullet holes</label>
+          <label title="Recolors the targets, the red team and the hill ring so they never rely on red versus orange or green"><input type="checkbox" id="colorblind-targets" data-setting="colorblindTargets">Colorblind-friendly colours</label>
+        </div>
+        <div class="slider-row">
+          <label for="quality">Graphics</label>
+          <select id="quality" data-setting="quality">
+            <option value="auto">Auto (steps down if it runs slow)</option>
+            <option value="high">High</option>
+            <option value="medium">Medium (75% resolution, cheaper shadows)</option>
+            <option value="low">Low (half resolution, no shadows)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="targets" hidden>
+        <div class="slider-row">
+          <label for="tgt-normal"><i class="tdot" style="background:#e5352f"></i>Standard (still)</label>
+          <input type="range" id="tgt-normal" data-setting="tgtNormal" min="0" max="12" step="1" value="6">
+          <div class="val">6</div>
+        </div>
+        <div class="slider-row">
+          <label for="tgt-moving"><i class="tdot" style="background:#ff8a1c"></i>Moving</label>
+          <input type="range" id="tgt-moving" data-setting="tgtMoving" min="0" max="12" step="1" value="4">
+          <div class="val">4</div>
+        </div>
+        <div class="slider-row">
+          <label for="tgt-small"><i class="tdot" style="background:#19c6e0"></i>Small (still)</label>
+          <input type="range" id="tgt-small" data-setting="tgtSmall" min="0" max="12" step="1" value="3">
+          <div class="val">3</div>
+        </div>
+        <div class="slider-row">
+          <label for="tgt-tiny"><i class="tdot" style="background:#7b2bf0"></i>Tiny (fast)</label>
+          <input type="range" id="tgt-tiny" data-setting="tgtTiny" min="0" max="12" step="1" value="2">
+          <div class="val">2</div>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="sound" hidden>
+        <div class="slider-row">
+          <label for="volume">Master volume</label>
+          <input type="range" id="volume" min="0" max="1" step="0.05" value="0.55">
+          <div class="val" id="volume-val">0.55</div>
+        </div>
+        <div class="slider-row">
+          <label for="vol-guns">Guns</label>
+          <input type="range" id="vol-guns" data-setting="volGuns" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="vol-move">Movement</label>
+          <input type="range" id="vol-move" data-setting="volMove" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="vol-hits">Target hits</label>
+          <input type="range" id="vol-hits" data-setting="volHits" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="vol-knife">Knife</label>
+          <input type="range" id="vol-knife" data-setting="volKnife" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+        <div class="slider-row">
+          <label for="vol-gear">Reloads</label>
+          <input type="range" id="vol-gear" data-setting="volGear" min="0" max="1.5" step="0.05" value="1">
+          <div class="val">1.00</div>
+        </div>
+      </div>
+
+      <div class="spanel" data-panel="other" hidden>
+        <div class="check-row">
+          <label><input type="checkbox" id="unlimited-ammo">Unlimited ammo</label>
+          <label title="Playing goes fullscreen and locks keys like W, T and N away from the browser, so Ctrl+W (slide + forward) can't close the tab. Chrome and Edge only. Esc leaves the game; Esc again leaves fullscreen."><input type="checkbox" id="fullscreen-play" data-setting="fullscreen">Fullscreen while playing (stops Ctrl+W closing the tab)</label>
+          <label title="Shots spread while you move (worse in the air; none standing still), and the sniper has a little spread from the hip. On by default, in every mode."><input type="checkbox" id="realistic-accuracy" data-setting="realisticShooting">Realistic shooting</label>
+        </div>
+        <p class="set-hint">Realistic shooting: shots spread the faster you move (up to 10 u/s), more in the air, and the sniper isn't perfectly accurate from the hip. On by default, in every mode.</p>
+        <button type="button" class="btn small" id="best-clear">Clear best trickshot</button>
+        <p class="set-hint">Start over completely: deletes every setting, key binding, stat, achievement, best trickshot and replay, Score Attack score and tutorial progress in this browser, then restarts the game as if you had never played.</p>
+        <p class="set-hint">Back up or move your settings, key bindings, stats, achievements, best shot and records as a file.</p>
+        <div class="check-row">
+          <button type="button" class="btn small" id="data-export">Export my data</button>
+          <button type="button" class="btn small" id="data-import">Import from a file&hellip;</button>
+          <input type="file" id="data-import-file" accept=".json,application/json" hidden>
+        </div>
+        <p class="set-hint" id="data-import-note"></p>
+        <button type="button" class="btn small danger" id="data-import-apply" hidden>Replace my data with this file</button>
+        <button type="button" class="btn small danger" id="erase-all">Erase all data&hellip;</button>
+        <p class="set-hint" id="about-line"></p>
+        <button type="button" class="btn small" id="debug-copy">Copy debug info</button>
+        <p class="set-hint">If something looks broken, copy this and send it along: the game version, your browser, graphics level, map and mode, and the last errors. Nothing personal is in it.</p>
+        <textarea id="debug-info" rows="7" readonly hidden aria-label="Debug info"></textarea>
+      </div>
+
+      <button type="button" class="btn small" id="settings-reset">Reset settings (not controls)</button>
+    </div>
+  </div>
+</div>
+
+<!-- problems the game hits show here, above the menu and the HUD alike -->
+<div id="problem-bar" role="alert" hidden>
+  <span id="problem-msg"></span>
+  <button type="button" id="problem-copy">Copy details</button>
+  <button type="button" id="problem-close" aria-label="Dismiss">&times;</button>
+</div>
+
+<!-- three.js r128 (MIT), kept in lib/ so the game needs no outside server; it's the official cdnjs file,
+     unchanged (SHA-512 dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==) -->
+<script src="lib/three.min.js"></script>
+<!-- PeerJS (multiplayer) is only loaded when MULTIPLAYER_ENABLED is true in game.js -->
+<script src="sounds.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
