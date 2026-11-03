@@ -1,0 +1,1381 @@
+/*
+ * digitalTULPA — studio ident
+ *
+ * Self-contained on purpose. Every custom property is namespaced `--dt-*`, every
+ * keyframe `dt-*`, and nothing in here reads a variable the host project owns. The
+ * ident is the studio's, not the game's: it brings its own background, its own
+ * colour and its own type stack, and it looks the same in front of whatever ships
+ * behind it.
+ *
+ * ── The palette is three values and no more ────────────────────────────────────
+ *
+ *   void    #07090C   near-black, a hair blue
+ *   ink     #EDEAE3   bone white — the built form
+ *   signal  #DDA53C   yellow ochre — and it lands in exactly one place
+ *
+ * **The logo is one colour.** The drawing — brackets, quotes, rings, pupils, the
+ * nose and the mouth — is ink and nothing else. A coloured pupil was built and it
+ * is wrong: a second colour inside a single drawing splits it into a diagram of
+ * two parts instead of one mark. The signal appears on TULPA in the wordmark,
+ * which is type rather than drawing, and nowhere else at all.
+ *
+ * Contrast against the void: ink 16.6:1, signal 9.0:1. Neither is decorative
+ * brightness; both clear AAA at any size, which is what lets the ident be flat.
+ *
+ * The ochre is the hue the brand already shipped with. The wordmark's original
+ * gold was #C89536, and #DDA53C is that hue exactly — both measure 39 degrees —
+ * lifted until it reads. At the original value it comes in at 7.4:1 against the
+ * void, which looks muddy next to a 16.6:1 ink; the two now sit far enough apart
+ * in lightness that the accent is a decision rather than a dim patch.
+ *
+ * One consequence worth knowing: the ink is a warm bone white and the signal is
+ * warm, so the palette no longer has the cool-against-warm tension it had. It
+ * holds together by lightness now, not by temperature.
+ *
+ * ── There is no glow ───────────────────────────────────────────────────────────
+ *
+ * The old ident faked light with `drop-shadow(0 0 22px)` on the logo and a
+ * `text-shadow` on the wordmark. Both are gone. A blurred copy of a shape behind
+ * the shape is the cheapest possible way to say "this emits light", and it reads
+ * as cheap — it muddies a hard vector edge and it is the first thing that dates.
+ *
+ * Where the ident needs to say *light*, it says it with form: `.eye-ping` is a
+ * real ring that expands out of the pupil once, at the one moment that earns it.
+ * A shape doing a thing, not a filter sitting on top of one.
+ *
+ * The single exception is `dt-reveal-pull`, and it is not decoration — the whole
+ * `reveal` variant *is* a focus pull, so the blur is the subject rather than a
+ * finish applied to it. It resolves to zero by 72% and never comes back.
+ */
+
+.dt-ident {
+  --dt-void: #07090c;
+  --dt-ink: #edeae3;
+  --dt-signal: #dda53c;
+  /* The ink at rest, before a part has been committed to. Used only by the
+     brackets on their way in, so the lockup assembles out of the dark rather than
+     sliding in fully formed. */
+  --dt-ink-dim: #6d6f72;
+
+  /* 2π × 49.5, the eye ring's circumference. The ring is drawn rather than
+     revealed, so its own length has to be a number the stylesheet knows. */
+  --dt-ring-length: 311.02;
+
+  --dt-duration: 6600ms;
+  --dt-gaze-x: 0px;
+  --dt-gaze-y: 0px;
+  --dt-gaze-tilt: 0deg;
+  --dt-gaze-duration: 200ms;
+  /* normalize(-2, 1.4) x 17 — the resting gaze, down and to the left. */
+  --dt-cutout-x: -13.93px;
+  --dt-cutout-y: 9.75px;
+
+  /*
+   * The box is stated in full, including the parts that look like they go without
+   * saying. This element is injected into a page the ident knows nothing about,
+   * and a host that has ever written `main { max-width: 70ch; margin: 0 auto }` —
+   * which is most of them, and every classless CSS framework — would otherwise
+   * letterbox the studio's own ident inside its article column. `inset: 0` does
+   * not save it: max-width beats it.
+   */
+  position: fixed;
+  z-index: var(--dt-z, 1000);
+  inset: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  background: var(--dt-void);
+  color: var(--dt-ink);
+  cursor: pointer;
+  /* Grotesk first, and a stack that degrades sideways rather than downwards. The
+     wordmark is tracked wide enough that the fallback still reads as the same
+     drawing. */
+  font-family: "Neue Haas Grotesk Display", "Inter", "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
+  font-synthesis: none;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dt-ident.is-playing {
+  animation: dt-lifecycle var(--dt-duration) linear both;
+}
+
+/* The skip lives at the very bottom of this file. See the note there for why. */
+
+/*
+ * An ident has to *hold* the frame. The old lockup came to about 36% of the width
+ * of a laptop screen, which is a logo politely getting out of the way — fine for a
+ * page header and wrong for the one moment the studio's name is the only thing on
+ * screen. Half the frame is the floor for that, not the ceiling.
+ */
+.dt-ident .brand-lockup {
+  display: grid;
+  width: min(90vw, 72rem);
+  place-items: center;
+  transform-origin: center;
+}
+
+.dt-ident .tulpa-logo {
+  display: block;
+  width: 78%;
+  max-width: 54rem;
+  height: auto;
+  overflow: visible;
+  color: var(--dt-ink);
+  user-select: none;
+}
+
+.dt-ident :is(
+    .mark,
+    .separator,
+    .mouth,
+    .eye,
+    .ring-layer,
+    .eye-ring,
+    .blink-lines,
+    .gaze-layer,
+    .drift-layer,
+    .blink-layer,
+    .eye-core,
+    .pupil-arrive,
+    .eye-ping
+  ) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/*
+ * One transform per element, and the whole eye is built on that rule:
+ *
+ *   .ring-layer    blink and focus, on the ring   (many times)
+ *   .eye-core      blink squash, on the pupil     (many times)
+ *   .drift-layer   involuntary wander             (always, never stops)
+ *   .gaze-layer    where it looks                 (scripted, continuous)
+ *   .pupil-arrive  the entrance, once per variant
+ *
+ * It looks like more nesting than an eye needs. It is the minimum: CSS resolves
+ * `animation` as a whole list, so two rules that target one element do not layer,
+ * the later one replaces the earlier — and when its class comes off, the earlier
+ * one is created again from scratch, backwards `both` fill and all. That is how
+ * the eye rings used to vanish for a second at a time on every blink.
+ */
+.dt-ident .gaze-layer {
+  transform: translate(var(--dt-gaze-x), var(--dt-gaze-y)) rotate(var(--dt-gaze-tilt));
+  transition: transform var(--dt-gaze-duration) cubic-bezier(0.2, 0.82, 0.2, 1);
+  will-change: transform;
+}
+
+/*
+ * Under a pixel, forever, and out of phase between the two eyes.
+ *
+ * A fixating eye still drifts about a degree — it is involuntary, it never stops,
+ * and its absence is precisely what makes a still logo read as a paused file
+ * rather than as something paying attention. The period is deliberately not a
+ * round number and not a multiple of anything else in the ident, so the loop never
+ * lines up with a blink or a saccade and never becomes a rhythm you can hear.
+ */
+.dt-ident .drift-layer {
+  animation: dt-drift 11000ms linear infinite;
+}
+
+.dt-ident .eye-right .drift-layer {
+  animation-duration: 12700ms;
+  animation-delay: -4900ms;
+}
+
+.dt-ident :is(.bracket, .quote, .separator, .mouth) {
+  fill: currentColor;
+}
+
+.dt-ident .bracket {
+  /* Knocked out against the void so two brackets meeting at speed stay two
+     brackets rather than one blob. */
+  stroke: var(--dt-void);
+  stroke-linejoin: round;
+  stroke-width: 4px;
+}
+
+.dt-ident .quote {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 82px;
+  font-weight: 500;
+}
+
+.dt-ident .eye-ring {
+  fill: none;
+  stroke: currentColor;
+  /* Butt, not round. The ring is dash-drawn, and a round cap on a dash of zero
+     length is still rendered — as a dot, sitting at twelve o'clock from the first
+     frame of the ident, before anything has been drawn at all. The two arcs meet
+     exactly, so a blunt cap leaves no seam once the circle is closed. */
+  stroke-linecap: butt;
+  stroke-width: 6;
+}
+
+/*
+ * The ring's blink and focus live here, one level above the ring itself, so that
+ * they never share an `animation` list with the entrance's `dt-ring-draw` — see
+ * the comment on the wrapper in index.ts for what happened when they did.
+ */
+.dt-ident .ring-layer {
+  /* Below centre, because an eyelid closes towards the cheek and not towards the
+     middle of the eyeball. */
+  transform-origin: 50% 58%;
+}
+
+.dt-ident .blink-lines {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 6;
+  opacity: 0;
+}
+
+.dt-ident .eye-left {
+  --dt-blink-tilt: -1.6deg;
+  --dt-blink-rebound: 0.5deg;
+}
+
+.dt-ident .eye-right {
+  --dt-blink-tilt: 1.6deg;
+  --dt-blink-rebound: -0.5deg;
+}
+
+.dt-ident .separator {
+  transform: scale(0.72);
+}
+
+/*
+ * The logo is one colour.
+ *
+ * A coloured pupil was tried and it is wrong: the mark is a single drawing, and a
+ * second colour inside it splits it into a diagram of two parts. Everything in the
+ * lockup is ink; the signal appears once, on TULPA in the wordmark, which is type
+ * and not drawing. That is also how the mark shipped before any of this, and the
+ * mark was right.
+ */
+.dt-ident .pupil-dot {
+  fill: currentColor;
+}
+
+/*
+ * The cutout goes where the eye looks. See the note in index.ts: at r=10.5 offset
+ * 17 on a pupil of r=24 this shape breaks the pupil's silhouette, so it is not
+ * read as light on a sphere — it is read as the pupil's own form, and the way the
+ * crescent opens is the way the eye appears to look.
+ */
+.dt-ident .pupil-cutout {
+  fill: var(--dt-void);
+  transform: translate(var(--dt-cutout-x), var(--dt-cutout-y));
+  transition: transform var(--dt-gaze-duration) cubic-bezier(0.2, 0.82, 0.2, 1);
+}
+
+/*
+ * The one moment of light in the ident, drawn as a shape.
+ *
+ * Fires once per eye, at the frame the pupil lands. Starts on the pupil and leaves
+ * through the ring — so it is the eye that emits, not a filter around it.
+ */
+.dt-ident .eye-ping {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  opacity: 0;
+}
+
+.dt-ident .eye.is-pinging .eye-ping {
+  animation: dt-ping 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Entrance: summon ─────────────────────────────────────────────────────────
+ *
+ * The lockup is not revealed, it is *built*, outside-in, and nothing shares a
+ * start time with anything else. The old ident began every part at 0.08s and was
+ * finished assembling by 1.1s, which left five and a half seconds of blinking with
+ * nothing to look at. Here the construction runs to 2.4s and each stage hands over
+ * to the next.
+ */
+
+/*
+ * Each mark is a pair of brackets *closing on* an eye, so they travel inwards from
+ * opposite sides rather than all sliding the same way. The left mark lands first
+ * and the right follows 140ms later: symmetry arriving asymmetrically is the
+ * difference between a lockup that assembles and one that simply appears.
+ *
+ * Translated in viewBox units, not pixels — the brackets have no `transform-box:
+ * fill-box`, on purpose, so the distance scales with the lockup.
+ */
+/*
+ * The outer two travel far and trail; the inner two step in and stay quiet.
+ *
+ * With all four at 70 units and all four trailing, the left mark's closing bracket
+ * and the right mark's opening bracket cross *through each other* in the middle of
+ * the lockup, with six chevrons overlapping in the gap where the colon goes. That
+ * is not speed, it is clutter. Only the two brackets that come from off the edges
+ * carry echoes, so every trail points outward and none of them meet.
+ */
+.dt-ident .mark-left .bracket-open {
+  --dt-bracket-from: -70px;
+}
+
+.dt-ident .mark-left .bracket-close {
+  --dt-bracket-from: 38px;
+}
+
+.dt-ident .mark-right .bracket-open {
+  --dt-bracket-from: -38px;
+}
+
+.dt-ident .mark-right .bracket-close {
+  --dt-bracket-from: 70px;
+}
+
+.dt-ident.is-summon.is-playing .bracket {
+  animation: dt-bracket-in 700ms 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .mark-right .bracket {
+  animation-delay: 300ms;
+}
+
+/*
+ * The trail, drawn rather than blurred.
+ *
+ * A `<use>` transform compounds with the referenced element's, so an echo running
+ * its own 34-unit travel while the source runs its 70 starts 104 out and lands on
+ * zero on the same frame — it lags, then catches up, then is gone. The mark stays
+ * a hard flat vector and the speed is told by the number of copies instead of by
+ * softening the one, which is the same reason there is no glow anywhere in here.
+ *
+ * They are `pointer-events: none` because a `<use>` is a real hit target and these
+ * ones are 100 units outside the lockup for the first half-second.
+ */
+.dt-ident .bracket-echo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * The lag comes from the *easing*, not from the distance.
+ *
+ * The first attempt gave the echoes the source's curve and a bigger amplitude, and
+ * that produces no trail at all: an identical curve keeps every copy at the same
+ * fraction of its own journey, so at 37% through, a 34-unit echo sits five pixels
+ * behind a 70-unit source and the effect is invisible. What makes a trail is one
+ * shape arriving on a snappy curve and its shadows arriving on a slack one, so the
+ * gap opens in the middle of the move and closes at the end.
+ */
+.dt-ident .echo-near {
+  --dt-echo-travel: 92px;
+  --dt-echo-peak: 0.36;
+}
+
+.dt-ident .echo-far {
+  --dt-echo-travel: 172px;
+  --dt-echo-peak: 0.18;
+}
+
+/* Each echo travels the way the bracket it shadows travels. The direction is on
+   the element rather than inferred from a sibling, because the echoes are written
+   *before* the path they reference and CSS has no previous-sibling combinator. */
+.dt-ident .echo-open {
+  --dt-echo-dir: -1;
+}
+
+.dt-ident .echo-close {
+  --dt-echo-dir: 1;
+}
+
+.dt-ident.is-summon.is-playing .bracket-echo {
+  animation: dt-bracket-echo 700ms 160ms cubic-bezier(0.45, 0, 0.32, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .mark-right .bracket-echo {
+  animation-delay: 300ms;
+}
+
+.dt-ident.is-summon.is-playing .quote {
+  animation: dt-quote-in 460ms 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .eye-ring {
+  animation: dt-ring-draw 760ms 880ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .eye-right .eye-ring {
+  animation-delay: 950ms;
+}
+
+/*
+ * The ring is drawn open, and the pupil arrives inside it.
+ *
+ * A version where the ring was drawn *shut* — a flat line that then opened into an
+ * eye — was built and rejected on sight: a lockup that starts as two dashes reads
+ * as a loading state, not as a mark. The circle is a circle from the moment it is
+ * drawn.
+ */
+.dt-ident.is-summon.is-playing .pupil-arrive {
+  animation: dt-pupil-arrive 560ms 1700ms cubic-bezier(0.2, 1.32, 0.36, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .eye-right .pupil-arrive {
+  animation-delay: 1790ms;
+}
+
+/* Two beats, not one — a colon is punctuation and punctuation has rhythm. */
+.dt-ident.is-summon.is-playing .separator rect {
+  animation: dt-separator-tick 300ms 2320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dt-ident.is-summon.is-playing .separator rect + rect {
+  animation-delay: 2440ms;
+}
+
+/*
+ * The mouth is *drawn*, and it is drawn last.
+ *
+ * Every other part of the construction lands — brackets travel in and stop, the
+ * quotes drop, the dots tick down. A fourth arrival in the same idiom would make
+ * the phrase four beats of the same beat. This one opens outward from the midline
+ * instead, on the ring's easing rather than the arrival curve, because it is the
+ * same gesture the eye rings make: a line being put down, not a piece being
+ * placed. It is also the only entrance in the mark that reads from the centre out,
+ * which is what makes it the closing statement rather than one more part.
+ *
+ * 2720ms is not a taste, it is the only gap left. The construction fills every
+ * hundred milliseconds up to the second dot at 2440, the first blink is at 2540
+ * and the first look at 2900 — so 2720 sits 180ms clear of both, which is the
+ * widest clearance available in the phase and just over the 100ms where two events
+ * start reading as one. What it buys: the mouth opens while the eyes are coming
+ * back up out of that blink, so the two gestures are legible in sequence. Its tail
+ * runs 140ms past the first saccade, and that is allowed to happen — a saccade
+ * moves the pupil five units, and a five-unit move does not compete with anything.
+ *
+ * `both`, so the backwards fill holds it shut from frame zero. Without it the
+ * mouth is on screen, full width, before the brackets have arrived.
+ */
+.dt-ident.is-summon.is-playing .mouth {
+  animation: dt-mouth-draw 320ms 2720ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* ── Entrance: reveal ─────────────────────────────────────────────────────────
+ *
+ * The opposite move. The whole lockup is there from frame one, but enormous and
+ * out of focus, and the ident is the camera walking backwards until it turns out
+ * you were being looked at the entire time. The blur and framing figures live on
+ * `dt-reveal-pull` itself, in one place, at the bottom of this file.
+ */
+/*
+ * The easing here is an S-curve and not the arrival curve the rest of the ident
+ * uses, and that is the whole difference between a camera and a snap.
+ * `cubic-bezier(0.16, 1, 0.3, 1)` spends three quarters of its travel in the first
+ * quarter of its time — right for a bracket landing, and it made this pull cover
+ * the distance in 700ms and then sit still for two and a half seconds. A dolly
+ * eases in, holds a steady rate, and settles.
+ */
+/*
+ * The camera pulls back *around the left eye*, which is what the origin is for.
+ *
+ * The obvious way to frame this is scale plus a translate that walks back to zero,
+ * and it does not work: the two multiply, so the eye swings 550px off to one side
+ * halfway through and comes back, which reads as a whip-pan bolted onto a zoom.
+ * Anchoring the origin on the eye instead — 222/858 across, 79/251 down — leaves
+ * it dead still on one point of the screen for the entire pull while everything
+ * else contracts onto it, and it lands exactly where the finished lockup wants it
+ * without a single pixel of correction. One animated property, no swing.
+ *
+ * On the SVG rather than `.brand-lockup` because those percentages are of the
+ * viewBox, and the wrapper is a different width. Which also means this pair is
+ * *derived*, not chosen: the vertical figure was 50% while the viewBox was 158
+ * tall and the eye line sat at exactly half of it. The mouth made the box 251 and
+ * the eye line 31% of it. Change the viewBox again and change this with it, or the
+ * camera walks back around a point that is no longer on the eye.
+ */
+.dt-ident.is-reveal .tulpa-logo {
+  transform-origin: 25.87% 31.47%;
+}
+
+.dt-ident.is-reveal.is-playing .tulpa-logo {
+  animation: dt-reveal-pull 3000ms cubic-bezier(0.45, 0.05, 0.25, 1) both;
+}
+
+.dt-ident.is-reveal.is-playing .pupil-arrive {
+  animation: dt-reveal-pupil 2600ms cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+
+/* ── The performance, scripted ────────────────────────────────────────────────*/
+
+/*
+ * Focus first, blink second, and the order is load-bearing.
+ *
+ * A saccade holds `is-focusing` for 320ms and a blink holds `is-blinking` for
+ * 320ms (560ms slow), so the two overlap whenever their beats land within a third
+ * of a second of each other — which they do, by design, because an eye that looks
+ * and then blinks is the whole performance. Both rule sets are four classes deep,
+ * so specificity ties and *source order alone* decides which `animation` the
+ * shared elements resolve to.
+ *
+ * With focus last, the small gesture won: `summon`'s closing slow blink started
+ * 20ms late on the ring and the iris while the lashes closed on time, and
+ * `reveal`'s second saccade cancelled a blink outright. Blink is the larger
+ * gesture and must win, so it goes last and focus goes first.
+ */
+.dt-ident .eye.is-focusing .ring-layer {
+  animation: dt-focus-ring 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dt-ident .eye.is-focusing .eye-core {
+  animation: dt-gaze-accent 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dt-ident .eye.is-blinking .ring-layer {
+  animation: dt-ring-blink 320ms cubic-bezier(0.33, 0, 0.12, 1);
+}
+
+.dt-ident .eye.is-blinking .blink-lines {
+  animation: dt-blink-lines 320ms cubic-bezier(0.33, 0, 0.12, 1);
+}
+
+.dt-ident .eye.is-blinking .eye-core {
+  animation: dt-inner-blink 320ms cubic-bezier(0.33, 0, 0.12, 1);
+}
+
+/*
+ * The closing blink is slower and heavier than the idle ones — the ident's last
+ * gesture, and the difference between a tic and a decision.
+ */
+.dt-ident .eye.is-blinking-slow .ring-layer {
+  animation: dt-ring-blink 560ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dt-ident .eye.is-blinking-slow .blink-lines {
+  animation: dt-blink-lines 560ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dt-ident .eye.is-blinking-slow .eye-core {
+  animation: dt-inner-blink 560ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * The one thing the entrance cannot do without the script.
+ *
+ * Every other part of both entrances is plain CSS and survives on its own —
+ * `eyes-scripted` only ever suppresses things that are additive. The wordmark is
+ * the exception: its letters start at `opacity: 0` and it is the typewriter that
+ * reveals them, so if the script dies between appending the element and scheduling
+ * its beats, the lockup arrives with the studio's name missing from it. This puts
+ * the name on screen on the same timing the typewriter would have.
+ *
+ * Nothing here restarts a blink or redraws a ring. A fallback that duplicates an
+ * entrance is a second opinion about what the entrance was, and the two disagree:
+ * an earlier version of this rule redrew the eye rings for *both* variants, which
+ * meant a script-less `reveal` drew rings that the focus pull had already shown
+ * fully formed in its first frame.
+ */
+.dt-ident.is-playing:not(.eyes-scripted) .wordmark span {
+  animation: dt-letter-in 1ms calc(3700ms + var(--dt-letter-index) * 78ms) linear both;
+}
+
+/* ── Wordmark ─────────────────────────────────────────────────────────────────
+ *
+ * Tracked *out*, not in. The old wordmark ran at -0.045em, which packs a short
+ * lowercase word into a smudge; an ident wordmark is read once, at distance, and
+ * wants air. The rule above it draws out from the centre — the one piece of pure
+ * graphic design in the ident, and the thing that makes the bottom of the frame
+ * feel composed instead of merely occupied.
+ */
+.dt-ident {
+  /* One number for the rail's length, because the rule, the sweep and the sweep's
+     travel all have to agree on it or the head overshoots the line it is drawing. */
+  --dt-rail: min(30vw, 14rem);
+  --dt-sweep: 2.6rem;
+}
+
+.dt-ident .wordmark-rail {
+  position: absolute;
+  right: 0;
+  bottom: calc(clamp(2.5rem, 7vh, 5rem) + 2.4em);
+  left: 0;
+  width: var(--dt-rail);
+  height: 1px;
+  margin: 0 auto;
+}
+
+.dt-ident .wordmark-rule {
+  position: absolute;
+  inset: 0;
+  background: var(--dt-ink);
+  opacity: 0.32;
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+.dt-ident .wordmark-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--dt-sweep);
+  height: 1px;
+  background: var(--dt-ink);
+  opacity: 0;
+}
+
+.dt-ident.is-playing .wordmark-rule {
+  animation: dt-rule-draw 940ms 3450ms cubic-bezier(0.33, 0, 0.28, 1) both;
+}
+
+.dt-ident.is-playing .wordmark-sweep {
+  animation: dt-sweep 940ms 3450ms cubic-bezier(0.33, 0, 0.28, 1) both;
+}
+
+.dt-ident .wordmark {
+  position: absolute;
+  right: 0;
+  bottom: clamp(2.5rem, 7vh, 5rem);
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  color: var(--dt-ink);
+  font-size: clamp(0.8125rem, 1.9vw, 1.4rem);
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  line-height: 1;
+  text-transform: none;
+}
+
+/*
+ * Tracking is added *after* every glyph, the last one included, so a centred line
+ * carries a full 0.34em of dead air on its right and sits half that far to the
+ * left of true centre. Taking it off the final A is the fix that leaves the line
+ * box exactly as wide as the letters in it — `text-indent` is not, because the
+ * wordmark is a flex container and text-indent does nothing to flex items.
+ */
+.dt-ident .wordmark span:last-child {
+  letter-spacing: 0;
+}
+
+/* The wordmark used to run its own copy of the lifecycle here — same duration,
+   same easing, byte-identical opacity stops to the one already running on the
+   ident above it. Two animations agreeing is not redundancy that costs nothing;
+   it is a second place to forget when the first one changes. The ancestor fades
+   it. */
+
+/*
+ * The letters converge, they do not type.
+ *
+ * A typewriter is the obvious motion for a wordmark and it says the wrong thing —
+ * it says the name is being entered, one keystroke at a time, by someone at a
+ * terminal. This says the name is being *resolved*: each letter starts pushed out
+ * from the centre by an amount proportional to how far from the centre it belongs,
+ * so the word arrives as a spread that gathers. It is the same sentence the mark
+ * tells with its bracket echoes and the same one the brand is named for — many
+ * scattered versions of a thing collapsing into the one that stays.
+ *
+ * 5.5 is the midpoint of twelve zero-indexed letters, so the sign of
+ * (index − 5.5) is which side of the word the letter is on, and its size is how
+ * far out it starts.
+ */
+/*
+ * `digital` is revealed by the sweep and does nothing else.
+ *
+ * The head passing over a letter is the event. A convergence or a slide on top of
+ * it would be a second event competing with the first, which is how a wordmark
+ * ends up busy — so these seven only rise a fraction and resolve.
+ */
+.dt-ident .wordmark span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.2em);
+  transition:
+    opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dt-ident .wordmark span.is-typed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/*
+ * TULPA is not swept. It lands, as a word, and turns colour as it does.
+ *
+ * The name has two halves and the motion should say so instead of treating twelve
+ * letters as twelve identical events. The five capitals start pushed apart — 9 is
+ * the midpoint of indices 7 to 11, so the sign says which side of the word a
+ * letter is on and the size says how far out it starts — and they snap together
+ * 230ms after the lowercase has finished, into a beat of silence. They arrive in
+ * ink and go to signal on the way in, so the one coloured thing in the entire
+ * ident is also the last thing that happens in it.
+ */
+.dt-ident .wordmark .wordmark-accent {
+  color: var(--dt-ink);
+  font-weight: 500;
+  transform: translateX(calc((var(--dt-letter-index) - 9) * 0.55em));
+  transition: none;
+}
+
+.dt-ident .wordmark .wordmark-accent.is-typed {
+  animation: dt-tulpa-land 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* digital·TULPA — the join is the one place the tracking tightens, so the two
+   halves read as one word rather than two. */
+.dt-ident .wordmark span:nth-child(8) {
+  margin-left: 0.1em;
+}
+
+/* ── Reduced ──────────────────────────────────────────────────────────────────
+ *
+ * Not a shortened performance — a still. Everything is already in place, it holds
+ * for a beat, it leaves.
+ */
+.dt-ident.is-reduced {
+  --dt-duration: 1200ms;
+
+  animation-name: dt-reduced-lifecycle;
+}
+
+/*
+ * `!important`, and it is the right tool rather than a shortcut.
+ *
+ * This is a kill switch: its entire job is to out-rank every entrance rule in the
+ * file at once. Ranking on specificity does not survive contact — `.dt-ident
+ * .is-reduced :is(…)` computes at (0,3,1) against entrance rules at (0,4,0), so
+ * the still shipped with `reveal`'s logo frozen at `scale(9.5)`, a lockup nine and
+ * a half times too big for the 1.2 seconds it was on screen. Adding a class to win
+ * by one point makes the next rule anyone writes a coin toss. A suppression block
+ * should be unconditional, and should say so.
+ */
+.dt-ident.is-reduced :is(
+    .brand-lockup,
+    .tulpa-logo,
+    .bracket,
+    .quote,
+    .separator,
+    .separator rect,
+    .mouth,
+    .wordmark,
+    .wordmark span,
+    .wordmark-rail,
+    .wordmark-rule,
+    .wordmark-sweep,
+    .bracket-echo,
+    .pupil-arrive,
+    .gaze-layer,
+    .drift-layer,
+    .pupil-cutout,
+    .ring-layer,
+    .eye-ring,
+    .blink-lines,
+    .eye-core,
+    .eye-ping
+  ) {
+  animation: none !important;
+  transition: none !important;
+}
+
+.dt-ident.is-reduced .wordmark-rule {
+  transform: scaleX(1);
+}
+
+/* ── Keyframes ────────────────────────────────────────────────────────────────*/
+
+@keyframes dt-lifecycle {
+  0%,
+  92.5% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/*
+ * From wherever it actually is, not from full.
+ *
+ * `dt-dismiss` replaces `dt-lifecycle` outright, so without a `from` the element
+ * snaps back to its underlying `opacity: 1` and fades again from there. That is
+ * invisible for most of the ident's life and very visible at the end of it: the
+ * lifecycle fade runs from 6105ms to 6600ms, the ident is still on top and still
+ * eating clicks for all of it, and that is exactly the moment someone reaches for
+ * the mouse — so a click at 6300ms took a lockup that was 40% gone and flashed it
+ * back to solid.
+ */
+@keyframes dt-dismiss {
+  from {
+    opacity: var(--dt-dismiss-from, 1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.012);
+  }
+}
+
+@keyframes dt-reduced-lifecycle {
+  0%,
+  70% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/*
+ * The opacity ramp is over by 12%, and that number is doing a job.
+ *
+ * A `<use>` composites its own opacity with the referenced element's, so while the
+ * source is still fading in, every echo is multiplied down to nothing — at 0.30
+ * against a source at 0.36 the trail came out at 0.11 and was invisible on a black
+ * ground, which is to say the effect did not exist. The brackets reach full opacity
+ * almost immediately and let the *fill* carry the arriving-out-of-the-dark job on
+ * its own, which is what it was there for anyway.
+ */
+@keyframes dt-bracket-in {
+  from {
+    fill: var(--dt-ink-dim);
+    opacity: 0;
+    transform: translateX(var(--dt-bracket-from, -70px));
+  }
+
+  12%,
+  55% {
+    fill: var(--dt-ink-dim);
+    opacity: 1;
+  }
+
+  to {
+    fill: var(--dt-ink);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dt-quote-in {
+  from {
+    opacity: 0;
+    transform: translateY(-9px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dt-ring-draw {
+  from {
+    stroke-dasharray: var(--dt-ring-length);
+    stroke-dashoffset: var(--dt-ring-length);
+  }
+
+  to {
+    stroke-dasharray: var(--dt-ring-length);
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dt-pupil-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.08);
+  }
+
+  40% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dt-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  17% {
+    transform: translate(-1.4px, 0.8px);
+  }
+
+  33% {
+    transform: translate(0.9px, 1.5px);
+  }
+
+  48% {
+    transform: translate(-1.8px, -0.6px);
+  }
+
+  61% {
+    transform: translate(0.5px, 1.2px);
+  }
+
+  79% {
+    transform: translate(-0.8px, -1.1px);
+  }
+}
+
+/* Starts invisible for the same reason `dt-sweep` does — a `both` fill would
+   otherwise park four ghost chevrons off the edge of the lockup from frame zero. */
+@keyframes dt-bracket-echo {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--dt-echo-travel, 34px) * var(--dt-echo-dir, -1)));
+  }
+
+  4% {
+    opacity: var(--dt-echo-peak, 0.24);
+  }
+
+  72% {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dt-separator-tick {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * Width alone, and no fade under it.
+ *
+ * `scaleX(0)` on a filled shape is already invisible — it has no area — so an
+ * opacity ramp laid over the top adds nothing except softness at the edges of a
+ * mark that has no soft edges anywhere else. The line opens from its own centre,
+ * at full ink, from the first frame it exists in.
+ */
+@keyframes dt-mouth-draw {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Starts at exactly the pupil's radius (49.5 × 0.48 ≈ 24) and leaves through the
+   ring, thinning as it goes. */
+@keyframes dt-ping {
+  from {
+    opacity: 0.85;
+    stroke-width: 7;
+    transform: scale(0.48);
+  }
+
+  70% {
+    opacity: 0.4;
+  }
+
+  to {
+    opacity: 0;
+    stroke-width: 1;
+    transform: scale(1.15);
+  }
+}
+
+/*
+ * Opens on the left eye, not on the middle of the lockup — the middle of the
+ * lockup is the colon, and a reveal that pushes in on punctuation has nothing to
+ * reveal. The framing is `transform-origin`'s job; this only has to breathe out.
+ *
+ * Blur and scale multiply, because both are on one element and a filter is
+ * rasterised before the transform: 1.8px at 9.5× is ~17px on screen, which is the
+ * number that was actually tuned. It resolves to nothing by 72% and never returns.
+ */
+@keyframes dt-reveal-pull {
+  from {
+    filter: blur(1.8px);
+    transform: scale(9.5);
+  }
+
+  40% {
+    filter: blur(0.9px);
+  }
+
+  72% {
+    filter: blur(0);
+  }
+
+  to {
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+/* It has been looking past you the whole way in, and only finds you at the end. */
+@keyframes dt-reveal-pupil {
+  from {
+    transform: translate(22px, -14px);
+  }
+
+  58% {
+    transform: translate(18px, -11px);
+  }
+
+  82% {
+    transform: translate(-2.5px, 1.5px);
+  }
+
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes dt-rule-draw {
+  from {
+    opacity: 0.32;
+    transform: scaleX(0);
+  }
+
+  to {
+    opacity: 0.32;
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * The head runs the rail's length less its own, so it stops flush with the end of
+ * the line rather than sliding off it.
+ *
+ * It starts at zero opacity and reaches full four per cent in — 38ms, which is not
+ * a fade anyone sees, and is the entire point. `animation-fill-mode: both` paints
+ * the `from` keyframe for the whole of the delay before the animation runs, so a
+ * `from` of `opacity: 0.9` put this head on the screen from the ident's first
+ * frame: a short bright line sitting under the lockup for three and a half seconds
+ * with nothing to do. Every delayed animation in this file has to start from
+ * invisible for that reason, not just this one.
+ */
+@keyframes dt-sweep {
+  from {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  4%,
+  76% {
+    opacity: 0.9;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--dt-rail) - var(--dt-sweep)));
+  }
+}
+
+@keyframes dt-letter-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dt-tulpa-land {
+  from {
+    opacity: 0;
+    color: var(--dt-ink);
+    transform: translateX(calc((var(--dt-letter-index) - 9) * 0.55em));
+  }
+
+  46% {
+    opacity: 1;
+    color: var(--dt-ink);
+  }
+
+  to {
+    opacity: 1;
+    color: var(--dt-signal);
+    transform: translateX(0);
+  }
+}
+
+@keyframes dt-gaze-accent {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  38% {
+    transform: scale(1.055, 0.965) rotate(-1.2deg);
+  }
+}
+
+@keyframes dt-focus-ring {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.025);
+  }
+}
+
+/*
+ * A blink is not symmetric, and the old one was.
+ *
+ * Measured human blinks close in roughly 90ms and open in roughly 170ms — the lid
+ * is thrown down and then *lifted* back, and the two are not the same muscle doing
+ * the same work in reverse. The previous curve spent 50% of its time closing and
+ * 34% opening, which is that backwards, and the result reads as a shutter: mechanical,
+ * evenly weighted, and slightly startling every time it fires.
+ *
+ * Here the close is done at 28%, the eye is shut for eight per cent of the beat,
+ * and the rest is the lift. On a 320ms blink that is 90 / 26 / 180 — the real
+ * numbers. The tiny pre-stretch at 8% stays: a lid gathers upward a frame before
+ * it drops, and losing it makes the close start from nowhere.
+ */
+@keyframes dt-ring-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+
+  8% {
+    transform: scale(0.99, 1.05);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0.8px) scale(1, 0.55) rotate(var(--dt-blink-tilt));
+  }
+
+  26% {
+    opacity: 0.3;
+    transform: translateY(1.4px) scale(1, 0.32) rotate(var(--dt-blink-tilt));
+  }
+
+  28%,
+  36% {
+    opacity: 0;
+    transform: translateY(1.5px) scale(1, 0.3) rotate(var(--dt-blink-tilt));
+  }
+
+  48% {
+    opacity: 0.45;
+    transform: translateY(0.9px) scale(1, 0.48) rotate(var(--dt-blink-tilt));
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateY(0.1px) scale(1, 0.9) rotate(calc(var(--dt-blink-tilt) * 0.3));
+  }
+
+  88% {
+    opacity: 1;
+    transform: translateY(-0.3px) scale(0.995, 1.045) rotate(var(--dt-blink-rebound));
+  }
+}
+
+/* Same asymmetry: the lashes arrive with the close and linger a beat into the lift,
+   because they are the last thing to leave a closing eye and the first to go. */
+@keyframes dt-blink-lines {
+  0%,
+  20%,
+  72%,
+  100% {
+    opacity: 0;
+    transform: scaleX(0.82) rotate(0);
+  }
+
+  26% {
+    opacity: 0.7;
+    transform: scaleX(0.95) rotate(var(--dt-blink-tilt));
+  }
+
+  28%,
+  36% {
+    opacity: 1;
+    transform: scaleX(1) rotate(var(--dt-blink-tilt));
+  }
+
+  52% {
+    opacity: 0.3;
+    transform: scaleX(1.05) rotate(var(--dt-blink-tilt));
+  }
+}
+
+/*
+ * The pupil rolls up as the lid comes down — Bell's phenomenon, and it is why a
+ * squash on its own never quite convinces. The eye turns upward and back under the
+ * closing lid, so the pupil goes *up* at the moment it is hidden and drops back as
+ * the lid lifts. It costs one negative number and it is the difference between an
+ * eye closing and a shape being flattened.
+ */
+@keyframes dt-inner-blink {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+
+  10% {
+    transform: scale(1.01, 0.97);
+  }
+
+  22% {
+    transform: translateY(-0.6px) scale(0.98, 0.66);
+  }
+
+  28% {
+    transform: translateY(-1.4px) scale(0.87, 0.2) rotate(var(--dt-blink-tilt));
+  }
+
+  40% {
+    transform: translateY(-1px) scale(0.9, 0.36) rotate(var(--dt-blink-tilt));
+  }
+
+  62% {
+    transform: translateY(0.4px) scale(0.95, 0.78) rotate(calc(var(--dt-blink-tilt) * 0.4));
+  }
+
+  88% {
+    transform: translateY(-0.4px) scale(1.05, 0.97) rotate(var(--dt-blink-rebound));
+  }
+}
+
+/* ── Frames ───────────────────────────────────────────────────────────────────*/
+
+/*
+ * A phone is the hardest frame this has to hold, because the lockup is 5.4:1 and
+ * the screen is 1:2.2 — at the desktop proportion it comes to 47px of drawing in
+ * 812px of height and reads as a caption rather than as an ident. It takes nearly
+ * the full width here, and the negative space above and below is then obviously
+ * deliberate instead of obviously left over.
+ */
+@media (max-width: 42rem) {
+  .dt-ident .brand-lockup {
+    width: min(94vw, 36rem);
+  }
+
+  .dt-ident .tulpa-logo {
+    width: 94%;
+    max-width: none;
+  }
+
+  .dt-ident .wordmark {
+    bottom: clamp(2rem, 6vh, 3.5rem);
+    font-size: clamp(0.75rem, 3.2vw, 1.1rem);
+    letter-spacing: 0.28em;
+  }
+
+  .dt-ident .wordmark-rail {
+    bottom: calc(clamp(2rem, 6vh, 3.5rem) + 2.4em);
+
+    --dt-rail: min(52vw, 10rem);
+    --dt-sweep: 2rem;
+  }
+}
+
+@media (max-height: 30rem) {
+  .dt-ident .brand-lockup {
+    width: min(72vw, 42rem);
+  }
+
+  .dt-ident .wordmark {
+    bottom: 1.25rem;
+    font-size: clamp(0.7rem, 2.6vh, 1.05rem);
+  }
+
+  .dt-ident .wordmark-rail {
+    bottom: calc(1.25rem + 2.4em);
+  }
+}
+
+/*
+ * Opt-in only, and off in Slowblue. See `respectReducedMotionMedia` in index.ts for
+ * why an ident is not the thing that setting was built to suppress.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dt-ident.respects-motion-preference {
+    --dt-duration: 1200ms;
+
+    animation-name: dt-reduced-lifecycle;
+  }
+
+  /* Same kill switch, same reasoning as `.is-reduced` above. */
+  .dt-ident.respects-motion-preference :is(
+      .brand-lockup,
+      .tulpa-logo,
+      .bracket,
+      .quote,
+      .separator,
+      .separator rect,
+      .mouth,
+      .wordmark,
+      .wordmark span,
+      .wordmark-rail,
+      .wordmark-rule,
+      .wordmark-sweep,
+      .bracket-echo,
+      .pupil-arrive,
+      .gaze-layer,
+      .drift-layer,
+      .pupil-cutout,
+      .ring-layer,
+      .eye-ring,
+        .blink-lines,
+      .eye-core,
+      .eye-ping
+    ) {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .dt-ident.respects-motion-preference .wordmark-rule {
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * ── The skip ─────────────────────────────────────────────────────────────────
+ *
+ * Last in the file, and that position is the rule.
+ *
+ * Skipped, not cut: 300ms of fade, so that a tap two seconds in reads as a
+ * decision rather than as the page falling over.
+ *
+ * `.dt-ident.is-dismissing` is two classes, and so are `.dt-ident.is-reduced` and
+ * `.dt-ident.respects-motion-preference` — all three set `animation-name` on the
+ * same element and all three tie, so whichever comes last in the file wins. When
+ * this sat at the top, the two quiet paths won: pressing a key during the still
+ * left `dt-reduced-lifecycle` running and the ident was cut out mid-frame at the
+ * 300ms mark instead of fading. Being last is what makes the skip unconditional,
+ * so it stays last — including after the `prefers-reduced-motion` block above.
+ */
+.dt-ident.is-dismissing {
+  animation: dt-dismiss 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}

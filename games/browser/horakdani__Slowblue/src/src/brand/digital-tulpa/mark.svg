@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="digitalTULPA">
+  <title>digitalTULPA</title>
+  <!--
+    The square mark. One bracket, one eye.
+
+    Not a cropped lockup — a different drawing for a different frame. The lockup is
+    858x158, which is 5.4:1: a good ident format and an unusable avatar. Halving it
+    to one bracket and one eye still gives a group around 1.85:1, so something has
+    to give, and what gives is the *ratio between the two parts* rather than either
+    part's own geometry. Every number below is the lockup's, scaled:
+
+      eye      ring radius 37.714, stroke 4.571, pupil 18.286, highlight 8.0
+               - all of them 49.5 / 6 / 24 / 10.5 from the lockup, times 0.762
+      bracket  the lockup's chevron path verbatim, at scale 0.48
+
+    The eye is 80 of 128 across (63% of the frame) where the lockup's would be 63.
+    That is the whole departure, and it is what makes the mark hold a square instead
+    of sitting in a letterbox inside one. Two rejected alternatives, both built and
+    looked at: keeping the lockup's proportion leaves the drawing in a thin band
+    with half the frame empty, and overlapping the bracket into the ring merges the
+    two into one silhouette that reads as a comet rather than as a bracket.
+
+    The bracket degrades before the eye does, and that is the right way round: at 16
+    pixels the eye and its coloured pupil still say who this is, and punctuation at 16
+    pixels never says anything.
+
+    One colour, like the lockup. The drawing is ink throughout; the ochre belongs to
+    TULPA in the wordmark and to nothing else, so it has no business in a mark that
+    has no wordmark in it.
+
+    The void is part of the mark. Do not ship it on transparent - the ink is picked
+    against #07090C and loses its contrast on anything lighter.
+  -->
+  <rect width="128" height="128" fill="#07090C"/>
+
+  <g transform="translate(22 64) scale(0.48) translate(-66.5 -78.5)">
+    <path d="M 105 41 L 105 53 L 43 78 L 105 104 L 105 116 L 28 84 L 28 73 Z" fill="#EDEAE3"/>
+  </g>
+
+  <g transform="translate(84.48 64)">
+    <path d="M 0 -37.714 A 37.714 37.714 0 0 1 0 37.714 A 37.714 37.714 0 0 1 0 -37.714"
+          fill="none" stroke="#EDEAE3" stroke-width="4.571" stroke-linecap="round"/>
+    <circle r="18.286" fill="#EDEAE3"/>
+    <circle r="8" cx="-10.611" cy="7.428" fill="#07090C"/>
+  </g>
+</svg>

@@ -1,0 +1,294 @@
+<!doctype html>
+<!--
+  digitalTULPA ident — bench.
+
+  Dev-only. Vite's build input is `index.html` alone, so this never reaches a
+  production bundle; `npm run dev` serves it at /brand.html.
+
+  It exists because an ident cannot be tuned by watching it. Six and a half seconds
+  go past once and leave an impression rather than a note, and the beat that is
+  0.2s late is invisible at speed and obvious on a scrubber. Scrub mode freezes
+  every CSS timeline and replays the scripted beats — blinks, pings, gaze, the
+  wordmark — from the same CHOREOGRAPHY table the ident itself reads, so what the
+  slider shows is the performance and not an approximation of it.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>digitalTULPA — ident bench</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        background: #07090c;
+        font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      /*
+        At the top, and that is not a style preference.
+
+        The ident anchors its wordmark to the bottom of the viewport, so a control
+        bar down there covers the studio's name by about 65px and the bench reports
+        a bug the ident does not have. Nothing in the lockup goes near the top.
+      */
+      .bench {
+        position: fixed;
+        z-index: 2000;
+        top: 0;
+        right: 0;
+        left: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid #1c2026;
+        background: rgb(7 9 12 / 0.86);
+        backdrop-filter: blur(8px);
+        color: #edeae3;
+        font-size: 0.78rem;
+      }
+
+      .bench button {
+        padding: 0.4rem 0.85rem;
+        border: 1px solid #2a3038;
+        border-radius: 2px;
+        background: none;
+        color: #edeae3;
+        cursor: pointer;
+        font: inherit;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .bench button:hover {
+        border-color: #dda53c;
+      }
+
+      .bench button[aria-pressed="true"] {
+        border-color: #dda53c;
+        color: #dda53c;
+      }
+
+      .bench .sep {
+        width: 1px;
+        height: 1.5rem;
+        background: #1c2026;
+      }
+
+      .bench input[type="range"] {
+        flex: 1 1 14rem;
+        accent-color: #dda53c;
+      }
+
+      .bench output {
+        min-width: 8.5rem;
+        color: #8b9099;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .bench .hint {
+        flex-basis: 100%;
+        color: #6d7278;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bench">
+      <button type="button" data-variant="summon" aria-pressed="true">summon</button>
+      <button type="button" data-variant="reveal" aria-pressed="false">reveal</button>
+      <button type="button" data-variant="reduced" aria-pressed="false">reduced</button>
+      <span class="sep"></span>
+      <button type="button" id="replay">replay</button>
+      <button type="button" id="scrub" aria-pressed="false">scrub</button>
+      <input type="range" id="time" min="0" max="6600" step="10" value="0" disabled />
+      <output id="readout">press replay</output>
+      <span class="hint"></span>
+    </div>
+
+    <script type="module">
+      import {
+        CHOREOGRAPHY,
+        DIGITAL_TULPA_IDENT_DURATION_MS,
+        expandGaze,
+        playDigitalTulpaIdent,
+      } from './src/brand/digital-tulpa/index.ts';
+
+      const BLINK_MS = 320;
+      const SLOW_BLINK_MS = 560;
+      const PING_MS = 640;
+      const FOCUS_MS = 320; // matches replay(eye, 'is-focusing', 320) in index.ts
+      const BLINK_ANIMATIONS = new Set(['dt-ring-blink', 'dt-blink-lines', 'dt-inner-blink']);
+      const FOCUS_ANIMATIONS = new Set(['dt-focus-ring', 'dt-gaze-accent']);
+      const ACCENT_FROM = 7; // matches index.ts — `digital` is seven letters.
+
+      const range = document.getElementById('time');
+      const readout = document.getElementById('readout');
+      const hint = document.querySelector('.hint');
+      const scrubButton = document.getElementById('scrub');
+      const variantButtons = [...document.querySelectorAll('[data-variant]')];
+
+      let variant = 'summon';
+      let scrubbing = false;
+      let stop = null;
+
+      const mount = () => {
+        if (stop !== null) stop();
+        stop = playDigitalTulpaIdent({
+          variant: variant === 'reduced' ? 'summon' : variant,
+          reducedMotion: variant === 'reduced',
+          force: true,
+          hold: scrubbing,
+        });
+
+        // The ident makes every <body> sibling inert for its lifetime, and this
+        // bench is one of them. It sits above the ident and has to stay live to
+        // drive it — and in scrub mode nothing ever calls finish() to put it back,
+        // so without this line the controls die on the first click, permanently.
+        document.querySelector('.bench').inert = false;
+
+        if (!scrubbing) {
+          readout.textContent = 'playing…';
+          hint.textContent = 'Any key or a click skips it, same as in the game.';
+          return;
+        }
+
+        // Take the performance away from the module so the scrubber is the only
+        // thing driving it. Everything the ident schedules is a timeout or a rAF,
+        // and this runs in the same tick as the mount, so nothing has fired yet.
+        const lastTimer = setTimeout(() => {}, 0);
+        for (let id = 1; id <= lastTimer; id += 1) clearTimeout(id);
+        const lastFrame = requestAnimationFrame(() => {});
+        for (let id = 1; id <= lastFrame; id += 1) cancelAnimationFrame(id);
+
+        for (const element of document.querySelectorAll(
+          '#digitaltulpa-intro .gaze-layer, #digitaltulpa-intro .pupil-cutout, #digitaltulpa-intro .wordmark span',
+        )) {
+          element.style.transition = 'none';
+        }
+        apply(Number(range.value));
+      };
+
+      /** Rebuilds the exact state the ident would be in `t` ms after its first frame. */
+      const apply = (t) => {
+        const ident = document.getElementById('digitaltulpa-intro');
+        if (ident === null) return;
+        const beats = CHOREOGRAPHY[variant === 'reduced' ? 'summon' : variant];
+        const eyes = [...ident.querySelectorAll('.eye')];
+
+        const blink = [...beats.blinks]
+          .reverse()
+          .find((b) => t >= b.at && t < b.at + (b.slow === true ? SLOW_BLINK_MS : BLINK_MS));
+        // The same expanded list the ident schedules — microsaccades included, so
+        // the scrubber cannot be wrong about a beat it does not know exists.
+        // Before the first saccade the ident has set no inline vars at all, so the
+        // stylesheet's resting values are what is on screen. (0, 0) here would put
+        // the cutout somewhere the ident never puts it.
+        const gaze = [...expandGaze(beats)].reverse().find((s) => t >= s.at) ??
+          { x: -2, y: 1.4, tilt: 0, saccade: false };
+        // Only a real saccade holds `is-focusing`, for 320ms past its beat, and
+        // that overlap with the blinks is worth being able to see here.
+        const focusing =
+          gaze.saccade === true && gaze.at !== undefined && t >= gaze.at && t < gaze.at + FOCUS_MS;
+
+        const spread = Math.hypot(gaze.x, gaze.y) || 1;
+
+        eyes.forEach((eye, index) => {
+          eye.classList.remove('is-blinking', 'is-blinking-slow', 'is-pinging', 'is-focusing');
+          void eye.getBoundingClientRect();
+          if (blink !== undefined) {
+            eye.classList.add(blink.slow === true ? 'is-blinking-slow' : 'is-blinking');
+          }
+          const pingAt = beats.pings[index];
+          if (t >= pingAt && t < pingAt + PING_MS) eye.classList.add('is-pinging');
+          if (focusing) eye.classList.add('is-focusing');
+
+          const layer = eye.querySelector('.gaze-layer');
+          const divergence = index === 0 ? -0.1 : 0.1;
+          layer.style.setProperty('--dt-gaze-x', `${gaze.x + divergence}px`);
+          layer.style.setProperty('--dt-gaze-y', `${gaze.y}px`);
+          layer.style.setProperty('--dt-gaze-tilt', `${gaze.tilt}deg`);
+          // normalize(gaze) * 17 — matches `cutoutFor` in index.ts. These were
+          // still writing `--dt-highlight-*`, a name the stylesheet stopped
+          // reading when the cutout went back to following the look, so the
+          // scrubbed pupil has been sitting at its default angle regardless of
+          // where the eye was pointed.
+          layer.style.setProperty('--dt-cutout-x', `${((gaze.x / spread) * 17).toFixed(2)}px`);
+          layer.style.setProperty('--dt-cutout-y', `${((gaze.y / spread) * 17).toFixed(2)}px`);
+        });
+
+        // The wordmark is two events, not twelve: `digital` resolves under the
+        // sweep, and TULPA lands as one word at `accentAt`.
+        const swept =
+          variant === 'reduced'
+            ? ACCENT_FROM
+            : Math.max(
+                0,
+                Math.min(
+                  ACCENT_FROM,
+                  Math.floor((t - beats.wordmarkStart) / beats.wordmarkInterval) + 1,
+                ),
+              );
+        const landed = variant === 'reduced' || t >= beats.accentAt;
+        ident.querySelectorAll('.wordmark span').forEach((span, index) => {
+          span.classList.toggle('is-typed', index < ACCENT_FROM ? index < swept : landed);
+        });
+
+        // Each timeline gets seeked in its own clock: the entrance runs on the
+        // ident's, but a blink or a ping started when its beat fired.
+        for (const animation of document.getAnimations()) {
+          animation.pause();
+          const name = animation.animationName;
+          let local = t;
+          if (name === 'dt-ping') {
+            const eye = animation.effect?.target?.closest('.eye');
+            local = t - beats.pings[eyes.indexOf(eye)];
+          } else if (BLINK_ANIMATIONS.has(name)) {
+            local = blink === undefined ? 0 : t - blink.at;
+          } else if (FOCUS_ANIMATIONS.has(name)) {
+            local = focusing ? t - gaze.at : 0;
+          } else if (name === 'dt-tulpa-land') {
+            local = t - beats.accentAt;
+          }
+          try {
+            animation.currentTime = Math.max(0, local);
+          } catch {
+            /* a finished or idle animation will not take a time; it does not need one */
+          }
+        }
+
+        readout.textContent = `${String(t).padStart(4, ' ')} ms · ${variant}`;
+      };
+
+      range.addEventListener('input', () => apply(Number(range.value)));
+
+      scrubButton.addEventListener('click', () => {
+        scrubbing = !scrubbing;
+        scrubButton.setAttribute('aria-pressed', String(scrubbing));
+        range.disabled = !scrubbing;
+        hint.textContent = scrubbing
+          ? 'Frozen. Every beat below is replayed from CHOREOGRAPHY, not approximated.'
+          : '';
+        mount();
+      });
+
+      for (const button of variantButtons) {
+        button.addEventListener('click', () => {
+          variant = button.dataset.variant;
+          for (const other of variantButtons) {
+            other.setAttribute('aria-pressed', String(other === button));
+          }
+          mount();
+        });
+      }
+
+      document.getElementById('replay').addEventListener('click', mount);
+      range.max = String(DIGITAL_TULPA_IDENT_DURATION_MS);
+      mount();
+    </script>
+  </body>
+</html>

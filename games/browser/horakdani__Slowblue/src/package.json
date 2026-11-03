@@ -1,0 +1,54 @@
+{
+  "name": "slowblue",
+  "version": "0.1.0",
+  "private": true,
+  "description": "You do not control the fish. You control the ocean. A mobile-first web game: drag the water, and the water drags the shoal.",
+  "license": "MIT",
+  "author": "Daniel Horak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horakdani/Slowblue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/horakdani/Slowblue/issues"
+  },
+  "homepage": "https://horakdani.github.io/Slowblue/",
+  "keywords": [
+    "game",
+    "html5-game",
+    "canvas",
+    "typescript",
+    "pwa",
+    "vite"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "deploy": "bash tools/deploy.sh",
+    "preview": "vite preview --port 4173",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "screens": "SLOWBLUE_SCREENS=1 playwright test capture.spec.ts",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run e2e",
+    "sweep": "vitest run --config vitest.sweep.config.ts",
+    "icons": "node tools/make-icons.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0",
+    "vite": "^6.0.7",
+    "vitest": "^5.0.5"
+  }
+}

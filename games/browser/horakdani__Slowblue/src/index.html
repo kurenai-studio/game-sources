@@ -1,0 +1,2798 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Slowblue</title>
+    <!-- Slowblue: viewport-fit=cover + user-scalable=no; a game canvas must own every gesture. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="You do not control the fish. You control the ocean. A mobile-first web game: drag the water, and the water drags the shoal."
+    />
+    <link rel="canonical" href="https://horakdani.github.io/Slowblue/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Slowblue" />
+    <meta property="og:title" content="Slowblue" />
+    <meta
+      property="og:description"
+      content="You do not control the fish. You control the ocean. Seven acts, forty-two stations, one gesture, no network code."
+    />
+    <meta property="og:url" content="https://horakdani.github.io/Slowblue/" />
+    <meta property="og:image" content="https://horakdani.github.io/Slowblue/social.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#02101f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Slowblue" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        /* The cutout, declared once.
+           Every fixed thing in this game hangs off the inset of the edge it is
+           pinned to, and each of them used to spell `env(safe-area-inset-*)` out
+           for itself - sixteen copies of the same geometry, which is sixteen
+           places for one of them to be forgotten the next time something is added
+           to a corner. Naming it here costs nothing at runtime (custom properties
+           resolve at style time, and none of this animates) and buys two things:
+           one line to read to know what the game thinks the notch is, and a value
+           a test can *set*. Chromium will not emulate a Dynamic Island, so a
+           harness that cannot override the inset cannot check that the pause
+           button clears it - see `e2e/safearea.spec.ts`. */
+        --safe-t: env(safe-area-inset-top, 0px);
+        --safe-r: env(safe-area-inset-right, 0px);
+        --safe-b: env(safe-area-inset-bottom, 0px);
+        --safe-l: env(safe-area-inset-left, 0px);
+
+        /* The ink, in three steps and two accents.
+           Measured, not chosen. `e2e/chrome.spec.ts` photographs every screen
+           twice - once with the text painted and once without - and reads the
+           contrast of each run off the panel, and the first thing it found was
+           that this shell was painting text in thirty-six different colours:
+           five near-whites inside two per cent of each other, and eight opacities
+           of one pale blue strung between 0.42 and 0.6. Thirty-six inks are not a
+           hierarchy. Nobody can see the difference between 0.5 and 0.55, and the
+           reader cannot be told anything by a distinction they cannot see.
+           So there are three, and what separates them is size and weight as much
+           as strength. The floor is the point of the exercise: `--ink-3` is set
+           where the quietest tier still clears WCAG AA on the darkest field the
+           shell paints on, measured at 5.2:1 or better everywhere - because a
+           tier nobody can read is not a quiet tier, it is one that should have
+           been deleted. Thirty-one runs of text were under 4.5 before this
+           existed, across a dozen tiers, and the faintest of them - the separator
+           dot in the title screen's record line - was at 1.9:1, which is not
+           writing.
+           `--unlit` is the exception that proves it, and it is deliberately below
+           the floor: the map draws an act nobody has reached as an absence. It is
+           the ink of a thing that is not there yet, never of a thing to read. */
+        --ink: #eafcff;
+        --ink-2: rgba(206, 238, 255, 0.78);
+        --ink-3: rgba(198, 232, 252, 0.62);
+        /* The one bright blue. It was five, between 0.5 and 0.92 of the same
+           hue, all of them meaning "this is the live one". */
+        --accent: #9fe4ff;
+        /* The record, and the only warm thing in the interface. */
+        --gold: #ffd98a;
+        --warn: rgba(255, 178, 168, 0.85);
+        --unlit: rgba(206, 238, 255, 0.26);
+
+        /* What a finger needs, in CSS pixels.
+           Apple asks 44pt and Google asks 48dp; this is the smaller. The two
+           corner buttons were 40 and every switch in the game was 32 - and the
+           volume faders, the one control in here that is dragged rather than
+           tapped, were sixteen pixels tall. See `e2e/chrome.spec.ts`.
+
+           The comment here used to call 44 "the one that has to be cleared on
+           both", which is true of necessary and false of sufficient: every one of
+           the shell's sixty-five live controls comes off this variable, so all
+           sixty-five sit at exactly 44, clearing Apple by nothing and missing
+           Google by four pixels. §7.3 measured what 48 costs and did not spend it:
+           it adds twelve pixels to the circuit screen's bottom block and pushes
+           the BEGIN label off the fold, on a screen whose primary button already
+           hangs twenty pixels past it at rest. Both numbers are in
+           `docs/EDITORIAL.md`; the census in `chrome.spec` reports 48 every run so
+           the gap stays a number rather than a memory. */
+        --reach: 44px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #02101f;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        /* The callout is the long-press bubble mobile Safari raises over a link or
+           an image, and this shell has neither today - grep says zero `<a>` and
+           zero `<img>`, so the line refuses something that cannot currently
+           happen. It stays anyway, as a standing refusal rather than a fix: a
+           long press on this game is always a stroke the player is still in the
+           middle of, and the first link someone puts in the credits should not
+           bring the bubble with it. The canvas itself is covered three times
+           over already (`touch-action: none`, `preventDefault` on touchstart,
+           and a swallowed `contextmenu` in InputController). */
+        -webkit-touch-callout: none;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      /* No `touch-action` here. It used to say `none`, and touch-action is
+         intersected down the ancestor chain - so it silently disabled scrolling
+         inside every scrollable thing in the shell, which is both the settings
+         list and the in-game mixer drawer. The canvas declares its own `none` and
+         `InputController` calls `preventDefault` on top of that, so the gesture
+         the rule was protecting is protected twice already. */
+      #stage {
+        position: fixed;
+        inset: 0;
+      }
+      canvas#game {
+        display: block;
+        touch-action: none;
+        width: 100%;
+        height: 100%;
+      }
+      /* The menus own their own empty field of blue. The world is prepared
+         behind them, but not one fish from that world belongs on the opening
+         screen, on a map of the whole journey, or behind a list of switches -
+         and it used to swim through all three. The pause and results screens
+         are the exception, and keep the water they are about. */
+      #stage.quiet-screen canvas#game {
+        visibility: hidden;
+      }
+      #safe-probe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+        padding-top: var(--safe-t);
+        padding-bottom: var(--safe-b);
+        padding-left: var(--safe-l);
+        padding-right: var(--safe-r);
+      }
+
+      /* --- shell UI: title, pause, results, settings ---
+         Real DOM buttons on purpose: a canvas-drawn button has no focus ring, no
+         screen reader, no keyboard and no text scaling. The shell is display:none
+         while a run is in progress, so it can never eat a gesture. */
+      .ui {
+        position: fixed;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* All four sides, not two. The shell is a full-bleed overlay, so in
+           landscape on a notched phone its 20px gutter was measured from the
+           screen edge and the cutout ate into it - the one orientation where
+           left and right insets are the large ones. */
+        padding: calc(var(--safe-t) + 20px) calc(var(--safe-r) + 20px)
+          calc(var(--safe-b) + 20px) calc(var(--safe-l) + 20px);
+        background: radial-gradient(
+          120% 90% at 50% 40%,
+          rgba(2, 12, 24, 0.62),
+          rgba(1, 6, 14, 0.92)
+        );
+        color: var(--ink);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .ui.hidden,
+      .ui-corner.hidden,
+      .ui-veil.hidden,
+      .ui-world.hidden {
+        display: none;
+      }
+      .ui-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        width: min(100%, 380px);
+        margin: auto;
+        text-align: center;
+      }
+      .ui-title {
+        margin: 0;
+        font-size: 44px;
+        font-weight: 200;
+        letter-spacing: 0.34em;
+        text-indent: 0.34em;
+        color: var(--ink);
+      }
+      .ui-mission {
+        margin: 2px 0 14px;
+        font-size: 10.5px;
+        line-height: 1.5;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .ui-heading {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        color: var(--ink);
+      }
+      .ui-score {
+        margin: 2px 0 0;
+        font-size: 46px;
+        font-weight: 300;
+        color: var(--ink);
+      }
+      .ui-record {
+        margin: 6px 0 -4px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: var(--gold);
+      }
+      .ui-complete-kicker {
+        margin: 0 0 -2px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        color: var(--ink-2);
+      }
+      .ui.surfaced {
+        background:
+          radial-gradient(90% 55% at 50% 12%, rgba(183, 251, 255, 0.22), transparent 70%),
+          linear-gradient(180deg, rgba(5, 99, 121, 0.58), rgba(1, 20, 34, 0.82));
+      }
+      .ui.surfaced .ui-panel {
+        padding: 24px 18px;
+        border-top: 1px solid rgba(225, 255, 255, 0.2);
+        border-bottom: 1px solid rgba(225, 255, 255, 0.1);
+        background: linear-gradient(180deg, rgba(218, 255, 255, 0.035), transparent);
+      }
+      .ui.surfaced .ui-heading {
+        font-size: 17px;
+        letter-spacing: 0.18em;
+        color: var(--ink);
+      }
+      .ui-stats,
+      .ui-fine,
+      .ui-best {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--ink-3);
+      }
+      .ui-best {
+        margin-bottom: 10px;
+        font-size: 12px;
+        color: var(--ink-2);
+      }
+      .ui-row {
+        display: flex;
+        gap: 8px;
+      }
+      .ui-row > * {
+        flex: 1;
+      }
+      .ui-btn {
+        min-height: 48px;
+        padding: 12px 16px;
+        border-radius: 24px;
+        border: 1px solid rgba(140, 210, 245, 0.28);
+        background: rgba(12, 40, 62, 0.6);
+        color: var(--ink);
+        font:
+          600 13px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.12em;
+        cursor: pointer;
+      }
+      .ui-btn.primary {
+        background: rgba(52, 148, 190, 0.34);
+        border-color: rgba(160, 226, 255, 0.5);
+        color: var(--ink);
+      }
+      .ui-btn.ghost {
+        background: transparent;
+        color: var(--ink-2);
+      }
+      .ui-btn.danger {
+        border-color: rgba(255, 130, 120, 0.34);
+        color: var(--warn);
+        background: transparent;
+      }
+      /* Pause and comfort: opaque pills, so nothing from the world swims through
+         the labels. These are the two screens that keep the water behind them,
+         which means they are the two that need this. */
+      .ui.halted .ui-btn,
+      .ui.halted .ui-btn.ghost,
+      .ui.halted .ui-btn.danger {
+        background: #0a1d2e;
+      }
+      .ui.halted .ui-btn.primary {
+        background: #1d4a67;
+      }
+      .ui-btn.wide {
+        width: 100%;
+      }
+      .ui-btn:active {
+        transform: translateY(1px);
+      }
+      /* The keyboard's own line, and it is a line rather than a second border:
+         two pixels held three off the edge, with a wash outside it so the ring
+         lands on the glass instead of being stamped onto it. The offset is inside
+         every gap on the title screen, so a focused control never touches the
+         one under it. */
+      .ui-btn:focus-visible,
+      .ui-map-act:focus-visible,
+      .ui-map-core-open:focus-visible,
+      .ui-journey:focus-visible,
+      .ui-switch:focus-visible,
+      .ui-audio-track input:focus-visible,
+      .ui-mix-close:focus-visible,
+      .ui-corner:focus-visible {
+        outline: 2px solid rgba(127, 220, 255, 0.92);
+        outline-offset: 3px;
+      }
+      /* The fader's own box is the whole height of its row, so the ring goes on
+         the box rather than three pixels outside it - out there it would be drawn
+         across the label of the track above. */
+      .ui-audio-track input:focus-visible {
+        outline-offset: -1px;
+      }
+      /* ...and the three controls in the drawer whose target is bigger than the
+         thing you can see - the two chips and the close - put the ring round what
+         is drawn rather than round what is hit. Out at the edge of a 44px box it
+         would be a rectangle in a column of pills, touching the row above and the
+         row below; round the pill it is the same line every other control in the
+         shell gets. */
+      .ui-mix .ui-switch:focus-visible,
+      .ui-mix-close:focus-visible {
+        outline: none;
+      }
+      .ui-mix .ui-switch:focus-visible::before,
+      .ui-mix-close:focus-visible::before {
+        outline: 2px solid rgba(127, 220, 255, 0.92);
+        outline-offset: 3px;
+      }
+      .ui-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 6px 0;
+      }
+
+      /* --- the title screen -------------------------------------------------
+       *
+       * The one screen every session passes through, and for a long time the one
+       * screen with nothing on it: a wordmark, three sentences and three
+       * identically-sized pills, centred in an empty field of blue.
+       *
+       * It is now three bands rather than one column of equals - identity at the
+       * top, the primary and the journey card in the lower third where a thumb
+       * rests, the record and the studio at the bottom - and it has a field of
+       * its own to sit in. `#stage.quiet-screen` hides the game canvas, so none
+       * of what moves here is the simulation: it is two rings, three shafts of
+       * surface light and fourteen motes, all of which stop dead under reduced
+       * motion, and none of which costs anything because the renderer is idle
+       * while the menu is up.
+       */
+      .ui.titled {
+        background:
+          radial-gradient(135% 76% at 50% -16%, rgba(96, 198, 246, 0.2), transparent 62%),
+          radial-gradient(120% 60% at 50% 114%, rgba(1, 8, 17, 0.94), transparent 68%),
+          linear-gradient(180deg, #051f37 0%, #03162a 44%, #010a15 100%);
+      }
+      /* The map gets the same field, and none of the things that move in it: a
+         drawing of the journey is the one screen where a drifting mote is
+         something to check whether it is a stop. */
+      .ui.mapped {
+        background:
+          radial-gradient(120% 62% at 50% -10%, rgba(96, 198, 246, 0.13), transparent 62%),
+          linear-gradient(180deg, #04182c 0%, #031223 46%, #010a15 100%);
+        /* Ten pixels off the top and bottom of the frame rather than twenty, and
+           they are bought rather than saved: this is the one screen that has to
+           hold a picture, a paragraph and two controls at once, and every pixel
+           the margin gives up is a pixel of map. Still more than the four the
+           picture itself leaves at the sides, so the screen is not tighter at the
+           ends than it already is at the edges. */
+        padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+      }
+      .ui.titled .ui-panel {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 400px);
+        min-height: 100%;
+        gap: 16px;
+        justify-content: space-between;
+      }
+
+      /* The field. Fixed rather than absolute so that a panel long enough to
+         scroll - a short landscape phone - scrolls over it instead of with it. */
+      .ui-veil {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .ui-veil-shaft {
+        position: absolute;
+        top: -28%;
+        width: 38%;
+        height: 96%;
+        transform-origin: 50% 0;
+        background: linear-gradient(
+          180deg,
+          rgba(150, 222, 255, 0.17),
+          rgba(120, 200, 245, 0.05) 46%,
+          transparent 78%
+        );
+        filter: blur(26px);
+        /* Also the resting value: with the animation off, this is the field. */
+        opacity: 0.5;
+        animation: ui-veil-shaft 17s ease-in-out infinite alternate;
+      }
+      @keyframes ui-veil-shaft {
+        from {
+          opacity: 0.22;
+        }
+        to {
+          opacity: 0.85;
+        }
+      }
+      /* Two rings behind the wordmark: the circuit, at the size of a rumour. */
+      .ui-veil-ring {
+        position: absolute;
+        left: 50%;
+        top: 33%;
+        width: min(84vw, 430px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1px solid rgba(126, 206, 248, 0.1);
+        transform: translate(-50%, -50%);
+        animation: ui-veil-ring 15s ease-in-out infinite;
+      }
+      .ui-veil-ring.inner {
+        width: min(52vw, 268px);
+        border-color: rgba(126, 206, 248, 0.07);
+        animation-duration: 21s;
+        animation-direction: reverse;
+      }
+      @keyframes ui-veil-ring {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(0.975);
+          opacity: 0.55;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.03);
+          opacity: 1;
+        }
+      }
+      .ui-veil-mote {
+        position: absolute;
+        bottom: -6px;
+        border-radius: 50%;
+        background: rgba(184, 234, 255, 0.55);
+        animation: ui-veil-mote linear infinite;
+      }
+      @keyframes ui-veil-mote {
+        0% {
+          transform: translate(0, 0);
+          opacity: 0;
+        }
+        14% {
+          opacity: 0.5;
+        }
+        76% {
+          opacity: 0.28;
+        }
+        100% {
+          transform: translate(16px, -102vh);
+          opacity: 0;
+        }
+      }
+
+      /* --- band one: what this is ---
+         The mark, the wordmark and the promise, with nothing else near them.
+         `flex: 1` gives this band whatever the other two do not want, so on a
+         tall phone the identity floats and on a short one it simply closes up. */
+      .ui-hero {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding: 12px 0 6px;
+      }
+      .ui-mark {
+        width: 46px;
+        height: 46px;
+        margin-bottom: 15px;
+        overflow: visible;
+      }
+      .ui-mark-ring {
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.5);
+        stroke-width: 1.2;
+      }
+      .ui-mark-wave {
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.72);
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        animation: ui-mark-drift 6.5s linear infinite;
+      }
+      .ui-mark-wave.slow {
+        stroke: rgba(120, 196, 236, 0.42);
+        animation-duration: 10.5s;
+        animation-direction: reverse;
+      }
+      /* One period of the `q ... t` wave is 24 units wide, so a 24-unit drift
+         lands the path exactly where it started and the loop has no seam. */
+      @keyframes ui-mark-drift {
+        to {
+          transform: translateX(24px);
+        }
+      }
+      .ui.titled .ui-title {
+        /* Two words, not one: the type has to sit inside the phone as well as
+           the desktop, so it shrinks and is allowed to break between them. */
+        font-size: clamp(26px, 9vw, 40px);
+        letter-spacing: 0.3em;
+        text-indent: 0.3em;
+        line-height: 1.16;
+      }
+      /* The wordmark takes its light from above, like everything else here. The
+         fallback colour stays on the rule, so a browser without background-clip
+         gets flat ink rather than nothing at all. */
+      @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+        .ui.titled .ui-title {
+          background: linear-gradient(180deg, #f6ffff 0%, #d2f2ff 46%, #74bade 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          filter: drop-shadow(0 0 28px rgba(110, 205, 255, 0.3));
+        }
+      }
+      /* The waterline: the one horizontal in a screen of stacked centres. */
+      .ui-rule {
+        position: relative;
+        width: 128px;
+        height: 1px;
+        margin: 17px 0 15px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(159, 228, 255, 0.55) 30%,
+          rgba(159, 228, 255, 0.55) 70%,
+          transparent
+        );
+      }
+      .ui-rule::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: -2.5px;
+        width: 5px;
+        height: 5px;
+        transform: translateX(-50%) rotate(45deg);
+        background: #9fe4ff;
+        box-shadow: 0 0 10px rgba(159, 228, 255, 0.85);
+      }
+      /* The only writing under the wordmark now, so it is allowed to be read as
+         writing rather than as a caption under a caption. */
+      .ui.titled .ui-mission {
+        max-width: 26em;
+        margin: 0 auto;
+        /* Set as a sentence, not as a label: the wordmark above is already all
+           caps, and a second run of capitals reads as a second wordmark. */
+        text-transform: none;
+        font-size: 12px;
+        line-height: 1.7;
+        letter-spacing: 0.06em;
+        color: var(--ink-3);
+      }
+
+      /* --- band two: what happens next ---
+         Fifteen pixels between the primary and the card, not nine. Nine was less
+         than the primary's own focus ring is wide - two pixels of outline three
+         pixels off the button - so a keyboard on the title screen drew a line
+         that touched the card underneath it, and a thumb saw two panels with a
+         seam rather than one button and one door. It is now wider than the ring,
+         which is the smallest gap that can be called a gap at all. */
+      .ui-title-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      /* A setting that changes what the game *is*, said where it is about to be
+         started rather than left in the list it was turned on in. */
+      .ui-mode {
+        margin: 0 0 1px;
+        padding: 9px 12px 9px 13px;
+        border-radius: 12px;
+        border: 1px solid rgba(140, 210, 245, 0.16);
+        border-left: 2px solid rgba(159, 228, 255, 0.65);
+        background: rgba(10, 38, 60, 0.42);
+        text-align: left;
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--ink-2);
+      }
+      /* What RESTART and QUIT actually cost, under the buttons that do it. Quieter
+         than everything above it on purpose: it is an answer to a worry, not an
+         instruction, and it must not read as the first thing on the screen. */
+      .ui-save-note {
+        /* `auto` at the sides rather than `0`. The panel stretches its children,
+           so a block capped at 42ch was pinned against the panel's left edge and
+           its centred lines sat a few pixels left of every button above them -
+           close enough to centre to look like a mistake rather than a choice. */
+        margin: 8px auto 0;
+        max-width: 42ch;
+        padding: 10px 16px;
+        text-align: center;
+        /* Four lines with a short one at the end read as a leak rather than a
+           paragraph when they are centred. Balanced, the block has a shape. */
+        text-wrap: balance;
+        font-size: 11px;
+        line-height: 1.55;
+        /* The water stays behind this screen, and the flock was swimming through
+           the words. The buttons answer that with a flat opaque fill; the note
+           cannot take one - a card under the stack reads as a fourth button - so
+           it carries its own dark out past its edges instead, in the shadow's own
+           colour, and the shape dissolves before anyone can find it. Wide and
+           soft rather than dense: on the sunlit stations a tighter pool of this
+           read as a smudge, and thirty pixels of falloff reads as depth. */
+        border-radius: 18px;
+        background: rgba(4, 16, 28, 0.86);
+        box-shadow: 0 0 30px 18px rgba(4, 16, 28, 0.86);
+        /* Quiet, but quiet against its own dark now instead of against the water:
+           at 0.52 over a moving flock the line was not dim, it was unreadable. */
+        color: rgba(200, 236, 255, 0.66);
+      }
+      /* The primary, and the only control on the screen with two lines: the verb
+         and where the verb goes. BEGIN and CONTINUE are different games. */
+      .ui-btn.ui-cta {
+        position: relative;
+        display: grid;
+        gap: 5px;
+        min-height: 70px;
+        padding: 15px 58px 15px 20px;
+        border-radius: 22px;
+        text-align: left;
+        overflow: hidden;
+        border-color: rgba(168, 230, 255, 0.5);
+        background: linear-gradient(180deg, rgba(74, 176, 222, 0.44), rgba(24, 94, 140, 0.36));
+        /* The glow is pulled in from thirty-six pixels of blur to twenty-eight,
+           and lifted off the bottom edge: at the old spread it was still bright
+           where the card below starts, which read as the two of them sharing a
+           light rather than the button having one. */
+        box-shadow:
+          0 12px 28px -20px rgba(90, 200, 255, 0.8),
+          inset 0 1px 0 rgba(232, 251, 255, 0.22);
+      }
+      .ui-cta-label {
+        font:
+          700 15px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.2em;
+        color: var(--ink);
+      }
+      .ui-cta-sub {
+        font:
+          500 11px/1.35 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.01em;
+        color: var(--ink-2);
+      }
+      /* The arrow gets a well to sit in. Loose on the glass it was a glyph that
+         happened to be near the right-hand edge; in a ring it is a control, and
+         it is the one place on the screen where the eye can be told which end of
+         the button is the going end. */
+      .ui-btn.ui-cta::after {
+        content: '→';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        margin-top: -16px;
+        border-radius: 50%;
+        border: 1px solid rgba(196, 240, 255, 0.3);
+        background: rgba(7, 32, 52, 0.3);
+        font-size: 15px;
+        line-height: 1;
+        color: rgba(238, 252, 255, 0.9);
+        transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .ui-btn.ui-cta:active::after {
+        transform: translateX(2px);
+      }
+      /* One slow pass of light, roughly once a breath. It is the only thing on
+         the screen that says the big button is the live one. */
+      .ui-btn.ui-cta::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          104deg,
+          transparent 38%,
+          rgba(226, 250, 255, 0.14) 50%,
+          transparent 62%
+        );
+        transform: translateX(-100%);
+        animation: ui-cta-sheen 7s ease-in-out infinite;
+        pointer-events: none;
+      }
+      @keyframes ui-cta-sheen {
+        0%,
+        62% {
+          transform: translateX(-100%);
+        }
+        88%,
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      /* The journey card: the circuit at a glance, and the door to the map.
+         Quieter than it was, and quieter than the button above it on purpose:
+         two lit panels stacked is a screen with two primaries on it. The card
+         keeps the glass and gives up the light. */
+      .ui-journey {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 24px 12px;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        /* Twenty on the left, which is the primary's own left padding: the four
+           lines of writing in this band sit on one margin. */
+        padding: 15px 16px 15px 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(140, 210, 245, 0.17);
+        background: linear-gradient(180deg, rgba(14, 45, 70, 0.42), rgba(6, 23, 40, 0.3));
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        color: var(--ink);
+        text-align: left;
+        cursor: pointer;
+        transition:
+          border-color 200ms ease,
+          background-color 200ms ease;
+      }
+      @media (hover: hover) {
+        .ui-journey:hover {
+          border-color: rgba(150, 220, 252, 0.34);
+        }
+        .ui-journey:hover .ui-journey-go {
+          transform: translateX(2px);
+          color: rgba(190, 238, 255, 0.8);
+        }
+      }
+      .ui-journey:active {
+        transform: translateY(1px);
+      }
+      .ui-journey-text {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+      }
+      .ui-journey-eyebrow {
+        font:
+          700 9px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.26em;
+        color: var(--accent);
+      }
+      /* Seventeen pixels, not twenty. The tally is the card's subject but it is
+         not the screen's, and at twenty it was setting a bigger number than the
+         verb on the button above - which is the one thing on this screen that is
+         allowed to be the loudest. */
+      .ui-journey-count {
+        font:
+          300 17px/1.1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink);
+      }
+      .ui-journey-count b {
+        font-weight: 500;
+      }
+      .ui-journey-unit {
+        font-size: 11px;
+        color: var(--ink-3);
+      }
+      .ui-journey-sub {
+        font:
+          500 10.5px/1.35 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink-3);
+      }
+      .ui-journey-go {
+        font-size: 18px;
+        line-height: 1;
+        color: var(--accent);
+        transition:
+          transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+          color 200ms ease;
+      }
+      /* The gauge. Twenty-four by sixty-two because that is the shape of the
+         thing inside it - the route is a loop three times as tall as it is wide -
+         and a column any wider than the drawing is a column of nothing with a
+         drawing down the middle of it. It used to be given a sixty-four pixel
+         square, which is where the old drawing went to be lost. The glow behind
+         is what stops a line this thin from reading as a scratch on the glass. */
+      .ui-dial {
+        display: block;
+        width: 24px;
+        height: 62px;
+        overflow: visible;
+        filter: drop-shadow(0 0 7px rgba(70, 170, 224, 0.28));
+      }
+      /* The seven acts, and the stretches between them. Same weighting as the
+         map: an act is the line, a link is dark until it is earned, and the gaps
+         `ACT_GAP` opens between them are what makes an unflown circuit read as
+         seven of something rather than as one blank ring. */
+      .ui-dial-route {
+        fill: none;
+        stroke: rgba(150, 216, 250, 0.42);
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ui-dial-link {
+        fill: none;
+        stroke: rgba(140, 210, 245, 0.15);
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ui-dial-flown {
+        fill: none;
+        stroke: #9fe4ff;
+        stroke-width: 2.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 4px rgba(159, 228, 255, 0.55));
+      }
+      .ui-dial-here-halo {
+        fill: rgba(159, 228, 255, 0.2);
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .ui-dial-here-halo.beat {
+        animation: ui-map-beat 3.4s ease-in-out infinite;
+      }
+      .ui-dial-here {
+        fill: var(--ink);
+      }
+
+      .ui-ico {
+        flex: none;
+        width: 15px;
+        height: 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.3;
+        stroke-linecap: round;
+        opacity: 0.75;
+      }
+      .ui-ico .solid {
+        fill: currentColor;
+        stroke: none;
+      }
+
+      /* --- band three: the record, and whose game this is --- */
+      .ui-title-foot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding-top: 2px;
+      }
+      .ui-stat-row {
+        display: flex;
+        align-items: baseline;
+        gap: 7px;
+        font:
+          600 9.5px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .ui-stat-dot {
+        color: var(--ink-3);
+      }
+      .ui-title-foot .ui-best {
+        margin: 0;
+        font: inherit;
+        letter-spacing: inherit;
+        color: var(--gold);
+      }
+      /* A phone in landscape, or a very short window: the identity gives up its
+         breathing room first, because the actions are what the screen is for. */
+      @media (max-height: 620px) {
+        .ui.titled .ui-panel {
+          gap: 12px;
+        }
+        .ui-hero {
+          padding: 4px 0 2px;
+        }
+        .ui.titled .ui-title {
+          font-size: clamp(32px, 7.5vh, 44px);
+        }
+        .ui-mark {
+          width: 34px;
+          height: 34px;
+          margin-bottom: 9px;
+        }
+        .ui-rule {
+          margin: 11px 0 10px;
+        }
+        .ui.titled .ui-mission {
+          margin-top: 6px;
+        }
+        .ui-btn.ui-cta {
+          min-height: 58px;
+        }
+        /* The gauge gives up height with everything else here - at full size it
+           makes the card half again as tall as the button above it, and on a
+           screen this short that difference is the only thing either of them
+           has to say. */
+        .ui-dial {
+          height: 46px;
+        }
+        .ui-journey {
+          padding-top: 12px;
+          padding-bottom: 12px;
+        }
+      }
+      /* ...and a phone actually turned on its side has room the column cannot
+         use. Two columns: the identity keeps the left, everything that gets
+         pressed moves to the right, and nothing has to be scrolled to. */
+      @media (max-height: 620px) and (min-width: 660px) {
+        .ui.titled .ui-panel {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr auto;
+          align-items: center;
+          column-gap: 40px;
+          width: min(100%, 800px);
+          min-height: auto;
+        }
+        .ui-hero {
+          grid-row: 1 / 3;
+        }
+        .ui.titled .ui-title {
+          font-size: clamp(38px, 9vh, 52px);
+        }
+        .ui-mark {
+          width: 42px;
+          height: 42px;
+          margin-bottom: 13px;
+        }
+        .ui-title-actions {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        .ui-title-foot {
+          grid-column: 2;
+          grid-row: 2;
+          padding-top: 14px;
+        }
+      }
+      /*
+       * The circuit screen: one line, forty-two stops.
+       *
+       * A transit diagram, and it obeys that grammar because that grammar was
+       * invented for this exact problem: one line weight, one interval between
+       * stops, one corner radius, one accent for what is behind you, and the
+       * names set beside the line and never on it. Geometry is
+       * `meta/Circuit.ts`; this file only says what any of it looks like.
+       *
+       * Everything the pictures before this one had - platforms, weather, a
+       * cross-section of the ocean, forty-two little drawings - is gone. They
+       * were hard to read because nothing in them was quieter than anything
+       * else.
+       */
+      /*
+       * The picture takes the room that is left, and the screen ends where the
+       * window does.
+       *
+       * It used to be a share of the viewport - sixty per cent of it, floored at
+       * four hundred pixels - which is a number that knows nothing about what is
+       * under the map. On a four-hundred-and-twenty by seven-hundred window the
+       * heading, the count, the act and the two buttons come to three hundred and
+       * thirty pixels, sixty per cent came to four hundred and twenty, and the
+       * screen was seventy-five pixels too long: the player scrolled to reach
+       * BEGIN. So the height is not chosen here at all. The panel is the height
+       * of the window, everything that is writing or a control is sized by its
+       * content, and the map is the one thing that stretches into what is left.
+       *
+       * Two limits on that stretch, and both of them are about being readable
+       * rather than about fitting:
+       *
+       *   - **How wide it may get**: the column plus the sixteen pixels of the
+       *     shell's own gutter it borrows on each side, and never more than the
+       *     column's own ceiling. Every pixel of width here is type - a box unit
+       *     is drawn at whatever fraction of a pixel is left over, and the names
+       *     are set in box units - so this is the number the picture is really
+       *     limited by, expressed as the height that produces it.
+       *   - **How short it may get**: three hundred and forty-four pixels, which
+       *     is not a taste. Act IV's target is the smallest of the seven at
+       *     sixty-two box units, and sixty-two units of a four-hundred-and-eighty
+       *     unit box drawn this tall is forty-four pixels - the floor a control is
+       *     allowed to be. Below that the screen scrolls, as it already does with
+       *     the station list open, because a picture that fits by handing out
+       *     targets a thumb misses has not fitted. `tests/atlas.test.ts` holds the
+       *     other end of this.
+       */
+      .ui-map {
+        --map-w: min(calc(100cqw + 32px), 412px);
+        --map-h: min(520px, calc(var(--map-w) * 480 / 384));
+        position: relative;
+        flex: 1 1 0;
+        min-height: min(344px, var(--map-h));
+        max-height: var(--map-h);
+        /* Width is not set: with a definite height and a ratio, the box works it
+           out, which is what keeps the picture exactly the shape the act targets
+           and the horizon are placed against. */
+        width: auto;
+        aspect-ratio: 384 / 480;
+        /* Centred by alignment rather than by `auto` margins, because those
+           collapse to zero the moment the box is wider than the column and the
+           picture would hang off one side. */
+        align-self: center;
+      }
+      .ui-map-world {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      /*
+       * The line. One weight for an act, whether or not it has been flown - a
+       * route you have not travelled is still the route, so what is ahead is the
+       * same line in the quiet colour, never dashed and never thinner.
+       *
+       * The handover between two acts is the one exception, and it is not the
+       * same claim: it is not a stretch of anybody's act, it is the seam between
+       * two of them. Drawn at less than half the weight, so seven services read
+       * as seven along a line that never actually breaks.
+       */
+      .ui-route {
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.16);
+        stroke-width: 5.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* The act the writing under the map is showing. */
+      .ui-route.sel {
+        stroke: rgba(159, 228, 255, 0.34);
+      }
+      .ui-route.join {
+        stroke: rgba(159, 228, 255, 0.13);
+        stroke-width: 2.2;
+      }
+      /* ...and the part of it that has been flown: the one bright thing here. */
+      .ui-map-flown {
+        fill: none;
+        stroke: #9fe4ff;
+        stroke-width: 5.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* A flown seam keeps the seam's weight: it is lit, not promoted. */
+      .ui-map-flown.link {
+        stroke-width: 2.2;
+        stroke: rgba(159, 228, 255, 0.72);
+      }
+      /*
+       * ...and the head on it: which way round the journey goes.
+       *
+       * A stroke like everything else here, at the weight of a stop's edge
+       * rather than of the line, because it is a mark *on* the route and not a
+       * piece of it. It sits above the seam it belongs to and below the stops,
+       * which is the order it is drawn in - a stop is never covered by one.
+       *
+       * Stronger than the seam under it, and deliberately: the seam is at less
+       * than half weight because it is the space between two acts, and a symbol
+       * set in the ink of a gap is a symbol nobody reads.
+       */
+      .ui-route-arrow {
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.5);
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      /* Behind you it takes the lit seam's colour. Direction is a fact about the
+         route either way, so what changes is the ink and never the shape. */
+      .ui-route-arrow.on {
+        stroke: rgba(159, 228, 255, 0.82);
+      }
+      /* Where an act is entered: the interchange. A ring the line runs through. */
+      .ui-map-entry {
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.34);
+        stroke-width: 2;
+      }
+      .ui-map-entry.sel {
+        stroke: #eafcff;
+      }
+      /* The stops. Hollow ahead of you, solid behind. */
+      .ui-map-station {
+        fill: #05192b;
+        stroke: rgba(159, 228, 255, 0.55);
+        stroke-width: 1.6;
+      }
+      /* Behind you the stop is a bead on the lit line, and it keeps a dark edge
+         so that it is still a stop rather than a bulge in the line. */
+      .ui-map-station.on {
+        fill: var(--ink);
+        stroke: #05192b;
+        stroke-width: 1.4;
+      }
+      /* Where the saved circuit is sitting: the one moving thing on the screen. */
+      .ui-map-here-halo {
+        fill: rgba(159, 228, 255, 0.18);
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .ui-map-here-halo.beat {
+        animation: ui-map-beat 3.4s ease-in-out infinite;
+      }
+      @keyframes ui-map-beat {
+        0%,
+        100% {
+          opacity: 0.4;
+          transform: scale(0.72);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+      .ui-map-here {
+        fill: #061c2e;
+        stroke: #9fe4ff;
+        stroke-width: 2.4;
+      }
+      .ui-map-here-core {
+        fill: var(--ink);
+      }
+      /*
+       * The names. What the act is, then which act it is and how far it reaches -
+       * because a numeral on its own names nothing and a name on its own does not
+       * say where it stands in the seven.
+       *
+       * Both are in box units, and the box is drawn at somewhere near one pixel
+       * to the unit - so these are very nearly the pixel sizes they end up being
+       * read at. That is the whole reason `MAP_W` is wider than the route: the
+       * two sizes below are what a name and a caption have to be to be read on a
+       * phone, and the gutters were cut to fit them rather than the other way
+       * round.
+       */
+      .ui-stop-name {
+        fill: var(--ink-2);
+        font:
+          600 13px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      .ui-stop-name.sel {
+        fill: var(--ink);
+      }
+      .ui-stop-name.locked {
+        fill: var(--unlit);
+      }
+      .ui-stop-meta {
+        fill: var(--ink-3);
+        font:
+          500 9.5px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.1em;
+      }
+      .ui-stop-meta.sel {
+        fill: var(--accent);
+      }
+      .ui-stop-meta.locked {
+        fill: var(--unlit);
+      }
+      /*
+       * The world behind the line: water at the bottom of the screen, air over
+       * it, the dark over that, and the trench floor under the lot.
+       *
+       * The whole screen, not the map's box. One fixed layer under the panel, so
+       * the bands run off all four sides and the route is standing on a world
+       * rather than on a picture of one. `Shell.layoutWorld` measures where the
+       * map landed and paths this in viewport pixels; nothing here knows any
+       * geometry beyond "it is behind everything".
+       *
+       * Nothing here is labelled and nothing here is bright. Flat bands and
+       * hairlines, all of them further back than the quietest thing on the
+       * route, because the moment any of it competes with a stop it has stopped
+       * being the ground and started being a diagram over the map.
+       *
+       * The water is the one place in the shell that goes green of the teal: the
+       * whole interface is the cold blue end of it, so a step towards green is a
+       * step the eye reads as a material rather than as another state of the
+       * line. The dark above is the same navy the page already is, taken further
+       * down - space is not a colour here, it is the absence of the atmosphere
+       * that tints everything below it. The air between them is the newest of the
+       * three and the reason the other two now read at all: it was left as bare
+       * page for a long time, which made a three-level world out of two levels
+       * and a gap, and the gap was the one a player was most likely to be
+       * standing in.
+       */
+      .ui-world {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      /*
+       * ...and the panel over it, which is at least the height of the window on
+       * purpose.
+       *
+       * That is what gives the map something to stretch into: with a column the
+       * height of its own contents there is no leftover, and `flex` on the
+       * picture would do nothing at all. `min-height` rather than `height`
+       * because the column is allowed to be longer than the window - the station
+       * list unfolds into it - and a fixed height would spill that list out of a
+       * box that then keeps neither the shell's bottom margin nor the scroll it
+       * needs.
+       *
+       * Everything that is not the map is pinned to its own content, so a short
+       * window squeezes the picture and never the type or the tap targets. The
+       * map is the only thing here that gives.
+       *
+       * `safe center` and not `center`: with the list open the column is taller
+       * than the window, and a centred overflow puts the top of the map above the
+       * scroll origin, where nothing can reach it.
+       *
+       * The container is declared rather than measured in script because the one
+       * thing the map needs to know is how wide this column ended up, and `cqw`
+       * is that number - exact, and without a layout pass to ask for it.
+       */
+      .ui.mapped .ui-panel {
+        position: relative;
+        z-index: 1;
+        min-height: 100%;
+        gap: 6px;
+        justify-content: center;
+        justify-content: safe center;
+        container-type: inline-size;
+      }
+      .ui.mapped .ui-panel > *:not(.ui-map) {
+        flex: none;
+      }
+      /*
+       * What gets pressed, at the size of a control rather than of a subject.
+       *
+       * Everywhere else in the shell a pill the full width of the column is
+       * right, because everywhere else the column *is* the screen. Here it is
+       * not: the screen is a drawing three hundred pixels wide, and a button run
+       * out to the full width of the panel finishes up wider than the map it
+       * sits under - the loudest, largest object on a screen whose entire point
+       * is the picture. So the actions are narrower than the picture, always, and
+       * they are set at forty-four pixels rather than forty-eight, which is still
+       * the whole of what a finger is owed.
+       *
+       * What the four pixels buy is the gap. Two pills six pixels apart are not
+       * two controls, they are one object with a seam across it, and the one that
+       * starts water and the one that leaves the screen are not a pair.
+       */
+      .ui.mapped .ui-panel > .ui-btn {
+        width: min(100%, 248px);
+        min-height: 44px;
+        align-self: center;
+      }
+      .ui.mapped .ui-panel > .ui-btn + .ui-btn,
+      .ui.mapped .ui-map-core + .ui-btn,
+      .ui.mapped .ui-list + .ui-btn {
+        margin-top: 8px;
+      }
+      /*
+       * The one control on this screen that starts water, kept on the glass.
+       *
+       * This is the only screen in the shell whose column is taller than the
+       * phone, and until this rule the thing at the bottom of that column was
+       * the button the whole screen is for. Measured at rest, with nothing
+       * scrolled: BEGIN's bottom edge lands 23.7px past the fold on a 390x844
+       * once a circuit has been closed, 76.4px past on a 375x667 with a *fresh*
+       * profile, 123.4px past on that phone once the second toggle appears, and
+       * 400.2px past in landscape. The 844 case is the mildest of the family and
+       * was the only one the suite had ever looked at.
+       *
+       * Pixels could not have paid for it. The picture is the only block with
+       * any give - the two switches are finger targets, the act is prose - and
+       * the 375 case needs 123 of them, which is the map from 400 down to 277.
+       * Its width follows its height (`--map-h`, below), and every pixel of that
+       * width is the size the station names are read at, so shrinking the map to
+       * fit is paying for the button with the map. Sticky costs no height at all.
+       *
+       * It un-pins on its own: there are 150px of column below it, so scrolling
+       * to the bottom puts its resting place above the pin line and ERASE and
+       * BACK are never sat on. Opaque while it is up there, for the reason
+       * `.ui.halted` is opaque - a route swimming through the middle of BEGIN
+       * reads as a rendering fault - and in that same screen's colour rather
+       * than a new one.
+       */
+      .ui.mapped .ui-btn.primary {
+        position: sticky;
+        /*
+         * Zero, and it is not a missing safe-area term. The scrollport a sticky
+         * box is held inside is `.ui`'s content box, so the twenty pixels and
+         * the bottom inset that `.ui` is already padded by are subtracted before
+         * this offset is applied - the pinned pill lands in the same gutter as
+         * the bottom of the column, home indicator included, and would sit two
+         * gutters up if this repeated the arithmetic. Measured at 0, 34 and 48px
+         * of inset.
+         */
+        bottom: 0;
+        z-index: 2;
+        background: #1d4a67;
+      }
+      .ui-world-band {
+        stroke: none;
+      }
+      .ui-world-band.water {
+        fill: rgba(22, 124, 140, 0.2);
+      }
+      /* The air: a step warmer and lighter than the page, which is all it takes
+         for the middle band to stop being the space between the other two. */
+      .ui-world-band.air {
+        fill: rgba(64, 122, 178, 0.15);
+      }
+      .ui-world-band.space {
+        fill: rgba(1, 4, 13, 0.58);
+      }
+      /* ...and the floor of the trench under the water, which is the one thing
+         here that is darker than what it sits behind. It has no edge of its own
+         on purpose: its top lands on the seam the route closes along, so the one
+         line it needs is a line the picture is already drawing. */
+      .ui-world-band.bed {
+        fill: rgba(2, 17, 27, 0.5);
+      }
+      /*
+       * ...and their two edges. The sea is solid, because a surface is a real
+       * thing you break; the top of the air is dashed, because it is a line
+       * somebody agreed on - a hundred kilometres, where act III ends.
+       *
+       * The same distinction is drawn again in the geometry, and it is the one
+       * that finally made the sea read as water rather than as the third of
+       * three tone boundaries: `meta/Circuit.ts` puts a swell on it, and only on
+       * it. Nothing here needs to know - a ripple is the shape of the path, not
+       * a property of the stroke - but the two rules are the same statement and
+       * are meant to be read together.
+       */
+      .ui-world-face {
+        fill: none;
+        stroke-width: 1;
+      }
+      .ui-world-face.sea {
+        stroke: rgba(140, 218, 236, 0.45);
+      }
+      .ui-world-face.karman {
+        stroke: rgba(158, 188, 232, 0.28);
+        stroke-dasharray: 2 6;
+      }
+      /*
+       * What lives in each band, and the one rule all five obey: quieter than the
+       * quietest thing on the route.
+       *
+       * The route's own faintest mark is a stretch of unflown line at 0.16 of the
+       * pale blue, and nothing here is allowed past it except a star, which is
+       * two pixels across and buys its brightness with size. `meta/Habitat.ts`
+       * sets the ink per mark - a big cloud is a near cloud and a near thing is a
+       * solid one - and these only say what colour it is spent in.
+       *
+       * `vector-effect` is what makes them one family. The marks are unit-sized
+       * paths placed by a `transform`, so a stroke would otherwise be scaled by
+       * whatever the mark is: a satellite twenty-three units across would carry a
+       * line twenty-three times the weight of a bird's. Non-scaling holds every
+       * stroked thing in this world at the same hairline the two horizons are
+       * drawn with, however big any of it gets.
+       */
+      .ui-world-life {
+        fill: none;
+        stroke: none;
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+      }
+      .ui-world-life.fish {
+        fill: #8cdaec;
+      }
+      .ui-world-life.cloud {
+        fill: #b6dcf0;
+      }
+      .ui-world-life.star {
+        fill: #e6f6ff;
+      }
+      .ui-world-life.bird {
+        stroke: #cfe8f8;
+        stroke-linecap: round;
+      }
+      /* High ice: the same hairline as everything else stroked here, and rounded
+         off at the ends, because a filament of cirrus does not stop square. */
+      .ui-world-life.streak {
+        stroke: #b6dcf0;
+        stroke-linecap: round;
+      }
+      /*
+       * The two made things - the satellite above the air and the coaster on the
+       * sea - at one colour and one weight, at opposite ends of the world.
+       *
+       * It is the only grouping here that is not a band, and it is the one worth
+       * making. Everything else is coloured by the medium it is in, because
+       * everything else is what that medium is full of; these two are the same
+       * fact stated twice, which is that somebody built something and left it
+       * there. They are already the only shapes in the picture with corners on
+       * them, so reading them as a pair costs nothing - and it is what keeps the
+       * boat from being read as a strangely angular fish.
+       */
+      .ui-world-life.satellite,
+      .ui-world-life.boat {
+        stroke: #b8d8f0;
+        stroke-linejoin: round;
+      }
+      /* The bottom of the map is one place under two names: where it closes. */
+      .ui-seam-name {
+        fill: var(--ink-3);
+        font:
+          600 9.5px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        text-anchor: middle;
+      }
+
+      /*
+       * The seven acts, as seven targets over the picture.
+       *
+       * They were a strip of numerals under the map - seven identical squares
+       * that say nothing about where the acts are, sitting under a drawing whose
+       * whole subject is where the acts are. Here each act is picked where it
+       * actually is, and the target carries no ink of its own: the map already
+       * draws which act is selected, in the line, the entry ring and the name.
+       * What is left for the button to own is a focus ring and a pressed state.
+       */
+      .ui-map-act {
+        position: absolute;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 140ms ease;
+      }
+      /* Nothing marks the selected one here, and that is the point: the map
+         already says which act it is in the only ink it has - a white entry
+         ring, a lit stretch and a name at full strength. A tint over the top of
+         that draws a box round a third of the picture to repeat something the
+         picture has already said. */
+      .ui-map-act:active {
+        background: rgba(159, 228, 255, 0.11);
+      }
+      /* Locked reads as "not yet", never as broken - and the map dims its own
+         name and line for it already, so the target only stops being one. */
+      .ui-map-act.locked {
+        cursor: default;
+      }
+      /* The whole circuit in two numbers: the caption of the picture, sitting
+         with the picture. Below the card it was a second footer under the first,
+         at one scale under a summary of another. */
+      .ui-map-total {
+        margin: -14px 0 14px;
+      }
+      /*
+       * Under the map: the selected act, and the only writing on the screen that
+       * is not a place name. Not a card - there is no frame, no tint and no
+       * padding to hold, because a screen with one paragraph on it does not need
+       * the paragraph boxed to find it. The whole block is the disclosure.
+       *
+       * Frameless is not the same as unstructured, and this was six tiers of type
+       * five pixels apart, which is a pile. Nothing here is boxed; the grouping is
+       * done entirely in the gaps, and the three of them are the whole layout:
+       * three pixels inside a group, thirteen between two.
+       */
+      .ui-map-core {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .ui-map-core-open {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 2px 4px 4px;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: inherit;
+        text-align: center;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ui-map-core-open:active {
+        transform: translateY(1px);
+      }
+      /* Which of the seven, and what it is to this player - one line, and only
+         the half of it that is news carries the accent. */
+      .ui-map-core-kicker {
+        font:
+          700 9px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.26em;
+        text-indent: 0.26em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .ui-map-core-badge {
+        color: var(--ink-3);
+      }
+      .ui-map-core-kicker.here .ui-map-core-badge {
+        color: var(--accent);
+      }
+      .ui-map-core-name {
+        margin-top: 7px;
+        font:
+          600 18px/1.15 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.02em;
+        color: var(--ink);
+      }
+      /* The verb belongs to the name: same sentence, so barely any gap. */
+      .ui-map-core-verb {
+        margin-top: 3px;
+        font:
+          400 11px/1.35 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink-2);
+      }
+      /* The one line of narrative the screen carries. */
+      .ui-map-arc {
+        display: block;
+        max-width: 32ch;
+        margin: 13px auto 0;
+        font:
+          400 11px/1.55 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink-2);
+      }
+      /*
+       * The foot: how much of the act is behind you, and the word for what opens.
+       *
+       * The dots used to sit between the verb and the arc, cutting the card's own
+       * sentence in half. They are a summary of precisely what the disclosure
+       * unfolds, so they ride with it.
+       */
+      .ui-map-core-foot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        margin-top: 14px;
+      }
+      .ui-map-core-more {
+        font:
+          700 9px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.22em;
+        text-indent: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .ui-map-core-chevron {
+        width: 11px;
+        height: 11px;
+        margin-left: -6px;
+        fill: none;
+        stroke: rgba(159, 228, 255, 0.72);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 160ms ease;
+      }
+      .ui-map-core-open.open .ui-map-core-chevron {
+        transform: rotate(180deg);
+      }
+      /*
+       * The six stations themselves, unfolded from the sentence above them:
+       * named, placed, and with the one line each of them has about what changed.
+       * A record and a map - nothing in here is a button, because the campaign
+       * checkpoints at act boundaries and nowhere finer.
+       *
+       * It is drawn as the map draws them, because it is the same six stops: one
+       * rule, one weight, a stop on it per row, filled behind you and hollow
+       * ahead. The rule was a bare `border-left` before, which started and ended
+       * in mid-air against nothing, and the rows were numbered - a numeral beside
+       * a stop being a second way of saying the thing the stop's place on the line
+       * already says.
+       */
+      .ui-stations {
+        list-style: none;
+        width: 100%;
+        max-width: 300px;
+        margin: 14px auto 2px;
+        padding: 0 0 0 24px;
+        text-align: left;
+      }
+      .ui-stations li {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: 'name depth' 'note note';
+        align-items: baseline;
+        gap: 2px 10px;
+        padding: 6px 0;
+      }
+      /*
+       * The line, drawn one leg at a time: from this row's stop to the next one's.
+       *
+       * It is per-row rather than one rule down the whole list so that it starts
+       * at the first stop and stops at the last however tall the rows turn out to
+       * be - a note that wraps to two lines moves every stop below it, and a
+       * single absolute rule measured off the list would then either overshoot
+       * the last stop or fall short of it. A line that runs past its last stop is
+       * a line going somewhere, and this one ends where the act does.
+       */
+      .ui-stations li::after {
+        content: '';
+        position: absolute;
+        left: -20px;
+        top: 15.5px;
+        bottom: -15.5px;
+        width: 1px;
+        background: rgba(140, 210, 245, 0.24);
+      }
+      .ui-stations li:last-child::after {
+        content: none;
+      }
+      .ui-station-stop {
+        position: absolute;
+        left: -24px;
+        top: 11px;
+        z-index: 1;
+        box-sizing: border-box;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(159, 228, 255, 0.55);
+        background: #05192b;
+      }
+      .ui-station-name {
+        grid-area: name;
+        font:
+          600 13px/1.4 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink-2);
+      }
+      /* The depths are a ladder read down the column, so they are held to one
+         set of figure widths and kept quiet enough not to compete with a name. */
+      .ui-station-depth {
+        grid-area: depth;
+        white-space: nowrap;
+        font:
+          500 9.5px/1.4 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        color: var(--ink-3);
+      }
+      .ui-station-note {
+        grid-area: note;
+        font:
+          400 11px/1.45 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: var(--ink-3);
+      }
+      /* Behind you: the name lifts to full ink and the stop is a bead on the
+         line. Ahead: both stay where they are. */
+      .ui-stations li.done .ui-station-name {
+        color: var(--ink);
+      }
+      .ui-stations li.done .ui-station-stop {
+        background: #eafcff;
+        border-color: #05192b;
+      }
+      /* ...and where the circuit is sitting, which wins over `done` because a
+         station can be both, and this is the one worth saying. */
+      .ui-stations li.here .ui-station-name {
+        color: var(--accent);
+      }
+      .ui-stations li.here .ui-station-stop {
+        border-color: #9fe4ff;
+        background: radial-gradient(circle at 50% 50%, #eafcff 0 2.2px, #061c2e 2.2px);
+      }
+      .ui-setting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 44px;
+        padding: 0 4px;
+        border-bottom: 1px solid rgba(120, 180, 210, 0.12);
+      }
+      .ui-setting-label {
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      /* A group heading that carries its own rule out to the edge of the panel.
+         Two of these are the whole structure of the mixer - what this station is
+         made of, and what the game says on top of it - so they have to be read as
+         dividers and not as another row of writing. */
+      .ui-section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        /* Air above, none below: it belongs to the group under it, and the group
+           above it is a fader whose track would otherwise sit on the word. */
+        margin: 14px 0 2px;
+        text-align: left;
+        color: var(--ink-3);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      /* ...and it ends where the rules under the tracks do. The chip's column is a
+         gutter outside the list, so a heading rule that ran on into it would be
+         the one line in the panel with a different right edge - which is exactly
+         how it read: two right margins, 58px apart, in a drawer 320 wide. */
+      .ui-section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        margin-right: calc(46px + 12px);
+        background: rgba(120, 180, 210, 0.16);
+      }
+      @media (max-width: 340px) {
+        .ui-section-title::after {
+          margin-right: calc(42px + 8px);
+        }
+      }
+      /* The master switch reads as the lid on the mixer rather than as its first
+         track: brighter label, and no slider. Inside the drawer it sits on the
+         masthead's own plane, so the rule it used to carry is that band's edge. */
+      .ui-audio-master {
+        padding: 0;
+      }
+      .ui-switch {
+        min-width: 62px;
+        min-height: var(--reach);
+        padding: 6px 12px;
+        /* Half the height, so a switch is a pill at whatever `--reach` is. It
+           was a fixed 16 against a fixed 32, and grew into a rounded box the
+           moment the target did - the only cornered thing in a shell where
+           every other control is a lozenge. */
+        border-radius: calc(var(--reach) / 2);
+        border: 1px solid rgba(140, 210, 245, 0.24);
+        background: transparent;
+        color: var(--ink-2);
+        font:
+          600 11px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+      }
+      .ui-switch.on {
+        background: rgba(52, 148, 190, 0.32);
+        border-color: rgba(160, 226, 255, 0.48);
+        color: var(--ink);
+      }
+
+      /*
+       * A mixer track: a name, the line under it that is its level, and a word in
+       * the gutter saying whether any of it is being heard.
+       *
+       * It used to be two lines and a number. A label with a 62x32 ON pill beside
+       * it, a full-width slider under that, and `100%` printed at the end of every
+       * single one of them. Ten tracks of that is 668px of drawer trying to stand
+       * in a 600px hole, so the panel scrolled - and the thing at the bottom of a
+       * scrolling panel was CLOSE, which meant the button that shuts the mixer was
+       * below the fold on every screen the game runs on.
+       *
+       * Now it is one line. The percentage went with the second one and is not
+       * missed: a fader filled to its own value *is* that number, drawn. What a
+       * reader gets instead is `aria-valuetext`, which was always the copy that
+       * actually mattered.
+       *
+       * ## Why the row is a finger tall and not 36px
+       *
+       * It was 36, and 40 on a tall screen, and it shrank to 28 on a short one -
+       * four tiers of a number, all of them trading padding to keep the whole
+       * mixer on one screen. What that bought was a fader nobody could hit: the
+       * input *is* the row, so a 36px row is a 112x36 drag target, and the census
+       * in `e2e/chrome.spec.ts` reported nine of them as the joint-smallest live
+       * control in the shell. Twelve pixels of dead air per row is not what a
+       * mixer is for; a fader you can catch on the first try is.
+       *
+       * So a row is `--reach`, like everything else the shell asks a thumb for,
+       * and the panel scrolls when a bed has six layers and the screen is 568
+       * tall. That is a trade the drawer could not make when this comment was
+       * written and can now: CLOSE used to be the last thing in the list, so a
+       * scrolling panel was a panel you could not shut. It is in the masthead
+       * now, and the masthead is outside the scrollport.
+       */
+      .ui-audio-track {
+        --row: var(--reach);
+        /* The chip's column, named because three rules measure off it: the room
+           the row keeps clear on the right, the width of the button standing in
+           it, and where the fader and its rail have to stop. */
+        --chip: 46px;
+        /* The chip's ring - and the row's bottom band, because the two are the
+           same thing seen twice. The ring stands on the row's foot, so its middle
+           is half its height up from there, and that is the line the fader is
+           drawn on: rule and chip on one line, which is the only way a row of ten
+           reads as ten levels rather than twenty unrelated marks. */
+        --ring: 24px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        /* Room for the chip on the right, and for the rule along the bottom. The
+           name is centred in what is left, which lifts it clear of its own line
+           without a second row to put it on. */
+        padding: 0 calc(var(--chip) + 12px) calc(var(--ring) / 2) 0;
+        min-height: var(--row);
+      }
+      /* Two tiers, both of them the shell's own. The label used to be painted in
+         a bespoke `rgba(214, 244, 255, 0.86)` at 12.5px - one ink and one size
+         that existed nowhere else in the game, and both of them were counted
+         against the budgets in `e2e/chrome.spec.ts` by a panel that had no need
+         of either. */
+      .ui-audio-track .ui-setting-label {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      /* Off is drawn on the whole row rather than only on its name: a bright
+         fader over a grey label reads as a live control somebody dimmed by
+         accident.
+
+         `--ink-3` and not something fainter, and this is the one place in the
+         shell where that has teeth. Two of these rows are off in every act now
+         (see `QUIET_BY_DEFAULT`), so "the layer you switched off" is also the
+         state the game *opens* in - and a default state written in an ink below
+         the floor is a mixer that arrives looking broken. This tier is set where
+         the quietest one still clears AA, and it is measured every run. */
+      .ui-audio-track.muted .ui-setting-label {
+        color: var(--ink-3);
+      }
+      @media (hover: hover) {
+        .ui-audio-track .ui-setting-label:hover {
+          color: #eafcff;
+        }
+      }
+      /*
+       * The fader, which is the rule under the name.
+       *
+       * It was a 92px dash in a column of its own, between the name and the state
+       * chip, and the three of them read as three unrelated fragments on one line
+       * - a word, a scratch, another word - with the scratch the one the eye
+       * skipped. The panel's whole subject was the thing in it that looked least
+       * like an object.
+       *
+       * So the level stopped being a column and became the row's own line: a rule
+       * running the full width of the drawer under the track's name, lit from the
+       * left as far as the level and unlit past it, with a cap standing on the
+       * boundary. Nine of them down a panel draw the shape of the mix, at one line
+       * weight, and there is nothing else in the row to compete with.
+       *
+       * ## Drawn here rather than by the input
+       *
+       * Because it is a rule the *row* owns, and because a native fader cannot put
+       * its track anywhere but the middle of its own box. The input above it is a
+       * transparent 44px-tall sheet that catches the drag, the arrows and the
+       * focus ring, and paints nothing at all - which also settles what the two
+       * browsers disagree about, since `-moz-range-progress` and a webkit gradient
+       * are two ways of drawing a fill this element no longer draws.
+       */
+      .ui-audio-track {
+        --fill: 100%;
+        --fill-ink: var(--accent);
+        --rail-ink: rgba(140, 210, 245, 0.16);
+        --cap-ink: var(--ink);
+      }
+      /*
+       * Off keeps the level and stops claiming it is being heard.
+       *
+       * The fill does not go: a player who turned the whale down to a fifth before
+       * switching it off is owed that fifth back when they switch it on, and a
+       * rail wiped clean says it is gone. It goes to the ink the map paints an act
+       * nobody has reached in - the shell's own word for a thing that is there and
+       * is not happening.
+       */
+      .ui-audio-track.muted {
+        --fill-ink: var(--unlit);
+        --cap-ink: var(--unlit);
+      }
+      .ui-audio-track::after {
+        content: '';
+        position: absolute;
+        /* Under the name, and stopping where the chip's column starts: the rule is
+           the fader, so it may not run under a control that is not one. */
+        right: calc(var(--chip) + 12px);
+        /* Half a ring up from the row's foot, less half this box, so the 2px line
+           inside it lands exactly on the middle of the chip beside it. */
+        bottom: calc(var(--ring) / 2 - 5px);
+        left: 0;
+        /* Tall enough to hold the cap; the line itself is two pixels of it,
+           centred, and the rest is transparent. */
+        height: 10px;
+        background:
+          /* The cap, standing on the boundary. A percentage background-position
+             insets a 2px box by its own width across the track, which is the same
+             arithmetic a native thumb does - so the cap lands where the fill ends
+             at both extremes instead of hanging 1px off each. */
+          linear-gradient(var(--cap-ink), var(--cap-ink)) var(--fill) 50% / 2px 10px no-repeat,
+          /* ...and the line, in a hard stop. No gradient, no glow. */
+          linear-gradient(to right, var(--fill-ink) 0 var(--fill), var(--rail-ink) var(--fill) 100%)
+            0 50% / 100% 2px no-repeat;
+      }
+      /*
+       * The input: the whole row, and invisible.
+       *
+       * Every pixel between the panel's left edge and the chip is the drag target,
+       * which is 44 tall and about 250 wide - against the 92x40 it was, on a
+       * control the census in `e2e/chrome.spec.ts` reported nine times as the
+       * joint-smallest live thing in the shell.
+       */
+      .ui-audio-track input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        position: absolute;
+        top: 0;
+        right: calc(var(--chip) + 12px);
+        bottom: 0;
+        left: 0;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        border-radius: 8px;
+        background: transparent;
+        cursor: pointer;
+      }
+      .ui-audio-track input[type='range']::-webkit-slider-runnable-track {
+        height: 2px;
+        background: transparent;
+      }
+      .ui-audio-track input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 2px;
+        height: 2px;
+        border: none;
+        background: transparent;
+      }
+      .ui-audio-track input[type='range']::-moz-range-track {
+        height: 2px;
+        background: transparent;
+      }
+      .ui-audio-track input[type='range']::-moz-range-thumb {
+        width: 2px;
+        height: 2px;
+        border: none;
+        background: transparent;
+      }
+      /*
+       * The state chip, held to a column down the right edge. It keeps the word -
+       * a dot would have been smaller still, but ON and OFF are the two things in
+       * this panel nobody should have to work out.
+       *
+       * ...and it is drawn quietly, which is the opposite of what a switch usually
+       * gets. Everywhere else in the shell `.on` means filled, because everywhere
+       * else one switch is being compared with nothing. Here there are ten of them
+       * in a column and eight are on: filled, they were a stack of eight identical
+       * blue lozenges shouting the default state, and the two that were actually
+       * different were the quiet ones. Which is not a hypothetical - this class
+       * was written for that finding and then left off the element for four
+       * commits, and the panel in the meantime was exactly the stack of lozenges
+       * it describes, each one 62px wide in a 46px column and hanging over the
+       * drawer's own right edge.
+       *
+       * So on is a hairline and off is dimmer still, and what carries the state is
+       * the row itself - a named layer with a lit fader against a grey one. The
+       * exception is what should be visible, not the rule.
+       *
+       * ## The ring is a pseudo-element because the target is not the chip
+       *
+       * Everything in this shell that a finger is asked for measures `--reach` on
+       * its short side, and that is 44 - about twice the height this chip wants to
+       * be. Both used to be true of the same box and the box won: the chip grew to
+       * 44 and turned into the lozenge above. Drawing the ring on `::before`
+       * separates the two questions. The button is a 46x44 target; the ring inside
+       * it is 46x24, and the twenty pixels of quiet glass above it still answer a
+       * thumb.
+       *
+       * The glass is all above because the ring stands on the row's foot rather
+       * than in the middle of its target, which is what puts it on the fader's
+       * line - see `--ring`. The word moves with it: the top padding is what is
+       * left of the target once the ring has had its share, so ON is centred in
+       * the ring and not in the box the ring hangs in.
+       */
+      .ui-audio-toggle {
+        /* Out of the flow and into the gutter the row keeps clear for it, so that
+           the row's one in-flow child is the name and the name can have the whole
+           width. Nothing here ellipsises any more - not `Sinking bubbles`, not
+           `The ring of silence` - and the rule under it is the same length in
+           every row whatever it is called. */
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: var(--chip);
+        min-width: 0;
+        height: var(--reach);
+        min-height: var(--reach);
+        padding: calc(var(--reach) - var(--ring)) 0 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        /* letter-spacing hangs a gap off the last letter; half of it back on the
+           front is what actually centres a tracked-out word. */
+        text-indent: 0.12em;
+      }
+      .ui-audio-toggle::before {
+        content: '';
+        position: absolute;
+        /* Standing on the row's foot, not centred in the target: half of it is
+           above the fader's line and half below, which is what "in line with the
+           slider" means for a thing that is taller than a line. */
+        inset: auto 0 0;
+        /* `*` in this file does not reach pseudo-elements, and a content-box ring
+           is 26 tall for a 24 that has to be halved against the rule. */
+        box-sizing: border-box;
+        height: var(--ring);
+        border: 1px solid rgba(140, 210, 245, 0.14);
+        border-radius: 12px;
+      }
+      .ui-mix .ui-audio-toggle {
+        /* The floor tier, for the same reason the muted label is on it: OFF is a
+           resting state of this panel now, not only a state somebody chose. */
+        color: var(--ink-3);
+      }
+      /* `.ui-switch.on` fills, and it out-specifies the class above by a whole
+         selector - so the fill has to be turned off where it is most visible
+         rather than left to the base rule. Without this the chip is a 46x44 blue
+         slab with a 46x24 hairline drawn across the middle of it. */
+      .ui-mix .ui-audio-toggle.on {
+        background: transparent;
+        color: var(--ink-2);
+      }
+      .ui-mix .ui-audio-toggle.on::before {
+        border-color: rgba(140, 210, 245, 0.3);
+      }
+      @media (hover: hover) {
+        .ui-mix .ui-audio-toggle:hover,
+        .ui-mix-close:hover {
+          color: #eafcff;
+        }
+        .ui-mix .ui-audio-toggle:hover::before,
+        .ui-mix-close:hover::before {
+          border-color: rgba(160, 226, 255, 0.5);
+        }
+      }
+      /* The master switch is the lid on the mixer rather than its first track:
+         brighter, wider, no fader, and a plane of its own under it. */
+      .ui-mix .ui-setting {
+        min-height: var(--reach);
+        padding: 0;
+        border-bottom: none;
+      }
+      .ui-audio-master .ui-setting-label {
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: var(--ink);
+      }
+      /* The one switch in the drawer that is still filled when it is on, and the
+         same 44px-target-around-a-smaller-pill trick as the chip above. It is
+         allowed the fill because it is the exception the chips are quiet for:
+         there is one of it, and what it says is whether any of this is audible. */
+      .ui-mix .ui-audio-master .ui-switch {
+        position: relative;
+        width: 60px;
+        min-width: 0;
+        height: var(--reach);
+        min-height: var(--reach);
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-indent: 0.14em;
+      }
+      .ui-mix .ui-audio-master .ui-switch::before {
+        content: '';
+        position: absolute;
+        /* (44 - 26) / 2 */
+        inset: 9px 0;
+        border: 1px solid rgba(140, 210, 245, 0.24);
+        border-radius: 13px;
+      }
+      .ui-mix .ui-audio-master .ui-switch.on::before {
+        border-color: rgba(160, 226, 255, 0.48);
+        background: rgba(52, 148, 190, 0.32);
+      }
+      .ui-corner {
+        position: fixed;
+        z-index: 6;
+        top: calc(var(--safe-t) + 10px);
+        right: calc(var(--safe-r) + 10px);
+        width: var(--reach);
+        height: var(--reach);
+        border-radius: 22px;
+        border: 1px solid rgba(150, 210, 240, 0.2);
+        background: rgba(6, 22, 38, 0.45);
+        color: var(--ink-2);
+        font-size: 11px;
+        letter-spacing: 1px;
+        cursor: pointer;
+      }
+      /* The mixer button sits under the pause button rather than beside it: the
+         top-right corner is where a thumb rests, and two targets side by side
+         there is one mis-tap away from pausing a run somebody was enjoying.
+         Ten under the inset, then the pause button, then eight of air. */
+      .ui-corner-mix {
+        top: calc(var(--safe-t) + 10px + var(--reach) + 8px);
+        font-size: 17px;
+        line-height: 1;
+      }
+      /* The icon is the whole face of the button, so it centres itself and runs
+         at full strength rather than the 0.75 an inline label icon sits at. */
+      .ui-corner-mix {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ui-ico-mix {
+        width: 19px;
+        height: 19px;
+        opacity: 1;
+      }
+      /* The slash rides on the icon and is only shown while everything is muted,
+         so the corner says "silent" without being opened. */
+      .ui-ico-mix .slash {
+        display: none;
+      }
+      .ui-corner-mix.muted .ui-ico-mix .slash {
+        display: inline;
+      }
+      /* One reason for the slash, and it is the player's own switch. A launch
+         waiting on its first gesture is silent too, and drawing it here was a
+         mistake worth leaving a line about: a crossed-out speaker on the opening
+         screen reads as a game that ships muted, which is the opposite of what it
+         is. That state is handled where it belongs - in what the press does. See
+         `Shell.silent`. */
+      .ui-corner-mix.muted {
+        color: var(--ink-3);
+      }
+      .ui-corner-mix.on {
+        background: rgba(52, 148, 190, 0.42);
+        border-color: rgba(160, 226, 255, 0.5);
+        color: var(--ink);
+      }
+      /* Off-run there is no pause button above it, so it takes the corner itself
+         rather than floating 58px down with nothing over it. It is a mute there
+         and not a drawer - see the click handler in `Shell.ts` - and this is the
+         only outward sign of that: same face, same corner, one job each side of
+         a run. */
+      .ui-corner-mix.solo {
+        top: calc(var(--safe-t) + 10px);
+      }
+
+      /* --- the in-game mixer drawer ---
+         Not a dialog and not a pause screen. The *water* is held while it is open
+         (`mixHold` in main.ts) and the bed goes on playing, because the only way
+         to set a level is to hear it and the only way to take your time over one
+         is to know nothing is eating your shoal while you do. */
+      /*
+       * The card hugs what is in it.
+       *
+       * It used to be pinned top *and* bottom, which made it a column the height of
+       * the screen whatever it had to say - a slab down one side of the water, with
+       * the last two rows of a ten-row list hanging off the end of it. Anchored at
+       * the top with a ceiling on how tall it may get, it is a card: five layers in
+       * act I make a shorter one than six in act III, and both of them end where
+       * their last row does.
+       *
+       * The scrollport is `.ui-mix-list` and not the card, which is the other half
+       * of the same idea. Nothing the game ships reaches it on a phone with room -
+       * but a 568px screen with a six-layer bed does now that a row is a finger
+       * tall, and a text-scaling setting can turn any list into a long one. What
+       * scrolls is the list; what never does is the masthead, so the name of the
+       * station and the way out of the panel are on the glass at every scroll
+       * position.
+       */
+      .ui-mix {
+        position: fixed;
+        z-index: 6;
+        /* Clear of both corner buttons: the inset, two of them, and the air
+           between and below. */
+        top: calc(var(--safe-t) + 10px + 2 * var(--reach) + 16px);
+        right: calc(var(--safe-r) + 10px);
+        /* ...and it ends where its last row does, or here, whichever comes first.
+           `bottom` is what made this a slab: with both edges pinned the card is
+           the height of the screen whatever it has to say. Same arithmetic, read
+           as a ceiling instead of an anchor - the top offset above, plus the
+           gutter the bottom edge used to sit on.
+
+           Two declarations because they answer different questions on a phone:
+           `vh` is the tall viewport, measured with the browser's toolbars gone,
+           and a fixed card is laid out against the short one. `dvh` is the short
+           one, and it is the second line so that a browser without it keeps the
+           old answer rather than none. */
+        max-height: calc(100vh - var(--safe-t) - var(--safe-b) - 2 * var(--reach) - 36px);
+        max-height: calc(100dvh - var(--safe-t) - var(--safe-b) - 2 * var(--reach) - 36px);
+        /* The fallback width is what is left of the glass, not what is left of
+           the viewport: `100vw` includes both cutouts under `viewport-fit=cover`,
+           so a drawer pinned to the right inset and sized against the raw width
+           has its far edge under the left one. */
+        width: min(320px, calc(100vw - var(--safe-l) - var(--safe-r) - 20px));
+        display: flex;
+        flex-direction: column;
+        padding: 0 14px 8px;
+        border: 1px solid rgba(140, 210, 245, 0.18);
+        border-radius: 18px;
+        background: rgba(3, 16, 29, 0.9);
+        backdrop-filter: blur(9px);
+        color: var(--ink);
+        text-align: left;
+      }
+      /*
+       * The masthead: a plane, not two rows.
+       *
+       * What this panel is and whether any of it is audible are a different kind
+       * of question from what the whale is doing, and they used to be drawn like
+       * the same kind - a title, a rule, a switch, a rule, and then the list, all
+       * of it on one flat sheet with the eye given nothing to hold on to. It is
+       * its own surface now: full-bleed to the card's edges, a shade lighter than
+       * what it sits on, and closed off with a line. Two planes, and everything
+       * below the line is a level.
+       */
+      .ui-mix-top {
+        flex: 0 0 auto;
+        /* Out to the card's own edges, under its corners. The radius is the
+           card's minus its border, or the fill draws a bright hairline across
+           each top corner where the two curves disagree. */
+        margin: 0 -14px 4px;
+        padding: 4px 14px 8px;
+        border-bottom: 1px solid rgba(140, 210, 245, 0.2);
+        border-radius: 17px 17px 0 0;
+        background: rgba(16, 42, 66, 0.62);
+      }
+      /* The one thing in the card that is allowed to be taller than the card. */
+      .ui-mix-list {
+        flex: 1 1 auto;
+        /* A flex item's floor is its content, so without this the list refuses to
+           be shorter than ten rows and takes the card past its ceiling instead of
+           scrolling inside it. */
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+      }
+      .ui-mix-list::-webkit-scrollbar {
+        width: 3px;
+      }
+      .ui-mix-list::-webkit-scrollbar-thumb {
+        border-radius: 2px;
+        background: rgba(140, 210, 245, 0.3);
+      }
+      .ui-mix-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .ui-mix.hidden {
+        display: none;
+      }
+      /* `min-height` is a border-box number here, like everywhere else in this
+         file: a finger for the close, and the air it stands in. The rule under the
+         head went with the masthead - two lines three pixels apart, one under the
+         title and one under the master switch, were a boxed heading rather than a
+         header. */
+      .ui-mix-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: var(--reach);
+      }
+      .ui-mix-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 300;
+        letter-spacing: 0.16em;
+        color: var(--ink);
+      }
+      /* The way out, in the corner of the panel it belongs to rather than at the
+         bottom of the list it is under. Where it used to be - a full-width pill
+         after the last track - it was the one control that moved every time the
+         act changed the number of layers, and on a scrolling panel it was the one
+         control you had to scroll to find. */
+      .ui-mix-close {
+        position: relative;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--reach);
+        height: var(--reach);
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ink-3);
+        cursor: pointer;
+      }
+      /* The ring is 30px and the target is 44, drawn the same way the state chips
+         are: the border on a pseudo-element, so how big this looks and how big it
+         is stop being one number. It was 30 of both, and the census called it the
+         second-smallest live control in the shell. */
+      .ui-mix-close::before {
+        content: '';
+        position: absolute;
+        /* (44 - 30) / 2 */
+        inset: 7px;
+        border: 1px solid rgba(140, 210, 245, 0.22);
+        border-radius: 50%;
+      }
+      .ui-mix-close:active {
+        transform: translateY(1px);
+      }
+      .ui-mix-close svg {
+        width: 11px;
+        height: 11px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+      }
+      /*
+       * What a short screen gives up, and what it does not.
+       *
+       * It used to be the row. Four tiers of `--row` - 40, 36, 32, 28 - traded a
+       * mixer you could see all of against a fader you could hit, and the trade
+       * was settled the wrong way round: on a 320x568 the drag target for a level
+       * was 92x28. The row is `--reach` on every screen now, and the thing that
+       * gives instead is the air around the headings and the card's own padding,
+       * which nobody is being asked to hit.
+       *
+       * Past that the list scrolls, which is a thing this panel is allowed to do
+       * now that CLOSE is in the masthead rather than under the last track.
+       */
+      @media (max-height: 700px) {
+        .ui-section-title {
+          margin: 8px 0 2px;
+        }
+      }
+      @media (max-height: 620px) {
+        .ui-mix {
+          padding: 0 12px 6px;
+        }
+        .ui-mix-top {
+          margin: 0 -12px 2px;
+          padding: 2px 12px 4px;
+        }
+        .ui-section-title {
+          margin: 5px 0 1px;
+        }
+      }
+      /* ...and on a narrow one the chip's gutter closes up a little. There used to
+         be a second rule here taking width off the fader so that a layer called
+         "The ring of silence" was still called that rather than "The ring of s…":
+         the name has the whole row now, so the fader and the label have stopped
+         being two things bidding for the same 290 pixels. */
+      @media (max-width: 340px) {
+        .ui-audio-track {
+          --chip: 42px;
+          padding-right: calc(var(--chip) + 8px);
+        }
+        .ui-audio-track::after,
+        .ui-audio-track input[type='range'] {
+          right: calc(var(--chip) + 8px);
+        }
+      }
+      /* --- debug panel (dev / ?debug=1 only) --- */
+      .slowblue-debug {
+        position: fixed;
+        top: var(--safe-t);
+        right: 0;
+        z-index: 10;
+        display: none;
+        flex-direction: column;
+        align-items: flex-end;
+        font:
+          500 11px ui-monospace,
+          monospace;
+        color: #cdeaff;
+      }
+      .slowblue-debug.enabled {
+        display: flex;
+      }
+      .slowblue-debug-toggle {
+        margin: 6px;
+        width: 34px;
+        height: 34px;
+        border-radius: 17px;
+        border: 1px solid rgba(160, 220, 255, 0.25);
+        background: rgba(6, 24, 40, 0.7);
+        color: #cdeaff;
+        font-size: 16px;
+      }
+      .slowblue-debug-body {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        width: min(96vw, 360px);
+        max-height: 76vh;
+        overflow-y: auto;
+        padding: 8px;
+        background: rgba(4, 16, 28, 0.92);
+        border: 1px solid rgba(120, 200, 255, 0.18);
+        border-radius: 8px 0 0 8px;
+      }
+      .slowblue-debug-stats {
+        margin: 0;
+        color: #93ffcb;
+        font:
+          500 11px ui-monospace,
+          monospace;
+      }
+      .slowblue-debug-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .slowblue-debug-controls button {
+        background: rgba(20, 52, 78, 0.9);
+        color: #d6f2ff;
+        border: 1px solid rgba(140, 210, 255, 0.2);
+        border-radius: 5px;
+        padding: 4px 6px;
+        font:
+          500 11px ui-monospace,
+          monospace;
+      }
+      /* The row the whole iPad measurement is taken through, and the only part of this
+         panel worked by a finger rather than a mouse: 44px because it is tapped
+         mid-run, on the device the number is about, between ten-second stretches of
+         play. The lit one is the rung the ladder is being held at. */
+      .slowblue-debug-pins {
+        align-items: center;
+        gap: 6px;
+      }
+      .slowblue-debug-pins button {
+        min-width: 46px;
+        min-height: 44px;
+      }
+      .slowblue-debug-controls button.on {
+        background: rgba(64, 156, 208, 0.95);
+        border-color: rgba(205, 240, 255, 0.6);
+        color: #04121c;
+      }
+      .slowblue-debug-seed {
+        width: 92px;
+        background: rgba(2, 12, 22, 0.9);
+        color: #d6f2ff;
+        border: 1px solid rgba(140, 210, 255, 0.2);
+        border-radius: 5px;
+        padding: 3px 5px;
+        font:
+          500 11px ui-monospace,
+          monospace;
+      }
+      .slowblue-debug-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 4px;
+      }
+      .slowblue-debug-sliders {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .slowblue-debug-row {
+        display: grid;
+        grid-template-columns: 116px 1fr 54px;
+        align-items: center;
+        gap: 4px;
+      }
+      .slowblue-debug-row input[type='range'] {
+        width: 100%;
+        accent-color: #58d7ff;
+      }
+      .slowblue-debug-val {
+        text-align: right;
+        color: #8fd0ef;
+      }
+      .slowblue-debug-note {
+        color: #6b93ad;
+        padding-top: 2px;
+      }
+
+      /* --- admin surface (dev / ?admin=1 only) ---
+         A full-screen sheet rather than a corner drawer: it is a list of twelve
+         stations, sixty-odd sections and thirty sounds, and every one of them has
+         to be a 44px touch target on the phone the game is being felt on. */
+      .slowblue-admin-toggle {
+        position: fixed;
+        z-index: 10;
+        top: calc(var(--safe-t) + 6px);
+        left: calc(var(--safe-l) + 6px);
+        width: 34px;
+        height: 34px;
+        border-radius: 17px;
+        border: 1px solid rgba(160, 220, 255, 0.25);
+        background: rgba(6, 24, 40, 0.7);
+        color: #cdeaff;
+        font:
+          600 13px/1 ui-monospace,
+          monospace;
+      }
+      .slowblue-admin-toggle.on {
+        background: rgba(52, 148, 190, 0.5);
+        color: #f0fdff;
+      }
+      .slowblue-admin {
+        position: fixed;
+        inset: 0;
+        z-index: 11;
+        display: none;
+        flex-direction: column;
+        padding: calc(var(--safe-t)) 0 calc(var(--safe-b));
+        background: rgba(2, 11, 20, 0.97);
+        color: #cdeaff;
+        font:
+          500 12px/1.4 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      .slowblue-admin.open {
+        display: flex;
+      }
+      .slowblue-admin-tabs {
+        display: flex;
+        gap: 2px;
+        padding: 6px 6px 4px;
+        border-bottom: 1px solid rgba(120, 200, 255, 0.16);
+      }
+      .slowblue-admin-tab {
+        flex: 1;
+        min-height: 38px;
+        border-radius: 6px;
+        border: 1px solid rgba(140, 210, 255, 0.16);
+        background: transparent;
+        color: rgba(190, 226, 245, 0.6);
+        font:
+          700 10px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.12em;
+      }
+      .slowblue-admin-tab.on {
+        background: rgba(52, 148, 190, 0.32);
+        border-color: rgba(160, 226, 255, 0.45);
+        color: #eafcff;
+      }
+      .slowblue-admin-close {
+        width: 38px;
+        min-height: 38px;
+        border-radius: 6px;
+        border: 1px solid rgba(140, 210, 255, 0.16);
+        background: transparent;
+        color: rgba(190, 226, 245, 0.7);
+        font-size: 18px;
+      }
+      .slowblue-admin-status {
+        padding: 5px 10px;
+        color: rgba(147, 255, 203, 0.75);
+        font:
+          500 10px/1.4 ui-monospace,
+          monospace;
+        border-bottom: 1px solid rgba(120, 200, 255, 0.1);
+      }
+      .slowblue-admin-body {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px 6px 24px;
+      }
+      .slowblue-admin-acts {
+        display: flex;
+        gap: 4px;
+        margin: 4px 0 8px;
+      }
+      .slowblue-admin-act {
+        flex: 1;
+        min-height: 34px;
+        border-radius: 6px;
+        border: 1px solid rgba(140, 210, 255, 0.16);
+        background: transparent;
+        color: rgba(190, 226, 245, 0.6);
+        font:
+          700 10px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.1em;
+      }
+      .slowblue-admin-act.on {
+        background: rgba(52, 148, 190, 0.3);
+        border-color: rgba(160, 226, 255, 0.42);
+        color: #eafcff;
+      }
+      .slowblue-admin-group {
+        margin: 12px 2px 4px;
+        color: rgba(182, 225, 246, 0.5);
+        font:
+          700 9px/1.4 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .slowblue-admin-row {
+        display: grid;
+        grid-template-columns: 44px 1fr auto;
+        align-items: baseline;
+        gap: 2px 8px;
+        width: 100%;
+        min-height: 52px;
+        margin-bottom: 3px;
+        padding: 8px 10px;
+        text-align: left;
+        border-radius: 8px;
+        border: 1px solid rgba(140, 210, 245, 0.14);
+        background: rgba(9, 32, 52, 0.55);
+        color: #dcf4ff;
+        font: inherit;
+      }
+      .slowblue-admin-row.compact {
+        min-height: 44px;
+        padding: 6px 10px;
+      }
+      .slowblue-admin-row.sound {
+        grid-template-columns: 1fr auto;
+      }
+      .slowblue-admin-row.muted {
+        opacity: 0.45;
+      }
+      .slowblue-admin-row:active {
+        background: rgba(52, 148, 190, 0.34);
+      }
+      .slowblue-admin-index {
+        color: rgba(147, 255, 203, 0.8);
+        font:
+          700 11px/1.3 ui-monospace,
+          monospace;
+      }
+      .slowblue-admin-name {
+        font-size: 13px;
+        color: #eafcff;
+      }
+      .slowblue-admin-meta {
+        color: rgba(190, 226, 245, 0.55);
+        font:
+          500 10px/1.3 ui-monospace,
+          monospace;
+        text-align: right;
+      }
+      .slowblue-admin-sub {
+        grid-column: 2 / -1;
+        color: rgba(190, 226, 245, 0.5);
+        font-size: 10.5px;
+      }
+      .slowblue-admin-slider {
+        display: grid;
+        grid-template-columns: 116px 1fr 34px;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 0 8px;
+        color: rgba(206, 238, 255, 0.75);
+      }
+      .slowblue-admin-slider input[type='range'] {
+        width: 100%;
+        accent-color: #58c8ed;
+      }
+      .slowblue-admin-val {
+        text-align: right;
+        color: rgba(190, 226, 245, 0.55);
+        font:
+          500 10px/1 ui-monospace,
+          monospace;
+      }
+      .slowblue-admin-warn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 4px 0;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 190, 120, 0.28);
+        color: rgba(255, 214, 160, 0.85);
+        font-size: 11px;
+      }
+      .slowblue-admin-btn {
+        min-height: 32px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 190, 120, 0.35);
+        background: transparent;
+        color: rgba(255, 214, 160, 0.9);
+        font:
+          600 11px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      .slowblue-admin-tab:focus-visible,
+      .slowblue-admin-act:focus-visible,
+      .slowblue-admin-row:focus-visible,
+      .slowblue-admin-close:focus-visible,
+      .slowblue-admin-btn:focus-visible,
+      .slowblue-admin-toggle:focus-visible,
+      .slowblue-admin-slider input:focus-visible {
+        outline: 2px solid #7fdcff;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="safe-probe"></div>
+    <div id="stage"><canvas id="game"></canvas></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
