@@ -1,0 +1,418 @@
+[gd_scene format=3 uid="uid://d210n5prdsjvl"]
+
+[ext_resource type="Texture2D" uid="uid://cn3exxolx3q0r" path="res://Resource/Tiles/Player.png" id="1_kelma"]
+[ext_resource type="Script" uid="uid://cc1bepwqtkfog" path="res://Scene/player.gd" id="1_y8w33"]
+[ext_resource type="Texture2D" uid="uid://b06opsogs21ne" path="res://Resource/Tiles/InvincibleCover.png" id="3_ij4jb"]
+[ext_resource type="Texture2D" uid="uid://ccp7583r3stj8" path="res://Resource/Tiles/HealthBar.png" id="3_xa75v"]
+[ext_resource type="Texture2D" uid="uid://c0p51x52uito2" path="res://Resource/Tiles/gohst.png" id="4_58ae2"]
+[ext_resource type="Texture2D" uid="uid://b4erpmesywdjo" path="res://Resource/Tiles/AttackCover.png" id="4_c68nv"]
+[ext_resource type="Script" uid="uid://cii0j5es7c3v1" path="res://Scene/knob.gd" id="5_ivevv"]
+[ext_resource type="Theme" uid="uid://b11g55eg8h4wi" path="res://Resource/theme.tres" id="6_2sw5t"]
+[ext_resource type="Texture2D" uid="uid://cbpold3oq53es" path="res://Resource/Tiles/Expbar.png" id="6_r6jsd"]
+[ext_resource type="Shader" uid="uid://c75y6cisvbijc" path="res://Shader/vignette.gdshader" id="8_2sw5t"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wfuwq"]
+atlas = ExtResource("1_kelma")
+region = Rect2(0, 0, 125, 144)
+margin = Rect2(0, 0, 12, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b8xra"]
+size = Vector2(20, 29)
+
+[sub_resource type="Animation" id="Animation_y8w33"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Texture:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_xa75v"]
+resource_name = "idle"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.10000001, 0.20000002),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0, 1, 2]
+}
+
+[sub_resource type="Animation" id="Animation_p6qlh"]
+resource_name = "dying"
+length = 0.7
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:modulate")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [Color(1, 1, 1, 1), Color(1, 0, 0, 1), Color(1, 1, 1, 1), Color(1, 0, 0, 1), Color(1, 1, 1, 1), Color(1, 0, 0, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_r6jsd"]
+resource_name = "left"
+length = 0.3
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [9, 10, 11]
+}
+
+[sub_resource type="Animation" id="Animation_58ae2"]
+resource_name = "right"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.10000001, 0.20000002),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [3, 4, 5]
+}
+
+[sub_resource type="Animation" id="Animation_ivevv"]
+resource_name = "up"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Texture:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.10000001, 0.20000002),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [6, 7, 8]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_58ae2"]
+_data = {
+&"RESET": SubResource("Animation_y8w33"),
+&"down": SubResource("Animation_xa75v"),
+&"dying": SubResource("Animation_p6qlh"),
+&"left": SubResource("Animation_r6jsd"),
+&"right": SubResource("Animation_58ae2"),
+&"up": SubResource("Animation_ivevv")
+}
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2sw5t"]
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_2sw5t"]
+color = Color(0.2734375, 0.2734375, 0.2734375, 0.8039216)
+thickness = 5
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b8xra"]
+atlas = ExtResource("4_58ae2")
+region = Rect2(115, 227, 26, 27)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqfuc"]
+atlas = ExtResource("1_kelma")
+region = Rect2(3, 2, 27, 25)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xa75v"]
+atlas = ExtResource("3_xa75v")
+region = Rect2(34, 1, 31, 3)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jlhxr"]
+atlas = ExtResource("3_xa75v")
+region = Rect2(0, 1, 33, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gkccs"]
+atlas = ExtResource("3_xa75v")
+region = Rect2(67, 1, 31, 3)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kkaur"]
+atlas = ExtResource("6_r6jsd")
+region = Rect2(0, 57, 126, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mp3xo"]
+atlas = ExtResource("6_r6jsd")
+region = Rect2(0, 10, 128, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k7mqb"]
+atlas = ExtResource("6_r6jsd")
+region = Rect2(0, 31, 126, 6)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p6qlh"]
+shader = ExtResource("8_2sw5t")
+shader_parameter/alpha = 0.0
+shader_parameter/inner_radius = 0.4
+shader_parameter/outer_radius = 2.0
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_2sw5t"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_aqfuc"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_aqfuc"]
+
+[node name="Player" type="CharacterBody2D" unique_id=1247792071 groups=["player"]]
+collision_layer = 2
+motion_mode = 1
+script = ExtResource("1_y8w33")
+
+[node name="Texture" type="Sprite2D" parent="." unique_id=1477118840]
+position = Vector2(6, 0)
+texture = SubResource("AtlasTexture_wfuwq")
+hframes = 3
+vframes = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=322846843]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_b8xra")
+
+[node name="Animation" type="AnimationPlayer" parent="." unique_id=1003650721]
+libraries/ = SubResource("AnimationLibrary_58ae2")
+
+[node name="Axes" type="Node2D" parent="." unique_id=414884466]
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=213471676]
+visible = false
+offset_left = -12.0
+offset_top = -23.0
+offset_right = 36.0
+offset_bottom = -13.0
+scale = Vector2(0.5, 0.5)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/background = SubResource("StyleBoxEmpty_2sw5t")
+theme_override_styles/fill = SubResource("StyleBoxLine_2sw5t")
+show_percentage = false
+
+[node name="InvincibleCover" type="Sprite2D" parent="." unique_id=1881228003]
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(3, 3)
+texture = ExtResource("3_ij4jb")
+
+[node name="ExplosionCover" type="Sprite2D" parent="." unique_id=952827891]
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(2, 2)
+texture = ExtResource("4_c68nv")
+
+[node name="StandaloneLayer" type="CanvasLayer" parent="." unique_id=880747269]
+
+[node name="Knob" type="TouchScreenButton" parent="StandaloneLayer" unique_id=871839029]
+process_mode = 1
+modulate = Color(1, 1, 1, 0)
+position = Vector2(143, 498)
+texture_normal = SubResource("AtlasTexture_b8xra")
+script = ExtResource("5_ivevv")
+
+[node name="UI" type="Control" parent="StandaloneLayer" unique_id=678797035]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("6_2sw5t")
+
+[node name="H" type="HBoxContainer" parent="StandaloneLayer/UI" unique_id=1969627173]
+layout_mode = 1
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 170.0
+offset_bottom = 61.0
+scale = Vector2(1.2, 1.2)
+
+[node name="Panel" type="PanelContainer" parent="StandaloneLayer/UI/H" unique_id=2031702948]
+custom_maximum_size = Vector2(28, 28)
+layout_mode = 2
+
+[node name="Avatar" type="TextureRect" parent="StandaloneLayer/UI/H/Panel" unique_id=786641891]
+custom_minimum_size = Vector2(28, 0)
+custom_maximum_size = Vector2(28, 28)
+layout_mode = 2
+texture = SubResource("AtlasTexture_aqfuc")
+expand_mode = 1
+stretch_mode = 2
+
+[node name="V" type="VBoxContainer" parent="StandaloneLayer/UI/H" unique_id=1800198482]
+custom_maximum_size = Vector2(70, 28)
+layout_mode = 2
+
+[node name="H" type="HBoxContainer" parent="StandaloneLayer/UI/H/V" unique_id=1964987284]
+layout_mode = 2
+
+[node name="HealthBar" type="TextureProgressBar" parent="StandaloneLayer/UI/H/V/H" unique_id=934924877]
+custom_maximum_size = Vector2(70, 5)
+layout_mode = 2
+size_flags_vertical = 4
+offset_transform_scale = Vector2(2, 1.5)
+step = 0.1
+texture_progress = SubResource("AtlasTexture_xa75v")
+
+[node name="HealthBarEased" type="TextureProgressBar" parent="StandaloneLayer/UI/H/V/H/HealthBar" unique_id=1860628615]
+show_behind_parent = true
+layout_mode = 0
+offset_right = 33.0
+offset_bottom = 4.0
+size_flags_vertical = 4
+step = 0.1
+texture_under = SubResource("AtlasTexture_jlhxr")
+texture_progress = SubResource("AtlasTexture_gkccs")
+
+[node name="Label" type="Label" parent="StandaloneLayer/UI/H/V/H" unique_id=1649073645]
+custom_maximum_size = Vector2(10, 10)
+layout_mode = 2
+size_flags_horizontal = 0
+offset_transform_enabled = true
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_outline_size = 0
+theme_override_font_sizes/font_size = 6
+text = "Lv.1"
+
+[node name="ExperienceBar" type="TextureProgressBar" parent="StandaloneLayer/UI/H/V" unique_id=1179934823]
+custom_maximum_size = Vector2(65, 10)
+layout_mode = 2
+offset_transform_enabled = true
+offset_transform_scale = Vector2(0.5, 0.5)
+offset_transform_pivot_ratio = Vector2(0, 0.5)
+step = 0.1
+texture_under = SubResource("AtlasTexture_kkaur")
+texture_over = SubResource("AtlasTexture_mp3xo")
+texture_progress = SubResource("AtlasTexture_k7mqb")
+
+[node name="Label" type="Label" parent="StandaloneLayer/UI" unique_id=1548771795]
+process_mode = 3
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -103.0
+offset_top = 32.0
+offset_right = -23.0
+offset_bottom = 81.0
+grow_horizontal = 0
+offset_transform_enabled = true
+theme_override_font_sizes/font_size = 26
+text = "暴击 "
+
+[node name="Vignette" type="TextureRect" parent="StandaloneLayer" unique_id=637021100]
+process_mode = 3
+material = SubResource("ShaderMaterial_p6qlh")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("CanvasTexture_2sw5t")
+
+[node name="Mask" type="TextureRect" parent="StandaloneLayer" unique_id=1635118518]
+process_mode = 3
+modulate = Color(0, 0, 0, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("CanvasTexture_aqfuc")
+
+[node name="SelectPanel" type="PanelContainer" parent="StandaloneLayer" unique_id=2044642697]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -106.0
+offset_top = -56.0
+offset_right = 106.0
+offset_bottom = 56.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_aqfuc")
+
+[node name="H" type="HBoxContainer" parent="StandaloneLayer/SelectPanel" unique_id=1746385242]
+layout_mode = 2
+theme = ExtResource("6_2sw5t")
+
+[node name="Button1" type="Button" parent="StandaloneLayer/SelectPanel/H" unique_id=185712311]
+process_mode = 2
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+
+[node name="Button2" type="Button" parent="StandaloneLayer/SelectPanel/H" unique_id=110346950]
+process_mode = 2
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+
+[node name="Button3" type="Button" parent="StandaloneLayer/SelectPanel/H" unique_id=2028169896]
+process_mode = 2
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+
+[node name="Label" type="Label" parent="StandaloneLayer" unique_id=1576639364]
+process_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -24.5
+offset_right = 64.0
+offset_bottom = 24.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("6_2sw5t")
+text = "游戏结束"
+visible_characters = 0
+visible_ratio = 0.0
+
+[node name="InvincibleTimer" type="Timer" parent="." unique_id=1977900552]
+one_shot = true
+
+[connection signal="high_damage" from="." to="." method="_on_high_damage"]
+[connection signal="pressed" from="StandaloneLayer/SelectPanel/H/Button1" to="." method="_on_label1_gui_input"]
+[connection signal="pressed" from="StandaloneLayer/SelectPanel/H/Button2" to="." method="_on_label2_gui_input"]
+[connection signal="pressed" from="StandaloneLayer/SelectPanel/H/Button3" to="." method="_on_label3_gui_input"]
