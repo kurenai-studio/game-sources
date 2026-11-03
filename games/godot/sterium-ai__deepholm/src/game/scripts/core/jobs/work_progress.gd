@@ -1,0 +1,233 @@
+class_name WorkProgress
+extends RefCounted
+
+## The `work`-toil progress (colonist-ai.md 3.6): live per-tile timers, the job that last
+## wrote each one, and the timers of jobs suspended mid-work. Invariants:
+## - keys are "%d_%d", or "<job_id>:%d_%d" for a rescue; only key_of()/key_parts() build or split them (ADR 047).
+## - owners maps a key to the job that last wrote it; only the owner's termination drops it. Incident waits have no owner.
+## - suspended (job_id -> ticks) is never inherited by another job on the tile; resume() consumes it.
+## - all three maps are persisted; owners are restored from the save by restore_owners(), never guessed from targets.
+## - state_hash() covers suspended only (hash_into()); progress and owners are deliberately left out.
+
+const JobQueueType = preload("res://scripts/core/jobs/job_queue.gd")
+
+var progress: Dictionary = {}
+var owners: Dictionary = {}
+var suspended: Dictionary = {}
+var _queue: JobQueueType
+## job kind -> work ticks (content/jobs.json), shared by reference with WorldState.
+var _work_ticks: Dictionary
+## (tile: Vector3i) -> String: JobQueue's "tile:" reservation key (TileGrid.target_key()).
+var _tile_key: Callable
+## (job: Dictionary) -> Vector3i: the tile a job's `work` toil runs on.
+var _work_target_for: Callable
+
+func _init(queue: JobQueueType, work_ticks: Dictionary, tile_key: Callable, work_target_for: Callable) -> void:
+	_queue = queue
+	_work_ticks = work_ticks
+	_tile_key = tile_key
+	_work_target_for = work_target_for
+
+## The save fields this table owns, in StateCodec's wire shapes.
+func encode() -> Dictionary:
+	return {
+		"workProgress": StateCodec._encode_work_progress(progress),
+		"workProgressOwners": StateCodec._encode_work_progress_owners(owners),
+		"suspendedWorkProgress": StateCodec._encode_suspended_work_progress(suspended),
+	}
+
+## Restores progress and suspended; returns the persisted key -> job_id owners,
+## which restore_owners() applies once the jobs themselves are restored.
+func decode(state: Dictionary) -> Dictionary:
+	progress = StateCodec._decode_work_progress(state["workProgress"])
+	var persisted_owners := StateCodec._decode_work_progress_owners(state.get("workProgressOwners", []))
+	suspended = StateCodec._decode_suspended_work_progress(state.get("suspendedWorkProgress", []))
+	return persisted_owners
+
+## Adds this table's state_hash() entry to snapshot: suspended ticks decide what
+## a job does the moment it resumes, so states differing only there must not hash equal.
+func hash_into(snapshot: Dictionary) -> void:
+	snapshot["suspended_work_progress"] = StateCodec._encode_suspended_work_progress(suspended)
+
+## The progress key of `tile`: the plain tile key when scope_job_id is empty,
+## else the job-scoped "<job_id>:<x>_<y>" (TileGrid.coord_key()).
+static func key_of(tile: Vector3i, scope_job_id: String = "") -> String:
+	if scope_job_id.is_empty():
+		return TileGrid.coord_key(tile)
+	return "%s:%s" % [scope_job_id, TileGrid.coord_key(tile)]
+
+## key_of()'s inverse: {tile: Vector3i, scope: String}. Job ids never contain
+## ":" (the `^[a-z0-9_-]+$` id pattern), so the last ":" separates the scope.
+static func key_parts(progress_key: String) -> Dictionary:
+	var scope := ""
+	var coord_part := progress_key
+	var colon_index := progress_key.rfind(":")
+	if colon_index >= 0:
+		scope = progress_key.substr(0, colon_index)
+		coord_part = progress_key.substr(colon_index + 1)
+	return {"tile": TileGrid.coord_of_key(coord_part), "scope": scope}
+
+## The progress key of a specific job, by its own identity, never the tile's
+## current reservation owner: terminal cleanup runs after the reservation is released.
+func key_for_job(job_id: String, job: Dictionary) -> String:
+	var target: Vector3i = job["target"]
+	if String(job.get("kind", "")) != "rescue":
+		return key_of(target)
+	return key_of(target, job_id)
+
+## The tile-addressed key used mid-work: resolves the tile's reservation owner.
+func key(tile: Vector3i) -> String:
+	var owning_job_id: String = _queue.get_reservation_table().owner(_tile_key.call(tile))
+	if owning_job_id.is_empty():
+		return key_of(tile)
+	# A construction site's footprint is owned by "site:<id>", not a job id.
+	var owning_job := _queue.get_job(owning_job_id)
+	if owning_job.is_empty():
+		return key_of(tile)
+	return key_for_job(owning_job_id, owning_job)
+
+## Cleanup for a job that just took a terminal transition: a rescue's own key
+## always; an ordinary job's shared tile key only when it was the active owner.
+func clear_terminated_job(job_id: String, job: Dictionary, was_active: bool) -> void:
+	if not job.has("target"):
+		return
+	var kind := String(job.get("kind", ""))
+	if kind == "rescue" or (was_active and _work_ticks.has(kind)):
+		progress.erase(key_for_job(job_id, job))
+
+## null when the tile has no stored progress, else its ticks remaining,
+## whatever job wrote it (escape_trench's "already stamped?" check).
+func get_progress(target: Vector3i):
+	var progress_key := key(target)
+	if not progress.has(progress_key):
+		return null
+	return int(progress[progress_key])
+
+## start_work()'s job-scoped lookup: the job's suspended snapshot (consumed), else the
+## live value only when the job owns it; null (use the kind's duration) otherwise.
+func resume(target: Vector3i, job_id: String):
+	if suspended.has(job_id):
+		var value := int(suspended[job_id])
+		suspended.erase(job_id)
+		return value
+	var progress_key := key(target)
+	if not progress.has(progress_key):
+		return null
+	# An empty owner is an incident's own job_id-less stamp, which start_work() must pick up.
+	var owner := String(owners.get(progress_key, ""))
+	if not owner.is_empty() and owner != job_id:
+		return null
+	return int(progress[progress_key])
+
+## Moves a still-queued (not terminated) job's `work` timer out of the shared
+## tile cache into suspended before its colonist.work is cleared.
+func suspend(work) -> void:
+	if work == null:
+		return
+	var job_id := String(work.get("job_id", ""))
+	var job := _queue.get_job(job_id)
+	# "active" too: NeedsSystem.pause_work_job() calls this before the status flips to queued.
+	if job.is_empty() or String(job.get("status", "")) not in ["active", "queued"]:
+		return
+	var kind := String(job.get("kind", ""))
+	if kind == "incident" or not _work_ticks.has(kind):
+		return
+	suspended[job_id] = int(work.get("ticks_remaining", 0))
+	var target: Vector3i = _work_target_for.call(job)
+	var progress_key := key(target)
+	if String(owners.get(progress_key, "")) == job_id:
+		clear(target)
+
+## The tile-cache write behind WorldState._set_work_progress(); a non-empty job_id
+## becomes the key's owner.
+func record(target: Vector3i, ticks_remaining: int, job_id: String = "") -> void:
+	var progress_key := key(target)
+	progress[progress_key] = ticks_remaining
+	if not job_id.is_empty():
+		owners[progress_key] = job_id
+
+func clear(target: Vector3i) -> void:
+	var progress_key := key(target)
+	progress.erase(progress_key)
+	owners.erase(progress_key)
+
+## Every non-incident terminal transition (WorldState._finish_job()): drops the
+## job's suspended snapshot and its live key, but only a key it owns.
+func release_owned(job_id: String, job: Dictionary) -> void:
+	if job.is_empty() or not _work_ticks.has(String(job.get("kind", ""))):
+		return
+	suspended.erase(job_id)
+	var target: Vector3i = _work_target_for.call(job)
+	var progress_key := key(target)
+	if String(owners.get(progress_key, "")) == job_id:
+		clear(target)
+
+## StateCodec.decode()'s post-load owner restore; must run after jobs are restored and
+## before an incident reconcile can cancel one. Keeps persisted owners of live work-ticked
+## jobs, recovers the rest from execution state, drops ownerless keys except incident waits.
+func restore_owners(persisted: Dictionary, colonists: Array, paused_jobs: Dictionary) -> void:
+	owners.clear()
+	for progress_key in persisted:
+		var job_id := String(persisted[progress_key])
+		var job := _queue.get_job(job_id)
+		if job.is_empty() or String(job.get("status", "")) not in ["queued", "active"]:
+			continue
+		var kind := String(job.get("kind", ""))
+		if kind == "incident" or not _work_ticks.has(kind):
+			continue
+		if progress.has(progress_key):
+			owners[progress_key] = job_id
+	var reconstructed := reconstruct_owners(colonists, paused_jobs)
+	for progress_key in reconstructed:
+		if owners.has(progress_key):
+			continue
+		var candidate: Variant = reconstructed[progress_key]
+		if candidate != null:
+			owners[progress_key] = String(candidate)
+	var incident_keys := active_incident_keys()
+	for progress_key in progress.keys():
+		if not owners.has(progress_key) and not incident_keys.has(progress_key):
+			progress.erase(progress_key)
+	assert(owners.keys().all(func(k: String) -> bool: return progress.has(k)), "every owner names a live progress key")
+
+## Fallback owners from execution state every save carries: each colonist's
+## "work" job and each paused (queued) job. Two candidates for one key are
+## corruption, recorded as null so restore_owners() drops the key.
+func reconstruct_owners(colonists: Array, paused_jobs: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for colonist in colonists:
+		var work: Variant = colonist.get("work")
+		if work != null:
+			claim_reconstructed_owner(result, String(work.get("job_id", "")))
+	for colonist_id in paused_jobs.keys():
+		var job_id := String(paused_jobs[colonist_id])
+		var job := _queue.get_job(job_id)
+		if not job.is_empty() and String(job.get("status", "")) == "queued":
+			claim_reconstructed_owner(result, job_id)
+	return result
+
+## Keys an active incident job holds without an owner, so restore_owners() keeps them.
+func active_incident_keys() -> Dictionary:
+	var keys: Dictionary = {}
+	for job in _queue.get_jobs():
+		if String(job.get("kind", "")) == "incident" and String(job.get("status", "")) == "active":
+			var target: Vector3i = _work_target_for.call(job)
+			keys[key(target)] = true
+	return keys
+
+func claim_reconstructed_owner(result: Dictionary, job_id: String) -> void:
+	if job_id.is_empty():
+		return
+	var job := _queue.get_job(job_id)
+	var kind := String(job.get("kind", ""))
+	if job.is_empty() or kind == "incident" or not _work_ticks.has(kind):
+		return
+	var target: Vector3i = _work_target_for.call(job)
+	var progress_key := key(target)
+	if not progress.has(progress_key):
+		return
+	if result.has(progress_key):
+		if String(result[progress_key]) != job_id:
+			result[progress_key] = null
+	else:
+		result[progress_key] = job_id

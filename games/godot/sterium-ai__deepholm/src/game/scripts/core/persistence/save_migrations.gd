@@ -1,0 +1,275 @@
+class_name SaveMigrations
+extends RefCounted
+
+## Explicit migrations for persisted state dictionaries. The schema was reset to
+## v1 before release (R14, ADR 049): saves written before the reset are rejected by
+## SaveIO, never migrated. Steps since the reset:
+## - v1 -> v2 (A5, ADR 053): terminal jobs leave the save.
+## - v2 -> v3 (A13b, ADR 010 amendment 2): the save records its content packs.
+## - v3 -> v4 (A16b, ADR 057): the scenario calendar and incident list are saved.
+## - v4 -> v5 (A7, ADR 058): compact file encoding (SaveWire) and saved route-search costs.
+## - v5 -> v6 (F1, ADR 059): farm zones and the "crops" growth records.
+## - v6 -> v7 (F2, ADR 061): workbench targets, orders and bills ("crafting").
+## - v7 -> v8 (F3, ADR 062): every colonist saves its skills.
+## - v8 -> v9 (L2, ADR 045 §5): map layers ("map.layerCount") and "z" on every tile.
+## - v9 -> v10 (F5a, ADR 064): a stockpile zone may carry "groups" and "priority".
+## - v10 -> v11 (F6a, ADR 067): forest zones and the "saplings" growth records.
+## - v11 -> v12 (F5b, ADR 065): every colonist gains the "heal" labour and skill.
+##
+## Adding schema version N+1: bump StateCodec.SCHEMA_VERSION, add a `N:` arm to
+## _migrate_step() that checks the vN shape and returns a new dictionary (never
+## mutating its argument), add tests/fixtures/save_schema_vN+1_fixture.json, and a
+## test that the vN fixture loads through SaveIO.read() as vN+1.
+
+## Chains single-version steps through every intermediate schema up to to_version.
+static func migrate(state: Dictionary, from_version: int, to_version: int) -> Dictionary:
+	var current_state := state
+	var current_version := from_version
+	while current_version < to_version:
+		var step := _migrate_step(current_state, current_version)
+		if not step["ok"]:
+			return step
+		current_state = step["state"]
+		current_version += 1
+	return {"ok": true, "code": "ok", "message": "save migrated", "state": current_state}
+
+## One arm per from_version, each returning {"ok": true, "state": <vN+1 state>}.
+static func _migrate_step(state: Dictionary, from_version: int) -> Dictionary:
+	match from_version:
+		1:
+			return _v1_to_v2(state)
+		2:
+			return _v2_to_v3(state)
+		3:
+			return _v3_to_v4(state)
+		4:
+			return _v4_to_v5(state)
+		5:
+			return _v5_to_v6(state)
+		6:
+			return _v6_to_v7(state)
+		7:
+			return _v7_to_v8(state)
+		8:
+			return _v8_to_v9(state)
+		9:
+			return _v9_to_v10(state)
+		10:
+			return _v10_to_v11(state)
+		11:
+			return _v11_to_v12(state)
+		_:
+			return {
+				"ok": false,
+				"code": "no_migration_available",
+				"message": "no migration is available for this save schema",
+			}
+
+## v1 -> v2 (A5, ADR 053): drops completed/failed/cancelled jobs (JobQueue keeps them only in
+## its unsaved history); nothing else in a v1 save names one. Non-job entries are left for the
+## validator to reject.
+static func _v1_to_v2(state: Dictionary) -> Dictionary:
+	if not (state.get("jobs") is Array):
+		return {"ok": false, "code": "schema_error", "message": "v1 save has no jobs array"}
+	var migrated := state.duplicate(true)
+	var live: Array = []
+	for job: Variant in migrated["jobs"]:
+		if job is Dictionary and (job as Dictionary).get("status") in ["completed", "failed", "cancelled"]:
+			continue
+		live.append(job)
+	migrated["jobs"] = live
+	migrated["schemaVersion"] = 2
+	return {"ok": true, "state": migrated}
+
+## v2 -> v3 (A13b, ADR 010 amendment 2): adds "contentPacks" right after "contentVersion" (the
+## order encode() writes). boot.gd applied no pack roots before v3 (CONTENT_PACK_ROOTS was
+## empty), so every v2 save was made on the base bundle alone: the list is empty.
+static func _v2_to_v3(state: Dictionary) -> Dictionary:
+	if state.has("contentPacks"):
+		return {"ok": false, "code": "schema_error", "message": "v2 save already has contentPacks"}
+	var migrated: Dictionary = {}
+	for key: Variant in state.keys():
+		migrated[key] = state[key]
+		if key == "contentVersion":
+			migrated["contentPacks"] = []
+	if not migrated.has("contentPacks"):
+		migrated["contentPacks"] = []
+	migrated = migrated.duplicate(true)
+	migrated["schemaVersion"] = 3
+	return {"ok": true, "state": migrated}
+
+## v3 -> v4 (A16b, ADR 057): adds "scenarioStart" as the base start, {"calendar": null,
+## "enabledIncidents": []}: a v3 world always ran on calendar.json and every incident, and so
+## does the migrated one. Nothing else changes.
+static func _v3_to_v4(state: Dictionary) -> Dictionary:
+	if state.has("scenarioStart"):
+		return {"ok": false, "code": "schema_error", "message": "v3 save already has scenarioStart"}
+	var migrated := state.duplicate(true)
+	migrated["scenarioStart"] = {"calendar": null, "enabledIncidents": []}
+	migrated["schemaVersion"] = 4
+	return {"ok": true, "state": migrated}
+
+## v4 -> v5 (A7, ADR 058): SaveIO already unpacked the file (SaveWire.unpack() leaves a v4
+## file's plain map and routes alone), so the state keeps its shape. A v4 route search has no
+## "cost": it stays absent, and RouteSearch.restore() rebuilds the costs from the current map,
+## exactly as every v4 load did. Nothing else differs.
+static func _v4_to_v5(state: Dictionary) -> Dictionary:
+	if not (state.get("map") is Dictionary) or not (state["map"] as Dictionary).has("tiles"):
+		return {"ok": false, "code": "schema_error", "message": "v4 save has no map tiles"}
+	var migrated := state.duplicate(true)
+	migrated["schemaVersion"] = 5
+	return {"ok": true, "state": migrated}
+
+## v5 -> v6 (F1, ADR 059): adds an empty "crops" list. Every v5 zone is a stockpile (no "kind"),
+## which is v6's stockpile shape; a v5 sown tile gets its growth record from
+## FarmSystem.decode()'s reconcile, starting at its stage's threshold.
+static func _v5_to_v6(state: Dictionary) -> Dictionary:
+	if state.has("crops"):
+		return {"ok": false, "code": "schema_error", "message": "v5 save already has crops"}
+	var migrated := state.duplicate(true)
+	migrated["crops"] = []
+	migrated["schemaVersion"] = 6
+	return {"ok": true, "state": migrated}
+
+## v6 -> v7 (F2, ADR 061): adds "crafting" with no configured bench: a v6 world had no
+## recipes, so nothing was ever ordered or crafted. Nothing else changes.
+static func _v6_to_v7(state: Dictionary) -> Dictionary:
+	if state.has("crafting"):
+		return {"ok": false, "code": "schema_error", "message": "v6 save already has crafting"}
+	var migrated := state.duplicate(true)
+	migrated["crafting"] = {"benches": [], "nextOrderId": 1}
+	migrated["schemaVersion"] = 7
+	return {"ok": true, "state": migrated}
+
+## v7 -> v8 (F3, ADR 062): every colonist entity gains "skills", each of its labourTable's
+## labours at level 0 with 0 XP: a v7 colonist had no skills, and starting levels are seeded
+## only when a world is created. Other kinds have no worker component and gain nothing.
+static func _v7_to_v8(state: Dictionary) -> Dictionary:
+	if not (state.get("entities") is Array):
+		return {"ok": false, "code": "schema_error", "message": "v7 save has no entities array"}
+	var migrated := state.duplicate(true)
+	for entity: Variant in migrated["entities"]:
+		if not (entity is Dictionary) or (entity as Dictionary).get("kind") != "colonist":
+			continue
+		if (entity as Dictionary).has("skills"):
+			return {"ok": false, "code": "schema_error", "message": "v7 save already has entity skills"}
+		var skills: Dictionary = {}
+		var labours: Array = ((entity as Dictionary).get("labourTable", {}) as Dictionary).keys()
+		labours.sort()
+		for labour: Variant in labours:
+			skills[labour] = {"level": 0, "xp": 0}
+		entity["skills"] = skills
+	migrated["schemaVersion"] = 8
+	return {"ok": true, "state": migrated}
+
+
+## v8 -> v9 (L2, ADR 045 §5): a v8 world is one layer. "map" gains "layerCount": 1 and keeps
+## its tiles (layer 0's flat indices are the v8 row-major ones). Every object with integer "x"
+## and "y" and no "z" gains "z": 0: in the v8 schema those are exactly the tiles ({x, y}
+## targets, origins, routes, trapped tiles) and the flat x/y records (entities, items, zones,
+## benches, tool locations, area orders), game-state.schema.json. Nothing else changes.
+static func _v8_to_v9(state: Dictionary) -> Dictionary:
+	if not (state.get("map") is Dictionary) or (state["map"] as Dictionary).has("layerCount"):
+		return {"ok": false, "code": "schema_error", "message": "v8 save has no map or already has map.layerCount"}
+	var migrated: Dictionary = _on_surface(state)
+	migrated["map"]["layerCount"] = 1
+	migrated["schemaVersion"] = 9
+	return {"ok": true, "state": migrated}
+
+## A deep copy of value with "z": 0 beside every integer x/y pair (_v8_to_v9()).
+static func _on_surface(value: Variant) -> Variant:
+	if value is Dictionary:
+		var copy: Dictionary = {}
+		for key: Variant in (value as Dictionary):
+			copy[key] = _on_surface((value as Dictionary)[key])
+		if typeof(copy.get("x")) == TYPE_INT and typeof(copy.get("y")) == TYPE_INT and not copy.has("z"):
+			copy["z"] = 0
+		return copy
+	if value is Array:
+		var items: Array = []
+		for item: Variant in (value as Array):
+			items.append(_on_surface(item))
+		return items
+	return value
+
+## v9 -> v10 (F5a, ADR 064): a v9 stockpile accepted every item and had no priority, which is a
+## v10 stockpile with neither optional key (every group, priority 2): the zones keep their shape.
+## A v9 zone that already carries either key is refused.
+static func _v9_to_v10(state: Dictionary) -> Dictionary:
+	if not (state.get("zones") is Array):
+		return {"ok": false, "code": "schema_error", "message": "v9 save has no zones array"}
+	for zone: Variant in state["zones"]:
+		if zone is Dictionary and ((zone as Dictionary).has("groups") or (zone as Dictionary).has("priority")):
+			return {"ok": false, "code": "schema_error", "message": "v9 zone already has groups or priority"}
+	var migrated := state.duplicate(true)
+	migrated["schemaVersion"] = 10
+	return {"ok": true, "state": migrated}
+
+## v10 -> v11 (F6a, ADR 067): adds an empty "saplings" list. A v10 world had no forest zone and
+## no sapling tile, so every v10 zone is already a v11 zone and nothing has grown.
+static func _v10_to_v11(state: Dictionary) -> Dictionary:
+	if state.has("saplings"):
+		return {"ok": false, "code": "schema_error", "message": "v10 save already has saplings"}
+	var migrated := state.duplicate(true)
+	migrated["saplings"] = []
+	migrated["schemaVersion"] = 11
+	return {"ok": true, "state": migrated}
+
+## v11 -> v12 (F5b, ADR 065): the heal labour. Every colonist entity's labourTable gains "heal" at
+## the content labour_default (3) and its skills, when it has them (they are optional), gain "heal"
+## at level 0 with 0 XP, both kept in the sorted key order the codec writes. Other kinds have no
+## worker component and gain nothing.
+static func _v11_to_v12(state: Dictionary) -> Dictionary:
+	if not (state.get("entities") is Array):
+		return {"ok": false, "code": "schema_error", "message": "v11 save has no entities array"}
+	var migrated := state.duplicate(true)
+	for entity: Variant in migrated["entities"]:
+		if not (entity is Dictionary) or (entity as Dictionary).get("kind") != "colonist":
+			continue
+		var labour_table: Variant = (entity as Dictionary).get("labourTable")
+		var skills: Variant = (entity as Dictionary).get("skills")
+		if not (labour_table is Dictionary) or not (skills == null or skills is Dictionary):
+			return {"ok": false, "code": "schema_error", "message": "v11 colonist has no labourTable or a malformed skills"}
+		if (labour_table as Dictionary).has("heal") or (skills is Dictionary and (skills as Dictionary).has("heal")):
+			return {"ok": false, "code": "schema_error", "message": "v11 save already has the heal labour"}
+		(labour_table as Dictionary)["heal"] = 3
+		entity["labourTable"] = _sorted(labour_table as Dictionary)
+		if skills is Dictionary:
+			(skills as Dictionary)["heal"] = {"level": 0, "xp": 0}
+			entity["skills"] = _sorted(skills as Dictionary)
+	migrated["schemaVersion"] = 12
+	return {"ok": true, "state": migrated}
+
+## The same dictionary with its keys in sorted order (_v11_to_v12()).
+static func _sorted(value: Dictionary) -> Dictionary:
+	var keys := value.keys()
+	keys.sort()
+	var sorted: Dictionary = {}
+	for key: Variant in keys:
+		sorted[key] = value[key]
+	return sorted
+
+# --- content-version renames ---------------------------------------------
+
+## Content renames keyed by the exact stored contentVersion (F1's content-rename hook); each
+## remap returns a new state and never mutates its argument. None is registered today.
+static var _content_renames: Dictionary = {}
+
+## Registers the remap for saves written under from_content_version.
+static func register_content_rename(from_content_version: String, remap: Callable) -> void:
+	_content_renames[from_content_version] = remap
+
+## Removes exactly one registered entry, leaving every other registration untouched.
+static func unregister_content_rename(from_content_version: String) -> void:
+	_content_renames.erase(from_content_version)
+
+## {"ok": false} when no rename matches (SaveIO reports content_version_mismatch); on success
+## the returned state already carries to_content_version.
+static func resolve_content_version(state: Dictionary, to_content_version: String) -> Dictionary:
+	var from_content_version := String(state.get("contentVersion", ""))
+	if not _content_renames.has(from_content_version):
+		return {"ok": false}
+	var remap: Callable = _content_renames[from_content_version]
+	var resolved: Dictionary = (remap.call(state) as Dictionary).duplicate(true)
+	resolved["contentVersion"] = to_content_version
+	return {"ok": true, "state": resolved}

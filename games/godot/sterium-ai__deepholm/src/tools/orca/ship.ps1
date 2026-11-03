@@ -1,0 +1,40 @@
+﻿# Pushes the current task branch and opens (or updates) its pull request.
+# Usage (inside the task worktree): tools\orca\ship.ps1 [-AutoMerge]
+# CI (GitHub Actions, Windows) runs the full headless suite on the PR. Merge from Orca's PR tab
+# or with `gh pr merge --squash` once it is green. -AutoMerge asks GitHub to squash-merge
+# automatically when checks pass (needs branch protection on main; harmless otherwise).
+[CmdletBinding()]
+param([switch]$AutoMerge)
+
+$ErrorActionPreference = "Stop"
+# git/orca print UTF-8; Windows PowerShell 5.1 would otherwise mangle paths with accents
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+$root = (git rev-parse --show-toplevel 2>$null)
+if (-not $root) { Write-Error "ship: run this inside the task worktree"; exit 1 }
+Set-Location $root
+$branch = git rev-parse --abbrev-ref HEAD
+if ($branch -eq "main") { Write-Error "ship: you are on main"; exit 1 }
+if (git status --porcelain) { Write-Error "ship: uncommitted changes; ask the author to commit first"; exit 1 }
+
+$ErrorActionPreference = "Continue"   # git and gh report progress on stderr
+git push -u origin $branch 2>&1 | ForEach-Object { "$_" }
+if ($LASTEXITCODE -ne 0) { Write-Output "ship: push failed"; exit 1 }
+$existing = gh pr view --json url --jq .url 2>$null
+if ($existing) {
+    Write-Output "ship: PR already open: $existing"
+} else {
+    # Title = the branch's first commit (the task itself), not the last fix-up; it becomes the squash title.
+    $title = (git log --reverse --pretty=%s "origin/main..HEAD" | Select-Object -First 1)
+    $body = (git log "origin/main..HEAD" --pretty="- %s%n%n%b") -join "`n"
+    # Body via file: commit text can contain lines gh would parse as flags.
+    $bodyFile = Join-Path $env:TEMP ("pr-body-" + [guid]::NewGuid().ToString("N") + ".md")
+    [IO.File]::WriteAllText($bodyFile, $body, (New-Object Text.UTF8Encoding $false))
+    gh pr create --base main --head $branch --title "$title" --body-file $bodyFile
+    Remove-Item $bodyFile -ErrorAction SilentlyContinue
+    $existing = gh pr view --json url --jq .url
+    Write-Output "ship: PR created: $existing"
+}
+if ($AutoMerge) {
+    try { gh pr merge --squash --auto 2>&1 | Out-String | Write-Output } catch { Write-Output "ship: auto-merge not available ($($_.Exception.Message)); merge by hand when CI is green" }
+}
+Write-Output "ship: wait for 'Godot headless checks' to pass, then merge (Orca PR tab or: gh pr merge --squash) and delete the worktree in Orca."
