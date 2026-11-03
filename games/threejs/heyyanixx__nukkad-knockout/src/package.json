@@ -1,0 +1,16 @@
+{
+  "name": "nukkad-knockout",
+  "version": "2.0.0",
+  "description": "Nukkad Knockout v2 - a desi meme 3D fighting game (Three.js + Vite). By HEYYANIXX.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && cd classic && vite build --outDir ../site/classic --emptyOutDir && cd .. && node tools/postbuild.mjs",
+    "preview": "vite preview",
+    "test": "node --test",
+    "balance": "node tools/balance.mjs"
+  },
+  "dependencies": { "three": "^0.170.0" },
+  "devDependencies": { "vite": "^5.4.0" }
+}

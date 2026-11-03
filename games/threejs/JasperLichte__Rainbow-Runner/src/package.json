@@ -1,0 +1,32 @@
+{
+  "name": "rainbow-cube",
+  "version": "1.0.0",
+  "description": "A simple Jump 'n Run game written in ECMAScript2018.",
+  "main": "src/app.js",
+  "scripts": {
+    "watch-ts": "tsc -w",
+    "watch-sass": "sass --watch styles/index.scss assets/styles/bundle.css",
+    "build": "tsc && sass --update styles/index.scss assets/styles/bundle.css && webpack",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JasperLichte/Rainbow-Cube.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JasperLichte/Rainbow-Cube/issues"
+  },
+  "homepage": "https://github.com/JasperLichte/Rainbow-Cube#readme",
+  "devDependencies": {
+    "sass": "^1.17.0",
+    "typescript": "^3.3.3",
+    "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.3"
+  },
+  "dependencies": {
+    "@types/es6-promise": "^3.3.0"
+  }
+}
