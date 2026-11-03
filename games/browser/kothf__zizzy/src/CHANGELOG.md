@@ -1,0 +1,120 @@
+# Changelog
+
+All notable changes to this project are documented here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and the project uses [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [1.5.0] - 2026-11-03
+
+### Added
+- **Level 3, the Radio Tower**: five new rooms with first lessons in radio for
+  players of about 7 to 10, in English and Russian. A drum shows that sound is
+  a vibration and a loudspeaker needs its magnet back; an electromagnet crane
+  lifts the iron block (not the wooden crate) to make a step; Dot the operator
+  robot asks for SOS in Morse code, keyed by holding ↓ (tap = dot, longer =
+  dash); a receiver's dial is tuned past the hiss and a music station to the
+  polar station's call; on the roof, in a thunderstorm, Zizzy passes the
+  lightning rod between strikes, raises the antenna and plugs in its cable to
+  call "CQ". Wrong tries explain why; only the lightning costs a life.
+- Machines that take over the arrow keys while Zizzy works them (the engine's
+  new `busy()` hook), with a hint line at the bottom of the screen.
+- Arrow glyphs in the 8-px font; a ring magnet, an aerial cable and Dot.
+- The start screen lists all three levels; with more than two answers the
+  arrows move the pick one step at a time (and the 3 key picks the third).
+
+### Changed
+- Finishing level 2 leads on to level 3; the LEVEL button and the N key go
+  1 → 2 → 3 → 1.
+
+## [1.4.1] - 2026-10-09
+
+### Fixed
+- Level 2: the wooden stick in the storeroom looked like a glitch on the
+  floor (a thin dark-yellow line on the yellow boards). It is now a red-brown
+  twig with a green leaf.
+
+## [1.4.0] - 2026-10-09
+
+### Added
+- USE (SPACE) next to a thing lying on the floor says what it is and what it
+  is good for, in both levels. Level 2 also explains the dark hall's locked
+  hatch from the floor and the storeroom's rolled-up rope ladder.
+
+### Changed
+- Level 2: the copper wire now lies in the dark hall, right under the light
+  circuit it repairs (it was on the storeroom's high shelf, a room away).
+
+## [1.3.0] - 2026-10-08
+
+### Added
+- A start screen to choose the level: "Level 1: the Radio Station - an
+  adventure" or "Level 2: the Power Station - electricity for kids". The level
+  played last is already picked, so USE starts it; arrows or a tap pick the
+  other. A link with `?level=1` or `?level=2` still starts that level directly.
+
+## [1.2.0] - 2026-10-08
+
+### Added
+- **Level 2, the Power Station**: five new rooms with first lessons in
+  electricity for players of about 7 to 10, in English and Russian. Insulators
+  and conductors (the stick and the duck fail, the metal spoon closes a
+  motor's circuit), a circuit as a closed loop (a copper wire lights the dark
+  hall), a dynamo that turns running into a charged battery, a quiz by Volta
+  the teacher robot, and electrical safety on the roof (switch off before
+  fixing, rubber gloves, never step in water near a live cable). Wrong tries
+  explain why instead of costing a life.
+- Questions with answers to choose: arrows (or a tap) pick an answer, USE
+  confirms. Nothing is picked at first, so pressing USE to hurry the text
+  never answers by accident.
+- The LEVEL button and the N key switch between the levels (asking once while
+  you play); `?level=2` in the address opens level 2; the last level played is
+  remembered. Finishing level 1 leads on to level 2.
+- Six new items (stick, rubber duck, spoon, copper wire, battery, rubber
+  gloves), Volta, a darkened hall lit only by Zizzy's own glow, a moving
+  dynamo belt.
+
+### Changed
+- The engine is level-agnostic: each level is a world (map) plus a logic file
+  of hooks; level 1 plays exactly as before.
+
+## [1.1.0] - 2026-10-07
+
+### Added
+- Russian translation with an EN / RU switch in the panel under the screen
+  (key L). Everything changes at once, including a dialog already on screen,
+  the room names, the items and the painted signs. The first visit follows the
+  browser's language; the choice is remembered; `?lang=ru` / `?lang=en` in the
+  address picks one (for embeds).
+- Cyrillic capitals in the game's 8-px font, in the same chunky style, plus
+  « » quotes.
+
+### Fixed
+- The "DEEP" sign's first letter overlapped the sign's border.
+
+## [1.0.0] - 2026-10-07
+
+First release.
+
+### Added
+- Five-room adventure: the Dusty Cellar, Boiler Room, Flooded Tunnel,
+  Workshop and Radio Attic, with five sparks to find and a puzzle chain
+  (steam valve, oiled trapdoor, raft crossing, Tesla coil, robot Sprocket,
+  magnet and grate, the grand wireless).
+- Original pixel art, font, sound effects and victory tune, all generated in
+  code.
+- Tile engine where one map per room drives drawing and collision; rooms join
+  on a grid and keep the player's exact position across edges, ceilings and
+  floors.
+- Fixed 50 Hz simulation, cached scenery and glyphs, crisp pre-rotated
+  somersault frames.
+- Two-hand inventory, lives with respawn on the last safe spot, game over and
+  restart (R twice), sound toggle remembered between visits.
+- Keyboard and touch controls (pointer events; keys released when the page
+  loses focus).
+- Tests: world consistency checks and a bot that plays the whole game in
+  headless Chromium; CI and tag-driven releases with reproducible archives.
+
+[Unreleased]: https://github.com/kothf/zizzy/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kothf/zizzy/releases/tag/v1.0.0
