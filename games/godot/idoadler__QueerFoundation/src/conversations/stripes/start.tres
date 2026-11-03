@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://fhnhg02qxspy"]
+
+[ext_resource type="Resource" uid="uid://boalylyleuuub" path="res://conversations/stripes/experience.tres" id="1_v4rvs"]
+[ext_resource type="Resource" uid="uid://dmgj5mh1lghvv" path="res://conversations/stripes/plan.tres" id="2_alnug"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_m12uk"]
+[ext_resource type="Resource" uid="uid://cwngj50ktgb7x" path="res://conversations/stripes/introduction.tres" id="3_f8bqv"]
+
+[resource]
+script = ExtResource("2_m12uk")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["I need $30,000 to set up a solid legal advice hotline,
+create educational materials on LGBTQ+ rights,
+and offer free consultations.", "My project is called Legal Aid for LGBTQ+ Rights.
+It’s all about providing legal support for queer individuals facing discrimination or legal challenges.
+I want to use my skills to make a real difference in the community.", "Hello! I’m Stripes, a fierce and passionate lawyer with a mission to support the LGBTQ+ community.
+I’m here to fight for justice and make sure everyone’s voice is heard. "])
+goto = Array[ExtResource("2_m12uk")]([ExtResource("1_v4rvs"), ExtResource("2_alnug"), ExtResource("3_f8bqv")])

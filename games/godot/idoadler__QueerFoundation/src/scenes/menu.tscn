@@ -1,0 +1,140 @@
+[gd_scene load_steps=13 format=3 uid="uid://bh2u64oii8bb2"]
+
+[ext_resource type="Texture2D" uid="uid://60dv30o4l4qq" path="res://art/office/Office bg.png" id="1_e4map"]
+[ext_resource type="Texture2D" uid="uid://btjfqtbh5hyfq" path="res://art/office/white.png" id="2_7tra3"]
+[ext_resource type="FontFile" uid="uid://cdh2w25ey4dgi" path="res://fonts/Pacifico-Regular.ttf" id="3_spsr5"]
+[ext_resource type="Script" path="res://scripts/open_url.gd" id="4_cle50"]
+[ext_resource type="Texture2D" uid="uid://dc0n0rt57oq7n" path="res://art/logos/Itch-Pride-cover-5.webp" id="5_0xaet"]
+[ext_resource type="Texture2D" uid="uid://8301hvkb8fho" path="res://art/logos/Mini-jam-Support.png" id="6_6v8i3"]
+[ext_resource type="Texture2D" uid="uid://bselqxcjiug4p" path="res://art/logos/ido_flag.png" id="7_ucv88"]
+[ext_resource type="FontFile" uid="uid://obmtho1mur1j" path="res://fonts/PlaywriteAUVIC-Regular.ttf" id="8_vr8fa"]
+[ext_resource type="Texture2D" uid="uid://d27s140cm350b" path="res://art/popups/Screen.png" id="9_cr7dn"]
+[ext_resource type="FontFile" uid="uid://bfh134b1odp46" path="res://fonts/Anton-Regular.ttf" id="10_cqclg"]
+[ext_resource type="Script" path="res://scripts/load_scene.gd" id="11_785nm"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0e6ej"]
+
+[node name="Node2D" type="Node2D"]
+position = Vector2(36, 0)
+
+[node name="OfficeBg" type="Sprite2D" parent="."]
+position = Vector2(683, 579)
+scale = Vector2(0.565918, 0.565918)
+texture = ExtResource("1_e4map")
+
+[node name="OfficeBg2" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.231373)
+position = Vector2(666, 542)
+scale = Vector2(0.565918, 0.565918)
+texture = ExtResource("2_7tra3")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 499.0
+offset_top = 161.0
+offset_right = 927.0
+offset_bottom = 482.0
+theme_override_colors/font_color = Color(0.87451, 0.0117647, 0.92549, 1)
+theme_override_fonts/font = ExtResource("3_spsr5")
+theme_override_font_sizes/font_size = 90
+text = "Queer
+"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="."]
+offset_left = 499.0
+offset_top = 96.0
+offset_right = 927.0
+offset_bottom = 417.0
+theme_override_colors/font_color = Color(0.0117647, 0.580392, 0.92549, 1)
+theme_override_fonts/font = ExtResource("3_spsr5")
+theme_override_font_sizes/font_size = 90
+text = "
+Foundation"
+horizontal_alignment = 1
+
+[node name="JamLogo" type="Node2D" parent="."]
+position = Vector2(85, 107)
+scale = Vector2(0.3, 0.3)
+
+[node name="Button" type="Button" parent="JamLogo"]
+modulate = Color(1, 1, 1, 0.196078)
+offset_left = -270.0
+offset_top = -219.0
+offset_right = 282.0
+offset_bottom = 377.0
+focus_mode = 0
+script = ExtResource("4_cle50")
+url = "https://itch.io/jam/wild-and-proud"
+
+[node name="Gwj-full-logo-noBg-4k3" type="Sprite2D" parent="JamLogo"]
+position = Vector2(2.24018, 5.00002)
+scale = Vector2(0.793333, 0.793333)
+texture = ExtResource("5_0xaet")
+
+[node name="Mini-jam-support" type="Sprite2D" parent="JamLogo"]
+position = Vector2(2.02783, 284.958)
+scale = Vector2(0.187013, 0.187013)
+texture = ExtResource("6_6v8i3")
+
+[node name="IdoLogo" type="Node2D" parent="."]
+position = Vector2(-497, -85)
+scale = Vector2(0.5, 0.5)
+
+[node name="Button2" type="Button" parent="IdoLogo"]
+modulate = Color(1, 1, 1, 0.196078)
+offset_left = 1002.0
+offset_top = 644.0
+offset_right = 1332.0
+offset_bottom = 970.0
+focus_mode = 0
+script = ExtResource("4_cle50")
+url = "https://idoadler.itch.io/"
+
+[node name="IdoFlag" type="Sprite2D" parent="IdoLogo"]
+position = Vector2(1172, 770)
+scale = Vector2(0.18, 0.18)
+texture = ExtResource("7_ucv88")
+
+[node name="Label2" type="Label" parent="IdoLogo"]
+offset_left = 958.0
+offset_top = 846.0
+offset_right = 1386.0
+offset_bottom = 1167.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_vr8fa")
+theme_override_font_sizes/font_size = 60
+text = "ido.wtf"
+horizontal_alignment = 1
+
+[node name="Screen" type="Sprite2D" parent="."]
+position = Vector2(706, 704)
+scale = Vector2(0.352783, 0.352783)
+texture = ExtResource("9_cr7dn")
+
+[node name="Button3" type="Button" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 410.0
+offset_top = 413.0
+offset_right = 976.0
+offset_bottom = 867.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(1, 0, 0.521569, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0.521569, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("10_cqclg")
+theme_override_font_sizes/font_size = 80
+theme_override_styles/focus = SubResource("StyleBoxEmpty_0e6ej")
+text = "Start
+Supporting!"
+flat = true
+script = ExtResource("11_785nm")
+scene_path = "res://scenes/office.tscn"
+
+[connection signal="mouse_entered" from="Button3" to="Screen" method="set_self_modulate" binds= [Color(0.716296, 0.716296, 0.716296, 1)]]
+[connection signal="mouse_exited" from="Button3" to="Screen" method="set_self_modulate" binds= [Color(1, 1, 1, 1)]]
