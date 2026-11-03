@@ -1,0 +1,11 @@
+name: "player"
+instances {
+  id: "player"
+  prototype: "/player/player.go"
+  children: "cannon"
+}
+instances {
+  id: "cannon"
+  prototype: "/player/cannon.go"
+}
+scale_along_z: 0

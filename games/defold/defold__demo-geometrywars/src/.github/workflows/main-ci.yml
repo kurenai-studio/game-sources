@@ -1,0 +1,110 @@
+name: "demo-geometrywars"
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: 0 3 * * *
+  repository_dispatch: {}
+
+env:
+  MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+  MACOS_CERTIFICATE_PASS: ${{ secrets.MACOS_CERTIFICATE_PASS }}
+  BUILD_BRANCH: ${{ github.event.client_payload.branch }}
+  BUILD_SERVER: "https://build-stage.defold.com"
+
+jobs:
+  build-desktop:
+    name: Desktop
+    strategy:
+      max-parallel: 4
+      matrix:
+        platform: [x86_64-linux,x86_64-darwin,x86_64-win32,x86-win32,js-web,armv7-android]
+        channel: [alpha]
+        variant: [debug]
+    runs-on: ubuntu-18.04
+    steps: [
+      { name: 'Checkout', uses: actions/checkout@v2, with: { ref: '${{env.BUILD_BRANCH}}' } },
+      { name: 'Install Python', uses: actions/setup-python@v1, with: { python-version: 2.x, architecture: x64 } },
+      { name: 'Install Java', uses: actions/setup-java@v1, with: { java-version: '11.0.2' } },
+      { name: 'Install defold-builder', run: 'git clone https://github.com/britzl/defold-builder.git' },
+      {
+        name: 'Resolve project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --email=a@b.com --auth=abc123 resolve'
+      },
+      {
+        name: 'Build project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --platform=${{ matrix.platform }} --variant=${{ matrix.variant }} --archive --with-symbols --build-server=${{ env.BUILD_SERVER }} build '
+      },
+      {
+        name: 'Bundle project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --platform=${{ matrix.platform }} --variant=${{ matrix.variant }} bundle'
+      },
+      # {
+      #   name: 'Upload build artifact',
+      #   uses: actions/upload-artifact@v1,
+      #   with: {
+      #     name: 'Geometrywars-${{ matrix.platform }}-${{ matrix.channel }}-${{ matrix.variant }}',
+      #     path: 'build/${{ matrix.platform }}'
+      #   }
+      # },
+      {
+       name: 'Notify if build status changed',
+       uses: homoluctus/slatify@master,
+       if: always(),
+       with: {
+           type: '${{ job.status }}',
+           job_name: '${{ job.status }}: channel: ${{ matrix.channel }} platform: ${{ matrix.platform }}',
+           channel: '#defold-alarms-build', url: '${{ secrets.SLACK_WEBHOOK }}',
+           mention: 'here',
+           mention_if: 'failure' }
+      }
+    ]
+
+  # until we have lipo et al working on other platforms
+  build-ios:
+    name: iOS
+    strategy:
+      max-parallel: 4
+      matrix:
+        platform: [armv7-darwin]
+        channel: [alpha]
+        variant: [debug]
+    runs-on: macos-latest
+    steps: [
+      { name: 'Checkout', uses: actions/checkout@v2, with: { ref: '${{env.BUILD_BRANCH}}' } },
+      { name: 'Install Python', uses: actions/setup-python@v1, with: { python-version: 2.x, architecture: x64 } },
+      { name: 'Install Java', uses: actions/setup-java@v1, with: { java-version: '11.0.2' } },
+      { name: 'Install defold-builder', run: 'git clone https://github.com/britzl/defold-builder.git' },
+      {
+        name: 'Resolve project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --email=a@b.com --auth=abc123 resolve'
+      },
+      {
+        name: 'Build project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --platform=${{ matrix.platform }} --variant=${{ matrix.variant }} --archive --with-symbols --build-server=${{ env.BUILD_SERVER }} build '
+      },
+      {
+        name: 'Bundle project',
+        run: './defold-builder/build.sh --channel=${{ matrix.channel }} --platform=${{ matrix.platform }} --variant=${{ matrix.variant }} bundle'
+      },
+      # {
+      #   name: 'Upload build artifact',
+      #   uses: actions/upload-artifact@v1,
+      #   with: {
+      #     name: 'Geometrywars-${{ matrix.platform }}-${{ matrix.channel }}-${{ matrix.variant }}',
+      #     path: 'build/${{ matrix.platform }}'
+      #   }
+      # },
+      {
+       name: 'Notify if build status changed',
+       uses: homoluctus/slatify@master,
+       if: always(),
+       with: {
+           type: '${{ job.status }}',
+           job_name: '${{ job.status }}: channel: ${{ matrix.channel }} platform: ${{ matrix.platform }}',
+           channel: '#defold-alarms-build', url: '${{ secrets.SLACK_WEBHOOK }}',
+           mention: 'here',
+           mention_if: 'failure' }
+      }
+    ]
