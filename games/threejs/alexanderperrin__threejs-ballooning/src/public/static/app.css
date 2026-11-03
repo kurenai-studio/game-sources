@@ -1,0 +1,82 @@
+@-moz-keyframes spin {
+    100% {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+body {
+    color: black;
+    background-color: white;
+    font-family: sans-serif;
+    overflow: hidden;
+}
+
+canvas {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0); /* mobile webkit */
+}
+
+#heading {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    margin-top: 0px;
+}
+
+#canvas-container {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#loader {
+    background-color: white;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#loader> .label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    text-align: center;
+    width: 256px;
+    height: 48px;
+    margin-top: -24px;
+    margin-left: -128px;
+    color: #ddd;
+}
+
+#loader> .label> .spinner {
+    display: block;
+    margin: auto;
+    width: 48px;
+    height: 48px;
+    -webkit-animation: spin 0.25s linear infinite;
+    -moz-animation: spin 0.25s linear infinite;
+    animation: spin 0.25s linear infinite;
+}
