@@ -1,0 +1,231 @@
+{
+  "verified_at": "2026-11-02T14:15:02.421413+00:00",
+  "url": "https://shift-buddies.clippmann.de/",
+  "game_source_sha": "0e18ed04906113ce3db6783c025eb3f7212595f7",
+  "hosting": {
+    "host": "atlas",
+    "release": "/var/www/shift-buddies/releases/20261102T141127Z-0e18ed049061",
+    "current": "/var/www/shift-buddies/current",
+    "previous": "releases/20261102T103116Z-4266be728547",
+    "backup": "/var/backups/shift-buddies-20261102T141127Z-0e18ed049061",
+    "vhost": "/etc/nginx/sites-available/shift-buddies.clippmann.de.conf"
+  },
+  "assets": [
+    {
+      "path": "assets/index-BOYBfZDH.css",
+      "sha256": "a64e489a1e95f9358ba556d4c3ef4deb3b8f10f172ff7c0de8c0179d815de246"
+    },
+    {
+      "path": "assets/index-DqaMRSjV.js",
+      "sha256": "8617211d63b88f9895bcb6c1ef58fee41e89c77ce737adb7d2e107820336e68f"
+    },
+    {
+      "path": "index.html",
+      "sha256": "567554bdfafbd994b86801a74abc92e9272c58543c388f2077144fe141a733f8"
+    }
+  ],
+  "validation": {
+    "rule_tests_passed": 26,
+    "typecheck": "passed",
+    "build": "passed; known Phaser bundle size warning (1220 kB / 328 kB gzip)",
+    "local_final_production_browser_tests_passed": 6,
+    "public_browser_tests_passed": 6,
+    "solution_actions": {
+      "bodies": 12,
+      "modules": 26,
+      "tech": 71,
+      "freight": 21,
+      "routes": 52,
+      "bridge": 42
+    },
+    "full_undo_and_normal_and_reduced_motion_routes": "all six rooms passed",
+    "input_regressions": "held E+direction, no E-alone pull, lateral/forward refusal, release, focus loss, Shift/T/Z/R/room resets, repeated keys, blocked pulls, Enter with button focus and repeat, final ending",
+    "blur_boundary": "Real DOM focus loss; standard window blur event dispatched explicitly (headless windows retain virtual OS focus).",
+    "actual_motion_frames": {
+      "frames": 16,
+      "uniqueRenderedFrames": 8,
+      "firstMoving": "true",
+      "lastMoving": "false",
+      "errors": []
+    },
+    "public_http_tls_hash_path_checks": 22,
+    "tls": "TLS 1.3; CA chain and hostname verified without bypass",
+    "isolation": {
+      "tracked_nginx_and_renewal_items": 52,
+      "unchanged": 51,
+      "changed": [
+        "/etc/nginx/sites-available/shift-buddies.clippmann.de.conf"
+      ],
+      "nginx_master_pid_unchanged": "1449224",
+      "certificate_fingerprint_and_dates_unchanged": true,
+      "previous_release_manifest": "3 files passed",
+      "matching_previous_vhost_retained": true,
+      "dns": "No Cloudflare command or DNS mutation needed/performed"
+    },
+    "neighbor_status_and_body_hashes_unchanged": 13,
+    "rollback": "Previous three asset hashes and matching old vhost checked; not executed"
+  },
+  "visual_review": {
+    "reviewer": "Coding agent, no separate reviewer",
+    "scope": "Final local direction views, both module distributions, magnet link, bridge supply/occupancy/retraction and victories; final public spot checks and intermediate motion frames.",
+    "screenshots": [
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-bodies-won.png",
+        "sha256": "a443a2c9061ab411e52c5b26946de0bc0575542858e93ba574dd0e1cd2911790"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-bridge-occupied.png",
+        "sha256": "f1fc0c2310c5deb21dc28918a96fa0345f7b26858426afa531724cf657f54869"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-bridge-powered.png",
+        "sha256": "8671fe3e24bc0e04862cf9282a304d6b5b989b7422e2d6b3ec927d13805aa78f"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-bridge-retracted.png",
+        "sha256": "016bcf59b6de96c313385cce9737b5a40cdbda3079a3f9f591ce3c166a3624e2"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-bridge-won.png",
+        "sha256": "be64ba6599016791e9f542cc316d6727c81ab822a77b3452f71715335acd3c95"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-facing-down.png",
+        "sha256": "709b901bee96243c44e7c17537042c1bd0bb83e60869d8be9ee57311f7c8f30f"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-facing-left.png",
+        "sha256": "16b5f95530a5d90ce51d487d3497bf846305ac6c64417e465f58341640eef33a"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-facing-right.png",
+        "sha256": "12e19d4b9ae997b35c957a4b1fb9afe40bb67e1436a784a4b80af6f00442fc36"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-facing-up.png",
+        "sha256": "fe3dd62e15a375539e24efa8a382691291977c73733f8ff3ab9b3867bf0fadcc"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-freight-won.png",
+        "sha256": "59aac6cb18eb80e194836954cb8ef43c8372289ece1e26b515ca92ce42450c42"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-magnet-link.png",
+        "sha256": "5577c7406baf71c52532ab66acf60d19c9d76c76e1dca0e43680a8fa073b3dbf"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-modules-won.png",
+        "sha256": "44ed12d8ab151341fbace71275225a44748fb7bf5bbae411f9a7c9f65ef5ddc0"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-routes-won.png",
+        "sha256": "d4208823a16c8187d01c3fc1b16f2cf873b028e9a66480b74084fb35612a7a5f"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/expansion-tech-won.png",
+        "sha256": "8f937677ae6c5b1047be3f506c070aa0fe4e6b16bae061a1315f26b275839320"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/technikraum-geloest.png",
+        "sha256": "8f937677ae6c5b1047be3f506c070aa0fe4e6b16bae061a1315f26b275839320"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/technikraum-module-getauscht.png",
+        "sha256": "83de509c79514bbe1ae5cd00ae71459189276ccec3f11bf57f38bbbc9a2d0a30"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/public-screenshots/technikraum-start.png",
+        "sha256": "520387132638855ae63a266a1d370d612d99bea0cd3f2b64e1859b3094f82350"
+      }
+    ],
+    "motion_frames": [
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/motion/frame-0.png",
+        "sha256": "e0786fb1be410a8819c4a0fbfa4be3a58eeacb0b490d14e9635045535d9e194a"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/motion/frame-15.png",
+        "sha256": "e3d7668b0ff498ce11623114d122a6099cc278673925e14bd9017b350b874fc2"
+      },
+      {
+        "path": ".cache/deploy-expansion-2026-11-02/motion/frame-3.png",
+        "sha256": "3aae867b595c5f1e8be3e0a2e6dd669cad223b4d8bccf6da721ecd2ab3b01bbd"
+      }
+    ]
+  },
+  "neighbors": [
+    {
+      "url": "https://clippmann.de/",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://www.clippmann.de/",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://clippmann.de/preview",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://preview.clippmann.de/",
+      "status": 200,
+      "sha256": "0314aa2ef33543bb16c884512f8370693d81cc8f20342dd37c8230cf31f70be1"
+    },
+    {
+      "url": "https://preview.clippmann.de/styles.css",
+      "status": 200,
+      "sha256": "b328355f88569abc33382b638a68d2444722b1b806540d31e6cfae194c363406"
+    },
+    {
+      "url": "https://preview.clippmann.de/script.js",
+      "status": 200,
+      "sha256": "387046be7354f8432253099524472426a057e16699f14b86f5e279c9538cf31b"
+    },
+    {
+      "url": "https://preview.clippmann.de/favicon.svg",
+      "status": 200,
+      "sha256": "612ef4bbc7adf63977276d4a0c6399c4a4eada38f5069d1b4d6acfdd7c9912d1"
+    },
+    {
+      "url": "https://preview.clippmann.de/robots.txt",
+      "status": 200,
+      "sha256": "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1"
+    },
+    {
+      "url": "https://rc-preview.clippmann.de/",
+      "status": 200,
+      "sha256": "fbcae2f5aa2ef2020ce4e856be3d7c8666a05d50fc770ec03d4f833b19ac5c65"
+    },
+    {
+      "url": "https://raidpresence.clippmann.de/",
+      "status": 200,
+      "sha256": "28392c9d326c4f9517a0be1604bead01bcf429e7d48800a660dcd33b19633006"
+    },
+    {
+      "url": "https://app.synapse-tp.de/",
+      "status": 200,
+      "sha256": "3c429daa0197d24104e705bc991f15a20fdbd2036c24fdcffb9d5ce8fe028a5f"
+    },
+    {
+      "url": "https://control.synapse-tp.de/",
+      "status": 200,
+      "sha256": "b20413069b3b0fdf6febdc65e1f2c1fa1e286cf23a20ec0b0525864b01ec89a1"
+    },
+    {
+      "url": "https://logs.parrotosocial.club/",
+      "status": 200,
+      "sha256": "fe82023ae719e78ba3d6773128a16be426f54a04a826192fa24f254745225b3d"
+    }
+  ],
+  "limits": [
+    "Headless Chromium on Linux; human play and subjective sound acceptance pending.",
+    "No Firefox, Safari, physical mobile or itch.io embedding acceptance.",
+    "OS window blur dispatched as an event; native DOM focus loss and keyboard were exercised.",
+    "No exhaustive state-space proof; topology bypass searches give walkers more freedom than actual play.",
+    "No itch.io release, new service, dependency, DNS/certificate mutation, Discord send, worker or callback/Cue registration.",
+    "Three pre-existing neighboring 522 responses unchanged."
+  ]
+}
