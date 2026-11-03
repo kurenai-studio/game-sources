@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);script_templates/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="script_templates\**\*.cs" />
+    <None Include="script_templates\**\*.cs" />
+  </ItemGroup>
+</Project>
