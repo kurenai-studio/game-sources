@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas>
+	<Texture>Textures/snake</Texture>
+	<Regions>
+		<Region name="snakeGreenHeadUp" x="8" y="0" width="8" height="8" />
+		<Region name="snakeGreenHeadLeft" x="16" y="0" width="8" height="8" />
+		<Region name="snakeGreenHeadDown" x="24" y="0" width="8" height="8" />
+		<Region name="snakeGreenHeadRight" x="32" y="0" width="8" height="8" />
+		<Region name="snakeGreenBody" x="40" y="0" width="8" height="8" />
+
+		<Region name="snakeGrayHeadUp" x="8" y="8" width="8" height="8" />
+		<Region name="snakeGrayHeadLeft" x="16" y="8" width="8" height="8" />
+		<Region name="snakeGrayHeadDown" x="24" y="8" width="8" height="8" />
+		<Region name="snakeGrayHeadRight" x="32" y="8" width="8" height="8" />
+		<Region name="snakeGrayBody" x="40" y="8" width="8" height="8" />
+
+		<Region name="snakeBlueHeadUp" x="8" y="32" width="8" height="8" />
+		<Region name="snakeBlueHeadLeft" x="16" y="32" width="8" height="8" />
+		<Region name="snakeBlueHeadDown" x="24" y="32" width="8" height="8" />
+		<Region name="snakeBlueHeadRight" x="32" y="32" width="8" height="8" />
+		<Region name="snakeBlueBody" x="40" y="8" width="32" height="8" />
+
+		<Region name="redApple" x="48" y="0" width="8" height="8" />
+		<Region name="goldenApple" x="48" y="8" width="8" height="8" />
+		<Region name="redCherry" x="48" y="24" width="8" height="8" />
+		<Region name="brownCookie" x="56" y="24" width="8" height="8" />
+		<Region name="greenApple" x="48" y="32" width="8" height="8" />
+
+		<Region name="redBubble" x="8" y="40" width="8" height="8" />
+		<Region name="blueBubble" x="16" y="40" width="8" height="8" />
+		<Region name="yellowBubble" x="24" y="40" width="8" height="8" />
+		<Region name="orangeBubble" x="32" y="40" width="8" height="8" />
+		<Region name="greenBubble" x="40" y="40" width="8" height="8" />
+
+		<Region name="tileBottom" x="56" y="16" width="8" height="8" />
+		<Region name="tileRight" x="64" y="16" width="8" height="8" />
+		<Region name="tileLeft" x="72" y="16" width="8" height="8" />
+		<Region name="tileTop" x="80" y="16" width="8" height="8" />
+	</Regions>
+	<Animations>
+		<Animation name="snake-head-up-animation" delay="200">
+			<Frame region="snakeGreenHeadUp" />
+		</Animation>
+		<Animation name="snake-head-down-animation" delay="200">
+			<Frame region="snakeGreenHeadDown" />
+		</Animation>
+		<Animation name="snake-head-left-animation" delay="200">
+			<Frame region="snakeGreenHeadLeft" />
+		</Animation>
+		<Animation name="snake-head-right-animation" delay="200">
+			<Frame region="snakeGreenHeadRight" />
+		</Animation>
+		<Animation name="snake-body-animation" delay="200">
+			<Frame region="snakeGreenBody" />
+		</Animation>
+		<Animation name="redApple-animation" delay="200">
+			<Frame region="redApple" />
+			<Frame region="goldenApple" />
+		</Animation>
+		<Animation name="goldenApple-animation" delay="200">
+			<Frame region="goldenApple" />
+			<Frame region="greenApple" />
+		</Animation>
+		<Animation name="redCherry-animation" delay="200">
+			<Frame region="redCherry" />
+		</Animation>
+		<Animation name="brownCookie-animation" delay="200">
+			<Frame region="brownCookie" />
+		</Animation>
+		<Animation name="greenApple-animation" delay="200">
+			<Frame region="greenApple" />
+			<Frame region="redApple" />
+		</Animation>
+	</Animations>
+</TextureAtlas>
