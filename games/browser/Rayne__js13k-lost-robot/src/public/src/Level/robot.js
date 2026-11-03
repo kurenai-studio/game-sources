@@ -5,7 +5,7 @@
  * please view the LICENSE file that was distributed with this source code.
  */
 
-import * as kontra from '../../../node_modules/kontra/kontra.mjs';
+import * as kontra from '../../vendor/kontra/kontra.mjs';
 import {AM} from '../math.js';
 import {DistanceSensor} from "./sensors.js";
 import * as Input from '../Input/Input.js';

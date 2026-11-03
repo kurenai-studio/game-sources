@@ -1,4 +1,4 @@
-import {emit} from '../../../node_modules/kontra/kontra.mjs';
+import {emit} from '../../vendor/kontra/kontra.mjs';
 
 export const EVENT_ACTION = 'menu.action';
 export const EVENT_BACK = 'menu.back';

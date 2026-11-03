@@ -1,6 +1,6 @@
 import {GameState} from "./GameState.js";
 import {EVENT_LEVEL_RESTART, EVENT_QUIT} from "./MapGameState.js";
-import * as kontra from '../../../node_modules/kontra/kontra.mjs';
+import * as kontra from '../../vendor/kontra/kontra.mjs';
 import {EVENT_ACTION, MenuStateMachine} from "../Menu/MenuStateMachine.js";
 
 export class PauseMenuGameState extends GameState {

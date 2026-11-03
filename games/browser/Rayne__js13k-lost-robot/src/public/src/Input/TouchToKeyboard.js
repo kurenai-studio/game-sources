@@ -1,4 +1,4 @@
-import {Sprite} from "../../../node_modules/kontra/kontra.mjs";
+import {Sprite} from "../../vendor/kontra/kontra.mjs";
 import {Log} from "../Log.js";
 
 let arrowRightPolygon = [

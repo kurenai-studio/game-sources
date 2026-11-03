@@ -1,4 +1,4 @@
-import * as kontra from "../../node_modules/kontra/kontra.mjs";
+import * as kontra from "../vendor/kontra/kontra.mjs";
 import {GameStateMachine} from "./GameState/GameStateMachine.js";
 import * as MenuStateMachine from "./Menu/MenuStateMachine.js";
 import {IntroGameState} from "./GameState/IntroGameState.js";

@@ -2,7 +2,7 @@
  * The following code has to be refactored.
  */
 
-import * as kontra from '../../../node_modules/kontra/kontra.mjs';
+import * as kontra from '../../vendor/kontra/kontra.mjs';
 
 import {APP_CONFIG, RENDER_MODE_CUSTOM_RATIO, RENDER_MODE_SENSOR_RANGE} from "../config.js";
 import {Map} from "../Map.js";

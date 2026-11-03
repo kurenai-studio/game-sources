@@ -1,4 +1,4 @@
-import {keyPressed} from "../../../node_modules/kontra/kontra.mjs";
+import {keyPressed} from "../../vendor/kontra/kontra.mjs";
 
 export const EASY_UP = 'up';
 export const EASY_DOWN = 'down';
