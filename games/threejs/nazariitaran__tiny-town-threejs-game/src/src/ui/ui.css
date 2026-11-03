@@ -1,0 +1,1820 @@
+#ui-root [hidden] {
+  display: none !important;
+}
+
+:where(#ui-root) :where(button, input, label) {
+  pointer-events: auto;
+  font: inherit;
+  color: inherit;
+}
+
+:where(#ui-root) :where(button) {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+:where(#ui-root) :where(button:disabled) {
+  cursor: default;
+}
+
+#ui-root :focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.ui-glyph {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.ui-sep {
+  flex: none;
+  width: 1px;
+  align-self: stretch;
+  margin: 6px 2px;
+  background: var(--line-strong);
+}
+
+.ui-pill {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* Title mark */
+
+.ui-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.ui-mark-house {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 0.38em;
+  background: var(--brick);
+  color: #fff;
+  box-shadow: inset 0 -0.08em 0 rgba(0, 0, 0, 0.15);
+}
+
+.ui-mark-house .ui-glyph {
+  width: 0.9em;
+  height: 0.9em;
+  stroke-width: 2.6;
+}
+
+.ui-mark-big {
+  font-size: clamp(2.6rem, 4vw + 1.5rem, 4.5rem);
+  line-height: 1;
+  color: var(--panel-solid);
+  text-shadow:
+    0 0.05em 0 #d7825a,
+    0 0.09em 0 #b9623f,
+    0 0.2em 0.45em rgba(60, 40, 20, 0.35);
+}
+
+.ui-mark-big .ui-mark-house {
+  box-shadow:
+    0 0.09em 0 #a7432f,
+    0 0.2em 0.45em rgba(60, 40, 20, 0.3);
+}
+
+/* Buttons */
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 0 var(--line-strong);
+  font-weight: 800;
+  font-size: 1rem;
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+
+.ui-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--line-strong), var(--shadow-soft);
+}
+
+.ui-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.ui-btn-primary {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--green-dark);
+}
+
+.ui-btn-primary:hover:not(:disabled) {
+  background: #66bd73;
+  box-shadow: 0 4px 0 var(--green-dark), var(--shadow-soft);
+}
+
+.ui-btn-primary:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--green-dark);
+}
+
+.ui-btn-danger {
+  background: var(--brick);
+  border-color: var(--brick-dark);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--brick-dark);
+}
+
+.ui-btn-danger-soft {
+  color: var(--brick-dark);
+}
+
+.ui-btn-big {
+  min-height: 54px;
+  padding: 0 28px;
+  font-size: 1.15rem;
+  border-radius: 16px;
+}
+
+.ui-link {
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ui-link:hover {
+  color: var(--ink);
+}
+
+.ui-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--ink);
+  transition:
+    background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease),
+    opacity var(--fast) var(--ease);
+}
+
+.ui-icon-btn:hover:not(:disabled) {
+  background: rgba(60, 40, 20, 0.07);
+}
+
+.ui-icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+  background: rgba(60, 40, 20, 0.12);
+}
+
+.ui-icon-btn:disabled {
+  opacity: 0.32;
+}
+
+.ui-icon-btn[aria-pressed='true'] {
+  color: var(--brick-dark);
+}
+
+/* Loading, title, error */
+
+.ui-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 20px;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.ui-loading {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.55), transparent 60%),
+    linear-gradient(#bfe3ff, #d9efd0 70%, #8cc063);
+}
+
+.ui-progress {
+  width: min(280px, 70vw);
+  height: 14px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.ui-progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--green), #8fd07a);
+  transition: width 200ms var(--ease);
+}
+
+.ui-progress-label {
+  margin: 0;
+  min-height: 1.4em;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.ui-title {
+  /* Mark + tagline sit in the sky; actions sit on the foreground grass below the diorama. */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: max(4vh, var(--safe-top));
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.18), transparent 30%),
+    linear-gradient(transparent 70%, rgba(40, 60, 30, 0.18));
+}
+
+.ui-title-bottom {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  animation: ui-rise 600ms 120ms var(--ease) both;
+}
+
+.ui-version {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.ui-title-version {
+  position: absolute;
+  right: max(14px, var(--safe-right));
+  bottom: max(12px, var(--safe-bottom));
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(30, 50, 20, 0.45);
+  animation: ui-fade-in 600ms 240ms var(--ease) backwards;
+}
+
+.ui-title-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  animation: ui-rise 600ms var(--ease) both;
+}
+
+.ui-tagline {
+  margin: 4px 0 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+.ui-title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ui-title-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ui-title-credits {
+  background: var(--panel);
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Author's links, at the foot of Credits */
+.ui-author {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.ui-author-label {
+  margin-right: 4px;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+.ui-author-links {
+  display: flex;
+  gap: 2px;
+}
+
+.ui-author-link {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  transition:
+    color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+
+.ui-author-link .ui-glyph {
+  width: 18px;
+  height: 18px;
+}
+
+.ui-author-link:hover {
+  color: var(--ink);
+  background: rgba(60, 40, 20, 0.07);
+}
+
+.ui-error {
+  background: linear-gradient(#bfe3ff, #d9efd0);
+}
+
+.ui-error-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.ui-error-detail:empty {
+  display: none;
+}
+
+/* Top bar */
+
+.ui-hud {
+  transition: opacity var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+
+.ui-hud[inert] {
+  filter: saturate(0.7);
+}
+
+.ui-topbar {
+  position: absolute;
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: var(--safe-right);
+  height: var(--topbar-h);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A long town name ends in an ellipsis; the brand pill gives way to the action pill, never the other way round. */
+.ui-brand {
+  flex: 0 1 auto;
+  height: var(--topbar-h);
+  min-width: var(--topbar-h);
+  max-width: min(40vw, 440px);
+  padding: 0 16px 0 8px;
+  font-size: 1.05rem;
+  transition: background-color var(--fast) var(--ease);
+}
+
+.ui-brand:hover {
+  background: var(--panel-solid);
+}
+
+.ui-brand .ui-mark {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 1.1rem;
+}
+
+.ui-town-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-actions {
+  flex: none;
+  height: var(--topbar-h);
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.ui-time-btn[data-mode='day'] {
+  color: #b0701a;
+}
+
+.ui-time-btn[data-mode='night'] {
+  color: #45559c;
+}
+
+.ui-rain-btn[data-mode='on'] {
+  color: #3f6fa8;
+}
+
+.ui-rain-btn[data-mode='off'] {
+  color: #8a8f99;
+}
+
+/* Dock */
+
+.ui-dock-wrap {
+  position: absolute;
+  left: var(--safe-left);
+  right: var(--safe-right);
+  bottom: var(--safe-bottom);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-fps {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--topbar-h) + 10px);
+  left: var(--safe-left);
+  margin: 0;
+  min-width: 4.2em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(59, 58, 54, 0.78);
+  color: #fffaf0;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui-fps:not(.is-on) {
+  display: none;
+}
+
+.ui-hint {
+  /* Just under the top bar, so it never covers the build area. */
+  position: absolute;
+  top: calc(var(--safe-top) + var(--topbar-h) + 10px);
+  /* Centred with auto margins, not `translate`: lightningcss drops it next to `transform`. */
+  left: var(--gutter);
+  right: var(--gutter);
+  width: fit-content;
+  margin: 0 auto;
+  max-width: calc(100% - 2 * var(--gutter));
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(59, 58, 54, 0.78);
+  color: #fffaf0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 220ms var(--ease),
+    transform 220ms var(--ease);
+}
+
+.ui-hint.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.ui-hint:empty {
+  visibility: hidden;
+}
+
+.ui-dock {
+  pointer-events: auto;
+  display: grid;
+  gap: 6px;
+  max-width: 100%;
+  padding: 8px;
+  border-radius: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.ui-tray {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 2px 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 2px;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+.ui-tray::-webkit-scrollbar {
+  display: none;
+}
+
+.ui-tray.is-entering {
+  animation: ui-tray-in var(--tray-slide) var(--ease);
+}
+
+.ui-card {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-rows: 44px auto;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 84px;
+  height: 72px;
+  padding: 4px 3px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 0 var(--line-strong);
+  scroll-snap-align: start;
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+
+.ui-card img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  pointer-events: none;
+  transition: transform var(--fast) var(--ease);
+}
+
+.ui-card-label {
+  max-width: 100%;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-card kbd {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: rgba(60, 40, 20, 0.07);
+  color: var(--ink-faint);
+  font: 800 0.66rem/16px inherit;
+  font-family: inherit;
+  text-align: center;
+}
+
+.ui-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 var(--line-strong), var(--shadow-soft);
+}
+
+.ui-card:hover img {
+  transform: scale(1.06);
+}
+
+.ui-card:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.ui-card[aria-pressed='true'] {
+  transform: translateY(-3px);
+  background: var(--green-tint);
+  border-color: var(--green);
+  box-shadow:
+    0 0 0 2px var(--green),
+    0 4px 0 var(--green-dark);
+}
+
+.ui-card[aria-pressed='true'] kbd {
+  background: var(--green);
+  color: #fff;
+}
+
+/* A dot per model tells the player a card has several variants. */
+.ui-card-variants {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.ui-card-variants i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  opacity: 0.7;
+}
+
+.ui-card[aria-pressed='true'] .ui-card-variants i {
+  background: var(--green-dark);
+  opacity: 1;
+}
+
+/* Variant picker strip: UiRoot.placeVariants sets left and --caret-x. It sits outside the scrolling tray so it is never clipped. */
+.ui-variants {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  /* The gaps between chips must not reach the canvas (a click there would build). */
+  pointer-events: auto;
+}
+
+.ui-variants::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--caret-x, 50%);
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.ui-variants.is-entering {
+  animation: ui-variants-in 160ms var(--ease);
+}
+
+.ui-chip {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 0 var(--line-strong);
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+
+.ui-chip img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.ui-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 var(--line-strong), var(--shadow-soft);
+}
+
+.ui-chip:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.ui-chip[aria-pressed='true'] {
+  transform: translateY(-2px);
+  background: var(--green-tint);
+  border-color: var(--green);
+  color: var(--green-dark);
+  box-shadow:
+    0 0 0 2px var(--green),
+    0 3px 0 var(--green-dark);
+}
+
+.ui-tabbar {
+  display: flex;
+  align-items: center;
+  /* Stays centred under a wider tray, so it doesn't move when the category changes. */
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ui-tabs,
+.ui-modes {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ui-tabs {
+  flex: 0 1 auto;
+}
+
+.ui-tab,
+.ui-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    transform var(--fast) var(--ease),
+    opacity var(--fast) var(--ease);
+}
+
+.ui-tab .ui-glyph,
+.ui-mode .ui-glyph {
+  width: 20px;
+  height: 20px;
+}
+
+.ui-tab:hover,
+.ui-mode:hover {
+  background: rgba(60, 40, 20, 0.07);
+  color: var(--ink);
+}
+
+.ui-tab:active,
+.ui-mode:active {
+  transform: scale(0.96);
+}
+
+.ui-tab {
+  position: relative;
+}
+
+/* Open category: tint + underline (the selected item is the raised, outlined card). */
+.ui-tab[aria-pressed='true'] {
+  background: var(--green-tint);
+  color: var(--green-dark);
+}
+
+.ui-tab[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 3px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--green);
+}
+
+/* Tray frame: edge fades when more items are scrolled off-screen. */
+.ui-tray-frame {
+  position: relative;
+  min-width: 0;
+}
+
+.ui-tray-frame::before,
+.ui-tray-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease);
+  z-index: 1;
+}
+
+.ui-tray-frame::before {
+  left: -1px;
+  background: linear-gradient(90deg, var(--panel-solid), rgba(255, 249, 239, 0));
+}
+
+.ui-tray-frame::after {
+  right: -1px;
+  background: linear-gradient(270deg, var(--panel-solid), rgba(255, 249, 239, 0));
+}
+
+.ui-tray-frame.has-more-left::before,
+.ui-tray-frame.has-more-right::after {
+  opacity: 1;
+}
+
+/* Scroll arrows over the tray's ends (above the edge fades); UiRoot.updateTrayCue shows each one only when there are cards that way. */
+.ui-tray-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 44px;
+  margin-top: -20px;
+  border-radius: 999px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 0 var(--line-strong), var(--shadow-soft);
+  color: var(--ink);
+  animation: ui-arrow-in var(--fast) var(--ease);
+  transition:
+    transform var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
+}
+
+.ui-tray-prev {
+  left: -4px;
+}
+
+.ui-tray-next {
+  right: -4px;
+}
+
+.ui-tray-arrow:hover {
+  background: var(--card);
+  transform: scale(1.06);
+}
+
+.ui-tray-arrow:active {
+  transform: scale(0.96);
+}
+
+@keyframes ui-arrow-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-tray-arrow {
+    animation: none;
+    transition: none;
+  }
+}
+
+.ui-mode.is-idle {
+  opacity: 0.55;
+}
+
+.ui-rot {
+  display: inline-block;
+  transition: transform 120ms var(--ease);
+}
+
+.ui-mode-danger[aria-pressed='true'] {
+  background: var(--brick);
+  color: #fff;
+  box-shadow: inset 0 -2px 0 var(--brick-dark);
+}
+
+/* Move tool: sky blue, matching its in-world highlight. */
+.ui-mode-move[aria-pressed='true'] {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: inset 0 -2px 0 #2f78bf;
+}
+
+/* Cursor tooltip */
+
+.ui-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: rgba(59, 58, 54, 0.92);
+  color: #fffaf0;
+  font-weight: 700;
+  font-size: 0.88rem;
+  box-shadow: var(--shadow-soft);
+  pointer-events: none;
+}
+
+.ui-tooltip-x {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--brick);
+  color: #fff;
+}
+
+.ui-tooltip-x .ui-glyph {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.ui-tooltip.is-shaking .ui-tooltip-x {
+  animation: ui-shake 260ms ease-in-out;
+}
+
+/* Overlays */
+
+.ui-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  background: rgba(46, 38, 28, 0.3);
+  pointer-events: auto;
+  animation: ui-fade 160ms var(--ease);
+}
+
+.ui-panel {
+  display: grid;
+  gap: 10px;
+  width: min(360px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  text-align: left;
+  animation: ui-pop 200ms var(--ease);
+  pointer-events: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.ui-panel-wide {
+  width: min(640px, 100%);
+}
+
+.ui-panel h2 {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.ui-panel h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.ui-panel p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* Credits */
+.ui-credits {
+  gap: 14px;
+  width: min(480px, 100%);
+}
+
+.ui-credits > section {
+  display: grid;
+  gap: 4px;
+}
+
+.ui-credits h3 {
+  margin: 0;
+}
+
+.ui-credits p,
+.ui-credits-list {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.ui-credits-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 1.1em;
+  color: var(--ink-soft);
+}
+
+.ui-panel a {
+  border-radius: 4px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.ui-panel a:hover {
+  color: var(--brick);
+}
+
+.ui-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ui-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(60, 40, 20, 0.04);
+  font-weight: 800;
+}
+
+.ui-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-field input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+.ui-check {
+  cursor: pointer;
+}
+
+.ui-check input {
+  margin-left: auto;
+  width: 44px;
+  height: 26px;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+/* Time of day: a segmented control built on native radios. */
+.ui-seg-field {
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.ui-seg-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.ui-seg {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(60, 40, 20, 0.07);
+}
+
+.ui-seg-opt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+
+/* The radio itself covers its segment (invisible): it is the click/tap target and keeps native
+   arrow-key behaviour and the radiogroup semantics. */
+.ui-seg-opt input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ui-seg-opt:hover {
+  color: var(--ink);
+}
+
+.ui-seg-opt:has(input:checked) {
+  background: var(--card);
+  color: var(--green-dark);
+  box-shadow: 0 1px 0 var(--line-strong), 0 0 0 1px var(--line);
+}
+
+.ui-seg-opt:has(input:focus-visible) {
+  outline: 3px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.ui-field-sub {
+  margin-top: -6px;
+  padding-left: 42px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+.ui-field input[type='range']:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Menu tabs */
+
+/* A column so that on short screens only the pages area scrolls; heading, Resume and the tabs stay put. */
+.ui-menu-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 100%);
+}
+
+.ui-menu-panel > * {
+  flex: none;
+}
+
+.ui-menu-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  margin-top: 6px;
+  padding: 3px;
+  border-radius: 16px;
+  background: rgba(60, 40, 20, 0.07);
+}
+
+.ui-menu-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  height: 54px;
+  padding: 0 4px;
+  border-radius: 13px;
+  color: var(--ink-soft);
+  font-weight: 800;
+  font-size: 0.82rem;
+  line-height: 1.15;
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+
+.ui-menu-tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-menu-tab:hover {
+  color: var(--ink);
+}
+
+.ui-menu-tab[aria-selected='true'] {
+  background: var(--card);
+  color: var(--green-dark);
+  box-shadow: 0 1px 0 var(--line-strong), 0 0 0 1px var(--line);
+}
+
+#ui-root .ui-menu-tab:focus-visible {
+  outline-offset: 1px;
+}
+
+/* Every page sits in the same grid cell, so the menu keeps its size when the tab changes. A hidden page
+   keeps its box but is invisible: no clicks, no focus, out of the accessibility tree. The side/bottom
+   padding keeps focus rings clear of the scroll clip. */
+.ui-menu-pages {
+  display: grid;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0 -6px -6px;
+  padding: 2px 6px 6px;
+}
+
+.ui-menu-page {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The paired buttons (Rename town | New town) get slimmer side padding so both fit a 390 px phone. */
+.ui-menu-page .ui-btn {
+  white-space: nowrap;
+}
+
+.ui-menu-page .ui-row .ui-btn {
+  gap: 6px;
+  padding: 0 10px;
+}
+
+#ui-root .ui-menu-page[hidden] {
+  display: grid !important;
+  visibility: hidden;
+}
+
+.ui-panel p.ui-graphics-desc {
+  min-height: 2.7em;
+  margin-top: -2px;
+  padding: 0 4px;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+/* An empty live region takes no row gap. */
+.ui-graphics-live:has(> [hidden]) {
+  margin-top: -10px;
+}
+
+.ui-graphics-reload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius-sm);
+  background: #fdf3d6;
+  border: 1px solid rgba(214, 160, 40, 0.35);
+}
+
+.ui-panel .ui-graphics-reload p {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.ui-graphics-reload .ui-btn {
+  flex: none;
+  padding: 0 14px;
+}
+
+.ui-help-cols {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 18px;
+}
+
+.ui-help-cols dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 12px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.ui-help-cols dt {
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ui-help-cols dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* Photo */
+
+/* The tilt and washi tape exist only in the preview; the saved file is the straight card.
+   UiRoot sets --print-ar (card width / height). */
+.ui-photo-panel {
+  width: min(600px, 100%);
+  justify-items: center;
+  gap: 12px;
+}
+
+.ui-photo-panel h2 {
+  justify-self: start;
+}
+
+.ui-print {
+  position: relative;
+  margin: 10px 0 2px;
+  width: min(100%, calc((100dvh - 290px) * var(--print-ar, 1.45)));
+  aspect-ratio: var(--print-ar, 1.45);
+  border-radius: 3px;
+  background: linear-gradient(#fffbf3, #fbf1df);
+  box-shadow:
+    0 12px 26px rgba(60, 40, 20, 0.22),
+    0 2px 4px rgba(60, 40, 20, 0.14);
+  transform: rotate(-1.6deg);
+  animation: ui-print-drop 460ms var(--ease);
+}
+
+.ui-print img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  animation: ui-develop 1200ms ease-out;
+}
+
+/* While developing: a warm grey "undeveloped" patch where the picture will be. */
+.ui-print[data-state='developing']::before,
+.ui-print[data-state='error']::before {
+  content: '';
+  position: absolute;
+  inset: 3.5% 3.5% 16% 3.5%;
+  background: linear-gradient(110deg, #d8cdbb 30%, #e9e0d0 50%, #d8cdbb 70%) 0 0 / 220% 100%;
+  animation: ui-shimmer 1.4s linear infinite;
+}
+
+.ui-print[data-state='error']::before {
+  animation: none;
+}
+
+.ui-print-tape {
+  position: absolute;
+  z-index: 1;
+  top: -13px;
+  left: 50%;
+  width: 104px;
+  height: 28px;
+  background: rgba(244, 196, 78, 0.62);
+  box-shadow: 0 1px 2px rgba(60, 40, 20, 0.14);
+  transform: translateX(-50%) rotate(3deg);
+  clip-path: polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%);
+}
+
+.ui-panel p.ui-photo-status {
+  min-height: 1.35em;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.ui-photo-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.ui-photo-actions .ui-btn {
+  flex: 1 1 0;
+}
+
+/* Name dialog */
+.ui-name-form {
+  display: grid;
+  gap: 10px;
+}
+
+.ui-name-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-name-field input {
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  padding: 0 14px;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  /* ≥ 16 px, so iOS doesn't zoom in on focus. */
+  font-size: 1.2rem;
+  font-weight: 800;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.ui-name-field input:focus {
+  border-color: var(--blue);
+}
+
+.ui-name-field .ui-icon-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+
+/* A town's size is chosen once, when it is started. */
+.ui-name-panel[data-mode='rename'] .ui-size-field {
+  display: none;
+}
+
+.ui-panel p.ui-name-count {
+  margin-top: -6px;
+  justify-self: end;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Town file panel */
+.ui-town-file-row {
+  display: none;
+}
+
+.ui-panel p.ui-file-status {
+  min-height: 1.35em;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.ui-panel p.ui-file-status[data-state='error'] {
+  color: var(--brick-dark);
+}
+
+.ui-panel p.ui-file-when {
+  font-size: 0.9rem;
+}
+
+/* Camera flash when the shutter fires. */
+.ui-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #fffdf6;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-flash.is-on {
+  animation: ui-flash 380ms ease-out;
+}
+
+/* Motion */
+
+@keyframes ui-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes ui-variants-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes ui-tray-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ui-fade {
+  from { opacity: 0; }
+}
+
+@keyframes ui-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes ui-rise {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
+@keyframes ui-flash {
+  from { opacity: 0.85; }
+  to { opacity: 0; }
+}
+
+@keyframes ui-print-drop {
+  from { opacity: 0; transform: translateY(-22px) rotate(-6deg) scale(1.03); }
+}
+
+/* Like an instant print coming up: pale and grey first, then the colours arrive. */
+@keyframes ui-develop {
+  from { opacity: 0.35; filter: brightness(1.45) saturate(0) sepia(0.25); }
+}
+
+@keyframes ui-shimmer {
+  to { background-position: -220% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ui-root *,
+  #ui-root *::before,
+  #ui-root *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  #ui-root .ui-flash {
+    display: none;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 760px), (pointer: coarse) {
+  /* 44 px touch targets. Set on #ui-root, not :root: this file is imported before the :root tokens in
+     styles.css, which would otherwise win. */
+  #ui-root {
+    --topbar-h: 52px;
+  }
+
+  .ui-tray-arrow {
+    width: 44px;
+  }
+
+  .ui-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* 44 px segments for fingers: the row grows to 50 px. */
+  .ui-seg-opt {
+    height: 44px;
+    min-width: 48px;
+    padding: 0 8px;
+  }
+
+  .ui-dock-wrap {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 6px;
+  }
+
+  .ui-hint {
+    font-size: 0.82rem;
+  }
+
+  .ui-dock {
+    width: 100%;
+    padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    border-radius: 20px 20px 0 0;
+    border-bottom: 0;
+  }
+
+  .ui-card {
+    width: 80px;
+    height: 78px;
+    grid-template-rows: 50px auto;
+  }
+
+  .ui-card img {
+    width: 50px;
+    height: 50px;
+  }
+
+
+  /* Each button takes its label's width, at least 44 px, and the leftover is shared, so "Bulldoze" gets
+     the room it needs. */
+  .ui-tab,
+  .ui-mode {
+    flex: 1 1 auto;
+    min-width: 44px;
+    height: 48px;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0 2px;
+    font-size: 0.72rem;
+  }
+
+  .ui-sep {
+    margin: 6px 0;
+  }
+
+  .ui-tab span,
+  .ui-mode-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ui-tabbar,
+  .ui-tabs,
+  .ui-modes {
+    gap: 2px;
+  }
+
+  .ui-tabs {
+    flex: 5 1 auto;
+  }
+
+  .ui-modes {
+    flex: 3 1 auto;
+  }
+
+  .ui-card kbd {
+    display: none;
+  }
+
+  .ui-help-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-tagline {
+    border-radius: 16px;
+    font-size: 0.92rem;
+  }
+
+  .ui-title {
+    padding-top: max(7vh, var(--safe-top));
+  }
+
+  .ui-mark-big {
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
+  }
+}
+
+@media (pointer: coarse) {
+  .ui-card kbd {
+    display: none;
+  }
+
+  /* Touch players see their gestures first. */
+  .ui-help-cols > :last-child {
+    order: -1;
+  }
+}
+
+/* Six 44 px actions need ~290 px. Up to 440 px wide the town's name gets a smaller size and whatever
+   room is left; below 400 px that is 2–3 characters, so the brand becomes an icon-only badge (the
+   menu heading shows the full name). Keeps the top bar one row at 360, 390 and 412 px. */
+@media (max-width: 440px) {
+  .ui-topbar {
+    gap: 6px;
+  }
+
+  /* Eight dock buttons: the small label size keeps every one at 44 px from 390 px wide up. */
+  .ui-tab,
+  .ui-mode {
+    font-size: 0.66rem;
+  }
+
+  /* More than six 44 px actions don't fit one row here; the menu carries Town file and Rain instead. */
+  .ui-town-file-btn,
+  .ui-rain-btn {
+    display: none;
+  }
+
+  .ui-town-file-row {
+    display: inline-flex;
+  }
+
+  .ui-brand {
+    max-width: none;
+    padding: 0 10px 0 6px;
+  }
+
+  .ui-brand .ui-mark {
+    gap: 0.24em;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 399px) {
+  .ui-brand .ui-mark-text {
+    display: none;
+  }
+
+  .ui-brand {
+    width: var(--topbar-h);
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .ui-card {
+    width: 64px;
+    height: 64px;
+    grid-template-rows: 1fr;
+  }
+
+  .ui-card-label {
+    display: none;
+  }
+
+}
+
+/* Below 390 px eight 44 px dock buttons can't fit one row: the categories take the first row and the
+   modes (Rotate · Move · Bulldoze) a second one. */
+@media (max-width: 389px) {
+  .ui-tabbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .ui-tabs,
+  .ui-modes {
+    flex: 1 1 100%;
+  }
+
+  .ui-sep {
+    display: none;
+  }
+}
+
+/* Rotate is a touch control: with a mouse and keyboard, R (and Shift+R) rotates and the dock
+   keeps only Move and Bulldoze. Touch screens have no R key, so they keep the button. */
+@media (hover: hover) and (pointer: fine) {
+  .ui-mode-rotate {
+    display: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (max-width: 760px) {
+  .ui-modes {
+    flex: 2 1 auto;
+  }
+}

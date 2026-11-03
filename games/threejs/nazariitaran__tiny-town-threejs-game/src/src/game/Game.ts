@@ -1,0 +1,935 @@
+/**
+ * Composition root: creates every system, wires them through the event bus, and owns the
+ * phase machine (loading → title → building ⇄ menu) and the per-frame update order.
+ */
+import * as THREE from 'three';
+import { AudioManager } from '../audio/AudioManager';
+import { MODELS } from '../catalog/models';
+import { FpsMeter } from '../core/FpsMeter';
+import { FrameBudget } from '../core/FrameBudget';
+import { Loop } from '../core/Loop';
+import { createRenderer, resizeRenderer } from '../core/Renderer';
+import { DebugTools, type DebugTuning } from '../debug/DebugTools';
+import { PlacementFx } from '../fx/PlacementFx';
+import { BirdSystem, isBirdSpecies } from '../life/BirdSystem';
+import { DuckSystem } from '../life/DuckSystem';
+import { LifeSystem } from '../life/LifeSystem';
+import { crowdGainAt, MatchSchedule } from '../life/matchSchedule';
+import { ducksInEarshot, QuackTimer } from '../life/quacks';
+import { SaveStore } from '../persistence/SaveStore';
+import { encodeTownFile, TOWN_FILE_MIME, townFileName } from '../persistence/townFile';
+import { CameraController } from '../interaction/CameraController';
+import { GridPicker } from '../interaction/GridPicker';
+import { ToolController } from '../interaction/ToolController';
+import { ModelLibrary } from '../render/ModelLibrary';
+import { captureView } from '../photo/capture';
+import { photoFileName } from '../photo/photoLayout';
+import { NightLights } from '../render/NightLights';
+import { ShadowScheduler } from '../render/ShadowScheduler';
+import { TownRenderer } from '../render/TownRenderer';
+import { TownEditor } from '../town/TownEditor';
+import { TownState } from '../town/TownState';
+import { buildAssetGallery, buildSampleTown, buildStressTown } from '../town/sampleTown';
+import { parseSave } from '../town/serialize';
+import type { SavedTown } from '../town/types';
+import { parseTownNames, pickTownName, TOWN_NAMES_PATH } from '../town/townName';
+import { UiRoot } from '../ui/UiRoot';
+import { setWindGust } from '../fx/windSway';
+import { RainLayer } from '../weather/RainLayer';
+import { affectsSplashSurface } from '../weather/splashSurface';
+import { gloomAt, isRainKind, isRainMode, RAIN_MODES, shadeDaySample, WeatherSchedule, type RainMode } from '../weather/weatherSchedule';
+import { createSeededRandom, entropySeed } from '../utils/random';
+import { createDaySample, DAY_LENGTH_S, DayClock, nightAt, sampleDay, T_AFTERNOON, T_NIGHT, TIME_MODES, type DayPhase, type TimeMode } from '../world/dayCycle';
+import { Environment } from '../world/Environment';
+import { assetUrl, DEFAULT_TOWN_SIZE, plot, PLOT_DEPTH, PLOT_WIDTH } from './config';
+import { createGameBus, type GamePhase } from './events';
+import { LoadProgress } from './loadProgress';
+import { effectivePixelRatio, GRAPHICS_PROFILES, isGraphicsPreset, needsReload, type GraphicsPreset, type GraphicsProfile } from './graphics';
+import { materialFamily } from '../render/materials';
+
+/** Test-hook states; each pins the clock to afternoon except 'night-town' (sample town at T_NIGHT). */
+export const TEST_STATES = ['title', 'empty-build', 'sample-town', 'active-play', 'asset-gallery', 'stress-town', 'night-town'] as const;
+type TestState = (typeof TEST_STATES)[number];
+
+/** Birds run on their own stream derived from the seed, never drawing from fxRng. */
+const BIRD_SEED_SALT = 0xb12d5eed;
+/** Ducks likewise. */
+const DUCK_SEED_SALT = 0xd0c4d0c4;
+const QUACK_SEED_SALT = 0x0cac0cac;
+/** The weather likewise. */
+const WEATHER_SEED_SALT = 0x3a1ad405;
+const RAIN_SEED = 0x5ca77e2;
+
+/** `?graphics=low|medium|high`: boot with this preset without saving it. */
+const GRAPHICS_URL_PARAM = 'graphics';
+
+function graphicsOverride(): GraphicsPreset | null {
+  const value = new URLSearchParams(window.location.search).get(GRAPHICS_URL_PARAM);
+  return isGraphicsPreset(value) ? value : null;
+}
+
+/** Resolves once the current DOM has been painted; a timeout covers hidden tabs, where frames don't run. */
+function nextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    const fallback = window.setTimeout(resolve, 100);
+    requestAnimationFrame(() =>
+      window.setTimeout(() => {
+        window.clearTimeout(fallback);
+        resolve();
+      }, 0),
+    );
+  });
+}
+
+export class Game {
+  readonly bus = createGameBus();
+  private readonly renderer: THREE.WebGLRenderer;
+  private readonly scene = new THREE.Scene();
+  private readonly camera = new THREE.PerspectiveCamera(35, 1, 0.1, 900);
+  private readonly frameBudget = new FrameBudget();
+  /** The sun's shadow map is redrawn only when a caster changed (autoUpdate is off). */
+  private readonly shadows = new ShadowScheduler();
+  private shadowVersion = -1;
+  /** Seconds since the previous rendered frame. */
+  private frameDelta = 0;
+  private readonly lastCameraPosition = new THREE.Vector3();
+  private readonly lastCameraQuaternion = new THREE.Quaternion();
+  private readonly loop = new Loop(
+    (delta, elapsed) => this.update(delta, elapsed),
+    () => this.render(),
+    () => this.frameBudget.targetFps,
+  );
+  private readonly saves = new SaveStore();
+  /** Fixes MSAA and the material family until a reload; the live parts follow `graphics`. */
+  private readonly bootGraphics: GraphicsPreset = graphicsOverride() ?? this.saves.getSettings().graphics;
+  private graphics: GraphicsPreset = this.bootGraphics;
+  private readonly tuning: DebugTuning = { exposure: 1.0, maxDpr: GRAPHICS_PROFILES[this.bootGraphics].maxDpr, renderScale: GRAPHICS_PROFILES[this.bootGraphics].renderScale, showStats: false };
+  /** What the page really runs with: the context's MSAA and the lit material family in the scene. */
+  private antialias = false;
+  private materialInUse: 'standard' | 'lambert' | 'mixed' | 'none' = 'none';
+  private perfDebug: ReturnType<DebugTools['folder']> = null;
+  // All randomness goes through these so seed() keeps tests deterministic. Gameplay (variants) and
+  // cosmetic (audio/fx jitter) streams are separate, so playing a sound never changes the next house variant.
+  private seedValue = 1;
+  private rng = createSeededRandom(this.seedValue);
+  private fxRng = createSeededRandom(this.seedValue ^ 0x9e3779b9);
+  /** Seeded afresh per page load, else every new player gets the same first name suggestion; seed() pins it. */
+  private nameRng = createSeededRandom(entropySeed());
+  private townNames: string[] = [];
+  private gridPreferred = true;
+  private fpsShown = false;
+  private readonly fpsMeter = new FpsMeter();
+  private invalidCount = 0;
+
+  private readonly town = new TownState(PLOT_WIDTH, PLOT_DEPTH);
+  private readonly editor: TownEditor;
+  private readonly library = new ModelLibrary(GRAPHICS_PROFILES[this.bootGraphics].material);
+  private readonly environment: Environment;
+  private readonly cameraController: CameraController;
+  private readonly picker: GridPicker;
+  private readonly tools: ToolController;
+  private readonly townRenderer: TownRenderer;
+  private readonly fx: PlacementFx;
+  private readonly life: LifeSystem;
+  private readonly nightLights: NightLights;
+  /** Match nights at the stadium: ambient, per page session, never saved. */
+  private readonly match = new MatchSchedule();
+  private matchLevel = 0;
+  /** The clock was pinned last frame: its next reading is a jump, not time passing. */
+  private matchPinned = false;
+  private readonly birds: BirdSystem;
+  /** Spontaneous flocks stay off after a test state until a reload. */
+  private birdsAuto = true;
+  /** Ducks on the ponds; they stay put after a test state until a reload. */
+  private readonly ducks: DuckSystem;
+  private readonly quacks: QuackTimer;
+  /** Rain showers: ambient, per page session, never saved. */
+  private readonly weather: WeatherSchedule;
+  private readonly rain: RainLayer;
+  /** Weather was showing last frame: one more frame clears what it set. */
+  private weatherShown = false;
+  private rainMode: RainMode = this.saves.getSettings().rainMode;
+  /** What the town's lights see: the day sample, darkened by a storm. */
+  private readonly lightSample = { night: 0, lightsOn: 0, lightsOff: 0 };
+  /** Day/night: the clock, the sample it writes every frame, the last announced mode/phase. */
+  private readonly clock: DayClock;
+  private readonly daySample = createDaySample();
+  private announcedDay: { mode: TimeMode; phase: DayPhase } | null = null;
+  private readonly audio: AudioManager;
+  private readonly ui: UiRoot;
+  private readonly debug: DebugTools;
+
+  private phase: GamePhase = 'loading';
+  private ready: Promise<void>;
+  private frame = 0;
+  private pausedForScreenshot = false;
+  /** Diagnostics only; the framed blob travels on `photo:ready`. */
+  private readonly photo: ThreeGameDiagnostics['photo'] = { taken: 0, developing: false, last: null };
+  private reducedMotion = false;
+  /** OS "reduce motion": the day cycle still runs, but mode switches snap instead of sweeping. */
+  private readonly prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+
+  constructor(private readonly canvas: HTMLCanvasElement, uiHost: HTMLElement) {
+    const rand = () => this.rng();
+    const fxRand = () => this.fxRng();
+    const boot = GRAPHICS_PROFILES[this.bootGraphics];
+    this.renderer = createRenderer(canvas, { antialias: boot.antialias });
+    this.antialias = this.renderer.getContextAttributes()?.antialias === true;
+    this.renderer.toneMappingExposure = this.tuning.exposure;
+    this.debug = new DebugTools(this.tuning, () => {
+      this.renderer.toneMappingExposure = this.tuning.exposure;
+      resizeRenderer(this.renderer, this.camera, this.tuning.maxDpr, this.tuning.renderScale);
+    });
+
+    this.editor = new TownEditor(this.town, this.bus, rand);
+    this.environment = new Environment(this.scene, this.renderer, this.debug, boot.material);
+    this.cameraController = new CameraController(this.camera, canvas, this.debug);
+    this.picker = new GridPicker(this.camera, canvas);
+    this.tools = new ToolController(canvas, this.picker, this.editor, this.cameraController, this.bus, this.scene, this.library, () => this.rng(), this.debug);
+    this.townRenderer = new TownRenderer(this.scene, this.library, this.town, this.bus, this.debug);
+    this.townRenderer.fieldSurface = this.environment;
+    this.fx = new PlacementFx(this.scene, this.bus, fxRand);
+    // Ambient cars use the cosmetic stream so they never shift gameplay variants.
+    this.life = new LifeSystem(this.scene, this.town, this.bus, fxRand, this.debug, boot.material);
+    this.nightLights = new NightLights(this.scene, this.library, this.town, this.bus, this.life, this.debug);
+    this.birds = new BirdSystem(this.scene, this.town, this.seedValue ^ BIRD_SEED_SALT, this.debug, boot.material);
+    this.installBirdDebug();
+    this.ducks = new DuckSystem(this.scene, this.library, this.town, this.bus, this.seedValue ^ DUCK_SEED_SALT, this.debug);
+    // Its own stream, so a quack never shifts the effects' or the town's rolls.
+    this.quacks = new QuackTimer(createSeededRandom(this.seedValue ^ QUACK_SEED_SALT));
+    // Seeded per page load: showers come at different times every visit; seed() pins it.
+    this.weather = new WeatherSchedule(createSeededRandom(entropySeed() ^ WEATHER_SEED_SALT));
+    this.rain = new RainLayer(this.scene, createSeededRandom(RAIN_SEED), this.town);
+    this.applyRainMode();
+    this.installWeatherDebug();
+    this.clock = new DayClock(this.saves.getSettings().timeMode);
+    this.installClockDebug();
+    this.audio = new AudioManager(this.bus, fxRand, this.saves);
+    this.ui = new UiRoot(uiHost, this.bus, () => this.saves.has(), (avoid) => pickTownName(this.townNames, this.nameRng, avoid));
+    this.bus.on('intent:set-graphics', ({ preset }) => this.setGraphics(preset));
+    this.bus.on('intent:reload-graphics', () => this.reloadForGraphics());
+
+    // Autosave 1 s after edits (never on 'load'); flush on page hide.
+    this.saves.attachAutosave(this.bus, () => this.editor.serialize(this.cameraController.getPose()));
+    window.addEventListener('pagehide', this.onPageHide);
+    this.gridPreferred = this.saves.getSettings().grid;
+
+    // Registered before the intents that reset or load, so the world follows every resize.
+    this.bus.on('town:resized', () => this.resizeWorld());
+    this.bus.on('intent:start', ({ mode, name, size }) => {
+      void this.audio.unlock(); // must stay inside the click's call stack
+      const save = mode === 'continue' ? this.saves.read() : null;
+      if (save) this.editor.load(save);
+      else this.editor.reset(name, size ?? DEFAULT_TOWN_SIZE); // 'new': cause 'reset' also clears the stored save
+      this.setPhase('building');
+      if (save?.camera) this.cameraController.setPose(save.camera);
+      this.clock.startDay(); // Auto starts in the morning; the time of day is never saved
+      this.match.start(this.clock.t);
+      this.applyDaylight();
+    });
+    this.bus.on('intent:set-time-mode', ({ mode }) => this.setTimeMode(mode));
+    this.bus.on('intent:cycle-time-mode', () => {
+      this.setTimeMode(TIME_MODES[(TIME_MODES.indexOf(this.clock.mode) + 1) % TIME_MODES.length]);
+    });
+    this.bus.on('intent:set-rain-mode', ({ mode }) => this.setRainMode(mode));
+    this.bus.on('intent:cycle-rain-mode', () => this.setRainMode(RAIN_MODES[(RAIN_MODES.indexOf(this.rainMode) + 1) % RAIN_MODES.length]));
+    this.bus.on('intent:new-town', ({ name, size }) => this.editor.reset(name, size ?? DEFAULT_TOWN_SIZE));
+    this.bus.on('intent:rename-town', ({ name }) => this.editor.rename(name));
+    this.bus.on('intent:export-town', () => this.exportTown());
+    this.bus.on('intent:open-town', ({ save }) => this.openTown(save));
+    this.bus.on('intent:open-menu', () => {
+      if (this.phase === 'building') this.setPhase('menu');
+    });
+    this.bus.on('intent:close-menu', () => {
+      if (this.phase === 'menu') this.setPhase('building');
+    });
+    this.bus.on('intent:reset-camera', () => this.cameraController.reset());
+    this.bus.on('intent:take-photo', () => this.takePhoto());
+    this.bus.on('intent:toggle-grid', ({ visible }) => {
+      this.gridPreferred = visible;
+      this.saves.setSettings({ grid: visible });
+      this.environment.setGridVisible(visible && this.phase === 'building');
+    });
+    this.bus.on('intent:toggle-fps', ({ visible }) => {
+      this.fpsShown = visible;
+      this.fpsMeter.reset();
+      this.saves.setSettings({ fps: visible });
+    });
+    this.bus.on('build:invalid', () => {
+      this.invalidCount += 1;
+    });
+    this.bus.on('town:changed', ({ changes, cause }) => {
+      this.shadows.invalidate();
+      if (affectsSplashSurface(changes, cause)) this.rain.markSurfaceDirty();
+    });
+    this.frameBudget.attach(window);
+    this.installPerfDebug();
+    this.applyGraphics(GRAPHICS_PROFILES[this.graphics]);
+    this.announceGraphics(); // the UI exists: sync its Graphics radios
+
+    if (!this.gridPreferred) this.bus.emit('intent:toggle-grid', { visible: false }); // sync the UI switch
+    if (this.saves.getSettings().fps) this.bus.emit('intent:toggle-fps', { visible: true }); // sync the UI switch and counter
+    this.announceDaytime(); // sync the UI time button with the stored mode
+    this.bus.emit('rain:changed', { mode: this.rainMode }); // sync the UI rain button with the stored mode
+    resizeRenderer(this.renderer, this.camera, this.tuning.maxDpr, this.tuning.renderScale);
+    this.installTestHooks();
+    this.installDiagnostics();
+    this.ready = this.load();
+  }
+
+  start(): void {
+    this.loop.start();
+  }
+
+  dispose(): void {
+    this.loop.stop();
+    this.frameBudget.detach();
+    window.removeEventListener('pagehide', this.onPageHide);
+    this.saves.flush();
+    this.saves.dispose();
+    this.tools.dispose();
+    this.cameraController.dispose();
+    this.townRenderer.dispose();
+    this.fx.dispose();
+    this.nightLights.dispose();
+    this.life.dispose();
+    this.birds.dispose();
+    this.ducks.dispose();
+    this.rain.dispose();
+    this.audio.dispose();
+    this.ui.dispose();
+    this.environment.dispose();
+    this.library.dispose();
+    this.debug.dispose();
+    this.bus.clear();
+    this.renderer.dispose();
+    delete window.__THREE_GAME_DIAGNOSTICS__;
+    window.__THREE_GAME_TEST_HOOKS__ = undefined;
+  }
+
+  private readonly onPageHide = (): void => {
+    this.saves.flush();
+  };
+
+  private async load(): Promise<void> {
+    const progress = new LoadProgress({ models: Object.keys(MODELS).length, townsfolk: 2, scene: 1 }, (report) =>
+      this.bus.emit('load:progress', report),
+    );
+    try {
+      await Promise.all([
+        this.library.loadAll(() => progress.advance('models')),
+        this.life.load().then(() => progress.advance('townsfolk')),
+        this.loadTownNames().then(() => progress.advance('townsfolk')),
+      ]);
+      // The scene setup below blocks the main thread: let "Setting the scene…" reach the screen first.
+      await nextPaint();
+      this.townRenderer.rebuildAll();
+      this.environment.populate(this.library);
+      this.nightLights.populate();
+      this.applyDaylight();
+      this.measureMaterials();
+      progress.advance('scene');
+      this.setPhase('title');
+    } catch (error) {
+      console.error(error);
+      this.bus.emit('load:error', { message: error instanceof Error ? error.message : String(error) });
+      this.setPhase('error');
+    }
+  }
+
+  /** Never fails the load: without names the suggestion is "Tiny Town". */
+  private async loadTownNames(): Promise<void> {
+    try {
+      const response = await fetch(assetUrl(TOWN_NAMES_PATH));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      this.townNames = parseTownNames(await response.json());
+    } catch (error) {
+      console.warn('[town-name] no name suggestions:', error);
+    }
+  }
+
+  private setPhase(phase: GamePhase): void {
+    if (phase === this.phase) return;
+    const previous = this.phase;
+    this.phase = phase;
+    this.tools.setEnabled(phase === 'building');
+    this.environment.setGridVisible(this.gridPreferred && phase === 'building');
+    // Menu is an overlay over the build view: keep the camera where it was.
+    if (phase === 'title') this.cameraController.setMode('title');
+    else if (phase === 'building' && previous !== 'menu') this.cameraController.setMode('build');
+    this.bus.emit('phase:changed', { phase, previous });
+  }
+
+  /** Fixed update order: input/tools → camera → town visuals → world → fx. */
+  private update(delta: number, elapsed: number): void {
+    this.frame += 1;
+    this.frameDelta = delta;
+    if (this.fpsShown) {
+      const fps = this.fpsMeter.frame(elapsed);
+      if (fps !== null) this.bus.emit('fps:measured', { fps });
+    }
+    resizeRenderer(this.renderer, this.camera, this.tuning.maxDpr, this.tuning.renderScale);
+    if (!this.pausedForScreenshot) {
+      const animDelta = this.reducedMotion ? 0 : delta;
+      const animElapsed = this.reducedMotion ? 0 : elapsed;
+      this.tools.update(delta);
+      this.cameraController.update(delta);
+      this.townRenderer.update(animDelta);
+      this.life.update(animDelta);
+      // No spontaneous flocks under the OS "reduce motion" setting (a test hook's reduced motion stops the clock anyway).
+      this.birds.setAuto(this.birdsAuto && this.prefersReducedMotion?.matches !== true && this.weather.sample.rain < 0.05);
+      this.birds.update(animDelta);
+      this.ducks.update(animDelta);
+      this.updateQuacks(animDelta);
+      // The clock runs only while building (frozen on the title, in the menu, under reduced motion).
+      if (this.phase === 'building') {
+        this.clock.advance(animDelta);
+        this.stepMatch(animDelta);
+        this.stepWeather(animDelta);
+      }
+      this.applyDaylight();
+      this.rain.update(animDelta, this.rainShown(), this.weather.sample.wind, this.daySample.skyHorizon);
+      this.environment.update(animDelta, animElapsed);
+      this.fx.update(animDelta);
+    }
+    this.trackActivity();
+  }
+
+  private render(): void {
+    if (this.environment.shadowVersion !== this.shadowVersion) {
+      this.shadowVersion = this.environment.shadowVersion;
+      this.shadows.invalidate();
+    }
+    const moving = !this.pausedForScreenshot && !this.reducedMotion;
+    // Paused for a screenshot: always a fresh map, so captures never show a throttled car shadow.
+    if (this.pausedForScreenshot) this.shadows.invalidate();
+    this.renderer.shadowMap.needsUpdate = this.shadows.step(this.frameDelta, {
+      settling: this.townRenderer.isAnimating,
+      cars: moving && this.life.castsShadows,
+      birds: moving && this.birds.castsShadows,
+    });
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  /** One-off render from a test hook: state may have jumped, so the shadow map is redrawn too. */
+  private renderNow(): void {
+    this.shadows.invalidate();
+    this.frameDelta = 0;
+    this.render();
+  }
+
+  /**
+   * Input keeps the loop at the active rate (FrameBudget listens for it); so do a gliding camera and
+   * town pop-in tweens. The title screen's slow auto-orbit doesn't count, so the title idles.
+   */
+  private trackActivity(): void {
+    const camera = this.camera;
+    const cameraMoved = !camera.position.equals(this.lastCameraPosition) || !camera.quaternion.equals(this.lastCameraQuaternion);
+    if (cameraMoved) {
+      this.lastCameraPosition.copy(camera.position);
+      this.lastCameraQuaternion.copy(camera.quaternion);
+    }
+    if ((cameraMoved && this.phase !== 'title') || this.townRenderer.isAnimating || this.photo.developing) this.frameBudget.markActive();
+  }
+
+  /** Applies the live parts of a preset (MSAA and the material family stay as booted); overwrites the debug sliders. */
+  applyGraphics(profile: Readonly<GraphicsProfile>): void {
+    this.tuning.maxDpr = profile.maxDpr;
+    this.tuning.renderScale = profile.renderScale;
+    resizeRenderer(this.renderer, this.camera, this.tuning.maxDpr, this.tuning.renderScale);
+    this.environment.applyGraphics(profile);
+    this.frameBudget.tuning.activeFps = profile.activeFps;
+    this.frameBudget.tuning.idleFps = profile.idleFps;
+    this.nightLights.setLampHalos(profile.lampHalos);
+    this.rain.density = profile.rainDensity;
+    for (const controller of this.perfDebug?.parent?.controllersRecursive() ?? []) controller.updateDisplay();
+  }
+
+  private setGraphics(preset: GraphicsPreset): void {
+    if (!isGraphicsPreset(preset)) return;
+    this.graphics = preset;
+    this.saves.setSettings({ graphics: preset });
+    this.applyGraphics(GRAPHICS_PROFILES[preset]);
+    this.announceGraphics();
+  }
+
+  private announceGraphics(): void {
+    this.bus.emit('graphics:changed', { preset: this.graphics, reloadRequired: needsReload(this.bootGraphics, this.graphics) });
+  }
+
+  /** Reloads so MSAA and the material follow the saved preset; a `?graphics=` override would win again, so it is dropped. */
+  private reloadForGraphics(): void {
+    this.saves.flush();
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(GRAPHICS_URL_PARAM)) {
+      url.searchParams.delete(GRAPHICS_URL_PARAM);
+      window.location.replace(url.href);
+    } else {
+      window.location.reload();
+    }
+  }
+
+  /** The lit material family the scene draws with. Placement FX (`fx:*`) are Lambert on every preset, so they're excluded. */
+  private measureMaterials(): void {
+    const families = new Set<string>();
+    this.scene.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh || mesh.name.startsWith('fx:')) return;
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        const family = materialFamily(material);
+        if (family) families.add(family);
+      }
+    });
+    this.materialInUse = families.size === 0 ? 'none' : families.size > 1 ? 'mixed' : ([...families][0] as 'standard' | 'lambert');
+  }
+
+  private installPerfDebug(): void {
+    const folder = this.debug.folder('Performance');
+    this.perfDebug = folder;
+    if (!folder) return;
+    const budget = this.frameBudget.tuning;
+    folder.add(budget, 'activeFps', 0, 120, 5).name('active fps (0 = display)');
+    folder.add(budget, 'idleFps', 0, 120, 5).name('idle fps (0 = display)');
+    folder.add(budget, 'idleAfterS', 0.5, 30, 0.5).name('idle after (s)');
+    folder.add(this.shadows.tuning, 'carHz', 1, 60, 1).name('car shadow Hz');
+    folder.add(this.shadows.tuning, 'birdHz', 1, 60, 1).name('bird shadow Hz');
+  }
+
+  /**
+   * Entering the menu phase (the UI shows the photo view) hides the ghost, hover frame and grid and
+   * pauses the clock; one higher-resolution frame is captured synchronously, then framed and encoded
+   * asynchronously. The framing code is lazy-loaded to keep the main chunk under the 900 kB warning limit.
+   */
+  private takePhoto(): void {
+    if (this.phase !== 'building' || this.photo.developing) return;
+    const started = performance.now();
+    const phase = this.daySample.phase;
+    this.photo.taken += 1;
+    this.photo.developing = true;
+    this.setPhase('menu');
+    const fail = (error: unknown): void => {
+      console.error(error);
+      this.photo.developing = false;
+      this.bus.emit('photo:error', { message: error instanceof Error ? error.message : String(error) });
+    };
+    let shot: ReturnType<typeof captureView>;
+    try {
+      this.renderer.shadowMap.needsUpdate = true; // the photo never shows a throttled shadow
+      shot = captureView(this.renderer, this.scene, this.camera);
+    } catch (error) {
+      fail(error);
+      return;
+    }
+    const date = new Date();
+    const townName = this.editor.name;
+    import('../photo/PhotoFrame')
+      .then(({ framePhoto }) => framePhoto(shot.canvas, phase, date, townName))
+      .then(({ blob, width, height }) => {
+        this.photo.developing = false;
+        this.photo.last = { width, height, bytes: blob.size, pixelRatio: shot.pixelRatio, ms: Math.round(performance.now() - started) };
+        this.bus.emit('photo:ready', { blob, width, height, fileName: photoFileName(date, townName) });
+      }, fail);
+  }
+
+  /**
+   * `town:resized`, between the old town's removals and the new town's additions (the mapping has
+   * already moved): finishes the old town's tweens, then rebuilds the world for the new plot.
+   */
+  private resizeWorld(): void {
+    this.townRenderer.settle();
+    this.environment.setPlotSize();
+    this.cameraController.refit();
+    this.shadows.invalidate();
+    this.rain.markSurfaceDirty();
+  }
+
+  /** Serialises the live town synchronously, not the stored autosave (which trails by 1 s). */
+  private exportTown(): void {
+    if (this.phase !== 'building' && this.phase !== 'menu') return;
+    const date = new Date();
+    const text = encodeTownFile(this.editor.serialize(this.cameraController.getPose()), date);
+    this.bus.emit('town-file:ready', { blob: new Blob([text], { type: TOWN_FILE_MIME }), fileName: townFileName(this.editor.name, date) });
+  }
+
+  /**
+   * Not undoable. The save is written at once so a reload continues the opened town, and autosave
+   * turns back on after a test state. From the title this acts as Start (audio unlocks, the morning
+   * starts); from the menu the time of day carries on.
+   */
+  private openTown(save: SavedTown): void {
+    const fromTitle = this.phase === 'title';
+    if (!fromTitle && this.phase !== 'menu') return;
+    if (fromTitle) void this.audio.unlock(); // must stay inside the click's call stack
+    this.editor.load(save);
+    this.saves.autosaveEnabled = true;
+    this.saves.write(this.editor.serialize(save.camera));
+    this.setPhase('building');
+    if (save.camera) this.cameraController.setPose(save.camera);
+    else this.cameraController.reset();
+    if (fromTitle) {
+      this.clock.startDay();
+      this.match.start(this.clock.t);
+    }
+    this.applyDaylight();
+  }
+
+  /** `?debug&day=N`: an N-second Auto day; lil-gui `Clock` folder. */
+  private installClockDebug(): void {
+    if (!this.debug.enabled) return;
+    const day = Number(new URLSearchParams(window.location.search).get('day'));
+    if (Number.isFinite(day) && day > 0) this.clock.dayLengthS = day;
+    this.debug.folder('Clock')?.add(this.clock, 'dayLengthS', 10, 1200, 1).name('day length (s)');
+  }
+
+  /** `?debug&flock=N`: a flock every N seconds. */
+  private installBirdDebug(): void {
+    if (!this.debug.enabled) return;
+    const every = Number(new URLSearchParams(window.location.search).get('flock'));
+    if (!Number.isFinite(every) || every <= 0) return;
+    this.birds.setIntervalOverride(every);
+    this.birds.reset(this.seedValue ^ BIRD_SEED_SALT);
+  }
+
+  /** Persisted; the clock sweeps to the new mode (snaps under reduced motion). */
+  private setTimeMode(mode: TimeMode): void {
+    this.clock.setMode(mode, this.reducedMotion || this.prefersReducedMotion?.matches === true);
+    this.saves.setSettings({ timeMode: mode });
+    this.applyDaylight();
+  }
+
+  /**
+   * Samples the clock and drives every day/night consumer. The title and loading screens show the
+   * afternoon unless a test pinned the clock. Also called from test hooks, which must work while paused.
+   */
+  private applyDaylight(): void {
+    const live = this.clock.isPinned || this.phase === 'building' || this.phase === 'menu';
+    if (live) this.clock.sample(this.daySample);
+    else sampleDay(T_AFTERNOON, this.daySample);
+    const weather = this.weather.sample;
+    const wet = (this.phase === 'building' || this.phase === 'menu') && (weather.overcast > 0 || weather.rain > 0 || weather.flash > 0);
+    if (wet || this.weatherShown) {
+      const overcast = wet ? weather.overcast : 0;
+      shadeDaySample(this.daySample, overcast, wet ? weather.flash : 0);
+      this.environment.applyWeather(overcast, wet ? weather.rain : 0, wet ? weather.flash : 0, weather.flashX, weather.flashZ);
+      setWindGust(wet ? weather.wind : 1);
+      this.weatherShown = wet;
+    }
+    this.environment.applyDaylight(this.daySample);
+    this.matchLevel = live ? this.match.level(this.daySample.night) : 0;
+    // A storm by day is dark enough for lamps, windows and headlights.
+    const gloom = wet ? gloomAt(weather.overcast) : 0;
+    this.lightSample.night = Math.max(this.daySample.night, gloom);
+    this.lightSample.lightsOn = Math.max(this.daySample.lightsOn, gloom > 0 ? 0.35 + gloom : 0);
+    this.lightSample.lightsOff = this.daySample.lightsOff;
+    this.nightLights.update(this.lightSample, this.matchLevel);
+    this.audio.setRainLevel(wet ? weather.rain : 0);
+    this.life.setNight(this.daySample.night);
+    this.birds.setDaylight(this.daySample.night, this.daySample.phase);
+    this.ducks.setNight(this.daySample.night);
+    this.updateCrowd(live);
+    this.announceDaytime();
+  }
+
+  /** A pinned clock (test states, setTimeOfDay) runs no schedule: only setMatchNight starts a match there. */
+  private stepMatch(delta: number): void {
+    const pinned = this.clock.isPinned;
+    const seconds = delta * (DAY_LENGTH_S / this.clock.dayLengthS);
+    if (pinned || this.matchPinned) this.match.sync(this.clock.t);
+    else this.match.advance(this.clock.t, seconds, this.clock.isSweeping);
+    this.matchPinned = pinned;
+    this.match.tick(nightAt(this.clock.t), seconds);
+  }
+
+  /** Persisted; the rain fades in or out at the schedule's rates. */
+  private setRainMode(mode: RainMode): void {
+    if (!isRainMode(mode)) return;
+    this.rainMode = mode;
+    this.saves.setSettings({ rainMode: mode });
+    this.applyRainMode();
+    this.bus.emit('rain:changed', { mode });
+  }
+
+  /** Auto follows the schedule, On holds steady rain, Off holds dry skies. */
+  private applyRainMode(): void {
+    this.weather.force(this.rainMode === 'auto' ? null : this.rainMode === 'on' ? 'rain' : 'clear');
+  }
+
+  /** Showers run on real seconds while building; the title, the menu, reduced motion and a screenshot pause freeze them. */
+  private stepWeather(delta: number): void {
+    this.weather.flashes = this.prefersReducedMotion?.matches !== true;
+    this.weather.advance(delta);
+    const strike = this.weather.takeStrike();
+    if (strike) this.audio.thunder(strike.delay, strike.strength);
+  }
+
+  private rainShown(): number {
+    return this.phase === 'building' || this.phase === 'menu' ? this.weather.sample.rain : 0;
+  }
+
+  /** `?debug&rain=light|rain|storm`: hold that weather; lil-gui `Weather`. */
+  private installWeatherDebug(): void {
+    if (!this.debug.enabled) return;
+    const held = new URLSearchParams(window.location.search).get('rain');
+    if (isRainKind(held)) this.weather.force(held, true);
+    const folder = this.debug.folder('Weather');
+    if (!folder) return;
+    const actions = {
+      hold: held ?? 'schedule',
+      shower: () => this.weather.begin('light'),
+      rain: () => this.weather.begin('rain'),
+      storm: () => this.weather.begin('storm'),
+    };
+    folder
+      .add(actions, 'hold', ['schedule', 'clear', 'light', 'rain', 'storm'])
+      .onChange((value: string) => this.weather.force(value === 'schedule' ? null : value === 'clear' || isRainKind(value) ? value : null));
+    folder.add(actions, 'shower').name('start a light shower');
+    folder.add(actions, 'rain').name('start rain');
+    folder.add(actions, 'storm').name('start a storm');
+    const t = this.rain.tuning;
+    folder.add(this.rain, 'density', 0.1, 1, 0.05);
+    folder.add(t, 'boxWidth', 0.5, 3, 0.05);
+    folder.add(t, 'boxHeight', 0.2, 1.5, 0.02);
+    folder.add(t, 'ahead', 0, 1, 0.05);
+    folder.add(t, 'length', 0.005, 0.1, 0.001);
+    folder.add(t, 'width', 0.0003, 0.004, 0.0001);
+    folder.add(t, 'speed', 0.2, 2, 0.05);
+    folder.add(t, 'slant', 0, 0.5, 0.01);
+    folder.add(t, 'opacity', 0, 1, 0.01);
+    folder.add(t, 'nearFrom', 0, 1, 0.01);
+    folder.add(t, 'nearTo', 0, 1, 0.01);
+    folder.add(t, 'fogFade', 0, 1, 0.05);
+    folder.add(t, 'splashSize', 0.01, 0.3, 0.005);
+    folder.add(t, 'splashMinSize', 0, 0.01, 0.0001);
+    folder.add(t, 'splashOpacity', 0, 1, 0.01);
+  }
+
+  /** Ducks near the middle of a close view quack now and then, by day. */
+  private updateQuacks(delta: number): void {
+    const target = this.cameraController.target;
+    const inEarshot =
+      this.phase === 'building' && ducksInEarshot(this.ducks.sim.ducks, target.x, target.z, this.camera.position.distanceTo(target), this.daySample.night);
+    if (this.quacks.update(delta, inEarshot)) this.audio.play('duck-quack');
+  }
+
+  /** The crowd is as loud as the match level and the view's distance (the camera's ground target) to the nearest stadium allow. */
+  private updateCrowd(live: boolean): void {
+    let level = 0;
+    const sound = this.match.sound(this.daySample.night);
+    if (live && sound > 0 && (this.phase === 'building' || this.phase === 'menu')) {
+      const target = this.cameraController.target;
+      level = sound * crowdGainAt(this.nightLights.stadiums.distanceTo(target.x, target.z));
+    }
+    this.audio.setCrowdLevel(level);
+  }
+
+  private announceDaytime(): void {
+    const mode = this.clock.mode;
+    const phase = this.daySample.phase;
+    if (this.announcedDay?.mode === mode && this.announcedDay.phase === phase) return;
+    this.announcedDay = { mode, phase };
+    this.bus.emit('daytime:changed', { mode, phase });
+  }
+
+  private async applyTestState(name: TestState): Promise<void> {
+    await this.enterTestTown(name === 'title' ? 'title' : 'building', name === 'night-town' ? T_NIGHT : T_AFTERNOON, () => {
+      if (name === 'sample-town' || name === 'active-play' || name === 'night-town') buildSampleTown(this.editor);
+      if (name === 'asset-gallery') buildAssetGallery(this.editor);
+      if (name === 'stress-town') buildStressTown(this.editor);
+    });
+  }
+
+  /** A deterministic town for tests and captures: reseeded, autosave and flocks off, the clock pinned at `t`. */
+  private async enterTestTown(phase: 'title' | 'building', t: number, build: () => void): Promise<void> {
+    await this.ready;
+    // Demo/test towns must never overwrite or clear the player's save (stays off until reload).
+    this.saves.autosaveEnabled = false;
+    // Reseed so a state is identical no matter what happened before it.
+    this.rng = createSeededRandom(this.seedValue);
+    this.fxRng = createSeededRandom(this.seedValue ^ 0x9e3779b9);
+    this.editor.reset(undefined, DEFAULT_TOWN_SIZE);
+    if (this.tools.activeTool) this.tools.selectTool(null);
+    build();
+    this.setPhase(phase);
+    this.cameraController.setMode(phase === 'title' ? 'title' : 'build');
+    // Pinned until setTimeOfDay(null) or a reload.
+    this.clock.pin(t);
+    this.match.reset(this.clock.t);
+    this.matchPinned = true;
+    // No surprise shower in a test state: setWeather() brings one.
+    this.weather.auto = false;
+    this.weather.reset(createSeededRandom(this.seedValue ^ WEATHER_SEED_SALT));
+    this.applyDaylight();
+    this.townRenderer.settle();
+    this.life.settle();
+    // No surprise flock in a test state (baselines, draw-call checks): spawnFlock() launches one.
+    this.birdsAuto = false;
+    this.birds.setAuto(false);
+    this.birds.reset(this.seedValue ^ BIRD_SEED_SALT);
+    // Ducks arrive at once and stay where they are, so captures are stable.
+    this.ducks.setAuto(false);
+    this.ducks.reset(this.seedValue ^ DUCK_SEED_SALT);
+  }
+
+  private installTestHooks(): void {
+    // Keep them real: no-op hooks make screenshot baselines flaky.
+    window.__THREE_GAME_TEST_HOOKS__ = {
+      seed: (value: number) => {
+        this.seedValue = value;
+        this.rng = createSeededRandom(value);
+        this.fxRng = createSeededRandom(value ^ 0x9e3779b9);
+        this.nameRng = createSeededRandom(value ^ 0x51f15eed);
+        this.birds.reset(value ^ BIRD_SEED_SALT);
+        this.ducks.reset(value ^ DUCK_SEED_SALT);
+        this.weather.reset(createSeededRandom(value ^ WEATHER_SEED_SALT));
+      },
+      setState: async (name: string) => {
+        if (!(TEST_STATES as readonly string[]).includes(name)) throw new Error(`Unknown test state: ${name}`);
+        await this.applyTestState(name as TestState);
+        this.renderNow();
+        this.measureMaterials();
+        return { state: name };
+      },
+      loadTown: async (save: unknown) => {
+        const town = parseSave(save);
+        if (town instanceof Error) throw new Error(`loadTown: ${town.message}`);
+        await this.enterTestTown('building', T_AFTERNOON, () => this.editor.load(town));
+        this.renderNow();
+        this.measureMaterials();
+        return { objects: [...this.town.objects()].length, edges: [...this.town.edges()].length };
+      },
+      setPausedForScreenshot: (paused: boolean) => {
+        this.pausedForScreenshot = paused;
+      },
+      setReducedMotion: (enabled: boolean) => {
+        this.reducedMotion = enabled;
+        if (enabled) {
+          this.clock.finishSweep();
+          this.applyDaylight();
+          this.fx.stabilize();
+          this.townRenderer.settle();
+          this.life.settle();
+          this.birds.settle();
+          this.ducks.settle();
+        }
+        this.renderNow();
+      },
+      hideDebugUi: (hidden: boolean) => this.debug.setHidden(hidden),
+      cellToClient: (x: number, z: number) => this.picker.cellToClient({ x, z }),
+      setCameraPose: (pose) => {
+        this.cameraController.setPose(pose);
+        this.renderNow();
+      },
+      spawnFlock: (species?: string) => {
+        if (species !== undefined && !isBirdSpecies(species)) throw new Error(`spawnFlock: unknown species: ${species}`);
+        const birds = this.birds.spawnFlock(species);
+        this.renderNow();
+        return birds;
+      },
+      setTimeOfDay: (t: number | null) => {
+        if (t !== null && !Number.isFinite(t)) throw new Error(`setTimeOfDay: not a number: ${t}`);
+        this.clock.pin(t);
+        this.applyDaylight();
+        this.renderNow();
+      },
+      setWeather: (kind: string | null) => {
+        if (kind !== null && kind !== 'clear' && !isRainKind(kind)) throw new Error(`setWeather: unknown weather: ${String(kind)}`);
+        this.weather.force(kind, true);
+        this.applyDaylight();
+        this.rain.update(0, this.rainShown(), this.weather.sample.wind, this.daySample.skyHorizon);
+        this.renderNow();
+      },
+      setMatchNight: (on: boolean | null) => {
+        if (on !== null && typeof on !== 'boolean') throw new Error(`setMatchNight: not a boolean or null: ${String(on)}`);
+        this.match.force(on);
+        this.applyDaylight();
+        this.renderNow();
+      },
+    };
+  }
+
+  /** A getter: each read builds a fresh snapshot, so rendered frames never allocate for it. */
+  private installDiagnostics(): void {
+    Object.defineProperty(window, '__THREE_GAME_DIAGNOSTICS__', {
+      configurable: true,
+      enumerable: true,
+      get: () => this.diagnostics(),
+    });
+  }
+
+  private diagnostics(): ThreeGameDiagnostics {
+    const info = this.renderer.info;
+    return {
+      frame: this.frame,
+      phase: this.phase,
+      tool: this.tools.activeTool,
+      rotation: this.tools.activeRotation,
+      hover: this.tools.hovered,
+      selection: this.tools.selection,
+      variant: this.tools.variant,
+      town: this.town.stats(),
+      townName: this.editor.name,
+      plot: { size: this.editor.size, width: plot.width, depth: plot.depth },
+      objects: [...this.town.objects()].length,
+      render: this.townRenderer.getDiagnostics(),
+      history: {
+        canUndo: this.editor.history.canUndo,
+        canRedo: this.editor.history.canRedo,
+        undoDepth: this.editor.history.undoDepth,
+        redoDepth: this.editor.history.redoDepth,
+      },
+      invalidCount: this.invalidCount,
+      camera: this.cameraController.getPose(),
+      quality: this.graphics,
+      graphics: {
+        preset: this.graphics,
+        booted: this.bootGraphics,
+        reloadRequired: needsReload(this.bootGraphics, this.graphics),
+        antialias: this.antialias,
+        material: this.materialInUse,
+        maxDpr: this.tuning.maxDpr,
+        renderScale: this.tuning.renderScale,
+        ...this.environment.graphicsState,
+        activeFps: this.frameBudget.tuning.activeFps,
+        idleFps: this.frameBudget.tuning.idleFps,
+        lampHalos: this.nightLights.halosEnabled,
+      },
+      audio: this.audio.state,
+      save: { available: this.saves.available, pending: this.saves.pending, lastError: this.saves.lastError },
+      fx: this.fx.getDiagnostics(),
+      life: this.life.getDiagnostics(),
+      birds: this.birds.getDiagnostics(),
+      ducks: this.ducks.getDiagnostics(),
+      daytime: {
+        mode: this.clock.mode,
+        t: this.daySample.t,
+        phase: this.daySample.phase,
+        pinned: this.clock.isPinned,
+        night: this.daySample.night,
+        lightsOn: this.daySample.lightsOn,
+        ...this.nightLights.getDiagnostics(),
+      },
+      match: {
+        ...this.match.diagnostics,
+        level: this.matchLevel,
+        stadiums: this.nightLights.stadiums.count,
+        distance: this.nightLights.stadiums.count > 0 ? this.nightLights.stadiums.distanceTo(this.cameraController.target.x, this.cameraController.target.z) : null,
+      },
+      weather: { ...this.weather.diagnostics, ...this.rain.getDiagnostics() },
+      photo: { ...this.photo },
+      perf: { targetFps: this.frameBudget.targetFps, idle: this.frameBudget.idle, shadowRenders: this.shadows.renders },
+      renderer: {
+        calls: info.render.calls,
+        triangles: info.render.triangles,
+        geometries: info.memory.geometries,
+        textures: info.memory.textures,
+      },
+      canvas: {
+        clientWidth: this.canvas.clientWidth,
+        clientHeight: this.canvas.clientHeight,
+        width: this.canvas.width,
+        height: this.canvas.height,
+        dpr: effectivePixelRatio(window.devicePixelRatio, this.tuning),
+      },
+    };
+  }
+}

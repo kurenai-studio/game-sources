@@ -1,0 +1,80 @@
+/*
+ * Global page styles and design tokens. ui.css is imported here so that src/ui/*.ts stays free of
+ * CSS side effects and can be imported by Playwright in Node.
+ */
+@import '@fontsource-variable/nunito/wght.css';
+@import './ui/ui.css';
+
+:root {
+  --panel: rgba(255, 249, 239, 0.92);
+  --panel-solid: #fff9ef;
+  --card: #fffdf8;
+  --line: rgba(60, 40, 20, 0.08);
+  --line-strong: rgba(60, 40, 20, 0.16);
+  --shadow: 0 8px 22px rgba(60, 40, 20, 0.16), 0 1px 3px rgba(60, 40, 20, 0.12);
+  --shadow-soft: 0 3px 8px rgba(60, 40, 20, 0.1);
+  --ink: #3b3a36;
+  --ink-soft: #6f685c;
+  --ink-faint: #a39a8a;
+  --green: #5db36a;
+  --green-dark: #3e8d4c;
+  --green-tint: #eaf6e8;
+  --blue: #4a9be8;
+  --brick: #e0674f;
+  --brick-dark: #b84a35;
+  --brick-tint: #fcebe6;
+  --sun: #f4c44e;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fast: 140ms;
+  --tray-slide: 180ms;
+  --gutter: 12px;
+  /* ui.css raises it to 52px on phones. */
+  --topbar-h: 48px;
+  --safe-top: max(var(--gutter), env(safe-area-inset-top));
+  --safe-right: max(var(--gutter), env(safe-area-inset-right));
+  --safe-bottom: max(var(--gutter), env(safe-area-inset-bottom));
+  --safe-left: max(var(--gutter), env(safe-area-inset-left));
+
+  color: var(--ink);
+  font-family: 'Nunito Variable', 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #bfe3ff;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#game-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  outline: none;
+  touch-action: none;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

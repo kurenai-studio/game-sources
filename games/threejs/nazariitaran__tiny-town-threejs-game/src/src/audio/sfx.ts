@@ -1,0 +1,16 @@
+export type SfxEvent =
+  | 'ui-hover'
+  | 'ui-click'
+  | 'ui-open'
+  | 'ui-close'
+  | 'place-path'
+  | 'place-nature'
+  | 'place-building'
+  | 'place-prop'
+  | 'place-prop-metal'
+  | 'rotate'
+  | 'remove'
+  | 'invalid'
+  | 'undo'
+  | 'redo'
+  | 'duck-quack';
