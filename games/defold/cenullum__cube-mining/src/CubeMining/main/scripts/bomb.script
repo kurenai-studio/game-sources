@@ -1,0 +1,82 @@
+local sm = require "main.scripts.sound_manager"
+
+local vmath = vmath
+local msg = msg
+local go = go
+local math = math
+local hash = hash
+
+local function explode(self)
+    local pos = go.get_position()
+    local radius = self.radius or 4.0
+
+    -- Consolidate block destruction and NPC damage in C++
+    voxel_engine.explode(pos, radius, 80)
+
+    sm.play(sm.bomb, 1.0, pos)
+    go.delete()
+end
+
+go.property("gravity", -25.0)
+go.property("radius", 3)
+go.property("friction", 2.0)
+
+
+
+function init(self)
+    self.velocity = vmath.vector3(0, 0, 0)
+    self.size = vmath.vector3(0.6, 0.6, 0.6)
+
+    go.set_scale(self.size)
+    self.base_scale = self.size
+
+    self.timer = 3.0
+    self.pulse_phase = 0
+
+    -- Grab ambient light from player so we don't glow in the dark
+    if _G.player_ambient_light then
+        pcall(function() go.set("#model", "tint", _G.player_ambient_light) end)
+    end
+end
+
+function update(self, dt)
+    local timer = self.timer - dt
+
+    if timer <= 0 then
+        explode(self)
+        return
+    end
+    self.timer = timer
+
+    local vel = self.velocity
+    local size = self.size
+    local friction = self.friction
+
+    -- Calculate physics
+    vel.y = vel.y + self.gravity * dt
+    vel.x = vmath.lerp(friction * dt, vel.x, 0)
+    vel.z = vmath.lerp(friction * dt, vel.z, 0)
+
+    local pos = go.get_position()
+    local feet_pos = pos - vmath.vector3(0, size.y / 2, 0)
+
+    local new_feet_pos, new_vel, grounded = voxel_engine.move_and_slide(feet_pos, vel, size, dt)
+
+    self.velocity = new_vel
+    local new_pos = new_feet_pos + vmath.vector3(0, size.y / 2, 0)
+    go.set_position(new_pos)
+
+    -- Pulse animation
+    -- Frequency increases from 10 to ~40 as timer goes from 3 to 0
+    local freq = 10 + (3.0 - timer) * 10
+    local pulse_phase = self.pulse_phase + freq * dt
+    self.pulse_phase = pulse_phase
+    local pulse = 1.0 + math.sin(pulse_phase) * 0.4
+    go.set_scale(self.base_scale * pulse)
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("set_velocity") then
+        self.velocity = message.velocity
+    end
+end

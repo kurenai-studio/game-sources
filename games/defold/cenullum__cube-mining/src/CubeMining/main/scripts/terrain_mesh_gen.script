@@ -1,0 +1,348 @@
+-- terrain_mesh_gen.script
+-- Thin Lua wrapper: chunk streaming, mesh buffer assignment, light texture management.
+
+local items = require "main.scripts.items"
+local sm = require "main.scripts.sound_manager"
+
+local vmath = vmath
+local resource = resource
+local buffer = buffer
+local go = go
+local msg = msg
+local factory = factory
+local hash = hash
+
+go.property("mesh_prefab", msg.url())
+go.property("game_atlas", resource.atlas())
+go.property("grid_size", 16)
+go.property("torch_factory", msg.url())
+go.property("breaking_texture", resource.texture("/assets/images/effects/breaking.png"))
+go.property("view_distance", 2)
+
+local TEMP_POS = vmath.vector3()
+
+local H_MESH = hash("mesh")
+local H_MESH_WATER = hash("mesh_water")
+local H_POSITION = hash("position")
+local H_TEXCOORD0 = hash("texcoord0")
+local H_TEXCOORD1 = hash("texcoord1")
+local H_TEXCOORD2 = hash("texcoord2")
+local H_DESTROY_CUBE = hash("destroy_cube")
+local H_PLACE_CUBE = hash("place_cube")
+local H_TEXTURE0 = hash("texture0")
+local H_TEXTURE1 = hash("texture1")
+local H_TEXTURE2 = hash("texture2")
+local H_VERTICES = hash("vertices")
+local H_TOGGLE_AO = hash("toggle_ao")
+local H_TOGGLE_LIGHT_MODE = hash("toggle_light_mode")
+local H_SET_BLOCKS_AREA = hash("set_blocks_area")
+local H_SET_BLOCKS_LIST = hash("set_blocks_list")
+
+local PATCH_BUFFER = "/assets/model/patch_%s.bufferc"
+
+_G.stats_faces = 0
+_G.stats_vertices = 0
+_G.stats_mesh_build_time = 0
+_G.world_build_times = {}
+
+local function request_mesh_update(self)
+    local debug_mode = (_G.performance_mode == 2)
+    voxel_engine.request_mesh_update(self.ao_enabled, self.light_mode, debug_mode)
+end
+
+local function get_uv_data(atlas, texture_info, animation_name)
+    local animation_id = hash(animation_name)
+    local geometry_id = nil
+
+    for i, anim in ipairs(atlas.animations) do
+        local anim_id = (type(anim.id) == "string") and hash(anim.id) or anim.id
+        if anim_id == animation_id then
+            geometry_id = anim.frame_start
+            break
+        end
+        if type(anim.id) == "string" then
+            local basename = anim.id:match("([^/]+)%.%w+$") or anim.id:match("([^/]+)$")
+            if basename == animation_name then
+                geometry_id = anim.frame_start
+                break
+            end
+        end
+    end
+
+    if not geometry_id then
+        print("WARNING: Texture '" .. animation_name .. "' not found in atlas!")
+        return nil
+    end
+
+    local geom = atlas.geometries[geometry_id] or atlas.geometries[geometry_id + 1]
+    if not geom then return nil end
+
+    local min_u, max_u, min_v, max_v = math.huge, -math.huge, math.huge, -math.huge
+    for i = 1, #geom.uvs, 2 do
+        local u, v = geom.uvs[i], geom.uvs[i + 1]
+        if u < min_u then min_u = u end
+        if u > max_u then max_u = u end
+        if v < min_v then min_v = v end
+        if v > max_v then max_v = v end
+    end
+
+    return {
+        u = min_u / texture_info.width,
+        v = (texture_info.height - max_v) / texture_info.height,
+        w = (max_u - min_u) / texture_info.width,
+        h = (max_v - min_v) / texture_info.height
+    }
+end
+
+local function register_blocks(self)
+    local atlas = resource.get_atlas(self.game_atlas)
+    local texture_info = resource.get_texture_info(atlas.texture)
+
+    for id, def in pairs(items.definitions) do
+        if def.visual == "block" or def.is_placeable then
+            local uvs = nil
+            if def.faces then
+                uvs = {}
+                local function assign_face(dir, tex_name)
+                    local uv = get_uv_data(atlas, texture_info, tex_name)
+                    if not uv then
+                        print("ERROR: Block '" .. def.name .. "' (ID " .. id .. ") missing texture: " .. tex_name)
+                        uv = { 0, 0, 0, 0 }
+                    else
+                        uv = { uv.u, uv.v, uv.w, uv.h }
+                    end
+                    uvs[dir] = uv
+                end
+
+                if faces == nil then -- wait this had a bug if def.faces had no all?
+                    -- skipped
+                end
+                
+                local faces = def.faces
+                if faces.all then
+                    for d = 1, 6 do assign_face(d, faces.all) end
+                else
+                    assign_face(3, faces.top or "top")
+                    assign_face(4, faces.bottom or "top")
+                    local side_tex = faces.side or "side"
+                    assign_face(1, side_tex)
+                    assign_face(2, side_tex)
+                    assign_face(5, side_tex)
+                    assign_face(6, side_tex)
+                end
+            end
+
+            voxel_engine.register_block(
+                id,
+                def.render_type or 0,
+                def.light_level or 0,
+                (def.greedy_mesh ~= false),
+                uvs
+            )
+        end
+    end
+end
+
+local function spawn_chunk(self, cx, cy, cz)
+    local key = cx .. "_" .. cy .. "_" .. cz
+    if self.chunks[key] then return end
+
+    local pos = vmath.vector3(cx * 16, cy * 16, cz * 16)
+    local go_id = factory.create(self.mesh_prefab, pos)
+    
+    local c = {
+        go_id = go_id,
+        mesh_url = msg.url(nil, go_id, H_MESH),
+        trans_mesh_url = msg.url(nil, go_id, H_MESH_WATER)
+    }
+
+    local atlas = resource.get_atlas(self.game_atlas)
+    go.set(c.mesh_url, H_TEXTURE0, hash(atlas.texture))
+    go.set(c.mesh_url, H_TEXTURE1, self.breaking_texture)
+    go.set(c.mesh_url, H_TEXTURE2, self.light_texture)
+    
+    go.set(c.trans_mesh_url, H_TEXTURE0, hash(atlas.texture))
+    go.set(c.trans_mesh_url, H_TEXTURE1, self.breaking_texture)
+    go.set(c.trans_mesh_url, H_TEXTURE2, self.light_texture)
+
+    self.chunks[key] = c
+end
+
+local function despawn_chunk(self, cx, cy, cz)
+    local key = cx .. "_" .. cy .. "_" .. cz
+    local c = self.chunks[key]
+    if c then
+        if c.buffer_resource then resource.release(c.buffer_resource) end
+        if c.trans_buffer_resource then resource.release(c.trans_buffer_resource) end
+        go.delete(c.go_id)
+        self.chunks[key] = nil
+    end
+end
+
+function init(self)
+    self.grid_size = 16
+    self.ao_enabled = true
+    self.light_mode = 1 -- 0: Flat, 1: Smooth, 2: Off
+    _G.ao_enabled = true
+    _G.light_mode = 1
+    self.block_entities = {}
+    self.chunks = {}
+    
+    -- Global 2048x2048 light texture
+    self.light_tex_params = {
+        width = 2048,
+        height = 2048,
+        type = resource.TEXTURE_TYPE_2D,
+        format = resource.TEXTURE_FORMAT_RGBA,
+        num_mip_maps = 1
+    }
+    self.light_buffer = buffer.create(2048 * 2048, {{ name = hash("rgba"), type = buffer.VALUE_TYPE_UINT8, count = 4 }})
+    self.light_texture = resource.create_texture("/assets/textures/light_map.texturec", self.light_tex_params)
+
+    -- Initialize C++ world wrapper with user-defined distance
+    voxel_engine.init(self.view_distance, 12345)
+
+    register_blocks(self)
+
+    msg.post(".", "acquire_input_focus")
+end
+
+function update(self, dt)
+    self.time = (self.time or 0) + dt
+    for key, c in pairs(self.chunks) do
+        pcall(function() go.set(c.trans_mesh_url, hash("time"), vmath.vector4(self.time, 0, 0, 0)) end)
+    end
+
+    -- Process pending chunk events from C++
+    local updates = voxel_engine.poll_chunk_updates()
+    if updates then
+        for _, u in ipairs(updates) do
+            if u.type == "SPAWN" then
+                spawn_chunk(self, u.cx, u.cy, u.cz)
+            elseif u.type == "DESPAWN" then
+                despawn_chunk(self, u.cx, u.cy, u.cz)
+            elseif u.type == "MESH" then
+                local key = u.cx .. "_" .. u.cy .. "_" .. u.cz
+                local c = self.chunks[key]
+                if c then
+                    if u.opaque_buffer then
+                        if not c.buffer_resource then
+                            c.buffer_resource = resource.create_buffer(string.format(PATCH_BUFFER, "o_"..key), { buffer = u.opaque_buffer })
+                            go.set(c.mesh_url, H_VERTICES, c.buffer_resource)
+                        else
+                            resource.set_buffer(c.buffer_resource, u.opaque_buffer)
+                        end
+                    end
+                    if u.trans_buffer then
+                        if not c.trans_buffer_resource then
+                            c.trans_buffer_resource = resource.create_buffer(string.format(PATCH_BUFFER, "t_"..key), { buffer = u.trans_buffer })
+                            go.set(c.trans_mesh_url, H_VERTICES, c.trans_buffer_resource)
+                        else
+                            resource.set_buffer(c.trans_buffer_resource, u.trans_buffer)
+                        end
+                    end
+
+                    -- New: apply light atlas offset
+                    if u.light_tex_u and u.light_tex_v then
+                        local loat = vmath.vector4(u.light_tex_u, u.light_tex_v, 0, 0)
+                        go.set(c.mesh_url, "light_offset", loat)
+                        go.set(c.trans_mesh_url, "light_offset", loat)
+                    end
+                end
+            end
+        end
+        
+        -- Update light atlas for any dirty chunks
+        voxel_engine.update_light_buffer(self.light_buffer)
+        resource.set_texture(self.light_texture, self.light_tex_params, self.light_buffer)
+    end
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == H_DESTROY_CUBE then
+        local gx, gy, gz = message.gx, message.gy, message.gz
+        if gx and gy and gz then
+            local b_id = voxel_engine.get_block(gx, gy, gz)
+            if b_id ~= 0 and b_id ~= 2 then
+                TEMP_POS.x, TEMP_POS.y, TEMP_POS.z = gx, gy, gz
+
+                local b_def = voxel_engine.get_block_info(b_id)
+                if b_def and b_def.break_sound then
+                    sm.play(b_def.break_sound, 1.0, TEMP_POS)
+                else
+                    sm.play(sm.stone_debris, 1.0, TEMP_POS)
+                end
+
+                voxel_engine.set_block(gx, gy, gz, 0)
+                voxel_engine.spawn_block_particles(gx, gy, gz, b_id)
+
+                local e_key = gx .. "_" .. gy .. "_" .. gz
+                if self.block_entities[e_key] then
+                    go.delete(self.block_entities[e_key])
+                    self.block_entities[e_key] = nil
+                end
+            end
+        end
+    elseif message_id == H_PLACE_CUBE then
+        local gx, gy, gz = message.gx, message.gy, message.gz
+        local target_id = message.block_id or 1
+        if gx and gy and gz then
+            if voxel_engine.get_block(gx, gy, gz) == 0 then
+                voxel_engine.set_block(gx, gy, gz, target_id)
+
+                if target_id == 12 and self.torch_factory then
+                    local pos = vmath.vector3(gx, gy, gz)
+                    local t_id = factory.create(self.torch_factory, pos)
+                    self.block_entities[gx .. "_" .. gy .. "_" .. gz] = t_id
+                    pcall(function() go.set(msg.url(nil, t_id, "model"), "tint", vmath.vector4(1, 1, 1, 1)) end)
+                    sm.play(sm.place, 1.0, pos)
+                else
+                    sm.play(sm.place, 1.0, vmath.vector3(gx, gy, gz))
+                end
+            end
+        end
+    elseif message_id == H_SET_BLOCKS_AREA then
+        local center_gx, center_gy, center_gz = message.gx, message.gy, message.gz
+        local radius = message.radius or 1
+        local target_id = message.block_id or 0
+
+        if center_gx and center_gy and center_gz then
+            for gx = center_gx - radius, center_gx + radius do
+                for gy = center_gy - radius, center_gy + radius do
+                    for gz = center_gz - radius, center_gz + radius do
+                        local current_id = voxel_engine.get_block(gx, gy, gz)
+                        if current_id ~= target_id and current_id ~= 2 then
+                            voxel_engine.set_block(gx, gy, gz, target_id)
+                            if target_id == 0 then
+                                local e_key = gx .. "_" .. gy .. "_" .. gz
+                                if self.block_entities[e_key] then
+                                    pcall(go.delete, self.block_entities[e_key])
+                                    self.block_entities[e_key] = nil
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    elseif message_id == H_TOGGLE_AO then
+        self.ao_enabled = not self.ao_enabled
+        _G.ao_enabled = self.ao_enabled
+        request_mesh_update(self)
+        print("AO Enabled: " .. tostring(self.ao_enabled))
+    elseif message_id == H_TOGGLE_LIGHT_MODE then
+        self.light_mode = (self.light_mode + 1) % 3
+        _G.light_mode = self.light_mode
+        request_mesh_update(self)
+        local modes = { "Flat", "Smooth", "Off" }
+        print("Lighting Mode: " .. modes[self.light_mode + 1])
+    end
+end
+
+function final(self)
+    for key, c in pairs(self.chunks) do
+        if c.buffer_resource then resource.release(c.buffer_resource) end
+        if c.trans_buffer_resource then resource.release(c.trans_buffer_resource) end
+    end
+    voxel_engine.shutdown()
+end

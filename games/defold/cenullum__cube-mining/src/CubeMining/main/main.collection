@@ -1,0 +1,130 @@
+name: "main"
+instances {
+  id: "camera"
+  prototype: "/main/gameobjects/camera.go"
+  children: "hand_bomb"
+  children: "hand_torch"
+  position {
+    y: 25.0
+    z: 10.0
+  }
+  component_properties {
+    id: "voxelizer"
+    properties {
+      id: "depth"
+      value: "3.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "cursor"
+  prototype: "/main/gameobjects/cursor.go"
+}
+instances {
+  id: "sounds"
+  prototype: "/main/gameobjects/sounds.go"
+}
+instances {
+  id: "particle_manager"
+  prototype: "/main/gameobjects/particle_manager.go"
+  component_properties {
+    id: "particle_manager"
+    properties {
+      id: "game_atlas"
+      value: "/assets/images/game.atlas"
+      type: PROPERTY_TYPE_HASH
+    }
+  }
+}
+scale_along_z: 1
+embedded_instances {
+  id: "hand_torch"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/assets/model/torch.glb\\\"\\n"
+  "name: \\\"unnamed\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/assets/materials/hand_model.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/assets/images/entity/torch.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -0.5\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "hand_bomb"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/assets/model/bomb.glb\\\"\\n"
+  "name: \\\"unnamed\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/assets/materials/hand_model.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/assets/images/entity/bomb.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "root"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/main/scripts/terrain_mesh_gen.script\"\n"
+  "  properties {\n"
+  "    id: \"mesh_prefab\"\n"
+  "    value: \"/root#mesh_prefab\"\n"
+  "    type: PROPERTY_TYPE_URL\n"
+  "  }\n"
+  "  properties {\n"
+  "    id: \"game_atlas\"\n"
+  "    value: \"/assets/images/game.atlas\"\n"
+  "    type: PROPERTY_TYPE_HASH\n"
+  "  }\n"
+  "  properties {\n"
+  "    id: \"grid_size\"\n"
+  "    value: \"16.0\"\n"
+  "    type: PROPERTY_TYPE_NUMBER\n"
+  "  }\n"
+  "  properties {\n"
+  "    id: \"torch_factory\"\n"
+  "    value: \"/root#torch_factory\"\n"
+  "    type: PROPERTY_TYPE_URL\n"
+  "  }\n"
+  "  properties {\n"
+  "    id: \"view_distance\"\n"
+  "    value: \"2.0\"\n"
+  "    type: PROPERTY_TYPE_NUMBER\n"
+  "  }\n"
+  "}\n"
+  "components {\n"
+  "  id: \"performance_overlay\"\n"
+  "  component: \"/main/scripts/performance_overlay.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"mesh_prefab\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/gameobjects/terrain_mesh.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"torch_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/entity_gameobjects/torch.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
