@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://bhscmcrks7mqp"]
+
+[ext_resource type="Script" uid="uid://dgdxywgnleu42" path="res://Scene/enemy_bullet.gd" id="1_gmx5s"]
+[ext_resource type="Texture2D" uid="uid://c0p51x52uito2" path="res://Resource/Tiles/gohst.png" id="2_l7n8j"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8fs5m"]
+size = Vector2(8, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqfuc"]
+atlas = ExtResource("2_l7n8j")
+region = Rect2(20, 20, 8, 8)
+
+[node name="EnemyBullet" type="CharacterBody2D" unique_id=95049636]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_gmx5s")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1284690301]
+shape = SubResource("RectangleShape2D_8fs5m")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1433742400]
+texture = SubResource("AtlasTexture_aqfuc")
+
+[node name="Hitter" type="Area2D" parent="." unique_id=391686812]
+collision_layer = 8
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitter" unique_id=150079012]
+shape = SubResource("RectangleShape2D_8fs5m")
