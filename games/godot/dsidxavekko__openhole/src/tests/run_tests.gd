@@ -1,0 +1,161 @@
+extends SceneTree
+## Headless logic tests: godot --headless -s tests/run_tests.gd
+
+var _fails := 0
+
+
+func _check(cond: bool, what: String) -> void:
+	if cond:
+		print("  ok   ", what)
+	else:
+		print("  FAIL ", what)
+		_fails += 1
+
+
+func _hash(specs: Array) -> int:
+	var s := ""
+	for sp in specs:
+		s += "%s%.2f%.2f%.2f%.2f;" % [sp.k, sp.p.x, sp.p.z, sp.s.y, sp.r]
+	return s.hash()
+
+
+func _area(soups: Array) -> float:
+	var a := 0.0
+	for s in soups:
+		for i in range(0, s.p.size(), 3):
+			a += (s.p[i + 1] - s.p[i]).cross(s.p[i + 2] - s.p[i]).length() * 0.5
+	return a
+
+
+func _init() -> void:
+	print("HoleRules")
+	_check(HoleRules.points_for_level(1) == 0, "level 1 needs 0 points")
+	var monotonic := true
+	for l in range(2, HoleRules.MAX_LEVEL + 1):
+		if HoleRules.points_for_level(l) <= HoleRules.points_for_level(l - 1):
+			monotonic = false
+		if HoleRules.radius_for_level(l) <= HoleRules.radius_for_level(l - 1):
+			monotonic = false
+	_check(monotonic, "points and radius grow every level")
+	for l in range(1, HoleRules.MAX_LEVEL + 1):
+		if HoleRules.level_for_points(HoleRules.points_for_level(l)) != l:
+			_check(false, "level_for_points round-trip at %d" % l)
+	_check(HoleRules.level_for_points(10_000_000) == HoleRules.MAX_LEVEL, "level is capped")
+	_check(HoleRules.fits(0.45, HoleRules.BASE_RADIUS), "a person fits a new hole")
+	_check(not HoleRules.fits(4.0, HoleRules.BASE_RADIUS), "a car does not fit a new hole")
+	_check(HoleRules.fits(4.0, HoleRules.radius_for_level(6)), "a car fits at level 6")
+	var tower := HoleRules.fit_size(6.0, 40.0)
+	_check(not HoleRules.fits(tower, HoleRules.radius_for_level(6)), "a 6x40 m tower does not fit at level 6")
+	_check(HoleRules.fits(tower, HoleRules.radius_for_level(11)), "a 6x40 m tower fits at level 11")
+	_check(HoleRules.fits(HoleRules.fit_size(0.4, 4.5), HoleRules.BASE_RADIUS), "a lamp post fits a new hole")
+	_check(HoleRules.can_eat_hole(3.0, 1.0, 0.5), "big hole eats small hole on top of it")
+	_check(not HoleRules.can_eat_hole(3.0, 2.8, 0.0), "similar sizes do not eat each other")
+	_check(not HoleRules.can_eat_hole(3.0, 1.0, 5.0), "far holes do not eat")
+
+	_check(is_equal_approx(HoleRules.combo_multiplier(1), 1.0), "no combo bonus for a single item")
+	_check(HoleRules.combo_multiplier(5) > 1.0, "combo grows")
+	_check(is_equal_approx(HoleRules.combo_multiplier(1000), 1.5), "combo bonus is capped at +50 %")
+
+	print("Skins")
+	_check(Skins.unlocked_with({}, 0) and Skins.unlocked_with({}, 1), "first skins are free")
+	_check(not Skins.unlocked_with({}, Skins.count() - 1), "last skin starts locked")
+	var all := {"classic": 1e9, "solo": 100, "battle_wins": 1e9, "total_eaten": 1e9}
+	_check(Skins.unlocked_set(all).size() == Skins.count(), "every skin can be unlocked")
+	var patterns_ok := true
+	for i in Skins.count():
+		if Skins.get_skin(i).pattern < 0 or Skins.get_skin(i).pattern > Skins.Pattern.SHIMMER:
+			patterns_ok = false
+	_check(patterns_ok, "skin patterns are known to the shader")
+
+	print("Powerup")
+	var no_shield := true
+	for i in 300:
+		if Powerup.random_kind(false) == Powerup.Kind.SHIELD:
+			no_shield = false
+	_check(no_shield, "solo never spawns a shield")
+
+	print("CityGen")
+	var a := CityGen.generate(42, 5, 0)
+	var b := CityGen.generate(42, 5, 0)
+	var c := CityGen.generate(43, 5, 0)
+	var s := CityGen.generate(42, 5, 1)
+	_check(a.size() > 2800, "city is dense (%d objects)" % a.size())
+	_check(_hash(a) == _hash(b), "same seed gives same city")
+	_check(_hash(a) != _hash(c), "different seed gives different city")
+	_check(_hash(a) != _hash(s), "suburb theme differs from city")
+	_check(CityGen.generate(7, 2, 0).size() > 300, "menu background city has enough objects")
+	var half := CityGen.map_extent(5) / 2.0
+	var inside := true
+	for sp in a:
+		if absf(sp.p.x) > half or absf(sp.p.z) > half:
+			inside = false
+	_check(inside, "everything is inside the map")
+	var in_crossing := 0
+	for sp in a + s:
+		if sp.k != "person":
+			continue
+		var mx := fposmod(sp.p.x + half, CityGen.PITCH)
+		var mz := fposmod(sp.p.z + half, CityGen.PITCH)
+		if mx < CityGen.ROAD and mz < CityGen.ROAD:
+			in_crossing += 1
+	_check(in_crossing == 0, "nobody stands inside a crossing (%d)" % in_crossing)
+
+	print("Fracture")
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = Vector3(2, 6, 2)
+	var mi := MeshInstance3D.new()
+	mi.mesh = box_mesh
+	var model := Fracture.extract(mi)
+	mi.free()
+	var whole := Fracture.soup_aabb(model.soups)
+	var pieces := Fracture.split(model.soups, 8, 42)
+	_check(pieces.size() == 8, "a box splits into 8 pieces (%d)" % pieces.size())
+	var area := 0.0
+	var inside_box := true
+	var capped := true
+	for pc in pieces:
+		area += _area(pc.soups)
+		if not whole.grow(0.001).encloses(pc.aabb):
+			inside_box = false
+		if pc.cap.p.is_empty() or pc.hull.size() < 4:
+			capped = false
+	_check(inside_box, "pieces stay inside the model")
+	_check(capped, "every piece has a cap and a hull")
+	var full := _area(model.soups)
+	_check(absf(area - full) < full * 0.001, "cutting keeps the surface area (%.2f of %.2f)" % [area, full])
+	var again := Fracture.split(model.soups, 8, 42)
+	var same := again.size() == pieces.size()
+	for i in mini(again.size(), pieces.size()):
+		if not again[i].aabb.is_equal_approx(pieces[i].aabb):
+			same = false
+	_check(same, "same seed gives the same pieces")
+	var inst: Node = (load("res://assets/kenney/commercial/building-a.glb") as PackedScene).instantiate()
+	var real := Fracture.split(Fracture.extract(inst).soups, 10, 7)
+	inst.free()
+	_check(real.size() == 10, "a real building splits into 10 pieces (%d)" % real.size())
+
+	print("DebrisRules")
+	var stack: Array[Edible] = []
+	for y in 3:
+		var chunk := Edible.new()
+		chunk.position = Vector3(0, 1.0 + y * 2.0, 0)
+		chunk.height = 2.0
+		chunk.extent = 2.0
+		stack.append(chunk)
+	var aside := Edible.new()
+	aside.position = Vector3(8, 1.0, 0)
+	aside.height = 2.0
+	aside.extent = 2.0
+	stack.append(aside)
+	DebrisRules.link_supports(stack)
+	_check(stack[0].grounded and not stack[1].grounded and not stack[2].grounded, "only the bottom chunk is grounded")
+	_check(stack[0].supports.has(stack[1]) and stack[1].supports.has(stack[2]), "each chunk holds up the one above")
+	_check(not stack[0].supports.has(aside) and aside.supporters == 0, "a chunk aside is not held up")
+	for chunk in stack:
+		chunk.free()
+	_check(DebrisRules.breakable_kind("building", Vector3(10, 30, 10)), "buildings break")
+	_check(not DebrisRules.breakable_kind("person", Vector3.ONE), "people do not break")
+	_check(not DebrisRules.breakable_kind("tree", Vector3(2, 3, 2)), "small trees do not break")
+
+	print("FAILED: %d" % _fails if _fails else "ALL PASSED")
+	quit(1 if _fails else 0)
