@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亲爱的失败者</title>
+    <style>
+        /* ========== 全局样式重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            /* 禁止选择和拖拽 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ========== 游戏画布容器 ========== */
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-container canvas {
+            display: block;
+        }
+
+        /* ========== HUD 覆盖层 ========== */
+        #hud-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 不阻挡游戏交互 */
+            z-index: 10;
+        }
+
+        /* 生命值容器 */
+        #health-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #health-icon {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 6px #ff4444);
+        }
+
+        #health-bar-bg {
+            width: 200px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #555;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        #health-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #ff4444 0%, #aa1111 100%);
+            transition: width 0.3s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        #health-text {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255,0,0,0.6);
+            min-width: 60px;
+        }
+
+        /* 得分 */
+        #score-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ffcc00;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,200,0,0.5);
+            text-align: right;
+        }
+
+        #score-label {
+            font-size: 11px;
+            color: #999;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* 连击计数器 */
+        #combo-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #combo-count {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff6600;
+            text-shadow: 0 0 20px rgba(255,100,0,0.8), 0 2px 4px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: all 0.15s ease-out;
+        }
+
+        #combo-label {
+            font-size: 16px;
+            color: #ffaa00;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(255,150,0,0.6);
+            opacity: 0;
+            transition: all 0.15s ease-out;
+        }
+
+        #combo-count.active,
+        #combo-label.active {
+            opacity: 1;
+        }
+
+        /* 消息提示 */
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+        }
+
+        #message.visible {
+            opacity: 1;
+        }
+
+        /* 操作提示 */
+        #controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+            text-align: center;
+            letter-spacing: 1px;
+            line-height: 1.8;
+        }
+
+        #controls-hint span.key {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 3px;
+            padding: 2px 8px;
+            margin: 0 2px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 游戏渲染目标 -->
+    <div id="game-container"></div>
+
+    <!-- HUD 界面层 -->
+    <div id="hud-layer">
+        <!-- 生命值 -->
+        <div id="health-container">
+            <div id="health-bar-bg">
+                <div id="health-bar-fill"></div>
+            </div>
+            <div id="health-text">100/100</div>
+        </div>
+
+        <!-- 得分 -->
+        <div id="score-container">
+            <div id="score-label">得分</div>
+            <div id="score-value">0</div>
+        </div>
+
+        <!-- 连击 -->
+        <div id="combo-container">
+            <div id="combo-count">x1</div>
+            <div id="combo-label">COMBO</div>
+        </div>
+
+        <!-- 消息 -->
+        <div id="message"></div>
+
+        <!-- 操作提示 -->
+        <div id="controls-hint">
+            <span class="key">A/D</span> 或 <span class="key">← →</span> 移动 &nbsp;
+            <span class="key">W</span> 或 <span class="key">空格</span> 跳跃 &nbsp;
+            <span class="key">J</span> 或 <span class="key">鼠标左键</span> 攻击
+        </div>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <!-- 游戏入口 -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
