@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cinder Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --ops-ink: #0b0a08;
+    --ops-cream: #e8e0c8;
+    --ops-dust: #9a8e74;
+    --ops-amber: #e0b060;
+    --ops-amber-dim: #c4a060;
+    --ops-rule: rgba(224, 176, 96, 0.32);
+    --ops-kia: #c44a32;
+    --ops-ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ops-display: "Barlow Condensed", "Arial Narrow", "Franklin Gothic Medium", sans-serif;
+    --ops-ui: "Barlow", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0a08; }
+  #view { display: block; width: 100vw; height: 100vh; }
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+  #hud[hidden] { display: none; }
+
+  /* ── Shell: loader / start / pause / KIA ── */
+  #shell {
+    position: fixed; inset: 0; z-index: 8;
+    color: var(--ops-cream);
+    font: 500 15px/1.45 var(--ops-ui);
+    pointer-events: auto;
+  }
+  #shell[hidden] { display: none; }
+  #shell [hidden] { display: none !important; }
+  .shell-smoke, .shell-grain {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .shell-smoke {
+    background:
+      radial-gradient(70% 55% at 62% 42%, rgba(18, 12, 8, 0.28), rgba(8, 6, 4, 0.78) 72%),
+      rgba(10, 8, 6, 0.58);
+  }
+  #shell.is-menu .shell-smoke,
+  #shell.is-over .shell-smoke {
+    background:
+      linear-gradient(90deg, rgba(8, 6, 4, 0.86) 0%, rgba(8, 6, 4, 0.58) 36%, rgba(8, 6, 4, 0.28) 100%);
+    backdrop-filter: blur(7px) saturate(0.72) brightness(0.68);
+    -webkit-backdrop-filter: blur(7px) saturate(0.72) brightness(0.68);
+  }
+  #shell.is-loading .shell-smoke {
+    background: #0b0a08;
+    backdrop-filter: none;
+  }
+  .shell-grain {
+    opacity: 0.09;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.7  0 0 0 0 0.4  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+  }
+  .shell-col {
+    position: relative; z-index: 1;
+    width: min(420px, calc(100vw - 48px));
+    margin: 0;
+    padding:
+      max(56px, calc(12vh + env(safe-area-inset-top)))
+      max(24px, env(safe-area-inset-right))
+      max(28px, env(safe-area-inset-bottom))
+      max(56px, calc(8vw + env(safe-area-inset-left)));
+  }
+  @media (max-width: 720px) {
+    .shell-col {
+      padding-left: max(24px, env(safe-area-inset-left));
+      width: min(420px, calc(100vw - 32px));
+    }
+  }
+  .shell-kicker {
+    margin: 0 0 14px;
+    color: var(--ops-amber);
+    font: 600 11px/1 var(--ops-ui);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+  .shell-title {
+    margin: 0;
+    font: 600 clamp(44px, 6.4vw, 68px)/0.9 var(--ops-display);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .shell-rule {
+    width: 72px; height: 1px; margin: 18px 0 16px;
+    background: var(--ops-amber);
+    box-shadow: 0 0 12px rgba(224, 176, 96, 0.45);
+  }
+  .shell-obj {
+    margin: 0 0 36px;
+    color: var(--ops-dust);
+    font: 500 12px/1.4 var(--ops-ui);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .shell-stage {
+    margin: 10px 0 0;
+    color: var(--ops-dust);
+    font: 500 11px/1.4 var(--ops-ui);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    min-height: 1.4em;
+  }
+  .shell-bar {
+    width: min(220px, 56vw); height: 2px;
+    background: rgba(224, 176, 96, 0.16);
+    overflow: hidden;
+  }
+  .shell-bar i {
+    display: block; width: 100%; height: 100%;
+    background: var(--ops-amber);
+    transform: scaleX(0.04); transform-origin: left center;
+    box-shadow: 0 0 10px rgba(224, 176, 96, 0.55);
+    transition: transform 220ms var(--ops-ease);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shell-bar i { transition: none; }
+  }
+  .shell-nav { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .shell-btn {
+    appearance: none; background: none; border: 0;
+    color: var(--ops-cream);
+    font: 600 15px/1 var(--ops-display);
+    letter-spacing: 0.22em; text-transform: uppercase;
+    padding: 12px 8px 12px 14px;
+    min-height: 44px; min-width: 180px;
+    text-align: left; cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: color 160ms var(--ops-ease), border-color 160ms var(--ops-ease), transform 120ms var(--ops-ease);
+  }
+  .shell-btn.primary { color: var(--ops-amber); font-size: 18px; letter-spacing: 0.26em; }
+  .shell-btn:hover { border-left-color: var(--ops-amber); color: #f0e6c8; }
+  .shell-btn:focus-visible { outline: 1px solid var(--ops-amber); outline-offset: 3px; }
+  .shell-btn:active { transform: scale(0.98); }
+  .shell-back {
+    margin: 0 0 18px;
+    color: var(--ops-dust);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+  }
+  .shell-foot {
+    position: absolute; z-index: 1;
+    left: max(56px, calc(8vw + env(safe-area-inset-left)));
+    bottom: max(22px, env(safe-area-inset-bottom));
+    margin: 0;
+    color: rgba(154, 142, 116, 0.72);
+    font: 500 10px/1 var(--ops-ui);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 720px) {
+    .shell-foot { left: max(24px, env(safe-area-inset-left)); }
+  }
+  .shell-keys { width: 100%; border-collapse: collapse; }
+  .shell-keys th { display: none; }
+  .shell-keys td {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(224, 176, 96, 0.12);
+    font: 500 13px/1.35 var(--ops-ui);
+    color: var(--ops-cream);
+  }
+  .shell-keys td:first-child {
+    width: 42%;
+    color: var(--ops-amber);
+    font: 600 12px/1 var(--ops-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .shell-set { display: flex; flex-direction: column; gap: 22px; width: min(360px, 100%); }
+  .shell-set label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    color: var(--ops-dust);
+    font: 600 11px/1 var(--ops-ui);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .shell-set output { color: var(--ops-cream); letter-spacing: 0.08em; }
+  .shell-set input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 2px; border-radius: 0;
+    background: rgba(224, 176, 96, 0.18);
+    outline: none;
+  }
+  .shell-set input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px;
+    background: var(--ops-amber);
+    border: 0; border-radius: 0;
+    transform: rotate(45deg);
+    cursor: pointer;
+  }
+  .shell-set input[type="range"]::-moz-range-thumb {
+    width: 12px; height: 12px;
+    background: var(--ops-amber);
+    border: 0; border-radius: 0;
+    transform: rotate(45deg);
+    cursor: pointer;
+  }
+  .fps-row {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .fps-row button {
+    appearance: none;
+    background: transparent;
+    border: 1px solid rgba(224, 176, 96, 0.22);
+    color: var(--ops-dust);
+    font: 600 11px/1 var(--ops-ui);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    min-height: 36px; padding: 0 10px;
+    cursor: pointer;
+    transition: color 160ms var(--ops-ease), border-color 160ms var(--ops-ease), background 160ms var(--ops-ease);
+  }
+  .fps-row button.on {
+    color: var(--ops-ink);
+    background: var(--ops-amber);
+    border-color: var(--ops-amber);
+  }
+  .fps-row button:hover:not(.on) { color: var(--ops-cream); border-color: var(--ops-amber); }
+  .fps-row button:focus-visible { outline: 1px solid var(--ops-amber); outline-offset: 2px; }
+  .quality-row {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .quality-row button {
+    appearance: none;
+    display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: center;
+    background: transparent;
+    border: 1px solid rgba(224, 176, 96, 0.22);
+    color: var(--ops-dust);
+    font: 600 11px/1 var(--ops-ui);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    min-height: 52px; padding: 10px 14px;
+    cursor: pointer; text-align: left; width: 100%;
+    transition: color 160ms var(--ops-ease), border-color 160ms var(--ops-ease), background 160ms var(--ops-ease);
+  }
+  .quality-row button.on {
+    color: var(--ops-ink);
+    background: var(--ops-amber);
+    border-color: var(--ops-amber);
+  }
+  .quality-row button:hover:not(.on) { color: var(--ops-cream); border-color: var(--ops-amber); }
+  .quality-row button:focus-visible { outline: 1px solid var(--ops-amber); outline-offset: 2px; }
+  .quality-row button small {
+    display: block;
+    margin-top: 6px;
+    font: 500 10px/1.2 var(--ops-ui);
+    letter-spacing: 0.04em;
+    text-transform: none;
+    opacity: 0.72;
+  }
+  .quality-row button.on small { opacity: 0.88; }
+  .fps-live {
+    margin: 8px 0 0;
+    color: var(--ops-dust);
+    font: 500 11px/1 var(--ops-ui);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  #over.shell-over { position: relative; z-index: 1; }
+  #over[data-kind="kia"] .shell-kicker,
+  #over[data-kind="kia"] h2 { color: var(--ops-kia); }
+  #over[data-kind="extract"] h2 { color: var(--ops-amber); }
+  #over h2 {
+    margin: 0 0 10px;
+    font: 600 clamp(40px, 5.4vw, 56px)/0.9 var(--ops-display);
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  #over .over-lede { margin: 0 0 18px; color: var(--ops-dust); letter-spacing: 0.06em; }
+  #over-flash {
+    position: absolute; inset: 0; z-index: 4;
+    background: #f3eee4; opacity: 0; pointer-events: none;
+  }
+  #over-flash[hidden] { display: none; }
+  #over-flash.is-run { animation: extract-flash 380ms var(--ops-ease) forwards; }
+  @keyframes extract-flash {
+    0% { opacity: 0.88; }
+    100% { opacity: 0; }
+  }
+  .over-stats {
+    display: grid; gap: 0;
+    width: min(320px, 100%);
+    margin: 4px 0 18px; padding: 0;
+  }
+  .over-stat {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 16px;
+    margin: 0;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(224, 176, 96, 0.12);
+  }
+  .over-stat dt {
+    margin: 0;
+    color: var(--ops-dust);
+    font: 600 11px/1 var(--ops-ui);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .over-stat dd {
+    margin: 0;
+    color: var(--ops-cream);
+    font: 600 26px/1 var(--ops-display);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    min-width: 6ch;
+    text-align: right;
+  }
+  .over-stat dd small {
+    display: block;
+    margin-top: 4px;
+    color: var(--ops-dust);
+    font: 500 10px/1 var(--ops-ui);
+    letter-spacing: 0.14em;
+  }
+  #over.is-seq h2,
+  #over.is-seq .over-lede,
+  #over.is-seq .over-stat,
+  #over.is-seq button {
+    opacity: 0;
+    animation: over-in 420ms var(--ops-ease) forwards;
+  }
+  #over.is-seq h2 {
+    transform: translateY(12px) scaleX(0.94);
+    transform-origin: left center;
+    animation-duration: 520ms;
+    animation-delay: 160ms;
+  }
+  #over.is-seq .over-lede { transform: translateY(8px); animation-delay: 280ms; }
+  #over.is-seq .over-stat { transform: translateY(8px); animation-duration: 380ms; }
+  #over.is-seq .over-stat:nth-child(1) { animation-delay: 420ms; }
+  #over.is-seq .over-stat:nth-child(2) { animation-delay: 500ms; }
+  #over.is-seq .over-stat:nth-child(3) { animation-delay: 580ms; }
+  #over.is-seq .over-stat:nth-child(4) { animation-delay: 660ms; }
+  #over.is-seq .over-stat:nth-child(5) { animation-delay: 740ms; }
+  #over.is-seq button { transform: translateY(6px); animation-delay: 860ms; }
+  @keyframes over-in {
+    to { opacity: 1; transform: translateY(0) scaleX(1); }
+  }
+  .hud-clear {
+    position: absolute; left: 50%; top: 34%;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    transform: translate(-50%, 10px) scaleX(0.92);
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 420ms var(--ops-ease), transform 520ms var(--ops-ease);
+  }
+  .hud-clear[hidden] { display: none; }
+  .hud-clear.is-in {
+    opacity: 1;
+    transform: translate(-50%, 0) scaleX(1);
+  }
+  .hud-clear.is-out {
+    opacity: 0;
+    transform: translate(-50%, -6px) scaleX(1.03);
+    transition-duration: 380ms;
+  }
+  .hud-clear-rule {
+    display: block; width: 240px; height: 1px;
+    background: var(--ops-amber);
+    box-shadow: 0 0 10px rgba(224, 176, 96, 0.4);
+    transform: scaleX(0.28);
+    transition: transform 560ms var(--ops-ease);
+  }
+  .hud-clear.is-in .hud-clear-rule { transform: scaleX(1); }
+  .hud-clear.is-out .hud-clear-rule { transform: scaleX(0.55); }
+  .hud-clear-title {
+    margin: 0;
+    padding: 10px 40px;
+    color: var(--ops-amber);
+    font: 600 clamp(20px, 2.8vw, 32px)/1 var(--ops-display);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 1px 14px rgba(0, 0, 0, 0.7);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(8, 6, 4, 0.56) 14%,
+      rgba(8, 6, 4, 0.56) 86%,
+      transparent 100%);
+  }
+  @media (max-width: 720px) {
+    .hud-clear-title { letter-spacing: 0.16em; font-size: 18px; padding: 8px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #over-flash { display: none !important; }
+    #over.is-seq h2,
+    #over.is-seq .over-lede,
+    #over.is-seq .over-stat,
+    #over.is-seq button {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    .hud-clear, .hud-clear-rule {
+      transition: opacity 200ms ease;
+    }
+    .hud-clear.is-in { transform: translate(-50%, 0); }
+    .hud-clear.is-out { transform: translate(-50%, 0); }
+  }
+  .overlay {
+    position: fixed; inset: 0; z-index: 9; display: grid; place-items: start;
+    padding-top: max(20px, 8vh, var(--ogp-safe-top-inset, 0px));
+    padding-bottom: var(--ogp-safe-bottom-inset, 0px);
+    background: rgba(8, 6, 4, 0.78); color: var(--ops-cream);
+    font: 400 15px/1.5 var(--ops-ui);
+  }
+  .overlay[hidden] { display: none; }
+  .overlay h2 {
+    margin: 0 0 8px;
+    font: 600 28px/1 var(--ops-display);
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .overlay button, #over button {
+    margin-top: 8px; min-height: 44px; padding: 0 8px 0 14px;
+    border: 0; border-left: 2px solid var(--ops-amber);
+    border-radius: 0; background: transparent;
+    color: var(--ops-amber);
+    font: 600 14px/1 var(--ops-display);
+    letter-spacing: 0.22em; text-transform: uppercase; cursor: pointer;
+    transition: color 160ms var(--ops-ease), transform 120ms var(--ops-ease);
+  }
+  .overlay button:hover, #over button:hover { color: #f0e6c8; }
+  .overlay button:focus-visible, #over button:focus-visible {
+    outline: 1px solid var(--ops-amber); outline-offset: 3px;
+  }
+  .overlay button:active, #over button:active { transform: scale(0.98); }
+  .hud-compass {
+    position: absolute; top: max(10px, env(safe-area-inset-top));
+    left: 50%; transform: translateX(-50%);
+    width: min(420px, 52vw); height: 28px; overflow: hidden;
+  }
+  .hud-compass canvas { display: block; width: 100%; height: 100%; }
+  .hud-obj {
+    position: absolute; top: max(44px, calc(env(safe-area-inset-top) + 34px));
+    left: max(16px, env(safe-area-inset-left));
+    color: #c9c4a8; font: 600 11px/1.35 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 1px 2px #000;
+  }
+  .hud-obj small { display: block; color: #8d9278; font-weight: 500; letter-spacing: .16em; }
+  .hud-radar {
+    position: absolute;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    width: 118px; height: 118px;
+  }
+  .hud-radar canvas { width: 100%; height: 100%; display: block; }
+  .hud-ammo {
+    position: absolute;
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    color: #e8e4d4; text-align: right; text-shadow: 0 1px 3px #000a;
+    font: 500 13px/1 "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  }
+  .hud-ammo .stack { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
+  .hud-ammo .mag {
+    font: 600 44px/0.9 "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.04em;
+  }
+  .hud-ammo .res { color: #b7b39f; font-size: 20px; }
+  .hud-ammo .wep {
+    margin-top: 5px; color: #c4c0a6; letter-spacing: .2em;
+    font-size: 10px; text-transform: uppercase;
+  }
+  /* Weapon slot list (replaces the old LETHAL/TACTICAL kit block — slot
+     keys 1/2/3 own those digits now). */
+  .hud-ammo .slots {
+    margin-top: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    color: #8f8b74; font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+  }
+  .hud-ammo .slots b { color: #b9b394; font-weight: 600; margin-right: 4px; }
+  .hud-ammo .slots .on { color: #e8e4d4; }
+  .hud-ammo .slots .on b { color: #c4b57a; }
+  .hud-ammo .slots .dim { opacity: .5; }
+  /* CS2-style health readout: big number + bar (+armor above), right of
+     the radar in the bottom-left corner. */
+  .hud-health {
+    position: absolute;
+    left: max(148px, calc(env(safe-area-inset-left) + 140px));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    display: flex; align-items: flex-end; gap: 10px;
+    color: #e8e4d4; text-shadow: 0 1px 3px #000a;
+  }
+  .hud-health .hp {
+    font: 600 44px/0.9 "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.04em; transform-origin: left bottom;
+  }
+  .hud-health .hp.low { color: #d24a3a; }
+  .hud-health .bars { display: flex; flex-direction: column; gap: 4px; width: 140px; margin-bottom: 4px; }
+  .hud-health .bar, .hud-health .armor {
+    height: 5px; background: rgba(10,12,10,.55); border-radius: 1px; overflow: hidden;
+  }
+  .hud-health .armor { height: 3px; }
+  .hud-health .bar i { display: block; height: 100%; background: #e8e4d4; transition: width .15s ease; }
+  .hud-health .bar i.low { background: #d24a3a; }
+  .hud-health .armor i { display: block; height: 100%; background: #8fa4b4; transition: width .15s ease; }
+  .hud-stance {
+    position: absolute;
+    left: max(148px, calc(env(safe-area-inset-left) + 140px));
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 58px));
+    color: #cfc9b0; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .16em; text-transform: uppercase; text-shadow: 0 1px 2px #000;
+  }
+  .hud-sens {
+    position: absolute; left: 50%; top: 62%; transform: translateX(-50%);
+    color: #e6e0c8; font: 600 13px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .14em; text-transform: uppercase; text-shadow: 0 1px 2px #000;
+    background: rgba(0,0,0,.32); padding: 6px 12px; border-radius: 2px;
+  }
+  .hud-sens[hidden] { display: none; }
+  .hud-prompt {
+    position: absolute; left: 50%; bottom: 24%;
+    transform: translateX(-50%);
+    color: #e6e0c8;
+    font: 600 12px/1.35 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .16em; text-transform: uppercase;
+    text-shadow: 0 1px 2px #000;
+    background: rgba(0,0,0,.36); padding: 7px 14px; border-radius: 2px;
+  }
+  .hud-prompt[hidden] { display: none; }
+  /* CS2-style crosshair: zero-size anchor at exact screen center; the four
+     lines hang off it by --gap so bloom expansion stays perfectly centered. */
+  .hud-cross {
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+    --gap: 4px;
+    transition: opacity .12s ease;
+  }
+  .hud-cross i {
+    position: absolute; background: #3fd43f;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.55);
+  }
+  .hud-cross .n, .hud-cross .s { left: -1px; width: 2px; height: 7px; }
+  .hud-cross .n { bottom: var(--gap); } .hud-cross .s { top: var(--gap); }
+  .hud-cross .e, .hud-cross .w { top: -1px; height: 2px; width: 7px; }
+  .hud-cross .e { left: var(--gap); } .hud-cross .w { right: var(--gap); }
+  /* Hitmarker: 4 diagonal ticks around center (own node — NOT inside
+     .hud-cross). White = body; red + 20% larger = headshot or kill. */
+  .hud-hitmark {
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0; opacity: 0;
+  }
+  .hud-hitmark i {
+    position: absolute; width: 2px; height: 8px; background: #f2f0e4;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+  }
+  .hud-hitmark i:nth-child(1) { transform: translate(-7px, -13px) rotate(-45deg); }
+  .hud-hitmark i:nth-child(2) { transform: translate(5px, -13px) rotate(45deg); }
+  .hud-hitmark i:nth-child(3) { transform: translate(-7px, 5px) rotate(45deg); }
+  .hud-hitmark i:nth-child(4) { transform: translate(5px, 5px) rotate(-45deg); }
+  .hud-hitmark.head { scale: 1.2; }
+  .hud-hitmark.head i { background: #e0392a; }
+  /* Directional damage arcs: canvas ring around screen center. */
+  .hud-dmg {
+    position: absolute; left: 50%; top: 50%; width: 320px; height: 320px;
+    margin: -160px 0 0 -160px;
+  }
+  .hud-dmg canvas { width: 100%; height: 100%; display: block; }
+  /* CS2 AWP-style scope: hard black outside a circular lens, hairline
+     cross through the center, 1×/2× badge. Viewmodel + green crosshair
+     hide while this is up (Hud._updateScope / Weapon._setStage). */
+  .hud-scope {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    transition: opacity 70ms linear; z-index: 3;
+  }
+  .hud-scope.on { opacity: 1; }
+  .hud-scope .lens {
+    position: absolute; left: 50%; top: 50%;
+    width: 70vmin; height: 70vmin;
+    margin: -35vmin 0 0 -35vmin;
+    border-radius: 50%;
+    box-shadow: 0 0 0 200vmax #050608, inset 0 0 48px rgba(0,0,0,.42);
+    background: radial-gradient(circle at 50% 42%,
+      rgba(36, 58, 48, 0.10) 0%,
+      rgba(18, 32, 26, 0.16) 62%,
+      rgba(0, 0, 0, 0.28) 100%);
+    outline: 3px solid #0a0c0c;
+  }
+  .hud-scope i { position: absolute; background: rgba(10,12,12,.92); }
+  .hud-scope .h { left: 0; right: 0; top: 50%; height: 1px; }
+  .hud-scope .v { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .hud-scope .mag-x {
+    position: absolute; left: calc(50% + 22vmin); top: calc(50% + 24vmin);
+    color: #d4e8dc; font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: .18em; text-shadow: 0 1px 2px #000;
+  }
+  .hud-vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(80,0,0,.0) 100%);
+    opacity: 0;
+  }
+  .hud-feed {
+    position: absolute; top: max(14px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    color: #d7d2c0; font: 500 11px/1.6 ui-sans-serif, system-ui, sans-serif;
+    text-align: right; text-shadow: 0 1px 2px #000;
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.183.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="hud" hidden></div>
+<div id="shell" class="is-loading" aria-busy="true">
+  <div class="shell-smoke"></div>
+  <div class="shell-grain"></div>
+  <div id="loader" class="shell-col">
+    <p class="shell-kicker">Night raid · Ashline district</p>
+    <h1 class="shell-title">Cinder Ops</h1>
+    <div class="shell-rule"></div>
+    <p class="shell-obj">Clear Ashline Block</p>
+    <div class="shell-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Loading"><i id="load-bar"></i></div>
+    <p id="load-stage" class="shell-stage">Initializing…</p>
+  </div>
+  <div id="menu" class="shell-col" hidden>
+    <p class="shell-kicker">Night raid · Ashline district</p>
+    <h1 class="shell-title">Cinder Ops</h1>
+    <div class="shell-rule"></div>
+    <p class="shell-obj">Clear Ashline Block</p>
+    <div data-panel="nav" class="shell-nav">
+      <button type="button" class="shell-btn primary" id="menu-play">Play</button>
+      <button type="button" class="shell-btn" id="menu-controls">Controls</button>
+      <button type="button" class="shell-btn" id="menu-settings">Settings</button>
+    </div>
+    <div data-panel="controls" hidden>
+      <button type="button" class="shell-btn shell-back" data-back>Back</button>
+      <table class="shell-keys">
+        <thead><tr><th>Key</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>WASD</td><td>Move</td></tr>
+          <tr><td>Space</td><td>Jump</td></tr>
+          <tr><td>Shift</td><td>Sprint</td></tr>
+          <tr><td>1 / 2 / 3</td><td>Weapons</td></tr>
+          <tr><td>Scroll</td><td>Cycle weapons</td></tr>
+          <tr><td>RMB</td><td>Aim / scope stages</td></tr>
+          <tr><td>R</td><td>Reload</td></tr>
+          <tr><td>E</td><td>Interact</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div data-panel="settings" hidden>
+      <button type="button" class="shell-btn shell-back" data-back>Back</button>
+      <div class="shell-set">
+        <div>
+          <label for="set-sens">Sensitivity <output id="set-sens-val">1.50×</output></label>
+          <input id="set-sens" type="range" min="0.2" max="4" step="0.1" value="1.5">
+        </div>
+        <div>
+          <label for="set-vol">Master volume <output id="set-vol-val">100%</output></label>
+          <input id="set-vol" type="range" min="0" max="1" step="0.01" value="1">
+        </div>
+        <div>
+          <label>Quality</label>
+          <div class="quality-row" role="radiogroup" aria-label="Quality">
+            <button type="button" role="radio" data-quality="cinematic" class="on" aria-checked="true">
+              Cinematic
+              <small>showcase visuals</small>
+            </button>
+            <button type="button" role="radio" data-quality="competitive">
+              Competitive
+              <small>max smoothness (200Hz)</small>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label>FPS limit <output id="set-fps-live" class="fps-live">— fps</output></label>
+          <div class="fps-row" role="radiogroup" aria-label="FPS limit">
+            <button type="button" role="radio" data-fps="0">Uncapped</button>
+            <button type="button" role="radio" data-fps="200">200</button>
+            <button type="button" role="radio" data-fps="180" class="on" aria-checked="true">180</button>
+            <button type="button" role="radio" data-fps="144">144</button>
+            <button type="button" role="radio" data-fps="120">120</button>
+            <button type="button" role="radio" data-fps="60">60</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="over-flash" hidden aria-hidden="true"></div>
+  <div id="over" class="shell-col shell-over" hidden>
+    <p class="shell-kicker">Raid over</p>
+    <h2>KIA</h2>
+    <p class="over-lede">You were dropped in Ashline.</p>
+    <dl class="over-stats">
+      <div class="over-stat"><dt>Kills</dt><dd><span data-count="kills">0</span></dd></div>
+      <div class="over-stat"><dt>Headshots</dt><dd><span data-count="headshots">0</span></dd></div>
+      <div class="over-stat"><dt>Accuracy</dt><dd><span data-count="accuracy">0%</span><small data-acc-sub>0 / 0</small></dd></div>
+      <div class="over-stat"><dt>Damage taken</dt><dd><span data-count="damageTaken">0</span></dd></div>
+      <div class="over-stat"><dt>Raid time</dt><dd><span data-count="raidTime">0:00</span></dd></div>
+    </dl>
+    <button type="button">Restart</button>
+  </div>
+  <p class="shell-foot">AK · Longshot · Rampart · Vektor</p>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
