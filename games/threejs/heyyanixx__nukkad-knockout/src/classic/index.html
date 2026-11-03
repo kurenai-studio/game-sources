@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#060608" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nukkad KO" />
+  <meta name="description" content="Nukkad Knockout: a desi meme street fighting game in your browser. Chaiwala vs Dadi vs Streamer. By HEYYANIXX." />
+  <meta property="og:title" content="Nukkad Knockout — desi meme fighting game" />
+  <meta property="og:description" content="Chappal boomerang, Auto Ram, Smash That Like. Play free in your browser. By HEYYANIXX." />
+  <meta property="og:image" content="og.png" />
+  <title>Nukkad Knockout Classic 2D — by HEYYANIXX</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <main id="app">
+    <canvas id="game" width="960" height="540" aria-label="Nukkad Knockout game screen"></canvas>
+
+    <!-- touch controls (phones) -->
+    <div id="touch" class="hidden" aria-hidden="true">
+      <div class="stick"><div class="ring"></div><div class="knob"></div></div>
+      <div class="btns">
+        <button data-btn="g" class="tb grab">PAKAD</button>
+        <button data-btn="s" class="tb super">JUGAAD</button>
+        <button data-btn="p" class="tb punch">THAPPAD</button>
+        <button data-btn="k" class="tb kick">LAAT</button>
+        <button data-btn="t" class="tb taunt">HAHA</button>
+      </div>
+    </div>
+
+    <div id="topbar" class="hidden">
+      <button id="pause-btn" aria-label="Pause">❚❚</button>
+      <button id="sfx-btn" aria-label="Sound effects on/off">🔊</button>
+      <button id="music-btn" aria-label="Music on/off">🎵</button>
+    </div>
+
+    <!-- title -->
+    <section id="title" class="screen">
+      <div class="brand">HEYYANIXX PRESENTS</div>
+      <h1 class="logo">NUKKAD<br /><span>KNOCKOUT</span></h1>
+      <a href="../" style="position:absolute;top:12px;right:14px;color:#e3b65a;font:bold 14px system-ui;border:1px solid #e3b65a;padding:6px 12px;border-radius:10px;text-decoration:none;z-index:5">⚡ PLAY NEW 3D v2</a>
+      <p class="tagline">Gully ka sabse bada dangal. Chai, chappal aur combo.</p>
+      <button id="start-btn" class="big">TAP / ENTER TO START</button>
+      <p class="fineprint">All characters are fictional parodies; not affiliated with any real person.</p>
+    </section>
+
+    <!-- select -->
+    <section id="select" class="screen hidden">
+      <header class="sel-head">
+        <h2>CHUNO APNA FIGHTER</h2>
+        <div class="toggles">
+          <div class="seg" id="mode-seg"><button data-mode="cpu" class="on">VS CPU</button><button data-mode="2p">2 PLAYER</button></div>
+          <div class="seg" id="diff-seg"><button data-diff="easy">EASY</button><button data-diff="normal" class="on">NORMAL</button><button data-diff="hard">HARD</button></div>
+          <div class="seg" id="stage-seg"><button data-stage="tapri" class="on">CHAI TAPRI</button><button data-stage="terrace">PATANG TERRACE</button><button data-stage="platform">NUKKAD JN.</button></div>
+          <div class="seg" id="meme-seg"><button data-meme="off" class="on">NORMAL</button><button data-meme="on">MEME MODE 🤪</button></div>
+        </div>
+      </header>
+      <div class="sel-body">
+        <div class="card p1" id="card-p1"><div class="who">1P</div><canvas width="160" height="200"></canvas><div class="nm"></div><div class="tg"></div><div class="sp"></div></div>
+        <div class="grid" id="grid"></div>
+        <div class="card p2" id="card-p2"><div class="who">CPU</div><canvas width="160" height="200"></canvas><div class="nm"></div><div class="tg"></div><div class="sp"></div></div>
+      </div>
+      <footer class="sel-foot">
+        <p id="leader" class="leader"></p>
+        <p id="pick-hint">Tap a fighter for 1P, then tap again for the opponent</p>
+        <button id="fight-btn" class="big">LADO!</button>
+      </footer>
+      <details class="help">
+        <summary>Controls / combos</summary>
+        <p><b>VS CPU:</b> move WASD or arrows · jump W/↑ · crouch S/↓ · block = hold back · THAPPAD J/Z · LAAT K/X · PAKAD I/C (or J+K) · JUGAAD L/Space (when the bar is full) · TAUNT U</p>
+        <p><b>2 PLAYER:</b> P1 WASD + F THAPPAD, G LAAT, H PAKAD, T JUGAAD, R TAUNT · P2 arrows + K/Num1 THAPPAD, L/Num2 LAAT, O/Num3 PAKAD, P/Num0 JUGAAD, U/Num4 TAUNT</p>
+        <p><b>Specials:</b> →+THAPPAD rush · →+LAAT flying kick · ↓+LAAT sweep (blocked low only) · <b>Combos:</b> P,P,P · P,P,K · K,K · ↓P,K · press PAKAD when grabbed to escape</p>
+        <p><b>Meme Mode:</b> big heads, double speed, extra memes · <b>Pause</b> Esc/P · <b>Music</b> M · <b>SFX</b> N</p>
+      </details>
+      <p class="fineprint">All characters are fictional parodies; not affiliated with any real person. Original code & art by HEYYANIXX.</p>
+    </section>
+
+    <!-- pause -->
+    <section id="pause" class="screen hidden">
+      <h2>RUKO ZARA, SABAR KARO ✋</h2>
+      <p class="sub">Game paused. Paani pee lo.</p>
+      <button id="resume-btn" class="big">RESUME</button>
+      <button id="p-music">MUSIC: ON</button>
+      <button id="p-sfx">SFX: ON</button>
+      <button id="quit-btn">QUIT TO SELECT</button>
+    </section>
+
+    <!-- result -->
+    <section id="result" class="screen hidden">
+      <div class="res-box">
+        <div class="res-tag">GULLY GAZETTE · BREAKING</div>
+        <h2 id="res-title">JEET GAYA!</h2>
+        <p id="res-sub"></p>
+        <div id="res-stats"></div>
+        <p id="res-unlock" class="unlock hidden">🔓 SECRET BOSS UNLOCKED: HEYY ANISH</p>
+        <div class="res-btns"><button id="rematch-btn" class="big">REMATCH</button><button id="share-btn">SHARE WIN 📲</button><button id="reselect-btn">CHARACTER SELECT</button></div>
+      </div>
+    </section>
+
+    <div id="rotate"><div class="phone"></div><h2>PHONE GHUMAO 🔄</h2><p>Nukkad Knockout landscape mein khelte hain.</p></div>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
