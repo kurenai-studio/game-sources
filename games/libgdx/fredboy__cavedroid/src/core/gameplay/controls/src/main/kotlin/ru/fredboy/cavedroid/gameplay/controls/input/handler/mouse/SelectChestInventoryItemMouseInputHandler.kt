@@ -1,0 +1,118 @@
+package ru.fredboy.cavedroid.gameplay.controls.input.handler.mouse
+
+import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector2
+import ru.fredboy.cavedroid.common.api.InventoryHintEvents
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.domain.assets.usecase.GetTextureRegionByNameUseCase
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.GameContextRepository
+import ru.fredboy.cavedroid.domain.items.repository.ItemsRepository
+import ru.fredboy.cavedroid.domain.stats.repository.StatsRepository
+import ru.fredboy.cavedroid.entity.drop.DropQueue
+import ru.fredboy.cavedroid.entity.mob.abstraction.PlayerAdapter
+import ru.fredboy.cavedroid.game.controller.mob.MobController
+import ru.fredboy.cavedroid.game.window.GameWindowType
+import ru.fredboy.cavedroid.game.window.GameWindowsConfigs
+import ru.fredboy.cavedroid.game.window.GameWindowsManager
+import ru.fredboy.cavedroid.game.window.inventory.ChestInventoryWindow
+import ru.fredboy.cavedroid.gameplay.controls.input.action.MouseInputAction
+import ru.fredboy.cavedroid.gameplay.controls.input.annotation.BindMouseInputHandler
+import javax.inject.Inject
+
+@GameScope
+@BindMouseInputHandler
+class SelectChestInventoryItemMouseInputHandler @Inject constructor(
+    private val gameContextRepository: GameContextRepository,
+    private val gameWindowsManager: GameWindowsManager,
+    private val mobController: MobController,
+    private val textureRegions: GetTextureRegionByNameUseCase,
+    applicationContextRepository: ApplicationContextRepository,
+    itemsRepository: ItemsRepository,
+    inventoryHintEvents: InventoryHintEvents,
+    statsRepository: StatsRepository,
+    playerAdapter: PlayerAdapter,
+    dropQueue: DropQueue,
+) : AbstractInventoryItemsMouseInputHandler(
+    applicationContextRepository = applicationContextRepository,
+    gameContextRepository = gameContextRepository,
+    itemsRepository = itemsRepository,
+    gameWindowsManager = gameWindowsManager,
+    windowType = GameWindowType.CHEST,
+    inventoryHintEvents = inventoryHintEvents,
+    statsRepository = statsRepository,
+    playerAdapter = playerAdapter,
+    dropQueue = dropQueue,
+) {
+
+    override val windowTexture get() = requireNotNull(textureRegions["chest"])
+
+    override fun getWindowRect(viewport: Rectangle): Rectangle {
+        return Rectangle(
+            0f,
+            0f,
+            windowTexture.regionWidth.toFloat(),
+            windowTexture.regionHeight.toFloat(),
+        ).apply {
+            setCenter(viewport.getCenter(Vector2()))
+        }
+    }
+
+    private fun handleInsideContentGrid(action: MouseInputAction, xOnGrid: Int, yOnGrid: Int) {
+        val window = gameWindowsManager.currentWindow as ChestInventoryWindow
+        val itemIndex = xOnGrid + yOnGrid * GameWindowsConfigs.Chest.contentsInRow
+
+        handleInsidePlaceableCell(action, window.chest.items, window, itemIndex)
+    }
+
+    private fun handleInsideInventoryGrid(action: MouseInputAction, xOnGrid: Int, yOnGrid: Int) {
+        val window = gameWindowsManager.currentWindow as ChestInventoryWindow
+
+        var itemIndex = xOnGrid + yOnGrid * GameWindowsConfigs.Chest.itemsInRow
+        itemIndex += GameWindowsConfigs.Chest.hotbarCells
+
+        if (itemIndex >= mobController.player.inventory.size) {
+            itemIndex -= mobController.player.inventory.size
+        }
+
+        handleInsidePlaceableCell(action, mobController.player.inventory.items, window, itemIndex)
+    }
+
+    override fun handle(action: MouseInputAction) {
+        val window = gameWindowsManager.currentWindow as ChestInventoryWindow
+        val texture = windowTexture
+
+        val xOnWindow =
+            action.screenX - (gameContextRepository.getCameraContext().viewport.width / 2 - texture.regionWidth / 2)
+        val yOnWindow =
+            action.screenY - (gameContextRepository.getCameraContext().viewport.height / 2 - texture.regionHeight / 2)
+
+        val xOnGrid = (xOnWindow - GameWindowsConfigs.Chest.itemsGridMarginLeft) /
+            GameWindowsConfigs.Chest.itemsGridColWidth
+        val yOnGrid = (yOnWindow - GameWindowsConfigs.Chest.itemsGridMarginTop) /
+            GameWindowsConfigs.Chest.itemsGridRowHeight
+
+        val xOnContent = (xOnWindow - GameWindowsConfigs.Chest.contentsMarginLeft) /
+            GameWindowsConfigs.Chest.itemsGridColWidth
+        val yOnContent = (yOnWindow - GameWindowsConfigs.Chest.contentsMarginTop) /
+            GameWindowsConfigs.Chest.itemsGridRowHeight
+
+        val isInsideInventoryGrid = xOnGrid >= 0 &&
+            xOnGrid < GameWindowsConfigs.Chest.itemsInRow &&
+            yOnGrid >= 0 &&
+            yOnGrid < GameWindowsConfigs.Chest.itemsInCol
+
+        val isInsideContentGrid = xOnContent >= 0 &&
+            xOnContent < GameWindowsConfigs.Chest.contentsInRow &&
+            yOnContent >= 0 &&
+            yOnContent < GameWindowsConfigs.Chest.contentsInCol
+
+        if (isInsideInventoryGrid) {
+            handleInsideInventoryGrid(action, xOnGrid.toInt(), yOnGrid.toInt())
+        } else if (isInsideContentGrid) {
+            handleInsideContentGrid(action, xOnContent.toInt(), yOnContent.toInt())
+        } else {
+            handleOutsideAnyCell(action, window)
+        }
+    }
+}

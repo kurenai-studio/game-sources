@@ -1,0 +1,640 @@
+package ru.fredboy.cavedroid.entity.mob.model
+
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Vector2
+import ru.fredboy.cavedroid.common.api.SoundPlayer
+import ru.fredboy.cavedroid.common.model.GameMode
+import ru.fredboy.cavedroid.common.utils.TooltipManager
+import ru.fredboy.cavedroid.common.utils.applyOrigin
+import ru.fredboy.cavedroid.common.utils.drawSprite
+import ru.fredboy.cavedroid.common.utils.floorToInt
+import ru.fredboy.cavedroid.common.utils.meters
+import ru.fredboy.cavedroid.domain.assets.repository.StepsSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.model.inventory.Inventory
+import ru.fredboy.cavedroid.domain.items.model.inventory.InventoryItem
+import ru.fredboy.cavedroid.domain.items.model.item.Item
+import ru.fredboy.cavedroid.domain.items.model.item.isNone
+import ru.fredboy.cavedroid.domain.items.model.item.isShears
+import ru.fredboy.cavedroid.domain.items.model.item.isTool
+import ru.fredboy.cavedroid.domain.items.model.mob.MobParams
+import ru.fredboy.cavedroid.domain.items.usecase.GetFallbackItemUseCase
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.domain.world.lighting.LightHandle
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobPhysicsFactory
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobWorldAdapter
+import ru.fredboy.cavedroid.entity.mob.impl.PlayerMobBehavior
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+
+class Player(
+    private val getFallbackItem: GetFallbackItemUseCase,
+    private val tooltipManager: TooltipManager,
+    params: MobParams,
+    soundPlayer: SoundPlayer,
+    stepsSoundAssetsRepository: StepsSoundAssetsRepository,
+
+) : Mob(Direction.random(), params, PlayerMobBehavior(soundPlayer, stepsSoundAssetsRepository)) {
+
+    var mountedVehicleId: String? = null
+    val isMounted get() = mountedVehicleId != null
+    var onDetachVehicle: (() -> Unit)? = null
+
+    var spawnPoint: Vector2? = null
+
+    var inventory = Inventory(
+        size = INVENTORY_SIZE,
+        fallbackItem = getFallbackItem(),
+    )
+        set(value) {
+            value.setOnItemAddedListener { item, slot ->
+                if (slot == activeSlot) {
+                    isPullingBow = false
+                    tooltipManager.showHotbarTooltip(item.item.params.name)
+                }
+            }
+            field = value
+        }
+
+    var wearingArmor = WearingArmor(getFallbackItem())
+
+    var gameMode = GameMode.SURVIVAL
+
+    var aimX = 0f
+    var aimY = 0f
+
+    var cursorX = 0f
+    var cursorY = 0f
+
+    var holdAim = true
+    var aimToPlayer = Vector2()
+
+    val cursorRangeSquared: Float
+        get() = when (gameMode) {
+            GameMode.SURVIVAL -> SURVIVAL_CURSOR_RANGE_2
+            GameMode.CREATIVE -> CREATIVE_CURSOR_RANGE_2
+        }
+
+    val selectedX get() = cursorX.floorToInt()
+    val selectedY get() = cursorY.floorToInt()
+
+    var controlMode = ControlMode.CURSOR
+    var blockDamage = 0f
+
+    var isSprinting: Boolean = false
+        set(value) {
+            field = value && !isMounted && foodLevel > SPRINT_FOOD_FLOOR
+        }
+
+    override val effectiveSpeedMultiplier: Float
+        get() = if (isSprinting) SPRINT_SPEED_MULTIPLIER else 1f
+
+    var foodLevel: Int = MAX_FOOD_LEVEL
+    var saturationLevel: Float = INITIAL_SATURATION
+    var exhaustionLevel: Float = 0f
+    var foodTickTimer: Int = 0
+
+    private var hungerTickAccumulator: Float = 0f
+
+    var isHitting = false
+    var isHittingWithDamage = false
+
+    var hitAnim = 0f
+    var hitAnimDelta = DEFAULT_ANIMATION_SPEED
+
+    var headRotation = 0f
+
+    private var _activeSlot = 0
+
+    var isInBed = false
+
+    var tryClimb = false
+        set(value) {
+            if (!value) {
+                climb = false
+            }
+            field = value
+        }
+
+    var activeSlot
+        get() = _activeSlot
+        set(value) {
+            isPullingBow = false
+            if (value in 0..<HOTBAR_SIZE) {
+                if (value != _activeSlot) {
+                    tooltipManager.showHotbarTooltip(inventory.items[value].item.params.name)
+                }
+                _activeSlot = value
+            }
+        }
+
+    val hotbarItems get() = inventory.items.subList(0, HOTBAR_SIZE)
+
+    val activeItem get() = inventory.items[activeSlot]
+
+    var sight: LightHandle? = null
+        set(value) {
+            if (field != null) {
+                field?.dispose()
+                field = null
+            }
+
+            field = value
+        }
+
+    var onMobAttacked: ((mob: Mob, damageDealt: Int) -> Unit)? = null
+
+    fun canShootBow(): Boolean {
+        return !isInBed &&
+            activeItem.item is Item.Bow &&
+            (inventory.items.any { it.item.params.key == "arrow" && it.amount > 0 } || gameMode.isCreative())
+    }
+
+    override fun changeDir() = Unit
+
+    override fun damage(damage: Int) {
+        if (gameMode.isCreative() || damage == 0) {
+            return
+        }
+
+        addExhaustion(EXHAUSTION_PER_DAMAGE)
+
+        val protection = wearingArmor.getTotalProtection()
+        val reduction = minOf(0.8f, protection * 0.04f)
+        val reducedDamage = (damage * (1f - reduction)).toInt().coerceAtLeast(1)
+
+        if (reducedDamage > 0) {
+            wearingArmor.damageArmorPieces()
+        }
+
+        super.damage(reducedDamage)
+    }
+
+    fun addExhaustion(amount: Float) {
+        if (gameMode.isCreative()) return
+        exhaustionLevel = min(MAX_EXHAUSTION, exhaustionLevel + amount)
+    }
+
+    fun eat(food: Int, saturation: Float) {
+        foodLevel = MathUtils.clamp(foodLevel + food, 0, MAX_FOOD_LEVEL)
+        saturationLevel = min(foodLevel.toFloat(), saturationLevel + saturation)
+    }
+
+    fun resetHunger() {
+        foodLevel = MAX_FOOD_LEVEL
+        saturationLevel = INITIAL_SATURATION
+        exhaustionLevel = 0f
+        foodTickTimer = 0
+        hungerTickAccumulator = 0f
+    }
+
+    fun tickHunger(delta: Float) {
+        if (gameMode.isCreative()) {
+            return
+        }
+
+        if (foodLevel <= SPRINT_FOOD_FLOOR) {
+            isSprinting = false
+        }
+
+        if (isSprinting && !isFlyMode) {
+            addExhaustion(EXHAUSTION_PER_BLOCK_SPRINT * abs(velocity.x) * delta)
+        }
+
+        hungerTickAccumulator += delta
+        while (hungerTickAccumulator >= HUNGER_TICK_INTERVAL_S) {
+            hungerTickAccumulator -= HUNGER_TICK_INTERVAL_S
+            runHungerTick()
+        }
+    }
+
+    private fun runHungerTick() {
+        if (exhaustionLevel >= EXHAUSTION_DRAIN_THRESHOLD) {
+            exhaustionLevel -= EXHAUSTION_DRAIN_THRESHOLD
+            if (saturationLevel > 0f) {
+                saturationLevel = max(0f, saturationLevel - 1f)
+            } else {
+                foodLevel = max(0, foodLevel - 1)
+            }
+        }
+
+        when {
+            foodLevel >= NATURAL_REGEN_FOOD_THRESHOLD && health < maxHealth -> {
+                foodTickTimer++
+                val fastRegen = foodLevel >= MAX_FOOD_LEVEL && saturationLevel > 0f
+                if (fastRegen && foodTickTimer >= FAST_REGEN_TICK_INTERVAL) {
+                    heal(1)
+                    addExhaustion(EXHAUSTION_PER_REGEN_HEAL)
+                    foodTickTimer = 0
+                } else if (!fastRegen && foodTickTimer >= NATURAL_REGEN_TICK_INTERVAL) {
+                    heal(1)
+                    addExhaustion(EXHAUSTION_PER_REGEN_HEAL)
+                    foodTickTimer = 0
+                }
+            }
+
+            foodLevel <= 0 && health > STARVATION_HEALTH_FLOOR -> {
+                foodTickTimer++
+                if (foodTickTimer >= STARVATION_TICK_INTERVAL) {
+                    super.damage(1)
+                    foodTickTimer = 0
+                }
+            }
+
+            else -> foodTickTimer = 0
+        }
+    }
+
+    override fun getDropItems(itemByKey: GetItemByKeyUseCase): List<InventoryItem> {
+        return inventory.items + wearingArmor.items
+    }
+
+    override fun draw(spriteBatch: SpriteBatch, x: Float, y: Float, delta: Float) {
+        if (isDead) {
+            return
+        }
+
+        if (isMounted) anim = 0f else updateAnimation(delta)
+
+        var backHandAnim: Float
+        var frontHandAnim: Float
+
+        val rightHandAnim = getRightHandAnim(delta)
+
+        val backgroundTintColor = tintColor.cpy().sub(BG_BODY_TINT)
+
+        if (looksLeft()) {
+            backHandAnim = rightHandAnim
+            frontHandAnim = anim
+        } else {
+            backHandAnim = -anim
+            frontHandAnim = -rightHandAnim
+        }
+
+        params.sprites.forEach { spriteData ->
+            val sprite = spriteData.sprite
+
+            val armorSprites = wearingArmor.items.mapIndexedNotNull { index, item ->
+                spriteData.armorDataByMaterial?.get((item.item as? Item.Armor)?.material)
+                    ?.firstOrNull { (slot, _) ->
+                        slot == index
+                    }
+                    ?.sprite?.to(item.item)
+            }
+
+            sprite.setFlip(looksRight(), sprite.isFlipY)
+            armorSprites.onEach { it.first.setFlip(looksRight(), it.first.isFlipY) }
+
+            if (!isInBed) {
+                sprite.applyOrigin(spriteData.origin)
+                armorSprites.onEach { it.first.applyOrigin(spriteData.origin) }
+            }
+
+            if (spriteData.isBackground) {
+                sprite.color = backgroundTintColor
+                armorSprites.onEach { it.first.color = backgroundTintColor }
+            } else {
+                sprite.color = tintColor
+                armorSprites.onEach { it.first.color = tintColor }
+            }
+
+            val animationValue = if (isInBed) {
+                90f
+            } else if (spriteData.isStatic) {
+                0f
+            } else if (spriteData.isHead) {
+                headRotation
+            } else if (spriteData.isHand && spriteData.isBackground) {
+                if (isPullingBow) {
+                    headRotation - 90f * direction.basis
+                } else {
+                    backHandAnim
+                }
+            } else if (spriteData.isHand) {
+                if (isPullingBow) {
+                    headRotation - 90f * direction.basis
+                } else {
+                    frontHandAnim
+                }
+            } else if (isMounted) {
+                -75f * direction.basis
+            } else if (spriteData.isBackground) {
+                anim
+            } else {
+                -anim
+            }
+
+            val spriteX = if (isInBed) {
+                x - spriteData.offsetY
+            } else {
+                x + spriteData.offsetX
+            }
+
+            val spriteY = if (isInBed) {
+                y - sprite.regionHeight.meters / 2 + height * 0.625f
+            } else {
+                y + spriteData.offsetY
+            }
+
+            if (spriteData.isHand && looksRight() && !spriteData.isBackground) {
+                drawItem(spriteBatch, sprite.height, x, y, animationValue)
+            }
+
+            spriteBatch.drawSprite(
+                sprite = sprite,
+                x = spriteX,
+                y = spriteY,
+                rotation = animationValue,
+            )
+
+            armorSprites.forEach { (armorSprite, armorItem) ->
+                spriteBatch.drawSprite(
+                    sprite = armorSprite,
+                    x = spriteX,
+                    y = spriteY,
+                    rotation = animationValue,
+                    tint = armorItem.params.tint,
+                )
+            }
+
+            if (spriteData.isHand && spriteData.isBackground && looksLeft()) {
+                drawItem(spriteBatch, sprite.height, x, y, -animationValue)
+            }
+        }
+    }
+
+    override fun dispose() {
+        onDetachVehicle?.invoke()
+        super.dispose()
+        sight = null
+    }
+
+    fun respawn(spawnPoint: Vector2, mobPhysicsFactory: MobPhysicsFactory) {
+        onDetachVehicle?.invoke()
+        this.spawnPoint = spawnPoint
+        isPullingBow = false
+        isDead = false
+        isSprinting = false
+        heal(maxHealth)
+        breath = params.maxBreath
+        resetHunger()
+        spawn(spawnPoint.x, spawnPoint.y, mobPhysicsFactory)
+        cursorX = position.x
+        cursorY = position.y
+        aimX = position.x
+        aimY = position.y
+    }
+
+    fun initSight(mobWorldAdapter: MobWorldAdapter) {
+        sight = mobWorldAdapter.createPlayerSightLight(body, position.x, position.y)
+    }
+
+    fun updateSight() {
+        sight?.setPosition(position.x, position.y)
+    }
+
+    fun startHitting(withDamage: Boolean = true) {
+        isPullingBow = false
+
+        if (isHitting) {
+            return
+        }
+
+        isHitting = true
+        isHittingWithDamage = withDamage
+        hitAnim = HIT_ANIMATION_RANGE.endInclusive
+        hitAnimDelta = DEFAULT_ANIMATION_SPEED
+    }
+
+    fun stopHitting() {
+        blockDamage = 0f
+        isHitting = false
+    }
+
+    fun hitMob(mob: Mob) {
+        startHitting(false)
+        val activeTool = activeItem.item as? Item.Tool
+        if (activeTool != null) {
+            durateActiveDurable()
+        }
+        val damage = 1 * (activeTool?.mobDamageMultiplier ?: 1f)
+        val damageInt = damage.toInt()
+        mob.takeHit(damageInt, mob.position.x - position.x)
+        mob.behavior.onAttackedByPlayer()
+        onMobAttacked?.invoke(mob, damageInt)
+        addExhaustion(EXHAUSTION_PER_ATTACK)
+        stopHitting()
+    }
+
+    fun decreaseCurrentItemCount(amount: Int = 1) {
+        if (gameMode.isCreative()) {
+            return
+        }
+
+        activeItem.subtract(amount)
+
+        if (activeItem.amount <= 0) {
+            setCurrentInventorySlotItem(getFallbackItem())
+        }
+    }
+
+    fun durateActiveDurable(amount: Int = 1) {
+        if (gameMode.isCreative()) {
+            return
+        }
+
+        activeItem.durate(amount)
+
+        if (activeItem.amount <= 0) {
+            setCurrentInventorySlotItem(getFallbackItem())
+        }
+    }
+
+    fun decreaseArrows() {
+        if (gameMode.isCreative()) {
+            return
+        }
+
+        val index = inventory.items.indexOfFirst { it.item.params.key == "arrow" }
+
+        inventory.items[index].subtract()
+
+        if (inventory.items[index].amount == 0) {
+            inventory.items[index] = getFallbackItem().toInventoryItem()
+        }
+    }
+
+    fun setCurrentInventorySlotItem(item: Item) {
+        inventory.items[activeSlot] = item.toInventoryItem()
+    }
+
+    fun rayCastCursor(mobWorldAdapter: MobWorldAdapter, onCallback: () -> Unit = {}) {
+        val cursor = Vector2(aimX, aimY)
+
+        val plToCursor = cursor
+            .sub(position)
+            .limit2(cursorRangeSquared)
+
+        cursor.x = position.x + plToCursor.x
+        cursor.y = position.y + plToCursor.y
+
+        cursor.y = MathUtils.clamp(cursor.y, 0f, mobWorldAdapter.height.toFloat())
+
+        aimX = cursor.x
+        aimY = cursor.y
+        cursorX = cursor.x
+        cursorY = cursor.y
+
+        if (position.dst2(cursor) < 0.001f) {
+            return
+        }
+
+        mobWorldAdapter.getBox2dWorld().rayCast(
+            { fixture, point, _, fraction ->
+                val block = fixture.userData as? Block ?: return@rayCast -1f
+
+                val pointToCursor = cursor.cpy().sub(point)
+
+                val pointToCursorDX = abs(pointToCursor.x)
+                val pointToCursorDY = abs(pointToCursor.y)
+
+                if (pointToCursorDX < block.width / 2f && pointToCursorDY < block.height / 2f) {
+                    return@rayCast -1f
+                }
+
+                point.cpy().apply {
+                    x += min(pointToCursorDX, block.width / 2f) * if (pointToCursor.x < 0) -1f else 1f
+                    y += min(pointToCursorDY, block.height / 2f) * if (pointToCursor.y < 0) -1f else 1f
+
+                    cursorX = x
+                    cursorY = y
+                }
+
+                onCallback()
+                return@rayCast fraction
+            },
+            position.cpy().apply { y -= height / 2f },
+            cursor,
+        )
+    }
+
+    private fun drawItem(spriteBatch: SpriteBatch, handLength: Float, x: Float, y: Float, handAnim: Float) {
+        val item = activeItem.item.takeIf { !it.isNone() } ?: return
+        val itemSprite = if (item is Item.Bow && isPullingBow) {
+            item.stateSprites[bowState]
+        } else {
+            item.sprite
+        }
+        val isSmallSprite = !item.isTool() || item.isShears()
+        val originalWidth = itemSprite.width
+        val originalHeight = itemSprite.height
+
+        if (isSmallSprite) {
+            itemSprite.setSize(SMALL_ITEM_SIZE, SMALL_ITEM_SIZE)
+        } else {
+            itemSprite.setSize(1f, 1f)
+        }
+
+        val spriteOrigin = item.params.inHandSpriteOrigin
+        val handMultiplier = -direction.basis
+        val xOffset = (-1 + direction.index) * itemSprite.width + SMALL_ITEM_SIZE / 2 +
+            handMultiplier * itemSprite.width * spriteOrigin.x
+        val yOffset = if (!isSmallSprite) -itemSprite.height / 2 else 0f
+
+        val rotate = handAnim + HAND_ITEM_ANGLE_DEG
+
+        if (item.isTool()) {
+            itemSprite.rotate90(looksLeft())
+        }
+
+        val itemX = x + handLength * MathUtils.sin(handMultiplier * handAnim * MathUtils.degRad) + xOffset
+        val itemY = y + handLength * MathUtils.cos(handMultiplier * handAnim * MathUtils.degRad) + yOffset
+
+        if (looksLeft()) {
+            itemSprite.setFlip(!item.isTool(), itemSprite.isFlipY)
+            itemSprite.applyOrigin(spriteOrigin.getFlipped(flipX = true, flipY = false))
+        } else {
+            itemSprite.setFlip(item.isTool(), itemSprite.isFlipY)
+            itemSprite.applyOrigin(spriteOrigin)
+        }
+
+        itemSprite.rotation = -handMultiplier * rotate
+        itemSprite.setPosition(itemX, itemY)
+        itemSprite.draw(spriteBatch)
+
+        // dont forget to reset
+        itemSprite.setFlip(false, itemSprite.isFlipY)
+        itemSprite.rotation = 0f
+        itemSprite.setOriginCenter()
+        itemSprite.setSize(originalWidth, originalHeight)
+        if (item.isTool()) {
+            itemSprite.rotate90(looksRight())
+        }
+    }
+
+    private fun getRightHandAnim(delta: Float): Float {
+        hitAnim -= hitAnimDelta * delta
+
+        if (hitAnim !in HIT_ANIMATION_RANGE) {
+            if (isHitting) {
+                hitAnim = MathUtils.clamp(hitAnim, HIT_ANIMATION_RANGE.start, HIT_ANIMATION_RANGE.endInclusive)
+                hitAnimDelta = -hitAnimDelta
+            } else {
+                hitAnimDelta = DEFAULT_ANIMATION_SPEED
+            }
+        }
+
+        if (!isHitting) {
+            if (hitAnim < hitAnimDelta * delta) {
+                hitAnim = 0f
+                hitAnimDelta = 0f
+                return -anim
+            }
+        }
+
+        return hitAnim
+    }
+
+    enum class ControlMode {
+        WALK,
+        CURSOR,
+    }
+
+    companion object {
+        const val HOTBAR_SIZE = 9
+        const val INVENTORY_SIZE = 36
+
+        const val MAX_FOOD_LEVEL = 20
+        const val EXHAUSTION_PER_BLOCK_SPRINT = 0.1f
+        const val EXHAUSTION_PER_JUMP = 0.05f
+        const val EXHAUSTION_PER_SPRINT_JUMP = 0.2f
+        const val EXHAUSTION_PER_ATTACK = 0.1f
+        const val EXHAUSTION_PER_DAMAGE = 0.1f
+        const val EXHAUSTION_PER_REGEN_HEAL = 6f
+        const val EXHAUSTION_PER_BLOCK_BREAK_TICK = 0.005f
+
+        private const val SPRINT_SPEED_MULTIPLIER = 1.3f
+        private const val SPRINT_FOOD_FLOOR = 6
+
+        private const val INITIAL_SATURATION = 5f
+        private const val MAX_EXHAUSTION = 40f
+        private const val EXHAUSTION_DRAIN_THRESHOLD = 4f
+
+        private const val HUNGER_TICK_INTERVAL_S = 1f / 20f
+        private const val NATURAL_REGEN_FOOD_THRESHOLD = 18
+        private const val NATURAL_REGEN_TICK_INTERVAL = 80
+        private const val FAST_REGEN_TICK_INTERVAL = 10
+        private const val STARVATION_TICK_INTERVAL = 80
+        private const val STARVATION_HEALTH_FLOOR = 1
+
+        private val HIT_ANIMATION_RANGE = 30f..90f
+
+        private const val SMALL_ITEM_SIZE = .5f
+        private const val HAND_ITEM_ANGLE_DEG = 30f
+
+        private const val SURVIVAL_CURSOR_RANGE_2 = 36f
+        private const val CREATIVE_CURSOR_RANGE_2 = 81f
+    }
+}

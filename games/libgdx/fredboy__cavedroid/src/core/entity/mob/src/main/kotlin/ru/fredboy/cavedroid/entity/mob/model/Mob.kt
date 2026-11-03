@@ -1,0 +1,572 @@
+package ru.fredboy.cavedroid.entity.mob.model
+
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.physics.box2d.Body
+import com.badlogic.gdx.utils.Disposable
+import com.badlogic.gdx.utils.TimeUtils
+import com.badlogic.gdx.utils.Timer
+import ru.fredboy.cavedroid.common.model.GameMode
+import ru.fredboy.cavedroid.common.utils.Vector2Proxy
+import ru.fredboy.cavedroid.common.utils.floor
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.model.drop.DropAmount
+import ru.fredboy.cavedroid.domain.items.model.inventory.InventoryItem
+import ru.fredboy.cavedroid.domain.items.model.item.Item
+import ru.fredboy.cavedroid.domain.items.model.mob.MobParams
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.domain.world.model.PhysicsConstants
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobBehavior
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobPhysicsFactory
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobWorldAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.PlayerAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.ProjectileAdapter
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.sign
+
+abstract class Mob(
+    var direction: Direction,
+    val params: MobParams,
+    val behavior: MobBehavior,
+) : Disposable {
+
+    private var resetTakeDamageTask: ResetTakeDamageTask? = null
+
+    private var _body: Body? = null
+
+    private var knockbackRemainingSec = 0f
+
+    val width get() = params.width
+
+    val height get() = params.height
+
+    val maxHealth get() = params.hp
+
+    val speed get() = params.speed
+
+    val body: Body get() = requireNotNull(_body)
+
+    val position: Vector2 get() = body.position
+
+    val velocity = Vector2Proxy(
+        getVelocity = { body.linearVelocity },
+        setVelocity = { body.linearVelocity = it },
+    )
+
+    val controlVector = Vector2()
+
+    val mapX get() = body.position.x.floor.toInt()
+    val upperMapY get() = (body.position.y - height / 2).floor.toInt()
+    val middleMapY get() = body.position.y.floor.toInt()
+    val lowerMapY get() = (body.position.y + height / 2).floor.toInt()
+
+    val hitbox: Rectangle get() = Rectangle(position.x - width / 2f, position.y - height / 2f, width, height)
+
+    private val animationSpeed = DEFAULT_ANIMATION_SPEED * (params.animationRange / DEFAULT_ANIMATION_RANGE)
+
+    var animDelta = animationSpeed
+    var anim = 0f
+
+    var isDead = false
+
+    val canJump: Boolean
+        get() = knockbackRemainingSec <= 0f && footContactCounter > 0 && TimeUtils.timeSinceMillis(lastJumpMs) >= JUMP_COOLDOWN_MS
+
+    var isFlyMode = false
+        set(value) {
+            body.gravityScale = if (value) {
+                0f
+            } else {
+                1f
+            }
+            field = value
+        }
+
+    var health = maxHealth
+
+    var breath = params.maxBreath
+
+    open val effectiveSpeedMultiplier: Float
+        get() = 1f
+
+    var footContactCounter = 0
+
+    private var lastJumpMs = 0L
+
+    private var lastClimbMs = 0L
+
+    private var pendingBodyTransform: Vector2? = null
+
+    var climb = false
+
+    var descend = false
+
+    var canSwim = false
+
+    var canClimb = false
+
+    var makingSound: SoundType? = null
+        private set
+
+    private var lastStepTimeMs = 0L
+    private var lastSplashTimeMs = 0L
+
+    var takingDamage = false
+        set(value) {
+            field = value
+
+            if (value) {
+                var resetTask = resetTakeDamageTask
+                if (resetTask != null && resetTask.isScheduled) {
+                    resetTask.cancel()
+                } else {
+                    makingSound = SoundType.Hit
+                    resetTask = ResetTakeDamageTask()
+                }
+                Timer.schedule(resetTask, DAMAGE_TINT_TIMEOUT_S)
+                resetTakeDamageTask = resetTask
+            }
+        }
+
+    var autojumpCounters = IntArray(2)
+
+    var cliffEdgeCounters = IntArray(2)
+
+    var fireTicksRemaining: Float = 0f
+
+    var fireDamageAccumulator: Float = 0f
+
+    val isOnFire: Boolean
+        get() = fireTicksRemaining > 0f
+
+    private var wasOnFireAtDeath: Boolean = false
+
+    fun ignite(durationSec: Float) {
+        if (isDead || durationSec <= 0f || this is Player && gameMode == GameMode.CREATIVE) return
+        if (durationSec > fireTicksRemaining) {
+            fireTicksRemaining = durationSec
+        }
+    }
+
+    fun extinguish() {
+        fireTicksRemaining = 0f
+        fireDamageAccumulator = 0f
+    }
+
+    fun decreaseFireTicks(delta: Float) {
+        if (fireTicksRemaining > 0f) {
+            fireTicksRemaining = (fireTicksRemaining - delta).coerceAtLeast(0f)
+            if (fireTicksRemaining == 0f) {
+                fireDamageAccumulator = 0f
+            }
+        }
+    }
+
+    var isPullingBow = false
+        set(value) {
+            if (value != field) {
+                bowCharge = 0f
+            }
+            field = value
+        }
+    var bowCharge = 0f
+    val bowState get() = (min(1f, bowCharge / BOW_PULL_TIME_S) * 2).toInt()
+
+    protected val tintColor: Color
+        get() = if (takingDamage) {
+            DAMAGE_TINT_COLOR
+        } else {
+            Color.WHITE
+        }
+
+    open val physicsCategory: Short
+        get() = PhysicsConstants.CATEGORY_MOB
+
+    open val collidesOwnCategory: Boolean
+        get() = false
+
+    open fun spawn(x: Float, y: Float, factory: MobPhysicsFactory) {
+        if (_body != null) {
+            Gdx.app.error(
+                /* tag = */ TAG,
+                /* message = */
+                "Attempted to spawn ${this::class.simpleName} on coordinates ($x;$y), " +
+                    "when mob is already spawned and alive!",
+            )
+            return
+        }
+
+        _body = factory.createBody(this, x, y, physicsCategory)
+    }
+
+    private fun isAnimationIncreasing(): Boolean = anim > 0 && animDelta > 0 || anim < 0 && animDelta < 0
+
+    private fun checkHealth() {
+        health = MathUtils.clamp(health, 0, maxHealth)
+
+        if (health <= 0) {
+            kill()
+        }
+    }
+
+    protected fun updateAnimation(delta: Float) {
+        val velocityMultiplier = abs(velocity.x) / speed
+        val animMultiplier = (if (velocityMultiplier == 0f) 1f else velocityMultiplier) * delta
+        val maxAnim = params.animationRange * (if (velocityMultiplier == 0f) 1f else velocityMultiplier)
+
+        if (velocity.x != 0f || abs(anim) > animDelta * animMultiplier) {
+            anim += animDelta * animMultiplier
+        } else {
+            anim = 0f
+        }
+
+        if (anim > maxAnim) {
+            anim = maxAnim
+            animDelta = -animationSpeed
+        } else if (anim < -maxAnim) {
+            anim = -maxAnim
+            animDelta = animationSpeed
+        }
+
+        if (velocity.x == 0f && isAnimationIncreasing()) {
+            animDelta = -animDelta
+        }
+    }
+
+    protected fun switchDir() {
+        direction = if (looksLeft()) {
+            Direction.RIGHT
+        } else {
+            Direction.LEFT
+        }
+    }
+
+    fun looksLeft() = direction == Direction.LEFT
+
+    fun looksRight() = direction == Direction.RIGHT
+
+    fun kill() {
+        if (!isDead) {
+            wasOnFireAtDeath = isOnFire
+        }
+        if (this is Player) onDetachVehicle?.invoke()
+        controlVector.setZero()
+        isDead = true
+        makingSound = SoundType.Death
+        extinguish()
+    }
+
+    fun reduceBreath() {
+        if (breath > 0) {
+            breath--
+        } else if (breath == 0) {
+            damage(2)
+        }
+    }
+
+    fun restoreBreath() {
+        if (breath < params.maxBreath) {
+            breath++
+        }
+    }
+
+    open fun damage(damage: Int) {
+        if (damage == 0) {
+            return
+        }
+
+        if (damage < 0) {
+            logger.w { "Damage can't be negative!" }
+            return
+        }
+
+        if (health <= Int.MIN_VALUE + damage) {
+            health = Int.MIN_VALUE + damage
+        }
+
+        health -= damage
+        takingDamage = true
+
+        checkHealth()
+    }
+
+    /** A combat hit pushes away from its source; environmental damage has no directional impulse. */
+    fun takeHit(damage: Int, horizontalDirection: Float) {
+        if (isDead || damage <= 0) return
+        val previousHealth = health
+        damage(damage)
+        if (isDead || health >= previousHealth) return
+
+        knockbackRemainingSec = KNOCKBACK_DURATION_SEC
+        velocity.set(sign(horizontalDirection) * KNOCKBACK_SPEED, min(velocity.y, KNOCKBACK_LIFT))
+    }
+
+    fun heal(heal: Int) {
+        if (heal < 0) {
+            damage(-heal)
+            return
+        }
+
+        if (health >= Int.MAX_VALUE - heal) {
+            health = Int.MAX_VALUE - heal
+        }
+
+        health += heal
+        checkHealth()
+    }
+
+    fun retrieveSound(): SoundType? {
+        return makingSound?.also {
+            makingSound = null
+        }
+    }
+
+    fun stepOnBlock(block: Block) {
+        if (makingSound == null && TimeUtils.timeSinceMillis(lastStepTimeMs) >= STEP_TIMEOUT_MS) {
+            lastStepTimeMs = TimeUtils.millis()
+            makingSound = SoundType.Stepping(
+                block = block,
+            )
+        }
+    }
+
+    protected open fun applyMediumResistanceToBody(mobWorldAdapter: MobWorldAdapter) {
+        if (isFlyMode) {
+            body.linearDamping = 2f
+            body.gravityScale = 0f
+            return
+        }
+
+        val climbable = mobWorldAdapter.getClimbable(hitbox.apply { height *= .75f })
+        val liquid = climbable as? Block.Fluid?
+
+        if (TimeUtils.timeSinceMillis(lastSplashTimeMs) > SPLASH_TIMEOUT_MS) {
+            if (!canSwim && liquid != null || liquid == null && climbable != null && !velocity.isZero) {
+                lastSplashTimeMs = TimeUtils.millis()
+                stepOnBlock(climbable)
+            }
+        }
+
+        canClimb = climbable != null && climbable !is Block.Web
+        canSwim = liquid != null
+
+        val mediumResistance = climbable?.climbSpeedFactor ?: 0f
+        body.linearDamping = mediumResistance
+
+        body.gravityScale = if (canClimb) {
+            when {
+                controlVector.y != 0f -> MathUtils.clamp(controlVector.y, -2f, 2f)
+                climb -> -2f
+                descend -> 2f
+                else -> 1f
+            }
+        } else {
+            1f
+        }
+    }
+
+    fun applyPendingTransform(vector: Vector2) {
+        pendingBodyTransform = vector
+    }
+
+    fun update(
+        mobWorldAdapter: MobWorldAdapter,
+        playerAdapter: PlayerAdapter,
+        projectileAdapter: ProjectileAdapter,
+        delta: Float,
+    ) {
+        if (isDead) {
+            return
+        }
+        if (isPullingBow) {
+            bowCharge += delta
+        }
+
+        if (makingSound == null && MathUtils.randomBoolean(0.001f)) {
+            makingSound = SoundType.Idle
+        }
+
+        pendingBodyTransform?.let { transform ->
+            body.setTransform(transform.add(position), 0f)
+            pendingBodyTransform = null
+        }
+
+        behavior.update(this, mobWorldAdapter, playerAdapter, projectileAdapter, delta)
+
+        if (this is Player && isMounted) return
+
+        applyMediumResistanceToBody(mobWorldAdapter)
+        if (knockbackRemainingSec > 0f) {
+            // Keep the physics velocity while recoiling, even if AI or player input keeps moving.
+            knockbackRemainingSec = (knockbackRemainingSec - delta).coerceAtLeast(0f)
+        } else if (!controlVector.isZero) {
+            velocity.x = controlVector.x * effectiveSpeedMultiplier
+            if (isFlyMode) {
+                velocity.y = controlVector.y * effectiveSpeedMultiplier
+            } else if (!canClimb) {
+                controlVector.y = 0f
+            }
+        } else if (!isFlyMode) {
+            velocity.x = 0f
+        }
+
+        wrapAroundLoopedWorld(mobWorldAdapter)
+
+        if (position.y > mobWorldAdapter.height) {
+            kill()
+        }
+    }
+
+    private fun wrapAroundLoopedWorld(mobWorldAdapter: MobWorldAdapter) {
+        if (mobWorldAdapter.isInfinite) {
+            return
+        }
+
+        val worldWidth = mobWorldAdapter.width.toFloat()
+        val seamDeltaX = when {
+            position.x > worldWidth -> -worldWidth
+            position.x < 0f -> worldWidth
+            else -> 0f
+        }
+
+        if (seamDeltaX != 0f) {
+            body.setTransform(position.x + seamDeltaX, position.y, 0f)
+            if (this is Player) {
+                aimX += seamDeltaX
+                cursorX += seamDeltaX
+            }
+        }
+    }
+
+    open fun getDropItems(
+        itemByKey: GetItemByKeyUseCase,
+    ): List<InventoryItem> {
+        if (params.dropInfo.isEmpty()) {
+            return emptyList()
+        }
+
+        return buildList {
+            for (info in params.dropInfo) {
+                when (info.amount) {
+                    is DropAmount.ExactAmount -> Unit
+
+                    is DropAmount.RandomChance -> {
+                        val randomChanceAmount = info.amount as DropAmount.RandomChance
+                        if (!MathUtils.randomBoolean(randomChanceAmount.chance)) {
+                            continue
+                        }
+                    }
+
+                    is DropAmount.RandomRange -> {
+                        val randomRangeAmount = info.amount as DropAmount.RandomRange
+                        if (!MathUtils.randomBoolean(randomRangeAmount.chance)) {
+                            continue
+                        }
+                    }
+                }
+                val drop = info.toInventoryItem(itemByKey)
+                val smeltProductKey = drop.item.params.smeltProductKey
+                if (wasOnFireAtDeath && drop.item is Item.Food && smeltProductKey != null) {
+                    add(itemByKey[smeltProductKey].toInventoryItem(drop.amount))
+                } else {
+                    add(drop)
+                }
+            }
+        }
+    }
+
+    abstract fun draw(spriteBatch: SpriteBatch, x: Float, y: Float, delta: Float)
+
+    abstract fun changeDir()
+
+    open fun jump() {
+        if (!canJump) {
+            return
+        }
+
+        body.applyLinearImpulse(
+            /* impulse = */ Vector2(0f, JUMP_VELOCITY).scl(body.mass),
+            /* point = */ body.worldCenter,
+            /* wake = */ true,
+        )
+
+        lastJumpMs = TimeUtils.millis()
+    }
+
+    fun climbUp() {
+        if (!canClimb) {
+            climb = false
+            return
+        }
+
+        if (climb) {
+            return
+        }
+
+        if (TimeUtils.timeSinceMillis(lastClimbMs) >= CLIMB_COOLDOWN_MS) {
+            climb = true
+            lastClimbMs = TimeUtils.millis()
+        }
+    }
+
+    override fun dispose() {
+        body.world.destroyBody(body)
+        _body = null
+    }
+
+    fun isDisposed(): Boolean {
+        return _body == null
+    }
+
+    private inner class ResetTakeDamageTask : Timer.Task() {
+        override fun run() {
+            takingDamage = false
+        }
+    }
+
+    sealed interface SoundType {
+        data class Stepping(
+            val block: Block,
+        ) : SoundType
+
+        data object Idle : SoundType
+
+        data object Hit : SoundType
+
+        data object Death : SoundType
+    }
+
+    companion object {
+        private const val KNOCKBACK_DURATION_SEC = 0.2f
+        private const val KNOCKBACK_SPEED = 4.5f
+        private const val KNOCKBACK_LIFT = -4f
+        private const val TAG = "Mob"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+
+        @JvmStatic
+        protected val DEFAULT_ANIMATION_SPEED = 360f
+
+        private const val DEFAULT_ANIMATION_RANGE = 60f
+        private const val DAMAGE_TINT_TIMEOUT_S = 0.5f
+        private val DAMAGE_TINT_COLOR = Color((0xff8080 shl 8) or 0xFF)
+
+        private const val JUMP_VELOCITY = -8.6f
+
+        private const val JUMP_COOLDOWN_MS = 500L
+
+        private const val CLIMB_COOLDOWN_MS = 600L
+
+        private const val STEP_TIMEOUT_MS = 200L
+        private const val SPLASH_TIMEOUT_MS = 750L
+
+        private const val BOW_PULL_TIME_S = 1f
+
+        @JvmStatic
+        protected val BG_BODY_TINT = Color(0x888888 shl 8)
+    }
+}

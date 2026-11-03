@@ -1,0 +1,32 @@
+package ru.fredboy.cavedroid.gdx.menu.v2.view.language
+
+import ru.fredboy.cavedroid.common.di.MenuScope
+import ru.fredboy.cavedroid.common.mvvm.NavBackStack
+import ru.fredboy.cavedroid.common.mvvm.ViewModelProvider
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.items.repository.ItemsRepository
+import ru.fredboy.cavedroid.gdx.menu.v2.di.BindViewModelProvider
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.BaseViewModelDependencies
+import javax.inject.Inject
+import kotlin.reflect.KClass
+
+@MenuScope
+@BindViewModelProvider
+class LanguageMenuViewModelProvider @Inject constructor(
+    private val applicationContextRepository: ApplicationContextRepository,
+    private val baseViewModelDependencies: BaseViewModelDependencies,
+    private val itemsRepository: ItemsRepository,
+) : ViewModelProvider<LanguageMenuNavKey, LanguageMenuViewModel> {
+
+    override val viewModelClass: KClass<LanguageMenuViewModel>
+        get() = LanguageMenuViewModel::class
+
+    override fun get(navKey: LanguageMenuNavKey, navBackStack: NavBackStack): LanguageMenuViewModel {
+        return LanguageMenuViewModel(
+            applicationContextRepository = applicationContextRepository,
+            navBackStack = navBackStack,
+            baseViewModelDependencies = baseViewModelDependencies,
+            itemsRepository = itemsRepository,
+        )
+    }
+}

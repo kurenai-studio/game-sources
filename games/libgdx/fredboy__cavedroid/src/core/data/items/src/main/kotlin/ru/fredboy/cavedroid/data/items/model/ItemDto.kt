@@ -1,0 +1,32 @@
+package ru.fredboy.cavedroid.data.items.model
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class ItemDto(
+    @SerialName("name") val name: String,
+    @SerialName("creative_category") val creativeCategory: String = "materials",
+    @SerialName("type") val type: String = "normal",
+    @SerialName("texture") val texture: String,
+    @SerialName("origin_x") val originX: Float = 0f,
+    @SerialName("origin_y") val origin_y: Float = 1f,
+    @SerialName("action_key") val actionKey: String? = null,
+    @SerialName("mob_damage_multiplier") val mobDamageMultiplier: Float = 1f,
+    @SerialName("block_damage_multiplier") val blockDamageMultiplier: Float = 1f,
+    @SerialName("top_slab_block") val topSlabBlock: String? = null,
+    @SerialName("bottom_slab_block") val bottomSlabBlock: String? = null,
+    @SerialName("tool_level") val toolLevel: Int? = null,
+    @SerialName("max_stack") val maxStack: Int = 64,
+    @SerialName("tint") val tint: String? = null,
+    @SerialName("burning_time") val burningTime: Long? = null,
+    @SerialName("smelt_product") val smeltProduct: String? = null,
+    @SerialName("heal") val heal: Int? = null,
+    @SerialName("saturation") val saturation: Float = 0f,
+    @SerialName("plant_block") val plantBlock: String? = null,
+    @SerialName("mob_key") val mobKey: String? = null,
+    @SerialName("state_sprites") val stateSprites: List<String>? = null,
+    @SerialName("protection") val protection: Int? = null,
+    @SerialName("durability") val durability: Int? = null,
+    @SerialName("armor_material") val armorMaterial: String? = null,
+)

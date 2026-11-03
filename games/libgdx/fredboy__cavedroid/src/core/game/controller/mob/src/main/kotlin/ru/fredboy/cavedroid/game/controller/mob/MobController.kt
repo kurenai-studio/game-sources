@@ -1,0 +1,160 @@
+package ru.fredboy.cavedroid.game.controller.mob
+
+import com.badlogic.gdx.utils.Disposable
+import ru.fredboy.cavedroid.common.api.ApplicationController
+import ru.fredboy.cavedroid.common.api.SoundPlayer
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.common.utils.TooltipManager
+import ru.fredboy.cavedroid.common.utils.ifTrue
+import ru.fredboy.cavedroid.domain.assets.repository.StepsSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.items.model.mob.MobBehaviorType
+import ru.fredboy.cavedroid.domain.items.repository.MobParamsRepository
+import ru.fredboy.cavedroid.domain.items.usecase.GetFallbackItemUseCase
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.entity.drop.DropQueue
+import ru.fredboy.cavedroid.entity.mob.MobQueue
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobPhysicsFactory
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobWorldAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.ProjectileAdapter
+import ru.fredboy.cavedroid.entity.mob.model.Mob
+import ru.fredboy.cavedroid.entity.mob.model.Player
+import ru.fredboy.cavedroid.game.controller.mob.impl.PlayerAdapterImpl_Factory
+import java.util.LinkedList
+import javax.inject.Inject
+
+@GameScope
+class MobController @Inject constructor(
+    getFallbackItemUseCase: GetFallbackItemUseCase,
+    mobParamsRepository: MobParamsRepository,
+    private val mobWorldAdapter: MobWorldAdapter,
+    private val mobPhysicsFactory: MobPhysicsFactory,
+    private val dropQueue: DropQueue,
+    private val getItemByKeyUseCase: GetItemByKeyUseCase,
+    private val tooltipManager: TooltipManager,
+    private val mobSoundManager: MobSoundManager,
+    private val soundPlayer: SoundPlayer,
+    private val stepsSoundAssetsRepository: StepsSoundAssetsRepository,
+    private val projectileAdapter: ProjectileAdapter,
+    private val mobQueue: MobQueue,
+    private val applicationController: ApplicationController,
+    private val applicationContextRepository: ApplicationContextRepository,
+) : Disposable {
+
+    // TODO: Do proper DI
+    private val playerAdapter = PlayerAdapterImpl_Factory.newInstance(this)
+
+    private val _mobs = LinkedList<Mob>()
+
+    val mobs: List<Mob> get() = _mobs
+
+    private var deathHandled = false
+
+    var villageResidentsInitialized = false
+
+    var player = Player(
+        getFallbackItem = getFallbackItemUseCase,
+        tooltipManager = tooltipManager,
+        params = requireNotNull(mobParamsRepository.getMobParamsByKey("char")),
+        soundPlayer = soundPlayer,
+        stepsSoundAssetsRepository = stepsSoundAssetsRepository,
+    ).apply { holdAim = applicationContextRepository.isTouch() }
+        set(value) {
+            field.dispose()
+            field = value
+            field.holdAim = applicationContextRepository.isTouch()
+            field.initSight(mobWorldAdapter)
+        }
+
+    init {
+        respawnPlayer()
+        mobSoundManager.attachToMobController(this)
+    }
+
+    fun addMob(mob: Mob) {
+        // TODO: Probably shouldn't add if already in the list
+        _mobs.add(mob)
+    }
+
+    fun removeMob(mob: Mob) {
+        _mobs.remove(mob)
+    }
+
+    /** Materialize pending spawns before their owning chunk is saved or evicted. */
+    fun flushPendingSpawns(containsX: (Float) -> Boolean = { true }) {
+        val iterator = mobQueue.queue.iterator()
+        while (iterator.hasNext()) {
+            val qMob = iterator.next()
+            if (!containsX(qMob.x)) continue
+            iterator.remove()
+            qMob.mob.spawn(qMob.x, qMob.y, mobPhysicsFactory)
+            addMob(qMob.mob)
+        }
+    }
+
+    fun update(delta: Float) {
+        flushPendingSpawns()
+
+        mobs.forEach { mob ->
+            mob.update(mobWorldAdapter, playerAdapter, projectileAdapter, delta)
+            mobSoundManager.makeSound(mob)
+        }
+        _mobs.removeAll { mob ->
+            mob.isDead.ifTrue {
+                mobSoundManager.makeSound(mob)
+                dropQueue.offerItems(mob.position.x, mob.position.y, mob.getDropItems(getItemByKeyUseCase))
+                mob.dispose()
+                true
+            } ?: false
+        }
+
+        updatePlayer(delta)
+    }
+
+    private fun updatePlayer(delta: Float) {
+        if (!deathHandled) {
+            player.update(mobWorldAdapter, playerAdapter, projectileAdapter, delta)
+            mobSoundManager.makeSound(player)
+        }
+
+        if (!deathHandled && (player.isDead || player.health <= 0)) {
+            deathHandled = true
+            dropQueue.offerInventory(player.position.x, player.position.y, player.inventory)
+            dropQueue.offerItems(player.position.x, player.position.y, player.wearingArmor.items.toList())
+            player.inventory.clear()
+            player.wearingArmor.clear()
+            applicationController.showDeathScreen()
+        }
+    }
+
+    fun rayCastPlayerCursor(onCallback: () -> Unit = {}) {
+        player.rayCastCursor(mobWorldAdapter, onCallback)
+    }
+
+    fun respawnPlayer() {
+        deathHandled = false
+        if (!player.isDisposed()) {
+            player.dispose()
+        }
+        player.respawn(
+            spawnPoint = player.spawnPoint ?: mobWorldAdapter.findSpawnPoint(),
+            mobPhysicsFactory = mobPhysicsFactory,
+        )
+        player.initSight(mobWorldAdapter)
+    }
+
+    fun playerCanSleep(): Boolean {
+        return mobs.none { mob ->
+            val isHostileSpider = mob.params.behaviorType == MobBehaviorType.SPIDER && mob.behavior.attacksWhenPossible
+            (mob.params.behaviorType == MobBehaviorType.AGGRESSIVE || isHostileSpider) &&
+                mob.position.cpy().sub(player.position).len() < 16f
+        }
+    }
+
+    override fun dispose() {
+        mobs.forEach { it.dispose() }
+        player.dispose()
+        _mobs.clear()
+        mobSoundManager.dispose()
+    }
+}

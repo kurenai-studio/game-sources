@@ -1,0 +1,26 @@
+package ru.fredboy.cavedroid.gdx.menu.v2.view.attribution
+
+import ru.fredboy.cavedroid.common.di.MenuScope
+import ru.fredboy.cavedroid.common.mvvm.NavBackStack
+import ru.fredboy.cavedroid.common.mvvm.ViewModelProvider
+import ru.fredboy.cavedroid.gdx.menu.v2.di.BindViewModelProvider
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.BaseViewModelDependencies
+import javax.inject.Inject
+import kotlin.reflect.KClass
+
+@MenuScope
+@BindViewModelProvider
+class AttributionMenuViewModelProvider @Inject constructor(
+    private val baseViewModelDependencies: BaseViewModelDependencies,
+) : ViewModelProvider<
+    AttributionMenuNavKey,
+    AttributionMenuViewModel,
+    > {
+
+    override val viewModelClass: KClass<AttributionMenuViewModel>
+        get() = AttributionMenuViewModel::class
+
+    override fun get(navKey: AttributionMenuNavKey, navBackStack: NavBackStack): AttributionMenuViewModel {
+        return AttributionMenuViewModel(navBackStack, baseViewModelDependencies)
+    }
+}

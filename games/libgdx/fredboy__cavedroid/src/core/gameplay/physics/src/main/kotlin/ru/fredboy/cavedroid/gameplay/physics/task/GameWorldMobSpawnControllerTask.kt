@@ -1,0 +1,233 @@
+package ru.fredboy.cavedroid.gameplay.physics.task
+
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Rectangle
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.common.performance.NoOpPerformanceMonitor
+import ru.fredboy.cavedroid.common.performance.PerformanceMetric
+import ru.fredboy.cavedroid.common.performance.PerformanceMonitor
+import ru.fredboy.cavedroid.common.utils.forEachBlockInArea
+import ru.fredboy.cavedroid.domain.items.model.mob.MobBehaviorType
+import ru.fredboy.cavedroid.domain.items.model.mob.MobParams
+import ru.fredboy.cavedroid.domain.items.repository.MobParamsRepository
+import ru.fredboy.cavedroid.domain.world.model.Biome
+import ru.fredboy.cavedroid.entity.mob.MobQueue
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobFactory
+import ru.fredboy.cavedroid.game.controller.mob.MobController
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.game.world.abstraction.ChunkBodiesReadyListener
+import ru.fredboy.cavedroid.game.world.generator.ChunkGenerator
+import javax.inject.Inject
+
+@GameScope
+class GameWorldMobSpawnControllerTask @Inject constructor(
+    private val mobController: MobController,
+    private val gameWorld: GameWorld,
+    private val mobParamsRepository: MobParamsRepository,
+    private val mobFactory: MobFactory,
+    private val mobQueue: MobQueue,
+    performanceMonitor: PerformanceMonitor = NoOpPerformanceMonitor,
+) : BaseGameWorldControllerTask(performanceMonitor, PerformanceMetric.TASK_SPAWN),
+    ChunkBodiesReadyListener {
+
+    private var listenerAdded = false
+
+    override fun exec() {
+        if (!listenerAdded) {
+            logger.d { "Adding spawn chunk bodies listener after first task run" }
+            listenerAdded = true
+            gameWorld.addChunkBodiesReadyListener(this)
+        }
+
+        logger.i {
+            "Spawn controller task started. " +
+                "Current time: ${gameWorld.totalGameTimeSec}. Last spawn time: ${gameWorld.lastSpawnGameTime}"
+        }
+
+        val spawnSpan = if (gameWorld.isInfinite) ChunkGenerator.CHUNK_W else gameWorld.width
+
+        val originX = if (gameWorld.isInfinite) {
+            mobController.player.mapX - spawnSpan / 2
+        } else {
+            0
+        }
+
+        val mobsPerSpan = if (gameWorld.isInfinite) {
+            spawnSpan / SPAWN_CHUNK_SIZE
+        } else {
+            getInfiniteChunkMobsCount()
+        }
+
+        doSpawn(originX, spawnSpan, mobsPerSpan)
+
+        gameWorld.lastSpawnGameTime = gameWorld.totalGameTimeSec
+    }
+
+    private fun getInfiniteChunkMobsCount(): Int = (-0..MAX_CHUNK_MOBS).random().coerceAtLeast(0)
+
+    private fun doSpawn(originX: Int, span: Int, mobsPerSpan: Int) {
+        val surfaceCandidates = mobParamsRepository.getAllParams()
+            .filter {
+                when (it.behaviorType) {
+                    MobBehaviorType.PASSIVE, MobBehaviorType.SHEEP -> gameWorld.isDayTime()
+                    MobBehaviorType.AGGRESSIVE, MobBehaviorType.ARCHER, MobBehaviorType.SPIDER, MobBehaviorType.CREEPER -> !gameWorld.isDayTime()
+                    else -> false
+                }
+            }
+
+        val caveCandidates = mobParamsRepository.getAllParams()
+            .filter { MobSpawnRules.isHostile(it.behaviorType) }
+
+        val spanMobs = mobController.mobs.count { it.mapX in originX..(originX + span) }
+        val canSpawnSurface = (!gameWorld.isDayTime() || spanMobs < mobsPerSpan) && surfaceCandidates.isNotEmpty()
+        val canSpawnCave = spanMobs < mobsPerSpan && caveCandidates.isNotEmpty()
+
+        var spawnCount = 0
+        var caveSpawns = 0
+        for (x in originX until originX + span step SPAWN_CHUNK_SIZE) {
+            val isDayInDesert = gameWorld.isDayTime() && gameWorld.getBiomeAt(x) == Biome.DESERT
+            if (canSpawnSurface && !isDayInDesert) {
+                val surfaceX = x + MathUtils.random(SPAWN_CHUNK_SIZE - 1)
+                if (trySpawnAtSurface(surfaceX, surfaceCandidates)) {
+                    logger.d { "Spawned on surface at x: $surfaceX" }
+                    spawnCount++
+                }
+            }
+
+            if (canSpawnCave) {
+                val caveX = x + MathUtils.random(SPAWN_CHUNK_SIZE - 1)
+                if (trySpawnInCave(caveX, caveCandidates)) {
+                    logger.d { "Spawned in cave at x: $caveX" }
+                    caveSpawns++
+                    spawnCount++
+                }
+            }
+        }
+
+        if (spawnCount > 0) {
+            logger.i { "Spawn finished at $originX..${originX + span}. Spawn count: $spawnCount. Of them in caves: $caveSpawns" }
+        } else {
+            logger.d { "Nothing spawned" }
+        }
+    }
+
+    private fun trySpawnAtSurface(spawnX: Int, candidates: List<MobParams>): Boolean {
+        var surfaceY = -1
+        for (y in 1..<gameWorld.generatorConfig.seaLevel) {
+            if (gameWorld.getForeMap(spawnX, y).params.hasCollision) {
+                surfaceY = y
+                break
+            }
+        }
+        if (surfaceY < 0) return false
+        if (gameWorld.getForeMap(spawnX, surfaceY).params.key !in SPAWN_BLOCKS) return false
+
+        return trySpawnAbove(spawnX, surfaceY, candidates)
+    }
+
+    private fun trySpawnInCave(spawnX: Int, candidates: List<MobParams>): Boolean {
+        val caveTop = gameWorld.generatorConfig.seaLevel
+        val caveBottom = (gameWorld.generatorConfig.lavaLevel - 2).coerceAtLeast(caveTop + 1)
+
+        repeat(CAVE_SCAN_ATTEMPTS) {
+            val airY = MathUtils.random(caveTop, caveBottom)
+            if (gameWorld.getForeMap(spawnX, airY).params.hasCollision) {
+                return@repeat
+            }
+
+            var floorY = -1
+            val scanEnd = (airY + CAVE_FLOOR_SCAN_DEPTH).coerceAtMost(gameWorld.height - 1)
+            for (y in (airY + 1)..scanEnd) {
+                val block = gameWorld.getForeMap(spawnX, y)
+                if (block.params.hasCollision) {
+                    if (block.params.key in SPAWN_BLOCKS) {
+                        floorY = y
+                    }
+                    break
+                }
+            }
+            if (floorY < 0) return@repeat
+
+            if (trySpawnAbove(spawnX, floorY, candidates)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    override fun onChunkBodiesReady(chunkX: Int) {
+        logger.d { "Spawning chunk mobs at $chunkX" }
+        doSpawn(chunkX * ChunkGenerator.CHUNK_W, ChunkGenerator.CHUNK_W, getInfiniteChunkMobsCount())
+    }
+
+    private fun trySpawnAbove(spawnX: Int, floorY: Int, candidates: List<MobParams>): Boolean {
+        val params = MobSpawnRules.choose(candidates, MathUtils.random()) ?: return false
+        val spawnPosX = spawnX.toFloat()
+        val spawnPosY = floorY.toFloat() - params.height / 2f
+        if (params.behaviorType == MobBehaviorType.CREEPER && !canSpawnCreeper(spawnPosX, spawnPosY)) return false
+        if (!canFitAt(spawnPosX, spawnPosY, params)) return false
+        // Sample the mob's position: opaque floor blocks do not receive propagated light.
+        if (gameWorld.getLightAt(spawnX, MathUtils.floor(spawnPosY)) > params.maxSpawnLight) return false
+
+        mobFactory.create(spawnPosX, spawnPosY, params.key)
+        return true
+    }
+
+    private fun canSpawnCreeper(x: Float, y: Float): Boolean {
+        fun distanceSquared(otherX: Float, otherY: Float) = MobSpawnRules.distanceSquared(
+            x,
+            y,
+            otherX,
+            otherY,
+            gameWorld.width,
+            gameWorld.isInfinite,
+        )
+        val radiusSquared = MobSpawnRules.CREEPER_LOCAL_RADIUS * MobSpawnRules.CREEPER_LOCAL_RADIUS
+        val resident = mobController.mobs.count {
+            !it.isDead && it.params.behaviorType == MobBehaviorType.CREEPER && distanceSquared(it.position.x, it.position.y) <= radiusSquared
+        }
+        val pending = mobQueue.queue.count {
+            it.mob.params.behaviorType == MobBehaviorType.CREEPER && distanceSquared(it.x, it.y) <= radiusSquared
+        }
+        val player = mobController.player
+        return MobSpawnRules.allowsCreeper(distanceSquared(player.position.x, player.position.y), resident + pending)
+    }
+
+    private fun canFitAt(x: Float, y: Float, params: MobParams): Boolean {
+        val hitbox = Rectangle(
+            x - params.width / 2f,
+            y - params.height / 2f,
+            params.width,
+            params.height,
+        )
+        var blocked = false
+        forEachBlockInArea(hitbox) { bx, by ->
+            if (blocked) return@forEachBlockInArea
+            val block = gameWorld.getForeMap(bx, by)
+            if (block.params.hasCollision && block.getRectangle(bx, by).overlaps(hitbox)) {
+                blocked = true
+            }
+        }
+        return !blocked
+    }
+
+    override fun dispose() {
+        gameWorld.removeChunkBodiesReadyListener(this)
+    }
+
+    companion object {
+        private const val TAG = "GameWorldMobSpawnControllerTask"
+        private val logger = co.touchlab.kermit.Logger.withTag(TAG)
+
+        private const val SPAWN_CHUNK_SIZE = 16
+
+        private const val MAX_CHUNK_MOBS = 3
+
+        private const val CAVE_SCAN_ATTEMPTS = 8
+        private const val CAVE_FLOOR_SCAN_DEPTH = 8
+
+        private val SPAWN_BLOCKS = setOf("dirt", "grass", "grass_snowed", "sand", "stone")
+
+        const val SPAWN_INTERVAL_SEC = GameWorld.DAY_DURATION_SEC / 4f
+    }
+}

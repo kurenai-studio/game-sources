@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+
+# Generates plaintext fastlane changelogs for every supported locale via
+# DeepSeek. The list of locales (and their fastlane directory mapping)
+# lives in scripts/locales.sh.
+#
+# Usage:
+#   DEEPSEEK_API_KEY=... ./scripts/gen-changelog-ai.sh A.B.C [--model MODEL]
+#
+# Writes:
+#   fastlane/metadata/android/<locale-dir>/changelogs/<versionCode>.txt
+#   (one file per entry in SUPPORTED_LOCALES)
+#
+# Falls back to raw `git log` (same text in every locale) if the AI call fails.
+
+set -euo pipefail
+
+if [[ ! -f gradlew || ! -f settings.gradle.kts ]]; then
+  echo >&2 "error: must be run from the repository root"
+  exit 1
+fi
+
+if [[ -z "${1:-}" ]]; then
+  echo "usage: $0 versionName [--model MODEL]"
+  exit 1
+fi
+
+version=$1
+shift || true
+
+model="deepseek-flash"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --model) model=$2; shift 2 ;;
+    *) echo >&2 "unknown arg: $1"; exit 1 ;;
+  esac
+done
+
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo >&2 "error: version must be A.B.C (got '$version')"
+  exit 1
+fi
+
+if [[ -z "${DEEPSEEK_API_KEY:-}" ]]; then
+  echo >&2 "error: DEEPSEEK_API_KEY is required"
+  echo >&2 "  in CI:    add the DEEPSEEK_API_KEY repository Actions secret"
+  echo >&2 "  locally:  export DEEPSEEK_API_KEY=<your DeepSeek API key>"
+  exit 1
+fi
+
+# shellcheck source=scripts/locales.sh
+source "$(dirname "$0")/locales.sh"
+
+prev_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+if [[ -n "$prev_tag" ]]; then
+  commits=$(git log "$prev_tag"..HEAD --pretty=format:'- %s' --reverse | grep -v '^- Merge' || true)
+else
+  commits=$(git log --pretty=format:'- %s' --reverse | grep -v '^- Merge' || true)
+fi
+
+if [[ -z "$commits" ]]; then
+  echo >&2 "error: no commits found between ${prev_tag:-(root)} and HEAD"
+  exit 1
+fi
+
+# Build the AI prompt's "output sections" enumeration dynamically.
+locale_list_text=""
+output_format_text=""
+i=1
+for code in "${SUPPORTED_LOCALES[@]}"; do
+  name=${LOCALE_NAMES[$code]}
+  qualifier=""
+  if [[ "$code" != "en" ]]; then
+    qualifier=" (idiomatic, not literal)"
+  fi
+  locale_list_text+="  ${i}. ${name}${qualifier}"$'\n'
+  marker_upper=${code^^}
+  output_format_text+="<<<${marker_upper}>>>"$'\n'"- ..."$'\n'"- ..."$'\n'
+  i=$((i + 1))
+done
+
+prompt="You are generating user-facing changelogs for CaveDroid, a 2D Minecraft-inspired indie game. These changelogs ship to the Google Play Store via fastlane, so they must only describe changes that are relevant to mobile (Android) players.
+
+Below is the raw git commit log for the upcoming v${version} release. Drop refactors, internal cleanup, build/CI tweaks, and dependency bumps — keep only what a mobile player would care about (new features, gameplay changes, bug fixes, UI improvements).
+Omit changes that only affect desktop (Linux/Windows/macOS), the web/browser/TeaVM build, or iOS — if a change is explicitly scoped to one of those platforms and does not also reach Android, leave it out. Cross-platform changes that also reach Android are fine; do not prefix them with a platform name.
+Omit changes that mention store releases, yandex, ads, firebase, telemetry.
+
+Output one plaintext changelog per language:
+${locale_list_text}
+Each must be under 480 characters. Use simple dash bullet points. NO markdown formatting and NO code fences. Friendly, concise tone. If there are no player-facing changes, write a single bullet in each language conveying \"Minor improvements and bug fixes\".
+
+Format your reply EXACTLY as:
+${output_format_text}
+Commits:
+${commits}"
+
+request=$(jq -n --arg model "$model" --arg prompt "$prompt" '{
+  model: $model,
+  messages: [{role: "user", content: $prompt}],
+  thinking: {type: "disabled"},
+  stream: false
+}')
+
+set +e
+response=$(curl -sS --fail-with-body \
+  --write-out '%{stderr}DeepSeek HTTP %{http_code}; content type: %{content_type}\n' \
+  -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d "$request" \
+  https://api.deepseek.com/chat/completions)
+curl_status=$?
+set -e
+
+content=""
+if [[ $curl_status -eq 0 ]]; then
+  if ! content=$(printf '%s' "$response" | jq -er '.choices[0].message.content | select(type == "string" and length > 0)' 2>/dev/null); then
+    content=""
+  fi
+fi
+
+use_fallback=0
+if [[ -z "$content" ]]; then
+  echo >&2 "warning: AI changelog generation failed — falling back to raw git log"
+  echo >&2 "API response (first 500 chars):"
+  echo >&2 "${response:0:500}"
+  use_fallback=1
+fi
+
+declare -A changelog_by_locale=()
+
+if [[ $use_fallback -eq 0 ]]; then
+  # Strip optional leading/trailing code fences (defensive — prompt says no fences)
+  content=$(printf '%s\n' "$content" | sed -e '/^```/d')
+
+  # Parse each locale section delimited by <<<XX>>> markers. The next locale's
+  # marker (or end-of-content for the last) terminates the current section.
+  for idx in "${!SUPPORTED_LOCALES[@]}"; do
+    code=${SUPPORTED_LOCALES[$idx]}
+    start_marker="<<<${code^^}>>>"
+    next=$((idx + 1))
+    if [[ $next -lt ${#SUPPORTED_LOCALES[@]} ]]; then
+      next_code=${SUPPORTED_LOCALES[$next]}
+      end_marker="<<<${next_code^^}>>>"
+      section=$(awk -v s="$start_marker" -v e="$end_marker" '
+        $0 ~ s { flag=1; next }
+        $0 ~ e { flag=0 }
+        flag' <<< "$content")
+    else
+      section=$(awk -v s="$start_marker" '
+        $0 ~ s { flag=1; next }
+        flag' <<< "$content")
+    fi
+    if [[ -z "$section" ]]; then
+      echo >&2 "warning: AI output missing $start_marker marker — falling back"
+      echo >&2 "---- AI output ----"
+      echo >&2 "$content"
+      echo >&2 "-------------------"
+      use_fallback=1
+      break
+    fi
+    changelog_by_locale[$code]=$section
+  done
+fi
+
+if [[ $use_fallback -eq 1 ]]; then
+  fallback=$(printf '%s\n' "$commits" | head -n 10)
+  for code in "${SUPPORTED_LOCALES[@]}"; do
+    changelog_by_locale[$code]=$fallback
+  done
+fi
+
+version_code=$(grep 'const val versionCode' buildSrc/src/main/kotlin/ApplicationInfo.kt | sed -E 's/.*versionCode = ([0-9]+)/\1/')
+
+if [[ -z "$version_code" ]]; then
+  echo >&2 "error: could not parse versionCode from ApplicationInfo.kt"
+  exit 1
+fi
+
+for code in "${SUPPORTED_LOCALES[@]}"; do
+  dir="fastlane/metadata/android/${LOCALE_FASTLANE_DIRS[$code]}/changelogs"
+  mkdir -p "$dir"
+  printf '%s\n' "${changelog_by_locale[$code]}" > "$dir/${version_code}.txt"
+  echo ">> Wrote $dir/${version_code}.txt"
+done
+
+for code in "${SUPPORTED_LOCALES[@]}"; do
+  dir="fastlane/metadata/android/${LOCALE_FASTLANE_DIRS[$code]}/changelogs"
+  echo
+  echo "---- $code ----"
+  cat "$dir/${version_code}.txt"
+done

@@ -1,0 +1,24 @@
+package ru.fredboy.cavedroid.common.api
+
+import com.badlogic.gdx.audio.Sound
+
+interface SoundPlayer {
+    fun playSoundAtPosition(
+        sound: Sound,
+        soundX: Float,
+        soundY: Float,
+        playerX: Float,
+        playerY: Float,
+        pitch: Float = 1f,
+    )
+
+    fun playUiSound(sound: Sound)
+
+    fun playLoopSound(sound: Sound, volume: Float): Long
+
+    fun stopLoopSound(sound: Sound, id: Long)
+
+    fun pauseAll()
+
+    fun resumeAll()
+}

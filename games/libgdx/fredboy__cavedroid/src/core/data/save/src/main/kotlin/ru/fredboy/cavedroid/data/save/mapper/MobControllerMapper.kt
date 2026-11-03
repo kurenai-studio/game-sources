@@ -1,0 +1,134 @@
+package ru.fredboy.cavedroid.data.save.mapper
+
+import dagger.Reusable
+import ru.fredboy.cavedroid.common.api.ApplicationController
+import ru.fredboy.cavedroid.common.api.SoundPlayer
+import ru.fredboy.cavedroid.common.utils.TooltipManager
+import ru.fredboy.cavedroid.data.save.model.SaveDataDto
+import ru.fredboy.cavedroid.domain.assets.repository.StepsSoundAssetsRepository
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.items.repository.MobParamsRepository
+import ru.fredboy.cavedroid.domain.items.usecase.GetFallbackItemUseCase
+import ru.fredboy.cavedroid.domain.items.usecase.GetItemByKeyUseCase
+import ru.fredboy.cavedroid.entity.drop.DropQueue
+import ru.fredboy.cavedroid.entity.mob.MobQueue
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobPhysicsFactory
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobWorldAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.ProjectileAdapter
+import ru.fredboy.cavedroid.entity.mob.model.FallingBlock
+import ru.fredboy.cavedroid.entity.mob.model.Mob
+import ru.fredboy.cavedroid.entity.mob.model.WalkingMob
+import ru.fredboy.cavedroid.game.controller.mob.MobController
+import ru.fredboy.cavedroid.game.controller.mob.MobSoundManager
+import javax.inject.Inject
+
+@Reusable
+class MobControllerMapper @Inject constructor(
+    private val walkingMobMapper: WalkingMobMapper,
+    private val fallingBlockMapper: FallingBlockMapper,
+    private val playerMapper: PlayerMapper,
+    private val getFallbackItemUseCase: GetFallbackItemUseCase,
+    private val mobParamsRepository: MobParamsRepository,
+    private val getItemByKeyUseCase: GetItemByKeyUseCase,
+    private val tooltipManager: TooltipManager,
+    private val soundPlayer: SoundPlayer,
+    private val stepsSoundAssetsRepository: StepsSoundAssetsRepository,
+    private val applicationController: ApplicationController,
+    private val applicationContextRepository: ApplicationContextRepository,
+) {
+
+    fun mapSaveData(mobController: MobController): SaveDataDto.MobControllerSaveDataDto = SaveDataDto.MobControllerSaveDataDto(
+        version = SAVE_DATA_VERSION,
+        mobs = mobController.mobs.mapNotNull { mob ->
+            when (mob) {
+                is WalkingMob -> walkingMobMapper.mapSaveData(mob)
+                is FallingBlock -> fallingBlockMapper.mapSaveData(mob)
+                else -> null
+            }
+        },
+        player = playerMapper.mapSaveData(mobController.player),
+        villageResidentsInitialized = mobController.villageResidentsInitialized,
+    )
+
+    /** Player-only controller snapshot — for infinite worlds, where mobs are persisted per chunk. */
+    fun mapPlayerOnlySaveData(mobController: MobController): SaveDataDto.MobControllerSaveDataDto = SaveDataDto.MobControllerSaveDataDto(
+        version = SAVE_DATA_VERSION,
+        mobs = emptyList(),
+        player = playerMapper.mapSaveData(mobController.player),
+        villageResidentsInitialized = mobController.villageResidentsInitialized,
+    )
+
+    /** Maps a single (non-player) mob, or null for mob types that are not persisted. */
+    fun mapMobSaveData(mob: Mob): SaveDataDto.MobSaveDataDto? = when (mob) {
+        is WalkingMob -> walkingMobMapper.mapSaveData(mob)
+        is FallingBlock -> fallingBlockMapper.mapSaveData(mob)
+        else -> null
+    }
+
+    /** Reconstructs a single (non-player) mob with its physics body, or null for unknown DTO types. */
+    fun mapMob(
+        saveDataDto: SaveDataDto.MobSaveDataDto,
+        mobPhysicsFactory: MobPhysicsFactory,
+    ): Mob? = when (saveDataDto) {
+        is SaveDataDto.WalkingMobSaveDataDto -> walkingMobMapper.mapPassiveMob(saveDataDto, mobPhysicsFactory)
+        is SaveDataDto.FallingBlockSaveDataDto -> fallingBlockMapper.mapFallingBlock(saveDataDto, mobPhysicsFactory)
+        else -> null
+    }
+
+    fun mapMobController(
+        saveDataDto: SaveDataDto.MobControllerSaveDataDto,
+        mobWorldAdapter: MobWorldAdapter,
+        mobPhysicsFactory: MobPhysicsFactory,
+        dropQueue: DropQueue,
+        mobSoundManager: MobSoundManager,
+        projectileAdapter: ProjectileAdapter,
+        mobQueue: MobQueue,
+    ): MobController {
+        saveDataDto.verifyVersion(SAVE_DATA_VERSION)
+
+        return MobController(
+            getFallbackItemUseCase = getFallbackItemUseCase,
+            mobParamsRepository = mobParamsRepository,
+            mobWorldAdapter = mobWorldAdapter,
+            mobPhysicsFactory = mobPhysicsFactory,
+            dropQueue = dropQueue,
+            getItemByKeyUseCase = getItemByKeyUseCase,
+            tooltipManager = tooltipManager,
+            mobSoundManager = mobSoundManager,
+            soundPlayer = soundPlayer,
+            stepsSoundAssetsRepository = stepsSoundAssetsRepository,
+            projectileAdapter = projectileAdapter,
+            mobQueue = mobQueue,
+            applicationController = applicationController,
+            applicationContextRepository = applicationContextRepository,
+        ).apply {
+            villageResidentsInitialized = saveDataDto.villageResidentsInitialized
+            (mobs as MutableList).addAll(
+                saveDataDto.mobs.mapNotNull { mob ->
+                    when (mob) {
+                        is SaveDataDto.WalkingMobSaveDataDto -> walkingMobMapper.mapPassiveMob(
+                            saveDataDto = mob,
+                            mobPhysicsFactory = mobPhysicsFactory,
+                        )
+
+                        is SaveDataDto.FallingBlockSaveDataDto -> fallingBlockMapper.mapFallingBlock(
+                            saveDataDto = mob,
+                            mobPhysicsFactory = mobPhysicsFactory,
+                        )
+
+                        else -> null
+                    }
+                },
+            )
+
+            player = playerMapper.mapPlayer(
+                saveDataDto = saveDataDto.player,
+                mobPhysicsFactory = mobPhysicsFactory,
+            )
+        }
+    }
+
+    companion object {
+        private const val SAVE_DATA_VERSION = 4
+    }
+}

@@ -1,0 +1,58 @@
+package ru.fredboy.cavedroid.entity.mob.impl
+
+import ru.fredboy.cavedroid.entity.mob.abstraction.BaseMobBehavior
+import ru.fredboy.cavedroid.entity.mob.abstraction.MobWorldAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.PlayerAdapter
+import ru.fredboy.cavedroid.entity.mob.abstraction.ProjectileAdapter
+import ru.fredboy.cavedroid.entity.mob.model.Direction
+import ru.fredboy.cavedroid.entity.mob.model.WalkingMob
+
+class AggressiveMobBehavior(private val sightGraceSeconds: Float = 1f) :
+    BaseMobBehavior<WalkingMob>(
+        mobType = WalkingMob::class,
+    ) {
+
+    private val passiveBehavior = PassiveMobBehavior()
+
+    override val attacksWhenPossible: Boolean
+        get() = true
+
+    override fun WalkingMob.updateMob(worldAdapter: MobWorldAdapter, playerAdapter: PlayerAdapter, projectileAdapter: ProjectileAdapter, delta: Float) {
+        if (playerAdapter.gameMode.isCreative() || position.dst(playerAdapter.x, playerAdapter.y) > TRIGGER_DISTANCE) {
+            lostSightElapsedSec = Float.MAX_VALUE
+            passiveBehavior.update(this, worldAdapter, playerAdapter, projectileAdapter, delta)
+            return
+        }
+
+        if (!canStillTrackPlayer(worldAdapter, playerAdapter, delta, requireWalkableAngle = false, sightGraceSeconds = sightGraceSeconds)) {
+            passiveBehavior.update(this, worldAdapter, playerAdapter, projectileAdapter, delta)
+            return
+        }
+
+        if (checkForAutojump(worldAdapter)) {
+            jump()
+        }
+
+        direction = if (playerAdapter.x > position.x) {
+            Direction.RIGHT
+        } else {
+            Direction.LEFT
+        }
+
+        controlVector.x = speed * direction.basis
+
+        if (canJump && !canClimb && controlVector.x != 0f && cliffEdgeCounters[Direction.fromVector(controlVector).index] <= 0) {
+            controlVector.x = 0f
+        }
+
+        if (canSwim) {
+            climbUp()
+        } else {
+            climb = false
+        }
+    }
+
+    companion object {
+        private const val TRIGGER_DISTANCE = 32f
+    }
+}

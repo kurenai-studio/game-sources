@@ -1,0 +1,38 @@
+package ru.fredboy.cavedroid.gdx.menu.v2.view.singleplayer
+
+import ru.fredboy.cavedroid.common.api.ApplicationController
+import ru.fredboy.cavedroid.common.api.SaveTransferController
+import ru.fredboy.cavedroid.common.di.MenuScope
+import ru.fredboy.cavedroid.common.mvvm.NavBackStack
+import ru.fredboy.cavedroid.common.mvvm.ViewModelProvider
+import ru.fredboy.cavedroid.domain.configuration.repository.ApplicationContextRepository
+import ru.fredboy.cavedroid.domain.save.repository.SaveDataRepository
+import ru.fredboy.cavedroid.gdx.menu.v2.di.BindViewModelProvider
+import ru.fredboy.cavedroid.gdx.menu.v2.view.common.BaseViewModelDependencies
+import javax.inject.Inject
+import kotlin.reflect.KClass
+
+@MenuScope
+@BindViewModelProvider
+class SinglePlayerMenuViewModelProvider @Inject constructor(
+    private val applicationContextRepository: ApplicationContextRepository,
+    private val applicationController: ApplicationController,
+    private val saveDataRepository: SaveDataRepository,
+    private val saveTransferController: SaveTransferController,
+    private val baseViewModelDependencies: BaseViewModelDependencies,
+) : ViewModelProvider<SinglePlayerMenuNavKey, SinglePlayerMenuViewModel> {
+
+    override val viewModelClass: KClass<SinglePlayerMenuViewModel>
+        get() = SinglePlayerMenuViewModel::class
+
+    override fun get(navKey: SinglePlayerMenuNavKey, navBackStack: NavBackStack): SinglePlayerMenuViewModel {
+        return SinglePlayerMenuViewModel(
+            applicationContextRepository = applicationContextRepository,
+            applicationController = applicationController,
+            saveDataRepository = saveDataRepository,
+            saveTransferController = saveTransferController,
+            navBackStack = navBackStack,
+            baseViewModelDependencies = baseViewModelDependencies,
+        )
+    }
+}

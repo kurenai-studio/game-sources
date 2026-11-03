@@ -1,0 +1,16 @@
+package ru.fredboy.cavedroid.desktop
+
+import ru.fredboy.cavedroid.common.api.PreferencesStore
+import java.util.prefs.Preferences
+
+class DesktopPreferencesStore : PreferencesStore {
+
+    private val prefs = Preferences.userNodeForPackage(DesktopLauncher::class.java)
+
+    override fun getPreference(key: String): String? = prefs.get(key, null)
+
+    override fun setPreference(key: String, value: String?) {
+        if (value == null) prefs.remove(key) else prefs.put(key, value)
+        prefs.flush()
+    }
+}

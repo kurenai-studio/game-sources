@@ -1,0 +1,27 @@
+package ru.fredboy.cavedroid.data.configuration.model
+
+import com.badlogic.gdx.Files
+import ru.fredboy.cavedroid.domain.configuration.model.LightingBackend
+import java.util.Locale
+
+class ApplicationContext(
+    internal val isDebug: Boolean,
+    internal var isTouch: Boolean,
+    internal var isFullscreen: Boolean,
+    internal var useDynamicCamera: Boolean,
+    internal var gameDirectory: String,
+    internal val gameDirectoryFileType: Files.FileType,
+    internal var width: Float,
+    internal var height: Float,
+    internal var isAutoJumpEnabled: Boolean,
+    internal var locale: Locale,
+    internal var soundEnabled: Boolean,
+    internal var isOnboardingShown: Boolean,
+    internal var isInventoryHintShown: Boolean,
+    internal var isBoatHintShown: Boolean,
+    internal var personalizedAdsConsent: Boolean?,
+    internal var lightingBackend: LightingBackend,
+    internal val isYandexGamesBuild: Boolean,
+    internal var preferShowDebug: Boolean,
+    internal val supportsInfiniteWorlds: Boolean = true,
+)

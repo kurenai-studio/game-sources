@@ -1,0 +1,31 @@
+package ru.fredboy.cavedroid.gameplay.controls.action.useblock.door.wood.open
+
+import ru.fredboy.cavedroid.common.di.GameScope
+import ru.fredboy.cavedroid.domain.items.model.block.Block
+import ru.fredboy.cavedroid.domain.items.repository.ItemsRepository
+import ru.fredboy.cavedroid.game.world.GameWorld
+import ru.fredboy.cavedroid.gameplay.controls.action.annotation.BindUseBlockAction
+import ru.fredboy.cavedroid.gameplay.controls.action.useblock.IUseBlockAction
+import javax.inject.Inject
+
+@GameScope
+@BindUseBlockAction(stringKey = UseDoorWoodBottomLeftOpenAction.KEY)
+class UseDoorWoodBottomLeftOpenAction @Inject constructor(
+    private val gameWorld: GameWorld,
+    private val itemsRepository: ItemsRepository,
+) : IUseBlockAction {
+
+    override fun perform(block: Block, x: Int, y: Int): Boolean {
+        if (gameWorld.getForeMap(x, y - 1).params.key != "wood_door_top_left_open") {
+            return true
+        }
+
+        gameWorld.setForeMap(x, y - 1, itemsRepository.getBlockByKey("wood_door_top_left_closed"))
+        gameWorld.setForeMap(x, y, itemsRepository.getBlockByKey("wood_door_bottom_left_closed"))
+        return true
+    }
+
+    companion object {
+        const val KEY = "wood_door_bottom_left_open"
+    }
+}
