@@ -1,0 +1,112 @@
+﻿#pragma once
+
+#include "CoreMinimal.h"
+#include "RoboDiffDrive.h"
+#include "RoboLidar.h"
+#include "RoboMission.h"
+#include "RoboOdometry.h"
+
+/**
+ * Everything a brain is allowed to know, captured at one moment.
+ *
+ * A brain is handed this snapshot and never the robot itself. With no pointer
+ * to the vehicle it has no way to read ground truth, so it cannot cheat, even
+ * by accident. This is the in-engine version of the split between get_sensors
+ * and get_ground_truth in the external API.
+ *
+ * Held by value, so the data cannot change underneath a brain while it is
+ * deciding.
+ */
+struct FBrainInputs
+{
+	double SimTimeSeconds = 0.0;
+
+	/** Where the robot believes it is, from wheel odometry. */
+	FPose2D Odometry;
+
+	/** The latest lidar sweep, if there has been one. */
+	FLidarScan Scan;
+	bool bHasScan = false;
+
+	/** Where the robot has been asked to go, if anywhere. */
+	FMissionGoal Goal;
+	bool bHasGoal = false;
+};
+
+/** What a brain is doing, for a person watching. Never used to make decisions. */
+enum class EBrainActivity : uint8
+{
+	/** No goal to pursue. */
+	Idle,
+
+	/** Has a goal but no lidar scan yet, so holds still. */
+	WaitingForScan,
+
+	/** Heading straight for the goal. */
+	DrivingToGoal,
+
+	/** Heading off the goal's line to get around something. */
+	SteeringAround,
+
+	/** No clear heading: turning on the spot to look for one. */
+	BoxedIn,
+
+	/** Boxed in for too long, and the mission reported failed. */
+	GaveUp,
+
+	/** At the goal. */
+	Arrived
+};
+
+
+/** What a brain decided. */
+struct FBrainOutput
+{
+	/** Zero by default, which is a stop. */
+	RoboDiffDrive::FBodyVelocity Command;
+
+	/** How the brain thinks the mission is going, reported to the mission subsystem. */
+	EMissionStatus Status = EMissionStatus::None;
+
+	/**
+	 * The direction the brain chose to steer, relative to the robot, rad. For
+	 * drawing only: it lets a person watching see what the brain decided,
+	 * rather than inferring it from how the wheels moved.
+	 */
+	TOptional<double> ChosenHeadingRad;
+
+	/** What the brain is doing, and the details that go with it. For display only. */
+	EBrainActivity Activity = EBrainActivity::Idle;
+
+	/** While steering around: how far the chosen heading is from the goal's, rad. Positive is left. */
+	double DeviationRad = 0.0;
+
+	/** While boxed in: for how long so far, s. */
+	double BlockedForSeconds = 0.0;
+
+	/**
+	 * The returns the brain treated as obstacles, robot frame, m: what survived
+	 * the avoiding brain's clutter filter. Other brains leave it empty. For display.
+	 */
+	TArray<FVector2D> ObstaclePointsM;
+};
+
+/**
+ * Anything that can drive the robot from its sensors: go-to-goal, and
+ * go-to-goal with lidar obstacle avoidance.
+ *
+ * Plain C++ rather than a UObject, because a brain is pure decision logic.
+ * Tests can construct one, hand it a made-up snapshot and check what it decides,
+ * with no world, actor or engine running.
+ */
+class FRoboBrain
+{
+public:
+	virtual ~FRoboBrain() = default;
+
+	/** Decide what to do now. Called at a fixed rate on the simulation clock. */
+	virtual FBrainOutput Update(const FBrainInputs& Inputs) = 0;
+
+	/** Forget anything remembered from earlier updates, as when the robot is reset. */
+	virtual void Reset() {}
+};
