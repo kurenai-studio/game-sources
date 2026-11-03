@@ -1,0 +1,29 @@
+function init(self)
+	gui.set_enabled(gui.get_node("root"), false)
+end
+
+
+function on_input(self, action_id, action)
+	return end
+		print("MAIN MENU")
+		msg.post("main:/gameover#gameover", "hide")
+		msg.post("main:/gui#main", "reset_hud")
+		msg.post("main:/hero#hero", "reset_player")
+		msg.post("main:/menu#menu", "show")
+	--end
+
+
+function on_message(self, message_id, message, sender)
+	print("GAMEOVER RECEIVED:", message_id)
+
+	if message_id == hash("show") then
+		print("GAMEOVER: SHOW!")
+		msg.post("#", "acquire_input_focus")
+		msg.post("main:/gui#main", "hide_hud")
+		msg.post("main:/gui#main", "hide_warning")
+		msg.post("main:/wave#wave1", "reset_wave")
+		gui.set_enabled(gui.get_node("root"), true)
+	elseif message_id == hash("hide") then
+		gui.set_enabled(gui.get_node("root"), false)
+	end
+end

@@ -1,0 +1,48 @@
+local SPEED = 200
+local ACTIVE = false
+
+function init(self)
+	msg.post("#", "disable")
+	self.start_pos = go.get_position()
+	self.alive = false
+end
+
+function on_message(self, message_id, message, sender)
+	-- Called when note closes
+	if message_id == hash("start_wave") then
+		self.alive = true
+		msg.post("#collisionobject", "enable")
+	end
+end
+
+function update(self, dt)
+	if not self.alive then return end
+
+	-- Move left
+	local pos = go.get_position()
+	pos.x = pos.x - SPEED * dt
+	go.set_position(pos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_wave") then
+		self.alive = true
+		msg.post("#collisionobject", "enable")
+	end
+
+	-- Detect hitting player
+	if message_id == hash("trigger_response") then
+		if message.other_group == hash("player") then
+			-- Instantly kill player
+			msg.post(message.other_id, "take_damage", { amount = 2 })
+
+			-- Tell menu to show Game Over screen
+			msg.post("main:/gameover#gameover", "show")
+		end
+	end
+
+	if message_id == hash("reset_wave") then
+		go.set_position(vmath.vector3(23223,449,1.2))
+		self.active = false
+	end
+end

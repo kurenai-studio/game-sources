@@ -1,0 +1,11 @@
+function on_message (self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.enter then
+		if message.other_group == hash("player") then
+			-- Tell GUI to update
+			msg.post("gui#main", "update_score")
+			-- Remove fragment
+			sound.play("#pickup")
+			go.delete()
+		end
+	end
+end

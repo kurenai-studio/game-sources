@@ -1,0 +1,28 @@
+function init(self)
+	gui.set_enabled(gui.get_node("menu_root"), true)
+	msg.post("#", "acquire_input_focus")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		gui.set_enabled(gui.get_node("menu_root"), true)
+		msg.post("#", "acquire_input_focus")
+		msg.post("main:/hero#hero", "disable_player")
+	elseif message_id == hash("hide") then
+		gui.set_enabled(gui.get_node("menu_root"), false)
+		msg.post("#", "release_input_focus")
+	end
+end
+
+function on_input(self, action_id, action)
+	if not action.pressed then return end
+
+	local pos = vmath.vector3(action.x, action.y, 0)
+
+	if action_id == hash("touch") then
+		print("START GAME")
+		msg.post("main:/menu#menu", "hide")
+		msg.post("main:/gui#main", "show_hud")
+		msg.post("main:/hero#hero", "enable_player")
+	end
+end
