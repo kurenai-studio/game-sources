@@ -3,7 +3,7 @@
 - **Upstream:** https://github.com/taroxd/RPGMV-Taiko
 - **Author:** Taroxd
 - **License:** MIT (see LICENSE)
-- **Commit:** 
+- **Commit:** `605f1d943edc64c0dcd7dae3e1a331fe38aab606`
 - **Engine:** RPG Maker MV (custom Taiko rhythm game; no Kadokawa RTP)
 - **Collected by:** bot:c
 - **Collected at:** 2026-11-03T06:55:44-08:00 (America/Los_Angeles)
