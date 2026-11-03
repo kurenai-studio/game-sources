@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://o4efh1dk6bbg"]
+
+[ext_resource type="Script" path="res://custom_cursor.gd" id="1_cawem"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_qnpvg"]
+load_path = "res://.godot/imported/gameboy_mouse_cursor.png-83d08f3f027196b2db01431532d47814.ctex"
+
+[node name="CustomCursor" type="Node2D" unique_id=1064436338]
+script = ExtResource("1_cawem")
+
+[node name="Shake" type="Node2D" parent="." unique_id=1974248140]
+
+[node name="Sprite2D" type="Sprite2D" parent="Shake" unique_id=26010165]
+texture = SubResource("CompressedTexture2D_qnpvg")

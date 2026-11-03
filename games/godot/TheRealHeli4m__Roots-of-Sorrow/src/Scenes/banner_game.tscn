@@ -1,0 +1,364 @@
+[gd_scene format=3 uid="uid://cnohqtj0em2cp"]
+
+[ext_resource type="Script" uid="uid://bvtehjvbocvd4" path="res://Scripts/banner_game.gd" id="1_0t2ny"]
+[ext_resource type="Texture2D" uid="uid://bticf7m3iwqtv" path="res://Assets/Sewing/hightlighted_sewing_box.png" id="1_41hb5"]
+[ext_resource type="Texture2D" uid="uid://cql25b6op7e3j" path="res://Assets/Sewing/table.png" id="1_slxmv"]
+[ext_resource type="Texture2D" uid="uid://ds1ntdxausbg6" path="res://Assets/Sewing/open_sewing_box.png" id="3_0t2ny"]
+[ext_resource type="Texture2D" uid="uid://pvdevsqmgblu" path="res://Assets/Sewing/blue_bucket.png" id="3_5dgcm"]
+[ext_resource type="Script" uid="uid://clxgu7gn3m52f" path="res://Scripts/paint_buckets.gd" id="3_16quf"]
+[ext_resource type="Texture2D" uid="uid://bhysbwcvp1xo3" path="res://Assets/Sewing/scissors.png" id="3_f5sax"]
+[ext_resource type="Texture2D" uid="uid://d0pdcpe8b4tcs" path="res://Assets/Sewing/red_bucket.png" id="3_iqa4t"]
+[ext_resource type="Script" uid="uid://d24oj7ackavh" path="res://Scripts/sewing.gd" id="3_slxmv"]
+[ext_resource type="Texture2D" uid="uid://di38cu6ahftfm" path="res://Assets/Sewing/trash_bin.png" id="4_3ukne"]
+[ext_resource type="Texture2D" uid="uid://cok7qlrnwxbyh" path="res://Assets/Sewing/green_bucket.png" id="5_16quf"]
+[ext_resource type="Texture2D" uid="uid://bklcnliiqh4e6" path="res://Assets/Sewing/red_thread.png" id="6_6klv7"]
+[ext_resource type="Texture2D" uid="uid://csu8pu4hpcy2o" path="res://Assets/Sewing/sewbox_lid_flipping.png" id="6_dsrkm"]
+[ext_resource type="Texture2D" uid="uid://d0gi4bkwyyk8o" path="res://Assets/Sewing/sewing_box_pad.png" id="6_f2g3y"]
+[ext_resource type="Script" uid="uid://dctddinc1ge30" path="res://Scripts/scissors.gd" id="7_2rtjw"]
+[ext_resource type="Script" uid="uid://dcr621shaf6tf" path="res://Scripts/thread.gd" id="7_wj8u2"]
+[ext_resource type="Texture2D" uid="uid://chhl2o7l8ym6j" path="res://Assets/Sewing/bucket_overlay.png" id="7_xbrpe"]
+[ext_resource type="Texture2D" uid="uid://dtx7osrbnxvrj" path="res://Assets/Sewing/blue_thread.png" id="8_ptoy6"]
+[ext_resource type="Texture2D" uid="uid://br8mf3c11klxx" path="res://Assets/Sewing/scissors_overlay.png" id="8_vvrrx"]
+[ext_resource type="Texture2D" uid="uid://b4pa12l7vusiw" path="res://Assets/Sewing/needle.png" id="9_4t37s"]
+[ext_resource type="Texture2D" uid="uid://qt2kkay7jp23" path="res://Assets/Sewing/green_thread.png" id="9_5dgcm"]
+[ext_resource type="Script" uid="uid://cmfa4yyelklar" path="res://Scripts/needle.gd" id="9_m0f2c"]
+[ext_resource type="Texture2D" uid="uid://qkhidr2oeu81" path="res://Assets/Sewing/white_thread.png" id="10_5dgcm"]
+[ext_resource type="Texture2D" uid="uid://dng37jpvqwb5g" path="res://Assets/Sewing/needle_overlay.png" id="10_l8isq"]
+[ext_resource type="Script" uid="uid://c3qctoow2nte3" path="res://Scripts/threads.gd" id="11_d2tqt"]
+[ext_resource type="Texture2D" uid="uid://djtcpmgk7yx72" path="res://Assets/Sewing/golden_thread.png" id="11_hf5j2"]
+[ext_resource type="PackedScene" uid="uid://csg5uinmjuk6d" path="res://Scenes/banner.tscn" id="20_ptoy6"]
+[ext_resource type="Texture2D" uid="uid://naeyckr4yeqq" path="res://Assets/Sewing/banner_rack.png" id="27_amwj1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dsrkm"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(0, 0, 48, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4t37s"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(48, 0, 48, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l8isq"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(96, 0, 48, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m0f2c"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(144, 0, 48, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wdryc"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(192, 0, 48, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ce8fg"]
+atlas = ExtResource("6_dsrkm")
+region = Rect2(288, 0, 48, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wj8u2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dsrkm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4t37s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l8isq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m0f2c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdryc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ce8fg")
+}],
+"loop": false,
+"name": &"default",
+"speed": 15.0
+}]
+
+[node name="Banner" type="Node2D" unique_id=1286072771]
+script = ExtResource("1_0t2ny")
+
+[node name="Table" type="Sprite2D" parent="." unique_id=155290186]
+position = Vector2(575, 299)
+scale = Vector2(8, 8)
+texture = ExtResource("1_slxmv")
+
+[node name="BannerRack" type="Control" parent="." unique_id=1353141775]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1038.0
+offset_top = 388.0
+offset_right = 1078.0
+offset_bottom = 428.0
+
+[node name="TextureButton" type="TextureButton" parent="BannerRack" unique_id=176530383]
+layout_mode = 0
+offset_left = 74.0
+offset_top = -362.0
+offset_right = 128.125
+offset_bottom = -318.0
+scale = Vector2(8, 8)
+texture_normal = ExtResource("27_amwj1")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="TrashBin" type="Control" parent="." unique_id=927902421]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Sprite" type="Sprite2D" parent="TrashBin" unique_id=459322240]
+position = Vector2(1342, 628)
+scale = Vector2(8, 8)
+texture = ExtResource("4_3ukne")
+
+[node name="PaintBuckets" type="Control" parent="." unique_id=1977126215]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 95.0
+offset_right = 340.0
+offset_bottom = 135.0
+pivot_offset = Vector2(1, 0)
+script = ExtResource("3_16quf")
+
+[node name="RedBucket" type="TextureButton" parent="PaintBuckets" unique_id=822845196]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 112.0
+offset_right = 59.875
+offset_bottom = 135.0
+scale = Vector2(8, 8)
+texture_normal = ExtResource("3_iqa4t")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="RedOverlay" type="Sprite2D" parent="PaintBuckets/RedBucket" unique_id=1644889248]
+position = Vector2(10, 11.5)
+texture = ExtResource("7_xbrpe")
+
+[node name="BlueBucket" type="TextureButton" parent="PaintBuckets" unique_id=1842778779]
+layout_mode = 0
+offset_left = -78.0
+offset_top = 151.0
+offset_right = -58.125
+offset_bottom = 175.625
+scale = Vector2(8, 8)
+pivot_offset = Vector2(12.25, 6.25)
+texture_normal = ExtResource("3_5dgcm")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="BlueOverlay" type="Sprite2D" parent="PaintBuckets/BlueBucket" unique_id=365041419]
+position = Vector2(9.875, 12.25)
+texture = ExtResource("7_xbrpe")
+
+[node name="GreenBucket" type="TextureButton" parent="PaintBuckets" unique_id=609967459]
+layout_mode = 0
+offset_left = -72.0
+offset_top = -50.0
+offset_right = -50.0
+offset_bottom = -28.75
+scale = Vector2(8, 8)
+texture_normal = ExtResource("5_16quf")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="GreenOverlay" type="Sprite2D" parent="PaintBuckets/GreenBucket" unique_id=1136244831]
+position = Vector2(11, 10.625)
+texture = ExtResource("7_xbrpe")
+
+[node name="SewBox" type="Control" parent="." unique_id=1936898934]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 56.0
+offset_top = -1.0
+offset_right = 96.0
+offset_bottom = 39.0
+mouse_filter = 2
+script = ExtResource("3_slxmv")
+
+[node name="Padder" type="Sprite2D" parent="SewBox" unique_id=1515296676]
+position = Vector2(260, 548)
+scale = Vector2(8, 8)
+texture = ExtResource("6_f2g3y")
+
+[node name="SewBoxBottom" type="Sprite2D" parent="SewBox" unique_id=1341476420]
+position = Vector2(260, 548)
+scale = Vector2(8, 8)
+texture = ExtResource("3_0t2ny")
+
+[node name="Threads" type="Node2D" parent="SewBox" unique_id=1233279650]
+script = ExtResource("11_d2tqt")
+
+[node name="RedThread" type="TextureButton" parent="SewBox/Threads" unique_id=1102061418]
+offset_left = 100.0
+offset_top = 449.0
+offset_right = 106.25
+offset_bottom = 455.5
+scale = Vector2(8, 8)
+texture_normal = ExtResource("6_6klv7")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("7_wj8u2")
+
+[node name="BlueThread" type="TextureButton" parent="SewBox/Threads" unique_id=1250527684]
+offset_left = 163.0
+offset_top = 554.0
+offset_right = 169.25
+offset_bottom = 560.5
+scale = Vector2(8, 8)
+texture_normal = ExtResource("8_ptoy6")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("7_wj8u2")
+
+[node name="GreenThread" type="TextureButton" parent="SewBox/Threads" unique_id=561408570]
+offset_left = 163.0
+offset_top = 481.0
+offset_right = 169.25
+offset_bottom = 487.5
+scale = Vector2(8, 8)
+texture_normal = ExtResource("9_5dgcm")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("7_wj8u2")
+
+[node name="WhiteThread" type="TextureButton" parent="SewBox/Threads" unique_id=1187597101]
+offset_left = 100.0
+offset_top = 517.0
+offset_right = 106.25
+offset_bottom = 523.5
+scale = Vector2(8, 8)
+texture_normal = ExtResource("10_5dgcm")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("7_wj8u2")
+
+[node name="GoldenThread" type="TextureButton" parent="SewBox/Threads" unique_id=175484407]
+offset_left = 100.0
+offset_top = 588.0
+offset_right = 106.25
+offset_bottom = 594.5
+scale = Vector2(8, 8)
+texture_normal = ExtResource("11_hf5j2")
+ignore_texture_size = true
+stretch_mode = 3
+script = ExtResource("7_wj8u2")
+
+[node name="Scissors" type="Node2D" parent="SewBox" unique_id=1165311485]
+position = Vector2(45, 15)
+script = ExtResource("7_2rtjw")
+
+[node name="TextureButton" type="TextureButton" parent="SewBox/Scissors" unique_id=1086429934]
+offset_left = 269.0
+offset_top = 416.0
+offset_right = 280.875
+offset_bottom = 448.0
+scale = Vector2(8, 8)
+texture_normal = ExtResource("3_f5sax")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="ScissorsOverlay" type="Sprite2D" parent="SewBox/Scissors" unique_id=1705241615]
+position = Vector2(317, 544)
+scale = Vector2(8, 8)
+texture = ExtResource("8_vvrrx")
+
+[node name="Needle" type="Node2D" parent="SewBox" unique_id=562104373]
+position = Vector2(269.99997, 526)
+rotation = 0.0043253303
+script = ExtResource("9_m0f2c")
+
+[node name="TextureButton" type="TextureButton" parent="SewBox/Needle" unique_id=594436669]
+offset_left = -39.0
+offset_top = -76.0
+offset_right = -30.5
+offset_bottom = -51.25
+scale = Vector2(8, 8)
+texture_normal = ExtResource("9_4t37s")
+ignore_texture_size = true
+stretch_mode = 3
+
+[node name="NeedleOverlay" type="Sprite2D" parent="SewBox/Needle" unique_id=1130392379]
+position = Vector2(-5, 23)
+scale = Vector2(8, 8)
+texture = ExtResource("10_l8isq")
+
+[node name="SewBoxLidOpen" type="TextureButton" parent="SewBox" unique_id=1042753301]
+layout_mode = 0
+offset_left = 69.0
+offset_top = 164.0
+offset_right = 452.0
+offset_bottom = 419.0
+
+[node name="SewBoxLid" type="TextureButton" parent="SewBox" unique_id=624127622]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 420.0
+offset_right = 452.0
+offset_bottom = 676.0
+stretch_mode = 0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="SewBox/SewBoxLid" unique_id=1348818271]
+position = Vector2(192, 0)
+scale = Vector2(8, 8)
+sprite_frames = SubResource("SpriteFrames_wj8u2")
+frame = 5
+frame_progress = 1.0
+
+[node name="HighlightOverlay" type="Sprite2D" parent="SewBox" unique_id=66054178]
+visible = false
+position = Vector2(260, 548)
+scale = Vector2(8, 8)
+texture = ExtResource("1_41hb5")
+
+[node name="Banner" parent="." unique_id=1961695673 instance=ExtResource("20_ptoy6")]
+offset_left = 581.0
+offset_top = -91.0
+offset_right = 581.0
+offset_bottom = -91.0
+
+[connection signal="mouse_entered" from="BannerRack/TextureButton" to="Banner" method="onBannerRackMouseEnter"]
+[connection signal="mouse_exited" from="BannerRack/TextureButton" to="Banner" method="onBannerRackMouseExit"]
+[connection signal="mouse_entered" from="PaintBuckets/RedBucket" to="PaintBuckets" method="onMouseEnterRed"]
+[connection signal="mouse_exited" from="PaintBuckets/RedBucket" to="PaintBuckets" method="onMouseExitRed"]
+[connection signal="pressed" from="PaintBuckets/RedBucket" to="PaintBuckets" method="onRedPressed"]
+[connection signal="mouse_entered" from="PaintBuckets/BlueBucket" to="PaintBuckets" method="onMouseEnterBlue"]
+[connection signal="mouse_exited" from="PaintBuckets/BlueBucket" to="PaintBuckets" method="onMouseExitBlue"]
+[connection signal="pressed" from="PaintBuckets/BlueBucket" to="PaintBuckets" method="onBluePressed"]
+[connection signal="mouse_entered" from="PaintBuckets/GreenBucket" to="PaintBuckets" method="onMouseEnterGreen"]
+[connection signal="mouse_exited" from="PaintBuckets/GreenBucket" to="PaintBuckets" method="onMouseExitGreen"]
+[connection signal="pressed" from="PaintBuckets/GreenBucket" to="PaintBuckets" method="onGreenPressed"]
+[connection signal="mouse_entered" from="SewBox/Threads/RedThread" to="SewBox/Threads/RedThread" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="SewBox/Threads/RedThread" to="SewBox/Threads/RedThread" method="_on_mouse_exited"]
+[connection signal="pressed" from="SewBox/Threads/RedThread" to="SewBox/Threads" method="onRedPressed"]
+[connection signal="mouse_entered" from="SewBox/Threads/BlueThread" to="SewBox/Threads/BlueThread" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="SewBox/Threads/BlueThread" to="SewBox/Threads/BlueThread" method="_on_mouse_exited"]
+[connection signal="pressed" from="SewBox/Threads/BlueThread" to="SewBox/Threads" method="onBluePressed"]
+[connection signal="mouse_entered" from="SewBox/Threads/GreenThread" to="SewBox/Threads/GreenThread" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="SewBox/Threads/GreenThread" to="SewBox/Threads/GreenThread" method="_on_mouse_exited"]
+[connection signal="pressed" from="SewBox/Threads/GreenThread" to="SewBox/Threads" method="onGreenPressed"]
+[connection signal="mouse_entered" from="SewBox/Threads/WhiteThread" to="SewBox/Threads/WhiteThread" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="SewBox/Threads/WhiteThread" to="SewBox/Threads/WhiteThread" method="_on_mouse_exited"]
+[connection signal="pressed" from="SewBox/Threads/WhiteThread" to="SewBox/Threads" method="onWhitePressed"]
+[connection signal="mouse_entered" from="SewBox/Threads/GoldenThread" to="SewBox/Threads/GoldenThread" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="SewBox/Threads/GoldenThread" to="SewBox/Threads/GoldenThread" method="_on_mouse_exited"]
+[connection signal="pressed" from="SewBox/Threads/GoldenThread" to="SewBox/Threads" method="onGoldPressed"]
+[connection signal="mouse_entered" from="SewBox/Scissors/TextureButton" to="SewBox/Scissors" method="onMouseEnterScissors"]
+[connection signal="mouse_exited" from="SewBox/Scissors/TextureButton" to="SewBox/Scissors" method="onMouseExitScissors"]
+[connection signal="pressed" from="SewBox/Scissors/TextureButton" to="SewBox/Scissors" method="onScissorsSelected"]
+[connection signal="mouse_entered" from="SewBox/Needle/TextureButton" to="SewBox/Needle" method="onMouseEnterNeedle"]
+[connection signal="mouse_exited" from="SewBox/Needle/TextureButton" to="SewBox/Needle" method="onMouseExitNeedle"]
+[connection signal="pressed" from="SewBox/Needle/TextureButton" to="SewBox/Needle" method="onNeedlePressed"]
+[connection signal="pressed" from="SewBox/SewBoxLidOpen" to="SewBox" method="onSewBoxOpenPressed"]
+[connection signal="mouse_entered" from="SewBox/SewBoxLid" to="SewBox" method="onMouseEnterSewbox"]
+[connection signal="mouse_exited" from="SewBox/SewBoxLid" to="SewBox" method="onMouseExitSewbox"]
+[connection signal="pressed" from="SewBox/SewBoxLid" to="SewBox" method="onSewBoxPressed"]
+[connection signal="paintingFinished" from="Banner" to="." method="onPaintingFinished"]
+[connection signal="paintingFinished" from="Banner" to="Banner" method="onPaintingFinished"]
