@@ -1,0 +1,33 @@
+{
+  "name": "breach",
+  "version": "1.5.1",
+  "private": true,
+  "description": "A top-down tactical game set in the fictional harbour city of Port Ardley",
+  "license": "MIT",
+  "homepage": "https://sebastiaan-arnold.github.io/Breach/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sebastiaan-Arnold/Breach.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^5.0.5"
+  }
+}
