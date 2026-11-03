@@ -1,0 +1,218 @@
+[gd_scene format=3 uid="uid://bdc6jep74utom"]
+
+[ext_resource type="Script" uid="uid://cirsduep8fwp" path="res://scripts/core/main.gd" id="1_g00m7"]
+[ext_resource type="Texture2D" uid="uid://bcausjm1dkf6l" path="res://assets/sprites/prototiping/Brick-Texture.svg" id="1_ue2wo"]
+[ext_resource type="PackedScene" uid="uid://ovlqf2paxyyg" path="res://scenes/Core/container.tscn" id="1_x0yl7"]
+[ext_resource type="PackedScene" uid="uid://cpio4edsf1pe1" path="res://scenes/Core/dropper.tscn" id="2_x0yl7"]
+[ext_resource type="PackedScene" uid="uid://dtj6ojv0r2r45" path="res://scenes/Core/dungeon_background.tscn" id="3_5uyvx"]
+[ext_resource type="Script" uid="uid://c4tyydimprwns" path="res://scripts/core/queue_display.gd" id="5_ddvu7"]
+[ext_resource type="Shader" uid="uid://qikhvu7oy3m1" path="res://Shaders/kerno.gdshader" id="6_fojeq"]
+[ext_resource type="PackedScene" uid="uid://ca3i8oa2i7vre" path="res://scenes/levels/merge_particles.tscn" id="8_bwyuc"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_5uyvx"]
+font_size = 32
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ddvu7"]
+shader = ExtResource("6_fojeq")
+shader_parameter/base_color = Color(0.3, 0.85, 0.3, 1)
+shader_parameter/tier = 1
+shader_parameter/core_radius = 20.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fojeq"]
+shader = ExtResource("6_fojeq")
+shader_parameter/base_color = Color(0.3, 0.85, 0.3, 1)
+shader_parameter/tier = 1
+shader_parameter/core_radius = 20.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_fojeq"]
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_bwyuc"]
+font_size = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bwyuc"]
+bg_color = Color(0.1764706, 0.05490196, 0.09019608, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_wkppy"]
+font_size = 64
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lrpku"]
+bg_color = Color(0.078431375, 0.101960786, 0.09019608, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bfxpf"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08627451, 0.09803922, 0.12156863, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.29411766, 0.33333334, 0.3882353, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u3svs"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08627451, 0.09803922, 0.12156863, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.21960784, 0.9372549, 0.49019608, 1)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ktxv1"]
+
+[node name="Main" type="Node2D" unique_id=1972363362]
+script = ExtResource("1_g00m7")
+
+[node name="brick_wall" type="Sprite2D" parent="." unique_id=2137903800]
+visible = false
+modulate = Color(0.21568628, 0.21568628, 0.21568628, 0.5058824)
+scale = Vector2(1.312, 1)
+texture = ExtResource("1_ue2wo")
+centered = false
+
+[node name="DungeonBackground" parent="." unique_id=1480490908 instance=ExtResource("3_5uyvx")]
+
+[node name="Container" parent="." unique_id=303102109 instance=ExtResource("1_x0yl7")]
+position = Vector2(-200, 40)
+
+[node name="Dropper" parent="." unique_id=1659214463 instance=ExtResource("2_x0yl7")]
+position = Vector2(640, 20)
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=385510701]
+
+[node name="NextSlimePanel" type="Panel" parent="HUD" unique_id=963790192]
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 170.0
+offset_bottom = 320.0
+
+[node name="Label" type="Label" parent="HUD/NextSlimePanel" unique_id=998184654]
+layout_mode = 0
+offset_top = 1.0
+offset_right = 120.0
+offset_bottom = 46.0
+text = "Next"
+label_settings = SubResource("LabelSettings_5uyvx")
+horizontal_alignment = 1
+
+[node name="QueueDisplay" type="Control" parent="HUD/NextSlimePanel" unique_id=851194529]
+anchors_preset = 0
+offset_left = 60.0
+offset_top = 60.0
+offset_right = 100.0
+offset_bottom = 100.0
+script = ExtResource("5_ddvu7")
+
+[node name="NextSlime1" type="ColorRect" parent="HUD/NextSlimePanel/QueueDisplay" unique_id=1306358851]
+material = SubResource("ShaderMaterial_ddvu7")
+layout_mode = 1
+offset_right = 80.0
+offset_bottom = 80.0
+
+[node name="NextSlime2" type="ColorRect" parent="HUD/NextSlimePanel/QueueDisplay" unique_id=195505138]
+material = SubResource("ShaderMaterial_fojeq")
+layout_mode = 1
+offset_left = 1.0
+offset_top = 75.0
+offset_right = 81.0
+offset_bottom = 155.0
+
+[node name="ScorePanel" type="Panel" parent="HUD" unique_id=646403595]
+offset_right = 167.0
+offset_bottom = 102.0
+
+[node name="ScoreLabel" type="Label" parent="HUD/ScorePanel" unique_id=417501391]
+layout_mode = 0
+offset_left = 10.0
+offset_right = 61.0
+offset_bottom = 23.0
+text = "SCORE:"
+label_settings = SubResource("LabelSettings_fojeq")
+
+[node name="ScoreValueLabel" type="Label" parent="HUD/ScorePanel" unique_id=1349305625]
+layout_mode = 0
+offset_top = 43.0
+offset_right = 169.0
+offset_bottom = 88.0
+text = "0"
+label_settings = SubResource("LabelSettings_bwyuc")
+horizontal_alignment = 1
+
+[node name="GameOverPanel" type="Panel" parent="HUD" unique_id=1353287017]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="HUD/GameOverPanel" unique_id=455452341]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_bwyuc")
+text = "GAME OVER"
+label_settings = SubResource("LabelSettings_wkppy")
+horizontal_alignment = 1
+
+[node name="StatsRT" type="RichTextLabel" parent="HUD/GameOverPanel" unique_id=1226408828]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_right = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_lrpku")
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/GameOverPanel" unique_id=2058010109]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -165.5
+offset_top = -95.0
+offset_right = 165.5
+offset_bottom = -39.0
+grow_horizontal = 2
+grow_vertical = 0
+offset_transform_position = Vector2(0, -40)
+theme_override_constants/separation = 50
+
+[node name="MainMenuButton" type="Button" parent="HUD/GameOverPanel/HBoxContainer" unique_id=1675185923]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_bfxpf")
+theme_override_styles/hover = SubResource("StyleBoxFlat_u3svs")
+text = "Main Menu"
+
+[node name="RestartButton" type="Button" parent="HUD/GameOverPanel/HBoxContainer" unique_id=757979684]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Restart"
+
+[node name="MergeAudioPlayer" type="AudioStreamPlayer" parent="." unique_id=825674580]
+max_polyphony = 4
+
+[node name="MergeParticles" parent="." unique_id=1156539273 instance=ExtResource("8_bwyuc")]
+
+[node name="KillPlane" type="Area2D" parent="." unique_id=438586096]
+
+[node name="KillPlaneCollisionShape2D" type="CollisionShape2D" parent="KillPlane" unique_id=511548330]
+shape = SubResource("WorldBoundaryShape2D_ktxv1")

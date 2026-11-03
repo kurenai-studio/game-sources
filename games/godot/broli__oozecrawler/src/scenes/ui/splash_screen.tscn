@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://bc5ywi5uswo7t"]
+
+[ext_resource type="Script" uid="uid://bi8jtxtc40uli" path="res://scripts/scenes/ui/splash_screen.gd" id="1_yei5s"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ktxv1"]
+font_size = 72
+font_color = Color(0.8980392, 0.65882355, 0.39215687, 1)
+
+[sub_resource type="Theme" id="Theme_ktxv1"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_o54e2"]
+font_size = 22
+font_color = Color(0.8980392, 0.65882355, 0.39215687, 1)
+
+[node name="SplashScreen" type="Control" unique_id=1556706433]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_yei5s")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1964077426]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="BrandContainer" type="CenterContainer" parent="." unique_id=465963675]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BrandContainer" unique_id=1888827835]
+layout_mode = 2
+
+[node name="AcronymLabel" type="Label" parent="BrandContainer/VBoxContainer" unique_id=2058629410]
+layout_mode = 2
+size_flags_vertical = 0
+text = "SRSG"
+label_settings = SubResource("LabelSettings_ktxv1")
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="BrandContainer/VBoxContainer" unique_id=558354859]
+layout_mode = 2
+theme = SubResource("Theme_ktxv1")
+
+[node name="SubtitleLabel" type="Label" parent="BrandContainer/VBoxContainer" unique_id=923646888]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "STRONG ROAST SHOT GAMING"
+label_settings = SubResource("LabelSettings_o54e2")
+horizontal_alignment = 1

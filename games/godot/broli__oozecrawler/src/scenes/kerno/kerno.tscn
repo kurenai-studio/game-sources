@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://ctrnctwpdt5r6"]
+
+[ext_resource type="Script" uid="uid://bfx8115wfwwxr" path="res://scripts/kerno/kerno.gd" id="1_22mvs"]
+[ext_resource type="Shader" uid="uid://qikhvu7oy3m1" path="res://Shaders/kerno.gdshader" id="2_5rpp1"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ktxv1"]
+friction = 0.15
+bounce = 0.25
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ktxv1"]
+radius = 20.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ktxv1"]
+shader = ExtResource("2_5rpp1")
+shader_parameter/base_color = Color(0.3, 0.85, 0.3, 1)
+
+[node name="Kerno" type="RigidBody2D" unique_id=1177499602]
+physics_material_override = SubResource("PhysicsMaterial_ktxv1")
+gravity_scale = 1.5
+contact_monitor = true
+max_contacts_reported = 4
+linear_damp_mode = 1
+linear_damp = 3.0
+angular_damp = 0.3
+script = ExtResource("1_22mvs")
+angular_velocity_min = -5.0
+angular_velocity_max = 5.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=741467764]
+shape = SubResource("CircleShape2D_ktxv1")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1700093911]
+material = SubResource("ShaderMaterial_ktxv1")
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+mouse_filter = 2
