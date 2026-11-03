@@ -1,0 +1,1190 @@
+using System.Reflection;
+using Microsoft.Xna.Framework;
+using PuzzleBoy.Community.App;
+using PuzzleBoy.Community.Audio;
+using PuzzleBoy.Community.Classic;
+using PuzzleBoy.Community.Editor;
+using PuzzleBoy.Community.Graphics;
+using PuzzleBoy.Community.Save;
+using PuzzleBoy.Rules;
+
+namespace PuzzleBoy.Community;
+
+/// <summary>A stage's state in stage select.</summary>
+internal enum StageStatus
+{
+    /// <summary>Can't be played until one of the two stages before it is cleared.</summary>
+    Locked,
+
+    /// <summary>Playable and not cleared yet.</summary>
+    Open,
+
+    /// <summary>Cleared at least once.</summary>
+    Cleared,
+}
+
+/// <summary>What a pause menu item does.</summary>
+internal enum PauseAction
+{
+    /// <summary>Closes the menu.</summary>
+    Resume,
+
+    /// <summary>Takes back the last push or turn; the menu stays open.</summary>
+    Undo,
+
+    /// <summary>Starts the stage again and closes the menu.</summary>
+    Restart,
+
+    /// <summary>Opens help.</summary>
+    Help,
+
+    /// <summary>Opens settings.</summary>
+    Settings,
+
+    /// <summary>Leaves the stage: to the title, or from a playtest to the editor.</summary>
+    Quit,
+}
+
+/// <summary>The menu screens: title, stage select, pause, settings and credits.</summary>
+internal sealed partial class CommunityGame
+{
+    /// <summary>The title menu, in order.</summary>
+    internal static readonly string[] TitleItems = ["Play", "Stage Select", "Level Editor", "Settings", "Credits", "Quit"];
+
+    /// <summary>The pause menu, in order.</summary>
+    internal static readonly string[] PauseItems = ["Resume", "Undo", "Restart", "Help", "Settings", "Quit to Title"];
+
+    /// <summary>The pause menu in a playtest, whose last item returns to the editor.</summary>
+    internal static readonly string[] PlaytestPauseItems = [.. PauseItems[..^1], "Back to Editor"];
+
+    /// <summary>What each of <see cref="PauseItems"/> does, in order.</summary>
+    internal static readonly PauseAction[] PauseActions = [PauseAction.Resume, PauseAction.Undo, PauseAction.Restart, PauseAction.Help, PauseAction.Settings, PauseAction.Quit];
+
+    /// <summary>
+    /// The Classic theme's □ menu, in order: the original's Undo, Restart, Help and Quit, with Community's Settings before
+    /// Quit. Like the original's it has no Resume: Backspace, F or Esc closes it.
+    /// </summary>
+    internal static readonly PauseAction[] ClassicPauseActions = [PauseAction.Undo, PauseAction.Restart, PauseAction.Help, PauseAction.Settings, PauseAction.Quit];
+
+    /// <summary>The Classic theme's help pages: the original's rules, then Community's controls.</summary>
+    internal const int ClassicHelpPages = 2;
+
+    /// <summary>What can be done when an imported pack's id is already taken, in order.</summary>
+    internal static readonly string[] ImportChoiceItems = ["Replace It", "Keep Both", "Cancel"];
+
+    /// <summary>
+    /// The trademark and affiliation notice, as the credits show it. A shorter form sits on the title screen.
+    /// </summary>
+    internal const string Notice = "Inspired by Puzzle Boy (Atlus) and its 3D version in Shin Megami Tensei III: Nocturne. Puzzle Boy, Shin Megami Tensei and Nocturne are trademarks of ATLUS and SEGA. This is an independent fan project, not affiliated with or endorsed by either company. This download contains no ATLUS or SEGA assets.";
+
+    /// <summary>The credit for the Classic theme's works, which the player imports from their own copy.</summary>
+    internal const string ClassicCredit = "Classic theme: board, Jack-o'-Lantern, backdrop, music and sound effects © ATLUS / SEGA, read from your own copy of Shin Megami Tensei III Nocturne HD Remaster; not included with this game.";
+
+    /// <summary>Every library the game ships, by package, with its license; THIRD_PARTY_NOTICES.txt has the texts.</summary>
+    internal const string Libraries = "MonoGame.Framework.DesktopGL (Ms-PL), SDL2 from MonoGame.Library.SDL and FontStashSharp.MonoGame, FontStashSharp.Base and FontStashSharp.Rasterizers.StbTrueTypeSharp (zlib), OpenAL Soft from MonoGame.Library.OpenAL (LGPL 2.0 or later), StbTrueTypeSharp and StbImageSharp (public domain), and NVorbis, Cyotek.Drawing.BitmapFont, AssetsTools.NET, Fmod5Sharp, NAudio.Core, OggVorbisEncoder, IndexRange and Microsoft.Bcl.Memory (MIT). Their notices are in THIRD_PARTY_NOTICES.txt.";
+
+    /// <summary>
+    /// The game's version and the commit it was built from, such as <c>0.1.0+f7dab35</c>; just the version when the build
+    /// had no git checkout.
+    /// </summary>
+    internal static readonly string Version = ShortVersion(typeof(CommunityGame).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown");
+
+    // Stage select shows this many rows and scrolls the rest.
+    private const int SelectRows = 9;
+
+    private static readonly MenuLayout TitleMenu = new(96, 300, 400, 54);
+    private static readonly MenuLayout PauseMenu = new(470, 262, 340, 50);
+
+    // The original's □ menu: rows 58 units apart from y 164, its panel from x 90, 516 wide, in the 1920×1080 layout.
+    private static readonly MenuLayout ClassicPauseMenu = new(90 * 2 / 3f, 164 * 2 / 3f, 516 * 2 / 3f, 58 * 2 / 3f);
+    private static readonly MenuLayout SettingsLayout = new(240, 130, 800, 40);
+    private static readonly MenuLayout ConfirmLayout = new(490, 380, 300, 54);
+    private static readonly MenuLayout SelectMenu = new(72, 150, 580, 50);
+    private static readonly MenuLayout ImportChoiceLayout = new(490, 386, 300, 50);
+
+    // Credits run nearly to the bottom, so their Back sits lower.
+    private static readonly MenuLayout CreditsBack = new(540, 652, 200, 54);
+
+    /// <summary>Shortens the full commit hash after the <c>+</c> of an informational version to seven characters.</summary>
+    internal static string ShortVersion(string informational) =>
+        informational.IndexOf('+') is var plus and >= 0 && informational.Length > plus + 8 ? informational[..(plus + 8)] : informational;
+
+    /// <summary>Where stage <paramref name="index"/> of <paramref name="stages"/> stands in the player's progress.</summary>
+    internal static StageStatus StatusOf(SaveData data, IReadOnlyList<Content.PackStage> stages, int index) =>
+        data.IsCompleted(stages[index].Id) ? StageStatus.Cleared : data.IsUnlocked(stages, index) ? StageStatus.Open : StageStatus.Locked;
+
+    private void UpdateTitle(Controls controls)
+    {
+        if (Cancelled(controls))
+        {
+            // Back on the title only points at Quit; it never quits by itself.
+            if (_titleMenu.Set(TitleItems.Length - 1))
+            {
+                Sound(Sfx.MenuMove);
+            }
+
+            return;
+        }
+
+        switch (RunMenu(_titleMenu, controls, TitleMenu))
+        {
+            case 0:
+                var (pack, index) = _save.Data.NextToPlay(_manifest.Packs);
+                StartStage(pack, index);
+                break;
+            case 1:
+                FocusNextStage();
+                _nav.Open(Screen.StageSelect);
+                break;
+            case 2:
+                OpenEditor();
+                break;
+            case 3:
+                OpenSettings();
+                break;
+            case 4:
+                _nav.Open(Screen.Credits);
+                break;
+            case 5:
+                Exit();
+                break;
+        }
+    }
+
+    /// <summary>Focuses the stage Play would start, so stage select opens where the player left off.</summary>
+    private void FocusNextStage()
+    {
+        LoadSelectPacks();
+        (_importStatus, _importPending) = (null, null);
+        var (pack, index) = _save.Data.NextToPlay(_manifest.Packs);
+        ShowTab(_selectPacks.IndexOf(pack), index);
+    }
+
+    /// <summary>
+    /// Stage select's tabs: each bundled pack, the imported packs, the classic campaigns when the player imported them,
+    /// then the player's own stages, all read afresh from the data folder. The Import tab comes after them, at
+    /// <see cref="ImportTab"/>.
+    /// </summary>
+    private void LoadSelectPacks()
+    {
+        _importedPacks = PackArchive.LoadImported(_save.Folder, PackArchive.Reserved(_manifest.Packs), []);
+        _classicProblems.Clear();
+        var classic = ClassicStages.Load(_save.Folder, _classicProblems);
+        _selectPacks = [.. _manifest.Packs.Where(p => p.Stages.Count > 0), .. _importedPacks.Where(p => p.Stages.Count > 0), .. classic, CustomStages.AsPack(CustomStages.List(_save.Folder))];
+        _packSuffixes = TabStrip.Suffixes([.. _selectPacks.Select(p => p.Title)]);
+    }
+
+    /// <summary>Shows tab <paramref name="tab"/> of stage select with stage <paramref name="focus"/> focused.</summary>
+    private void ShowTab(int tab, int focus)
+    {
+        _selectTab = tab;
+        _importZips = tab == ImportTab ? ListImports() : [];
+        _selectable = tab == ImportTab ? [] : [.. _selectPacks[tab].Stages.Select((_, i) => (_selectPacks[tab], i))];
+        _selectMenu = new MenuList(Math.Max(1, _selectable.Count + _importZips.Count));
+        _selectMenu.Set(Math.Clamp(focus, 0, _selectMenu.Count - 1));
+        _selectScroll = 0;
+        KeepFocusVisible();
+    }
+
+    /// <summary>The archives in the imports folder, which is made here so the player can find it.</summary>
+    private List<string> ListImports()
+    {
+        try
+        {
+            Directory.CreateDirectory(PackArchive.ImportsFolder(_save.Folder));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // The tab still says where the folder should be.
+        }
+
+        return PackArchive.ListImports(_save.Folder);
+    }
+
+    /// <summary>Imports <paramref name="zip"/>: on success opens the new pack's tab, and on a taken id asks what to do.</summary>
+    private void RunImport(string zip, ImportChoice choice)
+    {
+        var result = PackArchive.Import(zip, _save.Folder, PackArchive.ReadKnown(), PackArchive.Reserved(_manifest.Packs), choice);
+        _importStatus = string.Join(" ", [result.Message, .. result.Warnings]);
+        _importPending = result.Conflict ? zip : null;
+        if (result.Conflict)
+        {
+            _importMenu = new MenuList(ImportChoiceItems.Length);
+            return;
+        }
+
+        LoadSelectPacks();
+        var tab = _selectPacks.FindIndex(p => p.PackId == result.PackId);
+        ShowTab(tab >= 0 ? tab : ImportTab, 0);
+        Sound(result.PackId is null ? Sfx.Buzz : Sfx.Goal);
+    }
+
+    private void KeepFocusVisible()
+    {
+        var focus = _selectMenu.Focus;
+        _selectScroll = Math.Clamp(_selectScroll, Math.Max(0, focus - SelectRows + 1), focus);
+        _selectScroll = Math.Clamp(_selectScroll, 0, Math.Max(0, _selectable.Count - SelectRows));
+    }
+
+    private void UpdateStageSelect(Controls controls)
+    {
+        if (_importPending is { } pending)
+        {
+            var pick = Cancelled(controls) ? 2 : RunMenu(_importMenu, controls, ImportChoiceLayout);
+            if (pick is 0 or 1)
+            {
+                RunImport(pending, pick == 0 ? ImportChoice.Replace : ImportChoice.KeepBoth);
+            }
+            else if (pick == 2)
+            {
+                _importPending = null;
+                _importStatus = "Nothing was imported.";
+                Sound(Sfx.Cancel);
+            }
+
+            return;
+        }
+
+        if (Cancelled(controls))
+        {
+            GoBack();
+            return;
+        }
+
+        // Left and Right, or a click on a tab, change the pack.
+        var clickedTab = _clicked ? _tabBoxes.FirstOrDefault(t => t.Box.Contains(_pointer), (default, -1)).Tab : -1;
+        if (_menuLeft || _menuRight || (clickedTab >= 0 && clickedTab != _selectTab))
+        {
+            var tab = clickedTab >= 0 ? clickedTab : Math.Clamp(_selectTab + (_menuRight ? 1 : -1), 0, ImportTab);
+            if (tab != _selectTab)
+            {
+                _importStatus = null;
+                ShowTab(tab, 0);
+                Sound(Sfx.MenuMove);
+            }
+
+            return;
+        }
+
+        var choice = RunMenu(_selectMenu, controls, SelectMenu, _selectScroll, SelectRows);
+        KeepFocusVisible();
+        if (_selectTab == ImportTab)
+        {
+            if (choice is { } zip && zip < _importZips.Count)
+            {
+                RunImport(_importZips[zip], ImportChoice.Ask);
+            }
+
+            return;
+        }
+
+        if (choice is { } chosen && chosen < _selectable.Count)
+        {
+            var (pack, index) = _selectable[chosen];
+            if (_save.Data.IsUnlocked(pack.Stages, index))
+            {
+                StartStage(pack, index);
+            }
+            else
+            {
+                Sound(Sfx.Buzz);
+            }
+        }
+    }
+
+    private void UpdatePaused(Controls controls)
+    {
+        if (_helpOpen)
+        {
+            UpdateHelp(controls);
+            return;
+        }
+
+        if (Cancelled(controls) || controls.Pressed(Command.Pause))
+        {
+            GoBack();
+            return;
+        }
+
+        var (menu, actions, layout) = ClassicMenus ? (_classicPauseMenu, ClassicPauseActions, ClassicPauseMenu) : (_pauseMenu, PauseActions, PauseMenu);
+        if (RunMenu(menu, controls, layout) is not { } chosen)
+        {
+            return;
+        }
+
+        switch (actions[chosen])
+        {
+            case PauseAction.Resume:
+                _nav.Back();
+                break;
+            case PauseAction.Undo when _session!.Undo():
+                // The menu stays open so several undos can follow.
+                _classic?.Clock.Undid();
+                break;
+            case PauseAction.Undo:
+                Sound(Sfx.Buzz);
+                break;
+            case PauseAction.Restart:
+                _session!.Restart();
+                _nav.Back();
+                break;
+            case PauseAction.Help:
+                (_helpOpen, _helpPage) = (true, 0);
+                break;
+            case PauseAction.Settings:
+                OpenSettings();
+                break;
+            case PauseAction.Quit when _playtest:
+                EndPlaytest("Playtest stopped.");
+                break;
+            case PauseAction.Quit:
+                _session = null;
+                _nav.ReturnTo(Screen.Title);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// A tick of help over the pause menu. Back, F or a click closes it. In the Classic theme, Right or Confirm turns to
+    /// the next page and Left back, and Confirm on the last page closes it; Community's single page closes on Confirm.
+    /// </summary>
+    private void UpdateHelp(Controls controls)
+    {
+        var pages = ClassicMenus ? ClassicHelpPages : 1;
+        var turn = _menuRight || (controls.Pressed(Command.Confirm) && _helpPage + 1 < pages) ? 1 : _menuLeft ? -1 : 0;
+        if (turn != 0 && pages > 1)
+        {
+            var page = Math.Clamp(_helpPage + turn, 0, pages - 1);
+            if (page != _helpPage)
+            {
+                _helpPage = page;
+                Sound(Sfx.MenuMove);
+            }
+
+            return;
+        }
+
+        if (Cancelled(controls) || controls.Pressed(Command.Confirm) || controls.Pressed(Command.Pause) || _clicked)
+        {
+            _helpOpen = false;
+            Sound(Sfx.Cancel);
+        }
+    }
+
+    private void OpenSettings()
+    {
+        _settingsMenu.Set(0);
+        _confirmReset = false;
+        _nav.Open(Screen.Settings);
+    }
+
+    private void UpdateSettings(Controls controls)
+    {
+        if (_confirmReset)
+        {
+            UpdateResetConfirm(controls);
+            return;
+        }
+
+        if (Cancelled(controls))
+        {
+            GoBack();
+            return;
+        }
+
+        var row = _settingsMenu.Focus;
+        if ((_menuLeft || _menuRight) && SettingsMenu.HasValue(row))
+        {
+            ChangeSetting(row, _menuLeft ? -1 : 1, wrap: false);
+        }
+
+        if (RunMenu(_settingsMenu, controls, SettingsLayout) is not { } chosen)
+        {
+            return;
+        }
+
+        if (SettingsMenu.HasValue(chosen))
+        {
+            // A click on the left half of the value steps it down; anything else steps it up, wrapping.
+            var valueLeft = SettingsLayout.Left + SettingsLayout.Width - 330;
+            var down = _clicked && _pointer.X >= valueLeft && _pointer.X < valueLeft + 165;
+            ChangeSetting(chosen, down ? -1 : 1, wrap: true);
+            return;
+        }
+
+        switch (chosen)
+        {
+            case SettingsMenu.ImportRow:
+                OpenImportClassic();
+                break;
+            case SettingsMenu.ResetRow:
+                _confirmReset = true;
+                _confirmMenu.Set(0);
+                break;
+            case SettingsMenu.BackRow:
+                _nav.Back();
+                break;
+        }
+    }
+
+    private void UpdateResetConfirm(Controls controls)
+    {
+        if (Cancelled(controls))
+        {
+            _confirmReset = false;
+            Sound(Sfx.Cancel);
+            return;
+        }
+
+        switch (RunMenu(_confirmMenu, controls, ConfirmLayout))
+        {
+            case 0:
+                _confirmReset = false;
+                break;
+            case 1:
+                _save.Data.Settings = new GameSettings();
+                ApplySettings(display: true);
+                _save.Save();
+                _confirmReset = false;
+                RequestSkin();
+                break;
+        }
+    }
+
+    /// <summary>Changes a setting, puts it into effect at once and saves it.</summary>
+    private void ChangeSetting(int row, int by, bool wrap)
+    {
+        if (!SettingsMenu.Adjust(_save.Data.Settings, row, by, wrap))
+        {
+            Sound(Sfx.Buzz);
+            return;
+        }
+
+        ApplySettings(display: row is 0 or 1);
+        _save.Save();
+        Sound(Sfx.MenuMove);
+        if (row == SettingsMenu.ThemeRow)
+        {
+            RequestSkin();
+        }
+    }
+
+    private void DrawTitle()
+    {
+        DrawDrift(0.7f);
+
+        // The Classic theme's interface brings the original's Jack-o'-Lantern; Community's own is Pixel Jack.
+        if (_ui.Skin?.Character(Motion, GraphicsDevice.Viewport.AspectRatio) != true)
+        {
+            DrawTitleJack();
+        }
+
+        _ui.Begin();
+        _ui.ShadowText(Font.TitleBold, 104, "PUZZLE BOY", new Vector2(88, 64), _ui["cream"], _ui["pumpkinShade"], spacing: 2, depth: 7);
+        _ui.Text(Font.Title, 30, "COMMUNITY EDITION", new Vector2(96, 196), _ui["bandOnDark"], spacing: 5);
+        DrawMenu(_titleMenu, TitleItems, TitleMenu, 30);
+
+        // Esc on the title only points at Quit, so the hints don't offer it as Back.
+        _ui.Hints(MenuHints(("Arrows", "Choose"), ("Enter", "Select")), 640, 636, _ui["cream"], 17);
+        _ui.Text(Font.Body, 15, "A fan project inspired by Puzzle Boy. Not affiliated with or endorsed by ATLUS or SEGA.", new Vector2(640, 690), _ui["cream"] * 0.6f, 0.5f);
+        _ui.End();
+    }
+
+    private void DrawStageSelect()
+    {
+        DrawDrift(0.6f);
+        _ui.Begin();
+        Heading("STAGE SELECT");
+        DrawTabs();
+        if (_selectTab == ImportTab)
+        {
+            DrawImportTab();
+            _ui.End();
+            return;
+        }
+
+        var layout = SelectMenu;
+        if (_importStatus is not null)
+        {
+            _ui.Text(Font.Body, 17, _importStatus, new Vector2(640, 628), _ui["ember"], 0.5f);
+        }
+        else if (IsClassic(SelectPack) && _classicProblems.Count > 0)
+        {
+            // The rest of the classic stages still play; this says which ones didn't load.
+            _ui.Text(Font.Body, 17, Shorten($"Left out: {string.Join(" ", _classicProblems)}", 120), new Vector2(640, 628), _ui["ember"], 0.5f);
+        }
+
+        if (_selectable.Count == 0)
+        {
+            _ui.Wrapped(Font.Body, 22, "No stages of your own yet. Make one with the Level Editor on the title screen; each one you save shows up here.", new Vector2(layout.Left + 20, layout.Top + 12), layout.Width - 40, _ui["cream"] * 0.85f);
+        }
+
+        for (var row = 0; row < SelectRows && _selectScroll + row < _selectable.Count; row++)
+        {
+            var i = _selectScroll + row;
+            var (pack, index) = _selectable[i];
+            var top = layout.Top + (row * layout.Spacing);
+            var focused = i == _selectMenu.Focus;
+            if (focused)
+            {
+                FocusBar(layout, top);
+            }
+
+            var status = StatusOf(_save.Data, pack.Stages, index);
+            var ink = focused ? FocusInk : status == StageStatus.Locked ? _ui["cream"] * 0.55f : _ui["cream"] * 0.92f;
+            StatusIcon(status, layout.Left + 14, top + 13, 24, ink);
+            var number = (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _ui.Text(Font.BodyBold, 22, number, new Vector2(layout.Left + 72, top + 12), ink, 1);
+            _ui.Text(Font.BodyBold, 22, pack.Stages[index].Title, new Vector2(layout.Left + 86, top + 12), ink);
+            _ui.Text(Font.Title, 16, StatusWord(status), new Vector2(layout.Left + layout.Width - 16, top + 16), ink, 1, 1);
+        }
+
+        // Chevrons say there's more above or below; the counter says where the focus is.
+        var middle = layout.Left + (layout.Width / 2);
+        if (_selectScroll > 0)
+        {
+            Chevron(middle, layout.Top - 10, up: true);
+        }
+
+        if (_selectScroll + SelectRows < _selectable.Count)
+        {
+            Chevron(middle, layout.Top + (SelectRows * layout.Spacing) + 6, up: false);
+        }
+
+        if (_selectable.Count > 0)
+        {
+            _ui.Text(Font.Title, 16, $"{_selectMenu.Focus + 1} / {_selectable.Count}", new Vector2(layout.Left + layout.Width, layout.Top + (SelectRows * layout.Spacing) + 4), _ui["cream"] * 0.7f, 1, 1);
+            DrawStageDetails();
+        }
+
+        _ui.Hints(MenuHints(("Up Down", "Choose"), ("Left Right", "Pack"), ("Enter", "Play"), ("Esc", "Back")), 640, 660, _ui["cream"], 17);
+        _ui.End();
+    }
+
+    /// <summary>
+    /// The packs and Import as tabs over the list, the open one underlined; the boxes are kept for clicks. With more tabs
+    /// than fit, the strip shows whole tabs around the open one and an arrow on each side that has more.
+    /// </summary>
+    private void DrawTabs()
+    {
+        const float Left = 78, Right = 1240, Gap = 40, Top = 114;
+        _tabBoxes.Clear();
+        var labels = _selectPacks.Select((p, i) => p.PackId == CustomStages.PackId ? $"{p.Title.ToUpperInvariant()} ({p.Stages.Count})" : Shorten(p.Title.ToUpperInvariant(), 20) + _packSuffixes[i]).Append("+ IMPORT").ToList();
+        var widths = labels.Select(l => _ui.Measure(Font.Title, 17, l, 2).X).ToList();
+        _tabFirst = TabStrip.First(widths, Gap, Right - Left, _selectTab, _tabFirst);
+        var count = TabStrip.Count(widths, Gap, Right - Left, _tabFirst);
+        var x = Left;
+        for (var tab = _tabFirst; tab < _tabFirst + count; tab++)
+        {
+            var open = tab == _selectTab;
+            var size = _ui.Text(Font.Title, 17, labels[tab], new Vector2(x, Top), open ? _ui["ember"] : _ui["cream"] * 0.6f, spacing: 2);
+            if (open)
+            {
+                _ui.Rect(x, Top + 22, size.X, 3, _ui["ember"]);
+            }
+
+            _tabBoxes.Add((new RectangleF(x - 6, Top - 6, size.X + 12, 34), tab));
+            x += widths[tab] + Gap;
+        }
+
+        if (_tabFirst > 0)
+        {
+            TabArrow(Left - 14, Top + 10, left: true);
+        }
+
+        if (_tabFirst + count < labels.Count)
+        {
+            TabArrow(Right + 16, Top + 10, left: false);
+        }
+    }
+
+    /// <summary>Says more tabs lie past the strip's left or right edge: the skin's cursor, or else a chevron.</summary>
+    private void TabArrow(float x, float y, bool left)
+    {
+        if (_ui.Cursor(x, y, 22, left: left))
+        {
+            return;
+        }
+
+        var (tip, foot) = left ? (x - 4, x + 4) : (x + 4, x - 4);
+        _ui.Line(new Vector2(foot, y - 10), new Vector2(tip, y), 3, _ui["cream"] * 0.7f);
+        _ui.Line(new Vector2(tip, y), new Vector2(foot, y + 10), 3, _ui["cream"] * 0.7f);
+    }
+
+    /// <summary>The focused stage's card: its state, a preview of how it starts and its best clear.</summary>
+    private void DrawStageDetails()
+    {
+        var (pack, index) = _selectable[_selectMenu.Focus];
+        var stage = pack.Stages[index];
+        var status = StatusOf(_save.Data, pack.Stages, index);
+        var (x, y, width, height) = (690f, 150f, 520f, 460f);
+        _ui.Panel(x, y, width, height, _ui["ink"] * 0.78f);
+        _ui.Text(Font.Title, 16, $"{pack.Title.ToUpperInvariant()}{_packSuffixes[_selectTab]}  ·  STAGE {index + 1} OF {pack.Stages.Count}", new Vector2(x + 24, y + 18), _ui["bandOnDark"], spacing: 1);
+        _ui.Text(Font.BodyBold, 30, stage.Title, new Vector2(x + 24, y + 40), _ui["cream"]);
+        StatusIcon(status, x + 24, y + 88, 22, _ui["cream"]);
+        _ui.Text(Font.BodyBold, 19, status switch
+        {
+            StageStatus.Cleared => "Cleared",
+            StageStatus.Open => "Not cleared yet",
+            _ => "Locked",
+        }, new Vector2(x + 54, y + 88), _ui["cream"]);
+
+        var (px, py, pw, ph) = (x + 24, y + 124, width - 48, 260f);
+        _ui.Panel(px, py, pw, ph, _ui["night"]);
+        if (status == StageStatus.Locked)
+        {
+            StatusIcon(StageStatus.Locked, px + (pw / 2) - 24, py + (ph / 2) - 58, 48, _ui["cream"] * 0.6f);
+            _ui.Text(Font.Body, 20, $"Clear “{pack.Stages[index - 1].Title}” to open it.", new Vector2(px + (pw / 2), py + (ph / 2) + 4), _ui["cream"] * 0.8f, 0.5f);
+        }
+        else
+        {
+            DrawPreview(stage.Stage, px + 8, py + 8, pw - 16, ph - 16);
+        }
+
+        var best = _save.Data.Stages.GetValueOrDefault(stage.Id);
+        var line = best is { BestMoves: { } moves, BestTime: { } time }
+            ? $"Best: {moves} {(moves == 1 ? "move" : "moves")}  ·  {FormatTime(time)}"
+            : best is { Completed: true } ? "Best: not recorded" : "Best: none yet";
+        _ui.Text(Font.BodyBold, 21, line, new Vector2(x + 24, y + 404), _ui["cream"]);
+        if (_importedPacks.Contains(pack))
+        {
+            _ui.Text(Font.Body, 16, Shorten($"Imported pack by {pack.Creator}  ·  {pack.License}", 60), new Vector2(x + 24, y + 434), _ui["cream"] * 0.8f);
+        }
+        else if (IsClassic(pack))
+        {
+            _ui.Text(Font.Body, 16, "From your own copy of Nocturne  ·  never shared or exported", new Vector2(x + 24, y + 434), _ui["cream"] * 0.8f);
+        }
+    }
+
+    /// <summary>True for a classic campaign imported from the player's own copy of Nocturne.</summary>
+    private static bool IsClassic(Content.StagePack? pack) => pack?.PackId is ClassicStages.OriginalPackId or ClassicStages.BonusPackId;
+
+    /// <summary>The Import tab: the archives in the imports folder, where that folder is, and what the last import did.</summary>
+    private void DrawImportTab()
+    {
+        var layout = SelectMenu;
+        if (_importZips.Count == 0)
+        {
+            _ui.Wrapped(Font.Body, 22, "No packs to import yet. Put a pack's .zip file in the folder shown on the right, then open this tab again.", new Vector2(layout.Left + 20, layout.Top + 12), layout.Width - 40, _ui["cream"] * 0.85f);
+        }
+
+        for (var row = 0; row < SelectRows && _selectScroll + row < _importZips.Count; row++)
+        {
+            var i = _selectScroll + row;
+            var top = layout.Top + (row * layout.Spacing);
+            var focused = i == _selectMenu.Focus;
+            if (focused)
+            {
+                FocusBar(layout, top);
+            }
+
+            _ui.Text(Font.BodyBold, 22, Shorten(Path.GetFileName(_importZips[i]), 40), new Vector2(layout.Left + 20, top + 12), focused ? FocusInk : _ui["cream"] * 0.92f);
+        }
+
+        var (x, y, width) = (690f, 150f, 520f);
+        _ui.Panel(x, y, width, 460, _ui["ink"] * 0.78f);
+        _ui.Text(Font.Title, 16, "IMPORT A PACK", new Vector2(x + 24, y + 18), _ui["bandOnDark"], spacing: 1);
+        _ui.Text(Font.BodyBold, 30, "Play someone's stages", new Vector2(x + 24, y + 40), _ui["cream"]);
+        _ui.Text(Font.Body, 19, "Put a pack's .zip file in this folder:", new Vector2(x + 24, y + 96), _ui["cream"]);
+
+        var below = y + 140 + DrawPath(Path.GetFullPath(PackArchive.ImportsFolder(_save.Folder)), new Vector2(x + 24, y + 128), width - 48, 17, _ui["ember"]);
+        _ui.Wrapped(Font.Body, 19, "Enter imports the focused pack. Everything in it is checked first: its size, its file names and every stage. Nothing in a pack is ever run.", new Vector2(x + 24, below), width - 48, _ui["cream"]);
+        if (_importStatus is not null && _importPending is null)
+        {
+            _ui.Wrapped(Font.Body, 18, _importStatus, new Vector2(x + 24, y + 320), width - 48, _ui["ember"]);
+        }
+
+        _ui.Hints(MenuHints(("Up Down", "Choose"), ("Left Right", "Pack"), ("Enter", "Import"), ("Esc", "Back")), 640, 660, _ui["cream"], 17);
+        if (_importPending is not null)
+        {
+            _ui.Rect(0, 0, VirtualScreen.Width, VirtualScreen.Height, _ui["ink"] * 0.6f);
+            _ui.Panel(400, 220, 480, 340, _ui["hat"] * 0.97f);
+            _ui.Text(Font.TitleBold, 28, "ALREADY IMPORTED", new Vector2(640, 246), _ui["cream"], 0.5f, 2);
+            _ui.Wrapped(Font.Body, 19, _importStatus ?? "", new Vector2(430, 292), 420, _ui["cream"]);
+            DrawMenu(_importMenu, ImportChoiceItems, ImportChoiceLayout, 24);
+        }
+    }
+
+    /// <summary>
+    /// Draws <paramref name="path"/> in lines no wider than <paramref name="width"/>, broken after its folder separators,
+    /// since a path has no spaces to wrap at. Returns the height drawn.
+    /// </summary>
+    private float DrawPath(string path, Vector2 at, float width, float size, Color color)
+    {
+        var lines = new List<string> { "" };
+        foreach (var part in System.Text.RegularExpressions.Regex.Split(path, @"(?<=[\\/])"))
+        {
+            if (lines[^1].Length > 0 && _ui.Measure(Font.BodyBold, size, lines[^1] + part).X > width)
+            {
+                lines.Add("");
+            }
+
+            lines[^1] += part;
+        }
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            _ui.Text(Font.BodyBold, size, lines[i], at + new Vector2(0, i * size * 1.3f), color);
+        }
+
+        return lines.Count * size * 1.3f;
+    }
+
+    /// <summary><paramref name="text"/> cut to <paramref name="max"/> characters with dots, for a line that must fit.</summary>
+    private static string Shorten(string text, int max) => text.Length <= max ? text : $"{text[..(max - 3)].TrimEnd()}...";
+
+    /// <summary>
+    /// A top-down picture of how <paramref name="stage"/> starts, fitted into the box: walls, floor, holes, blocks in their
+    /// group's color and pattern, swivels, the goal and the characters, with +y up as in play. It shows nothing of a
+    /// solution.
+    /// </summary>
+    private void DrawPreview(Stage stage, float x, float y, float width, float height)
+    {
+        var board = new Board(stage);
+        var (minX, minY, maxX, maxY) = BoardRenderer.PlayBounds(board);
+        (minX, minY, maxX, maxY) = (Math.Max(0, minX - 1), Math.Max(0, minY - 1), Math.Min(Stage.Width - 1, maxX + 1), Math.Min(Stage.Height - 1, maxY + 1));
+        var cell = MathF.Floor(Math.Min(Math.Min(width / (maxX - minX + 1), height / (maxY - minY + 1)), 30));
+        var left = x + ((width - ((maxX - minX + 1) * cell)) / 2);
+        var top = y + ((height - ((maxY - minY + 1) * cell)) / 2);
+        var (floor, wall) = PreviewTones(_save.Data.Settings.HighContrast);
+        Vector2 At(int cx, int cy) => new(left + ((cx - minX) * cell), top + ((maxY - cy) * cell));
+
+        for (var cy = minY; cy <= maxY; cy++)
+        {
+            for (var cx = minX; cx <= maxX; cx++)
+            {
+                var p = At(cx, cy);
+                DrawTile(Tile.FromCell(board[cx, cy]), p.X, p.Y, cell, floor, wall, _save.Data.Settings.HighContrast || (cx + cy) % 2 == 0);
+            }
+        }
+
+        var goal = At(board.Goal.X, board.Goal.Y);
+        DrawGoal(goal.X, goal.Y, cell);
+        foreach (var character in board.Characters.Where(c => c.Visible))
+        {
+            var p = At(character.X, character.Y);
+            DrawMiniJack(p.X, p.Y, cell);
+        }
+    }
+
+    /// <summary>The floor and wall colors of a top-down picture of a stage, starker in high contrast.</summary>
+    private (Color Floor, Color Wall) PreviewTones(bool highContrast) =>
+        (Color.Lerp(_ui["hatOnDark"], _ui["cream"], highContrast ? 0.66f : 0.5f), highContrast ? _ui["ink"] : Color.Lerp(_ui["hat"], _ui["night"], 0.3f));
+
+    /// <summary>
+    /// <paramref name="tile"/> seen from above in a square <paramref name="cell"/> wide: wall, floor (the darker check
+    /// unless <paramref name="plainFloor"/>), a hole, and a block or swivel part in its group's color and pattern. A part
+    /// over a hole leaves a black rim.
+    /// </summary>
+    private void DrawTile(Tile tile, float x, float y, float cell, Color floor, Color wall, bool plainFloor)
+    {
+        if (tile.Kind == CellKind.Wall)
+        {
+            _ui.Rect(x, y, cell, cell, wall);
+            return;
+        }
+
+        _ui.Rect(x, y, cell, cell, plainFloor ? floor : Color.Lerp(floor, _ui["hatOnDark"], 0.15f));
+        if (tile.Kind == CellKind.Hole || tile.OverHole)
+        {
+            _ui.Rect(x + 2, y + 2, cell - 4, cell - 4, Color.Black);
+        }
+
+        var inset = tile.OverHole ? MathF.Round(cell * 0.16f) : 0;
+        var color = _board.GroupColor(Math.Max(1, tile.Group));
+        static Rectangle Source(int index) => new(index * Atlas.TileSize, 0, Atlas.TileSize, Atlas.TileSize);
+        switch (tile.Kind)
+        {
+            case CellKind.Block:
+                _ui.Sprite(_board.AtlasTexture, Source(BoardRenderer.GroupPattern(tile.Group)), x + 1 + inset, y + 1 + inset, cell - 2 - (2 * inset), cell - 2 - (2 * inset), color);
+                break;
+            case CellKind.SwivelArm:
+                _ui.Sprite(_board.AtlasTexture, Source(BoardRenderer.GroupPattern(tile.Group)), x + 4 + inset, y + 4 + inset, cell - 8 - (2 * inset), cell - 8 - (2 * inset), color);
+                break;
+            case CellKind.SwivelCenter:
+                _ui.Sprite(_board.AtlasTexture, Source(Atlas.Pivot), x + 2 + inset, y + 2 + inset, cell - 4 - (2 * inset), cell - 4 - (2 * inset), Color.Lerp(color, _ui["ink"], 0.3f));
+                break;
+        }
+    }
+
+    /// <summary>The goal seen from above in a square <paramref name="cell"/> wide.</summary>
+    private void DrawGoal(float x, float y, float cell)
+    {
+        _ui.Panel(x + (cell * 0.15f), y + (cell * 0.15f), cell * 0.7f, cell * 0.7f, _ui["ember"]);
+        _ui.Panel(x + (cell * 0.32f), y + (cell * 0.32f), cell * 0.36f, cell * 0.36f, _ui["pumpkinShade"]);
+    }
+
+    /// <summary>Pixel Jack in miniature, a pumpkin under a hat, in a square <paramref name="cell"/> wide.</summary>
+    private void DrawMiniJack(float x, float y, float cell)
+    {
+        _ui.Panel(x + (cell * 0.18f), y + (cell * 0.36f), cell * 0.64f, cell * 0.52f, _ui["pumpkin"]);
+        _ui.Rect(x + (cell * 0.3f), y + (cell * 0.12f), cell * 0.4f, cell * 0.26f, _ui["hatOnDark"]);
+        _ui.Rect(x + (cell * 0.14f), y + (cell * 0.32f), cell * 0.72f, cell * 0.08f, _ui["band"]);
+    }
+
+    /// <summary>The word beside a stage's icon, so its state never depends on color or shape alone.</summary>
+    private static string StatusWord(StageStatus status) => status switch
+    {
+        StageStatus.Cleared => "CLEARED",
+        StageStatus.Open => "NEW",
+        _ => "LOCKED",
+    };
+
+    /// <summary>A stage state's icon in a square of <paramref name="size"/>: a check, an open ring or a padlock.</summary>
+    private void StatusIcon(StageStatus status, float x, float y, float size, Color color)
+    {
+        var s = size;
+        switch (status)
+        {
+            case StageStatus.Cleared:
+                _ui.Line(new Vector2(x + (0.1f * s), y + (0.55f * s)), new Vector2(x + (0.4f * s), y + (0.85f * s)), 0.16f * s, color);
+                _ui.Line(new Vector2(x + (0.34f * s), y + (0.85f * s)), new Vector2(x + (0.92f * s), y + (0.18f * s)), 0.16f * s, color);
+                break;
+            case StageStatus.Open:
+                for (var i = 0; i < 12; i++)
+                {
+                    var (a, b) = (i * MathF.Tau / 12, (i + 1) * MathF.Tau / 12);
+                    var c = new Vector2(x + (s / 2), y + (s / 2));
+                    _ui.Line(c + (new Vector2(MathF.Cos(a), MathF.Sin(a)) * s * 0.36f), c + (new Vector2(MathF.Cos(b), MathF.Sin(b)) * s * 0.36f), 0.12f * s, color);
+                }
+
+                break;
+            default:
+                _ui.Rect(x + (0.26f * s), y + (0.08f * s), 0.12f * s, 0.4f * s, color);
+                _ui.Rect(x + (0.62f * s), y + (0.08f * s), 0.12f * s, 0.4f * s, color);
+                _ui.Rect(x + (0.26f * s), y + (0.04f * s), 0.48f * s, 0.12f * s, color);
+                _ui.Rect(x + (0.14f * s), y + (0.44f * s), 0.72f * s, 0.52f * s, color);
+                break;
+        }
+    }
+
+    private void Chevron(float x, float y, bool up)
+    {
+        var (tip, foot) = up ? (y, y + 8) : (y + 8, y);
+        _ui.Line(new Vector2(x - 12, foot), new Vector2(x, tip), 3, _ui["cream"] * 0.7f);
+        _ui.Line(new Vector2(x, tip), new Vector2(x + 12, foot), 3, _ui["cream"] * 0.7f);
+    }
+
+    private void DrawSettings()
+    {
+        DrawDrift(0.6f);
+        _ui.Begin();
+        Heading("SETTINGS");
+        var settings = _save.Data.Settings;
+        var layout = SettingsLayout;
+        var mode = Microsoft.Xna.Framework.Graphics.GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
+        for (var row = 0; row < SettingsMenu.Labels.Length; row++)
+        {
+            var top = layout.Top + (row * layout.Spacing);
+            var focused = row == _settingsMenu.Focus;
+            if (focused)
+            {
+                FocusBar(layout, top);
+            }
+
+            var ink = focused ? FocusInk : _ui["cream"] * 0.92f;
+            var textTop = top + ((layout.Spacing - 26) / 2);
+            _ui.Text(Font.BodyBold, 21, SettingsMenu.Labels[row], new Vector2(layout.Left + 36, textTop), ink);
+            if (!SettingsMenu.HasValue(row))
+            {
+                continue;
+            }
+
+            var right = layout.Left + layout.Width - 24;
+            var value = SettingsMenu.Value(settings, row, (mode.Width, mode.Height));
+            if (SettingsMenu.IsSlider(row))
+            {
+                var level = row == 3 ? settings.MusicVolume : settings.SfxVolume;
+                var (barX, barY) = (right - 290, top + (layout.Spacing / 2) - 5);
+                _ui.Panel(barX, barY, 200, 10, focused ? FocusInk * 0.35f : _ui["cream"] * 0.25f);
+                var fill = focused ? FocusInk : settings.Mute ? _ui["cream"] * 0.5f : _ui["ember"];
+                _ui.Panel(barX, barY, Math.Max(10, 200 * level), 10, fill);
+            }
+
+            _ui.Text(Font.BodyBold, 21, focused ? $"<  {value}  >" : value, new Vector2(right, textTop), ink, 1);
+        }
+
+        if (_sounds.Silent)
+        {
+            _ui.Text(Font.Body, 16, "No audio device was found, so the game is silent.", new Vector2(640, 626), _ui["ember"], 0.5f);
+        }
+        else if (_settingsMenu.Focus == SettingsMenu.ThemeRow)
+        {
+            _ui.Text(Font.Body, 16, "Auto plays the Classic theme when you have a classic pack (Classic Nocturne, below), and the Default theme otherwise.", new Vector2(640, 626), _ui["cream"] * 0.85f, 0.5f);
+        }
+
+        _ui.Hints(MenuHints(("Up Down", "Choose"), ("Left Right", "Change"), ("Enter", "Select"), ("Esc", "Back")), 640, 660, _ui["cream"], 17);
+        if (_confirmReset)
+        {
+            _ui.Rect(0, 0, VirtualScreen.Width, VirtualScreen.Height, _ui["ink"] * 0.6f);
+            _ui.Panel(400, 250, 480, 260, _ui["hat"] * 0.97f);
+            _ui.Text(Font.TitleBold, 28, "RESET SETTINGS?", new Vector2(640, 276), _ui["cream"], 0.5f, 2);
+            _ui.Text(Font.Body, 19, "Every setting goes back to its default.", new Vector2(640, 326), _ui["cream"], 0.5f);
+            _ui.Text(Font.Body, 19, "Your progress is kept.", new Vector2(640, 350), _ui["cream"], 0.5f);
+            DrawMenu(_confirmMenu, ["Cancel", "Reset"], ConfirmLayout, 24);
+        }
+
+        _ui.End();
+    }
+
+    private void DrawCredits()
+    {
+        DrawDrift(0.4f);
+        _ui.Begin();
+        Heading("CREDITS");
+        // Wide lines, 17 px text and tight sections leave room for UI scale 120% above Back.
+        var (x, width) = (100f, 1080f);
+        var y = 132f;
+        void Section(string title, string text)
+        {
+            _ui.Text(Font.Title, 16, title, new Vector2(x, y), _ui["ember"], spacing: 2);
+            y += 24;
+            y += _ui.Wrapped(Font.Body, 17, text, new Vector2(x, y), width, _ui["cream"], 1.25f) + 8;
+        }
+
+        Section($"PUZZLE BOY COMMUNITY EDITION {Version}", "Game, stages, Pixel Jack, music and sound by the Puzzle Boy Community authors, with block colors from the Okabe-Ito colorblind-safe palette. Code and original content under the Apache License 2.0.");
+        Section("FONTS", "Atkinson Hyperlegible by the Braille Institute of America (Elliott Scott, Megan Eiswerth, Linus Boman, Theodore Petrosky).\nSilkscreen by Jason Kottke. Both under the SIL Open Font License 1.1.");
+        Section("LIBRARIES", Libraries);
+        Section("INSPIRATION", Notice);
+        Section("CLASSIC NOCTURNE THEME", ClassicCredit);
+        DrawMenu(_backMenu, ["Back"], CreditsBack, 26);
+        _ui.End();
+    }
+
+    /// <summary>
+    /// The Classic theme's pause: the original's □ menu where it stands, with Community's Settings, and a window under it
+    /// with what Community adds: the stage, its moves and its time. Help is the original's rules page (drawn with the
+    /// HUD), then a page of Community's controls. The original HUD's bar shows the menu's or help's keys.
+    /// </summary>
+    private void DrawClassicPaused()
+    {
+        if (_helpOpen)
+        {
+            if (_helpPage == 1)
+            {
+                DrawClassicControls();
+            }
+
+            // Bottom left, beside the original bar's Cancel.
+            _ui.Hints([("A D", $"Page {_helpPage + 1} of {ClassicHelpPages}")], 150, 658, _ui["cream"], 16);
+            return;
+        }
+
+        var labels = _classic!.Skin!.OriginalMenuLabels;
+        _ui.OriginalMenu([labels[0], labels[1], labels[2], "Settings", _playtest ? "Back to Editor" : labels[3]], _classicPauseMenu.Focus);
+        var session = _session!;
+        var (x, y, width) = (60f, 334f, 344f);
+        _ui.Panel(x, y, width, 112, _ui["ink"]);
+        var where = _playtest ? "PLAYTEST" : $"{_playPack!.Title.ToUpperInvariant()}  ·  STAGE {session.Index + 1} OF {session.Count}";
+        _ui.Text(Font.Title, 15, Shorten(where, 40), new Vector2(x + 18, y + 14), _ui["bandOnDark"], spacing: 1);
+        _ui.Text(Font.BodyBold, 24, Shorten(session.Stage.Title, 26), new Vector2(x + 18, y + 38), _ui["cream"]);
+        var moves = session.Moves == 1 ? "1 move" : $"{session.Moves} moves";
+        _ui.Text(Font.Body, 18, $"{moves}  ·  {FormatTime(session.ElapsedTicks / 30.0)[..^2]}", new Vector2(x + 18, y + 76), _ui["cream"] * 0.85f);
+    }
+
+    /// <summary>The Classic theme's second help page: every control, Community's included, with the original's key prompts.</summary>
+    private void DrawClassicControls()
+    {
+        _ui.Rect(0, 0, VirtualScreen.Width, VirtualScreen.Height, Color.Black * 0.5f);
+        _ui.Panel(150, 70, 980, 560, _ui["ink"]);
+        _ui.Text(Font.TitleBold, 34, "CONTROLS", new Vector2(640, 96), _ui["cream"], 0.5f);
+        (string Keys, string Pad, string Action)[] rows =
+        [
+            ("W A S D", "D-pad / stick", "Move (hold to keep walking); arrows too"),
+            ("Q E", "LB  RB", "Turn the view"),
+            ("V", "Y", "Overhead view"),
+            ("Tab", "R3", "Scroll the view"),
+            ("F", "Start", "Menu; Esc or P too"),
+            ("Z Backspace", "B", "Undo"),
+            ("R", "Back", "Restart"),
+            ("C", "X", "Switch character"),
+            ("Space", "A", "Confirm in menus; Enter too"),
+            ("Backspace", "B", "Cancel in menus; Esc too"),
+        ];
+        var y = 150f;
+        _ui.Text(Font.Title, 15, "KEYBOARD", new Vector2(200, y), _ui["ember"], spacing: 2);
+        _ui.Text(Font.Title, 15, "CONTROLLER", new Vector2(450, y), _ui["ember"], spacing: 2);
+        y += 30;
+        foreach (var (keys, pad, action) in rows)
+        {
+            var x = 200f;
+            foreach (var key in keys.Split(' '))
+            {
+                x += _ui.KeyCap(key, new Vector2(x, y - 4), 16) + 4;
+            }
+
+            _ui.Text(Font.BodyBold, 18, pad, new Vector2(450, y), _ui["cream"]);
+            _ui.Text(Font.Body, 18, action, new Vector2(640, y), _ui["cream"] * 0.85f);
+            y += 40;
+        }
+    }
+
+    private void DrawPaused()
+    {
+        _ui.Rect(0, 0, VirtualScreen.Width, VirtualScreen.Height, _ui["ink"] * 0.6f);
+        if (_helpOpen)
+        {
+            DrawHelp();
+            return;
+        }
+
+        var session = _session!;
+        _ui.Panel(430, 132, 420, 470, _ui["hat"] * 0.97f);
+        _ui.Text(Font.TitleBold, 40, "PAUSED", new Vector2(640, 156), _ui["cream"], 0.5f, 2);
+        var moves = session.Moves == 1 ? "1 move" : $"{session.Moves} moves";
+        _ui.Text(Font.Body, 19, $"{session.Stage.Title}  ·  {moves}  ·  {FormatTime(session.ElapsedTicks / 30.0)[..^2]}", new Vector2(640, 214), _ui["bandOnDark"], 0.5f);
+        DrawMenu(_pauseMenu, _playtest ? PlaytestPauseItems : PauseItems, PauseMenu, 26);
+        _ui.Hints([("Arrows", "Choose"), ("Enter", "Select"), ("Esc", "Resume")], 640, 680, _ui["cream"], 16);
+    }
+
+    /// <summary>Help's rules, naming the character the theme draws: the Jack-o'-Lantern in Classic, Pixel Jack in Default.</summary>
+    internal static string HowToPlay(bool classic) =>
+        $"Lead {(classic ? "the Jack-o'-Lantern" : "Pixel Jack")} to the glowing goal. Walk into a block to push it; it moves only if all of it can. Push a block entirely over holes and it drops in, making floor. Push a swivel's arm and it turns around its center. Undo takes back your last push or turn, or a restart.";
+
+    private void DrawHelp()
+    {
+        _ui.Panel(200, 56, 880, 604, _ui["hat"] * 0.97f);
+        _ui.Text(Font.TitleBold, 36, "HOW TO PLAY", new Vector2(640, 80), _ui["cream"], 0.5f, 2);
+        var height = _ui.Wrapped(Font.Body, 20, HowToPlay(PlaysClassic), new Vector2(250, 134), 780, _ui["cream"]);
+        (string Keys, string Pad, string Action)[] rows =
+        [
+            ("Arrows / WASD", "D-pad / stick", "Move (hold to keep walking)"),
+            ("Q  E", "LB  RB", "Turn the view"),
+            ("V", "Y", "Overhead view"),
+            ("Tab", "R3", "Scroll the view"),
+            ("Z / Backspace", "B", "Undo"),
+            ("R", "Back", "Restart"),
+            ("C", "X", "Switch character"),
+            ("Esc / P / F", "Start", "Pause"),
+            ("Enter  Esc", "A  B", "Choose and go back in menus"),
+        ];
+        var y = 134 + height + 8;
+        _ui.Text(Font.Title, 15, "KEYBOARD", new Vector2(250, y), _ui["ember"], spacing: 2);
+        _ui.Text(Font.Title, 15, "CONTROLLER", new Vector2(480, y), _ui["ember"], spacing: 2);
+        y += 26;
+        foreach (var (keys, pad, action) in rows)
+        {
+            _ui.Text(Font.BodyBold, 19, keys, new Vector2(250, y), _ui["cream"]);
+            _ui.Text(Font.BodyBold, 19, pad, new Vector2(480, y), _ui["cream"]);
+            _ui.Text(Font.Body, 19, action, new Vector2(680, y), _ui["cream"] * 0.85f);
+            y += 19 * _ui.TextScale * 1.45f;
+        }
+
+        if (_session?.Stage.Hint is { } hint)
+        {
+            _ui.Text(Font.Title, 15, "HINT", new Vector2(250, y + 8), _ui["ember"], spacing: 2);
+            _ui.Wrapped(Font.Body, 19, hint, new Vector2(330, y + 4), 700, _ui["cream"]);
+        }
+
+        _ui.Hints([("Enter", "Close")], 640, 680, _ui["cream"], 16);
+    }
+
+    private void Heading(string title)
+    {
+        _ui.ShadowText(Font.TitleBold, 56, title, new Vector2(640, 52), _ui["cream"], _ui["pumpkinShade"], 0.5f, 2, 5);
+    }
+
+    /// <summary>The color of a focused item's text: dark on Community's ember bar, light beside a skin's cursor.</summary>
+    private Color FocusInk => _ui.Skin is null ? _ui["ink"] : _ui["cream"];
+
+    /// <summary>
+    /// <paramref name="hints"/> for a menu, with a skin as the original prompts them: W and S choose, A and D change, Space
+    /// confirms and Backspace goes back. Every one of those keys does that in Community's menus.
+    /// </summary>
+    private (string Keys, string Action)[] MenuHints(params (string Keys, string Action)[] hints) =>
+        _ui.Skin is null ? hints : [.. hints.Select(h => (OriginalPrompt(h.Keys), h.Action))];
+
+    /// <summary>The original's keys for a menu hint's <paramref name="keys"/>, as the Nocturne-styled menus show them.</summary>
+    internal static string OriginalPrompt(string keys) => keys switch
+    {
+        "Up Down" or "Arrows" => "W S",
+        "Left Right" => "A D",
+        "Enter" => "Space",
+        "Esc" => "Backspace",
+        _ => keys,
+    };
+
+    /// <summary>
+    /// The ember bar behind a focused item whose row starts at <paramref name="top"/>; with a skin, a window across the
+    /// row and its cursor at the row's left.
+    /// </summary>
+    private void FocusBar(MenuLayout layout, float top)
+    {
+        if (_ui.Skin is not null)
+        {
+            _ui.Panel(layout.Left - 6, top + 2, layout.Width + 12, layout.Spacing - 4, _ui["ink"] * 0.9f);
+            _ui.Cursor(layout.Left - 2, top + (layout.Spacing / 2), Math.Min(layout.Spacing, 44) * 0.75f);
+            return;
+        }
+
+        var glow = 0.85f + (0.15f * MathF.Sin(Motion * 0.15f));
+        _ui.Panel(layout.Left - 6, top + 4, layout.Width + 12, layout.Spacing - 8, _ui["pumpkinShade"] * glow);
+        _ui.Panel(layout.Left, top + 4, layout.Width, layout.Spacing - 8, _ui["ember"]);
+    }
+
+    /// <summary>Draws a vertical menu with an ember bar behind the focused item.</summary>
+    private void DrawMenu(MenuList menu, string[] labels, MenuLayout layout, float size)
+    {
+        for (var i = 0; i < labels.Length; i++)
+        {
+            var top = layout.Top + (i * layout.Spacing);
+            var focused = i == menu.Focus;
+            if (focused)
+            {
+                FocusBar(layout, top);
+                if (_ui.Skin is null)
+                {
+                    _ui.Rect(layout.Left + 14, top + (layout.Spacing / 2) - 5, 10, 10, _ui["ink"]);
+                }
+            }
+
+            var color = focused ? FocusInk : _ui["cream"] * 0.9f;
+            _ui.Text(Font.BodyBold, size, labels[i], new Vector2(layout.Left + 36, top + ((layout.Spacing - (size * _ui.TextScale * 1.2f)) / 2)), color);
+        }
+    }
+
+    /// <summary>
+    /// Blocks drifting slowly through the dark, behind the menus; <paramref name="strength"/> dims them. They stand still
+    /// when the player reduces motion, and high contrast leaves them out.
+    /// </summary>
+    private void DrawDrift(float strength)
+    {
+        // The Classic theme's backdrop is the original's, with nothing drifting over it.
+        if (_save.Data.Settings.HighContrast || _ui.Skin is not null)
+        {
+            return;
+        }
+
+        var ticks = Motion;
+        var mesh = new Mesh();
+        for (var i = 0; i < 16; i++)
+        {
+            var hash = (uint)((i + 3) * 2246822519u);
+            var x = ((hash % 1000) / 1000f * 15) - 7.5f;
+            var z = -4 - ((hash / 1000 % 1000) / 1000f * 10);
+            var speed = 0.006f + (hash % 7 * 0.002f);
+            var y = ((((hash % 997) / 997f * 12) + (ticks * speed)) % 12) - 6;
+            var spin = Matrix.CreateRotationX((ticks * speed * 0.7f) + i) * Matrix.CreateRotationY((ticks * speed) + (i * 2));
+            var group = i + 1;
+            mesh.AddBox(new(-0.4f, -0.4f, -0.4f), new(0.4f, 0.4f, 0.4f), _board.GroupColor(group) * strength, BoardRenderer.GroupPattern(group), BoardRenderer.GroupPattern(group), spin * Matrix.CreateTranslation(x, y, z));
+        }
+
+        var view = Matrix.CreateLookAt(new Vector3(0, 0.45f, 4.2f), new Vector3(0, 0.45f, 0), Vector3.Up);
+        _board.DrawMesh(mesh, Matrix.Identity, view, Projection(40), new Color(0.75f, 0.75f, 0.8f), _ui["night"]);
+    }
+
+    private void DrawTitleJack()
+    {
+        var ticks = Motion;
+        var view = Matrix.CreateLookAt(new Vector3(0, 0.45f, 4.2f), new Vector3(0, 0.45f, 0), Vector3.Up);
+        var bob = MathF.Sin(ticks * 0.08f) * 0.06f;
+        var place = Matrix.CreateScale(1.85f) * Matrix.CreateRotationY(MathF.Sin(ticks * 0.025f) * 0.5f) * Matrix.CreateTranslation(1.55f, -0.95f + bob, 0);
+        var stand = new Mesh();
+        stand.AddBox(new(-0.55f, -0.22f, -0.55f), new(0.55f, 0, 0.55f), Color.Lerp(_ui["hatOnDark"], _ui["cream"], 0.25f), Atlas.Plain, Atlas.Plain, Matrix.Identity, _ui["band"]);
+        _board.DrawMesh(stand, place, view, Projection(40), Color.White);
+        _board.DrawMesh(_board.Jack, Matrix.CreateScale(1, 1 + (bob * 0.3f), 1) * place, view, Projection(40), Color.White);
+    }
+
+    private Matrix Projection(float fieldOfView) =>
+        Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fieldOfView), GraphicsDevice.Viewport.AspectRatio, 0.05f, 60f);
+}
