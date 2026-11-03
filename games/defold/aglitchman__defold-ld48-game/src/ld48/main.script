@@ -1,0 +1,46 @@
+local app_scenemanager = require("ld48.app.scenemanager")
+local app_misc = require("ld48.app.misc")
+local app_window = require("ld48.app.window")
+local player_state = require("ld48.scenes.common.player_state")
+
+go.property("first_scene", hash("testbed"))
+
+function init(self)
+    app_misc.error_catching_init()
+    app_misc.random_init()
+
+    -- Note: for the development only
+    app_window.resize()
+    app_window.center()
+    player_state.DEBUG = sys.get_sys_info().system_name == "Windows"
+    if player_state.DEBUG then
+        self.first_scene = "driller"
+    end
+    --
+
+    app_scenemanager.receiver = msg.url("#")
+    app_scenemanager.transition = msg.url("#transition")
+
+    msg.post(".", hash("acquire_input_focus"))
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("init_seq_complete") then
+        app_scenemanager.load_scene(self.first_scene)
+    elseif message_id == hash("proxy_loaded") then
+        app_scenemanager._proxy_loaded()
+    elseif message_id == hash("proxy_unloaded") then
+        app_scenemanager._proxy_unloaded()
+    elseif message_id == hash("_load_scene") then
+        app_scenemanager._load_scene()
+    elseif message_id == hash("_load_popup") then
+        app_scenemanager._load_popup()
+    elseif message_id == hash("transition_fade_in_complete") then
+        app_scenemanager._transition_fade_in_complete()
+    elseif message_id == hash("transition_fade_out_complete") then
+        app_scenemanager._transition_fade_out_complete()
+    end
+end
+
+function on_input(self, action_id, action)
+end
