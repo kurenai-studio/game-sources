@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Earth Defender</title>
+    <link rel="shortcut icon" href="img/favicon.png">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="bower_components/threejs/build/three.js"></script>
+    <script src="bower_components/stats.js/build/stats.min.js"></script>
+    <script src="bower_components/threejs/examples/js/controls/OrbitControls.js"></script>
+    <script src="bower_components/threejs/examples/js/libs/dat.gui.min.js"></script>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
+<body>
+    <div id="panel">
+        <div id="logo">
+            Earth-Defender
+        </div>
+        <div class="elements">
+            <div>Earth Life: <span id="life">--</span></div>
+            <div>Score: <span id="score">--</span></div>
+            <div>Players: <span id="players">--</span></div>
+        </div>
+    </div>
+
+    <div id="message" class="hidden"></div>
+    <div id="gameType">
+        <button id="gameType-singlePlayer">Single Player</button><button id="gameType-multiPlayer"> Multiplayer </button>
+    </div>
+    <div id="gameRoom" class="hidden">
+        <ul id="gameRoom-list">
+            <li>Not connected to the server</li>
+        </ul>
+        <div>
+            <button id="gameRoom-join">Join</button><button id="gameRoom-create">Create</button>
+        </div>
+    </div>
+    <div id="instructions">
+        <div class="move"><div class="key key-w">w</div><div class="key">a</div><div class="key">s</div><div class="key">d</div></div>
+        <div class="move-y"><div class="key">z</div><div class="key">x</div></div>
+        <div class="shoot"><div class="key key-space">space</div></div>
+    </div>
+
+    <script type="text/x-glsl" id="vertex">
+        uniform vec3 ambient;
+        uniform vec3 lightPosition;
+        uniform float lightPower;
+        uniform vec3 rho;
+        varying vec3 outRadiance;
+        varying vec2 vUv;
+        uniform sampler2D texture;
+
+        const float PI = 3.14159;
+
+        void main() {
+            vUv = uv;
+			// transforms the vertex from object space to clip space coords
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+			vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+			vec3 transformedNormal = normalMatrix * normal;
+			vec4 lPosition = viewMatrix * vec4( lightPosition, 1.0 );
+			vec3 lVector = lPosition.xyz - mvPosition.xyz;
+			float beta = lightPower / ( 4.0  * PI * length(lVector) );
+			lVector = normalize( lVector );
+			float dotProduct = dot( transformedNormal, lVector );
+			float pointLightWeighting = max( dotProduct, 0.0 );
+			outRadiance = beta * pointLightWeighting * rho / PI + ambient;
+		}
+	</script>
+    <script type="text/x-glsl" id="fragment">
+        varying vec2 vUv;
+        uniform sampler2D texture;
+        varying vec3 outRadiance;
+
+        void main() {
+		    gl_FragColor = texture2D(texture, vUv) + vec4(outRadiance, 1.0) - vec4(0.1, 0.1, 0.1, 1.0);
+		    //gl_FragColor = vec4(outRadiance, 1.0);
+        }
+		</script>
+    <script src="js/main.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/gameClient.js"></script>
+    <script src="js/gameElements.js"></script>
+    <script src="js/gameDOMHandler.js"></script>
+</body>
+</html>
