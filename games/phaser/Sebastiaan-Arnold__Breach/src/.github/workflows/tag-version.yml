@@ -1,0 +1,57 @@
+name: Tag version
+
+# Tags each new version that lands on main: for every pushed commit, the version in its
+# package.json gets a vX.Y.Z tag on the first commit that carries it. Pushing several versions
+# at once tags each of them.
+#
+# GitHub doesn't let this workflow's token tag a commit whose workflow files differ from the
+# current ones (an older version in a push that also changed a workflow). Those tags are
+# reported as warnings and need pushing by hand; the rest still go through.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag versions from package.json
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Only the commits in this push; fall back to the newest commit if that range is unknown.
+          if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            commits=$(git rev-list --reverse "$BEFORE..HEAD")
+          else
+            commits=$(git rev-parse HEAD)
+          fi
+          tagged=""
+          for c in $commits; do
+            version="v$(git show "$c:package.json" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version')"
+            if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then continue; fi
+            git tag -a "$version" "$c" -m "$(git log -1 --format=%s "$c")"
+            tagged="$tagged $version"
+          done
+          if [ -z "$tagged" ]; then
+            echo "No new versions to tag."
+            exit 0
+          fi
+          failed=""
+          for t in $tagged; do
+            if git push origin "$t"; then
+              echo "Tagged $t."
+            else
+              failed="$failed $t"
+              echo "::warning::Could not push tag $t. Its commit has different workflow files, so push this tag by hand."
+            fi
+          done
+          if [ -n "$failed" ]; then echo "Not tagged:$failed"; fi
