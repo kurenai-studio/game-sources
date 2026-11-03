@@ -10,5 +10,5 @@
 
 ## Third-party assets
 
-- **Kenney Bold** font (): [Kenney.nl](https://kenney.nl) — CC0 1.0
-- Sprites/audio under  appear to be Kenney-style pack assets redistributed under the project MIT; credit Kenney.nl (CC0) for the font and common Kenney game-asset packs.
+- **Kenney Bold** font (`src/assets/Kenney Bold.ttf`): [Kenney.nl](https://kenney.nl) — CC0 1.0
+- Sprites/audio under `src/assets/` appear to be Kenney-style pack assets redistributed under the project MIT; credit Kenney.nl (CC0) for the font and common Kenney game-asset packs.
