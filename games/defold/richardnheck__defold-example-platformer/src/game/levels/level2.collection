@@ -1,0 +1,680 @@
+name: "level2"
+instances {
+  id: "background"
+  prototype: "/game/levels/background/background.go"
+  component_properties {
+    id: "script"
+    properties {
+      id: "texture"
+      value: "/assets/images/pixel-adventure/Background/Yellow.png"
+      type: PROPERTY_TYPE_HASH
+    }
+  }
+}
+instances {
+  id: "fire"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 520.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire1"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 536.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire2"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 552.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire3"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 568.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire4"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 584.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire5"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 600.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire6"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 616.0
+    y: 192.0
+  }
+}
+instances {
+  id: "fire7"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 632.0
+    y: 192.0
+  }
+}
+instances {
+  id: "rock_head_vertical"
+  prototype: "/game/traps/rock-head/rock_head.go"
+  position {
+    x: 705.0
+    y: 288.0
+  }
+  component_properties {
+    id: "rock_head"
+    properties {
+      id: "direction"
+      value: "0.0, -1.0, 0.0"
+      type: PROPERTY_TYPE_VECTOR3
+    }
+  }
+}
+instances {
+  id: "rock_head_horizontal"
+  prototype: "/game/traps/rock-head/rock_head.go"
+  position {
+    x: 785.0
+    y: 223.0
+  }
+  component_properties {
+    id: "rock_head"
+    properties {
+      id: "direction"
+      value: "1.0, 0.0, 0.0"
+      type: PROPERTY_TYPE_VECTOR3
+    }
+  }
+}
+instances {
+  id: "falling_platform"
+  prototype: "/game/platforms/falling-platform/falling_platform.go"
+  position {
+    x: 328.0
+    y: 107.0
+  }
+}
+instances {
+  id: "falling_platform1"
+  prototype: "/game/platforms/falling-platform/falling_platform.go"
+  position {
+    x: 424.0
+    y: 108.0
+  }
+}
+instances {
+  id: "checkpoint"
+  prototype: "/game/items/checkpoint/checkpoint.go"
+  position {
+    x: 489.0
+    y: 223.0
+  }
+}
+instances {
+  id: "fire8"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 872.0
+    y: 144.0
+  }
+}
+instances {
+  id: "fire9"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 888.0
+    y: 144.0
+  }
+}
+instances {
+  id: "fire10"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 904.0
+    y: 144.0
+  }
+}
+instances {
+  id: "fire11"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 920.0
+    y: 144.0
+  }
+}
+instances {
+  id: "fire12"
+  prototype: "/game/traps/fire/fire.go"
+  position {
+    x: 936.0
+    y: 144.0
+  }
+}
+instances {
+  id: "rock_head_vertical1"
+  prototype: "/game/traps/rock-head/rock_head.go"
+  position {
+    x: 968.0
+    y: 320.0
+  }
+  component_properties {
+    id: "rock_head"
+    properties {
+      id: "speed"
+      value: "75.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+    properties {
+      id: "direction"
+      value: "0.0, -1.0, 0.0"
+      type: PROPERTY_TYPE_VECTOR3
+    }
+  }
+}
+instances {
+  id: "checkpoint1"
+  prototype: "/game/items/checkpoint/checkpoint.go"
+  position {
+    x: 1041.0
+    y: 320.0
+  }
+  component_properties {
+    id: "checkpoint"
+    properties {
+      id: "identifier"
+      value: "2.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "spring"
+  prototype: "/game/platforms/spring/spring.go"
+  position {
+    x: 136.0
+    y: 120.0
+  }
+}
+instances {
+  id: "banana"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 221.0
+    y: 209.0
+  }
+}
+instances {
+  id: "banana1"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 253.0
+    y: 209.0
+  }
+}
+instances {
+  id: "banana2"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 285.0
+    y: 209.0
+  }
+}
+instances {
+  id: "strawberry"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 328.0
+    y: 123.0
+  }
+}
+instances {
+  id: "strawberry1"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 424.0
+    y: 123.0
+  }
+}
+instances {
+  id: "banana3"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 555.0
+    y: 236.0
+  }
+}
+instances {
+  id: "banana4"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 555.0
+    y: 260.0
+  }
+}
+instances {
+  id: "banana5"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 577.0
+    y: 260.0
+  }
+}
+instances {
+  id: "banana6"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 577.0
+    y: 236.0
+  }
+}
+instances {
+  id: "banana7"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 600.0
+    y: 236.0
+  }
+}
+instances {
+  id: "banana8"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 600.0
+    y: 260.0
+  }
+}
+instances {
+  id: "strawberry2"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 849.0
+    y: 281.0
+  }
+}
+instances {
+  id: "strawberry3"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 849.0
+    y: 257.0
+  }
+}
+instances {
+  id: "strawberry4"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 849.0
+    y: 233.0
+  }
+}
+instances {
+  id: "strawberry5"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 849.0
+    y: 209.0
+  }
+}
+instances {
+  id: "banana9"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 929.0
+    y: 260.0
+  }
+}
+instances {
+  id: "banana10"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 929.0
+    y: 234.0
+  }
+}
+instances {
+  id: "strawberry6"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1218.0
+    y: 306.0
+  }
+}
+instances {
+  id: "strawberry7"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1218.0
+    y: 282.0
+  }
+}
+instances {
+  id: "banana11"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1168.0
+    y: 168.0
+  }
+}
+instances {
+  id: "banana12"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1190.0
+    y: 168.0
+  }
+}
+instances {
+  id: "banana13"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1190.0
+    y: 146.0
+  }
+}
+instances {
+  id: "banana14"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1168.0
+    y: 146.0
+  }
+}
+instances {
+  id: "strawberry8"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1425.0
+    y: 274.0
+  }
+}
+instances {
+  id: "strawberry9"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1425.0
+    y: 295.0
+  }
+}
+instances {
+  id: "strawberry10"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1529.0
+    y: 295.0
+  }
+}
+instances {
+  id: "strawberry11"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 1529.0
+    y: 274.0
+  }
+}
+collection_instances {
+  id: "common"
+  collection: "/game/core/common.collection"
+}
+collection_instances {
+  id: "conveyor_belt"
+  collection: "/game/platforms/conveyor-belt/conveyor_belt.collection"
+  position {
+    x: 200.0
+    y: 168.0
+  }
+  instance_properties {
+    id: "root"
+    properties {
+      id: "script"
+      properties {
+        id: "speed"
+        value: "70.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+      properties {
+        id: "length"
+        value: "7.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "endpoint"
+  collection: "/game/items/endpoint/endpoint.collection"
+  position {
+    x: 1635.0
+    y: 208.0
+  }
+}
+collection_instances {
+  id: "conveyor_belt2"
+  collection: "/game/platforms/conveyor-belt/conveyor_belt.collection"
+  position {
+    x: 360.0
+    y: 136.0
+  }
+  instance_properties {
+    id: "root"
+    properties {
+      id: "script"
+      properties {
+        id: "speed"
+        value: "-70.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+      properties {
+        id: "length"
+        value: "3.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "spiked-ball-swing"
+  collection: "/game/traps/spiked-ball/spiked-ball.collection"
+  position {
+    x: 1160.0
+    y: 328.0
+  }
+  instance_properties {
+    id: "spiked-ball"
+    properties {
+      id: "spike-ball"
+      properties {
+        id: "mode"
+        value: "0.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "spiked-ball1-swing"
+  collection: "/game/traps/spiked-ball/spiked-ball.collection"
+  position {
+    x: 1272.0
+    y: 329.0
+  }
+  instance_properties {
+    id: "spiked-ball"
+    properties {
+      id: "spike-ball"
+      properties {
+        id: "mode"
+        value: "0.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "spiked-ball-spin"
+  collection: "/game/traps/spiked-ball/spiked-ball.collection"
+  position {
+    x: 1424.0
+    y: 216.0
+  }
+  instance_properties {
+    id: "spiked-ball"
+    properties {
+      id: "spike-ball"
+      properties {
+        id: "mode"
+        value: "1.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "spiked-ball-spin1"
+  collection: "/game/traps/spiked-ball/spiked-ball.collection"
+  position {
+    x: 1528.0
+    y: 232.0
+  }
+  instance_properties {
+    id: "spiked-ball"
+    properties {
+      id: "spike-ball"
+      properties {
+        id: "mode"
+        value: "1.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+      properties {
+        id: "direction"
+        value: "1.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+collection_instances {
+  id: "spiked-ball1-swing1"
+  collection: "/game/traps/spiked-ball/spiked-ball.collection"
+  position {
+    x: 1304.0
+    y: 184.0
+  }
+  instance_properties {
+    id: "spiked-ball"
+    properties {
+      id: "spike-ball"
+      properties {
+        id: "mode"
+        value: "0.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+      properties {
+        id: "direction"
+        value: "1.0"
+        type: PROPERTY_TYPE_NUMBER
+      }
+    }
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "level"
+  children: "player_spawn_position"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/game/levels/level.script\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"tilemap\"\n"
+  "  component: \"/game/levels/level2.tilemap\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"level_collision_object\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"collision_shape: \\\"/game/levels/level2.tilemap\\\"\\n"
+  "type: COLLISION_OBJECT_TYPE_KINEMATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"world\\\"\\n"
+  "mask: \\\"player\\\"\\n"
+  "mask: \\\"trap\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "player_spawn_position"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 32.0\\n"
+  "  y: 32.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/atlas/characters.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 37.0
+    y: 84.0
+  }
+}
+embedded_instances {
+  id: "fruit"
+  children: "banana"
+  children: "banana1"
+  children: "banana10"
+  children: "banana11"
+  children: "banana12"
+  children: "banana13"
+  children: "banana14"
+  children: "banana2"
+  children: "banana3"
+  children: "banana4"
+  children: "banana5"
+  children: "banana6"
+  children: "banana7"
+  children: "banana8"
+  children: "banana9"
+  children: "strawberry"
+  children: "strawberry1"
+  children: "strawberry10"
+  children: "strawberry11"
+  children: "strawberry2"
+  children: "strawberry3"
+  children: "strawberry4"
+  children: "strawberry5"
+  children: "strawberry6"
+  children: "strawberry7"
+  children: "strawberry8"
+  children: "strawberry9"
+  data: ""
+}

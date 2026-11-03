@@ -1,0 +1,68 @@
+local data = require "main.data"
+local const = require "game.lib.const"
+local nav = require "game.lib.nav"
+
+-- Forward declarations
+local parse
+
+local SPAWN_POSITION = "player_spawn_position"
+local SPAWN_PLAYER = hash("spawn_player")
+
+function init(self)
+	parse(self)
+	
+	-- Get the default player spawn point now
+	self.spawn_position = go.get_position(SPAWN_POSITION)
+	go.delete(SPAWN_POSITION)   -- remove the marker from the level
+
+	-- Defer the spawn for one frame, so every checkpoint has registered its position in data.checkpoints.
+	msg.post(".", SPAWN_PLAYER)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == SPAWN_PLAYER then
+		local pos = self.spawn_position
+
+		-- Override the spawn position to a checkpoint (if player reached one)
+		local checkpoint_pos = data.get_checkpoint_pos()
+		if checkpoint_pos ~= nil then
+			pos = checkpoint_pos
+		end
+
+		msg.post(const.URLS.PLAYER, const.MSG.PLAYER_SPAWN, {pos = pos})
+	elseif message_id == const.MSG.PLAYER_DEATH_COMPLETE then
+		-- Player finished its death animation: reload if lives remain, else game over.
+		if data.get_player_lives() > 0 then
+			-- Reset collected items if the player has not reached a checkpoint
+			if not data.checkpoint_reached() then
+				data.reset_collected()
+			end
+			nav.reload_level()
+		else
+			-- Out of lives — show the game over screen
+			msg.post(const.URLS.GUI, const.MSG.PLAYER_DIED)
+			msg.post(const.URLS.GAMEOVER, const.MSG.SHOW, {state = data.STATE_GAMEOVER})
+		end
+	elseif message_id == const.MSG.LEVEL_COMPLETE then
+		if data.get_level() >= data.MAX_LEVELS then
+			-- Finished the final level — show the completion screen
+			-- (STATE_COMPLETE returns to the menu on confirm/exit).
+			msg.post(const.URLS.COMPLETE, const.MSG.SHOW, {state = data.STATE_COMPLETE})
+		else
+			-- Finished a non-final level — show the level-clear screen
+			-- (STATE_CLEAR advances to the next level on confirm).
+			msg.post(const.URLS.CLEAR, const.MSG.SHOW, {state = data.STATE_CLEAR})
+		end
+	end
+end
+
+parse = function(self)
+	sx, sy, w, h = tilemap.get_bounds("#tilemap")
+
+	data.bounds = vmath.vector4(
+	(sx - 1) * data.TILE_SIZE,
+	(sy - 1) * data.TILE_SIZE,
+	((sx + w - 1) * data.TILE_SIZE) - data.CANV_W,
+	((sy + h - 1) * data.TILE_SIZE) - data.CANV_H)
+end
+

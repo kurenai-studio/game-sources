@@ -1,0 +1,353 @@
+name: "level1"
+instances {
+  id: "background"
+  prototype: "/game/levels/background/background.go"
+  component_properties {
+    id: "script"
+    properties {
+      id: "texture"
+      value: "/assets/images/pixel-adventure/Background/Gray.png"
+      type: PROPERTY_TYPE_HASH
+    }
+    properties {
+      id: "scroll_time"
+      value: "8.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "checkpoint"
+  prototype: "/game/items/checkpoint/checkpoint.go"
+  position {
+    x: 489.0
+    y: 223.0
+  }
+}
+instances {
+  id: "falling_platform"
+  prototype: "/game/platforms/falling-platform/falling_platform.go"
+  position {
+    x: 560.0
+    y: 184.0
+  }
+}
+instances {
+  id: "falling_platform1"
+  prototype: "/game/platforms/falling-platform/falling_platform.go"
+  position {
+    x: 617.0
+    y: 184.0
+  }
+}
+instances {
+  id: "falling_platform2"
+  prototype: "/game/platforms/falling-platform/falling_platform.go"
+  position {
+    x: 675.0
+    y: 184.0
+  }
+}
+instances {
+  id: "horizontal_platform"
+  prototype: "/game/platforms/platform/platform.go"
+  position {
+    x: 809.0
+    y: 152.0
+  }
+  component_properties {
+    id: "script"
+    properties {
+      id: "vertical"
+      value: "false"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+    properties {
+      id: "distance"
+      value: "75.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+    properties {
+      id: "linear"
+      value: "true"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+  }
+}
+instances {
+  id: "rotating_platform_controller"
+  prototype: "/game/platforms/rotating-platform/rotating_platform_controller.go"
+  position {
+    x: 1108.0
+    y: 215.0
+  }
+  rotation {
+    y: 0.0040008402
+    w: 0.999992
+  }
+  component_properties {
+    id: "script"
+    properties {
+      id: "spin_speed"
+      value: "-45.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+    properties {
+      id: "chains"
+      value: "3.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+}
+instances {
+  id: "spring1"
+  prototype: "/game/platforms/spring/spring.go"
+  position {
+    x: 1009.0
+    y: 168.0
+  }
+}
+instances {
+  id: "vertical_platform"
+  prototype: "/game/platforms/platform/platform.go"
+  position {
+    x: 880.0
+    y: 184.0
+  }
+  component_properties {
+    id: "script"
+    properties {
+      id: "vertical"
+      value: "true"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+    properties {
+      id: "distance"
+      value: "50.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+    properties {
+      id: "linear"
+      value: "false"
+      type: PROPERTY_TYPE_BOOLEAN
+    }
+  }
+}
+instances {
+  id: "banana"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 188.0
+    y: 88.0
+  }
+}
+instances {
+  id: "strawberry"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 18.0
+    y: 133.0
+  }
+}
+instances {
+  id: "strawberry1"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 18.0
+    y: 175.0
+  }
+}
+instances {
+  id: "banana1"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 214.0
+    y: 88.0
+  }
+}
+instances {
+  id: "banana2"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 247.0
+    y: 88.0
+  }
+}
+instances {
+  id: "strawberry2"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 18.0
+    y: 218.0
+  }
+}
+instances {
+  id: "strawberry3"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 591.0
+    y: 225.0
+  }
+}
+instances {
+  id: "strawberry4"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 648.0
+    y: 225.0
+  }
+}
+instances {
+  id: "strawberry5"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 708.0
+    y: 225.0
+  }
+}
+instances {
+  id: "strawberry6"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 524.0
+    y: 225.0
+  }
+}
+instances {
+  id: "banana3"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 63.0
+    y: 131.0
+  }
+}
+instances {
+  id: "banana4"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 818.0
+    y: 226.0
+  }
+}
+instances {
+  id: "strawberry7"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 882.0
+    y: 276.0
+  }
+}
+instances {
+  id: "strawberry8"
+  prototype: "/game/items/fruits/strawberry.go"
+  position {
+    x: 882.0
+    y: 299.0
+  }
+}
+instances {
+  id: "banana5"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1009.0
+    y: 221.0
+  }
+}
+instances {
+  id: "banana6"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1009.0
+    y: 250.0
+  }
+}
+instances {
+  id: "banana7"
+  prototype: "/game/items/fruits/banana.go"
+  position {
+    x: 1009.0
+    y: 278.0
+  }
+}
+collection_instances {
+  id: "common"
+  collection: "/game/core/common.collection"
+}
+collection_instances {
+  id: "endpoint"
+  collection: "/game/items/endpoint/endpoint.collection"
+  position {
+    x: 1249.0
+    y: 208.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "level"
+  children: "player_spawn_position"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/game/levels/level.script\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"tilemap\"\n"
+  "  component: \"/game/levels/level1.tilemap\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"level_collision_object\"\n"
+  "  type: \"collisionobject\"\n"
+  "  data: \"collision_shape: \\\"/game/levels/level1.tilemap\\\"\\n"
+  "type: COLLISION_OBJECT_TYPE_KINEMATIC\\n"
+  "mass: 0.0\\n"
+  "friction: 0.1\\n"
+  "restitution: 0.5\\n"
+  "group: \\\"world\\\"\\n"
+  "mask: \\\"player\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "player_spawn_position"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 32.0\\n"
+  "  y: 32.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/atlas/characters.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 65.0
+    y: 79.0
+  }
+}
+embedded_instances {
+  id: "fruit"
+  children: "banana"
+  children: "banana1"
+  children: "banana2"
+  children: "banana3"
+  children: "banana4"
+  children: "banana5"
+  children: "banana6"
+  children: "banana7"
+  children: "strawberry"
+  children: "strawberry1"
+  children: "strawberry2"
+  children: "strawberry3"
+  children: "strawberry4"
+  children: "strawberry5"
+  children: "strawberry6"
+  children: "strawberry7"
+  children: "strawberry8"
+  data: ""
+}
