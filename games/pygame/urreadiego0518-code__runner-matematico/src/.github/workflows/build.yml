@@ -1,0 +1,59 @@
+name: Compilar binarios
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compilar:
+    name: ${{ matrix.plataforma }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            plataforma: Windows
+            binario: dist/RunnerMatematico.exe
+            asset: RunnerMatematico-windows.exe
+          - os: ubuntu-latest
+            plataforma: Linux
+            binario: dist/RunnerMatematico
+            asset: RunnerMatematico-linux
+          - os: macos-latest
+            plataforma: macOS
+            binario: dist/RunnerMatematico
+            asset: RunnerMatematico-macos
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install pygame pyinstaller
+
+      - name: Compilar con PyInstaller
+        run: pyinstaller --onefile --windowed --name RunnerMatematico main.py
+
+      - name: Renombrar el binario
+        shell: bash
+        run: cp "${{ matrix.binario }}" "${{ matrix.asset }}"
+
+      - name: Adjuntar al release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
