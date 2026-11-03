@@ -1,0 +1,293 @@
+name: CI
+
+on:
+  pull_request:
+  # Every branch, so a commit is known to be green before main is fast-forwarded to it.
+  # Dependabot branches are covered by their pull request run.
+  push:
+    branches-ignore: ["dependabot/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Known advisories in the dependencies warn without failing: a fix may wait for upstream.
+      - name: Audit the dependencies
+        run: |
+          if pnpm audit > "$RUNNER_TEMP/audit.txt" 2>&1; then
+            echo "No known advisory in the dependencies." >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### Dependency audit"
+              echo '```'
+              cat "$RUNNER_TEMP/audit.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Dependency audit::pnpm audit reports advisories, listed in the job summary"
+          fi
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+      # A full game on a World-sized map, failing if the tick misses its budget (docs/performance.md).
+      - run: pnpm sim -- --width 2048 --height 1024 --players 16 --ticks 3000 --interval 10 --budget 30
+
+  unit:
+    name: Unit tests (${{ matrix.shard }}/6)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # The tests are bound by the processor (the golden replays play thousands of ticks), so
+    # six runners share them; each keeps its coverage in a report that "Coverage" merges.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # A sixth of the tests cannot reach the thresholds on their own: they are held to them
+      # once the reports are merged.
+      - run: >-
+          pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/6
+          --reporter=blob --outputFile=.vitest-reports/blob-${{ matrix.shard }}.json
+          --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
+          --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unit-report-${{ matrix.shard }}
+          path: .vitest-reports
+          retention-days: 1
+          include-hidden-files: true
+
+  coverage:
+    name: Coverage
+    needs: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: unit-report-*
+          path: .vitest-reports
+          merge-multiple: true
+      # The thresholds of vitest.config.ts apply to the whole suite, as before.
+      - run: pnpm exec vitest run --merge-reports=.vitest-reports --coverage
+
+  e2e:
+    name: End-to-end (${{ matrix.shard }}/6)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Six runners share the suite: most tests play a game in real time on a software
+    # renderer, so a shard takes as long as its games, and more shards shorten the run.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/browsers
+      - run: pnpm build
+      # The built game at / and behind a proxy that serves it under /frontfall/,
+      # at / in Firefox, which needs a display for WebGL, and in WebKit.
+      - run: xvfb-run --auto-servernum pnpm test:e2e --shard=${{ matrix.shard }}/6
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-traces-${{ matrix.shard }}
+          path: e2e/test-results
+          retention-days: 7
+
+  self-hosting:
+    name: Self-hosting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    # The image built from this commit, run with compose.yaml as docs/self-hosting.md says,
+    # read-only and with its data volume, then played in Chromium against that container.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          tags: frontfall:ci
+          load: true
+          cache-from: type=gha,scope=self-hosting
+          cache-to: type=gha,scope=self-hosting,mode=max
+      - name: Start the game with compose.yaml
+        env:
+          FRONTFALL_IMAGE: frontfall:ci
+        run: docker compose up --detach --wait
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @frontfall/e2e
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm --filter @frontfall/e2e exec playwright install chromium
+      # The menu, solo games, a private game between two pages, and the server's own pages.
+      - run: pnpm test:e2e tests/server-pages.spec.ts tests/solo-game.spec.ts tests/walking-skeleton.spec.ts
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8080/
+      # Stopped, the server writes its usage counts to the volume, and reads them back on start.
+      - name: Keep the data across a restart
+        env:
+          FRONTFALL_IMAGE: frontfall:ci
+        run: |
+          docker compose stop
+          docker compose cp frontfall:/var/lib/frontfall/usage/usage.json "$RUNNER_TEMP/usage.json"
+          test -s "$RUNNER_TEMP/usage.json"
+          docker compose up --detach --wait
+          if docker compose logs | grep -E 'usage_not_loaded|usage_not_saved|usage_in_memory'; then exit 1; fi
+      - if: failure()
+        run: docker compose logs
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: self-hosting-traces
+          path: e2e/test-results
+          retention-days: 7
+
+  determinism:
+    name: Determinism
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/browsers
+      # Ten thousand ticks of bots on World, twice in Node and once in a Chromium, a Firefox
+      # and a WebKit worker, then the golden replays in the three browsers: every run must
+      # reach the same state hashes (R-FAIR-01).
+      - run: pnpm determinism
+
+  performance:
+    name: Performance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm --filter @frontfall/e2e exec playwright install chromium
+      - run: pnpm build
+      # Download sizes against bench/client/budget.json, failing when over; then load
+      # times and frame rate in headless Chromium, reported only (docs/performance.md).
+      - run: pnpm perf:client -- --trend
+      # The reference game on this commit and on the commit it branched from, alternated on
+      # this runner; fails when the engine got slower or its tick p95 is over 30 ms.
+      # A commit between the base and this one may accept a slowdown with a
+      # "Performance-Accepted: <reason>" trailer; the 30 ms budget still applies.
+      - name: Engine gate
+        if: ${{ !cancelled() }}
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          # A pull request is checked out as its merge commit, whose first parent is the base.
+          if [ "$EVENT" = pull_request ]; then base=$(git rev-parse HEAD^1); else base=$(git merge-base HEAD origin/main || true); fi
+          if [ -z "$base" ] || [ "$base" = "$(git rev-parse HEAD)" ] || git diff --quiet "$base" HEAD -- packages/engine; then
+            echo "No base to compare with, or the same engine as on $base: absolute budget only."
+            pnpm perf:engine
+            exit
+          fi
+          accepted=$(git log --format=%B "$base..HEAD" | sed -n 's/^Performance-Accepted: *//p' | head -n 1)
+          git worktree add --detach "$RUNNER_TEMP/base" "$base"
+          args=(--base "$RUNNER_TEMP/base" --base-label "${base:0:7}")
+          if [ -n "$accepted" ]; then args+=(--accept "$accepted"); fi
+          pnpm perf:engine -- "${args[@]}"
+
+  clean-room:
+    name: Clean room
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      REFERENCE: https://github.com/openfrontio/OpenFrontIO.git
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Fetched outside the workspace on every run: the reference never enters the repository or an image.
+      - run: git clone --quiet --depth 1 "$REFERENCE" "$RUNNER_TEMP/reference"
+      - name: Compare with the reference codebase
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            pnpm clean-room --reference "$RUNNER_TEMP/reference" --base "$BASE_SHA"
+          else
+            pnpm clean-room --reference "$RUNNER_TEMP/reference"
+          fi
+      - if: always()
+        run: rm -rf "$RUNNER_TEMP/reference"
