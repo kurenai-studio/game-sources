@@ -1,0 +1,69 @@
+class_name LevelDef
+extends Resource
+## One campaign level's tuning (PLAN.md E1). Values ship in resources/levels/*.tres —
+## ranges taken from PROJECT.md §5's LEVELS table, plus the Phase E additions
+## (zone theme, mission briefing).
+
+@export var display_name := "L1 · STARLIGHT APPROACH"
+@export_multiline var briefing := ""
+@export var objective := "REACH THE EXIT GATE"
+@export var rings := 110
+@export var spawn_tunnel := 0.06
+@export var spawn_arena := 0.30
+@export var enemy_hp := 2
+@export var enemy_speed := 6.0
+@export var enemy_fire := 2.8   # seconds between enemy shots (scaled ±)
+@export var theme_id := "tech"
+@export var level_seed := 101   # deterministic layout per level
+## Phase I3: weighted spawn pool — both tunnel and arena spawns pick a type from
+## here (repeat an id to weight it). L1 is drone-only; later levels mix in variants.
+@export var enemy_types := PackedStringArray(["drone"])
+## v4b: the types this sector introduces (at most two). Each is met first alone, in
+## plain tunnel before any other of its kind (game.gd _plan_intros), and its
+## briefing carries a tip for it.
+@export var intro_types := PackedStringArray()
+
+# --- Phase J: boss levels + score ranking ---
+## "tunnel" = the classic winding run; "boss" = short entry tunnel into one large
+## straight room holding a single boss whose death activates the exit portal.
+@export var kind := "tunnel"
+@export var boss_name := ""
+@export var boss_hp := 0              # absolute HP — bosses skip the mul/add formula
+@export var boss_size := 16.0         # billboard world-size (drones are 4.2)
+@export var boss_tint := Color(1, 1, 1)
+## 3.0: which baked boss model (SpriteModels.BOSSES) — sentinel | brood | maw.
+@export var boss_model := "sentinel"
+## Par time in seconds for the end-of-level rank; 0 derives it from ring count.
+@export var par_time := 0.0
+## Resupply stations on the boss room's back wall (behind the boss). They appear
+## at fight start and any collected ones respawn at each boss phase transition.
+@export var boss_shield_cells := 0
+@export var boss_missile_cells := 0
+
+# --- V2.2 L5: branching side-spurs (campaign, non-boss only) ---
+## Dead-end supply spurs branching off arenas: 0-2 per level. Each holds a cache
+## chamber; the risky ring-snap entry mechanism lives in spur_manager.gd.
+@export var spur_count := 0
+
+# --- v4b: mini-bosses (tunnel sectors) ---
+## A mini-boss holding the kill-locked arena nearest mid-sector (PathGen.mid_arena),
+## by its model in SpriteModels.BOSSES ("" = none). It sleeps until the ship enters
+## its room, fights in two phases (the second from 50%), and counts toward the room's
+## bulkhead: its death opens that door, never the exit.
+@export var miniboss_model := ""
+@export var miniboss_name := ""
+@export var miniboss_hp := 80          # absolute HP, as for a boss
+@export var miniboss_size := 12.0      # billboard world-size
+
+# --- v4c: level structure ---
+## A hub: the kill-locked room nearest mid-sector (PathGen.mid_arena, the mini-boss's
+## room where there is one) grows a keycard branch and a switch branch. Its bulkhead
+## needs the room's kills AND the keycard; the switch opens a vault beyond it.
+@export var hub := false
+
+# --- v4c: objectives ---
+## What must be done before the exit lights: "rescue" N stranded pods, shut down N
+## "generators", destroy the "reactor" or the "anchor" (both in the hub room, and
+## each starts the escape clock). "" = no objective: the portal is lit from the start.
+@export var objective_kind := ""
+@export var objective_count := 0

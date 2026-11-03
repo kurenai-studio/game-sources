@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="LevelDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "L8 · THE RIFT GATE"
+briefing = "WARDENS shield their nose: flank them or use BOLT. CARRIERS launch drones until you shoot out their bays. Breach the gate!"
+objective = "DESTROY THE RIFT ANCHOR, THEN ESCAPE"
+rings = 210
+spawn_tunnel = 0.14
+spawn_arena = 0.55
+enemy_hp = 4
+enemy_speed = 9.2
+enemy_fire = 1.6
+theme_id = "void"
+level_seed = 505
+enemy_types = PackedStringArray("weaver", "weaver", "hulk", "hulk", "drone", "turret", "turret", "stinger", "stinger", "spinner", "spinner", "mine", "layer", "rammer", "mender", "splitter", "wraith", "crawler", "warden", "carrier", "rammer_hv", "splitter_hv", "warden_hv")
+intro_types = PackedStringArray("warden", "carrier")
+spur_count = 2
+miniboss_model = "gatewarden"
+miniboss_name = "GATE WARDEN"
+miniboss_hp = 140
+miniboss_size = 13.0
+hub = true
+objective_kind = "anchor"
+objective_count = 1

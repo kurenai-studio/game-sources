@@ -1,0 +1,2211 @@
+extends Node3D
+## Root orchestrator: owns the level flow (briefing → fly → locked arenas → exit
+## portal → next level → victory), the weapon heat economy, and all system wiring.
+## Everything under it is built in code from procedural assets.
+
+enum State { MENU, BRIEFING, PLAYING, PAUSED, GAME_OVER, LEVEL_CLEAR, VICTORY }
+
+const HEAT_COOL := 26.0
+const OVERHEAT_LOCK := 3.0
+const PORTAL_TRIGGER_SQ := 49.0
+const OVERDRIVE_RATE := 0.5   # 3.0: fire-interval multiplier while OVERDRIVE runs
+## 3.0: odds that clearing a locked arena leaves a power-up for the player
+const ARENA_POWER_CHANCE := 0.5
+
+var state := State.MENU
+var weapons: Array[WeaponDef] = []
+var levels: Array[LevelDef] = []
+
+var path: PathGen
+var world: WorldBuilder
+var player: PlayerShip
+var enemy_mgr: EnemyManager
+var shot_mgr: ShotManager
+var pickup_mgr: PickupManager
+var prop_mgr: PropManager       # K3 fuel cells
+var hazard_mgr: HazardManager   # K3 crushers
+var gib_mgr: GibManager         # V2.2 L1 debris + hit-stop
+var spur_mgr: SpurManager       # V2.2 L5 side-spurs (hatch + ring-snap + cache)
+var hud: Hud
+var overlays: Overlays
+var view: SubViewport
+var automap: Automap             # V2.2 L4a: Tab automap, inside the 320x200 SubViewport
+var dither_layer: CanvasLayer   # Phase H: toggled by the settings menu
+var _dither_mat: ShaderMaterial   # so the amber "terminal" uniform can be flipped
+var palette_lut: PaletteLUT     # 3.0: 256-color palette + GPU-baked lookup table
+var light_rig: LightRig         # 3.0: every dynamic light (no OmniLight3D anywhere)
+var crt_layer: CanvasLayer      # 3.0: scanline / CRT monitor pass over the whole window
+var _crt_mat: ShaderMaterial
+var env: Environment            # K1: per-level fog/ambient moods retune this
+
+var _fire_cd := 0.0
+var _lowfire_cd := 0.0   # rate-limits the "LOW ENERGY"/"NO MISSILES" nag (I1/I2)
+var _overheat_t := 0.0
+var _arena_spawned := {}
+var _arena_kills := {}
+var _boss_arena_start := -1   # Phase J: first ring of the boss room (-1 = no boss)
+var _boss_announced := false
+var _miniboss_arena := -1     # v4b: the room a mini-boss holds (-1 = none this sector)
+var _miniboss_down := false   # ...and whether it has fallen (checkpoints keep this)
+var _hub_arena := -1          # v4c: the hub room (its door needs the keycard), or -1
+var _vault := {}              # v4c: the secret beyond the hub that the switch unlocks
+var _vault_light := -1
+var KEY_GOLD: Color = Palette.ramp(Palette.GOLD, 12)   # a ramp entry, so it survives quantization
+## v4c objectives: what the sector wants before its exit lights, and the escape clock
+## the reactor and the anchor start. Time = rings left x SEG / BASE_SPEED x slack + base.
+const ESCAPE_SLACK := 1.5
+const ESCAPE_BASE := 8.0
+const ESCAPE_BONUS := 1000
+const ESCAPE_BONUS_PER_SEC := 10
+const ESCAPE_DRAIN := 4.0     # shields per second once the clock is out (x damage taken)
+const ESCAPE_RESUME_MIN := 15.0   # a resume never restarts an escape with less than this
+const OBJ_ORANGE := Color("ffa040")
+var _obj_kind := ""           # "" | rescue | generators | reactor | anchor (from the LevelDef)
+var _obj_total := 0
+var _obj_done := 0
+var _obj_ids: Array = []      # PropManager ids of this sector's generators / reactor / anchor
+var _escape_left := -1.0      # seconds left on the escape clock; -1 = not running, 0 = out
+var _last_style := 0   # V2.2 L2c: sting fires on upward grade changes only
+var _low_shield_warned := false
+var _built_level := -1        # level index the world is currently built for (-1 = dirty)
+var _warmup_rig: Node3D
+var touch_ui: TouchControls   # M4a spike: null unless the build is in touch mode
+var _page_hidden_cb: JavaScriptObject   # re-audit Step 2 (web): keeps the listener alive
+var _touch_mode := false
+## Re-audit Step 4: the latest checkpoint (as saved or loaded), and the one a
+## pending CONTINUE / RETRY FROM CHECKPOINT will resume at the next launch
+var _checkpoint := {}
+var _resume := {}
+## Re-audit Step 5: first-run cockpit callouts on sector 1 — one line at a time,
+## each retired once you've done it (see _update_tips)
+const TIP_STEER := 0
+const TIP_FIRE := 1
+const TIP_BOOST := 2
+const TIP_EVADE := 3
+const TIP_DONE := 4
+const TIP_REPEAT := 3.2      # re-show a pending callout this often
+const TIP_GIVE_UP := 14.0    # never nag: an undone callout moves on after this long
+var _tips_on := false
+var _tip_stage := TIP_DONE
+var _tip_t := 0.0            # time in the current stage
+var _tip_shown_t := 99.0     # time since the current line was last shown
+var _tip_aim := Vector2.ZERO # yaw/pitch when STEER started
+var _tip_shots := 0
+var _tip_dodged := false
+var _first_flight_reported := false
+## Step 3: deaths in the current sector, for game over's "try RECRUIT" hint
+var _deaths_here := 0
+var _deaths_level := -1
+# V2.1 web loading: on single-threaded WebGL, first-use shader/pipeline compiles
+# block the main thread for seconds. On web we build + warm the level across this
+# many rendered frames under an HTML loading overlay, so the freeze is an honest
+# loading screen instead of a hung browser. _warming gates a launch-during-load race.
+const WARM_FRAMES := 12
+var _warming := false
+
+# K5 Void Gauntlet: endless mode runs on a synthetic LevelDef whose numbers climb
+# with distance (one tier per 60 rings ≈ 720 m); the path extends and its arenas
+# are discovered while flying.
+var _gauntlet := false
+var _gauntlet_def: LevelDef
+var _gauntlet_tier := 0
+# V2.1: discovery side effects are queued and drained a little per frame so a
+# newly-completed arena can't spike one frame with a door build + spawn burst
+var _door_queue: Array[Dictionary] = []      # arena dicts awaiting build_door
+var _spawn_queue: Array[Dictionary] = []     # {ring, arena_id, type}
+
+## V2.0 phantom-wall secrets: {ring, side, node, found} — a wall panel you can fly
+## straight through, hiding a pickup cache (the original's holographic walls).
+var _secrets: Array[Dictionary] = []
+
+## v4b: this sector's newcomers (LevelDef.intro_types) -> the ring each is met at
+## first, alone (see _plan_intros). Nothing rolls one of them before its ring.
+var _intro_rings := {}
+## The solo first contacts only happen on a fresh sector start, never on a resume
+var _intros_live := false
+const INTRO_CLEAR := 8   # no random tunnel spawns this many rings either side of one
+const MINIBOSS_GUARDS := 3   # v4b: a mini-boss's room keeps at most this many guards
+
+
+func _ready() -> void:
+	# M4a diagnostics: proves GDScript is actually executing on a device we can't
+	# attach a console to. If the overlay never gets past "STARTING ENGINE", the
+	# engine started but the game did not.
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.vrDiag && window.vrDiag('GAME BOOTING');", true)
+	PixelFont.install()   # 3.0: the game's own bitmap font for every Control, from the start
+	GameState.load_settings()   # Phase H: before overlays build so labels show saved values
+	GameState.load_records()    # Phase J: high score / best ranks / unlocked sector
+	# 3.0: turntable-render every enemy/boss/pickup sprite from its code-built model
+	# (one synchronous GPU pass; headless falls back to the pixel sprites). Before
+	# any manager exists — they pick their sprite sets up in _ready.
+	SpriteForge.bake(self)
+	if OS.has_feature("web"):   # v4b: what the bake cost on this device (vrReport shows it)
+		var gpu := "true" if SpriteForge.gpu_baked else "false"
+		JavaScriptBridge.eval("if (window.vrBoot) { window.vrBoot.bakeMs = %d;" % SpriteForge.bake_ms
+			+ " window.vrBoot.bakeGpu = %s; }" % gpu
+			+ " console.log('[vr] sprite bake %d ms gpu=%s');" % [SpriteForge.bake_ms, gpu], true)
+	for w in ["neutron", "scatter", "bolt", "missile"]:
+		weapons.append(load("res://resources/weapons/%s.tres" % w))
+		AudioSys.prerender_laser(weapons[-1].freq)   # no synth hitch on a first shot
+	# Phase J: probe rather than hardcode the count — adding level_N.tres extends
+	# the campaign. ResourceLoader.exists also matches the .remap files a web export
+	# converts .tres references into.
+	var li := 1
+	while ResourceLoader.exists("res://resources/levels/level_%d.tres" % li):
+		levels.append(load("res://resources/levels/level_%d.tres" % li))
+		li += 1
+	_gauntlet_def = LevelDef.new()
+	_gauntlet_def.display_name = "VOID GAUNTLET"
+	_gauntlet_def.kind = "endless"
+	_gauntlet_def.objective = "SURVIVE — EVERY METRE SCORES"
+	# narrative half lives in Lore.story(-1); this stays the tactical line (<=3 wrapped)
+	_gauntlet_def.briefing = "The tunnel goes on as long as you do, and the void " \
+		+ "keeps sending more. Fly far, fly sharp — your distance is the record."
+	_gauntlet_def.rings = 200   # initial batch; extend_to() grows it in flight
+	_build_game_view()
+	_build_environment()
+	light_rig = LightRig.new()
+	add_child(light_rig)
+	world = WorldBuilder.new()
+	world.light_rig = light_rig
+	view.add_child(world)
+	player = PlayerShip.new()
+	view.add_child(player)
+	enemy_mgr = EnemyManager.new()
+	view.add_child(enemy_mgr)
+	shot_mgr = ShotManager.new()
+	view.add_child(shot_mgr)
+	pickup_mgr = PickupManager.new()
+	view.add_child(pickup_mgr)
+	prop_mgr = PropManager.new()
+	view.add_child(prop_mgr)
+	hazard_mgr = HazardManager.new()
+	view.add_child(hazard_mgr)
+	gib_mgr = GibManager.new()
+	view.add_child(gib_mgr)
+	spur_mgr = SpurManager.new()
+	view.add_child(spur_mgr)
+	hud = Hud.new()
+	hud.layer = 1
+	view.add_child(hud)
+	# V2.2 L4a: Tab automap on its own layer above the HUD (1), below the dither (5),
+	# so the map draws chunky + dithered like the rest of the 320x200 viewport
+	var automap_layer := CanvasLayer.new()
+	automap_layer.layer = 4
+	automap = Automap.new()
+	automap_layer.add_child(automap)
+	view.add_child(automap_layer)
+	_build_dither_layer()
+	overlays = Overlays.new()
+	overlays.layer = 10
+	add_child(overlays)
+	_build_crt_layer()
+	# M4a: touch mode is opt-in via ?touch=1 while the spike is being measured, so
+	# the default desktop build is byte-identical to before.
+	if OS.has_feature("web"):
+		_touch_mode = str(JavaScriptBridge.eval(
+			"window.vrTouchMode ? '1' : '0'", true)) == "1"
+	overlays.touch_mode = _touch_mode   # re-audit Step 5: the manual's touch page
+	if _touch_mode:
+		touch_ui = TouchControls.new()
+		add_child(touch_ui)
+		touch_ui.fire_held.connect(func(down: bool) -> void:
+			if down:
+				Input.action_press("fire")
+			else:
+				Input.action_release("fire"))
+		# M4b: WEAPON/BOMB are one-shot taps, not holds, so they call the same
+		# handlers _unhandled_input already uses for the keyboard/gamepad bindings
+		# (weapon_cycle / plasma_bomb) rather than simulating an action event.
+		touch_ui.weapon_tapped.connect(func() -> void:
+			_select_weapon((GameState.weapon_index + 1) % weapons.size()))
+		touch_ui.bomb_tapped.connect(_fire_plasma_bomb)
+		touch_ui.pause_tapped.connect(_toggle_pause)   # re-audit Step 2
+	# re-audit Step 2: a hidden tab pauses the run. Canvas blur already arrives as a
+	# focus-out notification; this catches a tab switch the blur might miss.
+	if OS.has_feature("web"):
+		_page_hidden_cb = JavaScriptBridge.create_callback(func(_args: Array) -> void:
+			if JavaScriptBridge.eval("document.hidden", true):
+				_auto_pause())
+		JavaScriptBridge.get_interface("document").addEventListener(
+			"visibilitychange", _page_hidden_cb)
+	# wiring
+	shot_mgr.player = player
+	shot_mgr.enemy_mgr = enemy_mgr
+	shot_mgr.weapons = weapons   # V2.2 L3c: pellet_count seam
+	enemy_mgr.player = player
+	enemy_mgr.world = world
+	world.tunnel_spawn_requested.connect(_on_tunnel_spawn)
+	enemy_mgr.enemy_fired.connect(shot_mgr.fire_enemy)
+	enemy_mgr.exploded.connect(shot_mgr.spawn_explosion)
+	enemy_mgr.enemy_killed.connect(_on_enemy_killed)
+	enemy_mgr.turret_destroyed.connect(
+		func(pos: Vector3) -> void: prop_mgr.splash(pos, PropManager.CHAIN_RADIUS))
+	enemy_mgr.boss_killed.connect(_on_boss_killed)
+	enemy_mgr.boss_phase.connect(_on_boss_phase)
+	enemy_mgr.miniboss_engaged.connect(_on_miniboss_engaged)   # v4b
+	enemy_mgr.miniboss_killed.connect(_on_miniboss_killed)
+	enemy_mgr.gibs_requested.connect(gib_mgr.burst)
+	# v4b: a splitter's brood joins its locked room's tally; a mender's repair sparks
+	enemy_mgr.arena_reinforced.connect(func(arena_id: int, n: int) -> void:
+		_arena_spawned[arena_id] = _arena_spawned.get(arena_id, 0) + n)
+	enemy_mgr.mended.connect(shot_mgr.spawn_mend_sparks)
+	# ...a warden's shield turning a shot, and lines like "CARRIER BAYS DOWN"
+	enemy_mgr.deflected.connect(shot_mgr.spawn_deflect_sparks)
+	enemy_mgr.announced.connect(func(text: String) -> void: hud.show_message(text, 2.0))
+	# V2.2 L1: nearby explosions rattle the camera, scaled by proximity
+	enemy_mgr.exploded.connect(func(pos: Vector3, big: bool) -> void:
+		var d2 := pos.distance_squared_to(player.position)
+		if d2 < 1600.0:
+			player.add_shake((0.45 if big else 0.2) * (1.0 - sqrt(d2) / 40.0)))
+	pickup_mgr.player = player
+	enemy_mgr.drop_spawned.connect(pickup_mgr.spawn_drop)
+	pickup_mgr.collected.connect(_on_pickup_collected)
+	spur_mgr.switch_flipped.connect(_on_switch_flipped)   # v4c
+	spur_mgr.cache_collected.connect(func(_id: int) -> void:
+		hud.show_message("SUPPLY CACHE +300", 2.0)
+		AudioSys.play_portal())
+	prop_mgr.player = player
+	prop_mgr.enemy_mgr = enemy_mgr
+	prop_mgr.shot_mgr = shot_mgr
+	shot_mgr.prop_mgr = prop_mgr
+	prop_mgr.cell_destroyed.connect(_on_cell_destroyed)
+	prop_mgr.objective_destroyed.connect(_on_objective_destroyed)   # v4c
+	pickup_mgr.station_collected.connect(_on_station_collected)
+	hazard_mgr.player = player
+	# V2.2 L1e: shield hits also flash a directional arc toward the shooter
+	shot_mgr.player_hit.connect(func(dmg: float, from_pos: Vector3) -> void:
+		player.take_damage(dmg, "SHIELD HIT")
+		hud.show_damage_from(from_pos))
+	player.damaged.connect(func(amount: float, msg: String) -> void:
+		hud.show_message(msg)
+		# v4a: a red pop scaled by the hit (capped at 3 a second inside the HUD)
+		hud.flash_tint(Color(1.0, 0.12, 0.06), clampf(amount / 40.0, 0.12, 0.4)))
+	player.notified.connect(func(msg: String) -> void: hud.show_message(msg))
+	player.dodged.connect(func(dir: Vector3) -> void:
+		shot_mgr.spawn_dodge_burst(player.position + dir * 2.0 + Vector3.UP * -0.4)
+		AudioSys.play_dodge()
+		_tip_dodged = true)   # re-audit Step 5: the EVADE callout's answer
+	GameState.player_died.connect(_on_player_died)
+	overlays.launch_requested.connect(_on_launch)
+	overlays.gauntlet_requested.connect(_on_gauntlet)
+	overlays.next_level_requested.connect(_on_next_level)
+	overlays.retry_requested.connect(_on_retry)
+	overlays.new_campaign_requested.connect(_on_new_campaign)
+	overlays.continue_requested.connect(_on_continue)                  # Step 4
+	overlays.retry_checkpoint_requested.connect(_on_retry_checkpoint)
+	overlays.resume_requested.connect(_toggle_pause)                # re-audit Step 2
+	overlays.quit_to_title_requested.connect(_on_quit_to_title)
+	var names: Array[String] = []
+	for w in weapons:
+		names.append(w.display_name)
+	hud.setup(player, enemy_mgr, shot_mgr, names)
+	AudioSys.set_combat_refs(enemy_mgr, shot_mgr, player)   # V2.2 L2b: music feeds
+	GameState.style_changed.connect(func(grade: int) -> void:   # L2c: sting on ups only
+		if grade > _last_style:
+			AudioSys.style_sting(grade)
+		_last_style = grade)
+	var level_names: Array[String] = []
+	for l in levels:
+		level_names.append(l.display_name)
+	overlays.set_campaign(level_names)   # Phase J sector select
+	# re-audit Step 4: a saved checkpoint lights up CONTINUE on the title
+	_checkpoint = GameState.load_checkpoint(levels.size())
+	_refresh_continue()
+	# Phase H + V2.0: the dither layer hosts both the palette dither and the amber
+	# terminal mode; either being on keeps the layer visible.
+	GameState.dither_toggled.connect(func(_on: bool) -> void: _refresh_view_fx())
+	GameState.amber_toggled.connect(func(_on: bool) -> void: _refresh_view_fx())
+	GameState.crt_changed.connect(_apply_crt)
+	GameState.apply_settings()
+	# idle backdrop behind the start screen (v2.2 does the same)
+	_load_level_world(0)
+	player.reset_to_start()
+	player.active = false
+	Feedback.count(Feedback.EV_LOADED)   # M3: one anonymous "someone arrived" tick
+	# M1.2: a first-time player meets the photosensitivity notice before the menu.
+	overlays.show_only("start" if GameState.seen_warning else "warning")
+	# On web the HTML boot overlay is masking the menu backdrop's first-frame shader
+	# compile; drop it once that heavy frame has actually rendered (see web/vr_shell.html).
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.vrDiag && window.vrDiag('WARMING SHADERS');", true)
+		for i in WARM_FRAMES:
+			await get_tree().process_frame
+		if not _warming:   # a launch during these frames owns the overlay now
+			_web_hide_loading()
+
+
+## Phase I4: the whole game frame (3D world + in-flight HUD + dither) renders in a
+## fixed 320x200 SubViewport scaled up with nearest sampling, so the DOS look is
+## locked to that resolution no matter the window size. The menu/briefing overlays
+## stay OUTSIDE this viewport and draw at native resolution for crisp text (project
+## stretch mode is canvas_items). Do not move overlays inside, and do not let the
+## viewport size follow the window — both would undo the effect.
+func _build_game_view() -> void:
+	var container := SubViewportContainer.new()
+	container.stretch = true
+	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view = SubViewport.new()
+	view.size = Vector2i(320, 200)
+	view.own_world_3d = true
+	view.handle_input_locally = false
+	view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	container.add_child(view)
+	add_child(container)
+
+
+## K1/G3: light diminishing — surfaces dissolve into PURE black with distance (no
+## blue tint anywhere), low ambient so unlit pockets read as real shadow. Per-theme
+## fog distance and ambient tint are applied on top in _apply_theme_mood.
+func _build_environment() -> void:
+	env = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color.BLACK
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color("1b1e26")
+	env.ambient_light_energy = 0.95   # lifts the base tunnel a touch; fog still eats the far end
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color.BLACK
+	env.fog_depth_begin = 18.0   # 3.0: the lit near field reads before the dark eats it
+	env.fog_depth_end = 110.0
+	var we := WorldEnvironment.new()
+	we.environment = env
+	view.add_child(we)
+
+
+## K1/V-10: sector lighting mood — each zone theme can tighten the fog and tint
+## the ambient floor. Boss rooms are wider than most fog ranges, so boss levels
+## get a slack floor to keep the far wall (and the boss) readable.
+func _apply_theme_mood(theme: Dictionary, level: LevelDef) -> void:
+	var fog_end: float = theme.get("fog_end", 100.0)
+	if level.kind == "boss":
+		fog_end = maxf(fog_end, 110.0)
+	env.fog_depth_end = fog_end
+	env.ambient_light_color = theme.get("amb", Color("16181e"))
+	# v4a: the world's banded distance darkness ends where the sprites' fog does
+	light_rig.set_distance(env.fog_depth_begin, fog_end)
+
+
+## Dither layer visibility + amber uniform follow the two view settings. The amber
+## terminal effect lives inside the dither shader, so amber-on forces the layer
+## visible even if plain dither is off.
+func _refresh_view_fx() -> void:
+	dither_layer.visible = GameState.dither_enabled or GameState.amber_mode
+	_dither_mat.set_shader_parameter("amber", 1.0 if GameState.amber_mode else 0.0)
+
+
+## 3.0: the monitor — a full-window pass (above the menus and touch controls too)
+## that draws scanlines, or a curved RGB-masked CRT. Off costs nothing: the layer
+## is hidden.
+func _build_crt_layer() -> void:
+	crt_layer = CanvasLayer.new()
+	crt_layer.layer = 100
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_crt_mat = ShaderMaterial.new()
+	_crt_mat.shader = load("res://shaders/crt.gdshader")
+	rect.material = _crt_mat
+	crt_layer.add_child(rect)
+	add_child(crt_layer)
+	_apply_crt(GameState.crt_mode)
+
+
+func _apply_crt(mode: int) -> void:
+	crt_layer.visible = mode > 0
+	_crt_mat.set_shader_parameter("mode", float(mode))
+
+
+## Phase G2: palette-quantize + Bayer-dither the finished frame (3D + HUD, not the
+## menu overlays). Sits on CanvasLayer 5, between the HUD (1) and overlays (10).
+## 3.0: 256 colors via a GPU-baked lookup table (PaletteLUT) instead of a
+## per-pixel palette loop.
+func _build_dither_layer() -> void:
+	palette_lut = PaletteLUT.new()
+	add_child(palette_lut)
+	var layer := CanvasLayer.new()
+	layer.layer = 5
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://shaders/palette_dither.gdshader")
+	mat.set_shader_parameter("lut_tex", palette_lut.lut_texture)
+	rect.material = mat
+	layer.add_child(rect)
+	view.add_child(layer)
+	dither_layer = layer
+	_dither_mat = mat
+
+
+# ---------- level lifecycle ----------
+
+func _load_level_world(index: int) -> void:
+	GameState.level_index = index
+	var level := _current_level()
+	if _gauntlet:
+		# fresh tier-0 numbers, fresh seed, random zone theme — every run reads different
+		_apply_gauntlet_tier(0)
+		_gauntlet_def.level_seed = randi()
+		var theme_ids: Array = TextureGen.THEMES.keys()
+		_gauntlet_def.theme_id = theme_ids[randi() % theme_ids.size()]
+	path = PathGen.new()
+	path.generate(level.rings, level.level_seed, level.spawn_arena,
+		level.kind == "boss", _gauntlet)
+	# v4c: a hub grows its keycard and switch branches off the room nearest mid-sector;
+	# the supply spurs go first and skip it (so spurs[0] stays a supply spur)
+	_hub_arena = path.mid_arena() if level.hub and level.kind == "tunnel" and not _gauntlet \
+		else -1
+	path.add_spurs(level.spur_count, _hub_arena)   # V2.2 L5 (guarded for boss/endless/0)
+	path.add_hub(_hub_arena)
+	_intro_rings = _plan_intros(level)   # v4b: before any spawn picks a type
+	player.path = path
+	enemy_mgr.path = path
+	enemy_mgr.level = level
+	pickup_mgr.path = path
+	gib_mgr.path = path
+	automap.setup(path, player)   # V2.2 L4a: explored map resets to the new level
+	var theme: Dictionary = TextureGen.THEMES[level.theme_id]
+	_apply_theme_mood(theme, level)
+	world.rebuild(path, level.theme_id)
+	player.world = world
+	enemy_mgr.clear_all()
+	shot_mgr.clear_all()
+	pickup_mgr.clear_all()
+	prop_mgr.clear_all()
+	hazard_mgr.clear_all()
+	gib_mgr.clear_all()
+	hazard_mgr.path = path
+	hazard_mgr.setup(world.prop_material("wall_d", 0.95, Color.WHITE, theme.accent2 * 0.3))
+	_place_props(level)
+	_place_hazards(level)
+	_place_secrets(level)
+	_place_objectives(level)   # v4c: after the cells, traps and secrets it keeps clear of
+	spur_mgr.setup(path, player, pickup_mgr,   # V2.2 L5 (v4c: and the hub's branches)
+		world.prop_material("wall_c", 1.0, Color(1.0, 0.9, 0.7), theme.accent2 * 0.2),
+		world.light_rig)
+	if _hub_arena >= 0:
+		world.mark_door(_hub_arena, KEY_GOLD)   # v4c: the keyed bulkhead glows gold
+		world.set_door_hint(_hub_arena, "KEYCARD REQUIRED")
+	hud.set_key_slot(_hub_arena >= 0)
+	_arena_spawned.clear()
+	_arena_kills.clear()
+	_door_queue.clear()
+	_spawn_queue.clear()
+	# v4b: a mini-boss holds the kill-locked room nearest mid-sector, with its guards
+	# trimmed to three, and counts toward that room's bulkhead like any guard
+	_miniboss_arena = -1
+	_miniboss_down = false
+	if level.kind == "tunnel" and level.miniboss_model != "" and not _gauntlet:
+		_miniboss_arena = path.mid_arena()
+	for arena in path.arenas:
+		if arena.door_ring < 0:
+			continue
+		var guards: Array = arena.spawn_rings
+		if arena.id == _miniboss_arena:
+			guards = guards.slice(0, MINIBOSS_GUARDS)
+			enemy_mgr.spawn_miniboss(arena, level)
+		for ring_idx in guards:
+			enemy_mgr.spawn(ring_idx, arena.id, _pick_enemy_type(level, arena.start))
+		_arena_spawned[arena.id] = guards.size() + (1 if arena.id == _miniboss_arena else 0)
+		_arena_kills[arena.id] = 0
+		if _arena_spawned[arena.id] == 0:
+			world.open_door(arena.id)
+	# V2.2 L5c: 1-2 guards inside each spur. Fresh NEGATIVE arena_id — the kill
+	# handler early-outs on negatives, so spur kills never touch door/lock logic.
+	for sp in path.spurs:
+		enemy_mgr.spawn(sp.start + 3, -100 - sp.id, _pick_enemy_type(level, sp.entry))
+		if sp.cache - sp.start > 8:
+			enemy_mgr.spawn(sp.cache - 2, -100 - sp.id, _pick_enemy_type(level, sp.entry))
+	# Phase J: boss levels put a single boss deep in the final room and keep the
+	# exit ring dark until it falls (no bulkheads on boss levels — see PathGen).
+	_boss_arena_start = -1
+	_boss_announced = false
+	hud.set_boss_name(level.boss_name if level.kind == "boss" else level.miniboss_name)
+	if level.kind == "boss":
+		var room: Dictionary = path.arenas.back()
+		enemy_mgr.spawn_boss(room.end - 8, level)
+		world.set_portal_active(false)
+		_boss_arena_start = room.start
+		_place_boss_stations(room, level)
+	if _gauntlet:
+		_gauntlet_stream()   # discover + wire the arenas in the initial batch
+	_built_level = index
+
+
+## Resupply stations spread across the boss room's back wall, behind the boss —
+## crossing the open chamber to restock is the intended risk/reward. They respawn
+## at each boss phase transition (see _on_boss_phase).
+func _place_boss_stations(room: Dictionary, level: LevelDef) -> void:
+	var kinds: Array[String] = []
+	for i in level.boss_shield_cells:
+		kinds.append("shield")
+	for i in level.boss_missile_cells:
+		kinds.append("missile")
+	if kinds.is_empty():
+		return
+	var ring: Dictionary = path.rings[room.end - 2]
+	for i in kinds.size():
+		var frac := 0.0 if kinds.size() == 1 \
+			else lerpf(-0.55, 0.55, float(i) / (kinds.size() - 1))
+		pickup_mgr.add_station(ring.p + ring.r * (frac * ring.hw), kinds[i], true)
+
+
+## K3: fuel cells sit low in arenas — cover for the player, bait for chain kills.
+## Deterministic per level seed; destroying all of them is the secondary objective.
+func _place_props(level: LevelDef) -> void:
+	GameState.level_props_total = 0
+	GameState.level_props = 0
+	if level.kind == "boss" or _gauntlet:
+		return   # boss rooms stay clean (Phase J); gauntlet arenas stream in later (K5)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level.level_seed + 555
+	for arena in path.arenas:
+		for i in rng.randi_range(2, 4):
+			var ri := rng.randi_range(arena.start + 1, arena.end - 1)
+			var ring: Dictionary = path.rings[ri]
+			var pos: Vector3 = ring.p \
+				+ ring.r * (rng.randf_range(-0.7, 0.7) * ring.hw) \
+				+ ring.u * (-(ring.hh - ring.fo) + 1.4)
+			prop_mgr.spawn_prop(pos)
+	GameState.level_props_total = prop_mgr.cell_count()
+
+
+## v4c: the sector's objective, placed after the cells (so their ids never shift) and
+## deterministic per level seed. The exit starts dark and lights when it is done.
+##  - rescue: pods on plain tunnel, one per equal slice of the sector;
+##  - generators: one in each of the kill-locked rooms in turn (spread through the
+##    sector), by the wall, off the flight line;
+##  - reactor / anchor: in the hub room, off the flight line (the mini-boss's room).
+func _place_objectives(level: LevelDef) -> void:
+	_obj_kind = level.objective_kind if level.kind == "tunnel" and not _gauntlet else ""
+	_obj_total = level.objective_count if _obj_kind != "" else 0
+	_obj_done = 0
+	_obj_ids = []
+	_escape_left = -1.0
+	hud.set_escape(-1.0)
+	if _obj_kind == "":
+		hud.set_objective("")
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level.level_seed + 1313
+	match _obj_kind:
+		"rescue":
+			var sites := _pod_sites()
+			for i in _obj_total:
+				var ri := _pod_ring(sites, i)
+				var ring: Dictionary = path.rings[ri]
+				var pos: Vector3 = ring.p + ring.r * rng.randf_range(-4.5, 4.5) \
+					+ ring.u * ((ring.fo - ring.co) * 0.5)
+				pickup_mgr.add_station(pos, "pod", false, PickupManager.POD_RADIUS)
+		"generators":
+			var rooms: Array[int] = []
+			for a in path.arenas:
+				if a.door_ring >= 0:
+					rooms.append(a.id)
+			if rooms.is_empty():
+				rooms.append(0)
+			for i in _obj_total:
+				var pick: int = (i * rooms.size()) / _obj_total if rooms.size() >= _obj_total \
+					else i % rooms.size()
+				var room: Dictionary = path.arenas[rooms[pick]]
+				var ri := rng.randi_range(room.start + 2, maxi(room.start + 2, room.end - 2))
+				_obj_ids.append(prop_mgr.spawn_objective(
+					_wall_spot(ri, rng.randf_range(0.5, 0.75) * (1.0 if i % 2 == 0 else -1.0),
+						"generator"), "generator"))
+		_:
+			var room: Dictionary = path.arenas[_hub_arena if _hub_arena >= 0 else path.mid_arena()]
+			var ri: int = room.start + int((room.end - room.start) * 0.7)
+			_obj_ids.append(prop_mgr.spawn_objective(
+				_wall_spot(ri, 0.42 * (1.0 if rng.randf() < 0.5 else -1.0), _obj_kind), _obj_kind))
+	world.set_portal_active(false)
+	_refresh_objective_hud()
+
+
+## A spot on the floor of ring `ri`, `frac` of the half-width off the centre line (sign =
+## side), sitting on the floor with room for an objective prop's size.
+func _wall_spot(ri: int, frac: float, kind: String) -> Vector3:
+	var ring: Dictionary = path.rings[ri]
+	return ring.p + ring.r * (frac * ring.hw) \
+		+ ring.u * (-(ring.hh - ring.fo) + float(PropManager.OBJECTIVE[kind].size) * 0.5 + 0.4)
+
+
+## Pod `i` of the sector's pods: the middle of the i-th equal slice of the allowed sites,
+## so they spread over the free tunnel however little of it a short sector has.
+func _pod_ring(sites: Array[int], i: int) -> int:
+	return sites[clampi(((2 * i + 1) * sites.size()) / (2 * _obj_total), 0, sites.size() - 1)]
+
+
+## Rings a pod may sit on, in order: plain tunnel clear of every room and its door,
+## crushers and secrets. The pods take the middle of each equal slice of this list, so
+## they spread over the free tunnel.
+func _pod_sites() -> Array[int]:
+	var out: Array[int] = []
+	for ri in range(24, path.main_ring_count - 24):
+		if _plain_site_ok(ri):
+			out.append(ri)
+	if out.is_empty():
+		out.append(30)
+	return out
+
+
+func _plain_site_ok(ri: int) -> bool:
+	for a in path.arenas:
+		if ri >= a.start - 3 and ri <= maxi(a.end, a.door_ring) + 4:
+			return false
+	for t in hazard_mgr._traps:
+		if absi(ri - t.ring) < 4:
+			return false
+	for sc in _secrets:
+		if absi(ri - int(sc.ring)) < 4:
+			return false
+	return true
+
+
+## v4c: the console's objective counter, in words that fit above the weapons well.
+func _refresh_objective_hud() -> void:
+	var label := ""
+	match _obj_kind:
+		"rescue":
+			label = "PODS %d/%d"
+		"generators":
+			label = "GENERATORS %d/%d"
+		"reactor":
+			label = "REACTOR %d/%d"
+		"anchor":
+			label = "ANCHOR %d/%d"
+	hud.set_objective("" if label == "" else label % [_obj_done, _obj_total],
+		_obj_kind != "" and _obj_done >= _obj_total)
+
+
+## K3: crushers go in plain tunnel stretches — never in arenas, never adjacent to
+## a door ring or a hard corner, always ≥15 rings apart. L1 stays trap-free.
+func _place_hazards(level: LevelDef) -> void:
+	if level.kind == "boss" or GameState.level_index == 0:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level.level_seed + 777
+	var want := clampi(level.rings / 55, 1, 5)
+	var placed: Array[int] = []
+	var side := 1.0
+	for attempt in 60:
+		if placed.size() >= want:
+			break
+		var ri := rng.randi_range(26, level.rings - 24)
+		var ring: Dictionary = path.rings[ri]
+		if ring.arena_id >= 0:
+			continue
+		if path.rings[ri - 1].d.dot(path.rings[ri + 1].d) < 0.98:
+			continue   # mid-corner crushers would be unfair
+		var clear := true
+		for arena in path.arenas:
+			if arena.door_ring >= 0 and absi(ri - arena.door_ring) < 5:
+				clear = false
+		for other in placed:
+			if absi(ri - other) < 15:
+				clear = false
+		if not clear:
+			continue
+		hazard_mgr.spawn_trap(ri, side)
+		side = -side
+		placed.append(ri)
+
+
+## v4c: a rescue pod was flown through.
+func _on_station_collected(kind: String, _id: int) -> void:
+	if kind != "pod" or _obj_kind != "rescue":
+		return
+	_obj_done += 1
+	_refresh_objective_hud()
+	AudioSys.play_powerup()
+	hud.flash_tint(Color(0.35, 0.95, 1.0), 0.14)
+	if _obj_done >= _obj_total:
+		_objective_complete("ALL PODS SAFE · EXIT OPEN")
+	else:
+		hud.show_message("POD RESCUED %d/%d" % [_obj_done, _obj_total], 2.0)
+
+
+## v4c: a generator, the reactor or the anchor went down (it has already blown up and
+## paid its score; the blast's own HUD lines came before this signal).
+func _on_objective_destroyed(kind: String, _id: int, _pos: Vector3) -> void:
+	if _obj_kind == "":
+		return
+	_obj_done = mini(_obj_done + 1, _obj_total)
+	_refresh_objective_hud()
+	AudioSys.play_powerup()
+	player.shake = maxf(player.shake, 0.5)
+	if kind == "generator":
+		if _obj_done >= _obj_total:
+			_objective_complete("ALL GENERATORS DOWN · EXIT OPEN")
+		else:
+			hud.show_message("GENERATOR DOWN %d/%d" % [_obj_done, _obj_total], 2.0)
+	else:
+		gib_mgr.hit_stop(160, 0.25, true)
+		_objective_complete("%s DOWN · ESCAPE!" % kind.to_upper())
+		_start_escape()
+
+
+## v4c: the objective is done: the exit lights.
+func _objective_complete(msg: String) -> void:
+	world.set_portal_active(true)
+	AudioSys.play_portal()
+	hud.show_message(msg, 3.0)
+
+
+## v4c: seconds to reach the exit from `rings_left` rings away (plus `extra_rings` of
+## detour): rings x 12 m at cruise speed (18 m/s), x1.5 slack, + 8 s.
+static func escape_time(rings_left: int, extra_rings := 0) -> float:
+	return float(rings_left + extra_rings) * PathGen.SEG / PlayerShip.BASE_SPEED \
+		* ESCAPE_SLACK + ESCAPE_BASE
+
+
+## v4c: rings from the ship to the sector's end along the main path (a ship inside a
+## branch counts from the branch mouth).
+func _rings_to_exit() -> int:
+	var ri := player.ring_idx
+	if ri >= path.main_ring_count:
+		var sid: int = path.rings[ri].get("spur", -1)
+		ri = int(path.spurs[sid].entry) if sid >= 0 else path.main_ring_count - 1
+	return maxi(0, path.main_ring_count - 1 - ri)
+
+
+## v4c: the reactor or anchor fell: the exit is lit, and the clock starts. A keycard
+## still out in its branch adds that branch's round trip, since the hub door needs it.
+func _start_escape() -> void:
+	var detour := 0
+	if _hub_arena >= 0 and not GameState.has_key:
+		var sp: Dictionary = path.spur_of("key")
+		if not sp.is_empty():
+			detour = 2 * (int(sp.cache) - int(sp.start) + 1)
+	_escape_left = escape_time(_rings_to_exit(), detour)
+	hud.set_escape(_escape_left)
+
+
+## v4c: the escape clock. Out of time is not a fail: the shields drain instead (4/s
+## times the damage-taken multiplier) until the ship is through the exit.
+func _update_escape(delta: float) -> void:
+	if _escape_left < 0.0:
+		return
+	if _escape_left > 0.0:
+		_escape_left = maxf(0.0, _escape_left - delta)
+		if _escape_left == 0.0:
+			hud.show_message("OUT OF TIME · SHIELDS DRAINING — RUN!", 3.0)
+			AudioSys.play_overheat()
+	if _escape_left == 0.0:
+		GameState.shields -= ESCAPE_DRAIN * GameState.damage_taken_mult() * delta
+		player.last_damage = player.elapsed   # no shield regen while the core burns
+	hud.set_escape(_escape_left)
+
+
+## v4c: the objective's line in the level-clear tally ("" when the sector has none).
+func _objective_summary() -> String:
+	match _obj_kind:
+		"rescue":
+			return "PODS %d/%d" % [_obj_done, _obj_total]
+		"generators":
+			return "GENERATORS %d/%d" % [_obj_done, _obj_total]
+		"reactor":
+			return "REACTOR DESTROYED"
+		"anchor":
+			return "ANCHOR DESTROYED"
+	return ""
+
+
+## v4c: the objective's checkpoint entry: what is done and the escape clock.
+func _objective_data() -> Dictionary:
+	var done: Array = []
+	if _obj_kind == "rescue":
+		done = pickup_mgr.station_ids_collected("pod")
+	elif _obj_kind != "":
+		var gone: Array = prop_mgr.gone_ids()
+		done = _obj_ids.filter(func(i: int) -> bool: return i in gone)
+	return {"done": done, "escape_left": _escape_left}
+
+
+## v4c: a resume puts the objective back as the checkpoint had it: done pods and props
+## gone without a blast, the exit lit if that finished it, and a running escape clock
+## resumed (never with less than ESCAPE_RESUME_MIN, so a retry after running out of time
+## is not an instant drain).
+func _apply_objective(ob: Dictionary) -> void:
+	if _obj_kind == "":
+		return
+	var done: Array = ob.get("done", [])
+	if _obj_kind == "rescue":
+		pickup_mgr.mark_stations_collected("pod", done)
+	else:
+		prop_mgr.remove_ids(done)
+	_obj_done = mini(done.size(), _obj_total)
+	var left := float(ob.get("escape_left", -1.0))
+	if left >= 0.0 and _obj_done >= _obj_total:
+		_escape_left = maxf(left, ESCAPE_RESUME_MIN)
+		hud.set_escape(_escape_left)
+	if _obj_done >= _obj_total:
+		world.set_portal_active(true)
+	_refresh_objective_hud()
+
+
+func _on_cell_destroyed() -> void:
+	if GameState.level_props >= GameState.level_props_total:
+		hud.show_message("SECONDARY COMPLETE — ALL CELLS DESTROYED")
+
+
+## V2.0 secrets: 1-2 phantom wall panels per tunnel level, on straight plain-tunnel
+## stretches clear of doors, corners, crushers, and each other. Deterministic per
+## level seed, like props and hazards.
+func _place_secrets(level: LevelDef) -> void:
+	for s in _secrets:
+		if is_instance_valid(s.node):
+			s.node.queue_free()
+	_secrets.clear()
+	GameState.level_secrets = 0
+	GameState.level_secrets_total = 0
+	_vault = {}
+	_vault_light = -1
+	if level.kind != "tunnel":
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = level.level_seed + 999
+	var want := clampi(level.rings / 100, 1, 2)
+	var placed: Array[int] = []
+	# v4c: on a hub level the first secret is the vault, somewhere past the hub's door
+	var vault_from := -1
+	if _hub_arena >= 0:
+		vault_from = int(path.arenas[_hub_arena].door_ring) + 8
+	for attempt in 160:
+		if placed.size() >= want:
+			break
+		var ri := rng.randi_range(30, level.rings - 30)
+		if vault_from >= 0 and placed.is_empty() and ri < vault_from:
+			continue
+		if not _secret_site_ok(ri, placed):
+			continue
+		_secrets.append(_build_secret(ri, 1.0 if rng.randf() < 0.5 else -1.0))
+		if vault_from >= 0 and placed.is_empty():
+			_vault = _secrets.back()
+			_vault.vault = true   # sealed until the hub switch throws (_open_vault)
+		placed.append(ri)
+	# v4c: a hub level always has its vault. If the dice found no site past the door, take
+	# the first sound one in order, easing the flat-wall rule when the corridor is bendy
+	# (L2's is)
+	for flat in ([0.985, 0.95, 0.0] if vault_from >= 0 else []):
+		for ri in range(vault_from, level.rings - 4):
+			if _vault.is_empty() and _secret_site_ok(ri, placed, flat):
+				_secrets.append(_build_secret(ri, 1.0 if rng.randf() < 0.5 else -1.0))
+				_vault = _secrets.back()
+				_vault.vault = true
+	GameState.level_secrets_total = _secrets.size()
+
+
+## A phantom panel can sit at ring `ri`: not in a room, on a straight run, clear of
+## doors, traps and the secrets already `placed`.
+func _secret_site_ok(ri: int, placed: Array[int], flat := 0.985) -> bool:
+	if path.rings[ri].arena_id >= 0:
+		return false
+	if path.rings[ri - 2].d.dot(path.rings[ri + 2].d) < flat:
+		return false   # panels sit flush only on straight wall runs
+	for arena in path.arenas:
+		if arena.door_ring >= 0 and absi(ri - arena.door_ring) < 6:
+			return false
+	for other in placed:
+		if absi(ri - other) < 25:
+			return false
+	for t in hazard_mgr._traps:
+		if absi(ri - t.ring) < 6:
+			return false
+	return true
+
+
+## The panel: a box proud of the wall by ~1 u with a slightly-off wall tint — the
+## manual's "suspicious wall" tell. No collision anywhere in this game is physical,
+## so flying through it just works; discovery is a lateral-depth check per frame.
+func _build_secret(ri: int, side: float) -> Dictionary:
+	var ring: Dictionary = path.rings[ri]
+	var mi := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	# 3.0: sized to the wall face between the corner chamfers, not the full height
+	var face_h: float = (ring.hh - ring.fo - ring.co - ring.ch) * 2.0
+	box.size = Vector3(2.4, face_h - 0.6, PathGen.SEG * 1.6)
+	mi.mesh = box
+	# lit to match the wall it hides in, a shade cooler — the manual's "tell"
+	mi.material_override = world.prop_material("wall_a", 1.0,
+		world.ring_light(ri) * Color(0.9, 0.93, 1.12))
+	mi.transform = Transform3D(Basis(ring.r, ring.u, -ring.d),
+		ring.p + ring.r * (side * (ring.hw - 1.2)) + ring.u * ((ring.fo - ring.co) * 0.5))
+	world.add_child(mi)
+	return {"ring": ri, "side": side, "node": mi, "found": false}
+
+
+## Brushing into a phantom panel reveals it: the panel vanishes, the cache spills
+## out, score lands, and the tally remembers. Runs per frame; ≤2 entries, cheap.
+func _update_secrets() -> void:
+	for s in _secrets:
+		if s.found or absi(player.ring_idx - s.ring) > 1:
+			continue
+		if s.get("vault", false) and not s.get("open", false):
+			continue   # v4c: the vault stays sealed until the switch throws
+		var ring: Dictionary = path.rings[s.ring]
+		var lat: float = (player.position - ring.p as Vector3).dot(ring.r) * s.side
+		if lat > ring.hw - 2.4:
+			s.found = true
+			if is_instance_valid(s.node):
+				s.node.queue_free()
+			GameState.level_secrets += 1
+			if s.get("vault", false):
+				_loot_vault(s, ring)
+				continue
+			GameState.score += 250
+			hud.show_message("SECRET FOUND +250", 2.0)
+			AudioSys.play_portal()
+			var kinds: Array[String] = ["shield", "energy", "missile"]
+			if randf() < 0.35:
+				kinds.append("bomb")
+			for kind in kinds:
+				pickup_mgr.spawn_drop(
+					player.position + ring.d * randf_range(2.0, 6.0), s.ring, kind)
+			pickup_mgr.spawn_drop(   # V2.2 L3b: caches always hide scrap
+				player.position + ring.d * randf_range(2.0, 6.0), s.ring, "salvage", 25)
+
+
+## v4c: the vault's haul: +750, two missile packs, a bomb, a power-up and 60 salvage.
+func _loot_vault(s: Dictionary, ring: Dictionary) -> void:
+	GameState.score += 750
+	hud.show_message("VAULT OPEN +750", 2.5)
+	AudioSys.play_portal()
+	if _vault_light >= 0:
+		world.light_rig.set_static_on(_vault_light, false)
+	var kinds: Array[String] = ["missile", "missile", "bomb", EnemyManager.random_power()]
+	for kind in kinds:
+		pickup_mgr.spawn_drop(player.position + ring.d * randf_range(2.0, 7.0), s.ring, kind)
+	pickup_mgr.spawn_drop(player.position + ring.d * 4.0, s.ring, "salvage", 60)
+
+
+## K5: the active tuning source — campaign levels from resources, gauntlet from
+## the synthetic escalating def.
+func _current_level() -> LevelDef:
+	return _gauntlet_def if _gauntlet else levels[GameState.level_index]
+
+
+## K5: keep the endless path generated ahead of the player, and wire in any arena
+## the scan completes — bulkhead door, exact guard count, kill-counter bookkeeping.
+func _gauntlet_stream() -> void:
+	path.extend_to(player.ring_idx + WorldBuilder.BUILD_AHEAD + 40)
+	if not path.has_unscanned():
+		return
+	for arena in path.discover_arenas(_gauntlet_def.spawn_arena):
+		# bookkeeping is immediate (kill counters must exist before any kill can
+		# land) but the door build + guard spawns drain from per-frame queues —
+		# an arena is discovered 110+ rings out, so there's ~70 s of slack
+		_arena_spawned[arena.id] = arena.spawn_rings.size()
+		_arena_kills[arena.id] = 0
+		_door_queue.append(arena)
+		for ring_idx in arena.spawn_rings:
+			_spawn_queue.append({"ring": ring_idx, "arena_id": arena.id,
+				"type": _pick_enemy_type(_gauntlet_def)})
+		if arena.spawn_rings.is_empty():
+			world.open_door(arena.id)
+
+
+## V2.1: drain discovery side effects — 1 door build + 2 enemy spawns per frame.
+func _drain_stream_queues() -> void:
+	if not _door_queue.is_empty():
+		world.build_door(_door_queue.pop_front())
+	for i in 2:
+		if _spawn_queue.is_empty():
+			break
+		var s: Dictionary = _spawn_queue.pop_front()
+		enemy_mgr.spawn(s.ring, s.arena_id, s.type)
+
+
+## K5: one difficulty tier per 60 rings (~720 m). Newly spawned enemies sample the
+## def at spawn time, so raising it escalates the run without touching live ones.
+func _apply_gauntlet_tier(tier: int) -> void:
+	_gauntlet_tier = tier
+	_gauntlet_def.enemy_hp = 2 + tier / 2
+	_gauntlet_def.enemy_speed = minf(13.0, 6.0 + tier * 0.7)
+	_gauntlet_def.enemy_fire = maxf(1.3, 2.8 - tier * 0.16)
+	_gauntlet_def.spawn_tunnel = minf(0.30, 0.08 + tier * 0.025)
+	_gauntlet_def.spawn_arena = minf(0.55, 0.30 + tier * 0.03)
+	var pool := PackedStringArray(["drone", "drone"])
+	if tier >= 1:
+		pool.append("weaver")
+		pool.append("mine")      # 3.0
+	if tier >= 2:
+		pool.append("hulk")
+		pool.append("turret")
+		pool.append("stinger")   # 3.0
+		pool.append("layer")     # v4b: the roster joins tier by tier, in campaign order
+	if tier >= 3:
+		pool.append("weaver")
+		pool.append("spinner")   # 3.0
+		pool.append("rammer")
+	if tier >= 4:
+		pool.append("stinger")
+		pool.append("mine")
+		pool.append("mender")
+	if tier >= 5:
+		pool.append("hulk")
+		pool.append("turret")   # tier 5+ turrets fire seekers (enemy_speed >= 9)
+		pool.append("spinner")
+		pool.append("splitter")
+		pool.append("wraith")
+		pool.append("crawler")
+	if tier >= 6:
+		pool.append("warden")
+		pool.append("carrier")
+		pool.append("rammer_hv")
+		pool.append("splitter_hv")
+		pool.append("warden_hv")
+	_gauntlet_def.enemy_types = pool
+	AudioSys.set_music_intensity(tier / 8.0)
+
+
+func _launch_level() -> void:
+	if _warming:
+		return   # a Launch click landed mid warm-up (web); ignore until the rig is done
+	Feedback.count_level(Feedback.EV_LEVEL_STARTED, GameState.level_index)   # M3
+	if touch_ui != null:
+		touch_ui.enable(player)   # M4a
+	var resume := _resume   # re-audit Step 4: set by CONTINUE / RETRY FROM CHECKPOINT
+	_resume = {}
+
+	GameState.level_start_score = GameState.score
+	GameState.heat = 0.0
+	GameState.is_overheated = false
+	GameState.weapon_index = 0
+	GameState.missiles = GameState.missile_cap()   # I2→L3c: full rack each level start
+	_overheat_t = 0.0
+	_fire_cd = 0.0
+	GameState.arena_locked = false   # V2.2 L2b: fresh music state per level
+	GameState.boss_active = false
+	GameState.reset_level_stats()
+	if not resume.is_empty():
+		GameState.apply_checkpoint_level_state(resume)   # undo the level-start resets
+	_end_warmup()
+	# the briefing screen already built this level's world (and warmed its shaders);
+	# only rebuild when launched directly without a briefing (tests, dirty world)
+	if _built_level != GameState.level_index:
+		_load_level_world(GameState.level_index)
+	world.prebuild_all()   # no-op unless the launch outran the briefing pump
+	_built_level = -1   # once play starts the world is dirty (doors, kills)
+	player.reset_to_start()
+	if not resume.is_empty():
+		_apply_resume(resume)
+	elif not _gauntlet:
+		_save_checkpoint(1, [])   # re-audit Step 4: every sector start is a checkpoint
+		if GameState.level_index == 0:
+			# re-audit Step 5: a guaranteed first contact a few seconds in, in plain
+			# tunnel well before the first arena, so FIRE is taught on something real
+			enemy_mgr.spawn(mini(12, path.main_ring_count - 2), -1, "drone")
+	_start_tips(resume.is_empty() and not _gauntlet and GameState.level_index == 0)
+	# v4b: newcomers meet the ship alone only on a fresh start (see _on_tunnel_spawn)
+	_intros_live = resume.is_empty() and not _gauntlet
+	overlays.set_launch_label("> LAUNCH")
+	player.active = true
+	GameState.is_dead = false
+	state = State.PLAYING
+	_set_flight_time(true)   # Step 3: GAME SPEED assist
+	overlays.hide_all()
+	hud.show_message(_current_level().display_name)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_report_first_flight()
+
+
+## Re-audit Step 5: on web, note how long the page took to reach the first
+## controllable frame (window.vrBoot.firstFlightMs, logged once).
+func _report_first_flight() -> void:
+	if _first_flight_reported or not OS.has_feature("web"):
+		return
+	_first_flight_reported = true
+	JavaScriptBridge.eval("if (window.vrBoot && !window.vrBoot.firstFlightMs) {"
+		+ " window.vrBoot.firstFlightMs = Math.round(performance.now());"
+		+ " console.log('[vr] first flight at ' + window.vrBoot.firstFlightMs + ' ms'); }", true)
+
+
+## Re-audit Step 5: the first-run callouts only run on a fresh sector-1 launch, and
+## only until they've all been done once.
+func _start_tips(eligible: bool) -> void:
+	_tips_on = eligible and not GameState.seen_flight_tips
+	_tip_stage = TIP_STEER if _tips_on else TIP_DONE
+	_tip_t = 0.0
+	_tip_shown_t = 99.0
+	_tip_aim = Vector2(player.yaw, player.pitch)
+	_tip_shots = GameState.level_shots
+	_tip_dodged = false
+
+
+## One line at a time: STEER -> FIRE -> BOOST -> EVADE. A line re-shows until you do
+## it (or after TIP_GIVE_UP it moves on, so it never nags); EVADE waits for the first
+## bolt to come close. Finishing them all marks the callouts seen for good.
+func _update_tips(delta: float) -> void:
+	if not _tips_on:
+		return
+	_tip_t += delta
+	_tip_shown_t += delta
+	var done := false
+	var can_show := true
+	match _tip_stage:
+		TIP_STEER:
+			can_show = _tip_t >= 1.5
+			done = absf(player.yaw - _tip_aim.x) + absf(player.pitch - _tip_aim.y) > 0.15
+		TIP_FIRE:
+			done = GameState.level_shots > _tip_shots
+		TIP_BOOST:
+			can_show = GameState.level_kills > 0 or _tip_t >= 8.0
+			done = can_show and Input.is_action_pressed("boost")
+		TIP_EVADE:
+			can_show = shot_mgr.threat_near
+			done = _tip_dodged
+	if done or _tip_t >= TIP_GIVE_UP + (25.0 if _tip_stage == TIP_EVADE else 0.0):
+		_tip_stage += 1
+		_tip_t = 0.0
+		_tip_shown_t = 99.0
+		_tip_dodged = false
+		if _tip_stage >= TIP_DONE:
+			_tips_on = false
+			GameState.mark_flight_tips_seen()
+		return
+	if can_show and _tip_shown_t >= TIP_REPEAT:
+		_tip_shown_t = 0.0
+		hud.show_message(tip_text(_tip_stage), TIP_REPEAT - 0.4)
+
+
+## The callout for a stage, worded for the controls in use.
+func tip_text(stage: int) -> String:
+	var lines: Array
+	if _touch_mode:
+		lines = ["DRAG LEFT THUMB TO STEER", "HOLD FIRE TO SHOOT",
+			"DOUBLE-TAP LEFT SIDE TO BOOST", "INCOMING! FLICK STICK TWICE TO ROLL"]
+	elif GameState.gamepad_enabled and not Input.get_connected_joypads().is_empty():
+		lines = ["LEFT STICK TO STEER", "A OR RT TO FIRE",
+			"HOLD RB OR LT TO BOOST", "INCOMING! X OR B TO ROLL CLEAR"]
+	else:
+		lines = ["MOUSE OR ARROWS TO STEER", "CLICK OR SPACE TO FIRE",
+			"HOLD W OR RIGHT-CLICK TO BOOST", "INCOMING! A OR D TO ROLL CLEAR"]
+	return lines[clampi(stage, 0, lines.size() - 1)]
+
+
+func _level_complete() -> void:
+	_set_flight_time(false)
+	_deaths_here = 0
+	world.portal_active = false
+	player.active = false
+	AudioSys.play_portal()
+	AudioSys.stop_engine()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var idx := GameState.level_index
+	if idx == 0 and not _gauntlet:
+		GameState.mark_flight_tips_seen()   # re-audit Step 5: sector 1 is behind you
+	_tips_on = false
+	var earned := GameState.salvage_run   # V2.2 L3: haul this level, captured before banking
+	var bonus := 500 + idx * 250
+	# K3: secondary objective — every fuel cell destroyed
+	var secondary_done := GameState.level_props_total > 0 \
+		and GameState.level_props >= GameState.level_props_total
+	if secondary_done:
+		bonus += 400
+	# v4c: the objective's tally line, and the escape bonus for beating the clock
+	var objective_line := _objective_summary()
+	var escape_bonus := 0
+	if _escape_left > 0.0:
+		escape_bonus = ESCAPE_BONUS + ESCAPE_BONUS_PER_SEC * int(_escape_left)
+		bonus += escape_bonus
+	_escape_left = -1.0
+	hud.set_escape(-1.0)
+	bonus += GameState.peak_style * 100   # V2.2 L2c: style pays
+	GameState.score += bonus
+	# Phase J: rank the run, remember progress
+	var level := levels[idx]
+	var acc := 0
+	if GameState.level_shots > 0:
+		acc = roundi(100.0 * GameState.level_hits / GameState.level_shots)
+	var par := level.par_time
+	if par <= 0.0:
+		# level length at cruise speed, with generous slack for fighting
+		par = level.rings * PathGen.SEG / PlayerShip.BASE_SPEED * 1.9
+	var rank := _compute_rank(acc, player.elapsed, par)
+	GameState.unlocked_level = mini(
+		maxi(GameState.unlocked_level, idx + 1), levels.size() - 1)
+	Feedback.count_level(Feedback.EV_LEVEL_CLEARED, idx)   # M3: pairs with level-started
+	var new_record := GameState.record_progress(rank)
+	GameState.bank_salvage()   # V2.2 L3: this level's salvage haul → persistent bank
+	if idx >= levels.size() - 1:
+		GameState.clear_checkpoint()   # re-audit Step 4: the campaign is done
+		_checkpoint = {}
+		_refresh_continue()
+		state = State.VICTORY
+		overlays.set_final_score("victory", GameState.score, new_record)
+		overlays.show_only("victory")
+	else:
+		# re-audit Step 4: the next sector's start, saved now, so a tab closed on the
+		# tally screen loses nothing
+		var next := _checkpoint_data(1, [])
+		next.level_index = idx + 1
+		next.level_start_score = GameState.score
+		next.weapon_index = 0
+		next.salvage_run = 0
+		next.stats = [0, 0, 0, 0, 0, 0, 0]
+		next.elapsed = 0.0
+		# nothing this sector claimed carries into the next one's start
+		next.cleared_arenas = []
+		next.miniboss_down = false
+		next.secrets_found = []
+		next.caches = []
+		next.props_gone = []
+		next.has_key = false
+		next.switch_on = false
+		next.vault_found = false
+		next.objective = {"done": [], "escape_left": -1.0}
+		_store_checkpoint(next)
+		state = State.LEVEL_CLEAR
+		overlays.set_level_clear(
+			levels[idx].display_name, bonus, GameState.score, levels[idx + 1].display_name,
+			GameState.level_kills, acc, player.elapsed, rank, secondary_done,
+			GameState.level_secrets, GameState.level_secrets_total, GameState.peak_style, earned,
+			spur_mgr.caches_found, spur_mgr.supply_count(), objective_line, escape_bonus)
+		overlays.show_only("level_clear")
+
+
+## 5-point rank: accuracy 30/50/70% and finishing under par / well under par.
+func _compute_rank(acc: int, time: float, par: float) -> String:
+	var pts := 0
+	for gate in [30, 50, 70]:
+		if acc >= gate:
+			pts += 1
+	if time <= par:
+		pts += 1
+	if time <= par * 0.7:
+		pts += 1
+	if pts >= 5:
+		return "S"
+	if pts >= 4:
+		return "A"
+	if pts >= 2:
+		return "B"
+	return "C"
+
+
+func _on_player_died() -> void:
+	state = State.GAME_OVER
+	_set_flight_time(false)
+	player.active = false
+	shot_mgr.spawn_explosion(player.position, true)
+	AudioSys.stop_engine()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if _gauntlet:
+		# K5: a gauntlet run scores by distance; records stay campaign-separate
+		GameState.bank_salvage()   # V2.2 L3e: the run's salvage haul banks at run end
+		var dist := int(player.ring_idx * PathGen.SEG)
+		var new_best := GameState.record_gauntlet(dist)
+		overlays.set_final_score("game_over", GameState.score, new_best, dist)
+	else:
+		var new_record := GameState.record_progress()
+		overlays.set_final_score("game_over", GameState.score, new_record)
+		# Step 3: a second death in the same sector on RUNNER or harder offers
+		# RECRUIT (a new record still takes the line — that news wins)
+		if _deaths_level != GameState.level_index:
+			_deaths_level = GameState.level_index
+			_deaths_here = 0
+		_deaths_here += 1
+		if _deaths_here >= 2 and GameState.difficulty > 0 and not new_record:
+			overlays.suggest_recruit()
+	overlays.set_retry_options(_has_mid_checkpoint())   # re-audit Step 4
+	overlays.show_only("game_over")
+
+
+# ---------- overlay flow ----------
+
+func _on_launch() -> void:
+	if state == State.MENU:
+		# Phase J sector select: campaigns can start at any unlocked level
+		_gauntlet = false
+		GameState.gauntlet_mode = false
+		GameState.level_index = overlays.selected_sector()
+		GameState.level_start_score = 0
+		GameState.score = 0
+		_resume = {}   # NEW CAMPAIGN never resumes
+		_show_briefing()
+	else:
+		_launch_level()
+
+
+## K5: Void Gauntlet entry from the start screen.
+func _on_gauntlet() -> void:
+	GameState.reset_run()   # V2.2 L3e: gauntlet always starts at MK I (no bay mid-run)
+	_resume = {}   # re-audit Step 4: the gauntlet never resumes a campaign checkpoint
+	_gauntlet = true
+	GameState.gauntlet_mode = true
+	_built_level = -1
+	GameState.level_index = 0
+	GameState.level_start_score = 0
+	GameState.score = 0
+	_show_briefing()
+
+
+func _show_briefing() -> void:
+	state = State.BRIEFING
+	overlays.set_briefing(_current_level())
+	overlays.set_launch_label("> RESUME" if not _resume.is_empty() else "> LAUNCH")
+	overlays.show_only("briefing")
+	if OS.has_feature("web"):
+		# WebGL: build + warm under the HTML loading overlay, spread across rendered
+		# frames so the serial, main-thread-blocking shader compiles land here (an
+		# honest loading screen) instead of on the first level frame and the first shot.
+		await _web_load_and_warm()
+	else:
+		# Desktop/headless (warm shader cache): build the level world NOW behind the
+		# briefing overlay and park a warm-up rig in front of the camera so its shader
+		# variants compile while the player reads. Synchronous — unchanged from v2.0.
+		_load_level_world(GameState.level_index)
+		player.reset_to_start()
+		player.active = false
+		_start_warmup()
+		get_tree().create_timer(0.5).timeout.connect(_end_warmup)
+
+
+## Web-only load path. Shows the compositor-animated HTML loading overlay, yields two
+## frames so the browser actually paints it, then builds the level and drives the
+## warm-up across WARM_FRAMES *rendered* frames — long enough that WebGL's serial,
+## blocking shader/pipeline compiles all finish under the overlay. A muted real
+## fire + explosion makes the projectile / explosion / muzzle+boom-light-on-wall
+## variants compile here too, so the first live shot no longer stalls.
+func _web_load_and_warm() -> void:
+	_warming = true
+	_web_show_loading("ENTERING SECTOR",
+		Lore.load_lines(-1 if _gauntlet else GameState.level_index))
+	await get_tree().process_frame
+	await get_tree().process_frame            # give the browser a frame to paint the overlay
+	_load_level_world(GameState.level_index)
+	player.reset_to_start()
+	player.active = false
+	_start_warmup()
+	# exercise the actual combat draw path, silently, so its shaders compile now
+	var was_muted := AudioServer.is_bus_mute(0)
+	AudioServer.set_bus_mute(0, true)
+	var shots0 := GameState.level_shots
+	if not weapons.is_empty():
+		shot_mgr.fire_player(weapons[0])
+	shot_mgr.spawn_explosion(player.position + player.forward() * 12.0, true)
+	for i in WARM_FRAMES:
+		await get_tree().process_frame        # compiles happen here; the overlay keeps spinning
+	GameState.level_shots = shots0
+	shot_mgr.clear_all()                       # also zeroes the boom lights (see ShotManager)
+	AudioServer.set_bus_mute(0, was_muted)
+	_end_warmup()
+	await get_tree().process_frame
+	_web_hide_loading()
+	_warming = false
+
+
+func _web_show_loading(msg := "LOADING", lines := PackedStringArray()) -> void:
+	# V2.2 story pass: `lines` become the overlay's rotating lore transmissions —
+	# their crossfade is pure CSS, so it keeps moving while shader compiles block JS.
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.vrShowLoading && window.vrShowLoading(%s, %s);" \
+			% [JSON.stringify(msg), JSON.stringify(Array(lines))], true)
+
+
+func _web_hide_loading() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.vrHideLoading && window.vrHideLoading();", true)
+
+
+## One small instance of every material the level can draw — enemy/boss sprites,
+## shots, explosions, sparks, pickups, door + portal meshes — plus energized
+## muzzle/boom lights, visible to the camera for a few frames during the briefing.
+func _start_warmup() -> void:
+	_end_warmup()
+	_warmup_rig = Node3D.new()
+	view.add_child(_warmup_rig)
+	var fwd := player.forward()
+	var right := fwd.cross(Vector3.UP).normalized()
+	var base: Vector3 = player.position + fwd * 9.0
+	var texes: Array = []
+	texes.append_array(enemy_mgr.warmup_textures())
+	texes.append_array(pickup_mgr.warmup_textures())
+	texes.append_array(prop_mgr.warmup_textures())
+	for i in texes.size():
+		var s := SpriteGen.make_sprite(texes[i], 0.7)
+		s.position = base + right * ((i % 6) - 2.5) * 1.1 \
+			+ Vector3.UP * (float(i / 6) - 1.0) * 1.1
+		_warmup_rig.add_child(s)
+	# v4: shots, blasts, smoke, sparks and debris draw through FxBatch layers now;
+	# one instance of each, in a row under the sprites, compiles their variants
+	var row: Vector3 = base + Vector3.UP * -2.2 - right * 3.3
+	shot_mgr.warmup_batches(row, right * 1.1)
+	gib_mgr.warmup_batch(row + right * 1.1 * shot_mgr.layers().size())
+	world.warmup_meshes(_warmup_rig, base + Vector3.UP * 2.4)
+	player.muzzle_energy = 0.6
+	shot_mgr.warmup_boom_light(base, true)
+	# teardown is owned by the caller: the desktop path arms a 0.5s timer, the web
+	# path frees the rig after WARM_FRAMES rendered frames (see _web_load_and_warm)
+
+
+func _end_warmup() -> void:
+	if _warmup_rig and is_instance_valid(_warmup_rig):
+		_warmup_rig.queue_free()
+		player.muzzle_energy = 0.0
+		shot_mgr.warmup_boom_light(Vector3.ZERO, false)
+		shot_mgr.sync_batches()   # v4: the warm-up instances go; live effects stay
+		gib_mgr.sync_batch()
+	_warmup_rig = null
+
+
+func _on_next_level() -> void:
+	GameState.level_index += 1
+	_show_briefing()
+
+
+func _on_retry() -> void:
+	_resume = {}
+	GameState.reset_level()
+	_show_briefing()
+
+
+## Re-audit Step 4: title CONTINUE. Re-reads the save (the newer of user:// and
+## localStorage), restores the run and opens that sector's briefing to resume.
+func _on_continue() -> void:
+	var cp := GameState.load_checkpoint(levels.size())
+	_checkpoint = cp
+	_refresh_continue()
+	if cp.is_empty():
+		return
+	_gauntlet = false
+	GameState.gauntlet_mode = false
+	_begin_resume(cp)
+
+
+## Re-audit Step 4: game over RETRY FROM CHECKPOINT — falls back to a sector
+## restart if the save is gone or belongs to another sector.
+func _on_retry_checkpoint() -> void:
+	var cp := GameState.load_checkpoint(levels.size())
+	if cp.is_empty() or int(cp.level_index) != GameState.level_index:
+		_on_retry()
+		return
+	_begin_resume(cp)
+
+
+func _begin_resume(cp: Dictionary) -> void:
+	GameState.reset_level_stats()   # streaks and power-ups never carry over
+	GameState.apply_checkpoint(cp)
+	_resume = cp
+	_built_level = -1
+	_show_briefing()
+
+
+## Re-audit Step 4: after _launch_level built the sector, put back what the
+## checkpoint had already done — cleared bulkheads open with their guards gone, no
+## tunnel spawns behind the ship, the ship on the checkpoint ring, the clock.
+func _apply_resume(cp: Dictionary) -> void:
+	_apply_objective(cp.get("objective", {}))   # v4c: first, the resume ring depends on it
+	var ring := _resume_ring(int(cp.ring))
+	var cleared: Array = cp.cleared_arenas
+	for id in cleared:
+		world.open_door(int(id))
+		_arena_kills[int(id)] = _arena_spawned.get(int(id), 0)
+	enemy_mgr.remove_where(func(e: Dictionary) -> bool:
+		return int(e.arena_id) in cleared or (int(e.arena_id) == -1 and int(e.ring) < ring))
+	if bool(cp.get("miniboss_down", false)) and _miniboss_arena >= 0:
+		enemy_mgr.remove_boss()   # v4b: a mini-boss beaten before the save stays beaten
+		_miniboss_down = true
+		if not (_miniboss_arena in cleared):
+			# its room's door still counts it among the kills it waits for
+			_arena_kills[_miniboss_arena] = int(_arena_kills.get(_miniboss_arena, 0)) + 1
+	# v4c: the keycard held, the switch thrown, the vault looted
+	if bool(cp.get("has_key", false)) and _hub_arena >= 0:
+		GameState.has_key = true
+		spur_mgr.take_key()
+		world.set_door_hint(_hub_arena, "")
+	if bool(cp.get("switch_on", false)) and _hub_arena >= 0:
+		spur_mgr.set_switch(true)
+		_open_vault()
+	if bool(cp.get("vault_found", false)) and not _vault.is_empty():
+		_vault.found = true
+		if _vault_light >= 0:
+			world.light_rig.set_static_on(_vault_light, false)
+	world.skip_spawns_to(ring)
+	player.place_at_ring(ring)
+	player.elapsed = float(cp.elapsed)
+	# what the run already claimed stays claimed: found secrets stay open, collected
+	# caches stay empty, blown fuel cells stay gone (older saves lack these keys)
+	var found: Array = cp.get("secrets_found", [])
+	for s in _secrets:
+		if int(s.ring) in found and not s.found:
+			s.found = true
+			if is_instance_valid(s.node):   # (v4c: a resumed vault's panel is already gone)
+				s.node.queue_free()
+	spur_mgr.mark_collected(cp.get("caches", []))
+	prop_mgr.remove_ids(cp.get("props_gone", []))
+	var stats: Array = cp.stats
+	spur_mgr.caches_found = int(stats[6])
+	# belt and braces for pre-fix saves: a tally can never pass its total
+	GameState.level_secrets = mini(GameState.level_secrets, GameState.level_secrets_total)
+	GameState.level_props = mini(GameState.level_props, GameState.level_props_total)
+	spur_mgr.caches_found = mini(spur_mgr.caches_found, spur_mgr.supply_count())
+
+
+## Where a resume puts the ship: the saved ring, but always a couple of rings before the
+## exit portal (the last bulkhead's checkpoint lies past it), and, if an objective (a
+## generator, reactor, anchor or pod) is still undone behind that ring, a few rings before
+## the earliest such one: a room's door opens on its kills, before its objective may be done.
+func _resume_ring(saved: int) -> int:
+	var ring := clampi(saved, 1, maxi(1, world.portal_ring() - 2))
+	var earliest := ring
+	var spots: Array[Vector3] = []
+	for ob in prop_mgr.objective_positions():
+		spots.append(ob.pos)
+	for pod in pickup_mgr.live_stations("pod"):
+		spots.append(pod.pos)
+	for pos in spots:
+		var ri := 1
+		var best := INF
+		for i in path.main_ring_count:   # (a resume happens once: a plain scan will do)
+			var d2: float = (path.rings[i].p as Vector3).distance_squared_to(pos)
+			if d2 < best:
+				best = d2
+				ri = i
+		if ri - 4 < earliest:
+			earliest = ri - 4
+	return clampi(earliest, 1, ring)
+
+
+## Re-audit Step 4: the run as it stands, as a checkpoint at `ring`.
+func _checkpoint_data(ring: int, cleared: Array) -> Dictionary:
+	return {
+		"level_index": GameState.level_index,
+		"level_start_score": GameState.level_start_score,
+		"score": GameState.score,
+		"weapon_marks": GameState.weapon_marks.duplicate(),
+		"plasma_bombs": GameState.plasma_bombs,
+		"missiles": GameState.missiles,
+		"weapon_index": GameState.weapon_index,
+		"shields": GameState.shields,
+		"energy": GameState.energy,
+		"salvage_run": GameState.salvage_run,
+		"stats": [GameState.level_kills, GameState.level_shots, GameState.level_hits,
+			GameState.level_props, GameState.level_secrets, GameState.peak_style,
+			spur_mgr.caches_found],
+		"elapsed": player.elapsed,
+		"ring": ring,
+		"cleared_arenas": cleared,
+		"difficulty": GameState.difficulty,
+		"miniboss_down": _miniboss_down,   # v4b: a fallen mini-boss stays down
+		"secrets_found": _secrets.filter(func(s: Dictionary) -> bool: return s.found) \
+			.map(func(s: Dictionary) -> int: return int(s.ring)),
+		"caches": spur_mgr.collected_ids(),
+		"props_gone": prop_mgr.gone_ids(),
+		# v4c: the hub's keycard and switch, and whether the vault was looted
+		"has_key": GameState.has_key,
+		"switch_on": spur_mgr.switch_on,
+		"vault_found": not _vault.is_empty() and _vault.found,
+		"objective": _objective_data(),   # v4c: pods / generators done, the escape clock
+	}
+
+
+func _save_checkpoint(ring: int, cleared: Array) -> void:
+	_store_checkpoint(_checkpoint_data(ring, cleared))
+
+
+func _store_checkpoint(data: Dictionary) -> void:
+	_checkpoint = GameState.save_checkpoint(data)
+	_refresh_continue()
+
+
+## A checkpoint past this sector's start exists for the sector being played.
+func _has_mid_checkpoint() -> bool:
+	return not _gauntlet and not _checkpoint.is_empty() \
+		and int(_checkpoint.level_index) == GameState.level_index and int(_checkpoint.ring) > 1
+
+
+func _refresh_continue() -> void:
+	var tag := ""
+	if not _checkpoint.is_empty():
+		var li := int(_checkpoint.level_index)
+		if li >= 0 and li < levels.size():
+			tag = levels[li].display_name.split(" · ")[0]
+	overlays.set_continue(tag)
+
+
+func _on_new_campaign() -> void:
+	GameState.reset_run()
+	_show_briefing()
+
+
+# ---------- per-frame ----------
+
+func _process(delta: float) -> void:
+	world.animate(delta)
+	# 3.0: the title screen is translucent over the attract flythrough — no cockpit
+	hud.visible = state != State.MENU
+	if state == State.MENU:
+		_attract(delta)
+	# M4b: touch_ui's own active/visible state used to be set once by enable() and
+	# never revisited, so it kept drawing (and accepting input) over the pause menu,
+	# game-over screen, and every other non-flight state. This line is the fix — it
+	# has to run before the State.PLAYING early-return below, not after.
+	if touch_ui != null:
+		touch_ui.set_flight_active(state == State.PLAYING)
+	if state == State.BRIEFING:
+		# finish building the whole level behind the briefing overlay, 4 ms/frame —
+		# geometry + buffer uploads land here so flight never builds a chunk
+		world.prebuild_step(4000)
+	if state != State.PLAYING:
+		_update_lights(delta)
+		return
+	player.update_flight(delta)
+	_update_tips(delta)   # re-audit Step 5
+	automap.note_ring(player.ring_idx)   # V2.2 L4a: track the high-water explored ring
+	if _gauntlet:
+		_gauntlet_stream()
+		var tier := player.ring_idx / 60
+		if tier != _gauntlet_tier:
+			_apply_gauntlet_tier(tier)
+			hud.show_message("VOID PRESSURE RISING", 1.6)
+			AudioSys.play_select()
+	_drain_stream_queues()
+	world.update_streaming(player.ring_idx)
+	GameState.tick_combo(delta)
+	GameState.tick_powers(delta)   # 3.0: power-up clocks run only while flying
+	_update_heat(delta)
+	_update_firing(delta)
+	enemy_mgr.update_enemies(delta)
+	shot_mgr.update_shots(delta)
+	gib_mgr.update_gibs(delta)
+	pickup_mgr.update_pickups(delta)
+	prop_mgr.update_props(delta)
+	_update_escape(delta)   # v4c
+	hazard_mgr.update_traps(delta)
+	_update_secrets()
+	spur_mgr.update(delta)
+	_update_arena_lock()
+	if _boss_arena_start >= 0 and not _boss_announced \
+			and player.ring_idx >= _boss_arena_start - 4:
+		_boss_announced = true
+		GameState.boss_active = true   # V2.2 L2b: engagement, not spawn — the
+		hud.show_message("WARNING · CLASS-X SIGNATURE", 3.0)   # entry tunnel stays calm
+		AudioSys.play_overheat()
+	# Phase J: one-shot shields-critical callout with hysteresis
+	if GameState.shields < 25.0 and not _low_shield_warned:
+		_low_shield_warned = true
+		hud.show_message("SHIELDS CRITICAL", 2.0)
+		AudioSys.play_hit()
+	elif GameState.shields > 30.0:
+		_low_shield_warned = false
+	# v4 perf groundwork: draw this frame's effects, one call per layer, after
+	# everything that can spawn one (enemies, shots, props, traps) has run
+	shot_mgr.sync_batches()
+	gib_mgr.sync_batch()
+	_update_lights(delta)
+	_check_portal()
+
+
+## A ship that died earlier this frame (bolt, mine, splash) must not still clear the
+## sector on its way through the portal: GAME_OVER wins.
+func _check_portal() -> void:
+	if state == State.PLAYING and world.portal_active \
+			and player.position.distance_squared_to(world.portal_position) < PORTAL_TRIGGER_SQ:
+		_level_complete()
+
+
+## 3.0 attract mode: behind the title screen the camera flies the sector-1 tunnel on
+## autopilot (the way mid-90s DOS games demoed themselves) — steering for a point a
+## few rings ahead, banking into the bends, looping back to the start at the end.
+## No input, no enemies (tunnel spawns are ignored in MENU), just the world.
+func _attract(delta: float) -> void:
+	if path == null or path.rings.size() < 8:
+		return
+	var last: int = (path.main_ring_count if path.main_ring_count > 0 else path.rings.size()) - 1
+	var ahead: Vector3 = path.rings[mini(player.ring_idx + 3, last)].p
+	var to := (ahead - player.position).normalized()
+	var want_yaw := atan2(-to.x, -to.z)
+	var turn := wrapf(want_yaw - player.yaw, -PI, PI)
+	player.yaw += turn * minf(1.0, delta * 1.6)
+	player.pitch = lerpf(player.pitch, clampf(asin(clampf(to.y, -1.0, 1.0)), -0.45, 0.45),
+		minf(1.0, delta * 1.6))
+	player.roll = lerpf(player.roll, clampf(turn * 1.4, -0.3, 0.3), minf(1.0, delta * 2.0))
+	player.rotation = Vector3(player.pitch, player.yaw, player.roll)
+	player.position += player.forward() * (PlayerShip.BASE_SPEED * delta)
+	player.ring_idx = path.nearest_ring(player.position, player.ring_idx)
+	player.position = path.clamp_to_ring(player.position, player.ring_idx, 2.5)
+	# keep every chunk: the loop below jumps back to ring 1, and chunks freed
+	# behind the camera are never rebuilt (the second lap flew through black)
+	world.update_streaming(player.ring_idx, false)
+	if player.ring_idx >= last - 10:
+		player.reset_to_start()
+
+
+## 3.0: this frame's dynamic light — headlight, muzzle flash, explosion flashes,
+## glowing shots — then LightRig folds in the level's animated lamps and pushes
+## the best eight into every sector material.
+func _update_lights(delta: float) -> void:
+	light_rig.begin(player.position)
+	light_rig.add(player.headlight_position(), PlayerShip.HEADLIGHT_COLOR,
+		PlayerShip.HEADLIGHT_ENERGY, PlayerShip.HEADLIGHT_RANGE)
+	if player.muzzle_energy > 0.02:
+		light_rig.add(player.muzzle_position(), player.muzzle_color, player.muzzle_energy, 26.0)
+	shot_mgr.feed_lights(light_rig)
+	light_rig.commit(delta)
+
+
+func _update_heat(delta: float) -> void:
+	if _overheat_t > 0.0:
+		_overheat_t -= delta
+		GameState.heat = maxf(0.0, 100.0 * (_overheat_t / OVERHEAT_LOCK))
+		if _overheat_t <= 0.0:
+			_overheat_t = 0.0
+			GameState.heat = 0.0
+			GameState.is_overheated = false
+			hud.show_message("WEAPONS ONLINE")
+	else:
+		GameState.heat = maxf(0.0, GameState.heat - HEAT_COOL * delta)
+
+
+func _update_firing(delta: float) -> void:
+	_fire_cd -= delta
+	_lowfire_cd -= delta
+	if not Input.is_action_pressed("fire") or _fire_cd > 0.0 or GameState.is_overheated:
+		return
+	var w := weapons[GameState.weapon_index]
+	# --- ammo / energy gates (I2 / I1) — checked before the shot so a blocked
+	# trigger can fire the instant reserves return, without eating the cooldown ---
+	if w.uses_ammo and GameState.missiles <= 0:
+		_notify_cant_fire("NO MISSILES")
+		return
+	if w.energy_cost > 0.0 and GameState.energy < w.energy_cost:
+		_notify_cant_fire("LOW ENERGY")
+		return
+	# V2.2 L3c: NEUTRON marks shorten the interval; heat sinks cool every weapon.
+	# 3.0: OVERDRIVE doubles the fire rate and the guns stop heating at all.
+	var overdrive := GameState.power_on("overdrive")
+	_fire_cd = w.cooldown * GameState.weapon_mult(GameState.weapon_index, "interval") \
+		* (OVERDRIVE_RATE if overdrive else 1.0)
+	shot_mgr.fire_player(w)
+	player.add_kick(GameState.weapon_index)   # V2.2 L1: per-weapon muzzle kick
+	if w.uses_ammo:
+		GameState.missiles -= 1
+	if w.energy_cost > 0.0:
+		GameState.energy -= w.energy_cost   # shared afterburner pool; regens in player.gd
+	if not overdrive:
+		GameState.heat += w.heat * GameState.heat_mult()
+	if GameState.heat >= 100.0:
+		GameState.is_overheated = true
+		_overheat_t = OVERHEAT_LOCK
+		hud.show_message("WEAPONS OVERHEAT")
+		AudioSys.play_overheat()
+
+
+func _notify_cant_fire(msg: String) -> void:
+	if _lowfire_cd > 0.0:
+		return
+	_lowfire_cd = 1.0
+	hud.show_message(msg)
+
+
+## V2.0 plasma bomb (the original's spacebar screen-clear, on P here): heavy
+## damage to every enemy in visual range, reduced against bosses, and nearby
+## fuel cells cook off. Rare pickup, PLASMA_MAX carried.
+func _fire_plasma_bomb() -> void:
+	if GameState.plasma_bombs <= 0:
+		_notify_cant_fire("NO PLASMA BOMBS")
+		return
+	GameState.plasma_bombs -= 1
+	for k in range(enemy_mgr.enemies.size() - 1, -1, -1):
+		var e: Dictionary = enemy_mgr.enemies[k]
+		if e.node.position.distance_squared_to(player.position) > 120.0 * 120.0:
+			continue
+		enemy_mgr.hit_enemy(k, 25 if e.get("is_boss", false) else 60)
+	prop_mgr.splash(player.position, 60.0)
+	hud.flash_white()
+	player.shake = 0.6
+	AudioSys.play_bomb()
+	hud.show_message("PLASMA BOMB — %d LEFT" % GameState.plasma_bombs, 1.6)
+
+
+func _update_arena_lock() -> void:
+	for arena in path.arenas:
+		if arena.door_ring < 0 or world.is_door_open(arena.id):
+			continue
+		if player.ring_idx >= arena.start - 2 and player.ring_idx <= arena.door_ring:
+			GameState.arena_locked = true   # V2.2 L2b: music heat floor
+			hud.set_kill_counter(_arena_kills.get(arena.id, 0), _arena_spawned.get(arena.id, 0))
+			return
+	GameState.arena_locked = false
+	hud.set_kill_counter(0, 0)
+
+
+func _on_pickup_collected(kind: String, value := 0) -> void:
+	match kind:
+		"keycard":   # v4c
+			_on_key_taken()
+			return
+		"pod":   # v4c: a rescue, announced by _on_station_collected
+			return
+		"shield":   # the amount follows the difficulty's pickup value (Step 3)
+			hud.show_message("SHIELD CELL +%d" % roundi(PickupManager.EFFECT.shield
+				* GameState.pickup_mult()))
+		"energy":
+			hud.show_message("ENERGY CORE +%d" % roundi(PickupManager.EFFECT.energy
+				* GameState.pickup_mult()))
+		"missile":
+			hud.show_message("MISSILE PACK +3")
+		"bomb":
+			hud.show_message("PLASMA BOMB +1")
+		"salvage":   # V2.2 L3b
+			hud.show_message("SALVAGE +%d" % value)
+		"overdrive":   # 3.0 timed power-ups
+			GameState.heat = 0.0   # the rush vents the guns, even mid-overheat
+			GameState.is_overheated = false
+			_overheat_t = 0.0
+			hud.show_message("OVERDRIVE — RAPID FIRE!", 2.0)
+		"phase":
+			hud.show_message("PHASE SHIELD — INVULNERABLE!", 2.0)
+		"powercore":
+			hud.show_message("POWER CORE — DOUBLE DAMAGE!", 2.0)
+	# v4a: a gold pop on every pickup — strongest for power-ups, faint for the
+	# frequent salvage drops (the HUD caps flashes at 3 a second either way)
+	hud.flash_tint(Color(1.0, 0.82, 0.25),
+		0.22 if kind in GameState.POWER_TIME else (0.08 if kind == "salvage" else 0.14))
+	if kind in GameState.POWER_TIME:
+		AudioSys.play_powerup()
+	else:
+		AudioSys.play_select()
+
+
+func _on_boss_killed() -> void:
+	GameState.boss_active = false   # V2.2 L2b: let the music breathe again
+	gib_mgr.hit_stop(250, 0.25, true)   # V2.2 L1: boss-death slow-mo beats the cooldown
+	world.set_portal_active(true)
+	hud.show_message("SIGNATURE ELIMINATED — GATE OPEN", 3.0)
+	AudioSys.play_portal()
+	player.shake = 0.6
+
+
+func _on_boss_phase(phase: int) -> void:
+	gib_mgr.hit_stop(90)   # V2.2 L1: phase transitions land with a beat
+	# 3.0: each boss announces its own new trick, so the player knows what's coming
+	# (v4b: a mini-boss has one, at 50%)
+	var msgs := {
+		"sentinel": ["SIGNATURE SHIFTING — VOLLEY PATTERN", "SIGNATURE CRITICAL — STAY MOBILE"],
+		"brood": ["SHE IS LAYING MINES — SHOOT THEM EARLY", "THE BROOD SWARMS — STAY MOBILE"],
+		"maw": ["SPIRAL STORM — KEEP MOVING", "THE MAW RAGES — STAY MOBILE"],
+		"hauler": ["ESCORTS INBOUND — STAY MOBILE"],
+		"tender": ["SPLITTERS HATCHING — CLEAR THEM FAST"],
+		"gatewarden": ["SHIELD DOWN — OPEN FIRE"],
+	}
+	var model: String = enemy_mgr.boss.get("model", _current_level().boss_model)
+	var lines: Array = msgs.get(model, msgs.sentinel)
+	if phase >= 2:
+		hud.show_message(lines[mini(phase - 2, lines.size() - 1)], 2.5)
+	AudioSys.play_overheat()
+	pickup_mgr.replenish_stations()   # back-wall resupply respawns each phase
+
+
+## v4b: the ship entered a mini-boss's room (or shot it from the mouth): name it, and
+## the music climbs as for a boss.
+func _on_miniboss_engaged(boss_name: String) -> void:
+	GameState.boss_active = true
+	hud.show_message("WARNING · %s" % boss_name, 3.0)
+	AudioSys.play_overheat()
+
+
+## v4b: a mini-boss fell. Its room's bulkhead opens with the room's last kill (see
+## _on_enemy_killed); the exit is a separate matter.
+func _on_miniboss_killed() -> void:
+	_miniboss_down = true
+	GameState.boss_active = false   # the music breathes again
+	gib_mgr.hit_stop(200, 0.25, true)
+	hud.show_message("%s DESTROYED" % _current_level().miniboss_name, 2.5)
+	AudioSys.play_powerup()
+	player.shake = 0.5
+
+
+func _on_enemy_killed(arena_id: int) -> void:
+	hud.flash_kill_tick()   # V2.2 L1e: every kill, arena or tunnel
+	if arena_id < 0:
+		return
+	_arena_kills[arena_id] = _arena_kills.get(arena_id, 0) + 1
+	_try_open_bulkhead(arena_id)
+
+
+## A cleared room's bulkhead opens (v4c: the hub's needs the keycard too). Called on
+## each of the room's kills and when the keycard comes aboard.
+func _try_open_bulkhead(arena_id: int) -> void:
+	if arena_id < 0 or world.is_door_open(arena_id) or _arena_spawned.get(arena_id, 0) <= 0 \
+			or _arena_kills.get(arena_id, 0) < _arena_spawned.get(arena_id, 0):
+		return
+	if arena_id == _hub_arena and not GameState.has_key:
+		hud.show_message("ROOM CLEAR · KEYCARD REQUIRED", 2.5)   # it's in a side branch
+		return
+	world.open_door(arena_id)
+	if arena_id == _miniboss_arena and _miniboss_down:
+		hud.show_message("%s DESTROYED · BULKHEAD OPEN" % _current_level().miniboss_name, 2.5)
+	else:
+		hud.show_message("BULKHEAD OPEN")
+	AudioSys.play_select()
+	# re-audit Step 4: a cleared bulkhead is a checkpoint on RECRUIT and RUNNER
+	# (VOIDBORNE saves at sector starts only, the era's way)
+	if state == State.PLAYING and not _gauntlet and GameState.difficulty < 2:
+		var cleared := []
+		var door := -1
+		for a in path.arenas:
+			if a.door_ring >= 0 and world.is_door_open(a.id):
+				cleared.append(a.id)
+			if a.id == arena_id:
+				door = a.door_ring
+		if door >= 0:
+			_save_checkpoint(door + 2, cleared)
+	# 3.0: a cleared room often leaves a power-up floating in the flight line
+	if randf() < ARENA_POWER_CHANCE:
+		var ring := mini(player.ring_idx + 2, path.rings.size() - 1)
+		pickup_mgr.spawn_drop(path.rings[ring].p, ring, EnemyManager.random_power())
+
+
+## v4c: the hub's keycard came aboard: the door's glow and hint stand down, and if the
+## room is already clear it opens now.
+func _on_key_taken() -> void:
+	GameState.has_key = true
+	spur_mgr.take_key()
+	world.set_door_hint(_hub_arena, "")
+	hud.show_message("KEYCARD ACQUIRED", 2.0)
+	AudioSys.play_powerup()
+	_try_open_bulkhead(_hub_arena)
+
+
+## v4c: the hub switch threw: the vault beyond the hub unseals.
+func _on_switch_flipped() -> void:
+	hud.show_message("YOU HEAR A DOOR OPEN", 2.5)
+	AudioSys.play_clank()
+	_open_vault()
+
+
+## v4c: the vault's panel goes, and a gold light marks where it stood.
+func _open_vault() -> void:
+	if _vault.is_empty() or _vault.get("open", false):
+		return
+	_vault.open = true
+	if is_instance_valid(_vault.node):
+		_vault.node.queue_free()
+	var ring: Dictionary = path.rings[_vault.ring]
+	_vault_light = world.light_rig.add_static(
+		ring.p + ring.r * (_vault.side * (ring.hw - 3.0)), KEY_GOLD, 2.0, 30.0, "pulse")
+
+
+func _on_tunnel_spawn(ring_idx: int) -> void:
+	# fires during initial chunk builds (BRIEFING state) and while streaming (PLAYING);
+	# only the menu's idle backdrop stays empty
+	if state == State.MENU:
+		return
+	var level := _current_level()
+	# v4b: a newcomer's first appearance on a fresh start, with its stretch of tunnel
+	# kept clear. It spawns lazily here, as the ship nears, because anything over
+	# 300 u off despawns
+	if _intros_live:
+		for type_id in _intro_rings:
+			var at: int = _intro_rings[type_id]
+			if ring_idx == at:
+				enemy_mgr.spawn(ring_idx, -1, type_id)
+				return
+			if absi(ring_idx - at) <= INTRO_CLEAR:
+				return
+	if randf() < level.spawn_tunnel:
+		enemy_mgr.spawn(ring_idx, -1, _pick_enemy_type(level, ring_idx))
+
+
+## I3: weighted pick from a level's enemy_types pool (repeated ids act as weights).
+## v4b: a sector's newcomer is never picked for a ring before its own introduction,
+## and neither is its heavy variant.
+func _pick_enemy_type(level: LevelDef, ring := 1 << 30) -> String:
+	var pool := level.enemy_types
+	if not _intro_rings.is_empty():
+		pool = PackedStringArray()
+		for id in level.enemy_types:
+			if ring >= int(_intro_rings.get(EnemyManager.base_type(id), -1)):
+				pool.append(id)
+	if pool.is_empty():
+		return "drone"
+	return pool[randi() % pool.size()]
+
+
+## v4b: where each of this sector's newcomers (LevelDef.intro_types) is met first,
+## alone: newcomer i sits mid-way along stretch i of plain tunnel. The first stretch
+## runs from ring 21 (where tunnel spawns begin) to the first arena's mouth, each later
+## one from a bulkhead to the next mouth. A stretch too short to hold one is skipped.
+## A boss sector's entry tunnel is one stretch: ring 21 to the boss room's mouth.
+func _plan_intros(level: LevelDef) -> Dictionary:
+	var out := {}
+	if _gauntlet or level.intro_types.is_empty():
+		return out
+	var stretches: Array[Vector2i] = []
+	var from := 21
+	for arena in path.arenas:
+		stretches.append(Vector2i(from, arena.start - 6))
+		from = maxi(from, (arena.door_ring if arena.door_ring >= 0 else arena.end) + 6)
+	var si := 0
+	for id in level.intro_types:
+		while si < stretches.size() and stretches[si].y - stretches[si].x < 2:
+			si += 1
+		if si >= stretches.size():
+			break
+		out[id] = (stretches[si].x + stretches[si].y) / 2
+		si += 1
+	return out
+
+
+# ---------- input ----------
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("feedback"):
+		# M3: reachable from every state — the moment someone has an opinion is
+		# usually the moment they died, not the moment they reached a menu
+		Feedback.open_form()
+		return
+	if event.is_action_pressed("pause_game"):
+		_toggle_pause()
+		return
+	if state != State.PLAYING:
+		return
+	if event.is_action_pressed("automap"):
+		_open_automap()
+		get_viewport().set_input_as_handled()   # don't leak the Tab to the now-paused map
+		return
+	# I4: the player lives inside the SubViewport, which doesn't receive unhandled
+	# input — mouse look is forwarded from here (root viewport) instead.
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		player.apply_mouse_look(event.relative)
+		return
+	if event is InputEventMouseButton and event.pressed \
+			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+	if event.is_action_pressed("plasma_bomb"):
+		_fire_plasma_bomb()
+		return
+	for i in 4:
+		if event.is_action_pressed("weapon_%d" % (i + 1)):
+			_select_weapon(i)
+			return
+	if event.is_action_pressed("weapon_cycle"):
+		_select_weapon((GameState.weapon_index + 1) % weapons.size())
+
+
+## V2.2 L4a: gather current map markers (found secrets, woken portal), then open the
+## paused automap. Closing is handled by the map itself (it processes when paused).
+func _open_automap() -> void:
+	var secret_rings := PackedInt32Array()
+	for s in _secrets:
+		if s.found:
+			secret_rings.append(s.ring)
+	var portal_ring := maxi(path.main_ring_count - 6, 0) if world.portal_active else -1
+	automap.set_markers(secret_rings, portal_ring, _automap_extras())
+	automap.open()
+
+
+## v4c: what the automap marks beyond secrets and the exit: the keycard (K) and the
+## switch (a star, red until thrown) once their branch has been seen, the sealed hub door
+## (a red bar), the vault (V) once it's open, and ? on each branch mouth not yet flown;
+## and (v4c) the objectives still to do (P / G / R / A).
+func _automap_extras() -> Array:
+	var out: Array = []
+	var seen_to := automap.explored_to()
+	for sp in path.spurs:
+		var kind: String = sp.get("kind", "supply")
+		if not automap.spur_seen(sp.id):
+			if sp.entry <= seen_to:
+				out.append({"pos": path.rings[sp.entry].p, "glyph": "?", "col": Color("c8d0e0")})
+			continue
+		if kind == "key" and not GameState.has_key:
+			out.append({"pos": spur_mgr.key_pos(), "glyph": "K", "col": KEY_GOLD})
+		elif kind == "switch":
+			out.append({"pos": spur_mgr.switch_pos(), "glyph": "*",
+				"col": Color("50ff70") if spur_mgr.switch_on else Color("ff4030")})
+	if _hub_arena >= 0 and not world.is_door_open(_hub_arena):
+		var door: int = path.arenas[_hub_arena].door_ring
+		if door <= seen_to + 2:
+			out.append({"pos": path.rings[door].p, "bar": path.rings[door].r,
+				"col": Color("ff3030")})
+	if not _vault.is_empty() and _vault.get("open", false) and not _vault.found:
+		out.append({"pos": path.rings[_vault.ring].p, "glyph": "V", "col": KEY_GOLD})
+	# v4c: each objective still to do: P pod (cyan), G generator (orange), R reactor and
+	# A anchor (red)
+	for pod in pickup_mgr.live_stations("pod"):
+		out.append({"pos": pod.pos, "glyph": "P", "col": Color("55ffee")})
+	for ob in prop_mgr.objective_positions():
+		out.append({"pos": ob.pos, "glyph": String(ob.kind).substr(0, 1).to_upper(),
+			"col": OBJ_ORANGE if ob.kind == "generator" else Color("ff4030")})
+	return out
+
+
+func _select_weapon(i: int) -> void:
+	if i == GameState.weapon_index:
+		return
+	GameState.weapon_index = i
+	AudioSys.play_select()
+	hud.show_message(weapons[i].display_name + " SELECTED")
+
+
+## Re-audit Step 3: the GAME SPEED assist is a base time scale that only applies in
+## flight. Hit-stop (GibManager) and the automap restore to GameState.time_scale_base,
+## so they never knock the assist back to full speed.
+func _set_flight_time(flying: bool) -> void:
+	GameState.time_scale_base = GameState.flight_time_scale() if flying else 1.0
+	Engine.time_scale = GameState.time_scale_base
+
+
+## Re-audit Step 2: leaving the window or tab mid-flight pauses the run instead of
+## letting the ship fly on unattended (web game portals expect this too). It only
+## ever pauses; coming back waits for the player to press RESUME.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT \
+			or what == NOTIFICATION_APPLICATION_PAUSED:
+		_auto_pause()
+
+
+func _auto_pause() -> void:
+	# an open automap already hard-pauses the tree; the pause menu can wait for it
+	if state == State.PLAYING and not get_tree().paused:
+		_toggle_pause()
+
+
+## Re-audit Step 2: pause -> QUIT TO TITLE. The run ends the way a death ends it
+## (score recorded, the level's unbanked salvage lost; a gauntlet run banks its haul
+## and records its distance), then the title returns over the sector-1 flythrough
+## in exactly the state a fresh boot leaves it.
+func _on_quit_to_title() -> void:
+	if state != State.PAUSED:
+		return
+	if _gauntlet:
+		GameState.bank_salvage()
+		GameState.record_gauntlet(int(player.ring_idx * PathGen.SEG))
+	else:
+		GameState.record_progress()
+	_gauntlet = false
+	GameState.gauntlet_mode = false
+	GameState.reset_run()   # marks, shields, bombs, powers: a new campaign starts clean
+	GameState.arena_locked = false
+	GameState.boss_active = false
+	AudioSys.stop_engine()
+	state = State.MENU
+	player.active = false
+	_load_level_world(0)   # clears every manager and rebuilds the attract tunnel
+	player.reset_to_start()
+	_resume = {}
+	_refresh_continue()   # re-audit Step 4: the checkpoint survives a quit
+	overlays.show_only("start")
+
+
+func _toggle_pause() -> void:
+	if state == State.PLAYING:
+		state = State.PAUSED
+		_set_flight_time(false)   # menus run at real speed
+		player.active = false
+		AudioSys.stop_engine()
+		overlays.show_only("pause")
+	elif state == State.PAUSED:
+		state = State.PLAYING
+		_set_flight_time(true)   # picks up an assist changed from the pause menu
+		player.active = true
+		overlays.hide_all()
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
