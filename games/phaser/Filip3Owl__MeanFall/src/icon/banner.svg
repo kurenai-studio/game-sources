@@ -1,0 +1,86 @@
+<svg width="800" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="300" fill="#0a0a0e" />
+  
+  <!-- Grid Pattern (Subtle) -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="300" fill="url(#grid)" />
+
+  <!-- Normal Distribution Curve (Decorative Background) -->
+  <path d="M 100 250 Q 400 50 700 250" fill="none" stroke="#3388ff" stroke-width="4" stroke-opacity="0.2" />
+  <path d="M 150 250 Q 400 80 650 250" fill="none" stroke="#3388ff" stroke-width="2" stroke-opacity="0.1" />
+
+  <!-- Title "MeanFall" -->
+  <text x="400" y="140" font-family="monospace, serif" font-size="72" font-weight="bold" fill="#ffffff" text-anchor="middle" style="text-shadow: 4px 4px #223388;">MeanFall</text>
+  <text x="400" y="175" font-family="monospace, serif" font-size="18" fill="#aaccff" text-anchor="middle" letter-spacing="4">ESTATÍSTICA &amp; RPG</text>
+
+  <!-- Player Sprite (Simplified Pixel Art) -->
+  <g transform="translate(150, 160) scale(3)">
+    <rect x="8" y="1" width="12" height="10" fill="#e8b886" /> <!-- Head -->
+    <rect x="8" y="0" width="12" height="4" fill="#6b3a1a" /> <!-- Hair -->
+    <rect x="7" y="12" width="14" height="10" fill="#223388" /> <!-- Robe -->
+    <rect x="7" y="17" width="14" height="1" fill="#ffd700" /> <!-- Belt -->
+    <rect x="10" y="5" width="2" height="2" fill="#111111" /> <!-- Eye L -->
+    <rect x="16" y="5" width="2" height="2" fill="#111111" /> <!-- Eye R -->
+  </g>
+
+  <!-- Monster Sprite (Shadow Specter style) -->
+  <g transform="translate(600, 160) scale(3)">
+    <rect x="4" y="5" width="14" height="9" fill="#331155" /> <!-- Hood -->
+    <rect x="6" y="7" width="10" height="5" fill="#000000" /> <!-- Face void -->
+    <rect x="7" y="8" width="2" height="2" fill="#aa66dd" /> <!-- Eye L -->
+    <rect x="13" y="8" width="2" height="2" fill="#aa66dd" /> <!-- Eye R -->
+    <path d="M 4 14 L 18 14 L 20 28 L 2 28 Z" fill="#6633aa" /> <!-- Robe -->
+  </g>
+
+  <!-- Floating Symbols -->
+  <g font-family="serif" font-size="24" font-weight="bold" opacity="0.6">
+    <text x="220" y="80" fill="#ff4400" transform="rotate(-15, 220, 80)">P(A|B)</text>
+    <text x="550" y="70" fill="#44cc44" transform="rotate(10, 550, 70)">Σ x²</text>
+    <text x="120" y="220" fill="#3388ff" transform="rotate(20, 120, 220)">μ</text>
+    <text x="680" y="210" fill="#aa66dd" transform="rotate(-10, 680, 210)">p &lt; 0.05</text>
+    <text x="400" y="260" fill="#ffaa00">σ</text>
+  </g>
+
+  <!-- Elemental Icons at the bottom -->
+  <g transform="translate(250, 260)">
+    <!-- Fire (Dice) -->
+    <rect x="0" y="0" width="20" height="20" fill="#ff4400" rx="2" />
+    <circle cx="5" cy="5" r="1.5" fill="#ffffff" />
+    <circle cx="10" cy="10" r="1.5" fill="#ffffff" />
+    <circle cx="15" cy="15" r="1.5" fill="#ffffff" />
+    
+    <!-- Earth (Bar) -->
+    <rect x="40" y="0" width="20" height="20" fill="#886633" rx="2" />
+    <rect x="43" y="12" width="4" height="5" fill="#ffffff" />
+    <rect x="48" y="5" width="4" height="12" fill="#ffffff" />
+    <rect x="53" y="9" width="4" height="8" fill="#ffffff" />
+
+    <!-- Water (Gauss) -->
+    <rect x="80" y="0" width="20" height="20" fill="#3388ff" rx="2" />
+    <path d="M 82 17 Q 90 5 98 17" fill="none" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Ice (Scatter) -->
+    <rect x="120" y="0" width="20" height="20" fill="#88ddee" rx="2" />
+    <circle cx="125" cy="15" r="1" fill="#ffffff" />
+    <circle cx="130" cy="8" r="1" fill="#ffffff" />
+    <circle cx="135" cy="12" r="1" fill="#ffffff" />
+    <circle cx="128" cy="14" r="1" fill="#ffffff" />
+
+    <!-- Shadow (Inference) -->
+    <rect x="160" y="0" width="20" height="20" fill="#6633aa" rx="2" />
+    <circle cx="170" cy="8" r="5" stroke="#ffffff" fill="none" stroke-width="1.5" />
+    <line x1="174" y1="12" x2="178" y2="16" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Normal (List) -->
+    <rect x="200" y="0" width="20" height="20" fill="#eef6ff" rx="2" />
+    <line x1="204" y1="6" x2="216" y2="6" stroke="#6688aa" stroke-width="2" />
+    <line x1="204" y1="10" x2="216" y2="10" stroke="#6688aa" stroke-width="2" />
+    <line x1="204" y1="14" x2="216" y2="14" stroke="#6688aa" stroke-width="2" />
+  </g>
+
+</svg>
