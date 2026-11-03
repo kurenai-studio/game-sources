@@ -1,0 +1,122 @@
+emitters {
+  mode: PLAY_MODE_ONCE
+  duration: 0.1
+  space: EMISSION_SPACE_WORLD
+  tile_source: "/shared/shrapnel.tilesource"
+  animation: "small"
+  material: "/builtins/materials/particlefx.material"
+  blend_mode: BLEND_MODE_ADD_ALPHA
+  particle_orientation: PARTICLE_ORIENTATION_INITIAL_DIRECTION
+  max_particle_count: 8
+  type: EMITTER_TYPE_CONE
+  properties {
+    key: EMITTER_KEY_SPAWN_RATE
+    points {
+      y: 50.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_SIZE_X
+    points {
+      y: 32.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_SIZE_Y
+    points {
+      y: 8.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_LIFE_TIME
+    points {
+      y: 0.5
+    }
+    spread: 0.1
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_SPEED
+    points {
+      y: 300.0
+    }
+    spread: 100.0
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_SIZE
+    points {
+      y: 20.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_RED
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_GREEN
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_BLUE
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_ALPHA
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_SCALE
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_RED
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_GREEN
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_BLUE
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_ALPHA
+    points {
+      y: 0.9988521
+      t_x: 0.99991566
+      t_y: 0.0129876025
+    }
+    points {
+      x: 1.0
+      y: 0.0072254334
+      t_x: 0.27689195
+      t_y: -0.9609011
+    }
+  }
+  modifiers {
+    type: MODIFIER_TYPE_DRAG
+    properties {
+      key: MODIFIER_KEY_MAGNITUDE
+      points {
+        y: 1.5
+      }
+      spread: 0.5
+    }
+  }
+}

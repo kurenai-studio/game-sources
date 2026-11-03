@@ -1,0 +1,204 @@
+script: "/gui/outro.gui_script"
+fonts {
+  name: "small"
+  font: "/gui/small.font"
+}
+nodes {
+  position {
+    x: 640.0
+    y: 360.0
+  }
+  size {
+    x: 1280.0
+    y: 720.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "background"
+  inherit_alpha: true
+  alpha: 0.5
+}
+nodes {
+  position {
+    x: 640.0
+    y: 584.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Credits"
+  font: "small"
+  id: "credits"
+  outline {
+    x: 1.0
+    y: 0.015686275
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 620.0
+    y: 440.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Art:"
+  font: "small"
+  id: "art"
+  pivot: PIVOT_E
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 660.0
+    y: 440.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Christian & Gustav"
+  font: "small"
+  id: "art2"
+  pivot: PIVOT_W
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 620.0
+    y: 350.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Code:"
+  font: "small"
+  id: "code"
+  pivot: PIVOT_E
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 660.0
+    y: 350.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Ragnar"
+  font: "small"
+  id: "code2"
+  pivot: PIVOT_W
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 620.0
+    y: 260.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Music:"
+  font: "small"
+  id: "music"
+  pivot: PIVOT_E
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 660.0
+    y: 260.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Wrench"
+  font: "small"
+  id: "music2"
+  pivot: PIVOT_W
+  outline {
+    x: 1.0
+    z: 0.07058824
+  }
+  shadow {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
