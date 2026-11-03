@@ -1,0 +1,335 @@
+{
+  "verified_at": "2026-11-02T20:15:02.157748+00:00",
+  "url": "https://shift-buddies.clippmann.de/",
+  "game_source_sha": "cf33fb3dd55da93b229cca2954b7dfcfec120f4e",
+  "validation_sha": "cfd996d06f43377497b1faaa49f091f03f77afba",
+  "source_identity": "src/, index.html, package.json and package-lock.json unchanged from requested game SHA; only tests and release documentation added.",
+  "hosting": {
+    "release": "/var/www/shift-buddies/releases/20261102T200807Z-cf33fb3dd55d",
+    "current": "releases/20261102T200807Z-cf33fb3dd55d",
+    "previous": "releases/20261102T142546Z-15641ccc188f",
+    "backup": "/var/backups/shift-buddies-20261102T200807Z-cf33fb3dd55d",
+    "vhost": "/etc/nginx/sites-available/shift-buddies.clippmann.de.conf"
+  },
+  "manifest": {
+    "path": "deploy/release-2026-11-02-kooperation.sha256",
+    "sha256": "f04a27e7105bff68357fdba898544d55545a4f9e001b4f339599864d64341583"
+  },
+  "assets": [
+    {
+      "path": "assets/index-B6q5LN5Y.js",
+      "sha256": "09818fc31029aeb73526dbfdf0854fc6e6f04a07b7f9e9b9bc3eeb5efd91eaa1"
+    },
+    {
+      "path": "assets/index-BOYBfZDH.css",
+      "sha256": "a64e489a1e95f9358ba556d4c3ef4deb3b8f10f172ff7c0de8c0179d815de246"
+    },
+    {
+      "path": "index.html",
+      "sha256": "64157e9bb777fbc08350f967762579385759317bac0be0793db59618646e3210"
+    }
+  ],
+  "validation": {
+    "rule_tests_passed": 29,
+    "typecheck": "passed",
+    "build": "passed; existing Phaser size warning",
+    "local_production_browser_tests_passed": 8,
+    "public_browser_tests_passed": 8,
+    "rooms_actions": {
+      "bodies": 12,
+      "modules": 26,
+      "tech": 42,
+      "freight": 56,
+      "routes": 49,
+      "bridge": 43
+    },
+    "browser_scope": "All six keyboard solutions, every undo back to room start, replay with reduced motion, T/Shift/buttons, E+direction pull and push with either module, no E-only/normal-drive push, repeat/release/blur/reset, Enter/focused Next/repeat/final ending, occupied bridge, 800px viewport, 32 rendered eyes, no console/runtime errors.",
+    "public_http_tls_hash_path_checks": 22,
+    "old_javascript_asset_status": 404,
+    "tls": "TLS 1.3; CA chain and hostname verified without override/bypass",
+    "isolation": {
+      "tracked_nginx_and_renewal_items": 52,
+      "unchanged": 51,
+      "changed": [
+        "/etc/nginx/sites-available/shift-buddies.clippmann.de.conf"
+      ],
+      "nginx_master_pid_unchanged": "1449224",
+      "certificate_fingerprint_and_dates_unchanged": true,
+      "dns": "No Cloudflare command or DNS mutation"
+    },
+    "neighbor_status_and_body_hashes_unchanged": 13,
+    "rollback": "Previous three files rechecked against previous manifest; matching previous vhost hash and current link retained. Activation used nginx -t, atomic symlink and graceful reload with failure rollback. Rollback retained, not executed."
+  },
+  "neighbors": [
+    {
+      "url": "https://clippmann.de/",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://www.clippmann.de/",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://clippmann.de/preview",
+      "status": 522,
+      "sha256": "c8b9f348c8635d7ffcd5d16ad4b9c65289302dc6c4fe2e0210346b23013fb280"
+    },
+    {
+      "url": "https://preview.clippmann.de/",
+      "status": 200,
+      "sha256": "0314aa2ef33543bb16c884512f8370693d81cc8f20342dd37c8230cf31f70be1"
+    },
+    {
+      "url": "https://preview.clippmann.de/styles.css",
+      "status": 200,
+      "sha256": "b328355f88569abc33382b638a68d2444722b1b806540d31e6cfae194c363406"
+    },
+    {
+      "url": "https://preview.clippmann.de/script.js",
+      "status": 200,
+      "sha256": "387046be7354f8432253099524472426a057e16699f14b86f5e279c9538cf31b"
+    },
+    {
+      "url": "https://preview.clippmann.de/favicon.svg",
+      "status": 200,
+      "sha256": "612ef4bbc7adf63977276d4a0c6399c4a4eada38f5069d1b4d6acfdd7c9912d1"
+    },
+    {
+      "url": "https://preview.clippmann.de/robots.txt",
+      "status": 200,
+      "sha256": "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1"
+    },
+    {
+      "url": "https://rc-preview.clippmann.de/",
+      "status": 200,
+      "sha256": "fbcae2f5aa2ef2020ce4e856be3d7c8666a05d50fc770ec03d4f833b19ac5c65"
+    },
+    {
+      "url": "https://raidpresence.clippmann.de/",
+      "status": 200,
+      "sha256": "28392c9d326c4f9517a0be1604bead01bcf429e7d48800a660dcd33b19633006"
+    },
+    {
+      "url": "https://app.synapse-tp.de/",
+      "status": 200,
+      "sha256": "433e00c8f5c53ad022833758c7af8086ac1f605523c26c9d9ee99db8234149d3"
+    },
+    {
+      "url": "https://control.synapse-tp.de/",
+      "status": 200,
+      "sha256": "b20413069b3b0fdf6febdc65e1f2c1fa1e286cf23a20ec0b0525864b01ec89a1"
+    },
+    {
+      "url": "https://logs.parrotosocial.club/",
+      "status": 200,
+      "sha256": "fe82023ae719e78ba3d6773128a16be426f54a04a826192fa24f254745225b3d"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/cooperation-battery-push.png",
+      "sha256": "eac2ed8939a0fafa4d3bf4b018a5a7afa68d4b3fb9b603f5ce0391eda5a0b41e"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/cooperation-push.png",
+      "sha256": "3b144763cc1467a12aa552f34cb37324c08eb130227cd84cf73cc926f3549672"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-bodies-won.png",
+      "sha256": "ac256ad923466cbe2fb03a5f22144baffa06f691aedc2b41b3b8ae3ba068a9c9"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-bridge-occupied.png",
+      "sha256": "8f8a12165e0333cd7d644d81db3c68ac5f8c6e6e598292cee4025af71876d71c"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-bridge-powered.png",
+      "sha256": "3b96eebbf44174dd3855d9fa50088182d5afa7cb18325b5eca3f91d9b997cb91"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-bridge-retracted.png",
+      "sha256": "4883f488a4feb94c1bb746660e873706607d9a9f9fc88e4f5c31b64ee902a5ce"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-bridge-won.png",
+      "sha256": "08dbc8538cce7c06e93ee1c5602359cf9285324567ec6126ce816cc2230cc8ac"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-facing-down.png",
+      "sha256": "633ef5f71658910a328c497de41a4269850d5bdfeb6e740370ac56e7c7558066"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-facing-left.png",
+      "sha256": "22b8ff1cc856b66efd82b3ab58a966512341a2460de6aebba0d9a4d760200775"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-facing-right.png",
+      "sha256": "a6e8afe6dbea4f426ac14559c2293b0973287f075893f2bd18411d2ef37e7e87"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-facing-up.png",
+      "sha256": "e582e9f6b9689bb1e7e8d3862eb640194c5c61c3a636f993fd63ddc71bfcafbf"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-freight-won.png",
+      "sha256": "fb66c5a38d4bb8a82b2748c5cd7d58435b061b65bbe60d6638864ab8ab424c66"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-magnet-link.png",
+      "sha256": "b9965243a4617b038deb7f243cd581aaf81e10f2bdf957f4f39ca2996457e97f"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-modules-won.png",
+      "sha256": "351f2f80bcfe179237c884ce56857fd9862d55b4adcec17779f5878ecdce6ee7"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-routes-won.png",
+      "sha256": "8fc6b2fd9ed20cca658673d43d4a4c3490aa4d8b332ef58c687ffd69a5423e92"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/expansion-tech-won.png",
+      "sha256": "f1c0032a9c8fdeedc9139593ddc1af2459066a90ea8006733012ad8442b58ca9"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-magnet-down.png",
+      "sha256": "1e475964257cd3cb1a468b38a2b9197d51e6471be775c81fc6996b7f38b8b16d"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-magnet-left.png",
+      "sha256": "5f7e5e91ed1bfdb89a24bfe5adc3675e307fc0a856438a89339934bb89468215"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-magnet-right.png",
+      "sha256": "897ff2335f77c260b629a1941cc1f5fd3af89d218f2007621e493ed394ed91e0"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-magnet-up.png",
+      "sha256": "48b0ab7de26bbcc4ca8174d853e6fc12f0dd69a15871a4d190d4ec17a0f23f50"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-power-down.png",
+      "sha256": "0fa6aa8ec720b1f570b8047a9d1ef5a446a06c65c48fc067a1477a8734ee7200"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-power-left.png",
+      "sha256": "2ac64564a36ce7e696ad0a4fed17209d2c4afd4ad0586fcc4edbb4377b51e041"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-power-right.png",
+      "sha256": "3e222ee253d13a4baae7392827bc13195e539f963c8e6f998a995aa7ec0d7d37"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/bolt-power-up.png",
+      "sha256": "323fd4209f907c7f87579190556f78a6e6216b1f7076854a95862a0453068f40"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-magnet-down.png",
+      "sha256": "0e9c6099cf0bdd4b1ccd542b5628e98fdee203d38c3e3b083cb2624df98e5ceb"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-magnet-left.png",
+      "sha256": "457624e425dd8f42eb59be678652625c8dc0a05137c19291d90caf2d61b2f274"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-magnet-right.png",
+      "sha256": "0ba095d3546f0ef811897a433fea08e1f8f7cb8ddc22b80f69b18a46e24d2013"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-magnet-up.png",
+      "sha256": "94d91820be250411815d0d44d02326650e5c53c200ede052279c7d345af8f625"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-power-down.png",
+      "sha256": "331eb8afbe61b6c3906f5b517fc42a08665dfe26d79a25fb724f88f6ecd223ca"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-power-left.png",
+      "sha256": "2bc4929e743665133171b3b539d7e5b7342286103e27c0c2eb5b47c58ab4333e"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-power-right.png",
+      "sha256": "82845c8b334d2bf8578c87aef713c724b5567747acd6c3f2c5c2cb7a8c6768fe"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/poses/pip-power-up.png",
+      "sha256": "414f079b6010dfff3f8b662826dc26315754cb9a9d1f63fb281e4f7ce01f5f3f"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/technikraum-geloest.png",
+      "sha256": "3c8f0a19cf71ce0c595caa082cf941aa79f165bd62b63751f3590d881b7688e7"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/technikraum-module-getauscht.png",
+      "sha256": "03277bba103d0365b9c66399ce93acad18469c46ed2ae1eafc9d668989195034"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-screenshots/technikraum-start.png",
+      "sha256": "b4fa33006d44e64c488a337a37c9505df76f73e4d2558c9923f1f7f735537c6e"
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/rules.log",
+      "sha256": "aecafab37869395c37287260fa3e49cea3342bec22fe2d57de1663d5ab326869"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/typecheck.log",
+      "sha256": "262c8b81dba9a5295bb3d0dc72692f77755ea74c41381385fd7911fe4a07e242"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/build.log",
+      "sha256": "db132a63b94d0e6bdb959df27ce9fee5178f27c8be9cd675a5b37c5d33ee17c0"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/local-browser.log",
+      "sha256": "da0d314f75f8ed466d2d4359dfaf0634bc424164876444ec2b3b8cdfb4549d53"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/public-browser.log",
+      "sha256": "0b71cff31b4c9644f69b2395c85e395694f5b8473ed269a84c6d3d2858b14b42"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/activation.log",
+      "sha256": "6918f18584645a6e647696f81aa849be03ca613d2f8f8051fe0ea3884f98fc96"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/http-checks.json",
+      "sha256": "3a0e3df2ffa77c6599d2d5c4856c1c90768eda7c8479b5a332d1afb2259065f7"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/tls.log",
+      "sha256": "1a98e3ca185b8e21a1efe9d01ccbaceaf21baebc6112e144fda6312e0bb07e2d"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/isolation.json",
+      "sha256": "9fbf9c2f7d79fe0db540a0e2d3c59b91ebd241aa6b492de475b30d7781d61940"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/atlas.before.json",
+      "sha256": "8edab9d9c089762e183da5b2a24bdf9d6aa56f26939c5124045d58f69f65f491"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/atlas.after.json",
+      "sha256": "1a0fc37dfb0e321c47b96b99d196eea588ba214b086bfac71113ae18a9bea2c3"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/neighbors.before.json",
+      "sha256": "b1abd58d9e25b19828fc1963926590b77b8f91d1ffa1bdc7033d1f74bee430f8"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/neighbors.after.json",
+      "sha256": "f417740db460ca159761def484aefa4fb40b6a1768687c45252d070af9313045"
+    },
+    {
+      "path": ".cache/deploy-cooperation-2026-11-02/remote-final.log",
+      "sha256": "3b701c43d82b95520c2bdfd81c205eac64b81983bb74a4b9a9b560d46316670f"
+    }
+  ],
+  "limits": [
+    "Headless Chromium/Linux; no independent human acceptance, physical OS focus, Firefox/Safari, itch.io embedding or audible review.",
+    "Targeted geometry and required-action checks are not an exhaustive proof of all puzzle states.",
+    "No DNS/Cloudflare/certificate mutation, server restart, other Atlas service change, Discord message, automation or callback registration."
+  ]
+}

@@ -1,0 +1,15 @@
+# Fairy chimney B: a mushroom-capped main chimney with a smaller twin growing from the same base.
+# Canonical size: 3.4 m tall, 0.55 m base radius.
+tuff = mat("tuff", "#DDB58E"); tuff2 = mat("tuff_dark", "#C99A70"); cap = mat("basalt", "#6B5243"); dark = mat("dark", "#2E221B")
+base = jitter(cyl(0.62, 0.5, 0.7, (0, 0, 0.35), tuff2, n=12), 0.03, seed=3)
+body = jitter(cyl(0.5, 0.3, 2.3, (0, 0, 1.8), tuff, n=11), 0.035, seed=4)
+neck = cyl(0.3, 0.46, 0.25, (0, 0, 3.05), cap, n=9)
+hat = jitter(cyl(0.56, 0.12, 0.45, (0, 0, 3.4), cap, n=9), 0.035, seed=6)
+twin = jitter(cyl(0.3, 0.17, 1.6, (0.46, -0.3, 1.45), tuff, n=9), 0.03, seed=7)
+tneck = cyl(0.17, 0.26, 0.15, (0.46, -0.3, 2.32), cap, n=8)
+that = jitter(cyl(0.3, 0.06, 0.3, (0.46, -0.3, 2.55), cap, n=8), 0.03, seed=8)
+door = box((0.08, 0.24, 0.42), (-0.5, 0.1, 0.25), dark)
+win = box((0.08, 0.16, 0.18), (-0.42, -0.05, 1.5), dark)
+win2 = box((0.16, 0.08, 0.16), (0.1, -0.48, 2.3), dark)
+twinwin = box((0.07, 0.1, 0.12), (0.72, -0.35, 1.4), dark)
+origin_bottom(join([base, body, neck, hat, twin, tneck, that, door, win, win2, twinwin], "chimney_b"))
