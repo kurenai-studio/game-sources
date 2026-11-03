@@ -1,0 +1,110 @@
+function init(self)
+	self.rank = nil
+	self.suit = nil
+	self.drag = false
+	self.selected = false
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+local function set_sprite(rank,suit)
+	local r = tostring(rank)
+	--if rank == 11 then r = "J" end
+	--if rank == 12 then r = "Q" end
+	--if rank == 13 then r = "K" end
+	--if rank == 14 then r = "A" end
+	local s = suit .. "_" .. r
+	print(s)
+	sprite.play_flipbook("#sprite", s)
+end
+
+local function overlap_sprite(action)
+	local width = 30
+	local height = width
+	local pos = go.get_position(".")
+	return
+	pos.x < action.x + width and pos.x > action.x - width and
+	pos.y < action.y + width and pos.y > action.y - width
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+	if message_id == hash("set_card") then
+		self.rank = message.rank
+		self.suit = message.suit
+		set_sprite(self.rank,self.suit)
+	end
+	if message_id == hash("move") and self.drag then
+		local pos = vmath.vector3(message.action.x, message.action.y,1)
+		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, pos, go.EASING_LINEAR, 0.3, 0)
+	end
+	if message_id == hash("touch_press") and overlap_sprite(message.action) then
+		print("touch press")
+		msg.post(self.hand_id, "request_drag")
+	end
+	if message_id == hash("set_drag") then self.drag = true end
+	if message_id == hash("touch_release") and self.drag then
+		self.drag = false
+		msg.post(self.hand_id, "release_drag")
+		local pos = go.get_position()
+		pos.z = 0
+		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, pos, go.EASING_LINEAR, 0.3, 0)
+	end
+	if message_id == hash("sel_press") then
+		if overlap_sprite(message.action) then
+			self.selected = not self.selected
+			if self.selected then
+				print("selected", self.rank, self.suit)
+				msg.post(self.score_id, "inc_sel_nr")
+			else 
+				msg.post(self.score_id, "dec_sel_nr")
+			end
+		end
+	end
+	if message_id == hash("play") and self.selected then
+		print("playing", self.rank, self.suit)
+		msg.post(self.score_id, "play_card", {rank=self.rank,suit=self.suit})
+	end
+	if message_id == hash("set_ids") then
+		self.deck_id = message.deck
+		self.hand_id = message.hand
+		self.score_id = message.score
+		self.discard_id = message.discard
+	end
+	if message_id == hash("discard") and self.selected then
+		self.selected = false
+		msg.post(self.discard_id, "discard_card", {card=go.get_id()})
+		msg.post(self.hand_id, "remove_card", {card=go.get_id()})
+	end
+end
+
+
+function on_input(self, action_id, action)
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
