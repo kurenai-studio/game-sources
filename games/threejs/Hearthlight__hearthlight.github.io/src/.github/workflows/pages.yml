@@ -1,0 +1,46 @@
+# The web version on GitHub Pages — NOT ACTIVE: it only runs by hand (Actions → « Web version » →
+# Run workflow), once the repository is public and Settings → Pages → Source is « GitHub Actions ».
+# It publishes the game (index.html, pad.html, src/, vendor/) with a config.js that points the
+# Party Mode at the online relay, and the QR code at the public phone page.
+name: Web version
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  RELAY: wss://vps-ec093ef6.vps.ovh.ca/ws
+  STATS: https://vps-ec093ef6.vps.ovh.ca/hello
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html pad.html play.html src vendor _site/
+          # (the link previews' pictures, at the root the pages' og:image names)
+          cp docs/social/og.png docs/social/og-invite.png _site/
+          owner="${{ github.repository_owner }}"; owner="${owner,,}"; repo="${{ github.event.repository.name }}"
+          # (a <owner>.github.io repository is the site's root; any other is a folder of it)
+          if [ "${repo,,}" = "$owner.github.io" ]; then site="https://$owner.github.io"; else site="https://$owner.github.io/$repo"; fi
+          printf "window.HEARTHLIGHT = { relay: '%s', pad: '%s', stats: '%s', saves: 'https://vps-ec093ef6.vps.ovh.ca/saves' };\n" "$RELAY" "$site/pad.html" "$STATS" > _site/config.js
+          touch _site/.nojekyll
+          cat _site/config.js
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0 (its own upload-artifact is pinned too)
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
