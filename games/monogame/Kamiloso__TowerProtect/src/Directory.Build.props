@@ -1,0 +1,18 @@
+<Project>
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TowerProtect'">
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>TowerProtect</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'TowerProtect'">
+    <None Include="$(MSBuildThisFileDirectory)Licenses\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Licenses\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+</Project>
