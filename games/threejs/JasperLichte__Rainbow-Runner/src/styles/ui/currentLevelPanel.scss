@@ -1,0 +1,54 @@
+.current-level-panel {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 0.5rem;
+  padding-left: 4rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  color: var(--ui-currentLevelPanel-levelCount-font-color);
+  -webkit-user-select: none;        
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  #next-level-btn {
+    background: var(--ui-currentLevelPanel-button-background-color);
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    opacity: 0.6;
+    transition: all 0.25s ease;
+    color: var(--ui-currentLevelPanel-button-font-color);
+    cursor: pointer;
+
+    :hover {
+      opacity: 1;
+      border-radius: 10px;
+    }
+  }
+
+  .levelCounter {
+    padding: 1rem;
+    font-size: 1.4rem;
+
+    span:not(.slash) {
+      font-weight: 700;
+    }
+  }
+
+  #fpsCounter {
+    .low {
+      color: var(--ui-fpsCounter-low-color);
+    }
+
+    .medium {
+      color: var(--ui-fpsCounter-medium-color);
+    }
+
+    .high {
+      color: var(--ui-fpsCounter-high-color);
+    }
+  }
+}
