@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://cs1fvt2abe3j4"]
+
+[ext_resource type="Script" uid="uid://dc0af6r6fvb6d" path="res://Autoload/SoundManager.gd" id="1_p10nr"]
+
+[node name="SoundManager" type="Node" unique_id=272521693]
+process_mode = 3
+script = ExtResource("1_p10nr")
+
+[node name="Player" type="AudioStreamPlayer" parent="." unique_id=31041566]
+max_polyphony = 3
+playback_type = 1
+
+[node name="Enemy" type="AudioStreamPlayer" parent="." unique_id=878363897]
+max_polyphony = 3
+playback_type = 1
+
+[node name="Item" type="AudioStreamPlayer" parent="." unique_id=1188981068]
+max_polyphony = 3
+playback_type = 1
