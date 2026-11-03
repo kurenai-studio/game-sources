@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" style="overflow: hidden">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .a {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .b {
+            translate: -50%;
+            left: 50%;
+            background: #000;
+            font-weight: bold;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body id="b" style="height: 100vh; overflow: hidden">
+    <canvas id="c"></canvas>
+    <script type="module" src="./ts/index.ts"></script>
+    <div id="x" class="a"><div class="b"></div></div>
+</body>
+
+</html>
