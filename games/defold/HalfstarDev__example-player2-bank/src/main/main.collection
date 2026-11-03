@@ -1,0 +1,54 @@
+name: "main"
+instances {
+  id: "audio"
+  prototype: "/main/audio.go"
+}
+collection_instances {
+  id: "bank"
+  collection: "/main/bank.collection"
+}
+collection_instances {
+  id: "player2"
+  collection: "/player2/player2.collection"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "main"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/main/main.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "chat"
+  data: "components {\n"
+  "  id: \"chat\"\n"
+  "  component: \"/main/chat.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "win"
+  data: "components {\n"
+  "  id: \"win\"\n"
+  "  component: \"/main/win.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "title"
+  data: "components {\n"
+  "  id: \"title\"\n"
+  "  component: \"/main/title.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "menu"
+  data: "components {\n"
+  "  id: \"menu\"\n"
+  "  component: \"/main/menu.gui\"\n"
+  "}\n"
+  ""
+}

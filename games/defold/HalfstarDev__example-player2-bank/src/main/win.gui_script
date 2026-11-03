@@ -1,0 +1,55 @@
+local game = require "main.game"
+
+local LINEAR = gui.EASING_LINEAR
+local TOUCH = hash("touch")
+local ENTER = hash("key_enter")
+local SPACE = hash("key_space")
+
+local active = false
+
+local function show()
+	local node = gui.get_node("win")
+	local duration = 1
+	gui.set_enabled(node, true)
+	gui.set_alpha(node, 0)
+	gui.animate(node, "color.w", 1, LINEAR, duration, 0, function()
+		active = true
+	end)
+	if game.is_final() then
+		gui.set_text(gui.get_node("small"), "You finished all levels!")
+	else
+		gui.set_text(gui.get_node("small"), "You cracked the safe! But next time, the security will be stronger.")
+	end
+end
+
+local function hide()
+	active = false
+	local node = gui.get_node("win")
+	local duration = 1
+	gui.animate(node, "color.w", 0, LINEAR, duration, 0, function()
+		gui.set_enabled(node, false)
+	end)
+end
+
+function init(self)
+	gui.set_render_order(10)
+	gui.set_enabled(gui.get_node("win"), false)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		show()
+	elseif message_id == hash("hide") then
+		hide()
+	end
+end
+
+function on_input(self, action_id, action)
+	if active then
+		if action.pressed and (action_id == TOUCH or action_id == ENTER or action_id == SPACE) then
+			game.start_next_level()
+			hide()
+		end
+		return true
+	end
+end

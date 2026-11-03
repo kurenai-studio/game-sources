@@ -1,0 +1,169 @@
+local inputfield = require "main.inputfield"
+local password = require "main.password"
+local game = require "main.game"
+
+local v3 = vmath.vector3
+
+local HASH_TOUCH = hash("touch")
+local LINEAR = gui.EASING_LINEAR
+local OUTSINE = gui.EASING_OUTSINE
+local INOUTSINE = gui.EASING_INOUTSINE
+local ENTER = hash("key_enter")
+local BACKSPACE = hash("key_backspace")
+
+local keyboard = {
+	{"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
+	{"A", "S", "D", "F", "G", "H", "J", "K", "L"},
+	{"Z", "X", "C", "V", "B", "N", "M"},
+}
+
+local screen_active = false
+local screen_hovered = false
+local safe_inputfield
+local keyboard_nodes = {{},{},{}}
+
+local function unhover_screen()
+	if screen_active or not screen_hovered then return end
+	screen_hovered = false
+	local node = gui.get_node("screen")
+	local duration = 0.2
+	gui.animate(node, "scale", v3(0.1, 0.1, 0), INOUTSINE, duration)
+end
+
+local function hover_screen()
+	if screen_active or screen_hovered then return end
+	screen_hovered = true
+	local node = gui.get_node("screen")
+	local duration = 0.2
+	gui.animate(node, "scale", v3(0.12, 0.12, 0), INOUTSINE, duration)
+end
+
+local function show_screen()
+	if screen_active then return end
+	screen_active = true
+	local node = gui.get_node("screen")
+	local duration = 0.2
+	gui.animate(node, "position", v3(0, 0, 0), LINEAR, duration)
+	gui.animate(node, "scale", v3(0.5, 0.5, 0), OUTSINE, duration)
+	gui.animate(gui.get_node("lock"), "color.w", 0, LINEAR, duration)
+end
+
+local function hide_screen()
+	if not screen_active then return end
+	screen_active = false
+	local node = gui.get_node("screen")
+	local duration = 0.2
+	gui.animate(node, "position", v3(360, -80, 0), LINEAR, duration)
+	gui.animate(node, "scale", v3(0.1, 0.1, 0), OUTSINE, duration)
+	gui.animate(gui.get_node("lock"), "color.w", 1, LINEAR, duration)
+	gui.animate(gui.get_node("false"), "color.w", 0, LINEAR, duration)
+	inputfield.clear(safe_inputfield)
+end
+
+local function create_keyboard()
+	local template = gui.get_node("safe_button")
+	for j, row in pairs(keyboard) do
+		for i, letter in pairs(row) do
+			local tree = gui.clone_tree(template)
+			local safe_button = tree[hash("safe_button")]
+			local safe_button_text = tree[hash("safe_button_text")]
+			gui.set_position(safe_button, v3(-450 + (i-1) * 100, -120 - (j-1) * 100, 0))
+			gui.set_text(safe_button_text, letter)
+			keyboard_nodes[j][i] = {
+				button = safe_button,
+				text = safe_button_text,
+			}
+		end
+	end
+	gui.set_enabled(template, false)
+end
+
+local function open()
+	hide_screen()
+	game.win()
+end
+
+local function decline()
+	local node = gui.get_node("false")
+	local duration = 0.5
+	local delay = 1
+	gui.animate(node, "color.w", 1, INOUTSINE, duration, 0, function()
+		gui.animate(node, "color.w", 0, INOUTSINE, duration, delay, function()
+		end)
+	end)
+end
+
+
+
+
+function init(self)
+	gui.set_render_order(4)
+	create_keyboard()
+	safe_inputfield = inputfield.new("safe_text", function(s)
+		if password.is(s) then
+			open()
+		elseif s == password.DEBUG then
+			open()
+		else
+			decline()
+		end
+	end)
+	gui.set_alpha(gui.get_node("false"), 0)
+	safe_inputfield.max_chars = 10
+	safe_inputfield.force_caps = true
+end
+
+function on_message(self, message_id, message, sender)
+	inputfield.on_message(safe_inputfield, message_id, message)
+end
+
+function on_input(self, action_id, action)
+	if screen_active then
+		if action_id then
+			if action.pressed then
+				if action_id == hash("key_esc") then
+					hide_screen()
+				elseif action_id == hash("key_backspace") and #safe_inputfield.text == 0 then
+					hide_screen()
+				end
+			end
+			inputfield.on_input(safe_inputfield, action_id, action)
+			if action.repeated and action_id == HASH_TOUCH then
+				if gui.pick_node(gui.get_node("screen_box"), action.x, action.y) then
+					for j, row in pairs(keyboard) do
+						for i, letter in pairs(row) do
+							local node = keyboard_nodes[j][i].button
+							if gui.pick_node(node, action.x, action.y) then
+								inputfield.add_text(safe_inputfield, letter)
+							end
+						end
+					end
+					if gui.pick_node(gui.get_node("enter"), action.x, action.y) then
+						inputfield.on_input(safe_inputfield, ENTER, action)
+					elseif gui.pick_node(gui.get_node("backspace"), action.x, action.y) then
+						inputfield.on_input(safe_inputfield, BACKSPACE, action)
+					end
+				else
+					hide_screen()
+				end
+			end
+		end
+		return true
+	else
+		if not action_id then
+			if gui.pick_node(gui.get_node("screen"), action.x, action.y) then
+				if not screen_hovered then
+					hover_screen()
+				end
+			else
+				if screen_hovered then
+					unhover_screen()
+				end
+			end
+		elseif action_id == HASH_TOUCH then
+			if action.pressed and gui.pick_node(gui.get_node("screen_box"), action.x, action.y) then
+				show_screen()
+			end
+		end
+	end
+end

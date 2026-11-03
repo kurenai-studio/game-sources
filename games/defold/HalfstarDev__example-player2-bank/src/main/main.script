@@ -1,0 +1,24 @@
+local player2 = require "player2.player2"
+local api = player2.api
+
+function init(self)
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	msg.post("/chat", "acquire_input_focus")
+	msg.post("/menu", "acquire_input_focus")
+	msg.post("/bank/notes", "acquire_input_focus")
+	msg.post("/bank/safe", "acquire_input_focus")
+	msg.post("/win", "acquire_input_focus")
+	msg.post("/title", "acquire_input_focus")
+	msg.post(".", "acquire_input_focus")
+	
+	api.login()
+end
+
+function on_message(self, message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	if action.pressed and action_id == hash("f11") and defos then
+		defos.toggle_fullscreen()
+	end
+end

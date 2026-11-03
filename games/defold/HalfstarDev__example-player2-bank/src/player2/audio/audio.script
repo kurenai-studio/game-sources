@@ -1,0 +1,42 @@
+local tts = require "player2.tts"
+local base64 = require "player2.audio.base64"
+
+local function play(data)
+	local url = "#sound"
+	sound.stop(url)
+	local encoded = string.sub(data, 23) -- needed to remove header data in response from Web API
+	local decoded = base64.decode(encoded)
+	if decoded then
+		resource.set_sound(go.get(url, "sound"), decoded)
+		sound.play(url)
+	end
+end
+
+local function speak(text)
+	tts.speak(text, nil, function(response, error)
+		pprint("tts.speak", response)
+		if response.data then
+			play(response.data)
+		end
+	end)
+end
+
+local function mute()
+	sound.set_group_gain("player2", 0)
+end
+
+local function unmute()
+	sound.set_group_gain("player2", 1)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("play") then
+		play(message.data)
+	elseif message_id == hash("speak") then
+		speak(message.text)
+	elseif message_id == hash("mute") then
+		mute()
+	elseif message_id == hash("unmute") then
+		unmute()
+	end
+end

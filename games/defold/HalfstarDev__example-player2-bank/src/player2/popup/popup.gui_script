@@ -1,0 +1,132 @@
+local system = require "player2.system"
+
+local UPDATE_FREQUENCY = 1
+local COLOR_ON = vmath.vector4(0, 1, 0, 1)
+local COLOR_OFF = vmath.vector4(1, 0, 0, 1)
+local LINEAR = gui.EASING_LINEAR
+local SYSTEM_NAME = sys.get_sys_info().system_name 
+
+--local buttons = {"install", "start", "reload"}
+
+local active = false
+local steps_complete = 0
+local handle
+
+
+
+
+local function hide()
+	if not active then return end
+	timer.cancel(handle)
+	active = false
+	local node = gui.get_node("popup")
+	local duration = 1
+	gui.animate(node, "color.w", 0, LINEAR, duration, 0, function()
+		gui.set_enabled(node, false)
+	end)
+end
+
+local function set_light(step, enabled)
+	local node = gui.get_node("step_dot_"..step)
+	gui.set_color(node, enabled and COLOR_ON or COLOR_OFF)
+end
+
+local function check_steps()
+	if steps_complete <= 0 then
+		if system.is_installed() then
+			set_light(1, true)
+			steps_complete = 1
+		end
+	end
+	if steps_complete <= 2 then
+		system.get_health(function(health)
+			if health then
+				set_light(1, true)
+				set_light(2, true)
+				set_light(3, true)
+				steps_complete = 3
+				hide()
+			end
+		end)
+	end
+end
+
+local function press_button(button)
+	local action = buttons[button]
+	if action == "install" then
+		system.install()
+	elseif action == "start" then
+		if system.is_installed() then
+			system.start()
+			set_light(2, true)
+			steps_complete = 2
+		end
+	elseif action == "reload" then
+		system.get_health(function(health)
+			if health then
+				hide()
+			end
+		end)
+	end
+end
+
+local function show()
+	if active then return end
+	local node = gui.get_node("popup")
+	gui.set_enabled(node, true)
+	gui.set_alpha(node, 0)
+	local duration = 1
+	gui.animate(node, "color.w", 1, LINEAR, duration, 0, function()
+		active = true
+	end)
+	steps_complete = 0
+	set_light(1, false)
+	set_light(2, false)
+	set_light(3, false)
+	handle = timer.delay(UPDATE_FREQUENCY, true, check_steps)
+	check_steps()
+end
+
+
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	gui.set_render_order(15)
+	gui.set_enabled(gui.get_node("popup"), false)
+	system.get_health(function(health)
+		if not health then
+			show()
+		end
+	end)
+	if SYSTEM_NAME == "HTML5" then
+		for i = 1, 3 do
+			local node = gui.get_node("step_dot_"..i)
+			gui.set_enabled(node, false)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("show") then
+		show()
+	elseif message_id == hash("hide") then
+		hide()
+	end
+end
+
+function on_input(self, action_id, action)
+	if not active then return end
+	if action.pressed and action_id == hash("touch") then
+		for i, v in ipairs(buttons) do
+			if gui.pick_node(gui.get_node("step_button_"..i), action.x, action.y) then
+				press_button(i)
+			end
+		end
+		if not gui.pick_node(gui.get_node("popup_box"), action.x, action.y) 
+		and not gui.pick_node(gui.get_node("header"), action.x, action.y) then
+			hide()
+		end
+	end
+	return true
+end

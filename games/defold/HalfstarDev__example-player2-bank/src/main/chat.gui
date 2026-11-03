@@ -1,0 +1,244 @@
+script: "/main/chat.gui_script"
+fonts {
+  name: "font"
+  font: "/assets/fonts/font.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/images/gui/gui.atlas"
+}
+nodes {
+  position {
+    x: 480.0
+    y: 394.0
+  }
+  size {
+    x: 400.0
+    y: 120.0
+  }
+  color {
+    x: 0.949
+    y: 0.949
+    z: 0.949
+  }
+  type: TYPE_BOX
+  id: "output"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 2000.0
+    y: 425.0
+  }
+  type: TYPE_BOX
+  texture: "gui/textbox_bot"
+  id: "output_box"
+  pivot: PIVOT_N
+  parent: "output"
+  inherit_alpha: true
+  slice9 {
+    x: 500.0
+    y: 202.0
+    z: 500.0
+    w: 202.0
+  }
+}
+nodes {
+  position {
+    x: -212.0
+    y: -32.0
+  }
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 1700.0
+    y: 200.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Hi there. How can I help you? If you want to test my abilities in calling functions in the game, ask me to change the color of the square on the right."
+  font: "font"
+  id: "output_text"
+  pivot: PIVOT_NW
+  shadow {
+    y: 1.0
+    z: 1.0
+  }
+  line_break: true
+  parent: "output"
+  inherit_alpha: true
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    x: 480.0
+    y: 66.0
+  }
+  color {
+    x: 0.102
+    y: 0.102
+    z: 0.102
+  }
+  type: TYPE_BOX
+  id: "input"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -66.0
+  }
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 2000.0
+    y: 406.0
+  }
+  type: TYPE_BOX
+  texture: "gui/textbox"
+  id: "input_box"
+  pivot: PIVOT_S
+  parent: "input"
+  inherit_alpha: true
+  slice9 {
+    x: 500.0
+    y: 203.0
+    z: 500.0
+    w: 203.0
+  }
+}
+nodes {
+  position {
+    x: -211.0
+    y: -7.0
+  }
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 1700.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<Write text here, and press Enter to send it.>"
+  font: "font"
+  id: "input_text"
+  pivot: PIVOT_NW
+  shadow {
+    y: 1.0
+    z: 1.0
+  }
+  line_break: true
+  parent: "input"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 884.0
+    y: 500.0
+  }
+  size {
+    x: 128.0
+    y: 64.0
+  }
+  type: TYPE_BOX
+  id: "tts"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+nodes {
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 512.0
+    y: 256.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Text-to-speech: off"
+  font: "font"
+  id: "tts_text"
+  line_break: true
+  parent: "tts"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 884.0
+    y: 40.0
+  }
+  size {
+    x: 128.0
+    y: 64.0
+  }
+  type: TYPE_BOX
+  id: "stt"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+nodes {
+  scale {
+    x: 0.25
+    y: 0.25
+  }
+  size {
+    x: 512.0
+    y: 256.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Speech-to-text"
+  font: "font"
+  id: "stt_text"
+  line_break: true
+  parent: "stt"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 884.0
+    y: 270.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "square"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+max_nodes: 2048

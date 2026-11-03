@@ -1,0 +1,82 @@
+local START = hash("start")
+local START_THINKING = hash("start_thinking")
+local FINISH_THINKING = hash("finish_thinking")
+local FORWARD = go.PLAYBACK_ONCE_FORWARD
+local LOOP = go.PLAYBACK_LOOP_FORWARD
+local INOUTSINE = go.EASING_INOUTSINE
+local LINEAR = go.EASING_LINEAR
+local OUTELASTIC = go.EASING_OUTELASTIC
+local COLOR_EYE_LOAD = vmath.vector4(1, 1, 0, 1)
+local COLOR_EYE_READY = vmath.vector4(0, 1, 0, 1)
+local COLOR_EYE_BLOCKED = vmath.vector4(1, 0, 0, 1)
+
+local function idle_body()
+	local to = -5 + 10 * math.random()
+	local duration = 2 + 3 * math.random()
+	go.animate(".", "euler.z", FORWARD, to, INOUTSINE, duration, 0, idle_body)
+end
+
+local function idle_head()
+	local to = -5 + 10 * math.random()
+	local duration = 2 + 3 * math.random()
+	go.animate("head", "euler.z", FORWARD, to, INOUTSINE, duration, 0, idle_head)
+end
+
+local function idle()
+	idle_body()
+	idle_head()
+end
+
+local function start_thinking()
+	local duration = 0.15
+	local duration_spin = 2
+	for i = 1, 2 do
+		local url = "eye_"..i
+		go.set(url, "euler.z", 0)
+		go.animate(url.."#eye", "tint.w", FORWARD, 0, LINEAR, duration)
+		go.animate(url.."#load", "tint.w", FORWARD, 1, LINEAR, duration)
+		go.animate(url, "euler.z", LOOP, 360, LINEAR, duration_spin)
+	end
+end
+
+local function finish_thinking()
+	local duration = 0.15
+	for i = 1, 2 do
+		local url = "eye_"..i
+		go.animate(url.."#eye", "tint.w", FORWARD, 1, LINEAR, duration)
+		go.animate(url.."#load", "tint.w", FORWARD, 0, LINEAR, duration)
+	end
+	go.animate(".", "euler.z", FORWARD, 0, OUTELASTIC, 0.5, 0, idle_body)
+	go.animate("head", "euler.z", FORWARD, 0, OUTELASTIC, 0.5, 0, idle_head)
+end
+
+local function set_blocked(blocked)
+	for i = 1, 2 do
+		if blocked then
+			go.set("eye_"..i.."#eye", "tint", COLOR_EYE_BLOCKED)
+		else
+			go.set("eye_"..i.."#eye", "tint", COLOR_EYE_READY)
+		end
+	end
+end
+
+function init(self)
+	for i = 1, 2 do
+		go.set("eye_"..i.."#eye", "tint", COLOR_EYE_READY)
+		go.set("eye_"..i.."#load", "tint", COLOR_EYE_LOAD)
+		go.set("eye_"..i.."#load", "tint.w", 0)
+	end
+	idle_body()
+	idle_head()
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == START then
+		set_blocked(false)
+	elseif message_id == START_THINKING then
+		start_thinking()
+	elseif message_id == FINISH_THINKING then
+		finish_thinking()
+		set_blocked(message.blocked)
+	end
+end
