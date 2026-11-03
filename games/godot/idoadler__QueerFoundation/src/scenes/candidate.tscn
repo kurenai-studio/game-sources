@@ -1,0 +1,423 @@
+[gd_scene load_steps=44 format=3 uid="uid://c1bffkg4xn8t7"]
+
+[ext_resource type="Script" path="res://scripts/candidate.gd" id="1_4iqrw"]
+[ext_resource type="Texture2D" uid="uid://drxkrtb6f5vrc" path="res://art/office/Office.png" id="1_ymsdq"]
+[ext_resource type="Texture2D" uid="uid://btjfqtbh5hyfq" path="res://art/office/white.png" id="2_n5nqx"]
+[ext_resource type="Resource" uid="uid://bfvwm1pvvwrsl" path="res://conversations/glitter.tres" id="2_te1ui"]
+[ext_resource type="Texture2D" uid="uid://b5412c8ods55o" path="res://art/office/Chair.png" id="3_hp5ct"]
+[ext_resource type="Resource" uid="uid://dhjh3gor81d1m" path="res://conversations/fuzzy.tres" id="4_itlpo"]
+[ext_resource type="Texture2D" uid="uid://ct6joxc4cr0k5" path="res://art/candidates/Bear.png" id="4_nn4s1"]
+[ext_resource type="Texture2D" uid="uid://cxh5w05nk0ys" path="res://art/candidates/Bunny.png" id="5_fd1i0"]
+[ext_resource type="Resource" uid="uid://du8w3cs0u3uh8" path="res://conversations/whiskers.tres" id="5_lv8f0"]
+[ext_resource type="Resource" uid="uid://cg1mh3jj605f" path="res://conversations/hopper.tres" id="5_mlw8f"]
+[ext_resource type="Texture2D" uid="uid://clb3leg6afxps" path="res://art/candidates/Cat.png" id="6_12kot"]
+[ext_resource type="Resource" uid="uid://b0iocov77mido" path="res://conversations/sly.tres" id="6_avbau"]
+[ext_resource type="Texture2D" uid="uid://bajjbgqjf30sm" path="res://art/candidates/Dog.png" id="7_8huc7"]
+[ext_resource type="Resource" uid="uid://w0b0kh1omgry" path="res://conversations/stripes.tres" id="7_x2m15"]
+[ext_resource type="Texture2D" uid="uid://5g4ntk7i7krg" path="res://art/candidates/Fox.png" id="8_mdx8y"]
+[ext_resource type="Texture2D" uid="uid://dhngqohf0rqq7" path="res://art/candidates/Tiger.png" id="9_x152s"]
+[ext_resource type="Texture2D" uid="uid://ceaals06sfsub" path="res://art/candidates/Unicorn.png" id="10_o2ccx"]
+[ext_resource type="Texture2D" uid="uid://b1paljeid8pl2" path="res://art/office/Table.png" id="11_xpg6y"]
+[ext_resource type="Texture2D" uid="uid://01oltalnm3iv" path="res://art/popups/Question1.png" id="12_4lspu"]
+[ext_resource type="Texture2D" uid="uid://b2477yat8l43s" path="res://art/popups/V1.png" id="13_ekrty"]
+[ext_resource type="Script" path="res://scripts/conversation.gd" id="13_g5q27"]
+[ext_resource type="Script" path="res://scripts/decide.gd" id="13_k5dt8"]
+[ext_resource type="Texture2D" uid="uid://y137xa0eesyv" path="res://art/popups/Question2.png" id="13_xwgis"]
+[ext_resource type="Script" path="res://scripts/decision_button.gd" id="14_1ybhj"]
+[ext_resource type="Texture2D" uid="uid://bhy6ypwydxnxr" path="res://art/popups/V2.png" id="14_p7a3t"]
+[ext_resource type="Texture2D" uid="uid://qe48tvlymery" path="res://art/popups/Question3.png" id="14_ufvm5"]
+[ext_resource type="Texture2D" uid="uid://dkgo47lmwnq6d" path="res://art/popups/Response.png" id="15_7m65f"]
+[ext_resource type="Texture2D" uid="uid://db8b6cs0ljghf" path="res://art/popups/V3.png" id="15_8yln6"]
+[ext_resource type="Script" path="res://scripts/labeled_image.gd" id="15_yc3l3"]
+[ext_resource type="Texture2D" uid="uid://c2dsroewpu6ac" path="res://art/popups/Decide.png" id="16_yqhbi"]
+[ext_resource type="Texture2D" uid="uid://6gt74w1ao31e" path="res://art/popups/x1.png" id="16_yswa6"]
+[ext_resource type="Texture2D" uid="uid://eu358pvxg3a8" path="res://art/popups/x2.png" id="17_re5d4"]
+[ext_resource type="Texture2D" uid="uid://pgw3ynaeckw5" path="res://art/popups/x3.png" id="18_dau62"]
+[ext_resource type="Texture2D" uid="uid://c1ytwlq3ac8jc" path="res://art/popups/Stamps.png" id="19_xjlh2"]
+[ext_resource type="Texture2D" uid="uid://lebn5760l68c" path="res://art/popups/Approved.png" id="20_afi4w"]
+[ext_resource type="Texture2D" uid="uid://dsqpp0tou6lya" path="res://art/popups/Denied.png" id="21_poyov"]
+[ext_resource type="Texture2D" uid="uid://wsf5rletntpv" path="res://art/popups/Sticky notes_.png" id="22_8u1y8"]
+[ext_resource type="FontFile" uid="uid://bfh134b1odp46" path="res://fonts/Anton-Regular.ttf" id="23_2gf3n"]
+[ext_resource type="Texture2D" uid="uid://cikvyr2d7vasj" path="res://art/popups/Funds.png" id="24_u5elw"]
+[ext_resource type="Resource" uid="uid://bvp6jtstyqfr" path="res://conversations/wiggles.tres" id="27_jlejw"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oseuf"]
+atlas = ExtResource("4_nn4s1")
+region = Rect2(0, 0, 2732, 2048)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_gtohr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_8huc7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_o2ccx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oseuf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_12kot")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_mdx8y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_x152s")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_fd1i0")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_42tj8"]
+
+[node name="Candidate" type="Node2D" node_paths=PackedStringArray("animation", "conversation", "decide")]
+script = ExtResource("1_4iqrw")
+candidate_list = Array[Resource("res://conversations/candidate_res.gd")]([ExtResource("27_jlejw"), ExtResource("2_te1ui"), ExtResource("4_itlpo"), ExtResource("5_lv8f0"), ExtResource("6_avbau"), ExtResource("7_x2m15"), ExtResource("5_mlw8f")])
+animation = NodePath("Node2D/Animal")
+conversation = NodePath("Conversation")
+decide = NodePath("Decide")
+
+[node name="Office" type="Sprite2D" parent="."]
+position = Vector2(688.33, 541.25)
+scale = Vector2(0.532959, 0.532959)
+texture = ExtResource("1_ymsdq")
+
+[node name="White" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.278431)
+position = Vector2(684, 547)
+scale = Vector2(0.538574, 0.538574)
+texture = ExtResource("2_n5nqx")
+
+[node name="Node2D" type="Node2D" parent="."]
+position = Vector2(3, 117)
+
+[node name="Chair" type="Sprite2D" parent="Node2D"]
+position = Vector2(709, 320)
+scale = Vector2(0.85, 0.85)
+texture = ExtResource("3_hp5ct")
+
+[node name="Animal" type="AnimatedSprite2D" parent="Node2D"]
+position = Vector2(679, 616)
+scale = Vector2(0.2, 0.2)
+sprite_frames = SubResource("SpriteFrames_gtohr")
+speed_scale = 0.0
+
+[node name="Table" type="Sprite2D" parent="Node2D"]
+position = Vector2(690, 540)
+scale = Vector2(0.53418, 0.53418)
+texture = ExtResource("11_xpg6y")
+
+[node name="Decide" type="Sprite2D" parent="." node_paths=PackedStringArray("note_left", "note_right", "decision_buttons", "stamps", "approved", "denied", "no_funds", "next")]
+visible = false
+position = Vector2(674, 564)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("16_yqhbi")
+script = ExtResource("13_k5dt8")
+note_left = NodePath("StickyNotes/NoteLeft")
+note_right = NodePath("StickyNotes/NoteRight")
+decision_buttons = [NodePath("Button"), NodePath("Button2"), NodePath("Button3")]
+stamps = NodePath("Stamps")
+approved = NodePath("Approved")
+denied = NodePath("Denied")
+no_funds = NodePath("NoFunds")
+next = NodePath("Next")
+current_funds = 90000
+
+[node name="Button" type="Button" parent="Decide" node_paths=PackedStringArray("yes_icon", "no_icon")]
+offset_left = -561.667
+offset_right = 520.333
+offset_bottom = 245.0
+focus_mode = 0
+toggle_mode = true
+flat = true
+script = ExtResource("14_1ybhj")
+yes_icon = NodePath("V1")
+no_icon = NodePath("X3")
+
+[node name="V1" type="Sprite2D" parent="Decide/Button"]
+position = Vector2(198.334, 71.6666)
+texture = ExtResource("13_ekrty")
+
+[node name="X3" type="Sprite2D" parent="Decide/Button"]
+position = Vector2(641.667, 146.667)
+texture = ExtResource("18_dau62")
+
+[node name="Button2" type="Button" parent="Decide" node_paths=PackedStringArray("yes_icon", "no_icon")]
+offset_left = -546.667
+offset_top = -235.0
+offset_right = 535.333
+offset_bottom = 10.0
+focus_mode = 0
+toggle_mode = true
+flat = true
+script = ExtResource("14_1ybhj")
+yes_icon = NodePath("V2")
+no_icon = NodePath("X2")
+
+[node name="V2" type="Sprite2D" parent="Decide/Button2"]
+position = Vector2(170, 56.6669)
+texture = ExtResource("14_p7a3t")
+
+[node name="X2" type="Sprite2D" parent="Decide/Button2"]
+position = Vector2(658.334, 123.333)
+texture = ExtResource("17_re5d4")
+
+[node name="Button3" type="Button" parent="Decide" node_paths=PackedStringArray("yes_icon", "no_icon")]
+offset_left = -556.667
+offset_top = -470.0
+offset_right = 525.333
+offset_bottom = -225.0
+focus_mode = 0
+toggle_mode = true
+flat = true
+script = ExtResource("14_1ybhj")
+yes_icon = NodePath("V3")
+no_icon = NodePath("X1")
+
+[node name="V3" type="Sprite2D" parent="Decide/Button3"]
+position = Vector2(193.334, 38.333)
+texture = ExtResource("15_8yln6")
+
+[node name="X1" type="Sprite2D" parent="Decide/Button3"]
+position = Vector2(605, 60)
+texture = ExtResource("16_yswa6")
+
+[node name="Stamps" type="Sprite2D" parent="Decide"]
+position = Vector2(46.6667, 133.333)
+texture = ExtResource("19_xjlh2")
+
+[node name="Approve" type="Button" parent="Decide/Stamps"]
+offset_left = -1142.0
+offset_top = -160.0
+offset_right = -582.0
+offset_bottom = 505.0
+focus_mode = 0
+toggle_mode = true
+flat = true
+
+[node name="Deny" type="Button" parent="Decide/Stamps"]
+offset_left = 613.333
+offset_top = -250.0
+offset_right = 1173.33
+offset_bottom = 415.0
+focus_mode = 0
+toggle_mode = true
+flat = true
+
+[node name="Approved" type="Sprite2D" parent="Decide"]
+position = Vector2(-93.3333, 10)
+texture = ExtResource("20_afi4w")
+
+[node name="Denied" type="Sprite2D" parent="Decide"]
+position = Vector2(-56.6666, -8.33334)
+texture = ExtResource("21_poyov")
+
+[node name="NoFunds" type="Sprite2D" parent="Decide"]
+position = Vector2(-56.6666, -8.33334)
+texture = ExtResource("24_u5elw")
+
+[node name="StickyNotes" type="Sprite2D" parent="Decide"]
+texture = ExtResource("22_8u1y8")
+
+[node name="NoteLeft" type="Label" parent="Decide/StickyNotes"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2442.67
+offset_top = -1794.0
+offset_right = -1876.67
+offset_bottom = -1340.0
+grow_horizontal = 2
+grow_vertical = 2
+rotation = 0.158002
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("23_2gf3n")
+theme_override_font_sizes/font_size = 60
+text = "YYY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NoteRight" type="Label" parent="Decide/StickyNotes"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -929.333
+offset_top = -1712.33
+offset_right = -363.333
+offset_bottom = -1258.33
+grow_horizontal = 2
+grow_vertical = 2
+rotation = -0.282851
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("23_2gf3n")
+theme_override_font_sizes/font_size = 80
+text = "XXX"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Next" type="Button" parent="Decide"]
+offset_left = 878.0
+offset_top = 527.0
+offset_right = 1195.0
+offset_bottom = 727.0
+theme_override_font_sizes/font_size = 80
+text = "Next"
+
+[node name="Conversation" type="Node2D" parent="." node_paths=PackedStringArray("question_labels", "answer_label", "decision", "decide")]
+script = ExtResource("13_g5q27")
+question_labels = [NodePath("Questions/Question1"), NodePath("Questions/Question2"), NodePath("Questions/Question3")]
+answer_label = NodePath("Response")
+decision = NodePath("MakeDecision")
+decide = NodePath("../Decide")
+
+[node name="Questions" type="Node2D" parent="Conversation"]
+
+[node name="Question1" type="Sprite2D" parent="Conversation/Questions" node_paths=PackedStringArray("label", "conversation")]
+position = Vector2(492, 849)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("12_4lspu")
+script = ExtResource("15_yc3l3")
+label = NodePath("Label")
+conversation = NodePath("../..")
+
+[node name="Label" type="Label" parent="Conversation/Questions/Question1"]
+offset_left = -782.0
+offset_top = -188.0
+offset_right = 763.0
+offset_bottom = 98.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 80
+text = "Tell me about yourself"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Button" type="Button" parent="Conversation/Questions/Question1"]
+offset_left = -857.0
+offset_top = -265.0
+offset_right = 860.0
+offset_bottom = 285.0
+focus_mode = 0
+flat = true
+
+[node name="Question2" type="Sprite2D" parent="Conversation/Questions" node_paths=PackedStringArray("label", "conversation")]
+position = Vector2(548, 528)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("13_xwgis")
+script = ExtResource("15_yc3l3")
+label = NodePath("Label2")
+conversation = NodePath("../..")
+id = 1
+
+[node name="Label2" type="Label" parent="Conversation/Questions/Question2"]
+offset_left = -800.0
+offset_top = -173.333
+offset_right = 745.0
+offset_bottom = 112.667
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 80
+text = "Tell me about your project"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Button2" type="Button" parent="Conversation/Questions/Question2"]
+offset_left = -947.0
+offset_top = -280.0
+offset_right = 946.0
+offset_bottom = 212.0
+focus_mode = 0
+flat = true
+
+[node name="Question3" type="Sprite2D" parent="Conversation/Questions" node_paths=PackedStringArray("label", "conversation")]
+position = Vector2(594, 227)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("14_ufvm5")
+script = ExtResource("15_yc3l3")
+label = NodePath("Label3")
+conversation = NodePath("../..")
+id = 2
+
+[node name="Label3" type="Label" parent="Conversation/Questions/Question3"]
+offset_left = -768.333
+offset_top = -181.667
+offset_right = 776.667
+offset_bottom = 104.333
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 80
+text = "Tell me what do you need"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Button3" type="Button" parent="Conversation/Questions/Question3"]
+offset_left = -1008.0
+offset_top = -248.0
+offset_right = 1028.0
+offset_bottom = 212.0
+focus_mode = 0
+flat = true
+
+[node name="Response" type="Sprite2D" parent="Conversation" node_paths=PackedStringArray("label")]
+position = Vector2(717, 470)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("15_7m65f")
+script = ExtResource("15_yc3l3")
+label = NodePath("Label4")
+
+[node name="Label4" type="Label" parent="Conversation/Response"]
+offset_left = -845.0
+offset_top = -309.0
+offset_right = 756.0
+offset_bottom = 77.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 80
+text = "Wiggles: So and so and so!"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Button" type="Button" parent="Conversation/Response"]
+offset_left = 483.75
+offset_top = 518.75
+offset_right = 648.75
+offset_bottom = 594.75
+scale = Vector2(2, 2)
+theme_override_font_sizes/font_size = 40
+theme_override_styles/focus = SubResource("StyleBoxEmpty_42tj8")
+text = "Next"
+
+[node name="Button4" type="Button" parent="Conversation/Response"]
+offset_left = -880.0
+offset_top = -381.0
+offset_right = 849.0
+offset_bottom = 139.0
+focus_mode = 0
+flat = true
+
+[node name="MakeDecision" type="Button" parent="Conversation"]
+offset_left = 561.0
+offset_top = 937.0
+offset_right = 806.0
+offset_bottom = 1045.0
+theme_override_font_sizes/font_size = 60
+text = "Decide"
+
+[connection signal="pressed" from="Decide/Stamps/Approve" to="Decide" method="stamp" binds= [true]]
+[connection signal="pressed" from="Decide/Stamps/Deny" to="Decide" method="stamp" binds= [false]]
+[connection signal="pressed" from="Decide/Next" to="." method="start_next"]
+[connection signal="pressed" from="Conversation/Questions/Question1/Button" to="Conversation/Questions/Question1" method="set_response"]
+[connection signal="pressed" from="Conversation/Questions/Question2/Button2" to="Conversation/Questions/Question2" method="set_response"]
+[connection signal="pressed" from="Conversation/Questions/Question3/Button3" to="Conversation/Questions/Question3" method="set_response"]
+[connection signal="pressed" from="Conversation/Response/Button" to="Conversation" method="next"]
+[connection signal="pressed" from="Conversation/Response/Button4" to="Conversation" method="next"]

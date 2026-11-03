@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ConvRes" load_steps=5 format=3 uid="uid://b4qvg6b1b85ty"]
+
+[ext_resource type="Resource" uid="uid://co74h88fqx004" path="res://conversations/fuzzy/experience.tres" id="1_os1he"]
+[ext_resource type="Script" path="res://conversations/conversation_res.gd" id="2_aj0w4"]
+[ext_resource type="Resource" uid="uid://cjjoi2637vcm1" path="res://conversations/fuzzy/project.tres" id="2_ecy80"]
+[ext_resource type="Resource" uid="uid://bnyisu86eqlp6" path="res://conversations/fuzzy/introduction.tres" id="3_v5v5y"]
+
+[resource]
+script = ExtResource("2_aj0w4")
+questions = Array[String](["How can we help you, what do you need?", "Please tell me about your project?", "Hey there, please tell me a bit about yourself."])
+answers = Array[String](["Coffee beans, comfy chairs, and a bit of magic to keep the espresso flowing.
+Oh, and maybe a honey dispenser for the tea.", "It’s called the Inclusive Caffe.
+We’re brewing great coffee and serving chill vibes, all in a space where everyone feels welcome.", "Hey there, I’m Fuzzy, your friendly neighborhood bear.
+I’m all about good coffee, cozy vibes, and maybe a nap or two."])
+goto = Array[ExtResource("2_aj0w4")]([ExtResource("1_os1he"), ExtResource("2_ecy80"), ExtResource("3_v5v5y")])

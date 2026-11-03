@@ -1,0 +1,155 @@
+[gd_scene load_steps=8 format=3 uid="uid://bcd5aouldh548"]
+
+[ext_resource type="Texture2D" uid="uid://drxkrtb6f5vrc" path="res://art/office/Office.png" id="1_ajm7o"]
+[ext_resource type="PackedScene" uid="uid://c1bffkg4xn8t7" path="res://scenes/candidate.tscn" id="2_kjy25"]
+[ext_resource type="Texture2D" uid="uid://d27s140cm350b" path="res://art/popups/Screen.png" id="3_3tp0y"]
+[ext_resource type="FontFile" uid="uid://cdh2w25ey4dgi" path="res://fonts/Pacifico-Regular.ttf" id="4_7pte3"]
+[ext_resource type="Script" path="res://scripts/skippable_text.gd" id="4_h0kub"]
+[ext_resource type="Script" path="res://scripts/ending_text.gd" id="6_5p26e"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_44sh8"]
+
+[node name="Office" type="Node2D"]
+position = Vector2(36, 0)
+
+[node name="Office" type="Sprite2D" parent="."]
+position = Vector2(688.33, 541.25)
+scale = Vector2(0.532959, 0.532959)
+texture = ExtResource("1_ajm7o")
+
+[node name="Candidate" parent="." instance=ExtResource("2_kjy25")]
+visible = false
+
+[node name="Screen" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(690, 691)
+scale = Vector2(0.49396, 0.467773)
+texture = ExtResource("3_3tp0y")
+
+[node name="Label" type="Label" parent="Screen"]
+offset_left = -447.404
+offset_top = 194.539
+offset_right = -19.4042
+offset_bottom = 515.539
+theme_override_colors/font_color = Color(0.87451, 0.0117647, 0.92549, 1)
+theme_override_fonts/font = ExtResource("4_7pte3")
+theme_override_font_sizes/font_size = 90
+text = "Queer
+"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="Screen"]
+offset_left = -109.32
+offset_top = 40.618
+offset_right = 318.68
+offset_bottom = 361.618
+theme_override_colors/font_color = Color(0.0117647, 0.580392, 0.92549, 1)
+theme_override_fonts/font = ExtResource("4_7pte3")
+theme_override_font_sizes/font_size = 90
+text = "
+Foundation"
+horizontal_alignment = 1
+
+[node name="SkippableText" type="Control" parent="." node_paths=PackedStringArray("label", "button")]
+layout_mode = 3
+anchors_preset = 0
+offset_top = -60.0
+offset_bottom = -60.0
+script = ExtResource("4_h0kub")
+texts = Array[String](["Hello and welcome to your first day at Queer Foundation! 
+
+We are an organization dedicated to supporting queer initiatives and making a positive impact in the community. Your role here is crucial: you will be responsible for selecting which initiatives we should invest in to create a more inclusive and supportive world.", "To choose the best candidate, you'll need to consider three key elements:
+
+\"Queer\":
+Is the candidate themselves queer? Understanding their identity and how it relates to the initiative is vital.", "\"Good Cause\"
+
+Is the cause of the initiative good? Evaluate the initiative's potential to make a positive impact and support our community.", "\"High ROI\" (Return of Investment)
+
+Will the investment yield earnings that we can reinvest in future rounds? Consider the financial sustainability and potential for generating funds to support more projects.", "Don't forget to pay attention to the  budget before you suggest supporting a project. Ensure the cost aligns with our available resources.
+
+Get ready to make some important decisions and help us champion innovative and impactful projects!", "
+Let's call in the next candidate!"])
+label = NodePath("Label")
+button = NodePath("Button")
+
+[node name="Label" type="Label" parent="SkippableText"]
+layout_mode = 0
+offset_left = 365.0
+offset_top = 459.0
+offset_right = 973.0
+offset_bottom = 915.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 28
+text = "Hello and welcome to your first day at Queer Foundation! 
+
+We are an organization dedicated to supporting queer initiatives and making a positive impact in the community. Your role here is crucial: you will be responsible for selecting which initiatives we should invest in to create a more inclusive and supportive world."
+autowrap_mode = 3
+
+[node name="Button" type="Button" parent="SkippableText"]
+layout_mode = 0
+offset_left = 947.0
+offset_top = 926.0
+offset_right = 1086.0
+offset_bottom = 957.0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_44sh8")
+text = "Next"
+
+[node name="EndingText" type="Control" parent="." node_paths=PackedStringArray("candidate", "label", "button")]
+layout_mode = 3
+anchors_preset = 0
+offset_top = -60.0
+offset_bottom = -60.0
+script = ExtResource("6_5p26e")
+candidate = NodePath("../Candidate")
+label = NodePath("Label")
+button = NodePath("Button")
+
+[node name="Label" type="Label" parent="EndingText"]
+layout_mode = 0
+offset_left = 365.0
+offset_top = 459.0
+offset_right = 973.0
+offset_bottom = 915.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 28
+text = "Your work is done for today!
+
+You helped support <x> innovations. The projects you funded were: <project1, project2, project3...>."
+autowrap_mode = 3
+
+[node name="Button" type="Button" parent="EndingText"]
+layout_mode = 0
+offset_left = 947.0
+offset_top = 926.0
+offset_right = 1086.0
+offset_bottom = 957.0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_44sh8")
+text = "Next"
+
+[node name="TimerShowScreen" type="Timer" parent="."]
+wait_time = 0.3
+one_shot = true
+autostart = true
+
+[node name="TimerStartText" type="Timer" parent="TimerShowScreen"]
+wait_time = 0.5
+one_shot = true
+
+[node name="TimerShowScreen2" type="Timer" parent="."]
+wait_time = 0.3
+one_shot = true
+
+[node name="TimerStartEnding" type="Timer" parent="TimerShowScreen2"]
+wait_time = 0.5
+one_shot = true
+
+[connection signal="game_done" from="Candidate" to="TimerShowScreen2" method="start"]
+[connection signal="ready" from="Screen" to="Screen" method="set_visible" binds= [false]]
+[connection signal="scroll_done" from="SkippableText" to="Candidate" method="start_next"]
+[connection signal="scroll_done" from="SkippableText" to="Screen" method="hide"]
+[connection signal="timeout" from="TimerShowScreen" to="TimerShowScreen/TimerStartText" method="start"]
+[connection signal="timeout" from="TimerShowScreen" to="Screen" method="set_visible" binds= [true]]
+[connection signal="timeout" from="TimerShowScreen/TimerStartText" to="SkippableText" method="activate"]
+[connection signal="timeout" from="TimerShowScreen2" to="TimerShowScreen2/TimerStartEnding" method="start"]
+[connection signal="timeout" from="TimerShowScreen2" to="Screen" method="set_visible" binds= [true]]
+[connection signal="timeout" from="TimerShowScreen2/TimerStartEnding" to="EndingText" method="activate"]
