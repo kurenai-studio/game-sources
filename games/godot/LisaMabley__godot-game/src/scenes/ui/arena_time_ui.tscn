@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cmbua0v7t8w4n"]
+
+[ext_resource type="Script" uid="uid://da58tnjuccb56" path="res://scenes/ui/arena_time_ui.gd" id="1_oa7xr"]
+
+[sub_resource type="Theme" id="Theme_o7op4"]
+
+[node name="ArenaTimeUI" type="CanvasLayer" unique_id=194336573]
+script = ExtResource("1_oa7xr")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=964777472]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 8
+
+[node name="Label" type="Label" parent="MarginContainer" unique_id=1115563443]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme = SubResource("Theme_o7op4")
+theme_override_colors/font_shadow_color = Color(0.24705882, 0.14901961, 0.19215687, 1)
+theme_override_colors/font_outline_color = Color(0.24705882, 0.14901961, 0.19215687, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 6
+text = "test"
+horizontal_alignment = 1

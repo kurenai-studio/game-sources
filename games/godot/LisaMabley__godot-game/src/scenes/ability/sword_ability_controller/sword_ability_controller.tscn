@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://6q8u431tvhrf"]
+
+[ext_resource type="Script" uid="uid://dwdn3sgg363qa" path="res://scenes/ability/sword_ability_controller/sword_ability_controller.gd" id="1_4s6ac"]
+[ext_resource type="PackedScene" uid="uid://bjr6582wo0qct" path="res://scenes/ability/sword_ability/sword_ability.tscn" id="2_e8bxv"]
+
+[node name="SwordAbilityController" type="Node" unique_id=481446254]
+script = ExtResource("1_4s6ac")
+sword_ability_scene = ExtResource("2_e8bxv")
+
+[node name="Timer" type="Timer" parent="." unique_id=1551666761]
+autostart = true

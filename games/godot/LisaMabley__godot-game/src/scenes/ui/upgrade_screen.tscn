@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://cxw1epdlj7q72"]
+
+[ext_resource type="Script" uid="uid://5dl631js5wbm" path="res://scenes/ui/upgrade_screen.gd" id="1_eg2gl"]
+[ext_resource type="PackedScene" uid="uid://d04pnthnbltmc" path="res://scenes/ui/ability_upgrade_card.tscn" id="2_eg2gl"]
+
+[node name="UpgradeScreen" type="CanvasLayer" unique_id=673181601]
+process_mode = 3
+script = ExtResource("1_eg2gl")
+upgrade_card_scene = ExtResource("2_eg2gl")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1978097603]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CardContainer" type="HBoxContainer" parent="MarginContainer" unique_id=408217539]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 12
+
+[node name="CardContainer2" type="HBoxContainer" parent="MarginContainer" unique_id=758579934]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 12
