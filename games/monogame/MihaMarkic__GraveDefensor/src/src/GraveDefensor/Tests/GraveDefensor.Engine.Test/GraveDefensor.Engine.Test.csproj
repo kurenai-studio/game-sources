@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Autofac" Version="4.9.4" />
+      <PackageReference Include="AutoFixture" Version="4.11.0" />
+      <PackageReference Include="AutoFixture.AutoNSubstitute" Version="4.11.0" />
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+      <PackageReference Include="NUnit" Version="3.12.0" />
+      <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+      <PackageReference Include="NSubstitute" Version="4.2.1" />
+      <PackageReference Include="Righthand.Immutable" Version="1.0.2" />
+      <PackageReference Include="Righthand.MessageBus" Version="1.1.2" />
+    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\GraveDefensor.Engine\GraveDefensor.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

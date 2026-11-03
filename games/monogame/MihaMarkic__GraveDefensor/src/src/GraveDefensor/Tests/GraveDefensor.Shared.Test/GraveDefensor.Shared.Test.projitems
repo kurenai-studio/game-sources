@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>963fb07b-e982-419e-ae8f-55e2b2a6c205</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GraveDefensor.Shared.Test</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BaseTest`1.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\MathOpsTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\PathTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\TouchStateTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\BattleSceneTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\ClickableDrawableTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Dialogs\DialogTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\EnemyTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\EnemyWaveTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\WeaponPodTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\RotationalWeaponTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\WeaponTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\GeneralExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\BattleSceneTest.cs" />
+  </ItemGroup>
+</Project>

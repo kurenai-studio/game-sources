@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:GraveDefensor.Engine.Designer.ViewModels;assembly=GraveDefensor.Engine.Designer"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="GraveDefensor.Designer.MainWindow"
+        Title="GraveDefensor Designer">
+  <!--<Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>-->
+  <Panel>
+      <DockPanel LastChildFill="True" Margin="4">
+        <Menu DockPanel.Dock="Top">
+          <MenuItem Header="_File">
+            <MenuItem Header="_New" Command="{Binding CreateNewGameSettingsCommand}" />
+            <MenuItem Header="_Open..." Command="{Binding OpenGameSettingsCommand}" />
+            <MenuItem Header="_Save"/>
+            <MenuItem Header="_Save As..."/>
+            <MenuItem Header="Settings" Command="{Binding ShowSettingsCommand}" />
+            <Separator/>
+            <MenuItem Header="_Exit" Command="{Binding ExitCommand}"/>
+          </MenuItem>
+          <MenuItem Header="_Edit">
+            <MenuItem Header="Copy"/>
+            <MenuItem Header="Paste"/>
+          </MenuItem>
+        </Menu>
+        <ContentControl Content="{Binding Content, Mode=TwoWay}" />
+      </DockPanel>
+      <Border Background="LightBlue" Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding IsInitializing, Mode=OneWay}">
+        <TextBlock FontWeight="Bold">Initializing</TextBlock>
+      </Border>
+  </Panel>
+</Window>
