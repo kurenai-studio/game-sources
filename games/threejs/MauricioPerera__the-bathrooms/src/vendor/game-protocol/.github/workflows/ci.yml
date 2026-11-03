@@ -1,0 +1,84 @@
+name: GAME Protocol CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Itera TODOS los examples/*.GAME.md (y examples/GAME.md). No toca CI al añadir ejemplos.
+      # Mapping: examples/GAME.md -> game-data.generated.js ; X.GAME.md -> X.generated.js
+      - name: Lint + export + sin-drift (todos los ejemplos)
+        run: |
+          set -e
+          for md in examples/GAME.md examples/*.GAME.md; do
+            base=$(basename "$md" .md)
+            if [ "$base" = "GAME" ]; then gen="examples/game-data.generated.js"; else gen="examples/${base%.GAME}.generated.js"; fi
+            echo "::group::Lint $md"
+            node tools/game-lint.js "$md"
+            echo "::endgroup::"
+            node tools/game-export.js "$md" /tmp/gen.js
+            if ! diff -q /tmp/gen.js "$gen"; then
+              echo "::error::$gen está desactualizado. Regenera con: node tools/game-export.js $md $gen"
+              exit 1
+            fi
+            echo "ok  $md == $gen"
+          done
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Parser (casos límite — falla fuerte, no en silencio)
+        run: node test/parser.js
+      - name: Descriptor de perfil (contrato SPEC §6.1)
+        run: node test/profile-descriptor.js
+      - name: Lógica pura del runtime game3d (combate/visión/colisión)
+        run: node test/game3d-logic.js
+      - name: Un mismo core valida y compila varios géneros
+        run: node test/multi-genre.js
+      - name: Conformidad (ejemplos válidos + casos inválidos)
+        run: node test/conformance.js
+      - name: Todos los ejemplos (lint + export + sin-drift)
+        run: node test/all-examples.js
+      - name: CLI errores (exit codes, --help, flags, parse-error, profile)
+        run: node test/cli-errors.js
+      - name: buildGame contenido (claves derivadas por perfil)
+        run: node test/buildGame-content.js
+      - name: render-png (rechazo perfil + PNG adventure)
+        run: node test/render-png.js
+      - name: build-standalone (inlining local + CDN intacto)
+        run: node test/build-standalone.js
+      - name: Lifecycle (deprecation policy + migración + breaking)
+        run: node test/lifecycle.js
+
+  agent-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Manifiesto y schemas al día (sin-drift)
+        run: |
+          node tools/game-manifest.js /tmp/manifest.json
+          if ! diff -q /tmp/manifest.json manifest.json; then
+            echo "::error::manifest.json desactualizado. Regenera con: node tools/game-manifest.js"
+            exit 1
+          fi
+          rm -rf /tmp/schemas && cp -r schemas /tmp/schemas-committed
+          node tools/game-schema.js
+          if ! diff -rq schemas /tmp/schemas-committed >/dev/null; then
+            echo "::error::schemas/ desactualizado. Regenera con: node tools/game-schema.js"
+            exit 1
+          fi
