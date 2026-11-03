@@ -1,0 +1,144 @@
+
+<style>
+/* ===== 共用元件 ===== */
+.btn {
+  min-height: 44px; min-width: 44px; border-radius: 9px; border: 0; background: transparent; cursor: pointer;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 4px 10px; font-size: 12px; font-weight: 700; line-height: 1.1; transition: background .15s, color .15s;
+}
+.btn:hover { background: var(--yellow); }
+.btn[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.btn:focus-visible, .chip:focus-visible, .row:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+.btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; border-radius: 999px;
+  padding: 6px 12px; min-height: 32px; background: #fff; box-shadow: var(--chip-shadow); font-size: 13px; font-weight: 600;
+}
+.chip:hover { background: var(--yellow); }
+.chip.cream { background: var(--cream); }
+.panel { background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); }
+.num { font: italic 700 30px/1 var(--num); color: var(--coral); }
+
+/* ===== 左上工具列 ===== */
+#tools { position: fixed; z-index: 10; top: calc(116px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px));
+  display: flex; gap: 4px; padding: 4px; border-radius: 14px; }
+
+/* ===== 左側詳細卡片 ===== */
+#card {
+  position: fixed; z-index: 12; left: max(16px, env(safe-area-inset-left, 0px));
+  top: calc(180px + env(safe-area-inset-top, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: 340px; border-radius: 22px; background: var(--cream); display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 1px 2px #4a2a1414, 0 8px 24px #4a2a141f, 0 30px 60px #4a2a1424;
+}
+#card .scroll { overflow-y: auto; padding: 20px 20px 24px; display: grid; gap: 16px; align-content: start; overscroll-behavior: contain; }
+#card .close { position: absolute; top: 8px; right: 8px; z-index: 2; }
+#card h2 { margin: 4px 0 0; font-size: 24px; font-weight: 900; line-height: 1.2; text-wrap: balance; padding-right: 36px; }
+#card p { margin: 0; line-height: 1.65; font-size: 14px; color: #4a403b; }
+.disc { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font: 700 15px var(--mono); color: var(--ink); box-shadow: inset 0 0 0 3px #fff8; }
+.head { display: flex; gap: 12px; align-items: center; }
+.list { display: grid; gap: 6px; }
+.row { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: #fff; border-radius: 12px;
+  padding: 9px 12px; min-height: 44px; cursor: pointer; box-shadow: var(--chip-shadow); font-size: 14px; }
+.row:hover { background: var(--yellow); }
+.row .n { font: 700 12px var(--mono); color: var(--coral); min-width: 20px; }
+.row small { margin-left: auto; font: 600 11px var(--mono); color: #8a7b70; white-space: nowrap; }
+.row.lit { box-shadow: inset 0 0 0 2px var(--yellow), var(--chip-shadow); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.thumb { width: 160px; height: 160px; border-radius: 18px; background: radial-gradient(circle at 50% 40%, #fff, #f1e5d8); justify-self: center; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
+.tile { background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: var(--chip-shadow); display: grid; gap: 4px; align-content: start; }
+.tile small { font-size: 11px; color: #6b5d55; line-height: 1.35; }
+.status { display: flex; align-items: center; gap: 10px; }
+.st { font: 700 11px var(--mono); letter-spacing: 1px; padding: 4px 10px; border-radius: 999px; background: var(--stone); color: var(--ink); }
+.st.new { background: var(--yellow); } .st.debating { background: var(--coral); color: #fff; }
+.st.progress { background: var(--teal); color: #fff; } .st.settled { background: var(--ink); color: #fff; }
+.heat { color: var(--coral); letter-spacing: 2px; font-size: 13px; }
+.views, .sources { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; line-height: 1.55; }
+.views li { background: #fff; border-radius: 12px; padding: 8px 12px; box-shadow: var(--chip-shadow); }
+.views b { display: block; font-size: 12px; color: var(--coral); }
+.sources li { display: grid; gap: 2px; }
+.sources small { font: 600 11px var(--mono); color: #8a7b70; }
+.sources a { color: var(--ink); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.updated { font: 600 11px var(--mono); color: #8a7b70; }
+.hot { display: grid; gap: 8px; margin-bottom: 12px; }
+.flowline { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; flex-wrap: wrap; }
+.ev { font: 700 10px var(--mono); letter-spacing: 1px; padding: 4px 8px; border-radius: 999px; background: var(--ink); color: #fff; }
+.ev.thematic { background: var(--teal); } .ev.pending { background: var(--stone); color: var(--ink); }
+
+/* ===== 右側清單側欄 ===== */
+#side {
+  position: fixed; z-index: 11; right: max(16px, env(safe-area-inset-right, 0px));
+  top: calc(16px + env(safe-area-inset-top, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: 318px; border-radius: 22px; display: flex; flex-direction: column; overflow: hidden;
+  background: rgba(255, 250, 245, .66);
+}
+#side .top { padding: 16px 16px 10px; display: grid; gap: 10px; }
+#search { width: 100%; box-sizing: border-box; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #fff; padding: 0 14px; font: inherit; font-size: 14px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #fff8; border-radius: 12px; padding: 4px; }
+.tabs .btn { flex-direction: row; font-size: 13px; min-height: 38px; }
+#sideList { overflow-y: auto; padding: 4px 12px 16px; display: grid; gap: 6px; align-content: start; overscroll-behavior: contain; }
+#sideList details { background: #fff9; border-radius: 14px; }
+#sideList summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; box-sizing: border-box; border-radius: 14px; font-weight: 800; font-size: 14px; }
+#sideList summary::-webkit-details-marker { display: none; }
+#sideList summary:hover { background: var(--yellow); }
+#sideList summary .dot { width: 12px; height: 12px; border-radius: 50%; }
+#sideList summary small { margin-left: auto; font: 600 11px var(--mono); color: #8a7b70; }
+#sideList details .list { padding: 0 8px 8px; }
+#sideList .empty { padding: 16px; color: #6b5d55; font-size: 14px; }
+
+/* ===== HUD ===== */
+#hud {
+  position: fixed; z-index: 11; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 2px; padding: 5px; border-radius: 999px; max-width: calc(100vw - 32px); box-sizing: border-box;
+}
+#hud .sep { width: 1px; height: 30px; background: var(--line); margin: 0 4px; }
+#hud .btn { border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+#hud .btn[aria-pressed] { aspect-ratio: 1; border-radius: 10px; justify-content: center; } /* 開關按下時是正方形 */
+#clockBox { display: grid; justify-items: center; padding: 0 12px; min-width: 64px; }
+#clockTime { font: italic 700 20px/1 var(--num); font-variant-numeric: tabular-nums; }
+#clockPeriod { font-size: 11px; color: #6b5d55; margin-top: 2px; white-space: nowrap; }
+
+/* 選島後的細項 pin */
+.pin { width: 24px; height: 24px; border-radius: 50%; background: var(--coral); color: #fff; display: grid; place-items: center;
+  font-size: 13px; font-weight: 800; box-shadow: var(--chip-shadow); pointer-events: auto; cursor: pointer; transition: opacity .2s; }
+.pin.gone { opacity: 0; pointer-events: none; }
+</style>
+
+<nav id="tools" class="panel" aria-label="工具列" data-en-label="Tools">
+  <button class="btn" id="bOverview" type="button"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span data-en="Overview">全景</span></button>
+  <button class="btn" id="bList" type="button" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span data-en="List">清單</span></button>
+  <button class="btn" id="bHelp" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5h.01"/></svg><span data-en="Help">說明</span></button>
+</nav>
+
+<aside id="card" hidden aria-live="polite">
+  <button class="btn close" id="cardClose" type="button" aria-label="關閉" data-en-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="scroll" id="cardBody"></div>
+</aside>
+
+<aside id="side" class="panel" aria-label="議題清單" data-en-label="Issue list">
+  <div class="top">
+    <input id="search" type="search" placeholder="搜尋議題或關鍵字" data-en-ph="Search issues or keywords" autocomplete="off">
+    <div class="tabs" role="tablist">
+      <button class="btn" id="tabTopics" type="button" role="tab" aria-pressed="true" data-en="Areas">議題分類</button>
+      <button class="btn" id="tabFlows" type="button" role="tab" aria-pressed="false" data-en="Links">議題牽連</button>
+    </div>
+  </div>
+  <div id="sideList"></div>
+</aside>
+
+<div id="hud" class="panel" role="toolbar" aria-label="時間與顯示" data-en-label="Time and display">
+  <div id="timeGroup" style="display:flex;align-items:center;gap:2px">
+    <div id="clockBox"><span id="clockTime">10:00</span><span id="clockPeriod"></span></div>
+    <button class="btn" type="button" data-min="360"><svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 7V5M5.6 10.6 4.2 9.2M18.4 10.6l1.4-1.4"/></svg><span data-en="Dawn 06">清晨 06</span></button>
+    <button class="btn" type="button" data-min="720"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg><span data-en="Day 12">白天 12</span></button>
+    <button class="btn" type="button" data-min="1080"><svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M8 14l-2-1M16 14l2-1"/><path d="M12 9v3"/></svg><span data-en="Dusk 18">黃昏 18</span></button>
+    <button class="btn" type="button" data-min="1260"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span data-en="Night 21">夜晚 21</span></button>
+    <div class="sep"></div>
+  </div>
+  <button class="btn" type="button" id="tNames" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M7 12h6"/></svg><span data-en="Names">名牌</span></button>
+  <button class="btn" type="button" id="tCarry" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="10" rx="2"/><path d="M9 9V6h6v3"/></svg><span data-en="Cargo">搬運</span></button>
+  <button class="btn" type="button" id="tFlows" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 17c4 0 4-10 8-10s4 10 8 10"/><circle cx="4" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/></svg><span data-en="Links">牽連線</span></button>
+  <button class="btn" type="button" id="tPause" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg><span data-en="Pause">暫停</span></button>
+  <button class="btn" type="button" id="tBird" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v4M12 16v4M4 12h4M16 12h4"/></svg><span data-en="Top view">鳥瞰</span></button>
+  <button class="btn" type="button" id="tLog" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg><span data-en="Log">日誌</span></button>
+</div>

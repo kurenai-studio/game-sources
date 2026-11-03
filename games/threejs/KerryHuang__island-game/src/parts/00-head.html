@@ -1,0 +1,83 @@
+<title>今日群島</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 版面：全螢幕 3D 城市，UI 以毛玻璃卡片浮在四周；刻意單一暖色淺色外觀 */
+:root {
+  --coral: #db6a41; --ink: #211d1d; --cream: #fff8f4; --yellow: #fcea8b;
+  --stone: #c5b5a7; --green: #71806a; --teal: #3e7c8c; --live: #3fae5a;
+  --glass: rgba(255, 250, 245, .72); --line: rgba(33, 29, 29, .1);
+  --shadow: 0 1px 2px #4a2a1414, 0 6px 18px #4a2a141f, 0 22px 48px #4a2a141a;
+  --chip-shadow: 0 2px 8px #4a2a1414;
+  --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --num: Georgia, "Times New Roman", serif;
+  color-scheme: light;
+}
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font); color: var(--ink);
+  background: radial-gradient(ellipse at 50% 40%, #fffdf9 0%, #edddcf 100%);
+  -webkit-font-smoothing: antialiased; touch-action: none;
+}
+#stage { position: fixed; inset: 0; }
+#stage canvas { display: block; outline: none; }
+#labels { position: fixed; inset: 0; pointer-events: none; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.eyebrow { font: 700 10px/1.2 var(--mono); letter-spacing: 2px; text-transform: uppercase; color: var(--coral); }
+
+/* 載入畫面 */
+#loading {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; text-align: center;
+  background: radial-gradient(ellipse at 50% 40%, #fffdf9 0%, #edddcf 100%);
+  transition: opacity .6s ease;
+}
+#loading.done { opacity: 0; pointer-events: none; }
+#loading h1 { font-size: clamp(40px, 9vw, 84px); font-weight: 900; letter-spacing: 2px; margin: 0; line-height: 1.05; }
+#loading h1 span { color: var(--coral); }
+#loading p { margin: 14px 0 0; font-size: 15px; color: #6b5d55; }
+#loading .err { margin: 18px auto 0; max-width: 440px; padding: 12px 16px; border-radius: 12px;
+  background: #fff; color: #9b2c1a; box-shadow: var(--chip-shadow); font-size: 14px; line-height: 1.6; text-align: left; }
+.dots::after { content: ''; animation: dots 1.4s steps(4) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '．'; } 50% { content: '．．'; } 75% { content: '．．．'; } }
+
+/* 品牌卡 */
+#brand {
+  position: fixed; z-index: 10;
+  top: calc(16px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px));
+  padding: 12px 18px 13px; border-radius: 18px; background: var(--glass);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow);
+}
+#brand h1 { margin: 2px 0 0; font-size: 22px; font-weight: 900; letter-spacing: 1px; line-height: 1.15; }
+#brand h1 small { font-size: 14px; font-weight: 700; color: var(--coral); margin-left: 6px; letter-spacing: 3px; }
+#updatedAt { margin-top: 4px; font: 600 11px var(--mono); color: #8a7b70; }
+
+/* 島名標籤 */
+.isle-label {
+  pointer-events: auto; cursor: pointer; white-space: nowrap; user-select: none;
+  padding: 5px 11px 5px 6px; border-radius: 999px; background: var(--cream); box-shadow: var(--chip-shadow);
+  font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+  transition: opacity .25s, background .2s, color .2s;
+}
+.isle-label b { font: 700 10px/1 var(--mono); background: var(--coral); color: #fff; border-radius: 999px; padding: 4px 6px; letter-spacing: 1px; }
+.isle-label.sel { background: var(--ink); color: #fff; }
+.isle-label.dim { opacity: .42; }
+.isle-label.compact span { display: none; }
+.isle-label.compact { padding-right: 6px; }
+.isle-label.gone { opacity: 0; pointer-events: none; }
+</style>
+
+<div id="stage"></div>
+<div id="labels"></div>
+<header id="brand">
+  <div class="eyebrow" data-en="FICTIONAL CITY · ISSUES FROM THE NEWS">虛構城市 · 議題取材自新聞</div>
+  <h1><span id="cityName" data-en="Today">今日</span><small data-en="Isles">群島</small></h1>
+  <div id="updatedAt"><span data-en="Data as of">資料更新於</span> <span id="updatedDate"></span></div>
+</header>
+<div id="loading" role="status">
+  <div>
+    <h1><span data-en="Today " style="color:inherit">今日</span><span data-en="Isles">群島</span></h1>
+    <p><span data-en="Gathering today's issues">正在整理今天的議題</span><span class="dots"></span></p>
+    <div id="loadErr" class="err" hidden></div>
+  </div>
+</div>
