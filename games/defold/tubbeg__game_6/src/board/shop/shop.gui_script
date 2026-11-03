@@ -1,0 +1,187 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.is_shopping = false
+	self.max_bones = 15
+	self.max_ribs = 2
+	self.max_ghosts = 2
+	self.max_skull = 2
+	self.max_elden_bones = 0
+	self.max_oil = 5
+	self.oil_price = 200
+	self.bone_price = 200
+	self.rib_price = 3000
+	self.skull_price = 30000
+	self.ghost_price = (10^6) * 10
+	self.score_mult = 1
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+
+local function shorten_x(nr,max,s)
+	local divide = nr / max
+	local floor = math.floor(divide)
+	local rem = math.floor(math.fmod(divide,floor) * 100)
+	return tostring(floor) .. "." .. tostring(rem) .. s
+end
+
+local function shorten_number(nr)
+	local s = tostring(nr)
+	local e = math.log(nr,10)
+	if e > 9 then
+		return shorten_x(nr, (10^9), "B")
+	elseif e > 6 then
+		return shorten_x(nr, (10^6), "M")
+	elseif e > 3 then
+		return shorten_x(nr, (10^3), "k")
+	end
+	return s
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("dead_oil") then
+		if self.max_oil < 5 then
+			self.max_oil = self.max_oil + 1
+			local node = gui.get_node("oil_barrel_price")
+			gui.set_text(node, self.oil_price)
+		end
+	end
+	if message_id == hash("take_item") then
+		if message.item == "bone" then
+			self.max_bones = self.max_bones - 1
+			local node = gui.get_node("bone_price")
+			if self.max_bones < 1 then
+				gui.set_text(node, "MAX")
+			else
+				self.bone_price = 200 + ((15 - self.max_bones) * 100)
+				gui.set_text(node, shorten_number(self.bone_price))
+			end
+			msg.post("necromancer", "create_bone")
+		end
+		if message.item == "skull" then 
+			self.max_skull = self.max_skull - 1
+			local node = gui.get_node("skull_price")
+			if self.max_skull < 1 then
+				gui.set_text(node, "MAX")
+			else
+				self.skull_price = 30000 + ((15 - self.max_skull) * 100)
+				gui.set_text(node, shorten_number(self.skull_price))
+			end
+			msg.post("necromancer", "create_skull")
+		end
+		if message.item == "rib" then 
+			self.max_ribs = self.max_ribs - 1
+			local node = gui.get_node("rib_price")
+			if self.max_ribs < 1 then
+				gui.set_text(node, "MAX")
+			else
+				self.rib_price = 3000 + ((15 - self.max_ribs) * 100)
+				gui.set_text(node, shorten_number(self.rib_price))
+			end
+			msg.post("necromancer", "create_rib")
+		end
+		if message.item == "ghost" then 
+			self.max_ghosts = self.max_ghosts - 1
+			local node = gui.get_node("ghost_price")
+			if self.max_ghosts < 1 then
+				gui.set_text(node, "MAX")
+			else
+				self.ghost_price = (10 * (10^6)) + ((15 - self.max_ghosts) * (10^6))
+				gui.set_text(node, shorten_number(self.ghost_price))
+			end
+			msg.post("necromancer", "create_ghost")
+		end
+		if message.item == "oil" then
+			self.max_oil = self.max_oil - 1
+			local node = gui.get_node("oil_barrel_price")
+			if self.max_oil < 1 then
+				gui.set_text(node, "MAX")
+			end
+			msg.post("necromancer", "create_oil")
+		end
+	end
+end
+
+
+
+local function is_purchase_x(action,action_id,x,s)
+	local node = gui.get_node(s)
+	return x > 0 and action_id == hash("touch") and action.pressed and gui.pick_node(node, action.x, action.y)
+end
+
+local function is_purchase_bone(self,action,action_id)
+	return is_purchase_x(action, action_id, self.max_bones, "bone")
+end
+
+local function is_purchase_rib(self,action,action_id)
+	return is_purchase_x(action, action_id, self.max_ribs, "rib")
+end
+
+local function is_purchase_skull(self,action,action_id)
+	return is_purchase_x(action, action_id, self.max_skull, "skull")
+end
+
+local function is_purchase_ghost(self,action,action_id)
+	return is_purchase_x(action, action_id, self.max_ghosts, "ghost")
+end
+
+local function is_purchase_oil(self,action,action_id)
+	return is_purchase_x(action, action_id, self.max_oil, "oil")
+end
+
+function on_input(self, action_id, action)
+	if not action_id and not self.is_shopping then
+		local node = gui.get_node("shop_button/box")
+		if gui.pick_node(node, action.x, action.y) then
+			gui.play_flipbook(node, "button_hover")
+		else
+			gui.play_flipbook(node, "button")
+		end
+	end
+	if action_id == hash("touch") and action.pressed then
+		local node = gui.get_node("shop_button/box")
+		if gui.pick_node(node, action.x, action.y) then
+			self.is_shopping = not self.is_shopping
+			local shop = gui.get_node("shop")
+			if self.is_shopping then
+				gui.play_flipbook(node, "button_pressed")
+				gui.set_enabled(shop, true)
+			else
+				gui.set_enabled(shop, false)
+			end
+		end
+	end
+	if self.is_shopping then
+		if is_purchase_bone(self, action, action_id) then
+			msg.post("money","want_item", {price=self.bone_price, item="bone"})
+		end
+		if is_purchase_rib(self, action, action_id) then
+			msg.post("money","want_item", {price=self.rib_price, item="rib"})
+		end
+		if is_purchase_skull(self, action, action_id) then
+			msg.post("money","want_item", {price=self.skull_price, item="skull"})
+		end
+		if is_purchase_ghost(self, action, action_id) then
+			msg.post("money","want_item", {price=self.ghost_price, item="ghost"})
+		end
+		if is_purchase_oil(self, action, action_id) then
+			msg.post("money","want_item", {price=self.oil_price, item="oil"})
+		end
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
