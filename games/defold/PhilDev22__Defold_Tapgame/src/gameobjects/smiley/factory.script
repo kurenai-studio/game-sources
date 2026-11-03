@@ -1,0 +1,68 @@
+-- current number of smileys
+g_smiley_count = 0
+
+local spawn_timer = 0.0
+local spawn_timer_current_smiley = 0.0
+local spawn_timer_initialized = false
+local rotating = 0
+
+function init(self)
+	spawn_timer_initialized = false
+	-- init timer for spawning current smiley that has to be touched
+	self.spawn_time_current_smiley = g_constants.SPAWN_TIME_MAX_CURRENT_SMILEY
+	spawn_timer_current_smiley = self.spawn_time_current_smiley
+	-- set random seed
+	math.randomseed(os.time())
+end
+
+function _init_spawn_time(self, time)
+	self.spawn_time = time
+	spawn_timer = self.spawn_time
+	spawn_timer_initialized = true
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("reset_timer") then
+		spawn_timer_current_smiley = self.spawn_time_current_smiley
+		
+	elseif message_id == hash("init_spawn_values") then
+		_init_spawn_time(self, message.spawn_time)
+		rotating = message.rotating
+	end
+end
+
+function update(self, dt)
+	if (spawn_timer_initialized) and (not g_pause) and (not g_stopped) and (g_smiley_count < g_constants.MAX_SMILEYS) then
+		-- count down spawn timer
+		spawn_timer = spawn_timer - dt
+		-- count down spawn timer for current smiley that has to be found
+		spawn_timer_current_smiley = spawn_timer_current_smiley - dt
+		
+		if spawn_timer <= 0 then
+			spawn_timer = self.spawn_time
+			
+			-- spawn new smiley
+
+			-- spawn item with probability defined in g_constants.ITEM_PROB
+			local item = math.random(100)
+			if item > 100 - g_constants.ITEM_PROB then item = 1 else item = 0 end
+			-- set spawn properties for factory
+			local factory_props = {trigger_current = 0, trigger_item = item, rotating = rotating}
+			-- if time elapsed without the current active smiley being spawned,
+			-- then trigger spawning this smiley
+			if spawn_timer_current_smiley <= 0 then
+				factory_props = {trigger_current = 1, trigger_item = item, rotating = rotating}
+				-- reset timer
+				spawn_timer_current_smiley = self.spawn_time_current_smiley
+				-- print("Max time elapsed wihtout smiley being spawned. Spawning current active smiley!")
+			end
+			
+			-- get factory component
+			local component = "#smiley_factory"
+			-- spawn new smiley by factory
+			local instance_id = factory.create(component, nil, nil, factory_props, vmath.vector3(1, 1, 1))
+			-- increase counter
+			g_smiley_count = g_smiley_count + 1
+		end
+	end
+end

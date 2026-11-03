@@ -1,0 +1,261 @@
+go.property("smiley_id", 0)
+go.property("trigger_current", 0) -- 0 = random, else set id of current active smiley
+go.property("trigger_item", 0) -- 0 = no item, else set id of item
+go.property("angular_velocity", 2)
+go.property("rotating", 0)
+
+local spawn_range_y = 0
+local spawn_range_x = 0
+local death_offset_top = 300
+local death_offset_bottom = 200
+local death_offset_x = 200
+
+function init(self)
+	self.visible = true 
+	
+	local smiley_id = ""
+	local prefix  = "emoji_u1f"
+	-- if not a certain smiley is triggered, then spawn a random one
+	if self.trigger_current == 0 then
+		--spawn random smiley
+		if self.trigger_item == 0 then 
+			-- get random index of id table
+			local index = math.random(tablelength(g_level_smileys_all))
+			smiley_id = g_level_smileys_all[ index ]
+		else
+			-- spawn random item
+			local index = math.random(tablelength(g_constants.ITEM_IDS))
+			smiley_id = g_constants.ITEM_IDS[ index ]
+			prefix = "item_"
+			-- animate item (pulsate)
+			local s = 1.1
+			go.animate("#sprite", "scale", go.PLAYBACK_LOOP_PINGPONG, vmath.vector3(s, s, s), go.EASING_INOUTSINE, 0.5)
+		end
+	else
+		-- spawn certain smiley by id
+		smiley_id = g_level_smileys[ g_next_smiley_id ]
+	end
+	-- set new sprite image by id
+	msg.post("#sprite", "play_animation", {id = hash(prefix .. smiley_id ) } )
+	self.smiley_id = hash(smiley_id)	
+	
+	-- position
+	_init_position(self)
+	-- movement
+	_init_movement(self)
+end
+
+function final(self)
+	g_smiley_count = g_smiley_count - 1
+end
+
+local function _handle_pause_state(self)
+	if self.visible then
+		-- make sprite unvisible
+		go.set("#sprite", "tint", vmath.vector4(1,1,1,0))
+		self.visible = false
+	end
+end
+
+function update(self, dt)
+	if not g_stopped then
+		if not g_pause then
+			if not self.visible then
+				-- make sprite visible again
+				go.set("#sprite", "tint", vmath.vector4(1,1,1,1))
+				self.visible = true
+			end
+			
+			_move(self, dt)
+			_check_pos(self)
+		else
+			_handle_pause_state(self)
+		end
+	else
+		go.delete()
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("collision_response") then
+		msg.post("main", "smiley_touched", {smiley_id = hash(self.smiley_id)})
+		go.delete()
+
+	elseif message_id == hash("smiley_touch_success") then
+		particlefx.play("#touched_smiley")
+	end
+end
+
+function _init_position(self)
+	local pos = go.get_position()
+	
+	if g_mode_active == g_modes.horizontal then
+		
+		local spawn_offset_left = -128
+		local spawn_offset_right = 128
+		local spawn_offset_top = 300
+		local spawn_offset_bottom = 150
+		-- set spawn ranges
+		local spawn_range_x = g_constants.SCREEN_WIDTH
+		local spawn_range_y = g_constants.SCREEN_HEIGHT - spawn_offset_top - spawn_offset_bottom
+		
+		-- set random y-position
+		pos.y = (math.random() * spawn_range_y) + spawn_offset_bottom
+		-- spawn left or right randomly
+		pos.x = math.random(2) == 1 and spawn_offset_left or g_constants.SCREEN_WIDTH + spawn_offset_right
+		pos.z = 0.1
+		go.set_position(pos)
+		
+	elseif g_mode_active == g_modes.vertical then
+		
+		local spawn_offset_left = 64
+		local spawn_offset_right = 64
+		local spawn_offset_top = 300
+		local spawn_offset_bottom = -64
+		-- set spawn ranges
+		local spawn_range_x = g_constants.SCREEN_WIDTH  - spawn_offset_right - spawn_offset_left
+		local spawn_range_y = g_constants.SCREEN_HEIGHT - spawn_offset_top - spawn_offset_bottom
+		
+		-- set random x-position
+		pos.x = spawn_offset_left + (math.random() * (spawn_range_x))
+		-- spawn at the top or bottom randomly
+		pos.y = math.random(2) == 1 and spawn_offset_bottom or g_constants.SCREEN_HEIGHT - spawn_offset_top
+		go.set_position(pos)
+		
+	elseif g_mode_active == g_modes.popup then
+		
+		local spawn_offset_left = 128
+		local spawn_offset_right = 128
+		local spawn_offset_top = 300
+		local spawn_offset_bottom = 200
+		-- set spawn ranges
+		local spawn_range_x = g_constants.SCREEN_WIDTH  - spawn_offset_right - spawn_offset_left
+		local spawn_range_y = g_constants.SCREEN_HEIGHT - spawn_offset_top - spawn_offset_bottom
+		-- set random y-position
+		pos.y = (math.random() * spawn_range_y) + spawn_offset_bottom
+		-- set random x-position
+		pos.x = spawn_offset_left + (math.random() * (spawn_range_x))
+		go.set_position(pos)
+	end
+
+	local pos = go.get_position() * g_display_scale
+	go.set_position(pos)
+	
+end
+
+function _init_movement(self)	
+	self.v_speed = vmath.vector3()
+	self.direction = vmath.vector3()
+	self.speed = 0
+
+	if self.rotating == 1 then
+		local rand_direction = math.random(2)
+		-- direction of rotation (0 = no rotation, 1 = left, -1 = right)
+		self.rotate = rand_direction == 1 and 1 or -1
+		-- set random initial rotation
+		local rotation = go.get_rotation()
+		local new_angle = math.random(360)
+		local radians = new_angle * math.pi / 180
+		rotation = rotation * vmath.quat_rotation_z(radians * self.rotate)
+		go.set_rotation(rotation)
+	end
+	
+	local pos = go.get_position()
+
+	if g_mode_active == g_modes.horizontal then
+		self.speed = g_speed_horizontal
+		-- set moving direction
+		self.direction.x = pos.x <= 0 and 1 or -1
+		self.v_speed = self.speed * self.direction
+		-- animate
+		local s = 1.1
+		go.animate(".", "position.y", go.PLAYBACK_LOOP_PINGPONG, pos.y + 10, go.EASING_INOUTSINE, 0.7)
+		
+
+	elseif g_mode_active == g_modes.vertical then
+		self.speed = g_speed_vertical
+		self.direction.y = pos.y <= 0 and 1 or -1
+		self.v_speed = self.speed * self.direction
+		-- animate
+		local s = 1.1
+		go.animate(".", "position.x", go.PLAYBACK_LOOP_PINGPONG, pos.x + 10, go.EASING_INOUTSINE, 0.7)
+		
+	elseif g_mode_active == g_modes.popup then
+		self.popup_timer = 0.0
+		go.set_scale(0.01)
+		go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(1.0 * g_display_scale), go.EASING_OUTBACK, 0.3)
+	end
+
+	-- scale speed and size of smiles according to display scale
+	self.v_speed = self.v_speed * g_display_scale
+	
+	local scale = go.get_scale()
+	go.set_scale(scale * g_display_scale)
+	
+end
+
+function _move(self, dt)
+
+	if g_mode_active == g_modes.horizontal then
+		-- TODO
+		
+	elseif g_mode_active == g_modes.vertical then
+		-- TODO
+		
+	elseif g_mode_active == g_modes.popup then
+		self.popup_timer = self.popup_timer + dt
+		if self.popup_timer >= g_popup_time then
+			self.popup_timer = 0.0
+			go.delete()
+		end
+
+
+	end
+	
+	local pos = go.get_position() 
+	pos = (pos + self.v_speed * dt) 
+	go.set_position(pos)
+
+	if self.rotating == 1 then
+		local rotation = go.get_rotation()
+		rotation = rotation * vmath.quat_rotation_z(self.angular_velocity * self.rotate * dt)
+		go.set_rotation(rotation)
+	end
+end
+
+function _check_pos(self)
+	-- deleting sprite when it moves out of screen
+	if (self.direction.x == 1) and (go.get_position().x > g_constants.SCREEN_WIDTH + death_offset_x) then
+		go.delete()
+	end
+	if (self.direction.x == -1) and (go.get_position().x < 0 - death_offset_x) then
+		go.delete()
+	end
+
+	if (self.direction.y == 1) and (go.get_position().y > g_constants.SCREEN_HEIGHT - death_offset_top) then
+		go.delete()
+	end
+
+	if (self.direction.y == -1) and (go.get_position().y < 0 - death_offset_bottom) then
+		go.delete()
+	end
+end
+
+
+-- HELPER --
+
+-- get the size of a table
+function tablelength(T)
+	local count = 0
+	for _ in pairs(T) do count = count + 1 end
+	return count
+end
+
+function tablecontains(table, element)
+	for _, value in pairs(table) do
+		if value == element then
+			return true
+		end
+	end
+	return false
+end
