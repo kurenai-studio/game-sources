@@ -1,0 +1,18 @@
+name: "StarSystem"
+instances {
+  id: "StarSystem"
+  prototype: "/main/Galaxy/StarSystem/StarSystem.go"
+  children: "StarSystemLabel"
+  position {
+    x: 100.0
+    y: 100.0
+  }
+}
+instances {
+  id: "StarSystemLabel"
+  prototype: "/main/Galaxy/StarSystem/StarSystemLabel.go"
+  position {
+    y: -32.0
+  }
+}
+scale_along_z: 0
