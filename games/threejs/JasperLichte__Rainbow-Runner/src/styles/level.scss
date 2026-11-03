@@ -1,0 +1,41 @@
+main#main {
+  width: 100vw;
+  height: 100vh;
+}
+
+.dom-engine-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--canvas-background-color);
+  position: relative;
+
+  .block {
+    position: absolute;
+    display: block;
+  }
+
+  .coin {
+    background-color: transparent;
+    border: 5px solid var(--objects-coin-color);
+    transform: scale(.6);
+    border-radius: 50%;
+  }
+
+  .spikes {
+    background-color: transparent;
+    width: 0;
+    height: 0;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-bottom: 15px solid var(--objects-spikes-color);
+    transform: scale(0.7) translate(-5px, 10px);
+  }
+
+  .wall {
+    border: 1px solid var(--objects-wall-border-color);
+  }
+
+  .diamond {
+    transform: scale(0.2, 0.4) translateX(-12px);
+  }
+}
