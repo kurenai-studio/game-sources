@@ -1,0 +1,11 @@
+function init(self)
+	math.randomseed(socket.gettime()*10000)
+	math.random()
+	math.random()
+	math.random()
+	collectionfactory.create("go#collectionfactory", vmath.vector3(0,0,0))
+end
+
+
+function on_input(self, action_id, action)
+end

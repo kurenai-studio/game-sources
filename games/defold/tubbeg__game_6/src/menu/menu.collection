@@ -1,0 +1,40 @@
+name: "menu"
+scale_along_z: 0
+embedded_instances {
+  id: "board_maker"
+  data: "components {\n"
+  "  id: \"board_maker\"\n"
+  "  component: \"/menu/board_maker.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"collectionfactory\"\n"
+  "  type: \"collectionfactory\"\n"
+  "  data: \"prototype: \\\"/board/board.collection\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "start"
+  data: "components {\n"
+  "  id: \"start\"\n"
+  "  component: \"/menu/start/start.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "volume"
+  data: "components {\n"
+  "  id: \"volume\"\n"
+  "  component: \"/menu/volume/volume.gui\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "background"
+  data: "components {\n"
+  "  id: \"background\"\n"
+  "  component: \"/menu/background.gui\"\n"
+  "}\n"
+  ""
+}

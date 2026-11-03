@@ -1,0 +1,71 @@
+script: "/menu/volume/volume.gui_script"
+fonts {
+  name: "rf"
+  font: "/assets/fonts/rf.font"
+}
+textures {
+  name: "volume"
+  texture: "/menu/volume/volume.atlas"
+}
+nodes {
+  position {
+    x: 222.0
+    y: 159.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "VOLUME"
+  font: "rf"
+  id: "volume"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 459.0
+    y: 158.0
+  }
+  scale {
+    x: 0.950028
+    y: 0.910574
+  }
+  type: TYPE_BOX
+  texture: "volume/right"
+  id: "right"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 603.0
+    y: 159.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "0/10"
+  font: "rf"
+  id: "indicator"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 391.0
+    y: 158.0
+  }
+  scale {
+    x: 0.950028
+    y: 0.910574
+  }
+  type: TYPE_BOX
+  texture: "volume/left"
+  id: "left"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
