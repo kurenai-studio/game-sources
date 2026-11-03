@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lale Bahçesi · Claude Game Arena</title>
+<meta name="description" content="A cosy 3D garden builder in the Ottoman Tulip Era: plant bulbs on a sunlit sandstone diorama, breed new tulip varieties and win the Sultan's festival. Plays in the browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lale Bahçesi · Tulip Garden">
+<meta property="og:description" content="A cosy 3D garden builder in the Ottoman Tulip Era: plant bulbs on a sunlit sandstone diorama, breed new tulip varieties and win the Sultan's festival. Plays in the browser.">
+<meta property="og:url" content="https://furkiozknn.github.io/lale-bahcesi/">
+<meta property="og:image" content="https://furkiozknn.github.io/lale-bahcesi/docs/card.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<style>
+:root{--accent:#B3262F;--accent-hi:#E63946;--ink:#3a1f1c;--paper:#fff6e6;--glass:rgba(255,246,230,.93);--line:rgba(179,38,47,.32);--focus:#b45309;--mut:#5c3d32;--sky:#cdeaf8;--gold:#f5c34b;--head:#8E1B24;--leaf:#3A7D44;
+  --corner:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath d='M2 28C2 14 10 8 16 2C22 8 28 14 28 28' fill='none' stroke='%233A7D44' stroke-width='1.6'/%3E%3Cpath d='M16 2C12 6 10 10 10 14C13 11 14 10 16 10C18 10 19 11 22 14C22 10 20 6 16 2Z' fill='%23E63946'/%3E%3Ccircle cx='16' cy='18' r='2.4' fill='%23FFD166'/%3E%3C/svg%3E")}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--sky);overflow:hidden}
+body{font:15px/1.4 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+button{font:inherit;color:inherit;min-height:44px;min-width:44px;padding:8px 14px;border-radius:12px;border:1.5px solid var(--line);background:#fffaf0;cursor:pointer;touch-action:manipulation;box-shadow:0 2px 0 rgba(142,27,36,.18)}
+button:hover{background:#fff}
+button:active{transform:translateY(1px);box-shadow:none}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:linear-gradient(180deg,#c93b47,var(--accent));border-color:transparent;color:#fff;font-weight:700;box-shadow:0 3px 0 #7a1820}
+button.on{background:rgba(179,38,47,.16);border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input[type=range]{width:100%;min-height:44px;accent-color:var(--accent)}
+.hidden{display:none!important}
+.glass{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(90,30,30,.2)}
+.screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(255,244,226,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:auto}
+#scr-title{background:linear-gradient(180deg,rgba(205,234,248,.15),rgba(255,240,220,.88))}
+/* garden-scroll panel: parchment, a tulip flourish in each corner and a rolled-edge inset line */
+.panel{width:100%;max-width:640px;padding:22px;display:flex;flex-direction:column;gap:14px;max-height:100%;overflow:auto;background:var(--corner) no-repeat 10px 10px/30px 30px,var(--corner) no-repeat right 10px top 10px/30px 30px,var(--corner) no-repeat left 10px bottom 10px/30px 30px,var(--corner) no-repeat right 10px bottom 10px/30px 30px,var(--paper);border:1.5px solid var(--line);border-radius:14px;box-shadow:inset 0 0 0 4px var(--paper),inset 0 0 0 5px rgba(179,38,47,.28),0 14px 34px rgba(90,30,30,.22)}
+.panel>*{flex-shrink:0}
+.panel.wide{max-width:920px}
+h1,h2{margin:0;font-weight:800;letter-spacing:.02em}
+h1{font-size:clamp(38px,9vw,64px);color:var(--head);font-family:Georgia,"Times New Roman",serif;text-shadow:0 2px 0 #fff6e6}
+h2{font-size:22px;color:var(--head)}
+.center{text-align:center;align-items:center}
+.logo{width:96px;height:96px;margin:0 auto}
+.muted{font-size:14px;margin:0;color:var(--mut)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row>label{min-width:110px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1}
+.howto{margin:0;padding-left:20px;text-align:left;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.foot{position:fixed;left:0;right:0;bottom:6px;text-align:center;font-size:12px;z-index:21;pointer-events:none;color:var(--ink)}
+.foot span{display:inline-block;padding:2px 10px;border-radius:10px;background:var(--glass);border:1px solid var(--line)}
+.foot a{pointer-events:auto;color:var(--accent)}
+#title-best{font-size:14px;margin:0}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;font-variant-numeric:tabular-nums}
+.stats-grid div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:4px 0}
+.bars{display:flex;flex-direction:column;gap:8px;width:100%}
+.bar{display:grid;grid-template-columns:minmax(100px,1fr) 2fr 44px;gap:10px;align-items:center;font-size:14px;width:100%}
+.track{height:12px;border-radius:6px;background:rgba(190,24,93,.16);overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#f472b6,var(--accent))}
+.stars{display:flex;justify-content:center;gap:10px}
+.stars svg{width:56px;height:56px}
+.stars svg.off{opacity:.22}
+.big{font-size:56px;font-weight:900;color:var(--accent);text-align:center;line-height:1;font-variant-numeric:tabular-nums}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;padding:10px;border-radius:14px;font-size:13px}
+.card svg{width:54px;height:72px}
+.card b{font-size:13px}
+.card small{opacity:.8;font-size:11px}
+.card.unk{opacity:.5}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.4)}
+.item small{opacity:.8}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-size:13px;min-height:44px}
+/* HUD */
+#hud{position:fixed;left:8px;right:8px;top:8px;z-index:8;display:flex;align-items:center;gap:10px;padding:6px 10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--accent);white-space:nowrap;font-family:Georgia,serif}
+.brand svg{width:30px;height:30px}
+.stats{display:flex;gap:16px;flex:1;justify-content:center;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.stat span{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.06em}
+.stat .short{display:none}
+.stat b{font-size:17px;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ibtn{min-width:44px;min-height:44px;padding:6px;display:grid;place-items:center;border-radius:12px}
+.ibtn{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ibtn.on{background:var(--accent);color:#fff;border-color:transparent}
+.ibtn svg{width:22px;height:22px;fill:currentColor}
+.ibtn.txt{font-weight:800;font-size:13px}
+/* bottom panels (#coach offset above #tile so they never stack) */
+#tile{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:9;width:min(92vw,420px);padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;background:var(--corner) no-repeat right 8px top 8px/24px 24px,var(--glass)}
+#tile .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#coach{position:fixed;left:50%;transform:translateX(-50%);bottom:224px;z-index:9;width:min(92vw,460px);padding:10px 14px;font-size:15px;text-align:center;pointer-events:none}
+#build{position:fixed;left:8px;right:8px;bottom:30px;z-index:9;display:flex;gap:6px;padding:6px;overflow-x:auto;justify-content:center}
+#build button{flex:none;min-width:44px;display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 8px;font-size:12px;line-height:1.15}
+#build button small{font-size:11px;opacity:.75}
+#build button.on{box-shadow:0 0 0 2px var(--accent) inset}
+#toasts{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:15;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(92vw,460px)}
+.toast{padding:10px 14px;border-radius:12px;background:var(--glass);border:1.5px solid var(--line);font-size:15px;box-shadow:0 6px 18px rgba(90,30,30,.2);animation:tin .25s ease-out}
+.toast.good{border-color:#22a06b}
+.toast.bad{border-color:#d13b3b}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+#debug{position:fixed;left:8px;bottom:8px;z-index:40;background:rgba(0,0,0,.7);color:#eaffea;font:12px/1.4 monospace;padding:8px;border-radius:8px;max-width:90vw;white-space:pre-wrap;pointer-events:none}
+@media (max-width:700px){.stat .long{display:none}.stat .short{display:inline}.stat span{font-size:11px}.stats{order:3;flex:1 0 100%;gap:14px;padding-top:2px}.brand span{display:none}#hud{padding:6px 8px}#toasts{top:124px}#build button small{display:none}}
+</style>
+<script data-goatcounter="https://furkiozknn.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<canvas id="gl" aria-label="Lale Bahçesi"></canvas>
+
+<header id="hud" class="glass hidden">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-5 4-7 9-7 14h14c0-5-2-10-7-14z" fill="#BE185D"/><path d="M9 18c0 4 3 7 7 7s7-3 7-7z" fill="#f472b6"/><rect x="15" y="25" width="2" height="5" fill="#4d7c3a"/></svg>
+    <span data-t="title"></span>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="long" data-t="season"></span><span class="short" data-t="seasonS"></span><b id="h-season">1</b></div>
+    <div class="stat"><span class="long" data-t="day"></span><span class="short" data-t="dayS"></span><b id="h-day">1/30</b></div>
+    <div class="stat"><span class="long" data-t="akce"></span><span class="short" data-t="akceS"></span><b id="h-akce">50</b></div>
+    <div class="stat"><span class="long" data-t="varieties"></span><span class="short" data-t="varS"></span><b id="h-var">0/20</b></div>
+    <div class="stat"><span class="long" data-t="beauty"></span><span class="short" data-t="beautyS"></span><b id="h-beauty">0</b></div>
+  </div>
+  <div class="tools">
+    <button class="ibtn txt" id="b-speed" data-t="speed" aria-label="speed">1x</button>
+    <button class="ibtn" id="b-pause" aria-label="pause"><svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+    <button class="ibtn" id="b-cat" aria-label="catalogue"><svg viewBox="0 0 24 24"><path d="M5 3h12v18H5zM7 5v14h8V5zM3 5h2v14H3z"/></svg></button>
+    <button class="ibtn" id="b-bazaar" aria-label="bazaar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9 9h6M9 12h6M9 15h4" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <button class="ibtn" id="b-sound" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8c2 2 2 6 0 8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="ibtn txt" id="b-lang" aria-label="language">TR</button>
+  </div>
+</header>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="tile" class="glass hidden" role="dialog"></div>
+<div id="coach" class="coach glass hidden" role="status"></div>
+<nav id="build" class="glass hidden" aria-label="build"></nav>
+<div id="debug" class="hidden"></div>
+
+<section id="scr-title" class="screen hidden">
+  <div class="panel center">
+    <svg class="logo" viewBox="0 0 96 96" aria-hidden="true">
+      <circle cx="48" cy="48" r="46" fill="#fff6f8" stroke="#BE185D" stroke-width="2"/>
+      <path d="M48 16c-14 11-20 25-20 38h40c0-13-6-27-20-38z" fill="#BE185D"/>
+      <path d="M30 46c0 9 8 16 18 16s18-7 18-16z" fill="#f472b6"/>
+      <path d="M48 62v20" stroke="#4d7c3a" stroke-width="3"/>
+      <path d="M48 74c-8-2-12-6-12-10 6 0 10 3 12 10zM48 74c8-2 12-6 12-10-6 0-10 3-12 10z" fill="#6fa84e"/>
+    </svg>
+    <h1 data-t="title"></h1>
+    <p class="muted" data-t="sub"></p>
+    <ul class="howto">
+      <li data-t="how1"></li><li data-t="how2"></li><li data-t="how3"></li><li data-t="how4"></li>
+    </ul>
+    <div class="btns">
+      <button class="primary" id="b-play" data-t="play"></button>
+      <button id="b-cont" data-t="cont"></button>
+      <button id="b-set-title" data-t="settings"></button>
+    </div>
+    <p id="title-best" class="muted"></p>
+  </div>
+</section>
+
+<section id="scr-pause" class="screen hidden">
+  <div class="panel center" style="max-width:380px">
+    <h2 data-t="pause"></h2>
+    <button class="primary" id="b-resume" data-t="resume"></button>
+    <button id="b-restart" data-t="restart"></button>
+    <button id="b-set-pause" data-t="settings"></button>
+    <button id="b-menu" data-t="mainMenu"></button>
+  </div>
+</section>
+
+<section id="scr-settings" class="screen hidden">
+  <div class="panel" style="max-width:480px">
+    <h2 data-t="settings"></h2>
+    <div class="row"><label data-t="master" style="min-width:110px"></label><input type="range" id="s-master" min="0" max="1" step="0.05"></div>
+    <div class="row"><label data-t="music" style="min-width:110px"></label><input type="range" id="s-music" min="0" max="1" step="0.05"></div>
+    <div class="row"><label data-t="sfx" style="min-width:110px"></label><input type="range" id="s-sfx" min="0" max="1" step="0.05"></div>
+    <div class="row"><label data-t="language" style="min-width:110px"></label><div class="seg"><button id="s-tr">Türkçe</button><button id="s-en">English</button></div></div>
+    <div class="row"><label data-t="quality" style="min-width:110px"></label><div class="seg"><button id="s-low" data-t="low"></button><button id="s-high" data-t="high"></button></div></div>
+    <div class="row"><label data-t="fullscreen" style="min-width:110px"></label><button id="s-full" data-t="fsBtn"></button></div>
+    <div class="btns"><button id="b-back" data-t="back"></button></div>
+  </div>
+</section>
+
+<section id="scr-cat" class="screen hidden">
+  <div class="panel wide">
+    <div class="row" style="justify-content:space-between"><h2 data-t="catalogue"></h2><span id="cat-count"></span></div>
+    <div id="cat-body" class="grid-cards"></div>
+    <div class="btns"><button id="b-cat-close" data-t="close"></button></div>
+  </div>
+</section>
+
+<section id="scr-bazaar" class="screen hidden">
+  <div class="panel wide">
+    <div class="row" style="justify-content:space-between"><h2 data-t="bazaar"></h2><span id="baz-akce"></span></div>
+    <div id="baz-body" class="list"></div>
+    <div class="btns"><button id="b-baz-close" data-t="close"></button></div>
+  </div>
+</section>
+
+<section id="scr-fest" class="screen hidden">
+  <div class="panel center" style="max-width:600px" id="fest-body"></div>
+</section>
+
+<section id="scr-end" class="screen hidden">
+  <div class="panel center" style="max-width:560px" id="end-body"></div>
+</section>
+
+<footer class="foot"><span>Claude Game Arena · built by Claude Haiku 5.5 · <a href="https://furkiozknn.github.io/">furkiozknn.github.io</a></span></footer>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ---------- constants and data ---------- */
+const N = 16, DAY_SEC = 14, SEASON_DAYS = 30, GS = [10, 12, 14, 16];
+const T_GRASS = 0, T_PATH = 1, T_BED = 2, T_POOL = 3, T_FOUNTAIN = 4, T_KIOSK = 5;
+const COST = { path: 2, bed: 8, pool: 60, cypress: 30, plane: 40, lantern: 18, bench: 22 };
+const DECOR = ['cypress', 'plane', 'lantern', 'bench'];
+const TOOLS = ['path', 'bed', 'pool', 'cypress', 'plane', 'lantern', 'bench', 'erase'];
+const BULB_PRICE = 6, FLOWER_PRICE = 11, PACK_PRICE = 20, BED_LIMIT = 260;
+const PAL = [
+  { tr: 'Kırmızı', en: 'Red', col: 0xe63946 }, { tr: 'Pembe', en: 'Pink', col: 0xf4a6c1 },
+  { tr: 'Beyaz', en: 'White', col: 0xfaf4ea }, { tr: 'Sarı', en: 'Yellow', col: 0xffd166 },
+  { tr: 'Mor', en: 'Purple', col: 0x7a3fa0 }, { tr: 'Turuncu', en: 'Orange', col: 0xf28a3a },
+  { tr: 'Bordo', en: 'Maroon', col: 0x6e1630 }, { tr: 'Krem', en: 'Cream', col: 0xf3e3b5 },
+  { tr: 'Gül-mor', en: 'Rose-violet', col: 0xc05aa8 }, { tr: 'Ateş', en: 'Ember', col: 0xe0562b }
+];
+const SHAPE = [{ tr: 'Yuvarlak', en: 'round' }, { tr: 'Badem', en: 'almond' }, { tr: 'Lale-i rumi', en: 'needle' }];
+const PATT = [{ tr: 'düz', en: 'plain' }, { tr: 'alevli', en: 'flamed' }, { tr: 'kenarlı', en: 'edged' }];
+// named rare varieties, keyed by id = colour*9 + shape*3 + pattern
+const NAMED = {
+  7: { tr: 'Lale-i Rumi Ateşi', en: 'Rumi Flame Needle' }, 20: { tr: 'Sultan Beyazı', en: "Sultan's White" },
+  28: { tr: 'Altın Kaftan', en: 'Golden Kaftan' }, 40: { tr: 'Gül Mor Sultan', en: 'Rose Purple Sultan' },
+  62: { tr: 'Bordo Hilal', en: 'Maroon Crescent' }
+};
+// colour mixes when two parents of different colours cross
+const MIX = { '0,2': 1, '0,3': 5, '2,3': 7, '1,4': 8, '0,4': 6, '0,5': 9, '3,5': 9, '1,2': 1, '2,4': 8, '2,7': 7, '1,3': 7 };
+const STR = {
+  tr: {
+    title: 'Lale Bahçesi', sub: 'Osmanlı Lale Devri’nde bir saray bahçesi kurun.',
+    how1: 'Yatağa tıklayıp soğan dikin, sulayın, çiçeği kesin.',
+    how2: 'Yan yana açan laleler yeni tohum verir: yeni çeşitler keşfedin.',
+    how3: 'Bazarda satın, süsleyin, çeşmenin çevresini simetrik yapın.',
+    how4: 'Dört mevsimin sonunda Sultan’ın lale şenliğinde üç yıldız alın.',
+    play: 'Oyna', cont: 'Devam', settings: 'Ayarlar', resume: 'Devam et', restart: 'Yeniden başla',
+    mainMenu: 'Ana menü', back: 'Geri', close: 'Kapat', pause: 'Duraklatıldı',
+    best: 'En iyi', bestNone: 'Henüz şenlik yok', master: 'Ana ses', music: 'Müzik', sfx: 'Efektler',
+    language: 'Dil', quality: 'Kalite', low: 'Düşük', high: 'Yüksek', fullscreen: 'Tam ekran', fsBtn: 'Aç / kapat',
+    seasonS: 'Mev.', dayS: 'Gün', akceS: 'Akç.', varS: 'Çeş.', beautyS: 'Güz.',
+    season: 'Mevsim', day: 'Gün', akce: 'Akçe', varieties: 'Çeşit', beauty: 'Güzellik', speed: 'Hız',
+    catalogue: 'Katalog', bazaar: 'Bazar', found: 'bulundu', unknown: 'Bilinmiyor',
+    toolPath: 'Yol', toolBed: 'Yatak', toolPool: 'Havuz', toolCypress: 'Servi', toolPlane: 'Çınar',
+    toolLantern: 'Fener', toolBench: 'Bank', toolErase: 'Sil',
+    tile: 'Parsel', plantPick: 'Dikmek için soğan seçin:', noBulbs: 'Soğanınız yok. Bazardan paket alın.',
+    water: 'Sula', harvest: 'Kes', lift: 'Söküp al', clean: 'Yaprak bitini temizle',
+    rotate: 'Döndür: Q / E', stage0: 'Filiz', stage1: 'Yaprak', stage2: 'Tomurcuk', stage3: 'Çiçekte',
+    stage4: 'Solmuş / kesilmiş', kGrass: 'Çimen', kPath: 'Yol', kBed: 'Yatak', kPool: 'Havuz',
+    kFountain: 'Çeşme', kKiosk: 'Köşk', kDecor: 'Süs', empty: 'Boş', sellAll: 'Hepsini sat', sellOne: 'Sat',
+    bulbsTitle: 'Soğanlar', flowersTitle: 'Kesik çiçekler', flowersNone: 'Kesik çiçek yok',
+    buyPack: 'Soğan paketi al (20 akçe)', marketTitle: 'Piyasa', mania: 'Lale çılgınlığı!',
+    festTitle: 'Mevsim şenliği', score: 'Puan', stars: 'Yıldız', newRecord: 'Yeni rekor!',
+    partVar: 'Çeşitlilik', partHarm: 'Renk uyumu', partSym: 'Çeşme simetrisi', partDecor: 'Süsleme',
+    statBlooms: 'Kesilen çiçek', statVar: 'Çeşit', statAkce: 'Akçe', statBred: 'Melez tohum',
+    nextSeason: 'Sonraki mevsim', endlessBtn: 'Sonsuz bahçe', again: 'Yeniden oyna',
+    winTitle: 'Sultan’ın lale şenliği kazanıldı!', loseTitle: 'Bahçe şenliği tamamlandı',
+    winText: 'Üç yıldız ve 20 çeşit: bahçeniz Sultan’ın gözdesi oldu.',
+    loseText: 'Dört mevsim bitti. Üç yıldız ve 20 çeşit için tekrar deneyin.',
+    rotLabel: 'Döndürme', frostWarn: 'Yarın don bekleniyor: genç soğanlar zarar görebilir.',
+    frost: 'Don vurdu: genç soğanlar zarar gördü.', aphids: 'Yaprak biti belirdi!',
+    dies: 'Bir soğan çürüdü ve öldü.', planted: 'Soğan dikildi.', watered: 'Sulandı.',
+    picked: 'Çiçek kesildi.', lifted: 'Soğan söküldü.', cleaned: 'Yaprak biti temizlendi.',
+    bought: 'Paket alındı: 3 soğan eklendi.', sold: 'Satıldı.', noMoney: 'Akçeniz yetmiyor.',
+    newVariety: 'Yeni çeşit bulundu:', newSeed: 'Melez tohum:', maniaRise: 'Bir çeşidin fiyatı fırlıyor!',
+    maniaCrash: 'Lale çılgınlığı çöktü: fiyatlar düştü.', welcome: 'Bahçe hazır. İlk soğanlarınızı dikin.',
+    seasonStart: 'Yeni mevsim başladı: bahçe genişledi.', blocked: 'Burada yapılamaz.', lockedTile: 'Bu parsel henüz açık değil.',
+    endless: 'Sonsuz bahçe modu: şenlik her 30 günde.', bulbNoneSel: 'Seçili yatak yok.',
+    coachSelect: 'Başlamak için bir yatağa tıklayın, sonra soğan dikin.',
+    coachWait: 'Soğanlar filizleniyor. Çeşmenin yanındaki yataklar kendiliğinden sulanır.',
+    coachCut: 'Bir lale açtı: üstüne tıklayıp Kes’e basın.'
+  },
+  en: {
+    title: 'Lale Bahçesi', sub: 'Build a palace tulip garden in the Ottoman Tulip Era.',
+    how1: 'Click a bed to plant bulbs, water them, cut the blooms.',
+    how2: 'Tulips blooming side by side breed new seed: discover new varieties.',
+    how3: 'Sell at the bazaar, decorate, keep the fountain symmetrical.',
+    how4: 'After four seasons win the Sultan’s festival with three stars.',
+    play: 'Play', cont: 'Continue', settings: 'Settings', resume: 'Resume', restart: 'Restart',
+    mainMenu: 'Main menu', back: 'Back', close: 'Close', pause: 'Paused',
+    best: 'Best', bestNone: 'No festival yet', master: 'Master', music: 'Music', sfx: 'Effects',
+    language: 'Language', quality: 'Quality', low: 'Low', high: 'High', fullscreen: 'Fullscreen', fsBtn: 'Toggle',
+    seasonS: 'Sea.', dayS: 'Day', akceS: 'Akç.', varS: 'Var.', beautyS: 'Bty.',
+    season: 'Season', day: 'Day', akce: 'Akçe', varieties: 'Varieties', beauty: 'Beauty', speed: 'Speed',
+    catalogue: 'Catalogue', bazaar: 'Bazaar', found: 'found', unknown: 'Unknown',
+    toolPath: 'Path', toolBed: 'Bed', toolPool: 'Pool', toolCypress: 'Cypress', toolPlane: 'Plane',
+    toolLantern: 'Lantern', toolBench: 'Bench', toolErase: 'Erase',
+    tile: 'Plot', plantPick: 'Pick a bulb to plant:', noBulbs: 'No bulbs. Buy a pack at the bazaar.',
+    water: 'Water', harvest: 'Cut', lift: 'Lift bulb', clean: 'Clean aphids',
+    rotate: 'Rotate: Q / E', stage0: 'Sprout', stage1: 'Leaf', stage2: 'Bud', stage3: 'In bloom',
+    stage4: 'Wilted / cut', kGrass: 'Lawn', kPath: 'Path', kBed: 'Bed', kPool: 'Pool',
+    kFountain: 'Fountain', kKiosk: 'Kiosk', kDecor: 'Decor', empty: 'Empty', sellAll: 'Sell all', sellOne: 'Sell',
+    bulbsTitle: 'Bulbs', flowersTitle: 'Cut flowers', flowersNone: 'No cut flowers',
+    buyPack: 'Buy bulb pack (20 akçe)', marketTitle: 'Market', mania: 'Tulip mania!',
+    festTitle: 'Season festival', score: 'Score', stars: 'Stars', newRecord: 'New record!',
+    partVar: 'Variety', partHarm: 'Colour harmony', partSym: 'Fountain symmetry', partDecor: 'Decoration',
+    statBlooms: 'Cut flowers', statVar: 'Varieties', statAkce: 'Akçe', statBred: 'Hybrid seeds',
+    nextSeason: 'Next season', endlessBtn: 'Endless garden', again: 'Play again',
+    winTitle: 'The Sultan’s tulip festival is won!', loseTitle: 'The garden festival is over',
+    winText: 'Three stars and 20 varieties: your garden is the Sultan’s favourite.',
+    loseText: 'Four seasons passed. Try again for three stars and 20 varieties.',
+    rotLabel: 'Rotation', frostWarn: 'Frost tomorrow: young bulbs may be damaged.',
+    frost: 'Frost hit: young bulbs were damaged.', aphids: 'Aphids appeared!',
+    dies: 'A bulb rotted and died.', planted: 'Bulb planted.', watered: 'Watered.',
+    picked: 'Flower cut.', lifted: 'Bulb lifted.', cleaned: 'Aphids cleaned.',
+    bought: 'Pack bought: 3 bulbs added.', sold: 'Sold.', noMoney: 'Not enough akçe.',
+    newVariety: 'New variety found:', newSeed: 'Hybrid seed:', maniaRise: 'One variety’s price is soaring!',
+    maniaCrash: 'Tulip mania crashed: prices fell.', welcome: 'The garden is ready. Plant your first bulbs.',
+    seasonStart: 'A new season began: the garden grew.', blocked: 'Not possible here.', lockedTile: 'This plot is not open yet.',
+    endless: 'Endless garden: a festival every 30 days.', bulbNoneSel: 'No bed selected.',
+    coachSelect: 'Click a bed to start, then plant a bulb in it.',
+    coachWait: 'Bulbs are sprouting. Beds next to the fountain water themselves.',
+    coachCut: 'A tulip is in bloom: click it and press Cut.'
+  }
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const qs = new URLSearchParams(location.search);
+const FLAG = { auto: qs.has('auto'), debug: qs.has('debug'), low: qs.has('low') };
+const KEY_S = 'arena.lale-bahcesi.settings', KEY_SAVE = 'arena.lale-bahcesi.save', KEY_BEST = 'arena.lale-bahcesi.best';
+const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const isPhone = matchMedia('(pointer:coarse)').matches || innerWidth < 700;
+const cfg = Object.assign({ master: 0.8, music: 0.6, sfx: 0.8, lang: /^tr/i.test(navigator.language || '') ? 'tr' : 'en', quality: isPhone ? 'low' : 'high', mPrev: 0.6, sPrev: 0.8 }, load(KEY_S) || {});
+if (qs.has('lang')) cfg.lang = qs.get('lang') === 'en' ? 'en' : 'tr';
+if (FLAG.low) cfg.quality = 'low';
+const T = k => (STR[cfg.lang] && STR[cfg.lang][k]) || STR.en[k] || k;
+const saveCfg = () => store(KEY_S, cfg);
+const dec = v => ({ c: Math.floor(v / 9), s: Math.floor((v % 9) / 3), p: v % 3 });
+const nameOf = v => {
+  if (NAMED[v]) return NAMED[v][cfg.lang];
+  const d = dec(v);
+  return cfg.lang === 'tr' ? `${PAL[d.c].tr} ${SHAPE[d.s].tr} (${PATT[d.p].tr})` : `${PAL[d.c].en} ${SHAPE[d.s].en}, ${PATT[d.p].en}`;
+};
+const rarityOf = v => NAMED[v] ? 2 : (dec(v).s === 2 ? 1.5 : 1);
+const errors = [];
+window.addEventListener('error', e => { errors.push(String(e.message)); });
+
+/* ---------- state ---------- */
+let S = null, game = false, overlay = null, dirty = true, sel = null, tool = null, hover = null, prevOverlay = null;
+let botAcc = 0, botDone = false;
+const START_VARIETY = 0;
+function makeTiles() {
+  const a = [];
+  for (let i = 0; i < N * N; i++) a.push({ t: T_GRASS, d: '', r: 0, s: 0.5 + Math.random() * 0.3, w: 0, pe: false, pl: null });
+  for (const [x, y] of [[7, 7], [8, 7], [7, 8], [8, 8]]) a[y * N + x].t = T_FOUNTAIN;
+  // the kiosk sits in the north-west corner on a 2x2 tile block (world centre -4, -4)
+  for (const [x, y] of [[3, 3], [4, 3], [3, 4], [4, 4]]) a[y * N + x].t = T_KIOSK;
+  // a gift from the Sultan at the start: symmetric around the fountain axis (x = 7.5)
+  for (const [x, y, kind] of [[5, 6, 'cypress'], [10, 6, 'cypress'], [5, 11, 'plane'], [10, 11, 'plane'], [7, 3, 'lantern'], [8, 3, 'lantern'], [7, 12, 'pool']]) {
+    const tl = a[y * N + x];
+    if (kind === 'pool') tl.t = T_POOL; else tl.d = kind;
+  }
+  // four starting beds in front of the fountain, so the first bulb can be planted at once
+  for (const [x, y] of [[6, 9], [7, 9], [8, 9], [9, 9]]) a[y * N + x].t = T_BED;
+  return a;
+}
+function newState() {
+  return {
+    season: 1, day: 1, clock: 0, akce: 50, rot: 0, bulbs: { [START_VARIETY]: 6 }, flowers: [],
+    discovered: [], market: {}, mania: null, tiles: makeTiles(), endless: false, ended: false, won: false,
+    stats: { blooms: 0, bred: 0 }, lastFest: null, coached: false
+  };
+}
+const tileAt = (x, y) => S.tiles[y * N + x];
+const unlockedOff = () => (N - GS[S.season - 1]) / 2;
+const inPlay = (x, y) => { const o = unlockedOff(); return x >= o && y >= o && x < N - o && y < N - o; };
+function each(fn) { const o = unlockedOff(), e = N - o; for (let y = o; y < e; y++) for (let x = o; x < e; x++) fn(S.tiles[y * N + x], x, y); }
+const stageOf = p => { if (p.c) return 4; if (p.a < 6) return 0; if (p.a < 14) return 1; if (p.a < 22) return 2; if (p.a < 34) return 3; return 4; };
+const bloom = tl => tl.pl && stageOf(tl.pl) === 3 && !tl.pl.c;
+function sunAt(x, y) {
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+    const d = S.tiles[ny * N + nx].d;
+    if (d === 'cypress' || d === 'plane') return 0.5;
+  }
+  return 1;
+}
+function discover(v) {
+  if (S.discovered.includes(v)) return;
+  S.discovered.push(v);
+  toast(`${T('newVariety')} ${nameOf(v)}`, 'good');
+  sfx('good');
+}
+function breed(a, b) {
+  const da = dec(a), db = dec(b);
+  let c = da.c === db.c ? da.c : (MIX[[Math.min(da.c, db.c), Math.max(da.c, db.c)].join(',')] ?? (Math.random() < 0.5 ? da.c : db.c));
+  if (Math.random() < 0.12) c = Math.floor(Math.random() * 10);
+  let s = Math.random() < 0.5 ? da.s : db.s, p = Math.random() < 0.5 ? da.p : db.p;
+  if (Math.random() < 0.1) s = Math.floor(Math.random() * 3);
+  if (Math.random() < 0.1) p = Math.floor(Math.random() * 3);
+  return c * 9 + s * 3 + p;
+}
+function sellPrice(v, q, flower) {
+  const m = S.market[v] ?? 1;
+  return Math.round((flower ? FLOWER_PRICE * (0.7 + 0.6 * q) : BULB_PRICE) * rarityOf(v) * m);
+}
+
+/* ---------- actions (shared by player and bot) ---------- */
+function buildAt(x, y, t) {
+  if (!inPlay(x, y)) return false;
+  const tl = tileAt(x, y);
+  if (tl.t === T_FOUNTAIN || tl.t === T_KIOSK) return false;
+  if (t === 'erase') {
+    if (tl.t === T_GRASS && !tl.d) return false;
+    tl.t = T_GRASS; tl.d = ''; tl.pl = null; tl.pe = false; tl.w = 0;
+    sfx('click'); markDirty(); return true;
+  }
+  const cost = COST[t];
+  if (t === 'path' || t === 'bed' || t === 'pool') {
+    if (tl.d || tl.pl) return false;
+    if ((t === 'path' && tl.t === T_PATH) || (t === 'bed' && tl.t === T_BED) || (t === 'pool' && tl.t === T_POOL)) return false;
+    if (S.akce < cost) { toast(T('noMoney'), 'bad'); return false; }
+    S.akce -= cost;
+    tl.t = t === 'path' ? T_PATH : t === 'bed' ? T_BED : T_POOL;
+    if (t === 'bed') tl.w = 0.3;
+  } else {
+    if (tl.t !== T_GRASS && tl.t !== T_PATH) return false;
+    if (tl.d) return false;
+    if (S.akce < cost) { toast(T('noMoney'), 'bad'); return false; }
+    S.akce -= cost;
+    tl.d = t; tl.r = S.rot;
+  }
+  sfx('click'); markDirty(); return true;
+}
+function plantAt(x, y, v) {
+  const tl = tileAt(x, y);
+  if (tl.t !== T_BED || tl.pl || !S.bulbs[v]) return false;
+  S.bulbs[v]--;
+  if (!S.bulbs[v]) delete S.bulbs[v];
+  tl.pl = { v, a: 0, c: false, q: tl.s * 0.6 + 0.4 * sunAt(x, y), h: 1 };
+  sfx('plant'); markDirty(); return true;
+}
+function waterAt(x, y) {
+  const tl = tileAt(x, y);
+  if (tl.t !== T_BED) return false;
+  tl.w = Math.min(1, tl.w + 0.6); sfx('water'); markDirty(); return true;
+}
+function harvestAt(x, y) {
+  const tl = tileAt(x, y);
+  if (!bloom(tl)) return false;
+  S.flowers.push({ v: tl.pl.v, q: tl.pl.q });
+  S.stats.blooms++;
+  S.coached = true;
+  tl.pl.c = true;
+  sfx('pick'); markDirty(); return true;
+}
+function liftAt(x, y) {
+  const tl = tileAt(x, y);
+  if (!tl.pl) return false;
+  const v = tl.pl.v;
+  S.bulbs[v] = (S.bulbs[v] || 0) + 1;
+  if (Math.random() < 0.4) S.bulbs[v]++;
+  tl.pl = null; tl.pe = false;
+  sfx('dig'); toast(T('lifted'), 'info'); markDirty(); return true;
+}
+function cleanAt(x, y) {
+  const tl = tileAt(x, y);
+  if (!tl.pe) return false;
+  tl.pe = false; sfx('water'); markDirty(); return true;
+}
+function sellFlower(i) {
+  const f = S.flowers.splice(i, 1)[0];
+  if (!f) return;
+  S.akce += sellPrice(f.v, f.q, true);
+}
+function sellAllFlowers() {
+  if (!S.flowers.length) return;
+  let sum = 0;
+  for (const f of S.flowers) sum += sellPrice(f.v, f.q, true);
+  S.flowers = [];
+  S.akce += sum; sfx('coin'); toast(`${T('sold')} +${sum}`, 'good'); markDirty();
+}
+function sellBulb(v) {
+  if (!S.bulbs[v]) return;
+  S.akce += sellPrice(Number(v), 0, false);
+  S.bulbs[v]--;
+  if (!S.bulbs[v]) delete S.bulbs[v];
+  sfx('coin');
+}
+function buyPack() {
+  if (S.akce < PACK_PRICE) { toast(T('noMoney'), 'bad'); return false; }
+  S.akce -= PACK_PRICE;
+  for (let i = 0; i < 3; i++) {
+    const v = Math.floor(Math.random() * 8) * 9 + Math.floor(Math.random() * 3) * 3 + Math.floor(Math.random() * 3);
+    S.bulbs[v] = (S.bulbs[v] || 0) + 1;
+  }
+  sfx('coin'); toast(T('bought'), 'info'); return true;
+}
+function rotateSel(dir) {
+  const tl = sel ? tileAt(sel.x, sel.y) : null;
+  if (tl && tl.d) tl.r = (tl.r + dir + 4) % 4;
+  else S.rot = (S.rot + dir + 4) % 4;
+  toast(T('rotLabel'), 'info'); markDirty();
+}
+
+/* ---------- simulation: days, growth, breeding, market, festival ---------- */
+function markDirty() { dirty = true; renderTile(); renderHUD(); if (overlay === 'bazaar') renderBazaar(); }
+function fountainWater() {
+  each((tl, x, y) => {
+    if (tl.t !== T_BED) return;
+    if (Math.hypot(x + 0.5 - N / 2, y + 0.5 - N / 2) <= 4.6) tl.w = Math.min(1, tl.w + 0.3);
+  });
+}
+function growth() {
+  each((tl, x, y) => {
+    if (!tl.pl) { tl.s = Math.min(1, tl.s + 0.01); return; }
+    const p = tl.pl;
+    p.a += tl.w > 0.15 ? 1 : 0.55;
+    tl.w = Math.max(0, tl.w - 0.12);
+    if (tl.w <= 0.01) p.h -= 0.06;
+    if (!tl.pe && p.a >= 6 && Math.random() < 0.03) { tl.pe = true; toast(T('aphids'), 'bad'); }
+    if (tl.pe) p.h -= 0.05;
+    p.q = tl.s * 0.6 + 0.4 * sunAt(x, y);
+    if (stageOf(p) === 3 && !S.discovered.includes(p.v)) discover(p.v);
+    if (p.h <= 0) { tl.pl = null; tl.pe = false; toast(T('dies'), 'bad'); }
+  });
+}
+function breedPass() {
+  each((tl, x, y) => {
+    if (!bloom(tl)) return;
+    for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (!inPlay(nx, ny)) continue;
+      const nt = tileAt(nx, ny);
+      if (!bloom(nt)) continue;
+      if (Math.random() < 0.04 + 0.12 * (tl.pl.q + nt.pl.q) / 2) {
+        const child = breed(tl.pl.v, nt.pl.v);
+        S.bulbs[child] = (S.bulbs[child] || 0) + 1;
+        S.stats.bred++;
+        toast(`${T('newSeed')} ${nameOf(child)}`, 'info');
+      }
+    }
+  });
+}
+function marketPass() {
+  for (const v of S.discovered) {
+    if (S.mania && S.mania.v === v) continue;
+    S.market[v] = clamp((S.market[v] ?? 1) * (0.96 + Math.random() * 0.08), 0.5, 2.2);
+  }
+  if (!S.mania && S.day === 5 && S.discovered.length) {
+    S.mania = { v: S.discovered[Math.floor(Math.random() * S.discovered.length)], d: 0 };
+  }
+  if (S.mania) {
+    const m = S.mania; m.d++;
+    if (m.d <= 7) { S.market[m.v] = Math.min(3.4, (S.market[m.v] ?? 1) * 1.3); if (m.d === 1) toast(`${T('maniaRise')} ${nameOf(m.v)}`, 'info'); }
+    else if (m.d === 8) { S.market[m.v] = 0.35; toast(T('maniaCrash'), 'bad'); S.mania = null; }
+  }
+}
+function frostPass() {
+  const frost = (S.season === 2 && S.day === 12) || (S.season === 4 && S.day === 20);
+  if ((S.season === 2 && S.day === 11) || (S.season === 4 && S.day === 19)) toast(T('frostWarn'), 'info');
+  if (!frost) return;
+  toast(T('frost'), 'bad');
+  each(tl => { if (tl.pl && stageOf(tl.pl) <= 1 && Math.random() < 0.35) tl.pl.h -= 0.8; });
+}
+function endDay() {
+  frostPass(); fountainWater(); growth(); breedPass(); marketPass();
+  S.day++;
+  dirty = true;
+  if (S.day > SEASON_DAYS) { openFestival(); }
+  renderHUD();
+  saveGame();
+}
+function beauty() {
+  const seen = new Set(), colours = new Set();
+  let decor = 0, match = 0, total = 0;
+  each((tl, x, y) => {
+    if (tl.d) decor++;
+    if (tl.t === T_POOL) decor++;
+    if (tl.pl) {
+      seen.add(tl.pl.v);
+      const st = stageOf(tl.pl);
+      if (st === 2 || st === 3) colours.add(dec(tl.pl.v).c);
+    }
+  });
+  // symmetry: compare each unlocked tile with its mirror across the fountain axis (x = 7.5)
+  for (let y = 0; y < N; y++) for (let x = 0; x < N / 2; x++) {
+    if (!inPlay(x, y)) continue;
+    const a = S.tiles[y * N + x], b = S.tiles[y * N + (N - 1 - x)];
+    const ka = a.pl ? dec(a.pl.v).c : -1, kb = b.pl ? dec(b.pl.v).c : -1;
+    const sa = a.t === T_POOL || a.d ? a.t + a.d : '', sb = b.t === T_POOL || b.d ? b.t + b.d : '';
+    total++;
+    if (ka === kb && sa === sb) match++;
+  }
+  const nc = colours.size;
+  const parts = {
+    variety: Math.round(Math.min(seen.size / 8, 1) * 35),
+    harmony: nc === 0 ? 0 : nc === 1 ? 12 : nc <= 4 ? 25 : 15,
+    symmetry: total ? Math.round(match / total * 20) : 0,
+    decor: Math.round(Math.min(decor / 6, 1) * 20)
+  };
+  const score = parts.variety + parts.harmony + parts.symmetry + parts.decor;
+  return { score, parts, seen: seen.size };
+}
+function starsFor(score) { return score >= 85 ? 3 : score >= 65 ? 2 : score >= 40 ? 1 : 0; }
+function openFestival() {
+  const b = beauty();
+  const stars = starsFor(b.score);
+  const best = load(KEY_BEST) || { score: 0, stars: 0 };
+  const record = b.score > best.score;
+  if (record) store(KEY_BEST, { score: b.score, stars });
+  S.lastFest = { season: S.season, score: b.score, stars, parts: b.parts, varieties: S.discovered.length, blooms: S.stats.blooms, akce: S.akce, record };
+  sfx('fest');
+  renderFest();
+  show('fest');
+}
+function festContinue() {
+  if (S.season < 4) {
+    S.season++; S.day = 1; S.stats.blooms = 0; S.mania = null;
+    setupSeason(); toast(T('seasonStart'), 'good'); show(null); saveGame(); return;
+  }
+  if (!S.endless && !S.ended) { endGame(); return; }
+  S.day = 1; S.stats.blooms = 0; setupSeason(); toast(T('endless'), 'info'); show(null); saveGame();
+}
+function endGame() {
+  S.ended = true;
+  const f = S.lastFest;
+  S.won = f.stars === 3 && S.discovered.length >= 20;
+  const best = load(KEY_BEST) || { score: 0, stars: 0 };
+  store(KEY_BEST, { score: Math.max(best.score, f.score), stars: Math.max(best.stars || 0, f.stars), varieties: Math.max(best.varieties || 0, S.discovered.length) });
+  saveGame();
+  renderEnd(); show('end');
+}
+
+/* ---------- save ---------- */
+function saveGame() { if (S) store(KEY_SAVE, S); }
+
+/* ---------- three.js scene ---------- */
+const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, cfg.quality === 'low' ? 1 : 1.5));
+const LOW = cfg.quality === 'low';
+renderer.shadowMap.enabled = !LOW;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+const scene = new THREE.Scene();
+const SKY_DAY = new THREE.Color(0xcdeaf8), SKY_DUSK = new THREE.Color(0xf6b8a2), SKY_NIGHT = new THREE.Color(0x1d2b4f);
+scene.background = SKY_DAY.clone();
+scene.fog = new THREE.Fog(SKY_DAY.clone(), 30, 80);
+const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const hemi = new THREE.HemisphereLight(0xfff8ee, 0x8fc77a, 1.6); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffe6bd, 2.1);
+sun.castShadow = !LOW;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 60 });
+sun.shadow.camera.updateProjectionMatrix();
+sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+
+const M = {
+  bark: new THREE.MeshLambertMaterial({ color: 0x7a5230 }), cypress: new THREE.MeshLambertMaterial({ color: 0x2f5d3a }),
+  plane: new THREE.MeshLambertMaterial({ color: 0x6fae5b }), planeLight: new THREE.MeshLambertMaterial({ color: 0x8cc66f }),
+  lantern: new THREE.MeshLambertMaterial({ color: 0xf5d78e, emissive: 0xffb040, emissiveIntensity: 0.2 }),
+  bench: new THREE.MeshLambertMaterial({ color: 0x9b6b43 }), water: new THREE.MeshLambertMaterial({ color: 0x5ec6d9 }),
+  turtle: new THREE.MeshLambertMaterial({ color: 0x6b8e4e }),
+  candle: new THREE.MeshLambertMaterial({ color: 0xfff2c2, emissive: 0xffd27a, emissiveIntensity: 0.2 }),
+  marble: new THREE.MeshLambertMaterial({ color: 0xedeae2 }), wall: new THREE.MeshLambertMaterial({ color: 0xf7f3ea }),
+  plinth: new THREE.MeshLambertMaterial({ color: 0xc9a06e }),
+  roof: new THREE.MeshLambertMaterial({ color: 0xe63946 }), sea: new THREE.MeshLambertMaterial({ color: 0x6ca0dc }),
+  fountainWater: new THREE.MeshLambertMaterial({ color: 0x9fe3f0, emissive: 0x2b7f99, emissiveIntensity: 0.3 }),
+  stem: new THREE.MeshLambertMaterial(), gold: new THREE.MeshLambertMaterial({ color: 0xffd76a }),
+  cream: new THREE.MeshLambertMaterial({ color: 0xfff7e6 }), tulipCup: new THREE.MeshLambertMaterial()
+};
+const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), M.sea);
+sea.rotation.x = -Math.PI / 2; sea.position.y = -1.1; scene.add(sea);
+
+// ground tiles: one instanced mesh, colour per tile, with vertex-colour AO and organic noise
+const tileGeo = new THREE.BoxGeometry(0.98, 0.12, 0.98, LOW ? 1 : 2, 1, LOW ? 1 : 2);
+{
+  const p = tileGeo.attributes.position, c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const vx = p.getX(i), vy = p.getY(i), vz = p.getZ(i);
+    const n = vy > 0 ? 0.94 + 0.08 * Math.sin(vx * 5.2 + vz * 3.7) * Math.cos(vx * 3.1 - vz * 6.3) : 0.78;
+    c[i * 3] = n * 1.01; c[i * 3 + 1] = n; c[i * 3 + 2] = n * 0.97;
+  }
+  tileGeo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+}
+const tileMesh = new THREE.InstancedMesh(tileGeo, new THREE.MeshLambertMaterial({ vertexColors: true }), N * N);
+tileMesh.receiveShadow = true; scene.add(tileMesh);
+// cheap ground variation: path/bed edge curbs and soil/grass/pebble decals (fewer in ?low, no extra pass)
+const curbMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.96, 0.045, 0.075), new THREE.MeshLambertMaterial(), N * N * 4);
+const decalMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.14, 0.18, 0.022, LOW ? 5 : 7), new THREE.MeshLambertMaterial(), N * N * (LOW ? 1 : 3));
+curbMesh.receiveShadow = decalMesh.receiveShadow = true; scene.add(curbMesh, decalMesh);
+const TC = { grass: new THREE.Color(0x6fb35f), grassPatch: new THREE.Color(0x589849), soilPatch: new THREE.Color(0x7c6846), path: new THREE.Color(0xf2f0ea), pathStone: new THREE.Color(0xdccbb4), curb: new THREE.Color(0xe3dac9), bed: new THREE.Color(0x8a5a3c), bedWet: new THREE.Color(0x5a3620), pool: new THREE.Color(0x4fc0dc), marble: new THREE.Color(0xedeae2) };
+// lawn tint per season: spring fresh, summer deep, autumn gold-olive, winter frosted sage
+const SEASON_GRASS = [0x6fb35f, 0x4f9e4a, 0x9aa64a, 0x8fb8a0].map(c => new THREE.Color(c));
+const dm = new THREE.Object3D();
+function place(mesh, i, x, y, z, sx = 1, sy = 1, sz = 1, ry = 0) {
+  dm.position.set(x, y, z); dm.rotation.set(0, ry, 0); dm.scale.set(sx, sy, sz); dm.updateMatrix();
+  mesh.setMatrixAt(i, dm.matrix);
+}
+const wxOf = x => x - N / 2 + 0.5;
+
+// rounded square slab with soft corners, extruded downward from y = 0 to y = -depth
+function roundedSlab(size, r, depth) {
+  const h = size / 2 - r, e = size / 2, s = new THREE.Shape();
+  s.moveTo(-h, -e); s.lineTo(h, -e); s.quadraticCurveTo(e, -e, e, -h); s.lineTo(e, h);
+  s.quadraticCurveTo(e, e, h, e); s.lineTo(-h, e); s.quadraticCurveTo(-e, e, -e, h); s.lineTo(-e, -h);
+  s.quadraticCurveTo(-e, -e, -h, -e);
+  return new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false, curveSegments: 6 }).rotateX(-Math.PI / 2);
+}
+// walls, base and kiosk: rebuilt for each season
+const terraceGroup = new THREE.Group(); scene.add(terraceGroup);
+function buildTerrace() {
+  while (terraceGroup.children.length) terraceGroup.remove(terraceGroup.children[0]);
+  const gs = GS[S.season - 1];
+  // sandstone plinth under the marble terrace: the garden reads as a diorama floating on the Bosphorus
+  const plinth = new THREE.Mesh(roundedSlab(gs + 1.6, 0.5, 0.6), M.plinth);
+  plinth.position.y = -0.8; plinth.receiveShadow = true; plinth.castShadow = !LOW; terraceGroup.add(plinth);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(gs + 0.6, 0.2, gs + 0.6), M.marble);
+  base.position.y = -0.1; base.receiveShadow = true; terraceGroup.add(base);
+  const h = 0.9, t = 0.28, len = gs + 0.6;
+  for (const [sx, sz, w, d] of [[0, gs / 2 + 0.14, len, t], [0, -gs / 2 - 0.14, len, t], [gs / 2 + 0.14, 0, t, len], [-gs / 2 - 0.14, 0, t, len]]) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M.wall);
+    wall.position.set(sx, h / 2 - 0.05, sz); wall.castShadow = !LOW; terraceGroup.add(wall);
+  }
+  // kiosk in the north-west corner (fixed world position, on its own tile block)
+  const kiosk = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.0, 1.7), M.wall); body.position.y = 0.56; body.castShadow = !LOW; kiosk.add(body);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(1.35, 0.9, 4), M.roof); roof.rotation.y = Math.PI / 4; roof.position.y = 1.5; kiosk.add(roof);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.05), M.bench); door.position.set(0, 0.36, 0.87); kiosk.add(door);
+  kiosk.position.set(-4, 0.06, -4);
+  terraceGroup.add(kiosk);
+}
+// fountain (fixed at the centre, between tiles 7 and 8)
+const fountain = new THREE.Group();
+const basin = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, 0.4, 24), M.marble); basin.position.y = 0.12; basin.receiveShadow = true; fountain.add(basin);
+const pool = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.04, 24), M.fountainWater); pool.position.y = 0.3; fountain.add(pool);
+const column = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 1.4, 10), M.marble); column.position.y = 0.8; fountain.add(column);
+const spout = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), M.fountainWater); spout.position.y = 1.55; fountain.add(spout);
+// a marble step under the basin, so the fountain reads as a tiered Ottoman fountain
+const step = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 2.0, 0.16, 24), M.marble); step.position.y = 0.02; step.receiveShadow = true; fountain.add(step);
+fountain.position.y = 0.06; scene.add(fountain);
+
+// shared decor geometry
+const G = {
+  trunk: new THREE.CylinderGeometry(0.1, 0.14, 1.1, 7), cone: new THREE.ConeGeometry(0.5, 2.6, 8),
+  ico: new THREE.IcosahedronGeometry(0.85, 0), pole: new THREE.CylinderGeometry(0.05, 0.06, 1.7, 6),
+  glow: new THREE.BoxGeometry(0.36, 0.36, 0.36), seat: new THREE.BoxGeometry(0.9, 0.1, 0.32),
+  leg: new THREE.BoxGeometry(0.08, 0.3, 0.28), disk: new THREE.CylinderGeometry(0.42, 0.42, 0.05, 16),
+  turtle: new THREE.SphereGeometry(0.26, 8, 6), candle: new THREE.CylinderGeometry(0.06, 0.06, 0.22, 6),
+  lanternCap: new THREE.ConeGeometry(0.3, 0.26, 4)
+};
+function makeDecor(kind) {
+  const g = new THREE.Group();
+  const add = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = !LOW; m.receiveShadow = true; g.add(m); return m; };
+  // cypress: two tiers so the silhouette reads as a slim flame-shaped tree
+  if (kind === 'cypress') { add(G.trunk, M.bark, 0, 0.55, 0); add(G.cone, M.cypress, 0, 1.9, 0); add(G.cone, M.cypress, 0, 2.55, 0, 0.62, 0.7, 0.62); }
+  // plane: three crowns in two greens, the light one on top
+  if (kind === 'plane') { add(G.trunk, M.bark, 0, 0.55, 0); add(G.ico, M.plane, 0, 1.6, 0); add(G.ico, M.plane, -0.35, 1.9, -0.2, 0.55, 0.55, 0.55); add(G.ico, M.planeLight, 0.4, 2.1, 0.1, 0.6, 0.6, 0.6); }
+  // lantern: a glowing box under a small red cap
+  if (kind === 'lantern') { add(G.pole, M.bark, 0, 0.85, 0); add(G.glow, M.lantern, 0, 1.8, 0); add(G.lanternCap, M.roof, 0, 2.1, 0); }
+  if (kind === 'bench') { add(G.seat, M.bench, 0, 0.42, 0); add(G.leg, M.bench, -0.36, 0.2, 0); add(G.leg, M.bench, 0.36, 0.2, 0); }
+  if (kind === 'pool') {
+    add(G.disk, M.water, 0, 0.03, 0);
+    add(G.turtle, M.turtle, -0.14, 0.1, 0.05, 1, 0.45, 1.3); add(G.candle, M.candle, -0.14, 0.24, 0.05);
+    add(G.turtle, M.turtle, 0.16, 0.1, -0.1, 1, 0.45, 1.3); add(G.candle, M.candle, 0.16, 0.24, -0.1);
+  }
+  return g;
+}
+const decorGroup = new THREE.Group(); scene.add(decorGroup);
+function rebuildDecor() {
+  while (decorGroup.children.length) decorGroup.remove(decorGroup.children[0]);
+  each((tl, x, y) => {
+    const kind = tl.d || (tl.t === T_POOL ? 'pool' : '');
+    if (!kind) return;
+    const g = makeDecor(kind);
+    g.position.set(wxOf(x), 0.06, wxOf(y)); g.rotation.y = (tl.r || 0) * Math.PI / 2;
+    decorGroup.add(g);
+  });
+}
+
+// tulips: stems, three cup shapes, pattern accents
+// tulip head per shape: an outer and an inner lathe (3 facets each, the inner one turned 60 degrees)
+// so the silhouette reads as six petals; round = wide cup, almond = narrow and pointed, needle = long thin petals
+const CUP = [
+  { outer: [[0, 0], [0.06, 0.05], [0.14, 0.14], [0.2, 0.26], [0.23, 0.34]], inner: [[0, 0.02], [0.05, 0.1], [0.12, 0.21], [0.16, 0.31]] },
+  { outer: [[0, 0], [0.04, 0.1], [0.09, 0.24], [0.07, 0.38], [0, 0.46]], inner: [[0, 0.02], [0.03, 0.12], [0.06, 0.26], [0, 0.36]] },
+  { outer: [[0, 0], [0.03, 0.2], [0.05, 0.45], [0, 0.72]], inner: [[0, 0.02], [0.02, 0.25], [0.03, 0.5], [0, 0.62]] }
+];
+const CUP_TOP = [0.34, 0.46, 0.72];
+const toVec = pts => pts.map(p => new THREE.Vector2(p[0], p[1]));
+const cupMat = () => new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, emissive: 0x141414 });
+const cupOuter = CUP.map(c => new THREE.InstancedMesh(new THREE.LatheGeometry(toVec(c.outer), 3), cupMat(), N * N));
+const cupInner = CUP.map(c => new THREE.InstancedMesh(new THREE.LatheGeometry(toVec(c.inner), 3).rotateY(Math.PI / 3), cupMat(), N * N));
+// two long leaves at the base: 2 triangles each
+const leafGeo = (() => {
+  const pos = [];
+  for (const rot of [0, 2.1]) {
+    const c = Math.cos(rot), s = Math.sin(rot);
+    const P = (x, y, z) => [x * c + z * s, y, -x * s + z * c];
+    const tri = [P(0, 0, 0), P(0.08, 0.32, 0), P(0, 0.62, 0), P(0, 0, 0), P(0, 0.62, 0), P(-0.06, 0.3, 0)];
+    for (const v of tri) pos.push(...v);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+})();
+const leafMesh = new THREE.InstancedMesh(leafGeo, new THREE.MeshLambertMaterial({ color: 0x7fbf5a, side: THREE.DoubleSide }), N * N);
+const stemGeo = new THREE.CylinderGeometry(0.035, 0.035, 1, 5).translate(0, 0.5, 0);
+const stemMesh = new THREE.InstancedMesh(stemGeo, new THREE.MeshLambertMaterial(), N * N);
+const flameGeo = new THREE.SphereGeometry(0.1, 6, 4).scale(0.6, 1.6, 0.6);
+const edgeGeo = new THREE.TorusGeometry(0.22, 0.04, 4, 12).rotateX(Math.PI / 2);
+const flameMesh = new THREE.InstancedMesh(flameGeo, M.gold, N * N);
+const edgeMesh = new THREE.InstancedMesh(edgeGeo, M.cream, N * N);
+const cupMeshes = cupOuter;
+const tulipMeshes = [stemMesh, leafMesh, ...cupOuter, ...cupInner, flameMesh, edgeMesh];
+for (const m of tulipMeshes) { m.castShadow = !LOW; scene.add(m); }
+
+// petals (Points with a soft round sprite) and butterflies
+function softSprite() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.5, 'rgba(255,255,255,0.7)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); return t;
+}
+const PETALS = LOW ? 40 : 80;
+const petalPos = new Float32Array(PETALS * 3);
+for (let i = 0; i < PETALS; i++) { petalPos[i * 3] = (Math.random() - 0.5) * N; petalPos[i * 3 + 1] = Math.random() * 3; petalPos[i * 3 + 2] = (Math.random() - 0.5) * N; }
+const petalGeo = new THREE.BufferGeometry(); petalGeo.setAttribute('position', new THREE.BufferAttribute(petalPos, 3));
+const petals = new THREE.Points(petalGeo, new THREE.PointsMaterial({ map: softSprite(), size: 0.22, color: 0xffc2dc, transparent: true, depthWrite: false, alphaTest: 0.02 }));
+scene.add(petals);
+const butterflies = [0, 1, 2].map(i => {
+  const g = new THREE.Group();
+  const wl = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.16), new THREE.MeshLambertMaterial({ color: [0xf472b6, 0xffd76a, 0xffffff][i], side: THREE.DoubleSide }));
+  const wr = wl.clone(); wl.position.x = -0.1; wr.position.x = 0.1; g.add(wl, wr);
+  g.userData = { wl, wr, cx: (Math.random() - 0.5) * 8, cz: (Math.random() - 0.5) * 8, r: 2 + Math.random() * 2, sp: 0.3 + Math.random() * 0.3, ph: Math.random() * 6 };
+  scene.add(g); return g;
+});
+// bees: small striped bodies that circle the beds at different heights
+const beeBody = new THREE.SphereGeometry(0.075, 7, 5), beeStripe = new THREE.SphereGeometry(0.05, 6, 4);
+const M_BEE = new THREE.MeshLambertMaterial({ color: 0xffd166 }), M_STRIPE = new THREE.MeshLambertMaterial({ color: 0x2b2118 });
+const bees = [0, 1, 2].map(i => {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(beeBody, M_BEE), stripe = new THREE.Mesh(beeStripe, M_STRIPE);
+  stripe.position.x = 0.04; stripe.scale.set(0.8, 1, 1); g.add(body, stripe);
+  g.userData = { r: 3 + i * 1.2, sp: 0.55 + i * 0.15, ph: i * 2.1, cy: 1.1 + i * 0.3 };
+  scene.add(g); return g;
+});
+// fountain spray: droplets leave the spout, arc outwards and fall back into the basin (local to the fountain)
+const SPRAY = LOW ? 16 : 36, sprayPos = new Float32Array(SPRAY * 3);
+const sprayGeo = new THREE.BufferGeometry(); sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos, 3));
+const spray = new THREE.Points(sprayGeo, new THREE.PointsMaterial({ map: softSprite(), size: 0.2, color: 0xe6fbff, transparent: true, depthWrite: false, alphaTest: 0.02 }));
+fountain.add(spray);
+
+/* ---------- world rebuild (only when dirty) ---------- */
+function rebuildWorld() {
+  dirty = false;
+  let nCurb = 0, nDecal = 0;
+  const gBase = SEASON_GRASS[S.season - 1], dn = LOW ? 1 : 3;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = y * N + x, tl = S.tiles[i], on = inPlay(x, y), wx = wxOf(x), wz = wxOf(y);
+    const h = ((x * 37 + y * 59 + x * y * 13) % 17) / 16;
+    // beds stand higher than paths and lawn; subtle height jitter breaks flat coplanar horizons
+    const lift = tl.t === T_BED ? 1.9 : tl.t === T_PATH ? 1.08 : 0.96 + 0.08 * h;
+    place(tileMesh, i, wx, 0, wz, on ? 1 : 0.0001, on ? lift : 1, on ? 1 : 0.0001);
+    // per-tile colour variation across grass, paths and soil beds
+    let col = gBase.clone().lerp(TC.grassPatch, h * 0.35).multiplyScalar(0.92 + 0.12 * (((x * 7 + y * 13) % 5) / 4));
+    if (tl.t === T_PATH) col = TC.path.clone().lerp(TC.pathStone, h * 0.45);
+    else if (tl.t === T_BED) col = TC.bed.clone().lerp(TC.bedWet, clamp(tl.w, 0, 1)).multiplyScalar(0.94 + 0.1 * h);
+    else if (tl.t === T_POOL) col = TC.pool;
+    else if (tl.t === T_FOUNTAIN || tl.t === T_KIOSK) col = TC.marble;
+    tileMesh.setColorAt(i, col);
+    if (!on) continue;
+    // path edges and raised-bed marble curbs along tile boundaries where surface type changes
+    if (tl.t === T_BED || tl.t === T_PATH) {
+      const cy = tl.t === T_BED ? 0.1 : 0.055;
+      for (const [dx, dy, ry] of [[0, -1, 0], [0, 1, 0], [-1, 0, Math.PI / 2], [1, 0, Math.PI / 2]]) {
+        const nx = x + dx, ny = y + dy;
+        const nType = inPlay(nx, ny) ? S.tiles[ny * N + nx].t : -1;
+        if (nType !== tl.t && (tl.t === T_BED || nType === T_GRASS)) {
+          place(curbMesh, nCurb, wx + dx * 0.455, cy, wz + dy * 0.455, 1, tl.t === T_BED ? 1.35 : 0.85, 1, ry);
+          curbMesh.setColorAt(nCurb++, tl.t === T_BED ? TC.marble : TC.curb);
+        }
+      }
+    }
+    // small decals: clover/soil patches on lawn, flagstone pebbles on paths, humus clods on beds
+    if (tl.t === T_GRASS || tl.t === T_PATH || tl.t === T_BED) {
+      const dy = tl.t === T_BED ? 0.115 : tl.t === T_PATH ? 0.066 : 0.058;
+      for (let k = 0; k < dn; k++) {
+        const s1 = ((i * 31 + k * 53 + 11) % 29) / 29, s2 = ((i * 67 + k * 19 + 7) % 31) / 31;
+        const ox = (s1 - 0.5) * 0.62, oz = (s2 - 0.5) * 0.62, sc = 0.65 + 0.75 * ((s1 + s2) * 0.5);
+        place(decalMesh, nDecal, wx + ox, dy, wz + oz, sc, 1, sc * (0.8 + 0.4 * s1), s2 * Math.PI);
+        const dCol = tl.t === T_GRASS
+          ? (k === 1 ? TC.soilPatch.clone().lerp(gBase, 0.55) : gBase.clone().multiplyScalar(k === 0 ? 0.84 : 1.1))
+          : tl.t === T_PATH ? TC.pathStone.clone().multiplyScalar(0.92 + 0.14 * s1)
+          : col.clone().multiplyScalar(0.82 + 0.12 * s2);
+        decalMesh.setColorAt(nDecal++, dCol);
+      }
+    }
+  }
+  curbMesh.count = nCurb; decalMesh.count = nDecal;
+  for (const m of [tileMesh, curbMesh, decalMesh]) {
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }
+  rebuildDecor();
+  buildTerrace();
+  renderTile();
+}
+function setupSeason() { dirty = true; buildTerrace(); }
+
+/* ---------- per-frame visuals ---------- */
+const wiltCol = new THREE.Color(0x6e5a48), stemDry = new THREE.Color(0x9ad46b), stemGreen = new THREE.Color(0x5f9a46);
+const cupCol = PAL.map(p => new THREE.Color(p.col));
+const skyTmp = new THREE.Color();
+const cnt = { stem: 0, cup: [0, 0, 0], flame: 0, edge: 0 };
+const cupLight = PAL.map(p => new THREE.Color(p.col).lerp(new THREE.Color(0xffffff), 0.25));
+function updateTulips(time) {
+  // only planted tiles get an instance slot; mesh.count stops the GPU drawing empty slots
+  cnt.stem = 0; cnt.cup[0] = cnt.cup[1] = cnt.cup[2] = 0; cnt.flame = 0; cnt.edge = 0;
+  each((tl, x, y) => {
+    const p = tl.pl;
+    if (!p) return;
+    const i = y * N + x, wx = wxOf(x), wz = wxOf(y);
+    const st = stageOf(p), d = dec(p.v);
+    const sway = Math.sin(time * 1.3 + i) * (st >= 2 ? 0.035 : 0.012);
+    const stemH = [0.3, 0.55, 0.95, 1.05, 0.6][st];
+    const cupS = [0, 0, 0.5, 1.15 + 0.25 * clamp(p.q, 0, 1), 0.45][st];
+    const leafS = [0.5, 0.8, 1, 1, 0.8][st];
+    const top = 0.06 + stemH;
+    const k = cnt.stem++;
+    place(stemMesh, k, wx + sway, 0.06, wz, 1, stemH, 1);
+    stemMesh.setColorAt(k, st <= 1 ? stemDry : stemGreen);
+    place(leafMesh, k, wx, 0.06, wz, leafS, leafS, leafS);
+    if (cupS > 0.001) {
+      const c = cnt.cup[d.s]++;
+      const cy = top - 0.03 * cupS;
+      place(cupOuter[d.s], c, wx + sway, cy, wz, cupS, cupS, cupS);
+      place(cupInner[d.s], c, wx + sway, cy, wz, cupS, cupS, cupS);
+      const col = st === 4 ? wiltCol : cupCol[d.c];
+      cupOuter[d.s].setColorAt(c, col);
+      cupInner[d.s].setColorAt(c, st === 4 ? wiltCol : cupLight[d.c]);
+      const topY = cy + CUP_TOP[d.s] * cupS;
+      if (st !== 4 && d.p === 1) place(flameMesh, cnt.flame++, wx + sway, topY, wz, cupS, cupS, cupS);
+      if (st !== 4 && d.p === 2) place(edgeMesh, cnt.edge++, wx + sway, topY - 0.02, wz, cupS * [1, 0.35, 0.2][d.s], cupS, cupS * [1, 0.35, 0.2][d.s]);
+    }
+  });
+  stemMesh.count = cnt.stem;
+  leafMesh.count = cnt.stem;
+  cupOuter.forEach((m, s) => { m.count = cnt.cup[s]; });
+  cupInner.forEach((m, s) => { m.count = cnt.cup[s]; });
+  flameMesh.count = cnt.flame; edgeMesh.count = cnt.edge;
+  for (const m of tulipMeshes) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+}
+function updateVisuals(time) {
+  const dayT = S ? (S.clock / DAY_SEC) % 1 : 0.1;
+  const e = Math.sin(dayT * Math.PI);
+  const night = smooth(0.7, 0.84, dayT);
+  const dusk = clamp(1 - Math.abs(dayT - 0.7) / 0.12, 0, 1);
+  sun.position.set(-Math.cos(dayT * Math.PI) * 12, 2 + e * 12, 6);
+  sun.intensity = (0.4 + 2.0 * e) * (1 - night * 0.9);
+  hemi.intensity = 1.0 + 0.6 * e - 0.5 * night;
+  skyTmp.copy(SKY_DAY).lerp(SKY_DUSK, dusk).lerp(SKY_NIGHT, night);
+  scene.background.copy(skyTmp); scene.fog.color.copy(skyTmp);
+  M.lantern.emissiveIntensity = 0.2 + 1.6 * night + 0.05 * Math.sin(time * 9);
+  M.candle.emissiveIntensity = 0.2 + 1.6 * night;
+  spout.scale.y = 1 + 0.12 * Math.sin(time * 4);
+  for (let i = 0; i < SPRAY; i++) {
+    const ph = (time * 0.9 + i / SPRAY) % 1, a = i * 2.39996, r = 0.12 + 0.9 * ph;   // golden-angle spread
+    sprayPos[i * 3] = Math.cos(a) * r; sprayPos[i * 3 + 1] = 1.5 + 0.9 * ph - 1.9 * ph * ph; sprayPos[i * 3 + 2] = Math.sin(a) * r;
+  }
+  sprayGeo.attributes.position.needsUpdate = true;
+  for (const b of bees) {
+    const u = b.userData, a = time * u.sp + u.ph;
+    b.position.set(Math.cos(a) * u.r, u.cy + Math.sin(a * 3) * 0.15, Math.sin(a) * u.r);
+    b.rotation.y = -a;
+  }
+  const pa = petalGeo.attributes.position.array;
+  for (let i = 0; i < PETALS; i++) {
+    pa[i * 3] += 0.004 + 0.003 * Math.sin(time + i);
+    pa[i * 3 + 1] -= 0.004;
+    if (pa[i * 3 + 1] < 0.1) pa[i * 3 + 1] = 3.2 + Math.random();
+    if (pa[i * 3] > N / 2) pa[i * 3] = -N / 2;
+  }
+  petalGeo.attributes.position.needsUpdate = true;
+  for (const b of butterflies) {
+    const u = b.userData, a = time * u.sp + u.ph;
+    b.position.set(u.cx + Math.cos(a) * u.r, 1.5 + Math.sin(a * 1.7) * 0.4, u.cz + Math.sin(a) * u.r);
+    b.rotation.y = -a + Math.PI / 2;
+    u.wl.rotation.y = Math.sin(time * 14) * 0.9; u.wr.rotation.y = -Math.sin(time * 14) * 0.9;
+  }
+  updateTulips(time);
+}
+
+/* ---------- camera ---------- */
+let yaw = -0.6, dist = 16;
+const target = new THREE.Vector3();
+function updateCamera() {
+  const pitch = 0.95;
+  // portrait screens: pull back until the whole terrace fits the width (vertical fov 40 degrees)
+  const fit = (GS[S ? S.season - 1 : 0] + 3) / (0.728 * cam.aspect);
+  const d = cam.aspect < 1 ? Math.max(dist, fit) : dist;
+  cam.position.set(target.x + Math.sin(yaw) * Math.cos(pitch) * d, Math.sin(pitch) * d, target.z + Math.cos(yaw) * Math.cos(pitch) * d);
+  cam.lookAt(target);
+}
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
+function pickTile(px, py) {
+  ndc.set((px / innerWidth) * 2 - 1, -(py / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, cam);
+  if (!ray.ray.intersectPlane(groundPlane, hit)) return null;
+  const x = Math.floor(hit.x + N / 2), y = Math.floor(hit.z + N / 2);
+  if (x < 0 || y < 0 || x >= N || y >= N) return null;
+  return { x, y };
+}
+const hoverRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85, depthWrite: false }));
+hoverRing.position.y = 0.09; hoverRing.visible = false; scene.add(hoverRing);
+
+/* ---------- input ---------- */
+const ptrs = new Map();
+let drag = null, pinchD = 0;
+const cvs = $('gl');
+cvs.addEventListener('pointerdown', e => {
+  audioInit();
+  cvs.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1) {
+    drag = { x: e.clientX, y: e.clientY, moved: 0, tile: pickTile(e.clientX, e.clientY) };
+    if (game && overlay === null && tool && drag.tile) applyTool(drag.tile);
+  } else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y);
+  }
+});
+cvs.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) {
+    if (game && overlay === null && tool) { const t = pickTile(e.clientX, e.clientY); setHover(t); }
+    return;
+  }
+  const prev = ptrs.get(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (pinchD > 0) dist = clamp(dist * pinchD / d, 9, 30);
+    pinchD = d; return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+  drag.moved += Math.abs(dx) + Math.abs(dy);
+  if (tool && game && overlay === null) {
+    const t = pickTile(e.clientX, e.clientY); setHover(t);
+    if (t && (!drag.last || drag.last.x !== t.x || drag.last.y !== t.y)) { drag.last = t; applyTool(t); }
+    return;
+  }
+  if (drag.moved > 4) {
+    const k = dist * 0.0017;
+    target.x -= (Math.cos(yaw) * dx - Math.sin(yaw) * dy) * k;
+    target.z -= (-Math.sin(yaw) * dx - Math.cos(yaw) * dy) * k;
+    target.x = clamp(target.x, -N / 2, N / 2); target.z = clamp(target.z, -N / 2, N / 2);
+  }
+});
+function endPtr(e) {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (ptrs.size === 0 && drag) {
+    if (drag.moved < 6 && game && overlay === null && !tool && drag.tile) selectTile(drag.tile);
+    drag = null;
+  }
+}
+cvs.addEventListener('pointerup', endPtr);
+cvs.addEventListener('pointercancel', endPtr);
+cvs.addEventListener('pointerleave', () => setHover(null));
+cvs.addEventListener('wheel', e => { e.preventDefault(); dist = clamp(dist + e.deltaY * 0.02, 9, 30); }, { passive: false });
+function setHover(t) { hover = t; if (!t || !game) { hoverRing.visible = false; return; } hoverRing.visible = true; hoverRing.position.x = wxOf(t.x); hoverRing.position.z = wxOf(t.y); }
+function applyTool(t) {
+  if (!game || overlay !== null) return;
+  const ok = buildAt(t.x, t.y, tool);
+  if (!ok) return;
+  dirty = true;
+}
+function selectTile(t) {
+  if (!inPlay(t.x, t.y)) return;
+  sel = t; renderTile();
+}
+const ringSel = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.56, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xBE185D, transparent: true, opacity: 0.9, depthWrite: false }));
+ringSel.position.y = 0.1; ringSel.visible = false; scene.add(ringSel);
+
+/* ---------- UI rendering ---------- */
+const SVG = {
+  star: '<svg viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9.5 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.5 9,9" fill="#f5c34b" stroke="#BE185D" stroke-width="0.8"/></svg>',
+  starOff: '<svg viewBox="0 0 24 24" class="off"><polygon points="12,2 15,9 22,9.5 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.5 9,9" fill="#999" /></svg>'
+};
+function flowerSVG(v) {
+  const d = dec(v);
+  const known = S && S.discovered.includes(v);
+  if (!known) return '<svg viewBox="0 0 36 50"><text x="18" y="32" text-anchor="middle" font-size="22" fill="#999">?</text></svg>';
+  const col = '#' + PAL[d.c].col.toString(16).padStart(6, '0');
+  const shape = d.s === 0 ? '<circle cx="18" cy="16" r="11" fill="' + col + '"/>'
+    : d.s === 1 ? '<ellipse cx="18" cy="16" rx="8.5" ry="13" fill="' + col + '"/>'
+    : '<path d="M18 2 L27 30 Q18 36 9 30 Z" fill="' + col + '"/>';
+  const pat = d.p === 1 ? '<path d="M18 9 L18 22" stroke="#ffd76a" stroke-width="2.4" stroke-linecap="round"/>'
+    : d.p === 2 ? '<circle cx="18" cy="16" r="11" fill="none" stroke="#fff7e6" stroke-width="2.4"/>' : '';
+  return `<svg viewBox="0 0 36 50">${shape}${pat}<path d="M18 30 L18 48" stroke="#4d7c3a" stroke-width="2.4"/></svg>`;
+}
+function kindName(tl) {
+  if (tl.t === T_BED) return T('kBed');
+  if (tl.t === T_PATH) return T('kPath');
+  if (tl.t === T_POOL) return T('kPool');
+  if (tl.t === T_FOUNTAIN) return T('kFountain');
+  if (tl.t === T_KIOSK) return T('kKiosk');
+  if (tl.d) return tl.d === 'cypress' ? T('toolCypress') : tl.d === 'plane' ? T('toolPlane') : tl.d === 'lantern' ? T('toolLantern') : T('toolBench');
+  return T('kGrass');
+}
+function renderHUD() {
+  if (!S) return;
+  $('h-season').textContent = S.season;
+  $('h-day').textContent = `${S.day}/${SEASON_DAYS}`;
+  $('h-akce').textContent = S.akce;
+  $('h-var').textContent = `${S.discovered.length}/20`;
+  $('h-beauty').textContent = beauty().score;
+  $('b-speed').textContent = speed + 'x';
+  $('b-sound').classList.toggle('on', cfg.music > 0 || cfg.sfx > 0);
+  $('b-lang').textContent = cfg.lang === 'tr' ? 'TR' : 'EN';
+  $('build').innerHTML = TOOLS.map(t => {
+    const cost = COST[t] ? `<small>${COST[t]} ak.</small>` : '<small>&nbsp;</small>';
+    return `<button data-tool="${t}" class="${tool === t ? 'on' : ''}" aria-pressed="${tool === t}">${T('tool' + t[0].toUpperCase() + t.slice(1))}${cost}</button>`;
+  }).join('');
+  renderCoach();
+}
+// one short hint until the first tulip is cut; hidden while a tile panel is open
+function renderCoach() {
+  const el = $('coach');
+  let key = null;
+  if (game && S && overlay === null && !sel && !S.coached) {
+    key = S.tiles.some(t => bloom(t)) ? 'coachCut' : S.tiles.some(t => t.pl) ? 'coachWait' : 'coachSelect';
+  }
+  el.classList.toggle('hidden', !key);
+  if (key) el.textContent = T(key);
+}
+function renderTile() {
+  renderCoach();
+  const panel = $('tile');
+  if (!S || !sel || !game) { panel.classList.add('hidden'); ringSel.visible = false; return; }
+  const tl = tileAt(sel.x, sel.y);
+  ringSel.visible = true; ringSel.position.x = wxOf(sel.x); ringSel.position.z = wxOf(sel.y);
+  panel.classList.remove('hidden');
+  let html = `<div class="head"><b>${T('tile')} ${sel.x - unlockedOff() + 1}·${sel.y - unlockedOff() + 1}</b><span>${kindName(tl)}</span></div>`;
+  if (tl.d) html += `<div class="row"><button data-act="rotate">${T('rotate')}</button></div>`;
+  if (tl.t === T_BED && !tl.pl) {
+    const opts = Object.keys(S.bulbs).filter(v => S.bulbs[v] > 0);
+    html += `<div>${T('empty')}</div>`;
+    html += opts.length ? `<div>${T('plantPick')}</div><div class="chips">` + opts.map(v => `<button data-act="plant" data-v="${v}">${nameOf(Number(v))} ×${S.bulbs[v]}</button>`).join('') + '</div>' : `<div class="muted">${T('noBulbs')}</div>`;
+  }
+  if (tl.t === T_BED && tl.pl) {
+    const p = tl.pl, st = stageOf(p);
+    html += `<div><b>${nameOf(p.v)}</b> · ${T('stage' + st)}</div>`;
+    html += `<div class="row"><button data-act="water">${T('water')}</button>`;
+    if (bloom(tl)) html += `<button data-act="harvest" class="primary">${T('harvest')}</button>`;
+    html += `<button data-act="lift">${T('lift')}</button>`;
+    if (tl.pe) html += `<button data-act="clean">${T('clean')}</button>`;
+    html += '</div>';
+  }
+  panel.innerHTML = html;
+}
+function renderBazaar() {
+  if (!S) return;
+  $('baz-akce').textContent = `${T('akce')}: ${S.akce}`;
+  const bulbs = Object.keys(S.bulbs).filter(v => S.bulbs[v] > 0);
+  let h = `<div class="item"><b>${T('buyPack')}</b><button data-b="pack" class="primary">${T('buyPack').split('(')[0].trim()}</button></div>`;
+  h += `<h2>${T('bulbsTitle')}</h2>`;
+  h += bulbs.length ? bulbs.map(v => `<div class="item"><span>${nameOf(Number(v))} ×${S.bulbs[v]} <small>${sellPrice(Number(v), 0, false)} ak.</small></span><button data-b="bulb" data-v="${v}">${T('sellOne')}</button></div>`).join('') : `<div class="muted">${T('noBulbs')}</div>`;
+  h += `<h2>${T('flowersTitle')}</h2>`;
+  h += S.flowers.length ? `<div class="item"><span>${S.flowers.length} ×</span><button data-b="sellall" class="primary">${T('sellAll')}</button></div>` : `<div class="muted">${T('flowersNone')}</div>`;
+  h += `<h2>${T('marketTitle')}</h2>`;
+  const top = S.discovered.slice().sort((a, b) => (S.market[b] ?? 1) - (S.market[a] ?? 1)).slice(0, 5);
+  h += top.length ? top.map(v => `<div class="item"><span>${nameOf(v)}</span><small>x${(S.market[v] ?? 1).toFixed(2)}${S.mania && S.mania.v === v ? ' · ' + T('mania') : ''}</small></div>`).join('') : `<div class="muted">-</div>`;
+  $('baz-body').innerHTML = h;
+}
+function renderCat() {
+  if (!S) return;
+  $('cat-count').textContent = `${S.discovered.length}/90 · ${T('found')}`;
+  let h = '';
+  for (let v = 0; v < 90; v++) {
+    const known = S.discovered.includes(v);
+    const d = dec(v);
+    h += `<div class="card ${known ? '' : 'unk'}" style="background:rgba(255,255,255,.5)">${flowerSVG(v)}<b>${known ? nameOf(v) : T('unknown')}</b><small>${known ? (NAMED[v] ? '★ ' : '') + PAL[d.c][cfg.lang] + ' · ' + SHAPE[d.s][cfg.lang] : ''}</small></div>`;
+  }
+  $('cat-body').innerHTML = h;
+}
+function renderFest() {
+  const f = S.lastFest;
+  const last = f.season === 4;
+  const stars = [1, 2, 3].map(k => (k <= f.stars ? SVG.star : SVG.starOff)).join('');
+  const bar = (label, v, max) => `<div class="bar"><span>${label}</span><div class="track"><div class="fill" style="width:${Math.round(v / max * 100)}%"></div></div><span>${v}</span></div>`;
+  $('fest-body').innerHTML = `
+    <h2>${T('festTitle')} · ${f.season}</h2>
+    <div class="big">${f.score}</div>
+    <div class="muted">${T('score')}${f.record ? ' · <b>' + T('newRecord') + '</b>' : ''}</div>
+    <div class="stars">${stars}</div>
+    <div class="bars">
+      ${bar(T('partVar'), f.parts.variety, 35)}${bar(T('partHarm'), f.parts.harmony, 25)}
+      ${bar(T('partSym'), f.parts.symmetry, 20)}${bar(T('partDecor'), f.parts.decor, 20)}
+    </div>
+    <div class="stats-grid">
+      <div><span>${T('statBlooms')}</span><b>${f.blooms}</b></div>
+      <div><span>${T('statVar')}</span><b>${f.varieties}/20</b></div>
+      <div><span>${T('statAkce')}</span><b>${f.akce}</b></div>
+      <div><span>${T('statBred')}</span><b>${S.stats.bred}</b></div>
+    </div>
+    <div class="btns"><button class="primary" id="b-fest-next">${last ? (S.endless ? T('endlessBtn') : T('stars')) : T('nextSeason')}</button></div>`;
+  $('b-fest-next').onclick = () => festContinue();
+}
+function renderEnd() {
+  const f = S.lastFest;
+  const best = load(KEY_BEST) || {};
+  $('end-body').innerHTML = `
+    <h2>${S.won ? T('winTitle') : T('loseTitle')}</h2>
+    <p class="muted">${S.won ? T('winText') : T('loseText')}</p>
+    <div class="stars">${[1, 2, 3].map(k => (k <= f.stars ? SVG.star : SVG.starOff)).join('')}</div>
+    <div class="stats-grid">
+      <div><span>${T('score')}</span><b>${f.score}</b></div>
+      <div><span>${T('statVar')}</span><b>${S.discovered.length}/20</b></div>
+      <div><span>${T('statBlooms')}</span><b>${S.stats.blooms}</b></div>
+      <div><span>${T('statBred')}</span><b>${S.stats.bred}</b></div>
+    </div>
+    <p class="muted">${T('best')}: ${best.score ?? 0}</p>
+    <div class="btns">
+      <button class="primary" id="b-end-again">${T('again')}</button>
+      <button id="b-end-endless">${T('endlessBtn')}</button>
+      <button id="b-end-menu">${T('mainMenu')}</button>
+    </div>`;
+  $('b-end-again').onclick = () => newGame();
+  $('b-end-endless').onclick = () => { S.endless = true; saveGame(); show(null); };
+  $('b-end-menu').onclick = () => toTitle();
+}
+function renderTitle() {
+  const best = load(KEY_BEST);
+  $('title-best').textContent = best ? `${T('best')}: ${best.score} · ${best.stars}★${best.varieties ? ' · ' + best.varieties + ' ' + T('varieties').toLowerCase() : ''}` : T('bestNone');
+  $('b-cont').classList.toggle('hidden', !load(KEY_SAVE) || (load(KEY_SAVE) && load(KEY_SAVE).ended));
+}
+function syncSettings() {
+  $('s-master').value = cfg.master; $('s-music').value = cfg.music; $('s-sfx').value = cfg.sfx;
+  $('s-tr').classList.toggle('on', cfg.lang === 'tr'); $('s-en').classList.toggle('on', cfg.lang === 'en');
+  $('s-low').classList.toggle('on', cfg.quality === 'low'); $('s-high').classList.toggle('on', cfg.quality === 'high');
+}
+function applyI18n() {
+  document.documentElement.lang = cfg.lang;
+  document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
+  $('b-lang').textContent = cfg.lang === 'tr' ? 'TR' : 'EN';
+}
+function renderAll() {
+  applyI18n(); renderHUD(); renderTile();
+  if (overlay === 'cat') renderCat();
+  if (overlay === 'bazaar') renderBazaar();
+  if (overlay === 'fest' && S && S.lastFest) renderFest();
+  if (overlay === 'end' && S && S.lastFest) renderEnd();
+  if (overlay === 'title') renderTitle();
+  if (overlay === 'settings') syncSettings();
+}
+function toast(msg, kind = 'info') {
+  const box = $('toasts');
+  const last = box.children[box.children.length - 1];
+  if (last && last.dataset.msg === msg) {
+    last.dataset.n = String(+last.dataset.n + 1);
+    last.textContent = msg + ' ×' + last.dataset.n;
+    clearTimeout(last._t); last._t = setTimeout(() => last.remove(), 2800);
+    return;
+  }
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind; el.dataset.msg = msg; el.dataset.n = '1'; el.textContent = msg;
+  box.appendChild(el);
+  el._t = setTimeout(() => el.remove(), 2800);
+  while (box.children.length > 3) box.firstChild.remove();
+}
+let speed = 1;
+const SCREENS = ['title', 'settings', 'pause', 'cat', 'bazaar', 'fest', 'end'];
+function show(name) {
+  overlay = name;
+  for (const s of SCREENS) $('scr-' + s).classList.toggle('hidden', s !== name);
+  $('hud').classList.toggle('hidden', !game);
+  $('b-pause').classList.toggle('on', name === 'pause');
+  $('build').classList.toggle('hidden', !game || name !== null);
+  if (name === null) renderTile(); else $('tile').classList.add('hidden');
+  if (name === 'title') renderTitle();
+  if (name === 'cat') renderCat();
+  if (name === 'bazaar') renderBazaar();
+  if (name === 'settings') syncSettings();
+  renderHUD();
+}
+function toTitle() { game = false; show('title'); }
+function newGame() {
+  S = newState(); sel = null; tool = null;
+  game = true; setupSeason(); show(null);
+  toast(T('welcome'), 'info'); saveGame();
+  audioInit();
+}
+function continueGame() {
+  const s = load(KEY_SAVE);
+  if (!s || s.ended) return newGame();
+  S = s; sel = null; tool = null; game = true; setupSeason(); show(null);
+}
+function togglePause() {
+  if (!game) return;
+  if (overlay === null) show('pause');
+  else if (overlay === 'pause') show(null);
+}
+function back() {
+  if (overlay === 'settings') { show(prevOverlay); return; }
+  if (overlay === 'cat' || overlay === 'bazaar') { show(null); return; }
+  if (overlay === 'pause') { show(null); return; }
+}
+
+/* ---------- audio (synthesised) ---------- */
+let ac = null, master = null, musicBus = null, sfxBus = null, noiseBuf = null, nextNote = 0, deg = 4, musicTimer = 0;
+const SCALE = [0, 2, 3, 5, 7, 8, 10];
+function audioInit() {
+  if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+  try {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); musicBus = ac.createGain(); sfxBus = ac.createGain();
+    musicBus.connect(master); sfxBus.connect(master); master.connect(ac.destination);
+    applyVolumes();
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const drone = ac.createOscillator(); drone.type = 'sine'; drone.frequency.value = 73.42;
+    const dg = ac.createGain(); dg.gain.value = 0.03; drone.connect(dg).connect(musicBus); drone.start();
+    nextNote = ac.currentTime + 0.1;
+    musicTimer = setInterval(scheduleMusic, 120);
+  } catch (e) { ac = null; }
+}
+function applyVolumes() { if (!master) return; master.gain.value = cfg.master; musicBus.gain.value = cfg.music; sfxBus.gain.value = cfg.sfx; }
+function note(f, t, type, dur, vol, bus) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(bus); o.start(t); o.stop(t + dur + 0.05);
+}
+function noise(t, dur, freq) {
+  const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq;
+  g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f).connect(g).connect(sfxBus); src.start(t, Math.random() * 0.3); src.stop(t + dur + 0.05);
+}
+function scheduleMusic() {
+  if (!ac) return;
+  while (nextNote < ac.currentTime + 0.5) {
+    deg = clamp(deg + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)], 0, 13);
+    const midi = 62 + SCALE[deg % 7] + 12 * Math.floor(deg / 7);
+    const f = 440 * Math.pow(2, (midi - 69) / 12), r = Math.random();
+    if (r < 0.5) note(f, nextNote, 'triangle', 0.8, 0.12, musicBus);            // ud: short plucked tone
+    else if (r < 0.8) note(f, nextNote, 'sawtooth', 0.9, 0.04, musicBus);       // kanun: bright string
+    else note(f * 1.005, nextNote, 'sine', 1.6, 0.08, musicBus);                // ney: breathy sine
+    if (Math.random() < 0.3) note(f * 2, nextNote + 0.25, 'triangle', 0.5, 0.05, musicBus);
+    nextNote += Math.random() < 0.7 ? 0.5 : 1;
+  }
+}
+function sfx(k) {
+  if (!ac) return;
+  const t = ac.currentTime;
+  switch (k) {
+    case 'plant': note(330, t, 'triangle', 0.25, 0.25, sfxBus); note(440, t + 0.05, 'triangle', 0.2, 0.15, sfxBus); break;
+    case 'water': noise(t, 0.35, 1800); break;
+    case 'dig': noise(t, 0.2, 600); break;
+    case 'pick': note(880, t, 'sine', 0.2, 0.18, sfxBus); break;
+    case 'coin': note(1320, t, 'triangle', 0.12, 0.2, sfxBus); note(1760, t + 0.07, 'triangle', 0.16, 0.2, sfxBus); break;
+    case 'click': note(900, t, 'square', 0.05, 0.06, sfxBus); break;
+    case 'good': note(660, t, 'triangle', 0.15, 0.2, sfxBus); note(990, t + 0.08, 'triangle', 0.2, 0.2, sfxBus); break;
+    case 'bad': note(220, t, 'sawtooth', 0.2, 0.1, sfxBus); break;
+    case 'fest': [523, 659, 784, 1046, 1318].forEach((f, i) => note(f, t + i * 0.12, 'triangle', 0.3, 0.2, sfxBus)); break;
+  }
+}
+function toggleMusic() { cfg.music > 0 ? (cfg.mPrev = cfg.music, cfg.music = 0) : (cfg.music = cfg.mPrev || 0.6); applyVolumes(); saveCfg(); renderHUD(); }
+function toggleSfx() { cfg.sfx > 0 ? (cfg.sPrev = cfg.sfx, cfg.sfx = 0) : (cfg.sfx = cfg.sPrev || 0.8); applyVolumes(); saveCfg(); renderHUD(); }
+function setLang(l) { cfg.lang = l; saveCfg(); renderAll(); }
+function toggleFull() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+
+/* ---------- UI wiring ---------- */
+const cycleSpeed = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; renderHUD(); };
+$('b-play').onclick = () => { audioInit(); newGame(); };
+$('b-cont').onclick = () => { audioInit(); continueGame(); };
+$('b-set-title').onclick = () => { prevOverlay = 'title'; show('settings'); };
+$('b-set-pause').onclick = () => { prevOverlay = 'pause'; show('settings'); };
+$('b-back').onclick = () => back();
+$('b-resume').onclick = () => show(null);
+$('b-restart').onclick = () => newGame();
+$('b-menu').onclick = () => toTitle();
+$('b-pause').onclick = () => togglePause();
+$('b-speed').onclick = cycleSpeed;
+$('b-cat').onclick = () => { if (overlay === null) show('cat'); };
+$('b-bazaar').onclick = () => { if (overlay === null) show('bazaar'); };
+$('b-cat-close').onclick = () => show(null);
+$('b-baz-close').onclick = () => show(null);
+$('b-sound').onclick = () => { audioInit(); if (cfg.music > 0 || cfg.sfx > 0) { cfg.mPrev = cfg.music || cfg.mPrev; cfg.sPrev = cfg.sfx || cfg.sPrev; cfg.music = 0; cfg.sfx = 0; } else { cfg.music = cfg.mPrev || 0.6; cfg.sfx = cfg.sPrev || 0.8; } applyVolumes(); saveCfg(); renderHUD(); };
+$('b-lang').onclick = () => setLang(cfg.lang === 'tr' ? 'en' : 'tr');
+$('s-master').oninput = e => { cfg.master = +e.target.value; applyVolumes(); saveCfg(); };
+$('s-music').oninput = e => { cfg.music = +e.target.value; applyVolumes(); saveCfg(); };
+$('s-sfx').oninput = e => { cfg.sfx = +e.target.value; applyVolumes(); saveCfg(); };
+$('s-tr').onclick = () => setLang('tr');
+$('s-en').onclick = () => setLang('en');
+$('s-low').onclick = () => { cfg.quality = 'low'; saveCfg(); syncSettings(); toast('Low quality takes effect after reload.', 'info'); };
+$('s-high').onclick = () => { cfg.quality = 'high'; saveCfg(); syncSettings(); toast('High quality takes effect after reload.', 'info'); };
+$('s-full').onclick = toggleFull;
+$('build').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tool]'); if (!b) return;
+  const t = b.dataset.tool; tool = tool === t ? null : t; renderHUD();
+});
+$('tile').addEventListener('click', e => {
+  const r = e.target.closest('button[data-act]'); if (!r || !sel) return;
+  const a = r.dataset.act, x = sel.x, y = sel.y;
+  let ok = false;
+  if (a === 'plant') ok = plantAt(x, y, Number(r.dataset.v));
+  if (a === 'water') ok = waterAt(x, y);
+  if (a === 'harvest') ok = harvestAt(x, y);
+  if (a === 'lift') ok = liftAt(x, y);
+  if (a === 'clean') ok = cleanAt(x, y);
+  if (a === 'rotate') { rotateSel(1); ok = false; }
+  if (ok) markDirty(); else renderTile();
+});
+$('baz-body').addEventListener('click', e => {
+  const b = e.target.closest('button[data-b]'); if (!b) return;
+  const k = b.dataset.b;
+  if (k === 'pack') buyPack();
+  if (k === 'bulb') sellBulb(b.dataset.v);
+  if (k === 'sellall') sellAllFlowers();
+  renderBazaar(); renderHUD();
+});
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const k = e.key.toLowerCase();
+  if (k === 'p' || k === 'escape') { if (overlay === 'settings' || overlay === 'cat' || overlay === 'bazaar' || overlay === 'pause') back(); else if (overlay === null) togglePause(); e.preventDefault(); }
+  else if (k === 'm') toggleMusic();
+  else if (k === 'x') toggleSfx();
+  else if (k === 'l') setLang(cfg.lang === 'tr' ? 'en' : 'tr');
+  else if (k === 'f') toggleFull();
+  else if (k === 't') cycleSpeed();
+  else if (k === 'c' && overlay === null) show('cat');
+  else if (k === 'b' && overlay === null) show('bazaar');
+  else if (k === 'q' && game && overlay === null) rotateSel(-1);
+  else if (k === 'e' && game && overlay === null) rotateSel(1);
+  else if (k === 'arrowleft') yaw -= 0.15;
+  else if (k === 'arrowright') yaw += 0.15;
+  else if (k === 'arrowup') dist = clamp(dist - 1, 9, 30);
+  else if (k === 'arrowdown') dist = clamp(dist + 1, 9, 30);
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+
+/* ---------- simulation step ---------- */
+let botTimer = 0;
+function simulate(secs) {
+  if (!S || !game) return;
+  if (overlay === null) {
+    S.clock += secs;
+    while (S.clock >= DAY_SEC) {
+      S.clock -= DAY_SEC;
+      endDay();
+      if (overlay !== null) break;
+    }
+  }
+  botTimer += secs;
+  if (botTimer > 0.25) { botTimer = 0; botTick(); }
+}
+
+/* ---------- self-test bot (?auto): same actions a player can take ---------- */
+function botTick() {
+  if (!(FLAG.auto || (FLAG.debug && window.laleBotOn)) || botDone || (FLAG.debug && window.laleBotPause)) return;
+  if (overlay === 'fest') { festContinue(); return; }
+  if (overlay === 'end') { botDone = true; return; }
+  if (overlay !== null) return;
+  let acts = 0;
+  each((tl, x, y) => {
+    if (acts > 60) return;
+    if (tl.t === T_BED) {
+      const late = S.day >= 20;   // keep blooms standing for the last festival week
+      if (tl.pl) {
+        if (bloom(tl)) { if (!late) { harvestAt(x, y); acts++; } }
+        else if (stageOf(tl.pl) === 4 || tl.pl.c) { if (S.day <= 8) { liftAt(x, y); acts++; } }  // lift only in the early replanting window
+        else if (tl.pe) { cleanAt(x, y); acts++; }
+        else if (tl.w < 0.4) { waterAt(x, y); acts++; }
+      } else if (Object.keys(S.bulbs).length && S.day <= 8) {  // tulips need about 22 days to bloom
+        const v = Number(Object.keys(S.bulbs)[Math.floor(Math.random() * Object.keys(S.bulbs).length)]);
+        plantAt(x, y, v); acts++;
+      }
+    }
+  });
+  if (S.flowers.length) sellAllFlowers();
+  const beds = S.tiles.filter(t => t.t === T_BED).length;
+  if (beds < Math.min(BED_LIMIT, 8 + S.season * 4) && S.akce >= 8) {
+    const cands = []; each((tl, x, y) => { if (tl.t === T_GRASS && !tl.d) cands.push({ x, y, d: Math.hypot(x - 7.5, y - 7.5) }); });
+    cands.sort((a, b) => a.d - b.d);
+    if (cands.length) { const c = cands[Math.floor(Math.random() * Math.min(6, cands.length))]; buildAt(c.x, c.y, 'bed'); }
+  }
+  if (!S.tiles.some(t => t.t === T_POOL) && S.day >= 3 && S.akce >= 70) {
+    const cands = []; each((tl, x, y) => { if (tl.t === T_GRASS && !tl.d) cands.push({ x, y, d: Math.hypot(x + 0.5 - 8, y + 0.5 - 8) }); });
+    cands.sort((a, b) => Math.abs(a.d - 5) - Math.abs(b.d - 5));
+    if (cands.length) buildAt(cands[0].x, cands[0].y, 'pool');
+  }
+  const decorN = S.tiles.filter(t => t.d).length;
+  if (decorN < 6 + S.season * 3 && S.akce >= 60 && S.day >= 10) {  // early akçe goes to bulbs
+    const cands = []; each((tl, x, y) => { if (tl.t === T_GRASS && !tl.d) cands.push({ x, y, d: Math.hypot(x + 0.5 - 8, y + 0.5 - 8) }); });
+    cands.sort((a, b) => Math.abs(a.d - 4) - Math.abs(b.d - 4));
+    const kind = DECOR[decorN % DECOR.length];
+    if (cands.length) buildAt(cands[0].x, cands[0].y, kind);
+  }
+  if (Object.keys(S.bulbs).reduce((s, k) => s + S.bulbs[k], 0) < 4 && S.akce >= PACK_PRICE && S.day <= 8) buyPack();
+}
+window.laleBot = { get done() { return botDone; } };
+
+/* ---------- main loop ---------- */
+let last = performance.now(), frames = 0, fpsT = 0, fps = 0, time = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - last) / 1000); last = now; time += dt;
+  if (game && S && !document.hidden) simulate(overlay === null ? dt * speed : 0);
+  if (game && S) {
+    if (dirty) rebuildWorld();
+    updateVisuals(time);
+    if (sel && !tileAt(sel.x, sel.y)) sel = null;
+  }
+  updateCamera();
+  renderer.render(scene, cam);
+  frames++; fpsT += dt;
+  if (fpsT >= 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; if (FLAG.debug) updateDebug(); }
+}
+function updateDebug() {
+  const el = $('debug'); el.classList.remove('hidden');
+  el.textContent = `fps ${fps}\ndraw calls ${renderer.info.render.calls}\ntris ${renderer.info.render.triangles}\nshadows ${renderer.shadowMap.enabled ? 'on' : 'off'}\nerrors ${errors.length}${errors.length ? '\n' + errors.slice(-3).join('\n') : ''}`;
+}
+
+/* ---------- boot ---------- */
+window.lale = {
+  get state() { return S ? { season: S.season, day: S.day, akce: S.akce, varieties: S.discovered.length, beauty: beauty().score, endless: S.endless, ended: S.ended, won: S.won, overlay, bulbs: Object.values(S.bulbs).reduce((a, b) => a + b, 0), blooms: S.stats.blooms, bred: S.stats.bred, lastFest: S.lastFest } : null; },
+  get errors() { return errors.slice(); },
+  get garden() { if (!S) return null; const c = { beds: 0, planted: 0, stages: [0, 0, 0, 0, 0], cut: 0, pool: 0, decor: 0 }; for (const t of S.tiles) { if (t.t === T_BED) c.beds++; if (t.t === T_POOL) c.pool++; if (t.d) c.decor++; if (t.pl) { c.planted++; c.stages[stageOf(t.pl)]++; if (t.pl.c) c.cut++; } } return c; },
+  assets: 'none (procedural only)',
+  renderer
+};
+window.laleSim = seconds => { let t = 0; while (t < seconds && !botDone) { simulate(1 / 30); t += 1 / 30; } return window.lale.state; };
+resize();
+applyI18n();
+if (qs.has('sim')) { S = newState(); setupSeason(); game = true; show(null); window.laleSim(+qs.get('sim') || 0); }
+else { show('title'); }
+if (FLAG.auto) { if (!game) newGame(); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
