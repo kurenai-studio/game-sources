@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bp6dh0rh6ts4f"]
+
+[ext_resource type="Texture2D" uid="uid://driupe63k5kp8" path="res://Assets/Visual/Snake/Head.png" id="1_ntsbh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_t80be"]
+size = Vector2(32, 32)
+
+[node name="Head" type="Area2D" unique_id=443314154]
+
+[node name="Runderer" type="Sprite2D" parent="." unique_id=1451780124]
+texture = ExtResource("1_ntsbh")
+
+[node name="Collision" type="CollisionShape2D" parent="." unique_id=1573574982]
+shape = SubResource("RectangleShape2D_t80be")

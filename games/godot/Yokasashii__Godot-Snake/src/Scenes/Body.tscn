@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bh8hpgf1wjpek"]
+
+[ext_resource type="Texture2D" uid="uid://dphne30utsiwj" path="res://Assets/Visual/Snake/Body.png" id="1_cns1f"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ml3wu"]
+size = Vector2(32, 32)
+
+[node name="Body" type="Area2D" unique_id=1515430010]
+
+[node name="Runderer" type="Sprite2D" parent="." unique_id=1285370849]
+texture = ExtResource("1_cns1f")
+
+[node name="Collision" type="CollisionShape2D" parent="." unique_id=1008570226]
+shape = SubResource("RectangleShape2D_ml3wu")
