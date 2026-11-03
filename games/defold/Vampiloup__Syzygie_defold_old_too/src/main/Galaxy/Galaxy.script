@@ -1,0 +1,326 @@
+function init(self)
+
+	-- Initialize Random generator
+	math.randomseed(os.time())
+
+	-- Size of the game screen
+	game_ref = {}
+	game_ref.screen_X = sys.get_config_int("display.width")
+	game_ref.screen_Y = sys.get_config_int("display.height")
+	game_ref.zoom = {state = 7, gap = 1.1, min = -20, max = 30, proche = 8, show_label = -5, show_orbitals = 20}
+	game_ref.twopi = 2 * math.pi
+	-- Creating general Galaxy array
+	galaxie = {}
+	galaxie.Ref = {}
+	galaxie.etoiles = {id = {}, nom = {}, position = {}}
+	galaxie.orbitals = {id = {}, etoile = {}, orbite = {}}
+	galaxie.Ref.distmini = 80  -- distance mini entre étoiles
+
+	-- Creating global collision table
+	collision_global_etoile = {}
+	collision_global_orbital = {}
+	
+	local Number_Orbits = {}
+
+	-- Galaxy form
+	local map_form = {
+		{nom = "Square"},
+		{nom = "Disc with dense center"},
+		{nom = "Disc with uniform density"},
+		{nom = "Ring very large"},
+		{nom = "Ring large"},
+		{nom = "Ring thin"},
+		{nom = "Ring very thin"}
+	}
+	
+	-- Number of star Systems
+	local map_size = { 
+		{nom = "minuscule", map_X = 1250, map_Y = 1250},
+		{nom = "petite", map_X = 1875, map_Y = 1875},
+		{nom = "medium", map_X = 2500, map_Y = 2500},
+		{nom = "grande", map_X = 3125, map_Y = 3125},
+		{nom = "geante", map_X = 4375, map_Y = 4375},
+		{nom = "immense", map_X = 6250, map_Y = 6250}
+	}
+
+	local map_density = {
+		{nom = "épars", density = 0.5},
+		{nom = "clairsemé", density = 0.75},
+		{nom = "medium", density = 1},
+		{nom = "dense", density = 1.5},
+		{nom = "compact", density = 1.2}
+	}
+
+	-- Number of orbits by system
+	galaxie.Ref.NbOrbits = 5
+
+	-- default map characteristics
+	local map_size_tmp = 3
+	local map_density_tmp = 3
+	local map_X = map_size[map_size_tmp]["map_X"]
+	local map_Y = map_size[map_size_tmp]["map_Y"]
+	local map_form_tmp = 3
+
+	-- galaxy stats
+	galaxie.Nombre_Etoiles = math.ceil(((map_X * map_Y) / 4000000) * 100 * map_density[map_density_tmp]["density"])
+	galaxie.Taille = {}
+	galaxie.Taille.Map_form = map_form_tmp
+	if galaxie.Taille.Map_form == 1 then 
+		galaxie.Taille.Map_X = map_X
+		galaxie.Taille.Map_Y = map_Y
+	elseif galaxie.Taille.Map_form > 1 or galaxie.Taille.Map_form < 5 then
+		galaxie.Taille.Map_X = (((map_X + map_Y)/2)/math.sqrt(math.pi))*2
+		galaxie.Taille.Map_Y = galaxie.Taille.Map_X
+	end
+
+
+	-- Stars types
+	local type_etoiles = {"rouge","orange","jaune", "blanc", "cyan", "bleu", "violet"}
+	local type_etoiles_taille = {"naine", "medium", "géante"}
+
+	galaxie.Ref.Etoiles_Type = type_etoiles
+	galaxie.Ref.Etoiles_Taille = type_etoiles_taille
+
+
+	-- Size of Objects orbiting a Star
+	local liste_orbitals = {}
+	table.insert(liste_orbitals, 1, {chance = 40, nom = "Espace",           genre = {"Vide"}, moon_nb={0}})
+	-- Rock planets
+	table.insert(liste_orbitals, 2, {chance = 25 ,nom = "Planète rocheuse", genre={"minuscule", "petite", "medium", "grande", "enorme"}, moon_nb={1,1,2,2,3}})
+	-- Giant Ice planets
+	table.insert(liste_orbitals, 3, {chance = 12 ,nom = "Géante glacée",    genre={"subgéante glacée", "géante glacée", "supergéante glacée"}, moon_nb={2,3,4}})
+	-- Giant Gaz planets
+	table.insert(liste_orbitals, 4, {chance = 12 ,nom = "Géante gazeuse",   genre={"subgéante gazeuse", "géante gazeuze", "supergéante gazeuse"}, moon_nb={2,3,5}})
+	-- Asteroids
+	table.insert(liste_orbitals, 5, {chance = 11 ,nom = "Astéroïdes",       genre={"groupe d'astéroïdes", "multiple groupes d'astéroïdes", "Ceinture clairsemée d'astéroïdes", "ceinture d'astéroïdes", "large ceinture d'astéroïdes"}, moon_nb={0}})
+
+	galaxie.Ref.Orbitals_Types = liste_orbitals
+
+	-- Total chance to have an Object at a Star's orbit
+	local total_orbit_chance = {}
+	local toc = 0
+	for i = 1, #liste_orbitals do
+		toc = toc + liste_orbitals[i]["chance"]
+		table.insert (total_orbit_chance, i, toc)
+	end
+	galaxie.Ref.Orbitals_Types_Chance = total_orbit_chance
+
+	-- Temp orbits according to star colour
+	galaxie.Ref.Orbitals_temp = {}
+	galaxie.Ref.Orbitals_temp.nom = {"Chaud","Tempéré","Froid"}
+	galaxie.Ref.Orbitals_temp.chaud = {1,2,3,4,5,6,7}
+	-- temp_planetes = {}
+	-- temp_planetes = {chaud = 0, tempere = 0, froid = 0}
+
+	-- Wetness (!) of orbit (planet)
+	galaxie.Ref.Orbitals_wet = {nom = {"sec","aride","humide","aquatique"}, nb_zones_water = {{1,1,1},{2,1,1},{2,2,1},{2,2,2}}}
+	local RealStarsNumber = 0
+
+	-- Creation Star System
+	for i = 1, galaxie["Nombre_Etoiles"] do
+		
+		-- Creating system : Star type
+		local number = math.random(1,#type_etoiles)
+		local number2 = math.random(1,#type_etoiles_taille)
+
+
+		-- temporary name creation
+		local Premiere = {
+			"a", "ab", "ad", "ae", "aes", "au", "be","car", "clau", "cen", "con", "dan", "de","dic", "do", "e", "est", "ex", "den", "di", "dis", "duo" ,"ex", "fe", "fi", "foe", "gra", "in", "ma", "me", "men", "mi", "mit", "mo", "mon", "ni",
+			"no", "o", "ob", "pa", "pe", "plu", "pu", "qua", "quam", "re", "rem", "res", "ro", "sa", "san", "sax", "si", "sub", "tan","ter", "tol", "tri", "ui", "ver","vi", "vo"
+		}
+
+		local Medium = {
+			"a", "bi", "ci", "di", "cer", "clu", "de", "e", "el", "er", "fa", "fe", "iu", "la", "le", "li", "ma", "mi", "mit", "mo", "mu", "na", "ne", "ni", "ob", "phan", "qui", "ri", "tin", "vi", "zen"
+		}
+
+		local Derniere = {
+			"a", "bus", "ca", "ce", "cus", "cris", "ctae", "cto", "cus", "cut", "des", "do", "dos", "dus", "e", "er", "est", "hil", "git", "go", "gno", 
+			"io", "ior", "ius", "la", "lo", "lus", "ma", "mnes", "mu", "mus", "na", "ne", "no", "num", "nus", "o", "que", "quis", "ra", "re", "rem", "ro", "ros", "sa",
+			"sis","sit", "sor", "sti", "sto", "stris", "strum", "sul", "sum", "tae", "tem", "to", "ter", "tes", "tius", "to", "tor", "tur",
+			"tus", "um" ,"us", "va"
+		}
+
+		nom_choisi = ""
+		repeat
+
+			local nom_disponible = true
+			nom_choisi = StartNameGeneration (Premiere, Medium, Derniere)
+			-- check if the newly created name is already taken by another star
+			if i > 1 then
+				for j = 1, i-1 do
+					nomJ = galaxie.etoiles.nom[j]
+					if nomJ == nom_choisi then
+						nom_disponible = false
+					end
+				end
+			end
+		until (nom_disponible == true)
+		galaxie.etoiles.nom[i] = nom_choisi
+
+		-- Coordinates of the new system
+		local Essayer2 = 0
+		repeat
+			Essayer = ""
+			Essayer2 = Essayer2 + 1
+
+			local x1 = 0
+			local y1 = 0
+			
+			if galaxie.Taille.Map_form == 1 then 
+				x1 = math.random(0, map_X)
+				y1 = math.random(0, map_Y)
+			elseif galaxie.Taille.Map_form == 2 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.random()
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 3 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random())
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 4 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random(2000,10000) / 10000)
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 5 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random(4000,10000) / 10000)
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 6 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random(6000,10000) / 10000)
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 7 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random(8000,10000) / 10000)
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			elseif galaxie.Taille.Map_form == 8 then
+				theta = 2 * math.pi * math.random()
+				r = ((galaxie.Taille.Map_X)/2) * math.sqrt(math.random(10000,10000) / 10000)
+				x1 = r * math.cos(theta) + galaxie.Taille.Map_X / 2
+				y1 = r * math.sin(theta) + galaxie.Taille.Map_X / 2
+			end
+			local distance = true
+			galaxie.etoiles.position[i] = vmath.vector3(x1, y1, 1)
+			if i > 1 then
+				for j = 1, i-1 do
+					ecart = vmath.length(galaxie.etoiles.position[i] - galaxie.etoiles.position[j])
+					if ecart < galaxie.Ref.distmini then
+						distance = false
+						break
+					end
+				end
+			end
+			if Essayer2 > 1000 then
+				Essayer = "GAME GENERATION FUMBLE : GALAXIE SCRIPT - CAN'T FIND FREE PLACE FOR STAR SYSTEM ! - Planète " .. i
+				break
+			end
+			RealStarsNumber = i
+
+		until (distance == true)
+		if Essayer ~= "" then
+			break
+		else
+			Essayer = "Aucune erreur generation"			
+		end
+		
+		-- Call the factory to create the new Star System
+		local props = {}
+		props[hash("/StarSystem")] = {Etoile_nb = i, Etoile_Type = number, Etoile_Taille = number2}
+		galaxie.etoiles.id[i] = collectionfactory.create("#StarSystem", nil, nil, props , nil)
+				
+	end
+
+	if RealStarsNumber < galaxie["Nombre_Etoiles"] then
+		pprint("Only ".. RealStarsNumber .. " stars on " .. galaxie["Nombre_Etoiles"] .. " could be generated")
+		galaxie["Nombre_Etoiles"] = RealStarsNumber - 1
+	end
+
+	print (Essayer)
+	
+	-- pprint(galaxie.etoiles.position)
+	-- pprint(galaxie.Taille.Map_X)
+	-- pprint(galaxie.Taille.Map_Y)
+
+	-- pprint(galaxie.etoiles)
+
+	-- Put camera at the center of the map
+		local pos_X = galaxie.Taille.Map_X/2
+		local pos_Y = galaxie.Taille.Map_Y/2
+		local pos = vmath.vector3(pos_X, pos_Y, 10)
+	go.set_position(pos ,"Camera")
+	go.set("/Camera#camera", "orthographic_zoom", 1*(math.pow(game_ref.zoom.gap, game_ref.zoom.state)))
+
+	-- Telling the cursor where the camera start
+	--local action_x, action_y = screen_to_world(pos.x, pos.y, 9)
+	-- go.set_position(pos ,"Curseur")
+
+
+end
+
+
+function StartNameGeneration (Premiere, Medium, Derniere)
+	local number2 = Premiere[math.random(1,#Premiere)]
+
+	-- choose number of middle syllages (can be 0 to 2)
+	local number = math.random(0,2)
+	-- Choose "number" middle syllabes
+	for i = 1, number do
+		number2 = number2 .. Medium[math.random(1,#Medium)]
+	end
+
+	-- Choose last syllabe
+	number2 = number2 .. Derniere[math.random(1,#Derniere)]
+	return number2
+end
+
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
+

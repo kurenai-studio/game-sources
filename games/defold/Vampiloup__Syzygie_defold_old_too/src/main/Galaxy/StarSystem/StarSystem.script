@@ -1,0 +1,168 @@
+go.property("Etoile_nb", 0)
+go.property("Etoile_Type", 0)
+go.property("Etoile_Taille", 0)
+-- go.property("Id_Star", 0)
+
+
+function init(self)
+
+	-- require "main.Galaxy.StarSystem"
+
+	-- pprint (" *** " .. galaxie.Ref.Etoiles_Type[self.Etoile_Type] .. " ***")
+
+	self.orbitals = {"1","2","3","4","5"}
+
+	
+	-- Orbital objects
+
+	-- pprint (galaxie.etoiles.nom[self.Etoile_nb])
+
+	local temp_chaud = math.random(0, galaxie.Ref.Orbitals_temp.chaud[self.Etoile_Type])
+	local temp_froid = math.random(0, galaxie.Ref.Orbitals_temp.chaud[self.Etoile_Type]) + temp_chaud
+	local temp_counter = 0
+	for i = 1,galaxie.Ref.NbOrbits do
+
+		self.orbitals[i] = {"type", "genre","temp_zone", "wet_zone"}
+		self.orbitals[i]["wet_zone"] = {"orbit","zones"}
+		self.orbitals[i]["wet_zone"]["zones"] = {}
+		
+		-- Using the "chance" value in liste_orbitals as weights
+		local b = math.random(1,galaxie.Ref.Orbitals_Types_Chance[#galaxie.Ref.Orbitals_Types_Chance])
+		-- pprint(galaxie.Ref.Orbitals_Types_Chance[#galaxie.Ref.Orbitals_Types_Chance])
+		-- pprint (b)
+		-- pprint (galaxie.Ref.Orbitals_Types_Chance)
+		local b2 = 1
+		while b > galaxie.Ref.Orbitals_Types_Chance[b2] do
+			b2 = b2 + 1
+		end
+		self.orbitals[i]["type"] = b2		
+		self.orbitals[i]["genre"] = math.random(#galaxie["Ref"]["Orbitals_Types"][b2]["genre"])
+		
+		-- orbital temp zones
+		if i <= (temp_chaud) then
+			temp_counter = 1
+		elseif i <= (temp_froid) then
+			temp_counter = 2
+		else
+			temp_counter = 3
+		end
+		self.orbitals[i]["temp_zone"] = temp_counter
+		
+		-- orbital wet zone
+		-- choose randomly a wet zone (number) for the orbit, then put its number in the orbital webzone array
+		local temp_wetzone = 1
+		local w = math.random ( #galaxie.Ref.Orbitals_wet.nom )
+		self.orbitals[i]["wet_zone"]["orbit"] = w
+		-- put the wet zone of the orbit in the orbital wet array, then shuffling them
+		-- pprint (galaxie.Ref.Orbitals_wet.nb_zones_water[self.orbitals[i]["wet_zone"]["orbit"]])
+		local w={}
+		for j = 1,3 do
+			w[j] = galaxie.Ref.Orbitals_wet.nb_zones_water[self.orbitals[i]["wet_zone"]["orbit"]][j]
+		end
+		for j = 3, 2, -1 do
+			local k = math.random(3)
+			w[j], w[k] = w[k], w[j]
+		end
+				
+		self.orbitals[i]["moon_nb"] = math.random(0, #galaxie["Ref"]["Orbitals_Types"][self.orbitals[i]["type"]]["genre"])
+
+		for j = 0, self.orbitals[i]["moon_nb"] do
+			-- type of moon
+		end
+
+
+		-- Call the factory to create the planets (& company) around the stars
+		if self.orbitals[i]["type"] < 2 then
+
+		else
+			local props = {}
+			props[hash("/Orbital")] = {etoile = self.Etoile_nb, orbite = i}
+			galaxie.orbitals.id[self.Etoile_nb] = collectionfactory.create("/Galaxy#Orbital", nil, nil, props , nil)
+			go.set_parent(galaxie.orbitals.id[self.Etoile_nb][hash("/Orbital")], go.get_id(), true)
+			if self.orbitals[i]["type"] < 3 then 
+			elseif self.orbitals[i]["type"] < 4 then 
+				msg.post(galaxie.orbitals.id[self.Etoile_nb][hash("/Orbital")], "play_animation", {id = hash("geante_glacee")})
+			elseif self.orbitals[i]["type"] < 5 then 
+				msg.post(galaxie.orbitals.id[self.Etoile_nb][hash("/Orbital")], "play_animation", {id = hash("geante_gazeuse")})
+				
+			else
+			end
+		
+		end
+	end
+	-- position on the map
+	go.set_position(galaxie.etoiles.position[self.Etoile_nb], ".")
+
+	
+	-- color of star on the map
+	msg.post("#Etoile", "play_animation", {id = hash("etoile_"..galaxie.Ref.Etoiles_Type[self.Etoile_Type])})
+	msg.post("#Etoile_proche", "play_animation", {id = hash("etoile_proche_"..galaxie.Ref.Etoiles_Type[self.Etoile_Type])})
+
+	-- Is NEAR sprite of star is visible at start (depend of the starting zoom state) ?
+	if game_ref.zoom.state > game_ref.zoom.proche+1 then
+		sprite.set_constant("#Etoile_proche", "tint", vmath.vector4(1, 1, 1, 1))
+	else
+		sprite.set_constant("#Etoile_proche", "tint", vmath.vector4(1, 1, 1, 0))
+	end
+
+	-- Change label_name for the name of the star system
+	label.set_text("StarSystemLabel", galaxie.etoiles.nom[self.Etoile_nb])
+
+	-- Is star label visible at start (depend of the starting zoom state) ?
+	if game_ref.zoom.state > game_ref.zoom.show_label then
+		msg.post("StarSystemLabel", "enable")
+	else
+		msg.post("StarSystemLabel", "disable")
+	end
+
+	-- Show planets
+	
+
+	pprint("Generation systèmes.")
+	
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			-- take action for entry
+			collision_global_etoile[self.Etoile_nb] = socket.gettime()
+		--	pprint ("étoile entree : ".. galaxie.etoiles.nom[self.Etoile_nb])
+		elseif message.enter == false then
+			-- take action for exit
+			collision_global_etoile[self.Etoile_nb] = nil
+		--	pprint ("étoile sortie : ".. galaxie.etoiles.nom[self.Etoile_nb])
+		end
+	end
+	
+end
+
+function on_input(self, action_id, action)
+
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
