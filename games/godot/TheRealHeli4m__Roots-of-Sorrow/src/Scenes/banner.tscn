@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://csg5uinmjuk6d"]
+
+[ext_resource type="Script" uid="uid://bs2rmifr0o0dg" path="res://Scripts/banner_coloring.gd" id="1_04otu"]
+[ext_resource type="Texture2D" uid="uid://bo4eoxn3tyla0" path="res://Assets/Sewing/red_banner.png" id="3_utj6e"]
+[ext_resource type="Script" uid="uid://6lnom4virhtt" path="res://Scripts/banner.gd" id="4_iya0c"]
+[ext_resource type="Script" uid="uid://dgpk4jrbuywvf" path="res://Scripts/drag_button.gd" id="4_utj6e"]
+
+[node name="Banner" type="Control" unique_id=1961695673]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_04otu")
+
+[node name="GridContainer" type="GridContainer" parent="." unique_id=1317053792]
+layout_mode = 0
+offset_left = 2.0
+offset_top = -2.0
+offset_right = 42.0
+offset_bottom = 38.0
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+
+[node name="ModelBannerSprite" type="Sprite2D" parent="." unique_id=2052522543]
+modulate = Color(1, 1, 1, 0.47843137)
+position = Vector2(194, 446)
+scale = Vector2(8, 8)
+texture = ExtResource("3_utj6e")
+script = ExtResource("4_iya0c")
+
+[node name="DragButton" type="Button" parent="." unique_id=1436638587]
+layout_mode = 0
+offset_left = -46.0
+offset_top = -59.0
+offset_right = 434.0
+offset_bottom = -2.0
+mouse_filter = 1
+script = ExtResource("4_utj6e")
+
+[connection signal="button_down" from="DragButton" to="." method="onDragDown"]
+[connection signal="button_up" from="DragButton" to="." method="onDragUp"]
+[connection signal="mouse_entered" from="DragButton" to="." method="onDragEnter"]
+[connection signal="mouse_exited" from="DragButton" to="." method="onDragExit"]
+[connection signal="pressed" from="DragButton" to="." method="onDragPressed"]

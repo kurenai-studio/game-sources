@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://s3q0cie5q5l0"]
+
+[ext_resource type="Script" path="res://Scripts/game_boy.gd" id="1_p6yij"]
+[ext_resource type="Script" uid="uid://6fl1mcl8h2mm" path="res://Scripts/color_rect.gd" id="2_d6kwi"]
+[ext_resource type="PackedScene" uid="uid://bhxye5gp1ys04" path="res://Scenes/gameboy_player.tscn" id="3_p6yij"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_p6yij"]
+distance = -360.0
+
+[node name="root" type="Node2D" unique_id=53405422]
+script = ExtResource("1_p6yij")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=321533314]
+visible = false
+offset_right = 1155.0
+offset_bottom = 650.0
+script = ExtResource("2_d6kwi")
+
+[node name="CharacterBody2D" parent="." unique_id=1366060401 instance=ExtResource("3_p6yij")]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1687549613]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1188078589]
+position = Vector2(579, 149)
+shape = SubResource("WorldBoundaryShape2D_p6yij")

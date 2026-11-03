@@ -1,0 +1,364 @@
+[gd_scene format=3 uid="uid://1nubfxun847w"]
+
+[ext_resource type="Texture2D" uid="uid://dkr34bk241c76" path="res://Assets/room_window.png" id="1_gsalj"]
+[ext_resource type="Script" uid="uid://t1y8v5i32ydw" path="res://Scenes/3d_room.gd" id="1_ygyam"]
+[ext_resource type="Texture2D" uid="uid://bys0pnrfd2you" path="res://Assets/gameboy_handheld.png" id="2_kcs3x"]
+[ext_resource type="Script" uid="uid://d3vw2xwfl4231" path="res://Scenes/camera_2d.gd" id="3_7a0x1"]
+[ext_resource type="Texture2D" uid="uid://ub7oi4hqrwtj" path="res://Assets/room_door.png" id="3_1028l"]
+[ext_resource type="Shader" uid="uid://c8f470wldpv53" path="res://Scenes/static.gdshader" id="4_nf4k8"]
+[ext_resource type="Script" uid="uid://d2cqus61coxfu" path="res://Scenes/cabinet.gd" id="5_fo3qj"]
+[ext_resource type="Texture2D" uid="uid://c8xsx0decxo6g" path="res://Assets/cabinet_highlight.png" id="5_j24a4"]
+[ext_resource type="Texture2D" uid="uid://b860t2d74as23" path="res://Assets/cabinet_animation.png" id="5_v6qe3"]
+[ext_resource type="Texture2D" uid="uid://dwh7r623k5ax3" path="res://Assets/door.png" id="6_j24a4"]
+[ext_resource type="Texture2D" uid="uid://ynwxedmudfk8" path="res://Assets/cabinet_bg.png" id="8_xd3ic"]
+[ext_resource type="Texture2D" uid="uid://br1ytkdttcmph" path="res://Assets/cabinet_block_view.png" id="9_xd3ic"]
+[ext_resource type="Script" uid="uid://dt4stipgjsdr4" path="res://Scenes/mom_minigame.gd" id="13_akgf8"]
+[ext_resource type="Texture2D" uid="uid://dfsx3q8a05gak" path="res://Assets/Cursors/gameboy_mouse_cursor.png" id="13_xd3ic"]
+[ext_resource type="Texture2D" uid="uid://bggemyl2ib0v5" path="res://Assets/hover_circle.png" id="14_6e3bn"]
+
+[sub_resource type="Gradient" id="Gradient_j24a4"]
+offsets = PackedFloat32Array(0.47993827, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fo3qj"]
+gradient = SubResource("Gradient_j24a4")
+fill = 1
+fill_from = Vector2(0.50213677, 0.4722222)
+fill_to = Vector2(0, 1)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7p8vx"]
+atlas = ExtResource("5_v6qe3")
+region = Rect2(0, 0, 37, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xd3ic"]
+atlas = ExtResource("5_v6qe3")
+region = Rect2(37, 0, 37, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6e3bn"]
+atlas = ExtResource("5_v6qe3")
+region = Rect2(74, 0, 37, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_akgf8"]
+atlas = ExtResource("5_v6qe3")
+region = Rect2(111, 0, 37, 90)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mvidp"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7p8vx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xd3ic")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6e3bn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_akgf8")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 20.0
+}]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7a0x1"]
+shader = ExtResource("4_nf4k8")
+shader_parameter/exposure = 1.0
+shader_parameter/contrast = 1.05
+shader_parameter/saturation = 0.8
+shader_parameter/enable_pixelate = true
+shader_parameter/pixel_factor = 4.0
+shader_parameter/enable_posterize = true
+shader_parameter/color_levels = 8.0
+shader_parameter/dither_strength = 0.35
+shader_parameter/chrom_aberration = 0.07
+shader_parameter/vignette_strength = 1.2
+shader_parameter/grain_strength = 0.25
+shader_parameter/tint_strength = 0.25
+shader_parameter/scanline_density = 240.0
+shader_parameter/scanline_strength = 0.15
+shader_parameter/glitch_strength = 0.12
+shader_parameter/glitch_speed = 3.0
+shader_parameter/viewport_size_override = Vector2(0, 0)
+
+[sub_resource type="Animation" id="Animation_kcs3x"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Gameboy:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(582, 434)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Gameboy:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(8, 8)]
+}
+
+[sub_resource type="Animation" id="Animation_ygyam"]
+resource_name = "open_gameboy"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Gameboy:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1.866067, 0.2332585),
+"update": 0,
+"values": [Vector2(40, 730), Vector2(40, 200)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Gameboy:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.3, 0.6),
+"transitions": PackedFloat32Array(3.0314329, 2.6390157),
+"update": 0,
+"values": [Vector2(8, 8), Vector2(40, 40)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_nf4k8"]
+_data = {
+&"RESET": SubResource("Animation_kcs3x"),
+&"open_gameboy": SubResource("Animation_ygyam")
+}
+
+[sub_resource type="Animation" id="Animation_jaegf"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_yyghm"]
+resource_name = "change_room"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4),
+"transitions": PackedFloat32Array(1, 1, 0.8122524),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1028l"]
+_data = {
+&"RESET": SubResource("Animation_jaegf"),
+&"change_room": SubResource("Animation_yyghm")
+}
+
+[sub_resource type="Animation" id="Animation_v6qe3"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_7p8vx"]
+resource_name = "change_room"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.26666668, 0.5),
+"transitions": PackedFloat32Array(1, 1, 0.8122524),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_xd3ic"]
+_data = {
+&"RESET": SubResource("Animation_v6qe3"),
+&"change_room": SubResource("Animation_7p8vx")
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6e3bn"]
+bg_color = Color(1, 1, 1, 0.5882353)
+
+[node name="3d_room" type="Node2D" unique_id=1799449156]
+script = ExtResource("1_ygyam")
+
+[node name="Window" type="Sprite2D" parent="." unique_id=2143188331]
+position = Vector2(35, 40)
+scale = Vector2(8, 8)
+texture = ExtResource("1_gsalj")
+
+[node name="Door" type="Sprite2D" parent="." unique_id=2059058776]
+position = Vector2(34, 39)
+scale = Vector2(8, 8)
+texture = ExtResource("3_1028l")
+
+[node name="PointLight2D" type="PointLight2D" parent="Door" unique_id=1961675342]
+position = Vector2(30.625, 13.250001)
+scale = Vector2(0.7265625, 1.5929687)
+range_item_cull_mask = 2
+texture = SubResource("GradientTexture2D_fo3qj")
+
+[node name="Cabinet" type="TextureButton" parent="Door" unique_id=964874492]
+offset_left = -78.0
+offset_top = -45.25
+offset_right = -40.875
+offset_bottom = 44.75
+script = ExtResource("5_fo3qj")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Door/Cabinet" unique_id=13277494]
+position = Vector2(18.5, 45.125)
+sprite_frames = SubResource("SpriteFrames_mvidp")
+
+[node name="CabinetHighlight" type="Sprite2D" parent="Door" unique_id=639825383]
+position = Vector2(-59.5, 0)
+texture = ExtResource("5_j24a4")
+
+[node name="Door" type="Sprite2D" parent="Door" unique_id=12406094]
+light_mask = 2
+position = Vector2(30.625, 6)
+texture = ExtResource("6_j24a4")
+
+[node name="Cabinet" type="Node2D" parent="." unique_id=1867767201]
+
+[node name="CabinetBg" type="Parallax2D" parent="Cabinet" unique_id=594813727]
+scroll_scale = Vector2(2, 2)
+repeat_size = Vector2(1, 1)
+repeat_times = 5
+
+[node name="CabinetView" type="Sprite2D" parent="Cabinet/CabinetBg" unique_id=890237466]
+position = Vector2(208, 180)
+scale = Vector2(4, 4)
+texture = ExtResource("8_xd3ic")
+
+[node name="CabinetDoor" type="Parallax2D" parent="Cabinet" unique_id=1624694405]
+
+[node name="CabinetDoor" type="Sprite2D" parent="Cabinet/CabinetDoor" unique_id=165827358]
+position = Vector2(34, 42)
+scale = Vector2(8, 8)
+texture = ExtResource("9_xd3ic")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1189951278]
+position = Vector2(576, 302)
+script = ExtResource("3_7a0x1")
+
+[node name="Gameboy" type="Sprite2D" parent="." unique_id=1326338677]
+position = Vector2(582, 434)
+scale = Vector2(8, 8)
+texture = ExtResource("2_kcs3x")
+
+[node name="ColorRect" type="ColorRect" parent="Gameboy" unique_id=627488500]
+material = SubResource("ShaderMaterial_7a0x1")
+offset_left = -16.05
+offset_top = -21.673498
+offset_right = 16.949997
+offset_bottom = 5.001499
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1806167926]
+libraries/ = SubResource("AnimationLibrary_nf4k8")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=898376065]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="CanvasLayer" unique_id=1233250094]
+root_node = NodePath("../..")
+libraries/ = SubResource("AnimationLibrary_1028l")
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer" unique_id=2145088079]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(14.560001, 8.160002)
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="." unique_id=1641422010]
+
+[node name="SwitchToCabinet" type="AnimationPlayer" parent="CanvasLayer2" unique_id=1196319950]
+root_node = NodePath("../..")
+libraries/ = SubResource("AnimationLibrary_xd3ic")
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer2" unique_id=1072824901]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(14.560001, 8.160002)
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="MomMinigame" type="CanvasLayer" parent="." unique_id=379402171]
+script = ExtResource("13_akgf8")
+
+[node name="Hover" type="Sprite2D" parent="MomMinigame" unique_id=1239288089]
+modulate = Color(1, 0.39215687, 0.39215687, 0.39215687)
+position = Vector2(576, 478)
+scale = Vector2(2, 2)
+texture = ExtResource("14_6e3bn")
+
+[node name="Control" type="Control" parent="MomMinigame/Hover" unique_id=1745242495]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ProgressBar" type="ProgressBar" parent="MomMinigame" unique_id=33132904]
+offset_left = 187.0
+offset_top = 604.0
+offset_right = 970.0
+offset_bottom = 608.0
+theme_override_styles/fill = SubResource("StyleBoxFlat_6e3bn")
+show_percentage = false
+
+[node name="Mouse" type="CanvasLayer" parent="." unique_id=443654039]
+
+[node name="Mouse" type="Sprite2D" parent="Mouse" unique_id=1494860296]
+texture = ExtResource("13_xd3ic")
+
+[connection signal="mouse_entered" from="Door/Cabinet" to="Door/Cabinet" method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="Door/Cabinet" to="Door/Cabinet" method="_on_mouse_exited"]
+[connection signal="pressed" from="Door/Cabinet" to="Door/Cabinet" method="_on_pressed"]
+[connection signal="mouse_entered" from="MomMinigame/Hover/Control" to="MomMinigame" method="_on_control_mouse_entered"]
+[connection signal="mouse_exited" from="MomMinigame/Hover/Control" to="MomMinigame" method="_on_control_mouse_exited"]
