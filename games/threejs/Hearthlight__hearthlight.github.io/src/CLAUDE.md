@@ -1,0 +1,421 @@
+# Hearthlight — working notes for Claude
+
+A cozy 2.5D pixel-art life game (solo story mode whose valley opens onto the wild lands + a
+local **Party Mode** for 1–8 players with phones as controllers; a phone can drive the solo game
+too). Plain ES modules, **no build step**, Three.js 0.170 from `vendor/` (import map in
+`index.html`). Everything is procedural: every texture, model and sound is made in code — never
+add image or audio files. How the pieces fit together: `docs/ARCHITECTURE.md`.
+
+The user writes in French or English, expects a very high bar (score each area /10, iterate
+to 9+), judges from in-game screenshots, and wants finished work committed & pushed to
+`origin/main` (message ending with the `Co-Authored-By` line).
+
+## Run & test
+
+```bash
+python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws party relay
+```
+
+- Game: <http://localhost:8765/?debug=1> · phone controller: `/pad.html#CODE`.
+- `window.game.debug`: `step(n, dt)`, `shot(name, scale, crop)` (PNG in `screenshots/`,
+  git-ignored), `newGame`, `tp(x, z)`, `hour(h)`, `pause(on)`.
+- `const T = await import('/tools/partybots.js')`: `boot(n)` (title → party lobby with n bot
+  phones), `mode('explore'|'waves'|'brawl'|'story')`, `vote(re)`, `fight(frames)`,
+  `warp(x, z)`, `clearWave()`, `skipTalk()`, `autoplay('lobby')`. Bots talk to the real relay.
+- `window.__errs` (filled by `T.boot`) and the console must stay at **0 errors**.
+- Translations: `node tools/i18n-scan.mjs` must report **0 missing** in every language (fr, es,
+  de, it — and each one's party lines; `--list` prints them, `--lang=de` one language);
+  `node tools/i18n-check.mjs es` compares a language's files with their French twins;
+  `node tools/i18n-orphans.mjs fr` lists the keys no source uses any more (a line cut from a scene
+  leaves four translations behind). Screens in a language: `tools/langshots.js` (`start('de')`).
+  Syntax check: `node --check file.js`.
+- Remote play (`play.html#CODE.key`, a friend at home) needs the Node relay — the Python dev
+  server has none: `node server/relay.mjs --static . --lan --host 0.0.0.0 --port 8792` (once
+  `npm --prefix server ci`). Each remote player gets their own camera (`p.rcam`, drawn by
+  `Party.drawRemote` into `remote-host.js`'s canvases); the big screen frames the others.
+- Test Party Mode with 1, 4 and 8 bots; check the solo game still works and the whole story
+  in `T.autoplay()` (the first bot wears the crown and starts the party: `{t:'start'}`).
+- Solo quick start: `D.pause(true); await D.newGame('Alex'); await D.skip(200);
+  game.state.flags.wildIntro = true; game.world.wild.chooseClass('mage'); D.tp(-43, 86)`
+  (a steppe camp; `game.world.wild` is the `Wild`, `.combat`, `.encounters`, `.travel`…).
+- Party Mode's saved stories (four at most: `src/party/slots.mjs`, their words in
+  `src/party/stories.js`; the one being played stays in the live `hearthlight.party*.v1` keys, the
+  others wait under `hearthlight.stories.v1`): `node tools/slotstest.mjs` must pass — it proves
+  that no switch, new story, delete or import can lose a key, whatever write fails. `T.boot()`
+  plays the current story; the title's Play → Together chooses one.
+- A phone in solo: `game.phone.start()`, then open `/pad.html#CODE` in another tab; the pad
+  records drawing errors in `pad.S.drawError` (its loop never stops on one).
+- The guide (a place picked on a map — M on the big screen, a player's own menu, a phone, the solo
+  menu's world map — and an arrow at the hero's feet showing the way there):
+  `(await import('/tools/guidetest.js')).start('party')` or `start('solo')`, poll `window.__gt`;
+  by hand: `P.guides.set(p, P.guides.places()[i])`.
+- Gamepads (the pane has none): `const F = await import('/tools/fakepad.js'); F.install(2,
+  ['xbox', 'ps'])` fakes `navigator.getGamepads()` (families xbox / ps / nintendo);
+  `F.press(i, 'a')`, `F.set(i, 'select', true)`, `F.stick(i, x, y)`; rumbles land in
+  `window.__rumble`. `tools/padparty.js` `start(bots, shots)` plays Party Mode with pads (join,
+  their big-screen menu, a queue, a late pad, rumble): poll `window.__pp`.
+- Trailer (English, for Reddit): `tools/trailer.js` scripts the Party Mode shots, `tools/reel.js`
+  records them frame by frame at 1080p (`POST /__rec` → ffmpeg, lossless mkv in
+  `screenshots/reel/`) with captions in the pixel font, a real `pad.html` phone and the game's own
+  sounds re-rendered offline; `tools/reelcut.py` cuts them after `tools/trailer.edl.json`. The
+  recipe is in `trailer.js`'s header (`TR.all()` ≈ 10 min, `TR.mix()`, then `reelcut.py cut`).
+
+### Known pitfalls
+
+- **Never name a variable or parameter `t`** in a function that calls `t()` (the i18n
+  function). It has broken things before.
+- In tests, wait until `game.world.overCol` exists before `T.boot()`.
+- Don't `await` a party fade (`fadeTo`, `backToLobby`) without stepping `game.debug.step`.
+- Bots need a real `setTimeout` delay between steps so the relay delivers their messages.
+- When the browser pane is hidden, `requestAnimationFrame` is paused: drive frames with
+  `game.debug.step`, and capture the phone with `window.pad.draw()`.
+- The big world's ground is painted in workers: inside a tight `game.debug.step` loop their
+  messages never arrive — yield real time (`await new Promise(r => setTimeout(r, 100))`)
+  before screenshots of new places.
+- Navigating a tab to the same `pad.html#CODE` URL doesn't reload it (hash change only): use
+  `location.reload()` to pick up new code.
+- Editing with scripts: replace exact strings and check they occur once — never cut a slice
+  between two markers (it silently deleted half of party.js once).
+- `javascript_tool` times out after 45 s: split long scripts or run them in the background
+  and poll a result variable.
+- After a test with a real pad tab, that phone can come back into later `T.boot()` parties
+  (even with its tab closed) and wear the crown, so `T.autoplay()` never starts: remove it
+  (`P.removePlayer`) or crown a bot (`P.host.give(P.players.find((p) => p.id === 'bot0'))`).
+- A Bash hook blocks heredocs containing the bare word "helm".
+- The i18n scanner reads a straight apostrophe in a `//` comment after code as the start of a
+  string (hundreds of false « missing »): write comments with `’`.
+- Saga cast ids (`src/saga/cast.js`) must be unique across the whole saga — a second `nell:`
+  silently replaces the first (chapter 3's Nugget Nell became chapter 8's singer once). Check:
+  `grep -n "^  [a-z0-9]*: {" src/saga/cast.js | awk -F: '{print $2}' | sort | uniq -d`.
+- A zone no chapter ever opens stays under the Murk (the Wide Sea `wide` opens with chapter 7);
+  a new chapter's `zones` are opened (and the Murk refreshed) by `beginChapter`.
+- A chapter prop's `userData.anim(t, saga)` gets the saga as its 2nd argument, not a frame time:
+  a model whose anim needs `dt` keeps its own (ch10's `mooredShip`). A dungeon room counts
+  heroes only a tile inside its edges: keep goal lines (`goalZ`) at `z + 1` or more.
+- A `switch` with the same `case` twice runs only the first: a treasure hat called `furhat`
+  hid behind the steppe folk's felt hat (it's `chapka` now). New hats, foes, props: grep the id.
+- Props, buildings and valley animals merge their still parts into one mesh per material
+  (`bakeMeshes` / `bakeTree` in `models/geom.js`): a part you animate, recolour or look up later
+  must carry `userData.keep` (or `flag` / `swing`), or it vanishes into the merged mesh.
+- A click in a test: `game.input._click = true` (the input turns it into `mouse.pressed` at the
+  frame's start — setting `mouse.pressed` itself is wiped). Esc with no map or menu open opens the
+  host's menu, and M does nothing while it's open.
+- An AZERTY keyboard's M is the code `Semicolon` (`KeyM` prints « , »): both open the maps, and
+  `ctl('map')` names the one that prints M.
+- README shots: `resize_window` 960×540, English (`game.settings.lang = 'en'` + `setLang('en')`),
+  then `sagarun`/`worldboss` marks with `clean: 1` (the line typed out, old toasts cleared).
+  Party shots come out 1280×720, solo 960×540. Reset the viewport (`preset: 'desktop'`) after.
+- The valley is dense with trees and full of story places: big new constructions go in
+  the big world instead (the Festival Ring now stands on the Golden Steppe, west of the
+  valley: `ARENA_SITE` in `src/world/big/layout.js`, footprint cleared in `gen.js`, floor
+  painted as `TT.ARENA` by `paint.js`, buildings in `src/party/arena3d.js`).
+
+## Conventions
+
+- **Style**: crisp pixels (integer scales only), toon shading (`toon()` in `render/r3d.js`),
+  depth outlines, soft palette, the game's pixel font (`engine/font.js`), paper panels
+  (`ui/ui.js`), synthesised sounds & music (`engine/audio.js`, data-driven tracks).
+- **Controls**: never write a key into a hint ("E", "Esc", "Tab"): `ctl('interact')` (ui.js)
+  names it on the device in hand — a key cap, a gamepad's button by family (Xbox A B X Y,
+  PlayStation ✕ ○ □ △, Nintendo B A Y X), the phone's; `device()` says which ('keys' · 'pad' ·
+  'phone' · 'touch'); `keyHint` draws a gamepad's face buttons round. In Party Mode a player's
+  own buttons: `P.keyOf(p, 'a'|'b'|'x'|'y'|'u'|'m')`; a text for everyone says `{a}` with
+  `P.keyName('a')` (the connected players' own: « A/E » when they differ), never a bare "A" —
+  a keyboard player is there too, with the big screen's mouse (their menu, the votes: `tvmenu.js`
+  `pointing()`, `voteRects`). `input.buzz(pattern, index)` rumbles. A hero who has learned several
+  ultimates (a capstone per talent branch) has a gauge for each (`f.ults`; `f.ult` is the fullest)
+  and, on a phone, a button for each (`u1`…`u3` → the actions `ult1`…`ult3`); the one key or
+  gamepad button (`ult`) unleashes the first that is ready. What a player's buttons do
+  right now is one context for everyone, `P.ctxOf(p)` (English a/b/x/y + hint, from each system's
+  `ctxFor`): phones get it translated, keyboard & gamepad players as chips under their hero
+  (`updateChips`: only non-everyday labels, shown when new or when standing still, gone once
+  pressed) — a new action needs only its `ctxFor` label.
+- **Talking** (every mode): `game.chat` (`src/ui/chat.js`; its data — 36 quick
+  phrases, 12 emotes, emoji → emotes — in `chatdata.js`, light enough for the phone; its rules in
+  `src/party/chatfilter.mjs`, pure, shared with a server: links/e-mails/numbers refused,
+  rude words hidden with the family filter, 1 message per 1.5 s, repeats dropped):
+  `chat.post(speaker, { text } | { q: id } | { e })` → '' or why not. A speaker's
+  `say(text, t, tr)` — `tr`: a quick phrase, read in each screen's language at draw time
+  (`drawSpeech`, `drawBubbles`: bubbles & emotes stacked). Party: `party/partychat.js` (phones send
+  `say`/`quick`/`emote`/`typing`; a keyboard's T opens its chat line — T is no longer the menu, Tab
+  is; a gamepad holds LB for the wheel, X writes on the on-screen keys; the host menu has the chat
+  mode and each player's mute). Solo: `solo/solochat.js` (T, LB held, the phone; the folk answer a
+  « Hello! »). The phone: its chat sheet (`drawChat` in pad.js). Remote play: T. Test:
+  `(await import('/tools/chattest.js')).start('party', 4)` or `start('solo')`, poll `window.__ct`.
+- **Text**: every visible string goes through `t('English text', vars)` (or `tn` for plurals);
+  the English text is the key. Five languages: French in `src/lang/fr/*.js` (new content → a new
+  file, registered in `src/lang/fr/index.js`), following `tools/i18n-glossary.md`: tutoiement,
+  French typography (space before `! ? : ;`, `« »`, `’`, `…`); Spanish, German, Italian in
+  `src/lang/{es,de,it}/` — the same files as French (same keys, `_FR` exports → `_ES/_DE/_IT`,
+  `index.js` from `node tools/i18n/mkindex.mjs xx`), each with its guide
+  (`tools/i18n-glossary-{es,de,it}.md`), its names (`tools/i18n/names-xx.json`) and a translator's
+  brief (`tools/i18n/brief-xx.md`). A new string → all four languages. Lines said to the whole
+  party go in a chapter file's `__group` (vous · ustedes · ihr · voi). Dictionaries load on demand
+  (`loadLang`). The dialogue box translates `say()` texts itself — don't double-translate.
+- **A story that is easy to follow** (the guide's « Clarity » and « One story » sections are
+  rules): one idea a line, one joke a scene, a scene that sends the player somewhere ends on that
+  order. The words that must be understood are marked `{key}…{/}` — drawn bold and in colour by
+  the font, on paper and on dark panels — in the English line and its four translations alike
+  (`i18n-check` compares the marks); never cut such a text with anything but the tag-aware
+  helpers (`fitText`, `splitTwo`, `cutRich` in ui.js, `fitRich` in `ui/questcard.js`). Every step's
+  `text` is an order that names its place, every quest has a `brief` (why we do this), every
+  chapter a `recap` (the story so far): `Saga.card(p)` gives them, with the checklist of steps and
+  where to go, to the objective card, the journals and the phone's Quest page. In French the
+  enemies are « les Ombres » (the gloom, « l’Ombre »), never a word that sounds like the weather.
+- **Party's big screen stays calm**: the objective card comes, small, when the step changes, and
+  goes — a phone has it always (it stays only for a party without phones, or when asked:
+  `settings.partyGoal`, `P.goalStays()`); banners, title cards and long notes go one at a time through
+  `P.lane` (`src/party/announce.js`: `showBanner(title, sub, { keep })`, never drawn over the
+  dialogue box — a banner is a line in bold at the usual size over a smaller one; only a short
+  shout, under a third of the screen’s width, gets big letters: `isShout`); during a scene the
+  heroes keep their little arrows, not their names; toasts are three at most; a page of dialogue stays its reading time before
+  anyone's A turns it (`PartyDialogue` — the bots and `debug.skip` wait it out). `settings.hud`
+  (full · compact · minimal) rules it as it does the solo HUD, the corner's minimap shows only
+  when the party asks (`settings.partyMap`). The camera (`settings.camera`) keeps everyone in one
+  picture by default (`'together'`): the zoom goes out, then `Party.tether` takes back the step
+  that would lead a hero out of it (an invisible wall), a house's door brings the others in, and
+  a hero out of reach all the same is put back beside them (`regroup`; in any camera a player
+  can ask for it: « Rejoin » on the phone’s menu and on a local player’s own page — `rejoin` —,
+  « Bring everyone together » in the host’s menu); `'seats'` splits the
+  screen with every player in their own place, `'groups'` the old way (`tools/splittest.js` sets
+  the situations up and prints the camera's layout). A dungeon's fight room takes everyone in
+  before it locks (`Dungeon.gatherIn`), and « Get unstuck » never leaves a dungeon.
+- **The title** has two buttons, Play and Settings. Play asks what (`game.experiences`: the story,
+  and any other way to play a mode adds — `{ id, name(), sub(), solo(), multi() }`, the words as
+  functions; with only one, the step is skipped), then who (solo, or together: Party Mode), then,
+  for the story alone with a save, continue or a new game; the last choices come back preselected
+  (`settings.lastPlay`). The Controls are the Settings' second tab (`game.openControls()` opens it).
+- **Solo & Party share their systems**: the solo game runs Party Mode's systems (zones, swim,
+  vehicles, mounts, combat, camps, lairs, progress, travel, secrets, races, events, the Festival
+  Ring) through `src/solo/wild.js`, a "party of one" implementing the party API they use
+  (`players`, `act`, `host`, `net`, `ask`, `say`, `spawnNpc`, `loadSave`/`writeSave` → the solo
+  save, `keyName`…). A change to one of them must keep working in both modes: test both.
+  Party-only wording goes through `P.solo ? … : …`.
+- **Levels**: the game counts forty (lands, monsters, quests, every formula); players read twenty,
+  two of the game's each — `shownLevel(lv)` / `shownRange(lv)` (`src/saga/levels.js`) wherever a
+  level reaches the screen (heroes, monsters' plates, lands, dungeons, weapons, toasts, the phone):
+  never the game's scale on screen, never the shown one in a formula. The experience bar runs over
+  a shown level (`xpBar`, drawn by `src/ui/levelbar.js`: a notch half-way, where a talent point
+  waits); the level-up — one banner for all who rose together, a card on each phone, a panel in
+  solo — and the word when a land lifts a hero are `src/party/levelups.js` (owned by `Combat`).
+- **The pace**: a chapter is four of the game’s levels — chapter n runs from 4n − 3 to 4n
+  (`chapterLevels`), and so do its lands (`ZONES[].lv`, one level lower at most where a chapter
+  begins), its quests (`lv`), its camps (`level`) and its dungeon (the top three). New content
+  takes the levels of the chapter it belongs to: `node tools/pacecheck.mjs` must report
+  **0 out of place**. Experience follows the story (`questXp`,
+  `killXp`, `bend` in `src/saga/levels.js`): a chapter’s main quests share 3.4 of its levels, a
+  side quest is a quarter of one, a defeat a fiftieth, each bent by the gap between the thing and
+  the hero — so adding a main quest gives no more experience, and a hero ahead of the story (an
+  older save) earns slowly, never nothing, and never loses a level. `tools/pace.js` measures it
+  (the bots’ levels chapter by chapter, what a party meets at a land’s camp).
+- Match the surrounding code: dense, lightly commented, small helpers, no framework.
+
+## Layout
+
+```
+src/engine/   display (two integer-scaled canvases), input (keys, mouse, touch, gamepads: an
+              analog stick, rumble, the pad's family), font, colour, audio (synth engine)
+src/ui/       hud, menu (the pause page, the Settings page — two tabs: settings · controls —, the
+              book), dialogue, shop, creator, ui (panels, `ctl`, key hints); controls.js (the Settings'
+              Controls tab: keyboard · gamepad · phone), osk.js (on-screen keyboard for names),
+              questcard.js (the objective card's layout, a quest's checklist, tag-aware cutting),
+              levelbar.js (the experience bar, a level's words), talentpage.js (the talent tree on
+              one page, its three branches side by side — the phone’s, the solo Hero page’s and
+              the big-screen menu’s: `treeLayout`, `drawTree`, `drawInfo`), big.js (buttons, arrows and the
+              die at a finger's size), field.js (a real text field laid over the canvas: a
+              phone's own keyboard for names)
+src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split views: the
+              world's matrices once a frame), cull.js (split views: each hides what it can't see
+              nor shadow), lighting (time of day, lamp pool), portraits, wind.js (`windy(mat)`:
+              leaves & grass sway in the vertex shader, whole texels; `WIND` strength follows the
+              weather and bends the chimneys' smoke)
+src/art/      procedural painters: terrain (ground texture + water info), surfaces, icons
+src/models/   buildings (a house's `style`: roofKind, storeys, hip, roofShape, gable, annex, porch,
+              tower, ivy, stack, smoke hours…; `perches` for birds, `WET_ROOFS`), nature & treekit
+              (trees), props, furniture (rugs painted at 16 texels, the trades' clutter), boats.js
+              (the rowboat & sailboat, lofted clinker hulls: vehicles, moored props, the stilt
+              house's dinghy), chars (voxel chibis), geom (merging, soft boxes)
+src/world/    overworld (valley map 240x128, POINTS, AREAS), world3d (valley scene),
+              collision (circle vs tiles/colliders, A*), interiors, tiles (TT types)
+src/scenes/   world.js — the solo game scene (also hosts shared systems used by the party:
+              villagers' activities at their spots — `ACT`, `FACES`, `SEATS` in `scheduleFor` —,
+              `placeSounds` (fountain, saw, café), the wheel's zoom → `game.zoomStep`)
+src/systems/  fx (particles), perches.js (birds landing on ridges, posts, lamps), weather.js
+              (puddles & rain rings, wet roofs, dawn mist on the water), critters, fishing…
+src/solo/     wild.js (the wild lands in solo: a party of one), herotab.js (menu's Hero page),
+              wanderers.js (Rook, Sigrid, Moss, Kai), phone.js (a phone as the solo controller)
+src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen: fixed
+              places by seat, or by groups), plates.js (whose picture is whose: a face and a name
+              in each place), announce.js (the lane: one banner, title card or long note at a
+              time), levelups.js (the level-up said once, the cards), slots.mjs + stories.js (up
+              to four saved stories),
+              guide.js (a place picked on a map — the big screen's, a player's menu's, a phone's,
+              the solo menu's — and the way there: the arrow at the hero's feet, the dots, the flag;
+              `MapPick`; the way from world/big/route.js),
+              inputs.js, remote-host.js (friends at home: their own camera, streamed over
+              WebRTC), hub.js (Settings' Saves & backups page), tvmenu.js (a gamepad / keyboard
+              player's own menu on the big screen:
+              the solo Hero page + their own page; one at a time, a queue), net.js, story.js + games.js (Starfall Festival), explore.js,
+              arena.js (Festival Ring: site + waves/brawl/king), arena3d.js (its
+              buildings & instanced crowd), host.js (crown & host menu), zones.js,
+              swim.js, vehicles.js, mounts.js, encounters.js (gloom camps: one a land, asleep until a hero
+              comes within 8 tiles, a brute worth two small foes), lairs.js
+              (zone bosses, and the world bosses: `world: true`, a spot `at`), rares.js
+              (named gloom with silver plates and a treasure hat each: TREASURE_HATS in
+              data/looks.js, the hats in models/chars.js), progress.js (talents & gear), travel.js (waystones, fast
+              travel, travellers & Pim's trade), secrets.js (plates & chimes
+              puzzles, buried golden chests), races.js, events.js (invasions,
+              migrations, shooting stars), camp.js (campfires & sleeping the night
+              away, solo too), rooms.js (enterable buildings: rooms built off-map
+              east of x=1000, per-view interior lighting), buddies.js, lantern.js, qr.js
+src/combat/   classes (4 heroes), enemies, combat (hits, specials, drops), blessings, icons;
+              v7/troupe.js (the Duchess's Understudies, the Snuffbot 3000, the Human Cannonball,
+              the Synchronised Swimmers), v7/woods.js (ch2), v7/canyon.js (ch3: moles, fuse imps,
+              the Drillosaur), v7/frost.js (ch4: ice imps, the Frost Tenor), v7/sea.js (ch5: the
+              Gloom Kraken & its tentacles), v7/duchess.js (ch6: the Duchess's Debut — aria,
+              spotlight, snuffer, frozen by a hen), v7/dawn.js (ch7: moths, ink imps, the Mime
+              Troupe, Old Lucky the Paper Dragon), v7/moths.js (ch8: scarecrows, mothlings, the
+              Moth Queen), v7/manor.js (ch9: wisps, clockwork soldiers, the Lady in Grey),
+              v7/finale.js (ch10: stagehands, Snuffbot Mk III, the Grand Finale's Duchess),
+              v7/world.js (the five world bosses, the gloom hen; `worldBossMul` weighs a hit
+              by its direction and element); `e.immune` (a text) makes a foe untouchable;
+              `e.hold` keeps a beaten boss on stage for its scene; v9/ (Release v9): classes9.js
+              (the Lamplighter, the Gardener, the Cook, the Tinkerer), kit9.js (their statuses —
+              lit, blind, root — sprouts, snacks, heat, turrets & traps, hooked into combat.js),
+              talents9.js, weapons9.js, grandma.js (Grandmother Kraken, the sixth world boss,
+              fought from boats: rowers ram her arms, lantern-throwers hit her when she peeks);
+              v11/brutes.js (the four ground brutes that took the flying foes’ place — the Gloom
+              Boar, the Gustbelly, the Storm Ram, the Gloom Ogre: every attack marked on the
+              ground, one move that leaves the brute helpless when answered well, a reel meter
+              for plain mashing; `Combat.spawn` maps a gone flyer’s id to its brute)
+src/saga/     World v7's story engine: saga.js (chapters, quests, NPCs, the journal — hosted by
+              explore.js in Party and by the solo Wild), stage.js (the scene director: camera,
+              actors, bars, title cards), levels.js (zone levels, group scaling), murk.js (the
+              Murk that gates lands), cast.js, dungeon.js + dungeons/ (instanced at x ≥ 3000:
+              dark caves, or outdoor instances — instance.js: a little map of big-world tiles
+              painted & streamed like the world, lit at the instance's own hour; room kinds:
+              fight, plates, torches, wax, logs, points (rail points), simon (singing bells),
+              thinice, tide (the sea goes out when its bells ring), vent (geysers that throw
+              you in an arc: `to`/`tos`, caps sharing a pressure; `lavas`/`isles` carve lava),
+              beam (beam.js: the dawn beam, mirrors, prisms, paper screens, lotuses; the pagoda
+              theme is pagoda.js), jars (jars.js: firefly jars, moth swarms, glowcap doors; the
+              heartwood theme is heartwood.js), clock (clocks.js: THEN and NOW; the manor theme
+              is manor.js), spot (spots.js: sweeping spotlights, flats, the lighting board; the
+              backstage theme is backstage.js), script, end; a puzzle room says its `task` as the
+              objective while the heroes stand in it, then a plainer `hint` after a minute — a
+              failure counts for 15 s —, then golden arrows over the next thing to do; its
+              numbers follow the heroes who came in, and each chapter adds to what the last one
+              taught: `bellsBy`, `relay`, `wires`, spring mirrors, clocks that tire, a hook’s
+              `drink`…), escort.js (escort steps: a walker
+              on a path, or a flock following the lantern), games7/8/9.js (step mini-games:
+              whack, lamps, kite, net, carry, rhythm, piles, seek, snap, defend, chase),
+              games12.js (mini-games played in rounds — a card with the rule, three, two, one, a
+              board with the clock, the score and three stars, a result: toss (a shooting
+              range), herd, tug, cook; their models in models/v7/games12.js; a side quest with
+              `repeat: true` in chapters 1 to 6, on the phone’s Quest page until played once),
+              aboard.js (a journey in a craft: `aboard(st)` seats a look-alike of every hero in
+              it for the trip — `seat`, `ride`, `land` — and sets everybody down on dry ground
+              beside it; the stage ends it however the scene ends; every journey scene, the
+              Teacup line and the Pelican Post use it), acting.js (the stage’s acting
+              vocabulary, `st.act.*`: some sixty gestures any chibi can chain, a `troupe` whose
+              third member gets it wrong, entrances and exits — a rope, a trapdoor, a curtain, a
+              spotlight —, the heroes’ reactions; `st.say(…, { beats })` plays one at each pause
+              of a line; the villains’ scenes are blocked with it),
+              pelican.js (the Pelican Post's flights), teacup.js (the Teacup line between the
+              continents), chapters/ (ch1…ch10 — ch10 ends with the Epilogue and the credits;
+              a chapter may darken its lands with `gloom(S)`; scenes have `st.sepia()` for
+              flashbacks and `st.dialogue.showLetter(title, text, sign)` for a letter — `\n\n`
+              between paragraphs). Step kinds: go, talk, camp, collect
+              (spots; `dive`, `order`, `sound`, `drift` — moving pickups), kill, dungeon, scene,
+              race, escort, check (any condition; `bot` for the harness), sneak (running near a
+              sleeper sends you back), whack, lamps, kite, net, carry, rhythm, piles, seek,
+              snap, defend, chase. A quest with `repeat: true` is a mini-game to play again:
+              done, it's counted (`S.plays(id)`) and offered afresh — behind anything new the
+              same person has to offer
+src/models/v7/ kit.js, gloomstage.js (the flying opera house), props7.js, dawn7.js (ch7's props:
+              mast, street lamp, barnacle, kite, sky lantern, spout), autumn8.js (ch8's:
+              fireflies, jars, pumpkins, the festival stage, cut-outs, the siphon), moor9.js
+              (ch9's: the manor, the Lantern Cannon, the workshop, the cuckoo, an aurora),
+              finale10.js (ch10's: the Umbral Spotlight, searchlights, the Understudies' crate
+              stage, a letter, festival bunting), landmarks7.js (the Dawnlands' landmarks, 3D
+              peaks & limestone pillars)
+src/pad/      the phone controller (pad.html) — canvas UI, talks to the relay: the join screen (the
+              party's code, a name or the die's nickname: `src/data/nicknames.js`, per language),
+              the controller with the objective always on it, its Quest page (the host's
+              `{ t: 'quest' }` card: recap, brief, checklist, Go there), the level-up card;
+              padmap.js (the phone's own world map: pinch, drag, tap — fed by worldmap.js
+              mapBase/mapUpdate)
+src/lang/     fr/ es/ de/ it/ — the dictionaries (keys = English source text), loaded on demand
+tools/        devserver.py, partybots.js, sagatest.js (the saga played by itself: `V.solo`,
+              `V.play`, `V.autoplay`, `V.toChapter(n)`), sagarun.js (a chapter played by the bots
+              in the background: `start(mode, n, [chapters], class, marks)`, poll
+              `window.__ap`), worldboss.js (the world bosses walked through their phases, and
+              `start('rares', …)` the rares: poll `window.__wb`), balance.js (bots fighting
+              real-sized camps at levels 5/20/40, 3 times each from a fresh start, or `BOSS`;
+              `geared` spends every talent point; `classes()` each class alone: poll
+              `window.__bal`), pace.js (the pace of levels: the story played by the bots with
+              every gain of experience written down — `start('party', 4, [1, 2], { fresh: true })`,
+              `side`, `camps`; `campStart(4, 'dino', 30)` a land’s camp for a party of a level:
+              poll `window.__pace`), journeytest.js (every journey played with the sticks held —
+              drift, strays, anybody left hidden; `awake()` and `brisk()` keep a hidden tab’s
+              timers and frames going for any long replay), actingtest.js (frame strips of every
+              villain scene, a sheet of the gestures, the skip test), gamestest.js (a round
+              mini-game played by 1 to 8 bots: `start('party', 4, questId, { shots })`, poll
+              `window.__gt`), puzzletest.js + puzzleplays.js (every puzzle room failed on
+              purpose then solved from its clue; `audit()`: can every lever be reached), perf.js (Party frame times: `start(8, 'apart'|'apart4'|'together')`,
+              poll `window.__pf`), grandmatest.js (Grandmother Kraken played through),
+              i18n-scan.mjs, i18n-glossary.md,
+              mapdump.mjs, bigmap.mjs (`--crop
+              x0,z0,x1,z1` for a close-up), reel.js + trailer.js + reelcut.py (the trailer)
+docs/         README screenshots, plans (docs/plans/), social/ (the link previews' 1200×630 pictures —
+              og.png for the site, og-invite.png for pad.html / play.html — shot in the game at
+              1200×630 with the logo drawn in its font; the Pages workflow puts them at the root)
+```
+
+Coordinates: 1 unit = 1 tile = 16 texels; x east, z south; the camera looks north at 45°.
+
+## The big world (v3, grown in World v7)
+
+`src/world/big/` — a 1728×512 world streamed in 32×32-tile chunks around the camera views:
+two continents on one plane — the Hearthlands (`C1`, `gen.js`, around the valley, which keeps
+its own coordinates) and the Dawnlands (`C2`, `gen2.js`) across the Wide Sea. Ground painted
+in workers (`paint.js`, identical pixels to `art/terrain.js` in the valley), `BigCollision`
+replaces `world.overCol` while it runs (`world.big` is set), `WorldMap` = minimap/fog (maps fit
+the continent you're on: `mapRegion`). **Relief**: every tile has a height (`map.elev`); faces
+are painted under drops (`faceTex`), a one-level step of `SLOPE` ground is a walkable bank,
+bigger drops/rock are cliffs (`map.block`), paths are stairs, rivers fall where the ground
+steps; mountains = `mountain()` terraces + a `CRAG` core + 3D `peak` POIs. Render the layout
+with `node tools/bigmap.mjs screenshots/bigmap.png`. New tile types live in `world/tiles.js`
+(`HIGH` plateaus get cliff faces, `LIQUID` get the animated overlay). Rooms are built off-map
+at x ≥ 2000, dungeons at x ≥ 3000. A long way across the map: `route.js` (a weighted A* a slice a
+frame, paths & roads cheap) — the guide's (`party/guide.js`). A map may say what its maps show
+(`region`, `title`, `fog: false`, `lands: false`, `places`, `legend`).
+
+## Plans & progress logs (read the latest first after a context reset)
+
+- Release v9 (in progress) — finish the game & prepare its release (pause menu, HUD modes, the
+  hero in the creator, the big-screen menu, eight classes, World v7's leftovers, ES/DE/IT, the
+  relay, the VPS, Electron, Pages — nothing published): `docs/plans/release-v9.md` (its log).
+
+- Party Mode v3 (done): `docs/plans/party-v3.md` · `docs/plans/party-v3-progress.md`.
+- Controls v8 (done) — the keyboard, a gamepad or a phone, in solo and Party (a pad player's
+  own menu on the big screen): `docs/plans/controls-v8.md`.
+- Solo v2 — the wild lands, the hero & the phone in the solo game: `docs/plans/solo-v2.md` ·
+  `docs/plans/solo-v2-progress.md`.
+- Adventure v5 (done) — Dino Isle (a jungle island of dinosaurs in the south-east sea: zone
+  `dino`), dinosaurs to meet, tame and free (`src/party/dinos.js`, `src/models/dinos3d.js`,
+  `src/combat/v5/`), the Tyrant King, new gloom (jellyfish blooms, night bats, mimics),
+  companions managed from the phone (`src/party/buddies.js`, profile `pets`):
+  `docs/plans/dino-v5.md` · `docs/plans/dino-v5-progress.md`.
+- World v7 « Le Grand Monde » (in progress) — a WoW-vanilla-sized world (two continents with
+  relief, lands after great national parks), the whole main story rewritten (the Duchess &
+  the Murk, ten chapters), dungeons & bosses, cutscenes, levels to 40, side quests: brief
+  `docs/plans/world-v7-brief.md`, bible `docs/plans/world-v7.md`, log `docs/plans/world-v7-progress.md`
+  (read its last entry first). Test with `tools/sagatest.js`.
+- Phone v6 (done) — the phone's icon-grid menu, the map drawn & zoomed on the phone, icon
+  tabs in the host menu, zoom on the big screen's maps; one list of map marks for every map
+  (`src/party/mapmarks.js`: each system's `mapMarks(out)`): `docs/plans/phone-v6.md` ·
+  `docs/plans/phone-v6-progress.md`.
+- Adventure v4 (done) — illustrated moves (`src/combat/v4/icons.js`), WoW-like talent
+  trees & ultimates, weapons, spectacular effects, enterable buildings, Party Mode's clock &
+  campfires: `docs/plans/adventure-v4.md` · `docs/plans/adventure-v4-progress.md`.

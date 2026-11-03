@@ -1,0 +1,79 @@
+{
+  "name": "hearthlight",
+  "productName": "Hearthlight",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Hearthlight — a cozy pixel-art adventure, with Party Mode for phones on your Wi-Fi",
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "copy": "node scripts/copy-game.mjs && node scripts/icon.mjs",
+    "start": "npm run copy && electron .",
+    "dist:mac": "npm run copy && electron-builder --mac dmg --universal --publish never",
+    "dist:win": "npm run copy && electron-builder --win nsis --publish never",
+    "dist:linux": "npm run copy && electron-builder --linux AppImage --publish never"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "io.github.hearthlight",
+    "productName": "Hearthlight",
+    "files": [
+      "main.mjs",
+      "relay.mjs",
+      "stats.mjs",
+      "saves.mjs",
+      "dash.html",
+      "game/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "identity": null
+    },
+    "dmg": {
+      "title": "Hearthlight"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Hearthlight-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game"
+    },
+    "artifactName": "Hearthlight-${version}-${arch}.${ext}",
+    "publish": null
+  }
+}
