@@ -1,0 +1,368 @@
+extends Control
+
+## Work-priority table (colonist-ai.md 3.2/3.7/3.8):
+## one row per colonist (the view snapshot's worker roster), one column per labour kind
+## (WorldState.LABOUR_KINDS -- referenced, not copied, so this table always
+## matches the core vocabulary), each cell showing that colonist's current
+## labourTable level. Tapping/clicking a cell cycles its level in the
+## documented order 3 -> 4 -> off(0) -> 1 -> 2 -> 3 and issues the existing
+## set_labour command through world.apply() -- the only mutation this file
+## performs, exactly like every other file under scripts/viewer/ (enforced
+## by test_architecture_rules.gd's viewer-purity check: no call on `world`
+## beyond a get_* getter, apply(), get_events() or tick()). Cycling is just
+## "+1, wrapping at LABOUR_MAX back to LABOUR_MIN": 3,4,0,1,2,3 is that same
+## sequence read starting from the default level (colonist-ai.md 3.2's
+## "default all 3"), not a special-cased table.
+##
+## Each labour column's header also shows that labour's active calendar
+## boost (world.get_active_calendar_boost(), colonist-ai.md 3.7: "the work
+## table shows these active boosts") whenever it is non-zero.
+##
+## The banner shows the most recent calendar_alert event from
+## world.get_events() (colonist-ai.md 3.7/ADR 008) until the player
+## dismisses it, or a *different* calendar_alert event becomes the most
+## recent one. WorldState exposes no public getter for a calendar window's
+## own "to" day or the current day number (get_active_calendar_boost() only
+## answers "is a boost active right now", never "when does this window
+## close"), so day-based auto-expiry is deferred until a core change exposes
+## that information. This file never
+## builds its own CalendarService or reads content/calendar.json -- ADR 010
+## reserves content loading to ContentRegistry's frozen bundle, already
+## injected into WorldState's own calendar service; a second, panel-local
+## read of the same file would be exactly the drift ADR 010 forbids. The only
+## calendar-shaped fact read here is get_active_calendar_boost() plus
+## whatever world.get_events_since() already replayed.
+##
+## Refresh performance: boot.gd calls refresh() on
+## every simulation tick. Queueing every cell button for deletion and
+## creating replacements on every such call would let a real press-then-
+## release spanning a tick lose its button mid-press (the default
+## release-triggered `pressed` signal never fires on a freed node).
+## refresh() therefore only rebuilds rows when the colonist id set itself
+## changes (a colonist added or removed); the common case -- an ordinary,
+## tick-driven refresh -- just updates each already-alive button/label's
+## text in place, so a button the player is mid-press on is always the exact
+## same node before and after. A9: it reads the WorldState.get_view_snapshot()
+## boot.gd passes in, whose full records cover the colonist panel's window of rows
+## (colonist_panel.gd's detail_ids()); only those rows are compared, and a row's
+## cells are touched only when its labourTable differs from the one it last showed.
+## Labour levels change only through set_labour, and this table's own clicks
+## refresh their row at once; a rebuild (the roster changed) or a refresh() called
+## without a snapshot reads every row.
+##
+## Skills (F3, ADR 062): under each cell's priority button, the colonist's skill level in
+## that labour and a bar of its XP toward the next level, both read from the snapshot's
+## "skills" key ({id: {labour: {level, xp, next}}}); the bar is full at the top level
+## ("next" 0). Updated in place like the buttons, only when a row's skills changed.
+
+const WorldStateType = preload("res://scripts/core/world_state.gd")
+const TextTableType = preload("res://scripts/viewer/text_table.gd")
+const StatusTextType = preload("res://scripts/viewer/status_text.gd")
+
+const LABOUR_KINDS = WorldStateType.LABOUR_KINDS
+
+## Cells sized for touch: comfortably
+## above the ~44-48px minimum touch-target guidance most mobile platforms
+## document.
+const CELL_MIN_SIZE := Vector2(64, 64)
+
+var world: WorldStateType
+var _text_table: TextTableType
+var _grid: GridContainer
+var _banner_label: Label
+var _banner_button: Button
+## Dedupe key ("<window id>@<tick>") for the calendar_alert event currently
+## reflected in the banner, so a repeated refresh() with the same event does
+## not reset an already-acknowledged banner back to visible.
+var _current_alert_key: String = ""
+var _banner_acknowledged: bool = false
+## Cell buttons keyed "<colonist_id>:<labour>", kept alive across ordinary
+## refreshes (see file doc comment) -- only _rebuild_grid() replaces them.
+var _cell_buttons: Dictionary = {}
+## Column header Labels keyed by labour kind, updated in place every refresh
+## to reflect that labour's current calendar boost.
+var _header_labels: Dictionary = {}
+## The colonist id set (sorted) the grid was last built for; refresh() only
+## calls _rebuild_grid() again when this set has actually changed.
+var _known_colonist_ids: Array[String] = []
+## colonist id -> the labourTable its row's cells last showed.
+var _shown_tables: Dictionary = {}
+## Skill level Labels and XP ProgressBars keyed like _cell_buttons, and colonist id -> the
+## snapshot "skills" row they last showed.
+var _skill_labels: Dictionary = {}
+var _xp_bars: Dictionary = {}
+var _shown_skills: Dictionary = {}
+## The ids/worker columns _known_colonist_ids was last read from.
+var _seen_ids: Array = []
+var _seen_worker: Array = []
+var _command_sequence: int = 0
+## A6: _most_recent_calendar_alert() reads only the calendar_alert events
+## world.get_events_since() returns past _alert_cursor, keeping the best one
+## seen so far in _latest_alert. _alert_world_id restarts both when
+## info_panel.gd swaps in another world.
+var _alert_world_id: int = 0
+var _alert_cursor: int = 0
+var _latest_alert: Dictionary = {}
+
+func setup(world_ref: WorldStateType, text_table: TextTableType) -> void:
+	world = world_ref
+	_text_table = text_table
+
+	var layout := VBoxContainer.new()
+	add_child(layout)
+
+	var banner_row := HBoxContainer.new()
+	layout.add_child(banner_row)
+	_banner_label = Label.new()
+	banner_row.add_child(_banner_label)
+	_banner_button = Button.new()
+	_banner_button.text = _text_table.get_string("work_table.banner_dismiss")
+	_banner_button.pressed.connect(_dismiss_banner)
+	banner_row.add_child(_banner_button)
+
+	_grid = GridContainer.new()
+	_grid.columns = LABOUR_KINDS.size() + 1
+	layout.add_child(_grid)
+
+	refresh()
+
+## `snapshot` is this tick's WorldState.get_view_snapshot(); {} takes a fresh one
+## with every row's full record.
+func refresh(snapshot: Dictionary = {}) -> void:
+	if world == null:
+		return
+	if snapshot.is_empty():
+		snapshot = world.get_view_snapshot(_known_colonist_ids)
+	var ids := _colonist_ids(snapshot)
+	if ids != _known_colonist_ids:
+		if (snapshot["details"] as Dictionary).size() < ids.size():
+			snapshot = world.get_view_snapshot(ids)
+		_rebuild_grid(ids, snapshot["details"], snapshot["skills"])
+		_known_colonist_ids = ids
+	else:
+		_update_grid_values(snapshot["details"], snapshot["skills"])
+	_update_banner()
+
+func cell_count() -> int:
+	return _cell_buttons.size()
+
+func _cell_button(colonist_id: String, labour: String) -> Button:
+	return _cell_buttons.get(_cell_key(colonist_id, labour))
+
+func _cell_key(colonist_id: String, labour: String) -> String:
+	return "%s:%s" % [colonist_id, labour]
+
+## The snapshot's colonist ids, sorted; re-read only when its ids or worker
+## columns differ from the last snapshot's.
+func _colonist_ids(snapshot: Dictionary) -> Array[String]:
+	var all_ids: Array = snapshot["ids"]
+	var worker: Array = snapshot["worker"]
+	if all_ids == _seen_ids and worker == _seen_worker:
+		return _known_colonist_ids
+	_seen_ids = all_ids
+	_seen_worker = worker
+	var ids: Array[String] = []
+	for row: int in snapshot["workers_by_id"]:
+		ids.append(all_ids[row])
+	return ids
+
+## Builds the header row and one row per colonist from scratch. Only called
+## from refresh() when the colonist id set has actually changed (a colonist
+## added or removed) -- never on an ordinary tick-driven refresh, so a
+## button the player is mid-press on is never torn down underneath them.
+func _rebuild_grid(ids: Array[String], details: Dictionary, skills: Dictionary) -> void:
+	for child in _grid.get_children():
+		child.queue_free()
+	_cell_buttons.clear()
+	_header_labels.clear()
+	_shown_tables.clear()
+	_skill_labels.clear()
+	_xp_bars.clear()
+	_shown_skills.clear()
+
+	var corner := Label.new()
+	corner.text = _text_table.get_string("work_table.colonist_header")
+	_grid.add_child(corner)
+	for labour in LABOUR_KINDS:
+		var header := Label.new()
+		header.text = _column_header_text(labour)
+		_grid.add_child(header)
+		_header_labels[labour] = header
+
+	for colonist_id in ids:
+		var id_label := Label.new()
+		id_label.text = colonist_id
+		_grid.add_child(id_label)
+		var labour_table: Dictionary = (details.get(colonist_id, {}) as Dictionary).get("labourTable", {})
+		_shown_tables[colonist_id] = labour_table
+		var skill_row: Dictionary = skills.get(colonist_id, {})
+		_shown_skills[colonist_id] = skill_row
+		for labour in LABOUR_KINDS:
+			var level := int(labour_table.get(labour, 0))
+			var column := VBoxContainer.new()
+			var cell := Button.new()
+			cell.text = _level_text(level)
+			cell.custom_minimum_size = CELL_MIN_SIZE
+			cell.pressed.connect(_on_cell_pressed.bind(colonist_id, labour))
+			column.add_child(cell)
+			var skill_line := HBoxContainer.new()
+			var skill_label := Label.new()
+			var xp_bar := ProgressBar.new()
+			xp_bar.show_percentage = false
+			xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			skill_line.add_child(skill_label)
+			skill_line.add_child(xp_bar)
+			column.add_child(skill_line)
+			_grid.add_child(column)
+			var key := _cell_key(colonist_id, labour)
+			_cell_buttons[key] = cell
+			_skill_labels[key] = skill_label
+			_xp_bars[key] = xp_bar
+			_show_skill(key, skill_row.get(labour, {}))
+
+## Updates every already-built cell/header's displayed text in place, without
+## touching a single Button/Label node's identity -- the counterpart to
+## _rebuild_grid() for the common case (colonist set unchanged). `details` is the
+## snapshot's full records: only those colonists' rows are compared.
+func _update_grid_values(details: Dictionary, skills: Dictionary) -> void:
+	for labour in LABOUR_KINDS:
+		var header: Label = _header_labels.get(labour)
+		if header != null:
+			header.text = _column_header_text(labour)
+	for colonist_id: String in skills:
+		var skill_row: Dictionary = skills[colonist_id]
+		if not _shown_skills.has(colonist_id) or _shown_skills[colonist_id] == skill_row:
+			continue
+		_shown_skills[colonist_id] = skill_row
+		for labour in LABOUR_KINDS:
+			_show_skill(_cell_key(colonist_id, labour), skill_row.get(labour, {}))
+	for colonist_id: String in details:
+		var labour_table: Dictionary = (details[colonist_id] as Dictionary).get("labourTable", {})
+		if _shown_tables.get(colonist_id) == labour_table:
+			continue
+		_shown_tables[colonist_id] = labour_table
+		for labour in LABOUR_KINDS:
+			var cell: Button = _cell_buttons.get(_cell_key(colonist_id, labour))
+			if cell != null:
+				cell.text = _level_text(int(labour_table.get(labour, 0)))
+
+## The skill level (a bare number) and the XP bar of one cell; `progress` is one labour of
+## the snapshot's "skills" row ({} draws level 0 and an empty bar).
+func _show_skill(key: String, progress: Dictionary) -> void:
+	var skill_label: Label = _skill_labels.get(key)
+	var xp_bar: ProgressBar = _xp_bars.get(key)
+	if skill_label == null or xp_bar == null:
+		return
+	skill_label.text = str(int(progress.get("level", 0)))
+	var next := int(progress.get("next", 0))
+	xp_bar.max_value = maxi(next, 1)
+	xp_bar.value = int(progress.get("xp", 0)) if next > 0 else (1 if not progress.is_empty() else 0)
+
+func skill_text(colonist_id: String, labour: String) -> String:
+	var skill_label: Label = _skill_labels.get(_cell_key(colonist_id, labour))
+	return skill_label.text if skill_label != null else ""
+
+func xp_bar_ratio(colonist_id: String, labour: String) -> float:
+	var xp_bar: ProgressBar = _xp_bars.get(_cell_key(colonist_id, labour))
+	return xp_bar.ratio if xp_bar != null else -1.0
+
+func _column_header_text(labour: String) -> String:
+	var text: String = _text_table.get_string("work_table.labour.%s" % labour)
+	var boost := world.get_active_calendar_boost(labour)
+	if boost != 0:
+		text += " " + _text_table.format("work_table.boost_label", [boost])
+	return text
+
+func _level_text(level: int) -> String:
+	if level == WorldStateType.LABOUR_MIN:
+		return _text_table.get_string("work_table.level_off")
+	return str(level)
+
+## Cycles colonist_id's `labour` level one step (3 -> 4 -> off(0) -> 1 -> 2 ->
+## 3, i.e. +1 wrapping LABOUR_MAX back to LABOUR_MIN) and issues the change
+## through the existing set_labour command via world.apply() -- the same
+## command scripts/viewer already relies on WorldState to validate.
+func _on_cell_pressed(colonist_id: String, labour: String) -> void:
+	var colonist := _find_colonist(colonist_id)
+	if colonist.is_empty():
+		return
+	var labour_table: Dictionary = colonist.get("labourTable", {})
+	var current := int(labour_table.get(labour, 0))
+	var next_level := current + 1
+	if next_level > WorldStateType.LABOUR_MAX:
+		next_level = WorldStateType.LABOUR_MIN
+	_command_sequence += 1
+	world.apply({
+		"actor": "player",
+		"command_id": "viewer_set_labour_%s_%s_%d" % [colonist_id, labour, _command_sequence],
+		"tick": world.get_tick(),
+		"type": "set_labour",
+		"payload": {"colonist": colonist_id, "kind": labour, "level": next_level},
+	})
+	refresh(world.get_view_snapshot([colonist_id]))
+
+func _find_colonist(colonist_id: String) -> Dictionary:
+	return (world.get_view_snapshot([colonist_id])["details"] as Dictionary).get(colonist_id, {})
+
+## Finds the calendar_alert event with the highest tick (the latest in log
+## order on a tie) among those world.get_events_since() has returned (the
+## soonest-upcoming-window alert most recently fired); {} when none has fired
+## yet.
+func _most_recent_calendar_alert() -> Dictionary:
+	if world.get_instance_id() != _alert_world_id:
+		_alert_world_id = world.get_instance_id()
+		_alert_cursor = 0
+		_latest_alert = {}
+	var stream: Dictionary = world.get_events_since(_alert_cursor, ["calendar_alert"])
+	for event in stream["events"]:
+		if String(event.get("type", "")) != "calendar_alert":
+			continue
+		var tick := int(event["tick"])
+		if _latest_alert.is_empty() or tick > int(_latest_alert["tick"]) \
+				or (tick == int(_latest_alert["tick"]) and not StatusTextType.event_log_less(event, _latest_alert)):
+			_latest_alert = event
+	_alert_cursor = int(stream["next"])
+	return _latest_alert
+
+func _alert_key(event: Dictionary) -> String:
+	var data: Dictionary = event.get("data", {})
+	return "%s@%d" % [String(data.get("id", "")), int(event.get("tick", -1))]
+
+## Shows the most recent calendar_alert event's text until the player
+## dismisses it (_dismiss_banner()) or a different calendar_alert event
+## becomes the most recent one -- whichever comes first. Day-based expiry is
+## not implemented yet (see file doc comment); a newly-arrived alert (a
+## different dedupe key than the one currently tracked) always resets
+## acknowledgement, so a later window's alert is never suppressed by an
+## earlier one's dismissal, whether that earlier one was acknowledged yet or
+## not.
+func _update_banner() -> void:
+	var event := _most_recent_calendar_alert()
+	if event.is_empty():
+		_set_banner_visible(false)
+		return
+	var key := _alert_key(event)
+	if key != _current_alert_key:
+		_current_alert_key = key
+		_banner_acknowledged = false
+	if _banner_acknowledged:
+		_set_banner_visible(false)
+		return
+	var data: Dictionary = event.get("data", {})
+	# The window's label is a calendar.json text key; a label that is not one
+	# (a test calendar's) is shown as written.
+	var label := String(data.get("label", ""))
+	if _text_table.has_string(label):
+		label = _text_table.get_string(label)
+	_banner_label.text = _text_table.format("work_table.banner_text", [label, int(data.get("days_until", 0))])
+	_set_banner_visible(true)
+
+func _set_banner_visible(is_visible: bool) -> void:
+	_banner_label.visible = is_visible
+	_banner_button.visible = is_visible
+	if not is_visible:
+		_banner_label.text = ""
+
+func _dismiss_banner() -> void:
+	_banner_acknowledged = true
+	refresh()
