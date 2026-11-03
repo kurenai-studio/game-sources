@@ -1,0 +1,262 @@
+// air_hockey_drone.fab — AI behavior
+// Author: Brandon Thacker
+// License: MIT
+
+// ============================================================================
+// AI STATE AND DECISIONS
+// ============================================================================
+vars /air_hockey_drone
+    DroneState[2] drone_states
+
+fn handle_drone_mallet(U player)
+    update_ai_state(player)
+    execute_ai_behavior(player)
+
+fn get_active_ai_difficulty() U
+    // Keep attract mode consistent regardless of the last one-player selection.
+    if attract_mode
+        return AI_DIFFICULTY_NORMAL
+    return ai_difficulty
+
+fn get_ai_normal_speed() UF
+    if get_active_ai_difficulty() == AI_DIFFICULTY_EASY
+        return 0.35
+    return MALLET_SPEED_NORMAL
+
+fn get_ai_boost_speed() UF
+    if get_active_ai_difficulty() == AI_DIFFICULTY_EASY
+        return 0.75
+    return MALLET_SPEED_BOOST
+
+fn set_drone_target(U player, UF target_x, UF target_y, U tolerance, UF speed)
+    drone_states[player].target = Vector2UF(target_x, target_y)
+    drone_states[player].target_tolerance = tolerance
+    drone_states[player].target_speed = speed
+
+fn update_ai_state(U player)
+    if drone_states[player].can_start_counter > 0
+        drone_states[player].can_start_counter -= 1
+        return
+
+    if game_state.objects[player].cooldown_timer > 0
+        game_state.objects[player].cooldown_timer -= 1
+
+    U difficulty = get_active_ai_difficulty()
+    if drone_states[player].hit_counter > AI_HIT_THRESHOLDS[difficulty]
+        drone_states[player].backoff_counter = AI_BACKOFF_DURATIONS[difficulty]
+        drone_states[player].hit_counter = 0
+
+    if drone_states[player].backoff_counter > 0
+        drone_states[player].backoff_counter -= 1
+        if drone_states[player].backoff_counter == 0
+            drone_states[player].hit_counter = 0
+
+    if drone_states[player].idle_frame_counter > 0
+        drone_states[player].idle_frame_counter -= 1
+    else
+        drone_states[player].idle_frame_counter = THREE_SECONDS_FRAMES
+
+fn execute_ai_behavior(U player)
+    game_state.objects[player].vel = VEL_ZERO
+    game_state.objects[player].boosting = false
+
+    if drone_states[player].can_start_counter > 0
+        return
+
+    if game_state.objects[player].cooldown_timer > 0
+        return
+
+    if drone_states[player].backoff_counter > 0
+        execute_backoff_behavior(player)
+    else if drone_states[player].reaction_counter > 0
+        drone_states[player].reaction_counter -= 1
+    else
+        U difficulty = get_active_ai_difficulty()
+        drone_states[player].reaction_counter = AI_REACTION_FRAMES[difficulty]
+        update_drone_target(player)
+
+    move_drone_mallet_to_target(
+        player,
+        drone_states[player].target.x,
+        drone_states[player].target.y,
+        drone_states[player].target_tolerance,
+        drone_states[player].target_speed
+        )
+
+fn update_drone_target(U player)
+    Bool puck_on_ai_side
+    Bool puck_approaching_goal
+    Bool puck_moving_away_from_goal
+
+    if player == PLAYER_2
+        // Both drones claim the center lane so either can contest a stopped puck.
+        puck_on_ai_side = (
+            game_state.objects[PUCK].pos.y
+            <= RINK_DIMENSIONS.center_y_p1_collision_check
+            )
+        puck_approaching_goal = (
+            game_state.objects[PUCK].vel.y < -0.1
+            && game_state.objects[PUCK].pos.y < RINK_DIMENSIONS.center_y + 20
+            )
+        puck_moving_away_from_goal = (
+            game_state.objects[PUCK].vel.y > 0.1
+            && game_state.objects[PUCK].pos.y < RINK_DIMENSIONS.center_y
+            )
+    else
+        puck_on_ai_side = (
+            game_state.objects[PUCK].pos.y
+            >= RINK_DIMENSIONS.center_y_p2_collision_check
+            )
+        puck_approaching_goal = (
+            game_state.objects[PUCK].vel.y > 0.1
+            && game_state.objects[PUCK].pos.y > RINK_DIMENSIONS.center_y - 20
+            )
+        puck_moving_away_from_goal = (
+            game_state.objects[PUCK].vel.y < -0.1
+            && game_state.objects[PUCK].pos.y > RINK_DIMENSIONS.center_y
+            )
+
+    Bool puck_slow_or_mostly_horizontal = abs(game_state.objects[PUCK].vel.y) < 0.7
+
+    U difficulty = get_active_ai_difficulty()
+    UF distance_to_puck = (
+        abs(game_state.objects[player].pos.x.a - game_state.objects[PUCK].pos.x.a)
+        + abs(game_state.objects[player].pos.y.a - game_state.objects[PUCK].pos.y.a))
+    Bool close_to_puck = distance_to_puck < AI_CLOSE_DISTANCE_THRESHOLDS[difficulty]
+
+    // Only defend a puck that can actually enter the goal mouth. A puck
+    // outside it will reflect from the rink wall and should be contested.
+    if (
+        puck_approaching_goal
+        && puck_center_inside_goal_mouth()
+        && !puck_slow_or_mostly_horizontal
+    )
+        execute_defensive_behavior(player)
+    else if (
+        puck_on_ai_side
+        && (
+            puck_moving_away_from_goal
+            || puck_slow_or_mostly_horizontal
+            || close_to_puck
+        )
+    )
+        execute_aggressive_behavior(player, close_to_puck, puck_slow_or_mostly_horizontal)
+    else if puck_on_ai_side
+        execute_counter_attack_behavior(player)
+    else
+        execute_neutral_behavior(player)
+
+fn execute_defensive_behavior(U player)
+    UF target_x = get_goal_target_x()
+    set_drone_target(player, target_x, get_home_target_y(player), 5, get_ai_boost_speed())
+
+fn execute_aggressive_behavior(U player, Bool close_to_puck, Bool puck_slow_or_stationary_or_horizontal)
+    Vector2UF target = predict_puck_position(player)
+    UF speed = get_ai_normal_speed()
+
+    if close_to_puck || puck_slow_or_stationary_or_horizontal
+        speed = get_ai_boost_speed()
+
+    set_drone_target(player, target.x, target.y, 3, speed)
+
+fn execute_counter_attack_behavior(U player)
+    Vector2UF target = predict_puck_position(player)
+    set_drone_target(player, target.x, target.y, 4, get_ai_boost_speed())
+
+fn execute_neutral_behavior(U player)
+    if (
+        (drone_states[player].idle_frame_counter == ONE_SECOND_FRAMES)
+        || (drone_states[player].idle_frame_counter == (ONE_SECOND_FRAMES >> 1))
+    )
+        drone_states[player].idle_offset_x = SF(randb(41)) - 20
+        drone_states[player].idle_offset_y = SF(randb(21)) - 10
+
+    UF target_x = UF(SF(RINK_DIMENSIONS.center_x) + drone_states[player].idle_offset_x)
+    UF target_y = get_idle_target_y(player, drone_states[player].idle_offset_y)
+    set_drone_target(player, target_x, target_y, 3, get_ai_normal_speed())
+
+fn execute_backoff_behavior(U player)
+    UF target_x = get_goal_target_x()
+    set_drone_target(player, target_x, get_home_target_y(player), 5, get_ai_boost_speed())
+
+fn get_goal_target_x() UF
+    if game_state.objects[PUCK].pos.x.a < RINK_DIMENSIONS.left_net_x
+        return UF(RINK_DIMENSIONS.left_net_x)
+    if game_state.objects[PUCK].pos.x.a > RINK_DIMENSIONS.right_net_x
+        return UF(RINK_DIMENSIONS.right_net_x)
+    return game_state.objects[PUCK].pos.x
+
+fn get_home_target_y(U player) UF
+    if player == PLAYER_2
+        return AI_MIN_Y
+    return AI_MAX_Y
+
+fn get_idle_target_y(U player, SF idle_offset_y) UF
+    if player == PLAYER_2
+        return UF(SF(RINK_DIMENSIONS.top_y) + 15 + idle_offset_y)
+    return UF(SF(RINK_DIMENSIONS.bottom_y) - 15 + idle_offset_y)
+
+fn predict_puck_position(U player) Vector2UF
+    SF target_x = SF(game_state.objects[PUCK].pos.x)
+    SF target_y = SF(game_state.objects[PUCK].pos.y)
+    U difficulty = get_active_ai_difficulty()
+
+    if abs(game_state.objects[PUCK].vel.x) > 0.5 || abs(game_state.objects[PUCK].vel.y) > 0.5
+        target_x += game_state.objects[PUCK].vel.x * AI_PREDICTION_FRAMES[difficulty]
+        target_y += game_state.objects[PUCK].vel.y * AI_PREDICTION_FRAMES[difficulty]
+
+    U aim_error = AI_AIM_ERRORS[difficulty]
+    U vertical_aim_max = aim_error + 2
+    if aim_error > 0
+        S horizontal_aim = S(rand_range(0, aim_error << 1)) - S(aim_error)
+        target_x += SF(horizontal_aim)
+    if player == PLAYER_2
+        target_y -= rand_range(2, vertical_aim_max)
+    else
+        target_y += rand_range(2, vertical_aim_max)
+
+    SF min_target_y = SF(AI_MIN_Y)
+    SF max_target_y = SF(AI_MAX_Y)
+    if player == PLAYER_2
+        max_target_y = SF(RINK_DIMENSIONS.center_y - MALLET_RADIUS)
+    else
+        min_target_y = SF(RINK_DIMENSIONS.center_y + MALLET_RADIUS)
+
+    return Vector2UF(
+        UF(clamp_sf(
+            target_x,
+            SF(RINK_DIMENSIONS.left_x + MALLET_RADIUS),
+            SF(RINK_DIMENSIONS.right_x - MALLET_RADIUS)
+            )),
+        UF(clamp_sf(target_y, min_target_y, max_target_y))
+        )
+
+fn move_drone_mallet_to_target(U player, UF target_x, UF target_y, UF tolerance, UF speed)
+    U up_direction = DIRECTION_UP
+    U down_direction = DIRECTION_DOWN
+    if player == PLAYER_2
+        down_direction = DIRECTION_DOWN_CENTER
+    else
+        up_direction = DIRECTION_UP_CENTER
+
+    if (
+        game_state.objects[player].pos.x.a < (target_x - tolerance)
+        && !is_colliding_rink(MALLET_RADIUS, player, DIRECTION_RIGHT)
+        )
+        game_state.objects[player].vel.x += speed
+    else if (
+        game_state.objects[player].pos.x.a > (target_x + tolerance)
+        && !is_colliding_rink(MALLET_RADIUS, player, DIRECTION_LEFT)
+        )
+        game_state.objects[player].vel.x -= speed
+
+    if (
+        game_state.objects[player].pos.y.a > (target_y + tolerance)
+        && !is_colliding_rink(MALLET_RADIUS, player, up_direction)
+        )
+        game_state.objects[player].vel.y -= speed
+    else if (
+        game_state.objects[player].pos.y.a < (target_y - tolerance)
+        && !is_colliding_rink(MALLET_RADIUS, player, down_direction)
+        )
+        game_state.objects[player].vel.y += speed
