@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Afterglow</title>
+  <meta name="description" content="An open-world night drive. Carry embers across a blacked-out county and relight its power grid, one substation at a time." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 L26 16 L16 30 L6 16 Z' fill='%23ffb54a'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="loading">Wiring the county…</div>
+
+  <section id="title">
+    <div class="title-inner">
+      <p class="eyebrow">Halcyon County · 21:14 · Grid offline</p>
+      <h1>After<span>glow</span></h1>
+      <p class="lede">The power failed at dusk and never came back. Something moves in the dark now, and it is hungry for light.
+        One plant still hums. You have a pickup truck, a lantern, and a long night ahead.</p>
+      <p class="goal">Gather embers. Restore nine substations. Choose your links wisely. Bring back the dawn.</p>
+      <button id="startBtn">Begin the night</button>
+      <div class="keys">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Drive / walk</span></div>
+        <div><kbd>Mouse</kbd><span>Look around</span></div>
+        <div><kbd>Shift</kbd><span>Boost / sprint</span></div>
+        <div><kbd>Space</kbd><span>Handbrake / jump</span></div>
+        <div><kbd>E</kbd><span>Enter / leave truck</span></div>
+        <div><kbd>F</kbd><span>Hold to feed a substation</span></div>
+        <div><kbd>M</kbd><span>County map & route</span></div>
+        <div><kbd>Tab</kbd><span>Cycle target</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hud" class="hidden">
+    <div id="panel">
+      <div class="label">Embers</div>
+      <div class="val"><span id="emberCount">0</span><small>/ <span id="emberCap">30</span></small></div>
+      <div class="bar"><i id="emberBar"></i></div>
+      <div id="boostWrap">
+        <div class="label">Boost <span id="speed"></span></div>
+        <div class="bar thin"><i id="boostBar"></i></div>
+      </div>
+    </div>
+    <div id="objective"><div id="objTitle"></div><div id="objSub"></div></div>
+    <div id="miniWrap">
+      <canvas id="mini" width="220" height="220"></canvas>
+      <div class="meta"><span id="grid"></span><span id="clock"></span></div>
+    </div>
+    <div id="toasts"></div>
+    <div id="prompt"></div>
+    <div id="marker"><i></i><span id="markerDist"></span></div>
+    <div id="hurt"></div>
+    <div id="hint"><kbd>M</kbd> map · <kbd>N</kbd> sound</div>
+  </section>
+
+  <section id="map" class="hidden">
+    <canvas id="bigmap"></canvas>
+    <aside>
+      <h2>The Grid</h2>
+      <p>Power only travels along a live link. Every substation you restore clears its Hollows, fills a stockpile over time, and grants a lasting upgrade. Pick an order that pays for itself.</p>
+      <ul id="mapList"></ul>
+      <p class="maphint">Click a substation to set your route · <kbd>M</kbd> to close</p>
+    </aside>
+  </section>
+
+  <section id="end" class="hidden">
+    <div class="card">
+      <p class="eyebrow">06:02 · Grid restored</p>
+      <h2>Morning in Halcyon County</h2>
+      <div id="endStats"></div>
+      <div class="actions">
+        <button id="roamBtn" class="ghost">Keep exploring</button>
+        <button id="againBtn">Another night</button>
+      </div>
+      <p class="small">Another night reshuffles every ember and every Hollow den.</p>
+    </div>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
