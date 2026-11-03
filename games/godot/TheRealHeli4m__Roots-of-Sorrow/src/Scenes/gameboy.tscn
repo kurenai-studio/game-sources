@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://dy2etdm7ke30l"]
+
+[ext_resource type="Script" uid="uid://by740ywjlcdgk" path="res://Scripts/gameboy_main.gd" id="1_yyghm"]
+[ext_resource type="PackedScene" uid="uid://bhxye5gp1ys04" path="res://Scenes/gameboy_player.tscn" id="3_p6yij"]
+[ext_resource type="Script" uid="uid://db81j3kwgt617" path="res://Scripts/camera.gd" id="3_yyghm"]
+[ext_resource type="Shader" uid="uid://c8f470wldpv53" path="res://Scenes/static.gdshader" id="4_yyghm"]
+
+[sub_resource type="Animation" id="Animation_jaegf"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_yyghm"]
+resource_name = "change_room"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 0.8122524),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ebx30"]
+_data = {
+&"RESET": SubResource("Animation_jaegf"),
+&"change_room": SubResource("Animation_yyghm")
+}
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ebx30"]
+shader = ExtResource("4_yyghm")
+shader_parameter/exposure = 0.80000003148023
+shader_parameter/contrast = 1.050000026125
+shader_parameter/saturation = 1.10000005225
+shader_parameter/enable_pixelate = true
+shader_parameter/pixel_factor = 4.0
+shader_parameter/enable_posterize = false
+shader_parameter/color_levels = 8.0
+shader_parameter/dither_strength = 0.35
+shader_parameter/chrom_aberration = 0.0
+shader_parameter/vignette_strength = 0.30000001425
+shader_parameter/grain_strength = 0.10000000475
+shader_parameter/tint_strength = 0.10000000475
+shader_parameter/scanline_density = 240.0
+shader_parameter/scanline_strength = 0.10000000475
+shader_parameter/glitch_strength = 0.10000000475
+shader_parameter/glitch_speed = 1.0000000475
+shader_parameter/viewport_size_override = Vector2(0, 0)
+
+[node name="Gameboy" type="Node2D" unique_id=53405422]
+script = ExtResource("1_yyghm")
+
+[node name="Player" parent="." unique_id=1366060401 instance=ExtResource("3_p6yij")]
+position = Vector2(204, 115)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=631175954]
+script = ExtResource("3_yyghm")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1742914798]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="CanvasLayer" unique_id=1226166229]
+root_node = NodePath("../..")
+libraries/ = SubResource("AnimationLibrary_ebx30")
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer" unique_id=1061735107]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(14.560001, 8.160002)
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="CanvasLayer2" type="CanvasLayer" parent="." unique_id=171849451]
+layer = 1000
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer2" unique_id=2001961225]
+offset_left = -24.0
+offset_right = 51.0
+offset_bottom = 648.0
+scale = Vector2(1.5200024, 1)
+color = Color(0, 0, 0, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="CanvasLayer2" unique_id=2031741283]
+offset_left = 1039.0
+offset_right = 1114.0
+offset_bottom = 648.0
+scale = Vector2(1.5200024, 1)
+color = Color(0, 0, 0, 1)
+
+[node name="Static" type="ColorRect" parent="CanvasLayer2" unique_id=850891485]
+material = SubResource("ShaderMaterial_ebx30")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
