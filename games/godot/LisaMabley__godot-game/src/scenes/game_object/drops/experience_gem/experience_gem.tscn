@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://bahr14kw207r1"]
+
+[ext_resource type="Texture2D" uid="uid://qrnvenxnpxl8" path="res://scenes/game_object/drops/experience_gem/experience_gem.png" id="1_gfnbi"]
+[ext_resource type="Script" uid="uid://d2iv516oebgk1" path="res://scenes/game_object/drops/experience_gem/experience_gem.gd" id="1_hdj36"]
+[ext_resource type="Script" uid="uid://0whtkxtduvwf" path="res://scenes/component/pickup_animation_component.gd" id="2_pickup"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gfnbi"]
+radius = 9.0
+
+[node name="ExperienceGem" type="Node2D" unique_id=1279357129]
+script = ExtResource("1_hdj36")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=2046241924]
+collision_layer = 0
+collision_mask = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1878939046]
+shape = SubResource("CircleShape2D_gfnbi")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1036628730]
+scale = Vector2(0.55, 0.55)
+texture = ExtResource("1_gfnbi")
+
+[node name="PickupAnimationComponent" type="Node" parent="." unique_id=1944534718]
+script = ExtResource("2_pickup")

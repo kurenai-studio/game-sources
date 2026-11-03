@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://bfv4udcbrcib3"]
+
+[ext_resource type="Script" uid="uid://dh866wa7045co" path="res://scenes/game_object/drops/health_drop/health_drop.gd" id="1_p2mjp"]
+[ext_resource type="Texture2D" uid="uid://dnmxfyumom046" path="res://scenes/game_object/drops/health_drop/health_vial.png" id="1_vial_red"]
+[ext_resource type="Script" uid="uid://0whtkxtduvwf" path="res://scenes/component/pickup_animation_component.gd" id="2_pickup"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_frq24"]
+radius = 9.0
+
+[node name="HealthDrop" type="Node2D" unique_id=222354165]
+script = ExtResource("1_p2mjp")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=631808256]
+collision_layer = 0
+collision_mask = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=183978347]
+shape = SubResource("CircleShape2D_frq24")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1237834534]
+texture = ExtResource("1_vial_red")
+
+[node name="PickupAnimationComponent" type="Node" parent="." unique_id=1308453861]
+script = ExtResource("2_pickup")

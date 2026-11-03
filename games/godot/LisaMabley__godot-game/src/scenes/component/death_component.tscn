@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://db75kkv2hj6k"]
+
+[ext_resource type="Script" uid="uid://b74a1hoady3vx" path="res://scenes/component/death_component.gd" id="1_iwr6c"]
+[ext_resource type="Texture2D" uid="uid://bnxk06aa5klal" path="res://scenes/game_object/enemies/rat_enemy/rat_enemy.png" id="1_lgj88"]
+
+[sub_resource type="Animation" id="Animation_iwr6c"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GPUParticles2D:emitting")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_lgj88"]
+resource_name = "default"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GPUParticles2D:emitting")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"queue_free"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_iwr6c"]
+_data = {
+&"RESET": SubResource("Animation_iwr6c"),
+&"default": SubResource("Animation_lgj88")
+}
+
+[sub_resource type="Curve" id="Curve_t4oqy"]
+_data = [Vector2(0, 1), 0.0, 0.30930284, 0, 0, Vector2(0.5812274, 0.73076916), -1.1494938, -1.1494938, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_jkye5"]
+curve = SubResource("Curve_t4oqy")
+
+[sub_resource type="Curve" id="Curve_lgj88"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.6570397, 0.85576916), -1.1693246, -1.1693246, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_lgj88"]
+curve = SubResource("Curve_lgj88")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_yk5jb"]
+particle_flag_disable_z = true
+direction = Vector3(0, -1, 0)
+spread = 30.0
+initial_velocity_min = 175.0
+initial_velocity_max = 300.0
+angular_velocity_min = -1200.0
+angular_velocity_max = 1200.0
+gravity = Vector3(0, 800, 0)
+scale_curve = SubResource("CurveTexture_lgj88")
+alpha_curve = SubResource("CurveTexture_jkye5")
+
+[node name="DeathComponent" type="Node2D" unique_id=1444640122]
+script = ExtResource("1_iwr6c")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1832332534]
+libraries/ = SubResource("AnimationLibrary_iwr6c")
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=1871067134]
+emitting = false
+amount = 1
+texture = ExtResource("1_lgj88")
+lifetime = 0.5
+one_shot = true
+fixed_fps = 0
+interpolate = false
+process_material = SubResource("ParticleProcessMaterial_yk5jb")

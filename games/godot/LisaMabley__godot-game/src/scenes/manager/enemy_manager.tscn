@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://d3txqp4trk1ur"]
+
+[ext_resource type="Script" uid="uid://dvw1icm0f3w8v" path="res://scenes/manager/enemy_manager.gd" id="1_jybml"]
+[ext_resource type="PackedScene" uid="uid://c6ubec7d5uiv0" path="res://scenes/game_object/enemies/rat_enemy/rat_enemy.tscn" id="2_1w3g6"]
+[ext_resource type="PackedScene" uid="uid://ddo3ip1u63yui" path="res://scenes/game_object/enemies/bug_enemy/bug_enemy.tscn" id="3_bortd"]
+[ext_resource type="PackedScene" uid="uid://bphsvkht1nu18" path="res://scenes/game_object/enemies/slug_enemy/slug_enemy.tscn" id="4_8jsg4"]
+
+[node name="EnemyManager" type="Node" unique_id=1035948762]
+script = ExtResource("1_jybml")
+rat_enemy_scene = ExtResource("2_1w3g6")
+bug_enemy_scene = ExtResource("3_bortd")
+slug_enemy_scene = ExtResource("4_8jsg4")
+
+[node name="Timer" type="Timer" parent="." unique_id=1274541355]
+autostart = true
