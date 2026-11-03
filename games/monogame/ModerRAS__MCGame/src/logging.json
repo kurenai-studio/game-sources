@@ -1,0 +1,57 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "MCGame": "Debug",
+      "MCGame.Core": "Information",
+      "MCGame.Rendering": "Information",
+      "MCGame.ECS": "Debug",
+      "MCGame.Utils": "Information"
+    },
+    "Console": {
+      "Enabled": true,
+      "LogLevel": "Information",
+      "IncludeTimestamps": true,
+      "IncludeLogLevel": true,
+      "IncludeCategory": true,
+      "ColorOutput": true
+    },
+    "File": {
+      "Enabled": true,
+      "LogLevel": "Debug",
+      "Path": "logs",
+      "FileName": "mcgame_{date}_{time}.log",
+      "MaxFileSize": "10MB",
+      "MaxRetainedFiles": 5,
+      "IncludeTimestamps": true,
+      "IncludeLogLevel": true,
+      "IncludeCategory": true,
+      "FlushInterval": "1s"
+    },
+    "Debug": {
+      "Enabled": true,
+      "LogToFile": true,
+      "LogToConsole": true,
+      "LogExceptions": true,
+      "LogFrameTimes": false,
+      "LogMemoryUsage": false,
+      "LogRenderStats": false
+    }
+  },
+  "CrashReporting": {
+    "Enabled": true,
+    "CreateDumpFiles": false,
+    "ShowErrorDialog": true,
+    "LogSystemInfo": true,
+    "LogStackTrace": true,
+    "LogInnerExceptions": true
+  },
+  "Performance": {
+    "LogSlowOperations": true,
+    "SlowOperationThreshold": "16ms",
+    "LogFrameTimeWarnings": true,
+    "FrameTimeWarningThreshold": "33ms",
+    "LogMemoryWarnings": true,
+    "MemoryWarningThreshold": "1GB"
+  }
+}

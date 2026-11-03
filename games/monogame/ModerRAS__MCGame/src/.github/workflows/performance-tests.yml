@@ -1,0 +1,146 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/Performance/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/Performance/**'
+  schedule:
+    # 每天凌晨2点运行性能测试
+    - cron: '0 2 * * *'
+
+jobs:
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build Release
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run Performance Tests
+      run: |
+        cd tests/Performance
+        dotnet test --configuration Release --no-build --verbosity normal \
+          --logger "console;verbosity=detailed" \
+          --results-directory TestResults \
+          --collect:"XPlat Code Coverage"
+      
+    - name: Generate Performance Report
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        reportgenerator \
+          -reports:tests/Performance/TestResults/coverage.xml \
+          -targetdir:performance-report \
+          -reporttypes:HtmlInline_AzurePipelines
+        
+        # 创建性能摘要文件
+        echo "Performance Test Summary" > performance-summary.md
+        echo "Generated on: $(date)" >> performance-summary.md
+        echo "Branch: ${{ github.ref_name }}" >> performance-summary.md
+        echo "Commit: ${{ github.sha }}" >> performance-summary.md
+      if: success()
+      
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-results-${{ github.run_number }}
+        path: |
+          tests/Performance/TestResults/
+          performance-report/
+          performance-summary.md
+
+  performance-comparison:
+    needs: performance-benchmark
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取完整历史以进行比较
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Get base branch
+      id: get-base-branch
+      run: echo "base_branch=${{ github.base_ref || 'main' }}" >> $GITHUB_OUTPUT
+    
+    - name: Checkout base branch
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ steps.get-base-branch.outputs.base_branch }}
+        path: base-branch
+    
+    - name: Build and test base branch
+      run: |
+        cd base-branch
+        dotnet restore
+        dotnet build --configuration Release
+        cd tests/Performance
+        dotnet test --configuration Release --no-build --logger "trx;LogFileName=base-results.trx"
+        cp base-results.trx ../../../base-performance-results.trx
+    
+    - name: Build and test current branch
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+        cd tests/Performance
+        dotnet test --configuration Release --no-build --logger "trx;LogFileName=current-results.trx"
+        cp current-results.trx ../../../current-performance-results.trx
+    
+    - name: Compare performance results
+      run: |
+        echo "Performance Comparison" > comparison.md
+        echo "Base Branch: ${{ steps.get-base-branch.outputs.base_branch }}" >> comparison.md
+        echo "Current Branch: ${{ github.head_ref }}" >> comparison.md
+        echo "" >> comparison.md
+        echo "This is a placeholder for performance comparison logic." >> comparison.md
+        echo "In a real implementation, you would parse the TRX files" >> comparison.md
+        echo "and compare the performance metrics between branches." >> comparison.md
+    
+    - name: Upload comparison results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-comparison-${{ github.run_number }}
+        path: |
+          base-performance-results.trx
+          current-performance-results.trx
+          comparison.md
+
+  performance-alert:
+    needs: performance-benchmark
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Create performance alert
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Performance Test Failure - ${{ github.workflow }}',
+            body: 'Performance tests have failed. Please check the performance results.',
+            labels: ['performance', 'test-failure', 'needs-attention']
+          })
