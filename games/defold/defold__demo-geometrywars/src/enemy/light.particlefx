@@ -1,0 +1,114 @@
+emitters {
+  mode: PLAY_MODE_ONCE
+  duration: 0.2
+  space: EMISSION_SPACE_WORLD
+  tile_source: "/enemy/light_mask.tilesource"
+  animation: "anim"
+  material: "/materials/particlefx_light.material"
+  blend_mode: BLEND_MODE_ADD_ALPHA
+  max_particle_count: 128
+  type: EMITTER_TYPE_SPHERE
+  properties {
+    key: EMITTER_KEY_SPAWN_RATE
+    points {
+      y: 33.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_SIZE_X
+    points {
+      y: 2.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_SIZE_Y
+    points {
+      y: 2.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_LIFE_TIME
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_SPEED
+    points {
+      y: 500.0
+    }
+    spread: 50.0
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_SIZE
+    points {
+      y: 640.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_RED
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_GREEN
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_BLUE
+    points {
+      y: 1.0
+    }
+  }
+  properties {
+    key: EMITTER_KEY_PARTICLE_ALPHA
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_SCALE
+    points {
+      y: 0.7
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_RED
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_GREEN
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_BLUE
+    points {
+      y: 1.0
+    }
+  }
+  particle_properties {
+    key: PARTICLE_KEY_ALPHA
+    points {
+      y: 0.0069249156
+      t_x: 0.9855853
+      t_y: 0.16917957
+    }
+    points {
+      x: 0.17249417
+      y: 0.9610847
+      t_x: 0.27805904
+      t_y: -0.96056396
+    }
+    points {
+      x: 1.0
+      y: 2.4737974E-4
+    }
+  }
+}

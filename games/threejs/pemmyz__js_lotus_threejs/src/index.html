@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobile Viewport Lock -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AMIGA TURBO RACER</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Fullscreen / Mobile Mode Toggle Button (Top-Left) -->
+  <button id="mobile-btn">📱 FULLSCREEN / MOBILE</button>
+
+  <!-- Arcade FPS Counter -->
+  <div id="fps-counter">FPS: 60</div>
+
+  <!-- DEV Menu Dropdown (Top-Right Corner) -->
+  <div id="dev-menu-container">
+    <button id="dev-menu-btn">DEV ▾</button>
+    <div id="dev-menu-dropdown" class="hidden">
+      <!-- Column 1: Core Toggles & Cheats -->
+      <div class="dev-menu-col">
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-pixel-mode">
+          <span>Low-Res Pixel Mode</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-obstacle-damage" checked>
+          <span>Obstacle Damage</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-infinite-armor">
+          <span>Infinite Armor</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-infinite-tires">
+          <span>Infinite Tires</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-infinite-fuel">
+          <span>Infinite Fuel</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-infinite-turbo">
+          <span>Infinite Turbo</span>
+        </label>
+      </div>
+
+      <!-- Column 2: AI Settings & Spawn Actions -->
+      <div class="dev-menu-col">
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-disable-ai-cars">
+          <span>Disable AI Cars</span>
+        </label>
+        <label class="dev-menu-item">
+          <input type="checkbox" id="dev-disable-ai-env">
+          <span>Disable AI Env</span>
+        </label>
+        <div class="dev-menu-separator"></div>
+        <button type="button" id="dev-damage-ai" class="dev-menu-btn-action" style="color:#ff4466; border-color:#ff4466;">💥 Damage AI</button>
+        <button type="button" id="dev-set-50-cars" class="dev-menu-btn-action">🏎️ 50 Cars</button>
+        <button type="button" id="dev-add-5-cars" class="dev-menu-btn-action">⚡ +5 Cars</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scaled Game Container Wrapper -->
+  <div id="game-container">
+    <!-- Screen Viewport Wrapper -->
+    <div id="screen">
+      <div id="game-area">
+        <canvas id="game-canvas"></canvas>
+        <div id="crt-overlay"></div>
+
+        <!-- Horizontal Split-Screen Divider -->
+        <div id="split-divider" class="hidden">
+          <div class="divider-line"></div>
+          <div class="divider-badge">SPLIT DUAL RACE</div>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- Player 1 HUD -->
+        <div id="hud-p1" class="hud-layer hidden">
+          <div class="hud-top-left">
+            <div class="hud-player-tag p1-tag">P1</div>
+            <div class="hud-box">
+              <span class="hud-label">POS</span>
+              <span id="p1-pos" class="hud-value neon-yellow">01/20</span>
+            </div>
+            <div class="hud-box">
+              <span class="hud-label" id="p1-lap-label">LAP</span>
+              <span id="p1-lap" class="hud-value neon-white">1/3</span>
+            </div>
+            <div class="hud-box">
+              <span class="hud-label">TIME</span>
+              <span id="p1-time" class="hud-value neon-cyan">00:00.00</span>
+            </div>
+          </div>
+          <div class="hud-top-right">
+            <div class="hud-bar-group">
+              <span class="hud-label">ARMOR</span>
+              <div class="hud-bar-frame">
+                <div id="p1-health-bar" class="hud-bar-fill health-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">TIRES</span>
+              <div class="hud-bar-frame">
+                <div id="p1-tire-bar" class="hud-bar-fill tire-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">FUEL</span>
+              <div class="hud-bar-frame">
+                <div id="p1-fuel-bar" class="hud-bar-fill fuel-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">TURBO</span>
+              <div class="hud-bar-frame">
+                <div id="p1-turbo-bar" class="hud-bar-fill turbo-fill"></div>
+              </div>
+            </div>
+            <div class="hud-speedometer">
+              <span id="p1-speed" class="speed-digits">000</span>
+              <span class="speed-unit">KM/H</span>
+            </div>
+          </div>
+          <div id="p1-pit-msg" class="hud-center-msg hidden">STOP FOR PITSTOP</div>
+        </div>
+
+        <!-- Player 2 HUD -->
+        <div id="hud-p2" class="hud-layer hud-p2 hidden">
+          <div class="hud-top-left">
+            <div class="hud-player-tag p2-tag">P2</div>
+            <div class="hud-box">
+              <span class="hud-label">POS</span>
+              <span id="p2-pos" class="hud-value neon-yellow">02/20</span>
+            </div>
+            <div class="hud-box">
+              <span class="hud-label" id="p2-lap-label">LAP</span>
+              <span id="p2-lap" class="hud-value neon-white">1/3</span>
+            </div>
+            <div class="hud-box">
+              <span class="hud-label">TIME</span>
+              <span id="p2-time" class="hud-value neon-cyan">00:00.00</span>
+            </div>
+          </div>
+          <div class="hud-top-right">
+            <div class="hud-bar-group">
+              <span class="hud-label">ARMOR</span>
+              <div class="hud-bar-frame">
+                <div id="p2-health-bar" class="hud-bar-fill health-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">TIRES</span>
+              <div class="hud-bar-frame">
+                <div id="p2-tire-bar" class="hud-bar-fill tire-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">FUEL</span>
+              <div class="hud-bar-frame">
+                <div id="p2-fuel-bar" class="hud-bar-fill fuel-fill"></div>
+              </div>
+            </div>
+            <div class="hud-bar-group">
+              <span class="hud-label">TURBO</span>
+              <div class="hud-bar-frame">
+                <div id="p2-turbo-bar" class="hud-bar-fill turbo-fill"></div>
+              </div>
+            </div>
+            <div class="hud-speedometer">
+              <span id="p2-speed" class="speed-digits">000</span>
+              <span class="speed-unit">KM/H</span>
+            </div>
+          </div>
+          <div id="p2-pit-msg" class="hud-center-msg hidden">STOP FOR PITSTOP</div>
+        </div>
+
+        <!-- Minimap / Radar (Bottom-Right Corner) -->
+        <div id="minimap-container" class="hidden">
+          <canvas id="minimap-canvas" width="280" height="280"></canvas>
+        </div>
+
+        <!-- Countdown Overlay -->
+        <div id="countdown-banner" class="hidden">
+          <span id="countdown-text">3</span>
+        </div>
+
+        <!-- Controls Hints Overlay -->
+        <div id="controls-hint" class="hidden">
+          <div class="hint-card">
+            <div class="hint-title p1-color">PLAYER 1</div>
+            <p>ARROWS / TOUCH = DRIVE</p>
+            <p>R-SHIFT / ⚡ = TURBO</p>
+          </div>
+          <div id="hint-p2-card" class="hint-card hidden">
+            <div class="hint-title p2-color">PLAYER 2</div>
+            <p>W A S D = DRIVE</p>
+            <p>SPACE = TURBO</p>
+          </div>
+        </div>
+
+        <!-- Pause Screen Overlay -->
+        <div id="pause-screen" class="menu-screen hidden">
+          <div class="menu-content">
+            <h1 class="glitch-title">PAUSED</h1>
+            <p class="retro-subtitle">RACING SUSPENDED</p>
+            <p class="pause-desc">Game paused while in background. Click or<br>tap to resume.</p>
+            <div class="menu-buttons" style="margin-top: 20px;">
+              <button id="btn-resume-race" class="retro-btn btn-primary">▶ RESUME RACING</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Menu Overlay -->
+        <div id="main-menu" class="menu-screen">
+          <div class="menu-content">
+            <div class="retro-header">
+              <h1 class="glitch-title">AMIGA TURBO RACER</h1>
+              <p class="retro-subtitle">ARCADE &bull; LOW-POLY &bull; SPLIT-SCREEN</p>
+            </div>
+
+            <!-- Map / Circuit Selector -->
+            <div class="menu-config-row">
+              <label for="menu-map-select">CIRCUIT / MAP:</label>
+              <select id="menu-map-select" class="retro-select">
+                <option value="ORIGINAL" selected>ORIGINAL GRAND PRIX</option>
+                <option value="TROPICAL">PACIFIC ATOLL (TROPICAL PALMS)</option>
+                <option value="SERPENTINE">SERPENTINE TWISTS (FOREST)</option>
+                <option value="DUNES">CANYON DUNES (DESERT)</option>
+                <option value="ALPINE">DEVIL'S PEAK (MOUNTAIN)</option>
+                <option value="FJORD">FROZEN FJORD (SNOW)</option>
+                <option value="MIDNIGHT">CYBER VALE (NIGHT)</option>
+                <option value="OVAL">DAYTONA SUPERSPEEDWAY (BANKED OVAL)</option>
+                <option value="LOTUS">LOTUS ENDLESS HIGHWAY (NEVER-ENDING)</option>
+              </select>
+            </div>
+
+            <!-- Dynamic Environment Selector (Visible for ORIGINAL map) -->
+            <div class="menu-config-row" id="menu-env-row">
+              <label for="menu-env-select">ENVIRONMENT:</label>
+              <select id="menu-env-select" class="retro-select">
+                <option value="FOREST" selected>Forest Green</option>
+                <option value="TROPICAL">Tropical Coast (Palms)</option>
+                <option value="DESERT">Desert Sun (Cacti)</option>
+                <option value="MOUNTAIN">Alpine Peak</option>
+                <option value="SNOW">Snow Ridge (Snow Pines)</option>
+                <option value="NIGHT">Midnight Run</option>
+              </select>
+            </div>
+
+            <!-- Main Menu Lap Selector -->
+            <div class="menu-config-row" id="menu-laps-row">
+              <label for="menu-laps-select">RACE LAPS:</label>
+              <select id="menu-laps-select" class="retro-select">
+                <option value="1">1 Lap (Sprint)</option>
+                <option value="2">2 Laps</option>
+                <option value="3" selected>3 Laps (Standard)</option>
+                <option value="5">5 Laps (Endurance)</option>
+                <option value="10">10 Laps (Grand Prix)</option>
+              </select>
+            </div>
+
+            <!-- Counter-Clockwise / Reversed Checkbox Toggle -->
+            <div class="menu-config-row" id="menu-ccw-row">
+              <label for="menu-counter-clockwise" id="menu-counter-clockwise-label">COUNTER-CLOCKWISE:</label>
+              <input type="checkbox" id="menu-counter-clockwise" style="accent-color: #00ffff; width: 18px; height: 18px; cursor: pointer;">
+            </div>
+
+            <!-- AI Opponents Configuration Dropdown -->
+            <div class="menu-config-row">
+              <label for="menu-ai-count">AI OPPONENTS:</label>
+              <select id="menu-ai-count" class="retro-select">
+                <option value="0">0 (Solo)</option>
+                <option value="1">1 AI</option>
+                <option value="3" selected>3 AI (Default)</option>
+                <option value="5">5 AI</option>
+                <option value="9">9 AI</option>
+                <option value="19">19 AI (Full Grid)</option>
+                <option value="50">50 AI (Dev Chaos)</option>
+              </select>
+            </div>
+
+            <div class="seed-badge">
+              TRACK SEED: <span id="menu-seed-display">849271</span>
+            </div>
+
+            <div class="menu-buttons">
+              <button id="btn-single-player" class="retro-btn btn-primary">START SINGLE PLAYER</button>
+              <button id="btn-two-player" class="retro-btn btn-secondary">START 2 PLAYER SPLIT SCREEN</button>
+              <button id="btn-random-track" class="retro-btn">NEW RANDOM TRACK</button>
+              <button id="btn-practice" class="retro-btn">PRACTICE MODE</button>
+              <button id="btn-options" class="retro-btn">OPTIONS</button>
+            </div>
+
+            <div class="menu-footer">
+              <span>© 1993-2026 RETRO MOTORS AMIGA TRIBUTE</span>
+              <span id="audio-status-tag">CLICK ANYWHERE FOR AUDIO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options Screen Overlay -->
+        <div id="options-menu" class="menu-screen hidden">
+          <div class="menu-content">
+            <h2>RACE CONFIGURATION</h2>
+            <div class="option-row">
+              <label>PIXEL ART MODE:</label>
+              <input type="checkbox" id="opt-pixel-mode" style="accent-color: #00ffff; width: 18px; height: 18px; cursor: pointer;">
+            </div>
+            <div class="option-row">
+              <label>QUALITY LEVEL:</label>
+              <select id="opt-quality" class="retro-select">
+                <option value="HIGH" selected>HIGH (Full Scenery)</option>
+                <option value="MEDIUM">MEDIUM (Balanced)</option>
+                <option value="LOW">LOW (Fastest)</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label>ENVIRONMENT:</label>
+              <select id="opt-env" class="retro-select">
+                <option value="FOREST" selected>Forest Green</option>
+                <option value="TROPICAL">Tropical Coast (Palms)</option>
+                <option value="DESERT">Desert Sun</option>
+                <option value="MOUNTAIN">Alpine Peak</option>
+                <option value="SNOW">Snow Ridge</option>
+                <option value="NIGHT">Midnight Run</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label>LAPS:</label>
+              <select id="opt-laps" class="retro-select">
+                <option value="1">1 Lap</option>
+                <option value="2">2 Laps</option>
+                <option value="3" selected>3 Laps</option>
+                <option value="5">5 Laps</option>
+                <option value="10">10 Laps</option>
+              </select>
+            </div>
+            <div class="option-row">
+              <label>OBSTACLE DAMAGE:</label>
+              <input type="checkbox" id="opt-damage" checked style="accent-color: #00ff66; width: 18px; height: 18px; cursor: pointer;">
+            </div>
+            <div class="option-row">
+              <label>SOUND VOLUME:</label>
+              <input type="range" id="opt-volume" min="0" max="100" value="80" class="retro-slider">
+            </div>
+            <div class="option-row">
+              <label>CAMERA SHAKE:</label>
+              <input type="checkbox" id="opt-shake" checked>
+            </div>
+            <button id="btn-options-back" class="retro-btn btn-primary" style="margin-top:16px;">BACK TO MENU</button>
+          </div>
+        </div>
+
+        <!-- Results Screen Overlay -->
+        <div id="results-screen" class="menu-screen hidden">
+          <div class="menu-content">
+            <h2 id="results-title" class="neon-yellow">RACE FINISHED!</h2>
+            <div id="results-board" class="results-table"></div>
+            <div class="menu-buttons" style="margin-top: 20px;">
+              <button id="btn-results-retry" class="retro-btn btn-primary">REMATCH</button>
+              <button id="btn-results-new" class="retro-btn btn-secondary">NEW RANDOM TRACK</button>
+              <button id="btn-results-menu" class="retro-btn">MAIN MENU</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Touch Controls Overlay -->
+  <div id="mobile-controls">
+    <div id="mobile-dpad">
+      <button id="mobile-left" class="mobile-control-btn">◀</button>
+      <button id="mobile-right" class="mobile-control-btn">▶</button>
+    </div>
+    <div id="mobile-action">
+      <button id="mobile-turbo" class="mobile-control-btn btn-turbo">⚡</button>
+      <button id="mobile-down" class="mobile-control-btn btn-brake">▼</button>
+      <button id="mobile-up" class="mobile-control-btn btn-gas">▲</button>
+    </div>
+  </div>
+
+  <!-- Game Scripts (Ordered) -->
+  <script src="audio.js"></script>
+  <script src="clouds.js"></script>
+  <script src="pixelMode.js"></script>
+  
+  <!-- Modular Track System -->
+  <script src="trackProps.js"></script>
+  <script src="trackGenerator.js"></script>
+  <script src="trackLotus.js"></script>
+  <script src="track.js"></script>
+
+  <!-- Vehicles & Main Game Controller -->
+  <script src="cars.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
