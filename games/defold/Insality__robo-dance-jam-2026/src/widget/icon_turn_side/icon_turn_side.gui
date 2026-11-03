@@ -1,0 +1,143 @@
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.34117648
+    y: 0.34901962
+    z: 0.34509805
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_80"
+  id: "panel"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  color {
+    x: 0.34117648
+    y: 0.34901962
+    z: 0.34509805
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "group"
+  parent: "panel"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.28627452
+    y: 0.6862745
+    z: 0.44705883
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_segment_45_80"
+  id: "panel_side"
+  parent: "group"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.7
+    y: 0.7
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_turn_move"
+  id: "icon_turn"
+  parent: "group"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  type: TYPE_BOX
+  id: "cancel"
+  parent: "panel"
+  inherit_alpha: true
+  alpha: 0.0
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  color {
+    y: 0.47843137
+    z: 0.47843137
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_cross"
+  id: "icon_cancel"
+  parent: "cancel"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "empty"
+  parent: "root"
+  inherit_alpha: true
+  alpha: 0.0
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 0.2
+    y: 0.2
+  }
+  color {
+    x: 0.34117648
+    y: 0.34901962
+    z: 0.34509805
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_80"
+  id: "circle"
+  parent: "empty"
+  inherit_alpha: true
+  alpha: 0.8
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  color {
+    x: 0.34117648
+    y: 0.34901962
+    z: 0.34509805
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_80"
+  id: "circle2"
+  parent: "empty"
+  inherit_alpha: true
+  alpha: 0.0
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,129 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 460.0
+    y: 190.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 460.0
+    y: 190.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_yellow"
+  id: "button"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 70.0
+    y: 70.0
+    z: 70.0
+    w: 70.0
+  }
+}
+nodes {
+  position {
+    x: -245.0
+  }
+  size {
+    x: 490.0
+    y: 190.0
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "button_green_mask"
+  pivot: PIVOT_W
+  parent: "button"
+  inherit_alpha: true
+  clipping_mode: CLIPPING_MODE_STENCIL
+}
+nodes {
+  position {
+    x: 245.0
+  }
+  size {
+    x: 460.0
+    y: 190.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_action"
+  id: "button_green"
+  parent: "button_green_mask"
+  inherit_alpha: true
+  slice9 {
+    x: 80.0
+    y: 80.0
+    z: 80.0
+    w: 80.0
+  }
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "text_animated"
+  parent: "button"
+  inherit_alpha: true
+  template: "/widget/text_animated/text_animated.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "text_animated/root"
+  parent: "text_animated"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  id: "text_animated/text"
+  parent: "text_animated/root"
+  alpha: 0.7
+  overridden_fields: 5
+  overridden_fields: 30
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -60.0
+  }
+  type: TYPE_TEMPLATE
+  id: "button_input_hint"
+  parent: "button"
+  inherit_alpha: true
+  template: "/widget/button_input_hint/button_input_hint.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_input_hint/root"
+  parent: "button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_input_hint/panel"
+  parent: "button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "button_input_hint/text"
+  parent: "button_input_hint/root"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

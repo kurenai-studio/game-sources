@@ -1,0 +1,63 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 140.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 280.0
+    y: 160.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_action"
+  id: "button"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 70.0
+    y: 70.0
+    z: 70.0
+    w: 70.0
+  }
+}
+nodes {
+  size {
+    x: 160.0
+    y: 50.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Auto"
+  font: "text"
+  id: "text"
+  line_break: true
+  parent: "button"
+  layer: "text"
+  inherit_alpha: true
+  alpha: 0.7
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

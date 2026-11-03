@@ -1,0 +1,78 @@
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 400.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 400.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "group"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: -1.0
+  }
+  color {
+    x: 0.5176471
+    y: 0.6509804
+    z: 0.54509807
+  }
+  type: TYPE_BOX
+  texture: "gui/sector_outer"
+  id: "outer"
+  parent: "group"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -1.0
+  }
+  color {
+    x: 0.5764706
+    y: 0.7254902
+    z: 0.6039216
+  }
+  type: TYPE_BOX
+  texture: "gui/sector_inner"
+  id: "inner"
+  parent: "group"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 80.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_round"
+  id: "icon_arrow"
+  pivot: PIVOT_S
+  parent: "group"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+layers {
+  name: "gui"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

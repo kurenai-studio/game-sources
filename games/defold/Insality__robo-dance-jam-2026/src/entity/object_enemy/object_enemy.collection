@@ -1,0 +1,217 @@
+name: "object_enemy"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  children: "shadow"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  children: "arms"
+  children: "head"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"enemy_body\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 97.0\\n"
+  "  y: 91.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -18.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 53.0
+    z: 0.5
+  }
+}
+embedded_instances {
+  id: "shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"enemy_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 113.0\\n"
+  "  y: 56.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: -0.003
+  }
+}
+embedded_instances {
+  id: "head"
+  children: "eye"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"enemy_head\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 82.0\\n"
+  "  y: 71.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -18.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 33.0
+    z: 0.001
+  }
+}
+embedded_instances {
+  id: "arms"
+  children: "arm_left"
+  children: "arm_right"
+  data: ""
+  position {
+    z: -0.001
+  }
+}
+embedded_instances {
+  id: "arm_left"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"enemy_arm\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 25.0\\n"
+  "  y: 46.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: -4.0\n"
+  "    y: -16.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: -1.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    x: -23.0
+    y: 10.0
+  }
+}
+embedded_instances {
+  id: "arm_right"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"enemy_arm\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 25.0\\n"
+  "  y: 46.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: 4.0\n"
+  "    y: -16.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    x: 23.0
+    y: 10.0
+  }
+}
+embedded_instances {
+  id: "eye"
+  children: "eye_inside"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_eye_outside\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 36.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -4.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: 0.9\n"
+  "    y: 0.9\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: -2.0
+    z: 0.002
+  }
+}
+embedded_instances {
+  id: "eye_inside"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_eye_inside\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 22.0\\n"
+  "  y: 22.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.9490196108818054\\n"
+  "    v: 0.5882353186607361\\n"
+  "    v: 0.6392157077789307\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  scale {\n"
+  "    x: 0.75\n"
+  "    y: 0.75\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    z: 1.0E-4
+  }
+}

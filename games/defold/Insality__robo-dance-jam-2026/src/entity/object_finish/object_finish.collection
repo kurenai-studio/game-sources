@@ -1,0 +1,129 @@
+name: "object_finish"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "group"
+  data: ""
+}
+embedded_instances {
+  id: "group"
+  children: "background"
+  children: "ring"
+  children: "ring_shadow"
+  children: "star"
+  children: "star_shadow"
+  data: ""
+}
+embedded_instances {
+  id: "background"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"finish_back\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "ring"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"finish_ring\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 115.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 2.0
+    z: 0.003
+  }
+}
+embedded_instances {
+  id: "star"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"finish_star\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 115.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 5.5\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 1.0
+    z: 0.004
+  }
+}
+embedded_instances {
+  id: "ring_shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"finish_ring_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 115.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: -6.0
+    z: 0.001
+  }
+}
+embedded_instances {
+  id: "star_shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"finish_star_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 125.0\\n"
+  "  y: 115.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 5.5\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: -8.0
+    z: 0.002
+  }
+}

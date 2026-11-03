@@ -1,0 +1,180 @@
+nodes {
+  size {
+    x: 400.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 400.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "sectors"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "sector_up"
+  parent: "sectors"
+  inherit_alpha: true
+  template: "/widget/side_selector/side_selector_sector.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_up/root"
+  parent: "sector_up"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_up/group"
+  parent: "sector_up/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_up/outer"
+  parent: "sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_up/inner"
+  parent: "sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_up/icon_arrow"
+  parent: "sector_up/group"
+  template_node_child: true
+}
+nodes {
+  rotation {
+    z: 90.0
+  }
+  type: TYPE_TEMPLATE
+  id: "sector_left"
+  parent: "sectors"
+  inherit_alpha: true
+  template: "/widget/side_selector/side_selector_sector.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_left/root"
+  parent: "sector_left"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_left/group"
+  parent: "sector_left/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_left/outer"
+  parent: "sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_left/inner"
+  parent: "sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_left/icon_arrow"
+  parent: "sector_left/group"
+  template_node_child: true
+}
+nodes {
+  rotation {
+    z: 180.0
+  }
+  type: TYPE_TEMPLATE
+  id: "sector_down"
+  parent: "sectors"
+  inherit_alpha: true
+  template: "/widget/side_selector/side_selector_sector.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_down/root"
+  parent: "sector_down"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_down/group"
+  parent: "sector_down/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_down/outer"
+  parent: "sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_down/inner"
+  parent: "sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_down/icon_arrow"
+  parent: "sector_down/group"
+  template_node_child: true
+}
+nodes {
+  rotation {
+    z: 270.0
+  }
+  type: TYPE_TEMPLATE
+  id: "sector_right"
+  parent: "sectors"
+  inherit_alpha: true
+  template: "/widget/side_selector/side_selector_sector.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_right/root"
+  parent: "sector_right"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_right/group"
+  parent: "sector_right/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_right/outer"
+  parent: "sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_right/inner"
+  parent: "sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "sector_right/icon_arrow"
+  parent: "sector_right/group"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,229 @@
+name: "object_player"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  children: "shadow"
+  children: "shine"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  children: "arms"
+  children: "head"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_body\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -16.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 56.0
+    z: 0.5
+  }
+}
+embedded_instances {
+  id: "head"
+  children: "eye"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_head\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 36.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -7.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 54.0
+    z: 0.001
+  }
+}
+embedded_instances {
+  id: "arms"
+  children: "arm_left"
+  children: "arm_right"
+  data: ""
+  position {
+    z: -0.001
+  }
+}
+embedded_instances {
+  id: "arm_left"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_arm\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 25.0\\n"
+  "  y: 46.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: -4.0\n"
+  "    y: -16.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: -1.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    x: -31.0
+    y: 12.0
+  }
+}
+embedded_instances {
+  id: "arm_right"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_arm\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 82.0\\n"
+  "  y: 71.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    x: 4.0\n"
+  "    y: -16.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    x: 31.0
+    y: 12.0
+  }
+}
+embedded_instances {
+  id: "eye"
+  children: "eye_inside"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_eye_outside\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 188.0\\n"
+  "  y: 198.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -4.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 1.0
+    z: 0.002
+  }
+}
+embedded_instances {
+  id: "shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 25.0\\n"
+  "  y: 46.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: -0.003
+  }
+}
+embedded_instances {
+  id: "shine"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_shine\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 113.0\\n"
+  "  y: 56.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 80.0
+    z: -0.002
+  }
+}
+embedded_instances {
+  id: "eye_inside"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"player_eye_inside\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 36.0\\n"
+  "  y: 36.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.9058823585510254\\n"
+  "    v: 0.9137254953384399\\n"
+  "    v: 0.772549033164978\\n"
+  "    v: 1.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 1.0E-4
+  }
+}

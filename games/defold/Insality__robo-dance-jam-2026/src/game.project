@@ -1,0 +1,120 @@
+[bootstrap]
+main_collection = /loader.collectionc
+render = /materials/render/game.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 1920
+height = 1080
+high_dpi = 1
+update_frequency = 60
+
+[android]
+input_method = HiddenInputField
+
+[project]
+title = Robo Dance
+developer = Insality
+publisher = Insality Games
+custom_resources = /assets/locales,/tiled/levels,/tiled/tilesets
+version = 1.0
+dependencies#0 = https://github.com/Insality/asset-store/archive/refs/tags/3.zip
+dependencies#1 = https://github.com/Insality/druid/archive/refs/tags/1.2.2.zip
+dependencies#2 = https://github.com/Insality/panthera/archive/refs/tags/runtime.6.zip
+dependencies#3 = https://github.com/Insality/detiled/archive/refs/tags/3.zip
+dependencies#4 = https://github.com/Insality/defold-event/archive/refs/tags/16.zip
+dependencies#5 = https://github.com/Insality/defold-tweener/archive/refs/tags/6.zip
+dependencies#6 = https://github.com/Insality/defold-saver/archive/refs/tags/6.zip
+dependencies#7 = https://github.com/Insality/defold-lang/archive/refs/tags/4.zip
+dependencies#8 = https://github.com/Insality/defold-log/archive/refs/tags/6.zip
+dependencies#9 = https://github.com/subsoap/defos/archive/refs/tags/v2.8.7.zip
+dependencies#10 = https://github.com/britzl/deftest/archive/refs/tags/2.8.0.zip
+dependencies#11 = https://github.com/Insality/decore/archive/refs/tags/4.zip
+
+[gui]
+max_particlefx_count = 16
+max_count = 32
+max_particle_count = 1024
+
+[network]
+http_timeout = 10.0
+http_thread_count = 2
+
+[tilemap]
+max_count = 0
+max_tile_count = 0
+
+[sprite]
+max_count = 32000
+
+[particle_fx]
+max_count = 32
+max_emitter_count = 32
+
+[mesh]
+max_count = 0
+
+[label]
+max_count = 16384
+
+[html5]
+heap_size = 800
+scale_mode = stretch
+show_made_with_defold = 0
+show_console_banner = 0
+show_fullscreen_button = 0
+cssfile = /builtins/manifests/web/dark_theme.css
+wasm_streaming = 1
+splash_image = /media/splash_image.png
+
+[render]
+clear_color_red = 0.09019608
+clear_color_blue = 0.156863
+clear_color_green = 0.09019608
+
+[input]
+game_binding = /builtins/input/all.input_bindingc
+use_accelerometer = 0
+
+[native_extension]
+app_manifest = /assets/system/game.appmanifest
+
+[physics]
+debug_alpha = 0.4
+gravity_y = 0.0
+ray_cast_limit_3d = 0
+scale = 0.02
+use_fixed_timestep = 1
+
+[collectionfactory]
+max_count = 32
+
+[collection]
+max_instances = 32000
+
+[collection_proxy]
+max_count = 4
+
+[factory]
+max_count = 32
+
+[model]
+max_count = 0
+
+[sound]
+max_sound_instances = 128
+
+[log]
+level = TRACE
+level_release = ERROR
+info_block = %levelname | %memory_tracking [%logger]
+message_block = %space%message: %context %tab<%function>
+logger_block_width = 14
+max_log_length = 1024
+inspect_depth = 1
+
+[event]
+event_mode = xpcall
+

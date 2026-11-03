@@ -1,0 +1,131 @@
+nodes {
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "group"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -750.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star1"
+  parent: "group"
+  inherit_alpha: true
+  template: "/entity/background/background_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star1/root"
+  parent: "background_star1"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star1/star"
+  parent: "background_star1/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -250.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star2"
+  parent: "group"
+  inherit_alpha: true
+  template: "/entity/background/background_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star2/root"
+  parent: "background_star2"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star2/star"
+  parent: "background_star2/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 250.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star3"
+  parent: "group"
+  inherit_alpha: true
+  template: "/entity/background/background_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star3/root"
+  parent: "background_star3"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star3/star"
+  parent: "background_star3/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 750.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star4"
+  parent: "group"
+  inherit_alpha: true
+  template: "/entity/background/background_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star4/root"
+  parent: "background_star4"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star4/star"
+  parent: "background_star4/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -1250.0
+  }
+  type: TYPE_TEMPLATE
+  id: "background_star5"
+  parent: "group"
+  inherit_alpha: true
+  template: "/entity/background/background_star.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star5/root"
+  parent: "background_star5"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "background_star5/star"
+  parent: "background_star5/root"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

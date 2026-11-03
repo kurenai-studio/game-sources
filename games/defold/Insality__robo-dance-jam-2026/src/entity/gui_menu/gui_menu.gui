@@ -1,0 +1,231 @@
+script: "/druid/druid_widget.gui_script"
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+textures {
+  name: "druid"
+  texture: "/druid/druid.atlas"
+}
+textures {
+  name: "gui_menu"
+  texture: "/entity/gui_menu/assets/gui_menu.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  adjust_mode: ADJUST_MODE_STRETCH
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -150.0
+  }
+  size {
+    x: 550.0
+    y: 230.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_action"
+  id: "button_play"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 80.0
+    y: 80.0
+    z: 80.0
+    w: 80.0
+  }
+}
+nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  color {
+    x: 0.25882354
+    y: 0.34509805
+    z: 0.23137255
+  }
+  type: TYPE_TEXT
+  text: "Play"
+  font: "text"
+  id: "text_play"
+  parent: "button_play"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    y: -380.0
+  }
+  size {
+    x: 450.0
+    y: 180.0
+  }
+  type: TYPE_BOX
+  texture: "gui/button_yellow"
+  id: "button_levels"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    x: 80.0
+    y: 80.0
+    z: 80.0
+    w: 80.0
+  }
+}
+nodes {
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  color {
+    x: 0.4627451
+    y: 0.40392157
+    z: 0.30980393
+  }
+  type: TYPE_TEXT
+  text: "levels"
+  font: "text"
+  id: "text_levels"
+  parent: "button_levels"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "NE_Anchor"
+  pivot: PIVOT_NE
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    y: -100.0
+  }
+  color {
+    x: 0.42745098
+    y: 0.47843137
+    z: 0.72156864
+  }
+  type: TYPE_BOX
+  texture: "gui/button_side"
+  id: "button_menu"
+  pivot: PIVOT_E
+  parent: "NE_Anchor"
+  inherit_alpha: true
+  slice9 {
+    x: 32.0
+    y: 32.0
+    z: 32.0
+    w: 32.0
+  }
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -70.0
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_menu"
+  id: "icon_menu"
+  parent: "button_menu"
+  inherit_alpha: true
+  alpha: 0.5
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 220.0
+  }
+  type: TYPE_BOX
+  texture: "gui_menu/logo"
+  id: "logo"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 3.0
+    y: 3.0
+  }
+  type: TYPE_TEMPLATE
+  id: "text_animated"
+  parent: "logo"
+  inherit_alpha: true
+  template: "/widget/text_animated/text_animated.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "text_animated/root"
+  parent: "text_animated"
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 400.0
+    y: 50.0
+  }
+  color {
+    x: 0.85490197
+    z: 0.9843137
+  }
+  type: TYPE_TEXT
+  text: "Robo Dance"
+  id: "text_animated/text"
+  parent: "text_animated/root"
+  outline_alpha: 0.1
+  overridden_fields: 4
+  overridden_fields: 5
+  overridden_fields: 8
+  overridden_fields: 31
+  overridden_fields: 37
+  template_node_child: true
+  text_tracking: 0.15
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,0 +1,5 @@
+go.property("particle_name", hash(""))
+
+function init(self)
+	particlefx.play(msg.url(nil, nil, self.particle_name))
+end

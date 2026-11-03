@@ -1,0 +1,669 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 600.0
+    y: 1010.0
+  }
+  color {
+    x: 0.13124587
+    y: 0.15767443
+    z: 0.28100777
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: 140.0
+  }
+  size {
+    x: 600.0
+    y: 500.0
+  }
+  type: TYPE_BOX
+  id: "layout_action"
+  parent: "root"
+  inherit_alpha: true
+  slice9 {
+    w: 40.0
+  }
+  visible: false
+}
+nodes {
+  position {
+    y: 80.0
+  }
+  type: TYPE_TEMPLATE
+  id: "turn_action_card"
+  parent: "layout_action"
+  inherit_alpha: true
+  template: "/widget/turn_action_card/turn_action_card.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/root"
+  parent: "turn_action_card"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/group_description"
+  parent: "turn_action_card/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "turn_action_card/text_description"
+  parent: "turn_action_card/group_description"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "turn_action_card/text_hint"
+  parent: "turn_action_card/group_description"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_group"
+  parent: "turn_action_card/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/fx_hint"
+  parent: "turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/side_selector"
+  parent: "turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/root"
+  parent: "turn_action_card/side_selector"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sectors"
+  parent: "turn_action_card/side_selector/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/side_selector/sector_up"
+  parent: "turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_up/root"
+  parent: "turn_action_card/side_selector/sector_up"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_up/group"
+  parent: "turn_action_card/side_selector/sector_up/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_up/outer"
+  parent: "turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_up/inner"
+  parent: "turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_up/icon_arrow"
+  parent: "turn_action_card/side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/side_selector/sector_left"
+  parent: "turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_left/root"
+  parent: "turn_action_card/side_selector/sector_left"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_left/group"
+  parent: "turn_action_card/side_selector/sector_left/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_left/outer"
+  parent: "turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_left/inner"
+  parent: "turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_left/icon_arrow"
+  parent: "turn_action_card/side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/side_selector/sector_down"
+  parent: "turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_down/root"
+  parent: "turn_action_card/side_selector/sector_down"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_down/group"
+  parent: "turn_action_card/side_selector/sector_down/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_down/outer"
+  parent: "turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_down/inner"
+  parent: "turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_down/icon_arrow"
+  parent: "turn_action_card/side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/side_selector/sector_right"
+  parent: "turn_action_card/side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_right/root"
+  parent: "turn_action_card/side_selector/sector_right"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_right/group"
+  parent: "turn_action_card/side_selector/sector_right/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_right/outer"
+  parent: "turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_right/inner"
+  parent: "turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/side_selector/sector_right/icon_arrow"
+  parent: "turn_action_card/side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/icon_turn_action"
+  parent: "turn_action_card/icon_group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/root"
+  parent: "turn_action_card/icon_turn_action"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/shadow"
+  parent: "turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/panel"
+  parent: "turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/back"
+  parent: "turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/outline"
+  parent: "turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/icon"
+  parent: "turn_action_card/icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "turn_action_card/icon_turn_action/button_input_hint"
+  parent: "turn_action_card/icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/button_input_hint/root"
+  parent: "turn_action_card/icon_turn_action/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "turn_action_card/icon_turn_action/button_input_hint/panel"
+  parent: "turn_action_card/icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "turn_action_card/icon_turn_action/button_input_hint/text"
+  parent: "turn_action_card/icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 21.0
+    y: -210.0
+  }
+  type: TYPE_TEMPLATE
+  id: "panel_turns_plan"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/panel_turns_plan/panel_turns_plan.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/root"
+  parent: "panel_turns_plan"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/panel_turns"
+  parent: "panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/panel_background"
+  parent: "panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/layout_turns"
+  parent: "panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "panel_turns_plan/icon_turn_side"
+  parent: "panel_turns_plan/layout_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/root"
+  parent: "panel_turns_plan/icon_turn_side"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/panel"
+  parent: "panel_turns_plan/icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/group"
+  parent: "panel_turns_plan/icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/panel_side"
+  parent: "panel_turns_plan/icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/icon_turn"
+  parent: "panel_turns_plan/icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/cancel"
+  parent: "panel_turns_plan/icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/icon_cancel"
+  parent: "panel_turns_plan/icon_turn_side/cancel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/empty"
+  parent: "panel_turns_plan/icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/circle"
+  parent: "panel_turns_plan/icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_side/circle2"
+  parent: "panel_turns_plan/icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/arrow_selected"
+  parent: "panel_turns_plan/panel_turns"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_selected_player"
+  parent: "panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_player_head"
+  parent: "panel_turns_plan/icon_selected_player"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_eye_outside"
+  parent: "panel_turns_plan/icon_player_head"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_eye_inside"
+  parent: "panel_turns_plan/icon_eye_outside"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "panel_turns_plan/text_counter"
+  parent: "panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "panel_turns_plan/icon_turn_skip"
+  parent: "panel_turns_plan/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/root"
+  parent: "panel_turns_plan/icon_turn_skip"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/shadow"
+  parent: "panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/panel"
+  parent: "panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/back"
+  parent: "panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/outline"
+  parent: "panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/icon"
+  parent: "panel_turns_plan/icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "panel_turns_plan/icon_turn_skip/button_input_hint"
+  parent: "panel_turns_plan/icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  parent: "panel_turns_plan/icon_turn_skip/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "panel_turns_plan/icon_turn_skip/button_input_hint/panel"
+  parent: "panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "panel_turns_plan/icon_turn_skip/button_input_hint/text"
+  parent: "panel_turns_plan/icon_turn_skip/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    y: -420.0
+  }
+  type: TYPE_TEMPLATE
+  id: "button_plan_execute"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/button_plan_execute/button_plan_execute.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/root"
+  parent: "button_plan_execute"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/button"
+  parent: "button_plan_execute/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/button_green_mask"
+  parent: "button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/button_green"
+  parent: "button_plan_execute/button_green_mask"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "button_plan_execute/text_animated"
+  parent: "button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/text_animated/root"
+  parent: "button_plan_execute/text_animated"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "button_plan_execute/text_animated/text"
+  parent: "button_plan_execute/text_animated/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "button_plan_execute/button_input_hint"
+  parent: "button_plan_execute/button"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/button_input_hint/root"
+  parent: "button_plan_execute/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_execute/button_input_hint/panel"
+  parent: "button_plan_execute/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "button_plan_execute/button_input_hint/text"
+  parent: "button_plan_execute/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 360.0
+    y: -420.0
+  }
+  type: TYPE_TEMPLATE
+  id: "button_plan_mode"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/button_mode/button_plan_mode.gui"
+  enabled: false
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_mode/root"
+  parent: "button_plan_mode"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "button_plan_mode/button"
+  parent: "button_plan_mode/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "button_plan_mode/text"
+  parent: "button_plan_mode/button"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -269.0
+    y: -311.0
+  }
+  scale {
+    x: 0.5
+    y: 0.5
+  }
+  type: TYPE_TEMPLATE
+  id: "health_bar"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/health_bar/health_bar.gui"
+}
+nodes {
+  position {
+    x: 9.0
+    y: 20.0
+  }
+  type: TYPE_BOX
+  id: "health_bar/root"
+  parent: "health_bar"
+  overridden_fields: 1
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "health_bar/heart_1"
+  parent: "health_bar/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "health_bar/heart_2"
+  parent: "health_bar/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "health_bar/heart_3"
+  parent: "health_bar/root"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

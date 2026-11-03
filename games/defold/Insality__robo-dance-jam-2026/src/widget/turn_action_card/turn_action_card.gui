@@ -1,0 +1,341 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 700.0
+    y: 140.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: -80.0
+  }
+  size {
+    x: 395.0
+    y: 130.0
+  }
+  type: TYPE_BOX
+  id: "group_description"
+  pivot: PIVOT_W
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 5.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 400.0
+    y: 70.0
+  }
+  type: TYPE_TEXT
+  text: "Move 1 tile"
+  font: "text"
+  id: "text_description"
+  pivot: PIVOT_W
+  parent: "group_description"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    x: 5.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
+  }
+  size {
+    x: 400.0
+    y: 70.0
+  }
+  type: TYPE_TEXT
+  text: "Drag to apply"
+  font: "text"
+  id: "text_hint"
+  pivot: PIVOT_W
+  parent: "group_description"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+}
+nodes {
+  position {
+    x: -180.0
+  }
+  size {
+    x: 200.0
+    y: 200.0
+  }
+  type: TYPE_BOX
+  id: "icon_group"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  color {
+    x: 0.5764706
+    y: 0.7254902
+    z: 0.6039216
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_130_outline_10"
+  id: "fx_hint"
+  parent: "icon_group"
+  inherit_alpha: true
+  alpha: 0.0
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "side_selector"
+  parent: "icon_group"
+  inherit_alpha: true
+  template: "/widget/side_selector/side_selector.gui"
+  enabled: false
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/root"
+  parent: "side_selector"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sectors"
+  parent: "side_selector/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "side_selector/sector_up"
+  parent: "side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_up/root"
+  parent: "side_selector/sector_up"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_up/group"
+  parent: "side_selector/sector_up/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_up/outer"
+  parent: "side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_up/inner"
+  parent: "side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_up/icon_arrow"
+  parent: "side_selector/sector_up/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "side_selector/sector_left"
+  parent: "side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_left/root"
+  parent: "side_selector/sector_left"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_left/group"
+  parent: "side_selector/sector_left/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_left/outer"
+  parent: "side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_left/inner"
+  parent: "side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_left/icon_arrow"
+  parent: "side_selector/sector_left/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "side_selector/sector_down"
+  parent: "side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_down/root"
+  parent: "side_selector/sector_down"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_down/group"
+  parent: "side_selector/sector_down/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_down/outer"
+  parent: "side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_down/inner"
+  parent: "side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_down/icon_arrow"
+  parent: "side_selector/sector_down/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "side_selector/sector_right"
+  parent: "side_selector/sectors"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_right/root"
+  parent: "side_selector/sector_right"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_right/group"
+  parent: "side_selector/sector_right/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_right/outer"
+  parent: "side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_right/inner"
+  parent: "side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "side_selector/sector_right/icon_arrow"
+  parent: "side_selector/sector_right/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "icon_turn_action"
+  parent: "icon_group"
+  inherit_alpha: true
+  template: "/widget/icon_turn_action/icon_turn_action.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/root"
+  parent: "icon_turn_action"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/shadow"
+  parent: "icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/panel"
+  parent: "icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/back"
+  parent: "icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/outline"
+  parent: "icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/icon"
+  parent: "icon_turn_action/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "icon_turn_action/button_input_hint"
+  parent: "icon_turn_action/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/button_input_hint/root"
+  parent: "icon_turn_action/button_input_hint"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_action/button_input_hint/panel"
+  parent: "icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  id: "icon_turn_action/button_input_hint/text"
+  parent: "icon_turn_action/button_input_hint/root"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

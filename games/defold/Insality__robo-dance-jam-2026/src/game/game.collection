@@ -1,0 +1,29 @@
+name: "game"
+instances {
+  id: "entity_camera"
+  prototype: "/system/camera/camera_entity.go"
+  position {
+    z: 10.0
+  }
+}
+instances {
+  id: "entities"
+  prototype: "/entity/entities.go"
+}
+collection_instances {
+  id: "music"
+  collection: "/assets/music/music.collection"
+}
+collection_instances {
+  id: "sound"
+  collection: "/assets/sounds/sound.collection"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "game"
+  data: "components {\n"
+  "  id: \"game\"\n"
+  "  component: \"/game/game.script\"\n"
+  "}\n"
+  ""
+}

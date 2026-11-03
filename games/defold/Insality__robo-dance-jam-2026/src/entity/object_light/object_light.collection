@@ -1,0 +1,42 @@
+name: "object_light"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"object_light\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "blend_mode: BLEND_MODE_SCREEN\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 0.2538759708404541\\n"
+  "    v: 0.939268946647644\\n"
+  "    v: 1.0\\n"
+  "    v: 0.10869564861059189\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    z: 4.0\n"
+  "  }\n"
+  "  scale {\n"
+  "    x: 1.4\n"
+  "    y: 1.3\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    z: -0.1
+  }
+}

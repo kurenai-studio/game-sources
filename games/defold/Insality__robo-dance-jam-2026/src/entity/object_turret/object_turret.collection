@@ -1,0 +1,131 @@
+name: "object_turret"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "body"
+  data: ""
+}
+embedded_instances {
+  id: "body"
+  children: "group_head"
+  children: "group_pipe"
+  children: "group_shadow"
+  children: "tile"
+  data: ""
+}
+embedded_instances {
+  id: "group_pipe"
+  children: "pipe"
+  data: ""
+  position {
+    y: 4.0
+    z: 0.002
+  }
+}
+embedded_instances {
+  id: "group_head"
+  children: "head"
+  data: ""
+  position {
+    x: -1.0
+    y: 34.0
+    z: 0.003
+  }
+}
+embedded_instances {
+  id: "group_shadow"
+  children: "shadow"
+  data: ""
+  position {
+    y: 3.0
+    z: 0.001
+  }
+}
+embedded_instances {
+  id: "tile"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"turrent_tile\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 108.0\\n"
+  "  y: 113.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -12.0\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 9.0
+  }
+}
+embedded_instances {
+  id: "head"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"turret_top\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 77.0\\n"
+  "  y: 44.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 10.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "pipe"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"turret_pipe\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 25.0\\n"
+  "  y: 34.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: 14.0\n"
+  "  }\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"turret_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 86.0\\n"
+  "  y: 30.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}

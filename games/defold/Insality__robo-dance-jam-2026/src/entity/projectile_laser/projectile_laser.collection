@@ -1,0 +1,90 @@
+name: "projectile_laser"
+scale_along_z: 0
+embedded_instances {
+  id: "root"
+  children: "group"
+  data: ""
+}
+embedded_instances {
+  id: "group"
+  children: "bullet"
+  children: "shadow"
+  children: "tile_highlight"
+  data: ""
+  position {
+    z: 0.5
+  }
+}
+embedded_instances {
+  id: "bullet"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"projectile_laser\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 112.0\\n"
+  "  y: 57.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 36.0
+    z: 0.02
+  }
+}
+embedded_instances {
+  id: "shadow"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"projectile_laser_shadow\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 112.0\\n"
+  "  y: 57.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "tile_highlight"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"tile_highlight\\\"\\n"
+  "material: \\\"/panthera/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 128.0\\n"
+  "  y: 69.0\\n"
+  "}\\n"
+  "attributes {\\n"
+  "  name: \\\"color\\\"\\n"
+  "  double_values {\\n"
+  "    v: 1.0\\n"
+  "    v: 1.0\\n"
+  "    v: 1.0\\n"
+  "    v: 0.0\\n"
+  "  }\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/assets/game.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: -0.5
+  }
+}

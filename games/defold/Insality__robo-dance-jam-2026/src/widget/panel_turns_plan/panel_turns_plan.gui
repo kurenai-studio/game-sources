@@ -1,0 +1,367 @@
+fonts {
+  name: "text"
+  font: "/assets/text.font"
+}
+textures {
+  name: "gui"
+  texture: "/assets/gui.atlas"
+}
+nodes {
+  size {
+    x: 540.0
+    y: 160.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  scale {
+    x: 1.15
+    y: 1.15
+  }
+  size {
+    x: 500.0
+    y: 100.0
+  }
+  color {
+    x: 0.12941177
+    y: 0.21960784
+    z: 0.22352941
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_40"
+  id: "panel_turns"
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  slice9 {
+    x: 20.0
+    y: 20.0
+    z: 20.0
+    w: 20.0
+  }
+  visible: false
+}
+nodes {
+  size {
+    x: 500.0
+    y: 100.0
+  }
+  color {
+    x: 0.12941177
+    y: 0.21960784
+    z: 0.22352941
+  }
+  type: TYPE_BOX
+  texture: "gui/panel_circle_40"
+  id: "panel_background"
+  parent: "panel_turns"
+  layer: "gui"
+  inherit_alpha: true
+  slice9 {
+    x: 20.0
+    y: 20.0
+    z: 20.0
+    w: 20.0
+  }
+}
+nodes {
+  position {
+    x: -170.0
+  }
+  size {
+    x: 400.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "layout_turns"
+  pivot: PIVOT_W
+  parent: "panel_turns"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  visible: false
+}
+nodes {
+  position {
+    x: 50.0
+  }
+  type: TYPE_TEMPLATE
+  id: "icon_turn_side"
+  parent: "layout_turns"
+  inherit_alpha: true
+  template: "/widget/icon_turn_side/icon_turn_side.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/root"
+  parent: "icon_turn_side"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/panel"
+  parent: "icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/group"
+  parent: "icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/panel_side"
+  parent: "icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/icon_turn"
+  parent: "icon_turn_side/group"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/cancel"
+  parent: "icon_turn_side/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/icon_cancel"
+  parent: "icon_turn_side/cancel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/empty"
+  parent: "icon_turn_side/root"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/circle"
+  parent: "icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_side/circle2"
+  parent: "icon_turn_side/empty"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: -120.0
+    y: -50.0
+  }
+  color {
+    y: 0.92941177
+    z: 0.58431375
+  }
+  type: TYPE_BOX
+  texture: "gui/icon_arrow_select"
+  id: "arrow_selected"
+  parent: "panel_turns"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -285.0
+    y: -10.0
+  }
+  scale {
+    x: 1.1
+    y: 1.1
+  }
+  type: TYPE_BOX
+  texture: "gui/empty"
+  id: "icon_selected_player"
+  parent: "root"
+  layer: "gui"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -11.0
+  }
+  type: TYPE_BOX
+  texture: "gui/player_head"
+  id: "icon_player_head"
+  parent: "icon_selected_player"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 10.0
+  }
+  type: TYPE_BOX
+  texture: "gui/player_eye_outside"
+  id: "icon_eye_outside"
+  parent: "icon_player_head"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: 9.0
+  }
+  color {
+    x: 0.90588236
+    y: 0.9137255
+    z: 0.77254903
+  }
+  type: TYPE_BOX
+  texture: "gui/player_eye_inside"
+  id: "icon_eye_inside"
+  parent: "icon_eye_outside"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -37.0
+    y: 69.0
+  }
+  size {
+    x: 80.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "2 / 4"
+  font: "text"
+  id: "text_counter"
+  pivot: PIVOT_W
+  parent: "root"
+  layer: "text"
+  inherit_alpha: true
+  outline_alpha: 0.0
+  shadow_alpha: 0.0
+  enabled: false
+}
+nodes {
+  position {
+    x: 380.0
+  }
+  scale {
+    x: 0.8
+    y: 0.8
+  }
+  type: TYPE_TEMPLATE
+  id: "icon_turn_skip"
+  parent: "root"
+  inherit_alpha: true
+  template: "/widget/icon_turn_action/icon_turn_action.gui"
+}
+nodes {
+  size {
+    x: 200.0
+    y: 200.0
+  }
+  type: TYPE_BOX
+  id: "icon_turn_skip/root"
+  parent: "icon_turn_skip"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_skip/shadow"
+  parent: "icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.54509807
+    y: 0.62352943
+    z: 0.9137255
+  }
+  type: TYPE_BOX
+  id: "icon_turn_skip/panel"
+  parent: "icon_turn_skip/root"
+  overridden_fields: 5
+  template_node_child: true
+}
+nodes {
+  color {
+    x: 0.54509807
+    y: 0.62352943
+    z: 0.9137255
+  }
+  type: TYPE_BOX
+  id: "icon_turn_skip/back"
+  parent: "icon_turn_skip/panel"
+  overridden_fields: 5
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "icon_turn_skip/outline"
+  parent: "icon_turn_skip/panel"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  texture: "gui/icon_turn_wait"
+  id: "icon_turn_skip/icon"
+  parent: "icon_turn_skip/panel"
+  overridden_fields: 9
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEMPLATE
+  id: "icon_turn_skip/button_input_hint"
+  parent: "icon_turn_skip/root"
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "icon_turn_skip/button_input_hint/root"
+  parent: "icon_turn_skip/button_input_hint"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  type: TYPE_BOX
+  id: "icon_turn_skip/button_input_hint/panel"
+  parent: "icon_turn_skip/button_input_hint/root"
+  overridden_fields: 4
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 40.0
+    y: 40.0
+  }
+  type: TYPE_TEXT
+  text: "e"
+  id: "icon_turn_skip/button_input_hint/text"
+  parent: "icon_turn_skip/button_input_hint/root"
+  overridden_fields: 4
+  overridden_fields: 8
+  template_node_child: true
+}
+layers {
+  name: "gui"
+}
+layers {
+  name: "text"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
