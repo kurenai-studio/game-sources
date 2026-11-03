@@ -1,0 +1,58 @@
+name: SonarCloud
+
+on:
+  # Trigger analysis when pushing in master or pull requests, and when creating
+  # a pull request.
+  push:
+    branches:
+      - master
+      - '!dependabot/nuget/**'
+  pull_request:
+    branches:
+      - master
+      - '!dependabot/nuget/**'
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    env:
+      working-directory : $GITHUB_WORKSPACE
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup ReSharper Command Line Tools
+        run: dotnet tool install --global JetBrains.ReSharper.GlobalTools --version 2022.2.3
+
+      - name: Inspect codebase via ReSharper Command Line Tools
+        # use --absolute_paths to work around a issues https://github.com/olsh/dotnet-reqube/issues/9 + https://youtrack.jetbrains.com/issue/RSRP-484145
+        run: jb inspectcode $GITHUB_WORKSPACE/Zilon.Core/Zilon.Core.sln --swea --severity=INFO --output=$GITHUB_WORKSPACE/AnalysisResults/ReSharperReport.xml --absolute-paths
+
+      - name: Setup ReSharper to Sonar Converter
+        run: dotnet tool install --global dotnet-reqube
+
+      - name: Convert report from ReSharper to SonarQube format
+        run: dotnet-reqube -i $GITHUB_WORKSPACE/AnalysisResults/ReSharperReport.xml -o SonarQubeReport.json -d $GITHUB_WORKSPACE/AnalysisResults
+
+      - name: sonarscan-dotnet
+        uses: highbyte/sonarscan-dotnet@v2.1.3
+        with:
+          # Fix warning "Shallow clone detected during the analysis"
+          fetch-depth: '0'
+          # The key of the SonarQube project
+          sonarProjectKey: kreghek_Zilon_Roguelike
+          # The name of the SonarQube project
+          sonarProjectName:  Zilon Roguelike
+          # The name of the SonarQube organization in SonarCloud. For hosted SonarQube, skip this setting.
+          sonarOrganization: kreghek
+          dotnetBuildArguments: ./Zilon.Core/Zilon.Core.sln
+          dotnetDisableTests: true
+          sonarBeginArguments: /d:sonar.externalIssuesReportPaths=$GITHUB_WORKSPACE/AnalysisResults/SonarQubeReport.json
