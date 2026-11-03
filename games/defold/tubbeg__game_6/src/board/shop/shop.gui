@@ -1,0 +1,364 @@
+script: "/board/shop/shop.gui_script"
+fonts {
+  name: "rf"
+  font: "/assets/fonts/rf.font"
+}
+textures {
+  name: "shop"
+  texture: "/board/shop/shop.atlas"
+}
+nodes {
+  position {
+    x: 720.0
+    y: 543.0
+  }
+  type: TYPE_TEMPLATE
+  id: "shop_button"
+  inherit_alpha: true
+  template: "/board/button/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "shop_button/box"
+  parent: "shop_button"
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 397.0
+    y: 298.0
+  }
+  scale {
+    x: 9.708804
+    y: 3.935293
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -15.661009
+    y: -21.961845
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "skull"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -18.07458
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "SKULL"
+  font: "rf"
+  id: "text8"
+  parent: "skull"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "30k"
+  font: "rf"
+  id: "skull_price"
+  pivot: PIVOT_W
+  parent: "skull"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -15.661009
+    y: -1.378881
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "rib"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -19.61957
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "RIB"
+  font: "rf"
+  id: "text"
+  parent: "rib"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "3k"
+  font: "rf"
+  id: "rib_price"
+  pivot: PIVOT_W
+  parent: "rib"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -15.661009
+    y: 18.187641
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "bone"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -19.61957
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "BONE\n"
+  ""
+  font: "rf"
+  id: "text2"
+  parent: "bone"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "200"
+  font: "rf"
+  id: "bone_price"
+  pivot: PIVOT_W
+  parent: "bone"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 15.444779
+    y: 17.93353
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "elden_bone"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -18.589577
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "ELDEN BONE"
+  font: "rf"
+  id: "text6"
+  line_break: true
+  parent: "elden_bone"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "999B"
+  font: "rf"
+  id: "elden_bone_price"
+  pivot: PIVOT_W
+  parent: "elden_bone"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 15.34178
+    y: -1.378881
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "ghost"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -18.589577
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "GHOST\n"
+  ""
+  font: "rf"
+  id: "text12"
+  parent: "ghost"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "10M"
+  font: "rf"
+  id: "ghost_price"
+  pivot: PIVOT_W
+  parent: "ghost"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 15.444779
+    y: -21.961845
+  }
+  scale {
+    x: 0.4
+    y: 0.25
+  }
+  type: TYPE_BOX
+  texture: "shop/background_bone"
+  id: "oil"
+  parent: "shop"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -16.787088
+    y: 2.938212
+  }
+  scale {
+    x: 0.178946
+    y: 0.670856
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "oil barrel"
+  font: "rf"
+  id: "text1"
+  line_break: true
+  parent: "oil"
+  inherit_alpha: true
+}
+nodes {
+  scale {
+    x: 0.182853
+    y: 0.693517
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "1k"
+  font: "rf"
+  id: "oil_barrel_price"
+  pivot: PIVOT_W
+  parent: "oil"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

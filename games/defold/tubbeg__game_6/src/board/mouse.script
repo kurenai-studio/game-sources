@@ -1,0 +1,56 @@
+function init(self)
+	msg.post(".","acquire_input_focus")
+	self.bone_list = {}
+	self.disable_mouse = false
+end
+
+function final(self)
+end
+
+function update(self, dt)
+end
+
+function late_update(self, dt)
+end
+
+function fixed_update(self, dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("death") then
+		for _, url in pairs(self.bone_list) do
+			local new_list = {}
+			if not message.url == url then
+				table.insert(new_list, url)
+			end
+			self.bone_list = new_list
+		end
+	end
+	if message_id == hash("add_bone") then
+		table.insert(self.bone_list, message.bone_url)
+	end
+	if message_id == hash("remove_bone") then
+		print("NOT YET IMPLEMENTED")
+	end
+	if message_id == hash("toggle") then
+		self.disable_mouse = not self.disable_mouse
+	end
+end
+
+function on_input(self, action_id, action)
+	local pos = vmath.vector3(action.x + 30, action.y + 30, 0)
+	go.set_position(pos)
+	if action_id == hash("touch") and action.pressed then
+		if not self.disable_mouse then
+			for _,v in pairs(self.bone_list) do
+				msg.post(v, "clicked_bone", {action=action})
+			end	
+		end
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
