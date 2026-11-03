@@ -1,0 +1,42 @@
+name: "blind"
+instances {
+  id: "hand"
+  prototype: "/blind/hand/hand.go"
+}
+instances {
+  id: "deck"
+  prototype: "/blind/deck/deck.go"
+  position {
+    x: 557.0
+    y: 50.0
+  }
+}
+instances {
+  id: "discard"
+  prototype: "/blind/discard/discard.go"
+  position {
+    x: 557.0
+    y: 169.0
+  }
+}
+instances {
+  id: "score"
+  prototype: "/blind/score/score.go"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "blind_main"
+  data: "components {\n"
+  "  id: \"blind\"\n"
+  "  component: \"/blind/blind.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "play"
+  data: "components {\n"
+  "  id: \"play\"\n"
+  "  component: \"/blind/play/play.gui\"\n"
+  "}\n"
+  ""
+}

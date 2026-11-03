@@ -1,0 +1,117 @@
+function init(self)
+	self.max = 6
+	self.cards = {}
+	msg.post(".", "acquire_input_focus")
+	self.drag_is_busy = false
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+local function table_size(t)
+	local i = 0
+	for _,_ in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
+local function is_missing_cards(cards, max)
+	return table_size(cards) < max
+end
+
+local function broadcast_message(cards,fn)
+	for _, card in pairs(cards) do
+		fn(card)
+	end
+end
+
+local function find_card_index(card,cards)
+	local n = 0
+	for _,c in cards do
+		if c == card then return n end
+		n = n + 1
+	end 
+	return nil
+end
+
+function on_message(self, message_id, message, sender)
+	-- NOTE TO SELF
+	-- DO NOTE USE "set_light" or "set_parent" AS message_id
+	-- THEY ARE RESERVED!!
+	if message_id == hash("draw_all_cards") and is_missing_cards(self.cards,self.max) then
+		local deck_msg = {max=self.max, hand_size=table_size(self.cards)}
+		msg.post("deck", "get_random_cards", deck_msg)
+	end
+	if message_id == hash("draw_one_card") then
+		msg.post("deck", "get_one_random_card")
+	end
+	if message_id == hash("give_card") then
+		if not message.card then
+			print("ERROR! DECK IS EMPTY!")
+		else
+			table.insert(self.cards, message.card)
+			--local url = msg.url(nil, "", nil)
+			local pos = vmath.vector3(math.random(100, 600), math.random(300, 500),0)
+			go.animate(message.card, "position", go.PLAYBACK_ONCE_FORWARD, pos, go.EASING_LINEAR, 0.3, 0)
+		end
+	end
+	if message_id == hash("play_selected") then
+		broadcast_message(self.cards, function(card) msg.post(card, "play", {}) end)
+	end
+	if message_id == hash("request_drag") and not self.drag_is_busy then
+		msg.post(sender, "set_drag")
+		self.drag_is_busy = true
+	end
+	if message_id == hash("release_drag") then self.drag_is_busy = false end
+	if message_id == hash("discard_selected") then
+		broadcast_message(self.cards, function(card) msg.post(card, "discard") end)
+	end
+	if message_id == hash("remove_card") then
+		local new_list = {}
+		for _,c in pairs(self.cards) do
+			if c == message.card then
+				print("removing card from hand: ", c)
+			else
+				table.insert(new_list, c)
+			end
+		end
+		self.cards = new_list
+	end
+end
+
+
+function on_input(self, action_id, action)
+	broadcast_message(self.cards, function(card) msg.post(card, "move", {action=action}) end)
+	if action_id == hash("touch") and action.pressed then
+		broadcast_message(self.cards, function(card) msg.post(card, "touch_press", {action=action}) end)
+	elseif action_id == hash("touch") and action.released then
+		broadcast_message(self.cards, function(card) msg.post(card, "touch_release", {action=action}) end)
+	elseif action_id == hash("select") and action.pressed then
+		broadcast_message(self.cards, function(card) msg.post(card, "sel_press", {action=action}) end)
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

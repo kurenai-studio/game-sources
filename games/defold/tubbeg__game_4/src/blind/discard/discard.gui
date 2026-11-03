@@ -1,0 +1,43 @@
+script: "/blind/discard/discard.gui_script"
+fonts {
+  name: "rf"
+  font: "/assets/fonts/rf.font"
+}
+nodes {
+  position {
+    x: 395.0
+    y: 93.0
+  }
+  scale {
+    x: 0.781656
+    y: 0.638967
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "DISCARD\n"
+  ""
+  font: "rf"
+  id: "text"
+  parent: "box"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
