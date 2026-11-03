@@ -1,0 +1,1763 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mehter · Claude Game Arena</title>
+<meta name="description" content="A 3D rhythm game with an Ottoman mehter band marching down a square at dusk, redesigned in crimson, gold and deep green: hit davul, kös, zurna and zil notes on the beat across six marches. Plays in the browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mehter · Ottoman March Rhythm Game">
+<meta property="og:description" content="A 3D rhythm game with an Ottoman mehter band marching down a square at dusk, redesigned in crimson, gold and deep green: hit davul, kös, zurna and zil notes on the beat across six marches. Plays in the browser.">
+<meta property="og:url" content="https://furkiozknn.github.io/mehter/">
+<meta property="og:image" content="https://furkiozknn.github.io/mehter/docs/card.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<style>
+:root{--gold:#D4AF37;--gold-hi:#F3D27A;--red:#A4161A;--green:#1B4332;--night:#0B132B;--parch:#F1E3C6;--cream:#F1E3C6;--crimson-panel:rgba(74,10,14,.9);--glass:rgba(58,8,12,.86);--line:rgba(212,175,55,.55);--focus:#F3D27A}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b0d1a;overflow:hidden}
+body{font:15px/1.4 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--cream);user-select:none;-webkit-user-select:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+button{font:inherit;color:inherit;min-height:44px;min-width:44px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);cursor:pointer;touch-action:manipulation}
+button:hover{background:rgba(255,255,255,.14)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:linear-gradient(180deg,var(--gold-hi),var(--gold));border-color:transparent;color:#2a1604;font-weight:700;box-shadow:0 2px 0 #7a5a0c}
+button.on{background:rgba(212,175,55,.3);border-color:var(--gold)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input[type=range]{width:100%;min-height:44px;accent-color:var(--gold)}
+.hidden{display:none!important}
+.glass{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,8,20,.55);overflow:auto}
+#scr-title{background:linear-gradient(180deg,rgba(5,8,20,.12),rgba(5,8,20,.85))}
+#scr-pause{background:rgba(5,8,20,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.panel{width:100%;max-width:640px;padding:20px;display:flex;flex-direction:column;gap:14px;max-height:100%;overflow:auto;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.35);outline:1px solid rgba(212,175,55,.3);outline-offset:-7px}
+.panel>*{flex-shrink:0}
+#scr-title .panel{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.panel.wide{max-width:900px}
+h1,h2{margin:0;font-weight:800;letter-spacing:.05em;font-family:Georgia,"Times New Roman",serif}
+h1{font-size:clamp(38px,9vw,68px);color:var(--gold-hi);text-shadow:0 2px 0 #5a0b0d,0 0 26px rgba(212,175,55,.45)}
+h2{font-size:22px;color:var(--gold-hi)}
+.orn{width:min(220px,70vw);height:26px;display:block;margin:0 auto;flex:none}
+.center{text-align:center;align-items:center}
+.logo{width:96px;height:96px;margin:0 auto}
+.brand-svg{width:30px;height:30px;flex:none}
+.muted{opacity:.78;font-size:14px;margin:0}
+.btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row>label{min-width:110px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1}
+.howto{margin:0;padding-left:20px;text-align:left;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.foot{position:fixed;left:0;right:0;bottom:8px;text-align:center;font-size:12px;opacity:.7;z-index:21;pointer-events:none}
+.foot a{pointer-events:auto;color:var(--gold-hi)}
+#scr-title .foot{pointer-events:auto}
+.loading{color:var(--gold-hi);font-size:14px;margin:0}
+#best-line,#title-best{font-size:14px;opacity:.9;margin:0}
+.songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px;border-radius:14px;min-height:44px}
+.card.sel{border-color:var(--gold-hi);background:rgba(212,175,55,.2)}
+.card b{font-size:16px}
+.card small{opacity:.78;font-size:12px}
+.card .tail{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+.tiny{min-width:44px;min-height:44px;padding:4px 10px}
+.keys button{min-width:64px;font-weight:800;font-size:18px;text-transform:uppercase}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;font-variant-numeric:tabular-nums}
+.stats-grid div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);padding:4px 0}
+.hist{display:flex;align-items:flex-end;gap:4px;height:110px;width:100%;flex:none}
+.hist i{flex:1;background:linear-gradient(to top,var(--red),var(--gold));border-radius:4px 4px 0 0;min-height:2px}
+.hist-l{display:flex;justify-content:space-between;width:100%;font-size:11px;opacity:.75}
+.grade{font-size:84px;font-weight:900;color:var(--gold);line-height:1;text-align:center;text-shadow:0 0 30px rgba(212,175,55,.5)}
+#dot{width:72px;height:72px;border-radius:50%;margin:8px auto;background:var(--gold);opacity:.35;transform:scale(1)}
+#res-main{font-size:30px;font-weight:800;color:var(--gold-hi);text-align:center;margin:6px 0}
+/* HUD */
+#hud{position:fixed;left:10px;right:10px;top:10px;z-index:8;display:flex;align-items:center;gap:12px;padding:6px 10px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--gold);white-space:nowrap}
+.stats{display:flex;gap:18px;flex:1;justify-content:center;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.stat span{font-size:11px;opacity:.72;text-transform:uppercase;letter-spacing:.08em}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:6px}
+.ibtn{min-width:44px;min-height:44px;padding:6px;display:grid;place-items:center;border-radius:12px}
+.ibtn svg{width:22px;height:22px;fill:currentColor}
+.ibtn.txt{font-weight:800;font-size:13px}
+#spirit{position:fixed;left:12px;top:50%;transform:translateY(-50%);width:16px;height:38vh;z-index:7;display:flex;flex-direction:column;align-items:center;gap:4px}
+#spirit .bar{position:relative;flex:1;width:100%;border-radius:8px;background:rgba(0,0,0,.45);border:1px solid var(--line);overflow:hidden}
+#spirit .fill{position:absolute;left:0;right:0;bottom:0;height:100%;background:linear-gradient(to top,#7a0c0c,var(--gold));transform-origin:bottom;transform:scaleY(1)}
+#spirit span{font-size:10px;opacity:.8;writing-mode:vertical-rl;transform:rotate(180deg)}
+#touch{position:fixed;left:0;right:0;bottom:0;height:40vh;z-index:6;display:flex;touch-action:none}
+#touch .tz{flex:1 1 0;min-width:0;width:0;border-left:1px solid rgba(255,255,255,.07);background:linear-gradient(to top,rgba(255,255,255,.035),transparent);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-weight:800;font-size:18px;opacity:.5}
+#touch .tz:active{background:rgba(212,175,55,.2)}
+#judge{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);font-weight:900;font-size:clamp(26px,5.5vw,52px);pointer-events:none;z-index:9;opacity:0;text-shadow:0 3px 12px rgba(0,0,0,.6);white-space:nowrap}
+#judge.show{animation:pop .6s ease-out forwards}
+#judge.perfect{color:var(--gold-hi)}
+#judge.good{color:#8fd3ff}
+#judge.miss{color:#ff6b6b}
+#judge.brk{color:#ff9f43}
+@keyframes pop{0%{opacity:1;transform:translate(-50%,-50%) scale(1.35)}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+#toasts{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:min(92vw,420px)}
+#toasts div{padding:8px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--line);text-align:center;font-size:14px}
+#toasts .bad{border-color:#ff6b6b}
+#dbg{position:fixed;right:6px;bottom:6px;z-index:40;margin:0;max-width:60vw;max-height:45vh;overflow:auto;background:rgba(0,0,0,.72);color:#9ff;font:11px/1.35 Consolas,monospace;padding:6px;border-radius:6px;white-space:pre-wrap}
+body.playing #touch{display:flex}
+body:not(.playing) #touch{display:none}
+body:not(.playing) #hud,body:not(.playing) #spirit{display:none}
+body:not(.playing) #judge{display:none}
+body.playing #hud,body.playing #spirit{display:flex}
+#spirit{display:none}
+@media (max-width:640px){.brand .nm{display:none}.stats{gap:10px}.stat span{font-size:9px}.stat b{font-size:15px}#hud{gap:6px;padding:6px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script data-goatcounter="https://furkiozknn.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<div id="touch" aria-label="lanes">
+  <div class="tz" role="button" aria-label="Lane 1 (D)" data-lane="0">D</div>
+  <div class="tz" role="button" aria-label="Lane 2 (F)" data-lane="1">F</div>
+  <div class="tz" role="button" aria-label="Lane 3 (J)" data-lane="2">J</div>
+  <div class="tz" role="button" aria-label="Lane 4 (K)" data-lane="3">K</div>
+</div>
+
+<header id="hud" class="glass" aria-label="HUD">
+  <div class="brand">
+    <svg class="brand-svg" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="#A4161A" stroke="#D4AF37" stroke-width="5"/><path d="M72 20a42 42 0 1 0 0 80a34 34 0 1 1 0-80z" fill="#D4AF37"/><path d="M86 46l3.5 8.5 9 1-6.8 5.8 2.2 8.9-8-4.9-8 4.9 2.2-8.9-6.8-5.8 9-1z" fill="#F1E3C6"/></svg>
+    <span class="nm">MEHTER</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><span data-i18n="song">Şarkı</span><b id="h-song">–</b></div>
+    <div class="stat"><span data-i18n="diff">Zorluk</span><b id="h-diff">–</b></div>
+    <div class="stat"><span data-i18n="score">Skor</span><b id="h-score">0</b></div>
+    <div class="stat"><span data-i18n="combo">Kombo</span><b id="h-combo">0 ×1</b></div>
+    <div class="stat"><span data-i18n="acc">İsabet</span><b id="h-acc">100%</b></div>
+  </div>
+  <div class="tools">
+    <button id="b-pause" class="ibtn" data-i18n-aria="pause" aria-label="Duraklat"><svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+    <button id="b-sound" class="ibtn" data-i18n-aria="sound" aria-label="Ses"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7l-1.3-1.3a3.2 3.2 0 0 0 0-4.4z"/></svg></button>
+    <button id="b-lang-h" class="ibtn txt" aria-label="Dil">TR</button>
+  </div>
+</header>
+
+<div id="spirit" aria-label="spirit"><div class="bar"><div class="fill" id="spirit-fill"></div></div><span data-i18n="spirit">Ruh</span></div>
+<div id="judge" aria-live="polite"></div>
+<div id="toasts" aria-live="polite"></div>
+<pre id="dbg" class="hidden"></pre>
+
+<!-- TITLE -->
+<section id="scr-title" class="screen" role="dialog" aria-modal="true" aria-labelledby="t-name">
+  <div class="panel center">
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="#A4161A" stroke="#D4AF37" stroke-width="5"/><circle cx="60" cy="60" r="46" fill="none" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="2 4"/><path d="M72 20a42 42 0 1 0 0 80a34 34 0 1 1 0-80z" fill="#D4AF37"/><path d="M86 46l3.5 8.5 9 1-6.8 5.8 2.2 8.9-8-4.9-8 4.9 2.2-8.9-6.8-5.8 9-1z" fill="#F1E3C6"/></svg>
+    <svg class="orn" viewBox="0 0 220 26" aria-hidden="true"><path d="M4 13H78M142 13H216" stroke="#D4AF37" stroke-width="1.5"/><path d="M110 3C101 3 97 8 97 13C97 18 101 23 110 23C119 23 123 18 123 13C123 8 119 3 110 3Z" fill="none" stroke="#D4AF37" stroke-width="1.6"/><path d="M97 13C89 7 80 7 75 13C80 19 89 19 97 13ZM123 13C131 7 140 7 145 13C140 19 131 19 123 13Z" fill="#D4AF37"/><circle cx="110" cy="13" r="2.6" fill="#F1E3C6"/></svg>
+    <h1 id="t-name">MEHTER</h1>
+    <p class="muted" data-i18n="subtitle">Davul, kös, zurna ve zil bu caddede sizin ritminizle yürür.</p>
+    <ol class="howto">
+      <li data-i18n="howto1">Notalar vuruş çizgisine doğru gelir. Tam anda D F J K tuşlarına basın ya da şeritlere dokunun.</li>
+      <li data-i18n="howto2">Zurna uzun notalarında tuşu basılı tutun. Kombo çarpanı artar; ruh sıfıra inerse şarkı biter.</li>
+      <li data-i18n="howto3">Gecikmenizi kalibrasyon ekranında ölçün.</li>
+    </ol>
+    <div class="btns">
+      <button id="b-play" class="primary" disabled data-i18n="play">Oyna</button>
+      <button id="b-title-cal" data-i18n="calib">Kalibrasyon</button>
+      <button id="b-title-set" data-i18n="settings">Ayarlar</button>
+      <button id="b-title-lang" data-i18n-aria="language" aria-label="Dil">TR / EN</button>
+    </div>
+    <p class="loading" id="loading">Yükleniyor… 0/1</p>
+    <p id="title-best"></p>
+  </div>
+  <div class="foot"><a href="https://furkiozknn.github.io/">Claude Game Arena</a> · built by Claude Haiku 5.5</div>
+</section>
+
+<!-- SONG SELECT -->
+<section id="scr-select" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="sel-title">
+  <div class="panel wide">
+    <h2 id="sel-title" data-i18n="selectSong">Şarkı seç</h2>
+    <div class="seg" id="diffs" role="radiogroup">
+      <button data-diff="easy" data-i18n="easy">Kolay</button>
+      <button data-diff="normal" data-i18n="normal">Normal</button>
+      <button data-diff="hard" data-i18n="hard">Zor</button>
+    </div>
+    <div class="songs" id="song-list"></div>
+    <div class="btns">
+      <button id="b-sel-back" data-i18n="back">Geri</button>
+      <button id="b-sel-start" class="primary" data-i18n="start">Başla</button>
+    </div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="scr-settings" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="set-title">
+  <div class="panel">
+    <h2 id="set-title" data-i18n="settings">Ayarlar</h2>
+    <div class="row"><label for="s-master" data-i18n="master">Ana ses</label><input id="s-master" type="range" min="0" max="1" step="0.01" data-i18n-aria="master" aria-label="Ana ses"></div>
+    <div class="row"><label for="s-music" data-i18n="music">Müzik</label><input id="s-music" type="range" min="0" max="1" step="0.01" data-i18n-aria="music" aria-label="Müzik"></div>
+    <div class="row"><label for="s-sfx" data-i18n="sfx">Efektler</label><input id="s-sfx" type="range" min="0" max="1" step="0.01" data-i18n-aria="sfx" aria-label="Efektler"></div>
+    <div class="row"><span data-i18n="language">Dil</span><div class="seg" style="flex:1"><button data-lang="tr">Türkçe</button><button data-lang="en">English</button></div></div>
+    <div class="row"><span data-i18n="quality">Kalite</span><div class="seg" style="flex:1"><button data-q="low" data-i18n="low">Düşük</button><button data-q="high" data-i18n="high">Yüksek</button></div></div>
+    <div class="row"><button id="b-fs" data-i18n="fullscreen">Tam ekran</button></div>
+    <div class="row keys"><span data-i18n="keys">Tuşlar</span><button data-lane="0">D</button><button data-lane="1">F</button><button data-lane="2">J</button><button data-lane="3">K</button><span id="rebind-msg" class="muted"></span></div>
+    <div class="btns"><button id="b-set-back" data-i18n="back">Geri</button></div>
+  </div>
+</section>
+
+<!-- CALIBRATION -->
+<section id="scr-calib" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="cal-title">
+  <div class="panel center">
+    <h2 id="cal-title" data-i18n="calibTitle">Gecikme kalibrasyonu</h2>
+    <p class="muted" data-i18n="calibHelp">Metronomun her vuruşuna bir tuş basın (Boşluk, D F J K veya düğme).</p>
+    <div id="dot" aria-hidden="true"></div>
+    <p id="cal-msg" class="muted"></p>
+    <p id="cal-res" style="font-size:24px;font-weight:800;margin:0"></p>
+    <div class="btns">
+      <button id="b-cal-start" class="primary" data-i18n="start">Başla</button>
+      <button id="b-cal-tap" data-i18n="tapBtn">Vur</button>
+      <button id="b-cal-reset" data-i18n="reset">Sıfırla</button>
+      <button id="b-cal-back" data-i18n="back">Geri</button>
+    </div>
+  </div>
+</section>
+
+<!-- PAUSE -->
+<section id="scr-pause" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+  <div class="panel center">
+    <svg class="orn" viewBox="0 0 220 26" aria-hidden="true"><path d="M4 13H78M142 13H216" stroke="#D4AF37" stroke-width="1.5"/><path d="M110 3C101 3 97 8 97 13C97 18 101 23 110 23C119 23 123 18 123 13C123 8 119 3 110 3Z" fill="none" stroke="#D4AF37" stroke-width="1.6"/><circle cx="110" cy="13" r="2.6" fill="#F1E3C6"/></svg>
+    <h2 id="pause-title" data-i18n="pause">Duraklat</h2>
+    <div class="btns" style="flex-direction:column">
+      <button id="b-resume" class="primary" data-i18n="resume">Devam</button>
+      <button id="b-restart" data-i18n="restart">Yeniden başlat</button>
+      <button id="b-pause-set" data-i18n="settings">Ayarlar</button>
+      <button id="b-main" data-i18n="mainMenu">Ana menü</button>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="scr-results" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="r-title">
+  <div class="panel center">
+    <div class="grade" id="r-grade">–</div>
+    <div id="res-main"></div>
+    <h2 id="r-title" style="font-size:18px"></h2>
+    <div class="stats-grid" id="r-stats" style="width:100%"></div>
+    <p id="r-record" class="muted" style="color:var(--gold-hi);margin:0"></p>
+    <div class="hist-l" data-i18n="histogram">Vuruş zamanlaması (ms)</div>
+    <div class="hist" id="r-hist"></div>
+    <div class="hist-l"><span data-i18n="early">erken</span><span>0</span><span data-i18n="late">geç</span></div>
+    <div class="btns">
+      <button id="b-again" class="primary" data-i18n="playAgain">Tekrar oyna</button>
+      <button id="b-main2" data-i18n="mainMenu">Ana menü</button>
+    </div>
+  </div>
+</section>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Mehter: 3D rhythm march. Single file. Three.js r170 (CDN) + Web Audio.
+// ---------------------------------------------------------------------------
+let THREE = null;
+
+// ----- query flags and settings -------------------------------------------
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const Q = new URLSearchParams(location.search);
+const FLAG = { auto: Q.has('auto'), debug: Q.has('debug'), low: Q.has('low'), noassets: Q.has('noassets') };
+const PHONE = matchMedia('(pointer: coarse)').matches;
+const DEF_LANG = /^tr/i.test(navigator.language || '') ? 'tr' : 'en';
+const DEF = { master: 0.8, music: 0.6, sfx: 0.8, musicOn: true, sfxOn: true, lang: DEF_LANG, quality: PHONE ? 'low' : 'high', keys: ['d', 'f', 'j', 'k'], calib: 0 };
+
+function store(key, fallback) {
+  try { const raw = localStorage.getItem(key); return raw ? { ...fallback, ...JSON.parse(raw) } : { ...fallback }; }
+  catch (e) { return { ...fallback }; }
+}
+function persist(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode */ } }
+
+const S = store('arena.mehter.settings', DEF);
+let LANG = Q.get('lang') === 'en' ? 'en' : Q.get('lang') === 'tr' ? 'tr' : S.lang;   // S.lang defaults to the browser language
+const lowQ = () => FLAG.low || S.quality === 'low';
+const saveSettings = () => persist('arena.mehter.settings', S);
+const loadBest = () => store('arena.mehter.best', {});
+const saveBest = (b) => persist('arena.mehter.best', b);
+
+// ----- strings -------------------------------------------------------------
+const I18N = {
+  tr: {
+    subtitle: 'Davul, kös, zurna ve zil bu caddede sizin ritminizle yürür.',
+    howto1: 'Notalar vuruş çizgisine doğru gelir. Tam anda D F J K tuşlarına basın ya da şeritlere dokunun.',
+    howto2: 'Zurna uzun notalarında tuşu basılı tutun. Kombo çarpanı artar; ruh sıfıra inerse şarkı biter.',
+    howto3: 'Gecikmenizi kalibrasyon ekranında ölçün.',
+    play: 'Oyna', settings: 'Ayarlar', calib: 'Kalibrasyon', back: 'Geri', start: 'Başla',
+    selectSong: 'Şarkı seç', easy: 'Kolay', normal: 'Normal', hard: 'Zor',
+    resume: 'Devam', restart: 'Yeniden başlat', mainMenu: 'Ana menü',
+    master: 'Ana ses', music: 'Müzik', sfx: 'Efektler', language: 'Dil', quality: 'Kalite', low: 'Düşük', high: 'Yüksek',
+    fullscreen: 'Tam ekran', keys: 'Tuşlar', pressKey: 'Bir tuşa basın', rebindDone: 'Tuş atandı',
+    playAgain: 'Tekrar oyna', score: 'Skor', combo: 'Kombo', acc: 'İsabet', spirit: 'Ruh', song: 'Şarkı',
+    pause: 'Duraklat', grade: 'Derece', diff: 'Zorluk', newRecord: 'Yeni rekor!', defeat: 'Ruh tükendi', cleared: 'Şarkı tamam',
+    perfect: 'MÜKEMMEL', good: 'İYİ', miss: 'KAÇTI', brk: 'KOPTU',
+    maxCombo: 'En yüksek kombo', perfectN: 'Mükemmel', goodN: 'İyi', missN: 'Kaçan', brkN: 'Kopan', accN: 'İsabet',
+    histogram: 'Vuruş zamanlaması (ms)', early: 'erken', late: 'geç',
+    calibTitle: 'Gecikme kalibrasyonu', calibHelp: 'Metronomun her vuruşuna bir tuş basın (Boşluk, D F J K veya düğme).',
+    calibNeedAudio: 'Ses için önce Oyna düğmesine bir kez basın.', calibNone: 'Yeterli vuruş yok, tekrar deneyin.',
+    calibDone: 'Ortalama gecikme', tapBtn: 'Vur', reset: 'Sıfırla', calibSaved: 'Kalibrasyon kaydedildi',
+    loading: 'Yükleniyor… 0/1', loaded: 'Hazır', loadFail: 'Three.js yüklenemedi; internet bağlantınızı kontrol edin.',
+    noAudio: 'Ses bu tarayıcıda kullanılamıyor; oyun sessiz çalışır.',
+    sound: 'Ses', pauseHint: 'Devam etmek için Devam’a basın',
+    tk: 'Tuşlar: D F J K · Duraklat: P / Esc · Ses: M / X · Dil: L',
+    laneTouch: 'Şerit',
+    bpm: 'BPM', best: 'En iyi', none: 'Henüz yok', preview: 'Dinle', stop: 'Durdur',
+    tabHidden: 'Sekme gizlenince duraklatıldı', resetDone: 'Kalibrasyon sıfırlandı', fsErr: 'Tam ekran açılamadı',
+    diffBest: 'Zorluk', completeAuto: 'Otomatik oynatma bitti',
+    names: ['Düyek Yürüyüşü', 'Sofyan Geçidi', 'Semai Alayı', 'Nevbet Meydanı', 'Devr-i Kebir', 'Zafer Marşı'],
+    descs: ['Ağır adım, düyek ölçüsü', 'Sofyan adımı, hızlanan davul', 'Semai ölçüsü, zurna ağırlıklı', 'Nevbet töreni, yoğun kös', 'Devr-i kebir, uzun zurna notaları', 'Zafer yürüyüşü, en hızlı tempo'],
+  },
+  en: {
+    subtitle: 'Davul, kös, zurna and zil march down this avenue to your rhythm.',
+    howto1: 'Notes roll toward the hit line. Press D F J K on the beat, or tap the lanes.',
+    howto2: 'Hold long zurna notes. Combos raise the multiplier; if band spirit hits zero the song ends.',
+    howto3: 'Measure your input lag on the calibration screen.',
+    play: 'Play', settings: 'Settings', calib: 'Calibration', back: 'Back', start: 'Start',
+    selectSong: 'Choose a song', easy: 'Easy', normal: 'Normal', hard: 'Hard',
+    resume: 'Resume', restart: 'Restart', mainMenu: 'Main menu',
+    master: 'Master', music: 'Music', sfx: 'Effects', language: 'Language', quality: 'Quality', low: 'Low', high: 'High',
+    fullscreen: 'Fullscreen', keys: 'Keys', pressKey: 'Press a key', rebindDone: 'Key set',
+    playAgain: 'Play again', score: 'Score', combo: 'Combo', acc: 'Accuracy', spirit: 'Spirit', song: 'Song',
+    pause: 'Pause', grade: 'Grade', diff: 'Difficulty', newRecord: 'New record!', defeat: 'Spirit broke', cleared: 'Song complete',
+    perfect: 'PERFECT', good: 'GOOD', miss: 'MISS', brk: 'BREAK',
+    maxCombo: 'Max combo', perfectN: 'Perfect', goodN: 'Good', missN: 'Missed', brkN: 'Broken holds', accN: 'Accuracy',
+    histogram: 'Hit timing (ms)', early: 'early', late: 'late',
+    calibTitle: 'Input latency calibration', calibHelp: 'Press a key or the button on every metronome beat (Space, D F J K or the button).',
+    calibNeedAudio: 'Press Play once first so audio can run.', calibNone: 'Not enough taps, try again.',
+    calibDone: 'Average offset', tapBtn: 'Tap', reset: 'Reset', calibSaved: 'Calibration saved',
+    loading: 'Loading… 0/1', loaded: 'Ready', loadFail: 'Could not load Three.js; check your connection.',
+    noAudio: 'Audio is not available in this browser; the game runs silent.',
+    sound: 'Sound', pauseHint: 'Press Resume to continue',
+    tk: 'Keys: D F J K · Pause: P / Esc · Sound: M / X · Language: L',
+    laneTouch: 'Lane',
+    bpm: 'BPM', best: 'Best', none: 'None yet', preview: 'Listen', stop: 'Stop',
+    tabHidden: 'Paused when the tab was hidden', resetDone: 'Calibration reset', fsErr: 'Fullscreen is not available',
+    diffBest: 'Difficulty', completeAuto: 'Auto play finished',
+    names: ['Düyek March', 'Sofyan Pass', 'Semai Procession', 'Nevbet Square', 'Grand Cycle', 'March of Victory'],
+    descs: ['Slow steps, düyek cycle', 'Sofyan steps, speeding drums', 'Semai cycle, zurna led', 'Nevbet ceremony, dense kös', 'Grand cycle, long zurna notes', 'Victory march, fastest tempo'],
+  },
+};
+const T = (k) => (I18N[LANG][k] ?? I18N.en[k] ?? k);
+const setText = (el, v) => { if (el && el.textContent !== v) el.textContent = v; };
+
+// ----- song model (generated in code) -------------------------------------
+const LEAD = 2.0;                       // seconds before the first bar
+const LANE_X = [-1.5, -0.5, 0.5, 1.5];  // lane centres on the highway
+const LANE_HEX = [0xc0392b, 0xD4AF37, 0x3fae7e, 0xf1e3c6];
+const FAM = ['davul', 'kos', 'zurna', 'cevgen'];
+const WIN_PERFECT = 0.045, WIN_GOOD = 0.11;
+const HIT_Z = 2.2, SPAWN_Z = -12.5, SPEED = 8.0;
+const LOOK = (HIT_Z - SPAWN_Z) / SPEED + 0.25;
+// 16 sixteenth slots per bar: D strong davul, t light davul, z zil. Kös and zurna are placed by rule.
+const USUL = {
+  duyek: 'D.t.tD.tD.t.tD.t',
+  sofyan: 'D..tD..tD..tD..t',
+  semai: 'D..t..zD..t..z.t',
+  nevbet: 'D.tzD.tzD.tzD.tz',
+  devr: 'Dt.tDt.tDt.tDtzt',
+  zafer: 'D.tDt.zDD.tDtzDt',
+};
+const HICAZ = [0, 1, 4, 5, 7, 8, 10];   // semitones from D (hicaz-like)
+const SONG_DEFS = [
+  { usul: 'duyek', bpm: 96, bars: 32, seed: 11 },
+  { usul: 'sofyan', bpm: 112, bars: 36, seed: 23 },
+  { usul: 'semai', bpm: 124, bars: 40, seed: 37 },
+  { usul: 'nevbet', bpm: 138, bars: 40, seed: 41 },
+  { usul: 'devr', bpm: 156, bars: 44, seed: 53 },
+  { usul: 'zafer', bpm: 176, bars: 48, seed: 67 },
+];
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function buildSong(d, idx) {
+  const sx = 60 / d.bpm / 4;                  // one sixteenth in seconds
+  const bar = 16 * sx;
+  const pat = USUL[d.usul];
+  if (pat.length !== 16) throw new Error('usul pattern must have 16 slots: ' + d.usul);
+  const rnd = mulberry32(d.seed);
+  const full = [], bass = [];
+  let zBusy = 0;
+  for (let b = 0; b < d.bars; b++) {
+    const bt = LEAD + b * bar;
+    bass.push(bt);
+    for (let i = 0; i < 16; i++) {
+      const t = bt + i * sx, c = pat[i];
+      if (c === 'D') full.push({ t, lane: 0, dur: 0, lvl: 1, acc: 1, freq: 0 });
+      else if (c === 't') full.push({ t, lane: 0, dur: 0, lvl: 2, acc: 0, freq: 0 });
+      else if (c === 'z') full.push({ t, lane: 3, dur: 0, lvl: 2, acc: 0, freq: 0 });
+      if (i % 4 === 0) full.push({ t, lane: 1, dur: 0, lvl: 1, acc: 1, freq: 0 });
+      else if (i % 4 === 2) full.push({ t, lane: 1, dur: 0, lvl: 3, acc: 0, freq: 0 });
+    }
+    // zurna motif: a few phrases per bar, some held, more on later songs
+    const n = 2 + (idx >> 1);
+    const picks = [];
+    const used = new Set();
+    for (let k = 0; k < n; k++) {
+      const slot = Math.floor(rnd() * 8) * 2;
+      if (used.has(slot)) continue;
+      used.add(slot);
+      const r = rnd();
+      const len = r < 0.5 ? 0 : r < 0.8 ? 4 : 8;      // sixteenths: tap, quarter hold, half hold
+      const semi = HICAZ[Math.floor(rnd() * HICAZ.length)] + (rnd() < 0.3 ? 12 : 0);
+      picks.push({ slot, len, semi });
+    }
+    picks.sort((a, z) => a.slot - z.slot);
+    for (const p of picks) {
+      const t = bt + p.slot * sx;
+      if (t < zBusy) continue;
+      const dur = p.len * sx;
+      full.push({ t, lane: 2, dur, lvl: p.len === 8 ? 3 : 2, acc: 0, freq: 293.66 * Math.pow(2, p.semi / 12) });
+      zBusy = t + (dur || sx * 2);
+    }
+  }
+  full.sort((a, b) => a.t - b.t || a.lane - b.lane);
+  const end = Math.max(...full.map((e) => e.t + e.dur)) + 1.5;
+  return { idx, ...d, name: { tr: I18N.tr.names[idx], en: I18N.en.names[idx] }, desc: { tr: I18N.tr.descs[idx], en: I18N.en.descs[idx] }, full, bass, barDur: bar, end, seed: d.seed };
+}
+const SONGS = SONG_DEFS.map((d, i) => buildSong(d, i));
+
+function makeChart(s, diff) {
+  const lim = { easy: 1, normal: 2, hard: 3 }[diff];
+  const jit = mulberry32(s.seed * 31 + lim);
+  const out = [];
+  for (const e of s.full) {
+    if (e.lvl <= lim) out.push({ t: e.t, lane: e.lane, dur: e.dur, freq: e.freq, acc: e.acc, state: 0, w: 0, tick: 0, bj: (jit() * 2 - 1) * 0.018 });
+  }
+  return out;
+}
+
+// ----- audio (Web Audio clock) ---------------------------------------------
+const AU = { ctx: null, master: null, music: null, sfx: null, noise: null, nodes: [] };
+// CC0 one-shots (Kenney): only UI clicks and the results fanfare. Music and hit sounds stay synthesized.
+const SAMPLE_FILES = { click: 'assets/sfx/ui-click.mp3', fanfare: 'assets/sfx/results-fanfare.mp3' };
+const SAMPLE_BYTES = {}, SAMPLES = {};
+async function decodeSamples(ctx) {
+  for (const k of Object.keys(SAMPLE_BYTES)) {
+    if (SAMPLES[k]) continue;
+    try { SAMPLES[k] = await ctx.decodeAudioData(SAMPLE_BYTES[k].slice(0)); } catch (e) { /* bad file: synth fallback */ }
+  }
+  G.assets.sfx = Object.keys(SAMPLES).length > 0;
+}
+function playSample(k, gain = 1) {
+  const buf = SAMPLES[k];
+  if (!AU.ctx || !buf || AU.ctx.state !== 'running') return false;
+  const src = AU.ctx.createBufferSource(), g = AU.ctx.createGain();
+  src.buffer = buf; g.gain.value = gain;
+  src.connect(g); g.connect(AU.sfx);
+  src.start(AU.ctx.currentTime + 0.001);
+  track(src);
+  return true;
+}
+function audioInit() {
+  if (AU.ctx) return AU.ctx;
+  try {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    const ctx = new C();
+    AU.ctx = ctx;
+    AU.master = ctx.createGain(); AU.master.connect(ctx.destination);
+    AU.music = ctx.createGain(); AU.music.connect(AU.master);
+    AU.sfx = ctx.createGain(); AU.sfx.connect(AU.master);
+    const len = Math.floor(ctx.sampleRate * 0.5);
+    AU.noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = AU.noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    applyVolumes();
+    decodeSamples(ctx);
+  } catch (e) { AU.ctx = null; }
+  return AU.ctx;
+}
+async function readyAudio() {
+  const ctx = audioInit();
+  if (!ctx) return null;
+  if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { /* blocked */ } }
+  return ctx.state === 'running' ? ctx : null;
+}
+function applyVolumes() {
+  if (!AU.ctx) return;
+  AU.master.gain.value = S.master;
+  AU.music.gain.value = S.musicOn ? S.music : 0;
+  AU.sfx.gain.value = S.sfxOn ? S.sfx * 0.9 : 0;
+}
+function track(node) {
+  AU.nodes.push(node);
+  if (AU.nodes.length > 800) AU.nodes.splice(0, 400);
+}
+function stopAll() {
+  for (const n of AU.nodes) { try { n.stop(); } catch (e) { /* already ended */ } }
+  AU.nodes.length = 0;
+}
+function tone(dest, w, type, f0, f1, dur, vol, filt) {
+  if (!AU.ctx) return;
+  const ctx = AU.ctx;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, w);
+  if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, w + dur);
+  g.gain.setValueAtTime(0.0001, w);
+  g.gain.exponentialRampToValueAtTime(vol, w + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, w + dur);
+  o.connect(g);
+  let last = g;
+  if (filt) { const f = ctx.createBiquadFilter(); f.type = filt.type; f.frequency.value = filt.f; f.Q.value = filt.q || 0.7; g.connect(f); last = f; }
+  last.connect(dest);
+  o.start(w); o.stop(w + dur + 0.05); track(o);
+}
+function noiseHit(dest, w, dur, vol, type, f) {
+  if (!AU.ctx) return;
+  const ctx = AU.ctx;
+  const s = ctx.createBufferSource(); s.buffer = AU.noise;
+  const flt = ctx.createBiquadFilter(); flt.type = type; flt.frequency.value = f;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(vol, w); g.gain.exponentialRampToValueAtTime(0.0001, w + dur);
+  s.connect(flt); flt.connect(g); g.connect(dest);
+  s.start(w, Math.random() * 0.3); s.stop(w + dur + 0.02); track(s);
+}
+function sndDavul(w, acc) { tone(AU.music, w, 'sine', 190, 60, 0.18, acc ? 0.9 : 0.55); noiseHit(AU.music, w, 0.05, acc ? 0.25 : 0.12, 'highpass', 3000); }
+function sndKos(w) { tone(AU.music, w, 'sine', 110, 40, 0.45, 0.9); noiseHit(AU.music, w, 0.1, 0.2, 'lowpass', 600); }
+function sndZurna(w, f, dur) { tone(AU.music, w, 'sawtooth', f, f * 1.01, Math.max(0.2, dur), 0.1, { type: 'lowpass', f: 1600, q: 1.2 }); }
+function sndZil(w) { noiseHit(AU.music, w, 0.25, 0.2, 'bandpass', 6500); tone(AU.music, w, 'square', 2400, 2200, 0.12, 0.025, { type: 'highpass', f: 2000 }); }
+function sndBass(w, dur) { tone(AU.music, w, 'sine', 55, 50, dur * 0.95, 0.12); }
+function sndCheer() { if (AU.ctx) noiseHit(AU.sfx, AU.ctx.currentTime + 0.001, 1.1, 0.3, 'bandpass', 1400); }
+function sndHit(perfect) { if (AU.ctx) tone(AU.sfx, AU.ctx.currentTime + 0.001, 'sine', perfect ? 1320 : 880, perfect ? 1320 : 880, 0.08, perfect ? 0.22 : 0.16); }
+function sndMiss() { if (AU.ctx) tone(AU.sfx, AU.ctx.currentTime + 0.001, 'triangle', 150, 60, 0.2, 0.3, { type: 'lowpass', f: 500 }); }
+function sndClick(w, accent) { tone(AU.sfx, w, 'square', accent ? 1500 : 1000, accent ? 1500 : 1000, 0.05, 0.28, { type: 'bandpass', f: accent ? 1500 : 1000, q: 3 }); }
+function playEvent(e, w) {
+  if (e.lane === 0) sndDavul(w, e.acc);
+  else if (e.lane === 1) sndKos(w);
+  else if (e.lane === 2) sndZurna(w, e.freq, e.dur || 0.22);
+  else sndZil(w);
+}
+
+// ----- game state ----------------------------------------------------------
+const G = {
+  ready: false, screen: 'title', song: null, visSong: null, idx: 0, sel: 0, diff: 'normal',
+  clock: 'wall', audioT0: 0, gt: 0, idleT: 0, paused: false, auto: false, bot: false, autoDone: false,
+  endAt: Infinity, ended: false, notes: [], lanes: [[], [], [], []], lp: [0, 0, 0, 0], vis: 0,
+  holds: [null, null, null, null], held: [false, false, false, false], flash: [0, 0, 0, 0], instFlash: { davul: 0, kos: 0, zurna: 0, cevgen: 0 },
+  score: 0, combo: 0, maxCombo: 0, spirit: 100, cnt: { perfect: 0, good: 0, miss: 0, brk: 0 }, weight: 0, judged: 0,
+  hist: [], mIdx: 0, bIdx: 0, cheer: 0.15, dark: 0.25, errors: [], fps: 0, result: null, rebind: -1, returnTo: 'title',
+  preview: -1, calibOn: false, frames: 0, assets: { band: false, cobble: false, sfx: false, sky: false },
+};
+const CAL = { t0: 0, taps: [], end: 0, n: 12, beat: 0.6, on: false };
+
+// ----- screens and HUD -----------------------------------------------------
+const SCREENS = ['title', 'select', 'settings', 'calib', 'pause', 'results'];
+function show(name) {
+  G.screen = name;
+  for (const s of SCREENS) {
+    const el = $('#scr-' + s);
+    if (el) {
+      const active = s === name;
+      el.classList.toggle('hidden', !active);
+      el.inert = !active;
+    }
+  }
+  document.body.classList.toggle('playing', name === 'play' || name === 'pause');
+}
+function judgeShow(kind) {
+  const el = $('#judge');
+  el.className = '';
+  void el.offsetWidth;
+  el.textContent = T(kind === 'miss' ? 'miss' : kind === 'brk' ? 'brk' : kind);
+  el.className = kind + ' show';
+}
+function toast(msg, kind) {
+  const d = document.createElement('div');
+  if (kind === 'bad') d.className = 'bad';
+  d.textContent = msg;
+  $('#toasts').appendChild(d);
+  setTimeout(() => d.remove(), 2400);
+}
+const mult = (c) => (c >= 50 ? 4 : c >= 25 ? 3 : c >= 10 ? 2 : 1);
+const fmt = (n) => Math.round(n).toLocaleString(LANG === 'tr' ? 'tr-TR' : 'en-US');
+function refreshHud() {
+  if (!G.song) return;
+  setText($('#h-song'), G.song.name[LANG]);
+  setText($('#h-diff'), T(G.diff));
+  setText($('#h-score'), fmt(G.score));
+  setText($('#h-combo'), G.combo + ' ×' + mult(G.combo));
+  const acc = G.judged ? G.weight / G.judged : 1;
+  setText($('#h-acc'), Math.round(acc * 100) + '%');
+  $('#spirit-fill').style.transform = `scaleY(${Math.max(0, Math.min(1, G.spirit / 100))})`;
+}
+
+// ----- song flow -----------------------------------------------------------
+function startSong(idx, diff, opts = {}) {
+  const s = SONGS[idx];
+  stopAll();
+  G.song = s; G.visSong = s; G.idx = idx; G.diff = diff; G.sel = idx;
+  G.auto = !!opts.auto; G.bot = !!opts.bot; G.autoDone = false;
+  G.notes = makeChart(s, diff);
+  G.lanes = [[], [], [], []];
+  G.notes.forEach((n) => G.lanes[n.lane].push(n));
+  G.vis = 0; G.lp = [0, 0, 0, 0]; G.holds = [null, null, null, null]; G.held = [false, false, false, false];
+  G.flash = [0, 0, 0, 0];
+  G.score = 0; G.combo = 0; G.maxCombo = 0; G.spirit = 100; G.cnt = { perfect: 0, good: 0, miss: 0, brk: 0 };
+  G.weight = 0; G.judged = 0; G.hist = []; G.mIdx = 0; G.bIdx = 0;
+  G.ended = false; G.endAt = Infinity; G.paused = false; G.result = null; G.cheer = 0.15;
+  const ctx = AU.ctx;
+  let clock = opts.clock || (ctx && ctx.state === 'running' ? 'audio' : 'wall');
+  if (clock === 'audio' && !(ctx && ctx.state === 'running')) clock = 'wall';
+  G.clock = clock;
+  if (clock === 'audio') { G.audioT0 = ctx.currentTime + 0.15; G.gt = -0.15; } else { G.gt = 0; }
+  show('play');
+  refreshHud();
+}
+
+function tickGame(dt) {
+  if (G.paused) return;
+  if (G.screen !== 'play' && G.screen !== 'results') return;
+  if (G.clock === 'audio' && AU.ctx) G.gt = AU.ctx.currentTime - G.audioT0;
+  else G.gt += dt;
+  if (G.screen === 'play') {
+    logic();
+    if (G.screen === 'play' && G.clock === 'audio') scheduleAudio();
+    if (G.screen === 'play' && !G.ended && G.gt >= G.song.end) endSong(false);
+  } else if (G.auto && !G.autoDone && G.gt >= G.endAt) {
+    advanceAuto();
+  }
+}
+function advanceAuto() {
+  if (G.idx >= SONGS.length - 1) { G.autoDone = true; toast(T('completeAuto')); return; }
+  startSong(G.idx + 1, G.diff, { auto: true, bot: true, clock: G.clock });
+}
+function scheduleAudio() {
+  const ctx = AU.ctx;
+  if (!ctx) return;
+  const horizon = G.gt + 0.3;
+  const ev = G.song.full;
+  while (G.mIdx < ev.length && ev[G.mIdx].t <= horizon) { playEvent(ev[G.mIdx], G.audioT0 + ev[G.mIdx].t); G.mIdx++; }
+  const bs = G.song.bass;
+  while (G.bIdx < bs.length && bs[G.bIdx] <= horizon) { sndBass(G.audioT0 + bs[G.bIdx], G.song.barDur); G.bIdx++; }
+}
+function logic() {
+  const gt = G.gt;
+  if (G.bot) botTick();
+  for (let l = 0; l < 4; l++) {
+    const h = G.holds[l];
+    if (h) {
+      if (gt >= h.t + h.dur) completeHold(l, h);
+      else if (gt >= h.tick) { h.tick = gt + 0.25; G.score += 12 * mult(G.combo); G.spirit = Math.min(100, G.spirit + 0.1); }
+    }
+    const L = G.lanes[l];
+    let i = G.lp[l];
+    while (i < L.length) {
+      const n = L[i];
+      if (n.state === 2) { i++; continue; }
+      if (n.state === 0 && gt > n.t + WIN_GOOD + 0.01) { onMiss(n); i++; continue; }
+      break;
+    }
+    G.lp[l] = i;
+  }
+  checkFail();
+}
+function botTick() {
+  for (let l = 0; l < 4; l++) {
+    const L = G.lanes[l];
+    for (let i = G.lp[l]; i < L.length; i++) {
+      const n = L[i];
+      if (n.state !== 0) continue;
+      if (G.gt >= n.t + n.bj) press(l, n.t + n.bj);
+      break;
+    }
+  }
+}
+function press(l, t) {
+  G.held[l] = true;
+  const L = G.lanes[l];
+  let best = null, bd = Infinity;
+  for (let i = G.lp[l]; i < L.length; i++) {
+    const n = L[i];
+    if (n.t - t > WIN_GOOD) break;
+    if (n.state !== 0) continue;
+    const d = Math.abs(n.t - t);
+    if (d <= WIN_GOOD && d < bd) { bd = d; best = n; }
+  }
+  if (!best) return;
+  const dd = t - best.t;
+  G.hist.push(Math.round(dd * 1000));
+  onHit(best, bd <= WIN_PERFECT ? 'perfect' : 'good');
+}
+function release(l, t) {
+  G.held[l] = false;
+  const n = G.holds[l];
+  if (!n) return;
+  if (t < n.t + n.dur - 0.12) breakHold(l, n); else completeHold(l, n);
+}
+function onHit(n, grade) {
+  const perfect = grade === 'perfect';
+  G.judged++; G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.cnt[grade]++;
+  n.w = perfect ? 1 : 0.6; G.weight += n.w;
+  G.score += (perfect ? 100 : 60) * mult(G.combo);
+  G.spirit = Math.min(100, G.spirit + (perfect ? 1.2 : 0.6));
+  judgeShow(grade);
+  sndHit(perfect);
+  G.flash[n.lane] = 1; G.instFlash[FAM[n.lane]] = 1;
+  sparks(LANE_X[n.lane], 0.3, HIT_Z, perfect ? 12 : 6, n.lane === 3 ? 0xf1e3c6 : 0xF3D27A);
+  if (n.dur > 0) { n.state = 1; n.tick = G.gt + 0.25; G.holds[n.lane] = n; } else n.state = 2;
+  if (G.combo >= 10 && G.combo % 10 === 0) { petals(lowQ() ? 18 : 36); sndCheer(); }
+}
+function onMiss(n) {
+  G.judged++; G.cnt.miss++; G.combo = 0;
+  G.spirit -= 7; n.w = 0; n.state = 2;
+  judgeShow('miss'); sndMiss();
+  checkFail();
+}
+function completeHold(l, n) {
+  n.state = 2; G.holds[l] = null;
+  G.score += 40 * mult(G.combo); G.spirit = Math.min(100, G.spirit + 0.6);
+  G.flash[l] = 1;
+}
+function breakHold(l, n) {
+  n.state = 2; G.holds[l] = null;
+  G.cnt.brk++; G.combo = 0; G.judged += 0;
+  G.weight -= n.w * 0.5; n.w *= 0.5;
+  G.spirit -= 5;
+  judgeShow('brk'); sndMiss();
+  checkFail();
+}
+function checkFail() { if (G.screen === 'play' && G.spirit <= 0 && !G.ended) endSong(true); }
+
+function endSong(defeat) {
+  G.ended = true;
+  const total = Math.max(1, G.notes.length);
+  const acc = Math.max(0, G.weight / total);
+  const grade = defeat ? 'C' : acc >= 0.95 ? 'S' : acc >= 0.85 ? 'A' : acc >= 0.7 ? 'B' : 'C';
+  const key = `${G.idx}-${G.diff}`;
+  const best = loadBest();
+  let record = false;
+  if (!defeat && (!best[key] || G.score > best[key].score)) { best[key] = { score: Math.round(G.score), grade }; saveBest(best); record = true; }
+  G.result = { defeat, acc, grade, record, score: Math.round(G.score), maxCombo: G.maxCombo, cnt: { ...G.cnt }, hist: G.hist.slice(), name: G.song.name[LANG] };
+  G.endAt = G.gt + 2.5;
+  if (G.auto && G.idx >= SONGS.length - 1) G.autoDone = true;
+  showResults();
+}
+function showResults() {
+  const r = G.result;
+  if (!r) return;
+  show('results');
+  if (!r.defeat && !playSample('fanfare', 0.9)) sndCheer();
+  setText($('#r-grade'), r.grade);
+  setText($('#res-main'), r.defeat ? T('defeat') : T('cleared'));
+  setText($('#r-title'), r.name + ' · ' + T(G.diff));
+  setText($('#r-record'), r.record ? T('newRecord') : '');
+  const rows = [[T('score'), fmt(r.score)], [T('maxCombo'), r.maxCombo], [T('perfectN'), r.cnt.perfect], [T('goodN'), r.cnt.good], [T('missN'), r.cnt.miss], [T('brkN'), r.cnt.brk], [T('accN'), Math.round(r.acc * 100) + '%'], [T('grade'), r.grade]];
+  $('#r-stats').innerHTML = rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
+  const bins = new Array(11).fill(0);
+  for (const ms of r.hist) bins[Math.max(0, Math.min(10, Math.floor((ms + 110) / 20)))]++;
+  const mx = Math.max(1, ...bins);
+  $('#r-hist').innerHTML = bins.map((b) => `<i style="height:${Math.round((b / mx) * 100)}%"></i>`).join('');
+}
+function goTitle() {
+  stopAll();
+  G.notes = []; G.lanes = [[], [], [], []]; G.song = null; G.visSong = SONGS[G.sel];
+  G.paused = false; G.calibOn = false;
+  show('title');
+  refreshBest();
+}
+function pauseGame() {
+  if (G.screen !== 'play' || G.paused) return;
+  G.paused = true;
+  if (G.clock === 'audio' && AU.ctx) AU.ctx.suspend();
+  show('pause');
+}
+function resumeGame() {
+  if (G.screen !== 'pause') return;
+  G.paused = false;
+  if (G.clock === 'audio' && AU.ctx) AU.ctx.resume();
+  show('play');
+}
+function nowSong() { return G.clock === 'audio' && AU.ctx ? AU.ctx.currentTime - G.audioT0 : G.gt; }
+function laneDown(l) {
+  if (G.screen === 'calib') { calibTap(); return; }
+  if (G.screen !== 'play' || G.paused) return;
+  press(l, nowSong() - S.calib);
+  G.flash[l] = Math.max(G.flash[l], 0.25);
+}
+function laneUp(l) {
+  if (G.screen !== 'play' || G.paused) return;
+  release(l, nowSong() - S.calib);
+}
+
+// ----- preview and calibration --------------------------------------------
+async function previewSong(idx) {
+  stopAll();
+  G.preview = idx;
+  const ctx = await readyAudio();
+  if (!ctx) { toast(T('noAudio'), 'bad'); return; }
+  const s = SONGS[idx];
+  const t0 = ctx.currentTime + 0.05;
+  for (const e of s.full) { if (e.t > 14) break; playEvent(e, t0 + e.t); }
+  for (const b of s.bass) { if (b > 14) break; sndBass(t0 + b, s.barDur); }
+}
+async function calibStart() {
+  const ctx = await readyAudio();
+  if (!ctx) { setText($('#cal-msg'), T('calibNeedAudio')); return; }
+  stopAll();
+  CAL.t0 = ctx.currentTime + 0.8;
+  CAL.taps = [];
+  CAL.end = CAL.t0 + CAL.n * CAL.beat + 0.5;
+  for (let i = 0; i < CAL.n; i++) sndClick(CAL.t0 + i * CAL.beat, i % 4 === 0);
+  CAL.on = true;
+  setText($('#cal-res'), '');
+  setText($('#cal-msg'), '');
+}
+function calibTap() {
+  if (!CAL.on || !AU.ctx) return;
+  const now = AU.ctx.currentTime - CAL.t0;
+  const idx = Math.round(now / CAL.beat);
+  const d = now - idx * CAL.beat;
+  if (idx >= 2 && idx < CAL.n && Math.abs(d) < 0.3) CAL.taps.push(d);
+}
+function calibTick() {
+  if (!CAL.on || !AU.ctx) return;
+  const now = AU.ctx.currentTime;
+  const phase = ((now - CAL.t0) / CAL.beat) % 1;
+  const dot = $('#dot');
+  if (dot && now >= CAL.t0) dot.style.transform = `scale(${1 + 0.35 * Math.max(0, 1 - phase * 4)})`;
+  if (now > CAL.end) {
+    CAL.on = false;
+    if (CAL.taps.length < 4) { setText($('#cal-res'), ''); setText($('#cal-msg'), T('calibNone')); return; }
+    const v = CAL.taps.slice().sort((a, b) => a - b);
+    const med = v[Math.floor(v.length / 2)];
+    S.calib = Math.round(med * 1000) / 1000;
+    saveSettings();
+    setText($('#cal-res'), `${T('calibDone')}: ${Math.round(S.calib * 1000)} ms`);
+    setText($('#cal-msg'), T('calibSaved'));
+  }
+}
+
+// ----- three.js world (built in code) --------------------------------------
+let R = null, scene = null, cam = null, sun = null, hemi = null, BEAT_PULSE = 0;
+const C = {};
+const BAND = [];
+const CROWD = [];
+const TMP = { c: null, dusk: null, night: null, m: null, p: null, q: null, s: null, e: null, col: null };
+const PTS = {};
+const BANNERS = [];
+const BAND_SCALE = 1.5;   // band size on screen (pivot at z = -15)
+const BAND_Z = 15;
+
+function lamb(hex = 0xffffff) { return new THREE.MeshLambertMaterial({ color: hex, flatShading: true }); }
+function inst(geo, mat, n, cast = true) {
+  const m = new THREE.InstancedMesh(geo, mat, Math.max(1, n));
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  m.castShadow = cast && !lowQ() ? true : false;
+  m.receiveShadow = false;
+  scene.add(m);
+  return m;
+}
+function put(mesh, i, x, y, z, sx = 1, sy = 1, sz = 1, ry = 0, rx = 0) {
+  TMP.e.set(rx, ry, 0);
+  TMP.q.setFromEuler(TMP.e);
+  TMP.p.set(x, y, z);
+  TMP.s.set(sx, sy, sz);
+  TMP.m.compose(TMP.p, TMP.q, TMP.s);
+  mesh.setMatrixAt(i, TMP.m);
+}
+function paint(mesh, i, hex) { mesh.setColorAt(i, TMP.col.setHex(hex)); }
+
+class Mesh3 {
+  constructor() { this.p = []; this.c = []; }
+  tri(a, b, c, col) { for (const v of [a, b, c]) { this.p.push(v[0], v[1], v[2]); this.c.push(col.r, col.g, col.b); } }
+  box(x0, x1, y0, y1, z0, z1, hex) {
+    const col = new THREE.Color(hex);
+    const v = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+    const f = [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [3, 2, 6, 7], [4, 5, 1, 0]];
+    for (const [a, b, c, d] of f) { this.tri(v[a], v[b], v[c], col); this.tri(v[a], v[c], v[d], col); }
+  }
+  geo() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    g.computeVertexNormals();
+    return g;
+  }
+}
+
+function softTexture() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 64;
+  const g = cv.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.45, 'rgba(255,255,255,0.6)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(cv);
+}
+function makePts(n, size) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) pos[i * 3 + 1] = -99;
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({ size, map: PTS.tex, vertexColors: true, transparent: true, depthWrite: false });
+  const p = new THREE.Points(geo, mat);
+  p.frustumCulled = false;
+  scene.add(p);
+  return { p, pos, col, vel: new Float32Array(n * 3), life: new Float32Array(n), n, cur: 0 };
+}
+function emit(pool, x, y, z, vx, vy, vz, life, hex) {
+  const i = pool.cur; pool.cur = (pool.cur + 1) % pool.n;
+  pool.pos[i * 3] = x; pool.pos[i * 3 + 1] = y; pool.pos[i * 3 + 2] = z;
+  pool.vel[i * 3] = vx; pool.vel[i * 3 + 1] = vy; pool.vel[i * 3 + 2] = vz;
+  pool.life[i] = life;
+  TMP.col.setHex(hex);
+  pool.col[i * 3] = TMP.col.r; pool.col[i * 3 + 1] = TMP.col.g; pool.col[i * 3 + 2] = TMP.col.b;
+}
+function sparks(x, y, z, n, hex) { for (let i = 0; i < n; i++) emit(PTS.spark, x, y, z, (Math.random() - 0.5) * 3, 2 + Math.random() * 3, (Math.random() - 0.5) * 2, 0.5, hex); }
+function petals(n) {
+  const pal = [0xD4AF37, 0xA4161A, 0xF1E3C6, 0xF3D27A];   // gold and crimson confetti on a combo of 10
+  for (let i = 0; i < n; i++) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    emit(PTS.petal, side * (8 + Math.random() * 4), 5.5 + Math.random() * 2, -22 + Math.random() * 26, (Math.random() - 0.5) * 1.2, -0.8 - Math.random(), (Math.random() - 0.5) * 1.2, 4 + Math.random() * 2, pal[i % pal.length]);
+  }
+}
+function tickPool(pool, dt, g) {
+  const p = pool.pos, v = pool.vel, L = pool.life;
+  for (let i = 0; i < pool.n; i++) {
+    if (L[i] <= 0) continue;
+    L[i] -= dt;
+    v[i * 3 + 1] -= g * dt;
+    p[i * 3] += v[i * 3] * dt; p[i * 3 + 1] += v[i * 3 + 1] * dt; p[i * 3 + 2] += v[i * 3 + 2] * dt;
+    if (L[i] <= 0 || p[i * 3 + 1] < 0) { L[i] = 0; p[i * 3 + 1] = -99; }
+  }
+  pool.p.geometry.attributes.position.needsUpdate = true;
+  // colours are written by emit(); without this flag the GPU keeps the all-zero (black) colours
+  pool.p.geometry.attributes.color.needsUpdate = true;
+}
+
+// one house on the square: plastered wall, gold cornice, a row of arches with striped awnings, crenellated roof
+function arcadeHouse(m, side, xa, w, z, d, h, wall) {
+  const fx = side < 0 ? xa + w : xa;      // street-facing wall
+  const dir = -side;                      // towards the avenue
+  const at = (depth) => [Math.min(fx, fx + dir * depth), Math.max(fx, fx + dir * depth)];
+  m.box(xa, xa + w, 0, h, z, z + d, wall);
+  const [c0, c1] = at(0.3);
+  m.box(c0, c1, h - 0.4, h + 0.2, z - 0.05, z + d + 0.05, 0xD4AF37);
+  let k = 0;
+  for (let zz = z + 0.6; zz + 1.3 < z + d; zz += 2.4, k++) {
+    const [a0, a1] = at(0.12);
+    m.box(a0, a1, 0, 2.3, zz, zz + 1.1, 0x2a1d12);                       // doorway
+    m.box(a0, a1, 2.3, 2.5, zz + 0.1, zz + 1.0, 0xF1E3C6);               // arch courses, narrowing to the crown
+    m.box(a0, a1, 2.5, 2.7, zz + 0.25, zz + 0.85, 0xF1E3C6);
+    m.box(a0, a1, 2.7, 2.85, zz + 0.4, zz + 0.7, 0xF1E3C6);
+    m.box(a0, a1, 0, 2.3, zz - 0.12, zz, 0xd8c79a);                      // pillars
+    m.box(a0, a1, 0, 2.3, zz + 1.1, zz + 1.22, 0xd8c79a);
+    const [w0, w1] = at(0.7);
+    m.box(w0, w1, 2.95, 3.05, zz - 0.2, zz + 1.3, k % 2 ? 0x1B4332 : 0xA4161A);   // striped awning
+  }
+  for (let zz = z + 0.3; zz < z + d - 0.5; zz += 1.1) {
+    if (Math.floor(zz * 3) % 3 !== 0) m.box(xa + 0.2, xa + w - 0.2, h + 0.2, h + 0.7, zz, zz + 0.5, wall);   // roof battlements
+  }
+}
+
+// mosaic floor of the square: a star-and-diamond tile drawn on a canvas, laid over the plain slab
+function mosaicTexture() {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 128;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#cbb68a';
+  g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#A4161A';
+  g.beginPath(); g.moveTo(64, 14); g.lineTo(90, 64); g.lineTo(64, 114); g.lineTo(38, 64); g.closePath(); g.fill();
+  g.fillStyle = '#1B4332';
+  g.beginPath(); g.moveTo(64, 36); g.lineTo(78, 64); g.lineTo(64, 92); g.lineTo(50, 64); g.closePath(); g.fill();
+  g.fillStyle = '#D4AF37';
+  g.beginPath(); g.arc(64, 64, 6, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#6b5a3a'; g.lineWidth = 3; g.strokeRect(1, 1, 126, 126);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 12);
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function buildWorld() {
+  const m = new Mesh3();
+  m.box(-40, 40, -0.3, 0, -50, 22, 0x1b4332);
+  m.box(-6, 6, 0, 0.02, -50, 22, 0xb89d6e);
+  m.box(-7.5, -6, 0, 0.25, -50, 22, 0xd8c79a);
+  m.box(6, 7.5, 0, 0.25, -50, 22, 0xd8c79a);
+  m.box(-2.5, 2.5, 0.02, 0.05, -50, 8, 0xA4161A);
+  for (let i = 0; i < 4; i++) m.box(LANE_X[i] - 0.47, LANE_X[i] + 0.47, 0.05, 0.08, -12.6, 2.6, i % 2 ? 0x2b5c46 : 0x1b4332);
+  for (const x of [-2, -1, 0, 1, 2]) m.box(x - 0.035, x + 0.035, 0.05, 0.1, -12.6, 2.6, 0xD4AF37);
+  // arcaded houses around the square, seeded so every load looks the same
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const WALL = [0xe9dcc0, 0xd9c08a, 0x9b3a2a, 0xc9b58a];
+  for (const side of [-1, 1]) {
+    for (let z = -50; z < 20;) {
+      const w = rnd() * 2 + 4, h = rnd() * 3 + 6, d = rnd() * 2 + 6;
+      const xa = side < 0 ? -14 - w : 14;
+      arcadeHouse(m, side, xa, w, z, d, h, WALL[Math.floor(rnd() * WALL.length)]);
+      z += d + 0.4;
+    }
+  }
+  // poles for torches and banners
+  for (const side of [-1, 1]) {
+    const x = side * 6.8;
+    for (let z = -30; z <= 8; z += 7) m.box(x - 0.07, x + 0.07, 0.25, 3.4, z - 0.07, z + 0.07, 0x3b2a1a);
+    for (const z of [-18, -6, 6]) m.box(x - 0.06, x + 0.06, 0.25, 4.9, z - 0.06, z + 0.06, 0x3b2a1a);
+  }
+  // a mosque dome closing the far end of the square, and two minarets either side of the houses
+  m.box(-5, 5, 0, 3, -56, -49, 0xF1E3C6);
+  m.box(-4, 4, 3, 4.2, -55.6, -49.4, 0x5d7266);
+  m.box(-3, 3, 4.2, 5.2, -55.2, -49.8, 0x5d7266);
+  m.box(-1.8, 1.8, 5.2, 6, -54.8, -50.2, 0x5d7266);
+  m.box(-0.12, 0.12, 6, 7.2, -52.6, -52.4, 0xD4AF37);
+  for (const side of [-1, 1]) {
+    const x = side * 24, z = -38;
+    m.box(x - 1.1, x + 1.1, 0, 3, z - 1.1, z + 1.1, 0xF1E3C6);
+    m.box(x - 0.7, x + 0.7, 3, 11, z - 0.7, z + 0.7, 0xF1E3C6);
+    m.box(x - 0.95, x + 0.95, 7.4, 7.8, z - 0.95, z + 0.95, 0xD4AF37);
+    m.box(x - 0.5, x + 0.5, 11, 12.4, z - 0.5, z + 0.5, 0xF1E3C6);
+    m.box(x - 0.55, x + 0.55, 12.4, 12.8, z - 0.55, z + 0.55, 0xD4AF37);
+    m.box(x - 0.1, x + 0.1, 12.8, 14.6, z - 0.1, z + 0.1, 0xD4AF37);
+  }
+  C.world = new THREE.Mesh(m.geo(), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }));
+  C.world.receiveShadow = !lowQ();
+  scene.add(C.world);
+  const tiles = new THREE.Mesh(new THREE.PlaneGeometry(12, 72), new THREE.MeshLambertMaterial({ map: mosaicTexture() }));
+  tiles.rotation.x = -Math.PI / 2;
+  tiles.position.set(0, 0.025, -14);
+  tiles.receiveShadow = !lowQ();
+  scene.add(tiles);
+}
+
+// a banner cloth: field colour, gold border, crescent and star (drawn on a canvas, so no image file is needed)
+function bannerTexture(field) {
+  const cv = document.createElement('canvas');
+  cv.width = 128; cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = field; g.fillRect(0, 0, 128, 256);
+  g.strokeStyle = '#D4AF37'; g.lineWidth = 8; g.strokeRect(10, 10, 108, 236);
+  g.fillStyle = '#D4AF37'; g.fillRect(14, 186, 100, 6); g.fillRect(14, 200, 100, 6);
+  g.fillStyle = '#D4AF37';
+  g.beginPath(); g.arc(64, 96, 24, 0, Math.PI * 2); g.fill();          // crescent: gold disc with a field-coloured bite
+  g.fillStyle = field;
+  g.beginPath(); g.arc(73, 90, 20, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#D4AF37';
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {                                         // five-point star
+    const r = i % 2 ? 6 : 14, a = -Math.PI / 2 + i * Math.PI / 5;
+    g.lineTo(96 + Math.cos(a) * r, 74 + Math.sin(a) * r);
+  }
+  g.closePath(); g.fill();
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function buildBanners() {
+  const fields = ['#A4161A', '#1B4332', '#A4161A', '#1B4332', '#A4161A', '#1B4332'];
+  let k = 0;
+  for (const side of [-1, 1]) {
+    for (const z of [-18, -6, 6]) {
+      const geo = new THREE.PlaneGeometry(1.2, 2.6, 2, 8);
+      const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: bannerTexture(fields[k]), side: THREE.DoubleSide }));
+      mesh.position.set(side * 6.72, 2.9, z);
+      mesh.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+      scene.add(mesh);
+      BANNERS.push({ mesh, base: geo.attributes.position.array.slice(), ph: k * 1.3 });
+      k++;
+    }
+  }
+}
+
+function buildTrees() {
+  // plane trees: tall pale trunk, canopy made of three leafy clumps (instanced, 3 per tree)
+  const N = 16;
+  C.trunk = inst(new THREE.CylinderGeometry(0.1, 0.16, 2.6, 7), lamb(0x9a8a72), N);
+  C.canopy = inst(new THREE.IcosahedronGeometry(0.9, 0), lamb(0xffffff), N * 3);
+  const greens = [0x6b7a34, 0x7d8a3c, 0x8a7a2f];
+  const CLUMP = [[0, 0, 0, 1], [0.55, -0.2, 0.15, 0.75], [-0.5, -0.1, -0.2, 0.8]];
+  let i = 0;
+  for (const side of [-1, 1]) for (let z = -32; z <= 10; z += 6) {
+    const x = side * 8.4;
+    put(C.trunk, i, x, 1.3, z);
+    CLUMP.forEach(([dx, dy, dz, s], k) => {
+      put(C.canopy, i * 3 + k, x + dx, 3.4 + dy, z + dz, s, s, s);
+      paint(C.canopy, i * 3 + k, greens[i % greens.length]);
+    });
+    i++;
+  }
+  C.trunk.instanceMatrix.needsUpdate = true;
+  C.canopy.instanceMatrix.needsUpdate = true;
+  C.canopy.instanceColor.needsUpdate = true;
+}
+
+function buildTorches() {
+  const pos = [];
+  for (const side of [-1, 1]) for (let z = -30; z <= 8; z += 7) pos.push([side * 6.8, z]);
+  C.torchN = pos.length;
+  C.flames = inst(new THREE.ConeGeometry(0.16, 0.5, 6), new THREE.MeshLambertMaterial({ color: 0xffb347, emissive: 0xff7a1a, emissiveIntensity: 0.4 }), pos.length, false);
+  C.glows = inst(new THREE.SphereGeometry(0.6, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffa040, emissive: 0xff8020, transparent: true, opacity: 0, depthWrite: false }), pos.length, false);
+  C.flameMat = C.flames.material;
+  C.glowMat = C.glows.material;
+  C.torchPos = pos;
+}
+
+function buildCrowd() {
+  let seed = 99;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const PAL = [0xA4161A, 0x1B4332, 0xD4AF37, 0xF1E3C6, 0x3a2a1a, 0x2b4a7a, 0x7a1414, 0x5d4a3a];
+  for (const side of [-1, 1]) for (let row = 0; row < 3; row++) for (let z = -30; z < 10; z += 0.9) {
+    CROWD.push({ x: side * (9.3 + row * 1.05) + (rnd() - 0.5) * 0.2, z: z + (rnd() - 0.5) * 0.3, h: 0.9 + rnd() * 0.25, ph: rnd() * 6.28, c: PAL[Math.floor(rnd() * PAL.length)] });
+  }
+  const n = CROWD.length;
+  // people, not boxes: tapered torso, round head, two arms (instanced; arms are 2 per figure)
+  C.cBody = inst(new THREE.CylinderGeometry(0.17, 0.22, 1, 7), lamb(0xffffff), n, false);
+  C.cHead = inst(new THREE.SphereGeometry(0.14, 8, 6), lamb(0xd8a57c), n, false);
+  C.cArm = inst(new THREE.CylinderGeometry(0.045, 0.04, 0.55, 5), lamb(0xffffff), n * 2, false);
+  CROWD.forEach((c, i) => { paint(C.cBody, i, c.c); paint(C.cArm, 2 * i, c.c); paint(C.cArm, 2 * i + 1, c.c); });
+  C.cBody.instanceColor.needsUpdate = true;
+  C.cArm.instanceColor.needsUpdate = true;
+}
+
+function buildBand() {
+  const rows = [
+    ['kos', 'kos', 'kos', 'kos', 'kos', 'kos'],
+    ['davul', 'davul', 'davul', 'davul', 'davul', 'davul'],
+    ['zurna', 'zurna', 'zurna', 'zurna', 'zurna', 'zurna'],
+    ['zurna', 'zurna', 'zurna', 'zurna', 'zurna', 'zurna'],
+    ['cevgen', 'cevgen', 'cevgen', 'cevgen', 'cevgen', 'cevgen'],
+  ];
+  BAND.length = 0;
+  rows.forEach((kinds, r) => kinds.forEach((kind, c) => BAND.push({ kind, x: (c - 2.5) * 1.35, z: -15.2 - r * 1.7, row: r, lead: false, coat: (c + r) % 2 ? 0xA4161A : 0x1B4332 })));
+  BAND.push({ kind: 'cevgen', x: 0, z: -13.4, row: -1, lead: true, coat: 0xF1E3C6 });
+  const cnt = {};
+  for (const m of BAND) { m.ki = cnt[m.kind] || 0; cnt[m.kind] = m.ki + 1; }
+  const N = BAND.length;
+  C.body = inst(new THREE.BoxGeometry(0.46, 0.9, 0.28), lamb(0xffffff), N);
+  C.head = inst(new THREE.SphereGeometry(0.16, 10, 8), lamb(0xd8a57c), N);
+  C.fez = inst(new THREE.CylinderGeometry(0.13, 0.16, 0.22, 8), lamb(0xb3261e), N);
+  C.davul = inst(new THREE.CylinderGeometry(0.26, 0.26, 0.36, 10), lamb(0x9b5a2b), cnt.davul);
+  C.kos = inst(new THREE.CylinderGeometry(0.42, 0.42, 0.36, 12), lamb(0xd4af37), cnt.kos);
+  C.zurna = inst(new THREE.CylinderGeometry(0.03, 0.07, 0.7, 6), lamb(0xe0b84a), cnt.zurna);
+  C.staff = inst(new THREE.CylinderGeometry(0.035, 0.035, 2.1, 6), lamb(0x5a3a1a), cnt.cevgen);
+  C.ring = inst(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 10), lamb(0xD4AF37), cnt.cevgen);   // the zil (cymbal) flashes on lane-3 hits
+  C.stick = inst(new THREE.CylinderGeometry(0.02, 0.028, 0.5, 5), lamb(0x5a3a1a), cnt.davul, false);   // drum sticks
+  // sash: procedural fallback; models/band_figure.glb replaces the geometry when it loads
+  C.sash = inst(new THREE.CylinderGeometry(0.225, 0.225, 0.1, 8).scale(1, 1, 0.66), lamb(0xffffff), N, false);
+  BAND.forEach((m, i) => {
+    paint(C.body, i, m.coat);
+    paint(C.head, i, 0xd8a57c);
+    paint(C.fez, i, m.lead ? 0xD4AF37 : 0xF1E3C6);
+    paint(C.sash, i, m.lead ? 0xF1E3C6 : 0xD4AF37);
+    if (m.kind === 'davul') { paint(C.davul, m.ki, 0x9b5a2b); paint(C.stick, m.ki, 0x5a3a1a); }
+    if (m.kind === 'kos') paint(C.kos, m.ki, 0xD4AF37);
+    if (m.kind === 'zurna') paint(C.zurna, m.ki, 0xE0B84A);
+    if (m.kind === 'cevgen') { paint(C.staff, m.ki, 0x5a3a1a); paint(C.ring, m.ki, 0xD4AF37); }
+  });
+  const BAND_PARTS = ['body', 'head', 'fez', 'sash', 'davul', 'kos', 'zurna', 'staff', 'ring', 'stick'];
+  for (const k of BAND_PARTS) C[k].instanceColor.needsUpdate = true;
+  // bring the band closer to the camera: scale every band mesh about its centre (z = -15), so the rows
+  // keep their place on the avenue and the note highway in front is not covered
+  for (const k of BAND_PARTS) {
+    C[k].scale.setScalar(BAND_SCALE);
+    C[k].position.set(0, 0, -BAND_Z * (1 - BAND_SCALE));
+  }
+}
+
+function buildNotes() {
+  C.notes = new THREE.InstancedMesh(new THREE.BoxGeometry(0.82, 0.14, 0.36), lamb(0xffffff), 720);
+  C.notes.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  C.notes.count = 0;
+  C.holds = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.08, 1), lamb(0xffffff), 180);
+  C.holds.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  C.holds.count = 0;
+  C.glow = new THREE.InstancedMesh(new THREE.BoxGeometry(0.94, 0.03, 1.2), lamb(0xffffff), 4);
+  C.glow.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (let l = 0; l < 4; l++) put(C.glow, l, LANE_X[l], 0.1, HIT_Z - 0.3);
+  C.glow.instanceMatrix.needsUpdate = true;
+  C.hit = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.07, 0.12), new THREE.MeshLambertMaterial({ color: 0xD4AF37, emissive: 0x3a2600 }));
+  C.hit.position.set(0, 0.13, HIT_Z);
+  scene.add(C.notes, C.holds, C.glow, C.hit);
+}
+
+function buildFx() {
+  PTS.tex = softTexture();
+  const half = lowQ() ? 0.5 : 1;
+  PTS.petal = makePts(Math.round(220 * half), 0.42);
+  PTS.spark = makePts(Math.round(160 * half), 0.24);
+}
+
+function buildThree() {
+  const canvas = $('#gl');
+  R = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowQ() ? 1 : 1.5));
+  R.shadowMap.enabled = !lowQ();
+  R.shadowMap.type = THREE.PCFShadowMap;
+  scene = new THREE.Scene();
+  TMP.c = new THREE.Color(); TMP.dusk = new THREE.Color(0xd9864a); TMP.night = new THREE.Color(0x0b132b);
+  TMP.m = new THREE.Matrix4(); TMP.p = new THREE.Vector3(); TMP.s = new THREE.Vector3(); TMP.q = new THREE.Quaternion(); TMP.e = new THREE.Euler(); TMP.col = new THREE.Color();
+  scene.background = new THREE.Color().copy(TMP.dusk);
+  scene.fog = new THREE.Fog(TMP.dusk.getHex(), 30, 80);
+  cam = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+  cam.position.set(0, 6.2, 13);
+  cam.lookAt(0, 0.4, -4);
+  hemi = new THREE.HemisphereLight(0xfff0d0, 0x1b4332, 0.95);   // warm sky, green garden bounce
+  sun = new THREE.DirectionalLight(0xffd9a0, 1.2);
+  sun.position.set(-7, 14, 8);
+  sun.target.position.set(0, 0, -8);
+  sun.castShadow = !lowQ();
+  sun.shadow.mapSize.set(1024, 1024);
+  const sc = sun.shadow.camera;
+  sc.left = -14; sc.right = 14; sc.top = 12; sc.bottom = -14; sc.near = 2; sc.far = 60;
+  sc.updateProjectionMatrix();
+  sun.shadow.bias = -0.0008;
+  scene.add(hemi, sun, sun.target);
+  buildFx();
+  buildWorld();
+  buildBanners();
+  buildTrees();
+  buildTorches();
+  buildCrowd();
+  buildBand();
+  buildNotes();
+  resize();
+}
+
+function resize() {
+  if (!R) return;
+  const w = window.innerWidth, h = window.innerHeight;
+  R.setSize(w, h, false);
+  cam.aspect = w / h;
+  const fovHalf = Math.atan(Math.max(6.5, 5.6 / cam.aspect) / 14);
+  cam.fov = Math.min(85, Math.max(45, THREE.MathUtils.radToDeg(fovHalf * 2)));
+  cam.updateProjectionMatrix();
+}
+
+// ----- optional CC0 assets: loaded after the first frame; the procedural world stays until they arrive -----
+const ASSET_ON = !FLAG.noassets;
+function geoOf(gltf, name) {
+  let geo = null;
+  gltf.scene.traverse((o) => { if (!geo && o.isMesh && o.name === name) geo = o.geometry; });
+  if (!geo) throw new Error('missing mesh ' + name);
+  return geo;
+}
+async function loadAssets() {
+  if (!ASSET_ON) return;
+  try {
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    const gl = new GLTFLoader();
+    const [fig, ins] = await Promise.all([gl.loadAsync('assets/models/band_figure.glb'), gl.loadAsync('assets/models/band_instruments.glb')]);
+    // collect every geometry first so a missing part never leaves the band half-swapped
+    const geos = [
+      [C.body, geoOf(fig, 'body')], [C.head, geoOf(fig, 'head')], [C.fez, geoOf(fig, 'hat')], [C.sash, geoOf(fig, 'sash')],
+      [C.davul, geoOf(ins, 'davul')], [C.kos, geoOf(ins, 'kos')], [C.zurna, geoOf(ins, 'zurna')],
+      [C.staff, geoOf(ins, 'cevgen_staff')], [C.ring, geoOf(ins, 'cevgen_ring')],
+    ];
+    for (const [mesh, geo] of geos) { mesh.geometry.dispose(); mesh.geometry = geo; }
+    G.assets.band = true;
+  } catch (e) { /* keep the procedural band */ }
+}
+async function loadCobble() {
+  if (!ASSET_ON) return;
+  try {
+    const tex = await new THREE.TextureLoader().loadAsync('assets/textures/cobble.jpg');
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 18);
+    tex.anisotropy = 4;
+    const geo = new THREE.PlaneGeometry(12, 72);
+    geo.rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, color: 0xd8c7a0 }));
+    mesh.position.set(0, 0.03, -14);   // covers the purple avenue slab (x -6..6, z -50..22), under the red carpet
+    mesh.receiveShadow = !lowQ();
+    scene.add(mesh);
+    G.assets.cobble = true;
+  } catch (e) { /* keep the flat avenue */ }
+}
+// dusk HDRI as image-based light; High tier only (Low keeps the plain hemisphere light)
+async function loadSky() {
+  if (!ASSET_ON || lowQ()) return;
+  try {
+    const { RGBELoader } = await import('three/addons/loaders/RGBELoader.js');
+    const hdr = await new RGBELoader().loadAsync('assets/sky/dusk.hdr');
+    const pm = new THREE.PMREMGenerator(R);
+    scene.environment = pm.fromEquirectangular(hdr).texture;
+    hdr.dispose(); pm.dispose();
+    G.assets.sky = true;
+  } catch (e) { /* keep the hemisphere light only */ }
+}
+async function fetchSamples() {
+  if (!ASSET_ON) return;
+  for (const k of Object.keys(SAMPLE_FILES)) {
+    try { const r = await fetch(SAMPLE_FILES[k]); if (r.ok) SAMPLE_BYTES[k] = await r.arrayBuffer(); } catch (e) { /* offline or file:// */ }
+  }
+  if (AU.ctx) decodeSamples(AU.ctx);
+}
+function onUiClick(e) {
+  if (!AU.ctx || !e.target.closest || !e.target.closest('button, .card')) return;
+  if (!playSample('click', 0.9) && AU.sfx) sndClick(AU.ctx.currentTime + 0.001, false);
+}
+
+// per-frame visuals
+function visualBeat() {
+  const playing = G.song && (G.screen === 'play' || G.screen === 'pause' || G.screen === 'results');
+  const bpm = playing ? G.song.bpm : (G.visSong ? G.visSong.bpm : 100);
+  const t = playing ? G.gt : G.idleT;
+  return { beat: t * bpm / 60, t };
+}
+function updateBand(beat, dt) {
+  const bob = Math.abs(Math.sin(beat * Math.PI));
+  const turn = Math.sin(beat * Math.PI / 3);
+  for (const k of FAM) G.instFlash[k] = Math.max(0, G.instFlash[k] - dt * 5);
+  for (let i = 0; i < BAND.length; i++) {
+    const m = BAND[i];
+    const hop = bob * (m.lead ? 0.08 : 0.05);
+    const sway = turn * 0.08 * (m.row % 2 ? 1 : -1);
+    put(C.body, i, m.x, 0.45 + hop, m.z, 1, 1, 1, sway);
+    put(C.head, i, m.x, 1.05 + hop, m.z, 1, 1, 1, sway);
+    // the mehterbaşı wears a taller börk; the sash sits at waist height (0.12 above the body centre)
+    put(C.fez, i, m.x, 1.27 + hop + (m.lead ? 0.1 : 0), m.z, 1, m.lead ? 1.45 : 1, 1, sway);
+    put(C.sash, i, m.x, 0.57 + hop, m.z, 1, 1, 1, sway);
+    if (m.kind === 'davul') {
+      const f = G.instFlash.davul;
+      put(C.davul, m.ki, m.x - 0.05, 0.6 + hop, m.z + 0.22, 1 + f * 0.2, 1, 1 + f * 0.2, 0, Math.PI / 2);
+      // the drum arm: raised between the beats, striking the head on a davul note (f = 1 at the hit)
+      put(C.stick, m.ki, m.x + 0.1, 0.9 + hop, m.z + 0.42, 1, 1, 1, 0, -1.0 + 0.9 * f);
+    } else if (m.kind === 'kos') {
+      const f = G.instFlash.kos;
+      put(C.kos, m.ki, m.x + 0.3, 0.55 + hop, m.z + 0.2, 1 + f * 0.15, 1, 1 + f * 0.15, 0, Math.PI / 2);
+    } else if (m.kind === 'zurna') {
+      // the zurna sways more while the player holds a zurna note
+      const swing = (0.18 + 0.22 * (G.holds[2] ? 1 : 0)) * Math.sin(beat * Math.PI + m.row * 0.8);
+      put(C.zurna, m.ki, m.x, 1.05 + hop, m.z + 0.42, 1, 1, 1, swing, Math.PI / 2);
+    } else {
+      const f = G.instFlash.cevgen;
+      put(C.staff, m.ki, m.x + 0.42, 1.05 + hop, m.z, 1, 1, 1);
+      put(C.ring, m.ki, m.x + 0.42, 1.9 + hop + f * 0.08, m.z, 1 + f * 0.3, 1, 1 + f * 0.3, 0, Math.PI / 2);
+      // the zil (cymbal) flashes bright gold on every lane-3 hit
+      C.ring.setColorAt(m.ki, TMP.col.setHex(0xD4AF37).multiplyScalar(0.75 + 1.25 * f));
+    }
+  }
+  for (const k of ['body', 'head', 'fez', 'sash', 'davul', 'kos', 'zurna', 'staff', 'ring', 'stick']) C[k].instanceMatrix.needsUpdate = true;
+  C.ring.instanceColor.needsUpdate = true;
+  for (let j = 0; j < CROWD.length; j++) {
+    const c = CROWD[j];
+    const jump = G.cheer * Math.max(0, Math.sin(beat * Math.PI * 2 + c.ph)) * 0.32;
+    put(C.cBody, j, c.x, c.h * 0.5 + jump, c.z, 1, c.h, 1);
+    put(C.cHead, j, c.x, c.h * 1.12 + jump, c.z);
+    // arms hang from the shoulders and lift a little with the cheer
+    const armY = c.h * 0.72 + jump + G.cheer * 0.12;
+    put(C.cArm, 2 * j, c.x - 0.22, armY, c.z);
+    put(C.cArm, 2 * j + 1, c.x + 0.22, armY, c.z);
+  }
+  C.cBody.instanceMatrix.needsUpdate = true;
+  C.cHead.instanceMatrix.needsUpdate = true;
+  C.cArm.instanceMatrix.needsUpdate = true;
+}
+function updateNotes() {
+  const gt = G.gt;
+  const N = G.notes;
+  let vi = G.vis;
+  while (vi < N.length && N[vi].t < gt - 0.45) vi++;
+  G.vis = vi;
+  let nc = 0, hc = 0;
+  for (let i = vi; i < N.length; i++) {
+    const n = N[i];
+    if (n.t > gt + LOOK) break;
+    if (n.state === 2) continue;
+    const zh = n.state === 1 ? HIT_Z : Math.min(HIT_Z, HIT_Z - (n.t - gt) * SPEED);
+    if (n.dur > 0) {
+      const zt = HIT_Z - (n.t + n.dur - gt) * SPEED;
+      const len = zh - zt;
+      if (len > 0.05 && hc < 180) {
+        put(C.holds, hc, LANE_X[n.lane], 0.2, (zh + zt) / 2, 1, 1, len);
+        TMP.col.setHex(LANE_HEX[n.lane]);
+        C.holds.setColorAt(hc, TMP.col);
+        hc++;
+      }
+    }
+    if (nc < 720 && zh > SPAWN_Z - 0.5) {
+      put(C.notes, nc, LANE_X[n.lane], 0.2, zh);
+      TMP.col.setHex(LANE_HEX[n.lane]);
+      C.notes.setColorAt(nc, TMP.col);
+      nc++;
+    }
+  }
+  C.notes.count = nc;
+  C.holds.count = hc;
+  C.notes.instanceMatrix.needsUpdate = true;
+  C.holds.instanceMatrix.needsUpdate = true;
+  if (C.notes.instanceColor) C.notes.instanceColor.needsUpdate = true;
+  if (C.holds.instanceColor) C.holds.instanceColor.needsUpdate = true;
+  for (let l = 0; l < 4; l++) {
+    const f = Math.max(0, G.flash[l]);
+    G.flash[l] = Math.max(0, G.flash[l] - 0.05);
+    TMP.col.setHex(LANE_HEX[l]).multiplyScalar(0.18 + f * 0.9);
+    C.glow.setColorAt(l, TMP.col);
+  }
+  C.glow.instanceColor.needsUpdate = true;
+}
+function updateSky(dt, target) {
+  G.dark += (target - G.dark) * Math.min(1, dt * 1.5);
+  TMP.c.lerpColors(TMP.dusk, TMP.night, G.dark);
+  scene.background.copy(TMP.c);
+  scene.fog.color.copy(TMP.c);
+  // the sun and the hemisphere light swell on every beat (BEAT_PULSE is 0..1, set each frame)
+  sun.intensity = 1.25 - 0.6 * G.dark + 0.22 * BEAT_PULSE * (1 - G.dark * 0.5);
+  hemi.intensity = 0.95 - 0.45 * G.dark + 0.08 * BEAT_PULSE;
+  if (G.assets.sky) scene.environmentIntensity = 0.55 - 0.4 * G.dark;   // the HDRI fades with the dusk, like the sun
+  C.flameMat.emissiveIntensity = 0.25 + 1.4 * G.dark + 0.6 * BEAT_PULSE;
+  C.glowMat.opacity = 0.05 + 0.35 * G.dark;
+}
+function updateWorld(dt, t, beat) {
+  for (let i = 0; i < C.torchN; i++) {
+    const [x, z] = C.torchPos[i];
+    const s = 0.9 + 0.15 * Math.sin(t * 9 + i * 1.7);
+    put(C.flames, i, x, 3.55, z, s, s * 1.2, s);
+    put(C.glows, i, x, 3.5, z, 1 + 0.1 * Math.sin(t * 5 + i), 1, 1 + 0.1 * Math.sin(t * 5 + i));
+  }
+  C.flames.instanceMatrix.needsUpdate = true;
+  C.glows.instanceMatrix.needsUpdate = true;
+  for (const b of BANNERS) {
+    const p = b.mesh.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = b.base[i * 3], y = b.base[i * 3 + 1];
+      p.setXYZ(i, x, y, Math.sin(x * 4 + t * 3 + b.ph) * 0.12 + Math.sin(y * 2 + t * 2) * 0.04);
+    }
+    p.needsUpdate = true;
+  }
+  // the gilded hit line glows on every beat and flares when a note lands on it
+  const hitGlow = 0.12 + 0.5 * BEAT_PULSE + 0.6 * Math.max(G.flash[0], G.flash[1], G.flash[2], G.flash[3]);
+  C.hit.material.emissive.setRGB(0.22 * hitGlow + 0.1, 0.16 * hitGlow + 0.06, 0.02 * hitGlow);
+  tickPool(PTS.petal, dt, 1.4);
+  tickPool(PTS.spark, dt, 6);
+}
+
+function visualDark() {
+  if (G.screen === 'title') return 0.25;
+  if (G.screen === 'select' || G.screen === 'settings' || G.screen === 'calib') return 0.35;
+  if (G.screen === 'results') return 0.9;
+  if (!G.song) return 0.25;
+  return 0.05 + 0.85 * Math.min(1, Math.max(0, G.gt) / G.song.end);
+}
+
+// ----- UI wiring ------------------------------------------------------------
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  for (const el of $$('[data-i18n]')) {
+    const k = el.dataset.i18n;
+    if (I18N[LANG][k] !== undefined) el.textContent = T(k);
+  }
+  for (const el of $$('[data-i18n-aria]')) el.setAttribute('aria-label', T(el.dataset.i18nAria));
+  setText($('#b-lang-h'), LANG === 'tr' ? 'TR' : 'EN');
+  setText($('#b-title-lang'), LANG === 'tr' ? 'TR / EN' : 'EN / TR');
+  if (!G.ready) setText($('#loading'), T('loading'));
+  buildSongCards();
+  refreshDiffButtons();
+  refreshSettings();
+  refreshBest();
+  refreshKeys();
+  if (G.screen === 'play' || G.screen === 'pause') refreshHud();
+}
+function setLang(l) {
+  LANG = l;
+  S.lang = l;
+  saveSettings();
+  applyI18n();
+}
+function bestOf(idx, diff) { const b = loadBest(); return b[`${idx}-${diff}`]; }
+function refreshBest() {
+  const b = bestOf(G.sel, G.diff);
+  setText($('#title-best'), b ? `${T('best')}: ${fmt(b.score)} · ${b.grade}` : '');
+}
+function buildSongCards() {
+  const list = $('#song-list');
+  list.innerHTML = '';
+  SONGS.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'card glass' + (i === G.sel ? ' sel' : '');
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
+    const b = bestOf(i, G.diff);
+    card.innerHTML = `<b>${s.name[LANG]}</b><small>${s.desc[LANG]}</small><small>${T('bpm')}: ${s.bpm}</small><div class="tail"><span>${T('best')}: ${b ? fmt(b.score) + ' · ' + b.grade : T('none')}</span><button class="tiny" data-prev="${i}" aria-label="${T('preview')}"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 2l10 6-10 6z"/></svg></button></div>`;
+    const select = () => { G.sel = i; buildSongCards(); visualSelectBpm(); refreshBest(); };
+    card.addEventListener('click', (e) => {
+      const pv = e.target.closest('[data-prev]');
+      if (pv) { previewSong(i); return; }
+      select();
+    });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } });
+    list.appendChild(card);
+  });
+}
+function visualSelectBpm() { G.visSong = SONGS[G.sel]; }
+function refreshDiffButtons() {
+  for (const b of $$('#diffs button')) { b.classList.toggle('on', b.dataset.diff === G.diff); b.setAttribute('aria-checked', String(b.dataset.diff === G.diff)); }
+}
+function refreshSettings() {
+  $('#s-master').value = S.master;
+  $('#s-music').value = S.music;
+  $('#s-sfx').value = S.sfx;
+  for (const b of $$('[data-lang]')) b.classList.toggle('on', b.dataset.lang === LANG);
+  for (const b of $$('[data-q]')) b.classList.toggle('on', b.dataset.q === S.quality);
+}
+function refreshKeys() {
+  for (const b of $$('.keys button[data-lane]')) {
+    const l = Number(b.dataset.lane);
+    b.textContent = G.rebind === l ? '…' : S.keys[l].toUpperCase();
+  }
+  for (const b of $$('#touch .tz')) {
+    const l = Number(b.dataset.lane);
+    const keyName = S.keys[l].toUpperCase();
+    b.textContent = keyName;
+    b.setAttribute('aria-label', `${T('laneTouch')} ${l + 1} (${keyName})`);
+  }
+}
+function openSettings() {
+  G.returnTo = G.screen === 'pause' ? 'pause' : 'title';
+  show('settings');
+  refreshSettings();
+}
+function closeSettings() {
+  G.rebind = -1;
+  setText($('#rebind-msg'), '');
+  refreshKeys();
+  if (G.returnTo === 'pause') show('pause'); else { show('title'); refreshBest(); }
+}
+
+function wireUI() {
+  document.addEventListener('click', onUiClick, true);
+  $('#b-play').addEventListener('click', async () => { await readyAudio(); buildSongCards(); show('select'); refreshDiffButtons(); });
+  $('#b-title-set').addEventListener('click', openSettings);
+  $('#b-pause-set').addEventListener('click', openSettings);
+  $('#b-title-cal').addEventListener('click', () => { show('calib'); setText($('#cal-msg'), ''); setText($('#cal-res'), ''); });
+  $('#b-title-lang').addEventListener('click', () => setLang(LANG === 'tr' ? 'en' : 'tr'));
+  $('#b-lang-h').addEventListener('click', () => setLang(LANG === 'tr' ? 'en' : 'tr'));
+  $('#b-sound').addEventListener('click', toggleSound);
+  $('#b-sel-back').addEventListener('click', () => { stopAll(); show('title'); refreshBest(); });
+  $('#b-sel-start').addEventListener('click', async () => {
+    await readyAudio();
+    startSong(G.sel, G.diff, {});
+  });
+  for (const b of $$('#diffs button')) b.addEventListener('click', () => { G.diff = b.dataset.diff; refreshDiffButtons(); buildSongCards(); refreshBest(); });
+  $('#b-set-back').addEventListener('click', closeSettings);
+  $('#s-master').addEventListener('input', (e) => { S.master = Number(e.target.value); applyVolumes(); saveSettings(); });
+  $('#s-music').addEventListener('input', (e) => { S.music = Number(e.target.value); applyVolumes(); saveSettings(); });
+  $('#s-sfx').addEventListener('input', (e) => { S.sfx = Number(e.target.value); applyVolumes(); saveSettings(); });
+  for (const b of $$('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
+  for (const b of $$('[data-q]')) b.addEventListener('click', () => { S.quality = b.dataset.q; saveSettings(); refreshSettings(); toast(T('rebindDone')); });
+  $('#b-fs').addEventListener('click', toggleFullscreen);
+  for (const b of $$('.keys button[data-lane]')) b.addEventListener('click', () => { G.rebind = Number(b.dataset.lane); setText($('#rebind-msg'), T('pressKey')); refreshKeys(); });
+  $('#b-cal-start').addEventListener('click', calibStart);
+  $('#b-cal-tap').addEventListener('click', () => calibTap());
+  $('#b-cal-reset').addEventListener('click', () => { S.calib = 0; saveSettings(); setText($('#cal-res'), T('resetDone')); });
+  $('#b-cal-back').addEventListener('click', () => { CAL.on = false; stopAll(); show('title'); refreshBest(); });
+  $('#b-pause').addEventListener('click', pauseGame);
+  $('#b-resume').addEventListener('click', resumeGame);
+  $('#b-restart').addEventListener('click', async () => { await readyAudio(); startSong(G.idx, G.diff, { auto: G.auto, bot: G.bot }); });
+  $('#b-main').addEventListener('click', goTitle);
+  $('#b-main2').addEventListener('click', goTitle);
+  $('#b-again').addEventListener('click', async () => { await readyAudio(); startSong(G.idx, G.diff, {}); });
+  for (const z of $$('#touch .tz')) {
+    const lane = Number(z.dataset.lane);
+    z.addEventListener('pointerdown', (e) => { e.preventDefault(); laneDown(lane); });
+    z.addEventListener('pointerup', () => laneUp(lane));
+    z.addEventListener('pointercancel', () => laneUp(lane));
+    z.addEventListener('pointerleave', (e) => { if (e.buttons === 0) laneUp(lane); });
+  }
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    const l = S.keys.indexOf(k);
+    if (l >= 0) laneUp(l);
+  });
+  window.addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && G.screen === 'play') { pauseGame(); toast(T('tabHidden')); }
+  });
+  window.addEventListener('error', (e) => { G.errors.push(String(e.message)); });
+  window.addEventListener('unhandledrejection', (e) => { G.errors.push('promise: ' + String(e.reason)); });
+}
+function toggleSound() {
+  S.sfxOn = !S.sfxOn; S.musicOn = S.sfxOn;
+  applyVolumes(); saveSettings();
+  $('#b-sound').classList.toggle('on', S.sfxOn);
+}
+function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  } catch (e) { toast(T('fsErr'), 'bad'); }
+}
+function onKey(e) {
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (G.rebind >= 0) {
+    if (k === 'escape') { G.rebind = -1; setText($('#rebind-msg'), ''); refreshKeys(); return; }
+    const other = S.keys.indexOf(k);
+    if (other >= 0) S.keys[other] = S.keys[G.rebind];
+    S.keys[G.rebind] = k;
+    G.rebind = -1; saveSettings(); refreshKeys();
+    setText($('#rebind-msg'), T('rebindDone'));
+    e.preventDefault();
+    return;
+  }
+  if (k === 'm') { S.musicOn = !S.musicOn; applyVolumes(); saveSettings(); return; }
+  if (k === 'x') { S.sfxOn = !S.sfxOn; applyVolumes(); saveSettings(); return; }
+  if (k === 'l') { setLang(LANG === 'tr' ? 'en' : 'tr'); return; }
+  if (k === 'p' || k === 'escape') {
+    if (G.screen === 'play') pauseGame();
+    else if (G.screen === 'pause') resumeGame();
+    else if (G.screen === 'settings' && G.returnTo === 'pause') closeSettings();
+    return;
+  }
+  if (G.screen === 'calib' && (k === ' ' || S.keys.includes(k))) { e.preventDefault(); calibTap(); return; }
+  const l = S.keys.indexOf(k);
+  if (l >= 0 && G.screen === 'play' && !G.paused) { e.preventDefault(); laneDown(l); }
+}
+function pollPads() {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const prev = pollPads.prev || (pollPads.prev = [[false, false, false, false], [false, false, false, false]]);
+  for (let p = 0; p < 2; p++) {
+    const gp = pads[p];
+    if (!gp) continue;
+    for (let b = 0; b < 4; b++) {
+      const now = !!(gp.buttons[b] && gp.buttons[b].pressed);
+      if (now && !prev[p][b]) laneDown(b);
+      if (!now && prev[p][b]) laneUp(b);
+      prev[p][b] = now;
+    }
+  }
+}
+
+// ----- main loop -------------------------------------------------------------
+let last = performance.now(), fpsT = performance.now(), fpsN = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (!G.ready) return;
+  fpsN++;
+  if (now - fpsT >= 1000) { G.fps = Math.round(fpsN * 1000 / (now - fpsT)); fpsN = 0; fpsT = now; }
+  G.idleT += G.paused ? 0 : dt;
+  tickGame(dt);
+  pollPads();
+  calibTick();
+  updateVisuals(dt);
+  R.render(scene, cam);
+  G.frames++;
+  if (G.screen === 'play' || G.screen === 'pause') refreshHud();
+  if (FLAG.debug || Q.has('debug')) updateDebug();
+}
+function updateVisuals(dt) {
+  const vb = visualBeat();
+  BEAT_PULSE = Math.pow(1 - (vb.beat - Math.floor(vb.beat)), 3);   // 1 on the beat, decays to 0 before the next
+  updateSky(dt, visualDark());
+  updateBand(vb.beat, dt);
+  G.cheer += ((G.combo >= 10 ? Math.min(1, G.combo / 40) : 0.15) - G.cheer) * Math.min(1, dt * 2);
+  updateNotes();
+  updateWorld(dt, vb.t, vb.beat);
+  if (G.screen !== 'play' && G.screen !== 'pause' && G.screen !== 'results') {
+    for (const k of Object.keys(G.instFlash)) G.instFlash[k] = 0;
+  }
+  if (G.screen === 'title' || G.screen === 'select') {
+    cam.position.x = Math.sin(G.idleT * 0.12) * 1.6;
+    cam.lookAt(0, 0.4, -4);
+  } else {
+    cam.position.x = 0;
+    cam.lookAt(0, 0.4, -4);
+  }
+}
+function updateDebug() {
+  const d = $('#dbg');
+  d.classList.remove('hidden');
+  const info = R ? R.info : { render: { calls: 0, triangles: 0 } };
+  d.textContent = [
+    `fps ${G.fps}  draw calls ${info.render.calls}  triangles ${info.render.triangles}`,
+    `screen ${G.screen}  clock ${G.clock}  gt ${G.gt.toFixed(2)}  lang ${LANG}`,
+    `score ${G.score|0}  combo ${G.combo}  spirit ${G.spirit.toFixed(1)}  judged ${G.judged}`,
+    `perfect ${G.cnt.perfect} good ${G.cnt.good} miss ${G.cnt.miss} break ${G.cnt.brk} hist ${G.hist.length} r-hist ${$('#r-hist') ? $('#r-hist').children.length : -1}`,
+    `errors ${G.errors.length}${G.errors.length ? ': ' + G.errors.slice(-3).join(' | ') : ''}`,  ].join('\n');
+}
+
+// ----- virtual-time fast-forward (self test) --------------------------------
+function simulate(sec) {
+  if (!G.ready) return 0;
+  const steps = Math.round(sec * 60);
+  let done = 0;
+  for (let i = 0; i < steps; i++) {
+    if (G.screen !== 'play' && !(G.screen === 'results' && G.auto && !G.autoDone)) break;
+    tickGame(1 / 60);
+    done++;
+    if (G.screen === 'results' && !G.auto) break;
+    if (G.autoDone && G.screen === 'results') break;
+  }
+  if (G.screen === 'play') refreshHud();
+  return done;
+}
+function state() {
+  return {
+    screen: G.screen, lang: LANG, clock: G.clock, song: G.song ? G.song.idx : null, diff: G.diff,
+    gt: +G.gt.toFixed(3), score: Math.round(G.score), combo: G.combo, maxCombo: G.maxCombo,
+    spirit: +G.spirit.toFixed(2), counts: { ...G.cnt }, judged: G.judged, notes: G.notes.length,
+    auto: G.auto, autoDone: G.autoDone, result: G.result ? { grade: G.result.grade, defeat: G.result.defeat, score: G.result.score, acc: +G.result.acc.toFixed(3) } : null,
+    errors: G.errors.slice(), fps: G.fps, drawCalls: R ? R.info.render.calls : 0, triangles: R ? R.info.render.triangles : 0,
+    calib: S.calib, keys: S.keys.slice(), quality: lowQ() ? 'low' : 'high', assets: { ...G.assets },
+  };
+}
+window.mehter = Object.assign(G, { state, sim: simulate, songs: SONGS.map((s) => ({ idx: s.idx, bpm: s.bpm, notes: s.full.length, end: +s.end.toFixed(1) })) });
+window.mehterSim = (sec) => simulate(sec);
+
+// ----- boot -----------------------------------------------------------------
+wireUI();
+applyI18n();
+show('title');
+if (Q.get('screen') === 'settings') openSettings();
+(async () => {
+  try {
+    THREE = await import('three');
+  } catch (e) {
+    setText($('#loading'), T('loadFail'));
+    G.errors.push('three import failed');
+    return;
+  }
+  buildThree();
+  G.ready = true;
+  // assets arrive after the first frame; each one swaps in place when it is ready
+  loadAssets();
+  loadCobble();
+  loadSky();
+  fetchSamples();
+  $('#b-play').disabled = false;
+  setText($('#loading'), T('loaded'));
+  setTimeout(() => { const el = $('#loading'); if (el.textContent === T('loaded')) el.textContent = ''; }, 1200);
+  if (FLAG.debug) updateDebug();
+  refreshBest();
+  const sim = Q.get('sim');
+  const song = Math.max(0, Math.min(SONGS.length - 1, Number(Q.get('song') || 0)));
+  if (sim !== null || FLAG.auto) {
+    await readyAudio();
+    startSong(song, 'normal', { auto: FLAG.auto, bot: FLAG.auto, clock: sim !== null ? 'virtual' : undefined });
+    if (sim !== null) simulate(Number(sim));
+    refreshHud();
+    if (FLAG.debug) updateDebug();
+  }
+  if (Q.get('screen') === 'pause') pauseGame();
+  if (Q.get('screen') === 'results' && G.result) showResults();
+  if (Q.get('screen') === 'select') { show('select'); buildSongCards(); refreshDiffButtons(); }
+  if (Q.get('screen') === 'calib') { show('calib'); }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
