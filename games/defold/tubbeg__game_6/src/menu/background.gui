@@ -1,0 +1,45 @@
+textures {
+  name: "menu"
+  texture: "/menu/menu.atlas"
+}
+nodes {
+  position {
+    x: 383.0
+    y: 297.0
+  }
+  scale {
+    x: 4.769227
+    y: 9.587996
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.118
+    y: 0.11
+    z: 0.196
+  }
+  type: TYPE_BOX
+  id: "box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 4.40323
+    y: 12.724244
+  }
+  scale {
+    x: 0.320862
+    y: 0.127659
+  }
+  type: TYPE_BOX
+  texture: "menu/bone_title"
+  id: "box1"
+  parent: "box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

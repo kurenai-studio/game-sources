@@ -1,0 +1,56 @@
+components {
+  id: "dice"
+  component: "/board/bone/bone.script"
+}
+embedded_components {
+  id: "sprite"
+  type: "sprite"
+  data: "default_animation: \"default\"\n"
+  "material: \"/builtins/materials/sprite.material\"\n"
+  "textures {\n"
+  "  sampler: \"texture_sampler\"\n"
+  "  texture: \"/board/bone/bone.atlas\"\n"
+  "}\n"
+  ""
+}
+embedded_components {
+  id: "co"
+  type: "collisionobject"
+  data: "type: COLLISION_OBJECT_TYPE_DYNAMIC\n"
+  "mass: 1.0\n"
+  "friction: 15.0\n"
+  "restitution: 0.001\n"
+  "group: \"bone\"\n"
+  "mask: \"bounds\"\n"
+  "mask: \"bone\"\n"
+  "mask: \"mouse\"\n"
+  "mask: \"spill\"\n"
+  "embedded_collision_shape {\n"
+  "  shapes {\n"
+  "    shape_type: TYPE_BOX\n"
+  "    position {\n"
+  "      y: 3.0\n"
+  "    }\n"
+  "    rotation {\n"
+  "    }\n"
+  "    index: 0\n"
+  "    count: 3\n"
+  "  }\n"
+  "  data: 19.344202\n"
+  "  data: 7.459592\n"
+  "  data: 10.0\n"
+  "}\n"
+  ""
+}
+embedded_components {
+  id: "factory"
+  type: "factory"
+  data: "prototype: \"/board/score/score.go\"\n"
+  ""
+}
+embedded_components {
+  id: "spill_factory"
+  type: "factory"
+  data: "prototype: \"/board/spill/spill.go\"\n"
+  ""
+}

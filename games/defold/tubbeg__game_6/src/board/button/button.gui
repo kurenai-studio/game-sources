@@ -1,0 +1,13 @@
+textures {
+  name: "button"
+  texture: "/board/button/button.atlas"
+}
+nodes {
+  type: TYPE_BOX
+  texture: "button/button"
+  id: "box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

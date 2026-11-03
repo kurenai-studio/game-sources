@@ -1,0 +1,210 @@
+function init(self)
+	self.necromancer = nil
+	self.hp = 5
+	self.mouse_overlap = false
+	self.scoring = false
+	self.mouse_url = nil
+	self.money_url = nil
+	self.border_url = nil
+	self.scoring_enabled = false
+	self.collide_score = 20
+	self.click_score = 5
+	self.min_force = 20000
+	self.max_force = 50000
+	self.vel_dec = 0.9
+	self.score_id = nil
+	self.bone_type = "bone"
+end
+
+function final(self)
+end
+
+function update(self, dt)
+end
+
+function fixed_update(self, dt)
+end
+
+local function get_random_vector(min,max)
+	local x = 0
+	local y = 0
+	while x == 0 or y == 0 do
+		x = math.random(min,max)
+		y = math.random(min,max)
+		x = x * math.random(-1,1)
+		y = y * math.random(-1,1)
+	end
+	return vmath.vector3(x, y, 0)
+end
+
+local function get_random_force(self)
+	return get_random_vector(self.min_force,self.max_force)
+end
+
+local function get_random_rot_force()
+	return get_random_vector(500,1000)
+end
+
+-- decreases velocity by a percentage
+local function decrease_vel(self)
+	local vel = go.get("#co", "linear_velocity")
+	go.set("#co", "linear_velocity", vel * (self.vel_dec))
+end
+
+local function increase_vel()
+	local vel = go.get("#co", "linear_velocity")
+	go.set("#co", "linear_velocity", vel * 1.2)
+end
+
+local function apply_force_on_bone(self)
+	local physics_msg =
+	{
+		force = get_random_force(self),
+		position = go.get_world_position(),
+	}
+	msg.post("#co", "apply_force", physics_msg)
+	timer.delay(2, false, function() decrease_vel(self) end)
+end
+
+-- add rotation for cool effect
+local function apply_rot_force_on_bone()
+	--local angle = math.rad(180) -- if you want a specific angle (in radians)
+	--local quat = vmath.quat_rotation_z(angle) -- we use quaternions as args here
+	-- but we can just use the current rotation of the object since we don't need a specific rotation
+	local rot = go.get_rotation()
+	-- amount of force to be applied in each axis below
+	local f = vmath.rotate(rot, get_random_rot_force()) 
+	-- below specifies where the force should be applied on the object
+	local p = go.get_world_position() + vmath.rotate(rot, vmath.vector3(-5, -5, 0))
+	local physics_msg = { force = f, position = p}
+	msg.post("#co", "apply_force", physics_msg)
+end
+
+
+local function wall_or_mouse(self, message)
+	return 
+	msg.url(nil,message.other_id,nil) == self.mouse_url or
+	msg.url(nil,message.other_id,nil) == self.border_url
+end
+
+local function create_score(self,nr)
+
+	--local v = vmath.vector4(0,1,1,1)
+	--go.animate("#sprite", "tint", go.PLAYBACK_ONCE_BACKWARD, v, go.EASING_OUTINSINE, 0.5)
+	if self.bone_type == "bone" then
+		sprite.play_flipbook("#sprite", "react")
+	elseif self.bone_type == "skull" then
+		sprite.play_flipbook("#sprite", "skull_react")
+	elseif self.bone_type == "rib" then
+		sprite.play_flipbook("#sprite", "rib_react")
+	elseif self.bone_type == "ghost" then
+		sprite.play_flipbook("#sprite", "ghost_react")
+	elseif self.bone_type == "oil_barrel" then
+		sprite.play_flipbook("#sprite", "oil_barrel_react")
+	end
+	local fn = function ()
+		if self.bone_type == "bone" then
+			sprite.play_flipbook("#sprite", "default")
+		elseif self.bone_type == "skull" then
+			sprite.play_flipbook("#sprite", "skull")
+		elseif self.bone_type == "rib" then
+			sprite.play_flipbook("#sprite", "rib")
+		elseif self.bone_type == "ghost" then
+			sprite.play_flipbook("#sprite", "ghost")
+		elseif self.bone_type == "oil" then
+			sprite.play_flipbook("#sprite", "oil_barrel")
+		end
+	end
+	timer.delay(.2, false, fn)
+	if self.score_id then
+		msg.post(self.score_id, "add_combo", {type=self.bone_type})
+	else
+		local pos = go.get_position()
+		self.score_id = factory.create("#factory", vmath.vector3(pos.x,pos.y,pos.z + 1))
+		msg.post(self.score_id, "bones",{nr=nr,url=self.money_url})
+	end
+end
+
+local function set_mouse_overlap(self,message_id,message)
+	if message_id == hash("trigger_response") and message.enter then
+		self.mouse_overlap = true
+	end
+	if message_id == hash("trigger_response") and not message.enter then
+		self.mouse_overlap = false
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("dead_score") then
+		self.score_id = nil
+	end
+	if message_id == hash("trigger_response") then
+		msg.post(message.other_id, "are_you_oil_spill")
+	end
+	if message_id == hash("i_am_spill") then
+		print("inc velocity")
+		increase_vel()
+	end
+	if message_id == hash("set_necromancer") then
+		self.necromancer_url = message.url
+	end
+	if message_id == hash("set_vel_decrease") then
+		self.vel_dec = message.dec
+	end
+	if message_id == hash("update_score") then
+		self.collide_score = message.collide
+		self.click_score = message.click
+	end
+	if message_id == hash("set_bone_type") then
+		self.bone_type = message.type
+	end
+	if message_id == hash("collision_response") and self.scoring_enabled then
+		--print(message.other_id)
+		if not wall_or_mouse(self,message) and not self.scoring then
+			if self.bone_type == "oil" then
+				if self.hp > 0 then 
+					self.hp = self.hp - 1
+					if self.hp < 1 then
+						local pos = go.get_world_position()
+						factory.create("#spill_factory", vmath.vector3(pos.x,pos.y,1))
+						msg.post(self.necromancer_url, "oil_spill")
+						go.delete(".")
+					end
+				end
+			end
+			create_score(self,self.collide_score)
+			self.scoring = true
+			timer.delay(1, false, function () self.scoring = false end)
+		end
+	end
+	if message_id == hash("clicked_bone") and self.mouse_overlap then
+		if self.scoring_enabled then 
+			apply_force_on_bone(self)
+			apply_rot_force_on_bone()
+			create_score(self,self.click_score)
+		end
+	end
+	set_mouse_overlap(self,message_id,message)
+	if message_id == hash("init_bone") then
+		self.money_url = message.money_url
+		self.mouse_url = message.mouse_url
+		self.border_url = message.border_url
+		local fn = function ()
+			apply_force_on_bone(self)
+			apply_rot_force_on_bone()
+		end
+		timer.delay(.5, false, fn)
+		timer.delay(1, false, function() self.scoring_enabled = true end)
+	end
+	if message_id == hash("set_mouse") then
+		local my_id = msg.url()
+		msg.post(self.mouse_url, "add_bone", {bone_url=my_id})
+	end
+end
+
+
+function on_input(self, action_id, action)
+end
+
+function on_reload(self)
+end
