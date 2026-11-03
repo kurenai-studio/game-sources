@@ -1,0 +1,2052 @@
+/* COLD GAS — keynote restraint. One display face (Michroma), one text face (Geist), one mono
+   (Geist Mono) for numbers. White on deep blue-black, one signal red, hairlines everywhere. */
+:root {
+  --ink: #f5f6f8;
+  --ink-2: rgba(245, 246, 248, 0.72);
+  --ink-3: rgba(245, 246, 248, 0.46);
+  --hair: rgba(245, 246, 248, 0.16);
+  --hair-2: rgba(245, 246, 248, 0.08);
+  --bg: #05070c;
+  --glass: rgba(10, 13, 20, 0.58);
+  --signal: #e8323c;
+  --ice: #bfe6ff;
+  --ok: #6ff0b5;          /* the landing bands: on profile · fast but stoppable · past stopping */
+  --amber: #ffbf5a;
+  --hot: #ff5a62;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --display: 'Michroma', 'Geist Variable', sans-serif;
+  --text: 'Geist Variable', ui-sans-serif, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  /* Never below 0 (0103): mid-fold, Safari on the folding phone reports insets like right −84 or −282 for
+     up to half a second, which would push every edge-anchored box past the glass. */
+  --safe-t: max(0px, env(safe-area-inset-top, 0px));
+  --safe-b: max(0px, env(safe-area-inset-bottom, 0px));
+  --safe-l: max(0px, env(safe-area-inset-left, 0px));
+  --safe-r: max(0px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; overscroll-behavior: none; }
+body { font: 400 15px/1.45 var(--text); -webkit-font-smoothing: antialiased; touch-action: none; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* iOS zooms the page into any focused field under 16 px (and pinch-out is blocked): never on a touch screen. */
+@media (pointer: coarse) { input, select, textarea { font-size: max(16px, 1em) !important; } }
+[hidden] { display: none !important; }
+
+/* The canvas is the window's own box (0112): 100 % of the fixed containing block, which is what innerWidth × innerHeight
+   measure and what the director, the replay's region and every HUD edge are laid out against; never 100vh/100dvh, a
+   second answer WebKit computes apart from innerHeight (in an installed app with a black-translucent status bar the
+   two have disagreed). Installed (:root[data-installed]: standalone or fullscreen, or iOS's navigator.standalone; set
+   in index.html's head) it also bleeds past the bottom of the window by --bleed:
+   installed on the book fold, the closed screen's poses are 21 px short of its 466×678 glass (466×657, 678×445) and
+   the open ones fit the same 21 px (669×930 upright, 951×648 sideways; docs/backlog/0102), so whatever the web view shows past innerHeight is still
+   the scene, not the page's black. The top edge stays the window's, so no coordinate above the bottom moves. */
+#stage { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.9s var(--ease); }
+:root[data-installed] { --bleed: 24px; }
+:root[data-installed] #stage { height: calc(100% + var(--bleed)); }
+#stage.on { opacity: 1; }   /* the first 3D frame fades in under the title (src/render/scene.js) */
+.grain { position: fixed; inset: 0; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+/* --- Top bar --- */
+.top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
+  padding: calc(20px + var(--safe-t)) calc(24px + var(--safe-r)) 0 calc(24px + var(--safe-l)); pointer-events: none; z-index: 5; }
+.brand { font: 400 12px/1 var(--display); letter-spacing: 0.46em; color: var(--ink-2); }
+.top-actions { display: flex; gap: 10px; pointer-events: auto; }
+.chip { height: 32px; padding: 0 14px; border-radius: 16px; border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px);
+  font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); transition: all 0.3s var(--ease); }
+.tier-chip i { font-style: normal; color: var(--ink-3); letter-spacing: 0.04em; margin-left: 4px; }
+.tier-chip[data-tier='pro'] { color: var(--ink); border-color: rgba(255, 191, 90, 0.7); }
+.tier-chip[data-tier='pro'] i { color: var(--amber); }
+.tier-chip[data-tier='advanced'] { color: var(--ink); border-color: var(--signal); }
+.tier-chip[data-tier='advanced'] i { color: #ff8a8f; }
+.icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); display: grid; place-items: center; padding: 0; }
+.icon-btn svg { width: 16px; height: 16px; fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn[data-mute][aria-pressed='false'] [data-wave] { opacity: 0; }   /* pressed = sound on */
+.icon-btn[data-ghost][aria-pressed='false'] svg { opacity: 0.4; }
+.icon-btn[data-ghost][aria-pressed='false'] [data-echo] { opacity: 0; }
+/* Menu (0073). A fine pointer keeps the icon row (hover gives the title): the toggle is hidden and the
+   sheet dissolves into the bar. A touch screen can't hover, so the icons fold into one labelled button
+   whose sheet names each control and says On or Off in words. */
+.more, .more-sheet { display: contents; }
+.more-toggle, .m-txt, .m-state { display: none; }
+@media (pointer: coarse) {
+  .more { display: block; position: relative; }
+  .more-toggle { display: inline-flex; align-items: center; gap: 6px; position: relative; height: 32px; padding: 0 12px; border-radius: 18px;
+    border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); color: var(--ink); font: 500 12px/1 var(--text); letter-spacing: 0.02em; }
+  /* The chips' 32 px on the title and Home and Retry's 36 px in a run, so the bar's edge doesn't move
+     (Free Drive's map sits 52 px down); the hit area is 44 px either way. */
+  body:is([data-mode='live'], [data-mode='countdown'], [data-mode='results'], [data-mode='replay']) .more-toggle { height: 36px; }
+  .more-toggle::after { content: ''; position: absolute; left: -1px; right: -1px; top: 50%; height: 44px; transform: translateY(-50%); }
+  .more-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+  .more-toggle[aria-expanded='true'] { background: var(--ink); color: #07090d; border-color: var(--ink); }
+  .more-sheet { display: none; position: absolute; top: calc(100% + 8px); right: 0; width: max-content; min-width: 236px; max-width: calc(100vw - 32px);
+    padding: 6px; border-radius: 14px; border: 1px solid var(--hair); background: rgba(6, 9, 15, 0.94); backdrop-filter: blur(18px);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5); transform-origin: top right; animation: more-in 0.18s var(--ease) both; }
+  .more[data-open] .more-sheet { display: grid; gap: 2px; }
+  .more-sheet .icon-btn { width: auto; height: auto; min-height: 48px; display: grid; grid-template-columns: 20px 1fr auto; place-items: center start; gap: 12px;
+    padding: 8px 10px 8px 12px; border: 0; border-radius: 9px; background: none; backdrop-filter: none; text-align: left; color: var(--ink); }
+  .more-sheet .icon-btn:active { background: rgba(245, 246, 248, 0.08); }
+  .more-sheet .icon-btn svg { width: 20px; height: 20px; }
+  .more-sheet .icon-btn[data-ghost][aria-pressed='false'] svg { opacity: 1; }   /* the word says Off; the icon stays legible */
+  .m-txt { display: block; font: 400 12px/1.3 var(--text); color: var(--ink-2); }
+  .m-txt b { display: block; font: 500 14px/1.25 var(--text); color: var(--ink); }
+  .m-state { display: block; justify-self: end; min-width: 36px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--hair); text-align: center;
+    font: 500 11px/1 var(--text); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+  .m-state::before { content: 'Off'; }
+  [aria-pressed='true'] > .m-state { background: var(--ink); border-color: var(--ink); color: #07090d; }
+  [aria-pressed='true'] > .m-state::before { content: 'On'; }
+}
+@keyframes more-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+
+/* --- Title --- */
+.title { position: fixed; left: calc(clamp(24px, 6vw, 96px) + var(--safe-l)); bottom: calc(clamp(32px, 9dvh, 110px) + var(--safe-b)); max-width: 640px; z-index: 4; }
+.eyebrow { margin: 0 0 18px; font: 500 11px/1 var(--text); letter-spacing: 0.32em; text-transform: uppercase; color: var(--ink-3); }
+.title { --ink-3: rgba(245, 246, 248, 0.66); }   /* the title's quiet labels hold 4.5:1 on its backing (0.46 reads 4.3 on bare black, 0069) */
+.wordmark { margin: 0; font: 400 clamp(56px, 11vw, 148px)/0.92 var(--display); letter-spacing: 0.02em; color: var(--ink);
+  background: linear-gradient(180deg, #fff 30%, rgba(255, 255, 255, 0.55)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.tagline { margin: 22px 0 30px; font: 300 clamp(17px, 1.6vw, 21px)/1.35 var(--text); color: var(--ink-2); letter-spacing: 0.01em; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.spec { display: flex; gap: clamp(18px, 3vw, 40px); margin: 40px 0 0; padding: 18px 0 0; border-top: 1px solid var(--hair-2); }
+.spec div { display: grid; gap: 6px; }
+.spec dt { font: 500 11px/1 var(--text); letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
+.spec dd { margin: 0; font: 400 15px/1 var(--mono); color: var(--ink); }
+.fineprint { margin: 22px 0 0; font-size: 11px; color: var(--ink-3); max-width: 46ch; }
+
+/* The title's backing (0069): its text sits on the live 3D scene (the plume, the ring, the car), so the block carries
+   a feathered scrim of the page's own ground, under the text and over the canvas: every title label holds 4.5:1 on
+   the brightest pixels behind it (scripts/title-audit.mjs). No box-shadow overflow: it scrolls nothing. */
+.title::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: 28px;
+  background: rgba(5, 7, 12, 0.72); box-shadow: 0 0 44px 30px rgba(5, 7, 12, 0.72); animation: scrim-in 0.9s var(--ease) 0.1s both; }
+@keyframes scrim-in { from { opacity: 0; } }   /* in with the text's rise, not ahead of it as an empty panel */
+body[data-mode='title'] .brand { position: relative; isolation: isolate; }
+body[data-mode='title'] .brand::before { content: ''; position: absolute; inset: -4px -8px; z-index: -1; border-radius: 10px;
+  background: rgba(5, 7, 12, 0.72); box-shadow: 0 0 18px 10px rgba(5, 7, 12, 0.72); }
+.title > * { animation: rise 1.1s var(--ease) both; }
+.title > :nth-child(1) { animation-delay: 0.15s; } .title > :nth-child(2) { animation-delay: 0.3s; }
+.title > :nth-child(3) { animation-delay: 0.5s; } .title > :nth-child(4) { animation-delay: 0.65s; }
+.title > :nth-child(5) { animation-delay: 0.72s; } .title > :nth-child(6) { animation-delay: 0.8s; }
+.title > :nth-child(7) { animation-delay: 0.95s; } .title > :nth-child(8) { animation-delay: 1s; }
+/* Only opacity and transform: a filter on a container switches off its backdrop blur until it ends (the glass popped in). */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* --- Buttons --- */
+.btn { height: 46px; padding: 0 26px; border-radius: 23px; border: 1px solid transparent; font: 500 15px/1 var(--text); letter-spacing: 0.01em;
+  transition: transform 0.2s var(--ease), background 0.3s var(--ease), border-color 0.3s var(--ease), color 0.3s; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--ink); color: #07090d; }
+.btn.primary:hover { background: #fff; }
+.btn.ghost { background: var(--glass); border-color: var(--hair); backdrop-filter: blur(14px); }
+.btn.ghost:hover { border-color: rgba(255, 255, 255, 0.4); }
+.btn.link { background: none; padding: 0 8px; color: var(--ink-2); }
+.btn.link:hover { color: var(--ink); }
+.btn.small { height: 38px; padding: 0 18px; font-size: 13px; background: var(--ink); color: #07090d; }
+.btn:focus-visible, .chip:focus-visible, .icon-btn:focus-visible, .more-toggle:focus-visible, input:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
+.more-sheet .icon-btn:focus-visible { outline-offset: -2px; }
+/* A sheet given focus as it opens (src/focus-trap.js) shows no ring: its first control gets one on Tab. */
+[role="dialog"][tabindex="-1"]:focus { outline: none; }
+
+
+.cue { position: fixed; left: 50%; top: 30%; transform: translateX(-50%); font: 500 12px/1.4 var(--text); letter-spacing: 0.32em; text-transform: uppercase;
+  color: var(--ink); text-align: center; text-shadow: 0 1px 24px rgba(0, 0, 0, 0.6); pointer-events: none; opacity: 0; transition: opacity 0.4s var(--ease); z-index: 3; white-space: nowrap; }
+.cue.on { opacity: 1; }
+.cue kbd { font: 500 11px/1 var(--mono); padding: 3px 7px; border: 1px solid var(--hair); border-radius: 5px; margin: 0 2px; }
+/* The numeral's band (0070): src/ui.js measures the free space between the HUD's boxes as a countdown starts. */
+.count { position: fixed; inset: 0; box-sizing: border-box; padding: var(--count-top, 0px) 0 var(--count-bot, 0px); display: grid; place-items: center; font: 200 calc(clamp(90px, 16vw, 200px) * var(--count-scale, 1))/1 var(--text); pointer-events: none; z-index: 3; }
+.count span { animation: count 0.9s var(--ease) both; }
+@keyframes count { from { opacity: 0; transform: scale(1.25); filter: blur(10px); } 30% { opacity: 1; transform: none; filter: none; } to { opacity: 0; transform: scale(0.94); } }
+
+/* --- Sheets --- */
+.results, .board, .pause { position: fixed; inset: 0; display: flex; justify-content: flex-end; align-items: stretch; z-index: 6; pointer-events: none; }
+.board, .pause { justify-content: center; align-items: center; background: rgba(3, 4, 7, 0.45); pointer-events: auto; }
+.sheet { pointer-events: auto; width: min(520px, 100vw); padding: calc(58px + var(--safe-t)) calc(40px + var(--safe-r)) calc(32px + var(--safe-b)) 40px; overflow-y: auto;
+  background: linear-gradient(90deg, rgba(5, 7, 12, 0) 0%, rgba(5, 7, 12, 0.82) 14%, rgba(5, 7, 12, 0.94) 100%); backdrop-filter: blur(4px); animation: slide 0.9s var(--ease) both; }
+.board .sheet, .pause .sheet { width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 36px; border-radius: 22px; border: 1px solid var(--hair); background: rgba(8, 10, 16, 0.86); backdrop-filter: blur(24px); animation: rise 0.6s var(--ease) both; }
+.sheet.narrow { width: min(440px, calc(100vw - 32px)); }
+@keyframes slide { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+.sheet h2 { margin: 0; font: 400 22px/1.2 var(--display); letter-spacing: 0.04em; }
+.total-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 16px; padding-bottom: 22px; border-bottom: 1px solid var(--hair-2); }
+.verdict { font: 400 clamp(22px, 3vw, 30px)/1.1 var(--display) !important; }
+.total b { font: 200 64px/0.9 var(--text); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.total span { font: 400 13px/1 var(--mono); color: var(--ink-3); margin-left: 6px; }
+/* `/ 100` never breaks from its number. When the verdict and the total don't fit side by side, by the row's
+   own width (a 360 px phone, a fold's half, a drill's long headline), the verdict takes the line above, whole,
+   and the total keeps its own on the right; where they fit, as before (0111). */
+.total { flex: none; margin-left: auto; white-space: nowrap; }
+.judges { list-style: none; margin: 0; padding: 0; }
+.judges li { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; padding: 15px 0; border-bottom: 1px solid var(--hair-2); opacity: 0; animation: rise 0.7s var(--ease) both; }
+.judges .who { font: 500 12px/1.2 var(--text); letter-spacing: 0.04em; }
+.judges .role { grid-column: 1; font: 400 11px/1.2 var(--text); color: var(--ink-3); }
+.judges .score { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 300 34px/1 var(--text); font-variant-numeric: tabular-nums; }
+.judges .quote { grid-column: 1 / -1; margin-top: 8px; font: 300 14px/1.5 var(--text); color: var(--ink-2); min-height: 1.5em; }
+.judges .quote.typing::after { content: '▍'; animation: blink 1s steps(2) infinite; color: var(--ice); }
+@keyframes blink { 50% { opacity: 0; } }
+.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; padding: 22px 0; border-bottom: 1px solid var(--hair-2); }
+.cat { display: grid; gap: 7px; }
+.cat .lbl { display: flex; justify-content: space-between; font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+.cat .lbl b { font: 400 12px/1 var(--mono); color: var(--ink); letter-spacing: 0; }
+.cat .bar span { transform: scaleX(0); transition: transform 1.2s var(--ease); }
+.facts { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 20px 0; }
+.facts li { font: 400 11px/1 var(--mono); color: var(--ink-2); border: 1px solid var(--hair-2); border-radius: 12px; padding: 7px 10px; }
+.facts li.bad { color: var(--signal); border-color: rgba(232, 50, 60, 0.4); }
+.submit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 0 22px; }
+.submit label { font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+.submit input { width: 76px; height: 38px; border-radius: 10px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.04); color: var(--ink);
+  font: 400 16px/1 var(--mono); letter-spacing: 0.3em; text-transform: uppercase; text-align: center; user-select: text; -webkit-user-select: text; }
+.submit-msg { font-size: 12px; color: var(--ink-2); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.top-actions-row { padding: 14px 0 4px; }
+.top-actions-row .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; font-size: 14px; gap: 8px; }
+.top-actions-row .btn kbd, .pause .btn kbd { font: 500 10px/1 var(--mono); padding: 3px 5px; border: 1px solid currentColor; border-radius: 4px; opacity: 0.55; margin-left: 2px; }
+/* Retry is the move after a run: the biggest thing on the sheet, a slow ice pulse until pressed. */
+.top-actions-row .retry-btn { height: 48px; padding: 0 24px; font-size: 15px; font-weight: 600; letter-spacing: 0.02em;
+  box-shadow: 0 0 0 0 rgba(150, 220, 255, 0.5); animation: retry-pulse 2.4s var(--ease) 1.2s infinite; }
+.retry-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes retry-pulse { 0% { box-shadow: 0 0 0 0 rgba(150, 220, 255, 0.45); } 70%, 100% { box-shadow: 0 0 0 14px rgba(150, 220, 255, 0); } }
+/* Rookie mode (0074): after three crashes in a row, one wide ice-edged button under Retry, and why. */
+.rookie { padding: 10px 0 2px; animation: rise 0.6s var(--ease) 0.4s both; }
+.rookie[hidden] { display: none; }
+.rookie-btn { display: flex; flex-wrap: wrap; width: 100%; min-height: 48px; height: auto; padding: 8px 20px; align-items: center; justify-content: space-between; gap: 2px 12px; white-space: nowrap;
+  border-color: rgba(150, 220, 255, 0.6); background: rgba(150, 220, 255, 0.1); color: var(--ink); font: 600 14px/1.2 var(--text); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; }
+.rookie-btn span { font: 500 12px/1.2 var(--mono); letter-spacing: 0.04em; text-transform: none; color: var(--ink); opacity: 0.86; }
+.rookie-btn:hover { background: rgba(150, 220, 255, 0.18); border-color: rgba(150, 220, 255, 0.9); }
+.rookie-why { margin: 8px 2px 0; font: 400 12px/1.4 var(--text); color: var(--ink-2); }
+
+/* The run line: Run n · against your best. A new best gets the aurora. */
+.runline { display: flex; align-items: center; gap: 12px; padding: 16px 0 0; font: 500 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.runline[hidden] { display: none; }
+.runline .run-n { padding: 6px 9px; border: 1px solid var(--hair); border-radius: 6px; color: var(--ink-2); }
+.runline .pb { letter-spacing: 0.06em; }
+.runline[data-state='behind'] .pb { color: var(--ink-2); }
+.runline[data-state='best'] .pb, .runline[data-state='first'] .pb { color: #07090d; padding: 6px 10px; border-radius: 6px; font-weight: 700;
+  background: linear-gradient(100deg, var(--aur-1), var(--aur-2), var(--aur-3), var(--aur-1)); background-size: 300% 100%;
+  animation: pb-in 0.7s var(--ease) 0.5s both, pb-flow 3s linear infinite; }
+@keyframes pb-in { from { opacity: 0; transform: scale(0.6) translateY(4px); filter: blur(6px); } 60% { transform: scale(1.08); filter: none; } to { opacity: 1; transform: none; } }
+@keyframes pb-flow { to { background-position: -300% 0; } }
+/* Visually hidden, still read out (a label the field's placeholder stands in for). */
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+/* A crash or a wreck gets a plain tag, never the aurora (audit 2026-10-30). */
+.runline[data-state='neutral'] .pb { color: var(--ink-2); }
+
+/* The panel's call on the sheet (src/ui.js liveCall): one hairline strip, live dot, the model in mono, the tokens
+   counting; "Watch the call" opens the theatre over it. Then the call's receipt in the same line. */
+.call-strip { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; padding: 7px 8px 7px 14px; min-height: 46px; border: 1px solid var(--hair-2); border-radius: 12px;
+  background: linear-gradient(100deg, rgba(92, 255, 200, 0.05), rgba(79, 179, 255, 0.025) 60%, rgba(255, 255, 255, 0.015)); font: 400 12px/1.35 var(--text); color: var(--ink-2); }
+.call-strip[hidden] { display: none; }
+.cs-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--aur-1); box-shadow: 0 0 10px var(--aur-1); }
+.cs-dot.live { animation: beat 1s ease-in-out infinite; }
+.cs-dot.off { background: var(--ink-3); box-shadow: none; }
+.cs-text { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.cs-what { font-weight: 500; color: var(--ink); }
+.cs-model { font: 400 12px/1.35 var(--mono); color: var(--aur-1); overflow-wrap: anywhere; }
+.cs-model:empty { display: none; }
+.cs-stats { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; font: 400 11px/1.35 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.cs-watch { position: relative; flex: none; height: 34px; padding: 0 13px; font-size: 12px; white-space: nowrap; }
+.cs-watch::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+@media (prefers-reduced-motion: reduce) { .cs-dot.live { animation: none; } }
+
+/* Post to the board, beside Retry (src/post.js): ice-edged like the sheet's offers, the initials in mono. */
+.r-post { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.r-post[hidden] { display: none; }
+.r-post [hidden] { display: none !important; }
+.r-post-field input { width: 74px; height: 40px; border-radius: 10px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.05); color: var(--ink);
+  font: 400 16px/1 var(--mono); letter-spacing: 0.3em; text-indent: 0.3em; text-transform: uppercase; text-align: center; user-select: text; -webkit-user-select: text; }
+.top-actions-row .r-post-btn { border-color: rgba(150, 220, 255, 0.6); background: rgba(150, 220, 255, 0.1); color: var(--ink); font-weight: 600; white-space: nowrap; }
+.top-actions-row .r-post-btn:hover { background: rgba(150, 220, 255, 0.18); border-color: rgba(150, 220, 255, 0.9); }
+.r-post-ini { font: 500 13px/1 var(--mono); letter-spacing: 0.16em; }
+.top-actions-row .r-post-edit { height: 40px; padding: 0 6px; font-size: 12px; }
+.r-post-msg { font: 500 12px/1.3 var(--text); color: var(--ink-2); }
+.r-post-msg:empty { display: none; }
+.r-post[data-state='posted'] .r-post-msg { font: 700 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #07090d; padding: 9px 11px; border-radius: 8px;
+  background: linear-gradient(100deg, var(--aur-1), var(--aur-2)); animation: pb-in 0.6s var(--ease) both; }
+
+/* Leave without posting? (src/post.js): asked once, inline, over the sheet or the theatre; never a browser dialog. */
+.leave { position: fixed; left: 50%; bottom: calc(112px + var(--safe-b)); z-index: 9; translate: -50% 0; width: min(440px, calc(100vw - 32px));
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; padding: 12px 12px 12px 18px;
+  border-radius: 16px; border: 1px solid var(--hair); background: rgba(8, 10, 16, 0.95); backdrop-filter: blur(20px); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55); animation: rise 0.35s var(--ease) both; }
+.leave[hidden] { display: none; }
+.leave p { margin: 0; font: 500 14px/1.3 var(--text); color: var(--ink); }
+.leave-actions { display: flex; gap: 8px; margin-left: auto; }
+.leave .btn { display: inline-flex; align-items: center; height: 44px; padding: 0 16px; font-size: 13px; }
+
+/* The board: one event at a time, and the tier each entry was flown in. */
+.board-courses { width: fit-content; max-width: 100%; margin: -6px 0 14px; }
+.board-courses button { white-space: nowrap; }
+.rows .tier-tag { display: inline-block; margin-right: 7px; padding: 2px 5px; border: 1px solid var(--hair); border-radius: 4px; font: 500 11px/1 var(--text); letter-spacing: 0.08em; color: var(--ink-2); vertical-align: 1px; }
+.rows .tier-tag[data-tier='pro'] { border-color: rgba(150, 220, 255, 0.5); color: var(--ink); }
+.rows .tier-tag[data-tier='advanced'] { border-color: rgba(92, 255, 200, 0.55); color: var(--aur-1); }
+.count span.word { font-size: calc(clamp(54px, 9vw, 120px) * var(--count-scale, 1)); letter-spacing: 0.18em; text-transform: uppercase; font-weight: 300; animation-duration: 1s; }
+
+/* Quick Retry / Home in the top bar: only while a run is on screen (body[data-mode]). */
+.quick { display: none; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px);
+  color: var(--ink); font: 500 12px/1 var(--text); letter-spacing: 0.02em; }
+.quick svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.quick kbd { font: 500 11px/1 var(--mono); padding: 2px 4px; border: 1px solid var(--hair); border-radius: 3px; color: var(--ink-2); }
+body[data-mode='live'] .quick, body[data-mode='countdown'] .quick, body[data-mode='results'] .quick, body[data-mode='replay'] .quick { display: inline-flex; }
+body[data-mode='results'] .quick-retry { display: none; }   /* the sheet's own Retry is right there */
+.quick:hover { border-color: rgba(255, 255, 255, 0.35); }
+.quick:active { transform: scale(0.96); }
+@media (pointer: coarse) { .quick kbd { display: none; } .quick { height: 36px; padding: 0 12px; } }
+/* Pause (0098): only where pause() acts, a run (countdown and live) and Free Drive; never the title, results or replay.
+   On touch its box is a 44 px square, the 36 px glass circle drawn inside it, and -4 px margins keep the bar's row at 36 and its gaps at 6. */
+.quick-pause { position: relative; isolation: isolate; }
+body:not([data-mode='live'], [data-mode='countdown'], [data-mode='drive']) .quick-pause { display: none; }
+body[data-mode='drive'] .quick-pause { display: inline-flex; }
+body.building .quick-pause { visibility: hidden; }   /* build mode can't pause; its place in the row stays */
+/* Free Drive on a flip phone's cover screen (424×360): Menu goes to its icon, so the bar clears the timer. */
+@media (max-width: 440px) { body[data-mode='drive'] .more-toggle span { display: none; } }
+@media (pointer: coarse) {
+  .quick-pause { width: 44px; height: 44px; margin: -4px; padding: 0; justify-content: center; border: 0; background: none; backdrop-filter: none; }
+  .quick-pause::before { content: ''; position: absolute; inset: 4px; z-index: -1; border-radius: 18px; border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); }
+  /* Free Drive's bar is the chips' 32 px (its map sits 52 px down): a 32 px circle, -6 px margins. */
+  body[data-mode='drive'] .quick-pause { margin: -6px; }
+  body[data-mode='drive'] .quick-pause::before { inset: 6px; border-radius: 16px; }
+}
+/* A 390 px phone mid-run has no room for Retry's word beside Pause; the icon and its label stay. */
+@media (max-width: 440px) { body:is([data-mode='live'], [data-mode='countdown']) .quick-retry span { display: none; } }
+/* Narrow and touch screens mid-run: the AI and tier chips are title-screen settings; Home and Retry
+   take their place (in landscape the bar shares its row with the HUD's mission block). */
+@media (max-width: 720px), (pointer: coarse) {
+  body:is([data-mode='live'], [data-mode='countdown'], [data-mode='results'], [data-mode='replay']) :is(.ai-chip, .tier-chip) { display: none; }
+}
+
+.board-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.seg { display: flex; border: 1px solid var(--hair); border-radius: 16px; padding: 2px; }
+.seg button { height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: none; font-size: 12px; color: var(--ink-2); }
+.seg button[aria-pressed='true'] { background: var(--ink); color: #07090d; }
+.rows { list-style: none; margin: 0 0 22px; padding: 0; counter-reset: r; }
+.rows li { display: grid; grid-template-columns: 28px 64px 1fr auto; gap: 10px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--hair-2); counter-increment: r; }
+.rows li::before { content: counter(r); font: 400 12px/1 var(--mono); color: var(--ink-3); }
+.rows li.empty { display: block; color: var(--ink-3); }
+.rows li.empty::before { content: none; }
+.rows .ini { font: 400 15px/1 var(--mono); letter-spacing: 0.2em; }
+.rows .v { font-size: 12px; color: var(--ink-3); }
+.rows .t { font: 300 20px/1 var(--text); font-variant-numeric: tabular-nums; }
+/* Key lists: the labels in a column of their own, as wide as the widest, with a gap before the text
+   (0092: "ADVANCEDQ E Z C" ran together in a fixed 64 px box). Subgrid lines every row up; without it
+   a label sits above its line. */
+.keys { display: grid; grid-template-columns: max-content 1fr; column-gap: 14px; }
+.keys p { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: baseline; margin: 14px 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; }
+.keys b { font: 500 11px/1.45 var(--text); letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
+/* The pause sheet (0092): Paused, then the actions (Resume and Home on the glass at any size), then the
+   controls, which scroll. A touch screen has no R or H key to show. */
+.pause .sheet { display: flex; flex-direction: column; }
+.pause .sheet > * { flex: none; }
+.pause { --ink-3: rgba(245, 246, 248, 0.66); }   /* the labels hold 4.5:1 on the sheet's glass (0.46 read 4.38) */
+.pause .actions { margin-top: 20px; }
+.pause .actions .btn { min-height: 44px; }   /* a 44 px target, also where a short landscape screen trims buttons to 40 */
+.pause .keys { margin-top: 22px; padding-top: 8px; border-top: 1px solid var(--hair-2); }
+.pause .keys p { margin: 8px 0; }
+.pause .btn kbd { font-size: 11px; }
+.pause[data-device="touch"] .btn kbd { display: none; }
+@media (max-width: 720px), (max-height: 520px) {
+  .pause .sheet { padding: 22px 24px; max-height: calc(100dvh - 24px - var(--safe-t) - var(--safe-b)); }
+  .pause .actions { margin-top: 16px; }
+  .pause .keys { margin-top: 16px; }
+}
+
+.noscript { position: fixed; inset: 0; display: grid; place-items: center; }
+
+/* --- Small screens --- */
+@media (max-width: 720px) {
+  .sheet { width: 100vw; background: rgba(5, 7, 12, 0.9); padding-left: calc(22px + var(--safe-l)); padding-right: calc(22px + var(--safe-r)); }
+  /* Phones: Retry and Home ride a bar pinned under the thumb while the panel scrolls above. */
+  .results .sheet { display: flex; flex-direction: column; padding-bottom: 0; }
+  .results .sheet > * { flex: none; }
+  .results .top-actions-row { position: sticky; bottom: 0; z-index: 2; order: 99; gap: 6px; margin: 0 -22px; padding: 12px 22px calc(14px + var(--safe-b));
+    background: linear-gradient(180deg, rgba(5, 7, 12, 0), rgba(5, 7, 12, 0.96) 28%); flex-wrap: nowrap; }
+  .results .top-actions-row .retry-btn { flex: 1 1 auto; justify-content: center; }
+  .results .top-actions-row .btn:not(.retry-btn) { padding: 0 12px; font-size: 13px; flex: none; }
+  .top-actions-row .btn kbd { display: none; }
+  /* Post rides the pinned bar too, its own line over Retry: never a scroll away (audit 2026-10-30). */
+  .results .top-actions-row { flex-wrap: wrap; row-gap: 8px; }
+  /* With Post on it the bar is solid (the judges' words scrolling under it read through a fade), and the fade sits above it. */
+  .results .top-actions-row:has(.r-post:not([hidden])) { background: rgb(5, 7, 12); box-shadow: 0 -18px 18px -4px rgb(5, 7, 12); }
+  .results .top-actions-row .r-post { order: -1; flex: 1 0 100%; flex-wrap: nowrap; }
+  .results .top-actions-row .r-post .r-post-btn { flex: 0 1 auto; justify-content: center; min-width: 0; }
+  .results .top-actions-row .r-post-msg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .leave { bottom: calc(168px + var(--safe-b)); }
+  .total b { font-size: 52px; }
+  .cats { grid-template-columns: 1fr; }
+  .spec { gap: 18px; }
+}
+/* Replay where the sheet covers the screen (a phone upright, 0068): the sheet slides down out of view, kept
+   as it was (scroll, the judges still typing), and a peek holds the verdict and the way back at the bottom
+   while the replay plays full-frame above it (src/main.js peek(); the director frames it above the peek).
+   `translate` rides beside the sheet's slide-in animation instead of fighting its transform; the sheet is
+   `inert` while it is down (no focus, not read out), not `visibility: hidden`, so focus can come straight
+   back to it (reduced motion's 0.01 ms transitions would hold its children hidden for a frame). */
+.results .sheet { translate: 0 0; transition: translate 0.45s var(--ease); }
+.results[data-peek] .sheet { translate: 0 100%; }
+.results[data-peek] { overflow: hidden; }
+body[data-peek] .top .brand { visibility: hidden; }   /* a hairline over the lit curl: the peek names the run */   /* a folding phone's results scroll as a whole: held where they were */
+.peek { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: auto; display: grid; gap: 10px;
+  padding: 12px calc(16px + var(--safe-r)) calc(12px + var(--safe-b)) calc(16px + var(--safe-l));
+  background: linear-gradient(180deg, rgba(5, 7, 12, 0.72), rgba(5, 7, 12, 0.94)); border-top: 1px solid var(--hair);
+  animation: peek-in 0.45s var(--ease) both; cursor: pointer; }
+.peek[hidden] { display: none; }
+@keyframes peek-in { from { translate: 0 100%; } to { translate: 0 0; } }
+.peek-line { margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
+.peek-verdict { font: 400 16px/1.2 var(--display); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.peek-total { flex: none; font: 400 12px/1 var(--text); color: var(--ink-2); white-space: nowrap; }
+.peek-total b { font: 300 22px/1 var(--text); color: var(--ink); font-variant-numeric: tabular-nums; }
+.peek-actions { display: flex; gap: 6px; }
+.peek-actions .btn { display: inline-flex; align-items: center; height: 48px; min-width: 76px; padding: 0 14px; font-size: 13px; flex: none; justify-content: center; }   /* a whole 44 px square inside the rounded ends */
+.peek-actions .btn.primary { flex: 1 1 auto; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .results .sheet, .results[data-peek] .sheet { transition: none; } .peek { animation: none; } }
+@media (max-height: 500px) and (orientation: landscape) {
+  .title { bottom: 18px; } .spec, .fineprint { display: none; } .tagline { margin: 10px 0 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* --- The judges' theatre (src/ai/theatre.js) ---------------------------------------------- */
+:root { --aur-1: #5cffc8; --aur-2: #4fb3ff; --aur-3: #b07bff; }
+/* Legibility over the aurora: inside the theatre and the results sheet the secondary inks are
+   raised (0.46 → 0.66, 0.72 → 0.86) so 10–12 px labels clear WCAG AA (4.5:1) against the field,
+   measured from pixels by scripts/theatre-shots.mjs. --th-lift is the soft shadow every theatre
+   text sits on: a 1 px contact shadow plus a dark halo that dims any particle behind a glyph. */
+.theatre, .results { --ink-2: rgba(245, 246, 248, 0.86); --ink-3: rgba(245, 246, 248, 0.66);
+  --th-lift: 0 1px 1px rgba(0, 0, 0, 0.9), 0 0 10px rgba(2, 3, 6, 0.95), 0 0 22px rgba(2, 3, 6, 0.8); }
+.theatre { position: fixed; inset: 0 min(520px, 100vw) 0 0; z-index: 6; overflow: hidden; opacity: 0; transition: opacity 0.6s var(--ease); container: theatre / inline-size;
+  background: radial-gradient(120% 80% at 40% 45%, rgba(7, 11, 20, 0.93), rgba(2, 3, 6, 0.985)); }
+.theatre.on { opacity: 1; }
+.theatre.out { opacity: 0; transition-duration: 0.6s; }
+.theatre::before { content: ''; position: absolute; inset: -20%; pointer-events: none; opacity: 0.55; filter: blur(60px);
+  background: conic-gradient(from 200deg at 40% 55%, transparent, rgba(92, 255, 200, 0.18), rgba(79, 179, 255, 0.14), rgba(176, 123, 255, 0.16), transparent 70%);
+  animation: aurora 14s linear infinite; }
+@keyframes aurora { to { transform: rotate(360deg); } }
+.th-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.th-rail { position: absolute; top: calc(70px + var(--safe-t)); left: 50%; transform: translateX(-50%); display: flex; gap: 0; margin: 0; padding: 0; list-style: none; z-index: 1; }
+.th-rail li { position: relative; display: grid; justify-items: center; gap: 6px; width: clamp(78px, 11vw, 132px); color: var(--ink-3); transition: color 0.4s; text-shadow: var(--th-lift); }
+.th-rail li::before { content: ''; position: absolute; top: 6px; left: -50%; right: 50%; height: 1px; background: var(--hair); }
+.th-rail li:first-child::before { display: none; }
+.th-rail .n { font: 400 11px/1 var(--mono); }
+.th-rail .l { font: 500 11px/1 var(--text); letter-spacing: 0.26em; text-transform: uppercase; }
+.th-rail .d { position: absolute; top: 2px; width: 9px; height: 9px; border-radius: 50%; background: var(--bg); border: 1px solid var(--hair); }
+.th-rail .n { margin-top: 18px; }
+.th-rail li.done { color: var(--ink-2); }
+.th-rail li.done .d { background: var(--aur-2); border-color: var(--aur-2); }
+.th-rail li.done::before, .th-rail li.on::before { background: linear-gradient(90deg, var(--aur-1), var(--aur-2)); }
+.th-rail li.on { color: var(--ink); }
+.th-rail li.on .d { background: var(--aur-1); border-color: var(--aur-1); box-shadow: 0 0 0 4px rgba(92, 255, 200, 0.15), 0 0 18px var(--aur-1); animation: beat 1s ease-in-out infinite; }
+@keyframes beat { 50% { box-shadow: 0 0 0 7px rgba(92, 255, 200, 0.06), 0 0 26px var(--aur-1); } }
+.th-caption { position: absolute; top: calc(126px + var(--safe-t)); left: 0; right: 0; text-align: center; font: 400 14px/1.4 var(--text); color: var(--ink); padding: 0 24px; z-index: 1; text-shadow: var(--th-lift); }
+.th-card { position: absolute; left: calc(28px + var(--safe-l)); bottom: calc(28px + var(--safe-b)); width: min(300px, 40%); z-index: 1;
+  padding: 18px 20px; border: 1px solid var(--hair); border-radius: 16px; background: rgba(4, 6, 11, 0.82); backdrop-filter: blur(14px); }
+.th-eyebrow { font: 500 11px/1 var(--text); letter-spacing: 0.3em; text-transform: uppercase; color: var(--aur-1); }
+.th-model { display: grid; gap: 4px; margin: 12px 0 14px; }
+.th-model b { font: 400 17px/1.2 var(--mono); color: var(--ink); word-break: break-all; }
+.th-model span { font-size: 12px; color: var(--ink-3); }
+.th-meta, .th-stats { margin: 0; display: grid; gap: 8px; }
+.th-meta div, .th-stats div { display: flex; justify-content: space-between; gap: 12px; }
+.th-meta dt, .th-stats dt { font: 500 11px/1.4 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+.th-meta dd, .th-stats dd { margin: 0; font: 400 12px/1.4 var(--mono); color: var(--ink); text-align: right; }
+.th-stats { position: absolute; right: calc(28px + var(--safe-r)); bottom: calc(28px + var(--safe-b)); width: min(240px, 34%); z-index: 1;
+  padding: 18px 20px; border: 1px solid var(--hair); border-radius: 16px; background: rgba(4, 6, 11, 0.82); backdrop-filter: blur(14px); }
+/* The counters are what the call cost: read at a glance (0078). Labels in the raised ink, values
+   larger and in the aurora's near-white, so they read from arm's length on a phone. */
+.th-stats { gap: 10px; }
+.th-stats div { align-items: baseline; }
+.th-stats dt { font-size: 11px; color: var(--ink-2); }
+.th-stats dd { font: 500 15px/1.3 var(--mono); color: #eafff7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* A short sideways screen beside the sheet leaves the counters a narrow column: one size down. */
+@media (max-height: 500px) and (orientation: landscape) { .th-stats dd { font-size: 13px; } }
+/* The raw stream sits on its own dark glass (like the cards), so the words never share pixels
+   with the compute die behind them. Empty until the first token; gone when the words land. It stands
+   clear of the counters (205 px tall with 0078's figures, 28 px up: 248, 0082). */
+.th-ticker { position: absolute; left: 50%; bottom: calc(248px + var(--safe-b)); transform: translateX(-50%); width: min(560px, 70%); z-index: 1; text-align: center;
+  font: 400 14px/1.6 var(--mono); color: var(--ink); max-height: calc(5 * 1.6em + 24px); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 12px 16px; box-sizing: border-box; border-radius: 14px; border: 1px solid var(--hair-2); background: rgba(3, 5, 10, 0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  white-space: pre-wrap; word-break: break-word; transition: opacity 0.4s var(--ease); }
+.th-ticker:has(.th-reason:empty):has(.th-out:empty), .theatre[data-stage='app'] .th-ticker, .theatre[data-spell] .th-ticker { opacity: 0; }
+.th-ticker::before { content: ''; position: absolute; inset: 0 0 auto; height: 2.4em; border-radius: 14px 14px 0 0; pointer-events: none;
+  background: linear-gradient(rgba(3, 5, 10, 0.95), rgba(3, 5, 10, 0)); }
+.th-reason { color: #cdb3ff; font-style: italic; }
+.th-out { color: var(--aur-1); }
+.th-skip { position: absolute; top: calc(66px + var(--safe-t)); right: 24px; height: 30px; padding: 0 14px; border-radius: 15px; border: 1px solid var(--hair);
+  background: rgba(6, 9, 15, 0.82); font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); z-index: 2; }
+
+.th-quick { display: none; }
+@media (max-width: 720px) {
+  .th-quick { display: flex; gap: 8px; position: absolute; top: calc(14px + var(--safe-t)); left: calc(16px + var(--safe-l)); z-index: 2; }
+  .th-quick .quick-btn { height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--hair); background: rgba(6, 9, 15, 0.82);
+    font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .th-quick .quick-btn.primary { background: var(--ink); color: #07090d; border-color: transparent; }
+  .theatre:not(.th-quest) .th-rail { top: calc(62px + var(--safe-t)); }
+  /* Rookie mode (0076): while the results offer it, a second row of the bar, the width of the screen, ice-edged
+     like the sheet's; the rail and the caption step down one row to make room. */
+  .th-quick { flex-wrap: wrap; right: calc(16px + var(--safe-r)); pointer-events: none; }
+  .th-quick > * { pointer-events: auto; }
+  .th-quick .th-rookie-btn { display: none; }
+  .theatre.th-rookie:not(.th-quest) .th-quick .th-rookie-btn { display: flex; flex: 1 0 100%; min-height: 44px; height: auto; padding: 6px 16px; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 2px 12px; border-radius: 22px; border-color: rgba(150, 220, 255, 0.7); background: rgba(14, 26, 38, 0.92); color: var(--ink); font-weight: 600; text-align: left; }
+  .th-rookie-btn span { font: 500 12px/1.2 var(--mono); letter-spacing: 0.04em; text-transform: none; color: var(--ink); opacity: 0.86; }
+  .theatre.th-rookie:not(.th-quest) .th-rail { top: calc(116px + var(--safe-t)); }
+  .theatre.th-rookie:not(.th-quest) .th-caption { top: calc(180px + var(--safe-t)); }
+  .theatre.th-rookie:not(.th-quest) .th-ticker { max-height: min(calc(5 * 1.6em + 24px), calc(100dvh - 524px - var(--safe-t) - var(--safe-b))); }
+}
+/* Every control in the theatre is a 44 px target (0082): the pills stay slim and the hit area runs
+   past them, as the top bar's Menu does (0073). Retry and Home sit side by side, so it grows only up
+   and down. */
+.th-skip::after, .th-quick .quick-btn::after { content: ''; position: absolute; left: -1px; right: -1px; top: 50%; height: 44px; transform: translateY(-50%); }
+.th-quick .quick-btn { position: relative; }
+
+/* Receipt in the results sheet */
+.receipt { margin: 14px 0 0; padding: 14px 16px; border: 1px solid var(--hair-2); border-radius: 14px; background: rgba(255, 255, 255, 0.02); }
+.rc-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.rc-head b { font-weight: 500; color: var(--ink); }
+.rc-head code { font: 400 12px/1 var(--mono); color: var(--aur-1); }
+.rc-where { color: var(--ink-3); }
+.rc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--aur-1); box-shadow: 0 0 10px var(--aur-1); }
+.rc-dot.off { background: var(--ink-3); box-shadow: none; }
+.rc-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font: 400 12px/1.4 var(--mono); color: var(--ink-2); }
+.rc-actions { display: flex; gap: 4px; margin: 6px 0 0 -8px; }
+.rc-actions .btn.link { height: 30px; font-size: 12px; }
+.rc-inspect summary { cursor: pointer; font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+.rc-inspect h4 { margin: 12px 0 6px; font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+.rc-inspect pre { margin: 0; max-height: 180px; overflow: auto; padding: 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.35); font: 400 11px/1.5 var(--mono); color: var(--ink-2); white-space: pre-wrap; user-select: text; -webkit-user-select: text; }
+
+/* The judges' brain (settings) */
+.ai-modal { position: fixed; inset: 0; z-index: 9; display: flex; justify-content: center; align-items: center; background: rgba(3, 4, 7, 0.55); }
+.ai-sheet { width: min(600px, calc(100vw - 32px)) !important; max-height: calc(100dvh - 48px); padding: 34px !important; border-radius: 22px; border: 1px solid var(--hair); background: rgba(8, 10, 16, 0.92) !important; backdrop-filter: blur(24px); animation: rise 0.5s var(--ease) both !important; }
+.ai-lede { color: var(--ink-2); font-size: 14px; margin: 10px 0 20px; }
+.ai-providers { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 18px; }
+.ai-prov { position: relative; display: grid; gap: 4px; text-align: left; padding: 14px; border-radius: 14px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.02); transition: border-color 0.2s, background 0.2s; }
+.ai-prov b { font-weight: 500; font-size: 14px; }
+.ai-prov span { font-size: 12px; color: var(--ink-3); }
+.ai-prov i, .ai-prov em { position: absolute; top: 10px; right: 10px; font: 500 9px/1 var(--text); letter-spacing: 0.18em; text-transform: uppercase; font-style: normal; color: var(--aur-1); }
+.ai-prov em { top: auto; bottom: 10px; color: var(--ink-3); }
+.ai-prov.on { border-color: var(--aur-1); background: rgba(92, 255, 200, 0.06); }
+.ai-field { display: grid; gap: 8px; margin: 6px 0 10px; }
+.ai-field span { font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+.ai-field input, .ai-field select { height: 42px; border-radius: 10px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.04); color: var(--ink); padding: 0 12px; font: 400 13px/1 var(--mono); user-select: text; -webkit-user-select: text; }
+.ai-note { font-size: 12px; color: var(--ink-3); margin: 4px 0 14px; }
+.ai-note a { color: var(--ink-2); }
+.ai-note code { font-family: var(--mono); color: var(--ink-2); }
+.ai-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.ai-msg { font-size: 12px; color: var(--ink-2); }
+.btn[disabled] { opacity: 0.4; pointer-events: none; }
+
+@media (max-width: 720px) {
+  /* Full screen over the results sheet: opaque, so the sheet's text never ghosts through. */
+  .theatre { inset: 0; z-index: 8; background: radial-gradient(120% 80% at 40% 45%, rgb(7, 11, 20), rgb(2, 3, 6)); }
+  .th-rail li { width: 76px; }
+  .th-rail .n, .th-rail .l { font-size: 11px; }
+  .th-rail .l { letter-spacing: 0.2em; }
+  .th-caption { font-size: 15px; }
+  .th-skip { top: calc(14px + var(--safe-t)); right: calc(16px + var(--safe-r)); height: 34px; }
+  .th-meta dt, .th-stats dt { font-size: 11px; letter-spacing: 0.14em; }
+  .th-model span { font-size: 13px; }
+  .th-card { left: 16px; right: 16px; width: auto; bottom: calc(150px + var(--safe-b)); padding: 14px 16px; }
+  .th-card .th-meta { display: none; }
+  .th-stats { left: 16px; right: 16px; width: auto; bottom: calc(16px + var(--safe-b)); grid-template-columns: 1fr 1fr; padding: 12px 16px; }
+  /* Under the caption (at 126 px, up to three lines on a 320 px column) and over the card: the stream keeps its newest lines. */
+  .th-ticker { width: calc(100vw - 32px); bottom: calc(272px + var(--safe-b)); font-size: 15px; max-height: min(calc(5 * 1.6em + 24px), calc(100dvh - 472px - var(--safe-t) - var(--safe-b))); }
+  .ai-chip { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* A 320 px column: the counters' names wrap beside their values (0078's larger figures), so the
+   counters stand 30 px taller; the card and the stream step up with them (0082). */
+@media (max-width: 360px) {
+  .th-card { bottom: calc(166px + var(--safe-b)); }
+  .th-ticker { bottom: calc(288px + var(--safe-b)); max-height: min(calc(5 * 1.6em + 24px), calc(100dvh - 488px - var(--safe-t) - var(--safe-b))); }
+  .theatre.th-rookie:not(.th-quest) .th-ticker { max-height: min(calc(5 * 1.6em + 24px), calc(100dvh - 540px - var(--safe-t) - var(--safe-b))); }
+}
+@media (prefers-reduced-motion: reduce) { .theatre::before { animation: none; } }
+/* A short landscape screen (0082: a phone sideways, a folding phone closed and sideways; ≤ 480 px tall).
+   Beside the sheet the theatre was a 324 px column at 844×390, its rail clipped and Skip sitting on it,
+   its panels piled up; full screen it had a phone's tall stack in 340 px. So, as on a phone, it takes
+   the screen (the sheet is there when it ends) with Retry and Home (and the Rookie offer, 0076) in its
+   bar; and it reads across instead of down: the bar, the rail, the caption, then the model card, the
+   stream and the counters side by side (30 · 40 · 30 of the width inside the insets). The bar is the same
+   wherever the theatre covers the sheet beyond a phone's width: here, and on an opened folding phone
+   (0075's query), whose theatre took the screen without it. */
+@media (orientation: landscape) and (max-height: 480px), (pointer: coarse) and (min-width: 600px) and (min-height: 500px) and (max-width: 1000px) and (max-height: 960px) {
+  .th-quick { display: flex; flex-wrap: nowrap; gap: 8px; position: absolute; top: calc(14px + var(--safe-t)); left: calc(16px + var(--safe-l)); right: calc(96px + var(--safe-r)); z-index: 2; pointer-events: none; }
+  .th-quick > * { pointer-events: auto; }
+  .th-quick .quick-btn { height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid var(--hair); background: rgba(6, 9, 15, 0.82);
+    font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .th-quick .quick-btn.primary { background: var(--ink); color: #07090d; border-color: transparent; }
+  .th-quick .th-rookie-btn { display: none; }
+  .theatre.th-rookie:not(.th-quest) .th-quick .th-rookie-btn { display: flex; flex: 0 1 auto; min-width: 0; min-height: 44px; height: auto; margin-top: -5px; padding: 6px 16px; align-items: center;
+    gap: 2px 12px; border-radius: 22px; border-color: rgba(150, 220, 255, 0.7); background: rgba(14, 26, 38, 0.92); color: var(--ink); font-weight: 600; text-align: left; }
+  .th-rookie-btn span { font: 500 12px/1.2 var(--mono); letter-spacing: 0.04em; text-transform: none; color: var(--ink); opacity: 0.86; white-space: nowrap; }
+  .th-skip { top: calc(14px + var(--safe-t)); right: calc(16px + var(--safe-r)); height: 34px; }
+}
+/* Beside the sheet on a tablet (0082) the theatre is a column 248 px (768 upright) to 660 px (1180 sideways)
+   wide: Skip sat on the rail and the stream's glass on the card. By the column's own width (a container),
+   only where it stands beside the sheet (wider than a phone: a phone's theatre is the whole screen): Skip
+   goes up to the corner; a column under 560 px stacks as a phone's does (the counters at the foot, the card
+   over them, the stream over the card, as tall as the room under the caption), and under 360 px the rail
+   names only the stage it is on. */
+@media (min-width: 721px) {
+  @container theatre (max-width: 700px) {
+    .th-skip { top: calc(14px + var(--safe-t)); }
+  }
+  @container theatre (max-width: 560px) {
+    .th-rail li { width: min(120px, calc((100cqw - 24px) / 4)); }
+    .th-card { left: 16px; right: 16px; width: auto; bottom: calc(var(--th-stats-h, 128px) + var(--safe-b)); padding: 14px 16px; }
+    .th-card .th-meta { display: none; }
+    .th-stats { left: 16px; right: 16px; width: auto; bottom: calc(16px + var(--safe-b)); grid-template-columns: 1fr 1fr; column-gap: 16px; padding: 12px 16px; }
+    .th-ticker { left: 16px; right: 16px; width: auto; transform: none; bottom: calc(var(--th-stats-h, 128px) + 144px + var(--safe-b));
+      max-height: min(calc(8 * 1.55em + 24px), calc(100dvh - var(--th-stats-h, 128px) - 350px - var(--safe-t) - var(--safe-b))); }
+  }
+  @container theatre (max-width: 360px) {
+    .th-rail li:not(.on) .l { visibility: hidden; }
+    .th-card, .th-ticker { --th-stats-h: 216px; }
+    .th-stats { grid-template-columns: none; }
+  }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  .theatre { inset: 0; z-index: 8; background: radial-gradient(120% 80% at 40% 45%, rgb(7, 11, 20), rgb(2, 3, 6));
+    --th-in: calc(100% - var(--safe-l) - var(--safe-r) - 64px); }
+  .theatre .th-rail, .theatre.th-rookie:not(.th-quest) .th-rail { top: calc(64px + var(--safe-t)); }
+  .th-rail li { width: 76px; }
+  .th-rail .l { letter-spacing: 0.2em; }
+  .theatre .th-caption, .theatre.th-rookie:not(.th-quest) .th-caption { top: calc(116px + var(--safe-t)); left: var(--safe-l); right: var(--safe-r); }
+  .th-card, .th-stats { bottom: calc(12px + var(--safe-b)); width: calc(var(--th-in) * 0.3); padding: 12px 14px; }
+  .th-card { left: calc(16px + var(--safe-l)); right: auto; }
+  .th-card .th-meta { display: none; }
+  .th-model { margin: 10px 0 0; }
+  .th-model b { font-size: 15px; }
+  .th-stats { left: auto; right: calc(16px + var(--safe-r)); grid-template-columns: none; gap: 6px; }
+  .th-meta dt, .th-stats dt { letter-spacing: 0.12em; }
+  .theatre .th-ticker, .theatre.th-rookie:not(.th-quest) .th-ticker { left: calc(32px + var(--safe-l) + var(--th-in) * 0.3); bottom: calc(12px + var(--safe-b)); transform: none; width: calc(var(--th-in) * 0.4);
+    max-height: min(calc(8 * 1.55em + 24px), calc(100dvh - 164px - var(--safe-t) - var(--safe-b))); }
+}
+/* A flip phone (0104): sideways on its tall screen with Chrome's bars (≈ 300 px tall), or on its cover screen
+   (≈ 360 × 380, 424 × 360). The three panels across (or a phone's stack) need more room than that. The model
+   is named in the caption ("… is writing the judges' remarks") and the counters stay (tokens, time to first
+   token, speed, neurons, cost: invariant 5½); the raw stream steps out here (the receipt's Inspect the call
+   has it, whole, once the panel has spoken), and the counters read in two columns. On the cover screen
+   upright the model card steps out too (the caption names the model), and the Rookie offer is its name alone. */
+@media (orientation: landscape) and (max-height: 330px), (max-width: 520px) and (max-height: 440px) {
+  .theatre .th-ticker, .theatre.th-rookie:not(.th-quest) .th-ticker { display: none; }
+  .th-quick .th-rookie-btn span { display: none; }
+}
+@media (orientation: landscape) and (max-height: 330px), (orientation: landscape) and (max-width: 520px) and (max-height: 440px) {
+  .th-card { width: calc(var(--th-in) * 0.36); }
+  .th-stats { width: calc(var(--th-in) * 0.64 - 16px); grid-template-columns: 1fr 1fr; column-gap: 16px; }
+}
+/* The cover screen sideways (424 wide): two columns of counters didn't fit their figures; one column fits
+   under the caption. */
+@media (orientation: landscape) and (max-width: 520px) and (max-height: 440px) {
+  .th-card { width: calc(var(--th-in) * 0.42); }
+  .th-stats { width: calc(var(--th-in) * 0.58 - 16px); grid-template-columns: none; gap: 4px; }
+}
+@media (orientation: portrait) and (max-width: 520px) and (max-height: 440px) {
+  .th-card { display: none; }
+}
+/* Phones: brand, AI, Assist, Ghost and Sound all fit on one 390 px bar. */
+@media (max-width: 480px) {
+  .top { padding-left: calc(16px + var(--safe-l)); padding-right: calc(16px + var(--safe-r)); }
+  .brand { font-size: 11px; letter-spacing: 0.26em; }
+  .top-actions { gap: 6px; }
+  .chip { padding: 0 10px; letter-spacing: 0.1em; }
+  .ai-chip { max-width: 92px; }
+}
+
+/* Use your own AI: one paste box (src/ai/settings.js) */
+.ai-top { display: flex; justify-content: space-between; align-items: center; }
+.ai-status { display: flex; align-items: center; gap: 8px; margin: 10px 0 18px; font-size: 13px; color: var(--ink-2); }
+.ai-status b { color: var(--ink); font-weight: 500; }
+.ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aur-2); box-shadow: 0 0 10px var(--aur-2); flex: none; }
+.ai-dot.free { background: var(--aur-1); box-shadow: 0 0 10px var(--aur-1); }
+.ai-paste { display: grid; gap: 10px; }
+.ai-paste-label { font: 500 13px/1 var(--text); color: var(--ink); }
+.ai-paste-row { display: flex; gap: 8px; align-items: center; }
+.ai-paste-row input { flex: 1; min-width: 0; height: 56px; border-radius: 14px; border: 1px solid rgba(92, 255, 200, 0.45); background: rgba(92, 255, 200, 0.04);
+  color: var(--ink); padding: 0 16px; font: 400 15px/1 var(--mono); user-select: text; -webkit-user-select: text; box-shadow: 0 0 0 4px rgba(92, 255, 200, 0.06); }
+.ai-paste-row input:focus { outline: none; border-color: var(--aur-1); box-shadow: 0 0 0 4px rgba(92, 255, 200, 0.14); }
+.ai-paste-row .btn.small { height: 56px; padding: 0 20px; border-radius: 14px; }
+.ai-eye { height: 56px; padding: 0 12px; border: 0; background: none; color: var(--ink-3); font-size: 12px; }
+.ai-result { min-height: 2.8em; margin: 12px 0 18px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
+.ai-adv select { width: 100%; max-width: 100%; }
+.ai-result.ok { color: var(--aur-1); }
+.ai-result.ok b { color: var(--ink); }
+.ai-result.bad { color: #ff8a8f; }
+.ai-result.busy { color: var(--ink-2); }
+.ai-spin { display: inline-block; vertical-align: -2px; margin-right: 8px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--hair); border-top-color: var(--aur-1); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-get-title { margin: 0 0 10px; font-size: 12px; color: var(--ink-3); }
+.ai-get-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ai-get-tile { display: grid; gap: 3px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--hair); text-decoration: none; color: var(--ink); background: rgba(255, 255, 255, 0.02); transition: border-color 0.2s; }
+.ai-get-tile:hover { border-color: rgba(255, 255, 255, 0.4); }
+.ai-get-tile b { font-weight: 500; font-size: 14px; }
+.ai-get-tile span { font-size: 11px; color: var(--ink-3); }
+.ai-get-tile i { font-style: normal; font-size: 11px; color: var(--ink-2); margin-top: 4px; line-height: 1.35; }
+.ai-privacy { font-size: 11px; color: var(--ink-3); margin: 16px 0; }
+.ai-foot { align-items: center; }
+.ai-adv summary { cursor: pointer; font-size: 12px; color: var(--ink-3); padding: 10px 8px; }
+.ai-adv[hidden] { display: none; }
+@media (max-width: 720px) {
+  .ai-sheet { padding: 24px 20px !important; max-height: calc(100dvh - 24px); overflow-y: auto; }
+  .ai-sheet h2 { font-size: 19px; }
+  .ai-paste-row { flex-wrap: wrap; }
+  .ai-paste-row input { flex-basis: 100%; height: 54px; font-size: 16px; }
+  .ai-eye { display: none; }
+  .ai-paste-row .btn.small { flex: 1; height: 48px; }
+  .ai-get-grid { grid-template-columns: 1fr 1fr; }
+  .ai-get-tile i { display: none; }
+  .ai-result { min-height: 2.2em; margin: 10px 0 14px; }
+}
+
+
+.courses { display: flex; gap: 10px; margin: 0 0 18px; flex-wrap: wrap; }
+.course-btn { display: grid; gap: 4px; text-align: left; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(12px); min-width: 190px; }
+.course-btn b { font: 400 13px/1 var(--display); letter-spacing: 0.06em; }
+.course-btn span { font-size: 11px; color: var(--ink-3); }
+.course-btn[aria-checked='true'] { border-color: var(--ice); box-shadow: 0 0 0 3px rgba(191, 230, 255, 0.12); }
+.drive-row { display: flex; flex-wrap: wrap; gap: 10px; margin: -8px 0 18px; }
+.drive-btn { border-style: dashed; }
+.drive-btn b::after { content: ' →'; color: var(--ice); }
+@media (max-width: 720px) { .course-btn { min-width: 0; flex: 1; padding: 10px 12px; } .course-btn span { display: none; } }
+
+/* Titles that fit any screen: the wordmark scales with the shorter side. */
+.wordmark { font-size: clamp(44px, min(11vw, 16dvh), 148px); }
+@media (max-height: 500px) and (orientation: landscape) {
+  .title { top: auto; bottom: calc(14px + var(--safe-b)); }
+  .title .eyebrow { display: none; }
+  .tagline { font-size: 14px; margin: 6px 0 12px; }
+  .courses { margin-bottom: 10px; }
+  .course-btn { padding: 8px 12px; min-width: 0; }
+  .course-btn span { display: none; }
+  .btn { height: 40px; padding: 0 18px; font-size: 14px; }
+}
+
+/* --- Advanced on a phone: the nozzle pad ------------------------------------------------------- */
+.nozzle-pad { position: fixed; left: 50%; bottom: calc(14px + var(--safe-b)); transform: translateX(-50%); width: min(330px, 92vw); z-index: 5; touch-action: none; user-select: none; -webkit-user-select: none; }
+.nozzle-pad svg { display: block; width: 100%; height: auto; overflow: visible; }
+.np-car { fill: rgba(8, 10, 16, 0.38); stroke: var(--hair); stroke-width: 1.2; }
+.np-nose { fill: none; stroke: var(--hair); }
+.np .np-hit { fill: transparent; }
+.np .np-bg { fill: rgba(8, 10, 16, 0.55); stroke: var(--hair); stroke-width: 1; transition: fill 0.08s; }
+.np .np-ring { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.np .np-k { font: 500 13px var(--mono); fill: var(--ink); text-anchor: middle; pointer-events: none; }
+.np .np-s { font: 500 10px var(--text); letter-spacing: 0.08em; fill: var(--ink-2); text-anchor: middle; pointer-events: none; }
+.np.chord .np-bg { fill: rgba(245, 246, 248, 0.08); stroke: rgba(245, 246, 248, 0.42); }
+.np.chord .np-k { font: 500 10.5px var(--text); letter-spacing: 0.12em; }
+.np.on .np-bg { fill: rgba(245, 246, 248, 0.86); }
+.np.on .np-k { fill: #06080c; }
+.np.chord.on .np-bg { fill: rgba(245, 246, 248, 0.86); }
+.touch.np-on .stick, .touch.np-on .buttons { visibility: hidden; }
+
+/* --- Practice ---------------------------------------------------------------------------------- */
+.practice { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; background: rgba(3, 4, 7, 0.5); z-index: 7; }
+.practice .sheet { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 32px; border-radius: 22px; border: 1px solid var(--hair); background: rgba(8, 10, 16, 0.9); backdrop-filter: blur(24px); animation: rise 0.5s var(--ease) both; }
+.lede { color: var(--ink-2); font-size: 14px; margin: 10px 0 18px; }
+.lede kbd, .drill-bar kbd, .drill-card kbd { font: 500 11px/1 var(--mono); padding: 2px 6px; border: 1px solid var(--hair); border-radius: 5px; }
+.drills { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; }
+.drills .empty { color: var(--ink-3); font-size: 13px; }
+.drill-btn { width: 100%; display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; gap: 4px 12px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.02); transition: border-color 0.2s, background 0.2s; }
+.drill-btn:hover, .drill-btn:focus-visible { border-color: var(--ice); background: rgba(191, 230, 255, 0.05); outline: none; }
+.drill-btn .n { grid-row: 1 / span 2; align-self: center; font: 400 13px/1 var(--mono); color: var(--ink-3); }
+.drill-btn b { font: 400 13px/1.2 var(--display); letter-spacing: 0.05em; }
+.drill-btn .d { font-size: 12px; color: var(--ink-3); }
+.pr-opts { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+
+.drill-bar { position: fixed; top: calc(62px + var(--safe-t)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 22px;
+  border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); z-index: 5; white-space: nowrap; max-width: calc(100vw - 24px); }
+.drill-bar .db-tag { font: 500 11px/1 var(--text); letter-spacing: 0.24em; text-transform: uppercase; color: var(--amber); }
+.drill-bar b { font: 400 11px/1 var(--display); letter-spacing: 0.06em; }
+.drill-bar .db-goal { font-size: 12px; color: var(--ink-3); }
+.drill-bar .chip { height: 28px; padding: 0 12px; }
+
+/* Results: the tier, the drill's card, the coach. */
+.tier-line { margin: 12px 0 0; font-size: 12px; color: var(--ink-3); }
+.tier-line b { font-weight: 500; color: var(--ink); }
+.drill-card { padding: 16px 0 4px; }
+.drill-card .facts { padding: 0 0 14px; }
+.results[data-practice] .judges, .results[data-practice] .cats, .results[data-practice] .facts:not([data-drill-stats]), .results[data-practice] .submit, .results[data-practice] .call-strip,
+.results[data-practice] .receipt, .results[data-practice] .top-actions-row [data-again], .results[data-practice] .top-actions-row [data-share] { display: none; }
+.coach { margin: 16px 0 6px; padding: 16px 18px; border-radius: 14px; border: 1px solid rgba(255, 191, 90, 0.28); background: rgba(255, 191, 90, 0.04); }
+.coach .eyebrow { margin-bottom: 10px; color: var(--amber); }
+.coach-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.coach-items li { display: grid; gap: 4px; }
+.coach-items b { font: 500 13px/1.3 var(--text); color: var(--ink); }
+.coach-items .cd { margin: 0; font: 400 13px/1.45 var(--text); color: var(--ink-2); }
+.coach-items .cf { margin: 0; font: 400 13px/1.45 var(--text); color: var(--ink); }
+.coach-items .cf::before { content: '→ '; color: var(--amber); }
+.coach-items li[data-fix='clean'] .cf::before { color: var(--ok); }
+
+@media (max-width: 720px) {
+  .drill-bar { top: calc(54px + var(--safe-t)); gap: 6px; padding-left: 12px; }
+  .drill-bar .db-goal, .drill-bar .db-tag { display: none; }
+  .drill-bar .chip { padding: 0 9px; }
+  .practice .sheet { padding: 24px 20px; }
+}
+
+/* Phones: short labels where a long one won't fit; the drill bar stays one compact row and the HUD
+   moves down out of its way; in the air the readouts drop what the landing HUD already says. */
+.ts, .drill-bar .db-n { display: none; }
+@media (max-width: 480px) {
+  .tl { display: none; }
+  .ts { display: inline; }
+  .drill-bar [data-drill-name], .drill-bar kbd { display: none; }
+  .drill-bar .db-n { display: inline; }
+  .drill-bar { gap: 5px; padding: 5px 5px 5px 12px; }
+  .drill-bar .chip { padding: 0 10px; }
+}
+
+/* --- The HUD: one instrument system ------------------------------------------------------------
+   Flight-test telemetry over a premium driver display. Rules:
+   · Type: Michroma for names (the phase), Geist for labels, Geist Mono for every number (tabular).
+     Scale: 11 label · 15/16 value · 20 secondary · 52–96 primary. Nothing under 11 px.
+   · Every number wears its unit. Hairlines (1 px, 22 % ink) for every instrument edge.
+   · Colour is state only: nominal is ink; caution amber; warning red. Nothing else is coloured.
+   · A soft scrim under each band keeps labels at ≥ 4.5:1 over the bright deck (scripts/hud-audit.mjs
+     measures it on screenshots).
+   Layouts: fine pointer → a bottom cluster; coarse portrait → a top stack (thumbs own the bottom);
+   coarse landscape → a top band. */
+.hud {
+  --m: clamp(16px, 2.4vw, 36px);
+  --top: calc(64px + var(--safe-t));
+  --lbl: rgba(245, 246, 248, 0.86);
+  --line: rgba(245, 246, 248, 0.22);
+  --caution: var(--amber);
+  --warn: var(--hot);
+  --lift: 0 0 1px rgba(0, 0, 0, 0.85), 0 1px 10px rgba(0, 0, 0, 0.55);
+  position: fixed; inset: 0; pointer-events: none; z-index: 3; color: var(--ink);
+  font-variant-numeric: tabular-nums; text-shadow: var(--lift); animation: rise 0.8s var(--ease) both;
+}
+body:has([data-drill-bar]:not([hidden])) .hud { --top: calc(112px + var(--safe-t)); }
+.h-scrim { position: absolute; left: 0; right: 0; pointer-events: none; }
+.h-scrim-top { top: 0; height: calc(var(--top) + 120px); background: linear-gradient(rgba(3, 5, 9, 0.8), rgba(3, 5, 9, 0.62) 62%, rgba(3, 5, 9, 0)); }
+.h-scrim-bot { bottom: 0; height: min(60dvh, 460px); background: linear-gradient(rgba(3, 5, 9, 0), rgba(3, 5, 9, 0.56) 35%, rgba(3, 5, 9, 0.8)); }
+.h-lbl { font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lbl); }
+.h-unit { font: 400 11px/1 var(--mono); font-style: normal; color: var(--lbl); letter-spacing: 0; }
+.h-big { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 8px; align-items: end; justify-content: center; }
+.h-big .h-lbl { grid-column: 1 / -1; justify-self: start; margin-bottom: 4px; }
+.h-big b { font: 200 clamp(56px, 6.2vw, 92px)/0.86 var(--text); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; min-width: 2.2ch; text-align: right; transition: color 0.25s var(--ease); }
+.h-big .h-unit { font-size: 13px; padding-bottom: 6px; }
+
+/* Mission clock and phase timeline */
+.h-mission { position: absolute; top: var(--top); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; width: max-content; max-width: calc(100vw - 2 * var(--m)); }
+.h-clock { display: flex; align-items: baseline; gap: 6px; }
+.h-clock .h-t { font: 400 11px/1 var(--display); letter-spacing: 0.1em; color: var(--lbl); }
+.h-clock b { font: 400 16px/1 var(--mono); letter-spacing: 0.02em; font-weight: 400; }
+.h-timeline { display: flex; margin: 0; padding: 0; list-style: none; }
+.h-timeline li { position: relative; display: grid; justify-items: center; gap: 7px; width: 90px; color: rgba(245, 246, 248, 0.92); }
+.h-timeline li::before { content: ''; position: absolute; top: 3px; left: -50%; right: 50%; height: 1px; background: var(--line); }
+.h-timeline li:first-child::before { display: none; }
+.h-timeline li[data-state='done']::before, .h-timeline li[data-state='now']::before { background: rgba(245, 246, 248, 0.7); }
+.h-timeline i { position: relative; z-index: 1; width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(245, 246, 248, 0.55); background: var(--bg); box-sizing: border-box; }
+.h-timeline li[data-state='done'] i { background: rgba(245, 246, 248, 0.7); border-color: transparent; }
+.h-timeline li[data-state='now'] i { background: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 3px rgba(245, 246, 248, 0.16); }
+.h-timeline span { font: 500 11px/1 var(--text); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.h-timeline em { font: 400 11px/1 var(--mono); font-style: normal; letter-spacing: 0; margin-right: 2px; }
+.h-timeline li[data-state='now'] span { color: var(--ink); font-weight: 600; }
+.h-timeline li[data-state='now'] em { font-family: var(--mono); }
+/* A run that ended in a crash (0072): the step you're on is the crash, in signal red, never TOUCHDOWN. */
+.h-timeline li[data-crash] span, .h-timeline li[data-crash] em { color: var(--warn); }
+.h-timeline li[data-crash] i { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 0 3px rgba(255, 90, 98, 0.2); }
+/* Full, the label stands on the scene under its dot: red holds 4.5:1 only on dark glass (a lit deck
+   behind a wreck measured 4.2). Compact, it is in the head's glass already. */
+:root[data-hud='full'] .h-timeline li[data-crash] span { padding: 3px 5px; border-radius: 3px; background: rgba(5, 7, 12, 0.78); }
+
+/* Primary instrument: speed on the ground; in the air, the descent and its predictor */
+.h-primary { position: absolute; left: 50%; bottom: calc(104px + var(--safe-b)); transform: translateX(-50%); display: grid; justify-items: center; }
+.hud[data-air] .speed { display: none; }
+.descent { display: grid; grid-template-columns: auto auto; align-items: end; gap: 18px; justify-content: center; }
+.d-main { display: grid; gap: 10px; justify-items: end; }
+.d-meta { display: grid; gap: 6px; justify-items: end; }
+.d-row { display: flex; align-items: baseline; gap: 6px; }
+.d-row i { font: 400 15px/1 var(--mono); font-style: normal; color: var(--ink); min-width: 3.4ch; text-align: right; }
+.d-state { font: 400 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding: 5px 8px 4px; border: 1px solid var(--line); border-radius: 3px; background: rgba(5, 7, 12, 0.66); text-shadow: none; }
+.descent[data-status='amber'] .d-sink b, .descent[data-status='amber'] .d-state { color: var(--caution); }
+.descent[data-status='amber'] .d-state { border-color: rgba(255, 191, 90, 0.6); }
+.descent[data-status='red'] .d-sink b, .descent[data-status='red'] .d-state { color: var(--warn); }
+.descent[data-status='red'] .d-state { border-color: rgba(255, 90, 98, 0.7); animation: blink 0.5s steps(2) infinite; }
+.d-tape { width: 90px; height: 164px; overflow: visible; }
+.d-axis { stroke: var(--line); stroke-width: 1; }
+.d-ticks line { stroke: rgba(245, 246, 248, 0.55); stroke-width: 1; }
+.d-scale { font: 400 11px var(--mono); fill: var(--lbl); paint-order: stroke; stroke: rgba(3, 5, 9, 0.85); stroke-width: 3px; stroke-linejoin: round; }
+.d-fill { fill: rgba(255, 191, 90, 0.3); }
+.descent[data-status='red'] .d-fill { fill: rgba(255, 90, 98, 0.4); }
+.d-brake { stroke: var(--caution); stroke-width: 1; stroke-dasharray: 3 2; }
+.d-brake-lbl { font: 500 11px var(--text); letter-spacing: 0.08em; fill: var(--caution); paint-order: stroke; stroke: rgba(3, 5, 9, 0.85); stroke-width: 3px; stroke-linejoin: round; }
+.descent[data-status='green'] .d-brake, .descent[data-status='green'] .d-brake-lbl { opacity: 0.85; }
+.d-car path { fill: var(--ink); }
+.d-car text { font: 400 12px var(--mono); fill: var(--ink); text-anchor: end; paint-order: stroke; stroke: rgba(3, 5, 9, 0.85); stroke-width: 3px; stroke-linejoin: round; }
+
+/* The telemetry strip */
+.h-strip { position: absolute; left: 50%; bottom: calc(22px + var(--safe-b)); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 2 * var(--m)); display: flex; align-items: stretch; background: rgba(5, 7, 12, 0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.h-cell { position: relative; display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 5px; row-gap: 6px; align-items: baseline; justify-content: start; padding: 9px 16px 8px; min-width: 104px; }
+.h-cell + .h-cell { border-left: 1px solid var(--line); }
+.h-cell .h-lbl { grid-column: 1 / -1; }
+.h-cell b { font: 400 17px/1 var(--mono); font-weight: 400; justify-self: start; transition: color 0.25s var(--ease); }
+.tank .n2-bar { grid-column: 1 / -1; margin-top: -2px; font: 400 11px/1 var(--mono); color: var(--lbl); white-space: nowrap; }
+.tank .n2-bar span { color: var(--ink); }
+.n2-st { font-style: normal; margin-left: 2px; letter-spacing: 0.04em; }
+.tank .h-lbl { white-space: nowrap; }
+.tank[data-gas='blowdown'] .n2-st { color: var(--caution); }
+.h-cell[data-state='caution'] b, .h-cell[data-state='caution'] .h-unit { color: var(--caution); }
+.h-cell[data-state='warn'] b, .h-cell[data-state='warn'] .h-unit { color: var(--warn); }
+.hud:not([data-air]) .r-sink, .hud[data-air] .r-fan { display: none; }
+.tank .bar { position: absolute; left: 16px; right: 16px; bottom: -1px; height: 1px; margin: 0; background: none; overflow: visible; }
+.tank .bar span { display: block; height: 1px; width: 100%; background: var(--ink); transform-origin: left; transition: transform 0.15s linear; }
+.tank .bar .need { position: absolute; top: -4px; left: 0; width: 100%; height: 9px; opacity: 0; pointer-events: none; transition: transform 0.15s linear; }
+.tank .bar .need::before { content: ''; position: absolute; left: 0; top: 0; width: 1px; height: 9px; background: var(--caution); }
+.tank.low b, .tank.low .h-unit { color: var(--warn); }
+.tank.low .bar span { background: var(--warn); }
+/* A steady strip (0047): it is centred, so a cell that grows slides every cell sideways. Each figure
+   that changes length holds a slot as wide as its longest (in ch: the figures are mono), and SINK and
+   FAN, which trade places in the air, are one width. */
+@media (pointer: fine) and (min-width: 1101px) {
+  :root:not([data-hud='compact']) .h-strip > :is(.r-sink, .r-fan) { min-width: 118px; }
+  :root:not([data-hud='compact']) .h-strip [data-fan] { min-width: 5ch; }
+  :root:not([data-hud='compact']) .tank .n2-bar :is([data-2='kg'], [data-tank-bar]) { display: inline-block; text-align: right; }
+  :root:not([data-hud='compact']) .tank .n2-bar [data-2='kg'] { min-width: 6ch; }
+  :root:not([data-hud='compact']) .tank .n2-bar [data-tank-bar] { min-width: 5ch; }
+  :root:not([data-hud='compact']) .tank .n2-bar [data-2='bar'] { display: inline-block; min-width: 9ch; }
+}
+
+/* Attitude */
+.h-att { position: absolute; right: calc(var(--m) + var(--safe-r)); bottom: calc(104px + var(--safe-b)); display: grid; justify-items: center; gap: 6px; }
+.dial { width: 104px; height: 104px; transform: rotate(-90deg); }
+.dial .ring { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.dial .arc { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-dasharray: 0 360; transition: stroke 0.3s; }
+.dial [data-ticks] line { stroke: rgba(245, 246, 248, 0.55); stroke-width: 1.2; }
+.adi-sky { fill: rgba(245, 246, 248, 0.07); }
+.adi-ground { fill: rgba(245, 246, 248, 0.2); }
+.adi-hz { stroke: var(--ink); stroke-width: 1; }
+.adi-ladder { stroke: rgba(245, 246, 248, 0.5); stroke-width: 0.8; }
+.dial .adi-car rect, .dial .adi-car circle { fill: var(--ink); }
+.adi.level .ring { stroke: rgba(245, 246, 248, 0.7); }
+.adi-roll { display: flex; align-items: baseline; gap: 5px; }
+.adi-roll b { font: 400 15px/1 var(--mono); font-weight: 400; }
+.roll-cue { min-height: 13px; font: 400 11px/1.2 var(--mono); letter-spacing: 0.06em; color: var(--lbl); text-align: center; white-space: nowrap; }
+.roll-cue[data-kind='go'] { color: var(--ink); font-family: var(--display); }
+.roll-cue[data-kind='roll'] { color: var(--ink); }
+
+/* The vehicle: the thruster array and the damage sensor, side by side, both top-down, nose up */
+.h-vehicle { position: absolute; left: calc(var(--m) + var(--safe-l)); bottom: calc(104px + var(--safe-b)); display: flex; align-items: flex-end; gap: 22px; }
+/* Damage: a first-class instrument. Zones shade by damage; the total and its word carry the state;
+   a hit flashes the whole car (and buzzes, src/main.js). */
+.dmg { display: flex; align-items: flex-end; gap: 12px; }
+.dmg svg { width: 44px; height: 80px; overflow: visible; transform-origin: 50% 60%; }
+.dmg .z { fill: rgba(245, 246, 248, 0.05); stroke: rgba(245, 246, 248, 0.5); stroke-width: 0.8; transition: fill 0.25s var(--ease), stroke 0.25s; }
+.dmg .z.susp circle { fill: inherit; stroke: inherit; }
+.dmg .z[data-level='scuff'] { fill: rgba(245, 246, 248, calc(0.15 + var(--dmg) * 2)); }
+.dmg .z[data-level='amber'] { fill: rgba(255, 191, 90, calc(0.35 + var(--dmg))); stroke: var(--amber); }
+.dmg .z[data-level='red'] { fill: rgba(255, 90, 98, calc(0.45 + var(--dmg) * 0.5)); stroke: var(--hot); }
+.dmg-read { display: grid; gap: 6px; padding-bottom: 2px; }
+.dmg-v { display: flex; align-items: baseline; gap: 4px; }
+.dmg-v b { font: 400 22px/1 var(--mono); font-weight: 400; min-width: 2ch; transition: color 0.25s; }
+.dmg-word { font: 500 11px/1 var(--text); letter-spacing: 0.12em; text-transform: uppercase; color: var(--lbl); }
+.dmg[data-state='warn'] .dmg-v b, .dmg[data-state='warn'] .dmg-v .h-unit, .dmg[data-state='warn'] .dmg-word { color: var(--caution); }
+.dmg[data-state='wreck'] .dmg-v b, .dmg[data-state='wreck'] .dmg-v .h-unit, .dmg[data-state='wreck'] .dmg-word { color: var(--warn); }
+.dmg.hit svg { animation: dmg-hit 0.6s ease-out; }
+.dmg.hit .dmg-v b { animation: dmg-num 0.6s ease-out; }
+@keyframes dmg-hit { 0% { filter: drop-shadow(0 0 7px rgba(255, 90, 98, 0.95)); transform: scale(1.14); } 100% { filter: none; transform: none; } }
+@keyframes dmg-num { 0% { color: var(--hot); } }
+@media (prefers-reduced-motion: reduce) { .dmg.hit svg, .dmg.hit .dmg-v b { animation: none; } }
+/* The thruster array (top view, nose up): a dot per nozzle fills with its valve */
+.h-array { display: block; }
+.nozzles { width: 46px; height: 76px; overflow: visible; }
+.nozzles .body { fill: none; stroke: var(--line); stroke-width: 2; }
+.nozzles .nz { fill: rgba(245, 246, 248, 0.14); transition: fill 0.06s linear; }
+.nozzles .nzg .nz-ring { fill: none; stroke: var(--ink); stroke-width: 1.6; opacity: 0.8; }
+.nozzles .nzg .nz-k { display: none; font: 500 12px var(--mono); fill: var(--ink); text-anchor: middle; }
+.hud[data-tier='advanced'] .nozzles { width: 104px; height: 174px; }
+.hud[data-tier='advanced'] .nozzles .body { stroke: rgba(245, 246, 248, 0.5); }
+.hud[data-tier='advanced'] .nozzles .nz-k { display: block; }
+
+/* The cue line: one sentence on glass, under the mission header */
+.cue { position: fixed; left: 50%; top: calc(var(--cue-top, 132px) + var(--safe-t)); transform: translateX(-50%); max-width: calc(100vw - 32px); width: max-content;
+  padding: 9px 16px 8px; border-radius: 4px; border: 1px solid rgba(245, 246, 248, 0.14); background: rgba(5, 7, 12, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  font: 500 12px/1.45 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); text-align: center; white-space: normal; text-shadow: none;
+  pointer-events: none; opacity: 0; transition: opacity 0.35s var(--ease); z-index: 4; }
+.cue:empty { display: none; }
+.cue.on { opacity: 1; }
+.cue kbd { font: 500 11px/1 var(--mono); padding: 2px 6px; border: 1px solid rgba(245, 246, 248, 0.3); border-radius: 3px; margin: 0 2px; }
+body:has([data-drill-bar]:not([hidden])) .cue { --cue-top: 180px; }
+
+/* Desktop at narrower widths: the timeline keeps its dots and names only the phase you're in. */
+@media (max-width: 1100px) {
+  .h-timeline li { width: 46px; }
+  .h-timeline li span { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); visibility: hidden; }
+  .h-timeline li[data-state='now'] span { visibility: visible; }
+  .h-mission { gap: 8px; padding-bottom: 18px; }
+  .h-cell { min-width: 0; padding: 9px 12px 8px; }
+}
+@media (max-width: 760px) {
+  .h-strip { flex-wrap: wrap; justify-content: center; width: calc(100vw - 2 * var(--m)); }
+  .h-cell { flex: 1 1 30%; }
+  .h-cell:nth-child(n) { border-left: 0; }
+  .h-att { bottom: calc(178px + var(--safe-b)); }
+  .h-primary { bottom: calc(178px + var(--safe-b)); }
+  .h-vehicle { bottom: calc(178px + var(--safe-b)); }
+}
+
+/* Coarse pointer (phones, tablets): the bottom of the glass belongs to the thumbs. */
+@media (pointer: coarse) {
+  .hud { --top: calc(62px + var(--safe-t)); }
+  .h-scrim-bot { height: 34dvh; background: linear-gradient(rgba(3, 5, 9, 0), rgba(3, 5, 9, 0.42)); }
+  .h-array { display: none; }
+  .h-vehicle { bottom: auto; left: auto; top: calc(var(--top) + 48px); right: calc(var(--m) + var(--adi, 84px) + 14px + var(--safe-r)); }
+  .dmg { flex-direction: column; align-items: center; gap: 6px; }
+  .dmg svg { width: 30px; height: 54px; }
+  .dmg-read { justify-items: center; gap: 4px; }
+  .dmg-read .h-lbl { font-size: 11px; }   /* keep "Damage": without it "0 % Intact" reads as 0 % intact */
+  .dmg-v b { font-size: 16px; min-width: 0; }
+  .h-timeline li { width: 40px; }
+  .h-timeline li span { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); visibility: hidden; }
+  .h-timeline li[data-state='now'] span { visibility: visible; }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  /* Top stack: clock + timeline · primary + tape + attitude · the strip (two rows of three). */
+  .h-mission { left: calc(var(--m) + var(--safe-l)); right: calc(var(--m) + var(--safe-r)); transform: none; width: auto; max-width: none;
+    grid-template-columns: auto 1fr; align-items: start; justify-items: stretch; gap: 0 14px; padding-bottom: 20px; }
+  .h-timeline { justify-content: flex-end; }
+  .h-timeline li { width: min(34px, calc((100vw - 2 * var(--m) - 150px) / 7)); }
+  .h-timeline li:last-child span { left: auto; right: -2px; transform: none; }
+  .h-timeline li:first-child span { left: -2px; transform: none; }
+  .h-primary { top: calc(var(--top) + 48px); bottom: auto; left: calc(var(--m) + var(--safe-l)); transform: none; justify-items: start; }
+  .h-big { justify-content: start; }
+  .h-big b { font-size: clamp(52px, 13vw, 68px); min-width: 0; text-align: left; }
+  .descent { grid-template-columns: auto 64px; grid-template-areas: "sink tape" "meta meta"; gap: 8px 6px; align-items: end; justify-content: start; }
+  .d-main { display: contents; }
+  .d-sink { grid-area: sink; }
+  .d-meta { grid-area: meta; display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; width: 0; min-width: 0; overflow: visible; white-space: nowrap; }
+  .d-tape { grid-area: tape; width: 64px; height: 116px; margin-bottom: -6px; }
+  .d-tape text { font-size: 16px; }
+  .d-tape .d-car text { font-size: 16px; }
+  .h-att { top: calc(var(--top) + 46px); bottom: auto; right: calc(var(--m) + var(--safe-r)); }
+  .dial { width: 84px; height: 84px; }
+  .h-strip { top: calc(var(--top) + 206px); bottom: auto; left: calc(var(--m) + 74px + var(--safe-l)); right: calc(var(--m) + var(--safe-r)); transform: none; width: auto;
+    display: grid; grid-template-columns: 1.3fr 1fr 1fr; }   /* the first column carries N₂ and its BLOWDOWN tag */
+  .h-cell { min-width: 0; padding: 8px 8px 7px; }
+  .h-cell:nth-child(n) { border-left: 0; }
+  .h-cell b { font-size: 16px; }
+  .hud .h-cell:not(:first-child) { border-left: 1px solid var(--line); }
+  .h-strip > .tank { grid-column: 1; grid-row: 2; }   /* N₂ heads row 2 in the wide column, on the ground and in the air */
+  .hud .h-strip > .tank { border-left: 0; }   /* (beats .hud .h-cell:not(:first-child)) */
+  .h-strip { row-gap: 0; }
+  .cue { --cue-top: 444px; }   /* under the strip (N₂ wraps to three lines with both unit systems) */
+  /* The vehicle panel (damage) heads the strip: car health beside the telemetry. */
+  .h-vehicle { top: calc(var(--top) + 206px); left: calc(var(--m) + var(--safe-l)); right: auto; width: 66px; height: 112px; justify-content: center; align-items: center; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(5, 7, 12, 0.62); }
+  body:has([data-drill-bar]:not([hidden])) .cue { --cue-top: 480px; }
+  .h-scrim-top { height: calc(var(--top) + 300px); }
+}
+/* Short portrait: the cue line rides just under the strip, above the thumb's slots. */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 740px) {
+  /* N₂'s line in the leading units only (as at 320×568): with both unit systems it wrapped to two lines
+     or three by a pixel of the cell's width (393×659: three on the CI runner's fonts, two on a Mac), and
+     at three the strip ran 10 px into the cue line (0087). One line, whatever the reading. */
+  .tank .n2-bar :is(.h-alt, .n2-sep) { display: none; }
+  .cue { --cue-top: 414px; }
+  /* The cue sits 3 px under the strip here, so the first row must not wrap: SINK's 27.9 ft/s had 2 px
+     to spare in an 87 px cell and broke its unit on CI's Chromium (the row grew 21 px, into the cue). */
+  .hud .h-strip > .h-cell { padding-left: 6px; padding-right: 6px; column-gap: 3px; }
+  body:has([data-drill-bar]:not([hidden])) .cue { --cue-top: 450px; }
+}
+/* Very short portrait (320×568): a compact stack. The strip keeps what the primary and the dial don't
+   already show (altitude, G, N₂) in one row, the damage panel drops its car, and the descent's meta
+   row wraps instead of running off the glass. */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 620px) {
+  .hud { --top: calc(58px + var(--safe-t)); }
+  .h-primary { top: calc(var(--top) + 40px); }
+  .h-big b { font-size: 40px; }
+  .descent { column-gap: 0; }
+  .d-tape { width: 60px; height: 100px; }
+  .d-tape text, .d-tape .d-car text { font-size: 18px; }   /* 11 px on screen at this scale */
+  .h-att { top: calc(var(--top) + 40px); }
+  .dial { width: 68px; height: 68px; }
+  .hud { --adi: 68px; }
+  .h-strip { top: calc(var(--top) + 180px); grid-template-columns: 1fr 1fr 1.3fr; }
+  .hud .h-strip > :is([data-ch='spd'], .h-pitch, .r-fan, .r-sink) { display: none; }
+  .h-strip > .tank { grid-column: auto; grid-row: auto; }
+  .hud .h-strip > .tank { border-left: 1px solid var(--line); }
+  .h-vehicle { top: calc(var(--top) + 180px); height: auto; align-self: stretch; padding: 8px 0; }
+  .h-vehicle .dmg svg { display: none; }
+  /* The meta row in one line: the state, the limit (one unit system); time to ground is on the tape. */
+  .d-meta .h-alt, .d-meta .d-row:last-child { display: none; }
+  .tank .n2-bar :is(.h-alt, .n2-sep) { display: none; }   /* N₂ on one line: mass and pressure in the leading units */
+  .cue { --cue-top: 318px; }
+  body:has([data-drill-bar]:not([hidden])) .cue { --cue-top: 352px; }
+  .h-scrim-top { height: calc(var(--top) + 300px); }
+}
+@media (pointer: coarse) and (orientation: portrait) and (min-width: 600px) {
+  .h-primary { top: calc(var(--top) + 52px); }
+  .h-strip { max-width: 560px; }
+  .dial { width: 104px; height: 104px; }
+  .hud { --adi: 104px; }
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  /* Top band: brand · clock + timeline · chips; under it the strip in one row; primary left; attitude right. */
+  .hud { --top: calc(14px + var(--safe-t)); }
+  /* The mission block sits just under the top bar, centred between the primary and the attitude. */
+  .h-mission { top: calc(64px + var(--safe-t)); grid-template-columns: auto auto; align-items: center; gap: 12px; padding: 0 0 16px; }
+  /* The mission block and the cue line centre in the band between the primary (left) and the vehicle
+     panel (right), not on the screen, so neither runs into the descent tape when the notch eats 47 px. */
+  .h-mission, .cue { left: calc(268px + var(--safe-l)); right: calc(180px + var(--safe-r)); width: fit-content; max-width: none; margin: 0 auto; transform: none; }
+  .h-timeline li { width: 22px; }
+  .h-timeline li::before { top: 3px; }
+  .h-primary { top: calc(var(--top) + 46px); bottom: auto; left: calc(var(--m) + var(--safe-l)); transform: none; justify-items: start; }
+  .h-big { justify-content: start; }
+  .h-big b { font-size: 52px; min-width: 0; text-align: left; }
+  .descent { gap: 8px; }
+  .d-main { justify-items: start; }
+  .d-meta { justify-items: start; }
+  .d-tape { width: 62px; height: 104px; }
+  .d-tape text, .d-tape .d-car text { font-size: 18px; }
+  .h-att { top: calc(var(--top) + 46px); bottom: auto; right: calc(var(--m) + var(--safe-r)); }
+  .dial { width: 72px; height: 72px; }
+  .hud { --adi: 72px; }
+  .dmg svg { width: 24px; height: 44px; }
+  /* The strip becomes a dashboard along the bottom, between the stick and the right thumb's arc. */
+  .h-strip { left: calc(168px + var(--safe-l)); right: calc(271px + var(--safe-r)); bottom: calc(12px + var(--safe-b)); transform: none; width: auto; max-width: none; }
+  .h-strip .h-pitch { display: none; }
+  .h-strip .tank { flex-grow: 1.7; }
+  .h-cell { flex: 1 1 0; min-width: 0; padding: 7px 8px 6px; row-gap: 5px; }
+  .h-cell b { font-size: 15px; }
+  .cue { --cue-top: 112px; }
+  /* Deep enough to hold the primary's lowest row (GROUND) at 4.5:1 over the Lineup's dusk sky. */
+  .h-scrim-top { height: calc(var(--top) + 250px); background: linear-gradient(rgba(3, 5, 9, 0.82), rgba(3, 5, 9, 0.7) 76%, rgba(3, 5, 9, 0)); }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (min-height: 700px) {
+  .h-strip { left: calc(212px + var(--safe-l)); right: calc(292px + var(--safe-r)); bottom: calc(18px + var(--safe-b)); }
+}
+/* --- Touch controls ---------------------------------------------------------------------------
+   Placed by reach: the right thumb pivots off the glass below the corner; slot A (the action you
+   need now) sits mid-band, B and C either side of it on the same arc (scripts/thumb-reach.mjs draws
+   the heatmap). Each phase shows only the buttons it uses. One-thumb puts a single pad in slot A. */
+.touch { position: fixed; inset: 0; z-index: 4; pointer-events: none; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+  --ax: 112px; --ay: 152px; --as: 104px; --bx: 192px; --by: 54px; --bs: 72px; --cx: 52px; --cy: 252px; --cs: 72px; --stick: 132px; }
+.stick { position: absolute; left: calc(20px + var(--safe-l)); bottom: calc(26px + var(--safe-b)); width: var(--stick); height: var(--stick); border-radius: 50%;
+  border: 1px solid rgba(245, 246, 248, 0.22); background: rgba(6, 8, 13, 0.36); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: grid; place-items: center; pointer-events: auto; touch-action: none; }
+.stick::before { content: ''; position: absolute; inset: 22%; border-radius: 50%; border: 1px dashed rgba(245, 246, 248, 0.18); }
+.knob { width: 50px; height: 50px; border-radius: 50%; background: rgba(245, 246, 248, 0.88); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4); }
+/* On a pill: over a bright sky or road the label kept only 3.5:1 on its shadow. */
+.stick-hint { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); width: max-content; padding: 4px 9px; border-radius: 10px; background: rgba(5, 7, 12, 0.6); text-align: center; font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245, 246, 248, 0.94); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7); }
+.buttons { display: contents; }
+.tbtn { position: absolute; display: none; place-items: center; right: calc(var(--x) - var(--s) / 2 + var(--safe-r)); bottom: calc(var(--y) - var(--s) / 2 + var(--safe-b)); width: var(--s); height: var(--s);
+  border-radius: 50%; border: 1px solid rgba(245, 246, 248, 0.3); background: rgba(6, 8, 13, 0.46); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font: 500 12px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); pointer-events: auto; touch-action: none; padding: 0;
+  transition: background 0.1s, transform 0.1s, color 0.1s; -webkit-tap-highlight-color: transparent; }
+.tbtn.on { background: rgba(245, 246, 248, 0.9); color: #06080c; transform: scale(0.96); }
+/* Free modes (0080): held high above the ground the jets fade (ground effect); LIFT says so with a dashed rim and a
+   thinner fill, its label still full ink. */
+.tbtn.lift[data-faded] { border-style: dashed; }
+.tbtn.lift.on[data-faded] { background: rgba(245, 246, 248, 0.68); }
+/* Slots, by phase */
+.touch:is([data-phase='ground'], [data-phase='ramp']) .go,
+.touch[data-phase='air'][data-tier='assist'] .land,
+.touch[data-phase='air']:not([data-tier='assist']) .lift,
+.touch[data-phase='landed'] .brake { display: grid; --x: var(--ax); --y: var(--ay); --s: var(--as); }
+.touch:is([data-phase='ground'], [data-phase='ramp']) .brake,
+.touch[data-phase='air'][data-tier='assist']:is([data-course='lineup'], [data-course='drive']) .lift { display: grid; --x: var(--bx); --y: var(--by); --s: var(--bs); }
+.touch[data-phase='ground']:is([data-course='lineup'], [data-course='drive']) .lift,
+.touch[data-phase='ramp'][data-ledge] .lift,
+.touch[data-phase='air'] .go { display: grid; --x: var(--cx); --y: var(--cy); --s: var(--cs); }
+.touch[data-phase='air'][data-row-done] .go { display: none; }
+.touch[data-phase='ramp'] .lift { border-color: rgba(255, 191, 90, 0.75); }
+.touch[data-phase='air'] .stick-hint, .touch[data-phase='landed'] .stick { visibility: hidden; }
+.touch[data-phase='landed'] .stick { visibility: hidden; }
+/* Left hand: mirror the whole layout. */
+.touch[data-hand='left'] .stick { left: auto; right: calc(20px + var(--safe-r)); }
+.touch[data-hand='left'] .tbtn, .touch[data-hand='left'] .thumb { right: auto; left: calc(var(--x) - var(--s) / 2 + var(--safe-l)); }
+
+/* One-thumb. Its glass as dark as the HUD's (0.62, was 0.5): over the parked row's gold car its HOLDING
+   read 4.73:1 (0087). */
+.thumb { display: none; position: absolute; --x: var(--ax); --y: var(--ay); --s: 132px; right: calc(var(--x) - var(--s) / 2 + var(--safe-r)); bottom: calc(var(--y) - var(--s) / 2 + var(--safe-b));
+  width: var(--s); height: var(--s); border-radius: 50%; border: 1px solid rgba(245, 246, 248, 0.34); background: rgba(6, 8, 13, 0.62); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  place-items: center; align-content: center; gap: 6px; padding: 0; color: var(--ink); pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, transform 0.12s, border-color 0.2s; }
+.touch[data-scheme='thumb'] .thumb { display: grid; }
+.touch[data-scheme='thumb'] .stick, .touch[data-scheme='thumb'] .buttons { display: none; }
+.thumb-ring { position: absolute; inset: -7px; width: calc(100% + 14px); height: calc(100% + 14px); transform: rotate(-90deg); pointer-events: none; }
+.thumb-ring .tr-bg { fill: none; stroke: rgba(245, 246, 248, 0.14); stroke-width: 1.2; }
+.thumb-ring .tr-arc { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-dasharray: 0 100; transition: stroke-dasharray 0.15s linear; }
+.thumb-verb { font: 500 11px/1 var(--text); letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245, 246, 248, 0.92); }
+.thumb-act { font: 400 15px/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.thumb.on { background: rgba(245, 246, 248, 0.9); color: #06080c; transform: scale(0.97); }
+.thumb.on .thumb-verb { color: rgba(6, 8, 12, 0.72); }
+.thumb.on .tr-arc { stroke: rgba(245, 246, 248, 0.9); }
+.thumb[data-stage='ledge'] { border-color: rgba(255, 191, 90, 0.8); }
+/* 0129: the tap was taken; the car drives itself out to the lip. Amber, solid, and a ring that sweeps out
+   once from the pad (static under reduced motion), so the answer isn't only in the words. */
+.thumb[data-stage='going'] { border-color: var(--amber); }
+body .touch .thumb[data-stage='going']:not(.on) { background-color: rgba(58, 42, 14, 0.82); }
+.thumb[data-stage='going'] .tr-arc { stroke: var(--amber); stroke-width: 2.4; }
+.thumb[data-stage='going']:not(.on) .thumb-verb { color: var(--amber); }
+.thumb[data-stage='going'] { animation: thumbgo 0.5s var(--ease) both; }
+@keyframes thumbgo { from { box-shadow: 0 0 0 0 rgba(255, 191, 90, 0.5); } to { box-shadow: 0 0 0 14px rgba(255, 191, 90, 0); } }
+@media (prefers-reduced-motion: reduce) { .thumb[data-stage='going'] { animation: none; box-shadow: 0 0 0 4px rgba(255, 191, 90, 0.35); } }
+.thumb[data-warn] { border-color: var(--amber); animation: thumbpulse 0.9s var(--ease) infinite; }
+.thumb[data-warn] .thumb-act, .thumb[data-warn] .thumb-verb { color: var(--amber); }
+@keyframes thumbpulse { 50% { box-shadow: 0 0 0 10px rgba(255, 191, 90, 0.16); } }
+/* 0123: a touch off the pad in the climb was seen: a ring sweeps out from the pad once (ink: nominal, not a
+   warning), a still outline under reduced motion. */
+.thumb[data-nudge] { border-color: var(--ink); animation: thumbnudge 0.4s var(--ease) both; }
+@keyframes thumbnudge { from { box-shadow: 0 0 0 0 rgba(245, 246, 248, 0.55); } to { box-shadow: 0 0 0 16px rgba(245, 246, 248, 0); } }
+@media (prefers-reduced-motion: reduce) { .thumb[data-nudge] { animation: none; box-shadow: 0 0 0 4px rgba(245, 246, 248, 0.45); } }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* Slot C sits above B, left of A: the corner above A belongs to the attitude dial. */
+  .touch { --ax: 118px; --ay: 120px; --as: 100px; --bx: 226px; --by: 58px; --bs: 70px; --cx: 228px; --cy: 170px; --cs: 70px; --stick: 124px; }
+  .stick { left: calc(30px + var(--safe-l)); bottom: calc(22px + var(--safe-b)); }
+  .thumb { --s: 120px; }
+}
+/* Short portrait (Safari with its bars, small phones): the slots come down and in, so the cue line
+   fits between the strip and the thumb (C moves left of A, beside the stick's column). */
+@media (orientation: portrait) and (max-height: 740px) {
+  .touch { --ax: 104px; --ay: 118px; --as: 92px; --bx: 184px; --by: 48px; --bs: 66px; --cx: 196px; --cy: 150px; --cs: 64px; }
+  .thumb { --ay: 120px; --s: 116px; }
+}
+@media (orientation: portrait) and (max-height: 620px) {
+  .touch { --cy: 144px; --stick: 120px; }
+}
+/* A 320 px column: the stick narrows and B steps right of it; C rides above A's outer edge. */
+@media (orientation: portrait) and (max-width: 360px) {
+  .touch { --ax: 92px; --ay: 124px; --as: 88px; --bx: 160px; --by: 48px; --bs: 60px; --cx: 40px; --cy: 214px; --cs: 60px; --stick: 110px; }
+  .stick { left: calc(12px + var(--safe-l)); }
+  .thumb { --ax: 104px; }
+}
+@media (min-width: 700px) and (min-height: 700px) {
+  .touch { --ax: 140px; --ay: 170px; --as: 116px; --bx: 236px; --by: 66px; --bs: 84px; --cx: 64px; --cy: 290px; --cs: 84px; --stick: 156px; }
+  .stick { left: calc(36px + var(--safe-l)); bottom: calc(40px + var(--safe-b)); }
+  .thumb { --s: 148px; }
+}
+
+/* Touch controls sheet */
+.controls { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; background: rgba(3, 4, 7, 0.55); z-index: 9; pointer-events: auto; }
+.controls .sheet { width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 28px; border-radius: 22px; border: 1px solid var(--hair); background: rgba(8, 10, 16, 0.94); backdrop-filter: blur(24px); animation: rise 0.5s var(--ease) both; }
+.controls .eyebrow { margin-bottom: 12px; color: rgba(245, 246, 248, 0.7); }
+.ctl-group { display: grid; gap: 8px; margin: 18px 0 16px; }
+.ctl-opt { display: grid; gap: 5px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.02); }
+.ctl-opt b { font: 400 13px/1.2 var(--display); letter-spacing: 0.05em; }
+.ctl-opt span { font-size: 13px; line-height: 1.4; color: rgba(245, 246, 248, 0.74); }
+.ctl-opt[aria-checked='true'] { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(245, 246, 248, 0.1); }
+.ctl-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-top: 1px solid var(--hair-2); }
+.ctl-k { font: 500 11px/1 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245, 246, 248, 0.8); }
+.ctl-tilt { display: flex; align-items: center; gap: 10px; }
+.ctl-note { margin: 0 0 8px; font-size: 12px; line-height: 1.45; color: rgba(245, 246, 248, 0.7); }
+.controls .seg button { height: 36px; padding: 0 14px; border: 0; border-radius: 15px; background: none; font-size: 13px; color: rgba(245, 246, 248, 0.8); }
+.controls .seg button[aria-checked='true'] { background: var(--ink); color: #07090d; }
+.switch { position: relative; width: 50px; height: 30px; border-radius: 15px; border: 1px solid var(--hair); background: rgba(255, 255, 255, 0.06); padding: 0; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: rgba(245, 246, 248, 0.6); transition: transform 0.2s var(--ease), background 0.2s; }
+.switch[aria-checked='true'] { background: rgba(245, 246, 248, 0.9); }
+.switch[aria-checked='true'] i { transform: translateX(20px); background: #07090d; }
+.controls .actions { margin-top: 16px; }
+.touch-only { display: none; }
+@media (pointer: coarse) { .touch-only { display: inline-flex; align-items: center; } }
+/* Driving (0066): on every device, over Free Drive's pause sheet too; the touch rows only on touch. */
+.fine-only { display: inline-flex; align-items: center; gap: 8px; }
+.ctl-k + [data-driving-label] { color: var(--ink); }
+@media (pointer: coarse) { .fine-only { display: none; } }
+.controls { z-index: 30; }
+.controls .sheet { overflow-y: auto; }
+.ctl-touch { display: none; }
+@media (pointer: coarse) { .ctl-touch { display: block; } }
+/* Every key (a keyboard): the pause sheet shows the four that matter and links here (All controls). */
+.ctl-keys { margin: 14px 0 0; padding-top: 4px; border-top: 1px solid var(--hair-2); }
+.ctl-keys p { margin: 8px 0; }
+@media (pointer: coarse) { .ctl-keys { display: none; } }
+.pause .all-controls { margin: 4px 0 0 -8px; min-height: 44px; text-decoration: underline; text-decoration-color: rgba(245, 246, 248, 0.3); text-underline-offset: 4px; color: rgba(245, 246, 248, 0.82); }
+.pause .all-controls[hidden] { display: none; }
+.ctl-drive .ctl-row:first-child { border-top: 0; }
+.ctl-drive .seg button { padding: 0 11px; }
+/* Advanced's analog touch pedals: how far up the pad the finger is, as a fill. */
+.tbtn[style*='--amt'] { background: linear-gradient(to top, rgba(245, 246, 248, 0.9) calc(var(--amt) * 100%), rgba(6, 8, 13, 0.5) 0); }
+.ctl-k + [data-controls-label] { color: var(--ink); }
+
+/* --- Title layout that holds at every viewport ---------------------------------------------------
+   The block is anchored to the bottom but never rises under the top bar: the wordmark scales with
+   the shorter side, the event cards sit in one grid (three events, Free Drive across the row under
+   them), and the optional rows (eyebrow, spec) step aside when the height runs out. The fine print
+   (an independent fan game) always stays. scripts/title-audit.mjs checks it. */
+.title { top: auto; max-height: calc(100dvh - 72px - var(--safe-t) - var(--safe-b)); display: flex; flex-direction: column; justify-content: flex-end; }
+.wordmark { font-size: clamp(40px, min(10vw, 12.5dvh), 140px); }
+.courses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 8px; width: min(640px, calc(100vw - 2 * clamp(24px, 6vw, 96px))); }
+.course-btn { min-width: 0; }
+.drive-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 18px; width: min(640px, calc(100vw - 2 * clamp(24px, 6vw, 96px))); }
+.title > .course-line, .title > .cta { width: min(640px, calc(100vw - 2 * clamp(24px, 6vw, 96px))); }
+.drive-btn { margin: 0; width: auto; min-width: 0; }
+.course-btn span { font-size: 11px; color: rgba(245, 246, 248, 0.7); }
+.title .spec { margin-top: 28px; }
+@media (max-height: 860px) { .title .spec { display: none; } .tagline { margin: 16px 0 20px; } }
+@media (max-height: 760px) { .title .eyebrow { display: none; } }
+@media (max-width: 720px) { .courses { grid-template-columns: repeat(3, minmax(0, 1fr)); } .drive-btn span { display: none; } }
+@media (max-height: 500px) and (orientation: landscape) {
+  .wordmark br { display: none; }
+  .wordmark { font-size: 34px; white-space: nowrap; }
+  .tagline { display: none; }
+  .courses, .title > .course-line, .title > .cta { width: min(560px, 62vw); }
+  .title .fineprint { display: block; margin-top: 8px; font-size: 11px; max-width: none; }
+}
+/* Narrow and short sideways (the folding phone closed and turned, 594 × 368, 0103): the block is taller than
+   the glass under the top bar, so the big wordmark steps out; the top bar's brand names the game (the 320 px
+   column does the opposite: it keeps the wordmark and drops the brand). */
+@media (max-height: 400px) and (max-width: 719px) and (orientation: landscape) {
+  .title > .wordmark { display: none; }
+}
+@media (max-width: 480px) { .course-btn b { font-size: 12px; white-space: nowrap; } .course-btn { padding: 12px 10px; } }
+
+/* --- The title's hierarchy (audit 2026-10-30) -------------------------------------------------------
+   Phone first, the same order everywhere: the event (names only, the picked one's line under them, your
+   best on it at the right), one dominant Jump (full width, in the thumb's reach), one row of three for the
+   reference, Practice and the board, the settings as one quiet strip of labelled cells, and the other ways
+   to play behind a disclosure. The game is the jump: nothing else is white. */
+.title .course-btn { min-height: 44px; align-content: center; }
+.course-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; min-width: 0;
+  font: 400 13px/1.35 var(--text); color: rgba(245, 246, 248, 0.8); }
+.cl-desc { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-pb { flex: none; font: 500 11px/1 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245, 246, 248, 0.7); white-space: nowrap; }
+.cl-pb b { margin-left: 6px; font: 400 14px/1 var(--mono); letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cl-pb[hidden] { display: none; }
+.title .cta { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.jump-btn { height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 24px 0 28px;
+  font: 600 18px/1 var(--text); letter-spacing: 0.01em; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
+.jb-e { display: inline-flex; align-items: center; gap: 10px; min-width: 0; font: 400 11px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(7, 9, 13, 0.66); white-space: nowrap; }
+.jb-e::after { content: '→'; font: 500 18px/1 var(--text); letter-spacing: 0; color: #07090d; transition: transform 0.25s var(--ease); }
+.jump-btn:hover .jb-e::after { transform: translateX(3px); }
+.cta-row { display: flex; gap: 8px; min-width: 0; }
+.cta-row .btn { flex: 1 1 auto; height: 44px; padding: 0 14px; font-size: 14px; white-space: nowrap; min-width: 0; }
+[data-title-extra]:empty { display: none; }
+.cta-set { display: flex; align-items: stretch; min-width: 0; margin-top: 4px; }
+.cta-set > .set-cell { flex: 1 1 0; min-width: 0; min-height: 44px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 5px;
+  padding: 4px 12px; margin: 0; border: 0; border-left: 1px solid var(--hair-2); border-radius: 0; background: none; backdrop-filter: none;
+  font: 500 13px/1.15 var(--text); color: var(--ink); text-align: left; white-space: nowrap; transition: background 0.25s var(--ease); }
+.cta-set > :is(.touch-only, .fine-only) { padding-left: 0; border-left: 0; }
+.cta-set > .assist-ctl, .cta-set > .howto-link { display: inline-flex; }
+.cta-set > .set-cell:hover { background: rgba(245, 246, 248, 0.04); }
+.cta-set > .set-cell:active { transform: none; background: rgba(245, 246, 248, 0.08); }
+.cta-set > .set-cell:focus-visible { outline: 2px solid var(--ice); outline-offset: -2px; }
+.cta-set .ctl-k, .title .ac-k { font: 500 11px/1 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245, 246, 248, 0.7); }
+.cta-set > .set-cell > :not(.ctl-k) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.cta-set [data-controls-label], .cta-set [data-driving-label] { color: var(--ink); }
+/* Assist, in the strip: its word, its state with the status lamp (the tier's colour), and on a wide screen what it does. */
+.title .assist-ctl::before { content: none; }
+.title .ac-top { flex-direction: column; align-items: flex-start; gap: 5px; font: inherit; letter-spacing: 0; text-transform: none; }
+.title .ac-k::after { content: none; }
+.title .ac-state { display: inline-flex; align-items: center; gap: 7px; font: 500 13px/1.15 var(--text); color: var(--ink); }
+.title .ac-state::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #96dcff; box-shadow: 0 0 0 3px rgba(150, 220, 255, 0.16), 0 0 10px rgba(150, 220, 255, 0.6); }
+.title .assist-ctl[data-assist-tier='pro'] .ac-state::before { background: var(--amber); box-shadow: 0 0 0 3px rgba(255, 191, 90, 0.16); }
+.title .assist-ctl[data-assist-tier='advanced'] .ac-state::before { background: #ff8a8f; box-shadow: 0 0 0 3px rgba(232, 50, 60, 0.18); }
+.title .ac-sub { display: none; }
+.title .cta-set > .assist-ctl:is(:hover, [data-assist-tier]) { border-color: var(--hair-2); background: none; }
+.title .cta-set > .assist-ctl:hover { background: rgba(245, 246, 248, 0.04); }
+/* A wide screen: what Assist does, beside its state on the one line. */
+@media (min-width: 900px) and (min-height: 600px) {
+  .title .cta-set > .assist-ctl { flex-grow: 2.4; display: inline-grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; row-gap: 5px; align-content: center; }
+  .title .assist-ctl .ac-top { display: contents; }
+  .title .assist-ctl .ac-k { grid-column: 1 / -1; }
+  .title .assist-ctl .ac-sub { display: block; align-self: center; overflow: hidden; text-overflow: ellipsis; font-size: 12px; color: rgba(245, 246, 248, 0.75); }
+}
+/* On the title the Assist cell is where the tier shows (once): the top bar's chip steps aside, and the judges' chip
+   has its room ("Judges · Free" whole on a 360 px phone). */
+body:is(:not([data-mode]), [data-mode='title']) .tier-chip { display: none; }
+body:is(:not([data-mode]), [data-mode='title']) .ai-chip { max-width: 160px; }
+/* More ways to play: Free Drive and the Sandbox, a tap away (their deep links and their keys unchanged). */
+.play-more > summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; user-select: none; -webkit-user-select: none;
+  font: 500 11px/1 var(--text); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245, 246, 248, 0.72); transition: color 0.25s var(--ease); }
+.play-more > summary::-webkit-details-marker { display: none; }
+.play-more > summary::after { content: ''; width: 6px; height: 6px; margin-top: -3px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 0.25s var(--ease), margin 0.25s var(--ease); }
+.play-more[open] > summary::after { transform: rotate(-135deg); margin-top: 3px; }
+.play-more > summary:hover { color: var(--ink); }
+.play-more > summary:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; border-radius: 4px; }
+.play-more:not([open]) .drive-row { display: none; }   /* closed, its cards take no box at all (audits measure every box) */
+.title .play-more .drive-row { width: auto; margin: 2px 0 0; animation: rise 0.5s var(--ease) both; }
+/* Open, the block grows upward: the lines that only set the mood step aside for it. */
+.title:has(.play-more[open]) > :is(.eyebrow, .tagline, .spec) { display: none; }
+/* Sideways on a phone: Jump beside the row of three, the settings beside More ways to play. */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* The full column (not 62 %): Jump and its row, the strip and More ways to play, each fit one line. */
+  .title > :is(.courses, .course-line, .cta) { width: min(640px, calc(100vw - 2 * clamp(24px, 6vw, 96px) - var(--safe-l) - var(--safe-r))); }
+  .title > .course-line { margin-bottom: 8px; }
+  .title .cta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .title .jump-btn { flex: 1 1 110px; height: 44px; padding: 0 18px 0 22px; font-size: 16px; }
+  .title .cta-row { flex: 2 1 300px; }
+  .title [data-title-extra] { flex: 1 1 100%; }
+  .title .cta-set { flex: 1 1 300px; margin-top: 0; }
+  .title .play-more { flex: 0 1 auto; }
+  .title .play-more[open] { flex-basis: 100%; }
+  .title:has(.play-more[open]) > .wordmark { display: none; }
+}
+/* Narrow and short sideways (a folding phone closed and turned, a flip phone's cover screen sideways): Jump keeps its
+   word (the event is lit right above it), so it and its row share one line. */
+@media (max-height: 500px) and (max-width: 719px) and (orientation: landscape) {
+  .title .jb-e { display: none; }
+  .title .jump-btn { justify-content: center; padding: 0 18px; }
+  .title .cta-row .btn { padding: 0 10px; }
+}
+/* The smallest short screens (a flip phone's cover screen, either way): More, beside the settings strip. */
+@media (max-height: 500px) and (max-width: 480px) {
+  .title .play-more .pm-rest { display: none; }
+  .title .cta-set > .set-cell { padding: 2px 8px; }
+  .title .cta-set > :is(.touch-only, .fine-only) { padding-left: 0; }
+}
+/* A 320 px column (iPad Slide Over, the smallest phones): the top bar drops the brand (the wordmark is
+   right there, and in a run the HUD names the event), the chips tighten, and the title packs its
+   buttons two to a row so the whole block fits under the bar. */
+@media (max-width: 360px) {
+  .brand { display: none; }
+  .top { justify-content: flex-end; padding-left: calc(10px + var(--safe-l)); padding-right: calc(10px + var(--safe-r)); }
+  .top-actions { gap: 4px; }
+  .chip { padding: 0 8px; letter-spacing: 0.06em; }
+  .ai-chip { max-width: 84px; }
+  .title { left: calc(16px + var(--safe-l)); }
+  .courses, .title > .course-line, .title > .cta { width: calc(100vw - 32px - var(--safe-l) - var(--safe-r)); }
+  .courses { gap: 6px; }
+  .course-btn { padding: 10px 6px; }
+  .course-btn b { font-size: 11px; letter-spacing: 0.02em; }
+  .tagline { font-size: 15px; margin: 10px 0 14px; }
+  .title .cta { gap: 8px; }
+  .cta-row { gap: 6px; }
+  .cta-row .btn { padding: 0 10px; font-size: 13px; }
+  .cta-set > .set-cell { padding: 4px 8px; }
+  .fineprint { margin-top: 12px; }
+}
+/* A soft dark pool under the primary and the attitude: their small labels stay legible when the
+   car or the lit deck passes behind them. */
+.h-primary::before, .h-att::before { content: ''; position: absolute; inset: -34px -40px; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(3, 5, 9, 0.72), rgba(3, 5, 9, 0.5) 62%, rgba(3, 5, 9, 0)); }
+
+/* --- Instruments answer a tap (src/instruments.js, src/units.js) ------------------------------------
+   Every instrument is a button: a hairline lift on hover, a ring on keyboard focus. Units lead in
+   one system with the other beside them, smaller and dimmer (.h-alt, .u2); a swap blurs them in. */
+.h-tap { pointer-events: auto; cursor: pointer; border-radius: 3px; outline: none; -webkit-tap-highlight-color: transparent; transition: background-color 0.2s var(--ease), box-shadow 0.2s var(--ease); }
+.h-tap:hover { background-color: rgba(245, 246, 248, 0.06); box-shadow: inset 0 0 0 1px rgba(245, 246, 248, 0.14); }
+.h-tap:focus-visible, .hud [data-units]:focus-visible { box-shadow: inset 0 0 0 1px var(--ink), 0 0 0 3px rgba(245, 246, 248, 0.18); }
+.h-tap[aria-expanded='true'] { background-color: rgba(245, 246, 248, 0.08); box-shadow: inset 0 0 0 1px rgba(245, 246, 248, 0.3); }
+[data-units] { cursor: pointer; }
+.h-unit[data-units]:hover, .h-alt[data-units]:hover { color: var(--ink); text-decoration: underline dotted 1px; text-underline-offset: 3px; }
+.h-alt { font: 400 11px/1 var(--mono); font-style: normal; color: rgba(245, 246, 248, 0.72); letter-spacing: 0; white-space: nowrap; }
+/* In the telemetry strip the second unit reads at the labels' weight (it is still the smaller line): at
+   0.72 on the strip's glass, a wreck's lights behind FAN's 0 kgf measured 4.51:1 at 393×659 (0087). */
+.hud .h-strip .h-alt { color: var(--lbl); }
+.h-cell { row-gap: 5px; }
+.h-cell > .h-alt { grid-column: 1 / -1; margin-top: -1px; }
+.h-big > .h-alt { grid-column: 1 / -1; justify-self: end; margin-top: 4px; font-size: 12px; }
+.tank { grid-template-columns: auto 1fr; }
+.tank .n2-bar { white-space: nowrap; line-height: 1.3; }
+/* Phones: a cell is a wrapping line, not a grid, so a reading that outgrows a narrow cell (FAN's
+   five digits and lbf, in a wide fallback font) breaks its unit or its metric line under the
+   number instead of spilling out of the cell. */
+@media (pointer: coarse) {
+  .tank .n2-bar { white-space: normal; }
+  .h-strip .h-cell { display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; column-gap: 4px; row-gap: 5px; min-width: 0; }
+  .h-strip .h-cell > .h-lbl, .h-strip .h-cell > .h-alt, .h-strip .h-cell > .n2-bar { flex: 0 0 100%; min-width: 0; }
+  .h-strip .h-cell > .h-alt { white-space: normal; overflow-wrap: anywhere; }
+}
+.tank .n2-bar .h-alt { font-size: 11px; }
+.d-row .h-alt { margin-left: 4px; }
+.u2 { font-size: max(11px, 0.86em); color: rgba(245, 246, 248, 0.72); font-variant-numeric: tabular-nums; white-space: nowrap; }
+:root.u-flip :is([data-u], .h-alt, .u2, [data-u-src], .h-cell b, .h-big b, .fd-speed b, .fd-stats dd) { animation: u-flip 0.38s var(--ease); }
+@keyframes u-flip { 0% { opacity: 0.15; filter: blur(3px); transform: translateY(2px); } 100% { opacity: 1; filter: none; transform: none; } }
+@media (prefers-reduced-motion: reduce) { :root.u-flip * { animation: none !important; } }
+.dmg { padding: 4px; margin: -4px; }
+.h-array { padding: 4px; margin: -4px; }
+/* The popover: one sentence of glass beside the instrument. */
+.ipop { position: fixed; left: 0; top: 0; z-index: 7; width: min(300px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: 6px; border: 1px solid rgba(245, 246, 248, 0.16);
+  background: linear-gradient(180deg, #0b0e15, #06080d);   /* opaque: nothing under it reads through */ box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  color: var(--ink); font-variant-numeric: tabular-nums; pointer-events: auto; }
+/* It arrives with a short rise, never a fade: the glass is opaque from its first frame. */
+.ipop.on { animation: ip-in 0.22s var(--ease); }
+@keyframes ip-in { from { margin-top: 6px; } to { margin-top: 0; } }
+.ipop .ip-x { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border: 0; background: none; color: var(--ink-2); font-size: 18px; line-height: 1; border-radius: 4px; }
+.ipop .ip-x:hover { color: var(--ink); background: rgba(245, 246, 248, 0.08); }
+.ip-t { margin: 0 0 8px; font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.ip-big { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.ip-big b { font: 200 38px/0.95 var(--text); letter-spacing: -0.02em; font-weight: 200; }
+.ip-big .h-unit { font: 400 12px var(--mono); color: var(--ink-2); }
+.ip-sub { flex-basis: 100%; font: 400 12px/1.2 var(--text); color: var(--ink-2); }
+.ip-rows { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; margin: 0; padding-top: 9px; border-top: 1px solid var(--hair); font-size: 12px; }
+.ip-rows dt { color: var(--ink-2); white-space: nowrap; }
+.ip-rows dd { margin: 0; font: 400 12px var(--mono); text-align: right; }
+.ip-note { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .ipop.on { animation: none; } }
+/* The damage map's hit flash: a ring where it landed, an arrow the way it came in, and the last
+   few hits left as fading marks. */
+.dmg .z { transition: fill 0.5s var(--ease), stroke 0.5s var(--ease); }
+.dmg-fx { opacity: 0; pointer-events: none; }
+.dmg-fx .fx-ring { fill: none; stroke: var(--ink); stroke-width: 1; }
+.dmg-fx .fx-dot { fill: var(--ink); }
+.dmg-fx .fx-arrow { fill: none; stroke: var(--ink); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.dmg-fx.flat .fx-arrow { display: none; }
+.dmg-fx[data-sev='amber'] :is(.fx-ring, .fx-arrow) { stroke: var(--amber); } .dmg-fx[data-sev='amber'] .fx-dot { fill: var(--amber); }
+.dmg-fx[data-sev='red'] :is(.fx-ring, .fx-arrow) { stroke: var(--hot); } .dmg-fx[data-sev='red'] .fx-dot { fill: var(--hot); }
+.dmg-fx.on { animation: fx-out 1.6s ease-out forwards; }
+.dmg-fx.on .fx-ring { animation: fx-ring 0.7s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes fx-out { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fx-ring { from { transform: scale(2.4); opacity: 0.2; } to { transform: scale(1); opacity: 1; } }
+.dmg-trail circle { fill: rgba(245, 246, 248, 0.9); }
+@media (prefers-reduced-motion: reduce) { .dmg-fx.on, .dmg-fx.on .fx-ring { animation: none; opacity: 1; } }
+
+/* --- The compact HUD (0061, src/hud-mode.js) -----------------------------------------------------
+   Phones and small tablets start with one slim line of telemetry, docked at an edge away from the car
+   and the thumbs: speed (sink in the air), altitude, G and N₂, with the phase and the clock. The
+   handle at its end (MORE ▾) brings out every instrument; on the full HUD (LESS ▴) it is a tab standing
+   on the strip's top edge sideways, and closes the mission row upright. The cue line, the descent's state and BRAKE line and the touchdown
+   ring are up in both. Colour still means state only. */
+.h-handle { display: none; flex: none; place-items: center; align-content: center; gap: 6px; min-width: 48px; height: 44px; margin: 0; padding: 0 8px;
+  border: 0; border-radius: 0; background: none; color: var(--ink); font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase;
+  pointer-events: auto; cursor: pointer; text-shadow: inherit; transition: background-color 0.2s var(--ease); }
+.hh-w { color: var(--lbl); }
+.hh-less { display: none; }
+:root[data-hud='full'] .hh-more { display: none; }
+:root[data-hud='full'] .hh-less { display: block; }
+.hh-chev { display: block; width: 12px; height: 8px; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s var(--ease); }
+:root[data-hud='full'] .hh-chev { transform: rotate(180deg); }
+.h-handle:hover { background-color: rgba(245, 246, 248, 0.06); }
+.h-handle:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--ink), 0 0 0 3px rgba(245, 246, 248, 0.18); }
+.h-handle:active { background-color: rgba(245, 246, 248, 0.12); }
+@media (prefers-reduced-motion: reduce) { .hh-chev { transition: none; } }
+/* Full, on a touch screen: a tab standing on the strip's top edge at its right end. */
+@media (pointer: coarse) {
+  .hud .h-strip > .h-handle { display: grid; position: absolute; right: -1px; bottom: 100%; border: 1px solid var(--line); border-bottom: 0; border-radius: 4px 4px 0 0;
+    background: rgba(5, 7, 12, 0.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+}
+/* Full, upright: the descent's meta row runs on past its box, over the car; its second unit reads at the
+   labels' weight so it holds 4.5:1 there. */
+@media (pointer: coarse) and (orientation: portrait) {
+  .hud .d-meta .h-alt { color: var(--lbl); }
+}
+/* Full, upright on a phone or tablet: the strip's top edge belongs to the descent's meta row, so the
+   handle closes the mission row instead, top right (210 px over the strip, which sits at --top + 206;
+   the dots close up to make room). */
+@media (pointer: coarse) and (orientation: portrait) {
+  :root[data-hud='full'] .hud .h-strip > .h-handle { top: -210px; bottom: auto; right: 0; border: 1px solid var(--line); border-radius: 4px; }
+  :root[data-hud='full'] .hud .h-mission { right: calc(var(--m) + 56px + var(--safe-r)); }
+  :root[data-hud='full'] .hud .h-timeline li { width: min(34px, calc((100vw - 2 * var(--m) - 206px) / 7)); }
+}
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 620px) {
+  :root[data-hud='full'] .hud .h-strip > .h-handle { top: -184px; }   /* the strip sits at --top + 180 here */
+}
+/* A tablet upright: the strip stops short of the right edge, so the tab hangs under its right end
+   (the dial owns the corner above it) and the cue line steps down past it. */
+@media (pointer: coarse) and (orientation: portrait) and (min-width: 600px) {
+  :root[data-hud='full'] .hud .h-strip > .h-handle { top: 100%; bottom: auto; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 4px 4px; }
+  :root[data-hud='full'] .hud .h-mission { right: calc(var(--m) + var(--safe-r)); }
+  :root[data-hud='full'] .hud .h-timeline li { width: min(34px, calc((100vw - 2 * var(--m) - 150px) / 7)); }
+  :root[data-hud='full'] .cue { --cue-top: 460px; }
+  :root[data-hud='full'] body:has([data-drill-bar]:not([hidden])) .cue { --cue-top: 496px; }
+}
+/* Compact, everywhere (a desktop gets here with I): the line, the clock with only the phase you're in,
+   the descent as its tape over its state. */
+:root[data-hud='compact'] .hud :is(.h-att, .h-vehicle, .h-primary .speed) { display: none; }
+:root[data-hud='compact'] .hud .h-strip :is(.h-alt, .n2-bar) { display: none; }
+:root[data-hud='compact'] .hud .h-strip { display: flex; flex-wrap: nowrap; align-items: stretch; row-gap: 0; grid-template-columns: none; }
+:root[data-hud='compact'] .hud .h-strip > .h-cell { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; column-gap: 4px; row-gap: 5px;
+  padding: 8px 12px 7px; grid-column: auto; grid-row: auto; border-left: 1px solid var(--line); }
+:root[data-hud='compact'] .hud .h-strip > .h-cell:first-child, :root[data-hud='compact'] .hud[data-air] .h-strip > [data-ch='alt'] { border-left: 0; }
+/* Sideways the line is a band one cell tall with the phase tab standing on it (below): each cell goes
+   back to its own grid, label over value and unit (.h-cell .h-lbl spans the row), never narrower than its reading. As a wrapping flex
+   cell, a few px short split the value from its unit (655 / lb at 678x340, 16.5 / ft at 814x380 with
+   the notch, on CI's Chromium), the band grew a row and stood into the tab. Here, before the rules
+   that leave cells out, so they still win. */
+@media (pointer: coarse) and (orientation: landscape) {
+  :root[data-hud='compact'] .hud .h-strip > .h-cell { display: grid; grid-template-columns: max-content max-content; min-width: max-content; }
+}
+/* (After the cell's display, and as specific: what the line leaves out.) */
+:root[data-hud='compact'] .hud .h-strip > :is(.h-pitch, .r-fan), :root[data-hud='compact'] .hud:not([data-air]) .h-strip > .r-sink,
+:root[data-hud='compact'] .hud[data-air] .h-strip > [data-ch='spd'] { display: none; }
+:root[data-hud='compact'] .hud .h-strip > .h-cell > .h-lbl { flex: 0 0 100%; }
+/* The damage cell (0072): the full set has the vehicle panel; the line shows the state word and the %
+   only once the car is hurt, in G's place (the line never grows), in the panel's colours. */
+.hud .h-strip > .r-dmg { display: none; }
+:root[data-hud='compact'] .hud:not([data-damage]) .h-strip > .r-dmg, :root[data-hud='compact'] .hud[data-damage] .h-strip > [data-ch='g'] { display: none; }
+:root[data-hud='compact'] .hud[data-damage='warn'] .h-strip > .r-dmg > * { color: var(--caution); }
+:root[data-hud='compact'] .hud[data-damage='wreck'] .h-strip > .r-dmg > * { color: var(--warn); }
+/* Its own darker glass over the line's: amber and red need it over a lit deck (red read 3.5:1 on the
+   line's glass alone at 320×568, the car's lamps behind it). */
+:root[data-hud='compact'] .hud[data-damage] .h-strip > .r-dmg { background: rgba(5, 7, 12, 0.7); }
+:root[data-hud='compact'] .hud .h-strip .n2-st { display: none; }
+:root[data-hud='compact'] .hud .h-strip .tank[data-gas='blowdown'] .h-lbl { color: var(--caution); }   /* below the regulator: N₂ goes amber (the word is in the full set) */
+:root[data-hud='compact'] .hud .h-strip > .h-cell b { font-size: 16px; }
+:root[data-hud='compact'] .hud .h-strip > .h-handle { display: grid; position: static; height: auto; min-height: 44px; border: 0; border-left: 1px solid var(--line); border-radius: 0;
+  background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* The sink in the line wears the descent's band (amber: brake; red: past stopping). */
+:root[data-hud='compact'] .hud:has(.descent[data-status='amber']) .r-sink :is(b, .h-unit) { color: var(--caution); }
+:root[data-hud='compact'] .hud:has(.descent[data-status='red']) .r-sink :is(b, .h-unit) { color: var(--warn); }
+:root[data-hud='compact'] .hud .h-mission { grid-template-columns: auto auto; align-items: baseline; justify-items: start; gap: 0 12px; padding-bottom: 0; }
+:root[data-hud='compact'] .hud .h-timeline li:not([data-state='now']) { display: none; }
+:root[data-hud='compact'] .hud .h-timeline li { display: block; width: auto; }
+:root[data-hud='compact'] .hud .h-timeline li::before, :root[data-hud='compact'] .hud .h-timeline i { display: none; }
+:root[data-hud='compact'] .hud .h-timeline li span { position: static; visibility: visible; transform: none; }
+:root[data-hud='compact'] .hud .descent { grid-template-columns: auto; grid-template-areas: 'tape' 'meta'; gap: 6px 0; align-items: start; justify-content: start; justify-items: start; }
+:root[data-hud='compact'] .hud .d-main { display: contents; }
+:root[data-hud='compact'] .hud .d-sink, :root[data-hud='compact'] .hud .d-meta .d-row { display: none; }
+:root[data-hud='compact'] .hud .d-meta { grid-area: meta; display: grid; justify-items: start; width: auto; }
+:root[data-hud='compact'] .hud .d-tape { grid-area: tape; width: 64px; height: 116px; margin: 0; }
+:root[data-hud='compact'] .hud .d-tape text { font-size: 16px; }   /* 11.4 px on screen at this scale */
+:root[data-hud='compact'] .hud .d-bd { display: none; }   /* the tape keeps the word BRAKE; the distance is in the full set */
+/* The descent on glass, like the line: tape over state. */
+:root[data-hud='compact'] .hud .h-primary { justify-items: start; width: 100px; padding: 8px 10px 9px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: rgba(5, 7, 12, 0.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+:root[data-hud='compact'] .hud .h-primary:not(:has(.descent:not([hidden]))) { display: none; }
+:root[data-hud='compact'] .hud .h-primary::before { display: none; }
+:root[data-hud='compact'] .hud .d-state { max-width: 100%; white-space: normal; line-height: 1.35; }
+/* A desktop folded with I: the phase and the clock as a tab on the line at the bottom, the descent at
+   the left (the air cam flies the car through the top of the frame). */
+@media not (pointer: coarse) {
+  :root[data-hud='compact'] .hud .h-mission { top: auto; bottom: calc(22px + 49px + var(--safe-b)); padding: 7px 12px 6px; border: 1px solid var(--line); border-bottom: 0;
+    border-radius: 4px 4px 0 0; background: rgba(5, 7, 12, 0.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  :root[data-hud='compact'] .hud .h-primary { left: calc(var(--m) + var(--safe-l)); transform: none; }
+}
+/* Where the car isn't (measured: carRoot through the camera, every frame of the reference flight,
+   tests/e2e/hud-collapse.spec.js). Upright, the car's centre stays right of 37 % of the width at every
+   height and flies up to the top edge in the air, so the line stands on the left edge as a rail:
+   the phase and the clock, the cells, the handle, and in the air the descent under them. The cue
+   line sits at the foot of the car's band, right of the rail, above the thumbs. */
+@media (pointer: coarse) and (orientation: portrait) {
+  :root[data-hud='compact'] .hud { --rail: 120px; }   /* m + 120 stays left of the car's 37 % on a 390 px phone */
+  /* The rail's head: the clock over the phase you're in. */
+  :root[data-hud='compact'] .hud .h-mission { right: auto; width: var(--rail); height: 47px; grid-template-columns: auto; align-content: start; gap: 6px 0; padding: 8px 10px 0;
+    border-top: 1px solid var(--line); background: rgba(5, 7, 12, 0.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  :root[data-hud='compact'] .hud .h-clock b { font-size: 14px; }
+  :root[data-hud='compact'] .hud .h-strip { top: calc(var(--top) + 47px); left: calc(var(--m) + var(--safe-l)); right: auto; width: var(--rail); max-width: none; flex-direction: column; }
+  /* One line a cell, the label beside its value: the rail is half as tall as a stacked one. Tight gaps:
+     the widest, SINK 40.7 ft/s, needs 107 of the rail's 120 px (6 px gaps and 10 px sides overran it). */
+  :root[data-hud='compact'] .hud .h-strip > .h-cell { flex: none; flex-wrap: nowrap; align-items: baseline; column-gap: 4px; min-height: 30px; padding: 6px 8px 5px; border-left: 0; border-top: 1px solid var(--line); white-space: nowrap; }
+  :root[data-hud='compact'] .hud .h-strip > .h-cell > .h-lbl { flex: none; }
+  :root[data-hud='compact'] .hud .h-strip > .h-cell:first-child, :root[data-hud='compact'] .hud[data-air] .h-strip > .r-sink { border-top: 0; }
+  :root[data-hud='compact'] .hud[data-air] .h-strip > [data-ch='alt'] { display: none; }   /* in the air the tape carries the height */
+  :root[data-hud='compact'] .hud .h-strip > .h-handle { grid-auto-flow: column; justify-content: start; gap: 8px; min-height: 44px; padding: 0 10px; border-left: 0; border-top: 1px solid var(--line); }
+  :root[data-hud='compact'] .hud .h-primary { top: calc(var(--top) + 196px); left: calc(var(--m) + var(--safe-l)); width: var(--rail); }   /* head 47 + three cells in the air + the handle */
+  /* On the ground the car is low (below 35 % of the height): the cue line stands right of the rail's
+     head. In the air the car is high: it drops to the foot of the car's band, above the thumbs. */
+  :root[data-hud='compact'] .cue { top: calc(62px + var(--safe-t)); bottom: auto; left: calc(clamp(16px, 2.4vw, 36px) + var(--rail, 120px) + 12px + var(--safe-l)); right: calc(clamp(16px, 2.4vw, 36px) + var(--safe-r));
+    width: fit-content; max-width: none; margin: 0 auto; transform: none; }
+  :root[data-hud='compact'] body:has([data-drill-bar]:not([hidden])) .cue { top: calc(112px + var(--safe-t)); }
+  :root[data-hud='compact'] body:has(.hud[data-air]:not([hidden])) .cue { top: auto; bottom: calc(300px + var(--safe-b)); }
+  :root[data-hud='compact'] .hud .h-scrim-top { height: calc(var(--top) + 80px); }
+}
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 740px) {
+  :root[data-hud='compact'] body:has(.hud[data-air]:not([hidden])) .cue { bottom: calc(190px + var(--safe-b)); }   /* above slot C and the one-thumb pad, which come down here */
+}
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 620px) {
+  :root[data-hud='compact'] .hud .h-strip > .h-cell { padding: 5px 10px 4px; }
+  :root[data-hud='compact'] .hud .h-primary { top: calc(var(--top) + 190px); }
+  :root[data-hud='compact'] body:has(.hud[data-air]:not([hidden])) .cue { bottom: calc(184px + var(--safe-b)); }
+}
+/* Sideways the car keeps to the top 62 % (and right of 47 % of the width): the line runs along the
+   bottom between the stick and the right thumb, the phase and the clock just above it, the cue line
+   above them; the descent stays top left. */
+@media (pointer: coarse) and (orientation: landscape) {
+  /* A band from the stick to the right thumb, like the full strip; a notch can leave it under 330 px,
+     and then G steps out (it comes back with MORE). */
+  :root[data-hud='compact'] .hud .h-strip { container-type: inline-size; }
+  :root[data-hud='compact'] .hud .h-strip > .h-cell { padding: 7px 8px 6px; }
+  :root[data-hud='compact'] .hud[data-air] .h-strip > [data-ch='alt'] { display: none; }   /* in the air the tape carries the height */
+  :root[data-hud='compact'] .hud[data-air] .h-strip > .r-sink { border-left: 0; }
+  /* The phase and the clock: a tab standing on the line, as LESS stands on the full strip. */
+  :root[data-hud='compact'] .hud .h-mission { top: auto; bottom: calc(12px + var(--line-h, 47px) + var(--safe-b)); left: calc(168px + var(--safe-l)); right: calc(271px + var(--safe-r));
+    padding: 7px 12px 6px; border: 1px solid var(--line); border-bottom: 0; border-radius: 4px 4px 0 0; background: rgba(5, 7, 12, 0.62); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  :root[data-hud='compact'] .cue { top: auto; bottom: calc(100px + var(--safe-b)); left: calc(168px + var(--safe-l)); right: calc(271px + var(--safe-r)); }
+  :root[data-hud='compact'] .hud .h-scrim-top { height: calc(var(--top) + 200px); }
+  :root[data-hud='compact'] .hud .h-scrim-bot { height: 34dvh; }
+}
+/* The scene reads first (0112). Compact, every instrument stands on its own glass (the rail's cells, the descent's
+   panel, the band, the phase's tab, the cue's box, the thumbs' rings), so the scrims had nothing left to carry but
+   the wordmark: they darkened 51 % of a phone upright and 90 % of one sideways, the car in the air with it. What is
+   left is a short shade behind the top bar; nothing at the bottom. */
+@media (pointer: coarse) {
+  :root[data-hud='compact'] .hud .h-scrim-top { height: calc(var(--safe-t) + 28px); background: linear-gradient(rgba(3, 5, 9, 0.5), rgba(3, 5, 9, 0)); }   /* the status bar's own text, installed */
+  :root[data-hud='compact'] .hud .h-scrim-bot { display: none; }
+  /* The wordmark is the title's, not the run's: mid-run on a touch screen it stood bare over the Wall's lit edge
+     (1.9:1 once the shade was gone) and took a corner the scene can have. Hidden, its place kept (the actions stay right). */
+  :root[data-hud='compact'] body:has(.hud:not([hidden])) .top .brand, :root[data-hud='compact'] body.driving .top .brand { visibility: hidden; }
+}
+/* Sideways and short (the fold closed and turned, 594×368 and installed 678×445; a phone at 390; the flip's screens),
+   the car on the ground rides at 60–75 % of the height, right where the cue line stood over the band and the phase
+   tab: it hid the car outright at the start of a run (0112, scripts/hud-cover.mjs). On the ground the line goes up
+   under the top bar, into the sky, left of the right thumb's column; in the air the car is high and the line comes back down. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 460px) {
+  :root[data-hud='compact'] body:not(.driving):not(:has(.hud[data-air]:not([hidden]))) .cue { top: calc(66px + var(--safe-t)); bottom: auto;
+    left: calc(clamp(16px, 2.4vw, 36px) + var(--safe-l)); right: calc(164px + var(--safe-r)); }   /* short of the right thumb's column (LIFT rises to 80 px on a razr's cover) */
+  :root[data-hud='compact'] body:not(.driving):has([data-drill-bar]:not([hidden])):not(:has(.hud[data-air]:not([hidden]))) .cue { top: calc(116px + var(--safe-t)); }
+}
+@container (max-width: 330px) {
+  :root[data-hud='compact'] .hud .h-strip > [data-ch='g'] { display: none; }
+  /* G is already out here: on the ground the damage cell takes N₂'s place (a hurt car's gas is moot). */
+  :root[data-hud='compact'] .hud[data-damage]:not([data-air]) .h-strip > .tank { display: none; }
+}
+@media (pointer: coarse) and (orientation: landscape) and (min-height: 700px) {
+  :root[data-hud='compact'] .hud .h-mission { bottom: calc(18px + var(--line-h, 47px) + var(--safe-b)); left: calc(212px + var(--safe-l)); right: calc(292px + var(--safe-r)); }
+  :root[data-hud='compact'] .cue { bottom: calc(106px + var(--safe-b)); left: calc(212px + var(--safe-l)); right: calc(292px + var(--safe-r)); }
+}
+
+/* A short upright window (a folding phone's 466×498 mid-swing, a phone with its keyboard up): the
+   title packs down so the wordmark never rises under the top bar; and a phone a few px narrower than
+   390 (the folding phone closed, 382) keeps the whole top bar on screen. (0075) */
+@media (orientation: portrait) and (max-height: 540px) {
+  .title { bottom: calc(18px + var(--safe-b)); }
+  .wordmark { font-size: 40px; white-space: nowrap; }
+  .wordmark br { display: none; }
+  .tagline { margin: 6px 0 12px; }
+}
+@media (max-width: 386px) { .top-actions { gap: 4px; } }
+
+/* --- A folding phone (0075) ------------------------------------------------------------------------
+   Closed, it is a phone like any other (382×580 upright, 678×340 sideways in its browser, the bars
+   and the tool column already outside the viewport): the phone rules above hold, sized in dvh, never
+   100vh (18 px too tall there). Opened, the inner screen is regular width at a phone's height (669×825
+   upright, 951×543 sideways): the room is an upgrade, not a different game. The sheets that scroll on
+   a phone lay out in two even columns; the HUD keeps the same band (a wide band shows PITCH too, by
+   its own width, below). The query names that shape (touch, at least 600 × 500, at most 1000 × 960: installed, open upright is 669 × 930, 0103),
+   so no phone, iPad or desktop we audit matches it; inside it everything is fluid. A fold or an
+   unfold is only a resize: nothing reloads and the run carries on (src/render/scene.js reshape). */
+@media (pointer: coarse) and (min-width: 600px) and (min-height: 500px) and (max-width: 1000px) and (max-height: 960px) {
+  /* The title: who you are on the left (the wordmark, the line, the fine print), what to do on the
+     right (the events and the picked one's line, Jump under the right thumb, the rest under it). */
+  .title { right: calc(clamp(24px, 6vw, 96px) + var(--safe-r)); max-width: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(24px, 4vw, 48px);
+    grid-template-areas: 'eyebrow events' 'word line' 'tag cta' 'fine cta'; grid-template-rows: auto auto auto 1fr; align-content: end; align-items: end; }
+  .title > .eyebrow { grid-area: eyebrow; }
+  .title > .wordmark { grid-area: word; font-size: clamp(40px, min(8vw, 12dvh), 96px); }
+  .title > .tagline { grid-area: tag; align-self: start; margin: 16px 0 0; }
+  .title > .courses { grid-area: events; width: auto; margin: 0 0 8px; align-self: end; }
+  .title > .course-line { grid-area: line; width: auto; align-self: start; }
+  .title > .cta { grid-area: cta; width: auto; align-self: end; }
+  .title > .spec { display: none; }
+  .title > .fineprint { grid-area: fine; align-self: end; margin: 0; }
+  .title .drive-btn > span { display: none; }
+  /* The judges' theatre takes the whole screen, as on a phone (beside a two-column sheet there is no
+     room for it); the sheet is there when it ends. */
+  .theatre { inset: 0; z-index: 8; background: radial-gradient(120% 80% at 40% 45%, rgb(7, 11, 20), rgb(2, 3, 6)); }
+  /* Results: the sheet reads down two even columns, the verdict, the run and the actions at the head
+     of the first, each block whole (a judge's words never split across the columns). The section
+     scrolls (the sheet is as tall as its columns); the action row stays at the head of the first
+     column instead of pinned under the thumb. */
+  .results { display: block; overflow-y: auto; overscroll-behavior: contain; }
+  .results .sheet { display: block; width: 100vw; min-height: 100%; overflow: visible; columns: 2; column-gap: 40px; column-fill: balance;
+    padding-bottom: calc(32px + var(--safe-b)); }
+  .results .sheet > *, .results .judges > li { break-inside: avoid; -webkit-column-break-inside: avoid; }
+  .results .sheet > .top-actions-row { position: static; order: 0; margin: 18px 0 0; padding: 0; background: none; flex-wrap: wrap; }
+  .results[data-practice] .sheet { columns: auto; width: min(100vw, 560px); }
+  /* Practice: the drills two by two. */
+  .practice .sheet { width: min(880px, calc(100vw - 32px)); }
+  .drills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* A very narrow band (a folding phone closed and turned sideways: 678 px less the stick and the
+   right thumb leaves 239): every reading keeps to one line (the cell's grid, sideways above), so the band stays
+   one cell tall and the phase tab standing on it stays clear. The handle shows its chevron alone (it
+   keeps its 44 px target and its name), and the cells pack tighter: 11 mph · 31.1 ft · 655 lb leave
+   the band 9 px to spare. */
+@container (max-width: 260px) {
+  :root[data-hud='compact'] .hud .h-strip > .h-cell { padding-left: 5px; padding-right: 5px; column-gap: 2px; }
+  :root[data-hud='compact'] .hud .h-strip > .h-cell > :not(.h-lbl) { white-space: nowrap; }
+  :root[data-hud='compact'] .hud .h-strip > .h-handle { min-width: 44px; padding: 0; }
+  :root[data-hud='compact'] .hud .h-strip > .h-handle .hh-w { display: none; }
+}
+/* A wide band (an opened folding phone or a tablet sideways): the compact line has room for one more
+   instrument, the pitch. By the band's own width (it is a container in landscape), not the device. */
+@container (min-width: 480px) {
+  :root[data-hud='compact'] .hud .h-strip > .h-pitch { display: grid; }   /* the band's cell grid (above), not the line's flex */
+}
+
+/* --- The full HUD on a very short landscape screen (0082) -------------------------------------------
+   340 px of height (a folding phone closed and turned sideways; a small phone sideways with its bars)
+   is too short for the band's stack: the readings got 239 px in one wrapped row, the dial ran into the
+   thumb pad, the mission row into the vehicle panel. Everything stays, rearranged by the height it
+   needs (≈ 370 px for the stack), not by a device: the mission row rides up into the top bar's gap,
+   between the brand and the buttons; the cue line takes the band it leaves, between the primary and
+   the right column; the right column is the dial with its roll beside it, and the damage read in one
+   line under it, all above the thumb's arc; the primary packs down (time to ground stays on the tape, the limit in one unit system);
+   the readings sit in two rows of three between the stick and the right thumb, LESS on their top edge.
+   The car keeps to the top 62 % right of centre: the band over it holds only the cue line. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 370px) {
+  :root[data-hud='full'] .hud .h-mission { top: calc(30px + var(--safe-t)); left: calc(170px + var(--safe-l)); right: calc(256px + var(--safe-r)); padding: 0; }
+  :root[data-hud='full'] .hud .h-timeline li { width: 18px; }
+  :root[data-hud='full'] .cue { --cue-top: 64px; left: calc(262px + var(--safe-l)); right: calc(172px + var(--safe-r)); }
+  :root[data-hud='full'] .hud .h-primary { top: calc(var(--top) + 44px); }
+  :root[data-hud='full'] .hud .h-big b { font-size: 40px; }
+  :root[data-hud='full'] .hud .d-meta .d-row:last-child, :root[data-hud='full'] .hud .d-meta .h-alt { display: none; }   /* one line, one unit system, as at 320×568: the limit's twin widened the primary into the cue */
+  :root[data-hud='full'] .hud .descent { row-gap: 4px; }
+  :root[data-hud='full'] .hud .h-att { top: calc(var(--top) + 46px); grid-template-columns: auto auto; grid-template-areas: 'roll dial' 'cue dial'; align-items: center; justify-items: end; gap: 2px 10px; }
+  :root[data-hud='full'] .hud .h-att .dial { grid-area: dial; width: 64px; height: 64px; }
+  :root[data-hud='full'] .hud .h-att .adi-roll { grid-area: roll; align-self: end; }
+  :root[data-hud='full'] .hud .h-att .roll-cue { grid-area: cue; align-self: start; }
+  :root[data-hud='full'] .hud .h-vehicle { top: calc(var(--top) + 118px); right: calc(var(--m) + var(--safe-r)); }
+  :root[data-hud='full'] .hud .dmg { flex-direction: row; gap: 8px; }
+  :root[data-hud='full'] .hud .dmg svg { display: none; }
+  :root[data-hud='full'] .hud .dmg-read { display: flex; align-items: baseline; gap: 8px; padding: 0; }
+  :root[data-hud='full'] .hud .h-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0; }
+  :root[data-hud='full'] .hud .h-strip { bottom: calc(10px + var(--safe-b)); }
+  :root[data-hud='full'] .hud .h-strip > .h-cell { padding: 6px 6px 5px; column-gap: 4px; row-gap: 4px; border-left: 1px solid var(--line); }
+  :root[data-hud='full'] .hud .h-strip > .h-cell b { font-size: 14px; }
+  :root[data-hud='full'] .hud .h-strip .n2-bar { white-space: normal; }
+  :root[data-hud='full'] .hud .h-strip .n2-sep { display: none; }
+  :root[data-hud='full'] .hud .h-strip .n2-bar > .h-alt:first-child { display: block; margin-bottom: 3px; }
+}
+/* The same squeeze upright (a folding phone's 466×498 mid-swing): the cue line under the strip would
+   sit on the thumb's pad, so it keeps to the left of it, just under the strip (which sits at
+   --top + 180 here and is about 66 px tall: 304 px down). */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 540px) {
+  :root[data-hud='full'] .cue { --cue-top: 312px; left: calc(var(--m) + var(--safe-l)); right: calc(170px + var(--safe-r)); width: fit-content; max-width: none; margin: 0; transform: none; }
+}
+
+/* --- A narrow screen sideways (0103): the folding phone closed and turned, 594 × 368 with the camera's 84 px
+   on one side (510 px of glass) or 678 × 384 / 445, measured. The phone layout's band runs from the stick
+   (154 px) to B beside A (271 px): it had under 100 px here. So the right thumb's slots stand in one column,
+   B under A and C over it (all within 70–240 px of the thumb's pivot, scripts/thumb-reach.mjs), the stick
+   narrows, and the band, the phase tab and the cue line take what is left between them; with one thumb
+   (no stick) they start at the left margin. The full set has no room here: the handle is put away
+   (src/hud-mode.js fullFits; the choice comes back unfolded or upright). By the size, not the device. */
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 719px) {
+  .touch { --ax: 118px; --ay: 150px; --as: 92px; --bx: 118px; --by: 52px; --bs: 70px; --cx: 118px; --cy: 248px; --cs: 64px; --stick: 112px; }
+  .stick { left: calc(14px + var(--safe-l)); bottom: calc(22px + var(--safe-b)); }
+  .thumb { --ay: 132px; }
+  /* Two thumbs: the stick's 126 px on the left, the slots' column (164 px from the edge) on the right. One
+     thumb: no stick; the pad (120 px) reaches 178 px in. */
+  :root { --narrow-l: calc(138px + var(--safe-l)); --narrow-r: calc(176px + var(--safe-r)); }
+  :root:has(.touch[data-scheme='thumb']:not([hidden])) { --narrow-l: calc(clamp(16px, 2.4vw, 36px) + var(--safe-l)); --narrow-r: calc(190px + var(--safe-r)); }
+  :root[data-hud] .hud .h-strip { left: var(--narrow-l); right: var(--narrow-r); }
+  :root[data-hud] .hud .h-mission { left: var(--narrow-l); right: var(--narrow-r); grid-template-columns: auto; gap: 2px 0; padding-left: 8px; padding-right: 8px; }
+  :root[data-hud] .cue { left: var(--narrow-l); right: var(--narrow-r); bottom: calc(132px + var(--safe-b)); }
+  /* In the air the descent stands top left (100 px wide, down to ≈ 240 px): the cue keeps right of it. */
+  :root[data-hud] body:has(.hud[data-air]:not([hidden])) .cue { left: max(var(--narrow-l), calc(clamp(16px, 2.4vw, 36px) + 112px + var(--safe-l))); }
+}
+:root[data-hud-tight] [data-hud-toggle] { display: none !important; }
+/* The narrowest band (the 594 px pose, two thumbs: ≈ 180 px): on the ground ALT steps out (the tape has
+   the height in the air, and on the ground the run-up is at 0), so speed and the gas keep one line. */
+@container (max-width: 200px) {
+  :root[data-hud='compact'] .hud:not([data-air]) .h-strip > [data-ch='alt'] { display: none; }
+}
+/* A tiny square held upright (a flip phone's cover screen, ≈ 360 × 380, 0104): the rail keeps three cells
+   (G steps out: the line says the car's state, and the handle is away, src/hud-mode.js fullFits), and in the
+   air the descent comes up under them, its tape shorter (its figures scaled up to stay 11 px on screen). */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 440px) {
+  :root[data-hud='compact'] .hud .h-strip > [data-ch='g'] { display: none; }
+  /* The rail's head (the clock over the phase) rides up into the top bar's left corner, where the brand
+     would be (it steps out at this width): the top HUD ends with the top bar, so the camera can keep the car
+     under it and the parked row's roofs in frame (0107). */
+  :root[data-hud='compact'] .hud .h-mission { top: calc(8px + var(--safe-t)); width: 108px; height: auto; padding: 4px 0 0 2px; border-top: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; gap: 3px 0; }
+  :root[data-hud='compact'] .hud .h-strip { top: var(--top); }
+  :root[data-hud='compact'] .hud .h-primary { top: calc(var(--top) + 100px); }
+  :root[data-hud='compact'] .hud .d-tape { height: 84px; }
+  :root[data-hud='compact'] .hud .d-tape text { font-size: 22px; }
+}
+
+/* --- A screen in two segments (0075; Chromium's Viewport Segments, where a foldable reports its
+   hinge). Nothing here applies anywhere else: the queries are false without segments. What would
+   straddle the fold is displaced to one side of it, not redesigned. Beside a vertical fold the band,
+   the phase tab and the cue line keep their left edge and stop short of the fold (the right segment
+   belongs to the right thumb); below a horizontal fold the cue line moves into the lower segment. */
+@media (pointer: coarse) and (horizontal-viewport-segments: 2) {
+  :root { --fold-gap: calc(100vw - env(viewport-segment-right 0 0, 50vw) + 12px); }
+  .hud .h-mission, .hud .h-strip, .cue { right: var(--fold-gap) !important; max-width: none !important; }
+  .cue { width: fit-content; margin: 0 auto; transform: none !important; }
+  :root[data-hud='full'] .hud .h-strip { flex-wrap: wrap; }
+  @media (orientation: portrait) { :root[data-hud='full'] .cue { left: calc(16px + var(--safe-l)) !important; } }
+}
+@media (pointer: coarse) and (vertical-viewport-segments: 2) {
+  .cue { top: calc(env(viewport-segment-top 0 1, 50dvh) + 12px) !important; bottom: auto !important; }
+}
+
+/* The share fallback's toast (0081, src/share-card.js): one line above the safe area, glass and a hairline. */
+.toast { position: fixed; left: 50%; bottom: calc(28px + var(--safe-b)); z-index: 60; transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
+  max-width: calc(100vw - 32px - var(--safe-l) - var(--safe-r)); box-sizing: border-box; padding: 11px 18px; border-radius: 999px; border: 1px solid var(--hair);
+  background: rgba(10, 13, 20, 0.86); backdrop-filter: blur(14px); color: var(--ink); font: 500 13px/1.3 var(--text); letter-spacing: 0.02em; text-align: center;
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease); overflow-wrap: anywhere; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; transform: translate(-50%, 0); } }
+
+/* --- A new player knows the controls and gets coached (0079) ---------------------------------------
+   The AI assist control says in words what the computer does, on the title and the results, on every
+   device (no hover-only explanation): a hairline pill with a status lamp, the state, and one line of
+   what it means. A tap opens the tier picker (the .controls overlay). */
+.assist-ctl { display: inline-grid; align-content: center; gap: 3px; min-height: 44px; padding: 6px 16px 6px 30px; position: relative;
+  border-radius: 22px; border: 1px solid rgba(150, 220, 255, 0.42); background: rgba(150, 220, 255, 0.07); backdrop-filter: blur(14px);
+  color: var(--ink); text-align: left; transition: border-color 0.25s var(--ease), background 0.25s var(--ease); }
+.assist-ctl::before { content: ''; position: absolute; left: 13px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%;
+  background: #96dcff; box-shadow: 0 0 0 3px rgba(150, 220, 255, 0.16), 0 0 12px rgba(150, 220, 255, 0.7); }
+.assist-ctl:hover { border-color: rgba(150, 220, 255, 0.8); background: rgba(150, 220, 255, 0.12); }
+.assist-ctl:active { transform: scale(0.98); }
+.assist-ctl:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
+.ac-top { display: flex; align-items: baseline; gap: 6px; font: 500 11px/1.1 var(--text); letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
+.ac-k { color: rgba(245, 246, 248, 0.78); }
+.ac-k::after { content: ' ·'; }
+.ac-state { font-weight: 600; color: var(--ink); }
+.ac-sub { font: 400 12px/1.2 var(--text); color: rgba(245, 246, 248, 0.8); white-space: nowrap; }
+.assist-ctl[data-assist-tier='pro'] { border-color: rgba(255, 191, 90, 0.55); background: rgba(255, 191, 90, 0.06); }
+.assist-ctl[data-assist-tier='pro']::before { background: var(--amber); box-shadow: 0 0 0 3px rgba(255, 191, 90, 0.16); }
+.assist-ctl[data-assist-tier='advanced'] { border-color: rgba(232, 50, 60, 0.6); background: rgba(232, 50, 60, 0.06); }
+.assist-ctl[data-assist-tier='advanced']::before { background: #ff8a8f; box-shadow: 0 0 0 3px rgba(232, 50, 60, 0.18); }
+/* On the results: under the run line, before the actions; a drill's sheet doesn't show it. */
+.r-assist { padding: 12px 0 0; }
+.results[data-practice] .r-assist, .results[data-practice] .pointer { display: none; }
+
+/* The coach's pointer: one large line, the fix, with the device's control in it. */
+.pointer { margin: 14px 0 0; padding: 12px 14px 13px 16px; border-left: 2px solid var(--amber); border-radius: 2px 12px 12px 2px; background: rgba(255, 191, 90, 0.06);
+  display: grid; gap: 5px; animation: rise 0.6s var(--ease) 0.15s both; }
+.pointer[hidden] { display: none; }
+.pt-k { font: 500 11px/1 var(--text); letter-spacing: 0.2em; text-transform: uppercase; color: var(--amber); }
+.pt-text { font: 500 17px/1.35 var(--text); color: var(--ink); letter-spacing: 0.005em; }
+.pt-better { font: 500 13px/1.3 var(--mono); color: var(--ok); }
+.pt-better[hidden] { display: none; }
+.pointer[data-clean] { border-left-color: var(--ok); background: rgba(111, 240, 181, 0.05); }
+.pointer[data-clean] .pt-k { color: var(--ok); }
+
+/* Adapt to me: the step it took (and Undo), or a harder step offered (the Rookie button's shape). */
+.adapt { padding: 10px 0 2px; animation: rise 0.6s var(--ease) 0.4s both; }
+.adapt[hidden], .adapt > [hidden] { display: none; }
+.adapt-down { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 14px;
+  border: 1px solid rgba(150, 220, 255, 0.5); background: rgba(150, 220, 255, 0.08); }
+.adapt-down p { margin: 0; font: 500 13px/1.4 var(--text); color: var(--ink); }
+.adapt-undo { flex: none; height: 44px; padding: 0 18px; font-size: 14px; }
+.adapt-btn b { font: inherit; }
+
+/* How to fly: the phase, the control as a key cap, what it does. */
+.howto-rows { list-style: none; margin: 16px 0 12px; padding: 0; display: grid; counter-reset: hw; }
+.howto-rows li { display: grid; grid-template-columns: 108px minmax(0, 1fr); grid-template-areas: 'phase ctl' 'phase what'; column-gap: 14px; row-gap: 4px;
+  padding: 11px 0; border-top: 1px solid var(--hair-2); counter-increment: hw; }
+.howto-rows li:first-child { border-top: 0; }
+.hw-phase { grid-area: phase; font: 400 12px/1.3 var(--display); letter-spacing: 0.05em; color: var(--ink); padding-top: 3px; }
+.hw-phase::before { content: counter(hw, decimal-leading-zero); display: block; margin-bottom: 4px; font: 400 11px/1 var(--mono); color: var(--amber); }
+.hw-ctl { grid-area: ctl; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 13px; color: rgba(245, 246, 248, 0.8); }
+.hw-ctl i { font-style: normal; }
+.hw-ctl kbd { font: 500 13px/1 var(--mono); padding: 4px 7px; border: 1px solid rgba(245, 246, 248, 0.5); border-bottom-width: 2px; border-radius: 5px; color: var(--ink); background: rgba(245, 246, 248, 0.06); }
+.hw-what { grid-area: what; font-size: 13px; line-height: 1.4; color: rgba(245, 246, 248, 0.8); }
+.howto-assist { margin: 0; padding: 10px 0 0; border-top: 1px solid var(--hair-2); font-size: 12px; line-height: 1.45; color: rgba(245, 246, 248, 0.8); }
+.howto .sheet h2 { font-size: 20px; }
+/* 0127: the newcomer's one-row card; "All four steps" is a quiet link (a 44 px target) that opens the rest in place. */
+.howto-all { display: inline-flex; align-items: center; min-height: 44px; margin: -4px 0 0; padding: 0 2px; border: 0; background: none;
+  font: 500 13px/1.3 var(--text); color: rgba(245, 246, 248, 0.8); text-decoration: underline; text-decoration-color: rgba(245, 246, 248, 0.4);
+  text-underline-offset: 3px; cursor: pointer; }
+.howto-all:hover, .howto-all:focus-visible { color: var(--ink); text-decoration-color: currentColor; }
+.howto-all[hidden], .howto-assist[hidden] { display: none; }
+.howto.short .howto-rows { grid-template-columns: minmax(0, 1fr); }
+.howto-rows li:focus { outline: none; }
+/* The tier picker: the factor beside each name. */
+.assist .ctl-opt b i { font: 400 12px/1 var(--mono); font-style: normal; color: rgba(245, 246, 248, 0.7); margin-left: 6px; letter-spacing: 0; }
+.assist .ctl-opt[data-tier-opt='pro'] b i { color: var(--amber); }
+.assist .ctl-opt[data-tier-opt='advanced'] b i { color: #ff8a8f; }
+/* Short screens (a phone sideways, a folding phone either way open or closed): the card in two columns of two, tighter. */
+@media (max-height: 600px) and (orientation: landscape) {
+  .howto .sheet { width: min(760px, calc(100vw - 24px - var(--safe-l) - var(--safe-r))); padding: 16px 22px; max-height: calc(100dvh - 16px); }
+  .howto .eyebrow { margin-bottom: 6px; }
+  .howto-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; margin: 8px 0 6px; }
+  .howto-rows li { padding: 7px 0; grid-template-columns: 96px minmax(0, 1fr); }
+  .howto-rows li:nth-child(2) { border-top: 0; }
+  .howto-assist { padding-top: 6px; }
+  .howto .actions { margin-top: 8px; }
+  .howto .actions .btn { height: 44px; }
+  .howto.short .sheet { width: min(460px, calc(100vw - 24px - var(--safe-l) - var(--safe-r))); }
+  .assist .sheet { width: min(680px, calc(100vw - 24px)); padding: 16px 22px; max-height: calc(100dvh - 16px); }
+  .assist .ctl-group { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 10px 0 8px; }
+  .assist .ctl-opt { padding: 10px 12px; }
+}
+/* A short phone upright (a folding phone closed, 382×580): the number beside the phase, tighter rows. */
+@media (orientation: portrait) and (max-height: 700px) {
+  .howto .sheet { padding: 20px 20px 18px; max-height: calc(100dvh - 16px); }
+  .howto .eyebrow { margin-bottom: 8px; }
+  .howto .sheet h2 { font-size: 18px; }
+  .howto-rows { margin: 10px 0 8px; }
+  .howto-rows li { padding: 8px 0; grid-template-columns: 100px minmax(0, 1fr); column-gap: 10px; }
+  .hw-phase::before { margin-bottom: 3px; }
+  .howto-assist { padding-top: 8px; }
+  .howto .actions { margin-top: 10px; }
+  .howto .actions .btn { height: 44px; }
+  .assist .sheet { padding: 20px 20px 18px; max-height: calc(100dvh - 16px); }
+  .assist .ctl-group { margin: 12px 0 10px; }
+  .assist .ctl-opt { padding: 10px 12px; gap: 4px; }
+  .assist .ctl-opt span, .assist .ctl-note { font-size: 12px; }
+  .assist .actions { margin-top: 10px; }
+}
+@media (max-width: 400px) {
+  .assist-ctl { padding-right: 12px; }
+  .ac-sub { font-size: 11px; }
+}
+/* A short phone upright (a folding phone closed, 382×580; the 466×498 mid-swing; an SE): the tagline steps aside. */
+@media (orientation: portrait) and (max-height: 620px) { .title .tagline { display: none; } .title .wordmark { margin-bottom: 14px; } }
+
+/* --- Easy on the battery (0049) ---
+   A backdrop blur samples the canvas under it again on every frame the canvas changes, and through a run's
+   countdown and the run it changes every frame. There the glass is a solid fill, a step denser (0.62 → 0.72,
+   the compact tabs 0.84) so the HUD's words keep their contrast without the blur, and the grain's full-screen
+   overlay blend is off. The results (the sheet, the judges' theatre and the replay behind them: the replay
+   plays in the 'results' mode, nothing sets 'replay') keep both: without them
+   software GL's main thread ran 2–3× further behind there (timer lag 0.7–1.1 s against 0.2–0.4 s) and the
+   theatre's words missed their deadline. (Free Drive and the Sandbox keep their blur for now: their panels
+   were not measured without it.) */
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) .grain { display: none; }
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) * {
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) { --glass: rgba(10, 13, 20, 0.7); }
+@media (pointer: coarse) {   /* the full HUD's handle is a tab of its own on a touch screen */
+  :root:not([data-hud='compact']) body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) .hud .h-strip > .h-handle { background-color: rgba(5, 7, 12, 0.76); } }
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) :is(.h-strip, .thumb:not(.on)) { background-color: rgba(5, 7, 12, 0.72); }
+/* The compact tabs sit over the wreck on a phone held sideways, and the timeline's crash label is signal red
+   (4.5:1 on dense glass only, LESSONS 0072): 3.83:1 at 0.62 unblurred (audit, 814×380 and 844×390). */
+:root[data-hud='compact'] body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) .hud :is(.h-primary, .h-mission) { background-color: rgba(5, 7, 12, 0.84); }
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) .stick { background-color: rgba(6, 8, 13, 0.46); }
+body:is([data-mode='countdown'], [data-mode='live'], [data-mode='replay']) .tbtn:not(.on, [style*='--amt']) { background-color: rgba(6, 8, 13, 0.56); }
+
+/* --- The title on a flip phone's cover screen held upright (≈ 360 × 380, 0104) -------------------------------
+   A phone's title block is ≈ 560 px tall; here 318 px stand under the top bar. Nothing leaves: the wordmark
+   takes one line, the events and the drives keep their rows (names only), and the actions pack into rows of
+   44 px targets (the AI assist pill keeps its state, its sentence steps out; the tier picker explains it). */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 440px) {
+  .title { bottom: calc(8px + var(--safe-b)); }
+  .title > .wordmark { font-size: 22px; white-space: nowrap; margin: 0 0 8px; }
+  .title > .wordmark br, .title > .tagline, .title > .eyebrow, .title > .spec { display: none; }
+  .title > .courses { margin-bottom: 2px; gap: 6px; }
+  .title .course-btn { min-height: 44px; padding: 6px 10px; }
+  .title > .course-line { margin-bottom: 2px; font-size: 12px; }
+  .title > .cta { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+  .title .jump-btn { flex: 1 1 100%; height: 44px; }
+  .title .cta-row { flex: 1 1 100%; }
+  .title .cta-set { flex: 1 1 auto; }
+  .title .cta-set > .set-cell { padding: 2px 8px; }
+  .title .play-more { flex: 0 1 auto; }
+  .title .play-more > summary { letter-spacing: 0.08em; }
+  .title .play-more[open] { flex-basis: 100%; }
+  .title > .fineprint { margin-top: 2px; }
+}
+
+/* --- A screen in two segments, by the page's own reading (0105, src/fold.js via src/main.js syncFold) --------
+   Rows (a horizontal fold: a flip phone half-folded on a table): the scene is drawn in the top segment only
+   (the canvas stops at the fold; the camera takes its shape), and everything the thumbs and the eyes work
+   with sits in the bottom one. */
+:root[data-fold='rows'] #stage { height: var(--fold-a); }
+/* The descent (in the air) stands just under the fold, at the left margin; the cue line beside it; the line of
+   readings keeps its rail at the top left of the scene, as on a phone. The full set steps back to the line
+   here (src/hud-mode.js). */
+:root[data-fold='rows'] .hud .h-primary { top: calc(var(--fold-b) + 12px) !important; bottom: auto !important; }
+:root[data-fold='rows'] .cue { top: calc(var(--fold-b) + 12px) !important; bottom: auto !important; }
+/* The title starts under the fold (the hero car is in the scene above it) and scrolls there if it must. */
+:root[data-fold='rows'] .title { top: calc(var(--fold-b) + 8px); bottom: calc(8px + var(--safe-b)); max-height: none; justify-content: flex-start; align-content: start; overflow-y: auto; overscroll-behavior: contain; }
+/* The sheets: the pause sheet, the board and the results stand in the bottom segment (the scene, or the replay,
+   above them); their scrim still covers the whole screen. */
+:root[data-fold='rows'] :is(.pause, .board, .results) { padding-top: var(--fold-b); }
+:root[data-fold='rows'] :is(.pause, .board) .sheet { max-height: calc(100dvh - var(--fold-b) - 24px); }
+/* Columns (a vertical fold: a book fold half-open): the centred sheets stand in the left segment, the results
+   (docked at the right edge on a wide screen) in the right one; nothing straddles the hinge. */
+:root[data-fold='cols'] :is(.pause, .board) { padding-right: calc(100vw - var(--fold-a)); }
+:root[data-fold='cols'] :is(.pause, .board) .sheet { width: min(560px, calc(var(--fold-a) - 32px)); }
+:root[data-fold='cols'] .results { padding-left: var(--fold-b); }
+:root[data-fold='cols'] .results .sheet { width: auto; max-width: calc(100vw - var(--fold-b)); columns: auto; }
+/* The judges' theatre, where it takes the screen, takes the left segment (the results are in the right one). */
+:root[data-fold='cols'] .theatre { right: calc(100vw - var(--fold-a)); }
+
+/* Paused (0095): the flight readouts, the cue, the count and the top bar step back behind the sheet, so no live
+   readout reads under its glass or is cut in half by its edge (the scrim alone left them at 55 %). A filter, not
+   opacity: the HUD's `rise` fill holds its opacity at 1. Resume brings them back in the same 0.35 s. Last in the
+   file, so the cue's own opacity fade keeps its place in the list. */
+:is(.hud, .top, .count, .drill-bar) { transition: filter 0.35s var(--ease); }
+.cue { transition: opacity 0.35s var(--ease), filter 0.35s var(--ease); }
+body:has(> .pause:not([hidden])) :is(.hud, .top, .cue, .count, .drill-bar) { filter: opacity(0.15); }
+
+/* --- Plain words on Assist (audit 2026-10-30) -----------------------------------------------------------------
+   Each strip label carries the engineering word (.w-eng: SINK, N₂, SPD, ALT) and the plain one (.w-plain: Falling,
+   Gas, Speed, Height; "Fall" on the narrow rail). Assist's compact line reads the plain ones, without the regulator's tag; Pro, Advanced and
+   the full instrument set keep the engineering words (the burn-time view and For nerds keep N₂ and the regulator). */
+.w-plain { display: none; }
+:root[data-hud='compact'] .hud[data-tier='assist'] .w-eng { display: none; }
+:root[data-hud='compact'] .hud[data-tier='assist'] .w-plain { display: inline; }
+:root[data-hud='compact'] .hud[data-tier='assist'] .tank .n2-st { display: none; }
+/* The full set shows speed big on the ground: the strip doesn't say it twice (in the air the big readout is the
+   descent, and SPD comes back). */
+:root:not([data-hud='compact']) .hud:not([data-air]) .h-strip > [data-ch='spd'] { visibility: hidden; }   /* the slot stays: the strip never shifts when it comes back in the air (0047) */
+
+/* --- Marquee (src/ads.js): between runs only ------------------------------------------------ */
+/* The title's banner exists only when the slot can fill; it never covers the CTA, and short screens skip it. */
+.title .ad-banner { margin: 18px 0 0; width: min(100%, 468px); max-height: 90px; overflow: hidden; border-radius: 8px; animation: none; }
+@media (max-height: 620px), (max-width: 360px) { .title .ad-banner { display: none; } }
+.reroll-btn { margin: 12px 0 0; min-height: 44px; }

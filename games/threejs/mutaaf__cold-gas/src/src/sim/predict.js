@@ -1,0 +1,220 @@
+// What the descent looks like from here: the numbers behind the landing HUD, the coach and the
+// practice drills. Pure and allocation-free (fills an `out` object), read-only on the car: it never
+// changes a run, so it is not part of the deterministic scoring and needs no SIM_VERSION.
+//
+// The physics is the governor's own (src/sim/vehicle.js): the four down-jets' trimmed lift at the
+// feed pressure left at the end of the stop, times how upright the car is, minus gravity.
+import { G, setdownTop, LIFT_MAX, NOZZLES, massOf, feedPressure, pressureOf, gasToStop, brakePlan, profileVy, up, CAR } from './vehicle.js';
+import { SPEC } from './spec.js';
+import { v3, rotateInv } from './m3.js';
+import { datan2, dhypot } from './dmath.js';
+
+// Touchdown sink limits (m/s), from the judges' landing band (src/sim/judge.js: 0.9 is perfect,
+// 6 scores zero) and the suspension: ≤1.5 is a soft landing, ≤3 is firm, above that it hurts.
+export const SINK_SOFT = 1.5, SINK_FIRM = 3;
+// A person needs about this long to see a cue and press a key.
+export const REACTION = 0.3;
+
+export const newPrediction = () => ({
+  h: 0, sink: 0, upY: 1,
+  aNow: 0, aEnd: 0, aMax: 0, aPlan: 0,
+  stopDist: 0, brakeBy: 0, margin: 0, marginAhead: 0,
+  profileSink: 0,          // the sink rate the LAND profile wants at this height
+  status: 'green',         // green: on or under the profile · amber: fast but stoppable · red: not stoppable
+  tGround: Infinity,       // free fall to the ground from here, s
+  tLand: Infinity,         // to touchdown if you brake on the profile from here, s
+  landX: 0, landZ: 0,      // where that touchdown is
+  gas: 0, gasNeed: 0,      // kg: in the tanks, and what the stop (plus a short hover) costs
+  rollOut: 0,              // signed roll to upright, rad (+ = roll right), 0 when upright
+  pitchOut: 0,             // signed pitch to level, rad (+ = nose down, like the stick)
+  touchSink: 0,            // the sink you'd touch down at if you started braking now, at full lift
+  brakeSink: Infinity,     // braking already (or LAND engaged): the sink the stop as flown sets down at (0133)
+});
+
+const upv = v3();
+// `h` is the height of the floor above whatever is below (the HUD measures it against the course).
+// `land`: LAND is flying the descent (Assist, held or auto-land): the governor brakes on its plan (0133).
+export function predict(c, h, out, land = false) {
+  const m = massOf(c);
+  up(c, upv);
+  const vy = c.vel.y, sink = Math.max(0, -vy);
+  out.h = h; out.sink = sink; out.upY = upv.y;
+  // The brake as it will be flown: roof up, all four down-jets, at the pressure left at the end.
+  out.aNow = (LIFT_MAX * feedPressure(c)) / m - G;
+  const used = gasToStop(c, m, vy);
+  out.aEnd = (LIFT_MAX * pressureOf(c.air - used)) / Math.max(1, m - used) - G;
+  // Over a full-lift stop the thrust falls from today's to the end's (the tanks blow down as they
+  // empty), so the stop flies at about their mean.
+  out.aMax = 0.5 * (out.aNow + Math.min(out.aNow, out.aEnd));
+  out.aPlan = brakePlan(c, m);
+  // Not roof-up yet? The roll-out comes first, and the car keeps falling while it turns (≈1 s for
+  // the half-roll off the ledge at the stick's rate, with the spin-up and the stop).
+  const tilt = datan2(dhypot(upv.x, upv.z), upv.y);
+  // (A bank of up to ≈60° LAND levels while it brakes; past that the roll-out comes first.)
+  const tLevel = tilt > 1.05 ? 0.15 + (tilt - 0.7) / 3.5 : 0;
+  out.stopDist = stopFrom(sink, tLevel, out.aMax);
+  // Brake by: the roll-out and the stop, plus one reaction time of falling, plus a metre to set down.
+  out.brakeBy = out.stopDist + sink * REACTION + 1;
+  out.margin = h - out.brakeBy;
+  // The same, WARN seconds from now at today's vertical acceleration (free fall, or what the jets
+  // are doing): when that's gone, it's time to act. Braking already, it stays clear.
+  let lift = 0;
+  for (let i = 0; i < NOZZLES.length; i++) lift += NOZZLES[i].max * c.throttles[i] * NOZZLES[i].dir.y;
+  const aUp = (lift * feedPressure(c) * upv.y) / m - G;
+  const sinkAhead = Math.max(0, sink - aUp * WARN), hAhead = h - sink * WARN + 0.5 * aUp * WARN * WARN;
+  out.marginAhead = hAhead - (stopFrom(sinkAhead, tLevel, out.aMax) + sinkAhead * REACTION + 1);
+  const levelDrop = sink * tLevel + 0.5 * G * tLevel * tLevel, sinkLevel = sink + G * tLevel;
+  // The band's edge: the most sink you can carry here and still roll out (if you must), react and
+  // stop at 70 % of a full-lift stop, down to a hover. (LAND's own plan flies well inside it.)
+  const top = setdownTop(c);
+  out.profileSink = h > top ? maxSink(h - top, tLevel, Math.max(0.6, 0.7 * out.aMax)) : -profileVy(h, out.aPlan, top);
+  // Touching down after braking from here at full lift (after the roll-out): v² = v² − 2·a·h.
+  const v2 = sinkLevel * sinkLevel - 2 * Math.max(0, out.aMax) * Math.max(0, h - levelDrop - 0.3);
+  out.touchSink = v2 > 0 ? Math.sqrt(v2) : 0;
+  // The stop as it is being flown (0133): the down-jets already lifting (at today's valves), or LAND engaged
+  // (at least at the governor's share of full lift): where that sets down, flown out with the tanks blowing
+  // down as it burns (the end-point estimate in aEnd is too kind to a part-empty tank). A brake on a plan
+  // that sets down soft is nominal, however close to the ground it started.
+  // With LAND engaged upside down or banked hard, the computer flies the roll-out first (vehicle.js: the
+  // fast roll-out, only where its own branch takes it), then brakes roof up. That stop is judged after a
+  // roll-out measured against the sim, not tLevel's: ≈ 0.3 + 0.2·tilt s (180° in 0.88 s) falling at 1.3 G
+  // (the rolling jets push the car at the ground), so a car just let go off the ledge isn't read as free
+  // fall (critic bounce, 2026-11-02 15:40), and a roll-out too low to finish isn't read as soft. Elsewhere
+  // the stop is flown at today's uprightness.
+  const liftFlown = land ? Math.max(lift, LIFT_MAX * LAND_SHARE) : lift;
+  let bs = Infinity;
+  if (land && tLevel > 0 && rollsOut(c)) {
+    const tR = ROLL_T0 + ROLL_T1 * tilt + ROLL_TP * Math.abs(wur.z), aR = ROLL_G * G;
+    // The roll burns one side's down-jets (≈ 10 kN, vehicle.js ROLL_ACC on Iroll) for tR first.
+    const burnt = (ROLL_N * tR) / (SPEC.ispFull * G);
+    bs = flownSink(c.air - burnt, m - burnt, sink + aR * tR, h - sink * tR - 0.5 * aR * tR * tR - ROLL_ROOM, liftFlown);
+  } else if ((land || aUp > 0.05) && liftFlown > 0) {
+    bs = flownSink(c.air, m, sinkLevel, h - levelDrop - 0.3, liftFlown * Math.max(0, upv.y));
+  }
+  out.brakeSink = bs;
+  // Red: even full lift from now touches down harder than a firm landing. Green: the stop is flying
+  // and sets down soft. Amber: the stop has to start within WARN s (a person needs the warning before
+  // the BRAKE line, not at it), or it would touch down firm, or the sink is past the band. Green
+  // otherwise: on or under the band, with room.
+  out.status = out.touchSink > SINK_FIRM ? 'red'
+    : out.brakeSink <= SINK_SOFT && out.touchSink <= SINK_SOFT ? 'green'
+    : out.marginAhead < 0 || out.touchSink > SINK_SOFT || sink > out.profileSink + 0.5 ? 'amber' : 'green';
+  // Free fall to the ground.
+  out.tGround = (vy + Math.sqrt(vy * vy + 2 * G * Math.max(0, h))) / G;
+  // On the profile: fall until the profile catches the sink rate, then ride it down.
+  out.tLand = profileTime(h, vy, out.aPlan, top);
+  out.landX = c.pos.x + c.vel.x * out.tLand;
+  out.landZ = c.pos.z + c.vel.z * out.tLand;
+  out.gas = Math.max(0, c.air);
+  out.gasNeed = Math.min(CAR.airMass, used + (m * G * 1.0) / (SPEC.ispFull * 0.6 * G));
+  // Roll to upright in the body frame (driver-relative: + = to the right, like the stick).
+  attitude(c, out);
+  return out;
+}
+
+// The band as the HUD shows it (0047): `predict`'s status flaps at a band's edge (the margin ahead
+// crosses zero every few frames while LAND rides the profile), and with it the colour, the word,
+// the ring and the buzz. A worse band is entered at `predict`'s own thresholds once worse readings
+// have run for BAND_HOLD s; frames in between don't restart that (a flap between amber and red, or
+// green and red, still warns: the worst seen is shown), only BAND_HOLD s of none do. A better band
+// is entered only once the numbers are clear of the edges for BAND_HOLD s without a break.
+// `t` is sim time in seconds; a fresh band (or time running backwards) takes the status at once.
+export const BAND_HOLD = 0.15;
+const RANK = { green: 0, amber: 1, red: 2 };
+export const newBand = () => ({ status: '', up: '', upAt: 0, calmAt: -1, down: '', downAt: 0, t: 0 });
+export function steadyStatus(b, pr, t) {
+  if (!b.status || t < b.t) { b.status = pr.status; b.up = ''; b.down = ''; b.t = t; return b.status; }
+  b.t = t;
+  const cur = RANK[b.status];
+  if (RANK[pr.status] > cur) {
+    if (!b.up) { b.up = pr.status; b.upAt = t; } else if (RANK[pr.status] > RANK[b.up]) b.up = pr.status;
+    b.calmAt = -1; b.down = '';
+    if (t - b.upAt >= BAND_HOLD) { b.status = b.up; b.up = ''; }
+    return b.status;
+  }
+  if (b.up) {
+    if (b.calmAt < 0) b.calmAt = t;
+    if (t - b.calmAt < BAND_HOLD) return b.status;
+    b.up = '';
+  }
+  // Clear of the edges: what the band must read before it is allowed to step down.
+  const clear = pr.touchSink > SINK_FIRM - 0.3 ? 'red'
+    : pr.brakeSink <= SINK_SOFT - 0.2 && pr.touchSink <= SINK_SOFT - 0.2 ? 'green'
+    : pr.marginAhead < 0.5 || pr.touchSink > SINK_SOFT - 0.2 || pr.sink > pr.profileSink + 0.2 ? 'amber' : 'green';
+  if (RANK[clear] >= cur) { b.down = ''; return b.status; }
+  if (b.down !== clear) { b.down = clear; b.downAt = t; }
+  if (t - b.downAt >= BAND_HOLD) { b.status = clear; b.down = ''; }
+  return b.status;
+}
+
+// The sink a stop flown at a fixed valve opening (`lift`: the down-jets' summed thrust at full pressure,
+// vertical) sets down at, `room` m below, from `sink`: thrust follows the feed pressure, and the gas the
+// burn takes lowers it (vehicle.js's own blowdown and Isp sag). 0 if it stops short (it hovers, the next
+// frame re-reads it). Coarse steps, no allocation.
+const LAND_SHARE = 0.8;   // the governor's planned share of full lift (vehicle.js BRAKE_SHARE)
+function flownSink(air, m, sink, room, lift) {
+  const dt = 1 / 30;
+  let v = sink, y = Math.max(0, room);
+  for (let i = 0; i < 240 && y > 0; i++) {
+    const pr = pressureOf(air), F = air > 0.5 ? lift * pr : 0;
+    v -= (F / m - G) * dt;
+    if (v <= 0) return 0;
+    y -= v * dt;
+    const used = (F / (SPEC.ispFull * (0.7 + 0.3 * pr) * G)) * dt;
+    air -= used; m -= used;
+  }
+  return Math.max(0, v);
+}
+
+// LAND's roll-out as the sim flies it (vehicle.js flightComputer): the branch that takes it, and a
+// conservative time and fall for it. Measured from rest with LAND held (time to uy 0.95, drop): rolled 180°
+// 0.88 s / 4.8 m, 2.3 rad 0.70 s / 2.7 m; pitched over 2.7 rad (the roll-out holds the pitch) 0.98 s / 5.4 m.
+// Pitched further than |uz| 0.7 the fast roll-out doesn't run and the stop is read at today's uprightness.
+// ROLL_ROOM: a roll-out that ends within 5 m of the ground sets down firm in the sim. ESTIMATE with margin.
+const ROLL_N = 10e3, ROLL_T0 = 0.3, ROLL_T1 = 0.2, ROLL_TP = 0.5, ROLL_G = 1.3, ROLL_ROOM = 5;
+const wur = v3();
+function rollsOut(c) {
+  rotateInv(wur, c.quat, Y);
+  return (wur.y < -0.2 && Math.abs(wur.z) < 0.7) || (wur.y < 0.94 && Math.abs(wur.x) > Math.abs(wur.z));
+}
+
+// Height a stop from `sink` takes: the roll-out (falling `tLevel` s), then braking at `a`.
+const WARN = 0.6;
+function stopFrom(sink, tLevel, a) {
+  const drop = sink * tLevel + 0.5 * G * tLevel * tLevel, v = sink + G * tLevel;
+  return drop + (v > 0 ? (a > 0.05 ? (v * v) / (2 * a) : Infinity) : 0);
+}
+
+// The largest sink from which a stop (roll-out, reaction, braking at `a`) still fits in `room` m.
+function maxSink(room, tLevel, a) {
+  let lo = 0, hi = 40;
+  for (let i = 0; i < 18; i++) {
+    const v = (lo + hi) / 2;
+    if (stopFrom(v, tLevel, a) + v * REACTION <= room) lo = v; else hi = v;
+  }
+  return lo;
+}
+
+// Seconds to touchdown riding the LAND profile (a coarse 1-D integration: 1/30 s steps).
+function profileTime(h, vy, aPlan, top) {
+  let y = Math.max(0, h), v = vy, t = 0;
+  const dt = 1 / 30;
+  while (y > 0.05 && t < 20) {
+    const want = profileVy(y, aPlan, top);
+    v = v < want ? Math.min(want, v + aPlan * 2 * dt) : v - G * dt;
+    if (v > -0.3) v = -0.3;
+    y += v * dt; t += dt;
+  }
+  return t;
+}
+
+// The roll (about the car's long axis) and pitch that bring its roof up, signed like the stick:
+// roll + = right, pitch + = nose down. World up in the body frame is u; roll correction is −u.x and
+// pitch correction is +u.z (LESSONS: level-controller signs).
+const wub = v3(), Y = v3(0, 1, 0);
+function attitude(c, out) {
+  rotateInv(wub, c.quat, Y);
+  out.rollOut = -datan2(wub.x, wub.y);
+  out.pitchOut = datan2(wub.z, wub.y > 0 ? wub.y : -wub.y);
+  return out;
+}
