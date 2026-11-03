@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datacenter Survival</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #0a0f14; font-family: 'Courier New', monospace; }
+    .glass-panel { background: rgba(13, 20, 28, 0.88); backdrop-filter: blur(8px); border: 1px solid rgba(96, 165, 250, 0.18); }
+    .build-btn.active { border-color: #60a5fa; background: rgba(96, 165, 250, 0.15); }
+    .build-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tut-pulse { animation: tutpulse 1.1s ease-in-out infinite; border-color: #fbbf24 !important; }
+    .paused-cta { background: rgba(217,119,6,.35) !important; border-color: #fbbf24 !important; color: #fde68a !important; animation: tutpulse 1.1s ease-in-out infinite; }
+    #tut-spotlight { position: fixed; z-index: 40; pointer-events: none; border-radius: 14px;
+      box-shadow: 0 0 0 9999px rgba(3,6,10,.72), 0 0 26px 4px rgba(251,191,36,.45);
+      border: 2px solid #fbbf24; transition: all .28s ease; opacity: 0; }
+    #tut-callout { position: fixed; z-index: 45; width: 280px; background: #3a2c10;
+      border: 2px solid #fbbf24; border-radius: 12px; padding: 12px 14px; pointer-events: none;
+      transition: left .28s ease, top .28s ease; }
+    #tut-callout::after { content: ""; position: absolute; width: 14px; height: 14px;
+      background: #3a2c10; left: 50%; margin-left: -7px; transform: rotate(45deg); }
+    #tut-callout.arrow-down::after { bottom: -9px; border-right: 2px solid #fbbf24; border-bottom: 2px solid #fbbf24; }
+    #tut-callout.arrow-up::after { top: -9px; border-left: 2px solid #fbbf24; border-top: 2px solid #fbbf24; }
+    .toast-pop { animation: toastpop .35s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes toastpop { 0% { transform: translate(-50%,-8px) scale(.7); opacity: 0; } 100% { transform: translate(-50%,0) scale(1); opacity: 1; } }
+    #tut-rings { position: fixed; z-index: 60; pointer-events: none; }
+    #tut-rings .ring { position: absolute; left: 0; top: 0; width: 10px; height: 10px; margin: -5px;
+      border: 3px solid #fbbf24; border-radius: 50%; animation: ringout 1.1s ease-out forwards; }
+    @keyframes ringout { 0% { transform: scale(1); opacity: .95; } 100% { transform: scale(22); opacity: 0; } }
+    .chip { display: flex; gap: 10px; align-items: center; background: rgba(239,159,39,.08);
+      border: 1px solid rgba(239,159,39,.3); border-radius: 8px; padding: 8px 12px; text-align: left; }
+    @keyframes tutpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,.55);} 50% { box-shadow: 0 0 0 7px rgba(251,191,36,0);} }
+  </style>
+</head>
+<body>
+  <div id="canvas-container" class="fixed inset-0"></div>
+
+  <!-- Top HUD -->
+  <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+    <div class="glass-panel rounded-xl px-6 py-3 flex items-center gap-8 pointer-events-auto">
+      <div class="text-center">
+        <div class="text-[10px] text-gray-500 uppercase" data-i18n="hud_money">Money</div>
+        <div id="hud-money" class="text-lg font-bold text-green-400">$800</div>
+        <div id="hud-tariff" class="hidden text-[9px] font-bold text-amber-300 uppercase tracking-wide"></div>
+        <div id="hud-peakshave" class="hidden text-[9px] font-bold uppercase tracking-wide"></div>
+      </div>
+      <div class="text-center">
+        <div class="text-[10px] text-gray-500 uppercase" data-i18n="hud_reputation">SLA Rep</div>
+        <div id="hud-rep" class="text-lg font-bold text-blue-300">100%</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[10px] text-gray-500 uppercase" data-i18n="hud_demand">Demand</div>
+        <div id="hud-demand" class="text-lg font-bold text-amber-300">0 kW</div>
+      </div>
+      <div class="text-center">
+        <div class="text-[10px] text-gray-500 uppercase" data-i18n="hud_served">Served</div>
+        <div id="hud-served" class="text-lg font-bold text-emerald-300">0 kW</div>
+      </div>
+      <div class="text-center" title="Total facility power / IT power" data-i18n-title="hud_pue_tip">
+        <div class="text-[10px] text-gray-500 uppercase">PUE</div>
+        <div id="hud-pue" class="text-lg font-bold text-cyan-300">—</div>
+      </div>
+      <div class="text-center" title="Litres of water per kWh of IT energy" data-i18n-title="hud_wue_tip">
+        <div class="text-[10px] text-gray-500 uppercase">WUE</div>
+        <div id="hud-wue" class="text-lg font-bold text-sky-300">—</div>
+        <div id="hud-wue-run" class="hidden text-[9px] text-gray-500 uppercase tracking-wide whitespace-nowrap"></div>
+        <div id="hud-drought" class="hidden text-[9px] font-bold uppercase tracking-wide whitespace-nowrap"></div>
+      </div>
+      <div class="flex items-center gap-2 pl-4 border-l border-gray-700">
+        <button id="btn-menu" class="glass-panel rounded-lg px-3 py-2 text-gray-300 hover:text-white" onclick="openPauseMenu()" title="Menu (Esc)" data-i18n-title="menu_tip">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <button id="btn-faq" class="glass-panel rounded-lg px-3 py-2 text-gray-300 hover:text-white font-bold" onclick="showHelp()" title="FAQ">?</button>
+        <button id="btn-pause" class="glass-panel rounded-lg px-4 py-2 text-blue-300 hover:text-white" onclick="togglePause()" title="Play / Pause (Space)" data-i18n-title="play_pause_tip">
+          <svg id="icon-play" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="icon-pause" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <button id="btn-overlay" class="glass-panel rounded-lg px-3 py-2 text-red-300 hover:text-white" onclick="toggleThermalOverlay()" title="Thermal overlay (T)" data-i18n-title="thermal_overlay_tip">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 3v10m0 0a3 3 0 1 0 3 3M12 13a3 3 0 0 1 3 3m-3-13a2 2 0 0 1 2 2v6.35A5 5 0 1 1 10 11.35V5a2 2 0 0 1 2-2z"/></svg>
+        </button>
+        <button id="btn-peakshave" class="glass-panel rounded-lg px-3 py-2 text-gray-300 hover:text-white" onclick="togglePeakShave()" title="Peak shaving: spend the UPS buffer instead of the grid" data-i18n-title="peakshave_tip">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="12" rx="2"/><path stroke-linecap="round" d="M21 10v4"/><path stroke-linecap="round" stroke-linejoin="round" fill="currentColor" stroke="none" d="M13 8.5 8.7 13.3h2.6L10 17.5l4.3-4.8h-2.6L13 8.5z"/></svg>
+        </button>
+        <select id="lang-select" class="bg-gray-800 text-gray-300 text-xs rounded px-1 py-1" onchange="i18n.setLocale(this.value)">
+          <option value="en">EN</option>
+          <option value="uk">UK</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seed pill (seeded runs only; rendered by src/ui/hud.js). Clicking it
+       copies the link to this exact room — a run you cannot hand to someone
+       else is the unfalsifiable claim seeds exist to replace. -->
+  <button id="seed-pill" class="hidden fixed top-4 left-4 z-10 glass-panel rounded-full px-4 py-2 flex items-center gap-2 text-cyan-200 hover:text-white" onclick="copySeedLink()" title="Copy the link to this run" data-i18n-title="seed_pill_tip">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <span class="text-[10px] uppercase tracking-wide text-gray-500" data-i18n="seed_label">Seed</span>
+    <span id="seed-pill-value" class="text-sm font-bold tracking-widest"></span>
+  </button>
+
+  <!-- Paused pill -->
+  <div id="paused-pill" class="hidden absolute top-24 left-1/2 -translate-x-1/2 z-10 glass-panel rounded-full px-5 py-2 text-amber-300 text-sm font-bold border border-amber-500/50" data-i18n="paused_pill">
+    PAUSED — build freely, then press ▶
+  </div>
+
+  <!-- Event banner -->
+  <div id="event-banner" class="hidden absolute top-24 left-1/2 -translate-x-1/2 z-10 glass-panel rounded-lg px-5 py-2 text-amber-300 text-sm font-bold"></div>
+
+  <!-- Active mini-contract (rendered by src/ui/hud.js) -->
+  <div id="contract-line" class="hidden absolute top-36 left-1/2 -translate-x-1/2 z-10 glass-panel rounded-lg px-4 py-1.5 text-cyan-200 text-xs font-bold"></div>
+
+  <!-- Work-order line (rendered by src/ui/hud.js) -->
+  <div id="maintenance-line" class="hidden absolute top-48 left-1/2 -translate-x-1/2 z-10 glass-panel rounded-lg px-4 py-1.5 text-sky-200 text-xs font-bold"></div>
+
+  <!-- Build toolbar -->
+  <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-10">
+    <div class="glass-panel rounded-2xl p-2 flex items-center gap-1" id="toolbar">
+      <button class="build-btn glass-panel rounded-lg w-16 h-16 flex flex-col items-center justify-center text-gray-300" data-tool="select" onclick="setTool('select')">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 4l7 16 2-7 7-2z"/></svg>
+        <span class="text-[9px] mt-1 uppercase" data-i18n="tool_select">Select</span>
+      </button>
+      <button class="build-btn glass-panel rounded-lg w-16 h-16 flex flex-col items-center justify-center text-gray-300" data-tool="wire" onclick="setTool('wire')">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+        <span class="text-[9px] mt-1 uppercase" data-i18n="tool_wire">Wire</span>
+      </button>
+      <button class="build-btn glass-panel rounded-lg w-16 h-16 flex flex-col items-center justify-center text-gray-300" data-tool="demolish" onclick="setTool('demolish')">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 6h18M8 6V4h8v2m-9 3v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9"/></svg>
+        <span class="text-[9px] mt-1 uppercase" data-i18n="tool_demolish">Demolish</span>
+      </button>
+      <div class="w-px h-12 bg-gray-700 mx-1"></div>
+      <div id="build-palette" class="flex gap-1"><!-- buttons injected by ui/toolbar.js --></div>
+    </div>
+  </div>
+
+  <!-- Thermal overlay legend (built from CONFIG by src/ui/overlay.js) -->
+  <!-- Bottom-right: the top-right stack belongs to the inspect panel, which
+       would sit on top of the legend exactly when a player is diagnosing. -->
+  <div id="overlay-legend" class="hidden absolute bottom-5 right-4 z-10 glass-panel rounded-lg px-3 py-2 w-44"></div>
+
+  <!-- Wire hint -->
+  <div id="wire-hint" class="hidden absolute bottom-28 left-1/2 -translate-x-1/2 z-10 glass-panel rounded px-4 py-2 text-xs text-cyan-200" data-i18n="wire_hint">
+    Click a power source, then the building to feed.
+  </div>
+
+  <!-- Tutorial v2: spotlight, callout, checklist, toast, finale rings -->
+  <div id="tut-spotlight" class="hidden"></div>
+  <div id="tut-callout" class="hidden arrow-down"><p class="text-[13px] text-amber-50 leading-relaxed m-0"></p></div>
+  <div id="tut-checklist" class="hidden fixed top-24 left-4 z-40 glass-panel rounded-xl px-4 py-3 w-56 border border-amber-500/30"></div>
+  <div id="tut-toast" class="hidden fixed top-24 left-1/2 z-50 -translate-x-1/2 bg-emerald-900/80 border border-emerald-400 text-emerald-200 text-sm font-bold rounded-full px-6 py-2"></div>
+  <div id="tut-rings" class="hidden"></div>
+
+  <!-- Ceremony: the welcome modal -->
+  <div id="ceremony-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-9 max-w-md w-full mx-4 text-center border-2 border-amber-500/60" style="box-shadow: 0 0 60px rgba(239,159,39,.25);">
+      <div class="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center border-2 border-amber-400" style="background:#412402;">
+        <svg class="w-7 h-7 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+      </div>
+      <h2 class="text-2xl font-black text-amber-100 mb-1" data-i18n="cer_title">Welcome, Operator</h2>
+      <p class="text-gray-400 text-xs mb-5" data-i18n="cer_intro">You just got the keys to an empty machine hall.</p>
+      <div class="space-y-2 mb-6">
+        <div class="chip"><svg class="w-5 h-5 text-amber-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 3v7m0 0-3 4h6l-3 7M5 10h14"/></svg><span class="text-xs text-gray-200" data-i18n="cer_chip_power">Power</span></div>
+        <div class="chip"><svg class="w-5 h-5 text-orange-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 3v10m0 0a3 3 0 1 0 3 3M12 13a3 3 0 0 1 3 3"/></svg><span class="text-xs text-gray-200" data-i18n="cer_chip_heat">Heat</span></div>
+        <div class="chip"><svg class="w-5 h-5 text-emerald-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg><span class="text-xs text-gray-200" data-i18n="cer_chip_pue">PUE</span></div>
+      </div>
+      <button id="ceremony-start" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-lg mb-2" data-i18n="cer_start">Teach me — one minute</button>
+      <button id="ceremony-skip" class="text-gray-500 hover:text-gray-300 text-xs py-1" data-i18n="cer_skip">I will figure it out myself</button>
+    </div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="main-menu" class="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-12 max-w-md w-full text-center border border-blue-500/30">
+      <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-red-400 mb-1 tracking-tighter">DATACENTER<br/>SURVIVAL</h1>
+      <p class="text-gray-400 text-xs mb-1" data-i18n="tagline">The physical layer of the cloud</p>
+      <p class="text-gray-600 text-[10px] mb-8">v0.1 · sister of <a class="underline hover:text-gray-400" href="https://pshenok.github.io/server-survival/">Server Survival</a></p>
+      <!-- Seed box: type one, paste one from a friend, or roll a fresh one.
+           Empty = the ordinary unseeded game, unchanged. -->
+      <div class="flex items-center gap-2 mb-1">
+        <input id="seed-input" type="text" maxlength="12" autocomplete="off" spellcheck="false"
+               class="flex-1 min-w-0 bg-gray-900/70 border border-gray-700 rounded-lg px-3 py-2 text-xs text-cyan-200 uppercase tracking-widest text-center placeholder-gray-600 focus:outline-none focus:border-cyan-500"
+               placeholder="SEED (OPTIONAL)" data-i18n="seed_placeholder" onblur="echoSeedInput()" />
+        <button onclick="rollSeed()" class="glass-panel rounded-lg px-3 py-2 text-gray-300 hover:text-white shrink-0" title="Roll a fresh seed" data-i18n-title="seed_roll_tip">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+      <p class="text-gray-600 text-[10px] mb-3 text-left" data-i18n="seed_hint">Same seed, same crises, at the same seconds.</p>
+      <button onclick="startGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-lg uppercase tracking-wide mb-3" data-i18n="start_game">Power On</button>
+      <button onclick="openCampaign()" class="w-full glass-panel hover:border-emerald-500/50 text-emerald-300 py-3 rounded-lg text-sm mb-3" data-i18n="menu_campaign">Campaign</button>
+      <button onclick="startTutorialGame()" class="w-full glass-panel hover:border-amber-500/50 text-amber-300 py-3 rounded-lg text-sm mb-3" data-i18n="menu_tutorial">Tutorial</button>
+      <button onclick="showHelp()" class="w-full glass-panel hover:border-gray-500 text-gray-300 py-3 rounded-lg text-sm" data-i18n="how_to_play">How to play</button>
+    </div>
+  </div>
+
+  <!-- In-game pause menu (Esc or the ☰ button) -->
+  <div id="pause-menu-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-8 max-w-xs w-full mx-4 text-center border border-blue-500/30">
+      <h2 class="text-xl font-black text-white mb-5" data-i18n="pause_title">Paused</h2>
+      <button onclick="resumeRun()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg uppercase text-sm mb-3" data-i18n="btn_resume">Resume</button>
+      <button id="pause-retry" onclick="retryFromPause()" class="w-full glass-panel hover:border-amber-500/50 text-amber-300 py-3 rounded-lg text-sm mb-3" data-i18n="btn_retry_level">Retry</button>
+      <button onclick="menuFromPause()" class="w-full glass-panel hover:border-gray-500 text-gray-300 py-3 rounded-lg text-sm" data-i18n="btn_to_menu">Menu</button>
+      <div id="pause-ledger" class="hidden mt-5 pt-4 border-t border-gray-700 text-left"></div>
+    </div>
+  </div>
+
+  <!-- Level briefing (before a campaign level starts) -->
+  <div id="briefing-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-8 max-w-lg w-full mx-4 border border-emerald-500/40">
+      <p id="briefing-chapter" class="text-emerald-300/80 text-xs uppercase tracking-wide mb-1"></p>
+      <h2 id="briefing-title" class="text-2xl font-black text-white mb-3"></h2>
+      <p id="briefing-scenario" class="text-gray-300 text-sm leading-relaxed mb-4"></p>
+      <div class="bg-blue-900/25 border border-blue-500/40 rounded-lg p-3 mb-3">
+        <div class="text-blue-300 text-[10px] font-bold uppercase tracking-wide mb-1" data-i18n="brief_learn">What you'll learn</div>
+        <p id="briefing-learn" class="text-gray-200 text-sm m-0"></p>
+      </div>
+      <div class="bg-emerald-900/25 border border-emerald-500/40 rounded-lg p-3 mb-5">
+        <div class="text-emerald-300 text-[10px] font-bold uppercase tracking-wide mb-1" data-i18n="brief_goals">Goals</div>
+        <ul id="briefing-goals" class="text-gray-200 text-sm m-0 pl-4 list-disc"></ul>
+      </div>
+      <div class="flex justify-between gap-3">
+        <button onclick="briefingBack()" class="glass-panel hover:border-gray-500 text-gray-300 py-3 px-5 rounded-lg text-sm" data-i18n="brief_back">← Back</button>
+        <button id="briefing-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg uppercase text-sm" data-i18n="brief_start">Start level →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaign level select (rendered by src/ui/campaign-ui.js) -->
+  <div id="campaign-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-8 max-w-md w-full mx-4 border border-emerald-500/30">
+      <div class="flex justify-between items-center mb-1">
+        <h2 class="text-2xl font-black text-white" data-i18n="campaign_title">Campaign</h2>
+        <button onclick="closeCampaign()" class="text-gray-500 hover:text-white text-xl leading-none px-2">×</button>
+      </div>
+      <div id="campaign-levels" class="max-h-[60vh] overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <!-- In-level objectives panel (same slot as the tutorial checklist) -->
+  <div id="objectives-panel" class="hidden fixed top-24 left-4 z-40 glass-panel rounded-xl px-4 py-3 w-64 border border-emerald-500/30"></div>
+
+  <!-- The Lab's knob panel (same slot; rendered by src/ui/lab-panel.js).
+       A sandbox level has no objectives to show, so the two never coexist. -->
+  <div id="lab-panel" class="hidden fixed top-24 left-4 z-40 glass-panel rounded-xl px-4 py-3 w-64 border border-amber-500/30"></div>
+
+  <!-- Level result (victory or time-out) -->
+  <div id="level-result-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80">
+    <div class="glass-panel rounded-2xl p-10 max-w-md w-full mx-4 text-center border border-emerald-500/40">
+      <h2 id="level-result-title" class="text-3xl font-black mb-2"></h2>
+      <p id="level-result-sub" class="text-gray-400 text-sm mb-4"></p>
+      <p id="level-result-tip" class="hidden text-left text-gray-200 text-sm bg-blue-900/25 border border-blue-500/40 rounded-lg p-3 mb-4 leading-relaxed"></p>
+      <div id="level-result-ledger" class="hidden text-left mb-6"></div>
+      <div class="flex gap-3 justify-center">
+        <button id="level-result-next" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg uppercase text-sm hidden" data-i18n="btn_next_level">Next level</button>
+        <button id="level-result-retry" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-lg uppercase text-sm hidden" data-i18n="btn_retry_level">Retry</button>
+        <button id="level-result-menu" class="glass-panel hover:border-gray-500 text-gray-300 py-3 px-6 rounded-lg uppercase text-sm" data-i18n="btn_to_menu">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ modal (tabbed; content rendered by src/ui/faq.js) -->
+  <div id="faq-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80">
+    <div class="glass-panel rounded-2xl p-6 max-w-xl w-full mx-4">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-bold text-white" data-i18n="faq_title">FAQ</h2>
+        <button onclick="closeHelp()" class="text-gray-500 hover:text-white text-xl leading-none px-2">×</button>
+      </div>
+      <div id="faq-content"></div>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div id="gameover-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+    <div class="glass-panel rounded-2xl p-10 text-center border border-red-500/40 pointer-events-auto">
+      <h2 id="gameover-title" class="text-4xl font-black text-red-400 mb-2">FACILITY DOWN</h2>
+      <p id="gameover-reason" class="text-gray-400 mb-1"></p>
+      <p id="gameover-stats" class="text-gray-500 text-sm mb-4"></p>
+      <!-- The shareable run (seeded runs only; rendered by src/ui/hud.js).
+           The link, and only the link: the numbers above it are a claim,
+           this is what lets somebody check it. -->
+      <div id="gameover-share" class="hidden text-left mb-5 max-w-xs mx-auto">
+        <div id="gameover-share-label" class="text-[10px] text-gray-500 uppercase tracking-wide mb-1"></div>
+        <div class="flex items-center gap-2">
+          <input id="gameover-share-url" type="text" readonly onclick="this.select()"
+                 class="flex-1 min-w-0 bg-gray-900/70 border border-gray-700 rounded px-2 py-1 text-[11px] text-cyan-200 focus:outline-none focus:border-cyan-500" />
+          <button onclick="copySeedLink()" class="glass-panel rounded px-2 py-1.5 text-gray-300 hover:text-white shrink-0" title="Copy link" data-i18n-title="seed_copy_tip">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path stroke-linecap="round" d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="gameover-ledger" class="hidden text-left mb-6 max-w-xs mx-auto"></div>
+      <button onclick="restartGame()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-lg uppercase" data-i18n="restart">Restart</button>
+    </div>
+  </div>
+
+  <!-- Selected building panel -->
+  <div id="inspect-panel" class="hidden absolute top-24 right-4 z-10 glass-panel rounded-xl p-4 w-64 text-xs text-gray-300"></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

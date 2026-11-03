@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GAME Protocol · roguelike 2D (pisos procedurales desde la spec)</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0e13;color:#cdd6e4;font:14px/1.45 system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  #title{font-weight:600}#title b{color:#8fd6ff}
+  #hud{display:flex;gap:14px;font-size:13px;color:#9fb0c3}#hud b{color:#ffd86b}
+  canvas{image-rendering:pixelated;border:1px solid #2a3340;background:#000}
+  #msg{min-height:2.2em;max-width:640px;text-align:center;padding:6px 10px;background:#141a22;border-radius:6px}
+  #msg.win{color:#9fffa6;font-weight:600}#msg.dead{color:#ff8a8a;font-weight:600}
+  #hint{color:#6b7685;font-size:12px}
+  #mapwrap{position:fixed;top:14px;right:14px;background:#11161d;border:1px solid #2a3340;border-radius:8px;padding:8px 10px}
+  #mapwrap #maplabel{font-size:11px;color:#7b8696;margin-bottom:4px;text-align:center;letter-spacing:.5px}
+  #map{display:block;image-rendering:pixelated}
+</style>
+<div id="title"></div>
+<div id="hud"><span id="floor"></span><span id="depth"></span><span id="hp"></span><span id="weapon"></span><span id="keys"></span></div>
+<canvas id="c"></canvas>
+<div id="mapwrap"><div id="maplabel">MAPA</div><canvas id="map"></canvas></div>
+<div id="msg"></div>
+<div id="hint">← ↑ → ↓ moverse · Espacio: atacar · puertas = mismo piso (🔒 pide llave) · escaleras ▲▼ = cambiar de piso</div>
+
+<script src="roguelike.generated.js"></script>
+<script src="engine-core.js"></script>
+<script type="module">
+// VISOR 2D = renderer FINO sobre la MISMA logica pura que usa game3d
+// (game3d-logic.mjs): un solo generador y unas solas reglas -> el mismo
+// GAME.md produce el mismo mundo y las mismas mecanicas en ambos motores
+// por construccion (la logica se verifica en npm test).
+import { rgInit, rgMove, rgAttack, rgPatrol, RG_STEP } from './game3d-logic.mjs';
+
+const G = window.GAME, GEN = G.GENERATOR, SCALE = 6, TS = 8 * SCALE;
+const W = GEN.roomW, H = GEN.roomH;
+document.getElementById('title').innerHTML = `<b>${EngineCore.esc(G.name || 'Roguelike')}</b> — pisos generados en tiempo real desde el generador del GAME.md`;
+
+const S = rgInit(G);
+window.RL = { S };                     // estado expuesto para harnesses
+const T = G.TEXT || {};
+const room = () => S.rooms[S.cur];
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+cv.width = W * TS; cv.height = H * TS;
+const _R = EngineCore.makeRenderer(ctx, { ART: G.TILE_ART, PAL: G.PALETTES, SCALE });
+let frame = 0;
+function render() {
+  const r = room(), tm = r.tilemap;
+  for (let rr = 0; rr < H; rr++) for (let cc = 0; cc < W; cc++) _R.drawTile(tm[rr][cc], 0, cc, rr, false);
+  for (const it of r.items) if (!it.taken) _R.drawTile(it.tile, it.pal || 0, it.col, it.row, true);
+  for (const e of r.enemies) if (e.alive) _R.drawTile(e.tile, e.pal, e.col, e.row, true);
+  if (r.boss && r.boss.alive) _R.drawTile(G.BOSS.tile, G.BOSS.pal || 0, r.boss.col, r.boss.row, true);
+  if (r.goal) _R.drawTile(r.goal.tile, r.goal.pal, r.goal.col, r.goal.row, true);
+  if (!(S.invuln > 0 && ((frame >> 2) & 1))) _R.drawTile(G.PLAYER.tile, G.PLAYER.pal, S.pos.col, S.pos.row, true);
+}
+
+function setMsg(t, cls) { const m = document.getElementById('msg'); m.textContent = t; m.className = cls || ''; }
+function updHud() {
+  const r = room();
+  document.getElementById('floor').innerHTML = 'Piso: <b>' + r.z + '</b>';
+  document.getElementById('depth').textContent = '(' + r.x + ',' + r.y + ')  Salas: ' + Object.keys(S.rooms).length;
+  document.getElementById('hp').innerHTML = 'Vida: <b style="color:#ff7b7b">' + '♥'.repeat(Math.max(0, S.hp)) + '</b><span style="color:#553">' + '♡'.repeat(Math.max(0, S.maxHp - S.hp)) + '</span>';
+  document.getElementById('weapon').innerHTML = 'Arma: <b>' + EngineCore.esc(S.weapon) + '</b> (atq ' + (S.atk + S.atkBonus) + (S.atkBonus ? ' = ' + S.atk + '+' + S.atkBonus + ' XP' : '') + ')';
+  document.getElementById('keys').innerHTML = 'Llaves: <b>' + S.keys + '</b>';
+}
+
+function onEvent(r) {
+  if (r === 'door-new' || r === 'stairs-new') setMsg(T.enter || 'Nueva sala generada.');
+  else if (r === 'door') setMsg('Sala (' + room().x + ',' + room().y + ')');
+  else if (r === 'stairs') setMsg('Piso ' + room().z);
+  else if (r === 'locked') setMsg(T.locked || 'Puerta cerrada.');
+  else if (r === 'unlock') setMsg(T.unlock || 'La llave abre la puerta.');
+  else if (r === 'key') setMsg(T.key || 'Llave.');
+  else if (r === 'heal') setMsg((T.heal || 'Curado.') + ' (+' + S.lastItem.amount + ')');
+  else if (r === 'weapon') setMsg((T.equip || 'Equipas') + ': ' + S.weapon);
+  else if (r === 'weapon-worse') setMsg((S.lastItem.name || 'Arma') + ' — ya tienes algo mejor');
+  else if (r === 'boss-blocks' || r === 'boss-contact') setMsg(T.boss || 'El guardian bloquea el cofre.');
+  else if (r === 'hurt') setMsg(T.hit || 'Te golpearon.');
+  else if (r === 'fallen') setMsg(T.fallen || 'Has caido.');
+  else if (r === 'gameover') setMsg('Fin de la partida (permadeath).', 'dead');
+  else if (r === 'win') setMsg((G.WIN && G.WIN.text) || '¡Ganaste!', 'win');
+  updHud(); renderMap();
+}
+
+// --- MINIMAPA: solo el PISO actual; escaleras ▲▼; conexiones cerradas en rojo ---
+const mapCanvas = document.getElementById('map'), mctx = mapCanvas.getContext('2d');
+function renderMap() {
+  document.getElementById('maplabel').textContent = 'MAPA · Piso ' + room().z;
+  const ks = Object.keys(S.rooms).filter(k => S.rooms[k].z === room().z); if (!ks.length) return;
+  let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+  for (const k of ks) { const s = S.rooms[k]; minx = Math.min(minx, s.x); miny = Math.min(miny, s.y); maxx = Math.max(maxx, s.x); maxy = Math.max(maxy, s.y); }
+  const cell = 22, box = 15, pad = 8;
+  mapCanvas.width = (maxx - minx + 1) * cell + pad * 2; mapCanvas.height = (maxy - miny + 1) * cell + pad * 2;
+  const cx = s => pad + (s.x - minx) * cell + cell / 2, cy = s => pad + (s.y - miny) * cell + cell / 2;
+  mctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+  mctx.lineWidth = 2;
+  for (const k of ks) { const s = S.rooms[k];
+    for (const d of s.doors) { const st = RG_STEP[d.dir]; const nKey = (s.x + st[0]) + ',' + (s.y + st[1]) + ',' + s.z;
+      const nx = cx(s) + st[0] * cell / 2, ny = cy(s) + st[1] * cell / 2;
+      const col = d.locked ? '#b04040' : (S.rooms[nKey] ? '#54657d' : '#2b333f');
+      mctx.strokeStyle = col; mctx.beginPath(); mctx.moveTo(cx(s), cy(s));
+      if (S.rooms[nKey] && !d.locked) mctx.lineTo(cx(S.rooms[nKey]), cy(S.rooms[nKey])); else mctx.lineTo(nx, ny);
+      mctx.stroke(); } }
+  mctx.font = '8px system-ui'; mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+  for (const k of ks) { const s = S.rooms[k]; const x = cx(s) - box / 2, y = cy(s) - box / 2;
+    mctx.fillStyle = (s.goal && !S.won) ? '#ffe08a' : (k === S.cur ? '#ffd86b' : '#3f5167'); mctx.fillRect(x, y, box, box);
+    if (k === S.cur) { mctx.strokeStyle = '#fff'; mctx.lineWidth = 2; mctx.strokeRect(x, y, box, box); }
+    if (s.hasUp) { mctx.fillStyle = '#9fffa6'; mctx.fillText('▲', cx(s) + box / 2 - 3, cy(s) - box / 2 + 3); }
+    if (s.hasDown) { mctx.fillStyle = '#8fd6ff'; mctx.fillText('▼', cx(s) - box / 2 + 3, cy(s) + box / 2 - 3); } }
+}
+
+addEventListener('keydown', e => { const k = e.key;
+  if (k === 'ArrowLeft') onEvent(rgMove(G, S, -1, 0));
+  else if (k === 'ArrowRight') onEvent(rgMove(G, S, 1, 0));
+  else if (k === 'ArrowUp') onEvent(rgMove(G, S, 0, -1));
+  else if (k === 'ArrowDown') onEvent(rgMove(G, S, 0, 1));
+  else if (k === ' ') { const r = rgAttack(G, S);
+    if (r === 'kill' || r === 'boss-kill') setMsg((r === 'boss-kill' ? (T.bossdown || 'El guardian cae.') : (T.defeat || 'Derrotado.')) + ' (' + S.weapon + ')');
+    else if (r === 'kill-levelup') setMsg((T.levelup || 'Subes de ataque.') + ' (atq ' + (S.atk + S.atkBonus) + ')');
+    else if (r === 'hit' || r === 'boss-hit') setMsg('Golpeas con ' + S.weapon + '.');
+    updHud(); }
+  else return; e.preventDefault(); });
+
+updHud(); renderMap(); setMsg(T.intro || '');
+(function loop() { requestAnimationFrame(loop); frame++;
+  if (frame % 24 === 0 && !S.won && !S.lost) { const r = rgPatrol(G, S); if (r !== 'ok') onEvent(r); }
+  render(); })();
+</script>

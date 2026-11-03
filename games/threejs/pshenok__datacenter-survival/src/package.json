@@ -1,0 +1,22 @@
+{
+  "name": "datacenter-survival",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dev tooling for Datacenter Survival. The game has NO build step — served raw by GitHub Pages. Tooling is optional, for contributors.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run lint && npm run test",
+    "demo:capture": "node tools/capture-demo.mjs",
+    "demo:gif": "./tools/make-gif.sh"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "happy-dom": "^20.11.1",
+    "playwright-core": "^1.62.1",
+    "vitest": "^4.1.10"
+  }
+}
