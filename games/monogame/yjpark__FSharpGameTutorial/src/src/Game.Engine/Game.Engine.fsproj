@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageProjectUrl>https://github.com/yjpark/FsharpGameTutorial</PackageProjectUrl>
+    <PackageTags>fsharp;</PackageTags>
+    <Authors>YJ Park</Authors>
+    <Version>0.1.0</Version>
+    <Description>Simple Game Engine in F# Based on MonoGame</Description>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="MathF.fs" />
+    <Compile Include="Extensions.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Logging.fs" />
+    <Compile Include="Keyboard.fs" />
+    <Compile Include="Base/Addon.fs" />
+    <Compile Include="Base/Component.fs" />
+    <Compile Include="Internal/Entity.fs" />
+    <Compile Include="Internal/Game.fs" />
+    <Compile Include="Addon/Mask.fs" />
+    <Compile Include="GameParam.fs" />
+    <Compile Include="Game.fs" />
+    <Compile Include="Entity.fs" />
+    <Compile Include="Tile/Map.fs" />
+    <Compile Include="Comp_/Sprite.fs" />
+    <Compile Include="Helper.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Game.TexturePacker\Game.TexturePacker.csproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

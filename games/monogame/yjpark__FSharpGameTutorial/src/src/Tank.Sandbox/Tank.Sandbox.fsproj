@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="GuiHelper.fs" />
+    <Compile Include="CameraGui.fs" />
+    <Compile Include="BarrelGui.fs" />
+    <Compile Include="TankGui.fs" />
+    <Compile Include="TestGui.fs" />
+    <Compile Include="MainGui.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Maps\*.tsx" />
+    <EmbeddedResource Include="Maps\*.tmx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Game.Gui\Game.Gui.fsproj" />
+    <ProjectReference Include="..\Tank.Core\Tank.Core.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Argu" Version="6.1.1" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

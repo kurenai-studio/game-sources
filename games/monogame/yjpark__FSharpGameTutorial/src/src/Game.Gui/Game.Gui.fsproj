@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageProjectUrl>https://github.com/yjpark/FsharpGameTutorial</PackageProjectUrl>
+    <PackageTags>fsharp;</PackageTags>
+    <Authors>YJ Park</Authors>
+    <Version>0.1.0</Version>
+    <Description>GUI for Game.Engine based on Myra</Description>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Extensions.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Internal/Gui.fs" />
+    <Compile Include="Gui.fs" />
+    <Compile Include="Builder/Base.fs" />
+    <Compile Include="Builder/Text.fs" />
+    <Compile Include="Builder/Button.fs" />
+    <Compile Include="Builder/MenuItem.fs" />
+    <Compile Include="Builder/Helper.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Game.Engine\Game.Engine.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
