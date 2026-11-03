@@ -1,0 +1,198 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using TW3D.Shared;
+
+namespace TW3D.Graphics
+{
+    /// <summary>
+    /// The light of a scene: the sun (or the moon), the light of the sky and the ground, the haze,
+    /// the sky behind the scene and the headlights of the car. Colours of the light are linear;
+    /// the colours of the sky and the haze are on the screen.
+    /// </summary>
+    public sealed class Lighting
+    {
+        /// <summary>
+        /// Sets up a BasicEffect with the lighting of the 2016 version: three coloured directional lights. The classic
+        /// look of the game, the level editor and the catalog images are drawn with it.
+        /// </summary>
+        public static void ApplyClassic(BasicEffect effect)
+        {
+            effect.PreferPerPixelLighting = true;
+            effect.LightingEnabled = true;
+            effect.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
+
+            effect.SpecularColor = new Vector3(1, 1, 1);
+            effect.SpecularPower = 30;
+
+            effect.DirectionalLight0.Direction = new Vector3(1, -1, 0);
+            effect.DirectionalLight0.DiffuseColor = new Vector3(0.6f, 0.6f, 0.6f);
+            effect.DirectionalLight0.SpecularColor = new Vector3(1, 1, 1);
+
+            effect.DirectionalLight1.Direction = new Vector3(0, -1, -1);
+            effect.DirectionalLight1.DiffuseColor = new Color(90, 166, 206).ToVector3() / 2;
+            effect.DirectionalLight1.SpecularColor = new Color(90, 166, 206).ToVector3();
+            effect.DirectionalLight1.Enabled = true;
+
+            effect.DirectionalLight2.Direction = new Vector3(-1, -1, 0);
+            effect.DirectionalLight2.DiffuseColor = new Color(74, 125, 156).ToVector3() / 2;
+            effect.DirectionalLight2.SpecularColor = new Color(74, 125, 156).ToVector3();
+            effect.DirectionalLight2.Enabled = true;
+        }
+
+        /// <summary>Unit vector towards the sun.</summary>
+        public Vector3 SunDirection { get; init; }
+        public Vector3 SunColor { get; init; }
+        /// <summary>Light coming from above.</summary>
+        public Vector3 SkyLight { get; init; }
+        /// <summary>Light coming from below, reflected by the ground.</summary>
+        public Vector3 GroundLight { get; init; }
+        /// <summary>Light at grazing angles.</summary>
+        public Vector3 RimLight { get; init; }
+        public float Exposure { get; init; } = 1f;
+
+        /// <summary>The colour of the sky at the horizon, where the distance fades to.</summary>
+        public Vector3 HazeColor { get; init; }
+        public float HazeStart { get; init; }
+        public float HazeEnd { get; init; }
+        public float HazeMax { get; init; }
+
+        /// <summary>The sky behind the scene; its horizon is the colour of the haze, its sun where this light's sun is.</summary>
+        public SkyLook Sky { get; init; }
+
+        /// <summary>The headlights of the car are on.</summary>
+        public bool Headlights { get; init; }
+
+        //Where the sun and the moon are (unit vectors towards them), for the light and for the sky
+        private static readonly Vector3 DaySun = Vector3.Normalize(new Vector3(0.65f, 1f, -0.4f));
+        private static readonly Vector3 SunsetSun = Vector3.Normalize(new Vector3(0.9f, 0.32f, -0.35f));
+        private static readonly Vector3 Moon = Vector3.Normalize(new Vector3(-0.45f, 1f, -0.45f));
+
+        /// <summary>A clear blue sky with white clouds, green hills far away.</summary>
+        private static readonly SkyLook DaySky = new SkyLook
+        {
+            Zenith = new Color(72, 146, 228).ToVector3(),
+            Horizon = new Color(176, 235, 255).ToVector3(),
+            Ground = new Color(70, 104, 78).ToVector3(),
+            Hills = new Color(96, 142, 120).ToVector3(),
+            SunDirection = DaySun,
+            SunDisc = new Vector3(1f, 0.98f, 0.9f),
+            SunRadius = 0.025f,
+            SunGlow = new Vector3(1f, 0.95f, 0.8f) * 0.25f,
+            Clouds = 0.42f,
+            CloudLight = new Vector3(1f, 1f, 1f),
+            CloudShade = new Color(186, 200, 220).ToVector3()
+        };
+
+        /// <summary>Orange at the horizon, violet above, a large low sun and pink clouds, dark hills.</summary>
+        private static readonly SkyLook SunsetSky = new SkyLook
+        {
+            Zenith = new Color(96, 92, 160).ToVector3(),
+            Horizon = new Color(250, 178, 128).ToVector3(),
+            Ground = new Color(72, 50, 52).ToVector3(),
+            Hills = new Color(118, 78, 82).ToVector3(),
+            SunDirection = SunsetSun,
+            SunDisc = new Vector3(1f, 0.8f, 0.5f),
+            SunRadius = 0.04f,
+            SunGlow = new Vector3(1f, 0.55f, 0.25f) * 0.7f,
+            Clouds = 0.4f,
+            CloudLight = new Color(255, 190, 150).ToVector3(),
+            CloudShade = new Color(120, 92, 130).ToVector3()
+        };
+
+        /// <summary>A dark blue sky with stars and the moon, faint clouds, black hills.</summary>
+        private static readonly SkyLook NightSky = new SkyLook
+        {
+            Zenith = new Color(6, 10, 30).ToVector3(),
+            Horizon = new Color(22, 30, 58).ToVector3(),
+            Ground = new Color(6, 8, 14).ToVector3(),
+            Hills = new Color(12, 15, 26).ToVector3(),
+            SunDirection = Moon,
+            SunDisc = new Vector3(0.85f, 0.88f, 0.95f),
+            SunRadius = 0.03f,
+            SunGlow = new Vector3(0.35f, 0.42f, 0.6f) * 0.3f,
+            Stars = 0.9f,
+            Clouds = 0.3f,
+            CloudLight = new Color(44, 52, 80).ToVector3(),
+            CloudShade = new Color(16, 20, 36).ToVector3()
+        };
+
+        /// <summary>
+        /// A sunny day. The sun shines from above and from the left, a little from the side of the camera:
+        /// the faces turned to the camera are lit as well, and the shadows fall to the right onto the track.
+        /// </summary>
+        public static readonly Lighting Day = new Lighting
+        {
+            SunDirection = DaySun,
+            SunColor = new Vector3(1f, 0.93f, 0.82f) * 2.3f,
+            SkyLight = new Vector3(0.5f, 0.68f, 0.9f) * 0.55f,
+            GroundLight = new Vector3(0.32f, 0.28f, 0.24f) * 0.35f,
+            RimLight = new Vector3(0.55f, 0.7f, 0.9f) * 0.35f,
+            HazeColor = DaySky.Horizon,
+            HazeStart = 8f,
+            HazeEnd = 60f,
+            HazeMax = 0.55f,
+            Sky = DaySky
+        };
+
+        /// <summary>A low orange sun on the left, long shadows to the right, a warm sky.</summary>
+        public static readonly Lighting Sunset = new Lighting
+        {
+            SunDirection = SunsetSun,
+            SunColor = new Vector3(1f, 0.55f, 0.28f) * 2.6f,
+            SkyLight = new Vector3(0.42f, 0.4f, 0.62f) * 0.5f,
+            GroundLight = new Vector3(0.45f, 0.28f, 0.16f) * 0.3f,
+            RimLight = new Vector3(1f, 0.6f, 0.4f) * 0.45f,
+            HazeColor = SunsetSky.Horizon,
+            HazeStart = 6f,
+            HazeEnd = 50f,
+            HazeMax = 0.6f,
+            Sky = SunsetSky
+        };
+
+        /// <summary>The cold light of the moon from the right, a dark sky, the headlights of the car on.</summary>
+        public static readonly Lighting Night = new Lighting
+        {
+            SunDirection = Moon,
+            SunColor = new Vector3(0.55f, 0.68f, 1f) * 0.28f,
+            SkyLight = new Vector3(0.18f, 0.24f, 0.45f) * 0.22f,
+            GroundLight = new Vector3(0.06f, 0.06f, 0.08f) * 0.3f,
+            RimLight = new Vector3(0.3f, 0.42f, 0.8f) * 0.25f,
+            HazeColor = NightSky.Horizon,
+            HazeStart = 5f,
+            HazeEnd = 40f,
+            HazeMax = 0.7f,
+            Sky = NightSky,
+            Headlights = true
+        };
+
+        /// <summary>
+        /// The garage of the menu: white light from lamps high above, a little from the side of the windows, a light
+        /// hall around; the headlights of the cars on. The windows look out at the sky of a day.
+        /// </summary>
+        public static readonly Lighting Garage = new Lighting
+        {
+            SunDirection = Vector3.Normalize(new Vector3(0.2f, 1f, 0.35f)),
+            SunColor = new Vector3(1f, 0.96f, 0.9f) * 1.9f,
+            SkyLight = new Vector3(0.62f, 0.64f, 0.68f) * 0.6f,
+            GroundLight = new Vector3(0.5f, 0.5f, 0.5f) * 0.3f,
+            RimLight = new Vector3(0.6f, 0.65f, 0.75f) * 0.2f,
+            //No haze; its colour is the horizon mirrored by metal: the light grey of the hall
+            HazeColor = new Color(205, 208, 212).ToVector3(),
+            HazeStart = 100f,
+            HazeEnd = 200f,
+            HazeMax = 0f,
+            Sky = DaySky,
+            Headlights = true
+        };
+
+        public static Lighting For(LevelMood mood)
+        {
+            switch (mood)
+            {
+                case LevelMood.Sunset: return Sunset;
+                case LevelMood.Night: return Night;
+                default: return Day;
+            }
+        }
+    }
+}
