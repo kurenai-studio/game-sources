@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Playwright's headless Chromium, kept between runs (keyed by the locked
+      # Playwright version). The runner image already has Chrome's system
+      # libraries, so no apt step; full Google Chrome would run the tests 2x slower.
+      - name: Cache Playwright's browser
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Browser for the tests
+        run: npx playwright install --only-shell chromium || npx playwright install --with-deps --only-shell chromium
+
+      - name: World + browser tests (source)
+        run: npm test
+
+      - name: Package
+        run: npm run package
+
+      - name: Browser tests (packaged build)
+        run: npm run test:dist
