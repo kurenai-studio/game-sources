@@ -1,0 +1,517 @@
+# SKYHOOK - deploy to Fly.io.
+#
+# Order of operations, and why it is this order:
+#
+#   1. tests    the WHOLE existing suite, called - not copied - from
+#               test.yml. A deploy that ships a regression the repo already
+#               knows how to catch is the one failure mode worth designing
+#               against, and a second hand-maintained copy of those steps
+#               would drift from the real gate within a month.
+#   2. image    build the container and drive it with curl. test.yml proves
+#               the GAME works; nothing in it has ever proved that the thing
+#               nginx serves is that game. Wrong root, a missing COPY, a
+#               sub_filter typo and a broken health path are all invisible to
+#               the browser suite and all fatal in production.
+#   3. deploy   only on push to main, and only if FLY_API_TOKEN exists.
+#
+# App `skyhook-game` exists and FLY_API_TOKEN was set on 2026-09-18, so step 3
+# runs for real on every push to main. This paragraph used to say the opposite
+# and was left behind when that stopped being true - a comment asserting the
+# reverse of reality is worse than no comment, because it is trusted.
+#
+# The `preflight` token check stays anyway. It is what makes a rotated-away or
+# expired secret read as "deploy skipped, here is how to fix it" instead of a
+# red X somewhere in the middle of a flyctl invocation. See docs/DEPLOY.md.
+
+name: deploy
+
+# WHY THE SUITE APPEARS TO RUN TWICE ON A PR, AND WHY THAT MUST NOT BE
+# "OPTIMISED" AWAY
+# ------------------------------------------------------------------------
+# test.yml has its own `on: pull_request`, and this workflow ALSO runs on
+# pull_request and calls test.yml. So a PR executes the logic+browser jobs
+# twice. That looks like pure waste and it is not:
+#
+# Branch protection on `main` requires two status checks by EXACT name -
+# `logic (world + balance)` and `browser (smoke + frame time)` - with
+# enforce_admins on. A job run through `workflow_call` reports its context
+# PREFIXED with the calling job's id (`tests / logic (world + balance)`), so
+# only the standalone test.yml run can ever satisfy the required contexts.
+# Delete `pull_request` from test.yml and every future PR, including the one
+# that reverts the mistake, becomes permanently unmergeable.
+#
+# The duplication is therefore load-bearing until the protection rule is
+# renamed, which is a repo-settings change and not a code change. If you want
+# it gone: update the required contexts FIRST, confirm a PR still merges, then
+# come back here.
+#
+# STAGING IS NOT HERE
+# ------------------------------------------------------------------------
+# This workflow deploys production and nothing else. Staging used to deploy
+# every branch automatically from here; since 2026-09-24 it is ON DEMAND and
+# lives in staging.yml, which only runs when somebody asks it to. No push to
+# any branch brings staging up. The `image` job below still builds and checks
+# the staging VARIANT of the image on every PR, because that is what proves a
+# branch cannot point staging at production's database - and that proof is
+# worth having whether or not anybody is about to deploy it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Lets Leo re-deploy the current main without an empty commit - the thing
+  # everybody wants about ten minutes after the first deploy.
+  workflow_dispatch:
+
+concurrency:
+  # Never cancel a deploy in flight: a half-applied release is worse than a
+  # queued one. PR runs are cancellable because they ship nothing.
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------- 1. tests
+  tests:
+    name: test suite
+    uses: ./.github/workflows/test.yml
+
+  # ---------------------------------------------------------------- 2. image
+  image:
+    name: container (build + serve)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t skyhook:ci .
+
+      # SITE_ORIGIN here is DELIBERATELY NOT the value fly.toml sets.
+      #
+      # index.html now declares https://skyhookplay.com for real, and fly.toml
+      # sets SITE_ORIGIN to the same string, so production is an identity
+      # rewrite. Running CI that way too would make the "the rewrite happened"
+      # assertion below pass even if sub_filter were deleted outright - a green
+      # tick that cannot go red, which test.yml's header correctly calls worse
+      # than no tick at all. Overriding to the fly.dev name is what keeps that
+      # assertion falsifiable: the served page must contain the OVERRIDE and
+      # must NOT contain the source literal.
+      - name: Run it
+        run: |
+          docker run -d --name skyhook-ci -p 8080:8080 \
+            -e SITE_ORIGIN='https://skyhook-game.fly.dev' skyhook:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health > /dev/null; then
+              echo "up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "FAIL: container never answered /health"
+          docker logs skyhook-ci
+          exit 1
+
+      # Every assertion below is something that has no other gate anywhere in
+      # this repo. If one of them is deleted, the failure it used to catch
+      # becomes a silent production bug.
+      - name: Serve checks
+        run: |
+          set -e
+          fail() { echo "FAIL: $1"; docker logs skyhook-ci; exit 1; }
+
+          # The page itself, and every file it names.
+          curl -sf http://localhost:8080/ > /tmp/index.html || fail "/ did not serve"
+          grep -q '<canvas id="game"' /tmp/index.html || fail "/ served something that is not the game"
+          for f in css/style.css js/config.js js/utils.js js/audio.js js/celestial.js \
+                   js/rocket.js js/game.js js/online.js js/main.js js/ui_online.js; do
+            curl -sf -o /dev/null "http://localhost:8080/$f" || fail "missing asset: $f"
+          done
+          curl -sf -o /dev/null http://localhost:8080/screenshot.png || fail "og:image missing"
+          # The privacy policy the Google Play listing links to. Play rejects a
+          # listing whose policy URL does not resolve, and the Android app's
+          # Data safety form names this exact address.
+          curl -sf http://localhost:8080/privacy.html | grep -q 'PRIVACY POLICY' || fail "privacy.html missing"
+
+          # SITE_ORIGIN actually reached the served HTML. This is the check
+          # that makes the hostname genuinely configurable rather than
+          # configurable-looking. The container above was started with the
+          # fly.dev name precisely so this line is able to fail.
+          grep -q 'https://skyhook-game.fly.dev/' /tmp/index.html \
+            || fail "sub_filter did not rewrite the canonical/og origin"
+          # `grep -q ... && fail` would abort the step under `set -e` on the
+          # HEALTHY path, because a grep that finds nothing exits 1. The
+          # assertion has to be spelled out.
+          #
+          # The SOURCE literal must be gone, not merely accompanied. index.html
+          # and conf/site.conf.template hold the same origin string twice; if
+          # they ever drift apart the rewrite silently stops happening, and this
+          # is the only line in the repo that would notice.
+          if grep -q 'https://skyhookplay.com' /tmp/index.html; then
+            fail "source origin survived: index.html and conf/site.conf.template disagree"
+          fi
+          # GitHub Pages is a redirect stub now (see pages/), not a second copy
+          # of the game. The retired origin must never reappear in what Fly serves.
+          if grep -q 'leopechnicki.github.io' /tmp/index.html; then
+            fail "the retired GitHub Pages origin came back into index.html"
+          fi
+
+          # Headers on the page. add_header does not merge across nginx
+          # contexts, so a location block added later silently drops the
+          # inherited set - a regression with no visible symptom.
+          curl -sf -o /dev/null -D /tmp/ih http://localhost:8080/
+          grep -qi '^x-frame-options: SAMEORIGIN' /tmp/ih || fail "index lost X-Frame-Options"
+          grep -qi '^x-content-type-options: nosniff' /tmp/ih || fail "index lost nosniff"
+          grep -qi '^cache-control: no-cache' /tmp/ih || fail "index is cacheable - a deploy would not go live"
+
+          # Compression, on the biggest file in the game.
+          curl -sf -H 'Accept-Encoding: gzip' -o /dev/null -D /tmp/h \
+            http://localhost:8080/js/game.js
+          grep -qi '^content-encoding: gzip' /tmp/h || fail "js/game.js served uncompressed"
+
+          # A 404 is a 404, not a 200 with the game in it.
+          code=$(curl -s -o /tmp/404 -w '%{http_code}' http://localhost:8080/no-such-path)
+          [ "$code" = "404" ] || fail "unknown path returned $code, expected 404"
+          grep -q 'SIGNAL LOST' /tmp/404 || fail "404 page is nginx's, not ours"
+
+          # Nothing private escaped into the image.
+          for p in test/smoke.mjs package.json supabase/schema.sql docs/DEPLOY.md; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/$p")
+            [ "$code" = "404" ] || fail "$p is publicly reachable ($code)"
+          done
+
+          echo "OK: container serves the game, and only the game"
+
+      - name: Container logs
+        if: always()
+        run: docker logs skyhook-ci || true
+
+      # ------------------------------------------------- the staging variant
+      # Built and driven here, in the job that already has Docker warm, so the
+      # isolation is proved on every PR rather than discovered at deploy time
+      # on a URL somebody is already testing.
+      #
+      # Every assertion below is the difference between "staging is isolated"
+      # and "staging looked isolated". The first one is the one that matters:
+      # if the served staging config stops pointing at staging's OWN Supabase
+      # project, a test run lands in Leo's real data and nothing else in this
+      # repo would notice.
+      - name: Build the staging variant
+        run: docker build --build-arg SKYHOOK_ENV=staging -t skyhook:staging .
+
+      - name: Staging isolation checks
+        run: |
+          set -e
+          fail() { echo "FAIL: $1"; docker logs skyhook-staging-ci 2>/dev/null || true; exit 1; }
+
+          docker run -d --name skyhook-staging-ci -p 8081:8080 \
+            -e SITE_ORIGIN='https://skyhook-staging.fly.dev' \
+            -e ROBOTS_TAG='noindex, nofollow' skyhook:staging
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8081/health > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8081/health > /dev/null || fail "staging container never answered /health"
+
+          # 1. The overlay actually replaced js/config.js. Not "a staging file
+          #    exists somewhere in the image" - the file the PAGE loads.
+          curl -sf http://localhost:8081/js/config.js > /tmp/scfg.js || fail "staging /js/config.js did not serve"
+          grep -q 'STAGING BUILD' /tmp/scfg.js || fail "staging config is not the staging config"
+
+          # 2. and production's is untouched by the same source tree.
+          curl -sf http://localhost:8080/js/config.js > /tmp/pcfg.js || fail "prod /js/config.js did not serve"
+          if grep -q 'readOnlyScores' /tmp/pcfg.js; then
+            fail "the staging overlay leaked into the production image"
+          fi
+
+          # 2b. THE isolation, asserted between the two SERVED artefacts rather
+          #     than between two files in the tree. Staging has had its own
+          #     Supabase project since 2026-09-23, so the property to check is
+          #     "different project". readOnlyScores is no longer the guarantee;
+          #     it is the FALLBACK, required only if the two refs ever match
+          #     again. Refs are extracted, never hardcoded, so renumbering
+          #     either project cannot quietly turn this into a tautology.
+          refof() { sed -n "s#.*supabaseUrl: 'https://\([a-z0-9]\{1,\}\)\.supabase\.co'.*#\1#p" "$1" | head -1; }
+          prod_ref=$(refof /tmp/pcfg.js)
+          stag_ref=$(refof /tmp/scfg.js)
+          [ -n "$prod_ref" ] || fail "could not read a project ref out of the served PRODUCTION config"
+          [ -n "$stag_ref" ] || fail "could not read a project ref out of the served STAGING config"
+          if [ "$stag_ref" = "$prod_ref" ]; then
+            # Same project: the only thing left between a staging run and Leo's
+            # real data is the flag, so here it becomes mandatory again.
+            grep -q 'readOnlyScores: true' /tmp/scfg.js \
+              || fail "staging serves production's project AND is writable - runs would reach the real leaderboard"
+            echo "WARNING: staging shares production's Supabase project, held safe only by readOnlyScores"
+          else
+            echo "OK: staging project and production project differ"
+          fi
+
+          # 2c. The URL and the KEY must name the same project. A staging URL
+          #     carrying production's anon key is a production client wearing a
+          #     staging banner, and 2b cannot see it - 2b compares URLs, and in
+          #     that scenario the URLs are exactly what you would want them to
+          #     be. Supabase mints the ref into the JWT, so it is checkable
+          #     offline.
+          keyref() {
+            k=$(sed -n "s#.*supabaseAnonKey: '\([^']*\)'.*#\1#p" "$1" | head -1)
+            payload=$(printf '%s' "$k" | cut -d. -f2 | tr '_-' '/+')
+            # base64 refuses input that is not a multiple of 4; base64url drops
+            # the padding, so it has to be put back before decoding.
+            while [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="${payload}="; done
+            printf '%s' "$payload" | base64 -d 2>/dev/null \
+              | sed -n 's#.*"ref":"\([a-z0-9]\{1,\}\)".*#\1#p' | head -1
+          }
+          stag_key_ref=$(keyref /tmp/scfg.js)
+          [ -n "$stag_key_ref" ] || fail "could not decode a project ref out of the staging anon key"
+          [ "$stag_key_ref" = "$stag_ref" ] \
+            || fail "the staging build serves one project's URL and another project's anon key"
+          if [ "$stag_key_ref" = "$prod_ref" ]; then
+            fail "the staging build ships PRODUCTION's anon key"
+          fi
+          echo "OK: the staging anon key belongs to the project staging points at"
+
+          # 3. Three independent noindex signals, because a staging copy of the
+          #    game outranking the game is not quickly undone.
+          curl -sf http://localhost:8081/robots.txt | grep -q '^Disallow: /' \
+            || fail "staging robots.txt does not disallow"
+          curl -sf -o /dev/null -D /tmp/sh http://localhost:8081/
+          grep -qi '^x-robots-tag: noindex' /tmp/sh || fail "staging page is missing X-Robots-Tag: noindex"
+          grep -q 'noindex, nofollow' /tmp/scfg.js || fail "staging config injects no noindex meta"
+
+          # 4. Production must NOT have picked any of that up.
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/robots.txt)
+          [ "$code" = "404" ] || fail "production grew a robots.txt ($code) - that is a production change"
+          curl -sf -o /dev/null -D /tmp/ph http://localhost:8080/
+          grep -qi '^x-robots-tag: all' /tmp/ph \
+            || fail "production X-Robots-Tag is not the documented no-op 'all'"
+
+          # 5. The visible mark, and the canonical. A staging box that claims
+          #    to be skyhookplay.com is the bug this whole file guards against.
+          curl -sf http://localhost:8081/ > /tmp/sindex.html
+          grep -q '<canvas id="game"' /tmp/sindex.html || fail "staging is not serving the game"
+          grep -q 'https://skyhook-staging.fly.dev/' /tmp/sindex.html \
+            || fail "staging did not rewrite the canonical to itself"
+          if grep -q 'https://skyhookplay.com' /tmp/sindex.html; then
+            fail "staging is claiming the production canonical"
+          fi
+          # The banner, asserted as a PROPERTY rather than as one sentence of
+          # copy. This line used to grep for the literal
+          # "STAGING - scores are not saved". That sentence stopped being
+          # true the moment staging got its own project and its own board -
+          # scores ARE saved now, to staging's board - so the honest copy
+          # edit that went with that change turned this gate red while the
+          # thing it guards (is the build visibly marked as staging?) was
+          # never in danger. A gate that fails when the truth improves is a
+          # gate people learn to force past. What must hold is: the overlay
+          # still builds a banner element, and what that element says still
+          # starts with the word STAGING.
+          grep -q 'sk-staging-banner' /tmp/scfg.js             || fail "the staging overlay no longer creates a banner element"
+          grep -qE "textContent[[:space:]]*=[[:space:]]*'STAGING" /tmp/scfg.js             || fail "the staging banner no longer announces itself as STAGING"
+
+          # 6. A bad SKYHOOK_ENV must fail the build, not be ignored. Without
+          #    this the ARG is a typo away from silently producing production.
+          if docker build --build-arg SKYHOOK_ENV=stagging -t skyhook:typo . > /tmp/typo.log 2>&1; then
+            fail "a misspelled SKYHOOK_ENV built successfully"
+          fi
+          grep -q "SKYHOOK_ENV must be" /tmp/typo.log || fail "the bad-value build failed for the wrong reason"
+
+          echo "OK: staging is isolated, marked, unindexed, and production is unchanged"
+
+      - name: Staging container logs
+        if: always()
+        run: docker logs skyhook-staging-ci || true
+
+  # ------------------------------------------------------------- 3. preflight
+  # `secrets` cannot be read in a job-level `if`, so the presence of the token
+  # is turned into a job output here and gated on below. This also gives the
+  # not-configured-yet case somewhere to print instructions instead of a red X
+  # that means nothing is wrong.
+  preflight:
+    name: fly credentials
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -n "$FLY_API_TOKEN" ]; then
+            echo "configured=yes" >> "$GITHUB_OUTPUT"
+            echo "FLY_API_TOKEN is set - deploy will run on push to main."
+          else
+            echo "configured=no" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Fly deploy skipped - no FLY_API_TOKEN"
+              echo ""
+              echo "Everything needed to deploy is in the repo. Two commands away:"
+              echo ""
+              echo '```sh'
+              echo "fly apps create skyhook-game --org personal"
+              echo "fly tokens create deploy -x 8760h   # copy the output"
+              echo "gh secret set FLY_API_TOKEN --repo leopechnicki/skyhook"
+              echo '```'
+              echo ""
+              echo "Then re-run this workflow, or push anything to main."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------- 4. deploy
+  deploy:
+    name: fly deploy
+    needs: [tests, image, preflight]
+    if: >-
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main' &&
+      needs.preflight.outputs.configured == 'yes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # PINNED TO A COMMIT, NOT A BRANCH - AND THIS IS THE ONE STEP IN THE
+      # REPO WHERE THAT DISTINCTION IS LOAD-BEARING.
+      #
+      # This is the only third-party action in the repo, and it is the only
+      # step in the only job that can read FLY_API_TOKEN - a token that can
+      # deploy, scale, read secrets and destroy every app in the org. `@master`
+      # meant "whatever superfly pushed most recently", so a compromised
+      # upstream account, or one bad merge, would run arbitrary code inside
+      # that job on the next push to main. Nothing here would have noticed:
+      # the deploy would still succeed, and the token would leave anyway.
+      #
+      # A SHA is the only ref GitHub will not let anyone move. Tags can be
+      # force-pushed to a different commit; branches are expected to move.
+      #
+      # ed8efb3 is `master`, AND tag `v1`, AND tag `1.6`, all at the same
+      # commit as of 2026-04-08 - so this is the current release, not some
+      # mid-development state picked up by accident.
+      #
+      # The cost of the pin: it does not update itself. That is the intended
+      # trade. To move it, re-resolve and re-read the diff deliberately:
+      #
+      #   gh api repos/superfly/flyctl-actions/commits/master --jq .sha
+      #
+      # Note this pins the ACTION, not flyctl. The action's `version` input
+      # still defaults to "latest", so the CLI it installs stays current -
+      # from Fly's own release channel, which is the same trust boundary the
+      # deploy already sits behind.
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # master (== v1 == 1.6) as of 2026-04-08
+
+      # --remote-only: the image is built on Fly's builder, so the runner
+      # never needs a registry credential and the layer cache lives next to
+      # the thing being deployed.
+      - name: Deploy
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # A deploy that reports success and serves a blank page has happened to
+      # this team before. Assert the live site, not the deploy command's exit
+      # code - and assert the ASSETS, because a missing js/game.js is a black
+      # screen that a /health check is perfectly happy with.
+      - name: Verify the live site
+        run: |
+          set -e
+          # Deliberately the fly.dev name and not skyhookplay.com. This step
+          # asserts that the DEPLOY worked. Pointing it at the custom domain
+          # would also be asserting that GoDaddy DNS and a Let's Encrypt cert
+          # are healthy, so a registrar problem would read here as a failed
+          # deploy. fly.dev is assigned by Fly and always resolves.
+          base="https://skyhook-game.fly.dev"
+          for i in $(seq 1 20); do
+            curl -sf "$base/health" > /dev/null && break
+            echo "waiting for $base ..."; sleep 5
+          done
+          curl -sf "$base/health" > /dev/null || { echo "FAIL: /health"; exit 1; }
+          curl -sf "$base/" | grep -q '<canvas id="game"' || { echo "FAIL: / is not the game"; exit 1; }
+          for f in js/game.js js/main.js js/rocket.js js/celestial.js css/style.css screenshot.png privacy.html; do
+            curl -sfI "$base/$f" > /dev/null || { echo "FAIL: $f is not 200"; exit 1; }
+          done
+          echo "OK: $base is live and complete"
+
+  # ------------------------------------------------------- 5. the Pages stub
+  #
+  # GitHub Pages used to publish `main:/` - a SECOND, complete copy of the game
+  # that declared itself canonical. That is the thing being retired. It is not
+  # deleted, because every link already shared as
+  # https://leopechnicki.github.io/skyhook/ lives in somebody else's messages,
+  # bookmarks and chat history and cannot be recalled; turning Pages off turns
+  # all of them into a hard 404.
+  #
+  # So Pages publishes a two-file redirect instead, and this job is what keeps
+  # that redirect equal to `pages/` on main rather than a thing somebody pushed
+  # by hand once and never touched again.
+  #
+  # WHAT THIS JOB CANNOT DO: point Pages at the branch. The publishing source is
+  # a repository SETTING, and no workflow token can change it. Leo flips it once
+  # - Settings > Pages > Build and deployment > Branch: gh-pages / (root). Until
+  # he does, Pages keeps serving main:/, which after this PR is the game with a
+  # canonical pointing at skyhookplay.com - already the right signal, just not
+  # yet a redirect. Nothing breaks in the meantime; the flip is an improvement,
+  # not a repair.
+  pages-stub:
+    name: pages redirect stub (gh-pages)
+    needs: [tests]
+    # Same gate as `deploy`: never on a PR, and only from main. A
+    # workflow_dispatch on some other branch must not publish that branch's
+    # stub over the one main says is correct.
+    if: >-
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Elevated for this job ONLY. The workflow default is contents: read; the
+      # single write this needs is the push to gh-pages below.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish pages/ to the gh-pages branch
+        run: |
+          set -e
+          # An orphan branch: gh-pages shares no history with main and holds
+          # nothing but the stub. A crawler or a curious visitor that walks the
+          # published site can therefore never reach the game's source through
+          # it, and `git log gh-pages` is a readable record of the redirect
+          # rather than a duplicate of the project's history.
+          work=$(mktemp -d)
+          # Named file by file, the same way the Dockerfile names what the
+          # public may fetch. `cp -r pages/.` would also publish pages/README.md
+          # - developer notes, served at the retired URL, for nobody. The
+          # published site is exactly the redirect and nothing else.
+          # test/pages_stub.mjs asserts every pages/*.html appears on this line,
+          # so adding a stub file and forgetting to publish it fails the build.
+          cp pages/index.html pages/404.html pages/.nojekyll "$work"/
+          cd "$work"
+          git init -q
+          git checkout -q -b gh-pages
+          git config user.name  "Crew Leo Agile dev team"
+          git config user.email "noreply@github.com"
+          git add -A
+          # Two -m flags rather than one multi-line string: inside a YAML block
+          # scalar the continuation lines of a quoted string carry their
+          # indentation into the commit message.
+          git commit -q -m "pages: redirect the retired GitHub Pages URL to skyhookplay.com" -m "Mirrored from pages/ at ${{ github.sha }} by .github/workflows/deploy.yml. Edit pages/ on main - never this branch, the next push to main overwrites it."
+          # Force, because this branch is generated output and its history is
+          # not interesting. It is the ONLY branch this token ever writes to.
+          git push -q --force \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+            gh-pages
+          echo "gh-pages updated from pages/"
+
+      - name: Say what is still manual
+        run: |
+          {
+            echo "### Pages redirect stub published to \`gh-pages\`"
+            echo ""
+            echo "One manual step remains, and CI cannot do it - the Pages"
+            echo "publishing source is a repository setting:"
+            echo ""
+            echo "**Settings > Pages > Build and deployment >**"
+            echo "**Source: Deploy from a branch > Branch: \`gh-pages\` / \`(root)\` > Save**"
+            echo ""
+            echo "After that, <https://leopechnicki.github.io/skyhook/> redirects"
+            echo "to <https://skyhookplay.com/> and keeps its query string and hash."
+          } >> "$GITHUB_STEP_SUMMARY"
