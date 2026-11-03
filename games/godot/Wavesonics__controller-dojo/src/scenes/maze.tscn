@@ -1,0 +1,139 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/maze_game.gd" id="1_maze"]
+[ext_resource type="Script" path="res://scripts/maze_world.gd" id="2_world"]
+[ext_resource type="Script" path="res://scripts/maze_avatar.gd" id="3_avatar"]
+[ext_resource type="Script" path="res://scripts/mini_stick_indicator.gd" id="4_mini"]
+[ext_resource type="Script" path="res://scripts/score_stars.gd" id="5_stars"]
+[ext_resource type="Script" path="res://scripts/strike_meter.gd" id="6_strikes"]
+
+[node name="Maze" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_maze")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0705882, 0.0862745, 0.156863, 1)
+
+[node name="World" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_world")
+cols = 6
+rows = 4
+wall_thickness = 22.0
+extra_openings = 1
+
+[node name="Avatar" type="CharacterBody2D" parent="World"]
+script = ExtResource("3_avatar")
+
+[node name="Overlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MiniStick" type="Control" parent="Overlay"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 124.0
+offset_bottom = 124.0
+script = ExtResource("4_mini")
+
+[node name="StarRow" type="CenterContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+offset_top = 12.0
+offset_bottom = 76.0
+
+[node name="ScoreStars" type="Control" parent="Overlay/StarRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(264, 48)
+layout_mode = 2
+script = ExtResource("5_stars")
+
+[node name="StrikeMeter" type="Control" parent="Overlay"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -196.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 68.0
+grow_horizontal = 0
+mouse_filter = 2
+script = ExtResource("6_strikes")
+
+[node name="Cheer" type="Label" parent="Overlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.784314, 0.278431, 1)
+theme_override_font_sizes/font_size = 84
+text = "AMAZING!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackRow" type="CenterContainer" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+offset_top = -64.0
+offset_bottom = -12.0
+
+[node name="BackButton" type="Button" parent="Overlay/BackRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+mouse_filter = 0
+text = "Back"
+
+[node name="Hint" type="Label" parent="Overlay"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -40.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.443137, 0.486275, 0.6, 1)
+theme_override_font_sizes/font_size = 18
+text = "Select or Start, then A to go back"
+horizontal_alignment = 2
+
+[connection signal="pressed" from="Overlay/BackRow/BackButton" to="." method="_on_back_pressed"]

@@ -1,0 +1,18 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Export credentials: keystore and Apple signing passwords in plain text
+export_credentials.cfg
+
+# Export output
+/.export/*
+!/.export/.gdignore
+
+# Nested checkout of the MCP server, with its own history and node_modules
+/godot-mcp/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
