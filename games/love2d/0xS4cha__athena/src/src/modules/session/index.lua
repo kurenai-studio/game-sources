@@ -1,0 +1,124 @@
+local GM = require("src.core.index")
+local Camera = require("src.core.camera")
+local Game = require("src.modules.game.game")
+local Interaction = require("src.modules.game.interaction")
+local Overlay = require("src.modules.game.overlay")
+local Config = require("src.config.game")
+
+GM.Session = {}
+GM.State = "menu"
+
+GM.Modules:Register("Session", 40)
+
+function GM.Session:Initialize()
+    self.Game = nil
+    self.Camera = nil
+end
+
+function GM.Session:Start(options)
+    self:Stop()
+    local game = Game(options)
+    GM.Audio:Attach(game)
+    if options.lockstep then
+        options.lockstep:attach(game)
+    end
+    local map = game.map
+    local W, H = love.graphics.getDimensions()
+    local camera = Camera()
+    camera.mapW = map.width
+    camera.mapH = map.height
+    camera.scale = math.max(W / map.width, H / map.height)
+    camera.x = (W - map.width * camera.scale) / (2 * camera.scale)
+    camera.y = (H - map.height * camera.scale) / (2 * camera.scale)
+    camera:clamp()
+
+    self.Game = game
+    self.Camera = camera
+    GM.Camera = camera
+    GM.State = "game"
+    return game
+end
+
+function GM.Session:Stop()
+    if self.Game and self.Game.lockstep then
+        self.Game.lockstep:detach()
+    end
+    self.Game = nil
+    self.Camera = nil
+    GM.Camera = nil
+    GM.State = "menu"
+    collectgarbage()
+end
+
+function GM.Session:Think(dt)
+    if not self.Game then return end
+    self.Camera:update(dt)
+    self.Game:update(dt)
+end
+
+function GM.Session:Draw()
+    if not self.Game then return end
+    self.Camera:apply()
+    self.Game.renderer:draw()
+    self.Camera:clear()
+    Overlay.draw(self.Game, self.Camera)
+end
+
+function GM.Session:WheelMoved(_, y)
+    if not self.Camera then return end
+    local mx, my = love.mouse.getPosition()
+    if GM.Hud and GM.Hud:Captures(mx, my) then return end
+    if y > 0 then
+        self.Camera:zoom(1.1, mx, my)
+    elseif y < 0 then
+        self.Camera:zoom(0.9, mx, my)
+    end
+end
+
+function GM.Session:KeyPressed(key)
+    local game = self.Game
+    if not game or (GM.Hud and GM.Hud:Typing()) then return end
+    local delta = (key == "=" or key == "kp+") and 1 or (key == "-" or key == "kp-") and -1 or nil
+    if key ~= "p" and not delta then return end
+    local lockstep = game.lockstep
+    if lockstep then
+        if key == "p" then
+            lockstep:control(not game.paused, nil)
+        else
+            local speed = math.max(1, math.min(#Config.speeds, game.speedIndex + delta))
+            lockstep:control(nil, speed)
+        end
+    elseif key == "p" then
+        game.paused = not game.paused
+    else
+        game:changeSpeed(delta)
+    end
+end
+
+function GM.Session:MousePressed(x, y, button)
+    if not self.Game or button ~= 1 then return end
+    if GM.Hud and GM.Hud:Captures(x, y) then return end
+    local wx, wy = self.Camera:toWorld(x, y)
+    local tile = self.Game.map:tileAt(wx, wy)
+    if tile and self.Game.buildAim then
+        Interaction.placeBuild(self.Game, tile)
+    elseif tile and self.Game.nukeAim then
+        Interaction.fireAim(self.Game, tile)
+    elseif tile then
+        Interaction.click(self.Game, tile)
+    end
+end
+
+function GM.Session:WorldMouse()
+    if not self.Camera then return 0, 0 end
+    local mx, my = love.mouse.getPosition()
+    return self.Camera:toWorld(mx, my)
+end
+
+function GM.Session:HoveredTile()
+    if not self.Game then return nil end
+    local wx, wy = self:WorldMouse()
+    return self.Game.map:tileAt(wx, wy)
+end
+
+return GM.Session
