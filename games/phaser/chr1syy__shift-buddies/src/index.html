@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101825" />
+    <title>Shift Buddies · Sechs Werkstatträume</title>
+  </head>
+  <body>
+    <main class="app">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">GAME OFF 2026 · SECHS WERKSTATTRÄUME</p>
+          <h1>Shift <span>Buddies</span></h1>
+        </div>
+        <div class="room-label"><span id="room-title"></span><br />Zwei Körper. Zwei Module.</div>
+      </header>
+      <nav class="room-choice" aria-label="Raumwahl">
+        <label for="room-select">Raum ausprobieren</label>
+        <select id="room-select">
+          <option value="bodies">01 · Klein & schwer</option>
+          <option value="modules">02 · Energie teilen</option>
+          <option value="tech">03 · Der Technikraum</option>
+          <option value="freight">04 · Schwere Fracht</option>
+          <option value="routes">05 · Getrennte Wege</option>
+          <option value="bridge">06 · Brückendienst</option>
+        </select>
+        <button id="next-room" type="button" hidden>Weiter zum nächsten Raum →</button>
+      </nav>
+      <div class="workspace">
+        <section class="play-area" aria-label="Spielbereich">
+          <div class="room-toolbar">
+            <span id="door-status"></span><span id="move-count"></span>
+          </div>
+          <div
+            id="game"
+            tabindex="0"
+            role="application"
+            aria-label="Shift Buddies. Rasterbewegung mit WASD oder Pfeilen. Shift wechselt Roboter. T tauscht Module, E interagiert, Z macht rückgängig, R startet neu."
+          ></div>
+          <p
+            class="feedback"
+            id="feedback"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <p id="pull-status" class="pull-status"></p>
+          <div class="actions">
+            <button id="switch" type="button">Shift · Roboter wechseln</button>
+            <button id="interact" type="button">E · Interagieren</button
+            ><button id="swap" type="button">T · Module tauschen</button
+            ><button id="undo" type="button">Z · Undo</button
+            ><button id="restart" type="button">R · Neustart</button>
+            <button id="mute" type="button" aria-pressed="false">Ton: aus</button>
+          </div>
+        </section>
+        <aside aria-label="Roboter und Hilfe">
+          <div id="robots" class="robots"></div>
+          <section class="mission">
+            <p class="eyebrow">GEMEINSAM WEITER</p>
+            <h2 id="mission-title">Deine Aufgabe</h2>
+            <p id="objective"></p>
+            <ol id="progress"></ol>
+          </section>
+          <details>
+            <summary>Steuerung & Legende</summary>
+            <dl>
+              <dt>WASD / Pfeile</dt>
+              <dd>Tippen: ein Feld · Halten: weiterfahren / ausrichten</dd>
+              <dt>Shift</dt>
+              <dd>Aktiven Roboter wechseln</dd>
+              <dt>E</dt>
+              <dd>
+                Magnet (beide Bots): E halten + rückwärts zieht. Bolt (jedes Modul): E halten + vorwärts schiebt. Erst zur Kiste ausrichten; E loslassen zum Drehen. Batterie: auf dem Anschluss mit E verbinden / lösen
+              </dd>
+              <dt>Enter</dt><dd>Nach einem Sieg zum nächsten Raum</dd>
+              <dt>T</dt>
+              <dd>Module tauschen, wenn beide direkt nebeneinander stehen</dd>
+              <dt>Z / R</dt>
+              <dd>Letzte Aktion zurück / Raum neu</dd>
+            </dl>
+            <p>
+              Pip: schmale Räder, passt durch Schacht<br />Bolt: breites Kettenfahrwerk, hält
+              Druckplatten und schiebt Fracht (auch Metallkisten halten Platten)<br /><span class="magnet">∪ · Hufeisenmagnet</span> /
+              <span class="power">⚡ · Batterie</span>
+            </p>
+            <p>
+              Schmales Gitter: Schacht · genietete Kiste mit Hufeisen: Metall · verankerter, rissiger Achteckblock: feste Keramik · Ring:
+              Anschluss · Streifen: Tür · breite Bodenplatte: Druckplatte ·
+              Querstreben: ausfahrbare Brücke (besetzt bleibt sie sicher) · grüne Felder: Ausgang
+            </p>
+            <p>Gleiche A/B/C-Symbole gehören zusammen. ○ inaktiv / ● aktiv; Torstreben verschwinden bei Öffnung. Ein kurzes Aufleuchten verbindet Quelle und Tor. Bei reduzierter Bewegung bleibt nur der feste Zustand sichtbar.</p>
+            <p>
+              Loslassen hält am nächsten Feldzentrum. Die zuletzt gedrückte Richtung gewinnt. Nach einem Klick außerhalb zuerst das
+              Spielfeld anklicken.
+            </p>
+          </details>
+          <details>
+            <summary>Ein kleiner Hinweis</summary>
+            <p id="room-hint"></p>
+          </details>
+        </aside>
+      </div>
+      <footer>
+        Sechs Räume zum Ausprobieren · ohne Zeitdruck · Z nimmt auch Modultausch
+        und Verbindungen zurück
+      </footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
