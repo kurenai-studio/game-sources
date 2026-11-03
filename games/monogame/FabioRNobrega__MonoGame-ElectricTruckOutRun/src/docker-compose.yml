@@ -1,0 +1,35 @@
+name: electric-truck-out-run
+
+services:
+  dev:
+    platform: linux/amd64
+    build:
+      context: .
+      args:
+        MONOGAME_VERSION: "3.8.4.1"
+    working_dir: /workspace
+    entrypoint: /workspace/scripts/dev-entrypoint.sh
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    init: true
+    stdin_open: true
+    tty: true
+    environment:
+      DISPLAY: ":99"
+      DOTNET_CLI_HOME: /opt/dotnet-cli
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      MGFXC_WINE_PATH: /opt/winemonogame
+      NUGET_PACKAGES: /nuget/packages
+      NOVNC_PORT: "${NOVNC_PORT:-6080}"
+      SDL_AUDIODRIVER: dummy
+      XDG_CACHE_HOME: /tmp/monogame-cache
+    volumes:
+      - .:/workspace
+      - nuget-cache:/nuget/packages
+    ports:
+      - "127.0.0.1:${NOVNC_PORT:-6080}:6080"
+
+volumes:
+  nuget-cache:
