@@ -11,4 +11,6 @@ This directory is a redistributable source snapshot of the upstream repository a
 
 **Audio:** procedural ZzFX. **Fonts:** Roboto Condensed (Apache-2.0), vendored with license file.
 
-Playable: open `src/public/index.html` (or `npm install` + `./bin/build`).
+**Vendored for playability:** `src/public/vendor/SAT.js` (MIT, jriecken/sat-js) and `src/public/vendor/kontra/kontra.mjs` (MIT) replace the upstream `node_modules` symlink/imports so `src/public/index.html` runs without npm. js13k submission zip also under `src/build/`.
+
+Playable: open `src/public/index.html`.
