@@ -1,0 +1,43 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 48 48"
+  width="512"
+  height="512"
+  role="img"
+  aria-label="Slowblue"
+>
+  <!--
+    The tab icon: the title screen's mark, held still. Geometry is `titleMark()` in
+    src/ui/Shell.ts, in its own 48-unit box, pushed out by 18.75/17 so the ring takes
+    the same share of the tile the PNGs give it.
+
+    The strokes are heavier than the title screen's, and deliberately. A browser
+    prefers this file over any PNG and then draws it at sixteen pixels, where the
+    screen's 1.2 would land on four tenths of one device pixel and come out as a
+    smudge. 2.4 and 2.8 are the raster's minimum stroke written as vector, so this
+    and icon-32.png carry the same weight. Everything is a presentation attribute:
+    the .ui-mark rules live in index.html and none of them reach this file, and a
+    favicon is rendered in a static mode where no <style> or animation would run.
+
+    The tile is transparent: the navy fills the disc and stops at the ring, so what
+    stands in the tab is the mark rather than a card with the mark printed on it.
+    The stroke colours are the title screen's alphas already composited onto that
+    navy and then drawn opaque - the ring hangs half over open air, and left as an
+    alpha it would go pale on a light tab bar and dark on a black one.
+
+    Kept in step with tools/make-icons.mjs, which draws the same mark for the PNGs.
+  -->
+  <defs>
+    <clipPath id="slowblue-mark-clip">
+      <circle cx="24" cy="24" r="18.75" />
+    </clipPath>
+  </defs>
+  <circle cx="24" cy="24" r="18.75" fill="#02101f" />
+  <g clip-path="url(#slowblue-mark-clip)" fill="none" stroke-width="2.8" stroke-linecap="round">
+    <path d="M-28.94 26.21 q6.62 -5.51 13.24 0 t13.24 0 t13.24 0 t13.24 0 t13.24 0 t13.24 0" stroke="#9fe4ff" />
+    <path d="M-28.94 33.93 q6.62 -4.41 13.24 0 t13.24 0 t13.24 0 t13.24 0 t13.24 0 t13.24 0" stroke="#5792b3" />
+  </g>
+  <!-- Last, so the water passes behind the ring rather than over it, and so its
+       outer half covers the edge of the disc where the transparency begins. -->
+  <circle cx="24" cy="24" r="18.75" fill="none" stroke="#80bad2" stroke-width="2.4" />
+</svg>

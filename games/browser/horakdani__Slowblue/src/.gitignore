@@ -1,0 +1,17 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+coverage/
+# Review artefacts, not documentation: `e2e/acts.spec.ts` rewrites every one of
+# these on each `npm run e2e` - a hundred and twenty-six station frames alone now
+# that the late image is shot too - and they are tens of megabytes of binary that
+# would churn on every verify. The numbered screens in docs/screens/ are the
+# README's, and those are tracked.
+docs/screens/acts/
+docs/screens/acts-late/
+docs/screens/acts-hc/
+docs/screens/films/
+docs/screens/films-hc/
+.DS_Store
+*.local
