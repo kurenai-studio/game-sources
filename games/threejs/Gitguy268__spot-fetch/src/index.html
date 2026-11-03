@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Spot apporteert</title>
+<link rel="icon" href="./favicon.ico" sizes="48x48">
+<link rel="icon" href="./favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<style>
+  :root { --glas: rgba(18, 24, 20, 0.62); --rand: rgba(255, 255, 255, 0.16); --tekst: #f3f1e8; --rood: #d8232a; --geel: #cde23c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #10140f; color: var(--tekst);
+    font: 14px/1.3 ui-rounded, "Avenir Next", system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+  #c { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; }
+  .paneel { position: fixed; background: var(--glas); border: 1px solid var(--rand); border-radius: 14px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 10px 12px; }
+  button, select { font: inherit; color: inherit; }
+  button { min-height: 44px; min-width: 76px; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--rand);
+    background: var(--glas); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: pointer; font-weight: 600; }
+  button:hover { background: rgba(40, 52, 44, 0.8); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--geel); outline-offset: 2px; }
+
+  #stats { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); width: 172px; display: grid; gap: 7px; }
+  .stat { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 8px; }
+  .balk { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+  .balk::after { content: ""; display: block; height: 100%; width: var(--v, 0%); background: var(--geel); border-radius: 4px; transition: width 0.3s; }
+  .balk.slecht::after { background: var(--rood); }
+
+  #info { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); text-align: right; }
+  #info b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  #info small { display: block; opacity: 0.8; }
+  #rechtsboven { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 84px); right: max(10px, env(safe-area-inset-right)); display: grid; gap: 6px; }
+
+  #toast { top: max(14px, env(safe-area-inset-top)); left: 50%; translate: -50% -8px; max-width: min(420px, calc(100vw - 400px));
+    text-align: center; opacity: 0; transition: opacity 0.25s, translate 0.25s; pointer-events: none; font-weight: 600; }
+  #toast.aan { opacity: 1; translate: -50% 0; }
+  #hint { position: fixed; left: 50%; top: 17%; translate: -50%; text-align: center; pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7); font-size: 16px; font-weight: 600; }
+
+  .kolom { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; gap: 6px; }
+  #cmds { left: max(10px, env(safe-area-inset-left)); }
+  #zorg { right: max(10px, env(safe-area-inset-right)); }
+  /* Het streepje onder een commando laat zien hoe goed Spot het beheerst. */
+  [data-cmd] { position: relative; padding-bottom: 12px; }
+  [data-cmd]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 6px; height: 3px; border-radius: 2px;
+    background: linear-gradient(to right, var(--geel) var(--m, 0%), rgba(255, 255, 255, 0.2) var(--m, 0%)); }
+  #beloon { border-color: var(--geel); }
+
+  #balwijzer { position: fixed; left: 0; top: 0; width: 30px; height: 30px; margin: -15px; border: 2px solid var(--geel);
+    border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
+
+  #fotoPaneel { display: none; left: 50%; translate: -50%; bottom: max(12px, env(safe-area-inset-bottom)); width: min(560px, calc(100vw - 20px));
+    grid-template-columns: auto 1fr auto; gap: 8px 10px; align-items: center; }
+  #fotoPaneel output { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+  #fotoPaneel input[type=range] { width: 100%; accent-color: var(--geel); }
+  #fotoPaneel select { grid-column: 2 / 4; min-height: 36px; border-radius: 8px; background: #1c231d; border: 1px solid var(--rand); padding: 0 8px; }
+  #fotoPaneel .knoppen { grid-column: 1 / 4; display: flex; gap: 8px; justify-content: flex-end; }
+  #sluiter { background: var(--tekst); color: #151a15; }
+  body.foto #fotoPaneel { display: grid; }
+  body.foto .spel { display: none !important; }
+  #flits { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #flits.aan { animation: flits 0.35s ease-out; }
+  @keyframes flits { from { opacity: 0.85; } to { opacity: 0; } }
+
+  @media (max-width: 720px) {
+    #toast { top: auto; bottom: 34%; max-width: calc(100vw - 24px); }
+    #hint { top: 26%; width: 84vw; }
+    #stats { width: 150px; font-size: 12px; }
+    .stat { grid-template-columns: 64px 1fr; }
+    button { min-width: 68px; }
+  }
+  /* Liggende telefoon: de knoppen rechtsboven naast elkaar, anders raken ze de verzorging eronder. */
+  @media (max-height: 480px) { #rechtsboven { grid-auto-flow: column; } #hint { top: 150px; } }
+  @media (prefers-reduced-motion: reduce) { #flits.aan { animation: none; } #toast { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Park met Spot de labrador. Sleep de bal omhoog en laat los om te gooien."></canvas>
+
+<div id="stats" class="paneel spel">
+  <div class="stat"><span>Energie</span><div class="balk" data-stat="energie" role="progressbar" aria-label="Energie" aria-valuemin="0" aria-valuemax="100"></div></div>
+  <div class="stat"><span>Honger</span><div class="balk" data-stat="honger" role="progressbar" aria-label="Honger" aria-valuemin="0" aria-valuemax="100"></div></div>
+  <div class="stat"><span>Dorst</span><div class="balk" data-stat="dorst" role="progressbar" aria-label="Dorst" aria-valuemin="0" aria-valuemax="100"></div></div>
+  <div class="stat"><span>Vertrouwen</span><div class="balk" data-stat="vertrouwen" role="progressbar" aria-label="Vertrouwen" aria-valuemin="0" aria-valuemax="100"></div></div>
+</div>
+
+<div id="info" class="paneel spel">
+  <b id="score">0</b> punten
+  <small>beste worp <span id="beste">0</span></small>
+  <small id="klok"></small>
+</div>
+<div id="rechtsboven" class="spel">
+  <button id="foto" type="button">Foto</button>
+  <button id="geluid" type="button" aria-pressed="false">Geluid aan</button>
+  <button id="scherm" type="button" aria-pressed="false">Volledig scherm</button>
+</div>
+
+<div id="toast" class="paneel spel" role="status" aria-live="polite"></div>
+<div id="hint" class="spel">Sleep de bal omhoog en laat los om te gooien.<br>Mik op de vlag.</div>
+
+<div id="cmds" class="kolom spel" role="group" aria-label="Commando's">
+  <button type="button" data-cmd="zit">Zit</button>
+  <button type="button" data-cmd="blijf">Blijf</button>
+  <button type="button" data-cmd="bring">Bring</button>
+  <button type="button" data-cmd="aus">Aus</button>
+</div>
+<div id="zorg" class="kolom spel" role="group" aria-label="Verzorging">
+  <button id="beloon" type="button">Beloon</button>
+  <button id="voer" type="button">Voer</button>
+  <button id="water" type="button">Water</button>
+</div>
+
+<div id="balwijzer" class="spel" hidden></div>
+
+<div id="fotoPaneel" class="paneel">
+  <label for="lens">Lens</label><input id="lens" type="range" min="14" max="200" value="35"><output id="lensUit" for="lens"></output>
+  <label for="belichting">Belichting</label><input id="belichting" type="range" min="-2" max="2" step="0.1" value="0"><output id="belichtingUit" for="belichting"></output>
+  <label for="filter">Filter</label><select id="filter"></select>
+  <div class="knoppen"><button id="fotoUit" type="button">Terug</button><button id="sluiter" type="button">Maak foto</button></div>
+</div>
+<div id="flits"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
