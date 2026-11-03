@@ -1,0 +1,137 @@
+{
+  "verified_at": "2026-11-02T14:29:26.689852+00:00",
+  "url": "https://shift-buddies.clippmann.de/",
+  "game_source_sha": "15641ccc188f460ad65baf05cff0fd13771e60c1",
+  "hosting": {
+    "release": "/var/www/shift-buddies/releases/20261102T142546Z-15641ccc188f",
+    "previous": "releases/20261102T141127Z-0e18ed049061",
+    "backup": "/var/backups/shift-buddies-20261102T142546Z-15641ccc188f"
+  },
+  "assets": [
+    {
+      "path": "assets/index-B3dlDHN0.js",
+      "sha256": "3978a9e8e81a09d3fa2e1d91b10f9332d2522d4201b843f9147e1cd36cec4faa"
+    },
+    {
+      "path": "assets/index-BOYBfZDH.css",
+      "sha256": "a64e489a1e95f9358ba556d4c3ef4deb3b8f10f172ff7c0de8c0179d815de246"
+    },
+    {
+      "path": "index.html",
+      "sha256": "2980ccf839d871c805be28effcf96579bc4e4fae4e0d447cd13fad289b09c9df"
+    }
+  ],
+  "scope": "Only move the upright module mount to the rotating chassis rear, leaving the face visible; regression test added. No new features.",
+  "existing_fixes_verified": {
+    "magnet_line": "Requires active magnet, readiness/pull and same(facingTarget(active), s.crate), not adjacency alone.",
+    "socket_label": "Named circuit sockets suppress the generic ANSCHLUSS label."
+  },
+  "validation": {
+    "rule_tests_passed": 26,
+    "typecheck": "passed",
+    "build": "passed; existing Phaser size warning",
+    "local_production_browser_tests_passed": 7,
+    "public_browser_tests_passed": 7,
+    "rendered_eye_regression": "32 eyes across 2 bodies × 2 modules × 4 directions passed; exact same test fails on previous public build (down: both eyes fully occluded).",
+    "no_hmr": "All acceptance and differential runs used stable production builds; no product file edits during browser runs.",
+    "public_http_tls_hash_path_checks": 22,
+    "neighbor_status_and_body_hashes_unchanged": 13,
+    "isolation": {
+      "tracked_nginx_and_renewal_items": 52,
+      "unchanged": 51,
+      "changed": [
+        "/etc/nginx/sites-available/shift-buddies.clippmann.de.conf"
+      ],
+      "nginx_master_pid_unchanged": "1449224",
+      "certificate_fingerprint_and_dates_unchanged": true,
+      "previous_release_manifest": "3 files passed",
+      "matching_previous_vhost_retained": true,
+      "dns": "No Cloudflare command or DNS mutation"
+    },
+    "rollback": "Previous 3 assets and matching vhost checked; retained, not executed"
+  },
+  "screenshots": [
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-magnet-down.png",
+      "sha256": "d0d8f03a9dda94502f0d3c73bb3645072ba392254d32af411c56c6f967fdf159"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-magnet-left.png",
+      "sha256": "c4732eb2b71864510691623124e6341ec890e676aa6f1fb72f8091897c87899c"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-magnet-right.png",
+      "sha256": "ec0f4f413112951ee3991ae47af8e02694fe772a329b72660bfb69098f517e35"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-magnet-up.png",
+      "sha256": "afc923fde97a0c9c5cfed6b57cb4d22041938684f35881e537bfb2e4aab47de2"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-power-down.png",
+      "sha256": "8d7008932e9180bb0a4752731ee4791fc78e075db9774d79d3bf3d92ffaf404d"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-power-left.png",
+      "sha256": "eda0c636ae8f2134a16fee9881e47c4e833acd265b5797308a8efa1458ea8083"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-power-right.png",
+      "sha256": "3ae3ef6584fbb888c723f8ba8fc9a110a1abc8ba8cfc3bb91d4bac2a555a72db"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/bolt-power-up.png",
+      "sha256": "b4fb13e2ca989305d39779501766f4f2935b1219ae00c709c4624f256cfe4fb3"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-magnet-down.png",
+      "sha256": "3c9864a234adc6ce2ee3338860fc4b0a023e882f5db7d378cb23cef6d1822481"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-magnet-left.png",
+      "sha256": "befafc94f1a667bb3edab3a65b857715a6aebcbf71571b3625a04896959067cd"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-magnet-right.png",
+      "sha256": "9d689eb3012fa6ccd3f23b00414fdc90853d58857021b66a5697c4de3b622564"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-magnet-up.png",
+      "sha256": "b4eee5b2b1f6c3ba5318c00b8a05084309427720f03038288c271d1650f69ab1"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-power-down.png",
+      "sha256": "a6e645003f60b4a0fd3a9750a564125a1e76a6b6315c745b327bb02ee1a952a7"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-power-left.png",
+      "sha256": "975e0a1f869150e9506ceced8823904001b5da42ce0d836c62855467c37271ad"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-power-right.png",
+      "sha256": "56121f97ee30301a6e0503644199ce6f130e97d48e7ce5b406a9f4b6ff1d929e"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/public-poses/pip-power-up.png",
+      "sha256": "d43c840545b00c319cea74565b4ce44b9a98245dd798c880a7c8ea4739291ee3"
+    }
+  ],
+  "other_screenshots": [
+    {
+      "path": ".cache/review-facing-2026-11-02/contactsheet.png",
+      "sha256": "bb372cc7278cd66189647fcbdb4c81147952059ef97a9f50051097461ae1e260"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/expansion-bridge-powered.png",
+      "sha256": "29233bb3f738a2cf6cef32c612cee5102e1c326a7d1b11382cef1a5c59d7295d"
+    },
+    {
+      "path": ".cache/review-facing-2026-11-02/expansion-magnet-link.png",
+      "sha256": "39d4535904ce5b99a50b60b472f58e33dd833a4571c78d1da16cc0e5a9368379"
+    }
+  ],
+  "limits": [
+    "Chromium headless/Linux only; human play/sound, physical OS focus, other browsers and itch.io embedding remain unverified.",
+    "No DNS/certificate mutation, external message, new service or automation registration."
+  ]
+}
