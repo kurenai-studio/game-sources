@@ -1,0 +1,91 @@
+go.property("max_health", 100)
+go.property("max_speed", 120)
+go.property("max_stamina", 100)
+go.property("shot_delay", 3000)
+
+-- screen bounds
+local min_x = 0
+local max_x = 1280
+
+local min_y = 720
+local max_y = 150
+
+-- msg control flow
+local stamina_dirty = true
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	-- variable initialization
+	self.speed = 0
+	self.velocity = vmath.vector3(0, 0, 0)
+
+	-- property based variable initialization
+	self.refresh_speed = 75
+	self.stamina = self.max_stamina
+	self.health = self.max_health
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	local p = go.get_position()
+	p.x = p.x + self.speed * dt * self.velocity.x
+	p.y = p.y + self.speed * dt * self.velocity.y
+
+	go.set_position(p)
+	self.speed = 0
+	self.velocity.x = 0
+	self.velocity.y = 0
+
+	self.stamina = math.min(self.stamina + self.refresh_speed * dt, self.max_stamina)
+	if (self.stamina <= self.max_stamina and stamina_dirty) then
+		msg.post("hud#in_game_hud", "update_stamina", { current = self.stamina, max = self.max_stamina })
+		if (self.stamina == self.max_stamina) then
+			stamina_dirty = false
+		end
+	end 
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+	if (message_id == hash("collision_response")) then
+		if (message.group == hash("meteor")) then
+			self.health = self.health - 20
+			msg.post("hud#in_game_hud", "update_health", { current = self.health, max = self.max_health })
+			go.delete(message.other_id)
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if (action_id == hash("up")) then
+		self.speed = self.max_speed
+		self.velocity.y = 1
+	elseif (action_id == hash("down")) then
+		self.speed = self.max_speed
+		self.velocity.y = -1
+	elseif (action_id == hash("left")) then
+		self.speed = self.max_speed
+		self.velocity.x = -1
+	elseif (action_id == hash("right")) then
+		self.speed = self.max_speed
+		self.velocity.x = 1
+	end
+
+	if (action_id == hash("normal_shot") and action.released and math.floor(self.stamina) >= 40) then
+		local shipPos = go.get_position()
+		shipPos.y = shipPos.y + 20
+		self.stamina = self.stamina - 45
+		factory.create("#bulletfactory", shipPos, null, { speed = 200 })
+		stamina_dirty = true
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end

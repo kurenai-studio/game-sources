@@ -1,0 +1,51 @@
+
+local function update_bar(self, node, node_width, current, max)
+	local size = gui.get_size(node)
+
+	if (current < 0) then
+		current = 0
+	elseif (current > max) then
+		current = max
+	end
+
+	local pct = current / max
+	size.x = node_width * pct;
+	
+	gui.set_size(node, size)
+end
+
+function init(self)
+	self.stamina_node = gui.get_node("stamina_bar")
+	self.health_node = gui.get_node("health_bar")
+
+	self.max_stamina_width= gui.get_size(self.stamina_node).x
+	self.max_health_width = gui.get_size(self.health_node).x
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if (message_id == hash("update_stamina")) then
+		update_bar(self, self.stamina_node, self.max_stamina_width, message.current, message.max)
+	elseif (message_id == hash("update_health")) then
+		update_bar(self, self.health_node, self.max_health_width, message.current, message.max)
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add input-handling code here
+	-- Remove this function if not needed
+end

@@ -1,0 +1,53 @@
+images {
+  image: "/assets/images/player/playerShip2_green.png"
+}
+images {
+  image: "/assets/images/bullets/laserRed01.png"
+}
+images {
+  image: "/assets/images/meteor/meteor_brown_a.png"
+}
+images {
+  image: "/assets/images/meteor/meteor_brown_b.png"
+}
+images {
+  image: "/assets/images/meteor/meteor_brown_c.png"
+}
+images {
+  image: "/assets/images/meteor/meteor_brown_d.png"
+}
+animations {
+  id: "ship_fire"
+  images {
+    image: "/assets/images/player/fire_00.png"
+  }
+  images {
+    image: "/assets/images/player/fire_01.png"
+  }
+  images {
+    image: "/assets/images/player/fire_02.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 12
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "star_shine"
+  images {
+    image: "/assets/images/star/star1.png"
+  }
+  images {
+    image: "/assets/images/star/star2.png"
+  }
+  images {
+    image: "/assets/images/star/star3.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+  fps: 6
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+margin: 0
+extrude_borders: 0
+inner_padding: 0
