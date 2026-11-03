@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>The Underlay — v6</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; overflow:hidden; background:#0a0a0f; font-family:monospace; color:#c8c8b0;
+         touch-action:none; -webkit-user-select:none; user-select:none; }
+  #hud { position:fixed; top:12px; left:12px; z-index:10; text-shadow:1px 1px 0 #000; line-height:1.6; font-size:13px; }
+  #hud .hp { color:#c06060; }
+  #status { position:fixed; top:12px; right:12px; z-index:10; text-align:right; color:#8a8a6a; font-size:11px; }
+  #crosshair { position:fixed; top:50%; left:50%; width:4px; height:4px; background:#c8c8b0;
+               transform:translate(-50%,-50%); z-index:5; opacity:.6; pointer-events:none; }
+  #prompt { position:fixed; top:58%; left:50%; transform:translateX(-50%); z-index:12;
+            font-size:13px; color:#ffff88; text-shadow:1px 1px 0 #000; display:none; pointer-events:none; }
+  #chatlog { position:fixed; bottom:12px; left:12px; max-width:min(520px,60vw); z-index:10;
+             background:rgba(10,10,20,.5); border:1px solid #2a2a1a; padding:6px 10px;
+             font-size:12px; line-height:1.5; display:flex; flex-direction:column;
+             max-height:140px; overflow-y:auto; }
+  #chatlog div { color:#b8b898; white-space:pre-wrap; word-wrap:break-word; }
+  #chatinput { position:fixed; bottom:96px; left:50%; transform:translateX(-50%);
+               width:min(560px,90vw); padding:10px 14px; font-family:monospace; font-size:16px;
+               background:rgba(10,10,20,.95); border:2px solid #6a6a4a; color:#e0e0c0;
+               display:none; z-index:20; outline:none; }
+  #partyPanel { position:fixed; top:64px; left:12px; z-index:12; background:rgba(10,10,20,.8);
+                border:1px solid #4a4a3a; padding:8px 12px; font-size:12px; min-width:190px; display:none; }
+  #partyPanel h3 { margin:0 0 6px; font-size:11px; color:#d8d8a8; letter-spacing:1px; }
+  #partyPanel .member { color:#b8b898; padding:2px 0; }
+  #partyPanel .you { color:#ffff88; }
+  #questPanel { position:fixed; top:64px; right:12px; z-index:12; background:rgba(10,10,20,.8);
+                border:1px solid #4a4a3a; padding:8px 12px; font-size:11px; width:230px;
+                display:none; line-height:1.6; }
+  #questPanel h3 { margin:0 0 6px; font-size:11px; color:#d8d8a8; letter-spacing:1px; }
+  #bossBar { position:fixed; top:14px; left:50%; transform:translateX(-50%); width:min(420px,80vw);
+             z-index:15; display:none; text-align:center; }
+  #bossBar .name { font-size:12px; color:#d8a0a0; letter-spacing:2px; margin-bottom:4px; }
+  #bossBar .track { height:10px; background:#2a1a1a; border:1px solid #6a3a3a; }
+  #bossBar .fill { height:100%; background:#a03030; transition:width .12s; }
+  #bossBar .telegraph { color:#ffff88; font-size:10px; margin-top:4px; height:12px; letter-spacing:1px; }
+  #floorTag { position:fixed; bottom:12px; right:12px; z-index:11; font-size:11px; color:#6a6a5a; letter-spacing:1px; }
+  #banner { position:fixed; top:40%; left:50%; transform:translate(-50%,-50%); z-index:35;
+            font-size:26px; letter-spacing:4px; color:#d8d8a8; text-shadow:2px 2px 0 #000;
+            display:none; text-align:center; pointer-events:none; }
+  #title { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+           justify-content:center; background:#0a0a0f; z-index:100; padding:20px; text-align:center; }
+  #title h1 { font-size:min(42px,10vw); letter-spacing:4px; margin:0 0 6px; color:#d8d8a8; }
+  #title h2 { font-size:13px; font-weight:normal; color:#7a7a5a; margin:0 0 26px; }
+  #title input { padding:10px 14px; font-family:monospace; font-size:16px; width:min(260px,80vw);
+                 background:#0a0a14; border:2px solid #6a6a4a; color:#e0e0c0; outline:none;
+                 text-align:center; margin-bottom:14px; }
+  #title button { padding:10px 22px; font-family:monospace; font-size:16px; cursor:pointer;
+                  background:#2a2a1a; color:#d8d8a8; border:2px solid #6a6a4a; }
+  #title p { font-size:11px; color:#6a6a5a; max-width:560px; line-height:1.8; margin-top:16px; }
+  #msg { position:fixed; top:30%; left:50%; transform:translateX(-50%); font-size:15px;
+         z-index:30; display:none; text-shadow:2px 2px 0 #000; pointer-events:none; color:#d8d8a8; }
+  #dialogue { position:fixed; left:50%; bottom:8%; transform:translateX(-50%);
+              width:min(700px,92vw); background:rgba(8,8,16,.96); border:2px solid #6a6a4a;
+              padding:16px 20px 22px; z-index:50; display:none; }
+  #dialogue .who { color:#d8d8a8; font-size:12px; letter-spacing:2px; margin-bottom:8px; }
+  #dialogue .line { color:#c8c8b0; font-size:14px; line-height:1.7; min-height:52px; white-space:pre-wrap; }
+  #dialogue .more { color:#6a6a5a; font-size:10px; text-align:right; margin-top:6px; }
+  #floorPanel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:rgba(8,8,16,.97); border:2px solid #6a6a4a; padding:18px 22px;
+                z-index:60; display:none; width:min(420px,92vw); }
+  #floorPanel h3 { margin:0 0 12px; font-size:13px; letter-spacing:2px; color:#d8d8a8; }
+  #floorPanel .row { display:flex; justify-content:space-between; align-items:center;
+                     padding:8px 0; border-bottom:1px solid #2a2a1a; font-size:12px; }
+  #floorPanel .row:last-of-type { border-bottom:none; }
+  #floorPanel button { font-family:monospace; font-size:11px; padding:5px 12px;
+                       background:#2a2a1a; color:#d8d8a8; border:1px solid #6a6a4a; cursor:pointer; }
+  #floorPanel button:disabled { color:#4a4a3a; border-color:#2a2a1a; cursor:default; }
+  #floorPanel .close { margin-top:14px; width:100%; }
+  #inviteModal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+                 background:rgba(8,8,16,.97); border:2px solid #6a6a4a; padding:20px 24px;
+                 z-index:60; display:none; text-align:center; width:min(380px,90vw); }
+  #inviteModal p { margin:0 0 14px; font-size:13px; }
+  #inviteModal button { font-family:monospace; font-size:12px; padding:6px 14px; margin:0 4px;
+                        background:#2a2a1a; color:#d8d8a8; border:1px solid #6a6a4a; cursor:pointer; }
+  #credits { position:fixed; inset:0; display:none; flex-direction:column; align-items:center;
+             justify-content:center; background:#050508; z-index:200; text-align:center; padding:24px; }
+  #credits h1 { color:#d8d8a8; letter-spacing:6px; font-size:min(34px,9vw); margin:0 0 18px; }
+  #credits p { color:#8a8a6a; font-size:12px; line-height:2.1; margin:0 0 14px; max-width:560px; }
+
+  /* touch layer */
+  #touchLayer { position:fixed; inset:0; z-index:8; pointer-events:none; display:none; }
+  #touchLayer.active { display:block; }
+  #lookArea { position:absolute; right:0; top:0; width:55%; height:100%; pointer-events:auto; touch-action:none; }
+  .stick { position:absolute; width:130px; height:130px; border-radius:50%;
+           border:2px solid rgba(200,200,176,.3); background:rgba(10,10,20,.22);
+           pointer-events:auto; touch-action:none; z-index:10; }
+  .stick .knob { position:absolute; width:60px; height:60px; border-radius:50%;
+                 background:rgba(200,200,176,.32); border:2px solid rgba(200,200,176,.55);
+                 left:35px; top:35px; pointer-events:none; }
+  .stick .lbl { position:absolute; left:0; right:0; bottom:-18px; text-align:center; font-size:9px;
+                letter-spacing:2px; color:rgba(200,200,176,.45); pointer-events:none; }
+  #joystickBase { left:22px; bottom:calc(34px + env(safe-area-inset-bottom)); }
+  #lookBase { right:22px; bottom:calc(34px + env(safe-area-inset-bottom)); }
+  #lookBase .knob { background:rgba(176,200,220,.3); border-color:rgba(176,200,220,.55); }
+  #lookArea { z-index:1; }
+  .tbtn { position:absolute; border-radius:50%; display:flex; flex-direction:column; align-items:center;
+          justify-content:center; pointer-events:auto; touch-action:none; z-index:10; line-height:1;
+          -webkit-user-select:none; user-select:none; letter-spacing:1px; }
+  .tbtn.held { filter:brightness(1.6); }
+  /* buttons sit just above the sticks, where the thumb flicks up to */
+  #attackBtn { right:30px; bottom:calc(188px + env(safe-area-inset-bottom)); width:92px; height:92px;
+               border:2px solid rgba(220,120,120,.6); background:rgba(160,40,40,.3);
+               color:#f0c0c0; font-size:13px; }
+  #interactBtn { left:40px; bottom:calc(188px + env(safe-area-inset-bottom)); width:76px; height:76px;
+                 border:2px solid rgba(220,220,130,.55); background:rgba(110,110,40,.3);
+                 color:#f0f0b0; font-size:12px; }
+  @media (orientation: landscape) {
+    #attackBtn { right:170px; bottom:calc(60px + env(safe-area-inset-bottom)); }
+    #interactBtn { left:170px; bottom:calc(60px + env(safe-area-inset-bottom)); }
+  }
+  #touchBar { position:absolute; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+              display:flex; gap:8px; z-index:12; pointer-events:none; }
+  #touchBar div { pointer-events:auto; touch-action:none; height:36px; min-width:44px; padding:0 10px; border-radius:8px;
+                  border:1px solid rgba(200,200,176,.3); background:rgba(10,10,20,.6); color:#c8c8b0;
+                  font-size:11px; letter-spacing:1px; display:flex; align-items:center; justify-content:center; }
+  #joystickBase { z-index:10; }
+  body.touch #hud { font-size:12px; top:calc(10px + env(safe-area-inset-top)); }
+  body.touch #status { top:calc(10px + env(safe-area-inset-top)); font-size:10px; max-width:34vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.touch #questPanel { top:calc(56px + env(safe-area-inset-top)); width:min(230px,60vw); }
+  body.touch #partyPanel { top:calc(56px + env(safe-area-inset-top)); }
+  body.touch #prompt { top:auto; bottom:calc(290px + env(safe-area-inset-bottom)); font-size:14px; }
+  body.touch #lookArea { height:45%; }
+  body.touch #chatinput { bottom:auto; top:calc(56px + env(safe-area-inset-top)); }
+  body.touch #floorTag { bottom:calc(8px + env(safe-area-inset-bottom)); left:12px; right:auto; }
+  body.touch #inputBadge { display:none; }
+  body.touch #crosshair { display:none; }
+  body.touch #touchBar { top:calc(40px + env(safe-area-inset-top)); }
+  body.touch #questPanel { top:calc(86px + env(safe-area-inset-top)); }
+  body.touch #partyPanel { top:calc(86px + env(safe-area-inset-top)); }
+  body.touch #chatinput { top:calc(86px + env(safe-area-inset-top)); }
+  body.touch #dialogue { bottom:auto; top:calc(90px + env(safe-area-inset-top)); width:min(700px,94vw); padding:14px 16px 18px; z-index:50; }
+  body.touch.dlg #questPanel, body.touch.dlg #partyPanel, body.touch.dlg #prompt { display:none !important; }
+  body.touch #dialogue .line { font-size:15px; }
+  body.controller-connected #touchLayer { display:none !important; }
+  #inputBadge { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); z-index:11;
+                font-size:9px; color:#4a4a3a; letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<div id="title">
+  <h1>THE UNDERLAY</h1>
+  <h2 id="versionLine">v7 · the five floors</h2>
+  <input id="nameInput" maxlength="16" placeholder="Surveyor" autocomplete="off">
+  <button id="enterBtn">Enter the Underlay</button>
+  <p id="controlsHint">WASD move · Mouse look · Click attack · E interact · Q quest log · P invite · Enter chat</p>
+  <p id="deviceHint" style="color:#8a8a6a;"></p>
+</div>
+
+<div id="hud"></div>
+<div id="status">connecting…</div>
+<div id="crosshair"></div>
+<div id="prompt"></div>
+<div id="partyPanel"></div>
+<div id="questPanel"></div>
+<div id="bossBar">
+  <div class="name"></div>
+  <div class="track"><div class="fill" style="width:100%"></div></div>
+  <div class="telegraph"></div>
+</div>
+<div id="floorTag"></div>
+<div id="chatlog"></div>
+<div id="chatinput" contenteditable="false"><input id="chatField" type="text" maxlength="140"
+  style="width:100%;background:transparent;border:none;color:#e0e0c0;font-family:monospace;font-size:16px;outline:none;"></div>
+<div id="msg"></div>
+<div id="banner"></div>
+
+<div id="dialogue">
+  <div class="who"></div>
+  <div class="line"></div>
+  <div class="more">click / E / A to continue</div>
+</div>
+
+<div id="floorPanel">
+  <h3>THE BACK DOOR</h3>
+  <div id="floorRows"></div>
+  <button class="close" id="floorClose">Close</button>
+</div>
+
+<div id="inviteModal">
+  <p id="inviteText"></p>
+  <button id="inviteAccept">Accept</button>
+  <button id="inviteDecline">Decline</button>
+</div>
+
+<div id="credits">
+  <h1>THE UNDERLAY</h1>
+  <p>You closed all five seams.<br>The rice balls are still on the shelf.<br>The mentor is still missing.</p>
+  <p style="color:#5a5a4a;">story · design · tech · art · sound — written in code<br>
+     no ripped assets · no external art · no audio files</p>
+  <p style="color:#6a6a5a;font-size:11px;" id="creditsHint">Press R to return, or refresh to start again.</p>
+</div>
+
+<div id="touchLayer">
+  <div id="lookArea"></div>
+  <div id="joystickBase" class="stick"><div id="joystickKnob" class="knob"></div><span class="lbl">MOVE</span></div>
+  <div id="lookBase" class="stick"><div id="lookKnob" class="knob"></div><span class="lbl">LOOK</span></div>
+  <div class="tbtn" id="attackBtn">ATTACK</div>
+  <div class="tbtn" id="interactBtn">USE</div>
+  <div id="touchBar">
+    <div id="questBtn">QUEST</div><div id="inviteBtn">INVITE</div><div id="chatBtn">CHAT</div><div id="pauseBtn">MENU</div>
+  </div>
+</div>
+<div id="inputBadge"></div>
+
+<script src="vendor/colyseus.js"></script>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js",
+               "three/addons/": "./vendor/addons/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+/* =================================================================
+   0. DEVICE / INPUT
+   ================================================================= */
+const isTouch = window.matchMedia('(pointer: coarse)').matches &&
+                ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+document.getElementById('deviceHint').textContent = isTouch
+  ? 'Touch controls on. Add to your home screen for full screen.'
+  : 'Keyboard & mouse. Gamepad supported: L-stick move, R-stick look, A attack, X interact.';
+if (isTouch) document.getElementById('controlsHint').textContent = 'Left stick moves · right stick looks · ATTACK above the right stick, USE above the left · QUEST / INVITE / CHAT / MENU up top';
+
+let padIndex = null;
+const getPad = () => {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  if (padIndex !== null && pads[padIndex]) return pads[padIndex];
+  for (const p of pads) if (p && p.connected) { padIndex = p.index; return p; }
+  return null;
+};
+function badge() {
+  const gp = getPad();
+  const el = document.getElementById('inputBadge');
+  if (gp) el.textContent = 'CONTROLLER: ' + (gp.id || '?').slice(0, 28);
+  else if (isTouch) el.textContent = 'TOUCH';
+  else el.textContent = 'KEYBOARD + MOUSE';
+}
+function onPadOn() {
+  document.body.classList.add('controller-connected');
+  document.getElementById('touchLayer').classList.remove('active');
+  badge();
+}
+window.addEventListener('gamepadconnected', (e) => { padIndex = e.gamepad.index; onPadOn(); });
+window.addEventListener('gamepaddisconnected', (e) => {
+  if (padIndex === e.gamepad.index) padIndex = null;
+  document.body.classList.remove('controller-connected');
+  if (isTouch) document.getElementById('touchLayer').classList.add('active');
+  badge();
+});
+setInterval(() => { if (getPad() && !document.body.classList.contains('controller-connected')) onPadOn(); }, 800);
+if (isTouch) { document.getElementById('touchLayer').classList.add('active'); document.body.classList.add('touch'); }
+badge();
+/* iOS ignores user-scalable=no: swallow double-taps and pinches outside text fields */
+(() => { let last = 0;
+  document.addEventListener('touchend', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
+    const now = Date.now(); if (now - last < 350) e.preventDefault(); last = now;
+  }, { passive: false });
+  document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+})();
+
+/* =================================================================
+   1. PROFILE (localStorage)
+   ================================================================= */
+const SAVE_KEY = 'underlay:character';
+const defaultProfile = (name) => ({
+  name, questStage: 0, seals: 0, hasBadge: false, cleared: [], createdAt: Date.now(), lastPlayed: Date.now()
+});
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!p || typeof p.name !== 'string') return null;
+    if (!Array.isArray(p.cleared)) p.cleared = [];
+    return p;
+  } catch { return null; }
+}
+function saveProfile() {
+  try { profile.lastPlayed = Date.now(); localStorage.setItem(SAVE_KEY, JSON.stringify(profile)); } catch {}
+}
+let profile = loadProfile();
+if (profile) document.getElementById('nameInput').value = profile.name;
+else document.getElementById('nameInput').value = '';
+
+/* =================================================================
+   2. INPUT AGGREGATION
+   ================================================================= */
+const input = { mx: 0, mz: 0, lx: 0, ly: 0, attack: false, interact: false, _pa: false, _pi: false, _ps: false };
+const keys = {};
+addEventListener('keydown', (e) => { keys[e.code] = true; });
+addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+(function touchControls() {
+  // one factory for both sticks: returns {x,y} in -1..1, knob follows the thumb
+  const makeStick = (baseId, knobId, onChange) => {
+    const base = document.getElementById(baseId), knob = document.getElementById(knobId);
+    let active = null;
+    const R = 65, K = 35, MAX = 46;
+    const set = (dx, dy) => { knob.style.left = (K + dx) + 'px'; knob.style.top = (K + dy) + 'px'; onChange(dx / MAX, dy / MAX); };
+    base.addEventListener('pointerdown', (e) => {
+      if (active !== null) return;
+      active = e.pointerId; try { base.setPointerCapture(e.pointerId); } catch (_) {}
+      const r = base.getBoundingClientRect();
+      let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R);
+      const len = Math.hypot(dx, dy); if (len > MAX) { dx = dx / len * MAX; dy = dy / len * MAX; }
+      set(dx, dy); e.preventDefault();
+    });
+    base.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== active) return;
+      const r = base.getBoundingClientRect();
+      let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R);
+      const len = Math.hypot(dx, dy); if (len > MAX) { dx = dx / len * MAX; dy = dy / len * MAX; }
+      set(dx, dy); e.preventDefault();
+    });
+    const end = (e) => { if (e.pointerId === active) { active = null; set(0, 0); } };
+    base.addEventListener('pointerup', end);
+    base.addEventListener('pointercancel', end);
+    base.addEventListener('lostpointercapture', () => { active = null; set(0, 0); });
+  };
+  makeStick('joystickBase', 'joystickKnob', (x, y) => { input.mx = x; input.mz = y; });
+  makeStick('lookBase', 'lookKnob', (x, y) => { input.lx = x; input.ly = y; });
+
+  const hold = (el, key) => {
+    const off = () => { input[key] = false; el.classList.remove('held'); };
+    el.addEventListener('pointerdown', (e) => { input[key] = true; input[key + 'Press'] = true; el.classList.add('held'); try { el.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
+    el.addEventListener('pointerup', off);
+    el.addEventListener('pointercancel', off);
+    el.addEventListener('lostpointercapture', off);
+  };
+  hold(document.getElementById('attackBtn'), 'attack');
+  hold(document.getElementById('interactBtn'), 'interact');
+
+  const tap = (id, fn) => document.getElementById(id).addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
+  tap('pauseBtn', () => showTitle());
+  tap('questBtn', () => { const q = $('questPanel'); q.style.display = q.style.display === 'block' ? 'none' : 'block'; });
+  tap('inviteBtn', () => { if (started && mode === 'overworld') inviteNearest(); else msg('Invites happen in the store.', 1600); });
+  tap('chatBtn', () => { if (started && !chatOpen) openChat(); });
+
+  // look area: drag to rotate
+  const look = document.getElementById('lookArea');
+  let lookId = null, lastX = 0, lastY = 0;
+  Object.defineProperty(window, '__lookDragging', { get: () => lookId !== null });
+  look.addEventListener('pointerdown', (e) => {
+    if (lookId !== null) return;
+    lookId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
+    look.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  look.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== lookId) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    camera.rotation.y -= dx * 0.004;
+    camera.rotation.x -= dy * 0.003;
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -1.3, 1.3);
+    e.preventDefault();
+  });
+  const lookEnd = (e) => { if (e.pointerId === lookId) lookId = null; };
+  look.addEventListener('pointerup', lookEnd);
+  look.addEventListener('pointercancel', lookEnd);
+})();
+
+function pollPad() {
+  const gp = getPad();
+  if (!gp) return;
+  const dead = 0.18;
+  const [lx, ly, rx, ry] = gp.axes;
+  if (Math.abs(lx) > dead) input.mx = lx;
+  if (Math.abs(ly) > dead) input.mz = ly;
+  if (Math.abs(rx) > dead) camera.rotation.y -= rx * 0.055;
+  if (Math.abs(ry) > dead) {
+    camera.rotation.x -= ry * 0.045;
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -1.3, 1.3);
+  }
+  const btn = (i) => gp.buttons[i] && gp.buttons[i].pressed;
+  input.attack = btn(0);
+  input.interact = btn(2);
+  if (btn(9) && !input._ps) showTitle();
+  input._ps = btn(9);
+}
+function edgeAttack() { const e = (input.attack && !input._pa) || !!input.attackPress; input.attackPress = false; input._pa = input.attack; return e; }
+function edgeInteract() { const e = (input.interact && !input._pi) || !!input.interactPress; input.interactPress = false; input._pi = input.interact; return e; }
+
+/* =================================================================
+   3. TEXTURES / SPRITES
+   ================================================================= */
+function makeTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const wallTex = makeTex(32, 32, (ctx, w, h) => {
+  ctx.fillStyle = '#2a2a22'; ctx.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 8) for (let x = 0; x < w; x += 16) {
+    const off = (y / 8) % 2 ? 8 : 0;
+    ctx.fillStyle = `rgb(${44 + Math.random() * 14 | 0},${42 + Math.random() * 12 | 0},${30 + Math.random() * 10 | 0})`;
+    ctx.fillRect(x + off + 1, y + 1, 14, 6);
+  }
+  ctx.fillStyle = '#14140f';
+  for (let y = 0; y < h; y += 8) ctx.fillRect(0, y, w, 1);
+});
+const floorTex = makeTex(32, 32, (ctx, w, h) => {
+  ctx.fillStyle = '#1e1e18'; ctx.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4)
+    if (Math.random() < 0.25) { ctx.fillStyle = '#2a2a20'; ctx.fillRect(x, y, 4, 4); }
+  ctx.strokeStyle = '#0f0f0b';
+  for (let i = 0; i < w; i += 8) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
+});
+const bossFloorTex = makeTex(32, 32, (ctx, w, h) => {
+  ctx.fillStyle = '#1a1218'; ctx.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4)
+    if (Math.random() < 0.35) { ctx.fillStyle = '#3a1a2a'; ctx.fillRect(x, y, 4, 4); }
+});
+
+function makeSprite(draw, w, h, tint) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+  return new THREE.Sprite(new THREE.SpriteMaterial({
+    map: t, transparent: true, alphaTest: 0.5, color: tint === undefined ? 0xffffff : tint
+  }));
+}
+function drawPlayer(ctx) {
+  ctx.fillStyle = '#c8c8a0'; ctx.fillRect(11, 14, 10, 16);
+  ctx.fillStyle = '#c8a070'; ctx.fillRect(12, 4, 8, 10);
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(13, 2, 6, 4);
+  ctx.fillStyle = '#c8c8a0'; ctx.fillRect(9, 16, 2, 10); ctx.fillRect(21, 16, 2, 10);
+  ctx.fillStyle = '#8a6a3a'; ctx.fillRect(12, 30, 3, 12); ctx.fillRect(17, 30, 3, 12);
+  ctx.fillStyle = '#fff'; ctx.fillRect(14, 8, 1, 1); ctx.fillRect(17, 8, 1, 1);
+}
+function drawClerk(ctx) {
+  ctx.fillStyle = '#3a2e1a'; ctx.fillRect(11, 14, 10, 16);
+  ctx.fillStyle = '#c8a070'; ctx.fillRect(12, 4, 8, 10);
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(13, 2, 6, 4);
+  ctx.fillStyle = '#c8c8a0'; ctx.fillRect(9, 16, 2, 10); ctx.fillRect(21, 16, 2, 10);
+  ctx.fillStyle = '#8a6a3a'; ctx.fillRect(12, 30, 3, 12); ctx.fillRect(17, 30, 3, 12);
+  ctx.fillStyle = '#ffff88'; ctx.fillRect(14, 8, 1, 1); ctx.fillRect(17, 8, 1, 1);
+}
+function drawVending(ctx) {
+  ctx.fillStyle = '#1a2a3a'; ctx.fillRect(6, 2, 20, 44);
+  ctx.fillStyle = '#3a5a7a'; ctx.fillRect(9, 5, 14, 26);
+  for (let y = 8; y < 30; y += 7) {
+    ctx.fillStyle = ['#c06060', '#60c060', '#c0c060'][y % 3];
+    ctx.fillRect(11, y, 3, 4); ctx.fillRect(16, y, 3, 4); ctx.fillRect(21, y, 3, 4);
+  }
+  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(9, 35, 14, 6);
+  ctx.fillStyle = '#7aff7a'; ctx.fillRect(24, 6, 2, 2);
+}
+function drawKid(ctx) {
+  ctx.fillStyle = '#4a5a3a'; ctx.fillRect(12, 18, 8, 12);
+  ctx.fillStyle = '#c8a070'; ctx.fillRect(13, 10, 6, 8);
+  ctx.fillStyle = '#6a3a1a'; ctx.fillRect(12, 8, 8, 3);
+  ctx.fillStyle = '#8a6a3a'; ctx.fillRect(13, 30, 2, 10); ctx.fillRect(17, 30, 2, 10);
+  ctx.fillStyle = '#fff'; ctx.fillRect(14, 13, 1, 1); ctx.fillRect(17, 13, 1, 1);
+}
+function drawEnemy(ctx) {
+  ctx.fillStyle = '#4a1a2a'; ctx.fillRect(8, 12, 16, 20);
+  ctx.fillStyle = '#6a2a3a'; ctx.fillRect(10, 6, 12, 10);
+  ctx.fillStyle = '#d8d040'; ctx.fillRect(11, 9, 3, 3); ctx.fillRect(18, 9, 3, 3);
+  ctx.fillStyle = '#2a0a12'; ctx.fillRect(12, 32, 3, 12); ctx.fillRect(17, 32, 3, 12);
+  ctx.fillStyle = '#8a3a4a'; ctx.fillRect(5, 14, 4, 8); ctx.fillRect(23, 14, 4, 8);
+}
+function drawBoss(ctx) {
+  ctx.fillStyle = '#2a0a1a'; ctx.fillRect(4, 10, 56, 30);
+  ctx.fillStyle = '#4a1a3a'; ctx.fillRect(8, 4, 48, 14);
+  ctx.fillStyle = '#ff4040'; ctx.fillRect(14, 10, 8, 6); ctx.fillRect(42, 10, 8, 6);
+  ctx.fillStyle = '#ffd040'; ctx.fillRect(16, 12, 4, 2); ctx.fillRect(44, 12, 4, 2);
+  ctx.fillStyle = '#1a0508'; ctx.fillRect(20, 40, 6, 8); ctx.fillRect(38, 40, 6, 8);
+}
+function nameTag(name) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 48;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, 256, 48);
+  ctx.fillStyle = '#ffff88'; ctx.font = 'bold 26px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(name, 128, 24);
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true }));
+  s.scale.set(2, 0.375, 1);
+  return s;
+}
+
+/* =================================================================
+   4. SCENE
+   ================================================================= */
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.03);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 140);
+camera.position.set(0, 1.6, 6);
+
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1));
+document.body.appendChild(renderer.domElement);
+
+const overworldGroup = new THREE.Group();
+const dungeonGroup = new THREE.Group();
+scene.add(overworldGroup, dungeonGroup);
+dungeonGroup.visible = false;
+
+const OW = { w: 20, d: 24, h: 3.2 };
+const wallMat = new THREE.MeshBasicMaterial({ map: wallTex });
+const floorMat = new THREE.MeshBasicMaterial({ map: floorTex });
+const bossFloorMat = new THREE.MeshBasicMaterial({ map: bossFloorTex });
+const ceilMat = new THREE.MeshBasicMaterial({ color: 0x141410 });
+
+const overworldNpcs = [];
+let overworldDoor = null;
+(function buildOverworld() {
+  const box = (x, z, w, d) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, OW.h, d), wallMat);
+    m.position.set(x, OW.h / 2, z); overworldGroup.add(m);
+  };
+  box(0, -OW.d / 2, OW.w, 0.3); box(0, OW.d / 2, OW.w, 0.3);
+  box(-OW.w / 2, 0, 0.3, OW.d); box(OW.w / 2, 0, 0.3, OW.d);
+
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(OW.w, OW.d), floorMat);
+  fl.rotation.x = -Math.PI / 2; overworldGroup.add(fl);
+  const ce = new THREE.Mesh(new THREE.PlaneGeometry(OW.w, OW.d), new THREE.MeshBasicMaterial({ color: 0x141410 }));
+  ce.rotation.x = Math.PI / 2; ce.position.y = OW.h; overworldGroup.add(ce);
+
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.5, 0.15), new THREE.MeshBasicMaterial({ color: 0x6a2a3a }));
+  door.position.set(0, 1.25, -OW.d / 2 + 0.2); overworldGroup.add(door);
+
+  // NPCs
+  const clerk = makeSprite(drawClerk, 32, 48);
+  clerk.position.set(5, 1.0, -7); clerk.userData = { id: 'clerk' }; overworldGroup.add(clerk);
+  const vend = makeSprite(drawVending, 32, 48);
+  vend.position.set(-7, 1.0, -2); vend.userData = { id: 'vending' }; overworldGroup.add(vend);
+  const kid = makeSprite(drawKid, 32, 48);
+  kid.position.set(7, 0.95, 5); kid.userData = { id: 'kid' }; overworldGroup.add(kid);
+  overworldNpcs.push(clerk, vend, kid);
+
+  overworldDoor = door;
+})();
+
+/* dungeon instanced meshes */
+let dungeonMeshes = [];
+function clearDungeon() {
+  for (const m of dungeonMeshes) { dungeonGroup.remove(m); m.geometry.dispose(); }
+  dungeonMeshes = [];
+}
+function buildDungeon(mapData, W, H) {
+  clearDungeon();
+  const walls = [], floors = [], bossFloors = [], ceils = [];
+  for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+    const c = mapData[z * W + x];
+    if (c === '1') walls.push([x, z]);
+    else {
+      ceils.push([x, z]);
+      if (c === '2') bossFloors.push([x, z]);
+      else floors.push([x, z]);
+    }
+  }
+  const dummy = new THREE.Object3D();
+  const mk = (geo, mat, list, y, rotX) => {
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(geo, mat, list.length);
+    im.frustumCulled = false;
+    list.forEach(([x, z], i) => {
+      dummy.position.set(x + 0.5, y, z + 0.5);
+      dummy.rotation.set(rotX || 0, 0, 0);
+      dummy.updateMatrix();
+      im.setMatrixAt(i, dummy.matrix);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    dungeonGroup.add(im); dungeonMeshes.push(im);
+  };
+  mk(new THREE.BoxGeometry(1, OW.h, 1), wallMat, walls, OW.h / 2, 0);
+  mk(new THREE.PlaneGeometry(1, 1), floorMat, floors, 0, -Math.PI / 2);
+  mk(new THREE.PlaneGeometry(1, 1), bossFloorMat, bossFloors, 0, -Math.PI / 2);
+  mk(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x0a0808 }), ceils, OW.h, Math.PI / 2);
+}
+
+/* =================================================================
+   5. AUDIO
+   ================================================================= */
+let actx = null;
+function audioOn() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); }
+function beep(f, d, type = 'square', v = 0.04) {
+  if (!actx) return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = f; g.gain.value = v;
+  o.connect(g); g.connect(actx.destination);
+  o.start(); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + d);
+  o.stop(actx.currentTime + d);
+}
+function noise(d, v = 0.03) {
+  if (!actx) return;
+  const b = actx.createBuffer(1, actx.sampleRate * d, actx.sampleRate);
+  const data = b.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * v;
+  const s = actx.createBufferSource(); s.buffer = b; s.connect(actx.destination); s.start();
+}
+
+/* =================================================================
+   6. NETWORK
+   ================================================================= */
+/* Where the game server lives.
+   - Served by the server itself (Render, or `npm start` locally): same origin, leave empty.
+   - Served from GitHub Pages: point at the hosted server. ?server=wss://host overrides for testing. */
+const SERVER_URL = (() => {
+  const q = new URLSearchParams(location.search).get('server');
+  if (q) return q;
+  if (location.hostname.endsWith('github.io')) return 'wss://underlay.onrender.com';
+  return undefined; // same origin
+})();
+const client = new Colyseus.Client(SERVER_URL);
+let ow = null, dg = null;
+let myOwId = null, myDgId = null;
+let started = false;
+let mode = 'overworld';
+let dungeonFloor = 0;
+let floorCleared = false;
+
+const remote = new Map();      // key -> { group }
+const enemySprites = new Map(); // id -> sprite
+let bossSprite = null;
+
+async function joinOverworld(name) {
+  ow = await client.joinOrCreate('overworld', { name, playerId: (profile && profile.playerId) || null });
+  myOwId = ow.sessionId;
+  document.getElementById('status').textContent = 'online · ' + myOwId.slice(0, 6);
+
+  ow.state.players.onAdd((p, sid) => {
+    if (sid === myOwId) return;
+    const g = new THREE.Group();
+    const body = makeSprite(drawPlayer, 32, 48, p.color); body.position.y = 0.8;
+    const tag = nameTag(p.name || 'anon'); tag.position.y = 2.2;
+    g.add(body, tag); g.position.set(p.x, 0, p.z);
+    overworldGroup.add(g);
+    remote.set(sid, { group: g });
+  });
+  ow.state.players.onRemove((p, sid) => {
+    const v = remote.get(sid);
+    if (v) { overworldGroup.remove(v.group); remote.delete(sid); }
+  });
+  ow.state.chat.onAdd((m) => appendChat(m.name, m.text));
+  ow.onMessage('party-updated', drawParty);
+  ow.onMessage('party-error', (t) => msg(t, 2400));
+  ow.onMessage('party-invite-from', (d) => {
+    pendingInvite = d.fromSessionId;
+    document.getElementById('inviteText').textContent = d.fromName + ' invites you to their party.';
+    document.getElementById('inviteModal').style.display = 'block';
+  });
+  ow.onMessage('enter-dungeon-ok', (d) => startDungeon(d.floor));
+  ow.onMessage('profile-loaded', (d) => applyServerProfile(d.playerId, d.profile));
+  ow.onMessage('profile-replaced', (d) => { profile.playerId = d.newId; saveProfile(); msg('New character record started.', 2400); });
+  ow.onMessage('player-downed', (d) => { if (d && d.name) msg(d.name + ' went down.', 1800); });
+}
+
+/* server owns progress; the local copy is a cache for the HUD and the name box */
+function applyServerProfile(playerId, prof) {
+  if (!profile) return;
+  if (playerId) profile.playerId = playerId;
+  if (prof) {
+    const wasStage = profile.questStage;
+    profile.questStage = prof.questStage | 0;
+    profile.seals = prof.seals | 0;
+    profile.hasBadge = !!prof.hasBadge;
+    profile.cleared = Array.isArray(prof.cleared) ? prof.cleared.slice() : [];
+    if (profile.questStage === 6 && wasStage < 6) {
+      setTimeout(() => { document.getElementById('credits').style.display = 'flex'; if (controls) controls.unlock(); }, 1600);
+    }
+  }
+  saveProfile();
+  drawQuest();
+}
+
+let pendingInvite = null;
+
+function appendChat(name, text) {
+  const log = document.getElementById('chatlog');
+  const d = document.createElement('div');
+  d.textContent = name + ': ' + text;
+  log.appendChild(d);
+  while (log.children.length > 8) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ---------------- dungeon lifecycle ---------------- */
+async function startDungeon(floor) {
+  if (dg) return;
+  dungeonFloor = floor;
+  floorCleared = false;
+  try {
+    dg = await client.joinOrCreate('dungeon_' + floor, { floor, party: partyOfMe(), name: profile.name, playerId: profile.playerId || null });
+    myDgId = dg.sessionId;
+    // the room resolves before its first state patch lands; wait for the map
+    if (!dg.state.mapData) await new Promise((res) => { const h = () => { if (dg.state.mapData) { dg.onStateChange.remove(h); res(); } }; dg.onStateChange(h); setTimeout(res, 3000); });
+    mode = 'dungeon';
+    floorCleared = false;
+    overworldGroup.visible = false;
+    dungeonGroup.visible = true;
+    buildDungeon(dg.state.mapData, dg.state.width, dg.state.height);
+    wireDungeon();
+    // onAdd may not replay for players that were already in the state: place myself explicitly
+    const meNow = dg.state.players.get(myDgId);
+    if (meNow) camera.position.set(meNow.x, 1.6, meNow.z);
+    else camera.position.set(0, 1.6, 0);
+    camera.rotation.x = 0;
+    scene.fog.density = 0.022;   // dungeons were reading as pitch black on phones
+    msg('FLOOR ' + floor + ' — ' + dg.state.boss.name, 2600);
+    beep(180, 0.3, 'sawtooth', 0.05);
+  } catch (e) {
+    console.error(e);
+    msg('Could not enter: ' + e.message, 3000);
+    dg = null;
+  }
+}
+
+function wireDungeon() {
+  dg.state.players.onAdd((p, sid) => {
+    if (sid === myDgId) {
+      camera.position.set(p.x, 1.6, p.z);
+      return;
+    }
+    const g = new THREE.Group();
+    const body = makeSprite(drawPlayer, 32, 48, p.color); body.position.y = 0.8;
+    const tag = nameTag(p.name || 'anon'); tag.position.y = 2.2;
+    g.add(body, tag); g.position.set(p.x, 0, p.z);
+    dungeonGroup.add(g);
+    remote.set('d-' + sid, { group: g });
+  });
+  dg.state.players.onRemove((p, sid) => {
+    const v = remote.get('d-' + sid);
+    if (v) { dungeonGroup.remove(v.group); remote.delete('d-' + sid); }
+  });
+
+  dg.state.enemies.onAdd((e, id) => {
+    const s = makeSprite(drawEnemy, 32, 48);
+    s.position.set(e.x, 0.8, e.z);
+    dungeonGroup.add(s); enemySprites.set(id, s);
+  });
+  dg.state.enemies.onRemove((e, id) => {
+    const s = enemySprites.get(id);
+    if (s) { dungeonGroup.remove(s); enemySprites.delete(id); }
+  });
+
+  const b = dg.state.boss;
+  bossSprite = makeSprite(drawBoss, 64, 64);
+  bossSprite.scale.set(3, 3, 1);
+  bossSprite.position.set(b.x, 1.2, b.z);
+  dungeonGroup.add(bossSprite);
+
+  dg.onMessage('floor-cleared', (d) => {
+    floorCleared = true;
+    applyClear(d.floor);
+    banner('FLOOR ' + d.floor + ' CLEARED');
+    beep(660, 0.12, 'sine', 0.06);
+    setTimeout(() => beep(880, 0.2, 'sine', 0.06), 130);
+  });
+  dg.onMessage('boss-hit', () => { drawBossBar(); beep(180, 0.06, 'square', 0.03); });
+  dg.onMessage('boss-phase', () => { msg('THE LANDLORD STOPS PRETENDING.', 2600); beep(90, 0.5, 'sawtooth', 0.06); });
+  dg.onMessage('player-hurt', (d) => { if (d.hp <= 0) msg('You black out. You wake at the entrance.', 2000); });
+  dg.onMessage('profile-updated', (d) => applyServerProfile(null, d.profile));
+  dg.onMessage('player-downed', (d) => { if (d && d.name) msg(d.name + ' went down.', 1800); });
+  dg.onMessage('boss-scaled', (d) => { if (d && d.difficulty > 1) msg('The Landlord grows to meet the party.', 2000); });
+}
+
+function leaveDungeon() {
+  if (!dg) return;
+  dg.leave();
+  dg = null; myDgId = null;
+  mode = 'overworld';
+  scene.fog.density = 0.03;
+  dungeonGroup.visible = false;
+  overworldGroup.visible = true;
+  clearDungeon();
+  bossSprite = null;
+  enemySprites.clear();
+  for (const [k, v] of [...remote]) if (k.startsWith('d-')) { dungeonGroup.remove(v.group); remote.delete(k); }
+  camera.position.set(0, 1.6, 6);
+  document.getElementById('bossBar').style.display = 'none';
+  document.getElementById('floorTag').textContent = '';
+  drawParty(); drawQuest();
+  if (ow) { ow.send('leave-dungeon'); ow.send('request-profile'); }
+}
+
+/* =================================================================
+   7. QUEST
+   ================================================================= */
+function applyClear(floor) { /* server awards the floor; profile-updated carries the result */ }
+
+const SEAL_NAMES = { 2: 'AISLE THREE', 3: 'LOADING DOCK', 4: 'FREEZER' };
+function drawQuest() {
+  const q = document.getElementById('questPanel');
+  if (!started) { q.style.display = 'none'; return; }
+  q.style.display = 'block';
+  const stage = profile.questStage;
+  let body = '';
+  if (stage === 0) body = 'Talk to the night clerk.';
+  else if (stage === 1) body = 'Floor 1 is open. Find the mentor\'s badge.';
+  else if (stage === 2) body = 'Show the badge to the clerk.';
+  else if (stage === 3) {
+    body = 'Close the three seams:<br>';
+    for (const f of [2, 3, 4]) body += (profile.seals & (1 << (f - 2)) ? '✔ ' : '— ') + 'Floor ' + f + ' · ' + SEAL_NAMES[f] + '<br>';
+  }
+  else if (stage === 4) body = 'Tell the clerk all three are shut.';
+  else if (stage === 5) body = 'Floor 5. Collect from the Landlord.';
+  else body = 'All seams closed.';
+  q.innerHTML = '<h3>THE JOB</h3>' + body;
+}
+
+/* =================================================================
+   8. DIALOGUE
+   ================================================================= */
+const DLG = {
+  clerk: {
+    0: { who: 'NIGHT CLERK', lines: [
+      'You came in through the back door. That door is for boxes.',
+      'You\'re the new surveyor. Bureau of Seams. Probationary, by the look of you.',
+      'Your mentor went through that door four days ago. Bought a rice ball, said "be right back."',
+      'The back room isn\'t a room right now. It\'s a seam. Things come out of it and buy energy drinks.',
+      'If you\'re going in, take the badge off the hook. It\'s the only ID that scares them.'
+    ], done: () => { profile.questStage = Math.max(profile.questStage, 1); saveProfile(); drawQuest(); if (ow) ow.send('advance-quest', { stage: 1 }); } },
+    1: { who: 'NIGHT CLERK', lines: ['Still in there. Still buying nothing. Go on.'] },
+    2: { who: 'NIGHT CLERK', lines: [
+      'That\'s his badge. You found it on something that used to be a shelving unit.',
+      'Three more seams opened while you were gone. Aisle three, the loading dock, the freezer.',
+      'Close them in any order. When all three are shut, the back of the freezer opens onto the Underlay proper.'
+    ], done: () => { profile.questStage = Math.max(profile.questStage, 3); saveProfile(); drawQuest(); if (ow) ow.send('advance-quest', { stage: 3 }); } },
+    3: { who: 'NIGHT CLERK', lines: ['Seams don\'t close on their own. Check the door panel.'] },
+    4: { who: 'NIGHT CLERK', lines: [
+      'All three. The freezer\'s open all the way now.',
+      'Whatever owns this building is on the other side. It calls itself the Landlord.',
+      'It has been collecting rent from things that don\'t exist. Go collect ours.'
+    ], done: () => { profile.questStage = Math.max(profile.questStage, 5); saveProfile(); drawQuest(); if (ow) ow.send('advance-quest', { stage: 5 }); } },
+    5: { who: 'NIGHT CLERK', lines: ['Door panel. Bottom floor. Don\'t sign anything.'] },
+    6: { who: 'NIGHT CLERK', lines: ['You\'re back. The seams are shut. The rice balls are still on the shelf.'] }
+  },
+  vending: {
+    any: { who: 'VENDING MACHINE', lines: [
+      'The machine hums. A sticker reads: INSERT FRIEND.',
+      'It dispenses a cold can of something called ALLOTMENT. You feel better.'
+    ], done: () => { if (ow) ow.send('heal'); beep(700, 0.1, 'sine', 0.04); } }
+  },
+  kid: {
+    any: { who: 'KID WITH A BENT TOOTH', lines: [
+      'My brother says the Underlay is just the city with the lights off.',
+      'He says the Landlord used to be a person. Then he signed something.',
+      'I don\'t go past the freezer anymore.'
+    ] }
+  }
+};
+
+let dlgState = null; document.body.classList.remove('dlg');
+function talk(npcId) {
+  const table = DLG[npcId];
+  if (!table) return;
+  const node = table[profile.questStage] || table.any;
+  if (!node) return;
+  dlgState = { node, i: 0 }; document.body.classList.add('dlg');
+  document.getElementById('dialogue').style.display = 'block';
+  renderDlg();
+}
+function renderDlg() {
+  if (!dlgState) return;
+  const { node, i } = dlgState;
+  document.querySelector('#dialogue .who').textContent = node.who;
+  document.querySelector('#dialogue .line').textContent = node.lines[i];
+  const how = isTouch ? 'tap' : (getPad() ? 'A' : 'click / E');
+  document.querySelector('#dialogue .more').textContent =
+    how + (i < node.lines.length - 1 ? ' to continue' : ' to close');
+}
+function advanceDlg() {
+  if (!dlgState) return false;
+  dlgState.i++;
+  if (dlgState.i >= dlgState.node.lines.length) {
+    const done = dlgState.node.done;
+    dlgState = null; document.body.classList.remove('dlg');
+    document.getElementById('dialogue').style.display = 'none';
+    if (done) done();
+    return true;
+  }
+  renderDlg();
+  beep(520, 0.05, 'sine', 0.02);
+  return true;
+}
+
+/* =================================================================
+   9. UI HELPERS
+   ================================================================= */
+const $ = (id) => document.getElementById(id);
+function msg(t, ms = 2000) {
+  const m = $('msg'); m.textContent = t; m.style.display = 'block';
+  clearTimeout(msg._t); msg._t = setTimeout(() => m.style.display = 'none', ms);
+}
+function banner(t) {
+  const b = $('banner'); b.textContent = t; b.style.display = 'block';
+  clearTimeout(banner._t); banner._t = setTimeout(() => b.style.display = 'none', 2600);
+}
+function drawHud() {
+  const src = mode === 'dungeon' && dg ? dg.state.players.get(myDgId) : ow && ow.state.players.get(myOwId);
+  const hp = src ? src.hp : 8;
+  $('hud').innerHTML = 'HP <span class="hp">' + '█'.repeat(Math.max(0, hp)) + '░'.repeat(Math.max(0, 8 - hp)) + '</span>';
+}
+function drawParty() {
+  if (!ow) { $('partyPanel').style.display = 'none'; return; }
+  const me = ow.state.players.get(myOwId);
+  if (!me || !me.party) { $('partyPanel').style.display = 'none'; return; }
+  let html = '<h3>PARTY</h3>';
+  ow.state.players.forEach((p, sid) => {
+    if (p.party !== me.party) return;
+    html += '<div class="member' + (sid === myOwId ? ' you' : '') + '">' + p.name + (sid === myOwId ? ' (you)' : '') + '</div>';
+  });
+  $('partyPanel').innerHTML = html;
+  $('partyPanel').style.display = 'block';
+}
+function drawBossBar() {
+  if (!dg) return;
+  const b = dg.state.boss;
+  const bar = $('bossBar');
+  bar.style.display = 'block';
+  bar.querySelector('.name').textContent = b.name;
+  bar.querySelector('.fill').style.width = (b.hp / b.maxHp * 100) + '%';
+  bar.querySelector('.telegraph').textContent = b.slamTelegraph > 0 ? '!! SLAM — MOVE !!' : '';
+}
+function partyOfMe() {
+  if (!ow) return 'solo';
+  const me = ow.state.players.get(myOwId);
+  return (me && me.party) || 'solo';
+}
+
+/* floor panel */
+function openFloors() {
+  const rows = [];
+  for (let f = 1; f <= 5; f++) {
+    let unlocked = false;
+    if (f === 1) unlocked = profile.questStage >= 1;
+    else if (f <= 4) unlocked = profile.questStage >= 3;
+    else unlocked = profile.questStage >= 5;
+    const cleared = profile.cleared.includes(f);
+    rows.push('<div class="row"><span>Floor ' + f + (cleared ? ' ✔' : '') + '</span>' +
+      '<button data-f="' + f + '"' + (unlocked ? '' : ' disabled') + '>' + (unlocked ? 'Enter' : 'Locked') + '</button></div>');
+  }
+  $('floorRows').innerHTML = rows.join('');
+  $('floorRows').querySelectorAll('button').forEach(b => {
+    b.onclick = () => { $('floorPanel').style.display = 'none'; if (ow) ow.send('enter-dungeon', { floor: +b.dataset.f }); };
+  });
+  $('floorPanel').style.display = 'block';
+}
+$('floorClose').onclick = () => { $('floorPanel').style.display = 'none'; };
+
+/* title */
+function showTitle() {
+  $('title').style.display = 'flex';
+  if (controls) controls.unlock();
+  drawQuest();
+}
+
+/* =================================================================
+   10. CONTROLS / START
+   ================================================================= */
+const controls = new PointerLockControls(camera, document.body);
+let startedAt = 0;
+
+$('enterBtn').onclick = async () => {
+  const name = ($('nameInput').value.trim() || 'Surveyor').slice(0, 16);
+  if (!profile) profile = defaultProfile(name);
+  profile.name = name;
+  saveProfile();
+  audioOn();
+  $('enterBtn').disabled = true;
+  $('enterBtn').textContent = 'Connecting…';
+  try {
+    await joinOverworld(name);
+    $('title').style.display = 'none';
+    started = true;
+    startedAt = performance.now();
+    if (!isTouch && !getPad()) controls.lock();
+    drawParty(); drawQuest();
+    if (profile.questStage === 0) setTimeout(() => msg('Talk to the night clerk. He is by the back door.', 3200), 800);
+  } catch (e) {
+    $('status').textContent = 'failed: ' + e.message;
+    $('enterBtn').disabled = false;
+    $('enterBtn').textContent = 'Retry';
+  }
+};
+$('nameInput').addEventListener('keydown', (e) => { if (e.code === 'Enter') $('enterBtn').click(); });
+
+controls.addEventListener('lock', () => { if (started) $('title').style.display = 'none'; });
+controls.addEventListener('unlock', () => { if (started && !chatOpen && !isTouch) $('title').style.display = 'flex'; });
+
+let chatOpen = false;
+function openChat() {
+  chatOpen = true;
+  $('chatinput').style.display = 'block';
+  const f = $('chatField'); f.value = ''; setTimeout(() => f.focus(), 0);
+  if (controls) controls.unlock();
+}
+addEventListener('keydown', (e) => {
+  if (e.code === 'Enter' && started && !chatOpen) { e.preventDefault(); openChat(); }
+  if (e.code === 'KeyE' && started && !chatOpen) {
+    if (!advanceDlg()) interact();
+  }
+  if (e.code === 'KeyQ' && started && !chatOpen) {
+    const q = $('questPanel');
+    q.style.display = q.style.display === 'block' ? 'none' : 'block';
+  }
+  if (e.code === 'KeyP' && started && !chatOpen && mode === 'overworld') inviteNearest();
+  if (e.code === 'KeyR' && $('credits').style.display === 'flex') {
+    $('credits').style.display = 'none';
+  }
+});
+$('credits').addEventListener('pointerdown', () => { $('credits').style.display = 'none'; });
+$('dialogue').addEventListener('pointerdown', (e) => { if (isTouch && dlgState) { e.preventDefault(); e.stopPropagation(); advanceDlg(); } });
+if (isTouch) $('creditsHint').textContent = 'Tap to return, or refresh to start again.';
+$('chatField').addEventListener('keydown', (e) => {
+  if (e.code === 'Enter') {
+    const t = $('chatField').value.trim();
+    if (t && ow) ow.send('chat', t);
+    $('chatinput').style.display = 'none';
+    chatOpen = false;
+    if (started && !isTouch) controls.lock();
+  } else if (e.code === 'Escape') {
+    $('chatinput').style.display = 'none';
+    chatOpen = false;
+    if (started && !isTouch) controls.lock();
+  }
+});
+
+$('inviteAccept').onclick = () => {
+  if (pendingInvite && ow) ow.send('party-invite', { targetSessionId: pendingInvite });
+  $('inviteModal').style.display = 'none';
+  pendingInvite = null;
+};
+$('inviteDecline').onclick = () => { $('inviteModal').style.display = 'none'; pendingInvite = null; };
+
+function inviteNearest() {
+  if (!ow) return;
+  const me = ow.state.players.get(myOwId);
+  if (!me) return;
+  let best = null, bd = 3.2;
+  ow.state.players.forEach((p, sid) => {
+    if (sid === myOwId) return;
+    const d = Math.hypot(p.x - me.x, p.z - me.z);
+    if (d < bd) { bd = d; best = sid; }
+  });
+  if (!best) { msg('No one close enough.'); return; }
+  ow.send('party-invite', { targetSessionId: best });
+  beep(660, 0.08, 'sine', 0.03);
+  msg('Invite sent.');
+}
+
+/* interaction */
+function interact() {
+  if (mode === 'dungeon') {
+    if (floorCleared && dg && dg.state.exitOpen) { leaveDungeon(); return; }
+    msg(floorCleared ? 'The exit is at the entrance.' : 'Kill the boss first.');
+    return;
+  }
+  // overworld
+  const me = ow && ow.state.players.get(myOwId);
+  if (!me) return;
+  let best = null, bd = 3.2;
+  for (const npc of overworldNpcs) {
+    const d = Math.hypot(npc.position.x - camera.position.x, npc.position.z - camera.position.z);
+    if (d < bd) { bd = d; best = npc.userData.id; }
+  }
+  if (best) { talk(best); return; }
+  const dd = Math.hypot(0 - camera.position.x, (-OW.d / 2 + 0.5) - camera.position.z);
+  if (dd < 3.5) { openFloors(); return; }
+  msg('Nothing here.');
+}
+
+/* click attack */
+addEventListener('mousedown', (e) => {
+  if (!started || e.button !== 0 || chatOpen) return;
+  if (dlgState) { advanceDlg(); return; }
+  if (mode === 'dungeon') doAttack();
+});
+addEventListener('click', () => { if (dlgState) advanceDlg(); }, true);
+
+let atkCd = 0;
+function doAttack() {
+  if (!dg || atkCd > 0) return;
+  atkCd = 0.42;
+  beep(240, 0.07, 'square', 0.03); noise(0.05, 0.02);
+  let closest = null, cd = 2.2, isBoss = false;
+  dg.state.enemies.forEach((en, id) => {
+    if (!en.alive) return;
+    const d = Math.hypot(en.x - camera.position.x, en.z - camera.position.z);
+    if (d < cd) { cd = d; closest = id; isBoss = false; }
+  });
+  const b = dg.state.boss;
+  if (b.alive) {
+    const d = Math.hypot(b.x - camera.position.x, b.z - camera.position.z);
+    if (d < 2.6 && d < cd) { closest = 'boss'; isBoss = true; }
+  }
+  if (closest) dg.send('attack', { enemyId: closest, boss: isBoss });
+}
+
+/* =================================================================
+   11. MOVEMENT / LOOP
+   ================================================================= */
+function blocked(x, z) {
+  if (!dg || !dg.state.mapData) return false;
+  const W = dg.state.width, H = dg.state.height;
+  if (x < 0 || z < 0 || x >= W || z >= H) return true;
+  return dg.state.mapData[z * W + x] === '1';
+}
+
+const clock = new THREE.Clock();
+let lookDragging = false;
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  pollPad();
+
+  if (keys['KeyW']) input.mz = -1; else if (keys['KeyS']) input.mz = 1;
+  else if (!isTouch && !getPad()) input.mz = 0;
+  if (keys['KeyA']) input.mx = -1; else if (keys['KeyD']) input.mx = 1;
+  else if (!isTouch && !getPad()) input.mx = 0;
+
+  lookDragging = !!window.__lookDragging;
+  if (input.lx || input.ly) {
+    const dz = (v, d) => Math.abs(v) < d ? 0 : Math.sign(v) * (Math.abs(v) - d) / (1 - d);
+    const curve = (v) => Math.sign(v) * Math.pow(Math.abs(v), 1.7);   // gentle centre, fast at the rim
+    const lx = dz(input.lx, 0.12), ly = dz(input.ly, 0.35);           // vertical needs a deliberate push
+    camera.rotation.y -= curve(lx) * 2.4 * dt;
+    camera.rotation.x -= curve(ly) * 0.9 * dt;
+    camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -0.7, 0.7);
+  } else if (isTouch && !lookDragging) {
+    camera.rotation.x += (0 - camera.rotation.x) * Math.min(1, dt * 2.5);   // ease back to level
+  }
+  if (keys['ArrowRight']) camera.rotation.y -= 1.6 * dt;
+  if (keys['ArrowLeft']) camera.rotation.y += 1.6 * dt;
+  camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -1.3, 1.3);
+
+  const active = started && (controls.isLocked || isTouch || !!getPad());
+  if (active) {
+    const speed = 3.2;
+    const vx = input.mx * speed * dt;
+    const vz = input.mz * speed * dt;
+    if (mode === 'dungeon' && dg) {
+      const r = 0.32;
+      const nx = camera.position.x + vx;
+      if (!blocked(Math.floor(nx + r), Math.floor(camera.position.z)) &&
+          !blocked(Math.floor(nx - r), Math.floor(camera.position.z))) camera.position.x = nx;
+      const nz = camera.position.z + vz;
+      if (!blocked(Math.floor(camera.position.x), Math.floor(nz + r)) &&
+          !blocked(Math.floor(camera.position.x), Math.floor(nz - r))) camera.position.z = nz;
+    } else {
+      controls.moveRight(vx);
+      controls.moveForward(-vz);
+      camera.position.x = THREE.MathUtils.clamp(camera.position.x, -OW.w / 2 + 0.6, OW.w / 2 - 0.6);
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z, -OW.d / 2 + 0.6, OW.d / 2 - 0.6);
+    }
+  }
+
+  if (edgeAttack() && !dlgState) {
+    if (mode === 'dungeon') doAttack();
+  }
+  if (edgeInteract()) { if (!advanceDlg()) interact(); }
+
+  /* sync my position */
+  const room = mode === 'dungeon' ? dg : ow;
+  if (room && active) room.send('move', { x: camera.position.x, z: camera.position.z, ry: 0 });
+
+  /* remote positions */
+  remote.forEach((v, key) => {
+    const isD = key.startsWith('d-');
+    const r = isD ? dg : ow;
+    if (!r) return;
+    const p = r.state.players.get(isD ? key.slice(2) : key);
+    if (p) v.group.position.set(p.x, 0, p.z);
+  });
+
+  /* enemies / boss visuals */
+  if (dg && mode === 'dungeon') {
+    dg.state.enemies.forEach((e, id) => {
+      const s = enemySprites.get(id);
+      if (s) { s.position.set(e.x, 0.8, e.z); s.visible = e.alive; }
+    });
+    const b = dg.state.boss;
+    if (bossSprite) { bossSprite.position.set(b.x, 1.2, b.z); bossSprite.visible = b.alive; }
+    drawBossBar();
+    $('floorTag').textContent = 'FLOOR ' + dungeonFloor + (floorCleared ? ' · CLEARED' : '');
+  }
+
+  /* prompt */
+  if (started && !dlgState) {
+    let prompt = '', useLabel = 'USE';
+    const key = getPad() ? '[X]' : (isTouch ? '' : '[E]');
+    if (mode === 'dungeon') {
+      if (floorCleared) { prompt = key + ' Leave floor'; useLabel = 'LEAVE'; }
+    } else if (ow) {
+      const me = ow.state.players.get(myOwId);
+      if (me) {
+        for (const npc of overworldNpcs) {
+          if (Math.hypot(npc.position.x - camera.position.x, npc.position.z - camera.position.z) < 3.2) {
+            prompt = key + ' Talk'; useLabel = 'TALK'; break;
+          }
+        }
+        if (!prompt && Math.hypot(camera.position.x, camera.position.z + OW.d / 2 - 0.5) < 3.5) { prompt = key + ' The back door'; useLabel = 'DOOR'; }
+      }
+    }
+    prompt = prompt.trim();
+    if (isTouch && prompt) prompt = useLabel === 'TALK' ? 'TAP TALK' : 'TAP ' + useLabel + ' · ' + prompt;
+    $('prompt').textContent = prompt;
+    $('prompt').style.display = prompt ? 'block' : 'none';
+    const ib = $('interactBtn'); if (ib.textContent !== useLabel) ib.textContent = useLabel;
+  } else {
+    $('prompt').style.display = 'none';
+  }
+
+  atkCd = Math.max(0, atkCd - dt);
+  drawHud();
+  renderer.render(scene, camera);
+}
+loop();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* save profile periodically */
+setInterval(() => { if (profile) saveProfile(); }, 10000);
+addEventListener('beforeunload', () => { if (profile) saveProfile(); });
+
+/* test hook: only when the page is opened with ?debug */
+if (new URLSearchParams(location.search).has('debug')) {
+  window.__underlay = {
+    get ow() { return ow; }, get dg() { return dg; }, get mode() { return mode; }, get profile() { return profile; },
+    get dlg() { return dlgState; }, get floorCleared() { return floorCleared; },
+    camera, talk, advanceDlg, interact, doAttack, startDungeon, leaveDungeon, drawQuest,
+    enter(f) { if (ow) ow.send('enter-dungeon', { floor: f }); },
+    move(x, z) { camera.position.x = x; camera.position.z = z; const r = mode === 'dungeon' ? dg : ow; if (r) r.send('move', { x, z, ry: 0 }); },
+  };
+}
+</script>
+</body>
+</html>

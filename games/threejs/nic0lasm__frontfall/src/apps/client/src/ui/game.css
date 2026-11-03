@@ -1,0 +1,3043 @@
+.stat {
+  display: flex;
+  flex-direction: column;
+  /* Wide enough for the figures of a long game and the line below them (123.4K, +123K/s):
+     the bar keeps its width while troops and gold climb, and nothing beside it moves. */
+  min-width: 56px;
+  white-space: nowrap;
+}
+
+.stat:nth-child(3) {
+  min-width: 54px;
+}
+
+.stat-label {
+  color: var(--ff-slate-300);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-cap {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* R-ECO-08: gold taken from an eliminated player, by the counter; it takes no room in the panel. */
+/* The figures sit in a corner at the top: the gain shows beside their panel. */
+.gold-gain {
+  position: absolute;
+  top: calc(50% - 14px);
+  left: calc(100% + 8px);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ff-night-800) 92%, transparent);
+  box-shadow: var(--ff-lift);
+  color: var(--ff-warning);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.gold-gain.rising {
+  animation: gold-rise 2.4s ease-out forwards;
+}
+
+/* In the bar at the foot of a wide screen, it rises over the counter. */
+.game[data-wide] .stats .stat {
+  position: relative;
+}
+
+.game[data-wide] .gold-gain {
+  top: auto;
+  bottom: calc(100% + 14px);
+  left: -9px;
+}
+
+@keyframes gold-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.leaderboard {
+  top: 12px;
+  right: 12px;
+  width: 252px;
+  /* A long player menu scrolls inside the panel rather than running off the screen. */
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+
+/* An open player menu goes over the build panel below it. */
+.leaderboard:has(.player-menu:not([hidden])) {
+  z-index: 1;
+}
+
+.leaderboard h2 {
+  margin: 0 0 6px;
+  color: var(--ff-slate-300);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.leaderboard-list {
+  margin: 0;
+  padding: 0 0 0 1.6em;
+}
+
+.leader {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 1px 0;
+}
+
+.leader::marker {
+  color: var(--ff-slate-400);
+}
+
+.leader-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leader-land {
+  color: var(--ff-slate-300);
+}
+
+/* Attack share over work share (R-ECO-07): two rows on one grid, so labels,
+   sliders and values line up. Gold yellow tells the work slider from the attack one. */
+.ratio {
+  bottom: 12px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: center;
+  width: min(310px, calc(100vw - 24px));
+  box-sizing: border-box;
+}
+
+.ratio-row {
+  display: contents;
+}
+
+.ratio label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.ratio label .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.ratio input {
+  min-width: 0;
+  margin: 0;
+  /* A press on the track sets the value (range-click.ts): the browser must not scroll or zoom instead. */
+  touch-action: none;
+}
+
+@media (pointer: fine) {
+  .ratio input[type="range"] {
+    min-height: 28px;
+  }
+}
+
+.ratio .range-value {
+  min-width: 10ch;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.work-row label,
+.work-row .range-value {
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+.work-row input {
+  accent-color: var(--ff-warning);
+}
+
+.gold-rate {
+  color: var(--ff-warning);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What an attack on the land under the pointer would do, above the attacks under way. */
+.preview {
+  font-variant-numeric: tabular-nums;
+}
+
+.preview p {
+  margin: 0;
+}
+
+.preview-title {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.preview-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-tiles {
+  flex: none;
+}
+
+.preview-tiles.short {
+  color: var(--ff-warning);
+}
+
+.preview-text {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  white-space: pre-line;
+}
+
+.preview:not([hidden]) + .attack-list:not(:empty) {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ff-night-500);
+}
+
+/* The player's attacks under way, each with its retreat button (ui/hud.ts). */
+
+.attacks {
+  bottom: 64px;
+  left: 12px;
+  left: 12px;
+  width: 220px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 6px 8px;
+}
+
+.decided .guide {
+  display: none;
+}
+
+.attack-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attack {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.attack-text {
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attack-retreat {
+  flex: none;
+  padding: 3px 8px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.attack-retreat:hover,
+.attack-retreat:focus-visible {
+  border-color: var(--ff-slate-400);
+}
+
+/* Attacks on the player and ships under way (ui/threats.ts): lines that centre the map. */
+.attack-list:not(:empty) + .attack-list:not(:empty) {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ff-night-500);
+}
+
+.threat-focus {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.threat-focus:hover,
+.threat-focus:focus-visible {
+  text-decoration: underline;
+}
+
+.threat-incoming .threat-focus,
+.threat-boatIn .threat-focus {
+  color: var(--ff-danger);
+}
+
+.toolbar {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-800);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  border-color: var(--ff-slate-400);
+}
+
+.end-screen {
+  width: min(420px, 100%);
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 10px;
+  background: var(--ff-night-700);
+  text-align: center;
+}
+
+.end-screen h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.end-winner {
+  color: var(--ff-slate-300);
+}
+
+.end-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 16px;
+  margin: 16px 0;
+  text-align: left;
+}
+
+.end-stats dt {
+  color: var(--ff-slate-300);
+}
+
+.end-stats dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.end-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedback-question,
+.feedback-thanks {
+  margin: 0 0 8px;
+  color: var(--ff-slate-300);
+}
+
+.feedback-thumbs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.feedback-thumbs button {
+  display: grid;
+  place-items: center;
+  min-width: 64px;
+  font-size: 20px;
+}
+
+.feedback-reasons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.feedback-reasons[hidden],
+.feedback-thumbs[hidden] {
+  display: none;
+}
+
+.feedback-links {
+  /* Room for a link's focus ring on each side of the dot, which it must not cover. */
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 12px 0 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  text-align: center;
+}
+
+.feedback-links a {
+  color: var(--ff-slate-300);
+}
+@media (width < 720px) {
+  .leaderboard {
+    top: auto;
+    bottom: 64px;
+    width: 170px;
+  }
+  .attacks {
+    bottom: 148px;
+    width: auto;
+    max-width: calc(100vw - 206px);
+  }
+  .ratio {
+    left: 12px;
+    right: 174px;
+    width: auto;
+    transform: none;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  /* One more button in the toolbar: the pace of a solo game. */
+  .speedable .ratio {
+    right: 216px;
+  }
+
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .toolbar {
+    gap: 6px;
+  }
+
+  .ratio .ratio-name {
+    display: none;
+  }
+
+  .ratio .range-value {
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  /* The slider is what a finger drags: it never gets less than 44 px, whatever the text beside it. */
+  .ratio {
+    grid-template-columns: auto minmax(44px, 1fr) auto;
+  }
+}
+
+.map-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.paused {
+  place-content: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.pause-speeds {
+  justify-content: center;
+  gap: 8px;
+}
+
+.pause-speeds .replay-speed {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.paused-text {
+  padding: 12px 20px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.map-surface {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+}
+
+.map-surface:focus {
+  outline: none;
+}
+
+/* Keyboard play: a cross on the middle of the view shows where Enter clicks. */
+.map-surface:focus-visible::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  background:
+    linear-gradient(var(--ff-text), var(--ff-text)) center / 2px 100% no-repeat,
+    linear-gradient(var(--ff-text), var(--ff-text)) center / 100% 2px no-repeat;
+  filter: drop-shadow(0 0 2px var(--ff-night-900)) drop-shadow(0 0 1px var(--ff-night-900));
+  pointer-events: none;
+}
+
+.goal-text,
+.goal-clock {
+  margin: 0;
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.goal-bar {
+  position: relative;
+  height: 6px;
+  margin: 6px 0;
+  border-radius: 3px;
+  background: var(--ff-night-600);
+  overflow: hidden;
+}
+
+.goal-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+}
+
+.goal-leader {
+  background: var(--ff-slate-400);
+}
+
+.goal-you {
+  background: var(--ff-ember);
+}
+
+/* Where a build click would land, before it is made (ui/build-preview.ts). */
+
+.build-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bp-anchor {
+  --bp: var(--ff-success);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.bp-anchor[data-ok="false"] {
+  --bp: var(--ff-danger);
+}
+
+.bp-ring {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border: 2px solid var(--bp);
+  border-radius: 50%;
+  /* A dark edge on both sides keeps the ring readable on any land. */
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 55%),
+    inset 0 0 0 1px rgb(0 0 0 / 45%);
+}
+
+/* How far a fort or an air defense reaches: dashed, so it is no second ring. */
+.bp-reach {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  border: 2px dashed var(--bp);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bp) 12%, transparent);
+  opacity: 0.85;
+}
+
+.bp-card {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: 6px 10px;
+  translate: -50% 0;
+  border: 1px solid var(--bp);
+  border-radius: var(--ff-radius);
+  background: rgb(10 19 28 / 92%);
+  box-shadow: var(--ff-lift);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.bp-card.below {
+  top: 24px;
+  bottom: auto;
+}
+
+.bp-title {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.bp-cost {
+  color: var(--ff-warning);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The sign carries the answer too: colour alone is never all of it. */
+.bp-status {
+  color: var(--bp);
+  font-weight: 600;
+}
+
+.bp-anchor[data-ok="true"] .bp-status::before {
+  content: "✓ ";
+}
+
+.bp-anchor[data-ok="false"] .bp-status::before {
+  content: "✕ ";
+}
+
+.bp-detail {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+/* A finger confirms with a button, big enough to hit. */
+.bp-confirm {
+  min-width: 54px;
+  min-height: 44px;
+  margin-top: 6px;
+  pointer-events: auto;
+}
+
+/* The gold a trade ship brings, rising over its port (ui/gold-floats.ts). */
+
+.gold-floats {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gold-float {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.gold-float-text {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  color: var(--ff-warning);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--ff-night-800) 90%, transparent),
+    0 0 6px color-mix(in srgb, var(--ff-night-800) 80%, transparent);
+  animation: gold-float 1.6s ease-out forwards;
+}
+
+@keyframes gold-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gold-float-text {
+    animation-name: gold-float-still;
+  }
+}
+
+@keyframes gold-float-still {
+  0%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -8px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+/* The answer to a click on the map (ui/click-marks.ts). */
+
+.click-marks {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.click-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.click-mark::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border: 2px solid var(--ff-ember);
+  border-radius: 50%;
+  animation: click-ring 700ms ease-out forwards;
+}
+
+.click-mark.embark::before {
+  border-color: var(--ff-info);
+  border-style: dashed;
+}
+
+/* Under the pointer from the moment it goes down, until the game reads the click. */
+.click-mark.pressed::before {
+  transform: scale(0.55);
+  animation: none;
+}
+
+/* An online order on its way to the server and back. */
+.click-mark.pending::before {
+  opacity: 0.6;
+  animation: click-wait 600ms ease-in-out infinite alternate;
+}
+
+@keyframes click-wait {
+  from {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+
+  to {
+    transform: scale(0.7);
+    opacity: 1;
+  }
+}
+
+@keyframes click-ring {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.build-tip {
+  position: fixed;
+  bottom: calc(14px + 62px * var(--ff-ui-scale, 1));
+  left: 50%;
+  max-width: min(420px, calc(100vw - 24px));
+  margin: 0;
+  padding: 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ff-danger);
+  border-radius: var(--ff-radius);
+  background: rgb(10 19 28 / 90%);
+  font-size: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* What a build button does, after a long press on it (ui/hud.ts). */
+.build-tip {
+  z-index: 1;
+  border-color: var(--ff-slate-400);
+}
+
+.label-troops {
+  font-size: 0.75em;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.build-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ff-radius);
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Only narrow screens need the button that opens the dock as a tray. */
+.icon-build {
+  display: none;
+}
+
+.build-info {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 2;
+  display: none;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 8px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-800);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.build-info .build-key {
+  position: static;
+}
+
+.build-button:hover .build-info,
+.build-button:focus-visible .build-info {
+  display: flex;
+}
+
+.build-button:hover,
+.build-button:focus-visible {
+  border-color: var(--ff-slate-400);
+}
+
+.build-button[aria-pressed="true"] {
+  border-color: var(--ff-ember);
+  background: rgb(242 92 42 / 18%);
+}
+
+.build-button.unaffordable .build-cost {
+  color: var(--ff-danger);
+}
+
+.build-name {
+  font-weight: 600;
+}
+
+.build-cost,
+.build-count {
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-surface[data-mode="city"],
+.map-surface[data-mode="palace"],
+.map-surface[data-mode="fort"],
+.map-surface[data-mode="silo"],
+.map-surface[data-mode="airDefense"],
+.map-surface[data-mode="mosque"],
+.map-surface[data-mode="missile"],
+.map-surface[data-mode="heavyMissile"],
+.map-surface[data-mode="demolish"] {
+  cursor: crosshair;
+}
+@media (width < 720px), (height < 560px) {
+  .build-button {
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    align-content: center;
+    padding: 4px;
+    line-height: 1.1;
+  }
+
+  .build-info {
+    position: static;
+    display: block;
+    padding: 0;
+    transform: none;
+    border: 0;
+    background: none;
+  }
+
+  .build-name,
+  .build-count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .icon-build {
+    display: inline-block;
+  }
+}
+
+/* Diplomacy (ui/diplomacy.ts): the menu of a player, alliance requests and
+   a feed of what happened between players. */
+
+.leader-button {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0 -4px;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leader-button:hover,
+.leader-button:focus-visible {
+  background: var(--ff-night-600);
+}
+
+.badge-ally {
+  background: var(--ff-front);
+}
+
+.badge-traitor {
+  background: var(--ff-danger);
+}
+
+/* The doctrine a player plays (ui/leader-list.ts): a small icon after the name. */
+.leader-doctrine {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--ff-slate-300);
+}
+
+.leader-doctrine[hidden] {
+  display: none;
+}
+
+.leader-doctrine .icon {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* What a player is to you (ui/leader-list.ts): quiet when neutral, warm when it matters. */
+.badge-status {
+  background: var(--ff-night-600);
+  color: inherit;
+}
+
+.badge-status[data-status="war"],
+.badge-status[data-status="hostile"] {
+  background: var(--ff-danger);
+}
+
+.badge-status[data-status="embargo"],
+.badge-status[data-status="wary"] {
+  background: var(--ff-warning);
+  color: var(--ff-night-900);
+}
+
+.badge-status[data-status="friendly"] {
+  background: var(--ff-front);
+}
+
+.badge-status[data-status="neutral"] {
+  opacity: 0.65;
+}
+
+/* At the foot of the leaderboard, under the row it was opened from. */
+.player-menu {
+  position: static;
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid var(--ff-night-500);
+  border-radius: 0;
+  background: none;
+}
+
+.player-menu[hidden] {
+  display: none;
+}
+
+.player-menu-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.player-menu-head h2 {
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ff-text);
+  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-menu .icon-close {
+  width: 24px;
+  height: 24px;
+}
+
+.player-menu-status,
+.player-menu-facts,
+.player-menu-mood,
+.player-menu-traitor {
+  margin: 0;
+  color: var(--ff-slate-300);
+}
+
+.player-menu-traitor,
+.player-menu-mood.mood-hostile {
+  color: var(--ff-danger);
+}
+
+.player-menu-mood.mood-wary {
+  color: var(--ff-warning);
+}
+
+.player-menu-mood.mood-friendly {
+  color: var(--ff-success);
+}
+
+.menu-action,
+.request-accept,
+.request-ignore {
+  padding: 6px 10px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.menu-action:hover:not(:disabled),
+.menu-action:focus-visible,
+.request-accept:hover,
+.request-accept:focus-visible,
+.request-ignore:hover,
+.request-ignore:focus-visible {
+  border-color: var(--ff-slate-400);
+}
+
+.menu-action:disabled {
+  color: var(--ff-slate-400);
+  cursor: default;
+}
+
+.quick-messages {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.quick-phrase {
+  padding: 4px 6px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.quick-phrase:hover,
+.quick-phrase:focus-visible {
+  border-color: var(--ff-slate-400);
+}
+
+.menu-action.betray {
+  border-color: var(--ff-danger);
+}
+
+.menu-action.danger {
+  background: var(--ff-danger);
+}
+
+.request-time {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ff-night-500);
+}
+
+.request-time-left {
+  display: block;
+  height: 100%;
+  background: var(--ff-front);
+}
+
+.request-accept {
+  border-color: var(--ff-front);
+}
+
+/* What happens in the game, top left under the first steps (docs/hud-layout.md); each line fades by itself
+   (ui/events-feed.ts). The game screen moves it under the guide while one shows. */
+.events-feed {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: min(320px, calc(100vw - 24px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.feed-item.panel {
+  position: static;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border-left: 3px solid var(--ff-slate-400);
+  animation: feed-in 0.18s ease-out;
+  transition: opacity 0.2s;
+  pointer-events: auto;
+}
+
+.feed-item.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.feed-entry {
+  display: block;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--ff-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+button.feed-entry {
+  cursor: pointer;
+}
+
+button.feed-entry:hover,
+button.feed-entry:focus-visible {
+  text-decoration: underline;
+}
+
+.feed-quiet .feed-entry {
+  color: var(--ff-slate-300);
+}
+
+.tone-bad.feed-item {
+  border-left-color: var(--ff-danger);
+}
+
+.tone-good.feed-item {
+  border-left-color: var(--ff-info);
+}
+
+.tone-ask.feed-item {
+  border-left-color: var(--ff-warning);
+}
+
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+/* Medium windows: the figures sit top left, the feed is their second row. */
+@media (width < 1240px) {
+  .events-feed {
+    top: 96px;
+  }
+}
+
+/* A short window: beside the figures, one line a row, not past the leaderboard of a landscape phone. */
+@media (height < 560px) {
+  .events-feed {
+    top: 12px;
+    left: 212px;
+    width: calc(100vw - 212px - 244px);
+  }
+  .feed-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .feed-entry {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+/* A phone held upright: the latest event takes the banner's place for a few seconds, over the
+   banner's width, up to three lines (docs/hud-layout.md). */
+@media (width < 720px) {
+  .events-feed {
+    top: 90px;
+    left: 50%;
+    align-items: center;
+    width: calc(100vw - 24px);
+    transform: translateX(-50%);
+  }
+  .feed-text {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  .feed-entry {
+    padding: 6px 12px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .game:has(.feed-item:not(.leaving)) .banner:not(.danger) {
+    visibility: hidden;
+  }
+}
+
+/* The card of the player under the mouse (ui/player-tip.ts). */
+.player-tip {
+  position: fixed;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  max-width: 280px;
+  pointer-events: none;
+  font-size: 13px;
+}
+
+.player-tip[hidden] {
+  display: none;
+}
+
+.player-tip p {
+  margin: 0;
+}
+
+.player-tip-name {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 600;
+}
+
+.player-tip-line {
+  color: var(--ff-slate-300);
+}
+
+.player-tip-line:has(.swatch) {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* A landmark's card (R-LAND-02): what it is, what it gives, who holds it. */
+.player-tip-kicker {
+  color: #c9a978;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.player-tip-effect {
+  color: #e8cf9f;
+  font-weight: 600;
+}
+
+.player-tip-hint {
+  padding-top: 4px;
+  border-top: 1px solid var(--ff-night-500);
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.watching .ratio,
+.watching .attacks {
+  display: none;
+}
+
+.replay-bar {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: center;
+  width: min(600px, calc(100vw - 24px));
+  box-sizing: border-box;
+}
+
+.replay-progress {
+  width: 160px;
+  accent-color: var(--ff-ember);
+}
+
+.replay-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-speeds {
+  display: flex;
+  gap: 4px;
+}
+
+.replay-speed {
+  min-width: 40px;
+  min-height: 32px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-700);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.replay-speed[aria-pressed="true"] {
+  border-color: var(--ff-ember);
+  color: var(--ff-ember);
+}
+
+.replay-result.different {
+  color: var(--ff-ember);
+  font-weight: 600;
+}
+
+/* Phones: the leaderboard holds the bottom, the banner's place at the top is free. */
+@media (width < 720px) {
+  .replay-bar {
+    top: 84px;
+    bottom: auto;
+  }
+
+  .replay-progress {
+    flex: 1;
+    width: auto;
+  }
+}
+
+/* The key of each build button (ui/hud.ts), for players with a keyboard. */
+.build-button {
+  position: relative;
+  padding-right: 28px;
+}
+
+.build-key {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  color: var(--ff-slate-300);
+}
+
+/* The number that picks it, small in the top right corner of the button. */
+.build-button[data-num]::after {
+  content: attr(data-num);
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  padding: 0;
+  border: 0;
+  color: var(--ff-slate-300);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* A finger has no keys to learn. */
+@media (pointer: coarse) {
+  .build-key {
+    display: none;
+  }
+
+  .build-button[data-num]::after {
+    display: none;
+  }
+
+  .build-button {
+    padding-right: 8px;
+  }
+}
+
+@media (width < 720px), (height < 560px) {
+  .build-key {
+    display: none;
+  }
+
+  .build-button[data-num]::after {
+    display: none;
+  }
+
+  .build-button {
+    padding-right: 8px;
+  }
+}
+
+.end-achievements ul {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.end-achievements li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.end-achievements span {
+  display: grid;
+}
+
+.end-achievements small {
+  color: var(--ff-slate-300);
+}
+
+.end-achievements {
+  margin: 0 0 16px;
+}
+
+.end-achievements h2 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ff-warning);
+}
+
+.end-achievements em {
+  color: var(--ff-warning);
+  font-size: 12px;
+  font-style: normal;
+}
+
+/* Lighter in-game interface (ui/hud.ts). */
+
+.leaderboard-toggle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.leaderboard-toggle::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border: solid currentcolor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.leaderboard-toggle[aria-expanded="true"]::after {
+  transform: rotate(225deg);
+}
+
+.end-screen {
+  border-radius: 14px;
+  background: var(--ff-raised);
+  box-shadow: var(--ff-lift);
+}
+
+.end-screen {
+  background: linear-gradient(180deg, #1a2d40, var(--ff-night-700));
+}
+
+.icon-button {
+  background: linear-gradient(180deg, var(--ff-night-500), var(--ff-night-600));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+
+.end-stats dd {
+  font-size: 18px;
+}
+
+/* Relief, in game: figures stand out, the player's own row and the active tool are lit. */
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.stats .stat:nth-child(2) .stat-value {
+  color: var(--ff-warning);
+}
+
+.leader.you {
+  margin: 0 -6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 7%);
+}
+
+.build-button[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgb(242 92 42 / 32%), rgb(242 92 42 / 12%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
+}
+
+.toolbar .icon-button {
+  border-radius: 50%;
+}
+
+.end-stats {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgb(6 12 18 / 45%);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 40%);
+}
+
+/* The build dock in colour: economy blue, defence green, arms ember, with the price under each icon. */
+
+.build-button {
+  --tint: 141 162 182;
+  width: 46px;
+  height: 56px;
+  padding: 4px 0 2px;
+  align-content: center;
+  gap: 2px;
+  border-color: rgb(var(--tint) / 35%);
+  background: linear-gradient(180deg, rgb(var(--tint) / 24%), rgb(var(--tint) / 6%));
+}
+
+.build-city,
+.build-palace,
+.build-port {
+  --tint: 76 154 255;
+}
+
+.build-fort,
+.build-airDefense,
+.build-mosque {
+  --tint: 60 203 127;
+}
+
+.build-silo,
+.build-warship,
+.build-missile,
+.build-heavyMissile {
+  --tint: 242 92 42;
+}
+
+.build-demolish {
+  --tint: 240 76 94;
+}
+
+.build-button .build-icon {
+  color: rgb(var(--tint));
+  filter: brightness(1.35);
+}
+
+.build-button > .build-cost {
+  color: var(--ff-warning);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.build-button.unaffordable > .build-cost {
+  color: #ff8794;
+}
+
+.build-button.unaffordable {
+  background: linear-gradient(180deg, rgb(var(--tint) / 12%), rgb(var(--tint) / 3%));
+}
+
+.build-button[aria-pressed="true"] {
+  border-color: rgb(var(--tint));
+  background: linear-gradient(180deg, rgb(var(--tint) / 45%), rgb(var(--tint) / 15%));
+}
+
+@media (width < 720px), (height < 560px) {
+  .build-button {
+    width: auto;
+    height: auto;
+    padding: 4px;
+  }
+}
+
+/* Phones: the leaderboard folds into a one-line chip with your own row, and the
+   first steps become a banner above the bottom bar. */
+@media (width < 720px) {
+  .leaderboard:not(.open) {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    width: auto;
+    max-width: 170px;
+    padding: 6px 8px 6px 10px;
+  }
+
+  .leaderboard:not(.open) h2 {
+    order: 1;
+    margin: 0;
+  }
+
+  .leaderboard:not(.open) .leaderboard-toggle {
+    min-width: 28px;
+    min-height: 28px;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .leaderboard:not(.open) .leaderboard-list {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+  }
+
+  /* Your own row, or the leader's when you have none (eliminated, or watching). */
+  .leaderboard:not(.open):has(.leader.you) .leader:not(.you),
+  .leaderboard:not(.open):not(:has(.leader.you)) .leader:nth-child(n + 2),
+  .leaderboard:not(.open) .goal {
+    display: none;
+  }
+
+  .leaderboard:not(.open) .leader::marker {
+    content: "";
+  }
+
+  .game:has(.guide) .click-note {
+    top: 170px;
+    bottom: auto;
+    z-index: auto;
+    background: rgb(10 19 28 / 90%);
+  }
+}
+
+/* One bar at the foot of the map on a wide screen: your figures, the share of
+   troops an attack takes and the buildings, side by side. Narrower, the three keep
+   their own corners and the bar has no box of its own. */
+.bar {
+  display: contents;
+}
+
+.game[data-wide] .bar {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  padding: 6px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 14px;
+  background: var(--ff-raised);
+  box-shadow: var(--ff-lift);
+}
+
+.game[data-wide] .bar > .panel {
+  position: static;
+  align-items: center;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.game[data-wide] .bar > .panel + .panel {
+  padding-left: 14px;
+  border-left: 1px solid var(--ff-night-500);
+}
+
+.game[data-wide] .bar .ratio {
+  width: 290px;
+}
+
+/* The bar has no room for the names yet: the icons say which slider is which, the values what they mean. */
+@media (width < 1360px) {
+  .game[data-wide] .bar .ratio {
+    width: 210px;
+  }
+
+  .game[data-wide] .bar .ratio .ratio-name {
+    display: none;
+  }
+}
+
+.game[data-wide] .bar .stats {
+  gap: 12px;
+}
+
+.game[data-wide] .click-note,
+.game[data-wide] .build-tip {
+  bottom: calc(30px + 66px * var(--ff-ui-scale, 1));
+}
+
+.game[data-wide] .attacks {
+  bottom: 96px;
+}
+
+/* Medium screen at a larger interface size: the attack panel grows, the dock moves right to clear it. */
+@media (width >= 720px) and (height >= 560px) {
+  .game:not([data-wide]) .build {
+    left: calc(50% + 100px * (var(--ff-ui-scale, 1) - 1));
+  }
+}
+
+/* Short windows: the open leaderboard stops above the round tools instead of running under them. */
+@media (height < 560px) and (width >= 720px) {
+  .leaderboard {
+    box-sizing: border-box;
+    max-height: calc(100dvh - 84px);
+  }
+}
+
+/* A finger needs 44 px to hit: the buttons that are smaller under a mouse grow on a touch screen. */
+@media (pointer: coarse) {
+  .leaderboard-toggle,
+  .leaderboard:not(.open) .leaderboard-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .leader-button,
+  .guide-hide,
+  .guide-actions button.secondary,
+  .attack-retreat {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .ratio input[type="range"] {
+    min-height: 44px;
+  }
+}
+
+/* On the narrowest phones the slider gives up the icon of its label before it gives up its width. */
+@media (pointer: coarse) and (width < 380px) {
+  .ratio label .icon {
+    display: none;
+  }
+}
+
+/* Under 360 px the bottom bar has no room for bigger buttons beside the attack slider. */
+@media (pointer: coarse) and (width >= 360px) {
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (pointer: coarse) and (width >= 360px) and (width < 720px) {
+  .ratio {
+    right: 218px;
+  }
+
+  /* A solo game's fifth tool, its pace. */
+  .speedable .ratio {
+    right: 268px;
+  }
+}
+
+/*
+ * A phone held upright keeps its attack slider, and one held sideways its
+ * leaderboard: the pace is set in the pause banner.
+ */
+@media (pointer: coarse) {
+  .pause-speeds .replay-speed {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (pointer: coarse) and (width < 480px), (pointer: coarse) and (height < 560px) {
+  #speed {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) and (width < 480px),
+  (pointer: coarse) and (width < 720px) and (height < 560px) {
+  .speedable .ratio {
+    right: 174px;
+  }
+}
+
+@media (pointer: coarse) and (width >= 360px) and (width < 480px),
+  (pointer: coarse) and (width >= 360px) and (width < 720px) and (height < 560px) {
+  .speedable .ratio {
+    right: 218px;
+  }
+}
+
+/* The pace of a solo game (R-MODE-07), among the tools after pause, with its key. */
+.speed-button {
+  position: relative;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-button::after {
+  content: attr(data-key);
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  padding: 1px 4px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 4px;
+  background: var(--ff-night-800);
+  color: var(--ff-slate-300);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+@media (pointer: coarse), (width < 720px), (height < 560px) {
+  .speed-button::after {
+    display: none;
+  }
+}
+
+/* Above the bar of a phone, the preview keeps to one line: whose land, and how much of it.
+   The work share stays under the attack slider, within a finger's reach. */
+@media (width < 720px), (height < 560px) {
+  .preview-text {
+    display: none;
+  }
+}
+
+/* Land and troops over the game (ui/stats-chart.ts). */
+
+.end-screen {
+  display: flex;
+  flex-direction: column;
+  /* The overlay's padding on both sides. */
+  max-height: calc(100dvh - 32px);
+}
+
+.end-screen:has(.end-stats-chart) {
+  width: min(520px, 100%);
+}
+
+/* What scrolls on a tall panel is the body: the buttons stay under it, never over it. */
+.end-body {
+  min-height: 0;
+  margin: 0 -24px;
+  padding: 0 24px;
+  overflow-y: auto;
+}
+
+.end-actions {
+  flex: none;
+  padding-top: 12px;
+}
+
+.end-stats-chart {
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.stats-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.end-stats-chart h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.stats-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.stats-tab {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--ff-slate-300);
+  font: inherit;
+  font-size: 13px;
+}
+
+.stats-tab[aria-pressed="true"] {
+  border-color: var(--ff-ember);
+  background: var(--ff-night-600);
+  color: var(--ff-text);
+}
+
+.stats-plot {
+  position: relative;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: rgb(6 12 18 / 45%);
+  touch-action: pan-y;
+}
+
+.stats-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.stats-grid {
+  stroke: var(--ff-night-500);
+  stroke-width: 1;
+}
+
+.stats-goal {
+  stroke: var(--ff-slate-400);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.stats-axis {
+  /* Colour and fill together: the contrast audit reads the colour. */
+  color: var(--ff-text);
+  fill: currentcolor;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.stats-line.you {
+  stroke-width: 3.5;
+  opacity: 1;
+}
+
+.stats-cursor {
+  stroke: var(--ff-text);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+}
+
+.stats-dot {
+  stroke: var(--ff-night-700);
+  stroke-width: 2;
+}
+
+.stats-mark {
+  fill: var(--ff-slate-300);
+}
+
+.stats-mark.out {
+  fill: var(--ff-warning);
+}
+
+.stats-mark.betrayed {
+  fill: var(--ff-ember);
+}
+
+.stats-plot:focus-visible {
+  outline: 2px solid var(--ff-text);
+  outline-offset: 2px;
+}
+
+.stats-tooltip {
+  position: absolute;
+  top: 6px;
+  display: grid;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: 140px;
+  max-width: 60%;
+  margin-left: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ff-night-800, var(--ff-night-700));
+  box-shadow: 0 2px 8px rgb(0 0 0 / 50%);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.stats-tooltip.left {
+  transform: translateX(calc(-100% - 20px));
+}
+
+.stats-tooltip[hidden] {
+  display: none;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+  color: var(--ff-slate-300);
+}
+
+.stats-row.you {
+  color: var(--ff-text);
+  font-weight: 700;
+}
+
+.stats-row b {
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-tooltip em {
+  color: var(--ff-text);
+  font-style: normal;
+  border-top: 1px solid var(--ff-night-500);
+  padding-top: 3px;
+}
+
+.stats-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  list-style: none;
+}
+
+.stats-legend li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.stats-legend .you {
+  color: var(--ff-text);
+  font-weight: 700;
+}
+
+.stats-note {
+  margin: 6px 0 0;
+  color: var(--ff-slate-300);
+  font-size: 12px;
+}
+
+.stats-table {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.stats-table summary {
+  min-height: 32px;
+  color: var(--ff-slate-300);
+  cursor: pointer;
+}
+
+.stats-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 3px 4px;
+  font-weight: 400;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table th:first-child {
+  text-align: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stats-line {
+    transition: opacity 0.15s;
+  }
+}
+
+/* A laptop screen: the four buttons on two rows leave the chart more of the panel. */
+@media (max-height: 800px) {
+  .end-screen:has(.end-stats-chart) .end-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* With three buttons the main one takes the first row; the other two share the second. */
+  .end-screen:has(.end-stats-chart) .end-actions > :first-child:nth-last-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* A short screen: the panel scrolls as a whole, the buttons stick to its foot. */
+@media (max-height: 560px) {
+  .end-screen {
+    display: block;
+    overflow-y: auto;
+  }
+
+  .end-body {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  /* The buttons stay in sight at the foot of the panel while the rest scrolls. */
+  .end-screen .end-actions,
+  .end-screen:has(.end-stats-chart) .end-actions {
+    position: sticky;
+    bottom: -24px;
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin: 0 -24px -24px;
+    padding: 10px 24px 12px;
+    background: var(--ff-night-700);
+    box-shadow: 0 -8px 12px rgb(0 0 0 / 25%);
+  }
+
+  .end-actions > * {
+    flex: 1;
+  }
+}
+
+/* The mini-map (render/minimap.ts): bottom right, over the tools (docs/hud-layout.md). Up to
+   200 by 130 as a panel with its title and a button to fold it; folded, only a round button stays. */
+.minimap {
+  right: 12px;
+  bottom: 64px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 4px 4px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 6px;
+}
+
+.minimap-title {
+  margin: 0 0 0 4px;
+  color: var(--ff-slate-300);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.minimap-toggle {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--ff-slate-300);
+  cursor: pointer;
+}
+
+.minimap-toggle:hover {
+  border-color: var(--ff-slate-400);
+  color: var(--ff-text);
+}
+
+.minimap-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.minimap-map {
+  position: relative;
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+  /* Up to 188 by 90 inside the panel, in the map's own proportions. */
+  width: min(188px, calc(90px * var(--minimap-aspect, 2)));
+  aspect-ratio: var(--minimap-aspect, 2);
+  justify-self: end;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.minimap-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* What the camera shows: a paper frame with a dark edge on both sides, readable over any colour. */
+.minimap-view {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--ff-text);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px rgb(6 12 18 / 75%),
+    inset 0 0 0 1px rgb(6 12 18 / 75%);
+  pointer-events: none;
+}
+
+.minimap-view[data-seam-left] {
+  border-left-width: 0;
+}
+
+.minimap-view[data-seam-right] {
+  border-right-width: 0;
+}
+
+/* Folded: the panel gives way to a round button like the tools. */
+.minimap:not([data-open]) {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.minimap:not([data-open]) .minimap-toggle {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--ff-night-500), var(--ff-night-600));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+  color: var(--ff-text);
+}
+
+.minimap:not([data-open]) .minimap-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.minimap-toggle:focus-visible,
+.minimap-map:focus-visible {
+  outline: 2px solid var(--ff-text);
+  outline-offset: 2px;
+}
+
+/* Narrow (docs/hud-layout.md): folded it is a round button, 36 wide, top right on a phone, where
+   the bottom right belongs to the leaderboard chip; open it is a sheet centred on the map,
+   at most 40 % of the screen high (60 % on a short window), over the tips and under the requests. */
+@media (width < 720px) {
+  .minimap {
+    top: 12px;
+    right: 12px;
+    bottom: auto;
+  }
+
+  /* A finger needs 44. */
+  .minimap:not([data-open]) .minimap-toggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (width < 720px), (height < 560px) {
+  .minimap {
+    --sheet-height: 40vh;
+  }
+
+  .minimap[data-open] {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    z-index: 2;
+    width: fit-content;
+    max-width: calc(90vw - 24px);
+    max-height: var(--sheet-height);
+    transform: translate(-50%, -50%);
+  }
+
+  .minimap[data-open] .minimap-map {
+    width: min(100%, calc((var(--sheet-height) - 56px) * var(--minimap-aspect, 2)));
+    justify-self: center;
+  }
+
+  .minimap[data-open] .minimap-toggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (height < 560px) {
+  .minimap {
+    --sheet-height: 60vh;
+  }
+}
+
+.requests {
+  z-index: 3;
+}
+
+/* Population (R-ECO-02): the army against its cap, the band where it grows
+   fastest, and what it gains each second. Wide, it is the part of the bar after
+   the figures; narrower, a thin line along the foot of the figures panel, and
+   the whole panel is the button, big enough to tap, whose press shows the figures. */
+.pop-bar {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0 12px 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: help;
+}
+
+.pop-track {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ff-night-600);
+  overflow: hidden;
+}
+
+.pop-band {
+  position: absolute;
+  inset: 0 auto;
+  background: rgb(60 203 127 / 55%);
+  box-shadow: inset 0 0 0 1px rgb(60 203 127 / 80%);
+}
+
+.pop-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--ff-slate-300);
+}
+
+.pop-bar.in-band .pop-fill {
+  background: var(--ff-success);
+}
+
+.pop-bar.in-band .pop-rate {
+  color: var(--ff-success);
+}
+
+.pop-zone {
+  color: var(--ff-slate-300);
+}
+
+.pop-long {
+  display: none;
+}
+
+.pop-bar.full .pop-fill {
+  background: var(--ff-warning);
+}
+
+.pop-figures {
+  display: none;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ff-slate-300);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (width >= 1240px) and (height >= 560px) {
+  .bar .pop-bar {
+    position: static;
+    justify-content: center;
+    width: 56px;
+    padding: 0 0 0 12px;
+    border-left: 1px solid var(--ff-night-500);
+  }
+
+  .bar .pop-track {
+    height: 10px;
+    border-radius: 5px;
+  }
+
+  .bar .pop-figures {
+    display: flex;
+  }
+
+  .bar .pop-rate {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .bar .pop-zone {
+    display: none;
+  }
+}
+
+/* Room enough for the best zone to be named beside the figure. */
+@media (width >= 1500px) and (height >= 560px) {
+  .bar .pop-bar {
+    width: 230px;
+  }
+
+  .bar .pop-short {
+    display: none;
+  }
+
+  .bar .pop-long {
+    display: inline;
+  }
+
+  .bar .pop-zone {
+    display: inline;
+  }
+}
+
+/* Wide: the figures left the top left, so the first steps take it and the feed goes under them. */
+.game[data-wide] .event-feed {
+  top: 12px;
+}
+
+.game[data-wide]:has(.guide) .event-feed {
+  top: 172px;
+}
+
+/* R-CAP-05: the banner as an alarm while the player's capital is under threat. */
+.banner.danger {
+  border-color: var(--ff-danger);
+  background: color-mix(in srgb, var(--ff-danger) 28%, var(--ff-night-800));
+  color: #fff;
+  font-weight: 700;
+  animation: capital-alarm 1.2s ease-in-out infinite;
+}
+
+@keyframes capital-alarm {
+  50% {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--ff-danger) 55%, transparent),
+      var(--ff-lift);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner.danger {
+    animation: none;
+  }
+
+  .gold-gain.rising {
+    animation-name: gold-fade;
+  }
+}
+
+@keyframes gold-fade {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The map and the interface fade in together once the game screen is built. */
+.game {
+  animation: screen-in 0.3s ease-out;
+}
+
+/* Common fixes to the in-game interface, whatever its look (refonte, lot V1-hud-commun). */
+
+/* The attack slider on a phone: the share and the troops it sends sit over the rail, so the rail
+   takes the whole width of the panel (about 130 px at 390, where the value beside it left 43). */
+@media (width < 720px) {
+  .ratio {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 8px;
+  }
+
+  /* Two rows each, the share over its rail. The attack share keeps the lowest pair, under the
+     thumb and where it always was; the work share sits above it. */
+  .ratio > .ratio-row .range-value {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    justify-self: end;
+    padding-right: 2px;
+  }
+
+  .ratio > .ratio-row label {
+    grid-row: 4;
+    grid-column: 1;
+  }
+
+  .ratio > .ratio-row input {
+    grid-row: 4;
+    grid-column: 2;
+  }
+
+  .ratio > .work-row .range-value {
+    grid-row: 1;
+  }
+
+  .ratio > .work-row label {
+    grid-row: 2;
+  }
+
+  .ratio > .work-row input {
+    grid-row: 2;
+  }
+
+  .ratio .work-row .ratio-name {
+    display: none;
+  }
+}
+
+/* On the narrowest phones the buttons of the tools cover the right of the panel: the shares keep left. */
+@media (width < 360px) {
+  .ratio > .ratio-row .range-value {
+    justify-self: start;
+  }
+}
+
+/* A finger takes a thumb it can see: 28 px, on a rail it can read, filled up to the value
+   (ui/range-click.ts sets --fill). A mouse keeps the browser's own slider. */
+@media (pointer: coarse) {
+  .ratio input[type="range"] {
+    --thumb-size: 28px;
+    --thumb-color: var(--ff-ember);
+
+    appearance: none;
+    background: transparent;
+  }
+
+  .work-row input[type="range"] {
+    --thumb-color: var(--ff-warning);
+  }
+
+  .ratio input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--thumb-color) calc(14px + (100% - 28px) * var(--fill, 0)),
+      var(--ff-night-500) 0
+    );
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 50%);
+  }
+
+  .ratio input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--thumb-color) calc(14px + (100% - 28px) * var(--fill, 0)),
+      var(--ff-night-500) 0
+    );
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 50%);
+  }
+
+  .ratio input[type="range"]::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+    margin-top: -10px;
+    border: 3px solid var(--ff-text);
+    border-radius: 50%;
+    appearance: none;
+    background: var(--thumb-color);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 55%);
+  }
+
+  .ratio input[type="range"]::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--ff-text);
+    border-radius: 50%;
+    background: var(--thumb-color);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 55%);
+  }
+
+  .ratio input[type="range"]:focus-visible {
+    outline: 2px solid var(--ff-text);
+    outline-offset: 2px;
+  }
+}
+
+/* The bubble over a build button: name and keys, what it does, what it costs. */
+.build-info {
+  flex-wrap: wrap;
+  width: max-content;
+  max-width: 260px;
+  white-space: normal;
+}
+
+.build-price {
+  margin-left: auto;
+  color: var(--ff-warning);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.build-desc {
+  flex-basis: 100%;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* The ends of the dock keep their bubble on the screen. */
+.build-button:nth-child(-n + 3) .build-info {
+  left: 0;
+  transform: none;
+}
+
+.build-button:nth-last-child(-n + 3) .build-info {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+/* On a narrow screen the name and the cost stay under the buttons, not in a bubble. */
+@media (width < 720px), (height < 560px) {
+  .build-desc,
+  .build-price {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* The category of a building does not rest on colour alone: a bar on top of its button, full
+   for the economy, short and round for defence, dotted for weapons, crossed for demolition. */
+.build-button::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 8px;
+  left: 8px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgb(var(--tint));
+  pointer-events: none;
+}
+
+.build-fort::before,
+.build-airDefense::before,
+.build-mosque::before {
+  right: 16px;
+  left: 16px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.build-silo::before,
+.build-warship::before,
+.build-missile::before,
+.build-heavyMissile::before {
+  background: repeating-linear-gradient(90deg, rgb(var(--tint)) 0 3px, transparent 3px 6px);
+}
+
+.build-demolish::before {
+  background: repeating-linear-gradient(135deg, rgb(var(--tint)) 0 3px, transparent 3px 5px);
+}
+
+/* The chosen one is the key that is down: pushed in, rimmed in the text colour, and plain of any
+   category tint, so a selected weapon no longer looks like the weapons beside it. */
+.build-button[aria-pressed="true"] {
+  border-color: var(--ff-text);
+  background: linear-gradient(180deg, rgb(0 0 0 / 35%), rgb(var(--tint) / 22%));
+  box-shadow:
+    0 0 0 2px var(--ff-night-800),
+    0 0 0 4px var(--ff-text),
+    inset 0 3px 6px rgb(0 0 0 / 50%);
+  transform: translateY(2px);
+}
+
+.build-button[aria-pressed="true"] .build-icon {
+  filter: none;
+}
+
+/* A target is 44 px, with a mouse too: the tools, the folded map and the tabs of the chart. */
+.icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.minimap:not([data-open]) .minimap-toggle {
+  width: 44px;
+  height: 44px;
+}
+
+.minimap-toggle {
+  width: 44px;
+  height: 44px;
+}
+
+.stats-tab {
+  min-height: 44px;
+}
+
+/* The end of a game: the title is a moment of its own. The buttons stay under the scrolling body,
+   set off by a rule, and the body fades under it where there is more to see. */
+.end-screen h1 {
+  position: relative;
+  margin: 4px 0 6px;
+  padding-bottom: 14px;
+  font-size: 44px;
+  line-height: 1.05;
+}
+
+.end-screen h1::after {
+  content: "";
+  position: absolute;
+  right: 25%;
+  bottom: 0;
+  left: 25%;
+  height: 3px;
+  border-radius: 2px;
+  background: currentcolor;
+  opacity: 0.55;
+}
+
+.end-screen.lost h1 {
+  color: var(--ff-slate-300);
+}
+
+.end-actions {
+  margin-top: 12px;
+  border-top: 1px solid var(--ff-night-500);
+}
+
+@media (max-height: 560px) {
+  .end-screen .end-actions,
+  .end-screen:has(.end-stats-chart) .end-actions {
+    border-top: 0;
+  }
+}
+
+.end-achievements {
+  margin-top: 12px;
+}
+
+/* Choice of a doctrine in the spawn phase (ui/doctrine-picker.ts): three cards
+   over the map, above the bottom bar so that the sliders and the buildings stay in reach. */
+.doctrine-picker {
+  position: absolute;
+  inset: auto 16px 92px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 12px;
+  border-radius: 10px;
+  /* Opaque: the guide and the bar must not show through the cards. */
+  border: 1px solid var(--ff-slate-400);
+  background: var(--ff-night-800);
+  color: var(--text, #f2f4f7);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 35%);
+}
+
+.doctrine-picker[hidden] {
+  display: none;
+}
+
+.doctrine-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.doctrine-timer {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.doctrine-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.doctrine-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 44px;
+  padding: 10px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentcolor 8%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doctrine-card:hover,
+.doctrine-card:focus-visible {
+  border-color: color-mix(in srgb, currentcolor 45%, transparent);
+}
+
+.doctrine-card[aria-pressed="true"] {
+  border-color: currentcolor;
+  background: color-mix(in srgb, currentcolor 18%, transparent);
+}
+
+.doctrine-idea {
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+
+.doctrine-effects {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+}
+
+.doctrine-good::before {
+  content: "▲ ";
+  color: #5ad17a;
+}
+
+.doctrine-bad::before {
+  content: "▼ ";
+  color: #f08a6a;
+}
+
+/* A phone keeps the map: the cards fold to a line each, and only the chosen one
+   spells out its effects (the others stay in the reading order for a screen reader),
+   so that the start can still be placed above them. The picker rises over the bottom
+   bar rather than covering it, so the sliders and buttons stay in sight. */
+@media (width < 640px), (height < 560px) {
+  .doctrine-picker {
+    inset: auto 8px 84px;
+    gap: 4px;
+    max-height: 34vh;
+    padding: 8px 10px;
+    overflow-y: auto;
+  }
+
+  .doctrine-title {
+    font-size: 0.95rem;
+  }
+
+  .doctrine-timer {
+    font-size: 0.8rem;
+  }
+
+  .doctrine-cards {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .doctrine-card {
+    position: relative;
+    flex-flow: row wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 6px 10px;
+  }
+
+  .doctrine-effects {
+    flex-basis: 100%;
+  }
+
+  .doctrine-card:not([aria-pressed="true"]) .doctrine-effects {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* A short phone: three names in a row, the chosen one marked, so that the map keeps most of the screen. */
+@media (height < 700px) and ((width < 640px) or (height < 560px)) {
+  .doctrine-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .doctrine-card .doctrine-idea {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .doctrine-card[aria-pressed="true"] .doctrine-effects {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* A figure of the bar that explains itself: it reads as pressable only once pointed at. */
+.stat-help {
+  cursor: help;
+  border-radius: 8px;
+}
+
+.stat-help:focus-visible {
+  outline: 2px solid var(--ff-ember-bright);
+  outline-offset: 2px;
+}
+
+/* Why a building cannot be had now: a line in its bubble, only while it cannot. */
+.build-why {
+  display: none;
+  color: var(--ff-ember-bright);
+  font-weight: 600;
+}
+
+.build-button.unaffordable .build-why:not(:empty) {
+  display: block;
+}
+
+/* The achievements' badge is a 40 px tile (styles.css): a row's badges are small tags. */
+.leader .badge {
+  width: auto;
+  height: auto;
+}
+
+/* In the tray the name and price sit in flow under each icon: the reason waits for a press. */
+@media (width < 720px), (height < 560px) {
+  .build-button.unaffordable .build-why:not(:empty) {
+    display: none;
+  }
+}
+
+/* A red rim on the screen while the player loses land or a ship comes for it (ui/alert-frame.ts). */
+.alert-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  box-shadow:
+    inset 0 0 0 4px var(--ff-danger),
+    inset 0 0 48px 8px rgb(240 76 94 / 45%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease-out;
+}
+
+.alert-frame[data-on] {
+  opacity: 1;
+  transition-duration: 0.08s;
+}
