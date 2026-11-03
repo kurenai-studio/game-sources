@@ -1,0 +1,59 @@
+{
+  "name": "frontfall",
+  "version": "0.9.8",
+  "private": true,
+  "description": "Real-time multiplayer territorial strategy game on a world without edges.",
+  "license": "MIT",
+  "author": "Nicolas Maigre",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev": "pnpm --parallel --filter @frontfall/server --filter @frontfall/client dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "pnpm --filter @frontfall/e2e test",
+    "clean-room": "node tools/src/clean-room-cli.ts",
+    "bench": "pnpm --filter @frontfall/bench engine",
+    "bench:render": "pnpm --filter @frontfall/bench render",
+    "perf:engine": "pnpm --filter @frontfall/bench gate",
+    "perf:client": "pnpm --filter @frontfall/bench client",
+    "maps": "pnpm --filter @frontfall/tools maps",
+    "announce": "pnpm --filter @frontfall/tools announce",
+    "sim": "pnpm --filter @frontfall/bench sim",
+    "balance": "pnpm --filter @frontfall/bench balance",
+    "balance:doctrines": "pnpm --filter @frontfall/bench balance:doctrines",
+    "campaign": "pnpm --filter @frontfall/bench campaign",
+    "determinism": "pnpm --filter @frontfall/bench determinism",
+    "golden": "pnpm --filter @frontfall/bench golden",
+    "load": "pnpm --filter @frontfall/bench load"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
+  },
+  "lint-staged": {
+    "*.{ts,js,mjs}": [
+      "eslint --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,html}": "prettier --write"
+  }
+}

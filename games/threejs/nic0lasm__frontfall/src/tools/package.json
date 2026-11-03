@@ -1,0 +1,22 @@
+{
+  "name": "@frontfall/tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repository checks and the map generator.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "maps": "tsx src/mapgen/cli.ts",
+    "announce": "tsx src/announce-cli.ts"
+  },
+  "dependencies": {
+    "@frontfall/engine": "workspace:*",
+    "@frontfall/protocol": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "geotiff": "2.1.3",
+    "tsx": "^4.23.15"
+  }
+}

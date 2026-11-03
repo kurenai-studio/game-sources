@@ -1,0 +1,174 @@
+/* Sign-in under the name field; loaded with ui/account.ts, after the menu shows. */
+
+.account {
+  margin: 6px 0 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+.account[hidden] {
+  display: none;
+}
+
+.account p {
+  margin: 0;
+}
+
+.account button.link {
+  padding: 0;
+  font-size: inherit;
+}
+
+.account-sign-in {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 112px;
+  height: 40px;
+  margin: 8px 8px 0 0;
+  padding: 0 14px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-600);
+  color: var(--ff-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.account-sign-in:hover,
+.account-sign-in:focus-visible {
+  border-color: var(--ff-slate-300);
+  background: var(--ff-night-500);
+}
+
+.account-logo {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* Brand colours kept apart from the game's palette, as each service asks. */
+.account-sign-in.google {
+  border-color: #747775;
+  background: #ffffff;
+  color: #1f1f1f;
+}
+
+.account-sign-in.google:hover,
+.account-sign-in.google:focus-visible {
+  border-color: #1f1f1f;
+  background: #f2f2f2;
+}
+
+.account-sign-in.discord {
+  border-color: #5865f2;
+  background: #5865f2;
+  color: #ffffff;
+}
+
+.account-sign-in.discord:hover,
+.account-sign-in.discord:focus-visible {
+  border-color: #ffffff;
+  background: #4752c4;
+}
+
+.account-error {
+  color: var(--ff-ember-bright);
+}
+
+.account .account-legal {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.account-sign-in.email {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-email-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+/* As the name field above it. */
+.account-email {
+  flex: 1 1 200px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--ff-night-500);
+  border-radius: var(--ff-radius);
+  background: var(--ff-night-600);
+}
+
+.account .account-finish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--ff-text);
+}
+
+.account-note {
+  color: var(--ff-text);
+}
+
+/* Under the name field of the menu, while signed in. */
+.account-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--ff-slate-300);
+  font-size: 13px;
+}
+
+.account-line[hidden] {
+  display: none;
+}
+
+.account-line button.link {
+  padding: 0;
+  font-size: inherit;
+}
+
+.account-line .account-sign-out {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.account .account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 8px;
+}
+
+.account .account-methods,
+.account .account-add {
+  margin-top: 10px;
+}
+
+.account-add button.account-sign-in {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-merge {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ff-slate-300);
+  border-radius: var(--ff-radius);
+  color: var(--ff-text);
+}
