@@ -1,0 +1,54 @@
+body {
+    font-size: 18px;
+    line-height: 1.5em;
+    position: relative;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    color: #242424;
+}
+
+a {
+    color: #528CE0;
+}
+
+#demo {
+    /* comment for fixed dimentsions */
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.enemyText {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #fff;
+    padding: 10px;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 1;
+    transform: translate(-50%, -150%);
+}
+
+.currentEnemy {
+    background-color: #f05f4f;
+    color: white;
+}
+
+#waveMessage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background-color: #fff;
+    padding: 10px;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+}
+
+#waveMessage.is-active {
+    opacity: 1;
+}
