@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Harvest - Roguelite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay">
+            <!-- Split HUD Panels -->
+            <div id="p1-panel" class="hud-panel left">
+                <div class="panel-header"
+                    style="display: flex; align-items: center; gap: 15px; width: 100%; justify-content: flex-start;">
+                    <div class="panel-label">P1</div>
+                    <div id="p1-active-skills" class="active-skills"></div>
+                </div>
+
+                <div class="stat-bar health">
+                    <span>HP</span>
+                    <div class="bar-container">
+                        <div id="p1-health-bar" class="bar health-bar"></div>
+                    </div>
+                    <span id="p1-health-text">100/100</span>
+                </div>
+                <!-- Status Effects moved under Health -->
+                <div id="p1-status-effects" class="status-effects"></div>
+
+                <div class="stat-bar xp">
+                    <span>XP</span>
+                    <div class="bar-container">
+                        <div id="p1-xp-bar" class="bar xp-bar"></div>
+                    </div>
+                    <span id="p1-level-text">Lv 1</span>
+                </div>
+            </div>
+
+            <div id="p2-panel" class="hud-panel right hidden">
+                <div class="panel-header"
+                    style="display: flex; align-items: center; gap: 15px; width: 100%; justify-content: flex-end;">
+                    <div id="p2-active-skills" class="active-skills"></div>
+                    <div class="panel-label">P2</div>
+                </div>
+
+                <div class="stat-bar health">
+                    <span>HP</span>
+                    <div class="bar-container">
+                        <div id="p2-health-bar" class="bar health-bar"></div>
+                    </div>
+                    <span id="p2-health-text">100/100</span>
+                </div>
+                <!-- Status Effects moved -->
+                <div id="p2-status-effects" class="status-effects"></div>
+
+                <div class="stat-bar xp">
+                    <span>XP</span>
+                    <div class="bar-container">
+                        <div id="p2-xp-bar" class="bar xp-bar"></div>
+                    </div>
+                    <span id="p2-level-text">Lv 1</span>
+                </div>
+            </div>
+
+            <div id="game-stats-content">
+                <div class="hud-topbar">
+                    <div id="time-stats" class="hud-stat">
+                        <span class="stat-label">Time</span>
+                        <span id="time-val" class="stat-value">0:00</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="wave-stats" class="hud-stat">
+                        <span class="stat-label">Wave</span>
+                        <span id="wave-val" class="stat-value">1</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="kills-stats" class="hud-stat">
+                        <span class="stat-label">Kills</span>
+                        <span id="kills-val" class="stat-value">0</span>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div id="souls-stats" class="hud-stat">
+                        <span class="stat-label">Souls</span>
+                        <span class="stat-value souls-value">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                            </svg>
+                            <span id="souls-banked-text" title="Banked Souls">0</span>
+                            <span id="souls-run-text" title="Current Run Souls">(+0)</span>
+                        </span>
+                    </div>
+                </div>
+                <div id="wave-icons"></div>
+            </div>
+            <div id="fps-counter">FPS: 60</div>
+
+            <!-- Minimap Radar -->
+            <div id="minimap-container" class="hidden">
+                <canvas id="minimap-canvas"></canvas>
+            </div>
+
+            <!-- Frozen State Message -->
+            <div id="frozen-message" class="hidden">
+                <div class="frozen-text">GAME FROZEN</div>
+                <div class="frozen-sub">MOVE OR ATTACK TO RESUME</div>
+            </div>
+
+            <!-- FPS Counter Removed -->
+
+            <!-- Pause Modal -->
+            <div id="pause-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Game Paused</h2>
+                    <div id="pause-stats"></div>
+                    <button id="resume-btn" class="btn btn-large">Resume (ESC)</button>
+                    <button id="restart-pause-btn" class="btn">Restart</button>
+                    <button id="exit-pause-btn" class="btn">Exit to Main Menu</button>
+                </div>
+            </div>
+
+            <!-- Weather Warning (Independent of panels) -->
+            <div id="weather-warning" class="hidden">WARNING: WEATHER APPROACHING</div>
+
+            <!-- HUD (Heads-Up Display) -->
+            <!-- game-ui container removed as it was unused and hidden -->
+
+            <!-- Level Up Modal -->
+            <div id="levelup-modal" class="modal hidden">
+                <div class="modal-content" style="max-width: 1100px;">
+                    <h2>Level Up!</h2>
+                    <p style="font-size: 18px;">Choose an upgrade:</p>
+                    <div id="skill-choices"></div>
+                    <button id="reroll-btn" class="btn btn-large"
+                        style="margin: 20px auto 0 auto; display: block;">Reroll</button>
+                </div>
+            </div>
+
+            <!-- Game Over Modal -->
+            <div id="gameover-modal" class="modal hidden">
+                <div class="modal-content" id="gameover-content">
+                    <!-- Content populated by ui-gameover.js -->
+                </div>
+                <span id="close-gameover-x" class="modal-close-btn">&times;</span>
+            </div>
+
+            <!-- Meta Progression Modal -->
+            <div id="meta-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header-row">
+                        <h2>Permanent Upgrades</h2>
+                        <div class="souls-display">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #b388ff;">
+                                <path
+                                    d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                            </svg>
+                            <span id="currency-text" class="souls-count">0</span>
+                        </div>
+                    </div>
+                    <div id="meta-upgrades"></div>
+                    <button id="reset-meta-btn" class="btn">Reset All</button>
+                    <button id="close-meta-btn" class="btn">Close</button>
+                </div>
+            </div>
+
+            <!-- Reset Confirmation Modal -->
+            <div id="reset-confirm-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>⚠️ Reset All Upgrades?</h2>
+                    <p class="reset-warning">This will reset all permanent upgrades to level 0.</p>
+                    <p id="refund-amount" class="reset-refund"></p>
+                    <p class="reset-caution">This action cannot be undone.</p>
+                    <div class="reset-actions">
+                        <button id="confirm-reset-btn" class="btn">Yes, Reset</button>
+                        <button id="cancel-reset-btn" class="btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revive Prompt -->
+            <div id="revive-prompt" class="revive-prompt hidden">
+                HOLD <span class="key-hint">[E]</span> TO REVIVE
+            </div>
+
+            <!-- Stats Panel -->
+            <!-- Start Screen -->
+            <div id="start-screen" class="modal">
+                <div class="modal-content">
+                    <div class="start-header">
+                        <button id="meta-btn" class="btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M12 19V5M5 12l7-7 7 7" />
+                            </svg>
+                            Upgrades
+                            <div id="main-souls-display" class="souls-display hidden">
+                                <span class="separator">|</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+                                    style="color: #b388ff;">
+                                    <path
+                                        d="M12 2C9 2 7 3.5 7 5.5c0 1.5 1 2.5 2.5 3.5C8 10 7 12 7 14c0 3 3 6 5 6s5-3 5-6c0-2-1-4-2.5-5 1.5-1 2.5-2 2.5-3.5C17 3.5 15 2 12 2z" />
+                                </svg>
+                                <span id="main-souls-count">0</span>
+                            </div>
+                        </button>
+                        <h1>Void Harvest</h1>
+                        <button id="guide-btn" class="btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                            </svg>
+                            Guide
+                        </button>
+                    </div>
+                    <p>Survive waves of enemies and become stronger!</p>
+                    <div class="controls-info">
+                        <div class="controls-title">Controls</div>
+                        <div class="controls-visual">
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div class="key esc">ESC</div>
+                                </div>
+                                <div class="key-label">Pause</div>
+                            </div>
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div class="key space">SPACE</div>
+                                </div>
+                                <div class="key-label">Freeze</div>
+                            </div>
+                            <div class="keyboard-section">
+                                <div class="keyboard-row">
+                                    <div style="width: 50px;"></div>
+                                    <div class="key">W</div>
+                                    <div style="width: 50px;"></div>
+                                </div>
+                                <div class="keyboard-row">
+                                    <div class="key">A</div>
+                                    <div class="key">S</div>
+                                    <div class="key">D</div>
+                                </div>
+                                <div class="key-label">Movement</div>
+                            </div>
+                            <div class="mouse-section infographic">
+                                <!-- Left Callout: Aim -->
+                                <div class="callout aim">
+                                    <span class="label">Aim & Shoot</span>
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Center: Mouse -->
+                                <div class="mouse">
+                                    <div class="mouse-buttons">
+                                        <div class="mouse-button left"></div>
+                                        <div class="mouse-button right"></div>
+                                    </div>
+                                    <div class="mouse-wheel"></div>
+                                </div>
+
+                                <!-- Right Callouts: Zoom & Orbit -->
+                                <div class="callout zoom">
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <span class="label">Zoom</span>
+                                </div>
+
+                                <div class="callout orbit">
+                                    <div class="connector">
+                                        <div class="line"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <span class="label">Orbit</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Start Screen Actions Footer -->
+                    <div class="start-actions">
+
+                        <!-- Speed Controls (Left) -->
+                        <div class="speed-controls-group">
+                            <div class="label-mono">Game Speed</div>
+                            <div class="speed-controls">
+                                <button id="speed-slow-btn" class="btn btn-small speed-btn"
+                                    data-speed="0.5">Slow</button>
+                                <button id="speed-med-btn" class="btn btn-small speed-btn"
+                                    data-speed="0.75">Med</button>
+                                <button id="speed-fast-btn" class="btn btn-small speed-btn"
+                                    data-speed="0.85">Fast</button>
+                            </div>
+                        </div>
+
+                        <!-- Main Actions (Right) -->
+                        <div class="main-buttons-group">
+
+                            <div class="main-menu-pill">
+                                <!-- 1. 2 Player Co-op -->
+                                <button id="multiplayer-btn" class="btn pill-btn" title="2 Player Co-op">
+                                    <span style="font-weight: bold;">2P</span>
+                                </button>
+
+                                <!-- 2. Start Game (Center) -->
+                                <button id="start-btn" class="btn pill-btn pill-main">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                                        <path d="M20 7h-7L10 2 7 7H0l6 5-2 7 6-4 6 4-2-7z" />
+                                        <path d="M14 7h7l-6 5 2 7-6-4" />
+                                    </svg>
+                                    Start Game
+                                </button>
+
+                                <!-- 3. Custom Settings -->
+                                <button id="custom-btn" class="btn pill-btn" title="Custom Game Settings">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path
+                                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Guide Modal -->
+            <div id="guide-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Survivor's Guide</h2>
+                    <div id="guide-content"></div>
+                    <button id="close-guide-btn" class="btn">Close</button>
+                </div>
+                <!-- Sticky Close X: sibling of the scroll container so it
+                     stays in the corner regardless of scroll position -->
+                <span id="close-guide-x" class="modal-close-btn" aria-label="Close">&times;</span>
+            </div>
+
+            <!-- Custom Game Config Modal -->
+            <div id="custom-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Custom Game Configuration</h2>
+
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Enemy Types</h3>
+
+                            <!-- Select All Checkbox -->
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="enemy-select-all" class="sci-fi-checkbox">
+                                <label for="enemy-select-all">Select All</label>
+                            </div>
+                        </div>
+
+                        <!-- Enemy Options -->
+                        <div id="enemy-type-config" class="enemy-selector-group">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Spawn Settings</h3>
+                        </div>
+
+                        <div class="spawn-config-group">
+                            <div class="input-wrapper">
+                                <label for="custom-spawn-rate">Spawn Rate (per sec)</label>
+                                <input type="number" id="custom-spawn-rate" class="sci-fi-input" min="0.1" value="1"
+                                    step="0.1">
+                            </div>
+                            <div class="input-wrapper">
+                                <label for="custom-max-enemies">Max Enemies</label>
+                                <input type="number" id="custom-max-enemies" class="sci-fi-input" min="1" value="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Biome Selection</h3>
+
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="debug-weather-check" class="sci-fi-checkbox">
+                                <label for="debug-weather-check" style="font-size: 12px;">Debug Weather</label>
+                            </div>
+                        </div>
+
+                        <!-- Biome Options -->
+                        <div id="custom-biome-config" class="biome-selector-group">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="cfg-row">
+                        <div class="cfg-label">
+                            <h3>Game Mode</h3>
+                        </div>
+
+                        <div class="game-mode-group">
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="custom-2p-check" class="sci-fi-checkbox">
+                                <label for="custom-2p-check">2 Player Co-op</label>
+                            </div>
+
+                            <div class="sci-fi-checkbox-wrapper">
+                                <input type="checkbox" id="custom-friendly-fire-check" class="sci-fi-checkbox" disabled>
+                                <label for="custom-friendly-fire-check">Friendly Fire</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cfg-row cfg-row-stack">
+                        <h3>Starting Skills</h3>
+                        <p class="cfg-hint">Left click to advance level, right click to decrease. Click at max level to
+                            reset.</p>
+                        <div id="custom-skill-config"></div>
+                    </div>
+
+                    <!-- Footer with Speed Slider and Start Button -->
+                    <!-- Footer with Speed Buttons and Start Button -->
+                    <div class="modal-footer">
+                        <div class="game-speed-control">
+                            <div class="label-mono">Game Speed</div>
+                            <div class="speed-controls" style="display: flex; gap: 5px;">
+                                <button class="btn btn-small speed-btn" data-speed="0.5">Slow</button>
+                                <button class="btn btn-small speed-btn" data-speed="0.75">Med</button>
+                                <button class="btn btn-small speed-btn" data-speed="0.85">Fast</button>
+                            </div>
+                        </div>
+
+                        <button id="start-custom-btn" class="btn btn-large">Start Custom Game</button>
+                        <!-- removed cancel button -->
+                    </div>
+                </div>
+                <!-- Sticky Close X -->
+                <span id="close-custom-modal" class="modal-close-btn">&times;</span>
+            </div>
+
+            <!-- Multiplayer Lobby Modal -->
+            <div id="lobby-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Co-op Lobby</h2>
+                    <p class="lobby-tagline">Two players survive together. Mouse controls shared light.</p>
+
+                    <div class="lobby-columns">
+
+                        <!-- Player 1 (Left) -->
+                        <div class="lobby-player p1">
+                            <h3>Player 1</h3>
+
+                            <!-- Color Picker -->
+                            <div class="lobby-color-picker">
+                                <label for="p1-color">Color</label>
+                                <input type="color" id="p1-color" value="#00ffff">
+                            </div>
+
+                            <!-- WASD -->
+                            <div class="keyboard-section lobby-move-keys">
+                                <div class="key">W</div>
+                                <div class="keyboard-row">
+                                    <div class="key">A</div>
+                                    <div class="key">S</div>
+                                    <div class="key">D</div>
+                                </div>
+                                <div class="key-label">Move</div>
+                            </div>
+
+                            <!-- Revive E -->
+                            <div class="keyboard-section">
+                                <div class="key">E</div>
+                                <div class="key-label">Revive (Hold 2s)</div>
+                            </div>
+                        </div>
+
+                        <!-- Shared Mouse (Center) -->
+                        <div class="lobby-shared">
+                            <h3>Shared Controls</h3>
+
+                            <div class="mouse-section">
+                                <div class="mouse">
+                                    <div class="mouse-buttons">
+                                        <div class="mouse-button left"></div>
+                                        <div class="mouse-button right"></div>
+                                    </div>
+                                    <div class="mouse-wheel"></div>
+                                </div>
+                            </div>
+
+                            <p class="lobby-shared-note">
+                                <strong>Mouse Controls Shared Light</strong>
+                                P1 Aims/Shoots<br>
+                                P2 Autoshoots
+                            </p>
+                        </div>
+
+                        <!-- Player 2 (Right) -->
+                        <div class="lobby-player p2">
+                            <h3>Player 2</h3>
+
+                            <!-- Color Picker -->
+                            <div class="lobby-color-picker">
+                                <label for="p2-color">Color</label>
+                                <input type="color" id="p2-color" value="#0088ff">
+                            </div>
+
+                            <!-- Arrow Keys -->
+                            <div class="keyboard-section lobby-move-keys">
+                                <div class="key">↑</div>
+                                <div class="keyboard-row">
+                                    <div class="key">←</div>
+                                    <div class="key">↓</div>
+                                    <div class="key">→</div>
+                                </div>
+                                <div class="key-label">Move</div>
+                            </div>
+
+                            <!-- Revive R-Ctrl -->
+                            <div class="keyboard-section">
+                                <div class="key key-wide">R-Ctrl</div>
+                                <div class="key-label">Revive (Hold 2s)</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="lobby-mechanic">
+                        <strong>Mechanic:</strong> Players split XP. If a player falls, they can be revived. Game Over
+                        if BOTH players fall.
+                        <br><span class="lobby-mechanic-warning">Both players must coordinate to stay within
+                            the light!</span>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button id="start-coop-btn" class="btn btn-large">START CO-OP</button>
+                    </div>
+                </div>
+                <span id="close-lobby-modal" class="modal-close-btn">&times;</span>
+            </div>
+        </div>
+</body>
+
+</html>

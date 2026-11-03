@@ -1,0 +1,851 @@
+// ============================================
+// HUD - Health/XP Bars, Status Effects, Active Skills
+// ============================================
+
+@use 'sass:color';
+@use 'variables' as v;
+
+// Stat Bars (Health & XP)
+.stat-bar {
+    display: flex;
+    align-items: center; // Align label and bar vertically
+    gap: v.$spacing-sm;
+    // Removed solid background
+    padding: v.$spacing-sm;
+
+    span {
+        min-width: 25px;
+        font-size: v.$font-size-base;
+        font-weight: 800; // Extra bold
+        text-shadow: 0 0 5px currentColor; // Glow matching text color
+    }
+}
+
+// Hide Legacy Health Bars (Replaced by Overhead UI)
+.stat-bar.health {
+    display: none !important;
+}
+
+// HUD Panels (Split UI)
+.hud-panel {
+    position: absolute;
+    bottom: v.$spacing-lg;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; // Space between elements
+    width: 250px;
+    pointer-events: none; // Allow clicks/scroll to pass through to canvas
+
+    // Panel Header (Label + Skills wrapper)
+    .panel-header {
+        display: contents; // Default: SP style (unwrap children)
+    }
+
+    // Panel Labels (P1/P2) - Hidden by default (SP)
+    .panel-label {
+        display: none;
+        font-size: 24px;
+        font-weight: 900;
+        text-shadow: 0 0 10px currentColor;
+        margin-bottom: -5px;
+    }
+
+    // Active Skills - Default SP order (Bottom)
+    .active-skills {
+        order: 10;
+        margin-top: auto;
+    }
+
+    &.left {
+        left: v.$spacing-lg;
+        align-items: flex-start;
+
+        .panel-label {
+            color: #44ccff;
+        }
+
+        // Cyan for P1
+
+        // P1 Stats align left
+        .stat-bar {
+            flex-direction: row;
+        }
+
+        .status-effects {
+            justify-content: flex-start;
+        }
+
+        .active-skills {
+            justify-content: flex-start;
+            flex-direction: row;
+        }
+
+        // Oldest left
+    }
+
+    &.right {
+        right: v.$spacing-lg;
+        align-items: flex-end;
+
+        .panel-label {
+            color: #ffaa44;
+        }
+
+        // Orange for P2
+
+        // P2 Stats align right (reverse row)
+        .stat-bar {
+            flex-direction: row-reverse;
+        }
+
+        .status-effects {
+            justify-content: flex-end;
+        }
+
+        .active-skills {
+            justify-content: flex-start; // Start of row-reverse is RIGHT
+            flex-direction: row-reverse;
+        }
+
+        // Oldest right
+    }
+}
+
+// Remove old absolute positioning for bars effectively, as they are now inside panels
+.stat-bar:nth-child(1),
+.stat-bar:nth-child(3) {
+    position: static; // Reset absolute
+    bottom: auto;
+    left: auto;
+    right: auto;
+}
+
+// SINGLE PLAYER OVERRIDES (Default state)
+// Restore XP bar to the right side
+#ui-overlay:not(.multiplayer) {
+    .hud-panel {
+        .stat-bar.xp {
+            position: fixed;
+            right: v.$spacing-xl;
+            bottom: v.$spacing-xl;
+            width: 400px;
+            flex-direction: row-reverse; // Flip so label is on inside
+            background: none;
+            padding: 0;
+
+            .bar-container {
+                width: 100%; // Fill available space
+            }
+        }
+    }
+}
+
+// Status Effects Container
+.status-effects {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+// Active Skills Container
+.active-skills {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.bar-container {
+    position: relative;
+    width: v.$stat-bar-width;
+    height: 14px;
+    background: linear-gradient(180deg, rgba(6, 12, 20, 0.9), rgba(14, 24, 36, 0.7));
+    border: 1px solid rgba(v.$color-primary, 0.3);
+    transform: skewX(-18deg); // Angled sci-fi parallelogram
+    overflow: hidden;
+    box-shadow:
+        inset 0 1px 4px rgba(0, 0, 0, 0.8),
+        0 0 14px rgba(v.$color-primary, 0.12);
+
+    // Segment ticks
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(90deg,
+                transparent 0 36px,
+                rgba(0, 0, 0, 0.55) 36px 38px);
+        pointer-events: none;
+    }
+}
+
+.bar {
+    height: 100%;
+    transition: width v.$transition-base;
+}
+
+.health-bar {
+    background: linear-gradient(90deg, v.$color-danger, color.adjust(v.$color-danger, $lightness: 20%));
+}
+
+.xp-bar {
+    // Fill takes the player's color (set as --player-color on the panel by ui-hud.js)
+    background: linear-gradient(90deg,
+            var(--player-color, v.$color-primary) 0%,
+            var(--player-color, v.$color-primary) 82%,
+            rgba(255, 255, 255, 0.85) 100%);
+    box-shadow: 0 0 12px var(--player-color, v.$color-primary);
+}
+
+// Level badge next to the XP bar
+.stat-bar.xp>span:last-of-type {
+    min-width: 0;
+    font-family: v.$font-display;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--player-color, v.$color-primary);
+    background: rgba(6, 12, 20, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--player-color, v.$color-primary);
+    padding: 5px 14px;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    text-shadow: 0 0 8px var(--player-color, v.$color-primary);
+    white-space: nowrap;
+}
+
+// Hide the literal "XP" text label - the bar speaks for itself
+.stat-bar.xp>span:first-of-type {
+    display: none;
+}
+
+// New-level badge pop (triggered by LevelUpEffectSystem at the burst moment)
+.stat-bar.xp>span:last-of-type.level-pop {
+    // Grow inward so the badge never clips off the screen edge
+    transform-origin: right center;
+    animation: level-badge-pop 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+// drop-shadow (not box-shadow) so the glow hugs the clip-path silhouette
+@keyframes level-badge-pop {
+    0% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+
+    30% {
+        transform: scale(2.1);
+        filter: brightness(1.9) drop-shadow(0 0 22px var(--player-color, #00ffff)) drop-shadow(0 0 8px var(--player-color, #00ffff));
+    }
+
+    55% {
+        transform: scale(0.9);
+        filter: brightness(1.2) drop-shadow(0 0 10px var(--player-color, #00ffff));
+    }
+
+    75% {
+        transform: scale(1.18);
+        filter: brightness(1.35) drop-shadow(0 0 14px var(--player-color, #00ffff));
+    }
+
+    100% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+    }
+}
+
+// ============================================
+// Status Effects - positioned above health bar
+// ============================================
+
+// Old #status-effects styling removed or adapted above
+
+.status-effect {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap; // Prevent text wrapping
+    height: 28px;
+    padding: 0 v.$spacing-sm;
+    background: rgba(6, 12, 20, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid;
+    border-radius: 3px;
+    font-family: v.$font-ui;
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+    color: v.$color-white;
+    text-shadow: v.$text-shadow-sm;
+    box-shadow: v.$shadow-sm;
+
+    &.ice {
+        border-color: v.$enemy-ice;
+        background: rgba(v.$enemy-ice, 0.25);
+        color: v.$enemy-ice;
+        box-shadow: 0 0 8px rgba(v.$enemy-ice, 0.4), v.$shadow-sm;
+    }
+
+    &.passive {
+        border-color: #ff4444;
+        background: rgba(#ff4444, 0.25);
+        color: #ff4444;
+        box-shadow: 0 0 8px rgba(#ff4444, 0.4), v.$shadow-sm;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        .status-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg {
+                width: v.$skill-icon-sm;
+                height: v.$skill-icon-sm;
+            }
+        }
+
+        .status-level {
+            font-size: v.$font-size-md;
+            font-weight: bold;
+        }
+    }
+}
+
+// ============================================
+// Active Skills - positioned above XP bar
+// ============================================
+
+// Old #active-skills styling removed or adapted above
+
+.active-skill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(6, 12, 20, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid v.$color-success;
+    border-radius: 3px;
+    position: relative;
+    box-shadow: v.$shadow-sm, inset 0 0 8px rgba(v.$color-success, 0.12);
+
+    .skill-icon {
+        width: 100%;
+        height: 100%;
+        color: v.$color-success;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: none;
+        background: none;
+        border-radius: 0;
+
+        svg {
+            width: v.$skill-icon-md;
+            height: v.$skill-icon-md;
+        }
+    }
+
+    // Category overrides
+    &.offensive {
+        border-color: v.$skill-offensive;
+        background: rgba(v.$skill-offensive, 0.15);
+
+        .skill-icon {
+            color: v.$skill-offensive;
+        }
+    }
+
+    &.defensive {
+        border-color: v.$skill-defensive;
+        background: rgba(v.$skill-defensive, 0.15);
+
+        .skill-icon {
+            color: v.$skill-defensive;
+        }
+    }
+
+    &.survival {
+        border-color: v.$skill-survival;
+        background: rgba(v.$skill-survival, 0.15);
+
+        .skill-icon {
+            color: v.$skill-survival;
+        }
+    }
+}
+
+#souls-stats .souls-value {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #b388ff; // Soul Purple
+    text-shadow: 0 0 12px rgba(179, 136, 255, 0.6);
+
+    svg {
+        filter: drop-shadow(0 0 4px #b388ff);
+    }
+
+    #souls-run-text {
+        color: #d1c4e9; // Lighter purple for new souls
+        font-size: v.$font-size-md;
+        font-weight: 500;
+        margin-left: 2px;
+    }
+}
+
+.active-skill-level {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: v.$color-info;
+    color: v.$color-black;
+    border-radius: v.$border-radius-round;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-sm;
+    font-weight: bold;
+    box-shadow: 0 0 4px rgba(v.$color-info, 0.6);
+}
+
+// Custom (starting) skills - greyscale
+.active-skill.custom-skill {
+    background: rgba(v.$color-gray, 0.15);
+    border-color: v.$color-gray;
+
+    .skill-icon {
+        color: v.$color-gray;
+        filter: grayscale(100%);
+    }
+
+    .active-skill-level {
+        background: v.$color-gray;
+        color: v.$color-white;
+        box-shadow: 0 0 4px rgba(v.$color-gray, 0.6);
+    }
+}
+
+// ============================================
+// Command Bar - Top Center HUD
+// ============================================
+
+#game-stats-content {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.hud-topbar {
+    display: flex;
+    align-items: stretch;
+    gap: v.$spacing-xl;
+    padding: 9px 44px 11px;
+    background: linear-gradient(180deg,
+            rgba(6, 12, 20, 0.92) 0%,
+            rgba(8, 16, 26, 0.72) 70%,
+            rgba(10, 20, 30, 0.45) 100%);
+    backdrop-filter: blur(10px);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 28px) 100%, 28px 100%);
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+    border-bottom: 1px solid rgba(v.$color-primary, 0.45);
+}
+
+.hud-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    gap: 1px;
+
+    .stat-label {
+        font-family: v.$font-ui;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(v.$color-primary, 0.55);
+    }
+
+    .stat-value {
+        font-family: v.$font-display;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: v.$color-white;
+        text-shadow: 0 0 12px rgba(v.$color-primary, 0.35);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+#wave-stats .stat-value {
+    color: v.$color-primary;
+    text-shadow: 0 0 14px rgba(v.$color-primary, 0.7);
+}
+
+#kills-stats .stat-value {
+    color: #ff6666;
+    text-shadow: 0 0 12px rgba(255, 60, 60, 0.5);
+}
+
+.hud-divider {
+    width: 1px;
+    height: 30px;
+    align-self: center;
+    background: linear-gradient(180deg,
+            transparent,
+            rgba(v.$color-primary, 0.45),
+            transparent);
+}
+
+// Enemy roster chips hanging under the command bar
+#wave-icons {
+    display: flex;
+    gap: 6px;
+    margin-top: 7px;
+}
+
+.revive-prompt {
+    position: fixed;
+    bottom: 25%; // Above HUD
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #ffff00;
+    color: #ffff00;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 8px;
+    z-index: 2000;
+    pointer-events: none;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.5);
+    transition: opacity 0.2s;
+
+    &.hidden {
+        display: none;
+        opacity: 0;
+    }
+
+    .key-hint {
+        color: #ffffff;
+        background: #444;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin: 0 5px;
+        border: 1px solid #777;
+    }
+}
+
+// FPS counter - discreet corner badge (top-left)
+#fps-counter {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-family: v.$font-ui;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(4, 8, 14, 0.6);
+    border: 1px solid rgba(v.$color-primary, 0.15);
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+// ============================================
+// Minimap Radar (top-right)
+// ============================================
+
+#minimap-container {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 176px;
+    height: 176px;
+    border-radius: 50%;
+    border: 1px solid rgba(v.$color-primary, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    overflow: hidden;
+
+    &.hidden {
+        display: none;
+    }
+
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+// ============================================
+// Enemy Type Indicators (roster chips)
+// ============================================
+
+.enemy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    font-family: v.$font-ui;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(6, 12, 20, 0.7);
+    backdrop-filter: blur(6px);
+    border: 1px solid currentColor;
+    border-radius: 2px;
+
+    .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 6px currentColor;
+    }
+
+    .count {
+        color: v.$color-white;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &.basic {
+        color: v.$enemy-basic;
+    }
+
+    &.fast {
+        color: v.$enemy-fast;
+    }
+
+    &.tank {
+        color: v.$enemy-tank;
+    }
+
+    &.shooter {
+        color: v.$enemy-shooter;
+    }
+
+    &.ice {
+        color: v.$enemy-ice;
+    }
+}
+
+
+
+// ============================================
+// Frozen State Message
+// ============================================
+
+#frozen-message {
+    position: absolute;
+    top: 10%;
+    // transform: translateY(-50%); // Removed to keep it simple at the top
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 100;
+
+    // Animate opacity
+    animation: pulse-opacity 2s infinite;
+
+    .frozen-text {
+        font-size: 48px;
+        font-weight: 800;
+        color: v.$color-info; // Cyan/Blue
+        text-shadow: 0 0 10px rgba(v.$color-info, 0.8);
+        letter-spacing: 4px;
+        margin-bottom: 10px;
+    }
+
+    .frozen-sub {
+        font-size: 24px;
+        font-weight: bold;
+        color: v.$color-white;
+        text-shadow: 0 0 5px v.$color-black;
+        letter-spacing: 2px;
+        background: rgba(0, 0, 0, 0.5);
+        display: inline-block;
+        padding: 5px 20px;
+        border-radius: 4px;
+    }
+}
+
+@keyframes pulse-opacity {
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+// ============================================
+// Weather Warning
+// ============================================
+
+#weather-warning {
+    position: absolute;
+    top: 80px; // Below game timer (approx height)
+    left: 20px; // Aligned with left stats
+    transform: none; // Connects to left, no centering
+    color: v.$color-danger; // Red
+    font-size: 20px; // Smaller font (was 32px)
+    font-weight: 900;
+    text-shadow: 0 0 5px rgba(v.$color-danger, 0.8), 1px 1px 0px black;
+    background: rgba(0, 0, 0, 0.7); // Slightly more transparent
+    padding: 8px 15px; // Smaller padding
+    border: 2px solid v.$color-danger; // Thinner border
+    border-radius: 4px;
+    z-index: 200;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    pointer-events: none;
+
+    // Animation for impact (simplified)
+    animation: warning-pulse 0.5s infinite alternate;
+}
+
+@keyframes warning-pulse {
+    0% {
+        transform: scale(1);
+        border-color: v.$color-danger;
+        box-shadow: 0 0 5px rgba(v.$color-danger, 0.2);
+    }
+
+    100% {
+        transform: scale(1.02); // Subtle pulse
+        border-color: #ff8888;
+        box-shadow: 0 0 10px rgba(v.$color-danger, 0.5);
+    }
+}
+// ============================================
+// HUD visibility in menu context
+// ============================================
+// While the main menu or one of its sub-screens is open the run
+// hasn't started, so the HP/XP panels and Time/Wave/Kills topbar are
+// noise (they also z-index above the modal backdrop). Visibility is
+// driven purely by the .hidden class, so :has() stays in sync with
+// every show/hide call site without JS plumbing.
+#ui-overlay:has(#start-screen:not(.hidden)),
+#ui-overlay:has(#guide-modal:not(.hidden)),
+#ui-overlay:has(#lobby-modal:not(.hidden)),
+#ui-overlay:has(#custom-modal:not(.hidden)),
+#ui-overlay:has(#meta-modal:not(.hidden)) {
+
+    .hud-panel,
+    #game-stats-content,
+    #fps-counter {
+        display: none;
+    }
+}
+
+// ============================================
+// Downed teammate rescue call (2P)
+// ============================================
+// Floating label above a downed player, tracked per frame by
+// UIManager.updateDownedBanner(). z-index below modals so the pause
+// menu covers it.
+#downed-banner {
+    position: fixed;
+    z-index: 90;
+    transform: translate(-50%, -100%);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    display: none;
+
+    &.show {
+        display: block;
+        animation: downed-banner-in 0.35s ease-out;
+    }
+
+    .downed-title {
+        font-family: v.$font-display;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #ff4444;
+        text-shadow: 0 0 12px rgba(255, 68, 68, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+        animation: downed-pulse 1.4s ease-in-out infinite;
+    }
+
+    .downed-sub {
+        font-family: v.$font-ui;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.85);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        margin-top: 2px;
+    }
+
+    // Chevron pointing at an off-screen downed player; positioned and
+    // rotated per frame by updateDownedBanner()
+    .downed-chevron {
+        display: none;
+        position: absolute;
+        font-family: v.$font-display;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+        color: #ff4444;
+        text-shadow: 0 0 10px rgba(255, 68, 68, 0.7);
+        animation: downed-pulse 1.4s ease-in-out infinite;
+    }
+
+    &.offscreen .downed-chevron {
+        display: block;
+    }
+}
+
+// Gentle urgency pulse on the title only — the hint line stays steady
+@keyframes downed-pulse {
+    50% {
+        opacity: 0.55;
+    }
+}
+
+@keyframes downed-banner-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -100%) translateY(10px);
+    }
+}
+
+// ============================================
+// Bled-out player panel (2P)
+// ============================================
+// When the downed timer expires the player is gone for the run —
+// their whole HUD panel (XP bar, skills, level badge) desaturates to
+// match the grey husk in the world. Class toggled by ui-hud.js.
+.hud-panel.bled-out {
+    filter: grayscale(1) brightness(0.65);
+    transition: filter 0.6s ease;
+}

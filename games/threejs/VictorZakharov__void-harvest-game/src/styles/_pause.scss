@@ -1,0 +1,447 @@
+// ============================================
+// PAUSE SCREEN STYLES
+// ============================================
+
+@use 'variables' as v;
+@use 'hud-theme' as hud;
+
+.pause-section-title {
+    @include hud.section-label(12px);
+    border-bottom: 1px solid rgba(v.$color-primary, 0.2);
+    padding-bottom: 6px;
+    margin: 20px 0 15px;
+    text-align: left;
+}
+
+.pause-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+// Side-by-side player columns in 2P pause view
+.pause-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+// Each 2P column carries the player's chosen lobby color in
+// --player-accent (set inline by ui-pause.js); section titles and
+// stat cells pick it up so the columns read as "their" color, not a
+// hardcoded theme
+.pause-player-column {
+    .pause-section-title.player-accent {
+        color: var(--player-accent, #{v.$color-primary});
+        border-bottom-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+    }
+
+    .stat-item {
+        &::before {
+            border-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 35%, transparent);
+        }
+
+        .stat-value {
+            text-shadow: 0 0 10px color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 30%, transparent);
+        }
+
+        &.tooltip-container:hover::before {
+            border-color: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 65%, transparent);
+        }
+    }
+}
+
+.stat-item {
+    @include hud.panel(rgba(v.$color-primary, 0.25));
+    padding: 10px 15px;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    white-space: nowrap; // Prevent wrapping like "Atk \n Speed"
+
+    .stat-label {
+        font-family: v.$font-ui;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(v.$color-white, 0.6);
+        flex-shrink: 0; // Don't shrink label
+        margin-right: 10px;
+    }
+
+    .stat-val-wrapper {
+        text-align: right;
+    }
+
+    .stat-value {
+        @include hud.value-readout(14px);
+        text-shadow: 0 0 10px rgba(v.$color-primary, 0.25);
+    }
+
+    .stat-bonus {
+        font-family: v.$font-display;
+        font-variant-numeric: tabular-nums;
+        color: v.$color-success;
+        font-size: v.$font-size-md;
+        font-weight: bold;
+        margin-left: 4px;
+        text-shadow: 0 0 5px rgba(v.$color-success, 0.5);
+    }
+
+    // Stat Item Tooltip
+    &.tooltip-container {
+        position: relative;
+        cursor: help; // Indicate interactivity
+
+        &:hover {
+            // isolation on the panel traps the tooltip's z-index
+            // inside this item — lift the whole item over its
+            // siblings so bottom tooltips aren't painted over
+            z-index: 10;
+
+            // Brighten the cut-corner layer, not the element — a
+            // background here would paint over the clipped corners
+            &::before {
+                border-color: rgba(v.$color-primary, 0.5);
+            }
+
+            .stat-tooltip {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+    }
+
+    .stat-tooltip {
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(v.$color-bg-darker, 0.98); // Matches skill tooltip
+        border: 1px solid v.$color-primary;
+        border-radius: v.$border-radius-md;
+
+        // Base tooltip styles
+        color: v.$color-white;
+        font-size: v.$font-size-sm;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1); // Specific fancier easing
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(v.$color-primary, 0.2);
+
+        // Fancy override
+        &.fancy-tooltip {
+            padding: 0; // Header/content handle padding
+            width: 260px; // Wider for text
+            text-align: left; // Reset text align
+            white-space: normal; // Allow text wrapping
+        }
+
+        // Inner elements for detailed breakdown
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: v.$color-light-gray;
+
+            &.total-row {
+                margin-top: 8px;
+                font-size: 13px;
+                font-weight: bold;
+                align-items: center;
+            }
+        }
+
+        .stat-total {
+            color: #ffaa44; // Orange for total
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(255, 170, 68, 0.4);
+        }
+
+        .tooltip-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 6px 0;
+        }
+
+        .tooltip-header-icon {
+            width: 18px;
+            height: 18px;
+            margin-left: 8px;
+            color: v.$color-primary;
+            display: inline-block;
+            vertical-align: middle;
+            opacity: 0.8;
+        }
+
+        // Tooltip Arrow
+        &::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px; // Slightly larger
+            border-width: 6px;
+            border-style: solid;
+            border-color: v.$color-primary transparent transparent transparent;
+        }
+
+        // Shared inner styles work automatically because they are global classes:
+        // .tooltip-header, .tooltip-title, .tooltip-content, .tooltip-desc
+
+        // Modifier for Bottom Tooltips (rendered below the item)
+        &.tooltip-bottom {
+            bottom: auto;
+            top: 115%;
+
+            // Hover state needs to push DOWN, not UP
+            // The parent .stat-item:hover triggers the visibility, but we need to override the transform
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px; // Slightly larger
+            border-width: 6px;
+            border-style: solid;
+            border-color: v.$color-primary transparent transparent transparent;
+        }
+
+        // Logic for Bottom Tooltip Arrow and Hover Effect
+        &.tooltip-bottom {
+            &::after {
+                top: auto;
+                bottom: 100%;
+                border-color: transparent transparent v.$color-primary transparent;
+            }
+        }
+    }
+
+    // Hover effect override for bottom tooltips
+    // Since the hover is on the parent (.stat-item), we handle it there
+    &:hover {
+        .stat-tooltip.tooltip-bottom {
+            transform: translateX(-50%) translateY(5px);
+        }
+    }
+}
+
+// Tooltip styles for skills
+.skill-tooltip {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(v.$color-bg-dark, 0.98);
+    border: 1px solid v.$color-primary;
+    border-radius: v.$border-radius-md;
+    padding: 0; // Header/content handle padding
+    width: 240px;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transform-origin: bottom center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(v.$color-primary, 0.2);
+    text-align: left;
+    margin-bottom: 8px;
+
+    // Arrow
+    &::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -6px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: v.$color-primary transparent transparent transparent;
+    }
+}
+
+.tooltip-header {
+    background: rgba(v.$color-primary, 0.15);
+    padding: 10px 12px;
+    border-radius: v.$border-radius-md v.$border-radius-md 0 0;
+}
+
+.tooltip-title {
+    color: v.$color-primary;
+    font-size: 14px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-level-pips {
+    display: flex;
+    gap: 3px;
+
+    .pip {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+
+        &.filled {
+            background: v.$color-primary;
+            box-shadow: 0 0 4px rgba(v.$color-primary, 0.6);
+        }
+    }
+}
+
+.tooltip-content {
+    padding: 10px 12px;
+
+    .tooltip-stat {
+        color: v.$color-white;
+        font-size: 13px;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+
+        .val {
+            font-weight: bold;
+            color: v.$color-success;
+        }
+    }
+
+    .tooltip-desc {
+        color: v.$color-light-gray;
+        font-size: 12px;
+        line-height: 1.4;
+        font-style: italic;
+    }
+
+    // Restore separator only if description follows a stat row (like in Skills)
+    .tooltip-stat+.tooltip-desc {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+.active-skill {
+    position: relative;
+
+    &:hover {
+        z-index: 10; // Bring to front when hovering
+
+        .skill-tooltip {
+            opacity: 1;
+            visibility: visible;
+            bottom: 120%; // Float up slightly on hover
+        }
+    }
+
+    // Categories
+    &.offensive {
+        .skill-icon {
+            border-color: v.$skill-offensive;
+            background: rgba(v.$skill-offensive, 0.2);
+            color: v.$skill-offensive;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-offensive;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-offensive, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-offensive;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-offensive;
+            box-shadow: 0 0 4px rgba(v.$skill-offensive, 0.6);
+        }
+
+        // Arrow color override
+        .skill-tooltip::after {
+            border-color: v.$skill-offensive transparent transparent transparent;
+        }
+    }
+
+    &.defensive {
+        .skill-icon {
+            border-color: v.$skill-defensive;
+            background: rgba(v.$skill-defensive, 0.2);
+            color: v.$skill-defensive;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-defensive;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-defensive, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-defensive;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-defensive;
+            box-shadow: 0 0 4px rgba(v.$skill-defensive, 0.6);
+        }
+
+        .skill-tooltip::after {
+            border-color: v.$skill-defensive transparent transparent transparent;
+        }
+    }
+
+    &.survival {
+        .skill-icon {
+            border-color: v.$skill-survival;
+            background: rgba(v.$skill-survival, 0.2);
+            color: v.$skill-survival;
+        }
+
+        .skill-tooltip {
+            border-color: v.$skill-survival;
+        }
+
+        .tooltip-header {
+            background: rgba(v.$skill-survival, 0.15);
+        }
+
+        .tooltip-title {
+            color: v.$skill-survival;
+        }
+
+        .tooltip-level-pips .pip.filled {
+            background: v.$skill-survival;
+            box-shadow: 0 0 4px rgba(v.$skill-survival, 0.6);
+        }
+
+        .skill-tooltip::after {
+            border-color: v.$skill-survival transparent transparent transparent;
+        }
+    }
+}
+// 2P pause: skill icons carry the player's chosen color, matching
+// the in-game HUD badges (ui-hud.js tints those with player.color).
+// Kept at the end of this file so it wins the specificity tie with
+// the .active-skill.<category> .skill-icon rules above.
+.pause-player-column .active-skill .skill-icon {
+    border-color: var(--player-accent, #{v.$color-primary});
+    background: color-mix(in srgb, var(--player-accent, #{v.$color-primary}) 25%, transparent);
+    color: var(--player-accent, #{v.$color-primary});
+}

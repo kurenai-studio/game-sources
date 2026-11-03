@@ -1,0 +1,373 @@
+// ============================================
+// SKILL CHOICES
+// ============================================
+
+@use 'sass:color';
+@use 'variables' as v;
+@use 'hud-theme' as hud;
+
+#skill-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: v.$spacing-lg;
+    margin-top: v.$spacing-xl;
+    perspective: 1000px;
+}
+
+.skill-option {
+    background: rgba(v.$color-primary, 0.1);
+    border: v.$border-width-md solid v.$color-primary;
+    padding: 25px v.$spacing-xl;
+    border-radius: v.$border-radius-lg;
+    cursor: pointer;
+    // Use faster transition for transform to make parallax responsive, but keep other props smooth
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: v.$spacing-lg;
+    text-align: center;
+    min-height: 220px;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:hover {
+        background: rgba(v.$color-primary, 0.3);
+        // Transform is handled by JS for parallax
+        box-shadow: v.$glow-cyan-md;
+    }
+
+    // Animation State
+    &.flip-out {
+        transition: transform 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important; // easeInCubic
+        pointer-events: none;
+    }
+
+    &.flip-in {
+        transition: transform 0.4s cubic-bezier(0.215, 0.61, 0.355, 1) !important; // easeOutCubic
+        pointer-events: none;
+    }
+
+    h3 {
+        color: v.$color-primary;
+        margin-bottom: v.$spacing-sm;
+        font-size: v.$font-size-title;
+    }
+
+    p {
+        font-size: v.$font-size-xl;
+        margin: 0;
+        color: v.$color-light-gray;
+        line-height: 1.4;
+    }
+
+    // Category Colors
+    &.offensive {
+        border-color: v.$skill-offensive;
+        background: rgba(v.$skill-offensive, 0.05); // Reduced opacity
+
+        h3 {
+            color: v.$skill-offensive;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        // Enforce text readability
+
+        .skill-icon {
+            color: v.$skill-offensive;
+            border-color: v.$skill-offensive;
+            background: rgba(v.$skill-offensive, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-offensive, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-offensive, 0.4);
+        }
+    }
+
+    &.defensive {
+        border-color: v.$skill-defensive;
+        background: rgba(v.$skill-defensive, 0.05);
+
+        h3 {
+            color: v.$skill-defensive;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        .skill-icon {
+            color: v.$skill-defensive;
+            border-color: v.$skill-defensive;
+            background: rgba(v.$skill-defensive, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-defensive, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-defensive, 0.4);
+        }
+    }
+
+    &.survival {
+        border-color: v.$skill-survival;
+        background: rgba(v.$skill-survival, 0.05);
+
+        h3 {
+            color: v.$skill-survival;
+        }
+
+        p {
+            color: v.$color-light-gray;
+        }
+
+        .skill-icon {
+            color: v.$skill-survival;
+            border-color: v.$skill-survival;
+            background: rgba(v.$skill-survival, 0.15);
+        }
+
+        &:hover {
+            background: rgba(v.$skill-survival, 0.15);
+            box-shadow: 0 0 25px rgba(v.$skill-survival, 0.4);
+        }
+    }
+}
+
+.skill-icon {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    color: v.$color-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(v.$color-primary, 0.2);
+    border-radius: v.$border-radius-xl;
+    border: v.$border-width-md solid v.$color-primary;
+    position: relative;
+
+    svg {
+        width: v.$skill-icon-xxl;
+        height: v.$skill-icon-xxl;
+    }
+}
+
+.skill-level {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: v.$color-magenta;
+    color: v.$color-white;
+    border-radius: v.$border-radius-round;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: v.$font-size-base;
+    font-weight: bold;
+    border: v.$border-width-md solid v.$color-black;
+}
+
+.skill-info {
+    flex: 1;
+    text-align: center;
+    width: 100%;
+}
+
+// ============================================
+// META UPGRADES
+// ============================================
+
+#meta-upgrades {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: v.$spacing-lg;
+    // Removed margin and max-height to eliminate scrollbar
+    margin: 0;
+    max-height: none;
+    padding: v.$spacing-xs;
+}
+
+.meta-upgrade {
+    @include hud.panel(rgba(v.$color-white, 0.18));
+    padding: v.$spacing-lg;
+    cursor: default;
+    transition: all v.$transition-base;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    &::before {
+        transition: border-color v.$transition-base, box-shadow v.$transition-base;
+    }
+
+    // MAXED OUT STATE (Previously 'unlocked')
+    &.unlocked {
+        opacity: 0.6; // Greyed out look
+        cursor: default;
+
+        .meta-icon {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #666;
+            color: #888;
+            box-shadow: none;
+        }
+
+        .meta-progress-fill {
+            background: #666; // Grey progress bar
+            box-shadow: none;
+        }
+
+        .maxed {
+            color: #888;
+            font-weight: bold;
+            text-shadow: none;
+        }
+    }
+
+    // AFFORDABLE STATE (Actionable)
+    &.affordable:not(.unlocked) {
+        cursor: pointer;
+
+        &::before {
+            border-color: rgba(v.$color-primary, 0.6);
+        }
+
+        .meta-icon {
+            border-color: v.$color-primary;
+            color: v.$color-primary;
+        }
+
+        .cost {
+            color: v.$color-primary;
+            text-shadow: 0 0 5px rgba(v.$color-primary, 0.5);
+        }
+
+        &:hover {
+            transform: translateY(-4px);
+
+            &::before {
+                border-color: v.$color-primary;
+                box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.6),
+                    0 5px 15px rgba(0, 0, 0, 0.3),
+                    0 0 10px rgba(v.$color-primary, 0.3);
+            }
+        }
+    }
+
+    .meta-icon {
+        width: 50px; // Larger icon
+        height: 50px;
+        margin-bottom: v.$spacing-md;
+        color: #777;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        border: v.$border-width-md solid #555;
+        transition: all 0.3s ease;
+
+        svg {
+            width: 28px;
+            height: 28px;
+        }
+    }
+
+    .meta-content {
+        width: 100%;
+    }
+
+    h4 {
+        font-family: v.$font-ui;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: v.$color-white;
+        margin: 0 0 5px 0;
+        font-size: 15px;
+    }
+
+    .description {
+        font-family: v.$font-ui;
+        font-size: 13px;
+        color: #aaa;
+        min-height: 40px; // Ensure consistent height
+        margin-bottom: 15px;
+        line-height: 1.3;
+    }
+
+    .meta-progress-container {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px;
+        border-radius: 6px;
+    }
+
+    .meta-row-spread {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 4px;
+        font-weight: 600;
+
+        .meta-label {
+            font-family: v.$font-ui;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        .cost,
+        .maxed {
+            font-family: v.$font-display;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cost {
+            color: #d1c4e9; // Light purple default
+        }
+    }
+
+    .meta-progress-track {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+
+        .meta-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7b1fa2, #e040fb); // Purple gradient
+            transition: width 0.5s ease;
+        }
+    }
+}
+
+// Old currency text selector removed
+// ============================================
+// SKILL CARD PICK CINEMATIC
+// ============================================
+// While the chosen card's clone flies over the frozen game
+// (SkillCardEffectSystem), the modal backdrop, unchosen cards and
+// chrome all fade away so only the card remains on screen
+#levelup-modal.card-picked {
+    background: rgba(0, 0, 0, 0) !important;
+    transition: background 0.4s ease;
+    pointer-events: none;
+
+    .modal-content {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+    }
+}
