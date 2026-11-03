@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#07090c" />
+    <title>Breach: a top-down tactical game</title>
+    <meta name="description" content="Lead a single operator into buildings you've only seen on a rough plan. Six campaigns, from street raids to the leak at headquarters. Plays in the browser." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Breach" />
+    <meta property="og:description" content="A top-down tactical game. You only know what you see. Slow is smooth." />
+    <meta property="og:image" content="https://sebastiaan-arnold.github.io/Breach/social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #07090c; overflow: hidden; }
+      #game { width: 100vw; height: 100vh; height: 100dvh; }
+      canvas { display: block; }
+      #loader {
+        position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 18px;
+        font-family: ui-monospace, Menlo, monospace; color: #64748b;
+      }
+      #loader .mark { font: 700 44px/1 "Arial Narrow", sans-serif; letter-spacing: 0.35em; color: #f8fafc; padding-left: 0.35em; }
+      #loader .bar { width: 220px; height: 2px; background: #1e293b; overflow: hidden; }
+      #loader .bar::after {
+        content: ""; display: block; width: 40%; height: 100%; background: #60a5fa;
+        animation: sweep 1.1s ease-in-out infinite;
+      }
+      #touch-note {
+        position: fixed; left: 0; right: 0; bottom: 14px; z-index: 10; text-align: center; pointer-events: none;
+        font: 12px/1.6 ui-monospace, Menlo, monospace; letter-spacing: 0.08em; color: #94a3b8;
+      }
+      @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+    </style>
+  </head>
+  <body>
+    <div id="loader">
+      <div class="mark">BREACH</div>
+      <div class="bar"></div>
+    </div>
+    <div id="touch-note" hidden>Breach is played with a mouse and keyboard.</div>
+    <div id="game"></div>
+    <script>
+      // On a touch-only device, say up front how the game is played.
+      if (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) {
+        document.getElementById('touch-note').hidden = false;
+      }
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
