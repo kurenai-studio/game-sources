@@ -1,0 +1,93 @@
+
+-- GLOBAL vars
+local globals = require( 'utils.GlobalVars' )
+
+local gamelib = require( 'utils.TheGame' )
+
+function end_of_round_timer( self, handle, time_elapsed )
+end
+
+function init(self)
+	math.randomseed( 3333*os.time() )
+
+	-- start_of_game will cascade a bunch of other calls
+	-- e.g. start_of_deck, start_of_hand, and start_of_round
+	gamelib.start_of_game()
+
+	-- disable the okbutton
+	msg.post( '/mvc#view', 'ok_button', {enable=false} )
+end
+
+function on_message( self, message_id, message, sender )
+	if( message_id == hash('check_in') ) then
+		local id = message.id
+		--print( 'recv check_in from', id, sender )
+		local card = globals.player_hand:scanXtra( 'go_id', id )
+		if( card ~= nil ) then
+			card:setXtraMult( message )
+		end
+		card = globals.opponent_hand:scanXtra( 'go_id', id )
+		if( card ~= nil ) then
+			card:setXtraMult( message )
+		end
+
+	elseif( message_id == hash('check_out') ) then
+		-- not really used right now .. 
+		if( false ) then
+			local id = message.id
+			--print( 'recv check_out from', id, sender )
+			local card = globals.player_hand:scanXtra( 'go_id', id )
+			if( card ~= nil ) then
+				globals.player_hand:removeCard( card )
+			end
+			card = globals.opponent_hand:scanXtra( 'go_id', id )
+			if( card ~= nil ) then
+				globals.opponent_hand:removeCard( card )
+			end
+		end
+
+	elseif( message_id == hash('card_touch') ) then
+		local found_obj  = message.card_obj
+		local found_card = globals.player_hand:scanXtra( 'go_id', found_obj )
+		local found_scr  = found_card.xtra.script_url
+		local state = go.get( found_scr, 'state' )
+
+		if( state == 1 ) then
+			if( globals.card1 == nil ) then
+				globals.card1 = found_card
+				globals.card1obj = found_obj
+				msg.post( found_obj, 'to_target', {target=1} )
+			elseif( globals.card2 == nil ) then
+				globals.card2 = found_card
+				globals.card2obj = found_obj
+				msg.post( found_obj, 'to_target', {target=2} )
+			end
+			
+			-- both card selected, ok-button gets enabled
+			if( (globals.card1~=nil) and (globals.card2~=nil) ) then
+				self.ok_enabled = true
+				msg.post( '/mvc#view', 'ok_button', {enable=true} )
+			end
+		elseif( state == 2 ) then
+			if( found_obj == globals.card1obj ) then
+				msg.post( found_obj, 'to_home' )
+				globals.card1 = nil
+				globals.card1obj = nil
+				self.ok_enabled = false
+				msg.post( '/mvc#view', 'ok_button', {enable=false} )
+			elseif( found_obj == globals.card2obj ) then
+				msg.post( found_obj, 'to_home' )
+				globals.card2 = nil
+				globals.card2obj = nil
+				self.ok_enabled = false
+				msg.post( '/mvc#view', 'ok_button', {enable=false} )
+			end
+		end
+
+	elseif( message_id == hash('ok_button') ) then
+		gamelib.process_round()
+		
+		msg.post( '/mvc#view', 'ok_button', {enable=false} )
+
+	end
+end

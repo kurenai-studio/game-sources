@@ -1,0 +1,159 @@
+
+
+--[[
+try to keep the card-specific workings in CardObj (so it can be reused in simulations)
+but keep the graphics-specific stuff here
+]]-- 
+
+local cardobj = require( 'utils.CardObj' )
+
+go.property( 'parent', msg.url() )
+
+go.property( 'suit', -1 )
+go.property( 'num', -1 )
+go.property( 'gem', false )
+go.property( 'back', -1 )
+
+-- states: 0=back, 1=front, 2=in target-zone
+go.property( 'state', -1 )
+-- ready: is the card ready, or is it in an animation?
+go.property( 'ready', false )
+
+function show_back(self)
+	msg.post( '#front', 'disable' )
+	msg.post( '#back', 'enable' )
+	go.set( '#gem', 'tint', vmath.vector4(0,0,0,0) )
+end
+function show_front(self)
+	msg.post( '#front', 'enable' )
+	msg.post( '#back', 'disable' )
+	if( self.gem ) then
+		go.set( '#gem', 'tint', vmath.vector4(1,1,1,1) )
+	end
+end
+
+function init(self)
+	--print( 'self.back', self.back )
+	if( self.back < 0 ) then
+		self.back = math.random(1,#cardobj.cardBacks)
+	end
+	
+	self.card_back = cardobj.cardBacks[ self.back ]
+	self.card_front = 'card' .. cardobj.cardSuits[self.suit] .. cardobj.cardNums[self.num]
+
+	print( 'new card at', go.get_position(), self.suit, self.num, self.card_front, self.state, self.back )
+
+	-- style the graphics-obj
+	msg.post( '#front', 'play_animation', {id=hash(self.card_front)} )
+	msg.post( '#back',  'play_animation', {id=hash(self.card_back)} )
+
+	go.set( '#gem', 'tint', vmath.vector4(0,0,0,0) )
+	
+	if( self.state == 0 ) then
+		show_back(self)
+	else
+		show_front(self)
+	end
+	self.ready = true
+
+	self.orig_pos   = go.get_position()
+	self.orig_scale = go.get_scale()
+
+	self.targets = {
+		go.get_position( go.get_id( 'target1' ) ),
+		go.get_position( go.get_id( 'target2' ) ),
+		go.get_position( go.get_id( 'target3' ) ),
+		go.get_position( go.get_id( 'target4' ) ),
+	}
+
+	-- send msg back to controller that we're ready
+	-- -- and include references to components
+	-- print( 'id=',go.get_id(),'url=',msg.url() )
+	local props = {
+		id = go.get_id(),
+		script_url = msg.url(),
+		back_id   = go.get_id( '#back' ),
+		front_id  = go.get_id( '#front' ),
+		back_url  = msg.url( '#back' ),
+		front_url = msg.url( '#front' ),
+		size      = go.get( '#back', 'size' ),
+	}
+	msg.post( '/mvc', 'check_in', props )
+end
+
+function flip_phase3( self )
+	go.set( '.', 'scale', self.orig_scale )
+	print( 'flip anim is done' )
+	if( self.state == 1 ) then
+		self.state = 0
+	elseif( self.state == 0 ) then
+		self.state = 1
+	end
+	self.ready = true
+end
+function flip_phase2( self )
+	go.set( '.', 'scale.x', 0.0 )
+	go.set( '.', 'scale.y', self.orig_scale.y )
+	if( self.state == 1 ) then
+		show_back(self)
+	else
+		show_front(self)
+	end
+	local newscl = vmath.vector3( self.orig_scale.x,self.orig_scale.y, 1.0 )
+	go.animate( '.', 'scale', go.PLAYBACK_ONCE_FORWARD, newscl, go.EASING_LINEAR, 0.15, 0, flip_phase3 )
+end
+
+function end_of_anim( self )
+	self.ready = true
+end
+function end_of_destroy( self )
+	print( 'end_of_destroy' )
+	msg.post( '/mvc', 'check_out', {id=go.get_id()} )
+	go.delete()
+end
+
+function on_message(self, message_id, message, sender)
+	if( message_id == hash('to_target') ) then
+		if( self.state < 2 ) then
+			self.ready = false
+			local newpos = self.targets[ message.target ]
+			go.animate( '.', 'position', go.PLAYBACK_ONCE_FORWARD, newpos, go.EASING_LINEAR, 0.25, 0, end_of_anim )
+			self.state = 2
+		end
+
+	elseif( message_id == hash('to_home') ) then
+		if( self.state == 2 ) then
+			self.ready = false
+			go.animate( '.', 'position', go.PLAYBACK_ONCE_FORWARD, self.orig_pos, go.EASING_LINEAR, 0.25, 0, end_of_anim )
+			self.state = 1
+		end
+
+	elseif( message_id == hash('deal_to_home') ) then
+		self.ready = false
+		self.orig_pos = message.pos
+		go.animate( '.', 'position', go.PLAYBACK_ONCE_FORWARD, self.orig_pos, go.EASING_LINEAR, 0.25, 0, end_of_anim )
+		self.state = 1
+
+	elseif( message_id == hash('destroy') ) then
+		if( self.state == 2 ) then
+			self.ready = false
+			local newpos = vmath.vector3( -200, 384, 0 )
+			go.animate( '.', 'position', go.PLAYBACK_ONCE_FORWARD, newpos, go.EASING_LINEAR, 0.50, 0, end_of_destroy )
+			self.state = 1
+		end
+	elseif( message_id == hash('flip') ) then
+		self.ready = false
+		local newscl = vmath.vector3( 0.0, 1.05*self.orig_scale.y, 1.0 )
+		go.animate( '.', 'scale', go.PLAYBACK_ONCE_FORWARD, newscl, go.EASING_LINEAR, 0.15, 0, flip_phase2 )
+
+	elseif( message_id == hash('change_face') ) then
+		self.card_face = math.random(1,#cardFaces)
+		msg.post( '#face',  'play_animation', {id=hash(cardFaces[self.card_face])} )
+	elseif( message_id == hash('show_back') ) then
+		show_back(self)
+	elseif( message_id == hash('show_front') ) then
+		show_front(self)
+	elseif( message_id == hash('set_position') ) then
+		go.set_position( message.pos )
+	end
+end
